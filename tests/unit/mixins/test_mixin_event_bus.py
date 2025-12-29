@@ -440,9 +440,7 @@ class TestMixinEventBusPublishCompletionEvent:
 
         data = ModelCompletionData(message="test", success=True)
 
-        with patch(
-            "omnibase_core.mixins.mixin_event_bus.emit_log_event"
-        ) as mock_log:
+        with patch("omnibase_core.mixins.mixin_event_bus.emit_log_event") as mock_log:
             node.publish_completion_event("test.complete", data)
 
             # Should log error for async-only bus
@@ -894,9 +892,7 @@ class TestMixinEventBusLogging:
         """Test that _log_info emits structured log event."""
         node = TestMixinNode()
 
-        with patch(
-            "omnibase_core.mixins.mixin_event_bus.emit_log_event"
-        ) as mock_log:
+        with patch("omnibase_core.mixins.mixin_event_bus.emit_log_event") as mock_log:
             node._log_info("Test message", "test_pattern")
 
             mock_log.assert_called_once()
@@ -905,9 +901,7 @@ class TestMixinEventBusLogging:
         """Test that _log_warn emits structured log event."""
         node = TestMixinNode()
 
-        with patch(
-            "omnibase_core.mixins.mixin_event_bus.emit_log_event"
-        ) as mock_log:
+        with patch("omnibase_core.mixins.mixin_event_bus.emit_log_event") as mock_log:
             node._log_warn("Warning message", "test_pattern")
 
             mock_log.assert_called_once()
@@ -916,15 +910,15 @@ class TestMixinEventBusLogging:
         """Test that _log_error emits event with exception context."""
         node = TestMixinNode()
 
-        with patch(
-            "omnibase_core.mixins.mixin_event_bus.emit_log_event"
-        ) as mock_log:
+        with patch("omnibase_core.mixins.mixin_event_bus.emit_log_event") as mock_log:
             test_error = ValueError("test error")
             node._log_error("Error message", "test_pattern", error=test_error)
 
             mock_log.assert_called_once()
             call_args = mock_log.call_args
-            context = call_args[1].get("context", call_args[0][2] if len(call_args[0]) > 2 else {})
+            context = call_args[1].get(
+                "context", call_args[0][2] if len(call_args[0]) > 2 else {}
+            )
             if isinstance(context, dict):
                 assert "error" in context
 
@@ -963,9 +957,7 @@ class TestMixinEventBusEventHandler:
             node_id=node.get_node_id(),
         )
 
-        with patch.object(
-            node, "_event_to_input_state", return_value=MockInputState()
-        ):
+        with patch.object(node, "_event_to_input_state", return_value=MockInputState()):
             with patch.object(node, "_build_event", return_value=completion_event):
                 handler = node._create_event_handler("test.pattern")
                 handler(mock_envelope)
@@ -1067,9 +1059,7 @@ class TestMixinEventBusTopicValidation:
 
         mock_envelope = Mock(spec=[])  # No message_category attribute
 
-        with patch(
-            "omnibase_core.mixins.mixin_event_bus.emit_log_event"
-        ):
+        with patch("omnibase_core.mixins.mixin_event_bus.emit_log_event"):
             # Should not raise
             node._validate_topic_alignment("dev.test.events.v1", mock_envelope)
 

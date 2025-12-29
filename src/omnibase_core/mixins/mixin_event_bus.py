@@ -194,11 +194,21 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
 
         Args:
             contract_path: Absolute or relative path to the ONEX contract
-                YAML file that defines this node's event patterns.
+                YAML file that defines this node's event patterns. An empty
+                string is treated as "no contract" and will cause
+                get_event_patterns() to return an empty list with a warning.
 
         Note:
             The contract file is not loaded immediately; it is read when
             get_event_patterns() is called.
+
+        Empty String Handling:
+            Passing an empty string ("") is semantically equivalent to not
+            binding a contract path at all. The get_event_patterns() method
+            uses `if not contract_path:` to check for both None and empty
+            string, treating both as "no contract configured". If you want
+            to explicitly clear a previously bound contract path, pass an
+            empty string.
         """
         self._event_bus_runtime_state.contract_path = contract_path
 
@@ -212,6 +222,8 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
         Args:
             node_name: The human-readable name of this node. Should be
                 unique within the system for proper event correlation.
+                An empty string is treated as "not bound" and will cause
+                get_node_name() to return the class name as a fallback.
 
         Note:
             This affects get_node_name() return value and all log output.
