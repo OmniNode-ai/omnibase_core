@@ -16,8 +16,12 @@ Design Rationale:
     flexible template resolution.
 
 Thread Safety:
-    ModelEffectTemplateContext instances are immutable (frozen=True) after creation,
-    making them thread-safe for concurrent read access.
+    ModelEffectTemplateContext instances are frozen (frozen=True) after creation,
+    meaning the `data` attribute cannot be reassigned. However, the underlying dict
+    is mutable - if external code retains a reference to the input dict, it could
+    mutate the contents. The `from_dict()` factory method deep-copies input to
+    prevent this issue. For thread safety, prefer using `from_dict()` over direct
+    construction, or ensure no external references to the input dict are retained.
 
 Note:
     This is different from ModelTemplateContext in models/core/, which is for
@@ -28,6 +32,7 @@ See Also:
     - MixinEffectExecution: Uses this for template resolution
 """
 
+import copy
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -127,13 +132,16 @@ class ModelEffectTemplateContext(BaseModel):
     def from_dict(cls, data: dict[str, Any]) -> "ModelEffectTemplateContext":
         """Create a ModelEffectTemplateContext from a dictionary.
 
+        The input dictionary is deep-copied to prevent external mutations
+        from affecting the context after creation.
+
         Args:
             data: Dictionary to wrap as template context.
 
         Returns:
-            ModelEffectTemplateContext wrapping the data.
+            ModelEffectTemplateContext wrapping a deep copy of the data.
         """
-        return cls(data=data)
+        return cls(data=copy.deepcopy(data))
 
     @allow_dict_any(reason="Serialization method returning template context data")
     def to_dict(self) -> dict[str, Any]:

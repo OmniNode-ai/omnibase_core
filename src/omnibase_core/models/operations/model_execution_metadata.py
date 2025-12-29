@@ -5,8 +5,6 @@ Replaces dict[str, Any] usage in execution metadata with structured typing.
 Follows ONEX strong typing principles and one-model-per-file architecture.
 """
 
-from __future__ import annotations
-
 from datetime import datetime
 from typing import Any
 from uuid import UUID, uuid4

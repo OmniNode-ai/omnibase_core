@@ -1211,25 +1211,24 @@ class TestTypedConfigErrorScenarios:
         self,
         effect_with_contract_factory: EffectWithContractFactory,
     ) -> None:
-        """Test error handling when typed config has unknown handler type.
+        """Test that Pydantic raises ValidationError for invalid handler_type.
 
-        Verifies that get_typed_io_config raises ModelOnexError for unknown types.
+        The io_config field is a discriminated union that validates handler_type
+        on construction. Unknown handler_type values cause immediate ValidationError
+        rather than being stored as dict and validated later.
         """
+        from pydantic import ValidationError
+
         from omnibase_core.models.operations.model_effect_operation_config import (
             ModelEffectOperationConfig,
         )
 
-        # Create config with unknown handler type (falls back to dict)
-        config = ModelEffectOperationConfig(
-            io_config={"handler_type": "unknown_type", "some_field": "value"}
-        )
-
-        # io_config is stored as dict for unknown types
-        assert isinstance(config.io_config, dict)
-
-        # Attempting to get typed config should raise error
-        with pytest.raises(ModelOnexError, match="Unknown handler_type: unknown_type"):
-            config.get_typed_io_config()
+        # Pydantic discriminated union raises ValidationError on construction
+        # for invalid handler_type values
+        with pytest.raises(ValidationError, match="unknown_type"):
+            ModelEffectOperationConfig(
+                io_config={"handler_type": "unknown_type", "some_field": "value"}
+            )
 
     def test_typed_config_handler_not_registered_error(
         self,
