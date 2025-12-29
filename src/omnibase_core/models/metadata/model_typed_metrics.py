@@ -139,17 +139,55 @@ class ModelTypedMetrics[SimpleValueType](BaseModel):
     # Protocol method implementations
 
     def get_metadata(self) -> TypedDictMetadataDict:
-        """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
-        metadata = {}
-        # Include common metadata fields
-        for field in ["name", "description", "version", "tags", "metadata"]:
-            if hasattr(self, field):
-                value = getattr(self, field)
-                if value is not None:
-                    metadata[field] = (
-                        str(value) if not isinstance(value, (dict, list)) else value
-                    )
-        return metadata  # type: ignore[return-value]
+        """
+        Get metadata as dictionary for ProtocolMetadataProvider protocol.
+
+        Returns a TypedDictMetadataDict containing metric information with
+        type-parameterized value. The metric display name and description
+        map to standard top-level keys when present.
+
+        Returns:
+            TypedDictMetadataDict with the following structure:
+            - "name": metric_display_name (only if non-empty string)
+            - "description": description field (only if non-empty string)
+            - "metadata": Dict containing:
+                - "metric_id": String representation of the metric UUID
+                - "value": The typed metric value (str, int, float, or bool
+                  depending on generic type parameter)
+                - "unit": Unit of measurement string (only if non-empty)
+
+        Example:
+            >>> metric = ModelTypedMetrics.int_metric(
+            ...     name="request_count",
+            ...     value=42,
+            ...     unit="requests",
+            ...     description="Total HTTP requests"
+            ... )
+            >>> metadata = metric.get_metadata()
+            >>> metadata["name"]
+            'request_count'
+            >>> metadata["description"]
+            'Total HTTP requests'
+            >>> metadata["metadata"]["value"]
+            42
+            >>> metadata["metadata"]["unit"]
+            'requests'
+        """
+        result: TypedDictMetadataDict = {}
+        if self.metric_display_name:
+            result["name"] = self.metric_display_name
+        if self.description:
+            result["description"] = self.description
+        metadata_inner: dict[str, object] = {
+            "metric_id": str(self.metric_id),
+            "value": self.value,
+        }
+        if (
+            self.unit
+        ):  # Only include unit if non-empty (consistent with name/description)
+            metadata_inner["unit"] = self.unit
+        result["metadata"] = metadata_inner
+        return result
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""

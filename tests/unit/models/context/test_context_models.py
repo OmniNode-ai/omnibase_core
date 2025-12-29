@@ -679,7 +679,7 @@ class TestModelSessionContextInstantiation:
         assert context.user_agent == "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
         assert context.device_fingerprint == "fp_xyz789"
         assert context.locale == "en-US"
-        assert context.authentication_method == "oauth2"
+        assert context.authentication_method == EnumAuthenticationMethod.OAUTH2
 
     def test_create_with_partial_fields(self) -> None:
         """Test creating session context with partial fields."""
@@ -960,12 +960,12 @@ class TestModelAuthorizationContextFromAttributes:
         attrs = AuthorizationContextAttrs(
             roles=["editor"],
             permissions=["read:all"],
-            token_type="API",
+            token_type="api_key",
         )
         context = ModelAuthorizationContext.model_validate(attrs)
         assert context.roles == ["editor"]
         assert context.permissions == ["read:all"]
-        assert context.token_type == "API"
+        assert context.token_type == EnumTokenType.API_KEY
 
 
 @pytest.mark.unit
@@ -1088,9 +1088,9 @@ class TestModelCheckpointMetadataInstantiation:
             workflow_stage="processing",
             parent_checkpoint_id=parent_uuid,
         )
-        assert metadata.checkpoint_type == "automatic"
+        assert metadata.checkpoint_type == EnumCheckpointType.AUTOMATIC
         assert metadata.source_node == "node_compute_transform"
-        assert metadata.trigger_event == "stage_complete"
+        assert metadata.trigger_event == EnumTriggerEvent.STAGE_COMPLETE
         assert metadata.workflow_stage == "processing"
         assert metadata.parent_checkpoint_id == parent_uuid
 
@@ -1469,7 +1469,7 @@ class TestMetadataModelsCommonBehavior:
         session = ModelSessionContext(session_id=uuid4())
         http = ModelHttpRequestMetadata(method="GET")
         audit = ModelAuditMetadata(audit_id="audit_123")
-        checkpoint = ModelCheckpointMetadata(checkpoint_type="auto")
+        checkpoint = ModelCheckpointMetadata(checkpoint_type="automatic")
         detection = ModelDetectionMetadata(pattern_category="sql")
         node_init = ModelNodeInitMetadata(init_source="container")
 
@@ -1490,7 +1490,7 @@ class TestMetadataModelsCommonBehavior:
             ModelHttpRequestMetadata(method="GET"),
             ModelAuthorizationContext(roles=["user"]),
             ModelAuditMetadata(audit_id="audit_123"),
-            ModelCheckpointMetadata(checkpoint_type="auto"),
+            ModelCheckpointMetadata(checkpoint_type="automatic"),
             ModelDetectionMetadata(pattern_category="sql"),
             ModelNodeInitMetadata(init_source="container"),
         ]
@@ -1506,7 +1506,7 @@ class TestMetadataModelsCommonBehavior:
             ModelHttpRequestMetadata(method="GET"),
             ModelAuthorizationContext(roles=["user"]),
             ModelAuditMetadata(audit_id="audit_123"),
-            ModelCheckpointMetadata(checkpoint_type="auto"),
+            ModelCheckpointMetadata(checkpoint_type="automatic"),
             ModelDetectionMetadata(pattern_category="sql"),
             ModelNodeInitMetadata(init_source="container"),
         ]
@@ -1578,7 +1578,7 @@ class TestModelAuthorizationContextEnumSupport:
         context = ModelAuthorizationContext(
             token_type="CustomToken",
         )
-        # Unknown strings are kept as-is (original case preserved)
+        # Unknown strings are kept as-is for backward compatibility
         assert context.token_type == "CustomToken"
         assert isinstance(context.token_type, str)
 
@@ -1625,11 +1625,14 @@ class TestModelSessionContextEnumSupport:
         )
         assert context.authentication_method == EnumAuthenticationMethod.SAML
 
-    def test_authentication_method_keeps_unknown_string(self) -> None:
-        """Test that unknown strings are kept for backward compatibility."""
+    def test_authentication_method_keeps_unknown_string_for_backward_compat(
+        self,
+    ) -> None:
+        """Test that unknown strings are kept as-is for backward compatibility."""
         context = ModelSessionContext(
             authentication_method="custom_sso",
         )
+        # Unknown strings are kept as-is for backward compatibility
         assert context.authentication_method == "custom_sso"
         assert isinstance(context.authentication_method, str)
 
@@ -1640,6 +1643,7 @@ class TestModelSessionContextEnumSupport:
 
     def test_existing_oauth2_string_still_works(self) -> None:
         """Test backward compatibility: existing usage patterns still work."""
+        test_session_id = uuid4()
         context = ModelSessionContext(
             session_id=uuid4(),
             authentication_method="oauth2",
@@ -1673,12 +1677,14 @@ class TestModelCheckpointMetadataEnumSupport:
         )
         assert metadata.checkpoint_type == EnumCheckpointType.MANUAL
 
-    def test_checkpoint_type_keeps_unknown_string(self) -> None:
-        """Test that unknown strings are kept for backward compatibility."""
+    def test_checkpoint_type_keeps_unknown_string_for_backward_compat(self) -> None:
+        """Test that unknown strings are kept as-is for backward compatibility."""
         metadata = ModelCheckpointMetadata(
             checkpoint_type="custom_checkpoint",
         )
+        # Unknown strings are kept as-is for backward compatibility
         assert metadata.checkpoint_type == "custom_checkpoint"
+        assert isinstance(metadata.checkpoint_type, str)
 
     def test_trigger_event_accepts_enum_value(self) -> None:
         """Test that trigger_event accepts EnumTriggerEvent directly."""
@@ -1702,12 +1708,14 @@ class TestModelCheckpointMetadataEnumSupport:
         )
         assert metadata.trigger_event == EnumTriggerEvent.ERROR
 
-    def test_trigger_event_keeps_unknown_string(self) -> None:
-        """Test that unknown trigger events are kept for backward compatibility."""
+    def test_trigger_event_keeps_unknown_string_for_backward_compat(self) -> None:
+        """Test that unknown strings are kept as-is for backward compatibility."""
         metadata = ModelCheckpointMetadata(
             trigger_event="custom_trigger",
         )
+        # Unknown strings are kept as-is for backward compatibility
         assert metadata.trigger_event == "custom_trigger"
+        assert isinstance(metadata.trigger_event, str)
 
     def test_both_fields_accept_none(self) -> None:
         """Test that both fields accept None."""
@@ -1770,11 +1778,14 @@ class TestModelDetectionMetadataEnumSupport:
         )
         assert metadata.false_positive_likelihood == EnumLikelihood.VERY_LOW
 
-    def test_false_positive_likelihood_keeps_unknown_string(self) -> None:
-        """Test that unknown strings are kept for backward compatibility."""
+    def test_false_positive_likelihood_keeps_unknown_string_for_backward_compat(
+        self,
+    ) -> None:
+        """Test that unknown strings are kept as-is for backward compatibility."""
         metadata = ModelDetectionMetadata(
             false_positive_likelihood="negligible",
         )
+        # Unknown strings are kept as-is for backward compatibility
         assert metadata.false_positive_likelihood == "negligible"
         assert isinstance(metadata.false_positive_likelihood, str)
 
@@ -1783,8 +1794,8 @@ class TestModelDetectionMetadataEnumSupport:
         metadata = ModelDetectionMetadata(false_positive_likelihood=None)
         assert metadata.false_positive_likelihood is None
 
-    def test_existing_string_usage_still_works(self) -> None:
-        """Test backward compatibility: existing usage patterns still work."""
+    def test_string_normalization_to_enum(self) -> None:
+        """Test that valid string values are normalized to enum."""
         metadata = ModelDetectionMetadata(
             pattern_category="credential_exposure",
             detection_source="regex_scanner",

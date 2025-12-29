@@ -27,7 +27,7 @@ import pytest
 # Module-level pytest marker for all tests in this file
 pytestmark = pytest.mark.unit
 
-from omnibase_core.enums.enum_effect_types import EnumEffectType, EnumTransactionState
+from omnibase_core.enums import EnumEffectType, EnumTransactionState
 from omnibase_core.mixins.mixin_effect_execution import MixinEffectExecution
 from omnibase_core.models.configuration.model_circuit_breaker import ModelCircuitBreaker
 from omnibase_core.models.contracts.subcontracts.model_effect_io_configs import (
@@ -365,18 +365,25 @@ class TestParseIOConfig:
 
         with pytest.raises(ValidationError) as exc_info:
             ModelEffectOperationConfig.from_dict({})
-        assert "io_config" in str(exc_info.value)
+        errors = exc_info.value.errors()
+        assert any("io_config" in error.get("msg", "") for error in errors)
 
     def test_parse_unknown_handler_type_raises_error(self, test_node: TestNode) -> None:
-        """Test that unknown handler type raises ModelOnexError."""
+        """Test that unknown handler type raises ValidationError during parsing.
+
+        Since io_config uses a discriminated union, unknown handler types are
+        rejected at model validation time (before reaching _parse_io_config).
+        """
+        from pydantic import ValidationError
+
         from omnibase_core.models.operations import ModelEffectOperationConfig
 
-        operation_config = ModelEffectOperationConfig.from_dict(
-            {"io_config": {"handler_type": "unknown"}}
-        )
-        with pytest.raises(ModelOnexError) as exc_info:
-            test_node._parse_io_config(operation_config)
-        assert "Unknown handler type" in str(exc_info.value)
+        with pytest.raises(ValidationError) as exc_info:
+            ModelEffectOperationConfig.from_dict(
+                {"io_config": {"handler_type": "unknown"}}
+            )
+        errors = exc_info.value.errors()
+        assert any(error["type"] == "union_tag_invalid" for error in errors)
 
 
 @pytest.mark.unit
@@ -2484,7 +2491,7 @@ class TestEffectContractYamlParsing:
                 "timeout_ms": 5000,
             },
             "retry_policy": {
-                "max_attempts": 3,
+                "max_retries": 3,
                 "backoff_strategy": "exponential",
                 "base_delay_ms": 100,
             },

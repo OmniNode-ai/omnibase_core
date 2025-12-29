@@ -204,16 +204,18 @@ class ModelAnalyticsPerformanceMetrics(BaseModel):
 
     def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
-        metadata = {}
-        # Include common metadata fields
-        for field in ["name", "description", "version", "tags", "metadata"]:
-            if hasattr(self, field):
-                value = getattr(self, field)
-                if value is not None:
-                    metadata[field] = (
-                        str(value) if not isinstance(value, (dict, list)) else value
-                    )
-        return metadata  # type: ignore[return-value]
+        result: TypedDictMetadataDict = {}
+        # Analytics models don't have standard name/description/version fields
+        # Pack all performance metrics into metadata
+        result["metadata"] = {
+            "average_execution_time_ms": self.average_execution_time_ms,
+            "peak_memory_usage_mb": self.peak_memory_usage_mb,
+            "total_invocations": self.total_invocations,
+            "performance_level": self.get_performance_level(),
+            "memory_usage_level": self.get_memory_usage_level(),
+            "performance_score": self.calculate_performance_score(),
+        }
+        return result
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""

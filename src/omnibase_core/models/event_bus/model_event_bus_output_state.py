@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+__all__ = ["ModelEventBusOutputState"]
+
 import re
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Any, ClassVar
@@ -38,10 +40,19 @@ class ModelEventBusOutputState(BaseModel):
     - Operational metadata and monitoring integration
     - Business intelligence and analytics support
     - Factory methods for common scenarios
+
+    Note:
+        Error codes are validated using a SIMPLER pattern (_ERROR_CODE_PATTERN)
+        than the standard ERROR_CODE_PATTERN. This pattern accepts simple codes
+        like "UNKNOWN", "TIMEOUT", etc. without requiring the CATEGORY_NNN suffix.
+        This is intentional for event bus status codes which have different
+        requirements than structured error codes.
     """
 
-    # Pre-compiled regex pattern for error code validation
-    _ERROR_CODE_PATTERN: ClassVar[re.Pattern[str]] = re.compile(r"^[A-Z0-9_]+$")
+    # Private pattern for event bus error codes - intentionally simpler than
+    # the centralized ERROR_CODE_PATTERN. Accepts codes like "UNKNOWN", "TIMEOUT"
+    # without requiring the underscore-digit suffix (e.g., AUTH_001).
+    _ERROR_CODE_PATTERN: ClassVar[re.Pattern[str]] = re.compile(r"^[A-Z][A-Z0-9_]*$")
 
     # Note on from_attributes=True: Added for pytest-xdist parallel execution
     # compatibility. See CLAUDE.md "Pydantic from_attributes=True for Value Objects".
@@ -146,7 +157,23 @@ class ModelEventBusOutputState(BaseModel):
     @field_validator("error_code")
     @classmethod
     def validate_error_code(cls, v: str | None) -> str | None:
-        """Validate error code format."""
+        """Validate error code format using the simpler event bus pattern.
+
+        Event bus error codes use a MORE PERMISSIVE pattern than the standard
+        ERROR_CODE_PATTERN. This allows simple codes like "UNKNOWN", "TIMEOUT",
+        "ERROR", etc. without requiring the CATEGORY_NNN suffix.
+
+        The pattern accepts: uppercase letters, digits, and underscores.
+
+        Args:
+            v: The error code string to validate, or None.
+
+        Returns:
+            The validated error code (uppercase, stripped), or None.
+
+        Raises:
+            ModelOnexError: If the error code contains invalid characters.
+        """
         if v is None:
             return v
         v = v.strip().upper()
@@ -156,7 +183,10 @@ class ModelEventBusOutputState(BaseModel):
         if not cls._ERROR_CODE_PATTERN.match(v):
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message="error_code must contain only uppercase letters, numbers, and underscores",
+                message=(
+                    f"Invalid error_code format '{v}': expected uppercase letters, "
+                    f"digits, and underscores only (e.g., UNKNOWN, TIMEOUT, AUTH_001)."
+                ),
             )
         return v
 

@@ -49,7 +49,32 @@ from typing import Annotated
 
 from pydantic import AfterValidator
 
+# Re-export for module API (commonly used with validators)
+from omnibase_core.constants.constants_error import ERROR_CODE_PATTERN
 from omnibase_core.utils.util_enum_normalizer import create_enum_normalizer
+
+# =============================================================================
+# Module Exports
+# =============================================================================
+
+__all__ = [
+    # Validator functions
+    "validate_duration",
+    "validate_bcp47_locale",
+    "validate_uuid",
+    "validate_semantic_version",
+    "validate_error_code",
+    # Compiled regex patterns (re-exported from constants_error)
+    "ERROR_CODE_PATTERN",
+    # Enum normalizer factory
+    "create_enum_normalizer",
+    # Pydantic Annotated types
+    "Duration",
+    "BCP47Locale",
+    "UUIDString",
+    "SemanticVersion",
+    "ErrorCode",
+]
 
 # =============================================================================
 # ISO 8601 Duration Validator
@@ -363,9 +388,12 @@ def validate_semantic_version(value: str) -> str:
 #
 # If you need lint-style short codes (W001, E001), use a separate validator or
 # the workflow_linter module directly. This validator enforces structured codes.
-
-# Module-level compiled pattern for regex caching (compiled once at import time)
-ERROR_CODE_PATTERN = re.compile(r"^[A-Z][A-Z0-9_]*_\d{1,4}$")
+#
+# The ERROR_CODE_PATTERN is imported from omnibase_core.constants.constants_error
+# which provides the single source of truth for error code validation across:
+# - omnibase_core.models.context.model_operational_error_context
+# - omnibase_core.models.context.model_retry_error_context
+# - omnibase_core.validation.validators.common_validators (this module)
 
 
 def validate_error_code(value: str) -> str:
@@ -491,27 +519,3 @@ Examples of valid values: "1.0.0", "2.1.3-beta.1+build.123"
 Note: For structured version handling with comparison operators,
 use `ModelSemVer` from `omnibase_core.models.primitives` instead.
 """
-
-
-# =============================================================================
-# Module Exports
-# =============================================================================
-
-__all__ = [
-    # Validator functions
-    "validate_duration",
-    "validate_bcp47_locale",
-    "validate_uuid",
-    "validate_semantic_version",
-    "validate_error_code",
-    # Compiled regex patterns (cached at module level)
-    "ERROR_CODE_PATTERN",
-    # Enum normalizer factory
-    "create_enum_normalizer",
-    # Pydantic Annotated types
-    "Duration",
-    "BCP47Locale",
-    "UUIDString",
-    "SemanticVersion",
-    "ErrorCode",
-]

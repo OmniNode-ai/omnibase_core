@@ -1,6 +1,6 @@
 """Trust Policy re-exports.
 
-This module re-exports ModelTrustPolicy and ModelPolicyRule for backwards compatibility.
+This module re-exports ModelTrustPolicy and ModelPolicyRule for API consistency.
 """
 
 from .model_policy_rule import ModelPolicyRule

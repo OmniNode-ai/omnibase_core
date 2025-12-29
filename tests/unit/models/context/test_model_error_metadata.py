@@ -23,6 +23,10 @@ from pydantic import ValidationError
 
 from omnibase_core.models.context import ModelErrorMetadata
 
+# Test configuration constants
+UNIT_TEST_TIMEOUT_SECONDS: int = 30
+
+
 # =============================================================================
 # Helper classes for from_attributes testing
 # =============================================================================

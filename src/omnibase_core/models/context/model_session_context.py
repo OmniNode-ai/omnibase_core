@@ -22,7 +22,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums import EnumAuthenticationMethod
-from omnibase_core.utils.util_enum_normalizer import create_enum_normalizer
+from omnibase_core.utils import create_enum_normalizer
 
 __all__ = ["ModelSessionContext"]
 
@@ -54,16 +54,18 @@ class ModelSessionContext(BaseModel):
         Safe for concurrent read access across threads.
 
     Example:
+        >>> from uuid import UUID
         >>> from omnibase_core.models.context import ModelSessionContext
         >>>
+        >>> # Both string and UUID session_id values are accepted (backward compatible)
         >>> context = ModelSessionContext(
-        ...     session_id="sess_abc123",
+        ...     session_id="550e8400-e29b-41d4-a716-446655440000",
         ...     client_ip="192.168.1.100",
         ...     user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
         ...     locale="en-US",
         ... )
-        >>> context.session_id
-        'sess_abc123'
+        >>> isinstance(context.session_id, UUID)
+        True
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
@@ -96,9 +98,43 @@ class ModelSessionContext(BaseModel):
         default=None,
         description=(
             "Authentication method used (e.g., oauth2, saml, basic). "
-            "Accepts EnumAuthenticationMethod or string."
+            "Accepts EnumAuthenticationMethod values or strings."
         ),
     )
+
+    @field_validator("session_id", mode="before")
+    @classmethod
+    def coerce_session_id(cls, v: UUID | str | None) -> UUID | None:
+        """Coerce string UUID values to UUID type.
+
+        This validator ensures flexible input handling by accepting both UUID objects
+        and valid UUID strings. String inputs are automatically converted to UUID,
+        enabling seamless interoperability with APIs that return string representations.
+
+        Accepts UUID objects directly or valid UUID string representations.
+
+        Args:
+            v: The session ID value, either as UUID, string, or None.
+
+        Returns:
+            The UUID value, or None if input is None.
+
+        Raises:
+            ValueError: If the string value is not a valid UUID format.
+        """
+        if v is None:
+            return None
+        if isinstance(v, UUID):
+            return v
+        if isinstance(v, str):
+            try:
+                return UUID(v)
+            except ValueError:
+                raise ValueError(
+                    f"Invalid UUID string for session_id: '{v}'. "
+                    f"Must be a valid UUID format (e.g., '550e8400-e29b-41d4-a716-446655440000')"
+                ) from None
+        raise ValueError(f"session_id must be UUID or str, got {type(v).__name__}")
 
     @field_validator("authentication_method", mode="before")
     @classmethod

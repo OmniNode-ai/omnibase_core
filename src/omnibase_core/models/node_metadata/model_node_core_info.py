@@ -165,16 +165,26 @@ class ModelNodeCoreInfo(BaseModel):
 
     def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
-        metadata = {}
-        # Include common metadata fields
-        for field in ["name", "description", "version", "tags", "metadata"]:
-            if hasattr(self, field):
-                value = getattr(self, field)
-                if value is not None:
-                    metadata[field] = (
-                        str(value) if not isinstance(value, (dict, list)) else value
-                    )
-        return metadata  # type: ignore[return-value]
+        result: TypedDictMetadataDict = {}
+        # Map actual fields to TypedDictMetadataDict structure
+        # node_name property always returns non-empty (has UUID fallback)
+        result["name"] = self.node_name
+        if self.description:
+            result["description"] = self.description
+        result["version"] = self.node_version
+        # Pack additional fields into metadata
+        result["metadata"] = {
+            "node_id": str(self.node_id),
+            "node_type": self.node_type.value,
+            "status": self.status.value,
+            "health": self.health.value,
+            "author": self.author,
+            "is_active": self.is_active(),
+            "is_healthy": self.is_healthy(),
+            "has_description": self.has_description(),
+            "has_author": self.has_author(),
+        }
+        return result
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""

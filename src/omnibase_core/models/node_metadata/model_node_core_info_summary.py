@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from typing import cast
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -21,12 +22,22 @@ Follows ONEX one-model-per-file naming conventions.
 
 
 class ModelNodeCoreInfoSummary(BaseModel):
-    """Core node information summary with specific types.
+    """
+    Core node information summary with strongly-typed fields.
+
+    This model provides a clean, type-safe alternative to dict[str, Any] return
+    types for node core information. It captures essential node metadata including
+    identification, versioning, status, and health information.
+
     Implements Core protocols:
-    - Identifiable: UUID-based identification
-    - ProtocolMetadataProvider: Metadata management capabilities
-    - Serializable: Data serialization/deserialization
-    - Validatable: Validation and verification
+        - Identifiable: UUID-based identification via get_id()
+        - ProtocolMetadataProvider: Metadata management via get_metadata()/set_metadata()
+        - Serializable: Data serialization via serialize()
+        - Validatable: Instance validation via validate_instance()
+
+    Thread Safety:
+        This model is a Pydantic BaseModel with validate_assignment=True, making
+        it safe for concurrent reads. Modifications should be synchronized externally.
     """
 
     node_id: UUID = Field(description="Node identifier")
@@ -76,20 +87,86 @@ class ModelNodeCoreInfoSummary(BaseModel):
         )
 
     def get_metadata(self) -> TypedDictMetadataDict:
-        """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
-        metadata = {}
-        # Include common metadata fields
-        for field in ["name", "description", "version", "tags", "metadata"]:
-            if hasattr(self, field):
-                value = getattr(self, field)
-                if value is not None:
-                    metadata[field] = (
-                        str(value) if not isinstance(value, (dict, list)) else value
-                    )
-        return metadata  # type: ignore[return-value]
+        """
+        Get metadata as dictionary for ProtocolMetadataProvider protocol.
+
+        Returns a TypedDictMetadataDict containing comprehensive node core
+        information. Maps node identification and versioning to standard
+        top-level keys, with status and health details in nested metadata.
+
+        Returns:
+            TypedDictMetadataDict with the following structure:
+            - "name": node_name (required field, always present)
+            - "version": ModelSemVer instance representing node version
+            - "metadata": Dict containing:
+                - "node_id": String representation of the node UUID
+                - "node_type": EnumMetadataNodeType value string
+                  (e.g., "COMPUTE", "EFFECT", "REDUCER", "ORCHESTRATOR")
+                - "status": EnumStatus value string (e.g., "ACTIVE", "INACTIVE")
+                - "health": EnumNodeHealthStatus value string
+                  (e.g., "HEALTHY", "DEGRADED", "UNHEALTHY")
+                - "is_active": Boolean indicating if node is currently active
+                - "is_healthy": Boolean indicating if node is in healthy state
+                - "has_description": Boolean indicating if description is set
+                - "has_author": Boolean indicating if author info is available
+
+        Example:
+            >>> from uuid import uuid4
+            >>> summary = ModelNodeCoreInfoSummary(
+            ...     node_id=uuid4(),
+            ...     node_name="DataProcessor",
+            ...     node_type=EnumMetadataNodeType.COMPUTE,
+            ...     node_version=ModelSemVer(major=1, minor=0, patch=0),
+            ...     status=EnumStatus.ACTIVE,
+            ...     health=EnumNodeHealthStatus.HEALTHY,
+            ...     is_active=True,
+            ...     is_healthy=True,
+            ...     has_description=True,
+            ...     has_author=False
+            ... )
+            >>> metadata = summary.get_metadata()
+            >>> metadata["name"]
+            'DataProcessor'
+            >>> metadata["metadata"]["is_active"]
+            True
+        """
+        result: TypedDictMetadataDict = {}
+        # Map actual fields to TypedDictMetadataDict structure
+        # node_name is required field, always present
+        result["name"] = self.node_name
+        # node_version is required (has default_factory), include directly
+        result["version"] = self.node_version
+        # Pack additional fields into metadata
+        result["metadata"] = {
+            "node_id": str(self.node_id),
+            "node_type": self.node_type.value,
+            "status": self.status.value,
+            "health": self.health.value,
+            "is_active": self.is_active,
+            "is_healthy": self.is_healthy,
+            "has_description": self.has_description,
+            "has_author": self.has_author,
+        }
+        return result
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
-        """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
+        """
+        Set metadata from dictionary (ProtocolMetadataProvider protocol).
+
+        Updates model fields from the provided metadata dictionary. Only fields
+        that exist on the model are updated; unknown keys are silently ignored.
+
+        Args:
+            metadata: Dictionary containing metadata key-value pairs
+
+        Returns:
+            True if metadata was set successfully, False on any error
+
+        Note:
+            The broad exception handler is intentional for protocol compliance.
+            This method should never raise exceptions per ProtocolMetadataProvider
+            contract - failures are indicated by returning False.
+        """
         try:
             for key, value in metadata.items():
                 if hasattr(self, key):
@@ -100,10 +177,28 @@ class ModelNodeCoreInfoSummary(BaseModel):
 
     def serialize(self) -> TypedDictSerializedModel:
         """Serialize to dictionary (Serializable protocol)."""
-        return self.model_dump(exclude_none=False, by_alias=True)
+        return cast(
+            TypedDictSerializedModel,
+            self.model_dump(exclude_none=False, by_alias=True),
+        )
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (ProtocolValidatable protocol)."""
+        """
+        Validate instance integrity (ProtocolValidatable protocol).
+
+        Performs basic validation to ensure the instance is in a valid state.
+        For ModelNodeCoreInfoSummary, Pydantic's model validation handles field
+        constraints, so this method returns True for well-constructed instances.
+
+        Returns:
+            True if the instance is valid, False otherwise
+
+        Note:
+            The broad exception handler is intentional for protocol compliance.
+            This method should never raise exceptions per ProtocolValidatable
+            contract - validation failures are indicated by returning False.
+            Override in subclasses for custom validation logic.
+        """
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation

@@ -141,16 +141,17 @@ class ModelNodeFeatureFlags(BaseModel):
 
     def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
-        metadata = {}
-        # Include common metadata fields
-        for field in ["name", "description", "version", "tags", "metadata"]:
-            if hasattr(self, field):
-                value = getattr(self, field)
-                if value is not None:
-                    metadata[field] = (
-                        str(value) if not isinstance(value, (dict, list)) else value
-                    )
-        return metadata  # type: ignore[return-value]
+        result: TypedDictMetadataDict = {}
+        # Pack feature flags into metadata dict
+        result["metadata"] = {
+            "enable_caching": self.enable_caching,
+            "enable_monitoring": self.enable_monitoring,
+            "enable_tracing": self.enable_tracing,
+            "enabled_features": self.get_enabled_features(),
+            "is_production_ready": self.is_production_ready(),
+            "is_debug_mode": self.is_debug_mode(),
+        }
+        return result
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
