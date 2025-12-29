@@ -378,7 +378,9 @@ class MixinNodeService:
                 container = self.container
                 if hasattr(container, "get_service"):
                     event_bus = container.get_service("event_bus")
-            except Exception:
+            except (
+                Exception
+            ):  # fallback-ok: service lookup failure continues to next strategy
                 pass
 
         # Raise error if no event bus found
@@ -581,7 +583,7 @@ class MixinNodeService:
                 container = self.container
                 if hasattr(container, "get_service"):
                     event_bus = container.get_service("event_bus")
-            except Exception:
+            except Exception:  # fallback-ok: optional event bus for response
                 pass
 
         # Emit event if bus available
@@ -615,7 +617,7 @@ class MixinNodeService:
                     container = self.container
                     if hasattr(container, "get_service"):
                         event_bus = container.get_service("event_bus")
-                except Exception:
+                except Exception:  # fallback-ok: optional event bus for shutdown
                     pass
 
             if event_bus:

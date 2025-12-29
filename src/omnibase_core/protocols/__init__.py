@@ -150,7 +150,9 @@ from omnibase_core.protocols.schema import ProtocolSchemaLoader, ProtocolSchemaM
 # =============================================================================
 from omnibase_core.protocols.types import (
     ProtocolAction,
+    ProtocolCompute,
     ProtocolConfigurable,
+    ProtocolEffect,
     ProtocolExecutable,
     ProtocolIdentifiable,
     ProtocolLogEmitter,
@@ -160,6 +162,7 @@ from omnibase_core.protocols.types import (
     ProtocolNodeMetadata,
     ProtocolNodeMetadataBlock,
     ProtocolNodeResult,
+    ProtocolOrchestrator,
     ProtocolSchemaValue,
     ProtocolSerializable,
     ProtocolServiceInstance,
@@ -265,6 +268,10 @@ __all__ = [
     "ProtocolAction",
     "ProtocolNodeResult",
     "ProtocolWorkflowReducer",
+    # Node Protocols (ONEX Four-Node Architecture) - OMN-662
+    "ProtocolCompute",
+    "ProtocolEffect",
+    "ProtocolOrchestrator",
     "ProtocolState",
     "ProtocolMetadata",
     "ProtocolServiceInstance",

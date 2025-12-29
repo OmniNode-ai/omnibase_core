@@ -248,9 +248,10 @@ class TestModelActionExecutionContextValidation:
         """Test that environment rejects integer with clear error."""
         with pytest.raises(ValidationError) as exc_info:
             ModelActionExecutionContext(environment=123)  # type: ignore[arg-type]
-        # Should mention environment field and the invalid value
+        # Should mention environment field and the invalid type
         error_str = str(exc_info.value).lower()
         assert "environment" in error_str
+        assert "int" in error_str
 
     def test_environment_rejects_non_string_list(self) -> None:
         """Test that environment rejects list with clear error."""
@@ -258,6 +259,7 @@ class TestModelActionExecutionContextValidation:
             ModelActionExecutionContext(environment=["production"])  # type: ignore[arg-type]
         error_str = str(exc_info.value).lower()
         assert "environment" in error_str
+        assert "list" in error_str
 
     def test_environment_rejects_non_string_dict(self) -> None:
         """Test that environment rejects dict with clear error."""
@@ -265,6 +267,7 @@ class TestModelActionExecutionContextValidation:
             ModelActionExecutionContext(environment={"env": "production"})  # type: ignore[arg-type]
         error_str = str(exc_info.value).lower()
         assert "environment" in error_str
+        assert "dict" in error_str
 
     def test_environment_rejects_none_explicitly(self) -> None:
         """Test that environment rejects None value explicitly passed."""
@@ -272,6 +275,7 @@ class TestModelActionExecutionContextValidation:
             ModelActionExecutionContext(environment=None)  # type: ignore[arg-type]
         error_str = str(exc_info.value).lower()
         assert "environment" in error_str
+        assert "nonetype" in error_str
 
     def test_environment_normalizes_uppercase(self) -> None:
         """Test that environment normalizes all-uppercase to lowercase."""

@@ -7,6 +7,8 @@ from omnibase_core.models.operations.model_operation_parameters_base import (
 )
 from omnibase_core.types.type_serializable_value import SerializedDict
 
+__all__ = ["ModelOperationParameters"]
+
 
 class ModelOperationParameters(BaseModel):
     """
@@ -51,7 +53,9 @@ class ModelOperationParameters(BaseModel):
                 "validated": True,
             }
             return validation_results
-        except Exception as e:
+        except (
+            Exception
+        ) as e:  # error-ok: Converts any exception to structured ModelOnexError
             raise ModelOnexError(
                 message=f"Parameter execution failed: {e}",
                 error_code=EnumCoreErrorCode.OPERATION_FAILED,

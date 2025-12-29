@@ -86,6 +86,9 @@ from .json_types import (
 # Effect result type aliases (centralized to avoid primitive soup unions)
 from .type_effect_result import DbParamType, EffectResultType
 
+# Schema type aliases (for type-safe schema patterns)
+from .type_schema_aliases import SchemaDict, StepOutputs
+
 # Serializable value types (for JSON-compatible data)
 from .type_serializable_value import SerializableValue, SerializedDict
 from .typed_dict_access_control_config import TypedDictAccessControlConfig
@@ -386,6 +389,9 @@ __all__ = [
     # Effect result type aliases
     "EffectResultType",
     "DbParamType",
+    # Schema type aliases
+    "SchemaDict",
+    "StepOutputs",
     # JSON type aliases
     "JsonPrimitive",
     "JsonValue",
@@ -659,8 +665,7 @@ __all__ = [
 
 # =============================================================================
 # Lazy loading: Avoid circular imports during module initialization.
-# This is NOT for backwards compatibility aliases (see OMN-1071 for that pattern).
-# Instead, this defers imports that would cause circular dependency chains:
+# This defers imports that would cause circular dependency chains:
 #   error_codes -> types.__init__ -> constraints -> models -> error_codes
 # =============================================================================
 def __getattr__(name: str) -> object:
@@ -669,10 +674,6 @@ def __getattr__(name: str) -> object:
 
     All constraint imports are lazy-loaded to prevent circular dependency:
     error_codes -> types.__init__ -> constraints -> models -> error_codes
-
-    Note: This is NOT a backwards compatibility mechanism (see OMN-1071 for that
-    pattern in validation/__init__.py). This is purely for breaking circular
-    import chains that would otherwise occur at module load time.
     """
     # List of all constraint exports that should be lazy-loaded
     constraint_exports = {

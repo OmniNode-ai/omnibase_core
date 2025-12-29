@@ -3,6 +3,7 @@
 from omnibase_core.constants import (
     constants_contract_fields,
     constants_effect,
+    constants_error,
     constants_field_limits,
     constants_topic_taxonomy,
     handler_capabilities,
@@ -44,6 +45,10 @@ from omnibase_core.constants.constants_effect_limits import (
     EFFECT_TIMEOUT_DEFAULT_MS,
     EFFECT_TIMEOUT_MAX_MS,
     EFFECT_TIMEOUT_MIN_MS,
+)
+from omnibase_core.constants.constants_error import (
+    ERROR_CODE_PATTERN,
+    ERROR_CODE_PATTERN_STRING,
 )
 from omnibase_core.constants.constants_field_limits import (
     MAX_BFS_ITERATIONS,
@@ -141,10 +146,14 @@ from omnibase_core.constants.handler_capabilities import (
 __all__ = [
     "constants_contract_fields",
     "constants_effect",
+    "constants_error",
     "constants_field_limits",
     "constants_topic_taxonomy",
     "handler_capabilities",
     "normalize_legacy_event_type",
+    # Error code pattern (centralized)
+    "ERROR_CODE_PATTERN",
+    "ERROR_CODE_PATTERN_STRING",
     # Event type constants
     "NODE_FAILURE",
     "NODE_HEALTH_CHECK",

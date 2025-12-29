@@ -52,9 +52,26 @@ class ModelBaseResult(BaseModel):
         return self.model_dump(**kwargs)
 
     @classmethod
-    def parse_obj(cls, obj: Any) -> "ModelBaseResult":
-        """Override parse_obj to handle metadata conversion."""
+    def model_validate(
+        cls,
+        obj: Any,
+        *,
+        strict: bool | None = None,
+        from_attributes: bool | None = None,
+        context: Any | None = None,
+        **kwargs: Any,
+    ) -> "ModelBaseResult":
+        """Override model_validate to handle metadata conversion.
+
+        This replaces the deprecated parse_obj method for Pydantic v2 compatibility.
+        """
         if isinstance(obj, dict) and "metadata" in obj and obj["metadata"] is not None:
             if not isinstance(obj["metadata"], ModelGenericMetadata):
                 obj["metadata"] = ModelGenericMetadata.from_dict(obj["metadata"])
-        return super().parse_obj(obj)
+        return super().model_validate(
+            obj,
+            strict=strict,
+            from_attributes=from_attributes,
+            context=context,
+            **kwargs,
+        )
