@@ -167,6 +167,11 @@ def is_protocol_file(file_path: Path) -> bool:
     except (OSError, ValueError) as e:
         logger.debug(f"Error checking protocol file {file_path}: {e}")
         return False
+    except Exception as e:
+        # Catch-all for unexpected errors (e.g., RuntimeError, AttributeError)
+        # to ensure graceful degradation rather than propagating failures
+        logger.debug(f"Unexpected error checking protocol file {file_path}: {e}")
+        return False
 
 
 def find_protocol_files(directory: Path) -> list[Path]:
