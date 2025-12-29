@@ -144,7 +144,9 @@ def parse_yaml_to_descriptor(contract_data: dict[str, Any]) -> ModelHandlerDescr
     # Parse enum values
     handler_role = EnumHandlerRole[contract_data["handler_role"]]
     handler_type = EnumHandlerType[contract_data["handler_type"]]
-    handler_type_category = EnumHandlerTypeCategory[contract_data["handler_type_category"]]
+    handler_type_category = EnumHandlerTypeCategory[
+        contract_data["handler_type_category"]
+    ]
 
     # Parse capabilities (optional)
     capabilities = [
@@ -153,7 +155,8 @@ def parse_yaml_to_descriptor(contract_data: dict[str, Any]) -> ModelHandlerDescr
 
     # Parse commands_accepted (optional)
     commands_accepted = [
-        EnumHandlerCommandType[cmd] for cmd in contract_data.get("commands_accepted", [])
+        EnumHandlerCommandType[cmd]
+        for cmd in contract_data.get("commands_accepted", [])
     ]
 
     return ModelHandlerDescriptor(
@@ -322,9 +325,7 @@ commands_accepted:
   - EXECUTE
 import_path: "mypackage.handlers.FileValidator"
 """
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".yaml", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             f.write(yaml_content)
             temp_path = Path(f.name)
 
@@ -486,7 +487,10 @@ import_path: "mock.integration.Validator"
                 handler_role=EnumHandlerRole.COMPUTE_HANDLER,
                 handler_type=EnumHandlerType.NAMED,
                 handler_type_category=EnumHandlerTypeCategory.COMPUTE,
-                capabilities=[EnumHandlerCapability.CACHE, EnumHandlerCapability.IDEMPOTENT],
+                capabilities=[
+                    EnumHandlerCapability.CACHE,
+                    EnumHandlerCapability.IDEMPOTENT,
+                ],
                 import_path="mock.fast.Validator",
             ),
             ModelHandlerDescriptor(
@@ -516,8 +520,7 @@ import_path: "mock.integration.Validator"
         # Find handlers with ALL required capabilities
         required_caps = {EnumHandlerCapability.CACHE, EnumHandlerCapability.IDEMPOTENT}
         matching = [
-            d for d in descriptors
-            if required_caps.issubset(set(d.capabilities))
+            d for d in descriptors if required_caps.issubset(set(d.capabilities))
         ]
 
         # Should match fast-validator and full-validator
@@ -558,17 +561,18 @@ import_path: "mock.integration.Validator"
         ]
 
         # Find handlers with major version 2
-        v2_handlers = [
-            d for d in descriptors
-            if d.handler_version.major == 2
-        ]
+        v2_handlers = [d for d in descriptors if d.handler_version.major == 2]
 
         assert len(v2_handlers) == 2
 
         # Find latest v2
         latest_v2 = max(
             v2_handlers,
-            key=lambda d: (d.handler_version.major, d.handler_version.minor, d.handler_version.patch)
+            key=lambda d: (
+                d.handler_version.major,
+                d.handler_version.minor,
+                d.handler_version.patch,
+            ),
         )
         assert latest_v2.handler_version.minor == 1
         assert latest_v2.import_path == "v2.1.handler"
@@ -628,6 +632,7 @@ class TestDescriptorSerializationRoundtrip:
 
         # Parse back
         import json
+
         data = json.loads(json_str)
 
         # Create new descriptor

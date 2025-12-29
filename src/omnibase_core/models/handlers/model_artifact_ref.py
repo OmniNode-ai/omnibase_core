@@ -58,8 +58,6 @@ See Also:
     Initial implementation as part of OMN-1086 handler model additions.
 """
 
-from __future__ import annotations
-
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.primitives.model_semver import ModelSemVer
