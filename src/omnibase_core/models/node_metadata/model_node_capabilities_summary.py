@@ -69,16 +69,20 @@ class ModelNodeCapabilitiesSummary(BaseModel):
 
     def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
-        metadata = {}
-        # Include common metadata fields
-        for field in ["name", "description", "version", "tags", "metadata"]:
-            if hasattr(self, field):
-                value = getattr(self, field)
-                if value is not None:
-                    metadata[field] = (
-                        str(value) if not isinstance(value, (dict, list)) else value
-                    )
-        return metadata  # type: ignore[return-value]
+        result: TypedDictMetadataDict = {}
+        # Pack capabilities summary into metadata dict
+        result["metadata"] = {
+            "capabilities_count": self.capabilities_count,
+            "operations_count": self.operations_count,
+            "dependencies_count": self.dependencies_count,
+            "has_capabilities": self.has_capabilities,
+            "has_operations": self.has_operations,
+            "has_dependencies": self.has_dependencies,
+            "has_performance_metrics": self.has_performance_metrics,
+            "primary_capability": self.primary_capability,
+            "metrics_count": self.metrics_count,
+        }
+        return result
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""

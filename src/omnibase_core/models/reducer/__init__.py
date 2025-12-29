@@ -24,6 +24,18 @@ The ``__getattr__`` function provides lazy loading with deprecation warnings
 to help users migrate to the new names.
 """
 
+__all__ = [
+    "ModelConflictResolver",  # DEPRECATED alias, use UtilConflictResolver
+    "ModelIntent",
+    "ModelIntentPublishResult",
+    "ModelReducerContext",
+    "ModelReducerInput",
+    "ModelReducerOutput",
+    "ModelStreamingWindow",  # DEPRECATED alias, use UtilStreamingWindow
+    "UtilConflictResolver",
+    "UtilStreamingWindow",
+]
+
 from typing import Any
 
 from omnibase_core.models.reducer.model_intent import ModelIntent
@@ -37,18 +49,6 @@ from omnibase_core.models.reducer.model_reducer_output import ModelReducerOutput
 # Canonical utility classes (import directly, no deprecation warning)
 from omnibase_core.utils.util_conflict_resolver import UtilConflictResolver
 from omnibase_core.utils.util_streaming_window import UtilStreamingWindow
-
-__all__ = [
-    "ModelConflictResolver",  # DEPRECATED: Use UtilConflictResolver instead
-    "ModelIntent",
-    "ModelIntentPublishResult",
-    "ModelReducerContext",
-    "ModelReducerInput",
-    "ModelReducerOutput",
-    "ModelStreamingWindow",  # DEPRECATED: Use UtilStreamingWindow instead
-    "UtilConflictResolver",
-    "UtilStreamingWindow",
-]
 
 
 # =============================================================================

@@ -135,16 +135,20 @@ class ModelFieldValidationRules(BaseModel):
 
     def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
-        metadata = {}
-        # Include common metadata fields
-        for field in ["name", "description", "version", "tags", "metadata"]:
-            if hasattr(self, field):
-                value = getattr(self, field)
-                if value is not None:
-                    metadata[field] = (
-                        str(value) if not isinstance(value, (dict, list)) else value
-                    )
-        return metadata  # type: ignore[return-value]
+        result: TypedDictMetadataDict = {}
+        metadata_dict: dict[str, object] = {
+            "allow_empty": self.allow_empty,
+            "has_string_validation": self.has_string_validation(),
+            "has_numeric_validation": self.has_numeric_validation(),
+        }
+        if self.validation_pattern is not None:
+            metadata_dict["validation_pattern"] = self.validation_pattern
+        if self.min_length is not None:
+            metadata_dict["min_length"] = self.min_length
+        if self.max_length is not None:
+            metadata_dict["max_length"] = self.max_length
+        result["metadata"] = metadata_dict
+        return result
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""

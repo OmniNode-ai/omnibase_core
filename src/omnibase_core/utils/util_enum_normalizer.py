@@ -78,8 +78,10 @@ def create_enum_normalizer[E: Enum](
         # At this point, v must be a string (type narrowing for mypy)
         if not isinstance(v, str):
             # This branch should never execute, but helps mypy understand the type
-            return v  # pragma: no cover
-        # Try to convert string to enum
+            msg = f"Expected {enum_class.__name__} or str, got {type(v).__name__}"
+            # error-ok: Pydantic validator requires ValueError
+            raise ValueError(msg)  # pragma: no cover
+        # Convert string to enum (flexible handling - keep as-is if no match)
         try:
             return enum_class(v.lower())
         except ValueError:

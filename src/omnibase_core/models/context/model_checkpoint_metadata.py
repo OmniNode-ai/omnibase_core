@@ -21,7 +21,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums import EnumCheckpointType, EnumTriggerEvent
-from omnibase_core.utils.util_enum_normalizer import create_enum_normalizer
+from omnibase_core.utils import create_enum_normalizer
 
 __all__ = ["ModelCheckpointMetadata"]
 
@@ -51,6 +51,7 @@ class ModelCheckpointMetadata(BaseModel):
 
     Example:
         >>> from omnibase_core.models.context import ModelCheckpointMetadata
+        >>> from omnibase_core.enums import EnumCheckpointType
         >>>
         >>> checkpoint = ModelCheckpointMetadata(
         ...     checkpoint_type="automatic",
@@ -59,8 +60,8 @@ class ModelCheckpointMetadata(BaseModel):
         ...     workflow_stage="processing",
         ...     parent_checkpoint_id="chk_parent_123",
         ... )
-        >>> checkpoint.checkpoint_type
-        'automatic'
+        >>> checkpoint.checkpoint_type == EnumCheckpointType.AUTOMATIC
+        True
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
@@ -69,7 +70,7 @@ class ModelCheckpointMetadata(BaseModel):
         default=None,
         description=(
             "Type of checkpoint (e.g., automatic, manual, recovery). "
-            "Accepts EnumCheckpointType or string."
+            "Accepts EnumCheckpointType values or strings."
         ),
     )
     source_node: str | None = Field(
@@ -80,7 +81,7 @@ class ModelCheckpointMetadata(BaseModel):
         default=None,
         description=(
             "Event that triggered checkpoint (e.g., stage_complete, error, timeout). "
-            "Accepts EnumTriggerEvent or string."
+            "Accepts EnumTriggerEvent values or strings."
         ),
     )
     workflow_stage: str | None = Field(
@@ -91,6 +92,38 @@ class ModelCheckpointMetadata(BaseModel):
         default=None,
         description="Parent checkpoint ID",
     )
+
+    @field_validator("parent_checkpoint_id", mode="before")
+    @classmethod
+    def coerce_parent_checkpoint_id(cls, v: UUID | str | None) -> UUID | None:
+        """Coerce string UUID values to UUID type.
+
+        Accepts UUID objects directly or valid UUID string representations.
+
+        Args:
+            v: The parent checkpoint ID value, either as UUID, string, or None.
+
+        Returns:
+            The UUID value, or None if input is None.
+
+        Raises:
+            ValueError: If the string value is not a valid UUID format.
+        """
+        if v is None:
+            return None
+        if isinstance(v, UUID):
+            return v
+        if isinstance(v, str):
+            try:
+                return UUID(v)
+            except ValueError:
+                raise ValueError(
+                    f"Invalid UUID string for parent_checkpoint_id: '{v}'. "
+                    f"Must be a valid UUID format (e.g., '550e8400-e29b-41d4-a716-446655440000')"
+                ) from None
+        raise ValueError(
+            f"parent_checkpoint_id must be UUID or str, got {type(v).__name__}"
+        )
 
     @field_validator("checkpoint_type", mode="before")
     @classmethod

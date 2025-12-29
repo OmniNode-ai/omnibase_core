@@ -84,16 +84,12 @@ class ModelMetadataNodeCollection(RootModel[dict[str, object]]):
 
     def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
-        metadata: TypedDictMetadataDict = {}
-        # Include common metadata fields
-        for field in ["name", "description", "version", "tags", "metadata"]:
-            if hasattr(self, field):
-                value = getattr(self, field)
-                if value is not None:
-                    metadata[field] = (  # type: ignore[literal-required]
-                        str(value) if not isinstance(value, (dict, list)) else value
-                    )
-        return metadata
+        result: TypedDictMetadataDict = {}
+        # This is a RootModel container - extract metadata from analytics if available
+        analytics = self.root.get("_metadata_analytics")
+        if analytics is not None and hasattr(analytics, "get_metadata"):
+            return analytics.get_metadata()
+        return result
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""

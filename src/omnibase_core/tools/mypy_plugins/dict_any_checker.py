@@ -413,10 +413,9 @@ class DictAnyCheckerPlugin(Plugin):
                     if result is not None:
                         return result
 
-        except (AttributeError, KeyError, TypeError, IndexError):
-            # mypy-plugin-defensive: Module lookup can fail due to API variations
-            # across mypy versions - these are the expected failure modes when
-            # accessing internal module/symbol structures
+        except (
+            Exception
+        ):  # fallback-ok: graceful handling of internal mypy API access issues
             pass
 
         return None
@@ -473,10 +472,9 @@ class DictAnyCheckerPlugin(Plugin):
                     if modules is not None:
                         return cast("dict[str, MypyFile]", modules)
 
-        except (AttributeError, TypeError):
-            # mypy-plugin-defensive: Internal API structure access can fail due
-            # to variations across mypy versions - AttributeError for missing
-            # attrs, TypeError for unexpected types
+        except (
+            Exception
+        ):  # fallback-ok: mypy API access may fail on version differences
             pass
 
         return None
@@ -548,10 +546,7 @@ class DictAnyCheckerPlugin(Plugin):
             if isinstance(node, Decorator):
                 return node
 
-        except (AttributeError, KeyError, TypeError):
-            # mypy-plugin-defensive: Symbol traversal can fail due to missing
-            # attributes, missing dict keys, or unexpected node types across
-            # different mypy versions
+        except Exception:  # fallback-ok: symbol lookup may fail for unanalyzed code
             pass
 
         return None

@@ -136,7 +136,9 @@ class ModelSecretManager(BaseModel):
             # Try primary backend
             return config_class.load_from_env(env_prefix)
 
-        except (KeyError, ValueError, ModelOnexError, OSError):
+        except (
+            Exception
+        ):  # fallback-ok: primary backend failure triggers fallback chain
             if not self.fallback_enabled or not self.config.fallback_backends:
                 raise
 
@@ -154,7 +156,7 @@ class ModelSecretManager(BaseModel):
 
                     return config
 
-                except (KeyError, ValueError, ModelOnexError, OSError):
+                except Exception:  # fallback-ok: try next backend in chain
                     continue
 
                 finally:

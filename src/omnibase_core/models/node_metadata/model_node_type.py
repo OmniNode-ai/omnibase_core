@@ -725,15 +725,28 @@ class ModelNodeType(BaseModel):
             values. Common metadata fields checked: name, description, version,
             tags, metadata.
         """
-        metadata = {}
-        for field in ["name", "description", "version", "tags", "metadata"]:
-            if hasattr(self, field):
-                value = getattr(self, field)
-                if value is not None:
-                    metadata[field] = (
-                        str(value) if not isinstance(value, (dict, list)) else value
-                    )
-        return metadata  # type: ignore[return-value]
+        result: TypedDictMetadataDict = {}
+        # Map actual fields to TypedDictMetadataDict structure
+        # type_name is required (no default), always access directly
+        result["name"] = self.type_name.value
+        # description is required (no default), always access directly
+        result["description"] = self.description
+        result["version"] = self.version_compatibility
+        # Pack additional fields into metadata
+        result["metadata"] = {
+            # category is required (no default), always access directly
+            "category": self.category.value,
+            "dependencies": self.dependencies,
+            "execution_priority": self.execution_priority,
+            "is_generator": self.is_generator,
+            "is_validator": self.is_validator,
+            "requires_contract": self.requires_contract,
+            # output_type is optional, use explicit None check
+            "output_type": self.output_type.value
+            if self.output_type is not None
+            else None,
+        }
+        return result
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """

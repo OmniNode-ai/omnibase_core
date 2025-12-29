@@ -204,7 +204,9 @@ class MixinIntrospectionPublisher:
                     parts = str(metadata.namespace).split(".")
                     if len(parts) >= 3 and parts[-1].startswith("node_"):
                         return parts[-1]
-        except (AttributeError, ValueError, IndexError):
+        except (
+            Exception
+        ):  # fallback-ok: metadata extraction uses fallback to class name
             pass
         class_name = self.__class__.__name__
         if class_name.startswith("Node"):
@@ -230,7 +232,7 @@ class MixinIntrospectionPublisher:
                             minor=int(parts[1]),
                             patch=int(parts[2]),
                         )
-        except (AttributeError, ValueError, IndexError):
+        except Exception:  # fallback-ok: version extraction uses default 1.0.0
             pass
         return ModelSemVer(major=1, minor=0, patch=0)
 
@@ -259,7 +261,7 @@ class MixinIntrospectionPublisher:
                     ):
                         # Map copyright to license field in the typed model
                         license_str = str(loader_metadata.copyright)
-        except (AttributeError, ValueError):
+        except Exception:  # fallback-ok: capabilities extraction uses defaults
             pass
 
         # Create typed metadata model with extracted values
@@ -305,7 +307,7 @@ class MixinIntrospectionPublisher:
                         "configure",
                     ]:
                         actions.append(method_name)
-        except (AttributeError, ValueError):
+        except Exception:  # fallback-ok: action extraction uses health_check default
             pass
         if not actions:
             actions = ["health_check"]
@@ -323,7 +325,7 @@ class MixinIntrospectionPublisher:
                 protocols.append("graphql")
             if hasattr(self, "http_server") or hasattr(self, "supports_http"):
                 protocols.append("http")
-        except AttributeError:
+        except Exception:  # fallback-ok: protocol detection uses event_bus default
             pass
         return protocols
 
@@ -350,7 +352,7 @@ class MixinIntrospectionPublisher:
                 self, "supports_graphql", False
             ):
                 tags.append("graphql")
-        except AttributeError:
+        except Exception:  # fallback-ok: tag generation uses event_driven default
             pass
         return list(set(tags))
 
@@ -360,7 +362,7 @@ class MixinIntrospectionPublisher:
             if hasattr(self, "health_check"):
                 node_id = getattr(self, "_node_id", None) or "<unset>"
                 return f"/health/{node_id}"
-        except AttributeError:
+        except Exception:  # fallback-ok: health endpoint detection returns None
             pass
         return None
 

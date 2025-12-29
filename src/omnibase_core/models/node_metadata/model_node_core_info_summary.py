@@ -87,22 +87,67 @@ class ModelNodeCoreInfoSummary(BaseModel):
         )
 
     def get_metadata(self) -> TypedDictMetadataDict:
-        """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
-        metadata: dict[str, object] = {}
-        # Map model fields to standard metadata keys
-        # TypedDictMetadataDict expects: name, description, version, tags, metadata
-        field_mapping = {
-            "name": "node_name",
-            "version": "node_version",
+        """
+        Get metadata as dictionary for ProtocolMetadataProvider protocol.
+
+        Returns a TypedDictMetadataDict containing comprehensive node core
+        information. Maps node identification and versioning to standard
+        top-level keys, with status and health details in nested metadata.
+
+        Returns:
+            TypedDictMetadataDict with the following structure:
+            - "name": node_name (required field, always present)
+            - "version": ModelSemVer instance representing node version
+            - "metadata": Dict containing:
+                - "node_id": String representation of the node UUID
+                - "node_type": EnumMetadataNodeType value string
+                  (e.g., "COMPUTE", "EFFECT", "REDUCER", "ORCHESTRATOR")
+                - "status": EnumStatus value string (e.g., "ACTIVE", "INACTIVE")
+                - "health": EnumNodeHealthStatus value string
+                  (e.g., "HEALTHY", "DEGRADED", "UNHEALTHY")
+                - "is_active": Boolean indicating if node is currently active
+                - "is_healthy": Boolean indicating if node is in healthy state
+                - "has_description": Boolean indicating if description is set
+                - "has_author": Boolean indicating if author info is available
+
+        Example:
+            >>> from uuid import uuid4
+            >>> summary = ModelNodeCoreInfoSummary(
+            ...     node_id=uuid4(),
+            ...     node_name="DataProcessor",
+            ...     node_type=EnumMetadataNodeType.COMPUTE,
+            ...     node_version=ModelSemVer(major=1, minor=0, patch=0),
+            ...     status=EnumStatus.ACTIVE,
+            ...     health=EnumNodeHealthStatus.HEALTHY,
+            ...     is_active=True,
+            ...     is_healthy=True,
+            ...     has_description=True,
+            ...     has_author=False
+            ... )
+            >>> metadata = summary.get_metadata()
+            >>> metadata["name"]
+            'DataProcessor'
+            >>> metadata["metadata"]["is_active"]
+            True
+        """
+        result: TypedDictMetadataDict = {}
+        # Map actual fields to TypedDictMetadataDict structure
+        # node_name is required field, always present
+        result["name"] = self.node_name
+        # node_version is required (has default_factory), include directly
+        result["version"] = self.node_version
+        # Pack additional fields into metadata
+        result["metadata"] = {
+            "node_id": str(self.node_id),
+            "node_type": self.node_type.value,
+            "status": self.status.value,
+            "health": self.health.value,
+            "is_active": self.is_active,
+            "is_healthy": self.is_healthy,
+            "has_description": self.has_description,
+            "has_author": self.has_author,
         }
-        for metadata_key, model_field in field_mapping.items():
-            if hasattr(self, model_field):
-                value = getattr(self, model_field)
-                if value is not None:
-                    metadata[metadata_key] = (
-                        str(value) if not isinstance(value, (dict, list)) else value
-                    )
-        return cast(TypedDictMetadataDict, metadata)
+        return result
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """
