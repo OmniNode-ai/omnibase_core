@@ -84,11 +84,10 @@ class ModelTransaction:
                         "transaction_id": str(self.transaction_id),
                     },
                 )
-            except (KeyboardInterrupt, SystemExit, GeneratorExit, MemoryError):
-                # Re-raise system signals and critical errors - these must not be suppressed
-                raise
-            except Exception as e:  # catch-all-ok: cleanup must not fail
-                # Must not propagate exceptions during cleanup - attempt all operations
+            except Exception as e:  # fallback-ok: cleanup must complete
+                # Catch all regular exceptions to ensure all rollback operations are attempted
+                # System signals (KeyboardInterrupt, SystemExit, GeneratorExit, MemoryError)
+                # are allowed to propagate naturally for proper signal handling
                 emit_log_event(
                     LogLevel.ERROR,
                     f"Rollback operation failed during cleanup: {e!s}",
