@@ -111,14 +111,9 @@ class ModelNodeExecutionSettings(BaseModel):
     def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
         result: TypedDictMetadataDict = {}
-        # Pack execution settings into metadata dict
-        result["metadata"] = {
-            "max_retries": self.max_retries,
-            "timeout_seconds": self.timeout_seconds,
-            "batch_size": self.batch_size,
-            "parallel_execution": self.parallel_execution,
-            "is_configured_for_performance": self.is_configured_for_performance(),
-        }
+        summary = dict(self.get_execution_summary())
+        summary["is_configured_for_performance"] = self.is_configured_for_performance()
+        result["metadata"] = summary
         return result
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:

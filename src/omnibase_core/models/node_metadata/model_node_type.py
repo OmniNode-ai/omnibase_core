@@ -731,8 +731,7 @@ class ModelNodeType(BaseModel):
             result["name"] = self.type_name.value
         if self.description:
             result["description"] = self.description
-        if self.version_compatibility:
-            result["version"] = self.version_compatibility
+        result["version"] = self.version_compatibility
         # Pack additional fields into metadata
         result["metadata"] = {
             "category": self.category.value if self.category else None,

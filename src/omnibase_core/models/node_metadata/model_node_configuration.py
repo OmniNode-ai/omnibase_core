@@ -257,16 +257,7 @@ class ModelNodeConfiguration(BaseModel):
     def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
         result: TypedDictMetadataDict = {}
-        # Pack configuration data into metadata dict
-        result["metadata"] = {
-            "execution_summary": self.execution.get_execution_summary(),
-            "resources_summary": self.resources.get_resource_summary(),
-            "features_summary": self.features.get_feature_summary(),
-            "connection_summary": self.connection.get_connection_summary(),
-            "is_production_ready": self.is_production_ready(),
-            "is_performance_optimized": self.is_performance_optimized(),
-            "has_custom_settings": self.has_custom_settings(),
-        }
+        result["metadata"] = dict(self.get_configuration_summary())
         return result
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:

@@ -145,12 +145,11 @@ class ModelTypedMetrics[SimpleValueType](BaseModel):
             result["name"] = self.metric_display_name
         if self.description:
             result["description"] = self.description
-        if self.unit or self.value is not None:
-            result["metadata"] = {
-                "metric_id": str(self.metric_id),
-                "value": self.value,
-                "unit": self.unit,
-            }
+        result["metadata"] = {
+            "metric_id": str(self.metric_id),
+            "value": self.value,
+            "unit": self.unit,
+        }
         return result
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:

@@ -384,9 +384,8 @@ class ModelStructuredDescription(BaseModel):
     def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
         result: TypedDictMetadataDict = {}
-        summary = self.summary_description
-        if summary:
-            result["description"] = summary
+        # summary_description always returns non-empty string (includes required purpose)
+        result["description"] = self.summary_description
         if self.template_version is not None:
             result["version"] = self.template_version
         return result

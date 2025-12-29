@@ -14,6 +14,7 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.types import TypedDictMetadataDict
 
 # Use object for internal storage with field validator ensuring proper types
 # This avoids primitive union violations while maintaining type safety through validation
@@ -301,14 +302,15 @@ class ModelMetadataValue(BaseModel):
 
     # Protocol method implementations
 
-    def get_metadata(self) -> dict[str, object]:
+    def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
-        result: dict[str, object] = {
+        result: TypedDictMetadataDict = {}
+        result["metadata"] = {
             "value_type": self.value_type.value,
             "is_validated": self.is_validated,
         }
         if self.source is not None:
-            result["source"] = self.source
+            result["metadata"]["source"] = self.source
         return result
 
     def set_metadata(self, metadata: dict[str, object]) -> bool:

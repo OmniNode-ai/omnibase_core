@@ -359,8 +359,8 @@ class ModelStructuredTags(BaseModel):
     def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
         result: TypedDictMetadataDict = {}
-        if self.tag_version is not None:
-            result["version"] = self.tag_version
+        # tag_version is required field (no default), always present
+        result["version"] = self.tag_version
         all_tags = self.all_tags
         if all_tags:
             result["tags"] = all_tags

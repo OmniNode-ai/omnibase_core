@@ -280,9 +280,8 @@ class ModelStructuredDisplayName(BaseModel):
     def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
         result: TypedDictMetadataDict = {}
-        display_name = self.display_name
-        if display_name:
-            result["name"] = display_name
+        # display_name always returns non-empty string (includes required base_name)
+        result["name"] = self.display_name
         if self.version is not None:
             result["version"] = self.version
         return result

@@ -217,8 +217,7 @@ class ModelFunctionNodeCore(BaseModel):
             result["name"] = self.name
         if self.description:
             result["description"] = self.description
-        if self.version:
-            result["version"] = self.version
+        result["version"] = self.version
         # Pack additional fields into metadata
         result["metadata"] = {
             "function_id": str(self.function_id),

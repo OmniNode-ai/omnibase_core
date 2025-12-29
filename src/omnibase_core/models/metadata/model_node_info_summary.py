@@ -578,8 +578,8 @@ class ModelNodeInfoSummary(BaseModel):
             result["name"] = self.node_display_name
         if self.description:
             result["description"] = self.description
-        if self.version is not None:
-            result["version"] = self.version
+        # version has default_factory in ModelNodeCore, always present
+        result["version"] = self.version
         if self.tags:
             result["tags"] = self.tags
         return result

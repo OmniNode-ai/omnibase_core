@@ -344,8 +344,7 @@ class ModelNodeInformation(BaseModel):
             result["name"] = self.node_name
         if self.description:
             result["description"] = self.description
-        if self.node_version:
-            result["version"] = self.node_version
+        result["version"] = self.node_version
         # Pack additional fields into metadata
         result["metadata"] = {
             "node_id": str(self.node_id),

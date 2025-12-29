@@ -130,14 +130,7 @@ class ModelNodeResourceLimits(BaseModel):
     def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
         result: TypedDictMetadataDict = {}
-        # Pack resource limits into metadata dict
-        result["metadata"] = {
-            "max_memory_mb": self.max_memory_mb,
-            "max_cpu_percent": self.max_cpu_percent,
-            "has_memory_limit": self.has_memory_limit(),
-            "has_cpu_limit": self.has_cpu_limit(),
-            "has_any_limits": self.has_any_limits(),
-        }
+        result["metadata"] = dict(self.get_resource_summary())
         return result
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:

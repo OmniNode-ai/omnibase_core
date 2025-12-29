@@ -490,8 +490,7 @@ class ModelMetadataNodeInfo(BaseModel):
         description = self.description.summary_description
         if description:
             result["description"] = description
-        if self.version is not None:
-            result["version"] = self.version
+        result["version"] = self.version
         all_tags = self.tags.all_tags
         if all_tags:
             result["tags"] = all_tags
