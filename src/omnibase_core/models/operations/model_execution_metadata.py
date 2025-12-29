@@ -150,9 +150,18 @@ class ModelExecutionMetadata(BaseModel):
                 if isinstance(cpu_value, (int, float)):
                     self.cpu_usage_percent = float(cpu_value)
             return True
+        except ModelOnexError:
+            # Re-raise ModelOnexError as-is to preserve error context
+            raise
         except (
-            Exception
-        ) as e:  # error-ok: Converts any exception to structured ModelOnexError
+            # AttributeError: setattr on read-only/frozen attributes
+            AttributeError,
+            # TypeError: value type incompatible with attribute type
+            TypeError,
+            # ValueError: Pydantic validator rejects the value or conversion fails
+            ValueError,
+        ) as e:
+            # fallback-ok: Converts specific exceptions to structured ModelOnexError
             raise ModelOnexError(
                 message=f"Failed to execute metadata update: {e}",
                 error_code=EnumCoreErrorCode.OPERATION_FAILED,

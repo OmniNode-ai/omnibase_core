@@ -154,11 +154,14 @@ class ModelOrchestratorOutput(BaseModel):
             try:
                 return ModelSchemaValue.model_validate(value)
             except (
+                # ValidationError: Pydantic validation fails (missing/invalid fields)
                 ValidationError,
+                # AttributeError: Unexpected attribute access issue
                 AttributeError,
+                # ValueError: Value conversion or validation rejects value
                 ValueError,
+                # TypeError: Type conversion issues during validation
                 TypeError,
-                KeyError,
             ):
                 # fallback-ok: If validation fails, treat as raw value
                 pass

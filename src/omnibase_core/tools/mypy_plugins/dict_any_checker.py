@@ -414,7 +414,11 @@ class DictAnyCheckerPlugin(Plugin):
                         return result
 
         except (
-            Exception
+            AttributeError,
+            KeyError,
+            TypeError,
+            RuntimeError,
+            IndexError,
         ):  # fallback-ok: graceful handling of internal mypy API access issues
             pass
 
@@ -473,7 +477,10 @@ class DictAnyCheckerPlugin(Plugin):
                         return cast("dict[str, MypyFile]", modules)
 
         except (
-            Exception
+            AttributeError,
+            KeyError,
+            TypeError,
+            RuntimeError,
         ):  # fallback-ok: mypy API access may fail on version differences
             pass
 
@@ -546,7 +553,13 @@ class DictAnyCheckerPlugin(Plugin):
             if isinstance(node, Decorator):
                 return node
 
-        except Exception:  # fallback-ok: symbol lookup may fail for unanalyzed code
+        except (
+            AttributeError,
+            KeyError,
+            TypeError,
+            RuntimeError,
+            IndexError,
+        ):  # fallback-ok: symbol lookup may fail for unanalyzed code
             pass
 
         return None

@@ -53,7 +53,7 @@ class ModelResultDict(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except (AttributeError, ValueError, TypeError, KeyError, ValidationError) as e:
+        except (AttributeError, ValueError, TypeError, ValidationError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
@@ -66,7 +66,7 @@ class ModelResultDict(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except (AttributeError, ValueError, TypeError, KeyError, ValidationError) as e:
+        except (AttributeError, ValueError, TypeError, ValidationError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",

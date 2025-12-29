@@ -43,23 +43,17 @@ class ModelOperationParameters(BaseModel):
 
         Returns:
             Dictionary containing execution results and parameter validation status.
+
+        Note:
+            Error handling is managed by @standard_error_handling decorator.
         """
-        try:
-            # Validate all parameters
-            validation_results = {
-                "success": True,
-                "parameters": self.parameters,
-                "validated": True,
-            }
-            return validation_results
-        except (
-            Exception
-        ) as e:  # error-ok: Converts any exception to structured ModelOnexError
-            raise ModelOnexError(
-                message=f"Parameter execution failed: {e}",
-                error_code=EnumCoreErrorCode.OPERATION_FAILED,
-                context={"error": str(e)},
-            ) from e
+        # Validate all parameters
+        validation_results = {
+            "success": True,
+            "parameters": self.parameters,
+            "validated": True,
+        }
+        return validation_results
 
     def get_id(self) -> str:
         """

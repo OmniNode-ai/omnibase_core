@@ -84,8 +84,8 @@ class ModelTransaction:
                         "transaction_id": str(self.transaction_id),
                     },
                 )
-            except (KeyboardInterrupt, SystemExit, GeneratorExit):
-                # Re-raise system signals - these must not be suppressed
+            except (KeyboardInterrupt, SystemExit, GeneratorExit, MemoryError):
+                # Re-raise system signals and critical errors - these must not be suppressed
                 raise
             except Exception as e:  # catch-all-ok: cleanup must not fail
                 # Must not propagate exceptions during cleanup - attempt all operations

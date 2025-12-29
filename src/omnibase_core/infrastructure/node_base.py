@@ -163,7 +163,8 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
             TypeError,
             AttributeError,
             RuntimeError,
-            OSError,  # FileNotFoundError/PermissionError are OSError subclasses
+            # Note: File errors during contract loading are handled by UtilContractLoader
+            # and converted to ModelOnexError, which is re-raised above
         ) as e:
             self._emit_initialization_failure(e)
             raise ModelOnexError(
