@@ -21,6 +21,11 @@ from omnibase_core.enums import EnumNodeType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_dependency_type import EnumDependencyType
 from omnibase_core.models.contracts.model_dependency import ModelDependency
+
+# Import ModelExecutionProfile for execution profile field
+from omnibase_core.models.contracts.model_execution_profile import (
+    ModelExecutionProfile,
+)
 from omnibase_core.models.contracts.model_lifecycle_config import ModelLifecycleConfig
 from omnibase_core.models.contracts.model_performance_requirements import (
     ModelPerformanceRequirements,
@@ -123,6 +128,14 @@ class ModelContractBase(BaseModel, ABC):
     tags: list[str] = Field(
         default_factory=list,
         description="Contract classification tags",
+    )
+
+    # Execution profile for contract-driven execution
+    # Optional: Only set when created via profile factory
+    execution: ModelExecutionProfile | None = Field(
+        default=None,
+        description="Execution profile defining phases and ordering policy. "
+        "Set when created via profile factory, None for manually created contracts.",
     )
 
     @abstractmethod

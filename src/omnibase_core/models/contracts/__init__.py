@@ -102,6 +102,8 @@ from .model_effect_retry_config import ModelEffectRetryConfig
 from .model_event_coordination_config import ModelEventCoordinationConfig
 from .model_event_registry_config import ModelEventRegistryConfig
 from .model_event_subscription import ModelEventSubscription
+from .model_execution_ordering_policy import ModelExecutionOrderingPolicy
+from .model_execution_profile import DEFAULT_EXECUTION_PHASES, ModelExecutionProfile
 from .model_filter_conditions import ModelFilterConditions
 from .model_input_validation_config import ModelInputValidationConfig
 from .model_io_operation_config import ModelIOOperationConfig
@@ -163,6 +165,9 @@ __all__ = [
     "ModelRuntimeEventBusConfig",
     "ModelEventCoordinationConfig",
     "ModelEventDescriptor",
+    "ModelExecutionOrderingPolicy",
+    "ModelExecutionProfile",
+    "DEFAULT_EXECUTION_PHASES",
     "ModelEventRegistryConfig",
     "ModelEventSubscription",
     "ModelExternalServiceConfig",

@@ -1,0 +1,139 @@
+"""
+Effect Profile Factories.
+
+Provides default profiles for effect contracts with safe defaults.
+
+Profile Types:
+    - effect_idempotent: Idempotent effect with retries
+"""
+
+from collections.abc import Callable
+
+from omnibase_core.enums import EnumNodeType
+from omnibase_core.models.contracts import (
+    ModelBackupConfig,
+    ModelContractEffect,
+    ModelEffectRetryConfig,
+    ModelExecutionOrderingPolicy,
+    ModelExecutionProfile,
+    ModelIOOperationConfig,
+    ModelPerformanceRequirements,
+    ModelTransactionConfig,
+)
+from omnibase_core.models.contracts.subcontracts.model_event_type_subcontract import (
+    ModelEventTypeSubcontract,
+)
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
+
+def _parse_version(version: str) -> ModelSemVer:
+    """Parse version string to ModelSemVer."""
+    parts = version.split(".")
+    return ModelSemVer(
+        major=int(parts[0]) if len(parts) > 0 else 1,
+        minor=int(parts[1]) if len(parts) > 1 else 0,
+        patch=int(parts[2]) if len(parts) > 2 else 0,
+    )
+
+
+def _create_minimal_event_type_subcontract(
+    version: ModelSemVer,
+) -> ModelEventTypeSubcontract:
+    """
+    Create a minimal valid event type subcontract for effect profiles.
+
+    Provides basic event configuration for effect participation
+    in event-driven workflows.
+    """
+    return ModelEventTypeSubcontract(
+        version=version,
+        primary_events=["effect_executed", "effect_completed"],
+        event_categories=["effect", "io"],
+        publish_events=True,
+        subscribe_events=False,
+        event_routing="default",
+    )
+
+
+def get_effect_idempotent_profile(version: str = "1.0.0") -> ModelContractEffect:
+    """
+    Create an effect_idempotent profile.
+
+    Idempotent effect with safe defaults:
+    - Idempotent operations enabled
+    - Retry policies configured
+    - Audit trail enabled
+    - Consistency validation enabled
+
+    Args:
+        version: The version to apply to the contract.
+
+    Returns:
+        A fully valid effect contract with idempotent settings.
+    """
+    semver = _parse_version(version)
+
+    return ModelContractEffect(
+        # Core identification
+        name="effect_idempotent_profile",
+        version=semver,
+        description="Idempotent effect profile with retry support and audit trail",
+        node_type=EnumNodeType.EFFECT_GENERIC,
+        # Model specifications
+        input_model="omnibase_core.models.core.ModelInput",
+        output_model="omnibase_core.models.core.ModelOutput",
+        # Performance requirements
+        performance=ModelPerformanceRequirements(
+            single_operation_max_ms=10000,  # Longer for I/O
+            batch_operation_max_s=60,
+            memory_limit_mb=256,
+        ),
+        # I/O operations (required)
+        io_operations=[
+            ModelIOOperationConfig(
+                operation_type="generic_io",
+                atomic=True,
+                backup_enabled=True,
+                timeout_seconds=30,
+            ),
+        ],
+        # Transaction management
+        transaction_management=ModelTransactionConfig(
+            enabled=True,
+            isolation_level="serializable",
+            timeout_seconds=30,
+        ),
+        # Retry policies
+        retry_policies=ModelEffectRetryConfig(
+            max_attempts=3,
+            base_delay_ms=1000,
+            max_delay_ms=5000,
+            circuit_breaker_enabled=True,
+            circuit_breaker_threshold=3,
+        ),
+        # Backup configuration
+        backup_config=ModelBackupConfig(
+            enabled=True,
+            retention_days=3,
+        ),
+        # Effect-specific settings
+        idempotent_operations=True,
+        side_effect_logging_enabled=True,
+        audit_trail_enabled=True,
+        consistency_validation_enabled=True,
+        # Subcontracts
+        event_type=_create_minimal_event_type_subcontract(semver),
+        # Execution profile
+        execution=ModelExecutionProfile(
+            ordering_policy=ModelExecutionOrderingPolicy(
+                strategy="topological_sort",
+                deterministic_seed=True,
+            ),
+        ),
+    )
+
+
+# Profile registry mapping profile names to factory functions
+EFFECT_PROFILES: dict[str, Callable[[str], ModelContractEffect]] = {
+    "effect_idempotent": get_effect_idempotent_profile,
+}
