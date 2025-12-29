@@ -113,7 +113,7 @@ class TestModelEventBusRuntimeStateIsReady:
         assert state.is_ready() is False
 
     @pytest.mark.parametrize(
-        "node_name,is_bound,expected",
+        ("node_name", "is_bound", "expected"),
         [
             ("node", True, True),
             ("node", False, False),

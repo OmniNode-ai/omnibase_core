@@ -62,7 +62,7 @@ class ModelEventBusInputOutputState(BaseModel):
         message: str,
     ) -> "ModelEventBusInputOutputState":
         """Create a composite state from basic parameters."""
-        from omnibase_core.enums.onex_status import OnexStatus
+        from omnibase_core.enums.enum_onex_status import EnumOnexStatus as OnexStatus
         from omnibase_core.models.primitives.model_semver import (
             parse_semver_from_string,
         )

@@ -118,13 +118,21 @@ class ModelEventBusListenerHandle(BaseModel):
         reset since they cannot be meaningfully copied - a copied handle starts
         in a stopped state with no active thread.
 
+        Thread Safety:
+            Subscriptions are deep-copied with error handling because:
+            1. They may contain objects that cannot be deep-copied (callbacks,
+               closures referencing threading objects, etc.)
+            2. If deep copy fails, we fall back to an empty list rather than
+               raising an exception
+            3. A warning is logged when subscriptions cannot be copied
+
         Note:
             - listener_thread is set to None (a started Thread references an OS
               thread and cannot be meaningfully duplicated)
             - stop_event is replaced with a fresh Event if one existed (copying
               an Event would create one that doesn't share state with the original)
             - is_running is set to False (the copy has no active thread)
-            - subscriptions are deep-copied normally
+            - subscriptions are deep-copied if possible, otherwise empty list
 
         Args:
             memo: Dictionary of already copied objects (for cycle detection).
@@ -136,11 +144,26 @@ class ModelEventBusListenerHandle(BaseModel):
         if memo is None:
             memo = {}
 
+        # Try to deep copy subscriptions, fall back to empty list if it fails
+        # Subscriptions may contain callbacks or closures that reference
+        # threading objects which cannot be deep copied
+        try:
+            copied_subscriptions = copy.deepcopy(self.subscriptions, memo)
+        except (TypeError, RuntimeError) as e:
+            # TypeError: Can't pickle lock objects
+            # RuntimeError: Can't deep copy threading objects
+            emit_log_event(
+                LogLevel.DEBUG,
+                f"DEEPCOPY: Cannot deep copy subscriptions, using empty list: {e!r}",
+                context={"error_type": type(e).__name__},
+            )
+            copied_subscriptions = []
+
         # Don't copy active thread state - it cannot be meaningfully duplicated
         new_handle = ModelEventBusListenerHandle(
             listener_thread=None,  # Thread cannot be copied
             stop_event=threading.Event() if self.stop_event else None,
-            subscriptions=copy.deepcopy(self.subscriptions, memo),
+            subscriptions=copied_subscriptions,
             is_running=False,  # Copy is not running
         )
         memo[id(self)] = new_handle

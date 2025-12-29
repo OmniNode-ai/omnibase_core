@@ -97,11 +97,12 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
         from omnibase_core.models.event_bus import ModelEventBusRuntimeState
 
         attr_name = "_mixin_event_bus_state"
-        # NOTE: hasattr fallback handles lazy initialization for mixins that don't
-        # call bind_*() in __init__. This is intentional to support composition
-        # patterns where the mixin is mixed into classes that may not initialize
-        # state immediately. Remove only if MixinEventBus requires explicit
-        # initialization in a future major version (v1.0+).
+        # TODO(v1.0): Remove hasattr fallback after migration stabilizes.
+        # This fallback handles lazy initialization for mixins that don't call
+        # bind_*() in __init__. It supports composition patterns where the mixin
+        # is mixed into classes that may not initialize state immediately. Once
+        # all consumers have migrated to explicit binding in __init__, this
+        # fallback can be removed in favor of requiring bind_*() calls.
         if not hasattr(self, attr_name):
             state = ModelEventBusRuntimeState.create_unbound()
             object.__setattr__(self, attr_name, state)
@@ -113,11 +114,11 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
         from omnibase_core.models.event_bus import ModelEventBusListenerHandle
 
         attr_name = "_mixin_event_bus_listener"
-        # NOTE: hasattr fallback returns None for uninitialized listener handle.
-        # This is intentional - listener handle is only created when
-        # start_event_listener() is called, not during bind. Remove only if
-        # MixinEventBus requires explicit listener initialization in a future
-        # major version (v1.0+).
+        # TODO(v1.0): Remove hasattr fallback after migration stabilizes.
+        # This fallback returns None for uninitialized listener handle. The
+        # listener handle is only created when start_event_listener() is called,
+        # not during bind. Once all consumers have migrated to explicit lifecycle
+        # management, this fallback can be removed.
         if not hasattr(self, attr_name):
             return None
         return cast(
@@ -258,10 +259,11 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
         Returns:
             The event bus instance or None if not bound.
         """
-        # NOTE: hasattr checks support lazy binding patterns where bind_*() may
-        # not have been called yet. This enables flexible composition where
-        # event bus can be bound at any point in the lifecycle. Remove only if
-        # MixinEventBus requires bind_*() in __init__ in a future major version (v1.0+).
+        # TODO(v1.0): Remove hasattr fallbacks after migration stabilizes.
+        # These checks support lazy binding patterns where bind_*() may not have
+        # been called yet. This enables flexible composition where event bus can
+        # be bound at any point in the lifecycle. Once all consumers have migrated
+        # to explicit binding in __init__, these fallbacks can be removed.
         # Try direct event_bus binding first
         if hasattr(self, "_bound_event_bus"):
             bus = object.__getattribute__(self, "_bound_event_bus")
@@ -807,6 +809,11 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
         call multiple times - it will not raise errors if the listener
         is already stopped or was never started.
 
+        Thread Safety:
+            This method ensures target.stop() is always called, even if
+            unsubscription errors occur. This prevents resource leaks from
+            leaving listener threads running.
+
         Args:
             handle: Optional listener handle to stop. If None, stops the
                 current listener associated with this mixin instance.
@@ -818,6 +825,8 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
 
         Raises:
             ModelOnexError: If the event bus does not support unsubscribe().
+                Note: Even when this is raised, the listener thread is still
+                stopped to prevent resource leaks.
 
         Note:
             Unsubscription errors are logged but do not prevent stopping
@@ -827,29 +836,39 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
         if target is None:
             return True  # Nothing to stop
 
+        unsubscribe_error: ModelOnexError | None = None
+
         # Unsubscribe from all events - fail fast if bus doesn't support unsubscribe
+        # but still call target.stop() to prevent resource leaks
         bus = self._get_event_bus()
         if bus and target.subscriptions:
             if not hasattr(bus, "unsubscribe"):
-                raise ModelOnexError(
+                # Capture error but continue to stop the listener thread
+                unsubscribe_error = ModelOnexError(
                     message="Event bus does not support 'unsubscribe' method",
                     error_code=EnumCoreErrorCode.EVENT_BUS_ERROR,
                     context={"bus_type": type(bus).__name__},
                 )
+            else:
+                for subscription in target.subscriptions:
+                    try:
+                        # Cast to Any for legacy event bus interface
+                        cast(Any, bus).unsubscribe(subscription)
+                    except Exception as e:
+                        self._log_error(
+                            f"Failed to unsubscribe: {e!r}",
+                            "event_listener",
+                            error=e,
+                        )
 
-            for subscription in target.subscriptions:
-                try:
-                    # Cast to Any for legacy event bus interface
-                    cast(Any, bus).unsubscribe(subscription)
-                except Exception as e:
-                    self._log_error(
-                        f"Failed to unsubscribe: {e!r}",
-                        "event_listener",
-                        error=e,
-                    )
-
+        # Always stop the listener thread, even if unsubscription failed
         result = target.stop()
         self._log_info("Event listener stopped", "event_listener")
+
+        # Re-raise unsubscribe error after ensuring listener is stopped
+        if unsubscribe_error is not None:
+            raise unsubscribe_error
+
         return result
 
     def dispose_event_bus_resources(self) -> None:
@@ -858,15 +877,39 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
         This method is idempotent and safe to call multiple times. It will not
         raise exceptions for already-disposed resources.
 
-        Note:
-            Only AttributeError is caught during cleanup. Other exceptions
-            (e.g., RuntimeError, TypeError) will propagate up to the caller.
+        Error Handling:
+            All cleanup errors are collected and logged. If any errors occur
+            during cleanup, a ModelOnexError is raised after all cleanup steps
+            complete, containing details of all failures. This ensures:
+
+            1. All cleanup steps are attempted even if earlier steps fail
+            2. Errors are not silently swallowed
+            3. Callers are notified of cleanup failures via structured errors
+
+        Raises:
+            ModelOnexError: If any cleanup step fails. The error context contains
+                a list of all errors encountered during cleanup.
         """
+        cleanup_errors: list[str] = []
+
+        # Phase 1: Stop listener handle
         handle = self._event_bus_listener_handle
         if handle is not None:
-            handle.stop()
+            try:
+                stopped = handle.stop()
+                if not stopped:
+                    cleanup_errors.append(
+                        "Event listener did not stop within timeout"
+                    )
+            except Exception as e:
+                cleanup_errors.append(f"Failed to stop event listener: {e!r}")
+                emit_log_event(
+                    LogLevel.ERROR,
+                    f"MIXIN_DISPOSE: Failed to stop event listener: {e!r}",
+                    ModelLogData(node_name=self.get_node_name()),
+                )
 
-        # Clear bindings - delete private instance attributes
+        # Phase 2: Clear bindings - delete private instance attributes
         for attr in (
             "_bound_event_bus",
             "_bound_registry",
@@ -880,22 +923,50 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
                     # 1. Race condition: attribute deleted between hasattr() and delattr()
                     # 2. Idempotent cleanup: dispose() called multiple times
                     #
-                    # We log at DEBUG (not WARNING) because this is expected behavior,
-                    # not an error. Other exception types are NOT caught and will
-                    # propagate to surface unexpected errors.
+                    # We log at DEBUG (not WARNING) because this is expected behavior.
                     emit_log_event(
                         LogLevel.DEBUG,
                         f"MIXIN_DISPOSE: Attribute {attr} already deleted during cleanup",
                         ModelLogData(node_name=self.get_node_name()),
                     )
+                except Exception as e:
+                    # Unexpected error during attribute deletion
+                    cleanup_errors.append(f"Failed to delete {attr}: {e!r}")
+                    emit_log_event(
+                        LogLevel.ERROR,
+                        f"MIXIN_DISPOSE: Unexpected error deleting {attr}: {e!r}",
+                        ModelLogData(node_name=self.get_node_name()),
+                    )
 
-        self._event_bus_runtime_state.reset()
+        # Phase 3: Reset runtime state
+        try:
+            self._event_bus_runtime_state.reset()
+        except Exception as e:
+            cleanup_errors.append(f"Failed to reset runtime state: {e!r}")
+            emit_log_event(
+                LogLevel.ERROR,
+                f"MIXIN_DISPOSE: Failed to reset runtime state: {e!r}",
+                ModelLogData(node_name=self.get_node_name()),
+            )
 
+        # Log successful completion
         emit_log_event(
             LogLevel.DEBUG,
             "MIXIN_DISPOSE: Event bus resources disposed",
             ModelLogData(node_name=self.get_node_name()),
         )
+
+        # Raise collected errors as structured ModelOnexError
+        if cleanup_errors:
+            raise ModelOnexError(
+                message=f"Event bus cleanup completed with {len(cleanup_errors)} error(s)",
+                error_code=EnumCoreErrorCode.OPERATION_FAILED,
+                context={
+                    "node_name": self.get_node_name(),
+                    "error_count": len(cleanup_errors),
+                    "errors": cleanup_errors,
+                },
+            )
 
     def _event_listener_loop(self, handle: "ModelEventBusListenerHandle") -> None:
         """Run the main event listener loop in a background thread.

@@ -19,7 +19,7 @@ Comprehensive tests for the unified event bus mixin including:
 import threading
 import uuid
 from typing import Any
-from unittest.mock import AsyncMock, MagicMock, Mock, patch
+from unittest.mock import AsyncMock, Mock, patch
 from uuid import UUID
 
 import pytest
