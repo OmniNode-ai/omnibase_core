@@ -139,7 +139,28 @@ class ModelIdentifier(BaseModel):
     @field_validator("namespace")
     @classmethod
     def validate_namespace(cls, v: str) -> str:
-        """Validate namespace follows identifier naming rules."""
+        """
+        Validate that namespace follows identifier naming rules.
+
+        The namespace must:
+            - Not be empty
+            - Start with a letter (a-z, A-Z)
+            - Contain only letters, numbers, underscores, or hyphens
+
+        Args:
+            v: The namespace string to validate.
+
+        Returns:
+            The validated namespace string (unchanged if valid).
+
+        Raises:
+            ModelOnexError: If the namespace is empty or contains invalid
+                characters. Error code is VALIDATION_ERROR.
+
+        Examples:
+            Valid namespaces: "onex", "vendor", "my-namespace", "ns_v2"
+            Invalid namespaces: "", "123start", "has spaces", "has.dots"
+        """
         if not v:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -158,7 +179,28 @@ class ModelIdentifier(BaseModel):
     @field_validator("name")
     @classmethod
     def validate_name(cls, v: str) -> str:
-        """Validate name follows identifier naming rules."""
+        """
+        Validate that name follows identifier naming rules.
+
+        The name must:
+            - Not be empty
+            - Start with a letter (a-z, A-Z)
+            - Contain only letters, numbers, underscores, or hyphens
+
+        Args:
+            v: The name string to validate.
+
+        Returns:
+            The validated name string (unchanged if valid).
+
+        Raises:
+            ModelOnexError: If the name is empty or contains invalid
+                characters. Error code is VALIDATION_ERROR.
+
+        Examples:
+            Valid names: "compute", "my-handler", "effect_v2", "Transformer"
+            Invalid names: "", "123start", "has spaces", "has.dots"
+        """
         if not v:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -177,7 +219,29 @@ class ModelIdentifier(BaseModel):
     @field_validator("variant")
     @classmethod
     def validate_variant(cls, v: str | None) -> str | None:
-        """Validate variant follows identifier naming rules if present."""
+        """
+        Validate that variant follows identifier naming rules if present.
+
+        Unlike namespace and name, variants have more permissive rules:
+            - Can be None (no variant)
+            - Cannot be empty string (use None instead)
+            - Can start with a letter OR a number (e.g., "v2", "2024")
+            - Can contain letters, numbers, underscores, or hyphens
+
+        Args:
+            v: The variant string to validate, or None.
+
+        Returns:
+            The validated variant string (unchanged if valid), or None.
+
+        Raises:
+            ModelOnexError: If the variant is an empty string or contains
+                invalid characters. Error code is VALIDATION_ERROR.
+
+        Examples:
+            Valid variants: None, "v2", "async", "2024", "beta-1"
+            Invalid variants: "", "has spaces", "has.dots"
+        """
         if v is None:
             return None
         if not v:
@@ -268,7 +332,26 @@ class ModelIdentifier(BaseModel):
         return base
 
     def __repr__(self) -> str:
-        """Return detailed representation for debugging."""
+        """
+        Return detailed representation for debugging.
+
+        The representation includes all non-None fields in a format suitable
+        for debugging and logging. Unlike __str__, this shows the full
+        structure including field names.
+
+        Returns:
+            String representation in format:
+            ``ModelIdentifier(namespace='x', name='y', variant='z', version=...)``
+
+        Examples:
+            >>> id1 = ModelIdentifier(namespace="onex", name="compute")
+            >>> repr(id1)
+            "ModelIdentifier(namespace='onex', name='compute')"
+
+            >>> id2 = ModelIdentifier(namespace="vendor", name="handler", variant="v2")
+            >>> repr(id2)
+            "ModelIdentifier(namespace='vendor', name='handler', variant='v2')"
+        """
         parts = [
             f"namespace={self.namespace!r}",
             f"name={self.name!r}",
@@ -303,7 +386,19 @@ class ModelIdentifier(BaseModel):
         )
 
     def __ne__(self, other: object) -> bool:
-        """Check inequality with another ModelIdentifier."""
+        """
+        Check inequality with another ModelIdentifier.
+
+        This is the inverse of __eq__. Two identifiers are not equal if they
+        differ in namespace, name, or variant. Version is NOT considered.
+
+        Args:
+            other: Object to compare with.
+
+        Returns:
+            True if not equal, False if equal.
+            NotImplemented if other is not a ModelIdentifier.
+        """
         result = self.__eq__(other)
         if result is NotImplemented:
             return NotImplemented
@@ -444,3 +539,6 @@ class ModelIdentifier(BaseModel):
             variant=self.variant,
             version=version,
         )
+
+
+__all__ = ["ModelIdentifier"]

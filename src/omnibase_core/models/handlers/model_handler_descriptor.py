@@ -232,6 +232,34 @@ class ModelHandlerDescriptor(BaseModel):
             if desired.intersection(set(h.capabilities))
         ]
 
+    Metadata-Only Descriptors
+    -------------------------
+    Both ``import_path`` and ``artifact_ref`` are optional, allowing for
+    **metadata-only descriptors** that contain no instantiation information.
+    This is an intentional design choice supporting several use cases:
+
+    1. **Discovery Metadata**: Descriptors used purely for registry queries,
+       routing decisions, or capability matching without actual instantiation.
+
+    2. **External Handlers**: Handlers instantiated outside the Python runtime
+       (e.g., sidecar containers, external services) where the descriptor
+       provides routing/classification metadata only.
+
+    3. **Deferred Resolution**: Descriptors where instantiation information
+       is resolved separately through a lookup service or configuration.
+
+    4. **Documentation/Introspection**: Descriptors that document a handler's
+       contract without providing runtime instantiation.
+
+    When both fields are None, the descriptor can still be used for:
+        - Classification and routing decisions
+        - Capability-based handler matching
+        - Security policy evaluation via ``security_metadata_ref``
+        - Registry listing and discovery
+
+    If instantiation is required, callers should check ``has_instantiation_method``
+    or verify that ``import_path`` or ``artifact_ref`` is set.
+
     Attributes:
         handler_name: Structured identifier following the namespace:name pattern.
             Used as the primary key for registry lookup.
@@ -381,8 +409,13 @@ class ModelHandlerDescriptor(BaseModel):
         default_factory=list,
         description=(
             "List of capabilities the handler supports. Used for capability-based "
-            "routing and runtime optimization. "
-            "Values: CACHE, RETRY, BATCH, STREAM, ASYNC, IDEMPOTENT, etc."
+            "routing and runtime optimization. Common patterns: "
+            "[CACHE, IDEMPOTENT] for pure compute; "
+            "[STREAM, ASYNC, BATCH] for event handlers; "
+            "[RETRY, CIRCUIT_BREAKER, TIMEOUT] for resilient I/O. "
+            "See class docstring 'Capability Patterns' section for routing examples. "
+            "Values: CACHE, RETRY, BATCH, STREAM, ASYNC, IDEMPOTENT, VALIDATE, "
+            "CIRCUIT_BREAKER, TIMEOUT, etc."
         ),
     )
 
@@ -395,7 +428,18 @@ class ModelHandlerDescriptor(BaseModel):
     )
 
     # =========================================================================
-    # Instantiation (one or the other, both optional)
+    # Instantiation
+    # =========================================================================
+    # Both fields are optional, supporting metadata-only descriptors.
+    # See class docstring "Metadata-Only Descriptors" section for rationale.
+    #
+    # Usage patterns:
+    #   - import_path only: Direct Python instantiation
+    #   - artifact_ref only: Registry-resolved instantiation (containers, external)
+    #   - Neither: Metadata-only descriptor (discovery, routing, documentation)
+    #   - Both: Not recommended (import_path takes precedence by convention)
+    #
+    # Use has_instantiation_method property to check if instantiation is possible.
     # =========================================================================
 
     import_path: str | None = Field(
@@ -403,7 +447,8 @@ class ModelHandlerDescriptor(BaseModel):
         description=(
             "Python import path for direct instantiation. "
             "Format: 'package.module.ClassName' (e.g., 'mypackage.handlers.MyHandler'). "
-            "Mutually exclusive with artifact_ref for instantiation strategy."
+            "When set, this is the preferred instantiation method over artifact_ref. "
+            "Both fields may be None for metadata-only descriptors (see class docstring)."
         ),
     )
 
@@ -412,7 +457,8 @@ class ModelHandlerDescriptor(BaseModel):
         description=(
             "Artifact reference for registry-resolved instantiation. "
             "Used for containerized handlers or external artifacts that are "
-            "resolved at runtime through the artifact registry."
+            "resolved at runtime through the artifact registry. "
+            "Both fields may be None for metadata-only descriptors (see class docstring)."
         ),
     )
 
@@ -436,6 +482,35 @@ class ModelHandlerDescriptor(BaseModel):
             "provides dependencies, entry points, extras, and distribution metadata."
         ),
     )
+
+    # =========================================================================
+    # Computed Properties
+    # =========================================================================
+
+    @property
+    def has_instantiation_method(self) -> bool:
+        """
+        Check if this descriptor has an instantiation method defined.
+
+        Returns True if either ``import_path`` or ``artifact_ref`` is set,
+        indicating that the handler can be instantiated. Returns False for
+        metadata-only descriptors.
+
+        Use this property to determine if a descriptor can be used for
+        handler instantiation vs. only for discovery/routing metadata.
+
+        Returns:
+            True if import_path or artifact_ref is set, False otherwise.
+
+        Example:
+            >>> descriptor = ModelHandlerDescriptor(...)
+            >>> if descriptor.has_instantiation_method:
+            ...     handler = instantiate(descriptor)
+            ... else:
+            ...     # Metadata-only, use for routing decisions
+            ...     pass
+        """
+        return self.import_path is not None or self.artifact_ref is not None
 
     # =========================================================================
     # Validators

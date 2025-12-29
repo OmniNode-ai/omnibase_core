@@ -6,8 +6,8 @@
 import pytest
 from pydantic import ValidationError
 
-from omnibase_core.models.handlers.model_identifier import ModelIdentifier
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.handlers.model_identifier import ModelIdentifier
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
