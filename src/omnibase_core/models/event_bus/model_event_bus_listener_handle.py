@@ -130,7 +130,9 @@ class ModelEventBusListenerHandle(BaseModel):
                closures referencing threading objects, etc.)
             2. If deep copy fails, we fall back to an empty list rather than
                raising an exception
-            3. A warning is logged when subscriptions cannot be copied
+            3. A WARNING is logged when subscriptions cannot be copied - this is
+               expected behavior when callbacks contain locks, closures, or other
+               non-copyable objects and does not indicate a bug
 
         Note:
             - listener_thread is set to None (a started Thread references an OS
@@ -159,9 +161,13 @@ class ModelEventBusListenerHandle(BaseModel):
             # TypeError: Can't pickle lock objects
             # RuntimeError: Can't deep copy threading objects
             emit_log_event(
-                LogLevel.DEBUG,
-                f"DEEPCOPY: Cannot deep copy subscriptions, using empty list: {e!r}",
-                context={"error_type": type(e).__name__},
+                LogLevel.WARNING,
+                f"DEEPCOPY: Cannot deep copy subscriptions (callbacks may contain locks or closures), "
+                f"copied handle will have empty subscriptions: {e!r}",
+                context={
+                    "error_type": type(e).__name__,
+                    "original_subscription_count": len(self.subscriptions),
+                },
             )
             copied_subscriptions = []
 
@@ -174,6 +180,104 @@ class ModelEventBusListenerHandle(BaseModel):
         )
         memo[id(self)] = new_handle
         return new_handle
+
+    def _capture_and_signal(
+        self,
+    ) -> tuple[bool, threading.Event | None, threading.Thread | None]:
+        """
+        Phase 1: Capture references and signal stop under lock.
+
+        This method acquires the lock, checks if already stopped (idempotent),
+        captures thread-safe references to stop_event and listener_thread,
+        signals the stop event, then releases the lock.
+
+        Thread Safety:
+            - Lock is held for the entire duration of this method
+            - References are captured before lock release so they remain valid
+            - Python's reference counting keeps the objects alive after return
+
+        Returns:
+            A tuple of (should_continue, stop_event, listener_thread):
+            - should_continue: False if already stopped (caller should return True)
+            - stop_event: Captured reference to the stop event (or None)
+            - listener_thread: Captured reference to the listener thread (or None)
+        """
+        with self._lock:
+            # Already stopped - idempotent behavior allows safe concurrent calls
+            if not self.is_running and (
+                self.listener_thread is None or not self.listener_thread.is_alive()
+            ):
+                return (False, None, None)
+
+            # Capture references under lock - these remain valid after lock release
+            # because Python's reference counting keeps the objects alive
+            stop_event = self.stop_event
+            listener_thread = self.listener_thread
+
+            # Signal the listener to stop while still holding the lock
+            if stop_event is not None:
+                stop_event.set()
+
+            return (True, stop_event, listener_thread)
+        # Lock released here - other threads can now call stop() or is_active()
+
+    def _wait_for_thread(
+        self, listener_thread: threading.Thread | None, timeout: float
+    ) -> bool:
+        """
+        Phase 2: Wait for thread to stop (lock NOT held).
+
+        This method intentionally operates WITHOUT holding the lock to avoid
+        blocking other callers during the potentially long join() operation.
+
+        Thread Safety:
+            - Lock is NOT held during this method
+            - The listener_thread reference was captured under lock in Phase 1
+            - Python's reference counting ensures the thread object remains valid
+            - Other threads can call stop() or is_active() concurrently
+
+        Args:
+            listener_thread: The captured thread reference from Phase 1, or None.
+            timeout: Maximum time in seconds to wait for the thread to stop.
+
+        Returns:
+            True if the thread stopped (or was None/not alive), False if it
+            did not stop within the timeout.
+        """
+        if listener_thread is None or not listener_thread.is_alive():
+            return True
+
+        listener_thread.join(timeout=timeout)
+
+        if listener_thread.is_alive():
+            # Thread did not stop within timeout
+            emit_log_event(
+                LogLevel.WARNING,
+                f"Listener thread did not stop within {timeout}s timeout",
+                context={
+                    "thread_name": listener_thread.name,
+                    "timeout_seconds": timeout,
+                },
+            )
+            return False
+
+        return True
+
+    def _cleanup_state(self) -> None:
+        """
+        Phase 3: Clean up subscriptions and state under lock.
+
+        This method reacquires the lock to atomically update the final state,
+        clearing subscriptions and setting is_running to False.
+
+        Thread Safety:
+            - Lock is held for the entire duration of this method
+            - State modifications are atomic with respect to the lock
+            - This ensures consistent final state regardless of concurrent calls
+        """
+        with self._lock:
+            self.subscriptions.clear()
+            self.is_running = False
 
     def stop(self, timeout: float = 5.0) -> bool:
         """
@@ -216,21 +320,21 @@ class ModelEventBusListenerHandle(BaseModel):
             race conditions while avoiding blocking other callers during the
             potentially long join() operation:
 
-            **Phase 1 - Capture and Signal (lock held)**:
+            **Phase 1 - Capture and Signal (_capture_and_signal, lock held)**:
                 - Acquire lock
                 - Check if already stopped (idempotent early return)
                 - Capture references to stop_event and listener_thread
                 - Set the stop_event to signal thread termination
                 - Release lock
 
-            **Phase 2 - Wait for Thread (lock NOT held)**:
+            **Phase 2 - Wait for Thread (_wait_for_thread, lock NOT held)**:
                 - Call thread.join(timeout) on the captured reference
                 - This may block for up to `timeout` seconds
                 - Other threads can call stop() or is_active() during this time
                 - The captured thread reference remains valid because Python
                   keeps objects alive while references exist
 
-            **Phase 3 - Cleanup (lock held)**:
+            **Phase 3 - Cleanup (_cleanup_state, lock held)**:
                 - Reacquire lock
                 - Clear subscriptions list
                 - Set is_running = False
@@ -251,48 +355,16 @@ class ModelEventBusListenerHandle(BaseModel):
                 - The final state (is_running=False, subscriptions cleared) is
                   set atomically under the lock in Phase 3
         """
-        # === Phase 1: Capture and Signal (lock held) ===
-        with self._lock:
-            # Already stopped - idempotent behavior allows safe concurrent calls
-            if not self.is_running and (
-                self.listener_thread is None or not self.listener_thread.is_alive()
-            ):
-                return True
+        # Phase 1: Capture and Signal (lock held)
+        should_continue, _stop_event, listener_thread = self._capture_and_signal()
+        if not should_continue:
+            return True
 
-            # Capture references under lock - these remain valid after lock release
-            # because Python's reference counting keeps the objects alive
-            stop_event = self.stop_event
-            listener_thread = self.listener_thread
+        # Phase 2: Wait for Thread (lock NOT held)
+        thread_stopped = self._wait_for_thread(listener_thread, timeout)
 
-            # Signal the listener to stop while still holding the lock
-            if stop_event is not None:
-                stop_event.set()
-        # Lock released here - other threads can now call stop() or is_active()
-
-        # === Phase 2: Wait for Thread (lock NOT held) ===
-        # We intentionally release the lock before join() to avoid blocking
-        # other callers during the potentially long wait operation
-        thread_stopped = True
-        if listener_thread is not None and listener_thread.is_alive():
-            listener_thread.join(timeout=timeout)
-
-            if listener_thread.is_alive():
-                # Thread did not stop within timeout
-                thread_stopped = False
-                emit_log_event(
-                    LogLevel.WARNING,
-                    f"Listener thread did not stop within {timeout}s timeout",
-                    context={
-                        "thread_name": listener_thread.name,
-                        "timeout_seconds": timeout,
-                    },
-                )
-
-        # === Phase 3: Cleanup (lock held) ===
-        # Reacquire lock to atomically update final state
-        with self._lock:
-            self.subscriptions.clear()
-            self.is_running = False
+        # Phase 3: Cleanup (lock held)
+        self._cleanup_state()
 
         return thread_stopped
 

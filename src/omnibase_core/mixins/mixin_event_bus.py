@@ -23,6 +23,16 @@ Thread Safety:
 
     However, bind_*() methods are NOT thread-safe and should only be called
     during initialization before the mixin is shared across threads.
+
+    Runtime Misuse Detection:
+        The mixin tracks when it transitions to "in use" state via a
+        _binding_locked flag. This flag is set to True when:
+        - start_event_listener() is called (listener thread started)
+        - publish_event() or publish_completion_event() operations occur
+
+        If bind_*() methods are called after the flag is set, a WARNING is
+        emitted via structured logging. This helps developers identify
+        thread-unsafe binding patterns without breaking backwards compatibility.
 """
 
 import threading
@@ -78,6 +88,25 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
     - Composition with ModelEventBusRuntimeState and ModelEventBusListenerHandle
     - Generic[InputStateT, OutputStateT] for type-safe event processing
 
+    Empty String Semantics:
+        This mixin uses empty string ``""`` to mean "not explicitly set" for
+        both ``node_name`` and ``contract_path`` with consistent semantics:
+
+        - **node_name** (via ``bind_node_name()``): Empty string means "use
+          fallback". The ``get_node_name()`` method checks ``if state.node_name:``
+          and falls back to ``self.__class__.__name__`` when empty.
+
+        - **contract_path** (via ``bind_contract_path()``): Empty string means
+          "no contract configured". The ``get_event_patterns()`` method checks
+          ``if not contract_path:`` and returns an empty list when empty/None.
+
+        Use the helper methods on ``ModelEventBusRuntimeState`` for explicit
+        checks: ``has_node_name()`` and ``has_contract_path()`` both use
+        truthiness (``bool(value)``) for consistent behavior.
+
+        To clear a previously bound value, pass an empty string to the
+        respective bind method.
+
     Type Parameters:
         InputStateT: The type of input state for event processing
         OutputStateT: The type of output state returned from processing
@@ -104,10 +133,40 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
         to avoid __init__ requirements in the mixin.
 
         Thread Safety:
-            Uses __dict__.setdefault() for thread-safe lazy initialization.
-            This is atomic in CPython due to the GIL - only one lock will
-            ever be created even if multiple threads access this property
-            simultaneously.
+            This implementation relies on CPython's Global Interpreter Lock (GIL)
+            for thread-safe lazy initialization. Specifically:
+
+            - ``dict.setdefault()`` is atomic in CPython due to the GIL
+            - Only one thread can execute Python bytecode at a time
+            - The setdefault operation completes atomically before another thread
+              can access the dict
+
+            The GIL ensures that between checking if the key exists and inserting
+            the new value, no other thread can interleave. This guarantees exactly
+            one Lock instance is created even with concurrent first access.
+
+            **CPython Implementation Detail**: This pattern is safe in CPython but
+            may NOT be safe in other Python implementations:
+
+            - **PyPy**: Has a GIL but dict operations may have different atomicity
+              guarantees in future versions
+            - **Jython**: Uses Java threading model without a GIL
+            - **IronPython**: Uses .NET threading model without a GIL
+            - **GraalPython**: Experimental, threading behavior varies
+
+            For maximum portability, consider using ``threading.Lock`` with
+            double-checked locking or a module-level lock for initialization.
+
+            **Python 3.13+ Free-Threading (PEP 703)**: Python 3.13 introduces
+            experimental free-threaded builds (``--disable-gil``). As of Python 3.13,
+            dict operations including ``setdefault()`` remain thread-safe in
+            free-threaded builds through fine-grained per-object locking. However:
+
+            - This is an evolving area; verify behavior for production use
+            - The free-threaded build is experimental in 3.13
+            - Future Python versions may change these guarantees
+
+            See: https://peps.python.org/pep-0703/ for free-threading details.
 
         Returns:
             A threading.Lock instance unique to this mixin instance.
@@ -153,6 +212,55 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
             object.__getattribute__(self, attr_name),
         )
 
+    # --- Binding Lock for Thread Safety Detection ---
+
+    def _is_binding_locked(self) -> bool:
+        """Check if the mixin has transitioned to 'in use' state.
+
+        Returns True if bind_*() methods should no longer be called
+        because the mixin is being used by threads (listener started
+        or publish operations have occurred).
+
+        Returns:
+            True if binding is locked, False otherwise.
+        """
+        return getattr(self, "_mixin_binding_locked", False)
+
+    def _lock_binding(self) -> None:
+        """Mark the mixin as 'in use', locking further bind_*() calls.
+
+        After this method is called, any subsequent bind_*() calls will
+        emit a WARNING to alert developers of potential thread-safety issues.
+
+        This is called automatically when:
+        - start_event_listener() creates a listener thread
+        - publish_event() or publish_completion_event() performs publishing
+        """
+        object.__setattr__(self, "_mixin_binding_locked", True)
+
+    def _warn_if_binding_locked(self, method_name: str) -> None:
+        """Emit a warning if bind_*() is called after mixin is in use.
+
+        This method implements runtime misuse detection for thread-unsafe
+        binding patterns. It does NOT raise an exception (backwards compatible)
+        but emits a structured WARNING log to alert developers.
+
+        Args:
+            method_name: The name of the bind method being called
+                (e.g., "bind_event_bus", "bind_registry").
+
+        Note:
+            The warning includes the method name and node name for easy
+            identification of problematic code paths in logs.
+        """
+        if self._is_binding_locked():
+            emit_log_event(
+                LogLevel.WARNING,
+                f"MIXIN_BIND: {method_name}() called after mixin is in use. "
+                "bind_*() methods should be called in __init__ before sharing across threads.",
+                ModelLogData(node_name=self.get_node_name()),
+            )
+
     # --- Explicit Binding Methods ---
 
     def bind_event_bus(self, event_bus: ProtocolEventBus) -> None:
@@ -161,6 +269,12 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
         This method must be called before any event publishing operations.
         The event bus is stored as a private attribute and used for all
         subsequent publish operations.
+
+        Thread Safety:
+            This method is NOT thread-safe. It should only be called during
+            __init__ before the mixin instance is shared across threads.
+            A WARNING is emitted if called after the mixin is in use
+            (e.g., after start_event_listener() or publish operations).
 
         Args:
             event_bus: The event bus instance implementing ProtocolEventBus.
@@ -175,6 +289,7 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
             >>> node.bind_event_bus(event_bus)
             >>> node.publish_completion_event("complete", data)  # Now works
         """
+        self._warn_if_binding_locked("bind_event_bus")
         object.__setattr__(self, "_bound_event_bus", event_bus)
         self._event_bus_runtime_state.is_bound = True
 
@@ -191,6 +306,12 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
         accessed through a registry pattern. The registry's event_bus property
         will be used for all publishing operations.
 
+        Thread Safety:
+            This method is NOT thread-safe. It should only be called during
+            __init__ before the mixin instance is shared across threads.
+            A WARNING is emitted if called after the mixin is in use
+            (e.g., after start_event_listener() or publish operations).
+
         Args:
             registry: A registry implementing ProtocolEventBusRegistry.
                 Must have an event_bus property that returns ProtocolEventBus.
@@ -204,6 +325,7 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
             >>> node.bind_registry(my_registry)
             >>> # Event bus is accessed via registry.event_bus
         """
+        self._warn_if_binding_locked("bind_registry")
         object.__setattr__(self, "_bound_registry", registry)
         if registry.event_bus is not None:
             self._event_bus_runtime_state.is_bound = True
@@ -219,6 +341,12 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
 
         The contract path is used by get_event_patterns() to determine
         which event types this node should listen to and publish.
+
+        Thread Safety:
+            This method is NOT thread-safe. It should only be called during
+            __init__ before the mixin instance is shared across threads.
+            A WARNING is emitted if called after the mixin is in use
+            (e.g., after start_event_listener() or publish operations).
 
         Args:
             contract_path: Absolute or relative path to the ONEX contract
@@ -238,6 +366,7 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
             to explicitly clear a previously bound contract path, pass an
             empty string.
         """
+        self._warn_if_binding_locked("bind_contract_path")
         self._event_bus_runtime_state.contract_path = contract_path
 
     def bind_node_name(self, node_name: str) -> None:
@@ -246,6 +375,12 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
         The node name is included in published events and log messages
         for identification and tracing purposes. If not bound, the
         class name is used as a fallback.
+
+        Thread Safety:
+            This method is NOT thread-safe. It should only be called during
+            __init__ before the mixin instance is shared across threads.
+            A WARNING is emitted if called after the mixin is in use
+            (e.g., after start_event_listener() or publish operations).
 
         Args:
             node_name: The human-readable name of this node. Should be
@@ -264,6 +399,7 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
             want to explicitly clear a previously bound node name, pass an
             empty string.
         """
+        self._warn_if_binding_locked("bind_node_name")
         self._event_bus_runtime_state.node_name = node_name
 
     # --- Fail-Fast Event Bus Access ---
@@ -457,6 +593,8 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
             ModelOnexError: If event bus is not bound.
         """
         bus = self._require_event_bus()
+        # Lock binding after first publish operation - any bind_*() after this warns
+        self._lock_binding()
 
         try:
             # Build event using ModelOnexEvent or use provided payload
@@ -521,6 +659,8 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
             ModelOnexError: If event bus is not bound.
         """
         bus = self._require_event_bus()
+        # Lock binding after first publish operation - any bind_*() after this warns
+        self._lock_binding()
 
         # Check if bus is async-only (has async methods but not sync methods)
         has_async = hasattr(bus, "apublish") or hasattr(bus, "apublish_async")
@@ -578,6 +718,8 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
             ModelOnexError: If event bus is not bound.
         """
         bus = self._require_event_bus()
+        # Lock binding after first publish operation - any bind_*() after this warns
+        self._lock_binding()
 
         try:
             event = self._build_event(event_type, data)
@@ -819,6 +961,9 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
                 error_code=EnumCoreErrorCode.INVALID_STATE,
                 context={"class_name": self.__class__.__name__},
             )
+
+        # Lock binding before starting listener thread - any bind_*() after this warns
+        self._lock_binding()
 
         # Create new handle
         handle = ModelEventBusListenerHandle(

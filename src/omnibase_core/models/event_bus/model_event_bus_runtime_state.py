@@ -12,7 +12,9 @@ Thread Safety:
     synchronization.
 """
 
-from pydantic import BaseModel, ConfigDict, Field
+import warnings
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.constants.constants_field_limits import (
     MAX_NAME_LENGTH,
@@ -32,11 +34,29 @@ class ModelEventBusRuntimeState(BaseModel):
         This model does NOT contain threading objects (those belong in
         ListenerHandle) or dynamic bindings like registry/event_bus references.
 
+    Empty String Semantics:
+        Both ``node_name`` and ``contract_path`` use empty string to mean
+        "not explicitly set" with consistent semantics:
+
+        - **node_name**: Empty string ``""`` means "no node name bound".
+          When empty, consumers should fall back to an alternative (e.g.,
+          class name). Use ``has_node_name()`` to check if explicitly set.
+
+        - **contract_path**: Empty string ``""`` OR ``None`` means "no contract
+          configured". Both are treated equivalently as "not set". Use
+          ``has_contract_path()`` to check if explicitly set.
+
+        This design allows callers to use simple truthiness checks:
+        ``if state.node_name:`` or ``if state.contract_path:`` to determine
+        if a value was explicitly provided.
+
     Attributes:
         node_name: Identifier for the node using this event bus binding.
-            Empty string indicates unbound state.
-        contract_path: Optional path to the contract YAML file that defines
-            the event bus configuration. None if not using contract-based config.
+            Empty string ``""`` indicates no node name is bound; consumers
+            should use a fallback (typically the class name).
+        contract_path: Path to the contract YAML file that defines the event
+            bus configuration. Empty string ``""`` or ``None`` both mean
+            "no contract configured".
         is_bound: Flag indicating whether the event bus is currently bound
             to a node and ready for operations.
 
@@ -48,6 +68,10 @@ class ModelEventBusRuntimeState(BaseModel):
         ... )
         >>> state.is_ready()
         True
+        >>> state.has_node_name()
+        True
+        >>> state.has_contract_path()
+        True
     """
 
     # Note on from_attributes=True: Added for pytest-xdist parallel execution
@@ -56,18 +80,78 @@ class ModelEventBusRuntimeState(BaseModel):
 
     node_name: str = Field(
         default="",
-        description="Node identifier for the event bus binding",
+        description=(
+            "Node identifier for the event bus binding. Empty string means "
+            "'not set' and consumers should fall back to class name. Use "
+            "has_node_name() to check if explicitly set."
+        ),
         max_length=MAX_NAME_LENGTH,
     )
     contract_path: str | None = Field(
         default=None,
-        description="Path to the contract YAML file defining event bus configuration",
+        description=(
+            "Path to the contract YAML file defining event bus configuration. "
+            "Both empty string and None mean 'no contract configured'. Use "
+            "has_contract_path() to check if explicitly set."
+        ),
         max_length=MAX_PATH_LENGTH,
     )
     is_bound: bool = Field(
         default=False,
         description="Whether the event bus is bound and ready for operations",
     )
+
+    @field_validator("node_name", mode="after")
+    @classmethod
+    def warn_empty_node_name(cls, v: str) -> str:
+        """Warn if node_name is empty string.
+
+        Empty string is semantically valid (means "use class name fallback"),
+        but may indicate unintentional misconfiguration. Issues a debug-level
+        warning for visibility without breaking functionality.
+
+        Args:
+            v: The node_name value to validate.
+
+        Returns:
+            The unmodified node_name value.
+        """
+        if v == "":
+            warnings.warn(
+                "ModelEventBusRuntimeState: node_name is empty string. "
+                "This is semantically valid (fallback to class name will be used), "
+                "but may indicate unintentional misconfiguration. "
+                "Consider binding a non-empty node_name for explicit identification.",
+                UserWarning,
+                stacklevel=2,
+            )
+        return v
+
+    @field_validator("contract_path", mode="after")
+    @classmethod
+    def warn_empty_contract_path(cls, v: str | None) -> str | None:
+        """Warn if contract_path is empty string.
+
+        Empty string is semantically treated as "no contract" (same as None),
+        but using an empty string may indicate unintentional misconfiguration.
+        Prefer using None explicitly when no contract is intended.
+
+        Args:
+            v: The contract_path value to validate.
+
+        Returns:
+            The unmodified contract_path value.
+        """
+        if v == "":
+            warnings.warn(
+                "ModelEventBusRuntimeState: contract_path is empty string. "
+                "Empty string is treated as 'no contract' (same as None), "
+                "but may indicate unintentional misconfiguration. "
+                "Consider using None explicitly when no contract is intended.",
+                UserWarning,
+                stacklevel=2,
+            )
+        return v
 
     def is_ready(self) -> bool:
         """Check if the event bus is bound and has a valid node name.
@@ -77,11 +161,62 @@ class ModelEventBusRuntimeState(BaseModel):
         """
         return self.is_bound and bool(self.node_name)
 
-    def has_contract(self) -> bool:
-        """Check if a contract path is configured.
+    def has_node_name(self) -> bool:
+        """Check if a node name has been explicitly set (non-empty).
+
+        This method provides a semantic check for whether a node name was
+        explicitly bound. Empty string is treated as "not set".
 
         Returns:
-            True if contract_path is set, False otherwise.
+            True if node_name is a non-empty string, False otherwise.
+
+        Example:
+            >>> state = ModelEventBusRuntimeState(node_name="my_node")
+            >>> state.has_node_name()
+            True
+            >>> state = ModelEventBusRuntimeState(node_name="")
+            >>> state.has_node_name()
+            False
+        """
+        return bool(self.node_name)
+
+    def has_contract_path(self) -> bool:
+        """Check if a contract path has been explicitly set (non-empty).
+
+        This method provides a semantic check for whether a contract path was
+        explicitly configured. Both empty string and None are treated as
+        "not set" for consistency with empty string semantics.
+
+        Note:
+            This differs from ``has_contract()`` which only checks for None.
+            Use this method for consistent empty-string-aware checking.
+
+        Returns:
+            True if contract_path is a non-empty string, False otherwise.
+
+        Example:
+            >>> state = ModelEventBusRuntimeState(contract_path="/path.yaml")
+            >>> state.has_contract_path()
+            True
+            >>> state = ModelEventBusRuntimeState(contract_path="")
+            >>> state.has_contract_path()
+            False
+            >>> state = ModelEventBusRuntimeState(contract_path=None)
+            >>> state.has_contract_path()
+            False
+        """
+        return bool(self.contract_path)
+
+    def has_contract(self) -> bool:
+        """Check if a contract path is configured (not None).
+
+        .. deprecated::
+            Use ``has_contract_path()`` instead for consistent empty-string
+            semantics. This method only checks for None, not empty string.
+
+        Returns:
+            True if contract_path is not None, False otherwise.
+            Note: Returns True for empty string, which may not be intended.
         """
         return self.contract_path is not None
 
