@@ -1121,13 +1121,13 @@ async def _execute_parallel(
         # steps in the wave are skipped (not added to completed/failed).
         wave_stop_triggered = False
 
-        # Process results from parallel execution
+        # Process results from sequential wave execution (Fix 57)
         for step, action, action_payload_size, error in results:
             # v1.0.3 Fix 22: Skip remaining steps in wave if "stop" was triggered
             if wave_stop_triggered:
                 # This step's result is ignored - it's effectively skipped
-                # Note: The step already executed (asyncio.gather completed), but we
-                # don't add it to completed/failed lists. This is the "skip" behavior.
+                # Note: The step already executed, but we don't add it to
+                # completed/failed lists. This is the "skip" behavior.
                 logging.debug(
                     f"Workflow '{workflow_definition.workflow_metadata.workflow_name}' "
                     f"step '{step.step_name}' ({step.step_id}) skipped due to wave stop"
