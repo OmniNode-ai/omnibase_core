@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2025 OmniNode Team
+# SPDX-License-Identifier: Apache-2.0
 """
 Contract-derived capabilities model for capability-based auto-discovery.
 
@@ -32,7 +34,7 @@ class ModelContractCapabilities(BaseModel):
     Example:
         capabilities = ModelContractCapabilities(
             contract_type="orchestrator",
-            contract_version="2.0.0",
+            contract_version=ModelSemVer(major=2, minor=0, patch=0),
             intent_types=["OrderCreated", "PaymentProcessed"],
             protocols=["ProtocolOrchestrator", "ProtocolWorkflowReducer"],
             capability_tags=["async", "distributed"],

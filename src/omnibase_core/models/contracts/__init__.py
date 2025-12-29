@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2025 OmniNode Team
+# SPDX-License-Identifier: Apache-2.0
 """Contract Models for ONEX Four-Node Architecture.
 
 This module provides Pydantic models for validating and managing contract

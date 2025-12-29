@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2025 OmniNode Team
+# SPDX-License-Identifier: Apache-2.0
 """
 ProtocolDependencyResolver - Protocol for capability-based dependency resolution.
 

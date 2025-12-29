@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2025 OmniNode Team
+# SPDX-License-Identifier: Apache-2.0
 """
 Model Dependency Specification for Capability-Based Dependencies.
 
@@ -33,8 +35,6 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.common.model_error_context import ModelErrorContext
-from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 # Type aliases for Literal types
@@ -200,19 +200,11 @@ class ModelDependencySpec(BaseModel):
                     "None were provided or all were empty."
                 ),
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                details=ModelErrorContext.with_context(
-                    {
-                        "name": ModelSchemaValue.from_value(self.name),
-                        "capability": ModelSchemaValue.from_value(str(self.capability)),
-                        "intent_types": ModelSchemaValue.from_value(
-                            str(self.intent_types)
-                        ),
-                        "protocol": ModelSchemaValue.from_value(str(self.protocol)),
-                        "requirement": ModelSchemaValue.from_value(
-                            "At least one of: capability, intent_types, protocol"
-                        ),
-                    },
-                ),
+                name=self.name,
+                capability=str(self.capability),
+                intent_types=str(self.intent_types),
+                protocol=str(self.protocol),
+                requirement="At least one of: capability, intent_types, protocol",
             )
 
         return self

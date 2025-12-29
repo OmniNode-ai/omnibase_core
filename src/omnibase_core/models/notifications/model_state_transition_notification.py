@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2025 OmniNode Team
+# SPDX-License-Identifier: Apache-2.0
 """
 State Transition Notification Model.
 
@@ -158,6 +160,7 @@ class ModelStateTransitionNotification(BaseModel):
 
     projection_version: int = Field(
         default=...,
+        ge=0,
         description="Monotonically increasing version of the projection",
     )
 
