@@ -86,6 +86,9 @@ from .json_types import (
 # Effect result type aliases (centralized to avoid primitive soup unions)
 from .type_effect_result import DbParamType, EffectResultType
 
+# Schema type aliases (for type-safe schema patterns)
+from .type_schema_aliases import SchemaDict, StepOutputs
+
 # Serializable value types (for JSON-compatible data)
 from .type_serializable_value import SerializableValue, SerializedDict
 from .typed_dict_access_control_config import TypedDictAccessControlConfig
@@ -386,6 +389,9 @@ __all__ = [
     # Effect result type aliases
     "EffectResultType",
     "DbParamType",
+    # Schema type aliases
+    "SchemaDict",
+    "StepOutputs",
     # JSON type aliases
     "JsonPrimitive",
     "JsonValue",
