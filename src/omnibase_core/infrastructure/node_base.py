@@ -158,12 +158,12 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
             # Re-raise ONEX errors without wrapping to preserve original error code/context
             self._emit_initialization_failure(e)
             raise
-        except (
+        except (  # init-errors-ok: these exceptions are legitimate initialization failures
             ValueError,
             TypeError,
             AttributeError,
             RuntimeError,
-            OSError,  # Includes FileNotFoundError for missing contract files
+            OSError,  # Required: FileNotFoundError for missing contract files in _load_contract_and_initialize
         ) as e:
             self._emit_initialization_failure(e)
             raise ModelOnexError(

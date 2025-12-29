@@ -88,7 +88,8 @@ class MixinNodeExecutor(MixinEventDrivenNode):
             self._register_signal_handlers()
             self._log_info("Executor started successfully")
             await self._executor_event_loop()
-        except BaseException as e:  # catch-all-ok: cleanup during executor startup
+        except Exception as e:  # fallback-ok: cleanup during executor startup
+            # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
             self._log_error(f"Failed to start executor: {e}")
             await self.stop_executor_mode()
             raise
@@ -117,14 +118,14 @@ class MixinNodeExecutor(MixinEventDrivenNode):
             for callback in self._shutdown_callbacks:
                 try:
                     callback()
-                except (
-                    BaseException
-                ) as e:  # catch-all-ok: callbacks are user-provided, can raise anything
+                except Exception as e:  # fallback-ok: user callbacks must not crash shutdown
+                    # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
                     self._log_error(f"Shutdown callback failed: {e}")
             self.cleanup_event_handlers()
             self._executor_running = False
             self._log_info("Executor stopped successfully")
-        except BaseException as e:  # catch-all-ok: cleanup during executor shutdown
+        except Exception as e:  # fallback-ok: shutdown must complete even if cleanup fails
+            # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
             self._log_error(f"Error during executor shutdown: {e}")
             self._executor_running = False
 

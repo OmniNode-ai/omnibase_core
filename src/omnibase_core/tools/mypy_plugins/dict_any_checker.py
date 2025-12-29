@@ -413,13 +413,13 @@ class DictAnyCheckerPlugin(Plugin):
                     if result is not None:
                         return result
 
-        except (
+        except (  # tool-resilience-ok: mypy internal API may vary across versions
             AttributeError,
             KeyError,
             TypeError,
             RuntimeError,
             IndexError,
-        ):  # fallback-ok: graceful handling of internal mypy API access issues
+        ):
             pass
 
         return None
@@ -476,12 +476,12 @@ class DictAnyCheckerPlugin(Plugin):
                     if modules is not None:
                         return cast("dict[str, MypyFile]", modules)
 
-        except (
+        except (  # tool-resilience-ok: mypy API access may fail on version differences
             AttributeError,
             KeyError,
             TypeError,
             RuntimeError,
-        ):  # fallback-ok: mypy API access may fail on version differences
+        ):
             pass
 
         return None
@@ -553,13 +553,13 @@ class DictAnyCheckerPlugin(Plugin):
             if isinstance(node, Decorator):
                 return node
 
-        except (
+        except (  # tool-resilience-ok: symbol lookup may fail for unanalyzed code
             AttributeError,
             KeyError,
             TypeError,
             RuntimeError,
             IndexError,
-        ):  # fallback-ok: symbol lookup may fail for unanalyzed code
+        ):
             pass
 
         return None

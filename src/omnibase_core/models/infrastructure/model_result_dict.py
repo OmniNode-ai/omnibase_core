@@ -46,13 +46,19 @@ class ModelResultDict(BaseModel):
 
     # Protocol method implementations
     def execute(self, **kwargs: object) -> bool:
-        """Execute or update execution status (Executable protocol)."""
+        """Execute or update execution status (Executable protocol).
+
+        Raises:
+            ModelOnexError: If setting an attribute fails or validation error occurs
+        """
         try:
             # Update any relevant execution fields
             for key, value in kwargs.items():
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
+        except ModelOnexError:
+            raise  # Re-raise without double-wrapping
         except (AttributeError, ValueError, TypeError, ValidationError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -60,16 +66,22 @@ class ModelResultDict(BaseModel):
             ) from e
 
     def configure(self, **kwargs: object) -> bool:
-        """Configure instance with provided parameters (Configurable protocol)."""
+        """Configure instance with provided parameters (Configurable protocol).
+
+        Raises:
+            ModelOnexError: If setting an attribute fails or validation error occurs
+        """
         try:
             for key, value in kwargs.items():
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
+        except ModelOnexError:
+            raise  # Re-raise without double-wrapping
         except (AttributeError, ValueError, TypeError, ValidationError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Operation failed: {e}",
+                message=f"Configuration failed: {e}",
             ) from e
 
     def serialize(self) -> SerializedDict:

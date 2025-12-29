@@ -282,7 +282,8 @@ class MixinServiceRegistry:
                 for callback in self.discovery_callbacks:
                     try:
                         callback("tool_discovered", entry)
-                    except BaseException as e:  # catch-all-ok: callbacks are user-provided, can raise anything
+                    except Exception as e:  # fallback-ok: user callbacks must not crash discovery
+                        # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
                         logger.exception(f"Discovery callback error: {e}")
             else:
                 # Update existing entry
@@ -313,7 +314,8 @@ class MixinServiceRegistry:
                     for callback in self.discovery_callbacks:
                         try:
                             callback("tool_offline", self.service_registry[node_id_str])
-                        except BaseException as e:  # catch-all-ok: callbacks are user-provided, can raise anything
+                        except Exception as e:  # fallback-ok: user callbacks must not crash discovery
+                            # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
                             logger.exception(f"Discovery callback error: {e}")
 
         except (AttributeError, KeyError, TypeError, ValueError) as e:
