@@ -220,16 +220,19 @@ class ModelNodeQualityIndicators(BaseModel):
 
     def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
-        metadata = {}
-        # Include common metadata fields
-        for field in ["name", "description", "version", "tags", "metadata"]:
-            if hasattr(self, field):
-                value = getattr(self, field)
-                if value is not None:
-                    metadata[field] = (
-                        str(value) if not isinstance(value, (dict, list)) else value
-                    )
-        return metadata  # type: ignore[return-value]
+        result: TypedDictMetadataDict = {}
+        # Pack quality indicator fields into metadata dict
+        result["metadata"] = {
+            "has_documentation": self.has_documentation,
+            "has_examples": self.has_examples,
+            "documentation_quality": self.documentation_quality.value,
+            "is_well_documented": self.is_well_documented,
+            "needs_documentation": self.needs_documentation,
+            "quality_score": self.get_quality_score(),
+            "quality_level": self.get_quality_level(),
+            "improvement_suggestions": self.get_improvement_suggestions(),
+        }
+        return result
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""

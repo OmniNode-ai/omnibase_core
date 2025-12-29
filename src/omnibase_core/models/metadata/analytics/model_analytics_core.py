@@ -149,16 +149,21 @@ class ModelAnalyticsCore(BaseModel):
 
     def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
-        metadata = {}
-        # Include common metadata fields
-        for field in ["name", "description", "version", "tags", "metadata"]:
-            if hasattr(self, field):
-                value = getattr(self, field)
-                if value is not None:
-                    metadata[field] = (
-                        str(value) if not isinstance(value, (dict, list)) else value
-                    )
-        return metadata  # type: ignore[return-value]
+        result: TypedDictMetadataDict = {}
+        # Map collection_display_name to name if available
+        if self.collection_display_name is not None:
+            result["name"] = self.collection_display_name
+        # Pack all analytics core data into metadata
+        result["metadata"] = {
+            "collection_id": str(self.collection_id),
+            "collection_display_name": self.collection_display_name,
+            "total_nodes": self.total_nodes,
+            "active_nodes": self.active_nodes,
+            "deprecated_nodes": self.deprecated_nodes,
+            "disabled_nodes": self.disabled_nodes,
+            "active_node_ratio": self.active_node_ratio,
+        }
+        return result
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""

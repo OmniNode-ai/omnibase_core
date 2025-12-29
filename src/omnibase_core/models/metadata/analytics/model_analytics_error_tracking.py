@@ -194,16 +194,17 @@ class ModelAnalyticsErrorTracking(BaseModel):
 
     def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
-        metadata = {}
-        # Include common metadata fields
-        for field in ["name", "description", "version", "tags", "metadata"]:
-            if hasattr(self, field):
-                value = getattr(self, field)
-                if value is not None:
-                    metadata[field] = (
-                        str(value) if not isinstance(value, (dict, list)) else value
-                    )
-        return metadata  # type: ignore[return-value]
+        result: TypedDictMetadataDict = {}
+        # Analytics models don't have standard name/description/version fields
+        # Pack all error tracking data into metadata
+        result["metadata"] = {
+            "error_count": self.error_count,
+            "warning_count": self.warning_count,
+            "critical_error_count": self.critical_error_count,
+            "total_issues": self.total_issues,
+            "severity_level": self.get_error_severity_level(),
+        }
+        return result
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
