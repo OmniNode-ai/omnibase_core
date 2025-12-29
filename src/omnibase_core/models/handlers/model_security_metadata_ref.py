@@ -126,5 +126,9 @@ class ModelSecurityMetadataRef(BaseModel):
         from_attributes=True,
     )
 
+    def __repr__(self) -> str:
+        """Return a concise representation for debugging."""
+        return f"ModelSecurityMetadataRef(ref={self.ref!r})"
+
 
 __all__ = ["ModelSecurityMetadataRef"]

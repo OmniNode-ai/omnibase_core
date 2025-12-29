@@ -144,5 +144,12 @@ class ModelArtifactRef(BaseModel):
         "can be retrieved.",
     )
 
+    def __repr__(self) -> str:
+        """Return a concise representation for debugging."""
+        parts = [f"ref={self.ref!r}"]
+        if self.version:
+            parts.append(f"version={self.version}")
+        return f"ModelArtifactRef({', '.join(parts)})"
+
 
 __all__ = ["ModelArtifactRef"]

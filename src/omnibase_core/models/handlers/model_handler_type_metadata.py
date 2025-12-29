@@ -56,9 +56,7 @@ See Also:
     Initial implementation as part of OMN-1121 handler type metadata.
 """
 
-from __future__ import annotations
-
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_handler_type_category import EnumHandlerTypeCategory
 
@@ -71,7 +69,7 @@ class ModelHandlerTypeMetadata(BaseModel):
     handler type category and can be retrieved via :func:`get_handler_type_metadata`.
 
     Attributes:
-        category: The handler type category (COMPUTE, EFFECT, NONDETERMINISTIC_COMPUTE)
+        category: The handler type category (COMPUTE, EFFECT, NONDETERMINISTIC_COMPUTE).
         is_replay_safe: Whether handler can be safely replayed during recovery.
             True for deterministic handlers (same input = same output).
         requires_secrets: Whether handler needs access to secrets/credentials.
@@ -103,12 +101,59 @@ class ModelHandlerTypeMetadata(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
-    category: EnumHandlerTypeCategory
-    is_replay_safe: bool
-    requires_secrets: bool
-    is_deterministic: bool
-    allows_caching: bool
-    requires_idempotency_key: bool
+    category: EnumHandlerTypeCategory = Field(
+        ...,
+        description=(
+            "The handler type category. Determines the behavioral classification "
+            "of the handler: COMPUTE (pure/deterministic), EFFECT (I/O), or "
+            "NONDETERMINISTIC_COMPUTE (pure but non-deterministic)."
+        ),
+    )
+
+    is_replay_safe: bool = Field(
+        ...,
+        description=(
+            "Whether handler can be safely replayed during recovery. "
+            "True for deterministic handlers where same input always produces same output. "
+            "False for EFFECT and NONDETERMINISTIC_COMPUTE handlers."
+        ),
+    )
+
+    requires_secrets: bool = Field(
+        ...,
+        description=(
+            "Whether handler needs access to secrets/credentials. "
+            "True for EFFECT handlers that interact with external systems. "
+            "False for COMPUTE handlers that have no external dependencies."
+        ),
+    )
+
+    is_deterministic: bool = Field(
+        ...,
+        description=(
+            "Whether handler produces deterministic output for the same input. "
+            "True only for COMPUTE handlers. False for EFFECT handlers (I/O is "
+            "inherently non-deterministic) and NONDETERMINISTIC_COMPUTE (e.g., random)."
+        ),
+    )
+
+    allows_caching: bool = Field(
+        ...,
+        description=(
+            "Whether handler results can be cached. "
+            "True for COMPUTE (cache by input hash) and NONDETERMINISTIC_COMPUTE "
+            "(cache with appropriate keys). False for EFFECT handlers."
+        ),
+    )
+
+    requires_idempotency_key: bool = Field(
+        ...,
+        description=(
+            "Whether handler needs idempotency key for replay/retry. "
+            "True for non-deterministic handlers to track execution state and "
+            "prevent duplicate side effects. False for pure COMPUTE handlers."
+        ),
+    )
 
     def __repr__(self) -> str:
         """Return a concise representation for debugging."""
