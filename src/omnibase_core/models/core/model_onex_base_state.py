@@ -129,4 +129,4 @@ class ModelOnexInputState(BaseModel):
         result: ModelOnexInternalInputState = (
             ModelOnexInternalInputState.from_boundary_state(self)
         )
-        return result  # type: ignore[no-any-return]
+        return result

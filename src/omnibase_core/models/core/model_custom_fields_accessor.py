@@ -65,7 +65,7 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
                     # Homogeneous list assumption: if first element is ModelSchemaValue,
                     # all elements are (lists come from single serialization source)
                     elif isinstance(value_list[0], ModelSchemaValue):
-                        converted_list_fields[key] = value_list  # type: ignore[assignment]
+                        converted_list_fields[key] = value_list
                     else:
                         converted_list_fields[key] = [
                             ModelSchemaValue.from_value(item) for item in value_list
@@ -153,7 +153,7 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
                 # Homogeneous list assumption: if first element is ModelSchemaValue,
                 # all elements are (lists come from single serialization source)
                 if value and isinstance(value[0], ModelSchemaValue):
-                    list_fields_typed[key] = value  # type: ignore[assignment]
+                    list_fields_typed[key] = value
                 else:
                     list_fields_typed[key] = [
                         ModelSchemaValue.from_value(item) for item in value
@@ -216,7 +216,7 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
                     # Homogeneous list assumption: if first element is ModelSchemaValue,
                     # all elements are (lists come from single serialization source)
                     if value and isinstance(value[0], ModelSchemaValue):
-                        self.list_fields[path] = value  # type: ignore[assignment]
+                        self.list_fields[path] = value
                     else:
                         # Convert raw list to ModelSchemaValue list
                         self.list_fields[path] = [

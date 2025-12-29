@@ -91,7 +91,6 @@ Security Considerations:
         (https://owasp.org/www-community/attacks/Denial_of_Service)
 """
 
-import asyncio
 import heapq
 import json
 import logging
@@ -552,6 +551,11 @@ async def validate_workflow_definition(
                     f"Step '{step.step_name}' depends on non-existent step: {dep_id}"
                 )
 
+        # Note: step_type="conditional" is already rejected by:
+        # 1. Pydantic Literal type at model definition (type-level enforcement)
+        # 2. RESERVED_STEP_TYPES check at lines 532-536 (runtime enforcement)
+        # No additional check needed here.
+
     return errors
 
 
@@ -895,12 +899,23 @@ async def _execute_parallel(
     timeout_deadline: float,
 ) -> WorkflowExecutionResult:
     """
-    Execute workflow steps in parallel (respecting dependencies).
+    Execute workflow steps in parallel mode (wave-based ordering).
 
-    Steps are executed in waves based on dependency order. Within each wave,
-    all steps with met dependencies run concurrently via asyncio.gather.
-    Steps in the same wave cannot see each other's outputs (they run in parallel),
-    but can access outputs from prior waves via workflow context.
+    v1.0.5 Fix 57 - Synchronous Execution in v1.0:
+        While this function uses async signature for API compatibility, v1.0
+        execution is SYNCHRONOUS within the async context. Steps are organized
+        into waves based on dependencies, but within each wave they execute
+        SEQUENTIALLY (not concurrently). Actual parallel concurrency is deferred
+        to omnibase_infra in future versions.
+
+        The "parallel" in this function name refers to the LOGICAL wave structure
+        (steps in the same wave COULD run in parallel), not actual concurrent
+        execution. This design allows seamless upgrade to true parallelism in
+        v1.1+ without API changes.
+
+    Steps are executed in waves based on dependency order. Steps in the same wave
+    cannot see each other's outputs, but can access outputs from prior waves via
+    workflow context.
 
     Args:
         workflow_definition: Workflow definition from YAML contract.
@@ -913,22 +928,9 @@ async def _execute_parallel(
 
     Raises:
         ModelOnexError: If workflow validation fails during setup, or if total
-            payload limit (MAX_TOTAL_PAYLOAD_SIZE_BYTES) is exceeded. Unlike
-            sequential mode, payload limit violations in parallel mode fail
-            the entire workflow immediately after all wave steps complete,
-            raising ModelOnexError rather than treating it as a step failure.
+            payload limit (MAX_TOTAL_PAYLOAD_SIZE_BYTES) is exceeded.
 
     Note:
-        The error handling behavior differs from sequential mode:
-        - Sequential mode: Payload limit violations are caught and treated as
-          step failures per error_action configuration (workflow returns FAILED).
-        - Parallel mode: Payload limit violations raise ModelOnexError immediately
-          after the current wave completes (error propagates to caller).
-
-        This difference exists because parallel execution processes all steps in a
-        wave simultaneously, making per-step error handling less meaningful when
-        the aggregate payload exceeds the limit.
-
         Individual step errors (including MAX_STEP_PAYLOAD_SIZE_BYTES violations)
         are still handled per-step and respect the error_action configuration.
 
@@ -1082,12 +1084,17 @@ async def _execute_parallel(
             workflow_id, completed_step_ids, step_outputs
         )
 
-        # Execute all ready steps in parallel using asyncio.gather
-        tasks = [
-            asyncio.create_task(execute_step(step, wave_context))
-            for step in ready_steps
-        ]
-        results = await asyncio.gather(*tasks)
+        # v1.0.5 Fix 57: Execute steps SEQUENTIALLY within each wave
+        # Parallel waves are represented logically as metadata only.
+        # Actual concurrency is deferred to omnibase_infra in future versions.
+        # The wave structure ensures correct dependency ordering while keeping
+        # v1.0 execution simple and deterministic.
+        results: list[
+            tuple[ModelWorkflowStep, ModelAction | None, int, Exception | None]
+        ] = []
+        for step in ready_steps:
+            result = await execute_step(step, wave_context)
+            results.append(result)
 
         # v1.0.3 Fix 22: Partial Parallel-Wave Failure
         # Track if a "stop" was triggered within this wave. When triggered, remaining

@@ -19,7 +19,12 @@ StructuredData = dict[str, ParameterValue]
 
 
 class ModelWorkflowNode(BaseModel):
-    """A node definition in a workflow graph."""
+    """A node definition in a workflow graph.
+
+    v1.0.5 Reserved Fields Governance:
+        Extra fields are allowed ("extra": "ignore") to support reserved fields
+        for forward compatibility.
+    """
 
     # Model version for instance tracking
     version: ModelSemVer = Field(
@@ -45,7 +50,8 @@ class ModelWorkflowNode(BaseModel):
     )
 
     model_config = {
-        "extra": "forbid",
+        # v1.0.5 Fix 54: Reserved Fields Governance
+        "extra": "ignore",
         "use_enum_values": False,
         "validate_assignment": True,
         "frozen": True,

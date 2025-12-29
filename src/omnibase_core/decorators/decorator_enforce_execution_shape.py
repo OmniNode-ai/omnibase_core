@@ -144,6 +144,6 @@ def enforce_execution_shape(
             # Just execute the function
             return func(*args, **kwargs)
 
-        return sync_wrapper  # type: ignore[return-value]
+        return sync_wrapper
 
     return decorator

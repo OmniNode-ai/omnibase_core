@@ -270,7 +270,7 @@ class ModelCliAction(BaseModel):  # Protocols removed temporarily for syntax val
     @allow_dict_any
     def serialize(self) -> TypedDictCliActionSerialized:
         """Serialize to dictionary (Serializable protocol)."""
-        return self.model_dump(exclude_none=False, by_alias=True)  # type: ignore[no-any-return]
+        return self.model_dump(exclude_none=False, by_alias=True)
 
     def get_name(self) -> str:
         """Get name (Nameable protocol)."""

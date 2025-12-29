@@ -580,7 +580,7 @@ class MessageDispatchEngine:
         .. versionadded:: 0.4.0
         """
         with self._metrics_lock:
-            self._metrics[key] += value  # type: ignore[literal-required]
+            self._metrics[key] += value
 
     def _update_structured_metrics(
         self,

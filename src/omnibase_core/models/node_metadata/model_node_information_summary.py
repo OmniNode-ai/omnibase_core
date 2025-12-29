@@ -7,6 +7,8 @@ Follows ONEX one-model-per-file naming conventions.
 
 from __future__ import annotations
 
+from typing import cast
+
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -86,7 +88,7 @@ class ModelNodeInformationSummary(BaseModel):
                     metadata[field] = (
                         str(value) if not isinstance(value, (dict, list)) else value
                     )
-        return metadata  # type: ignore[return-value]
+        return cast(TypedDictMetadataDict, metadata)
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""

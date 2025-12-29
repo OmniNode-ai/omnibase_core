@@ -86,7 +86,8 @@ class ModelExecutionGraph(BaseModel):
     )
 
     model_config = {
-        "extra": "forbid",
+        # v1.0.5 Fix 54: Reserved Fields Governance
+        "extra": "ignore",
         "use_enum_values": False,
         "validate_assignment": True,
         "frozen": True,

@@ -11,7 +11,12 @@ from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelCoordinationRules(BaseModel):
-    """Rules for workflow coordination."""
+    """Rules for workflow coordination.
+
+    v1.0.5 Reserved Fields Governance:
+        Extra fields are allowed ("extra": "ignore") to support reserved fields
+        for forward compatibility.
+    """
 
     # Model version for instance tracking
     version: ModelSemVer = Field(
@@ -35,7 +40,8 @@ class ModelCoordinationRules(BaseModel):
     )
 
     model_config = {
-        "extra": "forbid",
+        # v1.0.5 Fix 54: Reserved Fields Governance
+        "extra": "ignore",
         "use_enum_values": False,
         "validate_assignment": True,
         "frozen": True,

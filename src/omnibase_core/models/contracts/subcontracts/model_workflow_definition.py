@@ -19,10 +19,22 @@ from .model_workflow_definition_metadata import ModelWorkflowDefinitionMetadata
 
 
 class ModelWorkflowDefinition(BaseModel):
-    """Complete workflow definition."""
+    """Complete workflow definition.
+
+    v1.0.5 Reserved Fields Governance:
+        Extra fields are allowed ("extra": "ignore") to support reserved fields
+        for forward compatibility. Reserved fields (execution_graph, saga fields,
+        compensation fields, etc.) are preserved during round-trip serialization
+        but are NOT validated beyond structural type checking and MUST NOT
+        influence any runtime decision in v1.0.
+    """
 
     model_config = {
-        "extra": "forbid",
+        # v1.0.5 Fix 54: Reserved Fields Governance
+        # Use "ignore" instead of "forbid" to preserve reserved fields during
+        # round-trip serialization. Reserved fields exist for forward compatibility
+        # and must not be rejected or validated in v1.0.
+        "extra": "ignore",
         "use_enum_values": False,
         "validate_assignment": True,
         "frozen": True,
