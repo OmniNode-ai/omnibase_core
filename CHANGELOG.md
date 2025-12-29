@@ -41,7 +41,7 @@ This aligns with the ONEX thread safety model documented in [docs/guides/THREADI
 
 **Migration Guide**:
 
-**1. Direct Mutation to Immutable Copies**
+#### 1. Direct Mutation to Immutable Copies
 
 ```python
 # Before (v0.3.x) - Direct mutation was possible
@@ -59,7 +59,7 @@ updated = original.model_copy(update={
 })
 ```
 
-**2. Handling Extra Fields**
+#### 2. Handling Extra Fields
 
 ```python
 # Before (v0.3.x) - Extra fields might have been silently ignored
@@ -87,7 +87,7 @@ metadata = ModelWorkflowDefinitionMetadata(
 )
 ```
 
-**3. Nested Model Updates**
+#### 3. Nested Model Updates
 
 ```python
 # For deeply nested updates, rebuild from the inside out:
@@ -102,7 +102,7 @@ new_metadata = original.workflow_metadata.model_copy(
 updated = original.model_copy(update={"workflow_metadata": new_metadata})
 ```
 
-**4. Pattern for Workflow Builders**
+#### 4. Pattern for Workflow Builders
 
 ```python
 # If you have a builder pattern that relied on mutation, convert to accumulation:
@@ -129,7 +129,7 @@ class WorkflowBuilder:
         return ModelWorkflowDefinition(**{**self._base_config, **self._updates})
 ```
 
-**5. Testing Code Updates**
+#### 5. Testing Code Updates
 
 ```python
 # Tests that mutated models need updating:
@@ -302,7 +302,7 @@ All legacy patterns marked with `TODO(v1.0)` comments in the source code will be
 
 **Migration Guide**:
 
-**1. Update Initialization Pattern**
+#### 1. Update Initialization Pattern
 
 ```python
 # Before (v0.4.x) - Implicit initialization
@@ -323,7 +323,7 @@ class MyNode(NodeCompute, MixinEventBus[MyInputState, MyOutputState]):
         self.bind_contract_path("/path/to/contract.yaml")
 ```
 
-**2. Update Event Bus Access**
+#### 2. Update Event Bus Access
 
 ```python
 # Before (v0.4.x) - Direct attribute access
@@ -337,7 +337,7 @@ if self._has_event_bus():
 bus = self._require_event_bus()  # Raises ModelOnexError if not bound
 ```
 
-**3. Update Listener Management**
+#### 3. Update Listener Management
 
 ```python
 # Before (v0.4.x) - Manual thread management
@@ -364,7 +364,7 @@ class MyNode(MixinEventBus[MyInputState, MyOutputState]):
             self.logger.warning("Listener did not stop within timeout")
 ```
 
-**4. Update State Access**
+#### 4. Update State Access
 
 ```python
 # Before (v0.4.x) - Direct attribute access
