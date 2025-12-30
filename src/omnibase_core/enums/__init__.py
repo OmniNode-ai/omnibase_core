@@ -246,7 +246,8 @@ from .enum_unicode_form import EnumUnicodeForm
 
 # URI-related enums
 from .enum_uri_type import EnumUriType
-from .enum_validation import EnumErrorSeverity, EnumValidationLevel, EnumValidationMode
+from .enum_validation import EnumErrorSeverity, EnumValidationLevel
+from .enum_validation_mode import EnumValidationMode
 from .enum_validation_rule_type import EnumValidationRuleType
 from .enum_value_type import EnumValueType
 

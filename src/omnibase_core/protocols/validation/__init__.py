@@ -46,12 +46,21 @@ from omnibase_core.protocols.validation.protocol_validation_result import (
 )
 from omnibase_core.protocols.validation.protocol_validator import ProtocolValidator
 
+# Contract Validation Invariant Checker (OMN-1146)
+# Import at package level to avoid long import paths
+# Uses lazy import pattern for circular import prevention
+from omnibase_core.protocols.protocol_contract_validation_invariant_checker import (
+    ProtocolContractValidationInvariantChecker,
+)
+
 __all__ = [
     # Core Validation
     "ProtocolValidationError",
     "ProtocolValidationResult",
     "ProtocolValidator",
     "ProtocolValidationDecorator",
+    # Contract Validation Invariant Checker (OMN-1146)
+    "ProtocolContractValidationInvariantChecker",
     # Compliance
     "ProtocolComplianceRule",
     "ProtocolComplianceViolation",

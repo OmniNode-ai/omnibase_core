@@ -208,6 +208,7 @@ from omnibase_core.protocols.validation import (
     ProtocolComplianceRule,
     ProtocolComplianceValidator,
     ProtocolComplianceViolation,
+    ProtocolContractValidationInvariantChecker,
     ProtocolONEXStandards,
     ProtocolQualityValidator,
     ProtocolValidationDecorator,
@@ -368,4 +369,6 @@ __all__ = [
     "ProtocolComplianceReport",
     "ProtocolComplianceValidator",
     "ProtocolQualityValidator",
+    # Contract Validation Invariant Checker (OMN-1146)
+    "ProtocolContractValidationInvariantChecker",
 ]
