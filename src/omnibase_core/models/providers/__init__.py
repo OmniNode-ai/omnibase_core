@@ -22,7 +22,7 @@ Creating a provider descriptor:
     >>> from omnibase_core.models.providers import ModelProviderDescriptor
     >>>
     >>> descriptor = ModelProviderDescriptor(
-    ...     provider_id=uuid4(),
+    ...     provider_id=uuid4(),  # UUID type
     ...     capabilities=["database.relational", "database.postgresql"],
     ...     adapter="omnibase_infra.adapters.PostgresAdapter",
     ...     connection_ref="secrets://postgres/primary",

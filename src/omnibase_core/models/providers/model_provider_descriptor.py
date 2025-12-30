@@ -56,6 +56,7 @@ See Also:
     Initial implementation as part of OMN-1153 provider registry models.
 """
 
+import fnmatch
 import re
 from typing import TYPE_CHECKING, Any
 from uuid import UUID
@@ -149,10 +150,17 @@ class ModelProviderDescriptor(BaseModel):
         >>> # (even if declared_features also has data)
 
     Note:
+        This model uses ``from_attributes=True`` in its ConfigDict. This enables
+        pytest-xdist compatibility by allowing Pydantic to construct instances
+        from objects with matching attributes, even when class identity differs
+        across parallel test workers. See CLAUDE.md "Pydantic from_attributes=True
+        for Value Objects" section for project convention details.
+
         This model is frozen (immutable) after creation, making it thread-safe
         for concurrent read access. Use model_copy() to create modified copies.
     """
 
+    # from_attributes=True enables pytest-xdist compatibility (class identity across workers)
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     provider_id: UUID = Field(
@@ -325,12 +333,23 @@ class ModelProviderDescriptor(BaseModel):
     @field_validator("connection_ref")
     @classmethod
     def validate_connection_ref(cls, v: str) -> str:
-        """Validate connection reference has valid scheme and path.
+        """Validate connection reference format.
 
-        Connection references must follow the format "scheme://path" where:
-        - scheme: lowercase alphanumeric, starting with a letter
-          (e.g., "secrets", "env", "vault", "file", "http", "s3")
-        - path: non-empty string after the "://" separator
+        Connection references must follow the pattern: scheme://path
+
+        The scheme must be lowercase alphanumeric (starting with a letter),
+        and the path must be non-empty.
+
+        Common Supported Schemes:
+            - secrets:// - Secret management (e.g., secrets://postgres/primary)
+            - env:// - Environment variables (e.g., env://DATABASE_URL)
+            - vault:// - HashiCorp Vault (e.g., vault://secret/data/db)
+            - file:// - File system paths (e.g., file:///etc/config.yaml)
+            - http:// / https:// - HTTP endpoints
+            - s3:// - S3 bucket references
+
+        Custom schemes are also accepted as long as they follow the
+        lowercase alphanumeric pattern (starting with a letter).
 
         Args:
             v: Connection reference string to validate.
@@ -339,17 +358,14 @@ class ModelProviderDescriptor(BaseModel):
             The validated connection reference (unchanged if valid).
 
         Raises:
-            ModelOnexError: If the connection reference does not contain
-                the "://" scheme separator, has an empty/invalid scheme,
-                or has an empty path. Error code is VALIDATION_ERROR.
+            ModelOnexError: If the connection reference format is invalid.
+                This includes: missing "://" separator, empty scheme,
+                scheme not matching the lowercase alphanumeric pattern,
+                or empty path. Error code is VALIDATION_ERROR.
 
         Examples:
-            Valid: "secrets://postgres/primary", "env://DB_URL",
-                   "file:///etc/config.yaml", "s3://bucket/key"
-            Invalid: "postgres/primary" (no scheme separator),
-                     "://no-scheme" (empty scheme),
-                     "SECRETS://path" (uppercase scheme),
-                     "secrets://" (empty path)
+            Valid: "secrets://postgres/primary", "env://DB_URL", "s3://bucket/key"
+            Invalid: "://no-scheme", "SECRETS://path", "secrets://"
         """
         if "://" not in v:
             raise ModelOnexError(
@@ -489,6 +505,71 @@ class ModelProviderDescriptor(BaseModel):
         if self.observed_features:
             return self.observed_features
         return self.declared_features
+
+    def has_capability(self, capability: str) -> bool:
+        """Check if provider has a specific capability.
+
+        Performs an exact match against the provider's capability list.
+
+        Args:
+            capability: Exact capability identifier to check.
+
+        Returns:
+            True if the provider has this exact capability, False otherwise.
+
+        Examples:
+            >>> from uuid import uuid4
+            >>> desc = ModelProviderDescriptor(
+            ...     provider_id=uuid4(),
+            ...     capabilities=["database.relational", "database.postgresql"],
+            ...     adapter="test.Adapter",
+            ...     connection_ref="env://TEST",
+            ... )
+            >>> desc.has_capability("database.relational")
+            True
+            >>> desc.has_capability("cache.redis")
+            False
+        """
+        return capability in self.capabilities
+
+    def matches_any_capability(self, patterns: list[str]) -> bool:
+        """Check if provider matches any capability pattern.
+
+        Supports glob-style patterns with '*' wildcard for flexible matching.
+        This is useful for capability requirement resolution where consumers
+        may specify patterns like "database.*" to match any database provider.
+
+        Args:
+            patterns: List of capability patterns to match against.
+                Supports glob wildcards (e.g., "database.*" matches
+                "database.relational", "database.postgresql").
+
+        Returns:
+            True if any pattern matches any capability, False otherwise.
+            Returns False if patterns list is empty.
+
+        Examples:
+            >>> from uuid import uuid4
+            >>> desc = ModelProviderDescriptor(
+            ...     provider_id=uuid4(),
+            ...     capabilities=["database.relational", "database.postgresql"],
+            ...     adapter="test.Adapter",
+            ...     connection_ref="env://TEST",
+            ... )
+            >>> desc.matches_any_capability(["database.*"])
+            True
+            >>> desc.matches_any_capability(["cache.*"])
+            False
+            >>> desc.matches_any_capability(["database.relational"])
+            True
+            >>> desc.matches_any_capability([])
+            False
+        """
+        for pattern in patterns:
+            for cap in self.capabilities:
+                if fnmatch.fnmatch(cap, pattern):
+                    return True
+        return False
 
     def __repr__(self) -> str:
         """Return a concise representation for debugging.

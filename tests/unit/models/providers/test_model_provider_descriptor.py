@@ -112,7 +112,12 @@ class TestModelProviderDescriptorCapabilities:
     """Tests for capability validation."""
 
     def test_capabilities_non_empty_required(self) -> None:
-        """Test that capabilities list cannot be empty."""
+        """Test that capabilities list cannot be empty.
+
+        Validates structural requirement: capabilities must have at least one entry.
+        This is distinct from pattern validation (test_capabilities_valid_pattern_accepted)
+        which validates the format of individual capability strings.
+        """
         with pytest.raises(
             (ValidationError, ModelOnexError),
         ):
@@ -124,7 +129,12 @@ class TestModelProviderDescriptorCapabilities:
             )
 
     def test_capabilities_valid_pattern_accepted(self) -> None:
-        """Test that valid capability patterns are accepted."""
+        """Test that valid capability patterns are accepted.
+
+        Validates pattern format: capabilities must be lowercase dot-separated strings.
+        This is distinct from non-empty validation (test_capabilities_non_empty_required)
+        which ensures the list has at least one entry.
+        """
         descriptor = ModelProviderDescriptor(
             provider_id=uuid4(),
             capabilities=["database.relational", "cache.redis.cluster"],
@@ -814,3 +824,148 @@ class TestModelProviderDescriptorRepr:
         # UUID repr includes the UUID('...') format
         assert "87654321-4321-8765-4321-876543218765" in repr_str
         assert "capabilities=3" in repr_str
+
+
+@pytest.mark.unit
+class TestModelProviderDescriptorCapabilityMatching:
+    """Tests for capability matching utility methods."""
+
+    def test_has_capability_exact_match(self) -> None:
+        """Test has_capability returns True for exact match."""
+        descriptor = ModelProviderDescriptor(
+            provider_id=uuid4(),
+            capabilities=["database.relational", "database.postgresql"],
+            adapter="test.Adapter",
+            connection_ref="env://TEST",
+        )
+
+        assert descriptor.has_capability("database.relational") is True
+        assert descriptor.has_capability("database.postgresql") is True
+
+    def test_has_capability_no_match(self) -> None:
+        """Test has_capability returns False when capability not present."""
+        descriptor = ModelProviderDescriptor(
+            provider_id=uuid4(),
+            capabilities=["database.relational", "database.postgresql"],
+            adapter="test.Adapter",
+            connection_ref="env://TEST",
+        )
+
+        assert descriptor.has_capability("cache.redis") is False
+        assert descriptor.has_capability("database.mysql") is False
+
+    def test_has_capability_partial_match_not_matched(self) -> None:
+        """Test has_capability does not match partial strings."""
+        descriptor = ModelProviderDescriptor(
+            provider_id=uuid4(),
+            capabilities=["database.relational"],
+            adapter="test.Adapter",
+            connection_ref="env://TEST",
+        )
+
+        # Partial matches should not work with has_capability
+        assert descriptor.has_capability("database") is False
+        assert descriptor.has_capability("relational") is False
+        assert descriptor.has_capability("database.rel") is False
+
+    def test_matches_any_capability_wildcard_patterns(self) -> None:
+        """Test matches_any_capability with wildcard patterns."""
+        descriptor = ModelProviderDescriptor(
+            provider_id=uuid4(),
+            capabilities=["database.relational", "database.postgresql"],
+            adapter="test.Adapter",
+            connection_ref="env://TEST",
+        )
+
+        # Wildcard should match all database capabilities
+        assert descriptor.matches_any_capability(["database.*"]) is True
+
+        # Multiple patterns, one matches
+        assert descriptor.matches_any_capability(["cache.*", "database.*"]) is True
+
+    def test_matches_any_capability_exact_patterns(self) -> None:
+        """Test matches_any_capability with exact patterns (no wildcards)."""
+        descriptor = ModelProviderDescriptor(
+            provider_id=uuid4(),
+            capabilities=["database.relational", "database.postgresql"],
+            adapter="test.Adapter",
+            connection_ref="env://TEST",
+        )
+
+        # Exact match should work
+        assert descriptor.matches_any_capability(["database.relational"]) is True
+        assert descriptor.matches_any_capability(["database.postgresql"]) is True
+
+    def test_matches_any_capability_no_matches(self) -> None:
+        """Test matches_any_capability returns False when no patterns match."""
+        descriptor = ModelProviderDescriptor(
+            provider_id=uuid4(),
+            capabilities=["database.relational", "database.postgresql"],
+            adapter="test.Adapter",
+            connection_ref="env://TEST",
+        )
+
+        assert descriptor.matches_any_capability(["cache.*"]) is False
+        assert descriptor.matches_any_capability(["storage.s3"]) is False
+        assert descriptor.matches_any_capability(["messaging.*", "queue.*"]) is False
+
+    def test_matches_any_capability_empty_patterns(self) -> None:
+        """Test matches_any_capability returns False for empty patterns list."""
+        descriptor = ModelProviderDescriptor(
+            provider_id=uuid4(),
+            capabilities=["database.relational", "database.postgresql"],
+            adapter="test.Adapter",
+            connection_ref="env://TEST",
+        )
+
+        assert descriptor.matches_any_capability([]) is False
+
+    def test_matches_any_capability_complex_wildcards(self) -> None:
+        """Test matches_any_capability with complex wildcard patterns."""
+        descriptor = ModelProviderDescriptor(
+            provider_id=uuid4(),
+            capabilities=["storage.s3.us.east.1", "database.postgresql.cluster"],
+            adapter="test.Adapter",
+            connection_ref="env://TEST",
+        )
+
+        # Wildcards at different positions
+        assert descriptor.matches_any_capability(["storage.s3.*"]) is True
+        assert descriptor.matches_any_capability(["*.cluster"]) is True
+        assert descriptor.matches_any_capability(["storage.*.*.*"]) is True
+
+        # Pattern that doesn't match
+        assert descriptor.matches_any_capability(["storage.s3.us.west.*"]) is False
+
+    def test_matches_any_capability_question_mark_wildcard(self) -> None:
+        """Test matches_any_capability with ? wildcard (matches single char)."""
+        descriptor = ModelProviderDescriptor(
+            provider_id=uuid4(),
+            capabilities=["database.v1", "database.v2", "database.v10"],
+            adapter="test.Adapter",
+            connection_ref="env://TEST",
+        )
+
+        # ? matches exactly one character
+        assert descriptor.matches_any_capability(["database.v?"]) is True
+        # v10 has two chars after v, so v? shouldn't match it alone
+        # but v1 and v2 should match
+        assert descriptor.matches_any_capability(["database.v?"]) is True
+
+    def test_matches_any_capability_mixed_patterns(self) -> None:
+        """Test matches_any_capability with mix of wildcard and exact patterns."""
+        descriptor = ModelProviderDescriptor(
+            provider_id=uuid4(),
+            capabilities=["database.relational", "cache.redis"],
+            adapter="test.Adapter",
+            connection_ref="env://TEST",
+        )
+
+        # Mix of patterns - first doesn't match, second does
+        assert descriptor.matches_any_capability(["storage.s3", "cache.redis"]) is True
+
+        # Mix of patterns - wildcards and exact, one matches
+        assert (
+            descriptor.matches_any_capability(["messaging.*", "database.relational"])
+            is True
+        )
