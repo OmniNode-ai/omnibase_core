@@ -190,7 +190,9 @@ class MixinHealthCheck:
                     {"check_name": check_func.__name__, "status": result.status},
                 )
 
-            except Exception as e:  # fallback-ok: health check should return UNHEALTHY status, not crash
+            except (
+                Exception
+            ) as e:  # fallback-ok: health check should return UNHEALTHY status, not crash
                 # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
                 emit_log_event(
                     LogLevel.ERROR,
@@ -371,7 +373,9 @@ class MixinHealthCheck:
                     for issue in result.issues:
                         messages.append(f"{check_name}: {issue.message}")
 
-            except Exception as e:  # fallback-ok: async health check should return UNHEALTHY status, not crash
+            except (
+                Exception
+            ) as e:  # fallback-ok: async health check should return UNHEALTHY status, not crash
                 # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
                 emit_log_event(
                     LogLevel.ERROR,
@@ -926,9 +930,11 @@ async def check_http_service_health(
 
         if response.status == expected_status:
             return ModelHealthStatus.create_healthy(score=1.0).model_copy(
-                update={"check_duration_ms": duration_ms}
-                if duration_ms is not None
-                else {}
+                update=(
+                    {"check_duration_ms": duration_ms}
+                    if duration_ms is not None
+                    else {}
+                )
             )
         else:
             return ModelHealthStatus.create_degraded(
@@ -940,9 +946,11 @@ async def check_http_service_health(
                     )
                 ],
             ).model_copy(
-                update={"check_duration_ms": duration_ms}
-                if duration_ms is not None
-                else {}
+                update=(
+                    {"check_duration_ms": duration_ms}
+                    if duration_ms is not None
+                    else {}
+                )
             )
 
     except TimeoutError:

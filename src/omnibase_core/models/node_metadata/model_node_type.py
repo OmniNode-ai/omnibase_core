@@ -742,9 +742,9 @@ class ModelNodeType(BaseModel):
             "is_validator": self.is_validator,
             "requires_contract": self.requires_contract,
             # output_type is optional, use explicit None check
-            "output_type": self.output_type.value
-            if self.output_type is not None
-            else None,
+            "output_type": (
+                self.output_type.value if self.output_type is not None else None
+            ),
         }
         return result
 

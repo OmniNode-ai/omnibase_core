@@ -687,6 +687,9 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
                 state_delta={},
             )
 
+        except ModelOnexError:
+            # Re-raise ONEX errors without wrapping to preserve original error code/context
+            raise
         except (
             Exception
         ) as e:  # catch-all-ok: top-level error boundary for state dispatch

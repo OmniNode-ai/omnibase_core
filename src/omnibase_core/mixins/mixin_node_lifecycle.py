@@ -117,7 +117,9 @@ class MixinNodeLifecycle:
                     description="Event-driven ONEX node",
                     author="ONEX",
                 )
-        except Exception as e:  # fallback-ok: registration failure returns early with logging, node registration is non-critical
+        except (
+            Exception
+        ) as e:  # fallback-ok: registration failure returns early with logging, node registration is non-critical
             # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
             context = ModelLogContext(
                 calling_module=_COMPONENT_NAME,
@@ -323,7 +325,9 @@ class MixinNodeLifecycle:
             )
             event_bus.publish(envelope)
 
-        except Exception as e:  # fallback-ok: lifecycle event emission is non-critical, log and continue
+        except (
+            Exception
+        ) as e:  # fallback-ok: lifecycle event emission is non-critical, log and continue
             # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
             emit_log_event_sync(
                 LogLevel.ERROR,
@@ -386,7 +390,9 @@ class MixinNodeLifecycle:
             )
             event_bus.publish(envelope)
 
-        except Exception as e:  # fallback-ok: lifecycle event emission is non-critical, log and continue
+        except (
+            Exception
+        ) as e:  # fallback-ok: lifecycle event emission is non-critical, log and continue
             # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
             emit_log_event_sync(
                 LogLevel.ERROR,
@@ -449,7 +455,9 @@ class MixinNodeLifecycle:
             )
             event_bus.publish(envelope)
 
-        except Exception as e:  # fallback-ok: lifecycle event emission is non-critical, log and continue
+        except (
+            Exception
+        ) as e:  # fallback-ok: lifecycle event emission is non-critical, log and continue
             # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
             emit_log_event_sync(
                 LogLevel.ERROR,
