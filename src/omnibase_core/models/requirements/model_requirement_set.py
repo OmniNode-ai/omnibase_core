@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import logging
 import warnings
-from collections.abc import Hashable, Mapping, Sequence
+from collections.abc import Mapping, Sequence
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -50,6 +50,37 @@ class ModelRequirementSet(BaseModel):
         1. Use sort_providers() method for efficient batch sorting
         2. Cache results externally if providers are known to be immutable
         3. Convert providers to frozen/hashable forms for caching if needed
+
+    Validation:
+        Two levels of validation are available:
+
+        **Automatic (during construction)**:
+            The `_validate_no_conflicts()` model validator runs automatically
+            when creating an instance. It raises `ValueError` immediately if
+            the same key has identical values in both `must` and `forbid`
+            (a logical impossibility).
+
+        **Manual (call explicitly)**:
+            The `validate_requirements()` method performs additional advisory
+            checks and must be called explicitly. It returns a list of warnings
+            (does not raise exceptions) for:
+            - Non-hashable values that may cause issues with set operations
+            - Keys appearing in multiple tiers (e.g., both `prefer` and `hints`)
+
+        Call `validate_requirements()` when you want comprehensive validation
+        during development/debugging, or when processing user-provided configs
+        where additional warnings are helpful.
+
+        Example:
+            >>> reqs = ModelRequirementSet(
+            ...     must={"region": "us-east-1"},
+            ...     prefer={"region": "us-west-2"},  # Same key in different tier
+            ... )
+            >>> warnings = reqs.validate_requirements()
+            >>> if warnings:
+            ...     for w in warnings:
+            ...         print(f"Warning: {w}")
+            Warning: Key 'region' appears in multiple tiers: ['must', 'prefer']. ...
 
     Example:
         >>> reqs = ModelRequirementSet(
@@ -191,13 +222,11 @@ class ModelRequirementSet(BaseModel):
         Returns:
             True if the value is hashable, False otherwise.
         """
-        if isinstance(value, Hashable):
-            try:
-                hash(value)
-                return True
-            except TypeError:
-                return False
-        return False
+        try:
+            hash(value)
+            return True
+        except TypeError:
+            return False
 
     def matches(self, provider: Mapping[str, Any]) -> tuple[bool, float, list[str]]:
         """Check if provider satisfies requirements.

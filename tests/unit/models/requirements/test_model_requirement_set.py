@@ -767,3 +767,73 @@ class TestCombinedTiers:
 
         assert matches is False
         assert score == 0.0  # No scoring on failed match
+
+
+@pytest.mark.unit
+class TestConflictValidation:
+    """Tests for _validate_no_conflicts() model validator."""
+
+    def test_conflict_same_key_same_value_raises(self) -> None:
+        """ValueError raised when must and forbid have same key with same value."""
+        with pytest.raises(ValueError) as exc_info:
+            ModelRequirementSet(
+                must={"region": "us-east-1"},
+                forbid={"region": "us-east-1"},
+            )
+
+        assert "Logical conflict" in str(exc_info.value)
+        assert "region" in str(exc_info.value)
+        assert "us-east-1" in str(exc_info.value)
+
+    def test_conflict_same_key_different_value_warns(self, caplog: pytest.LogCaptureFixture) -> None:
+        """Warning logged when same key in must and forbid has different values."""
+        import logging
+
+        with caplog.at_level(logging.WARNING):
+            reqs = ModelRequirementSet(
+                must={"region": "us-east-1"},
+                forbid={"region": "us-west-2"},
+            )
+
+        # Model should be created successfully (no exception)
+        assert reqs.must == {"region": "us-east-1"}
+        assert reqs.forbid == {"region": "us-west-2"}
+
+        # Warning should be logged
+        assert len(caplog.records) == 1
+        assert "region" in caplog.records[0].message
+        assert "must" in caplog.records[0].message.lower()
+        assert "forbid" in caplog.records[0].message.lower()
+
+    def test_no_conflict_different_keys(self) -> None:
+        """No error when must and forbid have completely different keys."""
+        # Should create without any errors or warnings
+        reqs = ModelRequirementSet(
+            must={"region": "us-east-1", "active": True},
+            forbid={"deprecated": True, "legacy": True},
+        )
+
+        assert reqs.must == {"region": "us-east-1", "active": True}
+        assert reqs.forbid == {"deprecated": True, "legacy": True}
+
+    def test_conflict_with_complex_values_same(self) -> None:
+        """ValueError raised for complex values that are equal."""
+        with pytest.raises(ValueError) as exc_info:
+            ModelRequirementSet(
+                must={"config": {"nested": True}},
+                forbid={"config": {"nested": True}},
+            )
+
+        assert "Logical conflict" in str(exc_info.value)
+        assert "config" in str(exc_info.value)
+
+    def test_conflict_multiple_keys_one_conflicts(self) -> None:
+        """ValueError raised when one of multiple keys conflicts."""
+        with pytest.raises(ValueError) as exc_info:
+            ModelRequirementSet(
+                must={"region": "us-east-1", "tier": "premium"},
+                forbid={"deprecated": True, "tier": "premium"},
+            )
+
+        assert "Logical conflict" in str(exc_info.value)
+        assert "tier" in str(exc_info.value)
