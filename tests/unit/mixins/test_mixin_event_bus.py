@@ -75,12 +75,24 @@ class UntypedTestMixinNode(MixinEventBus[Any, Any]):
 class TestMixinEventBusInitialization:
     """Test MixinEventBus initialization and lazy state accessors."""
 
-    def test_lazy_runtime_state_creation(self) -> None:
-        """Test that runtime state is created lazily on first access."""
+    def test_runtime_state_requires_explicit_init(self) -> None:
+        """Test that runtime state requires explicit initialization via bind or ensure."""
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
+
         node = TestMixinNode()
 
-        # Access should create state
-        state = node._event_bus_runtime_state
+        # Accessing _event_bus_runtime_state without binding should raise
+        with pytest.raises(ModelOnexError) as exc_info:
+            _ = node._event_bus_runtime_state
+
+        assert "not initialized" in str(exc_info.value)
+
+    def test_ensure_runtime_state_creates_state(self) -> None:
+        """Test that _ensure_runtime_state creates state on first call."""
+        node = TestMixinNode()
+
+        # _ensure_runtime_state should create state
+        state = node._ensure_runtime_state()
 
         assert state is not None
         assert state.is_bound is False
@@ -98,7 +110,8 @@ class TestMixinEventBusInitialization:
         """Test that runtime state returns same instance on repeated access."""
         node = TestMixinNode()
 
-        state1 = node._event_bus_runtime_state
+        # Initialize state first via _ensure_runtime_state
+        state1 = node._ensure_runtime_state()
         state2 = node._event_bus_runtime_state
 
         assert state1 is state2
@@ -348,6 +361,8 @@ class TestMixinEventBusGetNodeName:
     def test_get_node_name_returns_state_node_name_when_set(self) -> None:
         """Test get_node_name returns state.node_name when set directly."""
         node = TestMixinNode()
+        # Must initialize state first before accessing _event_bus_runtime_state
+        node._ensure_runtime_state()
         node._event_bus_runtime_state.node_name = "state_name"
 
         name = node.get_node_name()

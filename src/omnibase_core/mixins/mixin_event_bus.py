@@ -57,6 +57,7 @@ from collections.abc import Callable
 from typing import (
     TYPE_CHECKING,
     Any,
+    ClassVar,
     Generic,
     Protocol,
     TypeVar,
@@ -129,10 +130,21 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
 
     Design:
     - NO BaseModel inheritance (avoids MRO conflicts)
-    - NO __init__ method (uses lazy state accessors)
-    - Explicit binding required before publishing (fail-fast)
+    - Explicit binding REQUIRED in __init__ before any operations
     - Composition with ModelEventBusRuntimeState and ModelEventBusListenerHandle
     - Generic[InputStateT, OutputStateT] for type-safe event processing
+
+    Initialization Requirement:
+        Subclasses MUST call one or more bind_*() methods in their __init__
+        before using any event bus operations. Accessing runtime state before
+        binding will raise ModelOnexError with instructions to bind first.
+
+        Example:
+            >>> class MyNode(MixinEventBus[MyInput, MyOutput]):
+            ...     def __init__(self, event_bus: ProtocolEventBus):
+            ...         super().__init__()
+            ...         self.bind_event_bus(event_bus)  # REQUIRED
+            ...         self.bind_node_name("MyNode")   # Optional but recommended
 
     Validation:
         All bind methods enforce strict validation:
@@ -173,6 +185,24 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
         - Internal state protected by _mixin_lock (lazily initialized via class-level lock)
 
         See module docstring for detailed lock hierarchy and thread lifecycle documentation.
+
+    Strict Binding Mode:
+        By default, calling bind_*() methods after the mixin is "in use" (i.e., after
+        start_event_listener() or publish operations) only emits a WARNING log. This
+        maintains backwards compatibility while alerting developers to potential issues.
+
+        For stricter enforcement, enable STRICT_BINDING_MODE by subclassing:
+
+            class MyStrictNode(MixinEventBus[InputT, OutputT]):
+                STRICT_BINDING_MODE: ClassVar[bool] = True
+
+        When STRICT_BINDING_MODE is True, bind_*() calls after the mixin is in use will
+        raise ModelOnexError with error_code=INVALID_STATE instead of just warning.
+
+        This is useful for:
+        - Development/testing environments where you want to catch misuse early
+        - High-reliability systems where thread-unsafe patterns must be hard failures
+        - CI/CD pipelines where warnings might be missed but errors are caught
     """
 
     # Class-level lock for thread-safe lazy initialization of instance locks.
@@ -183,6 +213,16 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
     # all Python implementations (CPython, PyPy, Jython, etc.) and future
     # free-threaded Python builds (PEP 703).
     _class_init_lock: threading.Lock = threading.Lock()
+
+    # Strict binding mode flag. When True, bind_*() calls after the mixin is
+    # "in use" (after start_event_listener() or publish operations) will raise
+    # ModelOnexError instead of just emitting a warning. Override in subclasses
+    # to enable strict enforcement.
+    #
+    # Example:
+    #     class MyStrictNode(MixinEventBus[InputT, OutputT]):
+    #         STRICT_BINDING_MODE: ClassVar[bool] = True
+    STRICT_BINDING_MODE: ClassVar[bool] = False
 
     # --- Lazy State Accessors (avoid MRO hazards) ---
 
@@ -250,13 +290,65 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
 
     @property
     def _event_bus_runtime_state(self) -> "ModelEventBusRuntimeState":
-        """Lazy accessor for runtime state - creates on first access."""
-        # TODO(v1.0): Remove lazy initialization fallback after migration stabilizes.
-        # This fallback handles lazy initialization for mixins that don't call
-        # bind_*() in __init__. It supports composition patterns where the mixin
-        # is mixed into classes that may not initialize state immediately. Once
-        # all consumers have migrated to explicit binding in __init__, this
-        # fallback can be removed in favor of requiring bind_*() calls.
+        """Accessor for runtime state - requires explicit binding via bind_*() methods.
+
+        Returns:
+            The ModelEventBusRuntimeState instance set by bind_*() methods.
+
+        Raises:
+            ModelOnexError: If accessed before calling a bind_*() method in __init__.
+                This ensures explicit initialization is required and prevents
+                silent lazy initialization that could mask programming errors.
+        """
+        try:
+            return cast(
+                "ModelEventBusRuntimeState",
+                object.__getattribute__(self, "_mixin_event_bus_state"),
+            )
+        except AttributeError:
+            raise ModelOnexError(
+                message=f"Event bus runtime state not initialized on {self.__class__.__name__}. "
+                "Call bind_event_bus() or bind_registry() in __init__ before using the mixin.",
+                error_code=EnumCoreErrorCode.INVALID_STATE,
+                context={
+                    "class_name": self.__class__.__name__,
+                    "hint": "Add 'self.bind_event_bus(event_bus)' to your __init__ method",
+                },
+            ) from None
+
+    @property
+    def _event_bus_listener_handle(self) -> "ModelEventBusListenerHandle | None":
+        """Accessor for listener handle - returns None if listener not started.
+
+        The listener handle is created by start_event_listener() and stores
+        the listener thread reference and subscriptions for cleanup.
+
+        Returns:
+            The ModelEventBusListenerHandle if start_event_listener() was called,
+            None otherwise.
+        """
+        try:
+            return cast(
+                "ModelEventBusListenerHandle | None",
+                object.__getattribute__(self, "_mixin_event_bus_listener"),
+            )
+        except AttributeError:
+            return None
+
+    def _ensure_runtime_state(self) -> "ModelEventBusRuntimeState":
+        """Ensure runtime state exists, creating it if necessary.
+
+        This method is used by bind_*() methods to initialize the runtime state
+        on first binding. Unlike _event_bus_runtime_state property which raises
+        an error for uninitialized state, this method creates the state if needed.
+
+        Returns:
+            The ModelEventBusRuntimeState instance (existing or newly created).
+
+        Note:
+            This is the ONLY place where lazy state creation should occur.
+            All bind_*() methods should use this method to access state.
+        """
         try:
             return cast(
                 "ModelEventBusRuntimeState",
@@ -268,22 +360,6 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
             state = ModelEventBusRuntimeState.create_unbound()
             object.__setattr__(self, "_mixin_event_bus_state", state)
             return state
-
-    @property
-    def _event_bus_listener_handle(self) -> "ModelEventBusListenerHandle | None":
-        """Lazy accessor for listener handle - may be None if never started."""
-        # TODO(v1.0): Remove lazy initialization fallback after migration stabilizes.
-        # This fallback returns None for uninitialized listener handle. The
-        # listener handle is only created when start_event_listener() is called,
-        # not during bind. Once all consumers have migrated to explicit lifecycle
-        # management, this fallback can be removed.
-        try:
-            return cast(
-                "ModelEventBusListenerHandle | None",
-                object.__getattribute__(self, "_mixin_event_bus_listener"),
-            )
-        except AttributeError:
-            return None
 
     # --- Binding Lock for Thread Safety Detection ---
 
@@ -312,18 +388,27 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
         object.__setattr__(self, "_mixin_binding_locked", True)
 
     def _warn_if_binding_locked(self, method_name: str) -> None:
-        """Emit a warning if bind_*() is called after mixin is in use.
+        """Emit a warning or raise an error if bind_*() is called after mixin is in use.
 
         This method implements runtime misuse detection for thread-unsafe
-        binding patterns. It does NOT raise an exception (backwards compatible)
-        but emits a structured WARNING log to alert developers.
+        binding patterns. The behavior depends on the STRICT_BINDING_MODE class variable:
+
+        - STRICT_BINDING_MODE = False (default): Emits a structured WARNING log.
+          This maintains backwards compatibility while alerting developers.
+
+        - STRICT_BINDING_MODE = True: Raises ModelOnexError with INVALID_STATE.
+          This is useful for development/testing or high-reliability systems.
 
         Args:
             method_name: The name of the bind method being called
                 (e.g., "bind_event_bus", "bind_registry").
 
+        Raises:
+            ModelOnexError: If STRICT_BINDING_MODE is True and the mixin is already
+                in use (binding is locked). Error code is INVALID_STATE.
+
         Note:
-            The warning includes the method name and node name for easy
+            The warning/error includes the method name and node name for easy
             identification of problematic code paths in logs.
 
             This is a best-effort detection mechanism for debugging. It is NOT a
@@ -334,12 +419,35 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
             (setting the lock), and then Thread A continues binding without
             warning. Always call bind_*() in __init__ before sharing the instance
             across threads.
+
+        Example:
+            To enable strict mode, subclass and override STRICT_BINDING_MODE:
+
+                class MyStrictNode(MixinEventBus[InputT, OutputT]):
+                    STRICT_BINDING_MODE: ClassVar[bool] = True
+
+            Now bind_*() calls after start_event_listener() or publish will raise.
         """
         if self._is_binding_locked():
+            message = (
+                f"MIXIN_BIND: {method_name}() called after mixin is in use. "
+                "bind_*() methods should be called in __init__ before sharing across threads."
+            )
+
+            if self.STRICT_BINDING_MODE:
+                raise ModelOnexError(
+                    message=message,
+                    error_code=EnumCoreErrorCode.INVALID_STATE,
+                    context={
+                        "method_name": method_name,
+                        "node_name": self.get_node_name(),
+                        "class_name": self.__class__.__name__,
+                    },
+                )
+
             emit_log_event(
                 LogLevel.WARNING,
-                f"MIXIN_BIND: {method_name}() called after mixin is in use. "
-                "bind_*() methods should be called in __init__ before sharing across threads.",
+                message,
                 ModelLogData(node_name=self.get_node_name()),
             )
 
@@ -371,9 +479,12 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
             >>> node.bind_event_bus(event_bus)
             >>> node.publish_completion_event("complete", data)  # Now works
         """
+        # Ensure runtime state exists BEFORE any calls to get_node_name()
+        # (used by _warn_if_binding_locked and logging)
+        state = self._ensure_runtime_state()
         self._warn_if_binding_locked("bind_event_bus")
         object.__setattr__(self, "_bound_event_bus", event_bus)
-        self._event_bus_runtime_state.is_bound = True
+        state.is_bound = True
 
         emit_log_event(
             LogLevel.DEBUG,
@@ -407,10 +518,13 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
             >>> node.bind_registry(my_registry)
             >>> # Event bus is accessed via registry.event_bus
         """
+        # Ensure runtime state exists BEFORE any calls to get_node_name()
+        # (used by _warn_if_binding_locked and logging)
+        state = self._ensure_runtime_state()
         self._warn_if_binding_locked("bind_registry")
         object.__setattr__(self, "_bound_registry", registry)
         if registry.event_bus is not None:
-            self._event_bus_runtime_state.is_bound = True
+            state.is_bound = True
 
         emit_log_event(
             LogLevel.DEBUG,
@@ -449,6 +563,9 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
             a previously bound contract path, use _event_bus_runtime_state.reset()
             followed by re-binding with the desired configuration.
         """
+        # Ensure runtime state exists BEFORE any calls to get_node_name()
+        # (used by _warn_if_binding_locked and logging)
+        state = self._ensure_runtime_state()
         self._warn_if_binding_locked("bind_contract_path")
 
         # Validate contract_path - consistent with ModelEventBusRuntimeState.bind()
@@ -463,7 +580,7 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
                 },
             )
 
-        self._event_bus_runtime_state.contract_path = contract_path
+        state.contract_path = contract_path
 
     def bind_node_name(self, node_name: str) -> None:
         """Bind the node name used for event publishing and logging.
@@ -497,6 +614,9 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
             the node name binding, use _event_bus_runtime_state.reset() followed
             by re-binding with the desired configuration.
         """
+        # Ensure runtime state exists BEFORE any calls to get_node_name()
+        # (used by _warn_if_binding_locked and logging)
+        state = self._ensure_runtime_state()
         self._warn_if_binding_locked("bind_node_name")
 
         # Validate node_name - consistent with ModelEventBusRuntimeState.bind()
@@ -511,7 +631,7 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
                 },
             )
 
-        self._event_bus_runtime_state.node_name = node_name
+        state.node_name = node_name
 
     # --- Fail-Fast Event Bus Access ---
 
@@ -538,27 +658,29 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
         """
         Resolve event bus using protocol-based polymorphism.
 
+        Explicit binding is required before this method returns a valid event bus.
+        Call bind_event_bus() or bind_registry() in __init__ before using.
+
         Returns:
             The event bus instance or None if not bound.
         """
-        # TODO(v1.0): Remove hasattr fallbacks after migration stabilizes.
-        # These checks support lazy binding patterns where bind_*() may not have
-        # been called yet. This enables flexible composition where event bus can
-        # be bound at any point in the lifecycle. Once all consumers have migrated
-        # to explicit binding in __init__, these fallbacks can be removed.
         # Try direct event_bus binding first
-        if hasattr(self, "_bound_event_bus"):
+        try:
             bus = object.__getattribute__(self, "_bound_event_bus")
             if bus is not None:
                 return cast(ProtocolEventBus, bus)
+        except AttributeError:
+            pass  # Not bound via bind_event_bus()
 
         # Try registry binding
-        if hasattr(self, "_bound_registry"):
+        try:
             registry = object.__getattribute__(self, "_bound_registry")
-            if hasattr(registry, "event_bus"):
-                event_bus = getattr(registry, "event_bus", None)
-                if event_bus is not None:
-                    return cast(ProtocolEventBus, event_bus)
+            # Access event_bus property on registry - registry must conform to protocol
+            event_bus = registry.event_bus
+            if event_bus is not None:
+                return cast(ProtocolEventBus, event_bus)
+        except AttributeError:
+            pass  # Not bound via bind_registry()
 
         return None
 
@@ -595,10 +717,22 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
         Returns:
             The node name string. Either the explicitly bound name or
             the class name as a fallback.
+
+        Note:
+            This method is safe to call before bind_*() methods - it will
+            return the class name if runtime state has not been initialized.
         """
-        state = self._event_bus_runtime_state
-        if state.node_name:
-            return state.node_name
+        # Safe access to state - return class name fallback if state doesn't exist
+        try:
+            state = cast(
+                "ModelEventBusRuntimeState",
+                object.__getattribute__(self, "_mixin_event_bus_state"),
+            )
+            if state.node_name:
+                return state.node_name
+        except AttributeError:
+            # State not initialized yet - use class name fallback
+            pass
         return self.__class__.__name__
 
     def get_node_id(self) -> UUID:
@@ -924,9 +1058,9 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
                 or contract parsing errors.
 
         Note:
-            If contract_path is not bound, a warning is logged and an empty
-            list is returned. Bind contract_path via bind_contract_path()
-            before calling if you need contract-based patterns.
+            If contract_path is not bound or runtime state is not initialized,
+            a warning is logged and an empty list is returned. Bind contract_path
+            via bind_contract_path() before calling if you need contract-based patterns.
 
         Example:
             >>> node.bind_contract_path("/path/to/contract.yaml")
@@ -934,7 +1068,17 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
             >>> # Returns ["generation.mynode.start", "generation.mynode.process", ...]
         """
         try:
-            contract_path = self._event_bus_runtime_state.contract_path
+            # Safe access to state - return empty list if state doesn't exist
+            try:
+                state = cast(
+                    "ModelEventBusRuntimeState",
+                    object.__getattribute__(self, "_mixin_event_bus_state"),
+                )
+                contract_path = state.contract_path
+            except AttributeError:
+                # State not initialized - treat as no contract_path
+                contract_path = None
+
             if not contract_path:
                 self._log_warn(
                     "No contract_path found, cannot determine event patterns",
@@ -1213,8 +1357,8 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
                and state, set disposed flag to prevent re-entry
             2. **Cleanup Phase (lock released)**: Stop listener thread and
                perform potentially blocking cleanup operations
-            3. **Thread Join Phase**: Explicitly join listener thread with a
-               5-second timeout to ensure thread termination before proceeding
+            3. **Thread Join Phase**: Explicitly join listener thread with the
+               handle's configured timeout to ensure thread termination before proceeding
             4. **Binding Cleanup Phase (lock held)**: Atomically clear all
                bound attributes to prevent partial cleanup
 
@@ -1224,10 +1368,11 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
 
         Listener Thread Cleanup:
             Listener threads are explicitly joined to ensure proper resource
-            cleanup. The join has a 5-second timeout to prevent indefinite
-            blocking. If the thread does not terminate within this timeout,
-            a warning is logged and included in the cleanup errors, but
-            cleanup continues to release other resources.
+            cleanup. The join uses the handle's configured timeout (default 5.0
+            seconds via ModelEventBusListenerHandle.DEFAULT_STOP_TIMEOUT) to
+            prevent indefinite blocking. If the thread does not terminate within
+            this timeout, a warning is logged and included in the cleanup errors,
+            but cleanup continues to release other resources.
 
         Error Handling:
             All cleanup errors are collected and logged. If any errors occur
@@ -1284,8 +1429,10 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
                 # This ensures the thread has fully terminated before we continue
                 if handle.listener_thread is not None:
                     try:
-                        # Use a reasonable timeout to prevent indefinite blocking
-                        handle.listener_thread.join(timeout=5.0)
+                        # Use the handle's configured timeout for consistency
+                        # This respects instance/class-level timeout configuration
+                        join_timeout = handle.get_stop_timeout()
+                        handle.listener_thread.join(timeout=join_timeout)
                         if handle.listener_thread.is_alive():
                             cleanup_errors.append(
                                 "Listener thread did not terminate within join timeout"
@@ -1310,28 +1457,27 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
                     "_bound_registry",
                     "_mixin_event_bus_listener",
                 ):
-                    if hasattr(self, attr):
-                        try:
-                            object.__delattr__(self, attr)
-                        except AttributeError:
-                            # AttributeError is EXPECTED during cleanup for two reasons:
-                            # 1. Race condition: attribute deleted between hasattr() and delattr()
-                            # 2. Idempotent cleanup: dispose() called multiple times
-                            #
-                            # We log at DEBUG (not WARNING) because this is expected behavior.
-                            emit_log_event(
-                                LogLevel.DEBUG,
-                                f"MIXIN_DISPOSE: Attribute {attr} already deleted during cleanup",
-                                ModelLogData(node_name=self.get_node_name()),
-                            )
-                        except Exception as e:
-                            # Unexpected error during attribute deletion
-                            cleanup_errors.append(f"Failed to delete {attr}: {e!r}")
-                            emit_log_event(
-                                LogLevel.ERROR,
-                                f"MIXIN_DISPOSE: Unexpected error deleting {attr}: {e!r}",
-                                ModelLogData(node_name=self.get_node_name()),
-                            )
+                    try:
+                        object.__delattr__(self, attr)
+                    except AttributeError:
+                        # AttributeError is EXPECTED during cleanup for two reasons:
+                        # 1. Attribute was never bound (binding is optional)
+                        # 2. Idempotent cleanup: dispose() called multiple times
+                        #
+                        # We log at DEBUG (not WARNING) because this is expected behavior.
+                        emit_log_event(
+                            LogLevel.DEBUG,
+                            f"MIXIN_DISPOSE: Attribute {attr} not present during cleanup",
+                            ModelLogData(node_name=self.get_node_name()),
+                        )
+                    except Exception as e:
+                        # Unexpected error during attribute deletion
+                        cleanup_errors.append(f"Failed to delete {attr}: {e!r}")
+                        emit_log_event(
+                            LogLevel.ERROR,
+                            f"MIXIN_DISPOSE: Unexpected error deleting {attr}: {e!r}",
+                            ModelLogData(node_name=self.get_node_name()),
+                        )
 
             # === Phase 4: Reset runtime state ===
             try:

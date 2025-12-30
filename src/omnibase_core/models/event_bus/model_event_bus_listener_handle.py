@@ -11,7 +11,7 @@ excluded from serialization as this is purely a runtime management object.
 
 import copy
 import threading
-from typing import Any
+from typing import Any, ClassVar
 
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 
@@ -60,6 +60,18 @@ class ModelEventBusListenerHandle(BaseModel):
         - The listener thread itself should check stop_event.is_set() to
           determine when to terminate
 
+    Timeout Configuration:
+        The stop timeout can be configured at multiple levels:
+
+        1. **Class-level default**: Override DEFAULT_STOP_TIMEOUT in subclass
+        2. **Instance-level**: Set stop_timeout field on the handle
+        3. **Per-call**: Pass explicit timeout argument to stop()
+
+        Resolution order (first non-None value wins):
+            - Explicit timeout argument to stop()
+            - Instance-level stop_timeout field
+            - Class-level DEFAULT_STOP_TIMEOUT (5.0 seconds)
+
     Example:
         >>> handle = ModelEventBusListenerHandle()
         >>> # Start listener (thread management done externally)
@@ -69,9 +81,13 @@ class ModelEventBusListenerHandle(BaseModel):
         >>> handle.listener_thread.start()
         >>>
         >>> # Later, stop the listener (safe from any thread)
-        >>> success = handle.stop(timeout=5.0)
+        >>> success = handle.stop(timeout=5.0)  # Explicit timeout
         >>> if not success:
         ...     print("Warning: listener did not stop within timeout")
+        >>>
+        >>> # Or configure per-instance timeout
+        >>> handle.stop_timeout = 2.0
+        >>> handle.stop()  # Uses 2.0 seconds
     """
 
     # Note on from_attributes=True: Required for pytest-xdist parallel execution
@@ -85,6 +101,11 @@ class ModelEventBusListenerHandle(BaseModel):
         arbitrary_types_allowed=True,
         from_attributes=True,
     )
+
+    # Class-level default timeout for stop operations.
+    # This can be overridden by subclasses or by setting stop_timeout on an instance.
+    # The value is in seconds and applies to thread.join() operations during stop().
+    DEFAULT_STOP_TIMEOUT: ClassVar[float] = 5.0
 
     # Private lock for thread-safe state access (not serialized)
     _lock: threading.Lock = PrivateAttr(default_factory=threading.Lock)
@@ -111,6 +132,16 @@ class ModelEventBusListenerHandle(BaseModel):
         default=False,
         exclude=True,
         description="Whether the listener is currently running.",
+    )
+
+    stop_timeout: float | None = Field(
+        default=None,
+        exclude=True,
+        description=(
+            "Optional per-instance stop timeout in seconds. If set, overrides "
+            "the class-level DEFAULT_STOP_TIMEOUT when calling stop() without "
+            "an explicit timeout argument. Set to None to use the class default."
+        ),
     )
 
     def __deepcopy__(
@@ -141,6 +172,7 @@ class ModelEventBusListenerHandle(BaseModel):
               an Event would create one that doesn't share state with the original)
             - is_running is set to False (the copy has no active thread)
             - subscriptions are deep-copied if possible, otherwise empty list
+            - stop_timeout is copied directly (primitive float value)
 
         Args:
             memo: Dictionary of already copied objects (for cycle detection).
@@ -177,6 +209,7 @@ class ModelEventBusListenerHandle(BaseModel):
             stop_event=threading.Event() if self.stop_event else None,
             subscriptions=copied_subscriptions,
             is_running=False,  # Copy is not running
+            stop_timeout=self.stop_timeout,  # Copy timeout configuration
         )
         memo[id(self)] = new_handle
         return new_handle
@@ -279,7 +312,28 @@ class ModelEventBusListenerHandle(BaseModel):
             self.subscriptions.clear()
             self.is_running = False
 
-    def stop(self, timeout: float = 5.0) -> bool:
+    def get_stop_timeout(self) -> float:
+        """
+        Get the effective stop timeout for this handle.
+
+        Resolution order (first non-None value wins):
+            1. Instance-level stop_timeout field (if set)
+            2. Class-level DEFAULT_STOP_TIMEOUT (5.0 seconds)
+
+        Returns:
+            The timeout in seconds to use for stop operations.
+
+        Example:
+            >>> handle = ModelEventBusListenerHandle()
+            >>> handle.get_stop_timeout()  # Returns 5.0 (class default)
+            >>> handle.stop_timeout = 2.0
+            >>> handle.get_stop_timeout()  # Returns 2.0 (instance override)
+        """
+        if self.stop_timeout is not None:
+            return self.stop_timeout
+        return self.DEFAULT_STOP_TIMEOUT
+
+    def stop(self, timeout: float | None = None) -> bool:
         """
         Stop the listener with a bounded timeout.
 
@@ -289,7 +343,10 @@ class ModelEventBusListenerHandle(BaseModel):
 
         Args:
             timeout: Maximum time in seconds to wait for the listener thread
-                to stop. Defaults to 5.0 seconds.
+                to stop. If None, uses the configurable timeout from
+                get_stop_timeout() which resolves in this order:
+                1. Instance-level stop_timeout field (if set)
+                2. Class-level DEFAULT_STOP_TIMEOUT (5.0 seconds)
 
         Returns:
             True if the listener was successfully stopped or was already stopped.
@@ -301,6 +358,26 @@ class ModelEventBusListenerHandle(BaseModel):
             - Logs a warning if the thread does not stop within the timeout
             - Clears subscriptions and resets is_running state regardless of
               whether the thread stopped
+
+        Timeout Configuration:
+            The timeout can be configured at multiple levels:
+
+            1. **Per-call**: Pass explicit timeout argument to stop()
+            2. **Per-instance**: Set stop_timeout field on the handle
+            3. **Per-class**: Subclass and override DEFAULT_STOP_TIMEOUT
+
+            Example::
+
+                # Per-call override
+                handle.stop(timeout=2.0)
+
+                # Per-instance configuration
+                handle.stop_timeout = 10.0
+                handle.stop()  # Uses 10.0 seconds
+
+                # Per-class configuration
+                class FastStopHandle(ModelEventBusListenerHandle):
+                    DEFAULT_STOP_TIMEOUT: ClassVar[float] = 1.0
 
         Timeout Considerations:
             The default 5.0 second timeout is suitable for most production and
@@ -355,13 +432,16 @@ class ModelEventBusListenerHandle(BaseModel):
                 - The final state (is_running=False, subscriptions cleared) is
                   set atomically under the lock in Phase 3
         """
+        # Resolve timeout: explicit arg > instance field > class default
+        effective_timeout = timeout if timeout is not None else self.get_stop_timeout()
+
         # Phase 1: Capture and Signal (lock held)
         should_continue, _stop_event, listener_thread = self._capture_and_signal()
         if not should_continue:
             return True
 
         # Phase 2: Wait for Thread (lock NOT held)
-        thread_stopped = self._wait_for_thread(listener_thread, timeout)
+        thread_stopped = self._wait_for_thread(listener_thread, effective_timeout)
 
         # Phase 3: Cleanup (lock held)
         self._cleanup_state()
