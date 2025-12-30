@@ -496,14 +496,14 @@ class TestRegistryCapabilityFindByTags:
         registry: RegistryCapability,
         sample_capability: ModelCapabilityMetadata,
     ) -> None:
-        """Test find_by_tags with empty tags list (match_all returns all)."""
+        """Test find_by_tags with empty tags list returns empty (both modes)."""
         registry.register(sample_capability)
 
-        # With empty tags list and match_all=True, all() returns True
+        # Empty tag list matches nothing - searching for zero tags returns zero results.
+        # This avoids Python's `all([]) == True` trap.
         result = registry.find_by_tags([], match_all=True)
 
-        assert len(result) == 1
-        assert sample_capability in result
+        assert result == []
 
 
 # =============================================================================
@@ -635,7 +635,7 @@ class TestRegistryCapabilityThreadSafety:
         def register_capability(i: int) -> None:
             try:
                 cap = ModelCapabilityMetadata(
-                    capability=f"cap.{i}",
+                    capability=f"cap.n{i}",
                     name=f"Capability {i}",
                     version=ModelSemVer(major=1, minor=0, patch=0),
                     description=f"Description {i}",
@@ -684,7 +684,7 @@ class TestRegistryCapabilityThreadSafety:
                         unique_id = writer_counter[0]
                         writer_counter[0] += 1
                     cap = ModelCapabilityMetadata(
-                        capability=f"writer.{unique_id}",
+                        capability=f"writer.n{unique_id}",
                         name=f"Writer Cap {unique_id}",
                         version=ModelSemVer(major=1, minor=0, patch=0),
                         description=f"Description {unique_id}",
@@ -715,7 +715,7 @@ class TestRegistryCapabilityThreadSafety:
 
         def worker(i: int) -> None:
             try:
-                cap_id = f"cap.{i % 10}"
+                cap_id = f"cap.n{i % 10}"
                 cap = ModelCapabilityMetadata(
                     capability=cap_id,
                     name=f"Cap {i}",
@@ -794,19 +794,19 @@ class TestRegistryCapabilityEdgeCases:
         result = registry.get("cloud.aws.s3.storage")
         assert result == cap
 
-    def test_capability_with_special_characters(
+    def test_capability_with_underscores_and_numbers(
         self, registry: RegistryCapability
     ) -> None:
-        """Test capability ID with special characters."""
+        """Test capability ID with underscores and numbers (valid characters)."""
         cap = ModelCapabilityMetadata(
-            capability="api-v2_gateway",
+            capability="api_v2.gateway",
             name="API Gateway v2",
             version=ModelSemVer(major=2, minor=0, patch=0),
             description="API gateway capability",
         )
         registry.register(cap)
 
-        result = registry.get("api-v2_gateway")
+        result = registry.get("api_v2.gateway")
         assert result == cap
 
     def test_reregister_after_unregister(
@@ -836,10 +836,10 @@ class TestRegistryCapabilityEdgeCases:
         )
         registry.register(cap)
 
+        # Searching for specific tag should not find capability with no tags
         result = registry.find_by_tags(["anytag"])
         assert result == []
 
-        # But match_all with empty search should find it
+        # Empty tag list returns empty - searching for zero tags matches nothing
         result = registry.find_by_tags([], match_all=True)
-        assert len(result) == 1
-        assert cap in result
+        assert result == []

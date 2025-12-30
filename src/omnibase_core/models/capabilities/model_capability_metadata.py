@@ -11,9 +11,18 @@ NOT runtime registration.
 OMN-1156: ModelCapabilityMetadata - Capability metadata for documentation/discovery.
 """
 
-from pydantic import BaseModel, ConfigDict, Field
+import re
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.models.primitives.model_semver import ModelSemVer
+
+# Pattern for semantic capability identifiers:
+# - Must start with a lowercase letter
+# - Segments separated by dots (.)
+# - Each segment: starts with lowercase letter, followed by lowercase letters, digits, or underscores
+# Examples: "llm.generation", "storage.vector_db", "compute.gpu.nvidia"
+CAPABILITY_PATTERN = re.compile(r"^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)*$")
 
 
 class ModelCapabilityMetadata(BaseModel):
@@ -64,6 +73,38 @@ class ModelCapabilityMetadata(BaseModel):
         ...,
         description="Semantic capability identifier, e.g. 'database.relational'",
     )
+
+    @field_validator("capability")
+    @classmethod
+    def validate_capability_format(cls, v: str) -> str:
+        """
+        Validate that capability follows semantic identifier format.
+
+        Valid format: lowercase alphanumeric with underscores, dot-separated segments.
+        Each segment must start with a lowercase letter.
+
+        Examples of valid capabilities:
+            - "llm.generation"
+            - "storage.vector_db"
+            - "compute.gpu.nvidia"
+            - "database"
+
+        Examples of invalid capabilities:
+            - "LLM.Generation" (uppercase not allowed)
+            - "123.abc" (must start with letter)
+            - ".invalid" (cannot start with dot)
+            - "invalid." (cannot end with dot)
+            - "invalid..segment" (empty segments not allowed)
+        """
+        if not CAPABILITY_PATTERN.match(v):
+            raise ValueError(
+                f"Invalid capability format: '{v}'. "
+                "Capability must be a semantic identifier with dot-separated segments. "
+                "Each segment must start with a lowercase letter and contain only "
+                "lowercase letters, digits, or underscores. "
+                "Examples: 'llm.generation', 'storage.vector_db', 'compute.gpu.nvidia'"
+            )
+        return v
 
     name: str = Field(
         ...,

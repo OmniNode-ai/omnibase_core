@@ -15,6 +15,24 @@ Ordering:
     The registry maintains insertion order (via dict ordering in Python 3.7+),
     ensuring deterministic iteration order for list_all() and find_by_tags().
 
+Scale and Performance:
+    This registry is designed for small to medium-sized deployments with fewer
+    than 1,000 registered capabilities. At this scale, the simple locking strategy
+    provides excellent performance with minimal contention.
+
+    The lock is held during iteration in methods like find_by_tags() and list_all().
+    This is intentional to provide consistent snapshots, but means:
+
+    - Concurrent reads block each other during iteration
+    - Write operations (register/unregister) block until iteration completes
+    - For registries exceeding 1,000 entries, consider:
+        * Sharding by capability namespace (e.g., "database.*" vs "cache.*")
+        * Read-write locks (RWLock) for read-heavy workloads
+        * Copy-on-write snapshots for iteration
+
+    Typical use cases (capability discovery, provider matching) rarely exceed
+    100-200 capabilities, making this implementation well-suited for most deployments.
+
 OMN-1156: RegistryCapability implementation.
 
 .. versionadded:: 0.4.0
@@ -49,6 +67,11 @@ class RegistryCapability:
     Ordering:
         The registry maintains insertion order. list_all() and find_by_tags()
         return capabilities in the order they were registered.
+
+    Scale Constraints:
+        Designed for < 1,000 entries. Lock is held during iteration (find_by_tags,
+        list_all), which is acceptable at this scale. For larger registries,
+        consider sharding or read-write locks.
 
     Example:
         .. code-block:: python
@@ -258,6 +281,8 @@ class RegistryCapability:
         .. versionadded:: 0.4.0
         """
         with self._lock:
+            # Lock held during iteration - acceptable for < 1,000 entries.
+            # Returns a snapshot copy independent of registry mutations.
             return list(self._capabilities.values())
 
     def find_by_tags(
@@ -310,12 +335,18 @@ class RegistryCapability:
         .. versionadded:: 0.4.0
         """
         with self._lock:
+            # Empty tag list matches nothing - avoids Python's `all([]) == True` trap
+            # which would otherwise cause match_all=True to return ALL items.
+            if not tags:
+                return []
 
             def matches(cap: ModelCapabilityMetadata) -> bool:
                 if match_all:
                     return all(tag in cap.tags for tag in tags)
                 return any(tag in cap.tags for tag in tags)
 
+            # Lock held during iteration - acceptable for < 1,000 entries.
+            # For larger registries, consider sharding by namespace.
             return [c for c in self._capabilities.values() if matches(c)]
 
     @property

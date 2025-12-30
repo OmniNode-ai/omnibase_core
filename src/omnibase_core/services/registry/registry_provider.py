@@ -16,6 +16,25 @@ Insertion Order:
     Python 3.7+ dict maintains insertion order. The registry preserves this
     order for deterministic iteration via list_all().
 
+Scale and Performance:
+    This registry is designed for small to medium-sized deployments with fewer
+    than 1,000 registered providers. At this scale, the simple locking strategy
+    provides excellent performance with minimal contention.
+
+    The lock is held during iteration in methods like find_by_capability(),
+    find_by_tags(), list_all(), and list_capabilities(). This is intentional
+    to provide consistent snapshots, but means:
+
+    - Concurrent reads block each other during iteration
+    - Write operations (register/unregister) block until iteration completes
+    - For registries exceeding 1,000 entries, consider:
+        * Sharding by capability namespace (e.g., "database.*" vs "cache.*")
+        * Read-write locks (RWLock) for read-heavy workloads
+        * Copy-on-write snapshots for iteration
+
+    Typical use cases (provider discovery, capability matching) rarely exceed
+    100-200 providers, making this implementation well-suited for most deployments.
+
 Related:
     - OMN-1156: Provider registry implementation
     - ModelProviderDescriptor: The model stored in this registry
@@ -86,6 +105,12 @@ class RegistryProvider:
         All public methods are protected by an RLock (reentrant lock).
         This allows the same thread to call registry methods from within
         other registry method calls without deadlock.
+
+    Scale Constraints:
+        Designed for < 1,000 entries. Lock is held during iteration
+        (find_by_capability, find_by_tags, list_all, list_capabilities),
+        which is acceptable at this scale. For larger registries, consider
+        sharding or read-write locks.
 
     .. versionadded:: 0.4.0
     """
@@ -256,6 +281,8 @@ class RegistryProvider:
         .. versionadded:: 0.4.0
         """
         with self._lock:
+            # Lock held during iteration - acceptable for < 1,000 entries.
+            # For larger registries, consider sharding by capability namespace.
             return [p for p in self._providers.values() if capability in p.capabilities]
 
     def find_by_tags(
@@ -300,6 +327,10 @@ class RegistryProvider:
 
         .. versionadded:: 0.4.0
         """
+        # Empty tags list matches nothing - searching for no tags means no results.
+        # This also avoids Python's vacuous truth where all([]) returns True.
+        if not tags:
+            return []
 
         def matches(provider: ModelProviderDescriptor) -> bool:
             if match_all:
@@ -307,6 +338,7 @@ class RegistryProvider:
             return any(tag in provider.tags for tag in tags)
 
         with self._lock:
+            # Lock held during iteration - acceptable for < 1,000 entries.
             return [p for p in self._providers.values() if matches(p)]
 
     def list_all(self) -> list[ModelProviderDescriptor]:
@@ -334,6 +366,8 @@ class RegistryProvider:
         .. versionadded:: 0.4.0
         """
         with self._lock:
+            # Lock held during iteration - acceptable for < 1,000 entries.
+            # Returns a snapshot copy independent of registry mutations.
             return list(self._providers.values())
 
     def list_capabilities(self) -> set[str]:
@@ -366,6 +400,7 @@ class RegistryProvider:
         .. versionadded:: 0.4.0
         """
         with self._lock:
+            # Lock held during iteration - acceptable for < 1,000 entries.
             return {cap for p in self._providers.values() for cap in p.capabilities}
 
     def __len__(self) -> int:

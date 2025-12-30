@@ -467,16 +467,15 @@ class TestModelCapabilityMetadataFromAttributes:
 class TestModelCapabilityMetadataEdgeCases:
     """Tests for edge cases and boundary conditions."""
 
-    def test_empty_strings_allowed(self) -> None:
-        """Test that empty strings are allowed for string fields."""
+    def test_empty_strings_allowed_for_non_capability_fields(self) -> None:
+        """Test that empty strings are allowed for name and description fields."""
         metadata = ModelCapabilityMetadata(
-            capability="",
+            capability="test.capability",
             name="",
             version=ModelSemVer(major=1, minor=0, patch=0),
             description="",
         )
 
-        assert metadata.capability == ""
         assert metadata.name == ""
         assert metadata.description == ""
 
@@ -527,16 +526,16 @@ class TestModelCapabilityMetadataEdgeCases:
         assert metadata.name == "Base de Donnees Relationnelle"
         assert "UTF-8" in metadata.description
 
-    def test_special_characters_in_capability(self) -> None:
-        """Test that special characters in capability ID work."""
+    def test_underscores_and_numbers_in_capability(self) -> None:
+        """Test that underscores and numbers in capability segments work."""
         metadata = ModelCapabilityMetadata(
-            capability="my-org.service_v2.feature",
-            name="Special Chars",
+            capability="my_org.service_v2.feature123",
+            name="Underscores and Numbers",
             version=ModelSemVer(major=1, minor=0, patch=0),
-            description="Capability with special characters",
+            description="Capability with underscores and numbers in segments",
         )
 
-        assert metadata.capability == "my-org.service_v2.feature"
+        assert metadata.capability == "my_org.service_v2.feature123"
 
     def test_prerelease_version(self) -> None:
         """Test that prerelease versions work correctly."""
@@ -549,6 +548,217 @@ class TestModelCapabilityMetadataEdgeCases:
 
         assert metadata.version.prerelease == ("alpha", 1)
         assert str(metadata.version) == "1.0.0-alpha.1"
+
+
+@pytest.mark.unit
+class TestModelCapabilityMetadataCapabilityFormatValidation:
+    """Tests for capability field format validation."""
+
+    def test_valid_simple_capability(self) -> None:
+        """Test that simple single-segment capability is valid."""
+        metadata = ModelCapabilityMetadata(
+            capability="database",
+            name="Database",
+            version=ModelSemVer(major=1, minor=0, patch=0),
+            description="Database capability",
+        )
+        assert metadata.capability == "database"
+
+    def test_valid_dot_separated_capability(self) -> None:
+        """Test that dot-separated capability is valid."""
+        metadata = ModelCapabilityMetadata(
+            capability="llm.generation",
+            name="LLM Generation",
+            version=ModelSemVer(major=1, minor=0, patch=0),
+            description="LLM text generation capability",
+        )
+        assert metadata.capability == "llm.generation"
+
+    def test_valid_multi_segment_capability(self) -> None:
+        """Test that multi-segment capability is valid."""
+        metadata = ModelCapabilityMetadata(
+            capability="compute.gpu.nvidia",
+            name="NVIDIA GPU Compute",
+            version=ModelSemVer(major=1, minor=0, patch=0),
+            description="NVIDIA GPU compute capability",
+        )
+        assert metadata.capability == "compute.gpu.nvidia"
+
+    def test_valid_capability_with_underscores(self) -> None:
+        """Test that underscores in segments are valid."""
+        metadata = ModelCapabilityMetadata(
+            capability="storage.vector_db",
+            name="Vector Database",
+            version=ModelSemVer(major=1, minor=0, patch=0),
+            description="Vector database storage",
+        )
+        assert metadata.capability == "storage.vector_db"
+
+    def test_valid_capability_with_numbers(self) -> None:
+        """Test that numbers in segments are valid (after first char)."""
+        metadata = ModelCapabilityMetadata(
+            capability="auth.oauth2",
+            name="OAuth 2.0",
+            version=ModelSemVer(major=1, minor=0, patch=0),
+            description="OAuth 2.0 authentication",
+        )
+        assert metadata.capability == "auth.oauth2"
+
+    def test_invalid_capability_uppercase(self) -> None:
+        """Test that uppercase letters are rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelCapabilityMetadata(
+                capability="LLM.Generation",
+                name="Invalid",
+                version=ModelSemVer(major=1, minor=0, patch=0),
+                description="Should fail",
+            )
+
+        errors = exc_info.value.errors()
+        assert len(errors) == 1
+        assert "capability" in str(errors[0]["loc"])
+        assert "Invalid capability format" in str(errors[0]["msg"])
+
+    def test_invalid_capability_starts_with_number(self) -> None:
+        """Test that capability starting with number is rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelCapabilityMetadata(
+                capability="123.abc",
+                name="Invalid",
+                version=ModelSemVer(major=1, minor=0, patch=0),
+                description="Should fail",
+            )
+
+        errors = exc_info.value.errors()
+        assert len(errors) == 1
+        assert "capability" in str(errors[0]["loc"])
+
+    def test_invalid_capability_starts_with_dot(self) -> None:
+        """Test that capability starting with dot is rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelCapabilityMetadata(
+                capability=".invalid",
+                name="Invalid",
+                version=ModelSemVer(major=1, minor=0, patch=0),
+                description="Should fail",
+            )
+
+        errors = exc_info.value.errors()
+        assert len(errors) == 1
+        assert "capability" in str(errors[0]["loc"])
+
+    def test_invalid_capability_ends_with_dot(self) -> None:
+        """Test that capability ending with dot is rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelCapabilityMetadata(
+                capability="invalid.",
+                name="Invalid",
+                version=ModelSemVer(major=1, minor=0, patch=0),
+                description="Should fail",
+            )
+
+        errors = exc_info.value.errors()
+        assert len(errors) == 1
+        assert "capability" in str(errors[0]["loc"])
+
+    def test_invalid_capability_empty_segment(self) -> None:
+        """Test that empty segments (double dots) are rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelCapabilityMetadata(
+                capability="invalid..segment",
+                name="Invalid",
+                version=ModelSemVer(major=1, minor=0, patch=0),
+                description="Should fail",
+            )
+
+        errors = exc_info.value.errors()
+        assert len(errors) == 1
+        assert "capability" in str(errors[0]["loc"])
+
+    def test_invalid_capability_empty_string(self) -> None:
+        """Test that empty capability string is rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelCapabilityMetadata(
+                capability="",
+                name="Invalid",
+                version=ModelSemVer(major=1, minor=0, patch=0),
+                description="Should fail",
+            )
+
+        errors = exc_info.value.errors()
+        assert len(errors) == 1
+        assert "capability" in str(errors[0]["loc"])
+
+    def test_invalid_capability_with_hyphen(self) -> None:
+        """Test that hyphens are rejected (use underscores instead)."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelCapabilityMetadata(
+                capability="my-org.service",
+                name="Invalid",
+                version=ModelSemVer(major=1, minor=0, patch=0),
+                description="Should fail",
+            )
+
+        errors = exc_info.value.errors()
+        assert len(errors) == 1
+        assert "capability" in str(errors[0]["loc"])
+
+    def test_invalid_capability_with_spaces(self) -> None:
+        """Test that spaces are rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelCapabilityMetadata(
+                capability="invalid space",
+                name="Invalid",
+                version=ModelSemVer(major=1, minor=0, patch=0),
+                description="Should fail",
+            )
+
+        errors = exc_info.value.errors()
+        assert len(errors) == 1
+        assert "capability" in str(errors[0]["loc"])
+
+    def test_invalid_capability_segment_starts_with_number(self) -> None:
+        """Test that segment starting with number is rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelCapabilityMetadata(
+                capability="valid.2invalid",
+                name="Invalid",
+                version=ModelSemVer(major=1, minor=0, patch=0),
+                description="Should fail",
+            )
+
+        errors = exc_info.value.errors()
+        assert len(errors) == 1
+        assert "capability" in str(errors[0]["loc"])
+
+    def test_invalid_capability_segment_starts_with_underscore(self) -> None:
+        """Test that segment starting with underscore is rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelCapabilityMetadata(
+                capability="valid._invalid",
+                name="Invalid",
+                version=ModelSemVer(major=1, minor=0, patch=0),
+                description="Should fail",
+            )
+
+        errors = exc_info.value.errors()
+        assert len(errors) == 1
+        assert "capability" in str(errors[0]["loc"])
+
+    def test_error_message_includes_examples(self) -> None:
+        """Test that error message includes helpful examples."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelCapabilityMetadata(
+                capability="INVALID",
+                name="Invalid",
+                version=ModelSemVer(major=1, minor=0, patch=0),
+                description="Should fail",
+            )
+
+        error_msg = str(exc_info.value.errors()[0]["msg"])
+        assert "llm.generation" in error_msg
+        assert "storage.vector_db" in error_msg
+        assert "compute.gpu.nvidia" in error_msg
 
 
 @pytest.mark.unit

@@ -347,13 +347,17 @@ class TestRegistryProviderFindByTags:
     def test_find_by_tags_empty_tags_match_all(
         self, registry: RegistryProvider, db_provider: ModelProviderDescriptor
     ) -> None:
-        """Test find_by_tags with empty tags and match_all returns all."""
+        """Test find_by_tags with empty tags and match_all returns empty.
+
+        Empty tags list means "searching for nothing", so no results are returned.
+        This avoids Python's vacuous truth where all([]) returns True.
+        """
         registry.register(db_provider)
 
-        # With match_all=True and empty tags, all() returns True (vacuous truth)
+        # Empty tags returns empty - searching for no tags matches nothing
         results = registry.find_by_tags([], match_all=True)
 
-        assert len(results) == 1
+        assert len(results) == 0
 
     def test_find_by_tags_no_matches(
         self, registry: RegistryProvider, db_provider: ModelProviderDescriptor
