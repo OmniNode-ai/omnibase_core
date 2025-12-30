@@ -22,7 +22,7 @@ Usage:
         async def resolve_dependencies(
             resolver: ProtocolDependencyResolver,
             specs: list[ModelDependencySpec],
-        ) -> dict[str, Any]:
+        ) -> dict[str, object]:
             '''Resolve multiple dependencies using the resolver.'''
             return await resolver.resolve_all(specs)
 

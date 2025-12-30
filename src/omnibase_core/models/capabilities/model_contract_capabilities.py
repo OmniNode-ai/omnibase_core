@@ -10,8 +10,6 @@ the node capabilities system with contract-based metadata.
 OMN-1124: ModelContractCapabilities - Contract-derived capabilities.
 """
 
-from __future__ import annotations
-
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.primitives.model_semver import ModelSemVer
