@@ -1,0 +1,447 @@
+# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
+#
+# SPDX-License-Identifier: Apache-2.0
+"""
+RegistryProvider - In-memory thread-safe registry for provider descriptors.
+
+This module provides the RegistryProvider class for managing ModelProviderDescriptor
+instances at runtime. The registry supports registration, lookup, and filtering
+of providers by capability and tags.
+
+Thread Safety:
+    All operations are protected by threading.RLock for reentrant safety.
+    The registry can be safely accessed from multiple threads concurrently.
+
+Insertion Order:
+    Python 3.7+ dict maintains insertion order. The registry preserves this
+    order for deterministic iteration via list_all().
+
+Related:
+    - OMN-1156: Provider registry implementation
+    - ModelProviderDescriptor: The model stored in this registry
+
+.. versionadded:: 0.4.0
+"""
+
+from __future__ import annotations
+
+__all__ = ["RegistryProvider"]
+
+import threading
+from typing import TYPE_CHECKING
+
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+
+if TYPE_CHECKING:
+    from omnibase_core.models.providers.model_provider_descriptor import (
+        ModelProviderDescriptor,
+    )
+
+
+class RegistryProvider:
+    """In-memory thread-safe registry for provider descriptors.
+
+    Provides CRUD operations for ModelProviderDescriptor instances with
+    thread safety via RLock. Maintains insertion order for deterministic
+    iteration. Rejects duplicate provider_id unless replace=True.
+
+    Attributes:
+        _providers: Internal dict mapping provider_id (as str) to descriptors.
+        _lock: RLock for thread-safe access.
+
+    Example:
+        .. code-block:: python
+
+            from uuid import uuid4
+            from omnibase_core.services.registry.registry_provider import RegistryProvider
+            from omnibase_core.models.providers import ModelProviderDescriptor
+
+            # Create registry and provider
+            registry = RegistryProvider()
+            provider = ModelProviderDescriptor(
+                provider_id=uuid4(),
+                capabilities=["database.relational"],
+                adapter="test.Adapter",
+                connection_ref="env://TEST",
+                tags=["production", "primary"],
+            )
+
+            # Register provider
+            registry.register(provider)
+
+            # Lookup by ID
+            found = registry.get(str(provider.provider_id))
+            assert found is not None
+
+            # Find by capability
+            db_providers = registry.find_by_capability("database.relational")
+            assert len(db_providers) == 1
+
+            # Find by tags
+            prod_providers = registry.find_by_tags(["production"])
+            assert len(prod_providers) == 1
+
+    Thread Safety:
+        All public methods are protected by an RLock (reentrant lock).
+        This allows the same thread to call registry methods from within
+        other registry method calls without deadlock.
+
+    .. versionadded:: 0.4.0
+    """
+
+    def __init__(self) -> None:
+        """Initialize an empty RegistryProvider.
+
+        Creates an empty provider registry with a reentrant lock for
+        thread-safe operations.
+        """
+        # Type annotation uses forward reference (string) due to
+        # `from __future__ import annotations`. The actual type is
+        # imported only in TYPE_CHECKING block to avoid circular imports.
+        self._providers: dict[str, ModelProviderDescriptor] = {}
+        self._lock = threading.RLock()
+
+    def register(
+        self,
+        provider: ModelProviderDescriptor,
+        replace: bool = False,
+    ) -> None:
+        """Register a provider descriptor.
+
+        Adds a provider to the registry. By default, rejects duplicates
+        (same provider_id). Use replace=True to overwrite existing entries.
+
+        Args:
+            provider: The provider descriptor to register.
+            replace: If True, replace existing provider with same ID.
+                If False (default), raise ValueError for duplicates.
+
+        Raises:
+            ValueError: If provider_id already exists and replace=False.
+
+        Example:
+            .. code-block:: python
+
+                registry = RegistryProvider()
+
+                # First registration succeeds
+                registry.register(provider)
+
+                # Duplicate raises without replace=True
+                registry.register(provider)  # Raises ValueError!
+
+                # Replace existing
+                updated_provider = provider.model_copy(update={"tags": ["updated"]})
+                registry.register(updated_provider, replace=True)  # OK
+
+        Thread Safety:
+            This method is protected by the internal RLock.
+
+        .. versionadded:: 0.4.0
+        """
+        provider_id = str(provider.provider_id)
+
+        with self._lock:
+            if provider_id in self._providers and not replace:
+                raise ModelOnexError(
+                    message=f"Provider '{provider_id}' already registered. "
+                    "Use replace=True to overwrite.",
+                    error_code=EnumCoreErrorCode.DUPLICATE_REGISTRATION,
+                    context={"provider_id": provider_id},
+                )
+            self._providers[provider_id] = provider
+
+    def unregister(
+        self, provider_id: str
+    ) -> bool:  # id-ok: semantic provider identifier
+        """Unregister a provider by ID.
+
+        Removes the provider with the given ID from the registry.
+
+        Args:
+            provider_id: The provider ID (as string) to remove.
+
+        Returns:
+            True if the provider was found and removed, False if not found.
+
+        Example:
+            .. code-block:: python
+
+                registry = RegistryProvider()
+                registry.register(provider)
+
+                # Remove returns True
+                removed = registry.unregister(str(provider.provider_id))
+                assert removed is True
+
+                # Removing again returns False
+                removed = registry.unregister(str(provider.provider_id))
+                assert removed is False
+
+        Thread Safety:
+            This method is protected by the internal RLock.
+
+        .. versionadded:: 0.4.0
+        """
+        with self._lock:
+            return self._providers.pop(provider_id, None) is not None
+
+    def get(
+        self, provider_id: str
+    ) -> ModelProviderDescriptor | None:  # id-ok: semantic provider identifier
+        """Get a provider by ID.
+
+        Retrieves the provider with the given ID.
+
+        Args:
+            provider_id: The provider ID (as string) to look up.
+
+        Returns:
+            The ModelProviderDescriptor if found, None otherwise.
+
+        Example:
+            .. code-block:: python
+
+                registry = RegistryProvider()
+                registry.register(provider)
+
+                # Found
+                found = registry.get(str(provider.provider_id))
+                assert found is not None
+
+                # Not found
+                missing = registry.get("nonexistent-id")
+                assert missing is None
+
+        Thread Safety:
+            This method is protected by the internal RLock.
+
+        .. versionadded:: 0.4.0
+        """
+        with self._lock:
+            return self._providers.get(provider_id)
+
+    def find_by_capability(self, capability: str) -> list[ModelProviderDescriptor]:
+        """Find all providers that offer a specific capability.
+
+        Searches for providers whose capabilities list contains the
+        exact capability string.
+
+        Args:
+            capability: The capability identifier to search for.
+                Must be an exact match (e.g., "database.relational").
+
+        Returns:
+            List of providers offering the capability. Empty list if none found.
+
+        Example:
+            .. code-block:: python
+
+                registry = RegistryProvider()
+                registry.register(db_provider)  # has "database.relational"
+                registry.register(cache_provider)  # has "cache.redis"
+
+                # Find database providers
+                db_providers = registry.find_by_capability("database.relational")
+                assert len(db_providers) == 1
+
+                # No match returns empty list
+                storage_providers = registry.find_by_capability("storage.s3")
+                assert len(storage_providers) == 0
+
+        Thread Safety:
+            This method is protected by the internal RLock.
+
+        .. versionadded:: 0.4.0
+        """
+        with self._lock:
+            return [p for p in self._providers.values() if capability in p.capabilities]
+
+    def find_by_tags(
+        self,
+        tags: list[str],
+        match_all: bool = False,
+    ) -> list[ModelProviderDescriptor]:
+        """Find providers by tags.
+
+        Searches for providers based on their tags.
+
+        Args:
+            tags: List of tags to search for.
+            match_all: If True, provider must have ALL specified tags.
+                If False (default), provider must have ANY of the tags.
+
+        Returns:
+            List of matching providers. Empty list if none found.
+
+        Example:
+            .. code-block:: python
+
+                registry = RegistryProvider()
+                # provider1 has tags: ["production", "primary"]
+                # provider2 has tags: ["staging"]
+                registry.register(provider1)
+                registry.register(provider2)
+
+                # Any match (default)
+                results = registry.find_by_tags(["production", "staging"])
+                assert len(results) == 2  # Both match at least one tag
+
+                # All must match
+                results = registry.find_by_tags(
+                    ["production", "primary"],
+                    match_all=True,
+                )
+                assert len(results) == 1  # Only provider1 has both
+
+        Thread Safety:
+            This method is protected by the internal RLock.
+
+        .. versionadded:: 0.4.0
+        """
+
+        def matches(provider: ModelProviderDescriptor) -> bool:
+            if match_all:
+                return all(tag in provider.tags for tag in tags)
+            return any(tag in provider.tags for tag in tags)
+
+        with self._lock:
+            return [p for p in self._providers.values() if matches(p)]
+
+    def list_all(self) -> list[ModelProviderDescriptor]:
+        """List all registered providers.
+
+        Returns all providers in insertion order (deterministic iteration).
+
+        Returns:
+            List of all registered providers. Empty list if none registered.
+
+        Example:
+            .. code-block:: python
+
+                registry = RegistryProvider()
+                registry.register(provider1)
+                registry.register(provider2)
+
+                all_providers = registry.list_all()
+                assert len(all_providers) == 2
+                assert all_providers[0] == provider1  # Insertion order
+
+        Thread Safety:
+            This method is protected by the internal RLock.
+
+        .. versionadded:: 0.4.0
+        """
+        with self._lock:
+            return list(self._providers.values())
+
+    def list_capabilities(self) -> set[str]:
+        """List all unique capabilities across all providers.
+
+        Aggregates capabilities from all registered providers into a set.
+
+        Returns:
+            Set of all unique capability identifiers.
+
+        Example:
+            .. code-block:: python
+
+                registry = RegistryProvider()
+                # provider1: ["database.relational", "database.postgresql"]
+                # provider2: ["cache.redis", "database.relational"]
+                registry.register(provider1)
+                registry.register(provider2)
+
+                capabilities = registry.list_capabilities()
+                assert capabilities == {
+                    "database.relational",
+                    "database.postgresql",
+                    "cache.redis",
+                }
+
+        Thread Safety:
+            This method is protected by the internal RLock.
+
+        .. versionadded:: 0.4.0
+        """
+        with self._lock:
+            return {cap for p in self._providers.values() for cap in p.capabilities}
+
+    def __len__(self) -> int:
+        """Return the number of registered providers.
+
+        Returns:
+            int: Count of registered providers.
+
+        Example:
+            .. code-block:: python
+
+                registry = RegistryProvider()
+                assert len(registry) == 0
+
+                registry.register(provider)
+                assert len(registry) == 1
+
+        .. versionadded:: 0.4.0
+        """
+        with self._lock:
+            return len(self._providers)
+
+    def __contains__(
+        self, provider_id: str
+    ) -> bool:  # id-ok: semantic provider identifier
+        """Check if a provider ID is registered.
+
+        Args:
+            provider_id: The provider ID (as string) to check.
+
+        Returns:
+            bool: True if registered, False otherwise.
+
+        Example:
+            .. code-block:: python
+
+                registry = RegistryProvider()
+                registry.register(provider)
+
+                assert str(provider.provider_id) in registry
+                assert "nonexistent" not in registry
+
+        .. versionadded:: 0.4.0
+        """
+        with self._lock:
+            return provider_id in self._providers
+
+    def clear(self) -> None:
+        """Remove all registered providers.
+
+        Clears the registry, removing all providers.
+
+        Example:
+            .. code-block:: python
+
+                registry = RegistryProvider()
+                registry.register(provider1)
+                registry.register(provider2)
+                assert len(registry) == 2
+
+                registry.clear()
+                assert len(registry) == 0
+
+        Thread Safety:
+            This method is protected by the internal RLock.
+
+        .. versionadded:: 0.4.0
+        """
+        with self._lock:
+            self._providers.clear()
+
+    def __repr__(self) -> str:
+        """Return a string representation for debugging.
+
+        Returns:
+            str: Format "RegistryProvider(providers=N)"
+        """
+        with self._lock:
+            return f"RegistryProvider(providers={len(self._providers)})"
