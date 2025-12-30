@@ -196,7 +196,6 @@ class MixinNodeLifecycle:
         except (
             Exception
         ) as e:  # fallback-ok: event publishing is non-critical, log and continue
-            # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
             context = ModelLogContext(
                 calling_module=_COMPONENT_NAME,
                 calling_function="_register_node",
@@ -261,7 +260,6 @@ class MixinNodeLifecycle:
         except (
             Exception
         ) as e:  # fallback-ok: shutdown event is non-critical, log and continue
-            # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
             context = ModelLogContext(
                 calling_module=_COMPONENT_NAME,
                 calling_function="_publish_shutdown_event",
@@ -476,7 +474,6 @@ class MixinNodeLifecycle:
             except (
                 Exception
             ) as e:  # fallback-ok: cleanup failure is non-critical, log and continue
-                # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
                 node_id = _get_node_id_as_uuid(self)
                 context = ModelLogContext(
                     calling_module=_COMPONENT_NAME,

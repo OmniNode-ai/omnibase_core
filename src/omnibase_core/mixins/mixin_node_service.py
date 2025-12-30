@@ -154,7 +154,6 @@ class MixinNodeService:
         except (
             Exception
         ) as e:  # fallback-ok: service startup requires cleanup on any error
-            # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
             self._log_error(f"Failed to start service: {e}")
             await self.stop_service_mode()
             raise
@@ -198,7 +197,6 @@ class MixinNodeService:
                 except (
                     Exception
                 ) as e:  # fallback-ok: user callbacks must not crash shutdown
-                    # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
                     self._log_error(f"Shutdown callback failed: {e}")
 
             # Cleanup event handlers if available
@@ -211,7 +209,6 @@ class MixinNodeService:
         except (
             Exception
         ) as e:  # fallback-ok: shutdown must complete even if cleanup fails
-            # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
             self._log_error(f"Error during service shutdown: {e}")
             self._service_running = False
 
@@ -340,7 +337,6 @@ class MixinNodeService:
             Exception
         ) as e:  # fallback-ok: service must emit error response for any failure
             # Fallback for truly unexpected exceptions not covered above.
-            # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate.
             execution_time_ms = int((time.time() - start_time) * 1000)
             response_event = ModelToolResponseEvent.create_error_response(
                 correlation_id=correlation_id,
