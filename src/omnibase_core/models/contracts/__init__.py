@@ -70,8 +70,8 @@ from omnibase_core.models.runtime.model_descriptor_circuit_breaker import (
 from omnibase_core.models.runtime.model_descriptor_retry_policy import (
     ModelDescriptorRetryPolicy,
 )
-from omnibase_core.models.runtime.model_handler_descriptor import (
-    ModelHandlerDescriptor,
+from omnibase_core.models.runtime.model_handler_behavior_descriptor import (
+    ModelHandlerBehaviorDescriptor,
 )
 from omnibase_core.models.security.model_condition_value import ModelConditionValue
 from omnibase_core.models.services.model_external_service_config import (
@@ -188,7 +188,7 @@ __all__ = [
     "ModelExecutionProfile",
     "DEFAULT_EXECUTION_PHASES",
     # Handler descriptor models (for contract-driven execution)
-    "ModelHandlerDescriptor",
+    "ModelHandlerBehaviorDescriptor",
     "ModelDescriptorRetryPolicy",
     "ModelDescriptorCircuitBreaker",
     "ModelEventRegistryConfig",
