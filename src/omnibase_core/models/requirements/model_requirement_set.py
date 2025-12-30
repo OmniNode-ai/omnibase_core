@@ -8,15 +8,18 @@ forbid (exclusions), and hints (non-binding tie-breakers).
 
 from __future__ import annotations
 
+import logging
 import warnings
-from collections.abc import Mapping
+from collections.abc import Hashable, Mapping, Sequence
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 __all__ = [
     "ModelRequirementSet",
 ]
+
+logger = logging.getLogger(__name__)
 
 
 class ModelRequirementSet(BaseModel):
@@ -31,6 +34,22 @@ class ModelRequirementSet(BaseModel):
     Comparison Semantics:
     - Key-name heuristics: max_* keys use <=, min_* keys use >=, others use ==
     - Operator support: $eq, $ne, $lt, $lte, $gt, $gte, $in, $contains
+
+    Thread Safety:
+        This class is thread-safe for read operations. The model is frozen
+        (immutable after creation), so instances can be safely shared across
+        threads. However, the provider Mapping passed to matches() and sort_key()
+        should not be modified during method execution.
+
+        For thread safety patterns, see: docs/guides/THREADING.md
+
+    Caching:
+        The sort_key() and matches() methods do not cache results internally
+        because provider Mappings are mutable and not hashable. For performance
+        optimization when sorting many providers:
+        1. Use sort_providers() method for efficient batch sorting
+        2. Cache results externally if providers are known to be immutable
+        3. Convert providers to frozen/hashable forms for caching if needed
 
     Example:
         >>> reqs = ModelRequirementSet(
@@ -62,6 +81,124 @@ class ModelRequirementSet(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
+    @model_validator(mode="after")
+    def _validate_no_conflicts(self) -> ModelRequirementSet:
+        """Validate that there are no logical conflicts in requirements.
+
+        Checks for:
+        - Same key appearing in both must and forbid with equal values
+        - Keys in must that are also in forbid (potential conflict)
+
+        Returns:
+            Self if validation passes.
+
+        Raises:
+            ValueError: If logical conflicts are detected.
+        """
+        # Check for direct conflicts: same key in must and forbid with equal values
+        for key in self.must:
+            if key in self.forbid:
+                must_val = self.must[key]
+                forbid_val = self.forbid[key]
+                # If values are equal, this is a definite conflict
+                if must_val == forbid_val:
+                    raise ValueError(
+                        f"Logical conflict: key '{key}' has same value "
+                        f"({must_val!r}) in both 'must' and 'forbid'"
+                    )
+                # Log warning for same key with different values (potential issue)
+                logger.warning(
+                    "Key '%s' appears in both 'must' and 'forbid' with different values. "
+                    "This may indicate a configuration issue.",
+                    key,
+                )
+        return self
+
+    def validate_requirements(self) -> list[str]:
+        """Validate requirements for logical consistency and hashability.
+
+        Performs comprehensive validation including:
+        - Checking for logical conflicts (same item in must and forbid)
+        - Verifying that values used in set operations are hashable
+        - Checking list elements for hashability when used in comparisons
+
+        Returns:
+            A list of validation warnings (empty if all valid).
+            Critical errors are raised as exceptions during model construction.
+
+        Example:
+            >>> reqs = ModelRequirementSet(must={"region": "us-east-1"})
+            >>> warnings = reqs.validate_requirements()
+            >>> if warnings:
+            ...     print("Warnings:", warnings)
+        """
+        validation_warnings: list[str] = []
+
+        # Check hashability of values that may be used in set operations
+        for tier_name, tier_dict in [
+            ("must", self.must),
+            ("prefer", self.prefer),
+            ("forbid", self.forbid),
+            ("hints", self.hints),
+        ]:
+            for key, value in tier_dict.items():
+                # Check if value is hashable (needed for some comparisons)
+                if not self._is_hashable(value):
+                    validation_warnings.append(
+                        f"{tier_name}.{key}: Value {value!r} is not hashable. "
+                        "This may cause issues with set-based comparisons."
+                    )
+                # Check list elements for hashability
+                if isinstance(value, list):
+                    for i, item in enumerate(value):
+                        if not self._is_hashable(item):
+                            validation_warnings.append(
+                                f"{tier_name}.{key}[{i}]: List element {item!r} "
+                                "is not hashable. Set operations will use fallback."
+                            )
+
+        # Check for keys that appear in multiple tiers (may be intentional but worth noting)
+        all_keys = set(self.must.keys()) | set(self.prefer.keys())
+        all_keys |= set(self.forbid.keys()) | set(self.hints.keys())
+
+        for key in all_keys:
+            tiers_containing = []
+            if key in self.must:
+                tiers_containing.append("must")
+            if key in self.prefer:
+                tiers_containing.append("prefer")
+            if key in self.forbid:
+                tiers_containing.append("forbid")
+            if key in self.hints:
+                tiers_containing.append("hints")
+
+            if len(tiers_containing) > 1:
+                # Skip must+forbid conflict (already checked in validator)
+                if tiers_containing != ["must", "forbid"]:
+                    validation_warnings.append(
+                        f"Key '{key}' appears in multiple tiers: {tiers_containing}. "
+                        "This may be intentional but verify the logic."
+                    )
+
+        return validation_warnings
+
+    def _is_hashable(self, value: Any) -> bool:
+        """Check if a value is hashable.
+
+        Args:
+            value: The value to check.
+
+        Returns:
+            True if the value is hashable, False otherwise.
+        """
+        if isinstance(value, Hashable):
+            try:
+                hash(value)
+                return True
+            except TypeError:
+                return False
+        return False
+
     def matches(self, provider: Mapping[str, Any]) -> tuple[bool, float, list[str]]:
         """Check if provider satisfies requirements.
 
@@ -79,7 +216,7 @@ class ModelRequirementSet(BaseModel):
             - score: Sum of +1.0 for each satisfied PREFER constraint
             - warnings: List of unmet PREFER constraints (informational)
         """
-        warnings: list[str] = []
+        match_warnings: list[str] = []
 
         # Step 1: Check MUST requirements (all must be satisfied)
         for key, requirement in self.must.items():
@@ -99,24 +236,54 @@ class ModelRequirementSet(BaseModel):
             if self._check_requirement(key, requirement, provider):
                 score += 1.0
             else:
-                warnings.append(f"PREFER not satisfied: {key}")
+                match_warnings.append(f"PREFER not satisfied: {key}")
 
-        return (True, score, warnings)
+        return (True, score, match_warnings)
 
     def sort_key(self, provider: Mapping[str, Any]) -> tuple[float, int, str]:
-        """Return sort key for ordering providers.
+        """Return sort key for ordering providers by match quality.
 
-        Useful for sorting a list of providers by how well they match.
-        Use with sorted() with reverse=True for best matches first.
+        This method computes a composite sort key that enables deterministic
+        ordering of providers based on how well they match the requirements.
+        The key is designed for use with Python's sorted() function.
+
+        Sorting Algorithm:
+            The sort key is a 3-tuple ordered by priority:
+            1. Score (negated): Higher preference scores sort first
+            2. Hint rank: Fewer unmatched hints sort first
+            3. Deterministic fallback: Ensures stable ordering for equal scores
+
+        The negation of score allows ascending sort to produce best-matches-first
+        ordering. Non-matching providers receive (inf, 999, "") to sort last.
+
+        Performance Note:
+            This method calls matches() internally, which evaluates all
+            requirements. For sorting many providers, consider using
+            sort_providers() which may optimize repeated evaluations.
+
+            Results are NOT cached internally because provider Mappings are
+            mutable and not hashable. For performance-critical code, cache
+            results externally or ensure providers are converted to hashable
+            forms before repeated calls.
 
         Args:
             provider: A mapping of provider capabilities/attributes.
 
         Returns:
-            A tuple suitable for sorting:
-            - score: Negated so higher scores come first in ascending sort
-            - hint_rank: Lower is better (count of unmatched hints)
-            - deterministic_fallback: Stable ordering key based on provider id/name
+            A 3-tuple suitable for sorting:
+            - Element 0 (float): Negated score so higher scores sort first.
+                Non-matching providers return float('inf').
+            - Element 1 (int): Hint rank (count of unmatched hints).
+                Lower is better. Non-matching providers return 999.
+            - Element 2 (str): Deterministic fallback for stable ordering.
+                Uses provider 'id', 'name', or hash of provider.
+
+        Example:
+            >>> reqs = ModelRequirementSet(prefer={"speed": "fast"})
+            >>> providers = [{"name": "A", "speed": "fast"}, {"name": "B"}]
+            >>> sorted_providers = sorted(providers, key=reqs.sort_key)
+            >>> [p["name"] for p in sorted_providers]
+            ['A', 'B']
         """
         matches, score, _ = self.matches(provider)
 
@@ -131,26 +298,72 @@ class ModelRequirementSet(BaseModel):
                 hint_rank += 1
 
         # Deterministic fallback using provider id or name or hash
-        # Use try/except to handle unhashable values in provider dict
-        if "id" in provider:
-            fallback = str(provider["id"])
-        elif "name" in provider:
-            fallback = str(provider["name"])
-        else:
-            try:
-                fallback = str(
-                    hash(
-                        frozenset(provider.items())
-                        if isinstance(provider, dict)
-                        else id(provider)
-                    )
-                )
-            except TypeError:
-                # Fallback for unhashable values (lists, dicts, etc.)
-                fallback = str(id(provider))
+        fallback = self._compute_deterministic_fallback(provider)
 
         # Negate score so higher scores sort first in ascending order
         return (-score, hint_rank, fallback)
+
+    def _compute_deterministic_fallback(self, provider: Mapping[str, Any]) -> str:
+        """Compute a deterministic fallback string for stable sort ordering.
+
+        Args:
+            provider: The provider mapping.
+
+        Returns:
+            A string suitable for tie-breaking in sorts.
+        """
+        if "id" in provider:
+            return str(provider["id"])
+        if "name" in provider:
+            return str(provider["name"])
+        # Use try/except to handle unhashable values in provider dict
+        try:
+            return str(
+                hash(
+                    frozenset(provider.items())
+                    if isinstance(provider, dict)
+                    else id(provider)
+                )
+            )
+        except TypeError:
+            # Fallback for unhashable values (lists, dicts, etc.)
+            return str(id(provider))
+
+    def sort_providers(
+        self,
+        providers: Sequence[Mapping[str, Any]],
+        *,
+        reverse: bool = False,
+    ) -> list[Mapping[str, Any]]:
+        """Sort providers by match quality with optimized batch processing.
+
+        This method provides an efficient way to sort multiple providers,
+        potentially with internal caching optimizations for repeated
+        requirement evaluations.
+
+        Args:
+            providers: Sequence of provider mappings to sort.
+            reverse: If True, sort worst matches first (default: False).
+
+        Returns:
+            A new list of providers sorted by match quality.
+            Best matches appear first unless reverse=True.
+
+        Example:
+            >>> reqs = ModelRequirementSet(must={"active": True})
+            >>> providers = [
+            ...     {"name": "A", "active": False},
+            ...     {"name": "B", "active": True},
+            ... ]
+            >>> sorted_list = reqs.sort_providers(providers)
+            >>> [p["name"] for p in sorted_list]
+            ['B', 'A']
+        """
+        # Cache sort keys for efficiency when sorting
+        # Using a list of tuples to preserve order and enable caching
+        keyed_providers = [(self.sort_key(p), p) for p in providers]
+        keyed_providers.sort(key=lambda x: x[0], reverse=reverse)
+        return [p for _, p in keyed_providers]
 
     def _check_requirement(
         self,
@@ -317,12 +530,17 @@ class ModelRequirementSet(BaseModel):
             elif op == "$contains":
                 if not self._compare_contains(provider_value, expected):
                     return False
-            # Unknown operator - warn instead of silently ignoring
+            # Unknown operator - log warning and emit deprecation warning
             elif op.startswith("$"):
+                logger.warning(
+                    "Unknown operator '%s' in requirement - ignoring. "
+                    "Supported operators: $eq, $ne, $lt, $lte, $gt, $gte, $in, $contains",
+                    op,
+                )
                 warnings.warn(
                     f"Unknown operator '{op}' in requirement - ignoring",
                     UserWarning,
-                    stacklevel=2,
+                    stacklevel=3,
                 )
         return True
 
@@ -354,6 +572,7 @@ class ModelRequirementSet(BaseModel):
             except TypeError:
                 # Fallback for unhashable elements (dicts, lists, etc.)
                 # Use iteration instead of set operations
+                logger.debug("Using fallback comparison for unhashable list elements")
                 return any(item in requirement for item in provider_value)
 
         # Otherwise check if provider value is in requirement list

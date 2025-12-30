@@ -179,7 +179,8 @@ class TestPreferScoring:
     def test_prefer_does_not_affect_match(self) -> None:
         """PREFER failures don't cause match failure."""
         reqs = ModelRequirementSet(
-            must={"region": "us-east-1"}, prefer={"memory_gb": 32}  # Won't be satisfied
+            must={"region": "us-east-1"},
+            prefer={"memory_gb": 32},  # Won't be satisfied
         )
         provider = {"region": "us-east-1", "memory_gb": 8}
 
