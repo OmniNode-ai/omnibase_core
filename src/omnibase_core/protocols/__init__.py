@@ -126,6 +126,11 @@ from omnibase_core.protocols.event_bus import (
 from omnibase_core.protocols.handler import ProtocolHandlerContext
 
 # =============================================================================
+# Handlers Module Exports (Handler Type Resolution)
+# =============================================================================
+from omnibase_core.protocols.handlers import ProtocolHandlerTypeResolver
+
+# =============================================================================
 # HTTP Module Exports
 # =============================================================================
 from omnibase_core.protocols.http import ProtocolHttpClient, ProtocolHttpResponse
@@ -301,6 +306,10 @@ __all__ = [
     # Handler Module
     # ==========================================================================
     "ProtocolHandlerContext",
+    # ==========================================================================
+    # Handlers Module (Handler Type Resolution)
+    # ==========================================================================
+    "ProtocolHandlerTypeResolver",
     # ==========================================================================
     # Runtime Module
     # ==========================================================================

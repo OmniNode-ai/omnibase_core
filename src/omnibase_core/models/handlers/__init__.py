@@ -5,7 +5,8 @@ Handler models for ONEX framework.
 
 This module provides models for handler-related functionality including
 artifact references, identifiers, packaging metadata references, security
-metadata references, handler descriptors, and other handler configuration types.
+metadata references, handler descriptors, handler type metadata, and other
+handler configuration types.
 
 Key Models
 ----------
@@ -31,6 +32,11 @@ ModelSecurityMetadataRef
 ModelPackagingMetadataRef
     Reference to packaging metadata configuration (dependencies,
     entry points, distribution metadata).
+
+ModelHandlerTypeMetadata
+    Metadata describing handler type behavior (replay safety, secrets,
+    determinism, caching, idempotency). Used for runtime decisions about
+    handler execution semantics.
 
 Example Usage
 -------------
@@ -73,6 +79,18 @@ Working with identifiers:
     >>> # Use as dict keys
     >>> cache = {id1: "cached_value"}
     >>> id1 in cache
+    True
+
+Working with handler type metadata:
+
+    >>> from omnibase_core.models.handlers import get_handler_type_metadata
+    >>> from omnibase_core.enums import EnumHandlerTypeCategory
+    >>>
+    >>> # Get metadata for a handler category
+    >>> metadata = get_handler_type_metadata(EnumHandlerTypeCategory.COMPUTE)
+    >>> metadata.is_replay_safe
+    True
+    >>> metadata.allows_caching
     True
 
 End-to-End Runtime Example
@@ -190,6 +208,10 @@ from omnibase_core.models.handlers.model_artifact_ref import ModelArtifactRef
 from omnibase_core.models.handlers.model_handler_descriptor import (
     ModelHandlerDescriptor,
 )
+from omnibase_core.models.handlers.model_handler_type_metadata import (
+    ModelHandlerTypeMetadata,
+    get_handler_type_metadata,
+)
 from omnibase_core.models.handlers.model_identifier import ModelIdentifier
 from omnibase_core.models.handlers.model_packaging_metadata_ref import (
     ModelPackagingMetadataRef,
@@ -201,7 +223,9 @@ from omnibase_core.models.handlers.model_security_metadata_ref import (
 __all__ = [
     "ModelArtifactRef",
     "ModelHandlerDescriptor",
+    "ModelHandlerTypeMetadata",
     "ModelIdentifier",
     "ModelPackagingMetadataRef",
     "ModelSecurityMetadataRef",
+    "get_handler_type_metadata",
 ]
