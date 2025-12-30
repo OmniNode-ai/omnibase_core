@@ -26,6 +26,9 @@ HookCallable = Callable[["PipelineContext"], None | Coroutine[object, object, No
 class ModelHookError(BaseModel):
     """Represents an error captured during hook execution."""
 
+    # TODO(pydantic-v3): Re-evaluate from_attributes=True when Pydantic v3 is released.
+    # Workaround for pytest-xdist class identity issues. See model_pipeline_hook.py
+    # module docstring for detailed explanation.
     model_config = ConfigDict(
         frozen=True,
         extra="forbid",
@@ -74,6 +77,9 @@ class PipelineResult(BaseModel):
     and the final context state.
     """
 
+    # TODO(pydantic-v3): Re-evaluate from_attributes=True when Pydantic v3 is released.
+    # Workaround for pytest-xdist class identity issues. See model_pipeline_hook.py
+    # module docstring for detailed explanation.
     model_config = ConfigDict(
         frozen=True,
         extra="forbid",
@@ -117,12 +123,71 @@ class RunnerPipeline:
         - after, emit, finalize: continue (collect errors, run all hooks)
     - Finalize ALWAYS runs, even if earlier phases raise exceptions
 
-    Thread Safety:
-        - The runner is NOT thread-safe during execution (intentional design)
-        - Create a new RunnerPipeline instance per execution/thread
-        - The execution plan (ModelExecutionPlan) is frozen and can be safely
-          shared across threads
-        - The callable_registry dict must not be modified after runner creation
+    Thread Safety
+    -------------
+    **CRITICAL**: This class is NOT thread-safe during execution (intentional design).
+
+    **Thread Safety Matrix:**
+
+    ===============================  ==============  =====================================
+    Component                        Thread-Safe?    Notes
+    ===============================  ==============  =====================================
+    RunnerPipeline instance          No              Mutable state during run()
+    ModelExecutionPlan               Yes             Frozen Pydantic model (frozen=True)
+    ModelPhaseExecutionPlan          Yes             Frozen Pydantic model (frozen=True)
+    ModelPipelineHook                Yes             Frozen Pydantic model (frozen=True)
+    PipelineContext                  No              Mutable dict for hook communication
+    PipelineResult                   Yes             Frozen Pydantic model (frozen=True)
+    ModelHookError                   Yes             Frozen Pydantic model (frozen=True)
+    callable_registry dict           Conditional     Safe if not modified after init
+    ===============================  ==============  =====================================
+
+    **Usage Patterns:**
+
+    Incorrect - Sharing runner across threads::
+
+        # UNSAFE - concurrent execution will have race conditions
+        runner = RunnerPipeline(plan, registry)
+
+        async def worker_1():
+            await runner.run()  # Race on context state!
+
+        async def worker_2():
+            await runner.run()  # Race on context state!
+
+    Correct - Separate instance per execution::
+
+        # SAFE - each execution gets its own runner
+        def create_runner():
+            return RunnerPipeline(plan, registry)  # plan is safely shared
+
+        async def worker_1():
+            runner = create_runner()
+            await runner.run()  # Isolated execution
+
+        async def worker_2():
+            runner = create_runner()
+            await runner.run()  # Isolated execution
+
+    **Design Rationale:**
+
+    The runner is intentionally NOT thread-safe for these reasons:
+
+    1. **Performance**: Synchronization adds overhead to every hook execution
+    2. **Simplicity**: Per-execution instances are simpler to reason about
+    3. **AsyncIO Compatibility**: Most pipeline workloads use asyncio single-threaded
+    4. **Explicit Control**: Callers must consciously choose concurrency model
+
+    **Safe Sharing:**
+
+    - ``ModelExecutionPlan`` is frozen and can be safely shared across threads
+    - ``callable_registry`` dict can be shared IF not modified after runner creation
+    - Use ``plan.model_copy()`` if you need isolated plan modifications
+
+    See Also
+    --------
+    - docs/guides/THREADING.md for comprehensive thread safety guide
+    - CLAUDE.md section "Thread Safety" for quick reference
     """
 
     def __init__(

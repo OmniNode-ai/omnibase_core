@@ -14,6 +14,9 @@ from omnibase_core.pipeline.models.model_pipeline_hook import (
 class ModelPhaseExecutionPlan(BaseModel):
     """Execution plan for a single phase."""
 
+    # TODO(pydantic-v3): Re-evaluate from_attributes=True when Pydantic v3 is released.
+    # Workaround for pytest-xdist class identity issues. See model_pipeline_hook.py
+    # module docstring for detailed explanation.
     model_config = ConfigDict(
         frozen=True,
         extra="forbid",
@@ -42,6 +45,9 @@ class ModelExecutionPlan(BaseModel):
     ready for execution by the PipelineRunner.
     """
 
+    # TODO(pydantic-v3): Re-evaluate from_attributes=True when Pydantic v3 is released.
+    # Workaround for pytest-xdist class identity issues. See model_pipeline_hook.py
+    # module docstring for detailed explanation.
     model_config = ConfigDict(
         frozen=True,
         extra="forbid",
@@ -62,10 +68,16 @@ class ModelExecutionPlan(BaseModel):
     )
 
     def get_phase_hooks(self, phase: PipelinePhase) -> list[ModelPipelineHook]:
-        """Get hooks for a specific phase in execution order."""
+        """
+        Get hooks for a specific phase in execution order.
+
+        Returns:
+            A copy of the hooks list (safe to modify without affecting
+            internal state).
+        """
         if phase not in self.phases:
             return []
-        return self.phases[phase].hooks
+        return list(self.phases[phase].hooks)
 
     def is_phase_fail_fast(self, phase: PipelinePhase) -> bool:
         """Check if a phase should fail fast on error."""

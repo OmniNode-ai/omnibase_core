@@ -13,9 +13,11 @@ from omnibase_core.pipeline.composer_middleware import (
     MiddlewareComposer,
 )
 from omnibase_core.pipeline.exceptions import (
+    CallableNotFoundError,
     DependencyCycleError,
     DuplicateHookError,
     HookRegistryFrozenError,
+    HookTimeoutError,
     HookTypeMismatchError,
     PipelineError,
     UnknownDependencyError,
@@ -40,9 +42,11 @@ from omnibase_core.pipeline.runner_pipeline import (
 
 __all__ = [
     # Exceptions
+    "CallableNotFoundError",
     "DependencyCycleError",
     "DuplicateHookError",
     "HookRegistryFrozenError",
+    "HookTimeoutError",
     "HookTypeMismatchError",
     "PipelineError",
     "UnknownDependencyError",

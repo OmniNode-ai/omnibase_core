@@ -777,3 +777,290 @@ class TestRunnerPipelineComplexPipeline:
 
         # Preflight ran, before ran and failed, execute skipped, finalize ran
         assert execution_order == ["preflight", "before", "finalize"]
+
+
+@pytest.mark.unit
+class TestRunnerPipelineTimeoutEnforcement:
+    """Test timeout enforcement for hooks."""
+
+    @pytest.mark.unit
+    @pytest.mark.asyncio
+    async def test_async_hook_timeout_raises_hook_timeout_error(self) -> None:
+        """Async hook that exceeds timeout raises HookTimeoutError."""
+        import asyncio
+
+        from omnibase_core.pipeline.exceptions import HookTimeoutError
+
+        async def slow_hook(ctx: PipelineContext) -> None:
+            await asyncio.sleep(1.0)  # Sleep longer than timeout
+
+        hook = ModelPipelineHook(
+            hook_id="slow",
+            phase="execute",
+            callable_ref="test.slow",
+            timeout_seconds=0.1,  # 100ms timeout
+        )
+        plan = make_plan_with_hooks(("execute", [hook]))
+
+        runner = RunnerPipeline(plan=plan, callable_registry={"test.slow": slow_hook})
+
+        with pytest.raises(HookTimeoutError) as exc_info:
+            await runner.run()
+
+        # Verify error message contains expected info
+        assert "slow" in str(exc_info.value)
+        assert "0.1" in str(exc_info.value)
+
+    @pytest.mark.unit
+    @pytest.mark.asyncio
+    async def test_sync_hook_timeout_raises_hook_timeout_error(self) -> None:
+        """Sync hook that exceeds timeout raises HookTimeoutError."""
+        import time
+
+        from omnibase_core.pipeline.exceptions import HookTimeoutError
+
+        def slow_sync_hook(ctx: PipelineContext) -> None:
+            time.sleep(1.0)  # Sleep longer than timeout
+
+        hook = ModelPipelineHook(
+            hook_id="slow_sync",
+            phase="execute",
+            callable_ref="test.slow_sync",
+            timeout_seconds=0.1,  # 100ms timeout
+        )
+        plan = make_plan_with_hooks(("execute", [hook]))
+
+        runner = RunnerPipeline(
+            plan=plan, callable_registry={"test.slow_sync": slow_sync_hook}
+        )
+
+        with pytest.raises(HookTimeoutError) as exc_info:
+            await runner.run()
+
+        # Verify error message contains expected info
+        assert "slow_sync" in str(exc_info.value)
+        assert "0.1" in str(exc_info.value)
+
+    @pytest.mark.unit
+    @pytest.mark.asyncio
+    async def test_async_hook_completes_within_timeout(self) -> None:
+        """Async hook that completes within timeout succeeds."""
+        import asyncio
+
+        executed: list[bool] = []
+
+        async def fast_hook(ctx: PipelineContext) -> None:
+            await asyncio.sleep(0.01)  # Sleep less than timeout
+            executed.append(True)
+
+        hook = ModelPipelineHook(
+            hook_id="fast",
+            phase="execute",
+            callable_ref="test.fast",
+            timeout_seconds=1.0,  # 1 second timeout
+        )
+        plan = make_plan_with_hooks(("execute", [hook]))
+
+        runner = RunnerPipeline(plan=plan, callable_registry={"test.fast": fast_hook})
+        result = await runner.run()
+
+        assert result.success is True
+        assert executed == [True]
+
+    @pytest.mark.unit
+    @pytest.mark.asyncio
+    async def test_sync_hook_completes_within_timeout(self) -> None:
+        """Sync hook that completes within timeout succeeds."""
+        import time
+
+        executed: list[bool] = []
+
+        def fast_sync_hook(ctx: PipelineContext) -> None:
+            time.sleep(0.01)  # Sleep less than timeout
+            executed.append(True)
+
+        hook = ModelPipelineHook(
+            hook_id="fast_sync",
+            phase="execute",
+            callable_ref="test.fast_sync",
+            timeout_seconds=1.0,  # 1 second timeout
+        )
+        plan = make_plan_with_hooks(("execute", [hook]))
+
+        runner = RunnerPipeline(
+            plan=plan, callable_registry={"test.fast_sync": fast_sync_hook}
+        )
+        result = await runner.run()
+
+        assert result.success is True
+        assert executed == [True]
+
+    @pytest.mark.unit
+    @pytest.mark.asyncio
+    async def test_hook_without_timeout_no_enforcement(self) -> None:
+        """Hook without timeout_seconds runs without timeout enforcement."""
+        import asyncio
+
+        executed: list[bool] = []
+
+        async def hook_no_timeout(ctx: PipelineContext) -> None:
+            await asyncio.sleep(0.05)  # Would timeout if enforced at 0.01s
+            executed.append(True)
+
+        hook = ModelPipelineHook(
+            hook_id="no_timeout",
+            phase="execute",
+            callable_ref="test.no_timeout",
+            # No timeout_seconds specified - defaults to None
+        )
+        plan = make_plan_with_hooks(("execute", [hook]))
+
+        runner = RunnerPipeline(
+            plan=plan, callable_registry={"test.no_timeout": hook_no_timeout}
+        )
+        result = await runner.run()
+
+        assert result.success is True
+        assert executed == [True]
+
+    @pytest.mark.unit
+    @pytest.mark.asyncio
+    async def test_timeout_in_continue_phase_captured_as_error(self) -> None:
+        """Timeout in continue phase (after) is captured, not raised."""
+        import asyncio
+
+        async def slow_after_hook(ctx: PipelineContext) -> None:
+            await asyncio.sleep(1.0)
+
+        hook = ModelPipelineHook(
+            hook_id="slow_after",
+            phase="after",
+            callable_ref="test.slow_after",
+            timeout_seconds=0.1,
+        )
+        plan = make_plan_with_hooks(("after", [hook]))
+
+        runner = RunnerPipeline(
+            plan=plan, callable_registry={"test.slow_after": slow_after_hook}
+        )
+        result = await runner.run()
+
+        # Continue phase captures errors
+        assert result.success is False
+        assert len(result.errors) == 1
+        assert result.errors[0].hook_id == "slow_after"
+        assert "HookTimeoutError" in result.errors[0].error_type
+
+    @pytest.mark.unit
+    @pytest.mark.asyncio
+    async def test_timeout_in_fail_fast_phase_raises_immediately(self) -> None:
+        """Timeout in fail-fast phase (execute) raises immediately."""
+        import asyncio
+
+        from omnibase_core.pipeline.exceptions import HookTimeoutError
+
+        execution_order: list[str] = []
+
+        async def slow_execute_hook(ctx: PipelineContext) -> None:
+            execution_order.append("slow_start")
+            await asyncio.sleep(1.0)
+            execution_order.append("slow_end")  # Should never reach
+
+        def second_hook(ctx: PipelineContext) -> None:
+            execution_order.append("second")  # Should never run
+
+        hooks = [
+            ModelPipelineHook(
+                hook_id="slow",
+                phase="execute",
+                callable_ref="test.slow",
+                timeout_seconds=0.1,
+            ),
+            ModelPipelineHook(
+                hook_id="second",
+                phase="execute",
+                callable_ref="test.second",
+            ),
+        ]
+        plan = make_plan_with_hooks(("execute", hooks))
+
+        runner = RunnerPipeline(
+            plan=plan,
+            callable_registry={
+                "test.slow": slow_execute_hook,
+                "test.second": second_hook,
+            },
+        )
+
+        with pytest.raises(HookTimeoutError):
+            await runner.run()
+
+        # Only slow_start executed before timeout
+        assert execution_order == ["slow_start"]
+
+
+@pytest.mark.unit
+class TestRunnerPipelineExceptionModels:
+    """Test exception classes follow project patterns."""
+
+    @pytest.mark.unit
+    def test_callable_not_found_error_has_correct_error_code(self) -> None:
+        """CallableNotFoundError uses NOT_FOUND error code."""
+        from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+        from omnibase_core.pipeline.exceptions import CallableNotFoundError
+
+        error = CallableNotFoundError("missing.callable")
+
+        assert error.error_code == EnumCoreErrorCode.NOT_FOUND
+        assert "missing.callable" in str(error)
+        # Context is stored in additional_context -> context for custom keys
+        additional = error.context.get("additional_context", {})
+        context_dict = additional.get("context", {})
+        assert context_dict.get("callable_ref") == "missing.callable"
+
+    @pytest.mark.unit
+    def test_hook_timeout_error_has_correct_error_code(self) -> None:
+        """HookTimeoutError uses TIMEOUT error code."""
+        from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+        from omnibase_core.pipeline.exceptions import HookTimeoutError
+
+        error = HookTimeoutError("my_hook", 5.0)
+
+        assert error.error_code == EnumCoreErrorCode.TIMEOUT
+        assert "my_hook" in str(error)
+        assert "5.0" in str(error)
+        # Context is stored in additional_context -> context for custom keys
+        additional = error.context.get("additional_context", {})
+        context_dict = additional.get("context", {})
+        assert context_dict.get("hook_id") == "my_hook"
+        assert context_dict.get("timeout_seconds") == 5.0
+
+    @pytest.mark.unit
+    def test_exceptions_inherit_from_pipeline_error(self) -> None:
+        """Pipeline exceptions inherit from PipelineError."""
+        from omnibase_core.pipeline.exceptions import (
+            CallableNotFoundError,
+            HookTimeoutError,
+            PipelineError,
+        )
+
+        callable_err = CallableNotFoundError("test")
+        timeout_err = HookTimeoutError("hook", 1.0)
+
+        assert isinstance(callable_err, PipelineError)
+        assert isinstance(timeout_err, PipelineError)
+
+    @pytest.mark.unit
+    def test_exceptions_inherit_from_model_onex_error(self) -> None:
+        """Pipeline exceptions ultimately inherit from ModelOnexError."""
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
+        from omnibase_core.pipeline.exceptions import (
+            CallableNotFoundError,
+            HookTimeoutError,
+        )
+
+        callable_err = CallableNotFoundError("test")
+        timeout_err = HookTimeoutError("hook", 1.0)
+
+        assert isinstance(callable_err, ModelOnexError)
+        assert isinstance(timeout_err, ModelOnexError)

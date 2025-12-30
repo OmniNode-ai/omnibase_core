@@ -14,6 +14,9 @@ class ModelValidationWarning(BaseModel):
     to report type mismatches without failing.
     """
 
+    # TODO(pydantic-v3): Re-evaluate from_attributes=True when Pydantic v3 is released.
+    # Workaround for pytest-xdist class identity issues. See model_pipeline_hook.py
+    # module docstring for detailed explanation.
     model_config = ConfigDict(
         frozen=True,
         extra="forbid",

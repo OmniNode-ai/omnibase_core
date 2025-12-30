@@ -21,6 +21,19 @@ from omnibase_core.pipeline.models import (
 )
 from omnibase_core.pipeline.registry_hook import RegistryHook
 
+# Phase fail_fast semantics:
+# - preflight, before, execute: fail_fast=True (critical phases, abort on first error)
+# - after, emit, finalize: fail_fast=False (cleanup/notification phases, collect all errors)
+#
+# Rationale:
+# - preflight: Validation must pass before proceeding
+# - before: Setup must succeed before main execution
+# - execute: Core logic - first failure should halt further execution
+# - after: Cleanup should attempt all hooks even if some fail
+# - emit: Event emission should try all hooks (best effort)
+# - finalize: Resource cleanup must try all hooks regardless of prior errors
+FAIL_FAST_PHASES: frozenset[PipelinePhase] = frozenset({"preflight", "before", "execute"})
+
 
 class BuilderExecutionPlan:
     """
@@ -102,9 +115,12 @@ class BuilderExecutionPlan:
             # Topologically sort with priority tie-breaker
             sorted_hooks = self._topological_sort(phase_hooks, hook_map)
 
+            # Set fail_fast explicitly based on phase semantics
+            # (see FAIL_FAST_PHASES constant for rationale)
             phases[phase] = ModelPhaseExecutionPlan(
                 phase=phase,
                 hooks=sorted_hooks,
+                fail_fast=phase in FAIL_FAST_PHASES,
             )
 
         contract_cat_str = (
@@ -253,4 +269,4 @@ class BuilderExecutionPlan:
 # Backwards compatibility alias
 RuntimePlanBuilder = BuilderExecutionPlan
 
-__all__ = ["BuilderExecutionPlan", "RuntimePlanBuilder"]
+__all__ = ["BuilderExecutionPlan", "FAIL_FAST_PHASES", "RuntimePlanBuilder"]
