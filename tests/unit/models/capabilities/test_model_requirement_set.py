@@ -194,6 +194,49 @@ class TestModelRequirementSetMerge:
         assert "retries" not in merged.must.get("config", {})
         assert "host" not in merged.must.get("config", {})
 
+    def test_merge_shallow_exact_example(self) -> None:
+        """Test shallow merge with exact example: {a: {b: 1}} + {a: {c: 2}} = {a: {c: 2}}.
+
+        This explicitly tests the documented warning that nested dicts are replaced,
+        not deep-merged. This is the canonical example from the PR review.
+        """
+        # Base has nested dict with key 'b'
+        base = ModelRequirementSet(must={"a": {"b": 1}})
+        # Override has nested dict with DIFFERENT key 'c'
+        override = ModelRequirementSet(must={"a": {"c": 2}})
+
+        merged = base.merge(override)
+
+        # Shallow merge: entire nested dict is REPLACED
+        # Result is {a: {c: 2}}, NOT {a: {b: 1, c: 2}}
+        assert merged.must == {"a": {"c": 2}}
+
+        # Explicitly verify 'b' is NOT present (shallow, not deep merge)
+        nested = merged.must.get("a", {})
+        assert isinstance(nested, dict)
+        assert "b" not in nested, "Shallow merge should replace nested dict, not merge keys"
+        assert nested.get("c") == 2
+
+    def test_merge_shallow_lists_are_replaced_not_concatenated(self) -> None:
+        """Test that list values are replaced, not concatenated.
+
+        The merge warning also applies to lists - they are replaced entirely,
+        not merged or concatenated.
+        """
+        base = ModelRequirementSet(hints={"vendors": ["postgres", "mysql"]})
+        override = ModelRequirementSet(hints={"vendors": ["redis"]})
+
+        merged = base.merge(override)
+
+        # List is REPLACED, not concatenated
+        assert merged.hints == {"vendors": ["redis"]}
+        # Verify postgres and mysql are gone
+        vendors = merged.hints.get("vendors", [])
+        assert isinstance(vendors, list)
+        assert "postgres" not in vendors
+        assert "mysql" not in vendors
+        assert len(vendors) == 1
+
 
 @pytest.mark.unit
 class TestModelRequirementSetImmutability:

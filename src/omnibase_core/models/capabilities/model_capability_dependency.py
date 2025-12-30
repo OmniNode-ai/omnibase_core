@@ -132,31 +132,61 @@ class ModelCapabilityDependency(BaseModel):
             - ``False``: Unmet preferences generate warnings only
             Note: ``must`` and ``forbid`` always hard-filter regardless of strict.
 
-    Selection Policy Semantics:
-        **auto_if_unique**:
-            1. Filter providers by must/forbid requirements
-            2. If exactly one provider matches, select it automatically
-            3. If multiple match, the dependency remains unresolved
+    Resolver Behavior:
+        The resolver is responsible for matching dependencies to concrete providers.
+        It operates in two phases:
 
-            Note: The exact behavior when multiple providers match is
-            resolver-specific. Common implementations may: raise an error,
-            return an "ambiguous" status for user resolution, or fall back
-            to a secondary selection strategy. This model only declares the
-            policy; the resolver determines enforcement semantics.
+        **Phase 1 - Filtering** (hard constraints):
+            - Apply ``must`` requirements: provider must have all specified attributes
+              with matching values. Providers missing any ``must`` attribute are excluded.
+            - Apply ``forbid`` requirements: provider must NOT have the specified
+              attribute values. Any match on ``forbid`` excludes the provider.
+
+        **Phase 2 - Selection** (based on selection_policy):
+            The remaining providers after filtering are selected according to policy.
+
+    Selection Policy Semantics:
+        **auto_if_unique** (default):
+            Best for: Dependencies where only one provider is expected.
+
+            1. After filtering, count remaining providers
+            2. If exactly one provider remains, select it automatically
+            3. If zero match: resolution fails (no provider available)
+            4. If multiple match: resolution is ambiguous
+
+            Ambiguity handling is resolver-specific. Common behaviors:
+            - Return an "ambiguous" status requiring user resolution
+            - Raise an error with the list of matching providers
+            - Fall back to a secondary strategy (e.g., alphabetical first)
 
             .. todo::
                 See ``docs/architecture/CAPABILITY_RESOLUTION.md`` for canonical
                 resolver behavior semantics (planned documentation).
 
         **best_score**:
-            1. Filter providers by must/forbid requirements
-            2. Score remaining providers using prefer requirements
-            3. Select highest-scoring provider
-            4. Ties broken using hints (advisory only)
+            Best for: Dependencies where multiple providers may match and
+            preferences should guide selection.
+
+            1. After filtering, score each remaining provider
+            2. For each ``prefer`` constraint:
+               - If provider has matching value: add points to score
+               - Scoring weight is implementation-specific (typically +1 per match)
+            3. Select the provider with highest score
+            4. Ties are broken using ``hints`` (advisory):
+               - Hints like ``{"vendor_preference": ["postgres", "mysql"]}``
+                 provide ordered preferences for tie-breaking
+               - If still tied, behavior is resolver-specific (e.g., first registered)
 
         **require_explicit**:
-            1. Never auto-select, even if only one provider matches
-            2. Always require explicit provider binding via config/user
+            Best for: Security-sensitive dependencies that should never be
+            auto-resolved (e.g., secrets, credentials, production databases).
+
+            1. Never auto-select, even if only one provider matches filtering
+            2. Always require explicit provider binding via:
+               - Configuration file (binding section)
+               - Runtime API call
+               - User prompt/selection
+            3. Fail resolution until explicit binding is provided
 
     Examples:
         Database with transactions required:
@@ -280,6 +310,15 @@ class ModelCapabilityDependency(BaseModel):
             - No consecutive dots, leading/trailing dots
             - No hyphens (use underscores for multi-word tokens)
 
+        .. important:: Dot Requirement
+
+            At least one dot is **REQUIRED** in capability names. Single-token
+            names like "logging" or "database" are invalid. Always use the
+            two-part format: "core.logging", "database.relational", etc.
+
+            This ensures capabilities are namespaced by domain, preventing
+            naming collisions and enabling hierarchical capability matching.
+
         Args:
             v: The capability string to validate.
 
@@ -290,8 +329,19 @@ class ModelCapabilityDependency(BaseModel):
             ModelOnexError: If the capability format is invalid.
 
         Examples:
-            Valid: "database.relational", "storage.vector.qdrant", "cache.key_value"
-            Invalid: "Database.Relational", "database", "event-bus.handler"
+            Valid capabilities (note: all have at least one dot):
+
+            - "database.relational" - domain=database, type=relational
+            - "storage.vector.qdrant" - domain=storage, type=vector, variant=qdrant
+            - "cache.key_value" - domain=cache, type=key_value (underscore OK)
+            - "core.logging" - domain=core, type=logging
+
+            Invalid capabilities:
+
+            - "Database.Relational" - uppercase not allowed
+            - "database" - **missing dot** (single token not allowed)
+            - "logging" - **missing dot** (must be "core.logging" or similar)
+            - "event-bus.handler" - hyphens not allowed (use "event_bus.handler")
         """
         if not _CAPABILITY_PATTERN.match(v):
             raise ModelOnexError(
@@ -332,6 +382,13 @@ class ModelCapabilityDependency(BaseModel):
         Returns:
             The domain portion of the capability.
 
+        Note:
+            This property safely accesses index [0] without bounds checking because
+            the ``capability`` field is validated by ``validate_capability()`` which
+            guarantees the string matches ``_CAPABILITY_PATTERN`` - requiring at least
+            two dot-separated tokens. The validation invariant ensures the split
+            always produces at least 2 elements.
+
         Performance Note:
             The capability string is parsed once and cached. Subsequent accesses
             to domain, capability_type, and variant reuse the cached parts.
@@ -341,6 +398,8 @@ class ModelCapabilityDependency(BaseModel):
             >>> dep.domain
             'database'
         """
+        # Safe: Pydantic validation guarantees capability has at least one dot,
+        # so split() always returns at least 2 elements.
         return self._get_capability_parts()[0]
 
     @property
@@ -351,6 +410,13 @@ class ModelCapabilityDependency(BaseModel):
         Returns:
             The type portion of the capability.
 
+        Note:
+            This property safely accesses index [1] without bounds checking because
+            the ``capability`` field is validated by ``validate_capability()`` which
+            guarantees the string matches ``_CAPABILITY_PATTERN`` - requiring at least
+            two dot-separated tokens. The validation invariant ensures the split
+            always produces at least 2 elements.
+
         Performance Note:
             The capability string is parsed once and cached. Subsequent accesses
             to domain, capability_type, and variant reuse the cached parts.
@@ -360,6 +426,8 @@ class ModelCapabilityDependency(BaseModel):
             >>> dep.capability_type
             'relational'
         """
+        # Safe: Pydantic validation guarantees capability has at least one dot,
+        # so split() always returns at least 2 elements.
         return self._get_capability_parts()[1]
 
     @property
@@ -368,7 +436,15 @@ class ModelCapabilityDependency(BaseModel):
         Extract the variant (third+ tokens) from the capability if present.
 
         Returns:
-            The variant portion if present, None otherwise.
+            The variant portion if present, None otherwise. Two-part capabilities
+            like "database.relational" have no variant (returns None). Three-part
+            or longer capabilities like "cache.kv.redis" have a variant ("redis").
+
+        Note:
+            This property safely accesses index [2] because ``_get_capability_parts()``
+            always returns a 3-tuple ``(domain, type, variant)`` where variant is
+            None for two-part capabilities. The tuple structure is guaranteed by the
+            parsing logic which is safe due to the ``validate_capability()`` invariant.
 
         Performance Note:
             The capability string is parsed once and cached. Subsequent accesses
@@ -382,6 +458,8 @@ class ModelCapabilityDependency(BaseModel):
             >>> dep2.variant
             'redis'
         """
+        # Safe: _get_capability_parts() always returns a 3-tuple; variant is None
+        # for two-part capabilities, or the joined remaining tokens for 3+ parts.
         return self._get_capability_parts()[2]
 
     @property

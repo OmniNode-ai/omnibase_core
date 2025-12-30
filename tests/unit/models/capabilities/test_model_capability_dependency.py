@@ -638,3 +638,377 @@ class TestModelCapabilityDependencySelectionPolicySemantics:
         # Even with preferences, explicit binding is required
         assert dep.requires_explicit_binding
         assert dep.requirements.has_soft_constraints
+
+
+@pytest.mark.unit
+class TestSelectionPolicyBehavior:
+    """Tests demonstrating selection policy behavior with mock providers.
+
+    These tests codify the expected BEHAVIORAL semantics of each selection policy
+    using mock providers. While actual enforcement is resolver-specific, these
+    tests document the contract that resolvers must follow.
+
+    See ModelCapabilityDependency docstring for policy definitions.
+    """
+
+    def test_auto_if_unique_rejects_multiple_matches(self) -> None:
+        """Test that auto_if_unique policy rejects when multiple providers match.
+
+        Contract: When selection_policy='auto_if_unique' and multiple providers
+        match the must/forbid criteria, automatic selection should fail.
+        """
+        dep = ModelCapabilityDependency(
+            alias="db",
+            capability="database.relational",
+            selection_policy="auto_if_unique",
+            requirements=ModelRequirementSet(
+                must={"supports_transactions": True},
+            ),
+        )
+
+        # Simulate multiple matching providers
+        matching_providers = [
+            {"name": "postgres", "supports_transactions": True, "score": 0.9},
+            {"name": "mysql", "supports_transactions": True, "score": 0.8},
+            {"name": "mariadb", "supports_transactions": True, "score": 0.85},
+        ]
+
+        # Mock resolver behavior: auto_if_unique should reject multiple matches
+        def mock_resolve_auto_if_unique(
+            providers: list[dict[str, object]],
+        ) -> dict[str, object] | None:
+            """Mock resolver implementing auto_if_unique policy."""
+            filtered = [
+                p
+                for p in providers
+                if p.get("supports_transactions") == dep.requirements.must.get(
+                    "supports_transactions"
+                )
+            ]
+            # auto_if_unique: only select if exactly one match
+            if len(filtered) == 1:
+                return filtered[0]
+            return None  # Reject: multiple matches or no matches
+
+        # With 3 matching providers, auto_if_unique should return None (reject)
+        result = mock_resolve_auto_if_unique(matching_providers)
+        assert result is None, "auto_if_unique should reject when multiple providers match"
+
+        # Verify policy configuration
+        assert dep.selection_policy == "auto_if_unique"
+        assert not dep.requires_explicit_binding
+
+    def test_auto_if_unique_selects_single_match(self) -> None:
+        """Test that auto_if_unique policy auto-selects when exactly one matches."""
+        dep = ModelCapabilityDependency(
+            alias="db",
+            capability="database.relational",
+            selection_policy="auto_if_unique",
+            requirements=ModelRequirementSet(
+                must={"supports_transactions": True, "supports_jsonb": True},
+            ),
+        )
+
+        # Simulate providers where only one matches all must constraints
+        providers = [
+            {"name": "postgres", "supports_transactions": True, "supports_jsonb": True},
+            {"name": "mysql", "supports_transactions": True, "supports_jsonb": False},
+            {"name": "sqlite", "supports_transactions": False, "supports_jsonb": False},
+        ]
+
+        def mock_resolve_auto_if_unique(
+            providers: list[dict[str, object]],
+        ) -> dict[str, object] | None:
+            """Mock resolver implementing auto_if_unique policy."""
+            filtered = [
+                p
+                for p in providers
+                if all(
+                    p.get(k) == v
+                    for k, v in dep.requirements.must.items()
+                )
+            ]
+            if len(filtered) == 1:
+                return filtered[0]
+            return None
+
+        # With exactly one matching provider, auto_if_unique should select it
+        result = mock_resolve_auto_if_unique(providers)
+        assert result is not None, "auto_if_unique should select when exactly one matches"
+        assert result["name"] == "postgres"
+
+    def test_best_score_selects_highest_scoring_provider(self) -> None:
+        """Test that best_score policy selects the highest-scoring provider.
+
+        Contract: When selection_policy='best_score', after filtering by
+        must/forbid, select the provider with the highest preference score.
+        """
+        dep = ModelCapabilityDependency(
+            alias="cache",
+            capability="cache.distributed",
+            selection_policy="best_score",
+            requirements=ModelRequirementSet(
+                must={"distributed": True},
+                prefer={"region": "us-east-1", "latency_ms": 10},
+            ),
+        )
+
+        # Simulate providers with different preference scores
+        providers = [
+            {
+                "name": "redis_west",
+                "distributed": True,
+                "region": "us-west-2",
+                "latency_ms": 20,
+            },
+            {
+                "name": "redis_east",
+                "distributed": True,
+                "region": "us-east-1",
+                "latency_ms": 15,
+            },
+            {
+                "name": "memcached",
+                "distributed": True,
+                "region": "us-east-1",
+                "latency_ms": 10,
+            },
+        ]
+
+        def mock_resolve_best_score(
+            providers: list[dict[str, object]],
+        ) -> dict[str, object] | None:
+            """Mock resolver implementing best_score policy."""
+            # Filter by must constraints
+            filtered = [
+                p
+                for p in providers
+                if all(p.get(k) == v for k, v in dep.requirements.must.items())
+            ]
+            if not filtered:
+                return None
+
+            # Score by prefer constraints (higher score = better match)
+            def score_provider(p: dict[str, object]) -> float:
+                score = 0.0
+                for key, preferred in dep.requirements.prefer.items():
+                    if p.get(key) == preferred:
+                        score += 1.0
+                return score
+
+            # Select highest-scoring
+            return max(filtered, key=score_provider)
+
+        result = mock_resolve_best_score(providers)
+        assert result is not None, "best_score should select a provider"
+        # memcached has both region AND latency_ms matching = score 2.0
+        assert result["name"] == "memcached", "best_score should select highest-scoring"
+
+        # Verify policy configuration
+        assert dep.selection_policy == "best_score"
+        assert not dep.requires_explicit_binding
+
+    def test_best_score_with_ties_uses_hints(self) -> None:
+        """Test that best_score uses hints to break ties between equal scores."""
+        dep = ModelCapabilityDependency(
+            alias="cache",
+            capability="cache.distributed",
+            selection_policy="best_score",
+            requirements=ModelRequirementSet(
+                must={"distributed": True},
+                prefer={"region": "us-east-1"},
+                hints={"vendor_preference": ["redis", "memcached"]},
+            ),
+        )
+
+        # Two providers with equal preference scores
+        providers = [
+            {"name": "memcached", "distributed": True, "region": "us-east-1"},
+            {"name": "redis", "distributed": True, "region": "us-east-1"},
+        ]
+
+        def mock_resolve_best_score_with_hints(
+            providers: list[dict[str, object]],
+        ) -> dict[str, object] | None:
+            """Mock resolver implementing best_score with hint tie-breaking."""
+            filtered = [
+                p
+                for p in providers
+                if all(p.get(k) == v for k, v in dep.requirements.must.items())
+            ]
+            if not filtered:
+                return None
+
+            def score_provider(p: dict[str, object]) -> float:
+                return sum(
+                    1.0 for k, v in dep.requirements.prefer.items() if p.get(k) == v
+                )
+
+            max_score = max(score_provider(p) for p in filtered)
+            tied = [p for p in filtered if score_provider(p) == max_score]
+
+            if len(tied) == 1:
+                return tied[0]
+
+            # Break ties using hints
+            vendor_pref = dep.requirements.hints.get("vendor_preference", [])
+            if isinstance(vendor_pref, list):
+                for preferred_vendor in vendor_pref:
+                    for p in tied:
+                        if p.get("name") == preferred_vendor:
+                            return p
+            return tied[0]
+
+        result = mock_resolve_best_score_with_hints(providers)
+        assert result is not None
+        # Redis is first in hints preference list
+        assert result["name"] == "redis", "best_score should use hints to break ties"
+
+    def test_require_explicit_never_auto_selects(self) -> None:
+        """Test that require_explicit policy never auto-selects.
+
+        Contract: When selection_policy='require_explicit', NEVER auto-select
+        even if only one provider matches. Always require explicit binding.
+        """
+        dep = ModelCapabilityDependency(
+            alias="secrets",
+            capability="secrets.vault",
+            selection_policy="require_explicit",
+            requirements=ModelRequirementSet(
+                must={"encryption": "aes-256"},
+            ),
+        )
+
+        # Even with a single perfect match, require_explicit should not auto-select
+        providers = [
+            {"name": "hashicorp_vault", "encryption": "aes-256"},
+        ]
+
+        def mock_resolve_require_explicit(
+            providers: list[dict[str, object]],
+            explicit_binding: str | None = None,
+        ) -> dict[str, object] | None:
+            """Mock resolver implementing require_explicit policy."""
+            # require_explicit: NEVER auto-select, even with one match
+            if explicit_binding is None:
+                return None
+
+            # Only resolve if explicit binding is provided
+            filtered = [
+                p
+                for p in providers
+                if p.get("name") == explicit_binding
+                and all(p.get(k) == v for k, v in dep.requirements.must.items())
+            ]
+            return filtered[0] if filtered else None
+
+        # Without explicit binding, should return None even with one match
+        result_without_binding = mock_resolve_require_explicit(providers)
+        assert result_without_binding is None, (
+            "require_explicit should never auto-select"
+        )
+
+        # With explicit binding, should resolve
+        result_with_binding = mock_resolve_require_explicit(
+            providers, explicit_binding="hashicorp_vault"
+        )
+        assert result_with_binding is not None, (
+            "require_explicit should resolve with explicit binding"
+        )
+        assert result_with_binding["name"] == "hashicorp_vault"
+
+        # Verify policy configuration
+        assert dep.selection_policy == "require_explicit"
+        assert dep.requires_explicit_binding is True
+
+    def test_require_explicit_with_no_matches_still_requires_binding(self) -> None:
+        """Test that require_explicit requires binding even when no matches exist."""
+        dep = ModelCapabilityDependency(
+            alias="secrets",
+            capability="secrets.vault",
+            selection_policy="require_explicit",
+        )
+
+        # Empty provider list
+        providers: list[dict[str, object]] = []
+
+        def mock_resolve_require_explicit(
+            providers: list[dict[str, object]],
+            explicit_binding: str | None = None,
+        ) -> dict[str, object] | None:
+            """Mock resolver requiring explicit binding."""
+            if explicit_binding is None:
+                return None
+            return next((p for p in providers if p.get("name") == explicit_binding), None)
+
+        # Without explicit binding, should return None
+        assert mock_resolve_require_explicit(providers) is None
+        # The property confirms this policy never auto-binds
+        assert dep.requires_explicit_binding is True
+
+
+@pytest.mark.unit
+class TestCapabilityNameRegexEdgeCases:
+    """Tests for capability name regex edge cases, particularly hyphen handling.
+
+    The capability naming pattern explicitly excludes hyphens to maintain
+    unambiguous token boundaries. Dots separate tokens, underscores join
+    multi-word tokens within a single namespace level.
+    """
+
+    def test_hyphen_in_capability_domain_rejected(self) -> None:
+        """Test that hyphens in domain token are rejected."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelCapabilityDependency(alias="db", capability="my-domain.feature")
+        assert "must follow pattern" in str(exc_info.value)
+        assert "use underscores, not hyphens" in str(exc_info.value)
+
+    def test_hyphen_in_capability_type_rejected(self) -> None:
+        """Test that hyphens in type token are rejected."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelCapabilityDependency(alias="svc", capability="core.my-feature")
+        assert "must follow pattern" in str(exc_info.value)
+
+    def test_hyphen_in_capability_variant_rejected(self) -> None:
+        """Test that hyphens in variant token are rejected."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelCapabilityDependency(alias="svc", capability="vendor.some-capability")
+        assert "must follow pattern" in str(exc_info.value)
+
+    def test_multiple_hyphens_rejected(self) -> None:
+        """Test that multiple hyphens in capability are rejected."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelCapabilityDependency(alias="x", capability="my-ns.my-type.my-var")
+        assert "must follow pattern" in str(exc_info.value)
+
+    def test_underscore_alternative_to_hyphen_accepted(self) -> None:
+        """Test that underscores work as alternative to hyphens for multi-word tokens."""
+        # Underscores ARE allowed for multi-word tokens
+        dep1 = ModelCapabilityDependency(alias="db", capability="my_domain.feature")
+        assert dep1.domain == "my_domain"
+
+        dep2 = ModelCapabilityDependency(alias="svc", capability="core.my_feature")
+        assert dep2.capability_type == "my_feature"
+
+        dep3 = ModelCapabilityDependency(alias="vec", capability="storage.vector.my_variant")
+        assert dep3.variant == "my_variant"
+
+    def test_mixed_underscore_and_numbers_accepted(self) -> None:
+        """Test that underscores and numbers are valid within tokens."""
+        dep = ModelCapabilityDependency(
+            alias="db",
+            capability="database_v2.relational_14.postgres_compatible"
+        )
+        assert dep.domain == "database_v2"
+        assert dep.capability_type == "relational_14"
+        assert dep.variant == "postgres_compatible"
+
+    def test_capability_with_only_underscores_accepted(self) -> None:
+        """Test capability with multiple underscores in tokens."""
+        dep = ModelCapabilityDependency(
+            alias="q", capability="event_bus.message_queue.rabbit_mq"
+        )
+        assert dep.capability == "event_bus.message_queue.rabbit_mq"
+        assert dep.domain == "event_bus"
+        assert dep.capability_type == "message_queue"
+        assert dep.variant == "rabbit_mq"

@@ -44,7 +44,6 @@ Type Safety:
 
 from pydantic import BaseModel, ConfigDict, Field
 
-
 # PEP 695 recursive type alias (Python 3.12+)
 # Pydantic requires this syntax for recursive types to avoid RecursionError.
 #
@@ -66,7 +65,13 @@ from pydantic import BaseModel, ConfigDict, Field
 #   ["postgres", "mysql"]                   # list
 #   {"timeout": 30, "retries": 3}           # nested dict
 type RequirementValue = (
-    str | int | float | bool | None | list[RequirementValue] | dict[str, RequirementValue]
+    str
+    | int
+    | float
+    | bool
+    | None
+    | list[RequirementValue]
+    | dict[str, RequirementValue]
 )
 
 # Type alias for requirement dictionaries.
@@ -212,6 +217,12 @@ class ModelRequirementSet(BaseModel):
 
         Creates a new requirement set combining constraints from both.
         For conflicts (same key in both), the other's values take precedence.
+
+        .. important:: TL;DR - Nested Dicts Are REPLACED, Not Merged
+
+            If your requirements contain nested dicts like ``{"config": {"a": 1, "b": 2}}``,
+            merging with ``{"config": {"a": 10}}`` will **lose** the ``"b"`` key entirely.
+            See the "Shallow merge behavior" example below.
 
         .. warning:: Shallow Merge Semantics
 
