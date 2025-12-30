@@ -565,11 +565,11 @@ class ModelProviderDescriptor(BaseModel):
             >>> desc.matches_any_capability([])
             False
         """
-        for pattern in patterns:
-            for cap in self.capabilities:
-                if fnmatch.fnmatch(cap, pattern):
-                    return True
-        return False
+        return any(
+            fnmatch.fnmatch(cap, pattern)
+            for pattern in patterns
+            for cap in self.capabilities
+        )
 
     def __repr__(self) -> str:
         """Return a concise representation for debugging.
