@@ -219,3 +219,195 @@ class TestModelDescriptorPatch:
         )
         assert patch.has_overrides() is True
         assert len(patch.get_override_fields()) == 8
+
+
+class TestModelDescriptorPatchConflictValidation:
+    """Tests for ModelDescriptorPatch settings consistency validation."""
+
+    # =========================================================================
+    # timeout_ms=0 with retry_policy conflicts
+    # =========================================================================
+
+    def test_timeout_zero_with_retry_enabled_raises(self) -> None:
+        """Test that timeout_ms=0 with retry_policy.enabled=True raises error."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelDescriptorPatch(
+                timeout_ms=0,
+                retry_policy=ModelDescriptorRetryPolicy(
+                    enabled=True,
+                    max_retries=3,
+                ),
+            )
+        assert "timeout_ms=0" in str(exc_info.value)
+        assert "retry_policy" in str(exc_info.value)
+
+    def test_timeout_zero_with_retry_disabled_ok(self) -> None:
+        """Test that timeout_ms=0 with retry_policy.enabled=False is valid."""
+        patch = ModelDescriptorPatch(
+            timeout_ms=0,
+            retry_policy=ModelDescriptorRetryPolicy(
+                enabled=False,
+                max_retries=3,
+            ),
+        )
+        assert patch.timeout_ms == 0
+        assert patch.retry_policy is not None
+        assert patch.retry_policy.enabled is False
+
+    def test_timeout_zero_with_retry_zero_retries_ok(self) -> None:
+        """Test that timeout_ms=0 with max_retries=0 is valid."""
+        patch = ModelDescriptorPatch(
+            timeout_ms=0,
+            retry_policy=ModelDescriptorRetryPolicy(
+                enabled=True,
+                max_retries=0,
+            ),
+        )
+        assert patch.timeout_ms == 0
+        assert patch.retry_policy is not None
+        assert patch.retry_policy.max_retries == 0
+
+    def test_timeout_zero_without_retry_policy_ok(self) -> None:
+        """Test that timeout_ms=0 without retry_policy is valid."""
+        patch = ModelDescriptorPatch(timeout_ms=0)
+        assert patch.timeout_ms == 0
+        assert patch.retry_policy is None
+
+    def test_positive_timeout_with_retry_enabled_ok(self) -> None:
+        """Test that positive timeout with retry_policy.enabled=True is valid."""
+        patch = ModelDescriptorPatch(
+            timeout_ms=5000,
+            retry_policy=ModelDescriptorRetryPolicy(
+                enabled=True,
+                max_retries=3,
+            ),
+        )
+        assert patch.timeout_ms == 5000
+        assert patch.retry_policy is not None
+        assert patch.retry_policy.enabled is True
+
+    # =========================================================================
+    # idempotent=False with retry_policy conflicts
+    # =========================================================================
+
+    def test_non_idempotent_with_retry_enabled_raises(self) -> None:
+        """Test that idempotent=False with retry_policy.enabled=True raises error."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelDescriptorPatch(
+                idempotent=False,
+                retry_policy=ModelDescriptorRetryPolicy(
+                    enabled=True,
+                    max_retries=3,
+                ),
+            )
+        assert "idempotent" in str(exc_info.value)
+        assert "retry" in str(exc_info.value).lower()
+
+    def test_non_idempotent_with_retry_disabled_ok(self) -> None:
+        """Test that idempotent=False with retry_policy.enabled=False is valid."""
+        patch = ModelDescriptorPatch(
+            idempotent=False,
+            retry_policy=ModelDescriptorRetryPolicy(
+                enabled=False,
+                max_retries=3,
+            ),
+        )
+        assert patch.idempotent is False
+        assert patch.retry_policy is not None
+        assert patch.retry_policy.enabled is False
+
+    def test_non_idempotent_with_retry_zero_retries_ok(self) -> None:
+        """Test that idempotent=False with max_retries=0 is valid."""
+        patch = ModelDescriptorPatch(
+            idempotent=False,
+            retry_policy=ModelDescriptorRetryPolicy(
+                enabled=True,
+                max_retries=0,
+            ),
+        )
+        assert patch.idempotent is False
+        assert patch.retry_policy is not None
+        assert patch.retry_policy.max_retries == 0
+
+    def test_non_idempotent_without_retry_policy_ok(self) -> None:
+        """Test that idempotent=False without retry_policy is valid."""
+        patch = ModelDescriptorPatch(idempotent=False)
+        assert patch.idempotent is False
+        assert patch.retry_policy is None
+
+    def test_idempotent_true_with_retry_enabled_ok(self) -> None:
+        """Test that idempotent=True with retry_policy.enabled=True is valid."""
+        patch = ModelDescriptorPatch(
+            idempotent=True,
+            retry_policy=ModelDescriptorRetryPolicy(
+                enabled=True,
+                max_retries=3,
+            ),
+        )
+        assert patch.idempotent is True
+        assert patch.retry_policy is not None
+        assert patch.retry_policy.enabled is True
+
+    def test_idempotent_none_with_retry_enabled_ok(self) -> None:
+        """Test that idempotent=None (unset) with retry_policy.enabled=True is valid.
+
+        When idempotent is None (not specified in patch), the base contract's
+        value will be used, so we cannot validate at patch level.
+        """
+        patch = ModelDescriptorPatch(
+            retry_policy=ModelDescriptorRetryPolicy(
+                enabled=True,
+                max_retries=3,
+            ),
+        )
+        assert patch.idempotent is None
+        assert patch.retry_policy is not None
+        assert patch.retry_policy.enabled is True
+
+    # =========================================================================
+    # Combined conflict scenarios
+    # =========================================================================
+
+    def test_valid_complete_patch_with_retry(self) -> None:
+        """Test a complete valid patch with retry configuration."""
+        patch = ModelDescriptorPatch(
+            purity="side_effecting",
+            idempotent=True,
+            timeout_ms=30000,
+            retry_policy=ModelDescriptorRetryPolicy(
+                enabled=True,
+                max_retries=5,
+                backoff_strategy="exponential",
+            ),
+            circuit_breaker=ModelDescriptorCircuitBreaker(enabled=True),
+            concurrency_policy="serialized",
+            isolation_policy="process",
+            observability_level="verbose",
+        )
+        assert patch.has_overrides() is True
+        assert len(patch.get_override_fields()) == 8
+
+    def test_error_message_contains_guidance(self) -> None:
+        """Test that error messages provide actionable guidance."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelDescriptorPatch(
+                timeout_ms=0,
+                retry_policy=ModelDescriptorRetryPolicy(enabled=True, max_retries=3),
+            )
+        error_str = str(exc_info.value)
+        # Verify error contains helpful guidance
+        assert "timeout" in error_str.lower()
+        assert "disable" in error_str.lower() or "positive" in error_str.lower()
+
+    def test_multiple_conflicts_first_wins(self) -> None:
+        """Test that when multiple conflicts exist, the first one raises."""
+        # Both conflicts: timeout_ms=0 with retry AND non-idempotent with retry
+        # The timeout check comes first in the validator
+        with pytest.raises(ValidationError) as exc_info:
+            ModelDescriptorPatch(
+                timeout_ms=0,
+                idempotent=False,
+                retry_policy=ModelDescriptorRetryPolicy(enabled=True, max_retries=3),
+            )
+        # Should fail on timeout conflict first
+        assert "timeout_ms=0" in str(exc_info.value)

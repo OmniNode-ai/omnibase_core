@@ -16,11 +16,65 @@ Related:
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-# Type alias for handler config values - supports common primitive types
-# without the full dict[str, Any] anti-pattern
+# =============================================================================
+# HandlerConfigValue Type Alias
+# =============================================================================
+#
+# Type alias for handler configuration values used in ModelHandlerSpec.config.
+#
+# SUPPORTED TYPES:
+#   - str:        String values (URLs, addresses, identifiers)
+#   - int:        Integer values (timeouts, retries, port numbers)
+#   - float:      Floating-point values (thresholds, rates)
+#   - bool:       Boolean flags (enable/disable features)
+#   - list[str]:  String lists (server addresses, tags, allowed origins)
+#   - None:       Explicit null values
+#
+# NOT SUPPORTED (by design):
+#   - dict[str, Any] or nested dicts: Prevents deep nesting that loses type safety
+#   - list[int], list[float], list[bool]: Only list[str] is supported for simplicity
+#   - Complex objects (Pydantic models, dataclasses): Keep configs serializable
+#   - Union types within lists: Keeps list contents homogeneous
+#
+# DESIGN RATIONALE:
+#   This type intentionally restricts configuration values to flat, primitive types
+#   to avoid the "dict[str, Any] anti-pattern" where type safety is lost in deeply
+#   nested, untyped configuration structures. The restriction ensures:
+#
+#   1. Type Safety: All config values have known types at parse time
+#   2. Serializability: Values can be safely serialized to YAML/JSON
+#   3. Simplicity: Flat key-value configs are easier to validate and document
+#   4. Predictability: No surprises from arbitrarily nested structures
+#
+#   If you need complex nested configuration, consider:
+#   - Using a dedicated Pydantic model with typed fields
+#   - Splitting configuration across multiple handlers
+#   - Using ModelDescriptorPatch for handler behavior settings
+#
+# EXAMPLES:
+#   Valid:
+#     config={"timeout": 30}                          # int
+#     config={"bootstrap_servers": "localhost:9092"}  # str
+#     config={"retries": 3, "enabled": True}          # int + bool
+#     config={"servers": ["host1", "host2"]}          # list[str]
+#     config={"rate": 0.5, "name": None}              # float + None
+#
+#   Invalid (will fail type checking):
+#     config={"nested": {"key": "value"}}             # Nested dict not allowed
+#     config={"ports": [8080, 8081]}                  # list[int] not supported
+#     config={"headers": {"Content-Type": "json"}}   # Nested dict not allowed
+#
+# See Also:
+#   - ModelHandlerSpec: Uses this for the config field
+#   - ModelDescriptorPatch: For complex handler behavior overrides
+#   - ModelHandlerDescriptor: Full runtime handler representation
+#
+# .. versionadded:: 0.4.0
+# =============================================================================
 HandlerConfigValue = str | int | float | bool | list[str] | None
 
 __all__ = [
+    "HandlerConfigValue",
     "ModelHandlerSpec",
 ]
 
@@ -58,7 +112,8 @@ class ModelHandlerSpec(BaseModel):
         min_length=1,
         description=(
             "Handler identifier (e.g., 'http_client', 'kafka_producer'). "
-            "Used for handler registration and lookup."
+            "Used for handler registration and lookup. "
+            "Leading/trailing whitespace is automatically stripped."
         ),
     )
 
@@ -67,7 +122,8 @@ class ModelHandlerSpec(BaseModel):
         min_length=1,
         description=(
             "Type of handler (e.g., 'http', 'kafka', 'database'). "
-            "Maps to EnumHandlerType for classification."
+            "Maps to EnumHandlerType for classification. "
+            "Leading/trailing whitespace is stripped and value is lowercased."
         ),
     )
 
@@ -75,13 +131,22 @@ class ModelHandlerSpec(BaseModel):
         default=None,
         description=(
             "Python import path for direct instantiation "
-            "(e.g., 'mypackage.handlers.HttpClientHandler')."
+            "(e.g., 'mypackage.handlers.HttpClientHandler'). "
+            "Leading/trailing whitespace is automatically stripped."
         ),
     )
 
     config: dict[str, HandlerConfigValue] | None = Field(
         default=None,
-        description="Handler-specific configuration with typed values.",
+        description=(
+            "Handler-specific configuration with typed values. "
+            "Values are restricted to HandlerConfigValue types: str, int, float, "
+            "bool, list[str], or None. Nested dicts and complex objects are NOT "
+            "supported by design to maintain type safety and prevent the "
+            "dict[str, Any] anti-pattern. For complex configuration needs, use "
+            "dedicated Pydantic models or ModelDescriptorPatch. "
+            "See HandlerConfigValue type alias documentation for full details."
+        ),
     )
 
     @field_validator("name")

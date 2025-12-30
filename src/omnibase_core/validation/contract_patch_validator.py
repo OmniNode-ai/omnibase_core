@@ -282,6 +282,35 @@ class ContractPatchValidator:
                     code="CONFLICTING_LIST_OPERATIONS",
                 )
 
+        # Check for duplicate capability outputs within __add
+        if patch.capability_outputs__add:
+            cap_names = [cap.name for cap in patch.capability_outputs__add]
+            seen: set[str] = set()
+            duplicates: set[str] = set()
+            for name in cap_names:
+                if name in seen:
+                    duplicates.add(name)
+                seen.add(name)
+            if duplicates:
+                result.add_error(
+                    f"Duplicate capability output(s) in add list: {duplicates}",
+                    code="DUPLICATE_LIST_ENTRIES",
+                )
+
+        # Check for duplicate capability inputs within __add
+        if patch.capability_inputs__add:
+            seen_inputs: set[str] = set()
+            duplicate_inputs: set[str] = set()
+            for name in patch.capability_inputs__add:
+                if name in seen_inputs:
+                    duplicate_inputs.add(name)
+                seen_inputs.add(name)
+            if duplicate_inputs:
+                result.add_error(
+                    f"Duplicate capability input(s) in add list: {duplicate_inputs}",
+                    code="DUPLICATE_LIST_ENTRIES",
+                )
+
     def _validate_descriptor_patch(
         self,
         patch: ModelContractPatch,

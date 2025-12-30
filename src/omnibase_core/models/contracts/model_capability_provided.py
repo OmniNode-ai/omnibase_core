@@ -52,7 +52,8 @@ class ModelCapabilityProvided(BaseModel):
         min_length=1,
         description=(
             "Capability identifier (e.g., 'event_emit', 'http_response'). "
-            "Used for capability matching and routing."
+            "Used for capability matching and routing. "
+            "Leading/trailing whitespace is automatically stripped."
         ),
     )
 

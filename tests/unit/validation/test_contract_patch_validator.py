@@ -9,6 +9,9 @@ from pathlib import Path
 import pytest
 import yaml
 
+from omnibase_core.models.contracts.model_capability_provided import (
+    ModelCapabilityProvided,
+)
 from omnibase_core.models.contracts.model_contract_patch import ModelContractPatch
 from omnibase_core.models.contracts.model_dependency import ModelDependency
 from omnibase_core.models.contracts.model_descriptor_patch import ModelDescriptorPatch
@@ -276,3 +279,90 @@ class TestContractPatchValidator:
         )
         result = validator.validate(patch)
         assert result.is_valid is True
+
+    def test_validate_duplicate_capability_outputs(
+        self, validator: ContractPatchValidator, profile_ref: ModelProfileReference
+    ) -> None:
+        """Test error for duplicate capability outputs in add list."""
+        patch = ModelContractPatch(
+            extends=profile_ref,
+            capability_outputs__add=[
+                ModelCapabilityProvided(name="event_emit"),
+                ModelCapabilityProvided(name="http_response"),
+                ModelCapabilityProvided(name="event_emit"),  # Duplicate
+            ],
+        )
+        result = validator.validate(patch)
+        assert result.is_valid is False
+        assert any("DUPLICATE_LIST_ENTRIES" in str(i.code) for i in result.issues)
+        assert any("event_emit" in str(i.message) for i in result.issues)
+
+    def test_validate_duplicate_capability_inputs(
+        self, validator: ContractPatchValidator, profile_ref: ModelProfileReference
+    ) -> None:
+        """Test error for duplicate capability inputs in add list."""
+        patch = ModelContractPatch(
+            extends=profile_ref,
+            capability_inputs__add=[
+                "http_client",
+                "event_bus",
+                "http_client",  # Duplicate
+            ],
+        )
+        result = validator.validate(patch)
+        assert result.is_valid is False
+        assert any("DUPLICATE_LIST_ENTRIES" in str(i.code) for i in result.issues)
+        assert any("http_client" in str(i.message) for i in result.issues)
+
+    def test_validate_unique_capability_outputs_passes(
+        self, validator: ContractPatchValidator, profile_ref: ModelProfileReference
+    ) -> None:
+        """Test that unique capability outputs pass validation."""
+        patch = ModelContractPatch(
+            extends=profile_ref,
+            capability_outputs__add=[
+                ModelCapabilityProvided(name="event_emit"),
+                ModelCapabilityProvided(name="http_response"),
+                ModelCapabilityProvided(name="file_write"),
+            ],
+        )
+        result = validator.validate(patch)
+        assert result.is_valid is True
+        assert not any("DUPLICATE_LIST_ENTRIES" in str(i.code) for i in result.issues)
+
+    def test_validate_unique_capability_inputs_passes(
+        self, validator: ContractPatchValidator, profile_ref: ModelProfileReference
+    ) -> None:
+        """Test that unique capability inputs pass validation."""
+        patch = ModelContractPatch(
+            extends=profile_ref,
+            capability_inputs__add=[
+                "http_client",
+                "event_bus",
+                "logger",
+            ],
+        )
+        result = validator.validate(patch)
+        assert result.is_valid is True
+        assert not any("DUPLICATE_LIST_ENTRIES" in str(i.code) for i in result.issues)
+
+    def test_validate_multiple_duplicate_capabilities(
+        self, validator: ContractPatchValidator, profile_ref: ModelProfileReference
+    ) -> None:
+        """Test detection of multiple different duplicates."""
+        patch = ModelContractPatch(
+            extends=profile_ref,
+            capability_outputs__add=[
+                ModelCapabilityProvided(name="cap_a"),
+                ModelCapabilityProvided(name="cap_b"),
+                ModelCapabilityProvided(name="cap_a"),  # Duplicate 1
+                ModelCapabilityProvided(name="cap_c"),
+                ModelCapabilityProvided(name="cap_b"),  # Duplicate 2
+            ],
+        )
+        result = validator.validate(patch)
+        assert result.is_valid is False
+        assert any("DUPLICATE_LIST_ENTRIES" in str(i.code) for i in result.issues)
+        # Both duplicates should be reported
+        assert any("cap_a" in str(i.message) for i in result.issues)
+        assert any("cap_b" in str(i.message) for i in result.issues)

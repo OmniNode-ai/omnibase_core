@@ -17,7 +17,7 @@ Related:
 
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.models.runtime.model_descriptor_circuit_breaker import (
     ModelDescriptorCircuitBreaker,
@@ -118,6 +118,59 @@ class ModelDescriptorPatch(BaseModel):
         default=None,
         description="Override telemetry and logging verbosity for the handler.",
     )
+
+    # =========================================================================
+    # Validators
+    # =========================================================================
+
+    @model_validator(mode="after")
+    def validate_settings_consistency(self) -> "ModelDescriptorPatch":
+        """Validate that descriptor patch settings are internally consistent.
+
+        Catches conflicting configurations that, while individually valid,
+        would produce nonsensical runtime behavior when combined.
+
+        Validates:
+            - timeout_ms=0 (no timeout) with retry_policy.enabled=True is invalid
+              because retries without a timeout could wait forever per attempt.
+            - idempotent=False with retry_policy.enabled=True is invalid because
+              retrying non-idempotent operations could cause duplicate side effects.
+
+        Returns:
+            Self if validation passes.
+
+        Raises:
+            ValueError: If conflicting settings are detected.
+
+        Note:
+            This validator only checks fields that are explicitly set in the patch.
+            Fields that are None are not validated since they will retain values
+            from the base contract.
+        """
+        # Check: timeout_ms=0 with retry enabled
+        if self.timeout_ms == 0 and self.retry_policy is not None:
+            if self.retry_policy.enabled and self.retry_policy.max_retries > 0:
+                raise ValueError(
+                    "Conflicting settings: cannot enable retry_policy with "
+                    "timeout_ms=0. With no timeout, each retry attempt could wait "
+                    "forever. Either set a positive timeout_ms or disable retries."
+                )
+
+        # Check: non-idempotent with retry enabled
+        if self.idempotent is False and self.retry_policy is not None:
+            if self.retry_policy.enabled and self.retry_policy.max_retries > 0:
+                raise ValueError(
+                    "Conflicting settings: cannot enable retry_policy when "
+                    "idempotent=False. Retrying non-idempotent operations could "
+                    "cause duplicate side effects. Either mark the handler as "
+                    "idempotent=True or disable retries."
+                )
+
+        return self
+
+    # =========================================================================
+    # Helper Methods
+    # =========================================================================
 
     def has_overrides(self) -> bool:
         """Check if this patch contains any overrides.

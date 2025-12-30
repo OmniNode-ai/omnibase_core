@@ -6,7 +6,9 @@
 import pytest
 from pydantic import ValidationError
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.contracts.model_reference import ModelReference
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 class TestModelReference:
@@ -163,3 +165,195 @@ class TestModelReference:
         )
         assert ref.module == "mypackage.models"
         assert ref.class_name == "MyModel"
+
+
+class TestModelReferenceResolveImport:
+    """Tests for ModelReference.resolve_import classmethod."""
+
+    def test_resolve_valid_reference(self) -> None:
+        """Test resolving a valid module/class reference."""
+        # Use a known class from the codebase
+        result = ModelReference.resolve_import(
+            "omnibase_core.models.contracts.model_reference.ModelReference"
+        )
+        assert result is ModelReference
+
+    def test_resolve_builtin_types(self) -> None:
+        """Test resolving references to built-in types."""
+        result = ModelReference.resolve_import("pydantic.BaseModel")
+        from pydantic import BaseModel
+
+        assert result is BaseModel
+
+    def test_resolve_nested_module(self) -> None:
+        """Test resolving a class from a nested module."""
+        result = ModelReference.resolve_import(
+            "omnibase_core.enums.enum_core_error_code.EnumCoreErrorCode"
+        )
+        assert result is EnumCoreErrorCode
+
+    def test_resolve_nonexistent_module(self) -> None:
+        """Test that nonexistent module returns None."""
+        result = ModelReference.resolve_import("nonexistent.module.SomeClass")
+        assert result is None
+
+    def test_resolve_nonexistent_class(self) -> None:
+        """Test that nonexistent class in existing module returns None."""
+        result = ModelReference.resolve_import(
+            "omnibase_core.models.contracts.model_reference.NonexistentClass"
+        )
+        assert result is None
+
+    def test_resolve_empty_reference(self) -> None:
+        """Test that empty reference returns None."""
+        assert ModelReference.resolve_import("") is None
+
+    def test_resolve_no_separator(self) -> None:
+        """Test that reference without dot returns None."""
+        assert ModelReference.resolve_import("nodot") is None
+
+    def test_resolve_single_module(self) -> None:
+        """Test resolving from a top-level module."""
+        result = ModelReference.resolve_import("os.path")
+        import os
+
+        assert result is os.path
+
+    def test_resolve_with_invalid_module_path(self) -> None:
+        """Test that malformed module path returns None gracefully."""
+        # Double dots, which would cause import errors
+        result = ModelReference.resolve_import("omnibase_core..models.SomeClass")
+        assert result is None
+
+
+class TestModelReferenceResolveImportOrRaise:
+    """Tests for ModelReference.resolve_import_or_raise classmethod."""
+
+    def test_resolve_valid_reference(self) -> None:
+        """Test resolving a valid reference returns the class."""
+        result = ModelReference.resolve_import_or_raise(
+            "omnibase_core.models.contracts.model_reference.ModelReference"
+        )
+        assert result is ModelReference
+
+    def test_resolve_empty_reference_raises(self) -> None:
+        """Test that empty reference raises ModelOnexError."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelReference.resolve_import_or_raise("")
+        assert exc_info.value.error_code == EnumCoreErrorCode.IMPORT_ERROR
+        assert "empty" in exc_info.value.message.lower()
+
+    def test_resolve_no_separator_raises(self) -> None:
+        """Test that reference without dot raises ModelOnexError."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelReference.resolve_import_or_raise("nodot")
+        assert exc_info.value.error_code == EnumCoreErrorCode.IMPORT_ERROR
+        assert "module.class" in exc_info.value.message.lower()
+
+    def test_resolve_nonexistent_module_raises(self) -> None:
+        """Test that nonexistent module raises with MODULE_NOT_FOUND."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelReference.resolve_import_or_raise("nonexistent.module.SomeClass")
+        assert exc_info.value.error_code == EnumCoreErrorCode.MODULE_NOT_FOUND
+        assert "module not found" in exc_info.value.message.lower()
+
+    def test_resolve_nonexistent_class_raises(self) -> None:
+        """Test that nonexistent class raises with IMPORT_ERROR."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelReference.resolve_import_or_raise(
+                "omnibase_core.models.contracts.model_reference.NonexistentClass"
+            )
+        assert exc_info.value.error_code == EnumCoreErrorCode.IMPORT_ERROR
+        assert "not found in module" in exc_info.value.message.lower()
+
+    def test_error_context_includes_reference(self) -> None:
+        """Test that error context includes the original reference."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelReference.resolve_import_or_raise("nonexistent.module.SomeClass")
+        # Context is stored in the error's model, check in the serialized form
+        error_data = exc_info.value.model_dump()
+        assert error_data["context"]["reference"] == "nonexistent.module.SomeClass"
+        assert error_data["context"]["module_path"] == "nonexistent.module"
+
+
+class TestModelReferenceInstanceResolve:
+    """Tests for ModelReference instance resolve methods."""
+
+    def test_resolve_valid_instance(self) -> None:
+        """Test resolving a valid ModelReference instance."""
+        ref = ModelReference(
+            module="omnibase_core.models.contracts.model_reference",
+            class_name="ModelReference",
+        )
+        result = ref.resolve()
+        assert result is ModelReference
+
+    def test_resolve_invalid_instance(self) -> None:
+        """Test that invalid instance returns None."""
+        ref = ModelReference(
+            module="nonexistent.module",
+            class_name="SomeClass",
+        )
+        result = ref.resolve()
+        assert result is None
+
+    def test_resolve_or_raise_valid_instance(self) -> None:
+        """Test resolve_or_raise with valid ModelReference instance."""
+        ref = ModelReference(
+            module="omnibase_core.models.contracts.model_reference",
+            class_name="ModelReference",
+        )
+        result = ref.resolve_or_raise()
+        assert result is ModelReference
+
+    def test_resolve_or_raise_invalid_module(self) -> None:
+        """Test resolve_or_raise raises for invalid module."""
+        ref = ModelReference(
+            module="nonexistent.module",
+            class_name="SomeClass",
+        )
+        with pytest.raises(ModelOnexError) as exc_info:
+            ref.resolve_or_raise()
+        assert exc_info.value.error_code == EnumCoreErrorCode.MODULE_NOT_FOUND
+
+    def test_resolve_or_raise_invalid_class(self) -> None:
+        """Test resolve_or_raise raises for invalid class in valid module."""
+        ref = ModelReference(
+            module="omnibase_core.models.contracts.model_reference",
+            class_name="NonexistentClass",
+        )
+        with pytest.raises(ModelOnexError) as exc_info:
+            ref.resolve_or_raise()
+        assert exc_info.value.error_code == EnumCoreErrorCode.IMPORT_ERROR
+
+    def test_resolve_uses_fully_qualified_name(self) -> None:
+        """Test that resolve uses the fully_qualified_name property."""
+        ref = ModelReference(
+            module="pydantic",
+            class_name="BaseModel",
+        )
+        result = ref.resolve()
+        from pydantic import BaseModel
+
+        assert result is BaseModel
+        # Verify fully_qualified_name is correct
+        assert ref.fully_qualified_name == "pydantic.BaseModel"
+
+    def test_resolve_real_world_model(self) -> None:
+        """Test resolving a real-world model from the codebase."""
+        ref = ModelReference(
+            module="omnibase_core.enums.enum_core_error_code",
+            class_name="EnumCoreErrorCode",
+        )
+        result = ref.resolve()
+        assert result is EnumCoreErrorCode
+
+    def test_resolve_with_version_ignores_version(self) -> None:
+        """Test that version field does not affect resolution."""
+        ref = ModelReference(
+            module="omnibase_core.models.contracts.model_reference",
+            class_name="ModelReference",
+            version="1.0.0",
+        )
+        result = ref.resolve()
+        assert result is ModelReference
