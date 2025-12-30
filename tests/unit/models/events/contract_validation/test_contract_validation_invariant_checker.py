@@ -436,7 +436,9 @@ class TestInvariant4MergeCompletedNotAfterValidationFailed:
         is_valid, violations = checker.validate_sequence(events)
 
         assert is_valid is False
-        assert any("merge_completed" in v and "validation_failed" in v for v in violations)
+        assert any(
+            "merge_completed" in v and "validation_failed" in v for v in violations
+        )
 
     def test_merge_completed_after_validation_passed_is_valid(self) -> None:
         """Test that merge_completed after validation_passed is valid."""
@@ -743,10 +745,18 @@ class TestMultipleRunIds:
 
         # Interleave events from two runs
         events = [
-            ModelContractValidationEvent(event_type="validation_started", run_id=run_id_1),
-            ModelContractValidationEvent(event_type="validation_started", run_id=run_id_2),
-            ModelContractValidationEvent(event_type="validation_passed", run_id=run_id_1),
-            ModelContractValidationEvent(event_type="validation_failed", run_id=run_id_2),
+            ModelContractValidationEvent(
+                event_type="validation_started", run_id=run_id_1
+            ),
+            ModelContractValidationEvent(
+                event_type="validation_started", run_id=run_id_2
+            ),
+            ModelContractValidationEvent(
+                event_type="validation_passed", run_id=run_id_1
+            ),
+            ModelContractValidationEvent(
+                event_type="validation_failed", run_id=run_id_2
+            ),
         ]
 
         is_valid, violations = checker.validate_sequence(events)
@@ -836,7 +846,9 @@ class TestCheckInvariantMethod:
         run_id = str(uuid4())
 
         history = [
-            ModelContractValidationEvent(event_type="validation_started", run_id=run_id),
+            ModelContractValidationEvent(
+                event_type="validation_started", run_id=run_id
+            ),
             ModelContractValidationEvent(event_type="validation_passed", run_id=run_id),
         ]
 
@@ -910,8 +922,12 @@ class TestEdgeCases:
         run_id = str(uuid4())
 
         events = [
-            ModelContractValidationEvent(event_type="validation_started", run_id=run_id),
-            ModelContractValidationEvent(event_type="validation_started", run_id=run_id),
+            ModelContractValidationEvent(
+                event_type="validation_started", run_id=run_id
+            ),
+            ModelContractValidationEvent(
+                event_type="validation_started", run_id=run_id
+            ),
             ModelContractValidationEvent(event_type="validation_passed", run_id=run_id),
         ]
 
@@ -926,7 +942,9 @@ class TestEdgeCases:
         run_id = "x" * 1000
 
         events = [
-            ModelContractValidationEvent(event_type="validation_started", run_id=run_id),
+            ModelContractValidationEvent(
+                event_type="validation_started", run_id=run_id
+            ),
             ModelContractValidationEvent(event_type="validation_passed", run_id=run_id),
         ]
 
@@ -940,7 +958,9 @@ class TestEdgeCases:
         run_id = "run/with:special@chars#123"
 
         events = [
-            ModelContractValidationEvent(event_type="validation_started", run_id=run_id),
+            ModelContractValidationEvent(
+                event_type="validation_started", run_id=run_id
+            ),
             ModelContractValidationEvent(event_type="validation_passed", run_id=run_id),
         ]
 
@@ -954,7 +974,9 @@ class TestEdgeCases:
         run_id = "run-\u4e2d\u6587-123"  # Contains Chinese characters
 
         events = [
-            ModelContractValidationEvent(event_type="validation_started", run_id=run_id),
+            ModelContractValidationEvent(
+                event_type="validation_started", run_id=run_id
+            ),
             ModelContractValidationEvent(event_type="validation_passed", run_id=run_id),
         ]
 
@@ -969,7 +991,9 @@ class TestEdgeCases:
 
         # Start with validation, then merge
         events = [
-            ModelContractValidationEvent(event_type="validation_started", run_id=run_id),
+            ModelContractValidationEvent(
+                event_type="validation_started", run_id=run_id
+            ),
             ModelContractValidationEvent(event_type="validation_passed", run_id=run_id),
             ModelContractValidationEvent(event_type="merge_started", run_id=run_id),
             ModelContractValidationEvent(event_type="merge_completed", run_id=run_id),

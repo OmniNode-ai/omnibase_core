@@ -513,9 +513,7 @@ class TestModelContractValidationFailedEvent:
             )
 
         error_str = str(exc_info.value)
-        assert (
-            "first_error_code" in error_str or "min_length" in error_str.lower()
-        )
+        assert "first_error_code" in error_str or "min_length" in error_str.lower()
 
     def test_failed_event_duration_ms_required(self) -> None:
         """Test that duration_ms is required."""
@@ -802,10 +800,7 @@ class TestModelContractMergeCompletedEvent:
             )
 
         error_str = str(exc_info.value)
-        assert (
-            "effective_contract_id" in error_str
-            or "min_length" in error_str.lower()
-        )
+        assert "effective_contract_id" in error_str or "min_length" in error_str.lower()
 
     def test_merge_completed_event_duration_ms_required(self) -> None:
         """Test that duration_ms is required."""
@@ -844,10 +839,7 @@ class TestModelContractMergeCompletedEvent:
             )
 
         error_str = str(exc_info.value)
-        assert (
-            "overlays_applied_count" in error_str
-            or "greater" in error_str.lower()
-        )
+        assert "overlays_applied_count" in error_str or "greater" in error_str.lower()
 
     def test_merge_completed_event_warnings_count_ge_zero(self) -> None:
         """Test that warnings_count must be >= 0."""
@@ -1026,9 +1018,7 @@ class TestEventImmutability:
         run_id = uuid4()
 
         events = [
-            ModelContractValidationEventBase(
-                contract_id="test", run_id=run_id
-            ),
+            ModelContractValidationEventBase(contract_id="test", run_id=run_id),
             ModelContractValidationStartedEvent(
                 contract_id="test", run_id=run_id, context=ModelValidationContext()
             ),
@@ -1059,9 +1049,7 @@ class TestEventImmutability:
         run_id = uuid4()
 
         events = [
-            ModelContractValidationEventBase(
-                contract_id="test", run_id=run_id
-            ),
+            ModelContractValidationEventBase(contract_id="test", run_id=run_id),
             ModelContractValidationStartedEvent(
                 contract_id="test", run_id=run_id, context=ModelValidationContext()
             ),

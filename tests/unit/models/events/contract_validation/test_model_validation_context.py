@@ -339,9 +339,7 @@ class TestModelValidationContextFlagsTypes:
 
     def test_flags_accepts_boolean_values(self) -> None:
         """Test that flags accepts boolean values."""
-        context = ModelValidationContext(
-            flags={"true_flag": True, "false_flag": False}
-        )
+        context = ModelValidationContext(flags={"true_flag": True, "false_flag": False})
 
         assert context.flags["true_flag"] is True
         assert context.flags["false_flag"] is False
