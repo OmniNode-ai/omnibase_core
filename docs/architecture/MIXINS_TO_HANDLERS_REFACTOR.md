@@ -3,12 +3,13 @@
 **Status**: Draft
 **Version**: 0.1.0
 **Last Updated**: 2025-12-30
-**Related Tickets**: OMN-1113, OMN-1114, OMN-1116, OMN-1162
+**Related Tickets**: OMN-1113, OMN-1114, OMN-1116, OMN-1117, OMN-1162
 
 ---
 
 ## Table of Contents
 
+- [Breaking Changes (OMN-1117)](#breaking-changes-omn-1117)
 1. [Current Mixin Architecture](#section-1-current-mixin-architecture)
 2. [Handler Architecture Vision](#section-2-handler-architecture-vision)
 3. [Migration Strategy](#section-3-migration-strategy)
@@ -20,6 +21,114 @@
 9. [The Manifest](#section-9-the-manifest)
 10. [Ordering Guarantees](#section-10-ordering-guarantees)
 11. [Testing Strategy](#section-11-testing-strategy)
+
+---
+
+## Breaking Changes (OMN-1117)
+
+> **Version Introduced**: 0.4.1
+> **Impact Level**: MEDIUM - New models, no existing code broken
+> **Migration Effort**: LOW - Additive changes only
+
+### Overview
+
+The Handler Contract Model (OMN-1117) introduces two new foundational models for the handler architecture. These are **additive changes** - no existing models are deprecated or removed. However, understanding these new models is essential for adopting the handler-based approach.
+
+### New Models Introduced
+
+| Model | Location | Purpose |
+|-------|----------|---------|
+| `ModelHandlerContract` | `omnibase_core.models.contracts` | Authoring surface - declarative specification defining handler behavior, capabilities, and I/O |
+| `ModelHandlerDescriptor` | `omnibase_core.models.handlers` | Runtime representation - used for handler discovery, instantiation, and routing |
+
+### Key Distinction: Contract vs Descriptor
+
+These two models serve distinct purposes in the handler lifecycle:
+
+```python
+# CONTRACT: What you author (YAML/JSON on disk)
+# Defines the complete handler specification
+from omnibase_core.models.contracts import ModelHandlerContract
+
+contract = ModelHandlerContract(
+    handler_id="node.user.reducer",
+    name="User Registration Reducer",
+    version="1.0.0",
+    descriptor=ModelHandlerBehaviorDescriptor(
+        handler_kind="reducer",
+        purity="side_effecting",
+        idempotent=True,
+    ),
+    input_model="myapp.models.UserRegistrationEvent",
+    output_model="myapp.models.UserState",
+)
+
+# DESCRIPTOR: Runtime representation (produced by parsing contracts)
+# Used for discovery, routing, and instantiation
+from omnibase_core.models.handlers import ModelHandlerDescriptor
+
+descriptor = ModelHandlerDescriptor(
+    handler_name=ModelIdentifier(namespace="onex", name="kafka-ingress"),
+    handler_version=ModelSemVer(major=1, minor=0, patch=0),
+    handler_role=EnumHandlerRole.INFRA_HANDLER,
+    handler_type=EnumHandlerType.KAFKA,
+    handler_type_category=EnumHandlerTypeCategory.EFFECT,
+    import_path="omnibase_infra.adapters.kafka_ingress.KafkaIngressAdapter",
+)
+```
+
+### Migration Path
+
+**If you are currently using mixins:**
+
+1. **No immediate action required** - Existing mixin-based code continues to work
+2. **Gradual adoption** - Begin authoring handler contracts for new handlers
+3. **Phase 3 migration** - When mixin deprecation begins (see Section 3), convert to handler contracts
+
+**If you are starting fresh:**
+
+1. Author handler contracts in YAML using the schema at `src/omnibase_core/schemas/handler_contract.schema.json`
+2. Use `ModelHandlerDescriptor` for runtime handler metadata
+3. Follow capability-based dependency patterns (no vendor names in contracts)
+
+### Import Paths
+
+```python
+# Handler Contract (authoring surface)
+from omnibase_core.models.contracts import (
+    ModelHandlerContract,
+    ModelCapabilityDependency,
+    ModelExecutionConstraints,
+    ModelHandlerBehaviorDescriptor,
+)
+
+# Handler Descriptor (runtime representation)
+from omnibase_core.models.handlers import (
+    ModelHandlerDescriptor,
+    ModelIdentifier,
+    ModelArtifactRef,
+)
+```
+
+### Impact Assessment
+
+| Existing Code | Impact | Action Required |
+|---------------|--------|-----------------|
+| Mixin-based nodes | None | No changes needed (yet) |
+| Custom handler registries | Low | Consider adopting `ModelHandlerDescriptor` |
+| Contract-driven nodes | Low | Optionally adopt `ModelHandlerContract` |
+| New handler development | Medium | Use handler contracts for new work |
+
+### Deprecation Timeline
+
+Currently, there are **no deprecations**. The handler contract model is additive. When mixin deprecation begins in Phase 3, migration guides will be provided with specific timelines.
+
+### Related Resources
+
+- JSON Schema: `src/omnibase_core/schemas/handler_contract.schema.json`
+- Handler Descriptor Tests: `tests/unit/models/handlers/test_model_handler_descriptor.py`
+- Handler Contract Tests: `tests/unit/models/contracts/test_model_handler_contract.py`
+- Related Ticket: OMN-1117
 
 ---
 

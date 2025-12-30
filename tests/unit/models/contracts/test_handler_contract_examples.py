@@ -161,7 +161,9 @@ class TestHandlerContractExamples:
     def test_all_example_files_load_successfully(self, examples_dir: Path) -> None:
         """Ensure all YAML files in examples directory can be loaded."""
         yaml_files = list(examples_dir.glob("*.yaml"))
-        assert len(yaml_files) >= 3, f"Expected at least 3 example files, found {len(yaml_files)}"
+        assert len(yaml_files) >= 3, (
+            f"Expected at least 3 example files, found {len(yaml_files)}"
+        )
 
         for yaml_path in yaml_files:
             # Each file should load without raising an exception
