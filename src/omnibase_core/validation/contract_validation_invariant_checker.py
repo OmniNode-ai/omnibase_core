@@ -19,8 +19,6 @@ Related:
 .. versionadded:: 0.4.0
 """
 
-from __future__ import annotations
-
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -58,6 +56,7 @@ class ModelContractValidationEvent(BaseModel):
         extra="forbid",
         validate_assignment=True,
         frozen=True,
+        from_attributes=True,
     )
 
     event_type: ContractValidationEventType = Field(
@@ -87,8 +86,10 @@ class ContractValidationInvariantChecker:
     4. merge_completed cannot occur if validation_failed occurred for the same run_id
 
     Thread Safety:
-        This implementation is thread-safe as it maintains no internal state.
-        Each method call is independent and can be safely called from multiple threads.
+        This implementation is thread-safe (stateless). Each method operates only
+        on its input parameters without maintaining or mutating any shared state.
+        All data structures (dictionaries, sets, lists) are created locally within
+        each method call, ensuring thread isolation.
 
     Example:
         .. code-block:: python

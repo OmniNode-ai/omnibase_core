@@ -210,8 +210,8 @@ def __getattr__(name: str) -> type:
 
 # Import contract validation invariant checker (OMN-1146)
 from .contract_validation_invariant_checker import (
-    ContractValidationInvariantChecker,
     ContractValidationEventType,
+    ContractValidationInvariantChecker,
     ModelContractValidationEvent,
 )
 from .contracts import (

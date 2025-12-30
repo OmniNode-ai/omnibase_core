@@ -22,8 +22,8 @@ import pytest
 from pydantic import ValidationError
 
 from omnibase_core.validation.contract_validation_invariant_checker import (
-    ContractValidationInvariantChecker,
     ContractValidationEventType,
+    ContractValidationInvariantChecker,
     ModelContractValidationEvent,
 )
 
