@@ -91,11 +91,11 @@ class ModelTransaction:
                     raise
                 # Catch all other BaseException subclasses (including Exception
                 # subclasses like MemoryError/OSError, plus GeneratorExit) to ensure
-                # all rollback operations are attempted even if one fails. We
-                # intentionally suppress resource errors like MemoryError during
-                # cleanup to maximize rollback completion. asyncio.CancelledError is
-                # handled separately above and re-raised after all rollback operations
-                # complete to honor task cancellation.
+                # all rollback operations are attempted even if one fails. Errors are
+                # logged but not re-raised to maximize rollback completion; this
+                # includes resource-related errors like MemoryError and OSError.
+                # asyncio.CancelledError is handled separately above and re-raised
+                # after all rollback operations complete to honor task cancellation.
                 emit_log_event(
                     LogLevel.ERROR,
                     f"Rollback operation failed during cleanup: {e!s}",

@@ -134,7 +134,11 @@ def validate_yaml_file(file_path: Path) -> list[str]:
             # Collect structured validation errors
             errors.append(f"Contract validation failed: {e.message}")
         except (AttributeError, KeyError, TypeError, ValueError) as e:
-            # Wrap in ModelOnexError for consistent error handling
+            # Handle data access/validation errors during YAML contract parsing:
+            # - AttributeError: YAML returns None where dict/object expected
+            # - KeyError: Required key missing in parsed YAML structure
+            # - TypeError: Type mismatch (e.g., list where dict expected)
+            # - ValueError: Invalid value during Pydantic model construction
             wrapped_error = ModelOnexError(
                 error_code=EnumCoreErrorCode.CONTRACT_VALIDATION_ERROR,
                 message=f"Contract validation failed: {e}",
