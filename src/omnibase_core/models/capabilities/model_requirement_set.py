@@ -39,10 +39,20 @@ Type Safety:
     Uses PEP 695 type alias syntax for proper recursive type handling
     with Pydantic 2.x.
 
+Runtime Validation:
+    Beyond static type hints, ``ModelRequirementSet`` enforces JSON-serializability
+    at runtime via the ``validate_json_serializable`` model validator. This catches
+    non-serializable objects that slip past type checkers (e.g., sets, datetime,
+    custom classes). If validation fails, a clear error message is raised with
+    examples of valid values.
+
 .. versionadded:: 0.4.0
 """
 
-from pydantic import BaseModel, ConfigDict, Field
+import json
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 # PEP 695 recursive type alias (Python 3.12+)
 # Pydantic requires this syntax for recursive types to avoid RecursionError.
@@ -163,6 +173,64 @@ class ModelRequirementSet(BaseModel):
         description="Advisory information for tie-breaking between equal providers",
     )
 
+    @model_validator(mode="before")
+    @classmethod
+    def validate_json_serializable(cls, data: Any) -> Any:
+        """Validate that all requirement values are JSON-serializable.
+
+        This validator ensures that values stored in must/prefer/forbid/hints
+        can be serialized to JSON, preventing runtime errors during serialization
+        and ensuring consistent behavior across resolvers.
+
+        This is a runtime enforcement of the ``RequirementValue`` type constraint,
+        since Pydantic's type checking alone cannot catch all non-JSON-serializable
+        objects (e.g., custom classes, datetime objects, lambdas).
+
+        Args:
+            data: Raw input data (dict or model instance).
+
+        Returns:
+            Validated data unchanged if all values are JSON-serializable.
+
+        Raises:
+            ValueError: If any requirement dict contains non-JSON-serializable values,
+                with a helpful error message showing the problematic field and value.
+
+        Examples:
+            Valid (all JSON-serializable)::
+
+                ModelRequirementSet(must={"key": "value", "nested": {"a": 1}})
+
+            Invalid (contains non-serializable object)::
+
+                # Raises ValueError: Requirements in 'must' are not JSON-serializable:
+                # Object of type 'set' is not JSON serializable.
+                # Ensure values are primitives (str, int, float, bool, None)
+                # or JSON-compatible containers (list, dict).
+                ModelRequirementSet(must={"invalid": {1, 2, 3}})  # set is not JSON
+        """
+        if not isinstance(data, dict):
+            # Let Pydantic handle non-dict inputs (e.g., model instances)
+            return data
+
+        requirement_fields = ["must", "prefer", "forbid", "hints"]
+        for field_name in requirement_fields:
+            if field_name not in data:
+                continue
+            field_value = data[field_name]
+            if field_value is None:
+                continue
+            try:
+                json.dumps(field_value)
+            except (TypeError, ValueError) as e:
+                raise ValueError(
+                    f"Requirements in '{field_name}' are not JSON-serializable: {e}. "
+                    f"Ensure values are primitives (str, int, float, bool, None) "
+                    f"or JSON-compatible containers (list, dict). "
+                    f"Example valid value: {{'key': 'value', 'count': 42, 'nested': {{'a': 1}}}}"
+                ) from e
+        return data
+
     @property
     def is_empty(self) -> bool:
         """
@@ -171,12 +239,20 @@ class ModelRequirementSet(BaseModel):
         Returns:
             True if all constraint tiers are empty, False otherwise.
 
+        Validation Invariants:
+            This property assumes all constraint dicts are valid (enforced by
+            ``validate_json_serializable``). Empty dicts evaluate to False in
+            boolean context, so this check is safe even if validation was
+            somehow bypassed - it would just return True for empty dicts.
+
         Examples:
             >>> ModelRequirementSet().is_empty
             True
             >>> ModelRequirementSet(must={"key": "value"}).is_empty
             False
         """
+        # Implementation Note: Uses Python's truthiness for dicts
+        # Empty dict {} is falsy, non-empty dict {"k": "v"} is truthy
         return not (self.must or self.prefer or self.forbid or self.hints)
 
     @property
@@ -184,8 +260,17 @@ class ModelRequirementSet(BaseModel):
         """
         Check if this requirement set has hard constraints (must or forbid).
 
+        Hard constraints are filter criteria that exclude providers entirely:
+        - ``must``: Provider MUST match all specified attributes
+        - ``forbid``: Provider MUST NOT match any specified attributes
+
         Returns:
             True if must or forbid are non-empty, False otherwise.
+
+        Validation Invariants:
+            This property assumes all constraint values are JSON-serializable
+            (enforced by ``validate_json_serializable``). The bool() conversion
+            is safe for any dict - empty returns False, non-empty returns True.
 
         Examples:
             >>> ModelRequirementSet(prefer={"fast": True}).has_hard_constraints
@@ -193,6 +278,8 @@ class ModelRequirementSet(BaseModel):
             >>> ModelRequirementSet(must={"required": True}).has_hard_constraints
             True
         """
+        # Implementation Note: Hard constraints affect provider FILTERING (Phase 1)
+        # They determine which providers are even considered, before scoring.
         return bool(self.must or self.forbid)
 
     @property
@@ -200,8 +287,17 @@ class ModelRequirementSet(BaseModel):
         """
         Check if this requirement set has soft constraints (prefer or hints).
 
+        Soft constraints affect provider SCORING but don't exclude providers:
+        - ``prefer``: Matching attributes increase provider score
+        - ``hints``: Advisory tie-breakers when scores are equal
+
         Returns:
             True if prefer or hints are non-empty, False otherwise.
+
+        Validation Invariants:
+            This property assumes all constraint values are JSON-serializable
+            (enforced by ``validate_json_serializable``). The bool() conversion
+            is safe for any dict - empty returns False, non-empty returns True.
 
         Examples:
             >>> ModelRequirementSet(must={"required": True}).has_soft_constraints
@@ -209,6 +305,8 @@ class ModelRequirementSet(BaseModel):
             >>> ModelRequirementSet(prefer={"fast": True}).has_soft_constraints
             True
         """
+        # Implementation Note: Soft constraints affect provider SCORING (Phase 2)
+        # They influence ranking among providers that passed hard constraint filtering.
         return bool(self.prefer or self.hints)
 
     def merge(self, other: "ModelRequirementSet") -> "ModelRequirementSet":

@@ -15,6 +15,133 @@ from omnibase_core.models.capabilities.model_requirement_set import ModelRequire
 
 
 @pytest.mark.unit
+class TestModelRequirementSetJSONSerializability:
+    """Tests for JSON-serializability validation.
+
+    These tests verify that the validate_json_serializable model validator
+    correctly rejects non-JSON-serializable values at construction time,
+    providing helpful error messages with examples.
+    """
+
+    def test_valid_primitive_values_accepted(self) -> None:
+        """Test that all JSON primitive types are accepted."""
+        reqs = ModelRequirementSet(
+            must={
+                "string": "value",
+                "int": 42,
+                "float": 3.14,
+                "bool": True,
+                "null": None,
+            }
+        )
+        assert reqs.must["string"] == "value"
+        assert reqs.must["int"] == 42
+        assert reqs.must["float"] == 3.14
+        assert reqs.must["bool"] is True
+        assert reqs.must["null"] is None
+
+    def test_valid_nested_structures_accepted(self) -> None:
+        """Test that nested JSON-compatible structures are accepted."""
+        reqs = ModelRequirementSet(
+            must={
+                "nested_dict": {"a": 1, "b": {"c": 2}},
+                "nested_list": [1, [2, 3], {"d": 4}],
+            }
+        )
+        assert reqs.must["nested_dict"]["b"]["c"] == 2
+        assert reqs.must["nested_list"][1] == [2, 3]
+
+    def test_set_rejected_in_must(self) -> None:
+        """Test that set values are rejected with helpful error message."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelRequirementSet(must={"invalid": {1, 2, 3}})  # type: ignore[dict-item]
+
+        error_msg = str(exc_info.value)
+        assert "must" in error_msg
+        assert "JSON-serializable" in error_msg
+        assert "set" in error_msg.lower()
+
+    def test_set_rejected_in_prefer(self) -> None:
+        """Test that set values are rejected in prefer tier."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelRequirementSet(prefer={"invalid": {"a", "b"}})  # type: ignore[dict-item]
+
+        error_msg = str(exc_info.value)
+        assert "prefer" in error_msg
+        assert "JSON-serializable" in error_msg
+
+    def test_set_rejected_in_forbid(self) -> None:
+        """Test that set values are rejected in forbid tier."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelRequirementSet(forbid={"invalid": frozenset([1, 2])})  # type: ignore[dict-item]
+
+        error_msg = str(exc_info.value)
+        assert "forbid" in error_msg
+        assert "JSON-serializable" in error_msg
+
+    def test_set_rejected_in_hints(self) -> None:
+        """Test that set values are rejected in hints tier."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelRequirementSet(hints={"invalid": {1, 2, 3}})  # type: ignore[dict-item]
+
+        error_msg = str(exc_info.value)
+        assert "hints" in error_msg
+        assert "JSON-serializable" in error_msg
+
+    def test_lambda_rejected(self) -> None:
+        """Test that lambda/function values are rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelRequirementSet(must={"invalid": lambda x: x})  # type: ignore[dict-item]
+
+        error_msg = str(exc_info.value)
+        assert "JSON-serializable" in error_msg
+
+    def test_custom_object_rejected(self) -> None:
+        """Test that custom objects without JSON support are rejected."""
+
+        class CustomObject:
+            pass
+
+        with pytest.raises(ValidationError) as exc_info:
+            ModelRequirementSet(must={"invalid": CustomObject()})  # type: ignore[dict-item]
+
+        error_msg = str(exc_info.value)
+        assert "JSON-serializable" in error_msg
+
+    def test_deeply_nested_set_rejected(self) -> None:
+        """Test that sets nested deep in structures are rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelRequirementSet(
+                must={"level1": {"level2": {"level3": {1, 2, 3}}}}  # type: ignore[dict-item]
+            )
+
+        error_msg = str(exc_info.value)
+        assert "JSON-serializable" in error_msg
+
+    def test_error_message_includes_example(self) -> None:
+        """Test that error message includes helpful example of valid value."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelRequirementSet(must={"invalid": {1, 2, 3}})  # type: ignore[dict-item]
+
+        error_msg = str(exc_info.value)
+        # Should include example of valid format
+        assert "Example valid value" in error_msg or "key" in error_msg
+
+    def test_error_message_mentions_allowed_types(self) -> None:
+        """Test that error message mentions allowed types."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelRequirementSet(must={"invalid": {1, 2, 3}})  # type: ignore[dict-item]
+
+        error_msg = str(exc_info.value)
+        # Should mention allowed primitives
+        assert (
+            "str" in error_msg
+            or "int" in error_msg
+            or "primitives" in error_msg.lower()
+        )
+
+
+@pytest.mark.unit
 class TestModelRequirementSetInstantiation:
     """Tests for ModelRequirementSet instantiation."""
 
@@ -1006,3 +1133,277 @@ class TestShallowMergeNestedDictBehavior:
 
         assert level3 == {"deep_key": "override"}, "Deeply nested dict is replaced"
         assert "another" not in level3, "'another' key should be lost (shallow merge)"
+
+
+# =============================================================================
+# Integration Examples (End-to-End Usage Patterns)
+# =============================================================================
+
+
+@pytest.mark.unit
+class TestCapabilityDependencyIntegration:
+    """Integration examples demonstrating typical capability dependency usage.
+
+    These tests show end-to-end workflows combining ModelCapabilityDependency
+    and ModelRequirementSet for common patterns in ONEX node contracts.
+    """
+
+    def test_database_dependency_with_merged_requirements(self) -> None:
+        """Example: Database dependency with base and environment-specific requirements.
+
+        Common pattern: Define base requirements in code, merge environment-specific
+        requirements from configuration.
+        """
+        # Base requirements (in handler code)
+        base_reqs = ModelRequirementSet(
+            must={"supports_transactions": True, "supports_ssl": True},
+            prefer={"connection_pool_size": 10},
+        )
+
+        # Environment-specific requirements (from config)
+        prod_reqs = ModelRequirementSet(
+            must={"encryption_at_rest": True},
+            prefer={"max_connections": 100, "region": "us-east-1"},
+            forbid={"deprecated": True},
+        )
+
+        # Merge for production
+        merged = base_reqs.merge(prod_reqs)
+
+        # Create the dependency with merged requirements
+        dep = ModelCapabilityDependency(
+            alias="db",
+            capability="database.relational",
+            requirements=merged,
+            selection_policy="auto_if_unique",
+        )
+
+        # Verify combined requirements
+        assert merged.must == {
+            "supports_transactions": True,
+            "supports_ssl": True,
+            "encryption_at_rest": True,
+        }
+        assert merged.prefer == {
+            "connection_pool_size": 10,
+            "max_connections": 100,
+            "region": "us-east-1",
+        }
+        assert merged.forbid == {"deprecated": True}
+
+        # Verify dependency properties
+        assert dep.alias == "db"
+        assert dep.domain == "database"
+        assert dep.capability_type == "relational"
+        assert dep.has_requirements is True
+        assert dep.requires_explicit_binding is False
+
+    def test_cache_dependency_with_scoring_resolution(self) -> None:
+        """Example: Cache dependency using best_score policy with mock resolution.
+
+        Demonstrates how prefer constraints affect provider selection.
+        """
+        reqs = ModelRequirementSet(
+            must={"distributed": True},
+            prefer={"in_memory": True, "supports_ttl": True, "region": "us-west-2"},
+            hints={"vendor_preference": ["redis", "memcached"]},
+        )
+
+        dep = ModelCapabilityDependency(
+            alias="cache",
+            capability="cache.distributed",
+            requirements=reqs,
+            selection_policy="best_score",
+            strict=False,  # Allow fallback if some preferences unmet
+        )
+
+        # Mock provider catalog
+        providers = [
+            {
+                "name": "redis_west",
+                "distributed": True,
+                "in_memory": True,
+                "supports_ttl": True,
+                "region": "us-west-2",
+            },
+            {
+                "name": "redis_east",
+                "distributed": True,
+                "in_memory": True,
+                "supports_ttl": True,
+                "region": "us-east-1",
+            },
+            {
+                "name": "memcached",
+                "distributed": True,
+                "in_memory": True,
+                "supports_ttl": False,
+                "region": "us-west-2",
+            },
+        ]
+
+        # Mock scoring function
+        def score_provider(p: dict[str, Any]) -> float:
+            return sum(1.0 for k, v in dep.requirements.prefer.items() if p.get(k) == v)
+
+        # Score all providers
+        scores = [(p["name"], score_provider(p)) for p in providers]
+
+        # redis_west matches all 3 prefer constraints (score=3)
+        # memcached matches 2 (in_memory, region) (score=2)
+        # redis_east matches 2 (in_memory, supports_ttl) (score=2)
+        assert ("redis_west", 3.0) in scores
+        assert max(scores, key=lambda x: x[1])[0] == "redis_west"
+
+    def test_secrets_dependency_requires_explicit_binding(self) -> None:
+        """Example: Security-sensitive dependency requiring explicit provider binding.
+
+        Demonstrates require_explicit policy for secrets management.
+        """
+        dep = ModelCapabilityDependency(
+            alias="secrets",
+            capability="secrets.vault",
+            requirements=ModelRequirementSet(
+                must={"encryption": "aes-256", "audit_logging": True},
+            ),
+            selection_policy="require_explicit",
+        )
+
+        # Verify security properties
+        assert dep.requires_explicit_binding is True
+        assert dep.selection_policy == "require_explicit"
+        assert dep.requirements.must["encryption"] == "aes-256"
+
+        # Mock: Even with single matching provider, require_explicit never auto-selects
+        single_provider = [
+            {"name": "vault", "encryption": "aes-256", "audit_logging": True}
+        ]
+
+        def resolve_require_explicit(
+            providers: list[dict[str, Any]], explicit_binding: str | None
+        ) -> dict[str, Any] | None:
+            if explicit_binding is None:
+                return None  # Never auto-select
+            return next((p for p in providers if p["name"] == explicit_binding), None)
+
+        # Without explicit binding: returns None (security guarantee)
+        assert resolve_require_explicit(single_provider, None) is None
+
+        # With explicit binding: resolves correctly
+        result = resolve_require_explicit(single_provider, "vault")
+        assert result is not None
+        assert result["name"] == "vault"
+
+    def test_vector_store_with_variant_and_hints(self) -> None:
+        """Example: Vector store dependency with variant and vendor hints.
+
+        Demonstrates three-part capability name and advisory hints.
+        """
+        dep = ModelCapabilityDependency(
+            alias="vectors",
+            capability="storage.vector.embeddings",
+            requirements=ModelRequirementSet(
+                must={"dimensions": 1536, "supports_metadata": True},
+                prefer={"max_vectors": 1000000},
+                hints={"engine_preference": ["qdrant", "milvus", "pinecone"]},
+            ),
+            selection_policy="best_score",
+        )
+
+        # Verify capability parsing
+        assert dep.domain == "storage"
+        assert dep.capability_type == "vector"
+        assert dep.variant == "embeddings"
+
+        # Verify hints for tie-breaking
+        assert dep.requirements.hints["engine_preference"] == [
+            "qdrant",
+            "milvus",
+            "pinecone",
+        ]
+
+    def test_requirement_layering_pattern(self) -> None:
+        """Example: Three-layer requirement merging (default -> base -> override).
+
+        Common pattern for configuration layering: default requirements are defined
+        in code, base requirements in shared config, and overrides per-environment.
+        """
+        # Layer 1: Code defaults (most permissive)
+        defaults = ModelRequirementSet(
+            prefer={"timeout_ms": 5000},
+        )
+
+        # Layer 2: Base config (shared across environments)
+        base_config = ModelRequirementSet(
+            must={"available": True},
+            prefer={"timeout_ms": 3000, "retries": 3},
+        )
+
+        # Layer 3: Environment override (production)
+        prod_override = ModelRequirementSet(
+            must={"encryption": True},
+            prefer={"timeout_ms": 1000},  # More aggressive timeout
+            forbid={"debug_mode": True},
+        )
+
+        # Apply layers: defaults -> base -> prod
+        layer1 = defaults.merge(base_config)
+        final = layer1.merge(prod_override)
+
+        # Verify layered result
+        assert final.must == {"available": True, "encryption": True}
+        assert final.prefer == {"timeout_ms": 1000, "retries": 3}  # timeout overridden
+        assert final.forbid == {"debug_mode": True}
+
+    def test_forbid_filters_before_scoring_integration(self) -> None:
+        """Example: Demonstrate that forbid constraints filter before prefer scoring.
+
+        This is a critical integration behavior: a provider with a perfect prefer
+        score is excluded if it matches any forbid constraint.
+        """
+        dep = ModelCapabilityDependency(
+            alias="api",
+            capability="http.client",
+            requirements=ModelRequirementSet(
+                must={"supports_https": True},
+                prefer={"connection_pooling": True, "retry_logic": True},
+                forbid={"uses_deprecated_tls": True},
+            ),
+            selection_policy="best_score",
+        )
+
+        providers = [
+            {
+                "name": "old_client",
+                "supports_https": True,
+                "connection_pooling": True,
+                "retry_logic": True,  # Perfect prefer score!
+                "uses_deprecated_tls": True,  # But forbidden
+            },
+            {
+                "name": "new_client",
+                "supports_https": True,
+                "connection_pooling": True,
+                "retry_logic": False,  # Lower prefer score
+                "uses_deprecated_tls": False,
+            },
+        ]
+
+        # Phase 1: Filter by must AND forbid
+        def filter_providers(
+            providers: list[dict[str, Any]], reqs: ModelRequirementSet
+        ) -> list[dict[str, Any]]:
+            result = []
+            for p in providers:
+                if not all(p.get(k) == v for k, v in reqs.must.items()):
+                    continue
+                if any(p.get(k) == v for k, v in reqs.forbid.items()):
+                    continue  # Excluded by forbid
+                result.append(p)
+            return result
+
+        filtered = filter_providers(providers, dep.requirements)
+
+        # old_client is excluded despite perfect prefer score
+        assert len(filtered) == 1
+        assert filtered[0]["name"] == "new_client"

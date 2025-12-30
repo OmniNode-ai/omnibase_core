@@ -159,9 +159,9 @@ class ModelCapabilityDependency(BaseModel):
             - Raise an error with the list of matching providers
             - Fall back to a secondary strategy (e.g., alphabetical first)
 
-            .. todo::
-                See ``docs/architecture/CAPABILITY_RESOLUTION.md`` for canonical
-                resolver behavior semantics (planned documentation).
+            .. seealso::
+                ``docs/architecture/CAPABILITY_RESOLUTION.md`` for canonical
+                resolver behavior semantics and ambiguity handling strategies.
 
         **best_score**:
             Best for: Dependencies where multiple providers may match and

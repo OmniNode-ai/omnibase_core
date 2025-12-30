@@ -102,6 +102,7 @@ omnibase_core/docs/
 | [**Container Types**](architecture/CONTAINER_TYPES.md) | ModelContainer vs ModelONEXContainer ⚠️ **CRITICAL** | ✅ Complete |
 | [Dependency Injection](architecture/DEPENDENCY_INJECTION.md) | ModelONEXContainer patterns | ✅ Complete |
 | [Contract System](architecture/CONTRACT_SYSTEM.md) | Contract architecture | ✅ Complete |
+| [**Capability Resolution**](architecture/CAPABILITY_RESOLUTION.md) | Selection policies and ambiguity handling ⭐ **NEW** | Draft |
 | [Type System](architecture/TYPE_SYSTEM.md) | Typing patterns and conventions | ✅ Complete |
 | [Documentation Architecture](architecture/DOCUMENTATION_ARCHITECTURE.md) | Documentation structure and organization | ✅ Complete |
 | [Subcontract Architecture](architecture/SUBCONTRACT_ARCHITECTURE.md) | Contract system design and subcontract patterns | ✅ Complete |
