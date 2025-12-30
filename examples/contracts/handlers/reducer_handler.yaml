@@ -7,6 +7,10 @@
 #   - idempotent: true (required for reducers)
 #   - Emits intents for downstream processing
 
+# Contract required fields
+node_type: REDUCER_GENERIC
+contract_version: {major: 1, minor: 0, patch: 0}
+
 handler_id: reducer.registration.user
 name: User Registration Reducer
 version: 1.2.0

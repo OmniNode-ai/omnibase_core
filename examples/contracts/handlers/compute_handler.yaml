@@ -7,6 +7,10 @@
 #   - idempotent: true (safe to retry)
 #   - Can be cached and run in parallel
 
+# Contract required fields
+node_type: COMPUTE_GENERIC
+contract_version: {major: 1, minor: 0, patch: 0}
+
 handler_id: compute.schema.validator
 name: Schema Validator
 version: 1.0.0
