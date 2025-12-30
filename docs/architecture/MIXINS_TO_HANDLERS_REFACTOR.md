@@ -327,6 +327,11 @@ class ModelActivationSource(BaseModel):
 
 ## Section 9: The Manifest
 
+> **Note**: The models described in this section are **planned for future implementation**
+> as part of OMN-1113: Manifest Generation & Observability. They are not yet available
+> in the current codebase and represent the target architecture for execution manifest
+> tracking and observability.
+
 **Reference Ticket**: OMN-1113 (Manifest Generation & Observability)
 
 ### Purpose

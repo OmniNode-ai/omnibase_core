@@ -141,7 +141,7 @@ class ModelExecutionConstraints(BaseModel):
         str_strip_whitespace=True,
     )
 
-    @field_validator("requires_before", "requires_after", mode="before")
+    @field_validator("requires_before", "requires_after", mode="after")
     @classmethod
     def validate_dependency_refs(cls, v: list[str]) -> list[str]:
         """
@@ -149,8 +149,13 @@ class ModelExecutionConstraints(BaseModel):
 
         Valid prefixes: capability:, handler:, tag:
 
+        Note:
+            Uses mode="after" because this validator checks semantic content
+            (prefix format) of already-typed values, not type coercion.
+            Pydantic validates list[str] type first, then this validates format.
+
         Args:
-            v: List of dependency references.
+            v: List of dependency references (guaranteed list[str] by Pydantic).
 
         Returns:
             Validated list of references.
