@@ -11,10 +11,11 @@ Modules:
 
 Usage:
     from omnibase_core.models.capabilities import ModelContractCapabilities
+    from omnibase_core.models.primitives.model_semver import ModelSemVer
 
     capabilities = ModelContractCapabilities(
         contract_type="compute",
-        contract_version="1.0.0",
+        contract_version=ModelSemVer(major=1, minor=0, patch=0),
         intent_types=["ProcessData"],
         protocols=["ProtocolCompute"],
         capability_tags=["pure", "cacheable"],
