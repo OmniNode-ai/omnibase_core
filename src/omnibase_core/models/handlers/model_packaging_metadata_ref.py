@@ -128,7 +128,10 @@ class ModelPackagingMetadataRef(BaseModel):
 
     def __repr__(self) -> str:
         """Return a concise representation for debugging."""
-        return f"ModelPackagingMetadataRef(ref={self.ref!r})"
+        parts = [f"ref={self.ref!r}"]
+        if self.version:
+            parts.append(f"version={self.version}")
+        return f"ModelPackagingMetadataRef({', '.join(parts)})"
 
 
 __all__ = ["ModelPackagingMetadataRef"]

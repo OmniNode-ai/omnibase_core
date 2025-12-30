@@ -391,7 +391,7 @@ class ModelHandlerDescriptor(BaseModel):
         ...,
         description=(
             "Semantic version of the handler implementation. Used for "
-            "compatibility checks and version-pinned instantiation."
+            "version validation and version-pinned instantiation."
         ),
     )
 
