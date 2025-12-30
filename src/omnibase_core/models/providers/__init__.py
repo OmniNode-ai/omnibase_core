@@ -36,6 +36,69 @@ Checking provider health:
     >>> health.status
     'healthy'
 
+Lifecycle Example
+-----------------
+This example demonstrates the typical lifecycle of a provider descriptor,
+from creation through registration, health monitoring, and capability matching:
+
+    >>> from uuid import uuid4
+    >>> from omnibase_core.models.providers import ModelProviderDescriptor
+    >>> from omnibase_core.models.health import ModelHealthStatus
+    >>>
+    >>> # 1. CREATE: Define the provider with its capabilities
+    >>> provider_id = uuid4()
+    >>> descriptor = ModelProviderDescriptor(
+    ...     provider_id=provider_id,
+    ...     capabilities=["database.relational", "database.postgresql"],
+    ...     adapter="omnibase_infra.adapters.PostgresAdapter",
+    ...     connection_ref="secrets://postgres/primary",
+    ...     attributes={"version": "15.4", "region": "us-east-1"},
+    ...     declared_features={"supports_json": True, "max_connections": 100},
+    ...     tags=["production", "primary"],
+    ... )
+    >>>
+    >>> # 2. REGISTER: Add to provider registry (conceptual)
+    >>> # registry.register(descriptor)  # Would register with actual registry
+    >>>
+    >>> # 3. HEALTH CHECK: Update health status after probe
+    >>> health = ModelHealthStatus.create_healthy(
+    ...     score=0.95,
+    ...     metrics={"latency_ms": 12.5, "connections_used": 45},
+    ... )
+    >>> # Create updated descriptor with health (immutable, so use model_copy)
+    >>> descriptor_with_health = descriptor.model_copy(update={"health": health})
+    >>>
+    >>> # 4. FEATURE RESOLUTION: Get effective features
+    >>> # Initially uses declared_features (observed_features is empty)
+    >>> features = descriptor.get_effective_features()
+    >>> features.get("supports_json")
+    True
+    >>>
+    >>> # After runtime probing, observed_features takes precedence
+    >>> probed_descriptor = descriptor.model_copy(
+    ...     update={"observed_features": {"supports_json": True, "supports_arrays": True}}
+    ... )
+    >>> probed_descriptor.get_effective_features()
+    {'supports_arrays': True, 'supports_json': True}
+    >>>
+    >>> # 5. CAPABILITY MATCHING: Check for specific capabilities
+    >>> # Exact match
+    >>> descriptor.has_capability("database.postgresql")
+    True
+    >>>
+    >>> # Pattern matching with wildcards
+    >>> descriptor.matches_any_capability(["database.*"])
+    True
+    >>> descriptor.matches_any_capability(["cache.*"])
+    False
+    >>>
+    >>> # 6. RESOLUTION: Find providers matching requirements (conceptual)
+    >>> # matching = registry.resolve(
+    >>> #     capabilities=["database.*"],
+    >>> #     tags=["production"],
+    >>> #     min_health_score=0.9,
+    >>> # )
+
 Thread Safety
 -------------
 All models in this module are immutable (frozen=True) after creation,

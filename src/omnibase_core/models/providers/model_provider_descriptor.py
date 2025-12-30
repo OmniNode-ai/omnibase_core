@@ -150,14 +150,42 @@ class ModelProviderDescriptor(BaseModel):
         >>> # (even if declared_features also has data)
 
     Note:
-        This model uses ``from_attributes=True`` in its ConfigDict. This enables
-        pytest-xdist compatibility by allowing Pydantic to construct instances
-        from objects with matching attributes, even when class identity differs
-        across parallel test workers. See CLAUDE.md "Pydantic from_attributes=True
-        for Value Objects" section for project convention details.
+        **Why from_attributes=True is Required**
 
-        This model is frozen (immutable) after creation, making it thread-safe
-        for concurrent read access. Use model_copy() to create modified copies.
+        This model uses ``from_attributes=True`` in its ConfigDict to ensure
+        pytest-xdist compatibility. The technical reason involves Python's class
+        identity behavior in parallel test execution:
+
+        1. **Parallel Worker Isolation**: When running tests with pytest-xdist
+           (e.g., ``pytest -n4``), each worker process runs in its own Python
+           interpreter with its own module imports.
+
+        2. **Class Identity Mismatch**: Each worker imports
+           ``ModelProviderDescriptor`` independently, creating separate class
+           objects. While these classes are functionally identical, Python's
+           ``isinstance()`` check and Pydantic's default validation fail
+           because ``WorkerA.ModelProviderDescriptor is not WorkerB.ModelProviderDescriptor``.
+
+        3. **from_attributes=True Solution**: This flag enables Pydantic's
+           "duck typing" mode for model construction. Instead of requiring exact
+           class identity, Pydantic checks if the source object has matching
+           attribute names and constructs a new instance from those values.
+           This allows fixtures created in one worker to be validated in another.
+
+        **Example of the Problem (without from_attributes=True)**::
+
+            # Worker A creates: descriptor = ModelProviderDescriptor(...)
+            # Worker B receives descriptor via pytest fixture
+            # Worker B's Pydantic rejects it: "expected ModelProviderDescriptor,
+            # got <models.providers.model_provider_descriptor.ModelProviderDescriptor>"
+
+        See CLAUDE.md "Pydantic from_attributes=True for Value Objects" section
+        for the project convention and additional models using this pattern.
+
+        **Thread Safety**: This model is frozen (immutable) after creation,
+        making it thread-safe for concurrent read access from multiple threads
+        or async tasks. Use ``model_copy()`` to create modified copies when
+        needed.
     """
 
     # from_attributes=True enables pytest-xdist compatibility (class identity across workers)
@@ -255,6 +283,7 @@ class ModelProviderDescriptor(BaseModel):
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="At least one capability is required",
+                context={"capabilities": v},
             )
 
         validated: set[str] = set()
@@ -263,6 +292,11 @@ class ModelProviderDescriptor(BaseModel):
                 raise ModelOnexError(
                     error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"Capability must be a string, got {type(cap).__name__}",
+                    context={
+                        "capability": cap,
+                        "capability_type": type(cap).__name__,
+                        "all_capabilities": v,
+                    },
                 )
 
             stripped = cap.strip()
@@ -270,6 +304,7 @@ class ModelProviderDescriptor(BaseModel):
                 raise ModelOnexError(
                     error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message="Capability cannot be empty or whitespace-only",
+                    context={"capability": cap, "all_capabilities": v},
                 )
 
             if not _CAPABILITY_PATTERN.match(stripped):
@@ -280,6 +315,7 @@ class ModelProviderDescriptor(BaseModel):
                         "alphanumeric with dots, containing at least one dot "
                         "(e.g., 'database.relational', 'cache.redis')"
                     ),
+                    context={"capability": stripped, "all_capabilities": v},
                 )
 
             validated.add(stripped)
@@ -317,6 +353,11 @@ class ModelProviderDescriptor(BaseModel):
                 raise ModelOnexError(
                     error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"Tag must be a string, got {type(tag).__name__}",
+                    context={
+                        "tag": tag,
+                        "tag_type": type(tag).__name__,
+                        "all_tags": v,
+                    },
                 )
 
             stripped = tag.strip()
@@ -324,6 +365,7 @@ class ModelProviderDescriptor(BaseModel):
                 raise ModelOnexError(
                     error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message="Tag cannot be empty or whitespace-only",
+                    context={"tag": tag, "all_tags": v},
                 )
 
             validated.add(stripped)
@@ -374,6 +416,7 @@ class ModelProviderDescriptor(BaseModel):
                     f"Invalid connection_ref '{v}': must contain scheme separator "
                     "'://' (e.g., 'secrets://postgres/primary', 'env://DB_URL')"
                 ),
+                context={"connection_ref": v},
             )
 
         # Split on first occurrence of "://" to get scheme and path
@@ -388,6 +431,7 @@ class ModelProviderDescriptor(BaseModel):
                     "Must start with a valid scheme "
                     "(e.g., 'secrets://path', 'env://VAR')"
                 ),
+                context={"connection_ref": v, "scheme": scheme, "path": path},
             )
 
         if not _SCHEME_PATTERN.match(scheme):
@@ -398,6 +442,7 @@ class ModelProviderDescriptor(BaseModel):
                     "lowercase alphanumeric, starting with a letter "
                     "(e.g., 'secrets', 'env', 'vault', 'file', 'http', 's3')"
                 ),
+                context={"connection_ref": v, "scheme": scheme, "path": path},
             )
 
         # Validate path is non-empty
@@ -409,6 +454,7 @@ class ModelProviderDescriptor(BaseModel):
                     "Must have content after '://' "
                     "(e.g., 'secrets://postgres/primary', 'env://DB_URL')"
                 ),
+                context={"connection_ref": v, "scheme": scheme, "path": path},
             )
 
         return v
@@ -446,6 +492,7 @@ class ModelProviderDescriptor(BaseModel):
                     "containing at least one dot "
                     "(e.g., 'omnibase_infra.adapters.PostgresAdapter', 'test.Adapter')"
                 ),
+                context={"adapter": v},
             )
 
         parts = v.split(".")
@@ -459,6 +506,7 @@ class ModelProviderDescriptor(BaseModel):
                         "or underscore and contain only alphanumeric characters "
                         "or underscores."
                     ),
+                    context={"adapter": v, "invalid_segment": part},
                 )
 
         return v
