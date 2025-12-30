@@ -208,6 +208,12 @@ def __getattr__(name: str) -> type:
     )
 
 
+# Import contract validation invariant checker (OMN-1146)
+from .contract_validation_invariant_checker import (
+    ContractValidationInvariantChecker,
+    EnumContractValidationEventType,
+    ModelContractValidationEvent,
+)
 from .contracts import (
     validate_contracts_directory,
     validate_no_manual_yaml,
@@ -247,13 +253,6 @@ from .workflow_constants import (
     MIN_TIMEOUT_MS,
     RESERVED_STEP_TYPES,
     VALID_STEP_TYPES,
-)
-
-# Import contract validation invariant checker (OMN-1146)
-from .contract_validation_invariant_checker import (
-    ContractValidationInvariantChecker,
-    EnumContractValidationEventType,
-    ModelContractValidationEvent,
 )
 
 # Import workflow linter

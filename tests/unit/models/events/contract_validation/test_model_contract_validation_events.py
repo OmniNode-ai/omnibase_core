@@ -37,7 +37,6 @@ from omnibase_core.models.events.contract_validation import (
     ModelValidationContext,
 )
 
-
 # =============================================================================
 # Base Event Model Tests
 # =============================================================================

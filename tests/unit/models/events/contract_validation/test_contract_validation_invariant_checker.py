@@ -27,7 +27,6 @@ from omnibase_core.validation.contract_validation_invariant_checker import (
     ModelContractValidationEvent,
 )
 
-
 # =============================================================================
 # ModelContractValidationEvent Tests
 # =============================================================================
@@ -587,7 +586,7 @@ class TestValidSequences:
             ),
         ]
 
-        is_valid, violations = checker.validate_sequence(events)
+        is_valid, _violations = checker.validate_sequence(events)
 
         assert is_valid is True
 
@@ -836,7 +835,7 @@ class TestCheckInvariantMethod:
             run_id=run_id_2,
         )
 
-        is_valid, violation = checker.check_invariant(new_event, history)
+        is_valid, _violation = checker.check_invariant(new_event, history)
 
         assert is_valid is False  # No started for run_id_2
 
@@ -931,7 +930,7 @@ class TestEdgeCases:
             ModelContractValidationEvent(event_type="validation_passed", run_id=run_id),
         ]
 
-        is_valid, violations = checker.validate_sequence(events)
+        is_valid, _violations = checker.validate_sequence(events)
 
         # Duplicates don't cause violations per the invariant rules
         assert is_valid is True
@@ -948,7 +947,7 @@ class TestEdgeCases:
             ModelContractValidationEvent(event_type="validation_passed", run_id=run_id),
         ]
 
-        is_valid, violations = checker.validate_sequence(events)
+        is_valid, _violations = checker.validate_sequence(events)
 
         assert is_valid is True
 
@@ -964,7 +963,7 @@ class TestEdgeCases:
             ModelContractValidationEvent(event_type="validation_passed", run_id=run_id),
         ]
 
-        is_valid, violations = checker.validate_sequence(events)
+        is_valid, _violations = checker.validate_sequence(events)
 
         assert is_valid is True
 
@@ -980,7 +979,7 @@ class TestEdgeCases:
             ModelContractValidationEvent(event_type="validation_passed", run_id=run_id),
         ]
 
-        is_valid, violations = checker.validate_sequence(events)
+        is_valid, _violations = checker.validate_sequence(events)
 
         assert is_valid is True
 
@@ -999,7 +998,7 @@ class TestEdgeCases:
             ModelContractValidationEvent(event_type="merge_completed", run_id=run_id),
         ]
 
-        is_valid, violations = checker.validate_sequence(events)
+        is_valid, _violations = checker.validate_sequence(events)
 
         assert is_valid is True
 
