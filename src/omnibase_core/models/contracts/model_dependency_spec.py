@@ -32,7 +32,7 @@ See Also:
 
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -167,7 +167,31 @@ class ModelDependencySpec(BaseModel):
         from_attributes=True,
         validate_assignment=True,
         str_strip_whitespace=True,
+        frozen=True,
     )
+
+    @field_validator("intent_types")
+    @classmethod
+    def validate_intent_types_not_empty(cls, v: list[str] | None) -> list[str] | None:
+        """
+        Validate that intent_types list does not contain empty strings.
+
+        Args:
+            v: The intent_types list value.
+
+        Returns:
+            The validated list.
+
+        Raises:
+            ValueError: If any intent type is empty or whitespace-only.
+        """
+        if v is not None:
+            for i, intent in enumerate(v):
+                if not intent or not intent.strip():
+                    raise ValueError(
+                        f"intent_types[{i}] cannot be empty or whitespace-only"
+                    )
+        return v
 
     @model_validator(mode="after")
     def validate_at_least_one_discovery_method(self) -> "ModelDependencySpec":
