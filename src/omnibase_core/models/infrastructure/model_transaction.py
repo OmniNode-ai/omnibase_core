@@ -84,11 +84,12 @@ class ModelTransaction:
                         "transaction_id": str(self.transaction_id),
                     },
                 )
-            except Exception as e:  # fallback-ok: cleanup must complete
+            except Exception as e:  # defensive-ok: prevents rollback failure from masking original error
                 # Catch all Exception subclasses to ensure all rollback operations
-                # are attempted. This includes MemoryError, OSError, etc. Only direct
-                # BaseException subclasses (KeyboardInterrupt, SystemExit, GeneratorExit)
-                # propagate through, but those indicate critical system events.
+                # are attempted. MemoryError, OSError, etc. are Exception subclasses
+                # and are caught here. Direct BaseException subclasses (KeyboardInterrupt,
+                # SystemExit, GeneratorExit) propagate through. asyncio.CancelledError
+                # (also a BaseException subclass) is handled separately above.
                 emit_log_event(
                     LogLevel.ERROR,
                     f"Rollback operation failed during cleanup: {e!s}",

@@ -458,9 +458,10 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
             raise
 
         except (
-            BaseException
+            Exception
         ) as e:  # catch-all-ok: top-level error boundary for node execution
             # Convert generic exceptions to ONEX errors
+            # Note: Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
             emit_log_event(
                 LogLevel.ERROR,
                 f"Node execution exception: {self.node_id}",
@@ -556,9 +557,10 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
             # Re-raise ONEX errors (fail-fast)
             raise
         except (
-            BaseException
+            Exception
         ) as e:  # catch-all-ok: top-level error boundary for tool processing
             # Convert generic exceptions to ONEX errors
+            # Note: Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
             emit_log_event(
                 LogLevel.ERROR,
                 f"Error in NodeBase processing: {e!s}",
@@ -686,9 +688,10 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
             )
 
         except (
-            BaseException
+            Exception
         ) as e:  # catch-all-ok: top-level error boundary for state dispatch
             # Log and convert to ONEX error
+            # Note: Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
             emit_log_event(
                 LogLevel.ERROR,
                 f"State dispatch failed: {self.node_id}",

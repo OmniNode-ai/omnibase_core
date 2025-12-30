@@ -615,7 +615,6 @@ class ModelContractReducer(MixinNodeTypeValidator, ModelContractBase):
             ValueError,
             TypeError,
             KeyError,
-            RuntimeError,
         ) as e:
             raise ModelOnexError(
                 message=f"Failed to load contract YAML: {e}",
