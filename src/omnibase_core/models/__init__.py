@@ -25,6 +25,7 @@ __all__ = [
     "core",
     "dedup",
     "events",
+    "execution",
     "handlers",
     "infrastructure",
     "metadata",

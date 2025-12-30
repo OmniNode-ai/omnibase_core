@@ -96,6 +96,9 @@ from .enum_handler_capability import EnumHandlerCapability
 # Handler command type enums (OMN-1085)
 from .enum_handler_command_type import EnumHandlerCommandType
 
+# Handler execution phase enums (OMN-1108)
+from .enum_handler_execution_phase import EnumHandlerExecutionPhase
+
 # Handler role enums (OMN-1086)
 from .enum_handler_role import EnumHandlerRole
 
@@ -374,6 +377,8 @@ __all__ = [
     "EnumGroupStatus",
     # Handler command type domain (OMN-1085)
     "EnumHandlerCommandType",
+    # Handler execution phase domain (OMN-1108)
+    "EnumHandlerExecutionPhase",
     # Handler role domain (OMN-1086)
     "EnumHandlerRole",
     # Handler type domain (runtime handler registry)
