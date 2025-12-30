@@ -16,6 +16,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from pydantic import ValidationError
 
+from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.models.event_bus.model_event_bus_listener_handle import (
     ModelEventBusListenerHandle,
 )
@@ -331,8 +332,6 @@ class TestModelEventBusListenerHandleStopWithRealThread:
             # Verify warning was logged
             mock_log.assert_called_once()
             # Check the log level was WARNING
-            from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-
             call_args = mock_log.call_args
             assert call_args[0][0] == LogLevel.WARNING
 
