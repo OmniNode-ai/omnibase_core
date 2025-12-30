@@ -353,25 +353,37 @@ class TestModelEventBusRuntimeStateFieldValidation:
 
         assert "contract_path" in str(exc_info.value)
 
-    def test_bind_with_name_exceeding_max_length_bypasses_validation(self) -> None:
-        """Test bind() with node_name exceeding max_length.
+    def test_bind_with_name_exceeding_max_length_raises_error(self) -> None:
+        """Test that bind() properly validates max_length constraints.
 
-        Note: For mutable Pydantic models (frozen=False), direct attribute
-        assignment bypasses validation. This is expected Pydantic behavior.
-        Validation only occurs during model construction or model_validate().
+        This validates the fix for PR #266 CodeRabbit review: bind() now
+        explicitly validates max_length since direct field assignment bypasses
+        Pydantic's field validation.
         """
-        state = ModelEventBusRuntimeState.create_unbound()
+        state = ModelEventBusRuntimeState()
         too_long_name = "x" * (MAX_NAME_LENGTH + 1)
 
-        # Direct assignment via bind() bypasses validation for mutable models
-        state.bind(node_name=too_long_name)
+        with pytest.raises(ValueError) as exc_info:
+            state.bind(node_name=too_long_name)
 
-        # The value is set despite exceeding max_length
-        assert len(state.node_name) == MAX_NAME_LENGTH + 1
+        assert "node_name exceeds max length" in str(exc_info.value)
+        assert str(MAX_NAME_LENGTH) in str(exc_info.value)
 
-        # However, re-validation would catch the issue
-        with pytest.raises(ValidationError):
-            ModelEventBusRuntimeState.model_validate(state.model_dump())
+    def test_bind_with_contract_path_exceeding_max_length_raises_error(self) -> None:
+        """Test that bind() properly validates contract_path max_length constraints.
+
+        This validates the fix for PR #266 CodeRabbit review: bind() now
+        explicitly validates max_length since direct field assignment bypasses
+        Pydantic's field validation.
+        """
+        state = ModelEventBusRuntimeState()
+        too_long_path = "/" + "x" * MAX_PATH_LENGTH  # exceeds by 1
+
+        with pytest.raises(ValueError) as exc_info:
+            state.bind(node_name="valid_name", contract_path=too_long_path)
+
+        assert "contract_path exceeds max length" in str(exc_info.value)
+        assert str(MAX_PATH_LENGTH) in str(exc_info.value)
 
 
 @pytest.mark.unit

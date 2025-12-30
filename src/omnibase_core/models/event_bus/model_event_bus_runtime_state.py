@@ -223,6 +223,11 @@ class ModelEventBusRuntimeState(BaseModel):
         and is_bound=True together. Call this during initialization to configure
         the runtime state before the instance is used for event bus operations.
 
+        Note:
+            This method validates max_length constraints explicitly since direct
+            field assignment bypasses Pydantic's field validation. This ensures
+            the same constraints defined on the model fields are enforced.
+
         Contrast with reset():
             - **bind()**: Initializes state with node identity. MUST be called
               during initialization (__init__) to establish the binding. Sets
@@ -237,15 +242,17 @@ class ModelEventBusRuntimeState(BaseModel):
 
         Args:
             node_name: Identifier for the node using this event bus binding.
-                Must be a non-empty string. Use a non-empty string for a
-                fully ready binding.
+                Must be a non-empty string with max length of MAX_NAME_LENGTH.
+                Use a non-empty string for a fully ready binding.
             contract_path: Optional path to contract YAML file. Pass None
-                to indicate no contract. Use ``has_contract_path()`` to check
-                if explicitly set.
+                to indicate no contract. Max length of MAX_PATH_LENGTH.
+                Use ``has_contract_path()`` to check if explicitly set.
 
         Raises:
             ModelOnexError: If node_name is empty or whitespace-only
                 (error code: VALIDATION_FAILED).
+            ValueError: If node_name exceeds MAX_NAME_LENGTH or contract_path
+                exceeds MAX_PATH_LENGTH.
 
         Example:
             >>> state = ModelEventBusRuntimeState.create_unbound()
@@ -268,6 +275,18 @@ class ModelEventBusRuntimeState(BaseModel):
                     "use reset() to unbind without clearing configuration"
                 ),
                 error_code=EnumCoreErrorCode.VALIDATION_FAILED,
+            )
+        # Explicit max_length validation since direct field assignment bypasses
+        # Pydantic's field validation. This ensures consistency with field constraints.
+        if len(node_name) > MAX_NAME_LENGTH:
+            raise ValueError(
+                f"node_name exceeds max length of {MAX_NAME_LENGTH} "
+                f"(got {len(node_name)} characters)"
+            )
+        if contract_path is not None and len(contract_path) > MAX_PATH_LENGTH:
+            raise ValueError(
+                f"contract_path exceeds max length of {MAX_PATH_LENGTH} "
+                f"(got {len(contract_path)} characters)"
             )
         self.node_name = node_name
         self.contract_path = contract_path
