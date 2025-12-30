@@ -23,6 +23,58 @@ class RegistryHook:
         registry.register(hook2)
         registry.freeze()  # Lock for concurrent access
         # Now safe for concurrent reads
+
+    Thread Safety
+    -------------
+    **This class uses a freeze-after-init pattern for thread safety.**
+
+    **Phase 1 - Registration (NOT thread-safe):**
+
+    Before ``freeze()`` is called, the registry is mutable. All registration
+    must happen in a single thread during initialization::
+
+        # Single-threaded registration phase
+        registry = RegistryHook()
+        registry.register(hook1)  # Modifies internal state
+        registry.register(hook2)  # Modifies internal state
+        registry.freeze()         # Transitions to read-only
+
+    **Phase 2 - After Freeze (Thread-safe for reads):**
+
+    Once ``freeze()`` is called, no further mutations are possible.
+    All read operations (``get_hooks_by_phase()``, ``get_all_hooks()``,
+    ``get_hook_by_id()``) are safe for concurrent access::
+
+        registry.freeze()
+
+        # Now safe for concurrent reads
+        await asyncio.gather(
+            worker_1(registry),  # Reads hooks
+            worker_2(registry),  # Reads hooks
+        )
+
+    **Thread Safety Matrix:**
+
+    ===========================  ============  ======================
+    Method                       Thread-Safe?  Notes
+    ===========================  ============  ======================
+    ``register()``               No            Only before freeze()
+    ``freeze()``                 Yes           Idempotent, safe to call multiple times
+    ``get_hooks_by_phase()``     Yes*          Returns a copy (safe after freeze)
+    ``get_all_hooks()``          Yes*          Returns a copy (safe after freeze)
+    ``get_hook_by_id()``         Yes*          Read-only (safe after freeze)
+    ``is_frozen``                Yes           Property, read-only
+    ===========================  ============  ======================
+
+    *Thread-safe only AFTER ``freeze()`` is called.
+
+    **Note**: The methods return copies of internal lists to prevent
+    external modification from affecting the registry state.
+
+    See Also
+    --------
+    - docs/guides/THREADING.md for comprehensive thread safety guide
+    - CLAUDE.md section "Thread Safety" for quick reference
     """
 
     def __init__(self) -> None:

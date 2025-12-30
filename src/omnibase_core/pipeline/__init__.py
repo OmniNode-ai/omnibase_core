@@ -4,6 +4,7 @@
 """Pipeline execution infrastructure for ONEX."""
 
 from omnibase_core.pipeline.builder_execution_plan import (
+    FAIL_FAST_PHASES,
     BuilderExecutionPlan,
     RuntimePlanBuilder,
 )
@@ -59,6 +60,7 @@ __all__ = [
     "MiddlewareComposer",
     # Builder (new name first, then backwards compat)
     "BuilderExecutionPlan",
+    "FAIL_FAST_PHASES",
     "RuntimePlanBuilder",
     # Runner (new name first, then backwards compat)
     "RunnerPipeline",

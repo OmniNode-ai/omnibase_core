@@ -28,6 +28,39 @@ class ComposerMiddleware:
         composer.use(timing_middleware)
         wrapped = composer.compose(core_function)
         result = await wrapped()
+
+    Thread Safety
+    -------------
+    **This class is NOT thread-safe during composition.**
+
+    The ``use()`` method mutates internal state (``_middleware`` list). Once
+    ``compose()`` is called and returns a wrapped callable, that callable is
+    safe to invoke from multiple concurrent contexts (assuming the middleware
+    functions themselves are thread-safe).
+
+    **Safe Pattern** - Build once, execute concurrently::
+
+        # Single-threaded setup
+        composer = ComposerMiddleware()
+        composer.use(logging_middleware)
+        composer.use(timing_middleware)
+        wrapped = composer.compose(core_function)
+
+        # Now safe for concurrent execution
+        await asyncio.gather(
+            wrapped(),  # Task 1
+            wrapped(),  # Task 2
+        )
+
+    **Unsafe Pattern** - Concurrent modification::
+
+        # UNSAFE - don't modify while composing
+        async def worker():
+            composer.use(some_middleware)  # Race condition!
+
+    See Also
+    --------
+    - docs/guides/THREADING.md for comprehensive thread safety guide
     """
 
     def __init__(self) -> None:

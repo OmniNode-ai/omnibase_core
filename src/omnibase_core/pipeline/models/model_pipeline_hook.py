@@ -75,6 +75,9 @@ class ModelPipelineHook(BaseModel):
 
     Hooks are registered for specific phases and ordered by dependencies
     and priority within each phase.
+
+    Thread Safety: This class is thread-safe. Instances are immutable
+    (frozen=True) and can be safely shared across threads.
     """
 
     # TODO(pydantic-v3): Re-evaluate from_attributes=True when Pydantic v3 is released.

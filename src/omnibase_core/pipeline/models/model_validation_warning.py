@@ -12,6 +12,9 @@ class ModelValidationWarning(BaseModel):
 
     Used when hook typing validation is disabled (enforce_hook_typing=False)
     to report type mismatches without failing.
+
+    Thread Safety: This class is thread-safe. Instances are immutable
+    (frozen=True) and can be safely shared across threads.
     """
 
     # TODO(pydantic-v3): Re-evaluate from_attributes=True when Pydantic v3 is released.

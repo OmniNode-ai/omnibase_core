@@ -129,6 +129,62 @@ preflight -> before -> execute -> after -> emit -> finalize
 
 **Finalize guarantee**: The `finalize` phase ALWAYS runs, even if earlier phases raised exceptions.
 
+### Fail-Fast Semantics Deep Dive
+
+The `fail_fast` setting is **explicitly set based on phase semantics** when building execution plans. This is not relying on defaults - the `BuilderExecutionPlan` explicitly assigns `fail_fast` based on the phase:
+
+```python
+# From builder_execution_plan.py - explicit phase-based assignment
+FAIL_FAST_PHASES: frozenset[PipelinePhase] = frozenset(
+    {"preflight", "before", "execute"}
+)
+
+# In build() method:
+phases[phase] = ModelPhaseExecutionPlan(
+    phase=phase,
+    hooks=sorted_hooks,
+    fail_fast=phase in FAIL_FAST_PHASES,  # Explicit, not default
+)
+```
+
+**Rationale for each phase**:
+
+| Phase | `fail_fast` | Rationale |
+|-------|-------------|-----------|
+| `preflight` | `True` | Validation must pass before proceeding. If permissions or resource checks fail, there's no point continuing. |
+| `before` | `True` | Setup must succeed before main execution. A failed setup (e.g., database connection) invalidates subsequent operations. |
+| `execute` | `True` | Core logic - first failure should halt further execution to prevent cascading errors or invalid state. |
+| `after` | `False` | Cleanup should attempt all hooks even if some fail. One failed cleanup should not prevent others. |
+| `emit` | `False` | Event emission should try all hooks (best effort). Failed notification should not block other notifications. |
+| `finalize` | `False` | Resource cleanup must try all hooks regardless of prior errors. Critical for preventing resource leaks. |
+
+**When might you want different behavior?**
+
+The phase-based defaults cover most use cases, but you can customize `fail_fast` by building custom `ModelPhaseExecutionPlan` objects:
+
+```python
+# Custom fail-fast behavior (advanced use case)
+from omnibase_core.pipeline import (
+    ModelExecutionPlan,
+    ModelPhaseExecutionPlan,
+    ModelPipelineHook,
+)
+
+# Build custom phase plan with overridden fail_fast
+custom_after_phase = ModelPhaseExecutionPlan(
+    phase="after",
+    hooks=[hook1, hook2],
+    fail_fast=True,  # Override: fail-fast even in "after" phase
+)
+
+# Use in custom execution plan
+custom_plan = ModelExecutionPlan(
+    phases={"after": custom_after_phase}
+)
+```
+
+**Note**: Overriding `fail_fast` is rarely needed. The default phase semantics are carefully chosen to match common pipeline patterns.
+
 ### Component Overview
 
 ```
@@ -360,8 +416,39 @@ def sync_hook(ctx: PipelineContext) -> None:
 async def async_hook(ctx: PipelineContext) -> None:
     await some_async_operation()
     ctx.data["async"] = True
+```
 
-# Both are valid HookCallable types
+### Constants
+
+Pipeline module exports two important constants for phase behavior:
+
+```python
+from omnibase_core.pipeline import CANONICAL_PHASE_ORDER, FAIL_FAST_PHASES
+
+# Phase execution order
+CANONICAL_PHASE_ORDER
+# ["preflight", "before", "execute", "after", "emit", "finalize"]
+
+# Phases with fail-fast behavior (abort on first error)
+FAIL_FAST_PHASES
+# frozenset({"preflight", "before", "execute"})
+
+# Check if a phase is fail-fast
+if "execute" in FAIL_FAST_PHASES:
+    print("execute phase will abort on first error")
+
+# Phases NOT in FAIL_FAST_PHASES use continue-on-error behavior
+continue_phases = [p for p in CANONICAL_PHASE_ORDER if p not in FAIL_FAST_PHASES]
+# ["after", "emit", "finalize"]
+```
+
+**Use cases**:
+- Check if a custom phase should be fail-fast
+- Build custom phase iteration logic
+- Validate phase names programmatically
+
+```python
+# Both sync and async hooks are valid HookCallable types
 callables: dict[str, HookCallable] = {
     "sync.hook": sync_hook,
     "async.hook": async_hook,
@@ -689,6 +776,321 @@ For detailed threading guidance, see [Threading Guide](THREADING.md).
 | `HookTypeMismatchError` | Hook type doesn't match contract (when enforced) | Build |
 | `CallableNotFoundError` | `callable_ref` not in registry | Execution |
 | `HookTimeoutError` | Hook exceeded `timeout_seconds` | Execution |
+
+## Testing Patterns
+
+### Unit Testing Hooks
+
+Test hooks in isolation without running the full pipeline:
+
+```python
+import pytest
+from omnibase_core.pipeline import PipelineContext
+
+def test_validation_hook_sets_flag():
+    """Test that validation hook sets validated flag."""
+    ctx = PipelineContext()
+
+    # Call hook directly
+    validation_hook(ctx)
+
+    assert ctx.data.get("validated") is True
+
+
+def test_validation_hook_rejects_invalid_data():
+    """Test that validation hook raises for invalid input."""
+    ctx = PipelineContext()
+    ctx.data["input"] = {"invalid": True}
+
+    with pytest.raises(ValueError, match="Invalid input"):
+        validation_hook(ctx)
+```
+
+### Integration Testing Pipeline Execution
+
+Test the full pipeline with all hooks:
+
+```python
+import pytest
+from omnibase_core.pipeline import (
+    BuilderExecutionPlan,
+    ModelPipelineHook,
+    PipelineContext,
+    RegistryHook,
+    RunnerPipeline,
+)
+
+
+@pytest.fixture
+def test_registry():
+    """Create a test registry with mock hooks."""
+    registry = RegistryHook()
+    registry.register(ModelPipelineHook(
+        hook_id="test-setup",
+        phase="before",
+        callable_ref="test.setup",
+    ))
+    registry.register(ModelPipelineHook(
+        hook_id="test-execute",
+        phase="execute",
+        callable_ref="test.execute",
+    ))
+    registry.freeze()
+    return registry
+
+
+@pytest.fixture
+def test_callables():
+    """Create test callable registry."""
+    def setup_hook(ctx: PipelineContext) -> None:
+        ctx.data["setup_complete"] = True
+
+    def execute_hook(ctx: PipelineContext) -> None:
+        assert ctx.data.get("setup_complete"), "Setup must run first"
+        ctx.data["result"] = "success"
+
+    return {
+        "test.setup": setup_hook,
+        "test.execute": execute_hook,
+    }
+
+
+@pytest.mark.asyncio
+async def test_pipeline_executes_in_order(test_registry, test_callables):
+    """Test that hooks execute in correct phase order."""
+    builder = BuilderExecutionPlan(registry=test_registry)
+    plan, _ = builder.build()
+
+    runner = RunnerPipeline(plan=plan, callable_registry=test_callables)
+    result = await runner.run()
+
+    assert result.success
+    assert result.context.data["setup_complete"] is True
+    assert result.context.data["result"] == "success"
+
+
+@pytest.mark.asyncio
+async def test_pipeline_captures_errors_in_after_phase():
+    """Test that errors in 'after' phase are captured, not raised."""
+    registry = RegistryHook()
+    registry.register(ModelPipelineHook(
+        hook_id="after-hook",
+        phase="after",
+        callable_ref="after.hook",
+    ))
+    registry.freeze()
+
+    def failing_hook(ctx: PipelineContext) -> None:
+        raise RuntimeError("After hook failed")
+
+    builder = BuilderExecutionPlan(registry=registry)
+    plan, _ = builder.build()
+
+    runner = RunnerPipeline(
+        plan=plan,
+        callable_registry={"after.hook": failing_hook}
+    )
+    result = await runner.run()
+
+    # Error captured, not raised (because 'after' is continue-on-error)
+    assert not result.success
+    assert len(result.errors) == 1
+    assert result.errors[0].hook_id == "after-hook"
+    assert "After hook failed" in result.errors[0].error_message
+
+
+@pytest.mark.asyncio
+async def test_pipeline_raises_errors_in_execute_phase():
+    """Test that errors in 'execute' phase are raised (fail-fast)."""
+    registry = RegistryHook()
+    registry.register(ModelPipelineHook(
+        hook_id="execute-hook",
+        phase="execute",
+        callable_ref="execute.hook",
+    ))
+    registry.freeze()
+
+    def failing_hook(ctx: PipelineContext) -> None:
+        raise ValueError("Execute hook failed")
+
+    builder = BuilderExecutionPlan(registry=registry)
+    plan, _ = builder.build()
+
+    runner = RunnerPipeline(
+        plan=plan,
+        callable_registry={"execute.hook": failing_hook}
+    )
+
+    # Error raised, not captured (because 'execute' is fail-fast)
+    with pytest.raises(ValueError, match="Execute hook failed"):
+        await runner.run()
+```
+
+### Testing Async Hooks
+
+```python
+import asyncio
+import pytest
+from omnibase_core.pipeline import PipelineContext
+
+
+@pytest.mark.asyncio
+async def test_async_hook_completes():
+    """Test async hook execution."""
+    ctx = PipelineContext()
+
+    async def async_fetch_hook(ctx: PipelineContext) -> None:
+        await asyncio.sleep(0.01)  # Simulate async operation
+        ctx.data["fetched"] = True
+
+    await async_fetch_hook(ctx)
+
+    assert ctx.data["fetched"] is True
+
+
+@pytest.mark.asyncio
+async def test_hook_timeout():
+    """Test that slow hooks respect timeout."""
+    from omnibase_core.pipeline import (
+        BuilderExecutionPlan,
+        HookTimeoutError,
+        ModelPipelineHook,
+        RegistryHook,
+        RunnerPipeline,
+    )
+
+    registry = RegistryHook()
+    registry.register(ModelPipelineHook(
+        hook_id="slow-hook",
+        phase="execute",
+        callable_ref="slow.hook",
+        timeout_seconds=0.1,  # 100ms timeout
+    ))
+    registry.freeze()
+
+    async def slow_hook(ctx: PipelineContext) -> None:
+        await asyncio.sleep(10)  # Way longer than timeout
+
+    builder = BuilderExecutionPlan(registry=registry)
+    plan, _ = builder.build()
+
+    runner = RunnerPipeline(
+        plan=plan,
+        callable_registry={"slow.hook": slow_hook}
+    )
+
+    with pytest.raises(HookTimeoutError):
+        await runner.run()
+```
+
+### Testing Dependencies and Priority
+
+```python
+import pytest
+from omnibase_core.pipeline import (
+    BuilderExecutionPlan,
+    DependencyCycleError,
+    ModelPipelineHook,
+    RegistryHook,
+    UnknownDependencyError,
+)
+
+
+def test_unknown_dependency_raises():
+    """Test that unknown dependencies raise an error."""
+    registry = RegistryHook()
+    registry.register(ModelPipelineHook(
+        hook_id="child",
+        phase="execute",
+        dependencies=["nonexistent"],  # This doesn't exist
+        callable_ref="child.hook",
+    ))
+    registry.freeze()
+
+    builder = BuilderExecutionPlan(registry=registry)
+
+    with pytest.raises(UnknownDependencyError) as exc_info:
+        builder.build()
+
+    assert "nonexistent" in str(exc_info.value)
+
+
+def test_dependency_cycle_raises():
+    """Test that circular dependencies raise an error."""
+    registry = RegistryHook()
+    registry.register(ModelPipelineHook(
+        hook_id="A",
+        phase="execute",
+        dependencies=["B"],
+        callable_ref="a.hook",
+    ))
+    registry.register(ModelPipelineHook(
+        hook_id="B",
+        phase="execute",
+        dependencies=["A"],  # Circular!
+        callable_ref="b.hook",
+    ))
+    registry.freeze()
+
+    builder = BuilderExecutionPlan(registry=registry)
+
+    with pytest.raises(DependencyCycleError):
+        builder.build()
+
+
+def test_priority_ordering():
+    """Test that hooks are ordered by priority when no dependencies."""
+    registry = RegistryHook()
+    registry.register(ModelPipelineHook(
+        hook_id="low-priority",
+        phase="execute",
+        priority=500,
+        callable_ref="low.hook",
+    ))
+    registry.register(ModelPipelineHook(
+        hook_id="high-priority",
+        phase="execute",
+        priority=10,
+        callable_ref="high.hook",
+    ))
+    registry.freeze()
+
+    builder = BuilderExecutionPlan(registry=registry)
+    plan, _ = builder.build()
+
+    hooks = plan.get_phase_hooks("execute")
+    assert hooks[0].hook_id == "high-priority"  # Lower priority value = earlier
+    assert hooks[1].hook_id == "low-priority"
+```
+
+### Mocking External Dependencies
+
+```python
+import pytest
+from unittest.mock import AsyncMock, patch
+from omnibase_core.pipeline import PipelineContext
+
+
+@pytest.mark.asyncio
+async def test_hook_with_mocked_external_service():
+    """Test hook that calls external service with mock."""
+    async def api_hook(ctx: PipelineContext) -> None:
+        # In real code, this would call an external API
+        from some_module import external_api
+        result = await external_api.fetch_data(ctx.data["user_id"])
+        ctx.data["api_result"] = result
+
+    ctx = PipelineContext()
+    ctx.data["user_id"] = "user123"
+
+    with patch("some_module.external_api.fetch_data", new_callable=AsyncMock) as mock_fetch:
+        mock_fetch.return_value = {"status": "ok", "data": [1, 2, 3]}
+
+        await api_hook(ctx)
+
+        mock_fetch.assert_called_once_with("user123")
+        assert ctx.data["api_result"]["status"] == "ok"
+```
 
 ## Troubleshooting
 

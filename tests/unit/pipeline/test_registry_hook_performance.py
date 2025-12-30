@@ -1057,7 +1057,9 @@ class TestTopologicalSortPerformance:
         for num_hooks, time_ms in times.items():
             per_hook = time_ms / num_hooks
             print(f"  {num_hooks} hooks: {time_ms:.3f}ms ({per_hook:.4f}ms/hook)")
-        print(f"  Per-hook time ratio 1000/100: {time_per_hook_1000/time_per_hook_100:.2f}x")
+        print(
+            f"  Per-hook time ratio 1000/100: {time_per_hook_1000 / time_per_hook_100:.2f}x"
+        )
 
     def test_topological_sort_mixed_dependencies(self) -> None:
         """Test topological sort with mixed dependency patterns.

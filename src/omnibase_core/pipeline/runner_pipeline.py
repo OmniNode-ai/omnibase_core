@@ -24,11 +24,19 @@ HookCallable = Callable[["PipelineContext"], None | Coroutine[object, object, No
 
 
 class ModelHookError(BaseModel):
-    """Represents an error captured during hook execution."""
+    """
+    Represents an error captured during hook execution.
+
+    Thread Safety: This class is thread-safe. Instances are immutable
+    (frozen=True) and can be safely shared across threads.
+    """
 
     # TODO(pydantic-v3): Re-evaluate from_attributes=True when Pydantic v3 is released.
-    # Workaround for pytest-xdist class identity issues. See model_pipeline_hook.py
-    # module docstring for detailed explanation.
+    # This workaround addresses Pydantic 2.x class identity validation issues where
+    # frozen models nested in other models (e.g., in PipelineResult.errors list)
+    # fail isinstance() checks across pytest-xdist worker processes.
+    # See model_pipeline_hook.py module docstring for detailed explanation.
+    # Track: https://github.com/pydantic/pydantic/issues (no specific issue yet)
     model_config = ConfigDict(
         frozen=True,
         extra="forbid",
@@ -59,9 +67,32 @@ class PipelineContext(BaseModel):
 
     The context is shared and mutable across all hooks within a pipeline run,
     allowing hooks to communicate state between each other.
+
+    Thread Safety
+    -------------
+    **This class is NOT thread-safe.**
+
+    ``PipelineContext`` is intentionally mutable to allow hooks to communicate.
+    Each pipeline execution should use its own ``PipelineContext`` instance.
+    Do not share contexts across concurrent pipeline executions.
+
+    Pydantic Configuration Note
+    ---------------------------
+    Unlike other pipeline models (e.g., ``ModelPipelineHook``, ``ModelExecutionPlan``),
+    this class does NOT use ``from_attributes=True`` because:
+
+    1. This model is **mutable** (``frozen=False``), not frozen
+    2. It is **not nested** inside other Pydantic models during validation
+    3. The ``from_attributes=True`` workaround is only needed for frozen models
+       that are nested inside other models and validated across pytest-xdist workers
+
+    See ``model_pipeline_hook.py`` module docstring for the full explanation of
+    when ``from_attributes=True`` is required.
     """
 
-    model_config = ConfigDict(frozen=False)  # Mutable for hooks to add data
+    # Note: frozen=False is intentional - this context must be mutable for hooks
+    # to add data. This does NOT require from_attributes=True (see docstring above).
+    model_config = ConfigDict(frozen=False)
 
     data: dict[str, object] = Field(
         default_factory=dict,
@@ -75,11 +106,19 @@ class PipelineResult(BaseModel):
 
     Contains success status, any captured errors (from continue phases),
     and the final context state.
+
+    Thread Safety: This class is thread-safe. Instances are immutable
+    (frozen=True) and can be safely shared across threads. Note that the
+    nested ``context`` field may be mutable (PipelineContext), so avoid
+    modifying it after the result is created if sharing across threads.
     """
 
     # TODO(pydantic-v3): Re-evaluate from_attributes=True when Pydantic v3 is released.
-    # Workaround for pytest-xdist class identity issues. See model_pipeline_hook.py
-    # module docstring for detailed explanation.
+    # This workaround addresses Pydantic 2.x class identity validation issues where
+    # frozen models (and models containing frozen nested models like ModelHookError)
+    # fail isinstance() checks across pytest-xdist worker processes.
+    # See model_pipeline_hook.py module docstring for detailed explanation.
+    # Track: https://github.com/pydantic/pydantic/issues (no specific issue yet)
     model_config = ConfigDict(
         frozen=True,
         extra="forbid",

@@ -61,6 +61,43 @@ class BuilderExecutionPlan:
             enforce_hook_typing=True,
         )
         plan, warnings = builder.build()
+
+    Thread Safety
+    -------------
+    **This class is NOT thread-safe.**
+
+    Each ``BuilderExecutionPlan`` instance maintains internal state during
+    the ``build()`` operation (temporary data structures for topological
+    sorting). Do not share instances across threads.
+
+    **Safe Pattern** - One builder per thread/task::
+
+        # Each concurrent operation creates its own builder
+        async def build_plan_for_request(registry: RegistryHook):
+            builder = BuilderExecutionPlan(registry=registry)
+            return builder.build()
+
+        # Safe: each call uses its own builder
+        plans = await asyncio.gather(
+            build_plan_for_request(registry),
+            build_plan_for_request(registry),
+        )
+
+    **Unsafe Pattern** - Shared builder::
+
+        # UNSAFE - don't share builder across concurrent operations
+        builder = BuilderExecutionPlan(registry=registry)
+
+        async def worker():
+            return builder.build()  # Race condition on internal state!
+
+    **Note**: The input ``RegistryHook`` can be safely shared IF it is frozen.
+    The output ``ModelExecutionPlan`` is frozen (immutable) and safe to share.
+
+    See Also
+    --------
+    - docs/guides/THREADING.md for comprehensive thread safety guide
+    - CLAUDE.md section "Thread Safety" for quick reference
     """
 
     def __init__(
