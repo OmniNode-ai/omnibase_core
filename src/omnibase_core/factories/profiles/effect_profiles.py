@@ -17,7 +17,7 @@ from omnibase_core.models.contracts import (
     ModelEffectRetryConfig,
     ModelExecutionOrderingPolicy,
     ModelExecutionProfile,
-    ModelHandlerDescriptor,
+    ModelHandlerBehavior,
     ModelIOOperationConfig,
     ModelPerformanceRequirements,
     ModelTransactionConfig,
@@ -105,8 +105,8 @@ def get_effect_idempotent_profile(version: str = "1.0.0") -> ModelContractEffect
                 deterministic_seed=True,
             ),
         ),
-        # Handler behavior descriptor for contract-driven execution
-        descriptor=ModelHandlerDescriptor(
+        # Handler behavior configuration for contract-driven execution
+        behavior=ModelHandlerBehavior(
             handler_kind="effect",
             purity="side_effecting",  # Effects interact with external systems
             idempotent=True,  # This is the idempotent profile
