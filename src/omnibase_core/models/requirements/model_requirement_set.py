@@ -8,6 +8,7 @@ forbid (exclusions), and hints (non-binding tie-breakers).
 
 from __future__ import annotations
 
+import warnings
 from collections.abc import Mapping
 from typing import Any
 
@@ -59,11 +60,9 @@ class ModelRequirementSet(BaseModel):
         description="Non-binding hints. May influence tie-breaking. Never causes failure.",
     )
 
-    model_config = ConfigDict(frozen=True, extra="forbid")
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
-    def matches(
-        self, provider: Mapping[str, Any]
-    ) -> tuple[bool, float, list[str]]:
+    def matches(self, provider: Mapping[str, Any]) -> tuple[bool, float, list[str]]:
         """Check if provider satisfies requirements.
 
         Resolution order:
@@ -104,9 +103,7 @@ class ModelRequirementSet(BaseModel):
 
         return (True, score, warnings)
 
-    def sort_key(
-        self, provider: Mapping[str, Any]
-    ) -> tuple[float, int, str]:
+    def sort_key(self, provider: Mapping[str, Any]) -> tuple[float, int, str]:
         """Return sort key for ordering providers.
 
         Useful for sorting a list of providers by how well they match.
@@ -134,7 +131,23 @@ class ModelRequirementSet(BaseModel):
                 hint_rank += 1
 
         # Deterministic fallback using provider id or name or hash
-        fallback = str(provider.get("id", provider.get("name", hash(frozenset(provider.items()) if isinstance(provider, dict) else id(provider)))))
+        # Use try/except to handle unhashable values in provider dict
+        if "id" in provider:
+            fallback = str(provider["id"])
+        elif "name" in provider:
+            fallback = str(provider["name"])
+        else:
+            try:
+                fallback = str(
+                    hash(
+                        frozenset(provider.items())
+                        if isinstance(provider, dict)
+                        else id(provider)
+                    )
+                )
+            except TypeError:
+                # Fallback for unhashable values (lists, dicts, etc.)
+                fallback = str(id(provider))
 
         # Negate score so higher scores sort first in ascending order
         return (-score, hint_rank, fallback)
@@ -304,7 +317,13 @@ class ModelRequirementSet(BaseModel):
             elif op == "$contains":
                 if not self._compare_contains(provider_value, expected):
                     return False
-            # Ignore unknown operators (non-operator dict keys)
+            # Unknown operator - warn instead of silently ignoring
+            elif op.startswith("$"):
+                warnings.warn(
+                    f"Unknown operator '{op}' in requirement - ignoring",
+                    UserWarning,
+                    stacklevel=2,
+                )
         return True
 
     def _check_list_requirement(
@@ -330,13 +349,29 @@ class ModelRequirementSet(BaseModel):
 
         # If provider value is a list, check intersection
         if isinstance(provider_value, list):
-            return bool(set(provider_value) & set(requirement))
+            try:
+                return bool(set(provider_value) & set(requirement))
+            except TypeError:
+                # Fallback for unhashable elements (dicts, lists, etc.)
+                # Use iteration instead of set operations
+                return any(item in requirement for item in provider_value)
 
         # Otherwise check if provider value is in requirement list
         return provider_value in requirement
 
     def _compare_eq(self, provider_value: Any, expected: Any) -> bool:
-        """Equality comparison with type coercion for numerics."""
+        """Equality comparison with type coercion for numerics.
+
+        Handles None values explicitly and coerces numeric types
+        to float for comparison to avoid int/float mismatch issues.
+
+        Args:
+            provider_value: The value from the provider to compare.
+            expected: The expected value from the requirement.
+
+        Returns:
+            True if the values are equal (with numeric coercion if applicable).
+        """
         if provider_value is None:
             return expected is None
         try:
@@ -350,7 +385,18 @@ class ModelRequirementSet(BaseModel):
         return bool(provider_value == expected)
 
     def _compare_lt(self, provider_value: Any, expected: Any) -> bool:
-        """Less than comparison."""
+        """Less than comparison with numeric coercion.
+
+        Converts both values to float for comparison. Returns False
+        if either value is None or cannot be converted to float.
+
+        Args:
+            provider_value: The value from the provider to compare.
+            expected: The expected threshold value.
+
+        Returns:
+            True if provider_value < expected (as floats).
+        """
         if provider_value is None or expected is None:
             return False
         try:
@@ -359,7 +405,18 @@ class ModelRequirementSet(BaseModel):
             return False
 
     def _compare_lte(self, provider_value: Any, expected: Any) -> bool:
-        """Less than or equal comparison."""
+        """Less than or equal comparison with numeric coercion.
+
+        Converts both values to float for comparison. Returns False
+        if either value is None or cannot be converted to float.
+
+        Args:
+            provider_value: The value from the provider to compare.
+            expected: The expected threshold value.
+
+        Returns:
+            True if provider_value <= expected (as floats).
+        """
         if provider_value is None or expected is None:
             return False
         try:
@@ -368,7 +425,18 @@ class ModelRequirementSet(BaseModel):
             return False
 
     def _compare_gt(self, provider_value: Any, expected: Any) -> bool:
-        """Greater than comparison."""
+        """Greater than comparison with numeric coercion.
+
+        Converts both values to float for comparison. Returns False
+        if either value is None or cannot be converted to float.
+
+        Args:
+            provider_value: The value from the provider to compare.
+            expected: The expected threshold value.
+
+        Returns:
+            True if provider_value > expected (as floats).
+        """
         if provider_value is None or expected is None:
             return False
         try:
@@ -377,7 +445,18 @@ class ModelRequirementSet(BaseModel):
             return False
 
     def _compare_gte(self, provider_value: Any, expected: Any) -> bool:
-        """Greater than or equal comparison."""
+        """Greater than or equal comparison with numeric coercion.
+
+        Converts both values to float for comparison. Returns False
+        if either value is None or cannot be converted to float.
+
+        Args:
+            provider_value: The value from the provider to compare.
+            expected: The expected threshold value.
+
+        Returns:
+            True if provider_value >= expected (as floats).
+        """
         if provider_value is None or expected is None:
             return False
         try:
@@ -401,10 +480,19 @@ class ModelRequirementSet(BaseModel):
             return False
         return bool(provider_value in expected)
 
-    def _compare_contains(
-        self, provider_value: Any, expected: Any
-    ) -> bool:
-        """Check if provider list contains expected value."""
+    def _compare_contains(self, provider_value: Any, expected: Any) -> bool:
+        """Check if provider list contains expected value.
+
+        Tests whether the provider's value (expected to be a list)
+        contains the expected item.
+
+        Args:
+            provider_value: The provider's value, expected to be a list.
+            expected: The value to search for in the provider's list.
+
+        Returns:
+            True if provider_value is a list containing expected.
+        """
         if provider_value is None:
             return False
         if not isinstance(provider_value, list):
