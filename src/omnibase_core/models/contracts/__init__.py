@@ -70,8 +70,8 @@ from omnibase_core.models.runtime.model_descriptor_circuit_breaker import (
 from omnibase_core.models.runtime.model_descriptor_retry_policy import (
     ModelDescriptorRetryPolicy,
 )
-from omnibase_core.models.runtime.model_handler_descriptor import (
-    ModelHandlerDescriptor,
+from omnibase_core.models.runtime.model_handler_behavior_descriptor import (
+    ModelHandlerBehaviorDescriptor,
 )
 from omnibase_core.models.security.model_condition_value import ModelConditionValue
 from omnibase_core.models.services.model_external_service_config import (
@@ -112,6 +112,12 @@ from .model_dependency_spec import (
     ModelDependencySpec,
     SelectionStrategy,
 )
+from .model_capability_dependency import (
+    ModelCapabilityDependency,
+    SelectionPolicy,
+)
+from .model_execution_constraints import ModelExecutionConstraints
+from .model_handler_contract import ModelHandlerContract
 from .model_drift_details import ModelDriftDetails
 from .model_drift_result import ModelDriftResult
 from .model_effect_retry_config import ModelEffectRetryConfig
@@ -158,6 +164,11 @@ __all__ = [
     "ModelDependencySpec",
     "DependencyType",
     "SelectionStrategy",
+    # Handler contract models (OMN-1117)
+    "ModelCapabilityDependency",
+    "SelectionPolicy",
+    "ModelExecutionConstraints",
+    "ModelHandlerContract",
     "ModelDriftDetails",
     "ModelDriftResult",
     "ModelNodeExtensions",
@@ -187,8 +198,8 @@ __all__ = [
     "ModelExecutionOrderingPolicy",
     "ModelExecutionProfile",
     "DEFAULT_EXECUTION_PHASES",
-    # Handler descriptor models (for contract-driven execution)
-    "ModelHandlerDescriptor",
+    # Handler behavior descriptor models (for contract-driven execution)
+    "ModelHandlerBehaviorDescriptor",
     "ModelDescriptorRetryPolicy",
     "ModelDescriptorCircuitBreaker",
     "ModelEventRegistryConfig",

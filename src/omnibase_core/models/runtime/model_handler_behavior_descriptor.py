@@ -1,5 +1,5 @@
 """
-Handler Descriptor Model.
+Handler Behavior Descriptor Model.
 
 Defines runtime behavior characteristics for handlers embedded in contracts.
 Part of the three-layer architecture: Profile -> Descriptor -> Contract.
@@ -7,12 +7,24 @@ Part of the three-layer architecture: Profile -> Descriptor -> Contract.
 This model configures how handlers behave at runtime including purity,
 idempotency, concurrency, isolation, and observability settings.
 
+Note:
+    This is the **behavior descriptor** (runtime configuration), distinct from
+    ``ModelHandlerDescriptor`` in ``models/handlers/`` which is the **registry
+    descriptor** (identity, classification, instantiation).
+
+    - ``ModelHandlerBehaviorDescriptor``: How the handler BEHAVES (this model)
+    - ``ModelHandlerDescriptor``: What the handler IS (registry/discovery)
+
 Related:
+    - OMN-1117: Handler Contract Model & YAML Schema
     - OMN-1125: Default Profile Factory for Contracts
     - ModelExecutionProfile: Profile layer (execution resource allocation)
     - ModelContractBase: Contract layer (declarative node specification)
 
 .. versionadded:: 0.4.0
+.. versionchanged:: 0.4.1
+    Renamed from ModelHandlerDescriptor to ModelHandlerBehaviorDescriptor
+    to disambiguate from the registry descriptor in models/handlers/.
 """
 
 from typing import Literal
@@ -27,11 +39,11 @@ from omnibase_core.models.runtime.model_descriptor_retry_policy import (
 )
 
 __all__ = [
-    "ModelHandlerDescriptor",
+    "ModelHandlerBehaviorDescriptor",
 ]
 
 
-class ModelHandlerDescriptor(BaseModel):
+class ModelHandlerBehaviorDescriptor(BaseModel):
     """Handler behavior descriptor embedded in contracts.
 
     Defines runtime behavior characteristics for handlers including purity,
@@ -86,7 +98,7 @@ class ModelHandlerDescriptor(BaseModel):
         capability_outputs: Provided output capabilities (e.g., ["event", "log"]).
 
     Example:
-        >>> descriptor = ModelHandlerDescriptor(
+        >>> descriptor = ModelHandlerBehaviorDescriptor(
         ...     handler_kind="compute",
         ...     purity="pure",
         ...     idempotent=True,
@@ -96,7 +108,7 @@ class ModelHandlerDescriptor(BaseModel):
         ... )
 
         >>> # Effect handler with retry and circuit breaker
-        >>> effect_descriptor = ModelHandlerDescriptor(
+        >>> effect_descriptor = ModelHandlerBehaviorDescriptor(
         ...     handler_kind="effect",
         ...     purity="side_effecting",
         ...     idempotent=True,  # Required for retry
