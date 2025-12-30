@@ -124,6 +124,7 @@ from omnibase_core.protocols.event_bus import (
     ProtocolEventBusRegistry,
     ProtocolEventEnvelope,
     ProtocolEventMessage,
+    ProtocolFromEvent,
     ProtocolKafkaEventBusAdapter,
     ProtocolSyncEventBus,
 )
@@ -278,6 +279,7 @@ __all__ = [
     "ProtocolSyncEventBus",
     "ProtocolAsyncEventBus",
     "ProtocolEventEnvelope",
+    "ProtocolFromEvent",
     "ProtocolEventBusRegistry",
     "ProtocolEventBusLogEmitter",
     # ==========================================================================

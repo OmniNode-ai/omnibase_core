@@ -332,7 +332,7 @@ class ManifestLogger:
             logger: Logger with info(message, extra=None) method
         """
         # Duck typing: logger must have .info() method
-        info_method = getattr(logger, "info")
+        info_method = logger.info
         info_method(
             "Execution manifest generated",
             extra={
