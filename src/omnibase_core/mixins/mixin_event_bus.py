@@ -125,6 +125,13 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
             def process(self, input_state: MyInputState) -> MyOutputState:
                 # Type-safe processing
                 return MyOutputState(...)
+
+    Thread Safety:
+        - bind_*() methods: MUST be called in __init__ before sharing across threads
+        - publish_*(), stop_*(), dispose_*(): Safe for concurrent access after binding
+        - Internal state protected by _mixin_lock (lazily initialized via class-level lock)
+
+        See module docstring for detailed lock hierarchy and thread lifecycle documentation.
     """
 
     # Class-level lock for thread-safe lazy initialization of instance locks.

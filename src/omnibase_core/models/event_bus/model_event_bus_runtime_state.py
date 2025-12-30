@@ -175,21 +175,22 @@ class ModelEventBusRuntimeState(BaseModel):
         return self.contract_path is not None
 
     def reset(self) -> None:
-        """Perform a soft unbind, preserving identity and configuration.
+        """Clear runtime state while preserving binding configuration.
 
-        This is a "soft unbind" operation that clears only the binding status
-        (is_bound=False) while preserving node_name and contract_path. The
-        instance retains its identity and can be rebound using bind() with
-        potentially different configuration.
+        Use for cleanup between operations. This is a "soft unbind" that clears
+        only the binding status (is_bound=False) while preserving node_name and
+        contract_path for potential rebinding.
 
-        Semantic Difference from bind():
-            - reset(): Soft unbind - marks as unbound but keeps node_name and
-              contract_path. Use when temporarily pausing operations or when
-              you need to rebind with new configuration.
-            - bind(): Full bind - sets node_name, contract_path, and is_bound=True.
-              Use after reset() to re-establish binding, or to change configuration.
+        Contrast with bind():
+            - **reset()**: Clears runtime state while preserving binding config.
+              Use for cleanup between operations or before rebinding with new
+              configuration. Does NOT clear node_name or contract_path.
+            - **bind()**: Initializes state with node identity. MUST be called
+              during initialization (__init__) to establish the binding. Sets
+              node_name, contract_path, and is_bound=True together.
 
         When to Use:
+            - Use reset() for cleanup between operations (e.g., test teardown)
             - Use reset() when temporarily pausing event bus operations
             - Use reset() before calling bind() with new configuration
             - Use create_unbound() instead when you want a completely fresh
@@ -199,36 +200,37 @@ class ModelEventBusRuntimeState(BaseModel):
             >>> state = ModelEventBusRuntimeState.create_bound("node1", "/path.yaml")
             >>> state.is_ready()
             True
-            >>> state.reset()  # Soft unbind - keeps node_name="node1"
+            >>> state.reset()  # Cleanup - keeps node_name="node1"
             >>> state.is_bound
             False
-            >>> state.node_name  # Still preserved
+            >>> state.node_name  # Still preserved for potential rebind
             'node1'
             >>> state.bind("node2", "/new.yaml")  # Rebind with new config
             >>> state.is_ready()
             True
 
         See Also:
-            bind(): Sets node_name, contract_path, and is_bound together.
+            bind(): Initializes state with node identity (call in __init__).
             create_unbound(): Creates a fresh instance with all defaults.
         """
         self.is_bound = False
 
     def bind(self, node_name: str, contract_path: str | None = None) -> None:
-        """Bind the event bus to a node with full configuration.
+        """Initialize state with node identity. MUST be called in __init__.
 
-        This is a "full bind" operation that sets node_name, contract_path,
-        and is_bound=True together. Use this to establish or re-establish
-        a binding, potentially with new configuration.
+        This method establishes the binding by setting node_name, contract_path,
+        and is_bound=True together. Call this during initialization to configure
+        the runtime state before the instance is used for event bus operations.
 
-        Semantic Difference from reset():
-            - bind(): Full bind - sets all values and marks as bound. Use to
-              establish a new binding or rebind after reset() with new config.
-            - reset(): Soft unbind - only clears is_bound, preserving node_name
-              and contract_path. Use when temporarily pausing operations.
+        Contrast with reset():
+            - **bind()**: Initializes state with node identity. MUST be called
+              during initialization (__init__) to establish the binding. Sets
+              all configuration values and marks as bound.
+            - **reset()**: Clears runtime state while preserving binding config.
+              Use for cleanup between operations. Only clears is_bound flag.
 
         Common Patterns:
-            - Initial binding: create_unbound() then bind()
+            - Initial binding: create_unbound() then bind() in __init__
             - Reconfiguration: reset() then bind() with new values
             - Direct creation: create_bound() for one-step initialization
 
@@ -237,23 +239,25 @@ class ModelEventBusRuntimeState(BaseModel):
                 Must be a non-empty string. Use a non-empty string for a
                 fully ready binding.
             contract_path: Optional path to contract YAML file. Pass None
-                to clear any existing contract_path.
+                to clear any existing contract_path. Empty string ``""``
+                is semantically equivalent to None (both mean "no contract").
+                Use ``has_contract_path()`` to check if explicitly set.
 
         Raises:
             ValueError: If node_name is empty or whitespace-only.
 
         Example:
             >>> state = ModelEventBusRuntimeState.create_unbound()
-            >>> state.bind("my_node", "/path/to/contract.yaml")
+            >>> state.bind("my_node", "/path/to/contract.yaml")  # Call in __init__
             >>> state.is_ready()
             True
-            >>> state.reset()  # Temporarily unbind
+            >>> state.reset()  # Cleanup between operations
             >>> state.bind("different_node")  # Rebind with different config
             >>> state.node_name
             'different_node'
 
         See Also:
-            reset(): Soft unbind that preserves node_name and contract_path.
+            reset(): Clears runtime state for cleanup between operations.
             create_bound(): One-step factory for creating a bound instance.
         """
         if not node_name or not node_name.strip():

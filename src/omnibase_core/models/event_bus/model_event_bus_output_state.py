@@ -57,7 +57,7 @@ class ModelEventBusOutputState(BaseModel):
     # Note on from_attributes=True: Added for pytest-xdist parallel execution
     # compatibility. See CLAUDE.md "Pydantic from_attributes=True for Value Objects".
     model_config = ConfigDict(
-        validate_assignment=True, extra="forbid", from_attributes=True
+        frozen=True, validate_assignment=True, extra="forbid", from_attributes=True
     )
     version: ModelSemVer = Field(
         default_factory=default_model_version,

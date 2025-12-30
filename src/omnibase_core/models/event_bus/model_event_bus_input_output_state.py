@@ -112,7 +112,9 @@ class ModelEventBusInputOutputState(BaseModel):
             version=parse_semver_from_string(input_version_str), input_field=input_field
         )
         # Normalize status to EnumOnexStatus
-        status_enum = status if isinstance(status, EnumOnexStatus) else EnumOnexStatus(status)
+        status_enum = (
+            status if isinstance(status, EnumOnexStatus) else EnumOnexStatus(status)
+        )
         output_state = ModelEventBusOutputState(
             version=parse_semver_from_string(output_version_str),
             status=status_enum,
