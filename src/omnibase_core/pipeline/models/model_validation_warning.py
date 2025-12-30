@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
+#
+# SPDX-License-Identifier: Apache-2.0
 """Validation warning model for pipeline hooks."""
 
 from pydantic import BaseModel, ConfigDict, Field

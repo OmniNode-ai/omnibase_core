@@ -48,7 +48,7 @@ class RegistryHook:
             DuplicateHookError: If hook_id already registered.
         """
         if self._frozen:
-            raise HookRegistryFrozenError()
+            raise HookRegistryFrozenError
 
         if hook.hook_id in self._hooks_by_id:
             raise DuplicateHookError(hook.hook_id)

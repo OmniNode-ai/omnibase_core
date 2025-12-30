@@ -211,16 +211,15 @@ class RunnerPipeline:
                 if fail_fast:
                     # Re-raise immediately for fail-fast phases
                     raise
-                else:
-                    # Capture error and continue for continue phases
-                    errors.append(
-                        ModelHookError(
-                            phase=phase,
-                            hook_id=hook.hook_id,
-                            error_type=type(e).__name__,
-                            error_message=str(e),
-                        )
+                # Capture error and continue for continue phases
+                errors.append(
+                    ModelHookError(
+                        phase=phase,
+                        hook_id=hook.hook_id,
+                        error_type=type(e).__name__,
+                        error_message=str(e),
                     )
+                )
 
         return errors
 

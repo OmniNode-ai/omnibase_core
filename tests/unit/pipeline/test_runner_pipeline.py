@@ -3,8 +3,6 @@
 # SPDX-License-Identifier: Apache-2.0
 """Tests for RunnerPipeline."""
 
-from collections.abc import Callable, Coroutine
-
 import pytest
 
 from omnibase_core.pipeline.models import (
@@ -16,7 +14,6 @@ from omnibase_core.pipeline.models import (
 from omnibase_core.pipeline.runner_pipeline import (
     HookCallable,
     PipelineContext,
-    PipelineResult,
     RunnerPipeline,
 )
 
@@ -658,7 +655,7 @@ class TestRunnerPipelineCallableResolution:
 
         runner = RunnerPipeline(plan=plan, callable_registry={})
 
-        with pytest.raises(KeyError, match="test.nonexistent"):
+        with pytest.raises(KeyError, match=r"test\.nonexistent"):
             await runner.run()
 
 

@@ -6,16 +6,16 @@
 import pytest
 
 from omnibase_core.enums.enum_handler_type_category import EnumHandlerTypeCategory
+from omnibase_core.pipeline.builder_execution_plan import BuilderExecutionPlan
 from omnibase_core.pipeline.exceptions import (
     DependencyCycleError,
     HookTypeMismatchError,
     UnknownDependencyError,
 )
-from omnibase_core.pipeline.registry_hook import RegistryHook
 from omnibase_core.pipeline.models import (
     ModelPipelineHook,
 )
-from omnibase_core.pipeline.builder_execution_plan import BuilderExecutionPlan
+from omnibase_core.pipeline.registry_hook import RegistryHook
 
 
 def create_frozen_registry(*hooks: ModelPipelineHook) -> RegistryHook:
@@ -65,7 +65,7 @@ class TestBuilderExecutionPlanHookTypingValidation:
             contract_category=EnumHandlerTypeCategory.EFFECT,
             enforce_hook_typing=True,
         )
-        plan, warnings = builder.build()
+        _plan, warnings = builder.build()
         assert len(warnings) == 0
 
     @pytest.mark.unit
@@ -83,7 +83,7 @@ class TestBuilderExecutionPlanHookTypingValidation:
             contract_category=EnumHandlerTypeCategory.COMPUTE,
             enforce_hook_typing=True,
         )
-        plan, warnings = builder.build()
+        _plan, warnings = builder.build()
         assert len(warnings) == 0
 
     @pytest.mark.unit
@@ -122,7 +122,7 @@ class TestBuilderExecutionPlanHookTypingValidation:
             contract_category=EnumHandlerTypeCategory.EFFECT,
             enforce_hook_typing=False,
         )
-        plan, warnings = builder.build()
+        _plan, warnings = builder.build()
         assert len(warnings) == 1
         assert warnings[0].code == "HOOK_TYPE_MISMATCH"
         assert "compute-hook" in warnings[0].context.get("hook_id", "")
@@ -162,7 +162,7 @@ class TestBuilderExecutionPlanHookTypingValidation:
             contract_category=EnumHandlerTypeCategory.NONDETERMINISTIC_COMPUTE,
             enforce_hook_typing=True,
         )
-        plan, warnings = builder.build()
+        _plan, warnings = builder.build()
         assert len(warnings) == 0
 
         # Mismatch with COMPUTE - should fail
@@ -247,7 +247,7 @@ class TestBuilderExecutionPlanDependencyValidation:
         )
         registry = create_frozen_registry(hook_a, hook_b, hook_c)
         builder = BuilderExecutionPlan(registry=registry)
-        plan, warnings = builder.build()
+        plan, _warnings = builder.build()
 
         hooks = plan.get_phase_hooks("execute")
         hook_ids = [h.hook_id for h in hooks]

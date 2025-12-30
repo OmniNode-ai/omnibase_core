@@ -1,9 +1,13 @@
+# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
+#
+# SPDX-License-Identifier: Apache-2.0
 """Tests for ComposerMiddleware."""
 
-import pytest
-from typing import Awaitable, Callable
+from collections.abc import Awaitable, Callable
 
-from omnibase_core.pipeline.composer_middleware import Middleware, ComposerMiddleware
+import pytest
+
+from omnibase_core.pipeline.composer_middleware import ComposerMiddleware
 
 
 @pytest.mark.unit

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
+#
+# SPDX-License-Identifier: Apache-2.0
 """Pipeline-specific exceptions."""
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -6,8 +9,6 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 class PipelineError(ModelOnexError):
     """Base exception for pipeline errors."""
-
-    pass
 
 
 class HookRegistryFrozenError(PipelineError):

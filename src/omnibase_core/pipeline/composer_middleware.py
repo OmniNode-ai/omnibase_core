@@ -3,7 +3,8 @@
 # SPDX-License-Identifier: Apache-2.0
 """Middleware composer for onion-style wrapping."""
 
-from typing import Awaitable, Callable, TypeVar
+from collections.abc import Awaitable, Callable
+from typing import TypeVar
 
 # Type variable for the result type
 T = TypeVar("T")

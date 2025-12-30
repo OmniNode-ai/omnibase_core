@@ -9,8 +9,8 @@ from omnibase_core.pipeline.exceptions import (
     DuplicateHookError,
     HookRegistryFrozenError,
 )
+from omnibase_core.pipeline.models import ModelPipelineHook
 from omnibase_core.pipeline.registry_hook import RegistryHook
-from omnibase_core.pipeline.models import ModelPipelineHook, PipelinePhase
 
 
 @pytest.mark.unit

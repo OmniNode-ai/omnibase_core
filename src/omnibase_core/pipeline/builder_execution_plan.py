@@ -12,7 +12,6 @@ from omnibase_core.pipeline.exceptions import (
     HookTypeMismatchError,
     UnknownDependencyError,
 )
-from omnibase_core.pipeline.registry_hook import RegistryHook
 from omnibase_core.pipeline.models import (
     ModelExecutionPlan,
     ModelPhaseExecutionPlan,
@@ -20,6 +19,7 @@ from omnibase_core.pipeline.models import (
     ModelValidationWarning,
     PipelinePhase,
 )
+from omnibase_core.pipeline.registry_hook import RegistryHook
 
 
 class BuilderExecutionPlan:
@@ -157,13 +157,12 @@ class BuilderExecutionPlan:
                     hook_category=hook_cat_str,
                     contract_category=contract_cat_str,
                 )
-            else:
-                warning = ModelValidationWarning.hook_type_mismatch(
-                    hook_id=hook.hook_id,
-                    hook_category=hook_cat_str,
-                    contract_category=contract_cat_str,
-                )
-                warnings.append(warning)
+            warning = ModelValidationWarning.hook_type_mismatch(
+                hook_id=hook.hook_id,
+                hook_category=hook_cat_str,
+                contract_category=contract_cat_str,
+            )
+            warnings.append(warning)
 
         return warnings
 
