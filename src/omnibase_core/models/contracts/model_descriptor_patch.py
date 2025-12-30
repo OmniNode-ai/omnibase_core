@@ -69,7 +69,7 @@ class ModelDescriptorPatch(BaseModel):
 
     See Also:
         - ModelContractPatch: Parent patch model that contains this
-        - ModelHandlerDescriptor (runtime): Full descriptor this patches
+        - ModelHandlerBehavior (runtime): Full behavior model this patches
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)

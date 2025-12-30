@@ -16,6 +16,11 @@ Related:
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from omnibase_core.validation.validation_utils import (
+    is_valid_onex_name,
+    validate_import_path_format,
+)
+
 # =============================================================================
 # HandlerConfigValue Type Alias
 # =============================================================================
@@ -67,7 +72,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 # See Also:
 #   - ModelHandlerSpec: Uses this for the config field
 #   - ModelDescriptorPatch: For complex handler behavior overrides
-#   - ModelHandlerDescriptor: Full runtime handler representation
+#   - ModelHandlerBehavior: Full runtime handler behavior representation
 #
 # .. versionadded:: 0.4.0
 # =============================================================================
@@ -83,7 +88,7 @@ class ModelHandlerSpec(BaseModel):
     """Handler specification for adding handlers to contracts via patches.
 
     Handler specs provide a lightweight way to declare handlers in contract
-    patches. These are resolved to full ModelHandlerDescriptor instances at
+    patches. These are resolved to full ModelHandlerBehavior instances at
     contract expansion time.
 
     Attributes:
@@ -102,7 +107,7 @@ class ModelHandlerSpec(BaseModel):
 
     See Also:
         - ModelContractPatch: Uses this for handlers__add field
-        - ModelHandlerDescriptor: Full handler descriptor model (OMN-1086)
+        - ModelHandlerBehavior: Full handler behavior model (runtime)
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
@@ -152,24 +157,57 @@ class ModelHandlerSpec(BaseModel):
     @field_validator("name")
     @classmethod
     def validate_name(cls, v: str) -> str:
-        """Validate handler name format."""
+        """Validate and normalize handler name format.
+
+        Handler names must be non-empty and contain only alphanumeric
+        characters and underscores. Names are normalized to lowercase for
+        consistent matching and comparison across the system. This ensures
+        that 'HTTP_Client' and 'http_client' are treated as the same handler.
+
+        Leading and trailing whitespace is stripped before validation.
+        Uses shared validation utilities from omnibase_core.validation.
+
+        Args:
+            v: The raw handler name string.
+
+        Returns:
+            The validated, stripped, and lowercased handler name.
+
+        Raises:
+            ValueError: If the name is empty or contains invalid characters.
+        """
         v = v.strip()
         if not v:
             raise ValueError("Handler name cannot be empty")
 
-        # Handler names should be lowercase with underscores
-        if not all(c.isalnum() or c == "_" for c in v):
+        # Use shared ONEX name validation (alphanumeric + underscores)
+        if not is_valid_onex_name(v):
             raise ValueError(
                 f"Handler name must contain only alphanumeric characters "
                 f"and underscores: {v}"
             )
 
-        return v
+        # Normalize to lowercase for consistent matching
+        return v.lower()
 
     @field_validator("handler_type")
     @classmethod
     def validate_handler_type(cls, v: str) -> str:
-        """Validate handler type format."""
+        """Validate handler type format.
+
+        Handler types are normalized to lowercase and stripped of whitespace.
+        They represent the transport/integration kind (e.g., 'http', 'kafka',
+        'database').
+
+        Args:
+            v: The raw handler type string.
+
+        Returns:
+            The validated, stripped, and lowercased handler type.
+
+        Raises:
+            ValueError: If the handler type is empty after stripping.
+        """
         v = v.strip().lower()
         if not v:
             raise ValueError("Handler type cannot be empty")
@@ -179,7 +217,25 @@ class ModelHandlerSpec(BaseModel):
     @field_validator("import_path")
     @classmethod
     def validate_import_path(cls, v: str | None) -> str | None:
-        """Validate import path format if provided."""
+        """Validate import path format if provided.
+
+        Import paths must be valid Python dotted paths with at least two
+        components (module and class). Each module segment must be a valid
+        Python identifier, and the final segment (class name) should start
+        with an uppercase letter by convention.
+
+        Uses shared validation utilities from omnibase_core.validation.
+        Empty or whitespace-only strings are converted to None.
+
+        Args:
+            v: The raw import path string, or None.
+
+        Returns:
+            The validated and stripped import path, or None if empty/not provided.
+
+        Raises:
+            ValueError: If the path format is invalid.
+        """
         if v is None:
             return v
 
@@ -187,10 +243,10 @@ class ModelHandlerSpec(BaseModel):
         if not v:
             return None
 
-        # Basic validation - should be valid Python import path
-        parts = v.split(".")
-        if len(parts) < 2:
-            raise ValueError(f"Import path must include module and class: {v}")
+        # Use shared import path validation
+        is_valid, error_message = validate_import_path_format(v)
+        if not is_valid:
+            raise ValueError(f"{error_message}: {v}")
 
         return v
 

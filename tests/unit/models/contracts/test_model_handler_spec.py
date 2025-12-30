@@ -9,9 +9,11 @@ from pydantic import ValidationError
 from omnibase_core.models.contracts.model_handler_spec import ModelHandlerSpec
 
 
+@pytest.mark.unit
 class TestModelHandlerSpec:
     """Tests for ModelHandlerSpec model."""
 
+    @pytest.mark.unit
     def test_valid_handler_spec(self) -> None:
         """Test creating a valid handler spec."""
         spec = ModelHandlerSpec(
@@ -23,6 +25,7 @@ class TestModelHandlerSpec:
         assert spec.import_path is None
         assert spec.config is None
 
+    @pytest.mark.unit
     def test_full_handler_spec(self) -> None:
         """Test creating a handler spec with all fields."""
         spec = ModelHandlerSpec(
@@ -36,26 +39,31 @@ class TestModelHandlerSpec:
         assert spec.import_path == "mypackage.handlers.KafkaProducer"
         assert spec.config == {"bootstrap_servers": "localhost:9092", "retries": 3}
 
+    @pytest.mark.unit
     def test_name_required(self) -> None:
         """Test that name is required."""
         with pytest.raises(ValidationError):
             ModelHandlerSpec(handler_type="http")  # type: ignore[call-arg]
 
+    @pytest.mark.unit
     def test_handler_type_required(self) -> None:
         """Test that handler_type is required."""
         with pytest.raises(ValidationError):
             ModelHandlerSpec(name="test")  # type: ignore[call-arg]
 
+    @pytest.mark.unit
     def test_empty_name_rejected(self) -> None:
         """Test that empty name is rejected."""
         with pytest.raises(ValidationError):
             ModelHandlerSpec(name="", handler_type="http")
 
+    @pytest.mark.unit
     def test_empty_handler_type_rejected(self) -> None:
         """Test that empty handler_type is rejected."""
         with pytest.raises(ValidationError):
             ModelHandlerSpec(name="test", handler_type="")
 
+    @pytest.mark.unit
     def test_name_validation_valid_names(self) -> None:
         """Test name validation with valid names."""
         valid_names = [
@@ -69,6 +77,7 @@ class TestModelHandlerSpec:
             spec = ModelHandlerSpec(name=name, handler_type="test")
             assert spec.name == name
 
+    @pytest.mark.unit
     def test_name_validation_invalid_names(self) -> None:
         """Test name validation with invalid names."""
         invalid_names = [
@@ -81,11 +90,13 @@ class TestModelHandlerSpec:
             with pytest.raises(ValidationError):
                 ModelHandlerSpec(name=name, handler_type="test")
 
+    @pytest.mark.unit
     def test_handler_type_lowercased(self) -> None:
         """Test that handler_type is lowercased."""
         spec = ModelHandlerSpec(name="test", handler_type="HTTP")
         assert spec.handler_type == "http"
 
+    @pytest.mark.unit
     def test_import_path_validation_valid(self) -> None:
         """Test import path validation with valid paths."""
         valid_paths = [
@@ -101,6 +112,7 @@ class TestModelHandlerSpec:
             )
             assert spec.import_path == path
 
+    @pytest.mark.unit
     def test_import_path_validation_invalid(self) -> None:
         """Test import path validation with invalid paths."""
         with pytest.raises(ValidationError):
@@ -110,6 +122,7 @@ class TestModelHandlerSpec:
                 import_path="single_segment",  # Must have module.class
             )
 
+    @pytest.mark.unit
     def test_empty_import_path_becomes_none(self) -> None:
         """Test that empty import path becomes None."""
         spec = ModelHandlerSpec(
@@ -119,6 +132,7 @@ class TestModelHandlerSpec:
         )
         assert spec.import_path is None
 
+    @pytest.mark.unit
     def test_config_accepts_various_types(self) -> None:
         """Test that config accepts supported value types."""
         config = {
@@ -136,6 +150,7 @@ class TestModelHandlerSpec:
         )
         assert spec.config == config
 
+    @pytest.mark.unit
     def test_extra_fields_rejected(self) -> None:
         """Test that extra fields are rejected."""
         with pytest.raises(ValidationError):
@@ -145,12 +160,14 @@ class TestModelHandlerSpec:
                 extra="not_allowed",  # type: ignore[call-arg]
             )
 
+    @pytest.mark.unit
     def test_frozen_model(self) -> None:
         """Test that the model is immutable."""
         spec = ModelHandlerSpec(name="test", handler_type="http")
         with pytest.raises(ValidationError):
             spec.name = "changed"  # type: ignore[misc]
 
+    @pytest.mark.unit
     def test_repr(self) -> None:
         """Test string representation."""
         spec = ModelHandlerSpec(name="http_client", handler_type="http")
@@ -158,6 +175,7 @@ class TestModelHandlerSpec:
         assert "http_client" in repr_str
         assert "http" in repr_str
 
+    @pytest.mark.unit
     def test_equality(self) -> None:
         """Test equality comparison."""
         spec1 = ModelHandlerSpec(name="test", handler_type="http")
@@ -166,6 +184,7 @@ class TestModelHandlerSpec:
         assert spec1 == spec2
         assert spec1 != spec3
 
+    @pytest.mark.unit
     def test_from_dict(self) -> None:
         """Test creating from dictionary."""
         data = {
@@ -180,6 +199,7 @@ class TestModelHandlerSpec:
         assert spec.import_path == "mypackage.Handler"
         assert spec.config == {"timeout": 30}
 
+    @pytest.mark.unit
     def test_whitespace_stripping(self) -> None:
         """Test that whitespace is stripped."""
         spec = ModelHandlerSpec(

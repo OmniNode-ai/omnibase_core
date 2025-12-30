@@ -2,12 +2,20 @@ from __future__ import annotations
 
 """
 Shared utilities for protocol validation across omni* ecosystem.
+
+This module provides common validation functions used throughout the ONEX framework:
+- Python identifier validation
+- ONEX naming convention validation
+- Import path format validation
+- Protocol signature extraction
+- File and directory path validation
 """
 
 
 import ast
 import hashlib
 import logging
+import re
 from pathlib import Path
 
 from omnibase_core.errors.exceptions import ExceptionInputValidationError
@@ -20,6 +28,160 @@ from omnibase_core.models.validation.model_protocol_signature_extractor import (
 
 # Configure logger for this module
 logger = logging.getLogger(__name__)
+
+# =============================================================================
+# Pre-compiled Regex Patterns for Name Validation
+# =============================================================================
+# Thread-safe: ClassVar patterns are compiled once at module load time
+# and re.Pattern objects are immutable, allowing safe concurrent access.
+
+# Pattern for validating Python identifier format (starts with letter/underscore,
+# followed by alphanumeric/underscore)
+_PYTHON_IDENTIFIER_PATTERN: re.Pattern[str] = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]*$")
+
+# Pattern for validating Python module path format (dot-separated identifiers)
+_MODULE_PATH_PATTERN: re.Pattern[str] = re.compile(
+    r"^[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*$"
+)
+
+# Pattern for validating ONEX naming convention (alphanumeric with underscores only)
+_ONEX_NAME_PATTERN: re.Pattern[str] = re.compile(r"^[a-zA-Z0-9_]+$")
+
+# Pattern for lowercase ONEX names (snake_case style)
+_ONEX_LOWERCASE_NAME_PATTERN: re.Pattern[str] = re.compile(r"^[a-z0-9_]+$")
+
+# Characters that are dangerous in import paths (potential security issues)
+_DANGEROUS_IMPORT_CHARS: frozenset[str] = frozenset(
+    ["<", ">", "|", "&", ";", "`", "$", "'", '"', "*", "?", "[", "]"]
+)
+
+
+# =============================================================================
+# Name and Identifier Validation Functions
+# =============================================================================
+
+
+def is_valid_python_identifier(name: str) -> bool:
+    """Check if a string is a valid Python identifier.
+
+    A valid Python identifier:
+    - Starts with a letter (a-z, A-Z) or underscore (_)
+    - Contains only letters, digits (0-9), or underscores
+    - Is not empty
+
+    This function uses a pre-compiled regex pattern for performance.
+
+    Args:
+        name: The string to validate.
+
+    Returns:
+        True if the string is a valid Python identifier, False otherwise.
+
+    Example:
+        >>> is_valid_python_identifier("my_var")
+        True
+        >>> is_valid_python_identifier("MyClass")
+        True
+        >>> is_valid_python_identifier("_private")
+        True
+        >>> is_valid_python_identifier("2fast")
+        False
+        >>> is_valid_python_identifier("my-var")
+        False
+    """
+    if not name:
+        return False
+    return bool(_PYTHON_IDENTIFIER_PATTERN.match(name))
+
+
+def is_valid_onex_name(name: str, *, lowercase_only: bool = False) -> bool:
+    """Check if a string follows ONEX naming conventions.
+
+    ONEX names must contain only alphanumeric characters and underscores.
+    Optionally, names can be restricted to lowercase only (snake_case style).
+
+    Args:
+        name: The string to validate.
+        lowercase_only: If True, requires all lowercase characters.
+
+    Returns:
+        True if the string follows ONEX naming conventions, False otherwise.
+
+    Example:
+        >>> is_valid_onex_name("http_client")
+        True
+        >>> is_valid_onex_name("HttpClient")
+        True
+        >>> is_valid_onex_name("http-client")
+        False
+        >>> is_valid_onex_name("HttpClient", lowercase_only=True)
+        False
+        >>> is_valid_onex_name("http_client", lowercase_only=True)
+        True
+    """
+    if not name:
+        return False
+    if lowercase_only:
+        return bool(_ONEX_LOWERCASE_NAME_PATTERN.match(name))
+    return bool(_ONEX_NAME_PATTERN.match(name))
+
+
+def validate_import_path_format(import_path: str) -> tuple[bool, str | None]:
+    """Validate a Python import path format.
+
+    Checks that the import path:
+    - Has at least two dot-separated segments (module and class)
+    - Each segment is a valid Python identifier
+    - Contains no dangerous characters (security check)
+    - Contains no path traversal sequences
+
+    Args:
+        import_path: The import path to validate (e.g., 'mypackage.module.MyClass').
+
+    Returns:
+        A tuple of (is_valid, error_message). If valid, error_message is None.
+        If invalid, is_valid is False and error_message describes the problem.
+
+    Example:
+        >>> validate_import_path_format("mypackage.handlers.HttpClient")
+        (True, None)
+        >>> validate_import_path_format("singlemodule")
+        (False, "Import path must include module and class (at least 2 segments)")
+        >>> validate_import_path_format("my..module.Class")
+        (False, "Import path cannot contain path separators or '..'")
+    """
+    if not import_path or not import_path.strip():
+        return False, "Import path cannot be empty"
+
+    import_path = import_path.strip()
+
+    # Security check: reject dangerous characters
+    found_dangerous = [c for c in _DANGEROUS_IMPORT_CHARS if c in import_path]
+    if found_dangerous:
+        return False, f"Import path contains invalid characters: {found_dangerous}"
+
+    # Security check: reject path traversal
+    if ".." in import_path or "/" in import_path or "\\" in import_path:
+        return False, "Import path cannot contain path separators or '..'"
+
+    # Split into segments and validate structure
+    parts = import_path.split(".")
+    if len(parts) < 2:
+        return False, "Import path must include module and class (at least 2 segments)"
+
+    # Check for empty segments
+    if any(not part for part in parts):
+        return False, "Import path contains empty segment"
+
+    # Validate each segment is a valid Python identifier
+    for part in parts:
+        if not is_valid_python_identifier(part):
+            return (
+                False,
+                f"Import path segment '{part}' is not a valid Python identifier",
+            )
+
+    return True, None
 
 
 def extract_protocol_signature(file_path: Path) -> ModelProtocolInfo | None:
@@ -290,15 +452,22 @@ def extract_protocols_from_directory(directory: Path) -> list[ModelProtocolInfo]
 
 # Export all public functions, classes, and types
 __all__ = [
+    # Models re-exported for convenience
     "ModelDuplicationInfo",
     "ModelProtocolInfo",
     "ModelValidationResult",
+    # Name and identifier validation
+    "is_valid_python_identifier",
+    "is_valid_onex_name",
+    "validate_import_path_format",
+    # Protocol extraction
     "determine_repository_name",
     "extract_protocol_signature",
     "extract_protocols_from_directory",
     "find_protocol_files",
     "is_protocol_file",
     "suggest_spi_location",
+    # Path validation
     "validate_directory_path",
     "validate_file_path",
 ]

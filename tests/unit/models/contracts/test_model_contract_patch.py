@@ -18,6 +18,7 @@ from omnibase_core.models.contracts.model_reference import ModelReference
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
+@pytest.mark.unit
 class TestModelContractPatch:
     """Tests for ModelContractPatch model."""
 
@@ -26,6 +27,7 @@ class TestModelContractPatch:
         """Create a profile reference fixture."""
         return ModelProfileReference(profile="compute_pure", version="1.0.0")
 
+    @pytest.mark.unit
     def test_minimal_patch(self, profile_ref: ModelProfileReference) -> None:
         """Test creating a minimal patch with just extends."""
         patch = ModelContractPatch(extends=profile_ref)
@@ -35,6 +37,7 @@ class TestModelContractPatch:
         assert patch.is_override_only is True
         assert patch.is_new_contract is False
 
+    @pytest.mark.unit
     def test_new_contract_patch(self, profile_ref: ModelProfileReference) -> None:
         """Test creating a new contract patch with identity."""
         version = ModelSemVer(major=1, minor=0, patch=0)
@@ -50,11 +53,13 @@ class TestModelContractPatch:
         assert patch.is_new_contract is True
         assert patch.is_override_only is False
 
+    @pytest.mark.unit
     def test_extends_required(self) -> None:
         """Test that extends is required."""
         with pytest.raises(ValidationError):
             ModelContractPatch()  # type: ignore[call-arg]
 
+    @pytest.mark.unit
     def test_name_without_version_rejected(
         self, profile_ref: ModelProfileReference
     ) -> None:
@@ -67,6 +72,7 @@ class TestModelContractPatch:
             )
         assert "node_version" in str(exc_info.value)
 
+    @pytest.mark.unit
     def test_version_without_name_rejected(
         self, profile_ref: ModelProfileReference
     ) -> None:
@@ -79,6 +85,7 @@ class TestModelContractPatch:
             )
         assert "name" in str(exc_info.value)
 
+    @pytest.mark.unit
     def test_model_overrides(self, profile_ref: ModelProfileReference) -> None:
         """Test input/output model overrides."""
         patch = ModelContractPatch(
@@ -97,6 +104,7 @@ class TestModelContractPatch:
         assert patch.input_model.class_name == "InputModel"
         assert patch.output_model.class_name == "OutputModel"
 
+    @pytest.mark.unit
     def test_descriptor_patch(self, profile_ref: ModelProfileReference) -> None:
         """Test nested descriptor patch."""
         patch = ModelContractPatch(
@@ -110,6 +118,7 @@ class TestModelContractPatch:
         assert patch.descriptor.timeout_ms == 30000
         assert patch.descriptor.idempotent is True
 
+    @pytest.mark.unit
     def test_handlers_add(self, profile_ref: ModelProfileReference) -> None:
         """Test adding handlers."""
         patch = ModelContractPatch(
@@ -123,6 +132,7 @@ class TestModelContractPatch:
         assert len(patch.handlers__add) == 2
         assert patch.handlers__add[0].name == "http_client"
 
+    @pytest.mark.unit
     def test_handlers_remove(self, profile_ref: ModelProfileReference) -> None:
         """Test removing handlers."""
         patch = ModelContractPatch(
@@ -133,6 +143,7 @@ class TestModelContractPatch:
         assert len(patch.handlers__remove) == 2
         assert "old_handler" in patch.handlers__remove
 
+    @pytest.mark.unit
     def test_dependencies_add(self, profile_ref: ModelProfileReference) -> None:
         """Test adding dependencies."""
         patch = ModelContractPatch(
@@ -145,6 +156,7 @@ class TestModelContractPatch:
         assert patch.dependencies__add is not None
         assert len(patch.dependencies__add) == 2
 
+    @pytest.mark.unit
     def test_dependencies_remove(self, profile_ref: ModelProfileReference) -> None:
         """Test removing dependencies."""
         patch = ModelContractPatch(
@@ -154,6 +166,7 @@ class TestModelContractPatch:
         assert patch.dependencies__remove is not None
         assert "OldProtocol" in patch.dependencies__remove
 
+    @pytest.mark.unit
     def test_consumed_events_add(self, profile_ref: ModelProfileReference) -> None:
         """Test adding consumed events."""
         patch = ModelContractPatch(
@@ -163,6 +176,7 @@ class TestModelContractPatch:
         assert patch.consumed_events__add is not None
         assert "user.created" in patch.consumed_events__add
 
+    @pytest.mark.unit
     def test_consumed_events_remove(self, profile_ref: ModelProfileReference) -> None:
         """Test removing consumed events."""
         patch = ModelContractPatch(
@@ -171,6 +185,7 @@ class TestModelContractPatch:
         )
         assert patch.consumed_events__remove is not None
 
+    @pytest.mark.unit
     def test_capability_inputs_add(self, profile_ref: ModelProfileReference) -> None:
         """Test adding capability inputs."""
         patch = ModelContractPatch(
@@ -180,6 +195,7 @@ class TestModelContractPatch:
         assert patch.capability_inputs__add is not None
         assert "http" in patch.capability_inputs__add
 
+    @pytest.mark.unit
     def test_capability_outputs_add(self, profile_ref: ModelProfileReference) -> None:
         """Test adding capability outputs."""
         patch = ModelContractPatch(
@@ -192,6 +208,7 @@ class TestModelContractPatch:
         assert patch.capability_outputs__add is not None
         assert len(patch.capability_outputs__add) == 2
 
+    @pytest.mark.unit
     def test_has_list_operations_false(
         self, profile_ref: ModelProfileReference
     ) -> None:
@@ -199,6 +216,7 @@ class TestModelContractPatch:
         patch = ModelContractPatch(extends=profile_ref)
         assert patch.has_list_operations() is False
 
+    @pytest.mark.unit
     def test_has_list_operations_true(self, profile_ref: ModelProfileReference) -> None:
         """Test has_list_operations when list operations present."""
         patch = ModelContractPatch(
@@ -207,6 +225,7 @@ class TestModelContractPatch:
         )
         assert patch.has_list_operations() is True
 
+    @pytest.mark.unit
     def test_get_add_operations(self, profile_ref: ModelProfileReference) -> None:
         """Test get_add_operations method."""
         patch = ModelContractPatch(
@@ -219,6 +238,7 @@ class TestModelContractPatch:
         assert "consumed_events" in adds
         assert "dependencies" not in adds
 
+    @pytest.mark.unit
     def test_get_remove_operations(self, profile_ref: ModelProfileReference) -> None:
         """Test get_remove_operations method."""
         patch = ModelContractPatch(
@@ -231,6 +251,7 @@ class TestModelContractPatch:
         assert "dependencies" in removes
         assert "consumed_events" not in removes
 
+    @pytest.mark.unit
     def test_extra_fields_rejected(self, profile_ref: ModelProfileReference) -> None:
         """Test that extra fields are rejected."""
         with pytest.raises(ValidationError):
@@ -239,6 +260,7 @@ class TestModelContractPatch:
                 extra_field="not_allowed",  # type: ignore[call-arg]
             )
 
+    @pytest.mark.unit
     def test_repr_new_contract(self, profile_ref: ModelProfileReference) -> None:
         """Test repr for new contract."""
         patch = ModelContractPatch(
@@ -250,6 +272,7 @@ class TestModelContractPatch:
         assert "new=" in repr_str
         assert "my_handler" in repr_str
 
+    @pytest.mark.unit
     def test_repr_override(self, profile_ref: ModelProfileReference) -> None:
         """Test repr for override patch."""
         patch = ModelContractPatch(extends=profile_ref)
@@ -257,6 +280,7 @@ class TestModelContractPatch:
         assert "override" in repr_str
         assert "compute_pure" in repr_str
 
+    @pytest.mark.unit
     def test_from_dict(self) -> None:
         """Test creating from dictionary."""
         data = {
@@ -270,6 +294,7 @@ class TestModelContractPatch:
         assert patch.descriptor is not None
         assert patch.descriptor.timeout_ms == 5000
 
+    @pytest.mark.unit
     def test_full_patch(self, profile_ref: ModelProfileReference) -> None:
         """Test a comprehensive patch with many fields."""
         patch = ModelContractPatch(

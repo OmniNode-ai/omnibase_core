@@ -70,7 +70,21 @@ class ModelCapabilityProvided(BaseModel):
     @field_validator("name")
     @classmethod
     def validate_name(cls, v: str) -> str:
-        """Validate capability name format."""
+        """Validate capability name format.
+
+        Capability names must be non-empty and contain only alphanumeric
+        characters and underscores. Leading and trailing whitespace is
+        stripped before validation.
+
+        Args:
+            v: The raw capability name string.
+
+        Returns:
+            The validated and stripped capability name.
+
+        Raises:
+            ValueError: If the name is empty or contains invalid characters.
+        """
         v = v.strip()
         if not v:
             raise ValueError("Capability name cannot be empty")

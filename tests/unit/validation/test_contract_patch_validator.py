@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: Apache-2.0
 """Tests for ContractPatchValidator."""
 
-import tempfile
 from pathlib import Path
 
 import pytest
@@ -128,6 +127,65 @@ class TestContractPatchValidator:
         assert result.is_valid is False
         assert any("CONFLICTING_LIST_OPERATIONS" in str(i.code) for i in result.issues)
 
+    def test_validate_conflicting_capability_inputs(
+        self, validator: ContractPatchValidator, profile_ref: ModelProfileReference
+    ) -> None:
+        """Test error for conflicting capability input operations."""
+        patch = ModelContractPatch(
+            extends=profile_ref,
+            capability_inputs__add=["database_read", "cache_write"],
+            capability_inputs__remove=["database_read"],
+        )
+        result = validator.validate(patch)
+        assert result.is_valid is False
+        assert any("CONFLICTING_LIST_OPERATIONS" in str(i.code) for i in result.issues)
+        # Check that the error message mentions the conflicting capability
+        assert any("database_read" in str(i.message) for i in result.issues)
+
+    def test_validate_conflicting_capability_outputs(
+        self, validator: ContractPatchValidator, profile_ref: ModelProfileReference
+    ) -> None:
+        """Test error for conflicting capability output operations."""
+        from omnibase_core.models.contracts.model_capability_provided import (
+            ModelCapabilityProvided,
+        )
+
+        patch = ModelContractPatch(
+            extends=profile_ref,
+            capability_outputs__add=[
+                ModelCapabilityProvided(name="file_write", version="1.0.0"),
+            ],
+            capability_outputs__remove=["file_write"],
+        )
+        result = validator.validate(patch)
+        assert result.is_valid is False
+        assert any("CONFLICTING_LIST_OPERATIONS" in str(i.code) for i in result.issues)
+        # Check that the error message mentions the conflicting capability
+        assert any("file_write" in str(i.message) for i in result.issues)
+
+    def test_validate_capability_no_conflict_different_items(
+        self, validator: ContractPatchValidator, profile_ref: ModelProfileReference
+    ) -> None:
+        """Test that different items in add/remove don't conflict."""
+        from omnibase_core.models.contracts.model_capability_provided import (
+            ModelCapabilityProvided,
+        )
+
+        patch = ModelContractPatch(
+            extends=profile_ref,
+            capability_inputs__add=["database_read"],
+            capability_inputs__remove=["cache_write"],
+            capability_outputs__add=[
+                ModelCapabilityProvided(name="file_write", version="1.0.0"),
+            ],
+            capability_outputs__remove=["file_read"],
+        )
+        result = validator.validate(patch)
+        # No conflict since different items
+        assert not any(
+            "CONFLICTING_LIST_OPERATIONS" in str(i.code) for i in result.issues
+        )
+
     def test_validate_non_standard_profile_warning(
         self, validator: ContractPatchValidator
     ) -> None:
@@ -188,17 +246,18 @@ class TestContractPatchValidator:
         result = validator.validate_dict(data)
         assert result.is_valid is False
 
-    def test_validate_file_valid(self, validator: ContractPatchValidator) -> None:
+    def test_validate_file_valid(
+        self, validator: ContractPatchValidator, tmp_path: Path
+    ) -> None:
         """Test validate_file with valid YAML file."""
         data = {
             "extends": {"profile": "compute_pure", "version": "1.0.0"},
             "name": "my_handler",
             "node_version": {"major": 1, "minor": 0, "patch": 0},
         }
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
-            yaml.dump(data, f)
-            f.flush()
-            result = validator.validate_file(Path(f.name))
+        yaml_file = tmp_path / "contract.yaml"
+        yaml_file.write_text(yaml.dump(data))
+        result = validator.validate_file(yaml_file)
 
         assert result.is_valid is True
         assert result.validated_value is not None
@@ -210,28 +269,26 @@ class TestContractPatchValidator:
         assert any("FILE_NOT_FOUND" in str(i.code) for i in result.issues)
 
     def test_validate_file_wrong_extension_warning(
-        self, validator: ContractPatchValidator
+        self, validator: ContractPatchValidator, tmp_path: Path
     ) -> None:
         """Test validate_file warns about wrong extension."""
         data = {
             "extends": {"profile": "test", "version": "1.0.0"},
         }
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
-            yaml.dump(data, f)
-            f.flush()
-            result = validator.validate_file(Path(f.name))
+        json_file = tmp_path / "contract.json"
+        json_file.write_text(yaml.dump(data))
+        result = validator.validate_file(json_file)
 
         # Should still validate but warn about extension
         assert any("UNEXPECTED_EXTENSION" in str(i.code) for i in result.issues)
 
     def test_validate_file_invalid_yaml(
-        self, validator: ContractPatchValidator
+        self, validator: ContractPatchValidator, tmp_path: Path
     ) -> None:
         """Test validate_file with invalid YAML."""
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
-            f.write("invalid: yaml: content: [")
-            f.flush()
-            result = validator.validate_file(Path(f.name))
+        yaml_file = tmp_path / "invalid.yaml"
+        yaml_file.write_text("invalid: yaml: content: [")
+        result = validator.validate_file(yaml_file)
 
         assert result.is_valid is False
         # Uses load_yaml_content_as_model which wraps errors
@@ -239,12 +296,13 @@ class TestContractPatchValidator:
             "YAML" in str(i.code) or "VALIDATION" in str(i.code) for i in result.issues
         )
 
-    def test_validate_file_not_dict(self, validator: ContractPatchValidator) -> None:
+    def test_validate_file_not_dict(
+        self, validator: ContractPatchValidator, tmp_path: Path
+    ) -> None:
         """Test validate_file with YAML that's not a dict."""
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
-            f.write("- item1\n- item2")  # List, not dict
-            f.flush()
-            result = validator.validate_file(Path(f.name))
+        yaml_file = tmp_path / "list.yaml"
+        yaml_file.write_text("- item1\n- item2")  # List, not dict
+        result = validator.validate_file(yaml_file)
 
         assert result.is_valid is False
         # Uses load_yaml_content_as_model which wraps the error

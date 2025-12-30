@@ -10,9 +10,11 @@ from omnibase_core.models.contracts.model_profile_reference import ModelProfileR
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
+@pytest.mark.unit
 class TestModelProfileReference:
     """Tests for ModelProfileReference model."""
 
+    @pytest.mark.unit
     def test_valid_profile_reference(self) -> None:
         """Test creating a valid profile reference."""
         ref = ModelProfileReference(
@@ -22,6 +24,7 @@ class TestModelProfileReference:
         assert ref.profile == "compute_pure"
         assert ref.version == "1.0.0"
 
+    @pytest.mark.unit
     def test_various_profile_names(self) -> None:
         """Test various valid profile name formats."""
         profiles = [
@@ -35,6 +38,7 @@ class TestModelProfileReference:
             ref = ModelProfileReference(profile=profile, version="1.0.0")
             assert ref.profile == profile
 
+    @pytest.mark.unit
     def test_various_version_formats(self) -> None:
         """Test various valid version formats."""
         versions = [
@@ -49,28 +53,33 @@ class TestModelProfileReference:
             ref = ModelProfileReference(profile="test", version=version)
             assert ref.version == version
 
+    @pytest.mark.unit
     def test_profile_required(self) -> None:
         """Test that profile is required."""
         with pytest.raises(ValidationError) as exc_info:
             ModelProfileReference(version="1.0.0")  # type: ignore[call-arg]
         assert "profile" in str(exc_info.value)
 
+    @pytest.mark.unit
     def test_version_required(self) -> None:
         """Test that version is required."""
         with pytest.raises(ValidationError) as exc_info:
             ModelProfileReference(profile="test")  # type: ignore[call-arg]
         assert "version" in str(exc_info.value)
 
+    @pytest.mark.unit
     def test_empty_profile_rejected(self) -> None:
         """Test that empty profile is rejected."""
         with pytest.raises(ValidationError):
             ModelProfileReference(profile="", version="1.0.0")
 
+    @pytest.mark.unit
     def test_empty_version_rejected(self) -> None:
         """Test that empty version is rejected."""
         with pytest.raises(ValidationError):
             ModelProfileReference(profile="test", version="")
 
+    @pytest.mark.unit
     def test_extra_fields_rejected(self) -> None:
         """Test that extra fields are rejected (extra='forbid')."""
         with pytest.raises(ValidationError) as exc_info:
@@ -81,12 +90,14 @@ class TestModelProfileReference:
             )
         assert "extra_field" in str(exc_info.value).lower()
 
+    @pytest.mark.unit
     def test_frozen_model(self) -> None:
         """Test that the model is immutable (frozen=True)."""
         ref = ModelProfileReference(profile="test", version="1.0.0")
         with pytest.raises(ValidationError):
             ref.profile = "changed"  # type: ignore[misc]
 
+    @pytest.mark.unit
     def test_repr(self) -> None:
         """Test string representation."""
         ref = ModelProfileReference(profile="compute_pure", version="1.0.0")
@@ -94,6 +105,7 @@ class TestModelProfileReference:
         assert "compute_pure" in repr_str
         assert "1.0.0" in repr_str
 
+    @pytest.mark.unit
     def test_equality(self) -> None:
         """Test equality comparison."""
         ref1 = ModelProfileReference(profile="test", version="1.0.0")
@@ -102,6 +114,7 @@ class TestModelProfileReference:
         assert ref1 == ref2
         assert ref1 != ref3
 
+    @pytest.mark.unit
     def test_from_dict(self) -> None:
         """Test creating from dictionary."""
         data = {"profile": "compute_pure", "version": "1.0.0"}
@@ -109,6 +122,7 @@ class TestModelProfileReference:
         assert ref.profile == "compute_pure"
         assert ref.version == "1.0.0"
 
+    @pytest.mark.unit
     def test_to_dict(self) -> None:
         """Test serializing to dictionary."""
         ref = ModelProfileReference(profile="test", version="1.0.0")
@@ -116,9 +130,11 @@ class TestModelProfileReference:
         assert data == {"profile": "test", "version": "1.0.0"}
 
 
+@pytest.mark.unit
 class TestSatisfiesVersion:
     """Tests for the satisfies_version helper method."""
 
+    @pytest.mark.unit
     def test_exact_version_match(self) -> None:
         """Test exact version constraint matching."""
         ref = ModelProfileReference(profile="test", version="1.0.0")
@@ -127,6 +143,7 @@ class TestSatisfiesVersion:
         assert ref.satisfies_version(ModelSemVer(major=1, minor=1, patch=0)) is False
         assert ref.satisfies_version(ModelSemVer(major=2, minor=0, patch=0)) is False
 
+    @pytest.mark.unit
     def test_compatible_version_caret(self) -> None:
         """Test caret (^) compatible version constraint."""
         ref = ModelProfileReference(profile="test", version="^1.0.0")
@@ -138,6 +155,7 @@ class TestSatisfiesVersion:
         assert ref.satisfies_version(ModelSemVer(major=0, minor=9, patch=9)) is False
         assert ref.satisfies_version(ModelSemVer(major=2, minor=0, patch=0)) is False
 
+    @pytest.mark.unit
     def test_minimum_version_tilde(self) -> None:
         """Test tilde (~) minimum version constraint."""
         ref = ModelProfileReference(profile="test", version="~1.2.0")
@@ -150,6 +168,7 @@ class TestSatisfiesVersion:
         assert ref.satisfies_version(ModelSemVer(major=1, minor=1, patch=9)) is False
         assert ref.satisfies_version(ModelSemVer(major=0, minor=9, patch=0)) is False
 
+    @pytest.mark.unit
     def test_greater_than_or_equal(self) -> None:
         """Test >= version constraint."""
         ref = ModelProfileReference(profile="test", version=">=1.5.0")
@@ -161,6 +180,7 @@ class TestSatisfiesVersion:
         assert ref.satisfies_version(ModelSemVer(major=1, minor=4, patch=9)) is False
         assert ref.satisfies_version(ModelSemVer(major=0, minor=0, patch=1)) is False
 
+    @pytest.mark.unit
     def test_less_than(self) -> None:
         """Test < version constraint."""
         ref = ModelProfileReference(profile="test", version="<2.0.0")
@@ -172,6 +192,7 @@ class TestSatisfiesVersion:
         assert ref.satisfies_version(ModelSemVer(major=2, minor=0, patch=0)) is False
         assert ref.satisfies_version(ModelSemVer(major=2, minor=0, patch=1)) is False
 
+    @pytest.mark.unit
     def test_less_than_or_equal(self) -> None:
         """Test <= version constraint."""
         ref = ModelProfileReference(profile="test", version="<=2.0.0")
@@ -181,6 +202,7 @@ class TestSatisfiesVersion:
         # Above maximum
         assert ref.satisfies_version(ModelSemVer(major=2, minor=0, patch=1)) is False
 
+    @pytest.mark.unit
     def test_range_constraint(self) -> None:
         """Test range version constraint (min,max)."""
         ref = ModelProfileReference(profile="test", version=">=1.0.0,<2.0.0")
@@ -193,6 +215,7 @@ class TestSatisfiesVersion:
         assert ref.satisfies_version(ModelSemVer(major=2, minor=0, patch=0)) is False
         assert ref.satisfies_version(ModelSemVer(major=2, minor=1, patch=0)) is False
 
+    @pytest.mark.unit
     def test_prerelease_versions_not_allowed_by_default(self) -> None:
         """Test that prerelease versions are rejected by default."""
         ref = ModelProfileReference(profile="test", version="^1.0.0")
@@ -200,6 +223,7 @@ class TestSatisfiesVersion:
         prerelease = ModelSemVer(major=1, minor=5, patch=0, prerelease=("alpha",))
         assert ref.satisfies_version(prerelease) is False
 
+    @pytest.mark.unit
     def test_boundary_conditions(self) -> None:
         """Test boundary conditions for version constraints."""
         # Exact boundary for exclusive max
@@ -224,6 +248,7 @@ class TestSatisfiesVersion:
             is False
         )
 
+    @pytest.mark.unit
     def test_zero_version(self) -> None:
         """Test with zero major version (pre-1.0 releases)."""
         ref = ModelProfileReference(profile="test", version="^0.1.0")
@@ -232,6 +257,7 @@ class TestSatisfiesVersion:
         assert ref.satisfies_version(ModelSemVer(major=0, minor=5, patch=0)) is True
         assert ref.satisfies_version(ModelSemVer(major=1, minor=0, patch=0)) is False
 
+    @pytest.mark.unit
     def test_parsed_constraint_caching(self) -> None:
         """Test that parsed constraint is cached for efficiency."""
         ref = ModelProfileReference(profile="test", version="^1.0.0")
@@ -241,6 +267,7 @@ class TestSatisfiesVersion:
         # Should be the same cached instance
         assert constraint1 is constraint2
 
+    @pytest.mark.unit
     def test_various_profile_version_combinations(self) -> None:
         """Test version checking with different profile names."""
         profiles_and_versions = [
@@ -255,6 +282,7 @@ class TestSatisfiesVersion:
             result = ref.satisfies_version(ModelSemVer(major=1, minor=0, patch=0))
             assert isinstance(result, bool)
 
+    @pytest.mark.unit
     def test_greater_than_exclusive(self) -> None:
         """Test > (exclusive greater than) constraint."""
         ref = ModelProfileReference(profile="test", version=">1.0.0")

@@ -77,7 +77,22 @@ class ModelReference(BaseModel):
     @field_validator("module")
     @classmethod
     def validate_module_format(cls, v: str) -> str:
-        """Validate module path format."""
+        """Validate module path format.
+
+        Module paths must be valid Python dotted paths where each segment
+        starts with a letter or underscore. Leading and trailing whitespace
+        is stripped before validation.
+
+        Args:
+            v: The raw module path string.
+
+        Returns:
+            The validated and stripped module path.
+
+        Raises:
+            ValueError: If the path is empty, contains empty segments,
+                or has segments starting with invalid characters.
+        """
         v = v.strip()
         if not v:
             raise ValueError("Module path cannot be empty")
@@ -97,7 +112,21 @@ class ModelReference(BaseModel):
     @field_validator("class_name")
     @classmethod
     def validate_class_name(cls, v: str) -> str:
-        """Validate class name format."""
+        """Validate class name format.
+
+        Class names must follow Python naming conventions: non-empty and
+        starting with an uppercase letter (PEP 8 class naming). Leading
+        and trailing whitespace is stripped before validation.
+
+        Args:
+            v: The raw class name string.
+
+        Returns:
+            The validated and stripped class name.
+
+        Raises:
+            ValueError: If the name is empty or doesn't start with uppercase.
+        """
         v = v.strip()
         if not v:
             raise ValueError("Class name cannot be empty")

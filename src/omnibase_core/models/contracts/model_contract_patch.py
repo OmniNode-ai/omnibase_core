@@ -106,7 +106,7 @@ class ModelContractPatch(BaseModel):
         - ContractPatchValidator: Validates patches before merge
     """
 
-    model_config = ConfigDict(extra="forbid", from_attributes=True)
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     # =========================================================================
     # Profile Extension (Required)
@@ -222,9 +222,19 @@ class ModelContractPatch(BaseModel):
         description="Required capability names to add.",
     )
 
+    capability_inputs__remove: list[str] | None = Field(
+        default=None,
+        description="Required capability names to remove.",
+    )
+
     capability_outputs__add: list[ModelCapabilityProvided] | None = Field(
         default=None,
         description="Provided capabilities to add.",
+    )
+
+    capability_outputs__remove: list[str] | None = Field(
+        default=None,
+        description="Provided capability names to remove.",
     )
 
     # =========================================================================
@@ -296,7 +306,9 @@ class ModelContractPatch(BaseModel):
             self.consumed_events__add,
             self.consumed_events__remove,
             self.capability_inputs__add,
+            self.capability_inputs__remove,
             self.capability_outputs__add,
+            self.capability_outputs__remove,
         ]
         return any(f is not None for f in list_fields)
 
@@ -332,6 +344,10 @@ class ModelContractPatch(BaseModel):
             result["dependencies"] = list(self.dependencies__remove)
         if self.consumed_events__remove:
             result["consumed_events"] = list(self.consumed_events__remove)
+        if self.capability_inputs__remove:
+            result["capability_inputs"] = list(self.capability_inputs__remove)
+        if self.capability_outputs__remove:
+            result["capability_outputs"] = list(self.capability_outputs__remove)
         return result
 
     def __repr__(self) -> str:
