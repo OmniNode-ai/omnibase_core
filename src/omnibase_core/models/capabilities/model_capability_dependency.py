@@ -19,9 +19,9 @@ Capability Naming Convention:
     Examples:
         - ``database.relational`` - Any relational database
         - ``database.document`` - Document/NoSQL database
-        - ``vector_store`` - Vector storage capability
-        - ``vector_store.qdrant_compatible`` - Qdrant-compatible vector store
-        - ``event_bus`` - Event bus capability
+        - ``storage.vector`` - Vector storage capability
+        - ``storage.vector.qdrant`` - Qdrant-compatible vector store
+        - ``messaging.eventbus`` - Event bus capability
         - ``cache.distributed`` - Distributed cache
         - ``secrets.vault`` - Secrets management
         - ``http.client`` - HTTP client capability
@@ -52,7 +52,7 @@ Example Usage:
     >>> # Vector store with hints for preference
     >>> vectors_dep = ModelCapabilityDependency(
     ...     alias="vectors",
-    ...     capability="vector_store",
+    ...     capability="storage.vector",
     ...     requirements=ModelRequirementSet(
     ...         must={"dimensions": 1536},
     ...         hints={"engine_preference": ["qdrant", "milvus"]},
@@ -104,7 +104,7 @@ class ModelCapabilityDependency(BaseModel):
             Must be lowercase letters, digits, or underscores, starting with a letter.
         capability: Capability identifier following the naming convention
             ``<domain>.<type>[.<variant>]``. Examples: "database.relational",
-            "vector_store", "cache.distributed".
+            "storage.vector", "cache.distributed".
         requirements: Constraint set defining must/prefer/forbid/hints for
             provider matching. See ModelRequirementSet for details.
         selection_policy: How to select among matching providers:
@@ -180,7 +180,7 @@ class ModelCapabilityDependency(BaseModel):
 
     capability: str = Field(
         ...,
-        description="Capability identifier (e.g., 'database.relational', 'vector_store')",
+        description="Capability identifier (e.g., 'database.relational', 'storage.vector')",
         min_length=3,
         max_length=128,
     )
@@ -260,7 +260,7 @@ class ModelCapabilityDependency(BaseModel):
             ModelOnexError: If the capability format is invalid.
 
         Examples:
-            Valid: "database.relational", "vector_store.qdrant", "cache.kv.redis"
+            Valid: "database.relational", "storage.vector.qdrant", "cache.kv.redis"
             Invalid: "Database.Relational", "database", "database..relational"
         """
         if not v:
