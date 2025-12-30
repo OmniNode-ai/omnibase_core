@@ -29,6 +29,7 @@ from omnibase_core.models.runtime.model_handler_behavior_descriptor import (
 )
 
 
+@pytest.mark.unit
 class TestModelHandlerContractCreation:
     """Tests for ModelHandlerContract creation."""
 
@@ -89,6 +90,7 @@ class TestModelHandlerContractCreation:
         assert contract.supports_lifecycle is True
 
 
+@pytest.mark.unit
 class TestHandlerIdValidation:
     """Tests for handler_id format validation."""
 
@@ -118,7 +120,7 @@ class TestHandlerIdValidation:
 
     def test_single_segment_id_rejected(self) -> None:
         """Test that single segment handler ID is rejected."""
-        with pytest.raises(ValueError, match="at least 2 segments"):
+        with pytest.raises(ValidationError, match="at least 2 segments"):
             ModelHandlerContract(
                 handler_id="handler",
                 name="Test",
@@ -130,7 +132,7 @@ class TestHandlerIdValidation:
 
     def test_empty_segment_id_rejected(self) -> None:
         """Test that handler ID with empty segment is rejected."""
-        with pytest.raises(ValueError, match="empty segment"):
+        with pytest.raises(ValidationError, match="empty segment"):
             ModelHandlerContract(
                 handler_id="node..handler",
                 name="Test",
@@ -153,6 +155,7 @@ class TestHandlerIdValidation:
         assert contract.handler_id == "node._internal.handler"
 
 
+@pytest.mark.unit
 class TestVersionValidation:
     """Tests for semantic version format validation."""
 
@@ -205,6 +208,7 @@ class TestVersionValidation:
             )
 
 
+@pytest.mark.unit
 class TestDescriptorConsistencyValidation:
     """Tests for handler_id prefix vs descriptor.handler_kind consistency."""
 
@@ -283,12 +287,13 @@ class TestDescriptorConsistencyValidation:
             )
 
 
+@pytest.mark.unit
 class TestCapabilityDependencyHandling:
     """Tests for capability dependency handling."""
 
     def test_unique_aliases_required(self) -> None:
         """Test that capability input aliases must be unique."""
-        with pytest.raises(ValueError, match="Duplicate capability input aliases"):
+        with pytest.raises(ValidationError, match="Duplicate capability input aliases"):
             ModelHandlerContract(
                 handler_id="node.test",
                 name="Test",
@@ -362,6 +367,7 @@ class TestCapabilityDependencyHandling:
         assert optional == ["cache"]
 
 
+@pytest.mark.unit
 class TestExecutionConstraintsHelpers:
     """Tests for execution constraints helper methods."""
 
@@ -406,6 +412,7 @@ class TestExecutionConstraintsHelpers:
         assert contract.has_execution_constraints() is True
 
 
+@pytest.mark.unit
 class TestImmutability:
     """Tests for model immutability."""
 

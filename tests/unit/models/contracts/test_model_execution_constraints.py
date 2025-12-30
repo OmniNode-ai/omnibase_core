@@ -18,6 +18,7 @@ from omnibase_core.models.contracts.model_execution_constraints import (
 )
 
 
+@pytest.mark.unit
 class TestModelExecutionConstraintsCreation:
     """Tests for ModelExecutionConstraints creation."""
 
@@ -53,6 +54,7 @@ class TestModelExecutionConstraintsCreation:
         assert constraints.requires_before == ["tag:security", "tag:audit"]
 
 
+@pytest.mark.unit
 class TestDependencyReferenceValidation:
     """Tests for dependency reference format validation."""
 
@@ -103,6 +105,7 @@ class TestDependencyReferenceValidation:
             ModelExecutionConstraints(requires_after=["invalid_ref"])
 
 
+@pytest.mark.unit
 class TestConstraintHelperMethods:
     """Tests for constraint analysis helper methods."""
 
@@ -151,6 +154,7 @@ class TestConstraintHelperMethods:
         assert "capability:logging" in deps
 
 
+@pytest.mark.unit
 class TestConstraintFlags:
     """Tests for constraint boolean flags."""
 
@@ -185,6 +189,7 @@ class TestConstraintFlags:
         assert constraints.nondeterministic_effect is True
 
 
+@pytest.mark.unit
 class TestImmutability:
     """Tests for model immutability."""
 

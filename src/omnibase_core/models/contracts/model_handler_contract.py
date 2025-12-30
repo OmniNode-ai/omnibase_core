@@ -392,9 +392,7 @@ class ModelHandlerContract(BaseModel):
         Returns:
             List of capability names that are required.
         """
-        return [
-            dep.capability for dep in self.capability_inputs if dep.strict
-        ]
+        return [dep.capability for dep in self.capability_inputs if dep.strict]
 
     def get_optional_capabilities(self) -> list[str]:
         """
@@ -403,9 +401,7 @@ class ModelHandlerContract(BaseModel):
         Returns:
             List of capability names that are optional.
         """
-        return [
-            dep.capability for dep in self.capability_inputs if not dep.strict
-        ]
+        return [dep.capability for dep in self.capability_inputs if not dep.strict]
 
     def has_execution_constraints(self) -> bool:
         """

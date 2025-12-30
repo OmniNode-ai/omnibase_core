@@ -29,7 +29,7 @@
 
 The current ONEX system uses Python mixins for cross-cutting concerns:
 
-```
+```text
 src/omnibase_core/mixins/
 ├── mixin_circuit_breaker.py
 ├── mixin_discovery_responder.py
@@ -632,7 +632,7 @@ class ModelOrderingInputs(BaseModel):
 
 Phases execute in strict order:
 
-```
+```text
 PREFLIGHT → BEFORE → EXECUTE → AFTER → EMIT → FINALIZE
 ```
 

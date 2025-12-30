@@ -21,7 +21,7 @@ descriptor:
     enabled: true
     max_retries: 3
     backoff_strategy: exponential
-    initial_delay_ms: 200
+    base_delay_ms: 200
     max_delay_ms: 10000
   concurrency_policy: serialized
   observability_level: verbose

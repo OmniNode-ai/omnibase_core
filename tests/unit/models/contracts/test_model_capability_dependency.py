@@ -21,6 +21,7 @@ from omnibase_core.models.contracts.model_capability_dependency import (
 from omnibase_core.models.requirements.model_requirement_set import ModelRequirementSet
 
 
+@pytest.mark.unit
 class TestModelCapabilityDependencyCreation:
     """Tests for ModelCapabilityDependency creation and validation."""
 
@@ -72,6 +73,7 @@ class TestModelCapabilityDependencyCreation:
         assert dep.requirements.hints == {}
 
 
+@pytest.mark.unit
 class TestCapabilityFormatValidation:
     """Tests for capability identifier format validation."""
 
@@ -100,15 +102,16 @@ class TestCapabilityFormatValidation:
 
     def test_capability_with_empty_segment_rejected(self) -> None:
         """Test that capability with empty segment is rejected."""
-        with pytest.raises(ValueError, match="empty segment"):
+        with pytest.raises(ValidationError, match="empty segment"):
             ModelCapabilityDependency(alias="x", capability="database..relational")
 
     def test_capability_segment_starting_with_number_rejected(self) -> None:
         """Test that capability segment starting with number is rejected."""
-        with pytest.raises(ValueError, match="must start with a letter"):
+        with pytest.raises(ValidationError, match="must start with a letter"):
             ModelCapabilityDependency(alias="x", capability="database.123sql")
 
 
+@pytest.mark.unit
 class TestAliasFormatValidation:
     """Tests for alias format validation."""
 
@@ -149,6 +152,7 @@ class TestAliasFormatValidation:
             ModelCapabilityDependency(alias="primary-db", capability="database")
 
 
+@pytest.mark.unit
 class TestSelectionPolicyValidation:
     """Tests for selection_policy validation."""
 
@@ -175,6 +179,7 @@ class TestSelectionPolicyValidation:
             )
 
 
+@pytest.mark.unit
 class TestProviderMatching:
     """Tests for provider matching via requirements."""
 
@@ -240,6 +245,7 @@ class TestProviderMatching:
         assert dep.is_optional() is False
 
 
+@pytest.mark.unit
 class TestImmutability:
     """Tests for model immutability."""
 

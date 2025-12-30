@@ -21,12 +21,12 @@ descriptor:
     enabled: true
     max_retries: 3
     backoff_strategy: exponential
-    initial_delay_ms: 100
+    base_delay_ms: 100
     max_delay_ms: 5000
   circuit_breaker:
     enabled: true
     failure_threshold: 5
-    reset_timeout_ms: 30000
+    timeout_ms: 30000
   concurrency_policy: serialized
   isolation_policy: none
   observability_level: standard
