@@ -284,10 +284,18 @@ class ModelCapabilityDependency(BaseModel):
         Raises:
             ModelOnexError: If the alias format is invalid.
 
+        Note:
+            Length validation (min_length=1, max_length=64) is enforced by Pydantic's
+            field constraints BEFORE this validator runs. This validator only validates
+            the FORMAT (regex pattern), not the length. Empty strings are already
+            rejected by the min_length=1 constraint, so no explicit empty check needed.
+
         Examples:
             Valid: "db", "my_cache", "vector_store_1"
             Invalid: "DB", "1cache", "my-cache", "cache.main"
         """
+        # Validation invariant: Pydantic's min_length=1 rejects empty strings before
+        # this validator runs. We only validate the format pattern here.
         if not _ALIAS_PATTERN.match(v):
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -327,6 +335,13 @@ class ModelCapabilityDependency(BaseModel):
         Raises:
             ModelOnexError: If the capability format is invalid.
 
+        Note:
+            Length validation (min_length=3, max_length=128) is enforced by Pydantic's
+            field constraints BEFORE this validator runs. This validator only validates
+            the FORMAT (regex pattern), not the length. Strings shorter than 3 characters
+            are already rejected by the min_length=3 constraint, so no explicit length
+            check needed.
+
         Examples:
             Valid capabilities (note: all have at least one dot):
 
@@ -343,6 +358,8 @@ class ModelCapabilityDependency(BaseModel):
             - "database" - **missing dot** (single token not allowed)
             - "logging" - **missing dot** (must be "core.logging" or similar)
         """
+        # Validation invariant: Pydantic's min_length=3 rejects short strings before
+        # this validator runs. We only validate the format pattern here.
         if not _CAPABILITY_PATTERN.match(v):
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -365,7 +382,7 @@ class ModelCapabilityDependency(BaseModel):
         """
         if self._cached_capability_parts is None:
             # Safe: field_validator guarantees capability matches _CAPABILITY_PATTERN,
-            # which requires at least two tokens (pattern: ^[a-z0-9]+(\.[a-z0-9]+)+$)
+            # which requires at least two tokens (pattern: ^[a-z0-9_-]+(\.[a-z0-9_-]+)+$)
             parts = self.capability.split(".")
             domain = parts[0]
             capability_type = parts[1]

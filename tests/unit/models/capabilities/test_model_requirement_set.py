@@ -540,3 +540,473 @@ class TestCapabilityModelsHashability:
         # Cannot use as dict key (dict keys must be hashable)
         with pytest.raises(TypeError, match="unhashable"):
             _ = {instance: "value"}
+
+
+# =============================================================================
+# Selection Policy Semantics Tests (Cross-Reference with ModelCapabilityDependency)
+# =============================================================================
+
+
+@pytest.mark.unit
+class TestSelectionPolicyWithRequirements:
+    """Tests documenting how ModelRequirementSet influences selection policy behavior.
+
+    These tests demonstrate the interaction between RequirementSet constraints
+    (must/prefer/forbid/hints) and selection policy semantics. While the selection
+    policy is defined on ModelCapabilityDependency, the RequirementSet provides
+    the filtering and scoring criteria.
+
+    See ModelCapabilityDependency docstring for policy definitions.
+    See also: tests/unit/models/capabilities/test_model_capability_dependency.py
+    for additional policy-focused tests.
+    """
+
+    def test_auto_if_unique_rejects_multiple_matches(self) -> None:
+        """Test that auto_if_unique rejects when multiple providers match requirements.
+
+        Contract: When selection_policy='auto_if_unique', automatic selection
+        should FAIL if more than one provider satisfies the 'must' constraints.
+        The resolver should return an error or ambiguous status.
+
+        This is a CRITICAL behavior test - auto_if_unique exists to prevent
+        accidental resolution when multiple valid options exist.
+        """
+        # Requirements that multiple providers could satisfy
+        requirements = ModelRequirementSet(
+            must={"supports_transactions": True},
+            prefer={"latency_ms": 10},
+        )
+
+        # Simulate multiple providers matching the 'must' constraint
+        matching_providers = [
+            {"name": "postgres", "supports_transactions": True, "latency_ms": 15},
+            {"name": "mysql", "supports_transactions": True, "latency_ms": 20},
+            {"name": "mariadb", "supports_transactions": True, "latency_ms": 12},
+        ]
+
+        # Filter by must constraints
+        def filter_by_must(
+            providers: list[dict[str, Any]], reqs: ModelRequirementSet
+        ) -> list[dict[str, Any]]:
+            return [
+                p
+                for p in providers
+                if all(p.get(k) == v for k, v in reqs.must.items())
+            ]
+
+        # auto_if_unique resolution logic
+        def resolve_auto_if_unique(
+            providers: list[dict[str, Any]], reqs: ModelRequirementSet
+        ) -> dict[str, Any] | None:
+            """Resolve using auto_if_unique policy: only select if exactly one matches."""
+            filtered = filter_by_must(providers, reqs)
+            if len(filtered) == 1:
+                return filtered[0]
+            return None  # Reject: zero or multiple matches
+
+        # CRITICAL: With 3 matching providers, auto_if_unique MUST reject
+        result = resolve_auto_if_unique(matching_providers, requirements)
+        assert result is None, (
+            "auto_if_unique MUST reject when multiple providers match 'must' constraints. "
+            "This prevents accidental selection when the dependency is ambiguous."
+        )
+
+        # Verify 3 providers actually match
+        filtered = filter_by_must(matching_providers, requirements)
+        assert len(filtered) == 3, "All 3 providers should match 'must' constraints"
+
+    def test_auto_if_unique_accepts_single_match(self) -> None:
+        """Test that auto_if_unique accepts when exactly one provider matches.
+
+        Contract: When exactly one provider satisfies 'must' constraints,
+        auto_if_unique should automatically select it.
+        """
+        # Requirements that only one provider satisfies
+        requirements = ModelRequirementSet(
+            must={"supports_transactions": True, "supports_jsonb": True},
+        )
+
+        providers = [
+            {"name": "postgres", "supports_transactions": True, "supports_jsonb": True},
+            {"name": "mysql", "supports_transactions": True, "supports_jsonb": False},
+            {"name": "sqlite", "supports_transactions": False, "supports_jsonb": False},
+        ]
+
+        def resolve_auto_if_unique(
+            providers: list[dict[str, Any]], reqs: ModelRequirementSet
+        ) -> dict[str, Any] | None:
+            filtered = [
+                p
+                for p in providers
+                if all(p.get(k) == v for k, v in reqs.must.items())
+            ]
+            if len(filtered) == 1:
+                return filtered[0]
+            return None
+
+        # With exactly one match, auto_if_unique should select
+        result = resolve_auto_if_unique(providers, requirements)
+        assert result is not None, "auto_if_unique should select single match"
+        assert result["name"] == "postgres"
+
+    def test_best_score_selects_highest_scoring_provider(self) -> None:
+        """Test that best_score selects provider with highest preference score.
+
+        Contract: When selection_policy='best_score':
+        1. Filter providers by 'must' constraints
+        2. Score remaining providers by 'prefer' constraints (each match = +1)
+        3. Select provider with highest score
+        """
+        requirements = ModelRequirementSet(
+            must={"distributed": True},
+            prefer={"region": "us-east-1", "latency_ms": 10, "encryption": True},
+        )
+
+        providers = [
+            {
+                "name": "redis_west",
+                "distributed": True,
+                "region": "us-west-2",
+                "latency_ms": 20,
+                "encryption": True,
+            },  # Score: 1 (encryption)
+            {
+                "name": "redis_east",
+                "distributed": True,
+                "region": "us-east-1",
+                "latency_ms": 15,
+                "encryption": True,
+            },  # Score: 2 (region, encryption)
+            {
+                "name": "memcached",
+                "distributed": True,
+                "region": "us-east-1",
+                "latency_ms": 10,
+                "encryption": True,
+            },  # Score: 3 (region, latency_ms, encryption) - HIGHEST
+        ]
+
+        def resolve_best_score(
+            providers: list[dict[str, Any]], reqs: ModelRequirementSet
+        ) -> dict[str, Any] | None:
+            """Resolve using best_score policy: select highest-scoring provider."""
+            # Filter by must constraints
+            filtered = [
+                p
+                for p in providers
+                if all(p.get(k) == v for k, v in reqs.must.items())
+            ]
+            if not filtered:
+                return None
+
+            # Score by prefer constraints
+            def score_provider(p: dict[str, Any]) -> float:
+                return sum(
+                    1.0 for key, preferred in reqs.prefer.items() if p.get(key) == preferred
+                )
+
+            # Select highest-scoring
+            return max(filtered, key=score_provider)
+
+        result = resolve_best_score(providers, requirements)
+        assert result is not None, "best_score should select a provider"
+        assert result["name"] == "memcached", (
+            "best_score MUST select provider with highest preference score. "
+            "memcached matches all 3 'prefer' constraints (score=3), "
+            "redis_east matches 2, redis_west matches 1."
+        )
+
+    def test_best_score_uses_hints_for_tie_breaking(self) -> None:
+        """Test that best_score uses hints to break ties between equal scores.
+
+        Contract: When multiple providers have the same 'prefer' score,
+        the resolver should use 'hints' as advisory tie-breakers.
+        """
+        requirements = ModelRequirementSet(
+            must={"distributed": True},
+            prefer={"region": "us-east-1"},
+            hints={"vendor_preference": ["redis", "memcached", "hazelcast"]},
+        )
+
+        # Two providers with EQUAL preference scores (both match region)
+        providers = [
+            {"name": "memcached", "distributed": True, "region": "us-east-1"},  # Score: 1
+            {"name": "redis", "distributed": True, "region": "us-east-1"},  # Score: 1
+        ]
+
+        def resolve_best_score_with_hints(
+            providers: list[dict[str, Any]], reqs: ModelRequirementSet
+        ) -> dict[str, Any] | None:
+            filtered = [
+                p
+                for p in providers
+                if all(p.get(k) == v for k, v in reqs.must.items())
+            ]
+            if not filtered:
+                return None
+
+            def score_provider(p: dict[str, Any]) -> float:
+                return sum(
+                    1.0 for k, v in reqs.prefer.items() if p.get(k) == v
+                )
+
+            max_score = max(score_provider(p) for p in filtered)
+            tied = [p for p in filtered if score_provider(p) == max_score]
+
+            if len(tied) == 1:
+                return tied[0]
+
+            # Break ties using hints
+            vendor_pref = reqs.hints.get("vendor_preference", [])
+            if isinstance(vendor_pref, list):
+                for preferred in vendor_pref:
+                    for p in tied:
+                        if p.get("name") == preferred:
+                            return p
+            return tied[0]
+
+        result = resolve_best_score_with_hints(providers, requirements)
+        assert result is not None
+        assert result["name"] == "redis", (
+            "best_score should use hints to break ties. "
+            "Redis is first in vendor_preference list."
+        )
+
+    def test_require_explicit_never_auto_selects(self) -> None:
+        """Test that require_explicit NEVER auto-selects, regardless of requirements.
+
+        Contract: When selection_policy='require_explicit', the resolver must
+        NEVER automatically select a provider, even if:
+        - Only one provider matches
+        - The provider has a perfect preference score
+        - All constraints are satisfied
+
+        This policy exists for security-sensitive dependencies (secrets, credentials).
+        """
+        requirements = ModelRequirementSet(
+            must={"encryption": "aes-256"},
+            prefer={"region": "us-east-1"},
+        )
+
+        # Perfect single match that would auto-select under other policies
+        providers = [
+            {
+                "name": "hashicorp_vault",
+                "encryption": "aes-256",
+                "region": "us-east-1",
+            },
+        ]
+
+        def resolve_require_explicit(
+            providers: list[dict[str, Any]],
+            reqs: ModelRequirementSet,
+            explicit_binding: str | None = None,
+        ) -> dict[str, Any] | None:
+            """Resolve using require_explicit policy: NEVER auto-select."""
+            # CRITICAL: Without explicit binding, ALWAYS return None
+            if explicit_binding is None:
+                return None
+
+            # Only resolve if explicit binding matches
+            filtered = [
+                p
+                for p in providers
+                if p.get("name") == explicit_binding
+                and all(p.get(k) == v for k, v in reqs.must.items())
+            ]
+            return filtered[0] if filtered else None
+
+        # Without explicit binding: MUST return None even with perfect match
+        result_without_binding = resolve_require_explicit(providers, requirements)
+        assert result_without_binding is None, (
+            "require_explicit MUST NOT auto-select, even with perfect single match. "
+            "This is critical for security-sensitive dependencies."
+        )
+
+        # With explicit binding: should resolve
+        result_with_binding = resolve_require_explicit(
+            providers, requirements, explicit_binding="hashicorp_vault"
+        )
+        assert result_with_binding is not None, (
+            "require_explicit should resolve when explicit binding is provided"
+        )
+        assert result_with_binding["name"] == "hashicorp_vault"
+
+    def test_forbid_constraints_exclude_before_policy_applies(self) -> None:
+        """Test that 'forbid' constraints exclude providers before policy logic.
+
+        Contract: The 'forbid' tier is applied during filtering (Phase 1),
+        before any selection policy (Phase 2). A provider matching ANY forbid
+        constraint is excluded regardless of how well it matches 'prefer'.
+        """
+        requirements = ModelRequirementSet(
+            must={"supports_sql": True},
+            prefer={"latency_ms": 5},  # Would give high score
+            forbid={"deprecated": True},
+        )
+
+        providers = [
+            {
+                "name": "legacy_db",
+                "supports_sql": True,
+                "latency_ms": 5,  # Perfect prefer match
+                "deprecated": True,  # But forbidden!
+            },
+            {
+                "name": "new_db",
+                "supports_sql": True,
+                "latency_ms": 20,
+                "deprecated": False,
+            },
+        ]
+
+        def filter_providers(
+            providers: list[dict[str, Any]], reqs: ModelRequirementSet
+        ) -> list[dict[str, Any]]:
+            """Filter by must AND forbid constraints."""
+            result = []
+            for p in providers:
+                # Check must constraints
+                if not all(p.get(k) == v for k, v in reqs.must.items()):
+                    continue
+                # Check forbid constraints (any match excludes)
+                if any(p.get(k) == v for k, v in reqs.forbid.items()):
+                    continue
+                result.append(p)
+            return result
+
+        filtered = filter_providers(providers, requirements)
+
+        # legacy_db is excluded by forbid, even though it has better prefer score
+        assert len(filtered) == 1
+        assert filtered[0]["name"] == "new_db", (
+            "forbid constraints MUST exclude providers before scoring. "
+            "legacy_db has perfect prefer score but is deprecated (forbidden)."
+        )
+
+
+# =============================================================================
+# Additional Shallow Merge Behavior Tests (PR Review Request)
+# =============================================================================
+
+
+@pytest.mark.unit
+class TestShallowMergeNestedDictBehavior:
+    """Additional tests for shallow merge nested dict behavior.
+
+    These tests specifically address the PR review request to document
+    the shallow merge warning behavior with nested dictionaries.
+    """
+
+    def test_shallow_merge_nested_dict_data_loss_warning(self) -> None:
+        """Document that shallow merge causes INTENTIONAL data loss on nested dicts.
+
+        This test explicitly demonstrates the WARNING documented in merge():
+        "If your requirements contain nested dicts like {'config': {'a': 1, 'b': 2}},
+        merging with {'config': {'a': 10}} will LOSE the 'b' key entirely."
+
+        This behavior is INTENTIONAL for:
+        1. Performance: O(n) dict spread vs O(n*m) recursive traversal
+        2. Predictability: Flat key-value replacement is easier to reason about
+        3. JSON compatibility: Matches JSON Merge Patch (RFC 7396) semantics
+        """
+        # SETUP: Base config with multiple nested keys
+        base = ModelRequirementSet(
+            must={"config": {"timeout": 30, "retries": 3, "buffer_size": 1024}}
+        )
+
+        # Override only specifies ONE nested key
+        override = ModelRequirementSet(must={"config": {"timeout": 60}})
+
+        # MERGE
+        merged = base.merge(override)
+
+        # CRITICAL ASSERTION: Nested keys 'retries' and 'buffer_size' are LOST
+        config = merged.must.get("config", {})
+        assert isinstance(config, dict)
+        assert config == {"timeout": 60}, (
+            "Shallow merge REPLACES entire nested dict, not deep-merges. "
+            "This is documented and intentional."
+        )
+        assert "retries" not in config, "retries should be LOST (shallow merge)"
+        assert "buffer_size" not in config, "buffer_size should be LOST (shallow merge)"
+
+    def test_shallow_merge_explicit_example_a_b_c(self) -> None:
+        """Test the exact example: {a: {b: 1}} + {a: {c: 2}} = {a: {c: 2}}.
+
+        This is the canonical example demonstrating shallow vs deep merge:
+        - Shallow (what we do): Result is {a: {c: 2}} - 'b' is lost
+        - Deep (what we DON'T do): Result would be {a: {b: 1, c: 2}}
+        """
+        base = ModelRequirementSet(must={"a": {"b": 1}})
+        override = ModelRequirementSet(must={"a": {"c": 2}})
+
+        merged = base.merge(override)
+
+        # Shallow merge: entire nested dict replaced
+        assert merged.must == {"a": {"c": 2}}
+
+        # NOT deep merge (would be {"a": {"b": 1, "c": 2}})
+        nested = merged.must.get("a", {})
+        assert isinstance(nested, dict)
+        assert "b" not in nested, "Shallow merge: 'b' should NOT be preserved"
+        assert nested.get("c") == 2
+
+    def test_shallow_merge_across_all_tiers_consistency(self) -> None:
+        """Verify shallow merge is consistent across must/prefer/forbid/hints.
+
+        All four tiers should exhibit identical shallow merge behavior -
+        this is not just a 'must' tier quirk.
+        """
+        base = ModelRequirementSet(
+            must={"x": {"a": 1}},
+            prefer={"x": {"a": 1}},
+            forbid={"x": {"a": 1}},
+            hints={"x": {"a": 1}},
+        )
+        override = ModelRequirementSet(
+            must={"x": {"b": 2}},
+            prefer={"x": {"b": 2}},
+            forbid={"x": {"b": 2}},
+            hints={"x": {"b": 2}},
+        )
+
+        merged = base.merge(override)
+
+        # ALL tiers should have shallow behavior
+        for tier_name in ["must", "prefer", "forbid", "hints"]:
+            tier = getattr(merged, tier_name)
+            nested = tier.get("x", {})
+            assert isinstance(nested, dict)
+            assert nested == {"b": 2}, f"{tier_name} tier should have shallow merge"
+            assert "a" not in nested, f"{tier_name} tier: 'a' should be lost"
+
+    def test_shallow_merge_deep_nesting_only_top_level_merged(self) -> None:
+        """Test that deeply nested structures are entirely replaced.
+
+        Even with 3+ levels of nesting, only the top-level key is merged -
+        the entire nested structure is replaced.
+        """
+        base = ModelRequirementSet(
+            must={
+                "level1": {
+                    "level2": {"level3": {"deep_key": "original", "another": 100}}
+                }
+            }
+        )
+        override = ModelRequirementSet(
+            must={"level1": {"level2": {"level3": {"deep_key": "override"}}}}
+        )
+
+        merged = base.merge(override)
+
+        # Verify entire deep structure is replaced
+        level1 = merged.must.get("level1", {})
+        assert isinstance(level1, dict)
+        level2 = level1.get("level2", {})
+        assert isinstance(level2, dict)
+        level3 = level2.get("level3", {})
+        assert isinstance(level3, dict)
+
+        assert level3 == {"deep_key": "override"}, "Deeply nested dict is replaced"
+        assert "another" not in level3, "'another' key should be lost (shallow merge)"
