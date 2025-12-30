@@ -15,7 +15,7 @@ Related:
 .. versionadded:: 0.4.0
 """
 
-from typing import Literal
+from typing import ClassVar, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -86,10 +86,18 @@ class ModelDescriptorPatch(BaseModel):
         description="Override whether handler is idempotent (safe to retry with same input).",
     )
 
+    # Maximum timeout: 1 hour (3,600,000 ms) to prevent unreasonable values
+    # that could cause resource exhaustion or effectively disable timeouts
+    MAX_TIMEOUT_MS: ClassVar[int] = 3_600_000
+
     timeout_ms: int | None = Field(
         default=None,
         ge=0,
-        description="Override handler timeout in milliseconds.",
+        le=3_600_000,  # 1 hour max
+        description=(
+            "Override handler timeout in milliseconds. "
+            "Maximum allowed value is 3,600,000 (1 hour)."
+        ),
     )
 
     retry_policy: ModelDescriptorRetryPolicy | None = Field(
@@ -125,7 +133,7 @@ class ModelDescriptorPatch(BaseModel):
 
     @model_validator(mode="after")
     def validate_settings_consistency(self) -> "ModelDescriptorPatch":
-        """Validate that descriptor patch settings are internally consistent.
+        """Validate that behavior patch settings are internally consistent.
 
         Catches conflicting configurations that, while individually valid,
         would produce nonsensical runtime behavior when combined.
@@ -147,8 +155,19 @@ class ModelDescriptorPatch(BaseModel):
             Fields that are None are not validated since they will retain values
             from the base contract.
         """
+        # Early return: skip validation if no overrides are set
+        # This is an optimization for empty patches
+        if not self.has_overrides():
+            return self
+
+        # Early return: skip conflict checks if retry_policy is not set
+        # Both conflict checks require retry_policy to be present
+        if self.retry_policy is None:
+            return self
+
         # Check: timeout_ms=0 with retry enabled
-        if self.timeout_ms == 0 and self.retry_policy is not None:
+        # Type narrowing: retry_policy is guaranteed non-None after above check
+        if self.timeout_ms == 0:
             if self.retry_policy.enabled and self.retry_policy.max_retries > 0:
                 raise ValueError(
                     "Conflicting settings: cannot enable retry_policy with "
@@ -157,7 +176,8 @@ class ModelDescriptorPatch(BaseModel):
                 )
 
         # Check: non-idempotent with retry enabled
-        if self.idempotent is False and self.retry_policy is not None:
+        # Type narrowing: retry_policy is guaranteed non-None after early return
+        if self.idempotent is False:
             if self.retry_policy.enabled and self.retry_policy.max_retries > 0:
                 raise ValueError(
                     "Conflicting settings: cannot enable retry_policy when "

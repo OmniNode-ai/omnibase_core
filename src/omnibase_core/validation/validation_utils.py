@@ -14,6 +14,7 @@ This module provides common validation functions used throughout the ONEX framew
 
 import ast
 import hashlib
+import keyword
 import logging
 import re
 from pathlib import Path
@@ -126,12 +127,194 @@ def is_valid_onex_name(name: str, *, lowercase_only: bool = False) -> bool:
     return bool(_ONEX_NAME_PATTERN.match(name))
 
 
+# =============================================================================
+# Patch Validation Helper Functions
+# =============================================================================
+
+
+def validate_string_list(
+    values: list[str] | None,
+    field_name: str,
+    *,
+    min_length: int = 1,
+    strip_whitespace: bool = True,
+) -> list[str] | None:
+    """Validate a list of strings, ensuring no empty values.
+
+    This is a shared helper for patch validation that handles common
+    string list validation patterns.
+
+    Args:
+        values: List of strings to validate, or None.
+        field_name: Name of the field being validated (for error messages).
+        min_length: Minimum length for each string after stripping.
+        strip_whitespace: If True, strip whitespace from each value.
+
+    Returns:
+        Validated list of strings, or None if input was None.
+
+    Raises:
+        ValueError: If any string is empty or too short after processing.
+
+    Example:
+        >>> validate_string_list(["foo", "bar"], "events")
+        ['foo', 'bar']
+        >>> validate_string_list(["  foo  ", "bar"], "events")
+        ['foo', 'bar']
+        >>> validate_string_list(["", "bar"], "events")
+        ValueError: events[0]: Value cannot be empty
+    """
+    if values is None:
+        return None
+
+    validated: list[str] = []
+    for i, value in enumerate(values):
+        if strip_whitespace:
+            value = value.strip()
+
+        if not value:
+            logger.debug(f"Validation failed for {field_name}[{i}]: empty string")
+            # error-ok: Pydantic validators require ValueError
+            raise ValueError(f"{field_name}[{i}]: Value cannot be empty")
+
+        if len(value) < min_length:
+            logger.debug(
+                f"Validation failed for {field_name}[{i}]: "
+                f"value {value!r} is shorter than {min_length} characters"
+            )
+            # error-ok: Pydantic validators require ValueError
+            raise ValueError(
+                f"{field_name}[{i}]: Value must be at least {min_length} "
+                f"characters: {value!r}"
+            )
+
+        validated.append(value)
+
+    logger.debug(f"Validated {len(validated)} values for {field_name}")
+    return validated
+
+
+def validate_onex_name_list(
+    values: list[str] | None,
+    field_name: str,
+    *,
+    normalize_lowercase: bool = True,
+) -> list[str] | None:
+    """Validate a list of ONEX-compliant names.
+
+    This is a shared helper for patch validation that validates names
+    conform to ONEX naming conventions (alphanumeric + underscores).
+
+    Args:
+        values: List of names to validate, or None.
+        field_name: Name of the field being validated (for error messages).
+        normalize_lowercase: If True, normalize all names to lowercase.
+
+    Returns:
+        Validated and optionally normalized list of names, or None if input was None.
+
+    Raises:
+        ValueError: If any name is empty or contains invalid characters.
+
+    Example:
+        >>> validate_onex_name_list(["http_client", "kafka_producer"], "handlers")
+        ['http_client', 'kafka_producer']
+        >>> validate_onex_name_list(["HTTP_Client"], "handlers", normalize_lowercase=True)
+        ['http_client']
+        >>> validate_onex_name_list(["http-client"], "handlers")
+        ValueError: handlers[0]: Name must contain only alphanumeric characters
+        and underscores: 'http-client'
+    """
+    if values is None:
+        return None
+
+    validated: list[str] = []
+    for i, name in enumerate(values):
+        name = name.strip()
+
+        if not name:
+            logger.debug(f"Validation failed for {field_name}[{i}]: empty name")
+            # error-ok: Pydantic validators require ValueError
+            raise ValueError(f"{field_name}[{i}]: Name cannot be empty")
+
+        if not is_valid_onex_name(name):
+            logger.debug(
+                f"Validation failed for {field_name}[{i}]: invalid ONEX name {name!r}"
+            )
+            # error-ok: Pydantic validators require ValueError
+            raise ValueError(
+                f"{field_name}[{i}]: Name must contain only alphanumeric "
+                f"characters and underscores: {name!r}"
+            )
+
+        if normalize_lowercase:
+            name = name.lower()
+
+        validated.append(name)
+
+    logger.debug(f"Validated {len(validated)} ONEX names for {field_name}")
+    return validated
+
+
+def detect_add_remove_conflicts(
+    add_values: list[str] | None,
+    remove_values: list[str] | None,
+    field_name: str,
+    *,
+    case_sensitive: bool = False,
+) -> list[str]:
+    """Detect conflicts between add and remove operations.
+
+    A conflict occurs when the same value appears in both the add and
+    remove lists, which would result in undefined or contradictory behavior.
+
+    Args:
+        add_values: Values being added (may be pre-normalized).
+        remove_values: Values being removed (may be pre-normalized).
+        field_name: Name of the field (for logging).
+        case_sensitive: If True, compare values case-sensitively.
+
+    Returns:
+        List of conflicting values (empty if no conflicts).
+
+    Example:
+        >>> detect_add_remove_conflicts(
+        ...     ["foo", "bar"], ["bar", "baz"], "handlers"
+        ... )
+        ['bar']
+        >>> detect_add_remove_conflicts(
+        ...     ["foo"], ["bar"], "handlers"
+        ... )
+        []
+    """
+    if add_values is None or remove_values is None:
+        return []
+
+    if case_sensitive:
+        add_set = set(add_values)
+        remove_set = set(remove_values)
+    else:
+        add_set = {v.lower() for v in add_values}
+        remove_set = {v.lower() for v in remove_values}
+
+    conflicts = sorted(add_set & remove_set)
+
+    if conflicts:
+        logger.warning(
+            f"Detected {len(conflicts)} add/remove conflicts for {field_name}: "
+            f"{conflicts}"
+        )
+
+    return conflicts
+
+
 def validate_import_path_format(import_path: str) -> tuple[bool, str | None]:
     """Validate a Python import path format.
 
     Checks that the import path:
     - Has at least two dot-separated segments (module and class)
     - Each segment is a valid Python identifier
+    - No segment is a Python reserved keyword
     - Contains no dangerous characters (security check)
     - Contains no path traversal sequences
 
@@ -149,6 +332,8 @@ def validate_import_path_format(import_path: str) -> tuple[bool, str | None]:
         (False, "Import path must include module and class (at least 2 segments)")
         >>> validate_import_path_format("my..module.Class")
         (False, "Import path cannot contain path separators or '..'")
+        >>> validate_import_path_format("mypackage.class.Handler")
+        (False, "Import path segment 'class' is a Python reserved keyword")
     """
     if not import_path or not import_path.strip():
         return False, "Import path cannot be empty"
@@ -179,6 +364,14 @@ def validate_import_path_format(import_path: str) -> tuple[bool, str | None]:
             return (
                 False,
                 f"Import path segment '{part}' is not a valid Python identifier",
+            )
+
+    # Check for Python reserved keywords (cannot be used as module/class names)
+    for part in parts:
+        if keyword.iskeyword(part):
+            return (
+                False,
+                f"Import path segment '{part}' is a Python reserved keyword",
             )
 
     return True, None
@@ -460,6 +653,10 @@ __all__ = [
     "is_valid_python_identifier",
     "is_valid_onex_name",
     "validate_import_path_format",
+    # Patch validation helpers
+    "validate_string_list",
+    "validate_onex_name_list",
+    "detect_add_remove_conflicts",
     # Protocol extraction
     "determine_repository_name",
     "extract_protocol_signature",

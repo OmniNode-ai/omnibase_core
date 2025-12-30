@@ -27,7 +27,10 @@ from omnibase_core.models.contracts.model_handler_spec import ModelHandlerSpec
 from omnibase_core.models.contracts.model_profile_reference import ModelProfileReference
 from omnibase_core.models.contracts.model_reference import ModelReference
 from omnibase_core.models.primitives.model_semver import ModelSemVer
-from omnibase_core.validation.validation_utils import is_valid_onex_name
+from omnibase_core.validation.validation_utils import (
+    detect_add_remove_conflicts,
+    is_valid_onex_name,
+)
 
 __all__ = [
     "ModelContractPatch",
@@ -67,7 +70,7 @@ class ModelContractPatch(BaseModel):
         description: Human-readable description.
         input_model: Override input model reference.
         output_model: Override output model reference.
-        descriptor: Nested descriptor overrides.
+        descriptor: Nested behavior overrides (via ModelDescriptorPatch).
         handlers__add: Handlers to add to the contract.
         handlers__remove: Handler names to remove.
         dependencies__add: Dependencies to add.
@@ -173,14 +176,19 @@ class ModelContractPatch(BaseModel):
     # List Operations - Handlers
     # =========================================================================
 
+    # Maximum number of items in list operations to prevent excessive patches
+    MAX_LIST_ITEMS: int = 100
+
     handlers__add: list[ModelHandlerSpec] | None = Field(
         default=None,
-        description="Handlers to add to the contract.",
+        max_length=100,
+        description="Handlers to add to the contract (max 100 items).",
     )
 
     handlers__remove: list[str] | None = Field(
         default=None,
-        description="Handler names to remove from the contract.",
+        max_length=100,
+        description="Handler names to remove from the contract (max 100 items).",
     )
 
     # =========================================================================
@@ -189,12 +197,14 @@ class ModelContractPatch(BaseModel):
 
     dependencies__add: list[ModelDependency] | None = Field(
         default=None,
-        description="Dependencies to add to the contract.",
+        max_length=100,
+        description="Dependencies to add to the contract (max 100 items).",
     )
 
     dependencies__remove: list[str] | None = Field(
         default=None,
-        description="Dependency names to remove from the contract.",
+        max_length=100,
+        description="Dependency names to remove from the contract (max 100 items).",
     )
 
     # =========================================================================
@@ -203,12 +213,14 @@ class ModelContractPatch(BaseModel):
 
     consumed_events__add: list[str] | None = Field(
         default=None,
-        description="Event types to add to consumed events.",
+        max_length=100,
+        description="Event types to add to consumed events (max 100 items).",
     )
 
     consumed_events__remove: list[str] | None = Field(
         default=None,
-        description="Event types to remove from consumed events.",
+        max_length=100,
+        description="Event types to remove from consumed events (max 100 items).",
     )
 
     # =========================================================================
@@ -220,22 +232,26 @@ class ModelContractPatch(BaseModel):
     # to use that model for richer capability requirements.
     capability_inputs__add: list[str] | None = Field(
         default=None,
-        description="Required capability names to add.",
+        max_length=50,
+        description="Required capability names to add (max 50 items).",
     )
 
     capability_inputs__remove: list[str] | None = Field(
         default=None,
-        description="Required capability names to remove.",
+        max_length=50,
+        description="Required capability names to remove (max 50 items).",
     )
 
     capability_outputs__add: list[ModelCapabilityProvided] | None = Field(
         default=None,
-        description="Provided capabilities to add.",
+        max_length=50,
+        description="Provided capabilities to add (max 50 items).",
     )
 
     capability_outputs__remove: list[str] | None = Field(
         default=None,
-        description="Provided capability names to remove.",
+        max_length=50,
+        description="Provided capability names to remove (max 50 items).",
     )
 
     # =========================================================================
@@ -263,17 +279,18 @@ class ModelContractPatch(BaseModel):
             return v
 
         validated: list[str] = []
-        for i, name in enumerate(v):
-            name = name.strip()
-            if not name:
+        for i, raw_name in enumerate(v):
+            # Type narrowing: use explicit variable for stripped value
+            stripped_name = raw_name.strip()
+            if not stripped_name:
                 raise ValueError(f"handlers__remove[{i}]: Handler name cannot be empty")
-            if not is_valid_onex_name(name):
+            if not is_valid_onex_name(stripped_name):
                 raise ValueError(
                     f"handlers__remove[{i}]: Handler name must contain only "
-                    f"alphanumeric characters and underscores: {name!r}"
+                    f"alphanumeric characters and underscores: {stripped_name!r}"
                 )
             # Normalize to lowercase for consistent matching
-            validated.append(name.lower())
+            validated.append(stripped_name.lower())
         return validated
 
     @field_validator("dependencies__remove", mode="before")
@@ -296,17 +313,18 @@ class ModelContractPatch(BaseModel):
             return v
 
         validated: list[str] = []
-        for i, name in enumerate(v):
-            name = name.strip()
-            if not name:
+        for i, raw_name in enumerate(v):
+            # Type narrowing: use explicit variable for stripped value
+            stripped_name = raw_name.strip()
+            if not stripped_name:
                 raise ValueError(
                     f"dependencies__remove[{i}]: Dependency name cannot be empty"
                 )
-            if len(name) < 2:
+            if len(stripped_name) < 2:
                 raise ValueError(
-                    f"dependencies__remove[{i}]: Dependency name too short: {name!r}"
+                    f"dependencies__remove[{i}]: Dependency name too short: {stripped_name!r}"
                 )
-            validated.append(name)
+            validated.append(stripped_name)
         return validated
 
     @field_validator("consumed_events__add", "consumed_events__remove", mode="before")
@@ -330,11 +348,14 @@ class ModelContractPatch(BaseModel):
             return v
 
         validated: list[str] = []
-        for i, name in enumerate(v):
-            name = name.strip()
-            if not name:
-                raise ValueError(f"Event type name cannot be empty at index {i}")
-            validated.append(name)
+        for i, raw_name in enumerate(v):
+            # Type narrowing: use explicit variable for stripped value
+            stripped_name = raw_name.strip()
+            if not stripped_name:
+                raise ValueError(
+                    f"consumed_events[{i}]: Event type name cannot be empty"
+                )
+            validated.append(stripped_name)
         return validated
 
     @field_validator(
@@ -361,17 +382,20 @@ class ModelContractPatch(BaseModel):
             return v
 
         validated: list[str] = []
-        for i, name in enumerate(v):
-            name = name.strip()
-            if not name:
-                raise ValueError(f"Capability input name cannot be empty at index {i}")
-            if not is_valid_onex_name(name):
+        for i, raw_name in enumerate(v):
+            # Type narrowing: use explicit variable for stripped value
+            stripped_name = raw_name.strip()
+            if not stripped_name:
                 raise ValueError(
-                    f"Capability input name must contain only alphanumeric "
-                    f"characters and underscores at index {i}: {name!r}"
+                    f"capability_inputs[{i}]: Capability name cannot be empty"
+                )
+            if not is_valid_onex_name(stripped_name):
+                raise ValueError(
+                    f"capability_inputs[{i}]: Capability name must contain only "
+                    f"alphanumeric characters and underscores: {stripped_name!r}"
                 )
             # Normalize to lowercase for consistent matching
-            validated.append(name.lower())
+            validated.append(stripped_name.lower())
         return validated
 
     @field_validator("capability_outputs__remove", mode="before")
@@ -398,19 +422,20 @@ class ModelContractPatch(BaseModel):
             return v
 
         validated: list[str] = []
-        for i, name in enumerate(v):
-            name = name.strip()
-            if not name:
+        for i, raw_name in enumerate(v):
+            # Type narrowing: use explicit variable for stripped value
+            stripped_name = raw_name.strip()
+            if not stripped_name:
                 raise ValueError(
                     f"capability_outputs__remove[{i}]: Capability name cannot be empty"
                 )
-            if not is_valid_onex_name(name):
+            if not is_valid_onex_name(stripped_name):
                 raise ValueError(
                     f"capability_outputs__remove[{i}]: Capability name must contain "
-                    f"only alphanumeric characters and underscores: {name!r}"
+                    f"only alphanumeric characters and underscores: {stripped_name!r}"
                 )
             # Normalize to lowercase for consistent matching
-            validated.append(name.lower())
+            validated.append(stripped_name.lower())
         return validated
 
     # =========================================================================
@@ -442,6 +467,83 @@ class ModelContractPatch(BaseModel):
             raise ValueError(
                 "Contract patch specifies 'node_version' but not 'name'. "
                 "New contracts must specify both name and node_version."
+            )
+
+        return self
+
+    @model_validator(mode="after")
+    def validate_no_add_remove_conflicts(self) -> "ModelContractPatch":
+        """Validate that no item appears in both add and remove lists.
+
+        Detects conflicts where the same value is added and removed in a single
+        patch, which would result in undefined or contradictory behavior.
+
+        Checks the following list operation pairs:
+            - handlers__add vs handlers__remove
+            - dependencies__add vs dependencies__remove
+            - consumed_events__add vs consumed_events__remove
+            - capability_inputs__add vs capability_inputs__remove
+            - capability_outputs__add vs capability_outputs__remove
+
+        Returns:
+            Self if validation passes.
+
+        Raises:
+            ValueError: If any add/remove conflicts are detected.
+        """
+        all_conflicts: list[str] = []
+
+        # Check handlers (extract names from ModelHandlerSpec)
+        if self.handlers__add and self.handlers__remove:
+            handler_add_names = [h.name for h in self.handlers__add]
+            conflicts = detect_add_remove_conflicts(
+                handler_add_names, self.handlers__remove, "handlers"
+            )
+            if conflicts:
+                all_conflicts.append(f"handlers: {conflicts}")
+
+        # Check dependencies (extract names from ModelDependency)
+        if self.dependencies__add and self.dependencies__remove:
+            dep_add_names = [d.name for d in self.dependencies__add]
+            conflicts = detect_add_remove_conflicts(
+                dep_add_names, self.dependencies__remove, "dependencies"
+            )
+            if conflicts:
+                all_conflicts.append(f"dependencies: {conflicts}")
+
+        # Check consumed_events
+        conflicts = detect_add_remove_conflicts(
+            self.consumed_events__add,
+            self.consumed_events__remove,
+            "consumed_events",
+        )
+        if conflicts:
+            all_conflicts.append(f"consumed_events: {conflicts}")
+
+        # Check capability_inputs
+        conflicts = detect_add_remove_conflicts(
+            self.capability_inputs__add,
+            self.capability_inputs__remove,
+            "capability_inputs",
+        )
+        if conflicts:
+            all_conflicts.append(f"capability_inputs: {conflicts}")
+
+        # Check capability_outputs (extract names from ModelCapabilityProvided)
+        if self.capability_outputs__add and self.capability_outputs__remove:
+            cap_out_add_names = [c.name for c in self.capability_outputs__add]
+            conflicts = detect_add_remove_conflicts(
+                cap_out_add_names,
+                self.capability_outputs__remove,
+                "capability_outputs",
+            )
+            if conflicts:
+                all_conflicts.append(f"capability_outputs: {conflicts}")
+
+        if all_conflicts:
+            raise ValueError(
+                "Conflicting add/remove operations detected. Cannot add and remove "
+                f"the same item in a single patch: {'; '.join(all_conflicts)}"
             )
 
         return self
