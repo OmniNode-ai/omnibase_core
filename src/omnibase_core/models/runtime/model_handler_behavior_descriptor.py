@@ -1,11 +1,17 @@
 """
-Handler Descriptor Model.
+Handler Behavior Descriptor Model.
 
 Defines runtime behavior characteristics for handlers embedded in contracts.
 Part of the three-layer architecture: Profile -> Descriptor -> Contract.
 
 This model configures how handlers behave at runtime including purity,
 idempotency, concurrency, isolation, and observability settings.
+
+Note:
+    This model was renamed from ModelHandlerDescriptor to ModelHandlerBehaviorDescriptor
+    to avoid naming collision with the canonical handler descriptor model in
+    omnibase_core.models.handlers.model_handler_descriptor.ModelHandlerDescriptor,
+    which defines handler identity, classification, and instantiation metadata.
 
 Related:
     - OMN-1125: Default Profile Factory for Contracts
@@ -27,11 +33,11 @@ from omnibase_core.models.runtime.model_descriptor_retry_policy import (
 )
 
 __all__ = [
-    "ModelHandlerDescriptor",
+    "ModelHandlerBehaviorDescriptor",
 ]
 
 
-class ModelHandlerDescriptor(BaseModel):
+class ModelHandlerBehaviorDescriptor(BaseModel):
     """Handler behavior descriptor embedded in contracts.
 
     Defines runtime behavior characteristics for handlers including purity,
@@ -86,7 +92,7 @@ class ModelHandlerDescriptor(BaseModel):
         capability_outputs: Provided output capabilities (e.g., ["event", "log"]).
 
     Example:
-        >>> descriptor = ModelHandlerDescriptor(
+        >>> descriptor = ModelHandlerBehaviorDescriptor(
         ...     handler_kind="compute",
         ...     purity="pure",
         ...     idempotent=True,
@@ -96,7 +102,7 @@ class ModelHandlerDescriptor(BaseModel):
         ... )
 
         >>> # Effect handler with retry and circuit breaker
-        >>> effect_descriptor = ModelHandlerDescriptor(
+        >>> effect_descriptor = ModelHandlerBehaviorDescriptor(
         ...     handler_kind="effect",
         ...     purity="side_effecting",
         ...     idempotent=True,  # Required for retry
