@@ -76,10 +76,37 @@ class HookTypeMismatchError(PipelineError):
         )
 
 
+class HookTimeoutError(PipelineError):
+    """Raised when a hook exceeds its configured timeout."""
+
+    def __init__(self, hook_id: str, timeout_seconds: float) -> None:
+        super().__init__(
+            error_code=EnumCoreErrorCode.TIMEOUT,
+            message=f"Hook '{hook_id}' exceeded timeout of {timeout_seconds}s",
+            context={
+                "hook_id": hook_id,
+                "timeout_seconds": timeout_seconds,
+            },
+        )
+
+
+class CallableNotFoundError(PipelineError):
+    """Raised when a callable reference is not found in the registry."""
+
+    def __init__(self, callable_ref: str) -> None:
+        super().__init__(
+            error_code=EnumCoreErrorCode.NOT_FOUND,
+            message=f"Callable not found in registry: {callable_ref}",
+            context={"callable_ref": callable_ref},
+        )
+
+
 __all__ = [
+    "CallableNotFoundError",
     "DependencyCycleError",
     "DuplicateHookError",
     "HookRegistryFrozenError",
+    "HookTimeoutError",
     "HookTypeMismatchError",
     "PipelineError",
     "UnknownDependencyError",

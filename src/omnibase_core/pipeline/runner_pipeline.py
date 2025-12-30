@@ -5,11 +5,13 @@
 
 from __future__ import annotations
 
+import asyncio
 import inspect
 from collections.abc import Callable, Coroutine
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.pipeline.exceptions import CallableNotFoundError, HookTimeoutError
 from omnibase_core.pipeline.models.model_execution_plan import ModelExecutionPlan
 from omnibase_core.pipeline.models.model_pipeline_hook import (
     ModelPipelineHook,
@@ -114,6 +116,13 @@ class RunnerPipeline:
         - preflight, before, execute: fail-fast (abort on first error)
         - after, emit, finalize: continue (collect errors, run all hooks)
     - Finalize ALWAYS runs, even if earlier phases raise exceptions
+
+    Thread Safety:
+        - The runner is NOT thread-safe during execution (intentional design)
+        - Create a new RunnerPipeline instance per execution/thread
+        - The execution plan (ModelExecutionPlan) is frozen and can be safely
+          shared across threads
+        - The callable_registry dict must not be modified after runner creation
     """
 
     def __init__(
@@ -140,7 +149,7 @@ class RunnerPipeline:
 
         Raises:
             Exception: Re-raises exceptions from fail-fast phases
-            KeyError: If a hook's callable_ref is not in the registry
+            CallableNotFoundError: If a hook's callable_ref is not in the registry
         """
         context = PipelineContext()
         errors: list[ModelHookError] = []
@@ -231,23 +240,42 @@ class RunnerPipeline:
         """
         Execute a single hook.
 
+        If the hook has a timeout_seconds configured, the callable will be
+        wrapped with asyncio.wait_for() to enforce the timeout. For sync
+        callables, asyncio.to_thread() is used to allow timeout enforcement.
+
         Args:
             hook: The hook to execute
             context: The shared pipeline context
 
         Raises:
-            KeyError: If the hook's callable_ref is not in the registry
+            CallableNotFoundError: If the hook's callable_ref is not in the registry
+            HookTimeoutError: If the hook exceeds its configured timeout
             Exception: Any exception raised by the hook callable
         """
         callable_ref = hook.callable_ref
 
         if callable_ref not in self._callable_registry:
-            raise KeyError(f"Callable not found in registry: {callable_ref}")
+            raise CallableNotFoundError(callable_ref)
 
         callable_fn = self._callable_registry[callable_ref]
 
-        # Handle both sync and async callables
-        if inspect.iscoroutinefunction(callable_fn):
+        # Handle both sync and async callables with optional timeout
+        if hook.timeout_seconds is not None:
+            try:
+                if inspect.iscoroutinefunction(callable_fn):
+                    await asyncio.wait_for(
+                        callable_fn(context), timeout=hook.timeout_seconds
+                    )
+                else:
+                    await asyncio.wait_for(
+                        asyncio.to_thread(callable_fn, context),
+                        timeout=hook.timeout_seconds,
+                    )
+            except TimeoutError:
+                raise HookTimeoutError(hook.hook_id, hook.timeout_seconds)
+        # Original non-timeout path
+        elif inspect.iscoroutinefunction(callable_fn):
             await callable_fn(context)
         else:
             callable_fn(context)

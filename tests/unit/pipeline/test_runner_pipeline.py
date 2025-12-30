@@ -5,6 +5,7 @@
 
 import pytest
 
+from omnibase_core.pipeline.exceptions import CallableNotFoundError
 from omnibase_core.pipeline.models import (
     ModelExecutionPlan,
     ModelPhaseExecutionPlan,
@@ -655,7 +656,7 @@ class TestRunnerPipelineCallableResolution:
 
         runner = RunnerPipeline(plan=plan, callable_registry={})
 
-        with pytest.raises(KeyError, match=r"test\.nonexistent"):
+        with pytest.raises(CallableNotFoundError, match=r"test\.nonexistent"):
             await runner.run()
 
 
