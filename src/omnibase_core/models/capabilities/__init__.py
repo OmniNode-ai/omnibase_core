@@ -31,9 +31,9 @@ Capabilities follow the pattern: ``<domain>.<type>[.<variant>]``
 Examples:
     - ``database.relational`` - Any relational database
     - ``database.document`` - Document/NoSQL database
-    - ``vector_store`` - Vector storage capability
+    - ``storage.vector`` - Vector storage capability
     - ``cache.distributed`` - Distributed cache
-    - ``event_bus`` - Event bus capability
+    - ``messaging.eventbus`` - Event bus capability
     - ``secrets.vault`` - Secrets management
 
 Example Usage
@@ -87,7 +87,7 @@ by the registry at runtime:
         selection_policy: "best_score"
         strict: true
       - alias: "vectors"
-        capability: "vector_store"
+        capability: "storage.vector"
         requirements:
           must:
             dimensions: 1536
