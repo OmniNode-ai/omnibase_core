@@ -103,6 +103,7 @@ class EnumCoreErrorCode(EnumOnexErrorCode):
 
     # Type validation errors (181-190)
     TYPE_MISMATCH = "ONEX_CORE_181_TYPE_MISMATCH"
+    TYPE_INTROSPECTION_ERROR = "ONEX_CORE_182_TYPE_INTROSPECTION_ERROR"
 
     # Intelligence and pattern recognition errors (191-200)
     INTELLIGENCE_PROCESSING_FAILED = "ONEX_CORE_191_INTELLIGENCE_PROCESSING_FAILED"
@@ -303,6 +304,7 @@ CORE_ERROR_CODE_TO_EXIT_CODE: dict[EnumCoreErrorCode, EnumCLIExitCode] = {
     EnumCoreErrorCode.PROCESSING_ERROR: EnumCLIExitCode.ERROR,
     # Type validation errors -> ERROR
     EnumCoreErrorCode.TYPE_MISMATCH: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.TYPE_INTROSPECTION_ERROR: EnumCLIExitCode.ERROR,
     # Intelligence errors -> ERROR
     EnumCoreErrorCode.INTELLIGENCE_PROCESSING_FAILED: EnumCLIExitCode.ERROR,
     EnumCoreErrorCode.PATTERN_RECOGNITION_FAILED: EnumCLIExitCode.ERROR,
@@ -452,6 +454,7 @@ def get_core_error_description(error_code: EnumCoreErrorCode) -> str:
         EnumCoreErrorCode.QUOTA_EXCEEDED: "Quota exceeded",
         EnumCoreErrorCode.PROCESSING_ERROR: "Processing error",
         EnumCoreErrorCode.TYPE_MISMATCH: "Type mismatch in value conversion",
+        EnumCoreErrorCode.TYPE_INTROSPECTION_ERROR: "Type introspection failed during runtime reflection",
         EnumCoreErrorCode.INTELLIGENCE_PROCESSING_FAILED: "Intelligence processing failed",
         EnumCoreErrorCode.PATTERN_RECOGNITION_FAILED: "Pattern recognition failed",
         EnumCoreErrorCode.CONTEXT_ANALYSIS_FAILED: "Context analysis failed",

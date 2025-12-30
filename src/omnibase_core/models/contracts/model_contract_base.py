@@ -636,7 +636,9 @@ def _rebuild_model_contract_base() -> None:
 
     # Pass the type in the namespace so Pydantic can resolve the forward reference
     ModelContractBase.model_rebuild(
-        _types_namespace={"ModelHandlerBehaviorDescriptor": ModelHandlerBehaviorDescriptor}
+        _types_namespace={
+            "ModelHandlerBehaviorDescriptor": ModelHandlerBehaviorDescriptor
+        }
     )
 
 

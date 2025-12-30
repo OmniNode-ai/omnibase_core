@@ -17,7 +17,7 @@ from omnibase_core.models.contracts import (
     ModelContractReducer,
     ModelExecutionOrderingPolicy,
     ModelExecutionProfile,
-    ModelHandlerDescriptor,
+    ModelHandlerBehaviorDescriptor,
 )
 
 
@@ -324,7 +324,7 @@ class TestProtocolContractProfileFactory:
 
 @pytest.mark.unit
 class TestDescriptorEmbedding:
-    """Tests for ModelHandlerDescriptor embedding in profiles."""
+    """Tests for ModelHandlerBehaviorDescriptor embedding in profiles."""
 
     def test_orchestrator_safe_has_descriptor(self) -> None:
         """Test orchestrator_safe profile includes descriptor."""
@@ -335,7 +335,7 @@ class TestDescriptorEmbedding:
             version="1.0.0",
         )
         assert contract.descriptor is not None
-        assert isinstance(contract.descriptor, ModelHandlerDescriptor)
+        assert isinstance(contract.descriptor, ModelHandlerBehaviorDescriptor)
         assert contract.descriptor.handler_kind == "orchestrator"
         assert contract.descriptor.concurrency_policy == "serialized"
         # Safe profile is NOT idempotent by default (conservative)
@@ -447,8 +447,10 @@ class TestDescriptorEmbedding:
                     f"Profile '{profile_name}' for {node_type} has None descriptor"
                 )
                 # Descriptor MUST be proper type
-                assert isinstance(contract.descriptor, ModelHandlerDescriptor), (
-                    f"Profile '{profile_name}' descriptor is not ModelHandlerDescriptor"
+                assert isinstance(
+                    contract.descriptor, ModelHandlerBehaviorDescriptor
+                ), (
+                    f"Profile '{profile_name}' descriptor is not ModelHandlerBehaviorDescriptor"
                 )
                 # handler_kind MUST match node type
                 assert contract.descriptor.handler_kind == expected_handler_kind, (
