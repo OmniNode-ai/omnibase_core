@@ -35,13 +35,7 @@ class TestProtocolCapabilityProviderStructure:
         The @runtime_checkable decorator enables isinstance checks for
         protocol compliance, essential for duck typing verification.
         """
-        # This should not raise TypeError
-        assert hasattr(ProtocolCapabilityProvider, "__protocol_attrs__") or hasattr(
-            ProtocolCapabilityProvider, "__subclasshook__"
-        ), "Protocol should have protocol-related attributes"
 
-        # Runtime checkable protocols can be used in isinstance
-        # Test that we can check isinstance without error
         class MockProvider:
             def get_capabilities(self) -> dict[str, Any]:
                 return {}
@@ -51,11 +45,9 @@ class TestProtocolCapabilityProviderStructure:
 
         mock = MockProvider()
 
-        # The actual isinstance check should work without raising TypeError
-        try:
-            isinstance(mock, ProtocolCapabilityProvider)
-        except TypeError as e:
-            pytest.fail(f"Protocol is not runtime_checkable: {e}")
+        # Runtime checkable protocols support isinstance without TypeError
+        result = isinstance(mock, ProtocolCapabilityProvider)
+        assert result is True, "MockProvider should satisfy the protocol"
 
     def test_protocol_has_get_capabilities_method(self) -> None:
         """Test that protocol defines get_capabilities method."""
