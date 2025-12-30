@@ -54,12 +54,33 @@ Thread Safety:
 import threading
 import uuid
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, Generic, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Generic, Protocol, TypeVar, cast, runtime_checkable
 from uuid import UUID
 
 # Generic type parameters for typed event processing
 InputStateT = TypeVar("InputStateT")
 OutputStateT = TypeVar("OutputStateT")
+
+
+@runtime_checkable
+class ProtocolFromEvent(Protocol):
+    """Protocol for classes that support construction from ModelOnexEvent.
+
+    This protocol enables type-safe checking of the from_event class method
+    pattern used by input state classes that can be constructed from events.
+
+    Example:
+        >>> class MyInputState:
+        ...     @classmethod
+        ...     def from_event(cls, event: ModelOnexEvent) -> "MyInputState":
+        ...         return cls(...)
+        >>> isinstance(MyInputState, ProtocolFromEvent)  # True at runtime
+    """
+
+    @classmethod
+    def from_event(cls, event: Any) -> Any:
+        """Construct an instance from a ModelOnexEvent."""
+        ...
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_execution_shape import EnumMessageCategory
@@ -106,11 +127,22 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
 
     Validation:
         All bind methods enforce strict validation:
-        - bind_node_name(): Rejects empty or whitespace-only strings
-        - bind_contract_path(): Rejects empty or whitespace-only strings
-        - Use _event_bus_runtime_state.reset() to clear bindings
+        - bind_node_name(): Rejects empty or whitespace-only strings (raises ModelOnexError)
+        - bind_contract_path(): Rejects empty or whitespace-only strings (raises ModelOnexError)
+        - bind_event_bus(): Stores the event bus reference and sets is_bound=True
+        - bind_registry(): Stores the registry and sets is_bound=True if registry.event_bus is available
 
         If no node_name is bound, get_node_name() falls back to class name.
+
+    Reset vs Bind Behavior:
+        - **bind_*() methods**: Set configuration values during initialization. These validate
+          input and raise ModelOnexError for invalid values. Use in __init__ before the
+          instance is shared across threads.
+        - **_event_bus_runtime_state.reset()**: Clears the is_bound flag while preserving
+          node_name and contract_path. Use for cleanup between operations (e.g., test teardown)
+          or before rebinding with new configuration.
+        - **dispose_event_bus_resources()**: Full cleanup that stops listeners, joins threads,
+          clears all bindings, and resets runtime state. Use on shutdown.
 
     Type Parameters:
         InputStateT: The type of input state for event processing
@@ -391,23 +423,37 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
 
         Args:
             contract_path: Absolute or relative path to the ONEX contract
-                YAML file that defines this node's event patterns. An empty
-                string is treated as "no contract" and will cause
-                get_event_patterns() to return an empty list with a warning.
+                YAML file that defines this node's event patterns. Must be
+                a non-empty string. Use reset() on the runtime state to clear
+                the binding if needed.
+
+        Raises:
+            ModelOnexError: If contract_path is empty or whitespace-only.
 
         Note:
             The contract file is not loaded immediately; it is read when
             get_event_patterns() is called.
 
-        Empty String Handling:
-            Passing an empty string ("") is semantically equivalent to not
-            binding a contract path at all. The get_event_patterns() method
-            uses `if not contract_path:` to check for both None and empty
-            string, treating both as "no contract configured". If you want
-            to explicitly clear a previously bound contract path, pass an
-            empty string.
+        Validation:
+            This method validates that contract_path is non-empty and non-whitespace,
+            consistent with ModelEventBusRuntimeState.bind() validation. To clear
+            a previously bound contract path, use _event_bus_runtime_state.reset()
+            followed by re-binding with the desired configuration.
         """
         self._warn_if_binding_locked("bind_contract_path")
+
+        # Validate contract_path - consistent with ModelEventBusRuntimeState.bind()
+        if not contract_path or not contract_path.strip():
+            raise ModelOnexError(
+                message="contract_path must be a non-empty string for binding; "
+                "use _event_bus_runtime_state.reset() to clear binding configuration",
+                error_code=EnumCoreErrorCode.VALIDATION_FAILED,
+                context={
+                    "class_name": self.__class__.__name__,
+                    "provided_value": repr(contract_path),
+                },
+            )
+
         self._event_bus_runtime_state.contract_path = contract_path
 
     def bind_node_name(self, node_name: str) -> None:
@@ -424,15 +470,38 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
             (e.g., after start_event_listener() or publish operations).
 
         Args:
-            node_name: The human-readable name of this node. Should be
-                unique within the system for proper event correlation.
+            node_name: The human-readable name of this node. Must be a
+                non-empty string. Should be unique within the system for
+                proper event correlation.
+
+        Raises:
+            ModelOnexError: If node_name is empty or whitespace-only.
 
         Note:
             This affects get_node_name() return value and all log output.
             If no node name is bound (state.node_name is None), the
             get_node_name() method returns the class name as a fallback.
+
+        Validation:
+            This method validates that node_name is non-empty and non-whitespace,
+            consistent with ModelEventBusRuntimeState.bind() validation. To clear
+            the node name binding, use _event_bus_runtime_state.reset() followed
+            by re-binding with the desired configuration.
         """
         self._warn_if_binding_locked("bind_node_name")
+
+        # Validate node_name - consistent with ModelEventBusRuntimeState.bind()
+        if not node_name or not node_name.strip():
+            raise ModelOnexError(
+                message="node_name must be a non-empty string for binding; "
+                "use _event_bus_runtime_state.reset() to unbind without clearing configuration",
+                error_code=EnumCoreErrorCode.VALIDATION_FAILED,
+                context={
+                    "class_name": self.__class__.__name__,
+                    "provided_value": repr(node_name),
+                },
+            )
+
         self._event_bus_runtime_state.node_name = node_name
 
     # --- Fail-Fast Event Bus Access ---
@@ -1498,10 +1567,28 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
             else:
                 event_data = {}
 
-            # Try to create input state from event data
-            if hasattr(input_state_class, "from_event"):
-                result: InputStateT = input_state_class.from_event(event)
+            # Try to create input state from event data using from_event if available
+            # Use Protocol-based type narrowing for proper type safety
+            if isinstance(input_state_class, type) and issubclass(
+                input_state_class, ProtocolFromEvent
+            ):
+                # Protocol check passed - from_event method exists and is callable
+                result: InputStateT = cast(
+                    InputStateT, input_state_class.from_event(event)
+                )
                 return result
+
+            # Fallback: check for from_event via getattr for classes that don't
+            # match the Protocol (e.g., due to signature differences)
+            # TODO(v1.0): Remove this fallback after migration to ProtocolFromEvent.
+            # This supports legacy input state classes that have from_event but don't
+            # conform to the ProtocolFromEvent signature. Once all consumers have
+            # migrated to the protocol-based pattern, this can be removed.
+            from_event_method = getattr(input_state_class, "from_event", None)
+            if from_event_method is not None and callable(from_event_method):
+                result = cast(InputStateT, from_event_method(event))
+                return result
+
             # Verify class is callable before invoking
             if not callable(input_state_class):
                 raise ModelOnexError(

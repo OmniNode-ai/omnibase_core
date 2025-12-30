@@ -616,9 +616,17 @@ class ModelEventBusOutputState(BaseModel):
     ) -> ModelEventBusOutputState:
         """Create output state with full tracking information."""
         # Normalize status to EnumOnexStatus
-        status_enum = (
-            status if isinstance(status, EnumOnexStatus) else EnumOnexStatus(status)
-        )
+        if isinstance(status, EnumOnexStatus):
+            status_enum = status
+        else:
+            try:
+                status_enum = EnumOnexStatus(status)
+            except ValueError as e:
+                raise ModelOnexError(
+                    message=f"Invalid status value: {e}",
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    context={"value": status},
+                ) from e
         is_success = status_enum == EnumOnexStatus.SUCCESS
         return cls(
             version=(
