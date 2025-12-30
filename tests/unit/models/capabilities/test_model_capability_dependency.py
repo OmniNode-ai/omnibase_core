@@ -190,9 +190,9 @@ class TestModelCapabilityDependencyCapabilityValidation:
         assert "must follow pattern" in str(exc_info.value)
 
     def test_invalid_capability_special_chars(self) -> None:
-        """Test that special characters raise ModelOnexError."""
+        """Test that special characters (other than underscore/hyphen) raise ModelOnexError."""
         with pytest.raises(ModelOnexError) as exc_info:
-            ModelCapabilityDependency(alias="db", capability="database-relational")
+            ModelCapabilityDependency(alias="db", capability="database@relational")
         assert "must follow pattern" in str(exc_info.value)
 
     def test_invalid_capability_empty(self) -> None:
@@ -369,30 +369,12 @@ class TestModelCapabilityDependencyStringRepresentation:
 
 @pytest.mark.unit
 class TestModelCapabilityDependencyEquality:
-    """Tests for equality (not hashable due to dict fields)."""
+    """Tests for ModelCapabilityDependency equality.
 
-    def test_unhashable_due_to_dict_fields(self) -> None:
-        """Test that ModelCapabilityDependency is NOT hashable due to dict fields.
-
-        Models with dict[str, Any] fields (like ModelRequirementSet's must/prefer/forbid/hints)
-        are frozen but cannot be hashed. This test verifies all unhashability scenarios:
-        - Direct hash() call fails
-        - Cannot be used in sets (sets require hashable elements)
-        - Cannot be used as dict keys (dict keys require hashable elements)
-        """
-        dep = ModelCapabilityDependency(alias="db", capability="database.relational")
-
-        # Direct hash() call should fail
-        with pytest.raises(TypeError, match="unhashable"):
-            hash(dep)
-
-        # Cannot add to set (sets use hashing internally)
-        with pytest.raises(TypeError, match="unhashable"):
-            _ = {dep}
-
-        # Cannot use as dict key (dict keys must be hashable)
-        with pytest.raises(TypeError, match="unhashable"):
-            _ = {dep: "value"}
+    Note: Hashability tests have been consolidated into
+    TestCapabilityModelsHashability in test_model_requirement_set.py for
+    cross-model parametrized testing.
+    """
 
     def test_equality_same_dependencies(self) -> None:
         """Test equality for identical dependencies."""
@@ -681,9 +663,8 @@ class TestSelectionPolicyBehavior:
             filtered = [
                 p
                 for p in providers
-                if p.get("supports_transactions") == dep.requirements.must.get(
-                    "supports_transactions"
-                )
+                if p.get("supports_transactions")
+                == dep.requirements.must.get("supports_transactions")
             ]
             # auto_if_unique: only select if exactly one match
             if len(filtered) == 1:
@@ -692,7 +673,9 @@ class TestSelectionPolicyBehavior:
 
         # With 3 matching providers, auto_if_unique should return None (reject)
         result = mock_resolve_auto_if_unique(matching_providers)
-        assert result is None, "auto_if_unique should reject when multiple providers match"
+        assert result is None, (
+            "auto_if_unique should reject when multiple providers match"
+        )
 
         # Verify policy configuration
         assert dep.selection_policy == "auto_if_unique"
@@ -723,10 +706,7 @@ class TestSelectionPolicyBehavior:
             filtered = [
                 p
                 for p in providers
-                if all(
-                    p.get(k) == v
-                    for k, v in dep.requirements.must.items()
-                )
+                if all(p.get(k) == v for k, v in dep.requirements.must.items())
             ]
             if len(filtered) == 1:
                 return filtered[0]
@@ -734,7 +714,9 @@ class TestSelectionPolicyBehavior:
 
         # With exactly one matching provider, auto_if_unique should select it
         result = mock_resolve_auto_if_unique(providers)
-        assert result is not None, "auto_if_unique should select when exactly one matches"
+        assert result is not None, (
+            "auto_if_unique should select when exactly one matches"
+        )
         assert result["name"] == "postgres"
 
     def test_best_score_selects_highest_scoring_provider(self) -> None:
@@ -939,7 +921,9 @@ class TestSelectionPolicyBehavior:
             """Mock resolver requiring explicit binding."""
             if explicit_binding is None:
                 return None
-            return next((p for p in providers if p.get("name") == explicit_binding), None)
+            return next(
+                (p for p in providers if p.get("name") == explicit_binding), None
+            )
 
         # Without explicit binding, should return None
         assert mock_resolve_require_explicit(providers) is None
@@ -951,38 +935,57 @@ class TestSelectionPolicyBehavior:
 class TestCapabilityNameRegexEdgeCases:
     """Tests for capability name regex edge cases, particularly hyphen handling.
 
-    The capability naming pattern explicitly excludes hyphens to maintain
-    unambiguous token boundaries. Dots separate tokens, underscores join
-    multi-word tokens within a single namespace level.
+    The capability naming pattern allows hyphens and underscores within tokens
+    for multi-word names. Dots remain the semantic separators between
+    domain/type/variant levels.
     """
 
-    def test_hyphen_in_capability_domain_rejected(self) -> None:
-        """Test that hyphens in domain token are rejected."""
-        with pytest.raises(ModelOnexError) as exc_info:
-            ModelCapabilityDependency(alias="db", capability="my-domain.feature")
-        assert "must follow pattern" in str(exc_info.value)
-        assert "use underscores, not hyphens" in str(exc_info.value)
+    def test_hyphen_in_capability_domain_accepted(self) -> None:
+        """Test that hyphens in domain token are accepted."""
+        dep = ModelCapabilityDependency(alias="db", capability="my-domain.feature")
+        assert dep.domain == "my-domain"
+        assert dep.capability_type == "feature"
 
-    def test_hyphen_in_capability_type_rejected(self) -> None:
-        """Test that hyphens in type token are rejected."""
-        with pytest.raises(ModelOnexError) as exc_info:
-            ModelCapabilityDependency(alias="svc", capability="core.my-feature")
-        assert "must follow pattern" in str(exc_info.value)
+    def test_hyphen_in_capability_type_accepted(self) -> None:
+        """Test that hyphens in type token are accepted."""
+        dep = ModelCapabilityDependency(alias="svc", capability="core.my-feature")
+        assert dep.domain == "core"
+        assert dep.capability_type == "my-feature"
 
-    def test_hyphen_in_capability_variant_rejected(self) -> None:
-        """Test that hyphens in variant token are rejected."""
-        with pytest.raises(ModelOnexError) as exc_info:
-            ModelCapabilityDependency(alias="svc", capability="vendor.some-capability")
-        assert "must follow pattern" in str(exc_info.value)
+    def test_hyphen_in_capability_variant_accepted(self) -> None:
+        """Test that hyphens in variant token are accepted."""
+        dep = ModelCapabilityDependency(
+            alias="svc", capability="vendor.capability.some-variant"
+        )
+        assert dep.domain == "vendor"
+        assert dep.capability_type == "capability"
+        assert dep.variant == "some-variant"
 
-    def test_multiple_hyphens_rejected(self) -> None:
-        """Test that multiple hyphens in capability are rejected."""
-        with pytest.raises(ModelOnexError) as exc_info:
-            ModelCapabilityDependency(alias="x", capability="my-ns.my-type.my-var")
-        assert "must follow pattern" in str(exc_info.value)
+    def test_multiple_hyphens_accepted(self) -> None:
+        """Test that multiple hyphens in capability are accepted."""
+        dep = ModelCapabilityDependency(alias="x", capability="my-ns.my-type.my-var")
+        assert dep.domain == "my-ns"
+        assert dep.capability_type == "my-type"
+        assert dep.variant == "my-var"
 
-    def test_underscore_alternative_to_hyphen_accepted(self) -> None:
-        """Test that underscores work as alternative to hyphens for multi-word tokens."""
+    def test_text_embedding_style_capability_accepted(self) -> None:
+        """Test common LLM-style capability names with hyphens."""
+        dep = ModelCapabilityDependency(
+            alias="embed", capability="llm.text-embedding.v1"
+        )
+        assert dep.domain == "llm"
+        assert dep.capability_type == "text-embedding"
+        assert dep.variant == "v1"
+
+    def test_key_value_style_capability_accepted(self) -> None:
+        """Test storage/cache capability names with hyphens."""
+        dep = ModelCapabilityDependency(alias="kv", capability="storage.key-value.v1")
+        assert dep.domain == "storage"
+        assert dep.capability_type == "key-value"
+        assert dep.variant == "v1"
+
+    def test_underscore_still_accepted(self) -> None:
+        """Test that underscores still work for multi-word tokens."""
         # Underscores ARE allowed for multi-word tokens
         dep1 = ModelCapabilityDependency(alias="db", capability="my_domain.feature")
         assert dep1.domain == "my_domain"
@@ -990,14 +993,24 @@ class TestCapabilityNameRegexEdgeCases:
         dep2 = ModelCapabilityDependency(alias="svc", capability="core.my_feature")
         assert dep2.capability_type == "my_feature"
 
-        dep3 = ModelCapabilityDependency(alias="vec", capability="storage.vector.my_variant")
+        dep3 = ModelCapabilityDependency(
+            alias="vec", capability="storage.vector.my_variant"
+        )
         assert dep3.variant == "my_variant"
+
+    def test_mixed_hyphen_and_underscore_accepted(self) -> None:
+        """Test that mixing hyphens and underscores is valid."""
+        dep = ModelCapabilityDependency(
+            alias="db", capability="database-v2.relational_14.postgres-compatible"
+        )
+        assert dep.domain == "database-v2"
+        assert dep.capability_type == "relational_14"
+        assert dep.variant == "postgres-compatible"
 
     def test_mixed_underscore_and_numbers_accepted(self) -> None:
         """Test that underscores and numbers are valid within tokens."""
         dep = ModelCapabilityDependency(
-            alias="db",
-            capability="database_v2.relational_14.postgres_compatible"
+            alias="db", capability="database_v2.relational_14.postgres_compatible"
         )
         assert dep.domain == "database_v2"
         assert dep.capability_type == "relational_14"
@@ -1012,3 +1025,13 @@ class TestCapabilityNameRegexEdgeCases:
         assert dep.domain == "event_bus"
         assert dep.capability_type == "message_queue"
         assert dep.variant == "rabbit_mq"
+
+    def test_capability_with_only_hyphens_accepted(self) -> None:
+        """Test capability with multiple hyphens in tokens."""
+        dep = ModelCapabilityDependency(
+            alias="q", capability="event-bus.message-queue.rabbit-mq"
+        )
+        assert dep.capability == "event-bus.message-queue.rabbit-mq"
+        assert dep.domain == "event-bus"
+        assert dep.capability_type == "message-queue"
+        assert dep.variant == "rabbit-mq"

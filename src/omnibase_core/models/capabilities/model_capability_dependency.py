@@ -16,9 +16,9 @@ at runtime.
 Capability Naming Convention:
     Capabilities follow the pattern: ``<domain>.<type>[.<variant>]``
 
-    - Tokens contain lowercase letters, digits, and underscores
+    - Tokens contain lowercase letters, digits, underscores, and hyphens
     - Dots are semantic separators between tokens
-    - Hyphens are NOT allowed (use underscores for multi-word tokens)
+    - Hyphens and underscores are allowed within tokens for multi-word names
 
     Examples:
         - ``database.relational`` - Any relational database
@@ -26,7 +26,8 @@ Capability Naming Convention:
         - ``storage.vector`` - Vector storage capability
         - ``storage.vector.qdrant`` - Qdrant-compatible vector store
         - ``messaging.event_bus`` - Event bus capability
-        - ``cache.key_value`` - Key-value cache capability
+        - ``llm.text-embedding.v1`` - Text embedding capability (hyphen OK)
+        - ``cache.key-value`` - Key-value cache capability (hyphen OK)
         - ``cache.distributed`` - Distributed cache
         - ``secrets.vault`` - Secrets management
         - ``http.client`` - HTTP client capability
@@ -81,17 +82,16 @@ from omnibase_core.models.capabilities.model_requirement_set import ModelRequire
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 # Regex pattern for valid capability names
-# Must be lowercase letters and digits, dot-separated tokens
+# Must be lowercase letters, digits, underscores, and hyphens, with dot-separated tokens
 # At least two tokens (one dot required): domain.type[.variant]
 # Note: Single-character tokens are intentionally allowed (e.g., "a.b") to support
 # short, idiomatic names common in capability systems. The min_length=3 field
 # constraint ensures the overall capability has reasonable length ("a.b" is valid).
 #
-# Why hyphens are excluded: Dots serve as semantic separators (domain.type.variant),
-# so allowing hyphens within tokens (e.g., "event-bus") would create ambiguity about
-# token boundaries. Use underscores instead for multi-word tokens (e.g., "event_bus",
-# "key_value"). This keeps the grammar unambiguous: dots separate, underscores join.
-_CAPABILITY_PATTERN = re.compile(r"^[a-z0-9_]+(\.[a-z0-9_]+)+$")
+# Both hyphens and underscores are allowed within tokens for multi-word names
+# (e.g., "text-embedding", "event_bus", "key-value"). Dots remain the semantic
+# separators between domain/type/variant levels.
+_CAPABILITY_PATTERN = re.compile(r"^[a-z0-9_-]+(\.[a-z0-9_-]+)+$")
 
 # Regex pattern for valid alias names
 # More permissive: lowercase letters, digits, underscores
@@ -119,8 +119,8 @@ class ModelCapabilityDependency(BaseModel):
             Must be lowercase letters, digits, or underscores, starting with a letter.
         capability: Capability identifier following the naming convention
             ``<domain>.<type>[.<variant>]``. Tokens may contain lowercase letters,
-            digits, and underscores (no hyphens). Examples: "database.relational",
-            "storage.vector", "cache.key_value".
+            digits, underscores, and hyphens. Examples: "database.relational",
+            "storage.vector", "cache.key-value", "llm.text-embedding.v1".
         requirements: Constraint set defining must/prefer/forbid/hints for
             provider matching. See ModelRequirementSet for details.
         selection_policy: How to select among matching providers:
@@ -305,10 +305,9 @@ class ModelCapabilityDependency(BaseModel):
         Validate that capability follows naming convention.
 
         The capability must follow the pattern: ``<domain>.<type>[.<variant>]``
-            - All lowercase letters, digits, and underscores
+            - All lowercase letters, digits, underscores, and hyphens
             - Dot-separated tokens (at least one dot required)
             - No consecutive dots, leading/trailing dots
-            - No hyphens (use underscores for multi-word tokens)
 
         .. important:: Dot Requirement
 
@@ -334,6 +333,8 @@ class ModelCapabilityDependency(BaseModel):
             - "database.relational" - domain=database, type=relational
             - "storage.vector.qdrant" - domain=storage, type=vector, variant=qdrant
             - "cache.key_value" - domain=cache, type=key_value (underscore OK)
+            - "llm.text-embedding.v1" - domain=llm, type=text-embedding (hyphen OK)
+            - "cache.key-value" - domain=cache, type=key-value (hyphen OK)
             - "core.logging" - domain=core, type=logging
 
             Invalid capabilities:
@@ -341,15 +342,13 @@ class ModelCapabilityDependency(BaseModel):
             - "Database.Relational" - uppercase not allowed
             - "database" - **missing dot** (single token not allowed)
             - "logging" - **missing dot** (must be "core.logging" or similar)
-            - "event-bus.handler" - hyphens not allowed (use "event_bus.handler")
         """
         if not _CAPABILITY_PATTERN.match(v):
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=(
                     f"Invalid capability '{v}': must follow pattern '<domain>.<type>[.<variant>]' "
-                    "with lowercase letters/digits/underscores and at least one dot separator "
-                    "(use underscores, not hyphens, for multi-word tokens)"
+                    "with lowercase letters/digits/underscores/hyphens and at least one dot separator"
                 ),
             )
         return v

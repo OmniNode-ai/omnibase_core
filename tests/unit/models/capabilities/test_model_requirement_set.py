@@ -3,9 +3,14 @@
 # SPDX-License-Identifier: Apache-2.0
 """Unit tests for ModelRequirementSet."""
 
+from typing import Any
+
 import pytest
 from pydantic import ValidationError
 
+from omnibase_core.models.capabilities.model_capability_dependency import (
+    ModelCapabilityDependency,
+)
 from omnibase_core.models.capabilities.model_requirement_set import ModelRequirementSet
 
 
@@ -191,8 +196,10 @@ class TestModelRequirementSetMerge:
         # IMPORTANT: This demonstrates shallow merge - "retries" and "host" are LOST
         # because the entire "config" dict is replaced, not recursively merged
         assert merged.must == {"config": {"timeout": 60}}
-        assert "retries" not in merged.must.get("config", {})
-        assert "host" not in merged.must.get("config", {})
+        config = merged.must.get("config", {})
+        assert isinstance(config, dict)
+        assert "retries" not in config
+        assert "host" not in config
 
     def test_merge_shallow_exact_example(self) -> None:
         """Test shallow merge with exact example: {a: {b: 1}} + {a: {c: 2}} = {a: {c: 2}}.
@@ -214,7 +221,9 @@ class TestModelRequirementSetMerge:
         # Explicitly verify 'b' is NOT present (shallow, not deep merge)
         nested = merged.must.get("a", {})
         assert isinstance(nested, dict)
-        assert "b" not in nested, "Shallow merge should replace nested dict, not merge keys"
+        assert "b" not in nested, (
+            "Shallow merge should replace nested dict, not merge keys"
+        )
         assert nested.get("c") == 2
 
     def test_merge_shallow_lists_are_replaced_not_concatenated(self) -> None:
@@ -236,6 +245,119 @@ class TestModelRequirementSetMerge:
         assert "postgres" not in vendors
         assert "mysql" not in vendors
         assert len(vendors) == 1
+
+    def test_merge_shallow_prefer_tier_nested_dicts(self) -> None:
+        """Test shallow merge on prefer tier with nested dicts.
+
+        Ensures shallow merge behavior is consistent across all tiers (must,
+        prefer, forbid, hints). The prefer tier may contain complex scoring
+        criteria that should be fully replaced, not deep-merged.
+        """
+        base = ModelRequirementSet(
+            prefer={
+                "latency_config": {"p50_ms": 10, "p99_ms": 50, "timeout_ms": 100},
+                "region": "us-east-1",
+            }
+        )
+        override = ModelRequirementSet(
+            prefer={
+                "latency_config": {
+                    "p50_ms": 5
+                },  # Only p50_ms, missing p99_ms/timeout_ms
+            }
+        )
+
+        merged = base.merge(override)
+
+        # Shallow merge: "latency_config" is entirely replaced
+        assert merged.prefer["latency_config"] == {"p50_ms": 5}
+
+        # p99_ms and timeout_ms are LOST (shallow, not deep merge)
+        config = merged.prefer.get("latency_config", {})
+        assert isinstance(config, dict)
+        assert "p99_ms" not in config
+        assert "timeout_ms" not in config
+
+        # region is preserved (different key, not overridden)
+        assert merged.prefer.get("region") == "us-east-1"
+
+    def test_merge_shallow_forbid_tier_nested_dicts(self) -> None:
+        """Test shallow merge on forbid tier with nested dicts.
+
+        Ensures shallow merge behavior is consistent across the forbid tier.
+        Forbid constraints might use nested dicts for complex exclusion rules.
+        """
+        base = ModelRequirementSet(
+            forbid={
+                "network_policy": {"public_internet": True, "cross_region": True},
+            }
+        )
+        override = ModelRequirementSet(
+            forbid={
+                "network_policy": {"cross_az": True},  # Different nested key
+            }
+        )
+
+        merged = base.merge(override)
+
+        # Shallow merge: entire "network_policy" dict is replaced
+        assert merged.forbid["network_policy"] == {"cross_az": True}
+
+        # public_internet and cross_region are LOST
+        policy = merged.forbid.get("network_policy", {})
+        assert isinstance(policy, dict)
+        assert "public_internet" not in policy
+        assert "cross_region" not in policy
+
+    def test_merge_shallow_all_tiers_comprehensive(self) -> None:
+        """Comprehensive test of shallow merge across all four tiers.
+
+        This test verifies that shallow merge behavior is consistent and
+        intentional across must, prefer, forbid, and hints tiers.
+        Documents the behavior as intentional rather than a bug.
+        """
+        base = ModelRequirementSet(
+            must={"config": {"a": 1, "b": 2}},
+            prefer={"scoring": {"weight": 0.5, "threshold": 0.8}},
+            forbid={"exclusions": {"x": True, "y": True}},
+            hints={"advice": {"primary": "postgres", "fallback": "mysql"}},
+        )
+        override = ModelRequirementSet(
+            must={"config": {"c": 3}},
+            prefer={"scoring": {"weight": 0.9}},
+            forbid={"exclusions": {"z": True}},
+            hints={"advice": {"tertiary": "sqlite"}},
+        )
+
+        merged = base.merge(override)
+
+        # All tiers should have shallow merge behavior
+        # must: {a, b} replaced by {c}
+        assert merged.must == {"config": {"c": 3}}
+        must_config = merged.must.get("config", {})
+        assert isinstance(must_config, dict)
+        assert "a" not in must_config
+        assert "b" not in must_config
+
+        # prefer: {weight, threshold} replaced by {weight}
+        assert merged.prefer == {"scoring": {"weight": 0.9}}
+        prefer_scoring = merged.prefer.get("scoring", {})
+        assert isinstance(prefer_scoring, dict)
+        assert "threshold" not in prefer_scoring
+
+        # forbid: {x, y} replaced by {z}
+        assert merged.forbid == {"exclusions": {"z": True}}
+        forbid_exclusions = merged.forbid.get("exclusions", {})
+        assert isinstance(forbid_exclusions, dict)
+        assert "x" not in forbid_exclusions
+        assert "y" not in forbid_exclusions
+
+        # hints: {primary, fallback} replaced by {tertiary}
+        assert merged.hints == {"advice": {"tertiary": "sqlite"}}
+        hints_advice = merged.hints.get("advice", {})
+        assert isinstance(hints_advice, dict)
+        assert "primary" not in hints_advice
+        assert "fallback" not in hints_advice
 
 
 @pytest.mark.unit
@@ -314,30 +436,12 @@ class TestModelRequirementSetRepr:
 
 @pytest.mark.unit
 class TestModelRequirementSetEquality:
-    """Tests for ModelRequirementSet equality (not hashable due to dict fields)."""
+    """Tests for ModelRequirementSet equality.
 
-    def test_not_hashable_due_to_dict_fields(self) -> None:
-        """Test that ModelRequirementSet is NOT hashable due to dict fields.
-
-        Models with dict[str, Any] fields are frozen but cannot be hashed.
-        This test verifies all unhashability scenarios:
-        - Direct hash() call fails
-        - Cannot be used in sets (sets require hashable elements)
-        - Cannot be used as dict keys (dict keys require hashable elements)
-        """
-        reqs = ModelRequirementSet(must={"key": "value"})
-
-        # Direct hash() call should fail
-        with pytest.raises(TypeError, match="unhashable"):
-            hash(reqs)
-
-        # Cannot add to set (sets use hashing internally)
-        with pytest.raises(TypeError, match="unhashable"):
-            _ = {reqs}
-
-        # Cannot use as dict key (dict keys must be hashable)
-        with pytest.raises(TypeError, match="unhashable"):
-            _ = {reqs: "value"}
+    Note: Hashability tests have been consolidated into
+    TestCapabilityModelsHashability at the end of this file for
+    cross-model parametrized testing.
+    """
 
     def test_equality_same_requirements(self) -> None:
         """Test equality for identical requirements."""
@@ -350,3 +454,89 @@ class TestModelRequirementSetEquality:
         reqs1 = ModelRequirementSet(must={"a": 1})
         reqs2 = ModelRequirementSet(must={"a": 2})
         assert reqs1 != reqs2
+
+
+# =============================================================================
+# Consolidated Hashability Tests (Cross-Model Parametrized)
+# =============================================================================
+
+
+def _create_model_requirement_set() -> ModelRequirementSet:
+    """Factory for ModelRequirementSet test instance."""
+    return ModelRequirementSet(must={"key": "value"})
+
+
+def _create_model_capability_dependency() -> ModelCapabilityDependency:
+    """Factory for ModelCapabilityDependency test instance."""
+    return ModelCapabilityDependency(alias="db", capability="database.relational")
+
+
+@pytest.mark.unit
+class TestCapabilityModelsHashability:
+    """Consolidated tests for hashability behavior across capability models.
+
+    This class uses pytest.mark.parametrize to test hashability behavior
+    consistently across all capability models that contain dict fields.
+    Models with dict[str, Any] fields are frozen (immutable) but NOT hashable
+    because dicts are mutable and thus unhashable.
+
+    This consolidation:
+    - Reduces code duplication across model-specific test files
+    - Ensures consistent testing of this critical behavior
+    - Makes it easy to add new models to the test suite
+
+    Note: Individual model test files may retain their own hashability tests
+    for backwards compatibility, but this parametrized test is the canonical
+    source for cross-model hashability verification.
+    """
+
+    @pytest.mark.parametrize(
+        ("model_factory", "model_name"),
+        [
+            pytest.param(
+                _create_model_requirement_set,
+                "ModelRequirementSet",
+                id="ModelRequirementSet",
+            ),
+            pytest.param(
+                _create_model_capability_dependency,
+                "ModelCapabilityDependency",
+                id="ModelCapabilityDependency",
+            ),
+        ],
+    )
+    def test_models_with_dict_fields_are_not_hashable(
+        self,
+        model_factory: Any,
+        model_name: str,
+    ) -> None:
+        """Test that capability models with dict fields are NOT hashable.
+
+        Pydantic models with frozen=True are immutable but this does NOT make
+        them hashable if they contain dict fields. This is because:
+        - Python's hash() requires all nested values to be hashable
+        - dict is inherently unhashable (mutable mapping)
+        - The frozen=True config only prevents attribute reassignment
+
+        This test verifies all unhashability scenarios:
+        - Direct hash() call raises TypeError
+        - Cannot be used in sets (sets require hashable elements)
+        - Cannot be used as dict keys (keys must be hashable)
+
+        Args:
+            model_factory: Callable that creates a test instance of the model.
+            model_name: Name of the model for error messages.
+        """
+        instance = model_factory()
+
+        # Direct hash() call should fail
+        with pytest.raises(TypeError, match="unhashable"):
+            hash(instance)
+
+        # Cannot add to set (sets use hashing internally)
+        with pytest.raises(TypeError, match="unhashable"):
+            _ = {instance}
+
+        # Cannot use as dict key (dict keys must be hashable)
+        with pytest.raises(TypeError, match="unhashable"):
+            _ = {instance: "value"}

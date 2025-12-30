@@ -268,6 +268,18 @@ class ModelRequirementSet(BaseModel):
             >>> merged.must
             {'config': {'timeout': 60}}
         """
+        # Implementation Note: Shallow merge is intentional
+        #
+        # Why shallow merge (dict spread) instead of deep merge (recursive update)?
+        # 1. Performance: O(n) dict spread vs O(n*m) recursive traversal
+        # 2. Predictability: Flat key-value replacement is easier to reason about
+        # 3. Simplicity: No edge cases with mixed types (list vs dict vs scalar)
+        # 4. Explicit override: When you override a nested config, you intend to
+        #    replace it entirely rather than partially patch it
+        # 5. JSON compatibility: Matches how JSON Merge Patch (RFC 7396) works
+        #
+        # If deep merge is needed, callers should pre-process their requirements
+        # before calling merge(), or use a utility like `dict_deep_update()`.
         return ModelRequirementSet(
             must={**self.must, **other.must},
             prefer={**self.prefer, **other.prefer},
