@@ -403,12 +403,18 @@ class ModelMetadataFieldInfo(BaseModel):
         return result
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
-        """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
+        """Set metadata from dictionary (ProtocolMetadataProvider protocol).
+
+        Raises:
+            ModelOnexError: If setting an attribute fails or validation error occurs
+        """
         try:
             for key, value in metadata.items():
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
+        except ModelOnexError:
+            raise  # Re-raise without double-wrapping
         except (AttributeError, ValueError, TypeError, ValidationError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,

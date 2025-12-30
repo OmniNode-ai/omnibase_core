@@ -63,8 +63,9 @@ class ModelTransaction:
         """Rollback transaction - execute all rollback operations."""
         self.state = EnumTransactionState.ROLLED_BACK
 
-        # Track cancellation to re-raise after completing all rollback operations
-        cancelled = False
+        # Store cancellation exception to re-raise after completing all rollback
+        # operations, preserving the original exception context and traceback.
+        cancelled_error: asyncio.CancelledError | None = None
 
         # Execute rollback operations in reverse order
         for rollback_func in reversed(self.rollback_operations):
@@ -73,10 +74,10 @@ class ModelTransaction:
                     await rollback_func()
                 else:
                     rollback_func()
-            except asyncio.CancelledError:
+            except asyncio.CancelledError as e:
                 # Note cancellation but continue with remaining rollback operations
                 # to maintain transaction consistency. Re-raise after all operations.
-                cancelled = True
+                cancelled_error = e
                 emit_log_event(
                     LogLevel.WARNING,
                     "Rollback operation cancelled - continuing with remaining operations",
@@ -86,14 +87,15 @@ class ModelTransaction:
                 )
             except BaseException as e:  # cleanup-resilience-ok: rollback must complete
                 # Re-raise process signals immediately to honor termination requests.
-                # KeyboardInterrupt and SystemExit indicate the process should stop.
-                if isinstance(e, (KeyboardInterrupt, SystemExit)):
+                # KeyboardInterrupt, SystemExit, and GeneratorExit indicate the
+                # process or generator should stop - these must always propagate.
+                if isinstance(e, (KeyboardInterrupt, SystemExit, GeneratorExit)):
                     raise
                 # Catch all other BaseException subclasses (including Exception
-                # subclasses like MemoryError/OSError, plus GeneratorExit) to ensure
-                # all rollback operations are attempted even if one fails. Errors are
-                # logged but not re-raised to maximize rollback completion; this
-                # includes resource-related errors like MemoryError and OSError.
+                # subclasses like MemoryError and OSError) to ensure all rollback
+                # operations are attempted even if one fails. Errors are logged but
+                # not re-raised to maximize rollback completion. Note: MemoryError
+                # and OSError are Exception subclasses, so they are caught here.
                 # asyncio.CancelledError is handled separately above and re-raised
                 # after all rollback operations complete to honor task cancellation.
                 emit_log_event(
@@ -107,5 +109,6 @@ class ModelTransaction:
                 )
 
         # After all rollback operations complete, honor any pending cancellation
-        if cancelled:
-            raise asyncio.CancelledError
+        # by re-raising the original exception to preserve context and traceback.
+        if cancelled_error is not None:
+            raise cancelled_error

@@ -156,8 +156,6 @@ class ModelOrchestratorOutput(BaseModel):
             except (
                 # ValidationError: Pydantic validation fails (missing/invalid fields)
                 ValidationError,
-                # AttributeError: Unexpected attribute access issue
-                AttributeError,
                 # ValueError: Value conversion or validation rejects value
                 ValueError,
                 # TypeError: Type conversion issues during validation

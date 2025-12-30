@@ -440,7 +440,7 @@ class ModelPost(BaseModel):
         assert result.metadata.files_with_violations is not None
 
     def test_generic_exception_handling(self, tmp_path: Path, monkeypatch):
-        """Test handling of generic exceptions during file processing."""
+        """Test handling of OSError during file processing."""
         test_file = tmp_path / "error_file.py"
         test_file.write_text("# Valid Python file")
 
@@ -452,16 +452,18 @@ class ModelPost(BaseModel):
 
         errors = validate_one_model_per_file(test_file)
         assert len(errors) > 0
-        assert any("Parse error" in error for error in errors)
+        # OSError is now wrapped with specific "File read error" message
+        assert any("File read error" in error for error in errors)
 
     def test_file_not_found_handling(self, tmp_path: Path):
         """Test handling of non-existent files."""
         non_existent = tmp_path / "doesnt_exist.py"
 
-        # Should handle FileNotFoundError gracefully
+        # Should handle FileNotFoundError (subclass of OSError) gracefully
         errors = validate_one_model_per_file(non_existent)
         assert len(errors) > 0
-        assert any("Parse error" in error for error in errors)
+        # FileNotFoundError (OSError) is now wrapped with specific "File read error" message
+        assert any("File read error" in error for error in errors)
 
 
 @pytest.mark.unit

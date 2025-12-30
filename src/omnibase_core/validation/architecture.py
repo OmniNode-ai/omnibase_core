@@ -11,14 +11,20 @@ This module provides validation functions for ONEX architectural principles:
 
 import argparse
 import ast
+import logging
 import sys
 from pathlib import Path
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_validation_metadata import (
     ModelValidationMetadata,
 )
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 from .validation_utils import ModelValidationResult
+
+# Configure logger for this module
+logger = logging.getLogger(__name__)
 
 
 class ModelCounter(ast.NodeVisitor):
@@ -125,12 +131,79 @@ def validate_one_model_per_file(file_path: Path) -> list[str]:
             pass
 
     except SyntaxError as e:
-        errors.append(f"❌ Syntax error: {e}")
-    except (ValueError, UnicodeDecodeError, OSError) as e:
-        errors.append(f"❌ Parse error: {e}")
-    except (TypeError, RecursionError, MemoryError) as e:
-        # Handle AST parsing edge cases: malformed input, deeply nested code, large files
-        errors.append(f"❌ Unexpected error: {e}")
+        # Wrap in ModelOnexError for consistent error handling
+        wrapped_error = ModelOnexError(
+            error_code=EnumCoreErrorCode.CONFIGURATION_PARSE_ERROR,
+            message=f"Syntax error in {file_path}: {e}",
+            context={
+                "file_path": str(file_path),
+                "exception_type": type(e).__name__,
+                "line_number": e.lineno,
+                "offset": e.offset,
+            },
+        )
+        logger.debug(f"Syntax error: {wrapped_error.message}")
+        errors.append(wrapped_error.message)
+    except (ValueError, UnicodeDecodeError) as e:
+        # Handle content parsing errors: invalid source content, encoding issues
+        wrapped_error = ModelOnexError(
+            error_code=EnumCoreErrorCode.FILE_READ_ERROR,
+            message=f"Parse error in {file_path}: {e}",
+            context={
+                "file_path": str(file_path),
+                "exception_type": type(e).__name__,
+            },
+        )
+        logger.debug(f"Parse error: {wrapped_error.message}")
+        errors.append(wrapped_error.message)
+    except OSError as e:
+        # Handle file system errors: permission denied, file not found
+        wrapped_error = ModelOnexError(
+            error_code=EnumCoreErrorCode.FILE_READ_ERROR,
+            message=f"File read error for {file_path}: {e}",
+            context={
+                "file_path": str(file_path),
+                "exception_type": type(e).__name__,
+            },
+        )
+        logger.debug(f"File read error: {wrapped_error.message}")
+        errors.append(wrapped_error.message)
+    except TypeError as e:
+        # Handle malformed AST input (e.g., wrong type passed to ast.parse)
+        wrapped_error = ModelOnexError(
+            error_code=EnumCoreErrorCode.CONFIGURATION_PARSE_ERROR,
+            message=f"Type error parsing {file_path}: {e}",
+            context={
+                "file_path": str(file_path),
+                "exception_type": type(e).__name__,
+            },
+        )
+        logger.debug(f"Type error: {wrapped_error.message}")
+        errors.append(wrapped_error.message)
+    except RecursionError:
+        # Handle deeply nested code that exceeds Python's recursion limit
+        wrapped_error = ModelOnexError(
+            error_code=EnumCoreErrorCode.CONFIGURATION_PARSE_ERROR,
+            message=f"Recursion limit exceeded parsing {file_path}",
+            context={
+                "file_path": str(file_path),
+                "exception_type": "RecursionError",
+            },
+        )
+        logger.debug(f"Recursion error: {wrapped_error.message}")
+        errors.append(wrapped_error.message)
+    except MemoryError:
+        # Handle extremely large files that exhaust memory during AST parsing
+        wrapped_error = ModelOnexError(
+            error_code=EnumCoreErrorCode.CONFIGURATION_PARSE_ERROR,
+            message=f"Memory exhausted parsing {file_path}",
+            context={
+                "file_path": str(file_path),
+                "exception_type": "MemoryError",
+            },
+        )
+        logger.debug(f"Memory error: {wrapped_error.message}")
+        errors.append(wrapped_error.message)
 
     return errors
 
