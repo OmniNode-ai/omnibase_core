@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 """Execution plan model for pipeline hooks."""
+
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.pipeline.models.model_pipeline_hook import (

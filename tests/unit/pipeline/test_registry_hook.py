@@ -1,24 +1,26 @@
 # SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
 #
 # SPDX-License-Identifier: Apache-2.0
-"""Tests for HookRegistry."""
+"""Tests for RegistryHook."""
+
 import pytest
 
 from omnibase_core.pipeline.exceptions import (
     DuplicateHookError,
     HookRegistryFrozenError,
 )
-from omnibase_core.pipeline.hook_registry import HookRegistry
+from omnibase_core.pipeline.registry_hook import RegistryHook
 from omnibase_core.pipeline.models import ModelPipelineHook, PipelinePhase
 
 
 @pytest.mark.unit
-class TestHookRegistryRegistration:
+class TestRegistryHookRegistration:
     """Test hook registration functionality."""
 
+    @pytest.mark.unit
     def test_register_hook_success(self) -> None:
         """Test successful hook registration."""
-        registry = HookRegistry()
+        registry = RegistryHook()
         hook = ModelPipelineHook(
             hook_id="test-hook",
             phase="execute",
@@ -27,9 +29,10 @@ class TestHookRegistryRegistration:
         registry.register(hook)
         assert registry.get_hooks_by_phase("execute") == [hook]
 
+    @pytest.mark.unit
     def test_register_multiple_hooks_same_phase(self) -> None:
         """Test registering multiple hooks in same phase."""
-        registry = HookRegistry()
+        registry = RegistryHook()
         hook1 = ModelPipelineHook(
             hook_id="hook-1",
             phase="before",
@@ -47,9 +50,10 @@ class TestHookRegistryRegistration:
         assert hook1 in hooks
         assert hook2 in hooks
 
+    @pytest.mark.unit
     def test_register_hooks_different_phases(self) -> None:
         """Test registering hooks in different phases."""
-        registry = HookRegistry()
+        registry = RegistryHook()
         hook1 = ModelPipelineHook(
             hook_id="preflight-hook",
             phase="preflight",
@@ -65,14 +69,16 @@ class TestHookRegistryRegistration:
         assert registry.get_hooks_by_phase("preflight") == [hook1]
         assert registry.get_hooks_by_phase("finalize") == [hook2]
 
+    @pytest.mark.unit
     def test_get_hooks_empty_phase(self) -> None:
         """Test getting hooks from phase with no registrations."""
-        registry = HookRegistry()
+        registry = RegistryHook()
         assert registry.get_hooks_by_phase("execute") == []
 
+    @pytest.mark.unit
     def test_get_all_hooks(self) -> None:
         """Test getting all registered hooks."""
-        registry = HookRegistry()
+        registry = RegistryHook()
         hook1 = ModelPipelineHook(
             hook_id="hook-1",
             phase="before",
@@ -88,9 +94,10 @@ class TestHookRegistryRegistration:
         all_hooks = registry.get_all_hooks()
         assert len(all_hooks) == 2
 
+    @pytest.mark.unit
     def test_get_hook_by_id(self) -> None:
         """Test getting a hook by its ID."""
-        registry = HookRegistry()
+        registry = RegistryHook()
         hook = ModelPipelineHook(
             hook_id="my-hook",
             phase="execute",
@@ -102,12 +109,13 @@ class TestHookRegistryRegistration:
 
 
 @pytest.mark.unit
-class TestHookRegistryDuplicateRejection:
+class TestRegistryHookDuplicateRejection:
     """Test duplicate hook ID rejection."""
 
+    @pytest.mark.unit
     def test_duplicate_hook_id_raises_error(self) -> None:
         """Test that registering duplicate hook ID raises error."""
-        registry = HookRegistry()
+        registry = RegistryHook()
         hook1 = ModelPipelineHook(
             hook_id="duplicate-id",
             phase="before",
@@ -125,12 +133,13 @@ class TestHookRegistryDuplicateRejection:
 
 
 @pytest.mark.unit
-class TestHookRegistryFreeze:
+class TestRegistryHookFreeze:
     """Test freeze-after-init pattern."""
 
+    @pytest.mark.unit
     def test_freeze_prevents_registration(self) -> None:
         """Test that freeze() prevents further registrations."""
-        registry = HookRegistry()
+        registry = RegistryHook()
         hook = ModelPipelineHook(
             hook_id="pre-freeze",
             phase="execute",
@@ -147,23 +156,26 @@ class TestHookRegistryFreeze:
         with pytest.raises(HookRegistryFrozenError):
             registry.register(new_hook)
 
+    @pytest.mark.unit
     def test_is_frozen_property(self) -> None:
         """Test is_frozen property."""
-        registry = HookRegistry()
+        registry = RegistryHook()
         assert not registry.is_frozen
         registry.freeze()
         assert registry.is_frozen
 
+    @pytest.mark.unit
     def test_freeze_idempotent(self) -> None:
         """Test that calling freeze() multiple times is safe."""
-        registry = HookRegistry()
+        registry = RegistryHook()
         registry.freeze()
         registry.freeze()  # Should not raise
         assert registry.is_frozen
 
+    @pytest.mark.unit
     def test_reads_allowed_after_freeze(self) -> None:
         """Test that read operations work after freeze."""
-        registry = HookRegistry()
+        registry = RegistryHook()
         hook = ModelPipelineHook(
             hook_id="hook",
             phase="execute",
@@ -180,12 +192,13 @@ class TestHookRegistryFreeze:
 
 
 @pytest.mark.unit
-class TestHookRegistryThreadSafety:
+class TestRegistryHookThreadSafety:
     """Test thread safety invariants."""
 
+    @pytest.mark.unit
     def test_frozen_registry_returns_copies(self) -> None:
         """Test that frozen registry returns copies, not internal state."""
-        registry = HookRegistry()
+        registry = RegistryHook()
         hook = ModelPipelineHook(
             hook_id="hook",
             phase="execute",

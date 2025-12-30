@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 """Pipeline runner for executing hooks in canonical phase order."""
+
 from __future__ import annotations
 
 import inspect
@@ -102,7 +103,7 @@ CANONICAL_PHASE_ORDER: list[PipelinePhase] = [
 ]
 
 
-class PipelineRunner:
+class RunnerPipeline:
     """
     Executes hooks in the canonical phase order using an execution plan.
 
@@ -253,11 +254,15 @@ class PipelineRunner:
             callable_fn(context)
 
 
+# Backwards compatibility alias
+PipelineRunner = RunnerPipeline
+
 __all__ = [
     "CANONICAL_PHASE_ORDER",
     "HookCallable",
     "ModelHookError",
     "PipelineContext",
     "PipelineResult",
+    "RunnerPipeline",
     "PipelineRunner",
 ]

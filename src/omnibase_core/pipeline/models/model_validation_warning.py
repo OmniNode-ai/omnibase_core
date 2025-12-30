@@ -1,4 +1,5 @@
 """Validation warning model for pipeline hooks."""
+
 from pydantic import BaseModel, ConfigDict, Field
 
 

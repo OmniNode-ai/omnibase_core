@@ -1,7 +1,8 @@
 # SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
 #
 # SPDX-License-Identifier: Apache-2.0
-"""Tests for PipelineRunner."""
+"""Tests for RunnerPipeline."""
+
 from collections.abc import Callable, Coroutine
 
 import pytest
@@ -12,11 +13,11 @@ from omnibase_core.pipeline.models import (
     ModelPipelineHook,
     PipelinePhase,
 )
-from omnibase_core.pipeline.pipeline_runner import (
+from omnibase_core.pipeline.runner_pipeline import (
     HookCallable,
     PipelineContext,
     PipelineResult,
-    PipelineRunner,
+    RunnerPipeline,
 )
 
 
@@ -36,9 +37,10 @@ def make_plan_with_hooks(
 
 
 @pytest.mark.unit
-class TestPhaseExecutionOrder:
+class TestRunnerPipelinePhaseExecutionOrder:
     """Test hooks execute in canonical phase order."""
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_phases_execute_in_order(self) -> None:
         """Phases execute in canonical order."""
@@ -68,7 +70,7 @@ class TestPhaseExecutionOrder:
             for phase in ["preflight", "before", "execute", "after", "emit", "finalize"]
         }
 
-        runner = PipelineRunner(plan=plan, callable_registry=callables)
+        runner = RunnerPipeline(plan=plan, callable_registry=callables)
         await runner.run()
 
         assert execution_order == [
@@ -80,6 +82,7 @@ class TestPhaseExecutionOrder:
             "finalize",
         ]
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_hooks_within_phase_execute_in_plan_order(self) -> None:
         """Hooks within a phase execute in the order from the plan."""
@@ -110,16 +113,17 @@ class TestPhaseExecutionOrder:
             "test.third": make_hook("third"),
         }
 
-        runner = PipelineRunner(plan=plan, callable_registry=callables)
+        runner = RunnerPipeline(plan=plan, callable_registry=callables)
         await runner.run()
 
         assert execution_order == ["first", "second", "third"]
 
 
 @pytest.mark.unit
-class TestFinalizeAlwaysRuns:
+class TestRunnerPipelineFinalizeAlwaysRuns:
     """Test finalize phase ALWAYS runs."""
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_finalize_runs_on_success(self) -> None:
         """Finalize runs after successful execution."""
@@ -137,13 +141,14 @@ class TestFinalizeAlwaysRuns:
         ]
         plan = make_plan_with_hooks(("finalize", hooks))
 
-        runner = PipelineRunner(
+        runner = RunnerPipeline(
             plan=plan, callable_registry={"test.finalize": finalize_hook}
         )
         await runner.run()
 
         assert finalize_ran == [True]
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_finalize_runs_on_exception(self) -> None:
         """Finalize runs even when earlier phase raises exception."""
@@ -170,7 +175,7 @@ class TestFinalizeAlwaysRuns:
             ("finalize", [finalize_hook_model]),
         )
 
-        runner = PipelineRunner(
+        runner = RunnerPipeline(
             plan=plan,
             callable_registry={
                 "test.failing": failing_hook,
@@ -186,9 +191,10 @@ class TestFinalizeAlwaysRuns:
 
 
 @pytest.mark.unit
-class TestErrorHandlingPerPhase:
+class TestRunnerPipelineErrorHandlingPerPhase:
     """Test error handling behavior per phase."""
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_preflight_fails_fast(self) -> None:
         """Preflight phase aborts on first error."""
@@ -211,7 +217,7 @@ class TestErrorHandlingPerPhase:
         ]
         plan = make_plan_with_hooks(("preflight", hooks))
 
-        runner = PipelineRunner(
+        runner = RunnerPipeline(
             plan=plan,
             callable_registry={"test.first": first, "test.second": second},
         )
@@ -221,6 +227,7 @@ class TestErrorHandlingPerPhase:
 
         assert execution_order == ["first"]  # Second never ran
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_before_fails_fast(self) -> None:
         """Before phase aborts on first error."""
@@ -243,7 +250,7 @@ class TestErrorHandlingPerPhase:
         ]
         plan = make_plan_with_hooks(("before", hooks))
 
-        runner = PipelineRunner(
+        runner = RunnerPipeline(
             plan=plan,
             callable_registry={"test.first": first, "test.second": second},
         )
@@ -253,6 +260,7 @@ class TestErrorHandlingPerPhase:
 
         assert execution_order == ["first"]  # Second never ran
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_execute_fails_fast(self) -> None:
         """Execute phase aborts on first error."""
@@ -275,7 +283,7 @@ class TestErrorHandlingPerPhase:
         ]
         plan = make_plan_with_hooks(("execute", hooks))
 
-        runner = PipelineRunner(
+        runner = RunnerPipeline(
             plan=plan,
             callable_registry={"test.first": first, "test.second": second},
         )
@@ -285,6 +293,7 @@ class TestErrorHandlingPerPhase:
 
         assert execution_order == ["first"]  # Second never ran
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_after_phase_continues_on_error(self) -> None:
         """After phase continues despite errors."""
@@ -307,7 +316,7 @@ class TestErrorHandlingPerPhase:
         ]
         plan = make_plan_with_hooks(("after", hooks))
 
-        runner = PipelineRunner(
+        runner = RunnerPipeline(
             plan=plan,
             callable_registry={"test.first": first, "test.second": second},
         )
@@ -318,6 +327,7 @@ class TestErrorHandlingPerPhase:
         assert execution_order == ["first", "second"]  # Both ran
         assert len(result.errors) > 0  # Error was captured
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_emit_phase_continues_on_error(self) -> None:
         """Emit phase continues despite errors."""
@@ -338,7 +348,7 @@ class TestErrorHandlingPerPhase:
         ]
         plan = make_plan_with_hooks(("emit", hooks))
 
-        runner = PipelineRunner(
+        runner = RunnerPipeline(
             plan=plan,
             callable_registry={"test.first": first, "test.second": second},
         )
@@ -349,6 +359,7 @@ class TestErrorHandlingPerPhase:
         assert execution_order == ["first", "second"]  # Both ran
         assert len(result.errors) > 0  # Error was captured
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_finalize_phase_continues_on_error(self) -> None:
         """Finalize phase continues despite errors."""
@@ -371,7 +382,7 @@ class TestErrorHandlingPerPhase:
         ]
         plan = make_plan_with_hooks(("finalize", hooks))
 
-        runner = PipelineRunner(
+        runner = RunnerPipeline(
             plan=plan,
             callable_registry={"test.first": first, "test.second": second},
         )
@@ -384,9 +395,10 @@ class TestErrorHandlingPerPhase:
 
 
 @pytest.mark.unit
-class TestAsyncHookSupport:
+class TestRunnerPipelineAsyncHookSupport:
     """Test async hook support."""
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_async_hook_awaited(self) -> None:
         """Async hooks are properly awaited."""
@@ -402,11 +414,13 @@ class TestAsyncHookSupport:
             ModelPipelineHook(
                 hook_id="async", phase="execute", callable_ref="test.async"
             ),
-            ModelPipelineHook(hook_id="sync", phase="execute", callable_ref="test.sync"),
+            ModelPipelineHook(
+                hook_id="sync", phase="execute", callable_ref="test.sync"
+            ),
         ]
         plan = make_plan_with_hooks(("execute", hooks))
 
-        runner = PipelineRunner(
+        runner = RunnerPipeline(
             plan=plan,
             callable_registry={"test.async": async_hook, "test.sync": sync_hook},
         )
@@ -414,6 +428,7 @@ class TestAsyncHookSupport:
 
         assert execution_order == ["async", "sync"]
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_mixed_sync_async_hooks(self) -> None:
         """Mixed sync and async hooks execute correctly."""
@@ -443,7 +458,7 @@ class TestAsyncHookSupport:
         ]
         plan = make_plan_with_hooks(("execute", hooks))
 
-        runner = PipelineRunner(
+        runner = RunnerPipeline(
             plan=plan,
             callable_registry={
                 "test.sync_first": sync_first,
@@ -457,30 +472,33 @@ class TestAsyncHookSupport:
 
 
 @pytest.mark.unit
-class TestEmptyPipeline:
+class TestRunnerPipelineEmptyPipeline:
     """Test behavior with no hooks."""
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_no_hooks_succeeds(self) -> None:
         """Pipeline with no hooks completes successfully."""
         plan = ModelExecutionPlan.empty()
-        runner = PipelineRunner(plan=plan, callable_registry={})
+        runner = RunnerPipeline(plan=plan, callable_registry={})
         result = await runner.run()
         assert result.success
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_empty_phases_succeed(self) -> None:
         """Pipeline with empty phases completes successfully."""
         plan = make_plan_with_hooks()
-        runner = PipelineRunner(plan=plan, callable_registry={})
+        runner = RunnerPipeline(plan=plan, callable_registry={})
         result = await runner.run()
         assert result.success
 
 
 @pytest.mark.unit
-class TestPipelineContext:
+class TestRunnerPipelinePipelineContext:
     """Test PipelineContext behavior."""
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_context_shared_across_hooks(self) -> None:
         """Context is shared and mutable across hooks."""
@@ -501,7 +519,7 @@ class TestPipelineContext:
         ]
         plan = make_plan_with_hooks(("execute", hooks))
 
-        runner = PipelineRunner(
+        runner = RunnerPipeline(
             plan=plan,
             callable_registry={"test.first": first, "test.second": second},
         )
@@ -511,6 +529,7 @@ class TestPipelineContext:
         assert result.context.data["from_first"] == "value1"
         assert result.context.data["from_second"] == "value1_modified"
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_context_preserved_across_phases(self) -> None:
         """Context data persists across phases."""
@@ -556,7 +575,7 @@ class TestPipelineContext:
         ]
         plan = make_plan_with_hooks(*hooks_by_phase)  # type: ignore[arg-type]
 
-        runner = PipelineRunner(
+        runner = RunnerPipeline(
             plan=plan,
             callable_registry={
                 "test.preflight": preflight_hook,
@@ -571,9 +590,10 @@ class TestPipelineContext:
 
 
 @pytest.mark.unit
-class TestPipelineResult:
+class TestRunnerPipelinePipelineResult:
     """Test PipelineResult behavior."""
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_result_success_when_no_errors(self) -> None:
         """Result is successful when no errors occurred."""
@@ -586,12 +606,13 @@ class TestPipelineResult:
         ]
         plan = make_plan_with_hooks(("execute", hooks))
 
-        runner = PipelineRunner(plan=plan, callable_registry={"test.ok": ok_hook})
+        runner = RunnerPipeline(plan=plan, callable_registry={"test.ok": ok_hook})
         result = await runner.run()
 
         assert result.success is True
         assert len(result.errors) == 0
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_result_contains_errors_from_continue_phases(self) -> None:
         """Result contains captured errors from continue phases."""
@@ -606,7 +627,7 @@ class TestPipelineResult:
         ]
         plan = make_plan_with_hooks(("after", hooks))
 
-        runner = PipelineRunner(
+        runner = RunnerPipeline(
             plan=plan, callable_registry={"test.failing": failing_hook}
         )
         result = await runner.run()
@@ -619,9 +640,10 @@ class TestPipelineResult:
 
 
 @pytest.mark.unit
-class TestCallableResolution:
+class TestRunnerPipelineCallableResolution:
     """Test callable registry resolution."""
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_missing_callable_raises_error(self) -> None:
         """Missing callable in registry raises an error."""
@@ -634,16 +656,17 @@ class TestCallableResolution:
         ]
         plan = make_plan_with_hooks(("execute", hooks))
 
-        runner = PipelineRunner(plan=plan, callable_registry={})
+        runner = RunnerPipeline(plan=plan, callable_registry={})
 
         with pytest.raises(KeyError, match="test.nonexistent"):
             await runner.run()
 
 
 @pytest.mark.unit
-class TestComplexPipeline:
+class TestRunnerPipelineComplexPipeline:
     """Test complex pipeline scenarios."""
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_full_pipeline_with_all_phases(self) -> None:
         """Full pipeline executes all phases correctly."""
@@ -676,12 +699,13 @@ class TestComplexPipeline:
             callables[f"test.{phase}"] = make_hook(phase)
 
         plan = make_plan_with_hooks(*hooks_by_phase)  # type: ignore[arg-type]
-        runner = PipelineRunner(plan=plan, callable_registry=callables)
+        runner = RunnerPipeline(plan=plan, callable_registry=callables)
         result = await runner.run()
 
         assert result.success
         assert execution_order == list(all_phases)
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_fail_fast_phase_stops_pipeline_but_finalize_runs(self) -> None:
         """Fail-fast phase stops pipeline, but finalize still runs."""
@@ -740,7 +764,7 @@ class TestComplexPipeline:
         ]
         plan = make_plan_with_hooks(*hooks_by_phase)  # type: ignore[arg-type]
 
-        runner = PipelineRunner(
+        runner = RunnerPipeline(
             plan=plan,
             callable_registry={
                 "test.preflight": preflight_hook,

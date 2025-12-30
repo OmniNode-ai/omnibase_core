@@ -1,15 +1,16 @@
-"""Tests for MiddlewareComposer."""
+"""Tests for ComposerMiddleware."""
 
 import pytest
 from typing import Awaitable, Callable
 
-from omnibase_core.pipeline.middleware_composer import Middleware, MiddlewareComposer
+from omnibase_core.pipeline.composer_middleware import Middleware, ComposerMiddleware
 
 
 @pytest.mark.unit
-class TestMiddlewareComposition:
+class TestComposerMiddlewareComposition:
     """Test onion-style middleware composition."""
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_single_middleware_wraps_core(self) -> None:
         """Single middleware wraps the core function."""
@@ -25,7 +26,7 @@ class TestMiddlewareComposition:
             execution_order.append("after")
             return result
 
-        composer = MiddlewareComposer()
+        composer = ComposerMiddleware()
         composer.use(middleware)
         wrapped = composer.compose(core)
 
@@ -34,6 +35,7 @@ class TestMiddlewareComposition:
         assert execution_order == ["before", "core", "after"]
         assert result == "result"
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_multiple_middleware_onion_order(self) -> None:
         """Multiple middleware execute in onion order (outer first, inner last)."""
@@ -55,7 +57,7 @@ class TestMiddlewareComposition:
             execution_order.append("inner-after")
             return result
 
-        composer = MiddlewareComposer()
+        composer = ComposerMiddleware()
         composer.use(outer)  # First added = outermost
         composer.use(inner)  # Last added = innermost
         wrapped = composer.compose(core)
@@ -71,6 +73,7 @@ class TestMiddlewareComposition:
             "outer-after",
         ]
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_no_middleware_returns_core_directly(self) -> None:
         """No middleware means core executes directly."""
@@ -80,7 +83,7 @@ class TestMiddlewareComposition:
             execution_order.append("core")
             return "result"
 
-        composer = MiddlewareComposer()
+        composer = ComposerMiddleware()
         wrapped = composer.compose(core)
 
         result = await wrapped()
@@ -88,6 +91,7 @@ class TestMiddlewareComposition:
         assert execution_order == ["core"]
         assert result == "result"
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_middleware_can_modify_result(self) -> None:
         """Middleware can transform the result."""
@@ -99,7 +103,7 @@ class TestMiddlewareComposition:
             result = await next_fn()
             return result * 2
 
-        composer = MiddlewareComposer()
+        composer = ComposerMiddleware()
         composer.use(doubler)
         wrapped = composer.compose(core)
 
@@ -107,6 +111,7 @@ class TestMiddlewareComposition:
 
         assert result == 20
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_middleware_can_short_circuit(self) -> None:
         """Middleware can short-circuit without calling next."""
@@ -119,7 +124,7 @@ class TestMiddlewareComposition:
         async def short_circuit(next_fn: Callable[[], Awaitable[object]]) -> object:
             return "short-circuited"  # Never calls next_fn
 
-        composer = MiddlewareComposer()
+        composer = ComposerMiddleware()
         composer.use(short_circuit)
         wrapped = composer.compose(core)
 
@@ -128,6 +133,7 @@ class TestMiddlewareComposition:
         assert result == "short-circuited"
         assert core_called == []  # Core never called
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_middleware_exception_propagates(self) -> None:
         """Exceptions in middleware propagate correctly."""
@@ -135,16 +141,19 @@ class TestMiddlewareComposition:
         async def core() -> str:
             return "result"
 
-        async def failing_middleware(next_fn: Callable[[], Awaitable[object]]) -> object:
+        async def failing_middleware(
+            next_fn: Callable[[], Awaitable[object]],
+        ) -> object:
             raise ValueError("Middleware failed")
 
-        composer = MiddlewareComposer()
+        composer = ComposerMiddleware()
         composer.use(failing_middleware)
         wrapped = composer.compose(core)
 
         with pytest.raises(ValueError, match="Middleware failed"):
             await wrapped()
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_middleware_can_catch_core_exception(self) -> None:
         """Middleware can catch and handle exceptions from core."""
@@ -158,7 +167,7 @@ class TestMiddlewareComposition:
             except ValueError:
                 return "handled"
 
-        composer = MiddlewareComposer()
+        composer = ComposerMiddleware()
         composer.use(error_handler)
         wrapped = composer.compose(core)
 
@@ -168,9 +177,10 @@ class TestMiddlewareComposition:
 
 
 @pytest.mark.unit
-class TestMiddlewareChainExecution:
+class TestComposerMiddlewareChainExecution:
     """Test middleware chain execution patterns."""
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_three_layer_middleware(self) -> None:
         """Three layers of middleware execute correctly."""
@@ -198,7 +208,7 @@ class TestMiddlewareChainExecution:
             execution_order.append("L3-out")
             return result
 
-        composer = MiddlewareComposer()
+        composer = ComposerMiddleware()
         composer.use(layer1)
         composer.use(layer2)
         composer.use(layer3)
@@ -217,6 +227,7 @@ class TestMiddlewareChainExecution:
         ]
         assert result == "result"
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_compose_returns_new_callable(self) -> None:
         """Compose returns a new callable, doesn't modify original."""
@@ -224,7 +235,7 @@ class TestMiddlewareChainExecution:
         async def core() -> str:
             return "original"
 
-        composer = MiddlewareComposer()
+        composer = ComposerMiddleware()
         wrapped = composer.compose(core)
 
         # Original still works

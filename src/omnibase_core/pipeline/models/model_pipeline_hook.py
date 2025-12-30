@@ -66,7 +66,9 @@ class ModelPipelineHook(BaseModel):
     def validate_hook_id(cls, v: str) -> str:
         """Ensure hook_id is a valid identifier."""
         if not v.replace("_", "").replace("-", "").isalnum():
-            raise ValueError(f"hook_id must be alphanumeric with underscores/hyphens: {v}")
+            raise ValueError(
+                f"hook_id must be alphanumeric with underscores/hyphens: {v}"
+            )
         return v
 
     @field_validator("dependencies")

@@ -8,8 +8,12 @@ from omnibase_core.pipeline.exceptions import (
     PipelineError,
     UnknownDependencyError,
 )
-from omnibase_core.pipeline.hook_registry import HookRegistry
-from omnibase_core.pipeline.middleware_composer import Middleware, MiddlewareComposer
+from omnibase_core.pipeline.registry_hook import HookRegistry, RegistryHook
+from omnibase_core.pipeline.composer_middleware import (
+    ComposerMiddleware,
+    Middleware,
+    MiddlewareComposer,
+)
 from omnibase_core.pipeline.models import (
     ModelExecutionPlan,
     ModelPhaseExecutionPlan,
@@ -17,15 +21,19 @@ from omnibase_core.pipeline.models import (
     ModelValidationWarning,
     PipelinePhase,
 )
-from omnibase_core.pipeline.pipeline_runner import (
+from omnibase_core.pipeline.runner_pipeline import (
     CANONICAL_PHASE_ORDER,
     HookCallable,
     ModelHookError,
     PipelineContext,
     PipelineResult,
     PipelineRunner,
+    RunnerPipeline,
 )
-from omnibase_core.pipeline.runtime_plan_builder import RuntimePlanBuilder
+from omnibase_core.pipeline.builder_execution_plan import (
+    BuilderExecutionPlan,
+    RuntimePlanBuilder,
+)
 
 __all__ = [
     # Exceptions
@@ -35,14 +43,18 @@ __all__ = [
     "HookTypeMismatchError",
     "PipelineError",
     "UnknownDependencyError",
-    # Registry
+    # Registry (new name first, then backwards compat)
+    "RegistryHook",
     "HookRegistry",
-    # Middleware
+    # Middleware (new name first, then backwards compat)
+    "ComposerMiddleware",
     "Middleware",
     "MiddlewareComposer",
-    # Builder
+    # Builder (new name first, then backwards compat)
+    "BuilderExecutionPlan",
     "RuntimePlanBuilder",
-    # Runner
+    # Runner (new name first, then backwards compat)
+    "RunnerPipeline",
     "CANONICAL_PHASE_ORDER",
     "HookCallable",
     "ModelHookError",

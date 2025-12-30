@@ -1,7 +1,8 @@
 # SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
 #
 # SPDX-License-Identifier: Apache-2.0
-"""Tests for RuntimePlanBuilder."""
+"""Tests for BuilderExecutionPlan."""
+
 import pytest
 
 from omnibase_core.enums.enum_handler_type_category import EnumHandlerTypeCategory
@@ -10,16 +11,16 @@ from omnibase_core.pipeline.exceptions import (
     HookTypeMismatchError,
     UnknownDependencyError,
 )
-from omnibase_core.pipeline.hook_registry import HookRegistry
+from omnibase_core.pipeline.registry_hook import RegistryHook
 from omnibase_core.pipeline.models import (
     ModelPipelineHook,
 )
-from omnibase_core.pipeline.runtime_plan_builder import RuntimePlanBuilder
+from omnibase_core.pipeline.builder_execution_plan import BuilderExecutionPlan
 
 
-def create_frozen_registry(*hooks: ModelPipelineHook) -> HookRegistry:
+def create_frozen_registry(*hooks: ModelPipelineHook) -> RegistryHook:
     """Helper to create a frozen registry with hooks."""
-    registry = HookRegistry()
+    registry = RegistryHook()
     for hook in hooks:
         registry.register(hook)
     registry.freeze()
@@ -27,9 +28,10 @@ def create_frozen_registry(*hooks: ModelPipelineHook) -> HookRegistry:
 
 
 @pytest.mark.unit
-class TestHookTypingValidation:
+class TestBuilderExecutionPlanHookTypingValidation:
     """Test hook typing validation per the matrix."""
 
+    @pytest.mark.unit
     def test_generic_hook_validates_for_compute(self) -> None:
         """Generic hook (None category) passes for COMPUTE contract."""
         hook = ModelPipelineHook(
@@ -39,7 +41,7 @@ class TestHookTypingValidation:
             callable_ref="module.func",
         )
         registry = create_frozen_registry(hook)
-        builder = RuntimePlanBuilder(
+        builder = BuilderExecutionPlan(
             registry=registry,
             contract_category=EnumHandlerTypeCategory.COMPUTE,
             enforce_hook_typing=True,
@@ -48,6 +50,7 @@ class TestHookTypingValidation:
         assert len(warnings) == 0
         assert plan.total_hooks == 1
 
+    @pytest.mark.unit
     def test_generic_hook_validates_for_effect(self) -> None:
         """Generic hook (None category) passes for EFFECT contract."""
         hook = ModelPipelineHook(
@@ -57,7 +60,7 @@ class TestHookTypingValidation:
             callable_ref="module.func",
         )
         registry = create_frozen_registry(hook)
-        builder = RuntimePlanBuilder(
+        builder = BuilderExecutionPlan(
             registry=registry,
             contract_category=EnumHandlerTypeCategory.EFFECT,
             enforce_hook_typing=True,
@@ -65,6 +68,7 @@ class TestHookTypingValidation:
         plan, warnings = builder.build()
         assert len(warnings) == 0
 
+    @pytest.mark.unit
     def test_typed_compute_hook_passes_on_compute_contract(self) -> None:
         """COMPUTE hook passes on COMPUTE contract."""
         hook = ModelPipelineHook(
@@ -74,7 +78,7 @@ class TestHookTypingValidation:
             callable_ref="module.func",
         )
         registry = create_frozen_registry(hook)
-        builder = RuntimePlanBuilder(
+        builder = BuilderExecutionPlan(
             registry=registry,
             contract_category=EnumHandlerTypeCategory.COMPUTE,
             enforce_hook_typing=True,
@@ -82,6 +86,7 @@ class TestHookTypingValidation:
         plan, warnings = builder.build()
         assert len(warnings) == 0
 
+    @pytest.mark.unit
     def test_typed_compute_hook_fails_on_effect_contract_when_enforced(self) -> None:
         """COMPUTE hook on EFFECT contract raises error when enforced."""
         hook = ModelPipelineHook(
@@ -91,7 +96,7 @@ class TestHookTypingValidation:
             callable_ref="module.func",
         )
         registry = create_frozen_registry(hook)
-        builder = RuntimePlanBuilder(
+        builder = BuilderExecutionPlan(
             registry=registry,
             contract_category=EnumHandlerTypeCategory.EFFECT,
             enforce_hook_typing=True,
@@ -100,6 +105,7 @@ class TestHookTypingValidation:
             builder.build()
         assert "compute-hook" in str(exc_info.value)
 
+    @pytest.mark.unit
     def test_typed_compute_hook_warns_on_effect_contract_when_not_enforced(
         self,
     ) -> None:
@@ -111,7 +117,7 @@ class TestHookTypingValidation:
             callable_ref="module.func",
         )
         registry = create_frozen_registry(hook)
-        builder = RuntimePlanBuilder(
+        builder = BuilderExecutionPlan(
             registry=registry,
             contract_category=EnumHandlerTypeCategory.EFFECT,
             enforce_hook_typing=False,
@@ -121,6 +127,7 @@ class TestHookTypingValidation:
         assert warnings[0].code == "HOOK_TYPE_MISMATCH"
         assert "compute-hook" in warnings[0].context.get("hook_id", "")
 
+    @pytest.mark.unit
     def test_typed_effect_hook_fails_on_compute_contract_when_enforced(self) -> None:
         """EFFECT hook on COMPUTE contract raises error when enforced."""
         hook = ModelPipelineHook(
@@ -130,7 +137,7 @@ class TestHookTypingValidation:
             callable_ref="module.func",
         )
         registry = create_frozen_registry(hook)
-        builder = RuntimePlanBuilder(
+        builder = BuilderExecutionPlan(
             registry=registry,
             contract_category=EnumHandlerTypeCategory.COMPUTE,
             enforce_hook_typing=True,
@@ -138,6 +145,7 @@ class TestHookTypingValidation:
         with pytest.raises(HookTypeMismatchError):
             builder.build()
 
+    @pytest.mark.unit
     def test_nondeterministic_compute_exact_match_only(self) -> None:
         """NONDETERMINISTIC_COMPUTE requires exact match."""
         hook = ModelPipelineHook(
@@ -149,7 +157,7 @@ class TestHookTypingValidation:
         registry = create_frozen_registry(hook)
 
         # Match - should pass
-        builder = RuntimePlanBuilder(
+        builder = BuilderExecutionPlan(
             registry=registry,
             contract_category=EnumHandlerTypeCategory.NONDETERMINISTIC_COMPUTE,
             enforce_hook_typing=True,
@@ -158,7 +166,7 @@ class TestHookTypingValidation:
         assert len(warnings) == 0
 
         # Mismatch with COMPUTE - should fail
-        builder2 = RuntimePlanBuilder(
+        builder2 = BuilderExecutionPlan(
             registry=registry,
             contract_category=EnumHandlerTypeCategory.COMPUTE,
             enforce_hook_typing=True,
@@ -168,9 +176,10 @@ class TestHookTypingValidation:
 
 
 @pytest.mark.unit
-class TestDependencyValidation:
+class TestBuilderExecutionPlanDependencyValidation:
     """Test dependency graph validation."""
 
+    @pytest.mark.unit
     def test_unknown_dependency_id_raises_error(self) -> None:
         """Unknown dependency raises UnknownDependencyError."""
         hook = ModelPipelineHook(
@@ -180,7 +189,7 @@ class TestDependencyValidation:
             callable_ref="module.func",
         )
         registry = create_frozen_registry(hook)
-        builder = RuntimePlanBuilder(registry=registry)
+        builder = BuilderExecutionPlan(registry=registry)
         with pytest.raises(UnknownDependencyError) as exc_info:
             builder.build()
         assert "nonexistent" in str(exc_info.value)
@@ -189,6 +198,7 @@ class TestDependencyValidation:
         inner_context = additional.get("context", {}) if additional else {}
         assert inner_context.get("validation_kind") == "unknown_dependency"
 
+    @pytest.mark.unit
     def test_dependency_cycle_raises_error(self) -> None:
         """Dependency cycle raises DependencyCycleError."""
         hook_a = ModelPipelineHook(
@@ -204,7 +214,7 @@ class TestDependencyValidation:
             callable_ref="module.b",
         )
         registry = create_frozen_registry(hook_a, hook_b)
-        builder = RuntimePlanBuilder(registry=registry)
+        builder = BuilderExecutionPlan(registry=registry)
         with pytest.raises(DependencyCycleError) as exc_info:
             builder.build()
         # Context is nested under additional_context.context due to ModelOnexError structure
@@ -212,6 +222,7 @@ class TestDependencyValidation:
         inner_context = additional.get("context", {}) if additional else {}
         assert inner_context.get("validation_kind") == "dependency_cycle"
 
+    @pytest.mark.unit
     def test_valid_dependency_chain_resolves(self) -> None:
         """Valid dependency chain resolves in correct order."""
         hook_a = ModelPipelineHook(
@@ -235,7 +246,7 @@ class TestDependencyValidation:
             priority=100,
         )
         registry = create_frozen_registry(hook_a, hook_b, hook_c)
-        builder = RuntimePlanBuilder(registry=registry)
+        builder = BuilderExecutionPlan(registry=registry)
         plan, warnings = builder.build()
 
         hooks = plan.get_phase_hooks("execute")
@@ -246,9 +257,10 @@ class TestDependencyValidation:
 
 
 @pytest.mark.unit
-class TestTopologicalSorting:
+class TestBuilderExecutionPlanTopologicalSorting:
     """Test topological sorting with priority tie-breaker."""
 
+    @pytest.mark.unit
     def test_priority_determines_order_no_dependencies(self) -> None:
         """Lower priority executes first when no dependencies."""
         hook_high = ModelPipelineHook(
@@ -263,14 +275,17 @@ class TestTopologicalSorting:
             priority=200,
             callable_ref="module.low",
         )
-        registry = create_frozen_registry(hook_low, hook_high)  # Register in wrong order
-        builder = RuntimePlanBuilder(registry=registry)
+        registry = create_frozen_registry(
+            hook_low, hook_high
+        )  # Register in wrong order
+        builder = BuilderExecutionPlan(registry=registry)
         plan, _ = builder.build()
 
         hooks = plan.get_phase_hooks("before")
         assert hooks[0].hook_id == "high-priority"  # Lower priority value = first
         assert hooks[1].hook_id == "low-priority"
 
+    @pytest.mark.unit
     def test_dependencies_override_priority(self) -> None:
         """Dependencies take precedence over priority."""
         hook_dep = ModelPipelineHook(
@@ -287,13 +302,14 @@ class TestTopologicalSorting:
             callable_ref="module.main",
         )
         registry = create_frozen_registry(hook_main, hook_dep)
-        builder = RuntimePlanBuilder(registry=registry)
+        builder = BuilderExecutionPlan(registry=registry)
         plan, _ = builder.build()
 
         hooks = plan.get_phase_hooks("execute")
         hook_ids = [h.hook_id for h in hooks]
         assert hook_ids.index("dependency") < hook_ids.index("main")
 
+    @pytest.mark.unit
     def test_multiple_phases_sorted_independently(self) -> None:
         """Each phase is sorted independently."""
         before_hook = ModelPipelineHook(
@@ -307,7 +323,7 @@ class TestTopologicalSorting:
             callable_ref="module.execute",
         )
         registry = create_frozen_registry(before_hook, execute_hook)
-        builder = RuntimePlanBuilder(registry=registry)
+        builder = BuilderExecutionPlan(registry=registry)
         plan, _ = builder.build()
 
         assert plan.get_phase_hooks("before") == [before_hook]
@@ -315,14 +331,15 @@ class TestTopologicalSorting:
 
 
 @pytest.mark.unit
-class TestEmptyRegistry:
+class TestBuilderExecutionPlanEmptyRegistry:
     """Test behavior with empty registry."""
 
+    @pytest.mark.unit
     def test_empty_registry_produces_empty_plan(self) -> None:
         """Empty registry produces empty plan with no warnings."""
-        registry = HookRegistry()
+        registry = RegistryHook()
         registry.freeze()
-        builder = RuntimePlanBuilder(registry=registry)
+        builder = BuilderExecutionPlan(registry=registry)
         plan, warnings = builder.build()
 
         assert plan.total_hooks == 0
@@ -330,9 +347,10 @@ class TestEmptyRegistry:
 
 
 @pytest.mark.unit
-class TestCrossPhaseDepedencies:
+class TestBuilderExecutionPlanCrossPhaseDependencies:
     """Test cross-phase dependency handling."""
 
+    @pytest.mark.unit
     def test_cross_phase_dependency_is_unknown(self) -> None:
         """Dependencies must be within same phase - cross-phase is unknown."""
         # Hook in 'before' phase depends on hook in 'execute' phase
@@ -349,7 +367,7 @@ class TestCrossPhaseDepedencies:
             callable_ref="module.execute",
         )
         registry = create_frozen_registry(before_hook, execute_hook)
-        builder = RuntimePlanBuilder(registry=registry)
+        builder = BuilderExecutionPlan(registry=registry)
 
         # The 'execute-hook' won't be found in the 'before' phase
         with pytest.raises(UnknownDependencyError):
@@ -357,9 +375,10 @@ class TestCrossPhaseDepedencies:
 
 
 @pytest.mark.unit
-class TestComplexDependencyGraphs:
+class TestBuilderExecutionPlanComplexDependencyGraphs:
     """Test complex dependency scenarios."""
 
+    @pytest.mark.unit
     def test_diamond_dependency(self) -> None:
         """Diamond dependency pattern resolves correctly."""
         #     A
@@ -395,7 +414,7 @@ class TestComplexDependencyGraphs:
             priority=1,
         )
         registry = create_frozen_registry(hook_d, hook_c, hook_b, hook_a)
-        builder = RuntimePlanBuilder(registry=registry)
+        builder = BuilderExecutionPlan(registry=registry)
         plan, _ = builder.build()
 
         hooks = plan.get_phase_hooks("execute")
@@ -411,6 +430,7 @@ class TestComplexDependencyGraphs:
         assert hook_ids.index("B") < hook_ids.index("D")
         assert hook_ids.index("C") < hook_ids.index("D")
 
+    @pytest.mark.unit
     def test_longer_cycle_detected(self) -> None:
         """Longer dependency cycles are detected."""
         # A -> B -> C -> A
@@ -433,16 +453,17 @@ class TestComplexDependencyGraphs:
             callable_ref="module.c",
         )
         registry = create_frozen_registry(hook_a, hook_b, hook_c)
-        builder = RuntimePlanBuilder(registry=registry)
+        builder = BuilderExecutionPlan(registry=registry)
 
         with pytest.raises(DependencyCycleError):
             builder.build()
 
 
 @pytest.mark.unit
-class TestContractCategoryNone:
+class TestBuilderExecutionPlanContractCategoryNone:
     """Test behavior when contract_category is None."""
 
+    @pytest.mark.unit
     def test_no_contract_category_skips_type_validation(self) -> None:
         """When contract_category is None, type validation is skipped."""
         hook = ModelPipelineHook(
@@ -452,7 +473,7 @@ class TestContractCategoryNone:
             callable_ref="module.func",
         )
         registry = create_frozen_registry(hook)
-        builder = RuntimePlanBuilder(
+        builder = BuilderExecutionPlan(
             registry=registry,
             contract_category=None,  # No contract category
             enforce_hook_typing=True,

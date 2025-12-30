@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 """Runtime plan builder for pipeline execution."""
+
 import heapq
 from collections import defaultdict
 
@@ -11,7 +12,7 @@ from omnibase_core.pipeline.exceptions import (
     HookTypeMismatchError,
     UnknownDependencyError,
 )
-from omnibase_core.pipeline.hook_registry import HookRegistry
+from omnibase_core.pipeline.registry_hook import RegistryHook
 from omnibase_core.pipeline.models import (
     ModelExecutionPlan,
     ModelPhaseExecutionPlan,
@@ -21,9 +22,9 @@ from omnibase_core.pipeline.models import (
 )
 
 
-class RuntimePlanBuilder:
+class BuilderExecutionPlan:
     """
-    Builds execution plans from a frozen HookRegistry.
+    Builds execution plans from a frozen RegistryHook.
 
     The builder performs:
     1. Hook type validation (optional, based on contract_category)
@@ -31,12 +32,12 @@ class RuntimePlanBuilder:
     3. Topological sort with priority tie-breaker (Kahn's algorithm)
 
     Usage:
-        registry = HookRegistry()
+        registry = RegistryHook()
         registry.register(hook1)
         registry.register(hook2)
         registry.freeze()
 
-        builder = RuntimePlanBuilder(
+        builder = BuilderExecutionPlan(
             registry=registry,
             contract_category=EnumHandlerTypeCategory.COMPUTE,
             enforce_hook_typing=True,
@@ -46,15 +47,15 @@ class RuntimePlanBuilder:
 
     def __init__(
         self,
-        registry: HookRegistry,
+        registry: RegistryHook,
         contract_category: EnumHandlerTypeCategory | None = None,
         enforce_hook_typing: bool = False,
     ) -> None:
         """
-        Initialize the RuntimePlanBuilder.
+        Initialize the BuilderExecutionPlan.
 
         Args:
-            registry: A frozen HookRegistry containing registered hooks.
+            registry: A frozen RegistryHook containing registered hooks.
             contract_category: Optional handler type category from the contract.
                 If None, hook type validation is skipped.
             enforce_hook_typing: If True, type mismatches raise errors.
@@ -250,4 +251,7 @@ class RuntimePlanBuilder:
         return sorted_hooks
 
 
-__all__ = ["RuntimePlanBuilder"]
+# Backwards compatibility alias
+RuntimePlanBuilder = BuilderExecutionPlan
+
+__all__ = ["BuilderExecutionPlan", "RuntimePlanBuilder"]

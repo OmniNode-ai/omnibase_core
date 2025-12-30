@@ -1,4 +1,5 @@
 """Pipeline models."""
+
 from omnibase_core.pipeline.models.model_execution_plan import (
     ModelExecutionPlan,
     ModelPhaseExecutionPlan,

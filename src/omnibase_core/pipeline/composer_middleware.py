@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
+#
+# SPDX-License-Identifier: Apache-2.0
 """Middleware composer for onion-style wrapping."""
 
 from typing import Awaitable, Callable, TypeVar
@@ -11,7 +14,7 @@ R = TypeVar("R")
 Middleware = Callable[[Callable[[], Awaitable[object]]], Awaitable[object]]
 
 
-class MiddlewareComposer:
+class ComposerMiddleware:
     """
     Composes middleware in onion (decorator) style.
 
@@ -19,7 +22,7 @@ class MiddlewareComposer:
     Last middleware added is innermost (closest to core).
 
     Usage:
-        composer = MiddlewareComposer()
+        composer = ComposerMiddleware()
         composer.use(logging_middleware)
         composer.use(timing_middleware)
         wrapped = composer.compose(core_function)
@@ -30,7 +33,7 @@ class MiddlewareComposer:
         """Initialize empty middleware stack."""
         self._middleware: list[Middleware] = []
 
-    def use(self, middleware: Middleware) -> "MiddlewareComposer":
+    def use(self, middleware: Middleware) -> "ComposerMiddleware":
         """
         Add middleware to the composition.
 
@@ -78,3 +81,9 @@ class MiddlewareComposer:
             return await middleware(next_fn)
 
         return wrapper
+
+
+# Backwards compatibility alias
+MiddlewareComposer = ComposerMiddleware
+
+__all__ = ["ComposerMiddleware", "MiddlewareComposer", "Middleware"]
