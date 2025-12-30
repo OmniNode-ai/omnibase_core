@@ -17,9 +17,9 @@ Core Principle:
     Resolution matches capabilities to providers."
 
 Feature Resolution Precedence:
-    observed_features takes precedence over declared_features when both
-    are present. Observed features represent runtime-probed reality,
-    while declared features are static claims that may become stale.
+    observed_features completely replaces declared_features when non-empty
+    (the two are NOT merged). Observed features represent runtime-probed
+    reality, while declared features are static claims that may become stale.
 
 Capability Naming Convention:
     Capabilities follow a hierarchical dotted notation using lowercase
@@ -93,9 +93,9 @@ class ModelProviderDescriptor(BaseModel):
         Resolution matches capabilities to providers."
 
     Feature Resolution Precedence:
-        observed_features takes precedence over declared_features when both
-        are present. Observed features represent runtime-probed reality,
-        while declared features are static claims that may become stale.
+        observed_features completely replaces declared_features when non-empty
+        (the two are NOT merged). Observed features represent runtime-probed
+        reality, while declared features are static claims that may become stale.
 
     Attributes:
         provider_id: Unique UUID identifier for this provider instance.
@@ -188,12 +188,18 @@ class ModelProviderDescriptor(BaseModel):
 
     declared_features: dict[str, JsonValue] = Field(
         default_factory=dict,
-        description="Features the adapter claims to support (static declaration)",
+        description=(
+            "Features the adapter claims to support (static declaration). "
+            "Completely replaced by observed_features when non-empty (NOT merged)."
+        ),
     )
 
     observed_features: dict[str, JsonValue] = Field(
         default_factory=dict,
-        description="Runtime-probed capabilities (preferred over declared_features)",
+        description=(
+            "Runtime-probed capabilities. When non-empty, completely replaces "
+            "declared_features (the two are NOT merged)."
+        ),
     )
 
     tags: list[str] = Field(
@@ -342,15 +348,18 @@ class ModelProviderDescriptor(BaseModel):
         return v
 
     def get_effective_features(self) -> dict[str, JsonValue]:
-        """Get effective features with observed taking precedence over declared.
+        """Get effective features with observed completely replacing declared.
 
         Returns observed_features if non-empty, otherwise returns declared_features.
-        This implements the feature resolution precedence where runtime-probed
-        capabilities (observed) are preferred over static declarations (declared).
+        This implements full replacement semantics: the two dictionaries are NOT
+        merged. When observed_features has any entries, declared_features is
+        completely ignored. This prevents stale declared features from polluting
+        fresh observed data.
 
         Returns:
             Dictionary of effective features. Returns observed_features if it
-            contains any entries, otherwise returns declared_features.
+            contains any entries (completely replacing declared_features),
+            otherwise returns declared_features.
 
         Examples:
             >>> from uuid import uuid4
