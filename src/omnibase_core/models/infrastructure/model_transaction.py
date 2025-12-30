@@ -85,9 +85,10 @@ class ModelTransaction:
                     },
                 )
             except Exception as e:  # fallback-ok: cleanup must complete
-                # Catch all regular exceptions (including MemoryError) to ensure all
-                # rollback operations are attempted. Only BaseException subclasses
-                # (KeyboardInterrupt, SystemExit, GeneratorExit) propagate naturally.
+                # Catch all Exception subclasses to ensure all rollback operations
+                # are attempted. This includes MemoryError, OSError, etc. Only direct
+                # BaseException subclasses (KeyboardInterrupt, SystemExit, GeneratorExit)
+                # propagate through, but those indicate critical system events.
                 emit_log_event(
                     LogLevel.ERROR,
                     f"Rollback operation failed during cleanup: {e!s}",
