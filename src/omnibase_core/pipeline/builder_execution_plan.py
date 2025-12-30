@@ -32,7 +32,9 @@ from omnibase_core.pipeline.registry_hook import RegistryHook
 # - after: Cleanup should attempt all hooks even if some fail
 # - emit: Event emission should try all hooks (best effort)
 # - finalize: Resource cleanup must try all hooks regardless of prior errors
-FAIL_FAST_PHASES: frozenset[PipelinePhase] = frozenset({"preflight", "before", "execute"})
+FAIL_FAST_PHASES: frozenset[PipelinePhase] = frozenset(
+    {"preflight", "before", "execute"}
+)
 
 
 class BuilderExecutionPlan:

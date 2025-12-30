@@ -615,16 +615,14 @@ class TestPipelineMiddlewareIntegration:
         execution_log: list[str] = []
 
         async def logging_middleware(
-            next_fn: Callable[[], Awaitable[object]]
+            next_fn: Callable[[], Awaitable[object]],
         ) -> object:
             execution_log.append("middleware_1_before")
             result = await next_fn()
             execution_log.append("middleware_1_after")
             return result
 
-        async def timing_middleware(
-            next_fn: Callable[[], Awaitable[object]]
-        ) -> object:
+        async def timing_middleware(next_fn: Callable[[], Awaitable[object]]) -> object:
             execution_log.append("middleware_2_before")
             start = time.time()
             result = await next_fn()
@@ -664,7 +662,7 @@ class TestPipelineMiddlewareIntegration:
         middleware_data: dict[str, object] = {}
 
         async def pipeline_wrapper_middleware(
-            next_fn: Callable[[], Awaitable[object]]
+            next_fn: Callable[[], Awaitable[object]],
         ) -> object:
             middleware_data["start_time"] = time.time()
             result = await next_fn()
@@ -689,9 +687,7 @@ class TestPipelineMiddlewareIntegration:
         def test_hook(ctx: PipelineContext) -> None:
             ctx.data["executed"] = True
 
-        runner = RunnerPipeline(
-            plan=plan, callable_registry={"hooks.test": test_hook}
-        )
+        runner = RunnerPipeline(plan=plan, callable_registry={"hooks.test": test_hook})
 
         # Wrap pipeline execution with middleware
         composer = ComposerMiddleware()

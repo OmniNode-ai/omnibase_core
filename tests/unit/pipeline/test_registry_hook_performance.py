@@ -575,8 +575,8 @@ class TestRunnerPipelineExecutionPerformance:
             hooks_by_phase.append((phase, hooks))
 
             for i in range(num_hooks_per_phase):
-                callable_registry[f"test.{phase}-exec-{i:04d}"] = make_tracking_callable(
-                    phase
+                callable_registry[f"test.{phase}-exec-{i:04d}"] = (
+                    make_tracking_callable(phase)
                 )
 
         plan = make_plan_with_hooks(*hooks_by_phase)
@@ -630,7 +630,8 @@ class TestRunnerPipelineExecutionPerformance:
         plan = make_plan_with_hooks(("execute", hooks))
 
         callable_registry: dict[str, Callable[..., object]] = {
-            f"test.async-hook-{i:04d}": async_counting_callable for i in range(num_hooks)
+            f"test.async-hook-{i:04d}": async_counting_callable
+            for i in range(num_hooks)
         }
 
         runner = RunnerPipeline(plan=plan, callable_registry=callable_registry)
@@ -650,9 +651,7 @@ class TestRunnerPipelineExecutionPerformance:
             f"Async execution time {total_time_ms:.3f}ms exceeds 100ms threshold"
         )
 
-        print(
-            f"\n[OK] Executed {num_hooks} async hooks in {total_time_ms:.3f}ms"
-        )
+        print(f"\n[OK] Executed {num_hooks} async hooks in {total_time_ms:.3f}ms")
 
 
 # ===== Memory Usage Tests =====
@@ -735,9 +734,7 @@ class TestRegistryHookMemoryUsage:
         assert len(registry.get_all_hooks()) == total_hooks
 
         # Verify per-phase counts
-        phase_total = sum(
-            len(registry.get_hooks_by_phase(phase)) for phase in phases
-        )
+        phase_total = sum(len(registry.get_hooks_by_phase(phase)) for phase in phases)
         assert phase_total == total_hooks
 
         # Verify no hooks are duplicated between phases
