@@ -9,7 +9,7 @@ Part of the contract patching system for OMN-1126.
 
 Related:
     - OMN-1126: ModelContractPatch & Patch Validation
-    - OMN-1086: ModelHandlerDescriptor
+    - OMN-1086: ModelHandlerBehavior
 
 .. versionadded:: 0.4.0
 """

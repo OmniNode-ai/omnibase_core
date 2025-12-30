@@ -334,3 +334,225 @@ class TestModelContractPatch:
         assert len(patch.get_add_operations()) == 5
         assert patch.descriptor is not None
         assert patch.descriptor.has_overrides() is True
+
+
+@pytest.mark.unit
+class TestModelContractPatchValidation:
+    """Tests for ModelContractPatch field validation and edge cases."""
+
+    @pytest.fixture
+    def profile_ref(self) -> ModelProfileReference:
+        """Create a profile reference fixture."""
+        return ModelProfileReference(profile="compute_pure", version="1.0.0")
+
+    # =========================================================================
+    # handlers__remove validation
+    # =========================================================================
+
+    @pytest.mark.unit
+    def test_handlers_remove_empty_string_rejected(
+        self, profile_ref: ModelProfileReference
+    ) -> None:
+        """Test that empty strings in handlers__remove are rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelContractPatch(
+                extends=profile_ref,
+                handlers__remove=["valid_handler", ""],
+            )
+        assert "cannot be empty" in str(exc_info.value)
+
+    @pytest.mark.unit
+    def test_handlers_remove_whitespace_only_rejected(
+        self, profile_ref: ModelProfileReference
+    ) -> None:
+        """Test that whitespace-only strings in handlers__remove are rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelContractPatch(
+                extends=profile_ref,
+                handlers__remove=["valid_handler", "   "],
+            )
+        assert "cannot be empty" in str(exc_info.value)
+
+    @pytest.mark.unit
+    def test_handlers_remove_invalid_chars_rejected(
+        self, profile_ref: ModelProfileReference
+    ) -> None:
+        """Test that invalid characters in handlers__remove are rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelContractPatch(
+                extends=profile_ref,
+                handlers__remove=["invalid-handler"],
+            )
+        assert "alphanumeric" in str(exc_info.value)
+
+    @pytest.mark.unit
+    def test_handlers_remove_normalized_to_lowercase(
+        self, profile_ref: ModelProfileReference
+    ) -> None:
+        """Test that handler names in handlers__remove are normalized to lowercase."""
+        patch = ModelContractPatch(
+            extends=profile_ref,
+            handlers__remove=["HTTP_Client", "KafkaProducer"],
+        )
+        assert patch.handlers__remove is not None
+        assert patch.handlers__remove == ["http_client", "kafkaproducer"]
+
+    @pytest.mark.unit
+    def test_handlers_remove_whitespace_stripped(
+        self, profile_ref: ModelProfileReference
+    ) -> None:
+        """Test that whitespace is stripped from handler names."""
+        patch = ModelContractPatch(
+            extends=profile_ref,
+            handlers__remove=["  valid_handler  ", "\tother_handler\n"],
+        )
+        assert patch.handlers__remove is not None
+        assert patch.handlers__remove == ["valid_handler", "other_handler"]
+
+    # =========================================================================
+    # dependencies__remove validation
+    # =========================================================================
+
+    @pytest.mark.unit
+    def test_dependencies_remove_empty_string_rejected(
+        self, profile_ref: ModelProfileReference
+    ) -> None:
+        """Test that empty strings in dependencies__remove are rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelContractPatch(
+                extends=profile_ref,
+                dependencies__remove=["ProtocolLogger", ""],
+            )
+        assert "cannot be empty" in str(exc_info.value)
+
+    @pytest.mark.unit
+    def test_dependencies_remove_too_short_rejected(
+        self, profile_ref: ModelProfileReference
+    ) -> None:
+        """Test that too-short dependency names are rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelContractPatch(
+                extends=profile_ref,
+                dependencies__remove=["X"],
+            )
+        assert "too short" in str(exc_info.value)
+
+    # =========================================================================
+    # consumed_events validation
+    # =========================================================================
+
+    @pytest.mark.unit
+    def test_consumed_events_add_empty_string_rejected(
+        self, profile_ref: ModelProfileReference
+    ) -> None:
+        """Test that empty strings in consumed_events__add are rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelContractPatch(
+                extends=profile_ref,
+                consumed_events__add=["user.created", ""],
+            )
+        assert "cannot be empty" in str(exc_info.value)
+
+    @pytest.mark.unit
+    def test_consumed_events_remove_empty_string_rejected(
+        self, profile_ref: ModelProfileReference
+    ) -> None:
+        """Test that empty strings in consumed_events__remove are rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelContractPatch(
+                extends=profile_ref,
+                consumed_events__remove=["user.deleted", "   "],
+            )
+        assert "cannot be empty" in str(exc_info.value)
+
+    # =========================================================================
+    # capability_inputs validation
+    # =========================================================================
+
+    @pytest.mark.unit
+    def test_capability_inputs_add_empty_string_rejected(
+        self, profile_ref: ModelProfileReference
+    ) -> None:
+        """Test that empty strings in capability_inputs__add are rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelContractPatch(
+                extends=profile_ref,
+                capability_inputs__add=["http", ""],
+            )
+        assert "cannot be empty" in str(exc_info.value)
+
+    @pytest.mark.unit
+    def test_capability_inputs_add_invalid_chars_rejected(
+        self, profile_ref: ModelProfileReference
+    ) -> None:
+        """Test that invalid characters in capability_inputs__add are rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelContractPatch(
+                extends=profile_ref,
+                capability_inputs__add=["http-client"],
+            )
+        assert "alphanumeric" in str(exc_info.value)
+
+    @pytest.mark.unit
+    def test_capability_inputs_normalized_to_lowercase(
+        self, profile_ref: ModelProfileReference
+    ) -> None:
+        """Test that capability names are normalized to lowercase."""
+        patch = ModelContractPatch(
+            extends=profile_ref,
+            capability_inputs__add=["HTTP", "DatabaseRead"],
+        )
+        assert patch.capability_inputs__add is not None
+        assert patch.capability_inputs__add == ["http", "databaseread"]
+
+    @pytest.mark.unit
+    def test_capability_inputs_remove_normalized_to_lowercase(
+        self, profile_ref: ModelProfileReference
+    ) -> None:
+        """Test that capability_inputs__remove names are normalized to lowercase."""
+        patch = ModelContractPatch(
+            extends=profile_ref,
+            capability_inputs__remove=["HTTP_Client", "CacheWrite"],
+        )
+        assert patch.capability_inputs__remove is not None
+        assert patch.capability_inputs__remove == ["http_client", "cachewrite"]
+
+    # =========================================================================
+    # capability_outputs__remove validation
+    # =========================================================================
+
+    @pytest.mark.unit
+    def test_capability_outputs_remove_empty_string_rejected(
+        self, profile_ref: ModelProfileReference
+    ) -> None:
+        """Test that empty strings in capability_outputs__remove are rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelContractPatch(
+                extends=profile_ref,
+                capability_outputs__remove=["event_emit", ""],
+            )
+        assert "cannot be empty" in str(exc_info.value)
+
+    @pytest.mark.unit
+    def test_capability_outputs_remove_invalid_chars_rejected(
+        self, profile_ref: ModelProfileReference
+    ) -> None:
+        """Test that invalid characters in capability_outputs__remove are rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelContractPatch(
+                extends=profile_ref,
+                capability_outputs__remove=["event-emit"],
+            )
+        assert "alphanumeric" in str(exc_info.value)
+
+    @pytest.mark.unit
+    def test_capability_outputs_remove_normalized_to_lowercase(
+        self, profile_ref: ModelProfileReference
+    ) -> None:
+        """Test that capability_outputs__remove names are normalized to lowercase."""
+        patch = ModelContractPatch(
+            extends=profile_ref,
+            capability_outputs__remove=["EventEmit", "HTTP_Response"],
+        )
+        assert patch.capability_outputs__remove is not None
+        assert patch.capability_outputs__remove == ["eventemit", "http_response"]

@@ -16,7 +16,7 @@ Related:
 .. versionadded:: 0.4.0
 """
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from omnibase_core.models.contracts.model_capability_provided import (
     ModelCapabilityProvided,
@@ -27,6 +27,7 @@ from omnibase_core.models.contracts.model_handler_spec import ModelHandlerSpec
 from omnibase_core.models.contracts.model_profile_reference import ModelProfileReference
 from omnibase_core.models.contracts.model_reference import ModelReference
 from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.validation.validation_utils import is_valid_onex_name
 
 __all__ = [
     "ModelContractPatch",
@@ -43,7 +44,7 @@ class ModelContractPatch(BaseModel):
     Architecture:
         Profile (Environment Policy)
             ↓ influences
-        Descriptor (Handler Behavior)
+        Behavior (Handler Configuration)
             ↓ embedded in
         Contract (Authoring Surface) ← PATCHES TARGET THIS
             ↓ produced by
@@ -160,12 +161,12 @@ class ModelContractPatch(BaseModel):
     )
 
     # =========================================================================
-    # Descriptor Overrides (Three-Layer Architecture)
+    # Behavior Overrides (Three-Layer Architecture)
     # =========================================================================
 
     descriptor: ModelDescriptorPatch | None = Field(
         default=None,
-        description="Nested descriptor overrides for handler behavior settings.",
+        description="Nested behavior overrides for handler settings.",
     )
 
     # =========================================================================
@@ -238,7 +239,182 @@ class ModelContractPatch(BaseModel):
     )
 
     # =========================================================================
-    # Validators
+    # Field Validators
+    # =========================================================================
+
+    @field_validator("handlers__remove", mode="before")
+    @classmethod
+    def validate_handlers_remove(cls, v: list[str] | None) -> list[str] | None:
+        """Validate and normalize handler names in remove list.
+
+        Handler names are stripped of whitespace and normalized to lowercase
+        for consistent matching. Empty strings after stripping are rejected.
+
+        Args:
+            v: List of handler names to remove, or None.
+
+        Returns:
+            Validated and normalized handler names.
+
+        Raises:
+            ValueError: If any name is empty or contains invalid characters.
+        """
+        if v is None:
+            return v
+
+        validated: list[str] = []
+        for i, name in enumerate(v):
+            name = name.strip()
+            if not name:
+                raise ValueError(f"handlers__remove[{i}]: Handler name cannot be empty")
+            if not is_valid_onex_name(name):
+                raise ValueError(
+                    f"handlers__remove[{i}]: Handler name must contain only "
+                    f"alphanumeric characters and underscores: {name!r}"
+                )
+            # Normalize to lowercase for consistent matching
+            validated.append(name.lower())
+        return validated
+
+    @field_validator("dependencies__remove", mode="before")
+    @classmethod
+    def validate_dependencies_remove(cls, v: list[str] | None) -> list[str] | None:
+        """Validate dependency names in remove list.
+
+        Dependency names are stripped of whitespace. Empty strings are rejected.
+
+        Args:
+            v: List of dependency names to remove, or None.
+
+        Returns:
+            Validated dependency names.
+
+        Raises:
+            ValueError: If any name is empty.
+        """
+        if v is None:
+            return v
+
+        validated: list[str] = []
+        for i, name in enumerate(v):
+            name = name.strip()
+            if not name:
+                raise ValueError(
+                    f"dependencies__remove[{i}]: Dependency name cannot be empty"
+                )
+            if len(name) < 2:
+                raise ValueError(
+                    f"dependencies__remove[{i}]: Dependency name too short: {name!r}"
+                )
+            validated.append(name)
+        return validated
+
+    @field_validator("consumed_events__add", "consumed_events__remove", mode="before")
+    @classmethod
+    def validate_consumed_events(cls, v: list[str] | None) -> list[str] | None:
+        """Validate event type names in add/remove lists.
+
+        Event type names are stripped of whitespace. Empty strings are rejected.
+        Event types typically use dot-separated format (e.g., 'user.created').
+
+        Args:
+            v: List of event type names, or None.
+
+        Returns:
+            Validated event type names.
+
+        Raises:
+            ValueError: If any name is empty.
+        """
+        if v is None:
+            return v
+
+        validated: list[str] = []
+        for i, name in enumerate(v):
+            name = name.strip()
+            if not name:
+                raise ValueError(f"Event type name cannot be empty at index {i}")
+            validated.append(name)
+        return validated
+
+    @field_validator(
+        "capability_inputs__add", "capability_inputs__remove", mode="before"
+    )
+    @classmethod
+    def validate_capability_inputs(cls, v: list[str] | None) -> list[str] | None:
+        """Validate and normalize capability input names.
+
+        Capability names are stripped of whitespace and normalized to lowercase
+        for consistent matching. Must contain only alphanumeric characters
+        and underscores.
+
+        Args:
+            v: List of capability names, or None.
+
+        Returns:
+            Validated and normalized capability names.
+
+        Raises:
+            ValueError: If any name is empty or contains invalid characters.
+        """
+        if v is None:
+            return v
+
+        validated: list[str] = []
+        for i, name in enumerate(v):
+            name = name.strip()
+            if not name:
+                raise ValueError(f"Capability input name cannot be empty at index {i}")
+            if not is_valid_onex_name(name):
+                raise ValueError(
+                    f"Capability input name must contain only alphanumeric "
+                    f"characters and underscores at index {i}: {name!r}"
+                )
+            # Normalize to lowercase for consistent matching
+            validated.append(name.lower())
+        return validated
+
+    @field_validator("capability_outputs__remove", mode="before")
+    @classmethod
+    def validate_capability_outputs_remove(
+        cls, v: list[str] | None
+    ) -> list[str] | None:
+        """Validate and normalize capability output names in remove list.
+
+        Capability names are stripped of whitespace and normalized to lowercase
+        for consistent matching. Must contain only alphanumeric characters
+        and underscores.
+
+        Args:
+            v: List of capability names to remove, or None.
+
+        Returns:
+            Validated and normalized capability names.
+
+        Raises:
+            ValueError: If any name is empty or contains invalid characters.
+        """
+        if v is None:
+            return v
+
+        validated: list[str] = []
+        for i, name in enumerate(v):
+            name = name.strip()
+            if not name:
+                raise ValueError(
+                    f"capability_outputs__remove[{i}]: Capability name cannot be empty"
+                )
+            if not is_valid_onex_name(name):
+                raise ValueError(
+                    f"capability_outputs__remove[{i}]: Capability name must contain "
+                    f"only alphanumeric characters and underscores: {name!r}"
+                )
+            # Normalize to lowercase for consistent matching
+            validated.append(name.lower())
+        return validated
+
+    # =========================================================================
+    # Model Validators
     # =========================================================================
 
     @model_validator(mode="after")

@@ -16,6 +16,8 @@ Related:
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from omnibase_core.validation.validation_utils import is_valid_onex_name
+
 __all__ = [
     "ModelCapabilityProvided",
 ]
@@ -70,17 +72,20 @@ class ModelCapabilityProvided(BaseModel):
     @field_validator("name")
     @classmethod
     def validate_name(cls, v: str) -> str:
-        """Validate capability name format.
+        """Validate and normalize capability name format.
 
         Capability names must be non-empty and contain only alphanumeric
         characters and underscores. Leading and trailing whitespace is
-        stripped before validation.
+        stripped before validation. Names are normalized to lowercase for
+        consistent matching across the system.
+
+        Uses shared validation utilities from omnibase_core.validation.
 
         Args:
             v: The raw capability name string.
 
         Returns:
-            The validated and stripped capability name.
+            The validated, stripped, and lowercased capability name.
 
         Raises:
             ValueError: If the name is empty or contains invalid characters.
@@ -89,14 +94,15 @@ class ModelCapabilityProvided(BaseModel):
         if not v:
             raise ValueError("Capability name cannot be empty")
 
-        # Capability names should be lowercase with underscores
-        if not all(c.isalnum() or c == "_" for c in v):
+        # Use shared ONEX name validation (alphanumeric + underscores)
+        if not is_valid_onex_name(v):
             raise ValueError(
                 f"Capability name must contain only alphanumeric characters "
                 f"and underscores: {v}"
             )
 
-        return v
+        # Normalize to lowercase for consistent matching
+        return v.lower()
 
     def matches(self, requirement_name: str) -> bool:
         """Check if this capability matches a requirement name.

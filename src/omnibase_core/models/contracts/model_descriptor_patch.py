@@ -2,15 +2,15 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 """
-Descriptor Patch Model.
+Behavior Patch Model.
 
-Partial descriptor overrides within a contract patch.
+Partial behavior overrides within a contract patch.
 Part of the contract patching system for OMN-1126.
 
 Related:
     - OMN-1126: ModelContractPatch & Patch Validation
-    - OMN-1086: ModelHandlerDescriptor
-    - models/runtime/model_handler_descriptor.py: Full descriptor model
+    - OMN-1086: ModelHandlerBehavior
+    - models/runtime/model_handler_behavior.py: Full behavior model
 
 .. versionadded:: 0.4.0
 """
@@ -32,12 +32,12 @@ __all__ = [
 
 
 class ModelDescriptorPatch(BaseModel):
-    """Partial descriptor overrides within a contract patch.
+    """Partial behavior overrides within a contract patch.
 
-    Descriptor patches allow selective override of handler behavior settings
-    without specifying a complete descriptor. Only the fields that need to
+    Behavior patches allow selective override of handler behavior settings
+    without specifying a complete behavior. Only the fields that need to
     change are included; unspecified fields retain their values from the
-    base contract's descriptor.
+    base contract's behavior.
 
     All fields are optional since patches only specify overrides.
 

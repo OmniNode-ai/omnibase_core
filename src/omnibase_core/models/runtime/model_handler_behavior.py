@@ -45,7 +45,7 @@ class ModelHandlerBehavior(BaseModel):
 
     1. **Profile** (ModelExecutionProfile): Resource allocation and execution
        environment settings (CPU, memory, timeout defaults).
-    2. **Descriptor** (this model): Handler behavior configuration embedded
+    2. **Behavior** (this model): Handler behavior configuration embedded
        in contracts defining how the handler operates.
     3. **Contract** (ModelContractBase): Full declarative node specification
        including I/O schemas, dependencies, and metadata.
