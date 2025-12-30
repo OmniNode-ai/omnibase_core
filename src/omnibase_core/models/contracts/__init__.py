@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2025 OmniNode Team
+# SPDX-License-Identifier: Apache-2.0
 """Contract Models for ONEX Four-Node Architecture.
 
 This module provides Pydantic models for validating and managing contract
@@ -105,6 +107,11 @@ from .model_contract_orchestrator import ModelContractOrchestrator
 from .model_contract_reducer import ModelContractReducer
 from .model_contract_version import ModelContractVersion
 from .model_dependency import ModelDependency
+from .model_dependency_spec import (
+    DependencyType,
+    ModelDependencySpec,
+    SelectionStrategy,
+)
 from .model_drift_details import ModelDriftDetails
 from .model_drift_result import ModelDriftResult
 from .model_effect_retry_config import ModelEffectRetryConfig
@@ -148,6 +155,9 @@ __all__ = [
     "ModelContractNormalizationConfig",
     "ModelContractVersion",
     "ModelDependency",
+    "ModelDependencySpec",
+    "DependencyType",
+    "SelectionStrategy",
     "ModelDriftDetails",
     "ModelDriftResult",
     "ModelNodeExtensions",
