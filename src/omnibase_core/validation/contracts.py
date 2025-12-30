@@ -161,11 +161,13 @@ def validate_yaml_file(file_path: Path) -> list[str]:
         )
         logging.exception(f"File read error: {wrapped_error.message}")
         errors.append(wrapped_error.message)
-    except (UnicodeDecodeError, yaml.YAMLError) as e:
+    except UnicodeDecodeError as e:
         # Wrap in ModelOnexError for consistent error handling
+        # Note: yaml.YAMLError is handled in the inner try block (line 109)
+        # since yaml.safe_load() is called within load_and_validate_yaml_model()
         wrapped_error = ModelOnexError(
             error_code=EnumCoreErrorCode.FILE_READ_ERROR,
-            message=f"Error reading file: {e}",
+            message=f"Error decoding file: {e}",
             context={
                 "file_path": str(file_path),
                 "exception_type": type(e).__name__,

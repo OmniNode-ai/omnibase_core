@@ -444,15 +444,15 @@ class ModelPost(BaseModel):
         test_file = tmp_path / "error_file.py"
         test_file.write_text("# Valid Python file")
 
-        # Mock open to raise a generic exception
+        # Mock open to raise an OSError (caught by validate_one_model_per_file)
         def mock_open(*args, **kwargs):
-            raise RuntimeError("Simulated file read error")
+            raise OSError("Simulated file read error")
 
         monkeypatch.setattr("builtins.open", mock_open)
 
         errors = validate_one_model_per_file(test_file)
         assert len(errors) > 0
-        assert any("Unexpected error" in error for error in errors)
+        assert any("Parse error" in error for error in errors)
 
     def test_file_not_found_handling(self, tmp_path: Path):
         """Test handling of non-existent files."""

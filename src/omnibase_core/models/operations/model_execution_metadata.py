@@ -9,7 +9,7 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, ValidationError, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_environment import EnumEnvironment
@@ -158,8 +158,10 @@ class ModelExecutionMetadata(BaseModel):
             AttributeError,
             # TypeError: value type incompatible with attribute type
             TypeError,
-            # ValueError: Pydantic validator rejects the value or conversion fails
+            # ValueError: value conversion fails
             ValueError,
+            # ValidationError: Pydantic validator rejects the value (validate_assignment=True)
+            ValidationError,
         ) as e:
             # fallback-ok: Converts specific exceptions to structured ModelOnexError
             raise ModelOnexError(
