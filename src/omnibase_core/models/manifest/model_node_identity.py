@@ -41,6 +41,7 @@ class ModelNodeIdentity(BaseModel):
         handler_descriptor_id: Optional handler descriptor ID or hash
         namespace: Optional namespace grouping the node
         display_name: Optional human-readable name for display purposes
+        runtime_identity: Optional runtime service or process identity (e.g., pod name, PID)
 
     Example:
         >>> from omnibase_core.enums.enum_node_kind import EnumNodeKind
@@ -142,7 +143,7 @@ class ModelNodeIdentity(BaseModel):
         Returns:
             Version string in format 'major.minor.patch'
         """
-        return f"{self.node_version.major}.{self.node_version.minor}.{self.node_version.patch}"
+        return str(self.node_version)
 
     def __str__(self) -> str:
         """Return a human-readable string representation."""

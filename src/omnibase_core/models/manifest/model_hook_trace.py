@@ -53,6 +53,7 @@ class ModelHookTrace(BaseModel):
         metadata: Additional metadata about the execution
 
     Example:
+        >>> from datetime import datetime, UTC
         >>> from omnibase_core.enums.enum_execution_status import EnumExecutionStatus
         >>> from omnibase_core.enums.enum_handler_execution_phase import EnumHandlerExecutionPhase
         >>> trace = ModelHookTrace(

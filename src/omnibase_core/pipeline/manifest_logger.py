@@ -13,9 +13,12 @@ various formats including JSON, YAML, Markdown, and human-readable text.
 
 from __future__ import annotations
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.manifest.model_execution_manifest import (
     ModelExecutionManifest,
 )
+from omnibase_core.protocols.protocol_logger_like import ProtocolLoggerLike
 
 
 class ManifestLogger:
@@ -70,8 +73,19 @@ class ManifestLogger:
 
         Returns:
             YAML string representation
+
+        Raises:
+            ModelOnexError: If PyYAML is not installed
         """
-        import yaml
+        try:
+            import yaml
+        except ImportError as e:
+            raise ModelOnexError(
+                message="PyYAML is required for YAML output. Install with: pip install pyyaml",
+                error_code=EnumCoreErrorCode.DEPENDENCY_UNAVAILABLE,
+                dependency="pyyaml",
+                operation="to_yaml",
+            ) from e
 
         data = manifest.model_dump(mode="json")
         return yaml.safe_dump(data, default_flow_style=False, sort_keys=False)
@@ -319,7 +333,7 @@ class ManifestLogger:
     @staticmethod
     def log_summary(
         manifest: ModelExecutionManifest,
-        logger: object,
+        logger: ProtocolLoggerLike,
     ) -> None:
         """
         Log manifest summary using structured logger.
@@ -330,23 +344,44 @@ class ManifestLogger:
         Args:
             manifest: The manifest to log
             logger: Logger with info(message, extra=None) method
+
+        Raises:
+            ModelOnexError: If logger does not have the expected interface
         """
-        # Duck typing: logger must have .info() method
-        info_method = logger.info
-        info_method(
-            "Execution manifest generated",
-            extra={
-                "manifest_id": str(manifest.manifest_id),
-                "node_id": manifest.node_identity.node_id,
-                "contract_id": manifest.contract_identity.contract_id,
-                "hooks_executed": manifest.get_hook_count(),
-                "duration_ms": manifest.get_total_duration_ms(),
-                "successful": manifest.is_successful(),
-                "failures": manifest.get_failure_count(),
-                "events_emitted": manifest.emissions_summary.events_count,
-                "intents_emitted": manifest.emissions_summary.intents_count,
-            },
-        )
+        try:
+            info_method = logger.info
+        except AttributeError as e:
+            raise ModelOnexError(
+                message="Logger must have an info() method",
+                error_code=EnumCoreErrorCode.INVALID_PARAMETER,
+                parameter="logger",
+                expected_interface="ProtocolLoggerLike",
+                operation="log_summary",
+            ) from e
+
+        try:
+            info_method(
+                "Execution manifest generated",
+                extra={
+                    "manifest_id": str(manifest.manifest_id),
+                    "node_id": manifest.node_identity.node_id,
+                    "contract_id": manifest.contract_identity.contract_id,
+                    "hooks_executed": manifest.get_hook_count(),
+                    "duration_ms": manifest.get_total_duration_ms(),
+                    "successful": manifest.is_successful(),
+                    "failures": manifest.get_failure_count(),
+                    "events_emitted": manifest.emissions_summary.events_count,
+                    "intents_emitted": manifest.emissions_summary.intents_count,
+                },
+            )
+        except TypeError as e:
+            raise ModelOnexError(
+                message="Logger.info() method has incompatible signature",
+                error_code=EnumCoreErrorCode.INVALID_PARAMETER,
+                parameter="logger",
+                expected_interface="ProtocolLoggerLike.info(message, *, extra=None)",
+                operation="log_summary",
+            ) from e
 
 
 # Export for use

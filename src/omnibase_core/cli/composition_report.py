@@ -19,6 +19,7 @@ from pathlib import Path
 from typing import Literal
 
 import click
+from pydantic import ValidationError
 
 from omnibase_core.models.manifest.model_execution_manifest import (
     ModelExecutionManifest,
@@ -288,8 +289,6 @@ def composition_report(
                     show_predicates=show_predicates,
                     show_timing=show_timing,
                 )
-            case _:
-                result = _format_text_report(manifest)
 
         # Output
         if output:
@@ -302,10 +301,14 @@ def composition_report(
 
     except json.JSONDecodeError as e:
         raise click.ClickException(f"Invalid JSON in manifest file: {e}") from e
-    except click.exceptions.Exit:
-        # Re-raise click Exit exceptions (should not happen here, but be safe)
-        raise
+    except ValidationError as e:
+        # Pydantic validation failed - manifest structure is invalid
+        raise click.ClickException(f"Invalid manifest structure: {e}") from e
+    except OSError as e:
+        # File I/O errors (read or write)
+        raise click.ClickException(f"File I/O error: {e}") from e
     except Exception as e:
+        # Catch-all for unexpected errors (formatting issues, etc.)
         raise click.ClickException(f"Error processing manifest: {e}") from e
 
 
