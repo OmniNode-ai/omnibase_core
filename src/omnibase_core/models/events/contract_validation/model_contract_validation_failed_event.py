@@ -41,11 +41,15 @@ from omnibase_core.models.events.contract_validation.model_contract_validation_e
 
 MAX_VIOLATION_ENTRIES = 100
 """
-Maximum number of violation entries in events.
+Maximum number of violation entries in failed validation events.
 
-Bounded to prevent event payload bloat in event streams and message queues.
-For full violation details, use the result_ref to retrieve the complete
-validation result from storage.
+Bounded to 100 entries to:
+- Prevent event payload bloat in message queues (Kafka/Redpanda typically have 1MB message limits)
+- Ensure reasonable serialization/deserialization performance
+- Maintain readability in logs and audit trails
+
+For complete violation details beyond this limit, use the result_ref field
+to reference the full validation result in persistent storage.
 """
 
 __all__ = [
