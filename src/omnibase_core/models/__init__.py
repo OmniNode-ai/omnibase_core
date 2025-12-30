@@ -30,6 +30,7 @@ __all__ = [
     "metadata",
     "nodes",
     "projection",
+    "providers",
     "registration",
     "results",
     "state",
