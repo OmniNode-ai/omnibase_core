@@ -16,7 +16,6 @@ from pydantic import ValidationError
 
 from omnibase_core.models.contracts.model_capability_dependency import (
     ModelCapabilityDependency,
-    SelectionPolicy,
 )
 from omnibase_core.models.requirements.model_requirement_set import ModelRequirementSet
 
@@ -193,7 +192,7 @@ class TestProviderMatching:
             ),
         )
         provider = {"supports_transactions": True, "max_connections": 100}
-        matches, score, warnings = dep.matches_provider(provider)
+        matches, score, _warnings = dep.matches_provider(provider)
         assert matches is True
         assert score == 0.0  # No prefer requirements
 
@@ -207,7 +206,7 @@ class TestProviderMatching:
             ),
         )
         provider = {"supports_transactions": False}
-        matches, score, warnings = dep.matches_provider(provider)
+        matches, _score, _warnings = dep.matches_provider(provider)
         assert matches is False
 
     def test_matches_provider_with_prefer_scoring(self) -> None:
@@ -222,7 +221,7 @@ class TestProviderMatching:
         )
         # Provider satisfies must and one prefer
         provider = {"active": True, "fast": True, "cheap": False}
-        matches, score, warnings = dep.matches_provider(provider)
+        matches, score, _warnings = dep.matches_provider(provider)
         assert matches is True
         assert score == 1.0  # One prefer satisfied
 

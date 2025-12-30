@@ -76,32 +76,32 @@ class TestDependencyReferenceValidation:
 
     def test_reference_without_prefix_rejected(self) -> None:
         """Test that reference without valid prefix is rejected."""
-        with pytest.raises(ValueError, match="must start with one of"):
+        with pytest.raises(ValidationError, match="must start with one of"):
             ModelExecutionConstraints(requires_before=["auth"])
 
     def test_reference_with_invalid_prefix_rejected(self) -> None:
         """Test that reference with invalid prefix is rejected."""
-        with pytest.raises(ValueError, match="must start with one of"):
+        with pytest.raises(ValidationError, match="must start with one of"):
             ModelExecutionConstraints(requires_before=["invalid:auth"])
 
     def test_empty_reference_rejected(self) -> None:
         """Test that empty reference is rejected."""
-        with pytest.raises(ValueError, match="cannot be empty"):
+        with pytest.raises(ValidationError, match="cannot be empty"):
             ModelExecutionConstraints(requires_before=[""])
 
     def test_reference_with_empty_value_rejected(self) -> None:
         """Test that reference with empty value after prefix is rejected."""
-        with pytest.raises(ValueError, match="must have a value after the prefix"):
+        with pytest.raises(ValidationError, match="must have a value after the prefix"):
             ModelExecutionConstraints(requires_before=["capability:"])
 
     def test_reference_with_whitespace_only_rejected(self) -> None:
         """Test that whitespace-only reference is rejected."""
-        with pytest.raises(ValueError, match="cannot be empty"):
+        with pytest.raises(ValidationError, match="cannot be empty"):
             ModelExecutionConstraints(requires_before=["   "])
 
     def test_requires_after_validation(self) -> None:
         """Test that requires_after has same validation as requires_before."""
-        with pytest.raises(ValueError, match="must start with one of"):
+        with pytest.raises(ValidationError, match="must start with one of"):
             ModelExecutionConstraints(requires_after=["invalid_ref"])
 
 
