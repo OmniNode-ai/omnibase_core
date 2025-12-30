@@ -171,7 +171,8 @@ def is_protocol_file(file_path: Path) -> bool:
         content_sample = file_path.read_text(encoding="utf-8", errors="ignore")[:1000]
         return "class Protocol" in content_sample
 
-    except (OSError, ValueError, UnicodeDecodeError) as e:
+    except (OSError, ValueError) as e:
+        # UnicodeDecodeError not caught: read_text uses errors="ignore"
         logger.debug(f"Error checking protocol file {file_path}: {e}")
         return False
 
