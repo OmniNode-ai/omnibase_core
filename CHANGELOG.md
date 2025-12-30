@@ -41,7 +41,7 @@ This aligns with the ONEX thread safety model documented in [docs/guides/THREADI
 
 **Migration Guide**:
 
-**1. Direct Mutation to Immutable Copies**
+#### 1. Direct Mutation to Immutable Copies
 
 ```python
 # Before (v0.3.x) - Direct mutation was possible
@@ -59,7 +59,7 @@ updated = original.model_copy(update={
 })
 ```
 
-**2. Handling Extra Fields**
+#### 2. Handling Extra Fields
 
 ```python
 # Before (v0.3.x) - Extra fields might have been silently ignored
@@ -87,7 +87,7 @@ metadata = ModelWorkflowDefinitionMetadata(
 )
 ```
 
-**3. Nested Model Updates**
+#### 3. Nested Model Updates
 
 ```python
 # For deeply nested updates, rebuild from the inside out:
@@ -102,7 +102,7 @@ new_metadata = original.workflow_metadata.model_copy(
 updated = original.model_copy(update={"workflow_metadata": new_metadata})
 ```
 
-**4. Pattern for Workflow Builders**
+#### 4. Pattern for Workflow Builders
 
 ```python
 # If you have a builder pattern that relied on mutation, convert to accumulation:
@@ -129,7 +129,7 @@ class WorkflowBuilder:
         return ModelWorkflowDefinition(**{**self._base_config, **self._updates})
 ```
 
-**5. Testing Code Updates**
+#### 5. Testing Code Updates
 
 ```python
 # Tests that mutated models need updating:
@@ -256,6 +256,220 @@ affinity = ModelSessionAffinity(hash_algorithm="sha512")  # ✅ Strongest
 ```
 
 **Recommendation**: Update configurations to use SHA-256 (default) before v0.6.0. Use SHA-384 or SHA-512 for high-security environments.
+
+#### MixinEventBus Architecture Refactoring [OMN-1081]
+
+`MixinEventBus` has been refactored to use composition with dedicated data models, separating state management from behavior. This change improves thread safety, eliminates MRO conflicts, and enables proper serialization of runtime state.
+
+##### Architectural Changes
+
+| Aspect | Before (v0.4.x) | After (v0.5.x) |
+|--------|-----------------|----------------|
+| **State Storage** | Direct instance attributes | Composition with `ModelEventBusRuntimeState` |
+| **Listener Handle** | Untyped threading objects | `ModelEventBusListenerHandle` with thread safety |
+| **Initialization** | `__init__` method required | Lazy state accessors (no `__init__`) |
+| **Binding** | Implicit attribute assignment | Explicit binding methods required |
+| **Thread Safety** | Not guaranteed | Lock-protected operations in `ModelEventBusListenerHandle` |
+
+##### New Data Models
+
+| Model | Purpose | Thread Safety |
+|-------|---------|---------------|
+| `ModelEventBusRuntimeState` | Serializable binding state (node_name, contract_path, is_bound) | NOT thread-safe (mutable) |
+| `ModelEventBusListenerHandle` | Listener lifecycle management (thread, stop_event, subscriptions) | Thread-safe (lock-protected) |
+
+##### Breaking Changes
+
+1. **Explicit Binding Required**: You must call binding methods before publishing events:
+   - `bind_event_bus(event_bus)` - Bind an event bus instance
+   - `bind_registry(registry)` - Bind a registry with event_bus property
+   - `bind_contract_path(path)` - Set contract path for event patterns
+   - `bind_node_name(name)` - Set node name for logging/events
+
+2. **Lazy State Initialization**: State is created on first access, not in `__init__`.
+
+3. **Fail-Fast Semantics**: Publishing without binding raises `ModelOnexError` immediately.
+
+4. **Input Validation on Binding**: `bind_node_name()` and `bind_contract_path()` now raise `ModelOnexError` for invalid input (empty strings, None values, whitespace-only strings). Previously these might have been silently accepted.
+
+5. **Binding Reset via reset() Method**: To clear a binding, use `ModelEventBusRuntimeState.reset()` instead of binding an empty string. Empty string binding now raises `ModelOnexError`.
+
+6. **Runtime Misuse Detection**: Binding methods now emit warnings if called after the object has been shared across threads (detected via binding lock state). This helps catch thread-safety violations early.
+
+##### New Features
+
+1. **Generic Type Parameters**: `MixinEventBus[InputStateT, OutputStateT]` now supports generic type parameters for type-safe event processing. This enables IDE autocomplete and static type checking for event payloads.
+
+2. **Thread-Safe stop() and dispose()**: `ModelEventBusListenerHandle.stop()` and `dispose_event_bus_resources()` are now fully thread-safe with lock-protected operations. Multiple threads can safely call these methods concurrently (idempotent).
+
+3. **Runtime Misuse Detection**: The mixin now detects and warns about common misuse patterns:
+   - Binding after object is shared across threads
+   - Publishing without proper binding
+   - Listener lifecycle violations
+
+4. **Serializable Runtime State**: `ModelEventBusRuntimeState` is a Pydantic model that can be serialized/deserialized, enabling state persistence and debugging.
+
+##### Deprecation Timeline
+
+| Version | Status | Changes |
+|---------|--------|---------|
+| **v0.5.x** | Current | Backwards compatibility via `hasattr` fallbacks for lazy initialization |
+| **v1.0** | Planned | Remove `hasattr` fallbacks; require explicit `bind_*()` calls in `__init__` |
+| **v1.0** | Planned | Standardize `ProtocolEventBus` to require `publish_async()`, `subscribe()`, `unsubscribe()` |
+
+All legacy patterns marked with `TODO(v1.0)` comments in the source code will be cleaned up in v1.0.
+
+##### Migration Guide
+
+###### 1. Update Initialization Pattern
+
+```python
+# Before (v0.4.x) - Implicit initialization
+class MyNode(NodeCompute, MixinEventBus):
+    def __init__(self, container: ModelONEXContainer):
+        super().__init__(container)
+        self.event_bus = container.get_service("ProtocolEventBus")
+        self.node_name = "my_node"  # Direct attribute access
+        self.contract_path = "/path/to/contract.yaml"
+
+# After (v0.5.x) - Explicit binding
+class MyNode(NodeCompute, MixinEventBus[MyInputState, MyOutputState]):
+    def __init__(self, container: ModelONEXContainer):
+        super().__init__(container)
+        # Use explicit binding methods
+        self.bind_event_bus(container.get_service("ProtocolEventBus"))
+        self.bind_node_name("my_node")
+        self.bind_contract_path("/path/to/contract.yaml")
+```
+
+###### 2. Update Event Bus Access
+
+```python
+# Before (v0.4.x) - Direct attribute access
+if hasattr(self, "event_bus") and self.event_bus:
+    self.event_bus.publish(event)
+
+# After (v0.5.x) - Use provided methods
+if self._has_event_bus():
+    self.publish_completion_event(event_type, data)
+# OR for required access:
+bus = self._require_event_bus()  # Raises ModelOnexError if not bound
+```
+
+###### 3. Update Listener Management
+
+```python
+# Before (v0.4.x) - Manual thread management
+class MyNode(MixinEventBus):
+    def start_listening(self):
+        self._listener_thread = threading.Thread(target=self._listen_loop)
+        self._stop_event = threading.Event()
+        self._listener_thread.start()
+
+    def stop_listening(self):
+        self._stop_event.set()
+        self._listener_thread.join()
+
+# After (v0.5.x) - Use ModelEventBusListenerHandle
+class MyNode(MixinEventBus[MyInputState, MyOutputState]):
+    def start_listening(self):
+        # Returns thread-safe handle
+        self._handle = self.start_event_listener()
+
+    def stop_listening(self):
+        # Uses lock-protected stop with timeout
+        success = self.stop_event_listener(self._handle)
+        if not success:
+            self.logger.warning("Listener did not stop within timeout")
+```
+
+###### 4. Update State Access
+
+```python
+# Before (v0.4.x) - Direct attribute access
+node_name = self.node_name
+contract_path = self.contract_path
+
+# After (v0.5.x) - Use accessor methods
+node_name = self.get_node_name()  # Falls back to class name if not bound
+# Contract path is accessed internally by get_event_patterns()
+```
+
+###### 5. Clearing Bindings
+
+```python
+# Before (v0.4.x) - Empty string binding (no longer works)
+self.bind_node_name("")  # ❌ Now raises ModelOnexError
+
+# After (v0.5.x) - Use reset() method
+self._event_bus_state.reset()  # ✅ Clears all bindings properly
+
+# Or for selective reset, create a new state:
+from omnibase_core.models.mixins import ModelEventBusRuntimeState
+self._event_bus_state = ModelEventBusRuntimeState()  # Fresh state
+```
+
+###### 6. Handle Input Validation Errors
+
+```python
+# Before (v0.4.x) - Invalid input might be silently accepted
+self.bind_node_name(None)  # Might have worked (undefined behavior)
+self.bind_contract_path("  ")  # Whitespace might have been accepted
+
+# After (v0.5.x) - Invalid input raises ModelOnexError
+from omnibase_core.errors import ModelOnexError
+
+try:
+    self.bind_node_name(user_provided_name)
+except ModelOnexError as e:
+    # Handle invalid input - empty, None, or whitespace-only
+    self.logger.warning(f"Invalid node name: {e}")
+    self.bind_node_name(self.__class__.__name__)  # Use fallback
+```
+
+##### Thread Safety Notes
+
+| Method/Operation | Thread-Safe? | Notes |
+|-----------------|--------------|-------|
+| `bind_event_bus()` | **NO** | Must be called during `__init__` |
+| `bind_registry()` | **NO** | Must be called during `__init__` |
+| `bind_contract_path()` | **NO** | Must be called during `__init__` |
+| `bind_node_name()` | **NO** | Must be called during `__init__` |
+| `stop_event_listener()` | **YES** | Lock-protected, idempotent |
+| `dispose_event_bus_resources()` | **YES** | Lock-protected, idempotent |
+
+**Important**: All `bind_*()` methods are **NOT thread-safe** and must be called during object initialization (`__init__`), before the object is shared across threads. Once bound, the event bus can be safely used from multiple threads.
+
+- `ModelEventBusListenerHandle.stop()` uses a three-phase lock pattern:
+  1. **Phase 1 (lock held)**: Capture references, set stop signal
+  2. **Phase 2 (lock released)**: Wait for thread with timeout
+  3. **Phase 3 (lock held)**: Clean up subscriptions, update state
+
+- Multiple threads can safely call `stop()` concurrently (idempotent)
+- Default stop timeout is 5.0 seconds (configurable)
+- Listener threads are daemon threads (auto-terminate on main exit)
+
+##### Resource Cleanup
+
+```python
+# Call on shutdown to clean up all event bus resources
+self.dispose_event_bus_resources()
+```
+
+##### Quick Migration Checklist
+
+- [ ] Replace direct `self.event_bus = ...` with `self.bind_event_bus(...)`
+- [ ] Replace direct `self.node_name = ...` with `self.bind_node_name(...)`
+- [ ] Replace direct `self.contract_path = ...` with `self.bind_contract_path(...)`
+- [ ] Update any `hasattr(self, "event_bus")` checks to use `self._has_event_bus()`
+- [ ] Add `Generic[InputStateT, OutputStateT]` type parameters if using typed event processing
+- [ ] Update listener management to use `start_event_listener()` / `stop_event_listener()`
+- [ ] Add `dispose_event_bus_resources()` call to shutdown/cleanup methods
+- [ ] Review thread safety requirements - `ModelEventBusListenerHandle` is now thread-safe
+- [ ] **NEW**: Ensure all `bind_*()` calls are in `__init__` before object is shared across threads
+- [ ] **NEW**: Add error handling for `bind_node_name()` and `bind_contract_path()` which now validate input
+- [ ] **NEW**: Replace empty string binding with `ModelEventBusRuntimeState.reset()` to clear bindings
+- [ ] **NEW**: Watch for binding lock warnings indicating thread-safety violations
 
 ### Changed
 - Renamed `ModelOnexEnvelopeV1` to `ModelOnexEnvelope` ()
