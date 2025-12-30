@@ -21,6 +21,7 @@ from omnibase_core.models.contracts import (
 )
 
 
+@pytest.mark.unit
 class TestModelExecutionOrderingPolicy:
     """Tests for ModelExecutionOrderingPolicy model."""
 
@@ -33,11 +34,14 @@ class TestModelExecutionOrderingPolicy:
 
     def test_immutable(self) -> None:
         """Test policy is immutable (frozen)."""
+        from pydantic import ValidationError
+
         policy = ModelExecutionOrderingPolicy()
-        with pytest.raises(Exception):  # ValidationError from Pydantic
-            policy.strategy = "other"  # type: ignore[misc]
+        with pytest.raises(ValidationError):
+            policy.strategy = "other"  # type: ignore[assignment]
 
 
+@pytest.mark.unit
 class TestModelExecutionProfile:
     """Tests for ModelExecutionProfile model."""
 
@@ -67,6 +71,7 @@ class TestModelExecutionProfile:
         assert profile.phases == custom_phases
 
 
+@pytest.mark.unit
 class TestContractProfileFactory:
     """Tests for the contract profile factory functions."""
 
@@ -138,6 +143,7 @@ class TestContractProfileFactory:
         assert contract.version.patch == 0
 
 
+@pytest.mark.unit
 class TestOrchestratorProfiles:
     """Tests for orchestrator profile factory."""
 
@@ -190,6 +196,7 @@ class TestOrchestratorProfiles:
         assert isinstance(contract.execution, ModelExecutionProfile)
 
 
+@pytest.mark.unit
 class TestReducerProfiles:
     """Tests for reducer profile factory."""
 
@@ -206,6 +213,7 @@ class TestReducerProfiles:
         assert contract.state_machine is not None
 
 
+@pytest.mark.unit
 class TestEffectProfiles:
     """Tests for effect profile factory."""
 
@@ -224,6 +232,7 @@ class TestEffectProfiles:
         assert len(contract.io_operations) >= 1
 
 
+@pytest.mark.unit
 class TestComputeProfiles:
     """Tests for compute profile factory."""
 
@@ -242,6 +251,7 @@ class TestComputeProfiles:
         assert contract.algorithm is not None
 
 
+@pytest.mark.unit
 class TestAvailableProfiles:
     """Tests for available_profiles functionality."""
 
@@ -276,6 +286,7 @@ class TestAvailableProfiles:
         assert "compute_pure" in profiles
 
 
+@pytest.mark.unit
 class TestProtocolContractProfileFactory:
     """Tests for ProtocolContractProfileFactory interface."""
 
@@ -311,6 +322,7 @@ class TestProtocolContractProfileFactory:
         assert len(profiles) > 0
 
 
+@pytest.mark.unit
 class TestDescriptorEmbedding:
     """Tests for ModelHandlerDescriptor embedding in profiles."""
 

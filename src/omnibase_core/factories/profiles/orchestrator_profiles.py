@@ -26,17 +26,8 @@ from omnibase_core.models.contracts import (
     ModelPerformanceRequirements,
     ModelWorkflowConfig,
 )
-from omnibase_core.models.primitives.model_semver import ModelSemVer
 
-
-def _parse_version(version: str) -> ModelSemVer:
-    """Parse version string to ModelSemVer."""
-    parts = version.split(".")
-    return ModelSemVer(
-        major=int(parts[0]) if len(parts) > 0 else 1,
-        minor=int(parts[1]) if len(parts) > 1 else 0,
-        patch=int(parts[2]) if len(parts) > 2 else 0,
-    )
+from ._utils import _parse_version
 
 
 def get_orchestrator_safe_profile(version: str = "1.0.0") -> ModelContractOrchestrator:

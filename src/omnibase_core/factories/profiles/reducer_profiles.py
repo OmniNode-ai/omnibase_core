@@ -32,23 +32,21 @@ from omnibase_core.models.contracts.subcontracts.model_fsm_subcontract import (
 from omnibase_core.models.fsm.model_fsm_operation import ModelFSMOperation
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
-
-def _parse_version(version: str) -> ModelSemVer:
-    """Parse version string to ModelSemVer."""
-    parts = version.split(".")
-    return ModelSemVer(
-        major=int(parts[0]) if len(parts) > 0 else 1,
-        minor=int(parts[1]) if len(parts) > 1 else 0,
-        patch=int(parts[2]) if len(parts) > 2 else 0,
-    )
+from ._utils import _parse_version
 
 
 def _create_minimal_fsm_subcontract(version: ModelSemVer) -> ModelFSMSubcontract:
     """
     Create a minimal valid FSM subcontract for reducer profiles.
 
-    Provides a basic three-state FSM (idle -> processing -> completed)
+    Provides a basic four-state FSM (idle -> processing -> completed, with error handling)
     with required operations for critical state machine actions.
+
+    States:
+        - idle: Initial state
+        - processing: Active processing state
+        - completed: Terminal success state
+        - error: Recoverable error state
     """
     return ModelFSMSubcontract(
         version=version,
@@ -167,7 +165,7 @@ def get_reducer_fsm_basic_profile(version: str = "1.0.0") -> ModelContractReduce
     Create a reducer_fsm_basic profile.
 
     Basic FSM reducer with simple state machine:
-    - Three-state FSM (idle -> processing -> completed)
+    - Four-state FSM (idle -> processing -> completed, with error handling)
     - Basic event type configuration
     - Incremental processing enabled
 
