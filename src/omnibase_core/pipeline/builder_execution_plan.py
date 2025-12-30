@@ -4,7 +4,10 @@
 """Runtime plan builder for pipeline execution."""
 
 import heapq
+import logging
 from collections import defaultdict
+
+logger = logging.getLogger(__name__)
 
 from omnibase_core.enums.enum_handler_type_category import EnumHandlerTypeCategory
 from omnibase_core.pipeline.exceptions import (
@@ -89,8 +92,35 @@ class BuilderExecutionPlan:
 
         Raises:
             UnknownDependencyError: If a hook references an unknown dependency.
+                Ensure all dependency hook_ids exist within the same phase.
+                Dependencies cannot span across phases (e.g., a "before" hook
+                cannot depend on an "execute" hook).
             DependencyCycleError: If dependencies form a cycle.
+                The error context includes the list of hook_ids involved in the
+                cycle. Review the dependency chain and remove circular references.
+                Enable DEBUG logging for dependency graph visualization on errors.
             HookTypeMismatchError: If enforce_hook_typing=True and type mismatch.
+                Either use generic hooks (handler_type_category=None) which pass
+                for any contract, or ensure the hook's handler_type_category
+                matches the contract_category passed to the builder.
+
+        See Also:
+            omnibase_core.pipeline.exceptions:
+                Complete list of pipeline exception types including
+                PipelineError (base), HookRegistryFrozenError,
+                DuplicateHookError, and HookTimeoutError.
+            docs/guides/PIPELINE_HOOK_REGISTRY.md:
+                Comprehensive guide to hook registration, phases, dependencies,
+                and execution plan building.
+            docs/guides/THREADING.md:
+                Thread safety considerations. Note that BuilderExecutionPlan
+                instances are NOT thread-safe; use separate instances per thread
+                or synchronize access.
+
+        Note:
+            When debugging dependency issues, the error context dict contains
+            structured information (hook_id, unknown_dependency, cycle list, etc.)
+            that can be logged or inspected programmatically.
         """
         warnings: list[ModelValidationWarning] = []
         phases: dict[PipelinePhase, ModelPhaseExecutionPlan] = {}
@@ -115,7 +145,7 @@ class BuilderExecutionPlan:
             self._validate_dependencies(phase_hooks, hook_map)
 
             # Topologically sort with priority tie-breaker
-            sorted_hooks = self._topological_sort(phase_hooks, hook_map)
+            sorted_hooks = self._topological_sort(phase_hooks, hook_map, phase)
 
             # Set fail_fast explicitly based on phase semantics
             # (see FAIL_FAST_PHASES constant for rationale)
@@ -211,6 +241,7 @@ class BuilderExecutionPlan:
         self,
         hooks: list[ModelPipelineHook],
         hook_map: dict[str, ModelPipelineHook],
+        phase: PipelinePhase,
     ) -> list[ModelPipelineHook]:
         """
         Topologically sort hooks using Kahn's algorithm with priority tie-breaker.
@@ -218,6 +249,7 @@ class BuilderExecutionPlan:
         Args:
             hooks: List of hooks to sort.
             hook_map: Mapping of hook_id to hook.
+            phase: The pipeline phase being processed.
 
         Returns:
             List of hooks in execution order.
@@ -263,9 +295,51 @@ class BuilderExecutionPlan:
         if len(sorted_hooks) != len(hooks):
             # Find hooks still in cycle
             cycle_hooks = [h.hook_id for h in hooks if in_degree[h.hook_id] > 0]
+
+            # Log dependency graph for debugging
+            self._log_cycle_debug_info(phase, hooks, in_degree, cycle_hooks)
+
             raise DependencyCycleError(cycle=cycle_hooks)
 
         return sorted_hooks
+
+    def _log_cycle_debug_info(
+        self,
+        phase: PipelinePhase,
+        hooks: list[ModelPipelineHook],
+        in_degree: dict[str, int],
+        cycle_hooks: list[str],
+    ) -> None:
+        """
+        Log dependency graph information when a cycle is detected.
+
+        This provides debugging information to help users troubleshoot
+        dependency configuration issues.
+
+        Args:
+            phase: The pipeline phase where the cycle was detected.
+            hooks: All hooks in the phase.
+            in_degree: In-degree counts for each hook.
+            cycle_hooks: List of hook IDs that are part of the cycle.
+        """
+        # Build dependency graph lines
+        graph_lines: list[str] = []
+        for hook in hooks:
+            deps_str = ", ".join(hook.dependencies) if hook.dependencies else "(none)"
+            graph_lines.append(
+                f"    {hook.hook_id}: depends_on=[{deps_str}], "
+                f"in_degree={in_degree[hook.hook_id]}"
+            )
+
+        cycle_str = ", ".join(cycle_hooks)
+
+        log_message = (
+            f"Dependency cycle detected in phase '{phase}':\n"
+            f"  Dependency graph:\n"
+            f"{chr(10).join(graph_lines)}\n"
+            f"  Hooks in cycle: {cycle_str}"
+        )
+        logger.debug(log_message)
 
 
 # Backwards compatibility alias

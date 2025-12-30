@@ -642,9 +642,8 @@ class TestRunnerPipelineCallableResolution:
     """Test callable registry resolution."""
 
     @pytest.mark.unit
-    @pytest.mark.asyncio
-    async def test_missing_callable_raises_error(self) -> None:
-        """Missing callable in registry raises an error."""
+    def test_missing_callable_raises_error_at_init(self) -> None:
+        """Missing callable in registry raises error at __init__ time (fail-fast)."""
         hooks = [
             ModelPipelineHook(
                 hook_id="missing",
@@ -654,9 +653,139 @@ class TestRunnerPipelineCallableResolution:
         ]
         plan = make_plan_with_hooks(("execute", hooks))
 
-        runner = RunnerPipeline(plan=plan, callable_registry={})
-
+        # Error should be raised at initialization, not at run()
         with pytest.raises(CallableNotFoundError, match=r"test\.nonexistent"):
+            RunnerPipeline(plan=plan, callable_registry={})
+
+    @pytest.mark.unit
+    def test_multiple_missing_callables_lists_all_in_error(self) -> None:
+        """Multiple missing callables are all listed in the error message."""
+        hooks = [
+            ModelPipelineHook(
+                hook_id="first",
+                phase="execute",
+                callable_ref="test.missing_one",
+            ),
+            ModelPipelineHook(
+                hook_id="second",
+                phase="execute",
+                callable_ref="test.missing_two",
+            ),
+        ]
+        plan = make_plan_with_hooks(("execute", hooks))
+
+        with pytest.raises(CallableNotFoundError) as exc_info:
+            RunnerPipeline(plan=plan, callable_registry={})
+
+        error_message = str(exc_info.value)
+        assert "test.missing_one" in error_message
+        assert "test.missing_two" in error_message
+        assert "Multiple missing callable_refs" in error_message
+
+    @pytest.mark.unit
+    def test_missing_callable_across_phases_detected_at_init(self) -> None:
+        """Missing callables across multiple phases are detected at init."""
+        hooks_by_phase = [
+            (
+                "preflight",
+                [
+                    ModelPipelineHook(
+                        hook_id="preflight_hook",
+                        phase="preflight",
+                        callable_ref="test.preflight_missing",
+                    )
+                ],
+            ),
+            (
+                "execute",
+                [
+                    ModelPipelineHook(
+                        hook_id="execute_hook",
+                        phase="execute",
+                        callable_ref="test.execute_missing",
+                    )
+                ],
+            ),
+        ]
+        plan = make_plan_with_hooks(*hooks_by_phase)  # type: ignore[arg-type]
+
+        with pytest.raises(CallableNotFoundError) as exc_info:
+            RunnerPipeline(plan=plan, callable_registry={})
+
+        error_message = str(exc_info.value)
+        assert "test.preflight_missing" in error_message
+        assert "test.execute_missing" in error_message
+
+    @pytest.mark.unit
+    def test_partial_registry_detects_only_missing(self) -> None:
+        """Only missing callables are reported, not ones that exist."""
+
+        def existing_hook(ctx: PipelineContext) -> None:
+            pass
+
+        hooks = [
+            ModelPipelineHook(
+                hook_id="exists",
+                phase="execute",
+                callable_ref="test.exists",
+            ),
+            ModelPipelineHook(
+                hook_id="missing",
+                phase="execute",
+                callable_ref="test.missing",
+            ),
+        ]
+        plan = make_plan_with_hooks(("execute", hooks))
+
+        # Partial registry - one callable exists, one doesn't
+        with pytest.raises(CallableNotFoundError) as exc_info:
+            RunnerPipeline(plan=plan, callable_registry={"test.exists": existing_hook})
+
+        error_message = str(exc_info.value)
+        assert "test.missing" in error_message
+        assert "test.exists" not in error_message
+
+    @pytest.mark.unit
+    def test_empty_plan_no_validation_error(self) -> None:
+        """Empty plan with empty registry succeeds initialization."""
+        plan = ModelExecutionPlan.empty()
+        # Should not raise
+        runner = RunnerPipeline(plan=plan, callable_registry={})
+        assert runner is not None
+
+    @pytest.mark.unit
+    @pytest.mark.asyncio
+    async def test_runtime_check_still_exists_for_defense_in_depth(self) -> None:
+        """
+        Runtime check is still performed for defense-in-depth.
+
+        Even though init-time validation catches missing callables,
+        the runtime check provides an additional safety layer in case
+        the registry is modified after initialization (which callers
+        should NOT do, but we defend against it).
+        """
+
+        def hook_fn(ctx: PipelineContext) -> None:
+            pass
+
+        hooks = [
+            ModelPipelineHook(
+                hook_id="test",
+                phase="execute",
+                callable_ref="test.hook",
+            )
+        ]
+        plan = make_plan_with_hooks(("execute", hooks))
+
+        # Initialize with valid registry
+        runner = RunnerPipeline(plan=plan, callable_registry={"test.hook": hook_fn})
+
+        # Simulate external mutation (callers should NOT do this)
+        # This tests that runtime check still works
+        runner._callable_registry.clear()
+
+        # Runtime check should catch the missing callable
+        with pytest.raises(CallableNotFoundError, match=r"test\.hook"):
             await runner.run()
 
 

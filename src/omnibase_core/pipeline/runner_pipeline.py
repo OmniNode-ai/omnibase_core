@@ -201,9 +201,41 @@ class RunnerPipeline:
         Args:
             plan: The execution plan containing hooks organized by phase
             callable_registry: Registry mapping callable_ref strings to actual callables
+
+        Raises:
+            CallableNotFoundError: If any hook's callable_ref is not in the registry.
+                This fail-fast validation prevents runtime surprises.
         """
         self._plan = plan
         self._callable_registry = callable_registry
+
+        # Fail-fast: validate all callable_refs at initialization time
+        self._validate_callable_refs()
+
+    def _validate_callable_refs(self) -> None:
+        """
+        Validate that all callable_refs in the plan exist in the registry.
+
+        Raises:
+            CallableNotFoundError: If any callable_ref is missing from the registry.
+                The error message lists all missing refs for easier debugging.
+        """
+        missing_refs: list[str] = []
+
+        for phase_plan in self._plan.phases.values():
+            for hook in phase_plan.hooks:
+                if hook.callable_ref not in self._callable_registry:
+                    missing_refs.append(hook.callable_ref)
+
+        if missing_refs:
+            # Sort for deterministic error messages in tests
+            missing_refs.sort()
+            if len(missing_refs) == 1:
+                raise CallableNotFoundError(missing_refs[0])
+            # For multiple missing refs, include all in the message
+            raise CallableNotFoundError(
+                f"Multiple missing callable_refs: {', '.join(missing_refs)}"
+            )
 
     async def run(self) -> PipelineResult:
         """
