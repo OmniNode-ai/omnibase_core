@@ -243,9 +243,7 @@ def is_allowed_exception(file_path: Path, class_name: str) -> bool:
     return False
 
 
-def check_class_name(
-    class_name: str, rule: NamingRule
-) -> tuple[bool, str | None]:
+def check_class_name(class_name: str, rule: NamingRule) -> tuple[bool, str | None]:
     """
     Check if a class name follows the naming convention.
 
@@ -269,9 +267,17 @@ def check_class_name(
         if not is_valid:
             # Suggest replacing the wrong prefix with the correct one
             # Try to detect existing prefix
-            for known_prefix in ["Model", "Service", "Util", "Protocol", "Enum", "Node", "Mixin"]:
+            for known_prefix in [
+                "Model",
+                "Service",
+                "Util",
+                "Protocol",
+                "Enum",
+                "Node",
+                "Mixin",
+            ]:
                 if class_name.startswith(known_prefix):
-                    base_name = class_name[len(known_prefix):]
+                    base_name = class_name[len(known_prefix) :]
                     suggested = f"{rule.expected_prefix}{base_name}"
                     return False, suggested
             # No known prefix found, just prepend
@@ -281,7 +287,9 @@ def check_class_name(
     return True, None
 
 
-def validate_file(file_path: Path, src_root: Path) -> tuple[list[Violation], int, str | None]:
+def validate_file(
+    file_path: Path, src_root: Path
+) -> tuple[list[Violation], int, str | None]:
     """
     Validate a single Python file for naming conventions.
 
@@ -325,10 +333,12 @@ def validate_file(file_path: Path, src_root: Path) -> tuple[list[Violation], int
         if not is_valid:
             if rule.is_suffix:
                 expected_pattern = f"*{rule.expected_prefix}"
-                actual_pattern = f"*{class_name[-5:]}" if len(class_name) > 5 else class_name
+                actual_pattern = (
+                    f"*{class_name[-5:]}" if len(class_name) > 5 else class_name
+                )
             else:
                 expected_pattern = f"{rule.expected_prefix}*"
-                actual_pattern = f"{class_name[:len(rule.expected_prefix)]}*"
+                actual_pattern = f"{class_name[: len(rule.expected_prefix)]}*"
 
             violations.append(
                 Violation(
@@ -350,7 +360,9 @@ def find_python_files(src_root: Path) -> list[Path]:
     return sorted(src_root.rglob("*.py"))
 
 
-def format_violation(violation: Violation, src_root: Path, show_suggestions: bool) -> str:
+def format_violation(
+    violation: Violation, src_root: Path, show_suggestions: bool
+) -> str:
     """Format a violation for output."""
     try:
         relative_path = violation.file_path.relative_to(src_root.parent.parent)
@@ -375,7 +387,8 @@ def main() -> int:
         description="Validate ONEX class naming conventions"
     )
     parser.add_argument(
-        "--verbose", "-v",
+        "--verbose",
+        "-v",
         action="store_true",
         help="Enable verbose output",
     )
@@ -444,6 +457,7 @@ def main() -> int:
     # Output results
     if args.json:
         import json
+
         output = {
             "violations": [
                 {
@@ -480,12 +494,16 @@ def main() -> int:
 
         for rule_key, violations in sorted(violations_by_rule.items()):
             print(f"[{rule_key}]")
-            for v in sorted(violations, key=lambda x: (str(x.file_path), x.line_number)):
+            for v in sorted(
+                violations, key=lambda x: (str(x.file_path), x.line_number)
+            ):
                 print(f"  {format_violation(v, src_root, args.fix_suggestions)}")
             print()
 
         print("-" * 70)
-        print(f"Summary: {len(result.violations)} violation(s) in {result.files_checked} files")
+        print(
+            f"Summary: {len(result.violations)} violation(s) in {result.files_checked} files"
+        )
         print(f"Total classes checked: {result.classes_checked}")
 
         if result.errors:
@@ -508,7 +526,9 @@ def main() -> int:
             for file_path, error in result.errors:
                 print(f"    {file_path}: {error}")
     else:
-        print(f"OK: {result.classes_checked} classes in {result.files_checked} files conform to naming conventions")
+        print(
+            f"OK: {result.classes_checked} classes in {result.files_checked} files conform to naming conventions"
+        )
 
     return 0
 
