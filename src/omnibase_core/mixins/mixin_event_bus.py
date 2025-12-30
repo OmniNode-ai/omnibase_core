@@ -24,6 +24,22 @@ Thread Safety:
     However, bind_*() methods are NOT thread-safe and should only be called
     during initialization before the mixin is shared across threads.
 
+    Lock Hierarchy:
+        - ``_class_init_lock`` (class-level): Protects lazy initialization of
+          instance locks. Acquired only during first access to _mixin_lock.
+        - ``_mixin_lock`` (instance-level): Protects mixin state mutations.
+          Acquired during stop(), dispose(), and state-modifying operations.
+
+        Never acquire _class_init_lock while holding _mixin_lock to avoid
+        deadlocks.
+
+    Thread Lifecycle:
+        - Listener threads are daemon threads (auto-terminate on process exit)
+        - dispose_event_bus_resources() explicitly joins listener threads with
+          a 5-second timeout to ensure proper cleanup
+        - Listener thread references are stored in ModelEventBusListenerHandle
+          for lifecycle management
+
     Runtime Misuse Detection:
         The mixin tracks when it transitions to "in use" state via a
         _binding_locked flag. This flag is set to True when:
@@ -88,24 +104,13 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
     - Composition with ModelEventBusRuntimeState and ModelEventBusListenerHandle
     - Generic[InputStateT, OutputStateT] for type-safe event processing
 
-    Empty String Semantics:
-        This mixin uses empty string ``""`` to mean "not explicitly set" for
-        both ``node_name`` and ``contract_path`` with consistent semantics:
+    Validation:
+        All bind methods enforce strict validation:
+        - bind_node_name(): Rejects empty or whitespace-only strings
+        - bind_contract_path(): Rejects empty or whitespace-only strings
+        - Use _event_bus_runtime_state.reset() to clear bindings
 
-        - **node_name** (via ``bind_node_name()``): Empty string means "use
-          fallback". The ``get_node_name()`` method checks ``if state.node_name:``
-          and falls back to ``self.__class__.__name__`` when empty.
-
-        - **contract_path** (via ``bind_contract_path()``): Empty string means
-          "no contract configured". The ``get_event_patterns()`` method checks
-          ``if not contract_path:`` and returns an empty list when empty/None.
-
-        Use the helper methods on ``ModelEventBusRuntimeState`` for explicit
-        checks: ``has_node_name()`` and ``has_contract_path()`` both use
-        truthiness (``bool(value)``) for consistent behavior.
-
-        To clear a previously bound value, pass an empty string to the
-        respective bind method.
+        If no node_name is bound, get_node_name() falls back to class name.
 
     Type Parameters:
         InputStateT: The type of input state for event processing
@@ -122,6 +127,15 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
                 return MyOutputState(...)
     """
 
+    # Class-level lock for thread-safe lazy initialization of instance locks.
+    # This prevents the TOCTOU race condition that would occur with a simple
+    # dict.setdefault() approach during concurrent first access to _mixin_lock.
+    # Using a class-level lock ensures that only one thread at a time can
+    # initialize any instance's lock, providing portable thread safety across
+    # all Python implementations (CPython, PyPy, Jython, etc.) and future
+    # free-threaded Python builds (PEP 703).
+    _class_init_lock: threading.Lock = threading.Lock()
+
     # --- Lazy State Accessors (avoid MRO hazards) ---
 
     @property
@@ -133,61 +147,58 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
         to avoid __init__ requirements in the mixin.
 
         Thread Safety:
-            This implementation relies on CPython's Global Interpreter Lock (GIL)
-            for thread-safe lazy initialization. Specifically:
+            This implementation uses double-checked locking with a class-level
+            lock to ensure thread-safe lazy initialization across all Python
+            implementations. The pattern works as follows:
 
-            - ``dict.setdefault()`` is atomic in CPython due to the GIL
-            - Only one thread can execute Python bytecode at a time
-            - The setdefault operation completes atomically before another thread
-              can access the dict
+            1. **First check (no lock)**: If the lock already exists in __dict__,
+               return it immediately. This is the fast path for subsequent accesses.
 
-            **Important clarification**: Due to Python's evaluation order,
-            ``threading.Lock()`` is evaluated **before** ``setdefault()`` is called.
-            This means multiple Lock instances may be **created** during concurrent
-            first access, but only one is **stored and used**. The extra instances
-            are immediately discarded and garbage collected. This is functionally
-            correct - all threads will use the same Lock - but slightly wasteful
-            if many threads race on first access.
+            2. **Class lock acquisition**: If the lock doesn't exist, acquire the
+               class-level _class_init_lock to serialize initialization.
 
-            To minimize unnecessary allocations, we check if the key exists before
-            calling setdefault with a new Lock instance.
+            3. **Second check (under lock)**: Re-check if the lock exists. Another
+               thread may have initialized it while we were waiting for the class
+               lock.
 
-            **CPython Implementation Detail**: This pattern is safe in CPython but
-            may NOT be safe in other Python implementations:
+            4. **Initialization (under lock)**: If still not present, create the
+               instance lock and store it in __dict__.
 
-            - **PyPy**: Has a GIL but dict operations may have different atomicity
-              guarantees in future versions
-            - **Jython**: Uses Java threading model without a GIL
-            - **IronPython**: Uses .NET threading model without a GIL
-            - **GraalPython**: Experimental, threading behavior varies
+            This pattern is safe across all Python implementations:
 
-            For maximum portability, consider using ``threading.Lock`` with
-            double-checked locking or a module-level lock for initialization.
+            - **CPython**: Works with and without the GIL
+            - **PyPy**: Uses the class lock, not GIL atomicity assumptions
+            - **Jython/IronPython**: Uses explicit locking, not GIL
+            - **Python 3.13+ Free-Threading (PEP 703)**: Uses explicit locking
 
-            **Python 3.13+ Free-Threading (PEP 703)**: Python 3.13 introduces
-            experimental free-threaded builds (``--disable-gil``). As of Python 3.13,
-            dict operations including ``setdefault()`` remain thread-safe in
-            free-threaded builds through fine-grained per-object locking. However:
+        Lock Hierarchy:
+            - ``_class_init_lock`` (class-level): Protects instance lock creation
+            - ``_mixin_lock`` (instance-level): Protects mixin state
 
-            - This is an evolving area; verify behavior for production use
-            - The free-threaded build is experimental in 3.13
-            - Future Python versions may change these guarantees
-
-            See: https://peps.python.org/pep-0703/ for free-threading details.
+            Always acquire _class_init_lock before creating _mixin_lock.
+            Never acquire _class_init_lock while holding _mixin_lock.
 
         Returns:
             A threading.Lock instance unique to this mixin instance.
         """
         attr_name = "_mixin_event_bus_lock"
-        # Check first to avoid creating unnecessary Lock instances.
-        # Without this check, threading.Lock() would be evaluated before
-        # setdefault(), potentially creating multiple discarded Lock instances.
-        if attr_name not in self.__dict__:
-            # Use __dict__.setdefault() for thread-safe lazy initialization.
-            # This is atomic in CPython due to the GIL. If another thread
-            # beat us here, setdefault returns the existing lock.
-            self.__dict__.setdefault(attr_name, threading.Lock())
-        return cast(threading.Lock, self.__dict__[attr_name])
+
+        # Fast path: lock already exists (no locking needed for read)
+        lock = self.__dict__.get(attr_name)
+        if lock is not None:
+            return cast(threading.Lock, lock)
+
+        # Slow path: need to initialize under class lock
+        with MixinEventBus._class_init_lock:
+            # Double-check after acquiring lock (another thread may have initialized)
+            lock = self.__dict__.get(attr_name)
+            if lock is not None:
+                return cast(threading.Lock, lock)
+
+            # Create and store the instance lock
+            new_lock = threading.Lock()
+            self.__dict__[attr_name] = new_lock
+            return new_lock
 
     @property
     def _event_bus_runtime_state(self) -> "ModelEventBusRuntimeState":
@@ -1023,7 +1034,10 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
             This method is thread-safe and can be called concurrently from
             multiple threads. It uses a three-phase lock pattern:
 
-            1. **Phase 1 (lock held)**: Capture handle and bus references
+            1. **Phase 1 (lock held)**: Capture handle and bus references.
+               Also checks is_running inside the lock for consistency - if
+               the listener is already stopped, returns immediately to avoid
+               unnecessary work and prevent race conditions.
             2. **Phase 2 (lock released)**: Perform unsubscription and stop
                (potentially blocking operations)
             3. **Cleanup**: Handle errors after stop completes
@@ -1055,6 +1069,11 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
             target = handle or self._event_bus_listener_handle
             if target is None:
                 return True  # Nothing to stop
+
+            # Check is_running inside lock for consistency
+            # This prevents unnecessary work if another thread already stopped the listener
+            if not target.is_running:
+                return True  # Already stopped
 
             # Capture bus reference under lock for thread safety
             bus = self._get_event_bus()
@@ -1117,12 +1136,21 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
                and state, set disposed flag to prevent re-entry
             2. **Cleanup Phase (lock released)**: Stop listener thread and
                perform potentially blocking cleanup operations
-            3. **Binding Cleanup Phase (lock held)**: Atomically clear all
+            3. **Thread Join Phase**: Explicitly join listener thread with a
+               5-second timeout to ensure thread termination before proceeding
+            4. **Binding Cleanup Phase (lock held)**: Atomically clear all
                bound attributes to prevent partial cleanup
 
             The lock is released during blocking operations to allow other
             threads to proceed. All cleanup phases are wrapped in try/finally
             to ensure resources are released even if exceptions occur.
+
+        Listener Thread Cleanup:
+            Listener threads are explicitly joined to ensure proper resource
+            cleanup. The join has a 5-second timeout to prevent indefinite
+            blocking. If the thread does not terminate within this timeout,
+            a warning is logged and included in the cleanup errors, but
+            cleanup continues to release other resources.
 
         Error Handling:
             All cleanup errors are collected and logged. If any errors occur
@@ -1164,6 +1192,29 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
                         f"MIXIN_DISPOSE: Failed to stop event listener: {e!r}",
                         ModelLogData(node_name=self.get_node_name()),
                     )
+
+                # Explicitly join listener thread for proper cleanup
+                # This ensures the thread has fully terminated before we continue
+                if handle.listener_thread is not None:
+                    try:
+                        # Use a reasonable timeout to prevent indefinite blocking
+                        handle.listener_thread.join(timeout=5.0)
+                        if handle.listener_thread.is_alive():
+                            cleanup_errors.append(
+                                "Listener thread did not terminate within join timeout"
+                            )
+                            emit_log_event(
+                                LogLevel.WARNING,
+                                "MIXIN_DISPOSE: Listener thread did not terminate within timeout",
+                                ModelLogData(node_name=self.get_node_name()),
+                            )
+                    except Exception as e:
+                        cleanup_errors.append(f"Failed to join listener thread: {e!r}")
+                        emit_log_event(
+                            LogLevel.ERROR,
+                            f"MIXIN_DISPOSE: Failed to join listener thread: {e!r}",
+                            ModelLogData(node_name=self.get_node_name()),
+                        )
 
             # === Phase 3: Clear bindings atomically under lock ===
             with self._mixin_lock:
@@ -1405,8 +1456,21 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
             The typed input state extracted from the event.
 
         Raises:
-            ModelOnexError: If input state class cannot be determined.
+            ModelOnexError: If event is not a ModelOnexEvent or if input state
+                class cannot be determined.
         """
+        # Type guard: validate event parameter is actually ModelOnexEvent
+        if not isinstance(event, ModelOnexEvent):
+            raise ModelOnexError(
+                message=f"Expected ModelOnexEvent, got {type(event).__name__}",
+                error_code=EnumCoreErrorCode.TYPE_MISMATCH,
+                context={
+                    "expected_type": "ModelOnexEvent",
+                    "actual_type": type(event).__name__,
+                    "node_name": self.get_node_name(),
+                },
+            )
+
         try:
             input_state_class = self._get_input_state_class()
             if not input_state_class:
@@ -1479,7 +1543,7 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
             # Fail fast on unexpected errors during type introspection
             raise ModelOnexError(
                 message=f"Failed to extract input state class from generic type parameters: {e!s}",
-                error_code=EnumCoreErrorCode.INTERNAL_ERROR,
+                error_code=EnumCoreErrorCode.TYPE_INTROSPECTION_ERROR,
                 context={
                     "node_name": self.get_node_name(),
                     "class_name": self.__class__.__name__,
