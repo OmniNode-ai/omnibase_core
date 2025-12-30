@@ -9,7 +9,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from omnibase_core.constants import MAX_ERROR_MESSAGE_LENGTH, MAX_IDENTIFIER_LENGTH
+from omnibase_core.constants import MAX_ERROR_MESSAGE_LENGTH
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
 from omnibase_core.models.core.model_error_summary import ModelErrorSummary
@@ -54,9 +54,9 @@ class ModelEventBusOutputState(BaseModel):
     # without requiring the underscore-digit suffix (e.g., AUTH_001).
     _ERROR_CODE_PATTERN: ClassVar[re.Pattern[str]] = re.compile(r"^[A-Z][A-Z0-9_]*$")
 
-    model_config = ConfigDict(
-        validate_assignment=True, extra="forbid", from_attributes=True
-    )
+    # Note on from_attributes=True: Added for pytest-xdist parallel execution
+    # compatibility. See CLAUDE.md "Pydantic from_attributes=True for Value Objects".
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
     version: ModelSemVer = Field(
         default_factory=default_model_version,
         description="Schema version for output state (matches input)",
@@ -76,12 +76,10 @@ class ModelEventBusOutputState(BaseModel):
     correlation_id: UUID | None = Field(
         default=None,
         description="Correlation ID for tracking across operations",
-        max_length=MAX_IDENTIFIER_LENGTH,
     )
     event_id: UUID | None = Field(
         default=None,
         description="Unique event identifier",
-        max_length=MAX_IDENTIFIER_LENGTH,
     )
     processing_time_ms: int | None = Field(
         default=None, description="Processing time in milliseconds", ge=0
@@ -610,20 +608,33 @@ class ModelEventBusOutputState(BaseModel):
     def create_with_tracking(
         cls,
         version: ModelSemVer | str,
-        status: str,
+        status: EnumOnexStatus | str,
         message: str,
         correlation_id: UUID,
         event_id: UUID,
         processing_time_ms: int | None = None,
     ) -> ModelEventBusOutputState:
         """Create output state with full tracking information."""
+        # Normalize status to EnumOnexStatus
+        if isinstance(status, EnumOnexStatus):
+            status_enum = status
+        else:
+            try:
+                status_enum = EnumOnexStatus(status)
+            except ValueError as e:
+                raise ModelOnexError(
+                    message=f"Invalid status value: {e}",
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    context={"value": status},
+                ) from e
+        is_success = status_enum == EnumOnexStatus.SUCCESS
         return cls(
             version=(
                 parse_semver_from_string(str(version))
                 if not isinstance(version, ModelSemVer)
                 else version
             ),
-            status=EnumOnexStatus(status),
+            status=status_enum,
             message=message,
             correlation_id=correlation_id,
             event_id=event_id,
@@ -632,8 +643,8 @@ class ModelEventBusOutputState(BaseModel):
                 response_time_ms=(
                     float(processing_time_ms) if processing_time_ms else None
                 ),
-                success_rate=100.0 if status == "success" else 0.0,
-                error_rate=0.0 if status == "success" else 100.0,
-                health_score=100.0 if status == "success" else 0.0,
+                success_rate=100.0 if is_success else 0.0,
+                error_rate=0.0 if is_success else 100.0,
+                health_score=100.0 if is_success else 0.0,
             ),
         )
