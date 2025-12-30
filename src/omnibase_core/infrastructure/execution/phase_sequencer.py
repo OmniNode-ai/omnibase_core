@@ -13,6 +13,12 @@ All functions in this module are PURE:
 - Deterministic output for same input
 - No global state modification
 
+Thread Safety
+-------------
+All functions in this module are pure and stateless, making them inherently
+thread-safe. The returned ModelExecutionPlan and ModelPhaseStep instances
+are frozen Pydantic models that can be safely shared across threads.
+
 .. versionadded:: 0.4.0
     Added as part of Runtime Execution Sequencing Model (OMN-1108)
 """
@@ -55,22 +61,6 @@ def get_canonical_phase_order() -> list[EnumHandlerExecutionPhase]:
         <EnumHandlerExecutionPhase.FINALIZE: 'finalize'>
     """
     return EnumHandlerExecutionPhase.get_ordered_phases()
-
-
-def _phase_string_to_enum(phase_str: str) -> EnumHandlerExecutionPhase | None:
-    """
-    Convert a phase string to its corresponding enum value.
-
-    Args:
-        phase_str: The phase string (e.g., "execute", "preflight")
-
-    Returns:
-        The corresponding EnumHandlerExecutionPhase, or None if invalid
-    """
-    try:
-        return EnumHandlerExecutionPhase(phase_str.lower())
-    except ValueError:
-        return None
 
 
 def validate_phase_list(phases: list[str]) -> bool:
@@ -261,6 +251,7 @@ def create_execution_plan(
     profile: ModelExecutionProfile,
     handler_phase_mapping: dict[str, EnumHandlerExecutionPhase],
     ordering_policy: ModelExecutionOrderingPolicy | None = None,
+    created_at: datetime | None = None,
 ) -> ModelExecutionPlan:
     """
     Convert execution profile and handler mappings into an execution plan.
@@ -271,12 +262,17 @@ def create_execution_plan(
     3. Orders handlers within each phase according to policy
     4. Creates an immutable ModelExecutionPlan
 
-    This function is PURE: same inputs always produce same output.
+    This function is PURE when ``created_at`` is provided: same inputs always
+    produce same output. When ``created_at`` is None, uses current time as
+    the default.
 
     Args:
         profile: The execution profile defining phases and ordering policy
         handler_phase_mapping: Mapping of handler_id -> phase they belong to
         ordering_policy: Optional ordering policy override (uses profile's policy if None)
+        created_at: Optional timestamp for the plan creation. If None, uses
+            ``datetime.now(UTC)``. Providing an explicit value enables
+            deterministic/pure behavior for testing.
 
     Returns:
         ModelExecutionPlan with ordered phases and handlers
@@ -328,6 +324,9 @@ def create_execution_plan(
         ordered_handlers = order_handlers_in_phase(handlers, effective_policy)
 
         # Create phase step
+        # Note: Empty phases (with no handlers) are intentionally included in the plan.
+        # This provides visibility into all configured phases and enables phase-level
+        # hooks/callbacks even when no handlers are registered for that phase.
         step = ModelPhaseStep(
             phase=phase_enum,
             handler_ids=ordered_handlers,
@@ -335,12 +334,15 @@ def create_execution_plan(
         )
         phase_steps.append(step)
 
+    # Use provided timestamp or current time as default
+    effective_created_at = created_at if created_at is not None else datetime.now(UTC)
+
     # Create and return the execution plan
     return ModelExecutionPlan(
         phases=phase_steps,
         source_profile=_get_profile_identifier(profile),
         ordering_policy=effective_policy.strategy if effective_policy else "default",
-        created_at=datetime.now(UTC),
+        created_at=effective_created_at,
     )
 
 
