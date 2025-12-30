@@ -101,7 +101,7 @@ _CAPABILITY_PATTERN = re.compile(r"^[a-z0-9_-]+(\.[a-z0-9_-]+)+$")
 _ALIAS_PATTERN = re.compile(r"^[a-z][a-z0-9_]*$")
 
 # Type alias for selection policies
-SelectionPolicy = Literal["auto_if_unique", "best_score", "require_explicit"]
+type SelectionPolicy = Literal["auto_if_unique", "best_score", "require_explicit"]
 
 
 class ModelCapabilityDependency(BaseModel):
@@ -303,6 +303,9 @@ class ModelCapabilityDependency(BaseModel):
                     f"Invalid alias '{v}': must start with a lowercase letter "
                     "and contain only lowercase letters, digits, or underscores"
                 ),
+                field="alias",
+                invalid_value=v,
+                pattern=_ALIAS_PATTERN.pattern,
             )
         return v
 
@@ -367,6 +370,9 @@ class ModelCapabilityDependency(BaseModel):
                     f"Invalid capability '{v}': must follow pattern '<domain>.<type>[.<variant>]' "
                     "with lowercase letters/digits/underscores/hyphens and at least one dot separator"
                 ),
+                field="capability",
+                invalid_value=v,
+                pattern=_CAPABILITY_PATTERN.pattern,
             )
         return v
 
