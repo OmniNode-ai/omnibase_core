@@ -165,14 +165,15 @@ class TestProtocol(Protocol
         """Test handling of nonexistent files."""
         nonexistent_path = Path("/nonexistent/file.py")
 
-        with caplog.at_level(logging.ERROR):
+        with caplog.at_level(logging.WARNING):
             result = extract_protocol_signature(nonexistent_path)
 
             assert result is None
             assert len(caplog.records) == 1
-            assert caplog.records[0].levelname == "ERROR"
+            assert caplog.records[0].levelname == "WARNING"
             log_message = caplog.records[0].message
-            assert "error reading file" in log_message.lower()
+            # Log message format: "Skipping file due to read error: <path>: <error>"
+            assert "read error" in log_message.lower()
 
     def test_extract_from_binary_file(self, caplog):
         """Test handling of binary files."""
@@ -181,12 +182,12 @@ class TestProtocol(Protocol
             temp_path = Path(f.name)
 
         try:
-            with caplog.at_level(logging.ERROR):
+            with caplog.at_level(logging.WARNING):
                 result = extract_protocol_signature(temp_path)
 
                 assert result is None
                 assert len(caplog.records) == 1
-                assert caplog.records[0].levelname == "ERROR"
+                assert caplog.records[0].levelname == "WARNING"
                 log_message = caplog.records[0].message
                 assert "encoding error" in log_message.lower()
 

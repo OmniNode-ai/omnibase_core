@@ -29,7 +29,8 @@ from omnibase_core.models.contracts.model_reference import ModelReference
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.validation.validation_utils import (
     detect_add_remove_conflicts,
-    is_valid_onex_name,
+    validate_onex_name_list,
+    validate_string_list,
 )
 
 __all__ = [
@@ -258,6 +259,49 @@ class ModelContractPatch(BaseModel):
     # Field Validators
     # =========================================================================
 
+    @field_validator(
+        "handlers__add",
+        "handlers__remove",
+        "dependencies__add",
+        "dependencies__remove",
+        "consumed_events__add",
+        "consumed_events__remove",
+        "capability_inputs__add",
+        "capability_inputs__remove",
+        "capability_outputs__add",
+        "capability_outputs__remove",
+        mode="before",
+    )
+    @classmethod
+    def normalize_empty_lists_to_none(
+        cls, v: list[object] | None
+    ) -> list[object] | None:
+        """Convert empty lists to None for list operation fields.
+
+        Empty lists in __add or __remove operations are semantically equivalent
+        to "no operation" and should be normalized to None to prevent confusion
+        and ensure consistent behavior during patch application.
+
+        This validation runs first (mode="before") so subsequent validators
+        receive either None or a non-empty list.
+
+        Args:
+            v: List value or None.
+
+        Returns:
+            None if the list is empty, otherwise the original list.
+
+        Example:
+            >>> # These are equivalent after normalization:
+            >>> patch1 = ModelContractPatch(extends=ref, handlers__add=[])
+            >>> patch2 = ModelContractPatch(extends=ref, handlers__add=None)
+            >>> assert patch1.handlers__add is None
+            >>> assert patch2.handlers__add is None
+        """
+        if v is not None and len(v) == 0:
+            return None
+        return v
+
     @field_validator("handlers__remove", mode="before")
     @classmethod
     def validate_handlers_remove(cls, v: list[str] | None) -> list[str] | None:
@@ -265,6 +309,8 @@ class ModelContractPatch(BaseModel):
 
         Handler names are stripped of whitespace and normalized to lowercase
         for consistent matching. Empty strings after stripping are rejected.
+
+        Uses shared validation from validation_utils to reduce code duplication.
 
         Args:
             v: List of handler names to remove, or None.
@@ -275,23 +321,7 @@ class ModelContractPatch(BaseModel):
         Raises:
             ValueError: If any name is empty or contains invalid characters.
         """
-        if v is None:
-            return v
-
-        validated: list[str] = []
-        for i, raw_name in enumerate(v):
-            # Type narrowing: use explicit variable for stripped value
-            stripped_name = raw_name.strip()
-            if not stripped_name:
-                raise ValueError(f"handlers__remove[{i}]: Handler name cannot be empty")
-            if not is_valid_onex_name(stripped_name):
-                raise ValueError(
-                    f"handlers__remove[{i}]: Handler name must contain only "
-                    f"alphanumeric characters and underscores: {stripped_name!r}"
-                )
-            # Normalize to lowercase for consistent matching
-            validated.append(stripped_name.lower())
-        return validated
+        return validate_onex_name_list(v, "handlers__remove", normalize_lowercase=True)
 
     @field_validator("dependencies__remove", mode="before")
     @classmethod
@@ -299,6 +329,9 @@ class ModelContractPatch(BaseModel):
         """Validate dependency names in remove list.
 
         Dependency names are stripped of whitespace. Empty strings are rejected.
+        Minimum length is 2 characters to ensure meaningful names.
+
+        Uses shared validation from validation_utils to reduce code duplication.
 
         Args:
             v: List of dependency names to remove, or None.
@@ -307,25 +340,9 @@ class ModelContractPatch(BaseModel):
             Validated dependency names.
 
         Raises:
-            ValueError: If any name is empty.
+            ValueError: If any name is empty or too short.
         """
-        if v is None:
-            return v
-
-        validated: list[str] = []
-        for i, raw_name in enumerate(v):
-            # Type narrowing: use explicit variable for stripped value
-            stripped_name = raw_name.strip()
-            if not stripped_name:
-                raise ValueError(
-                    f"dependencies__remove[{i}]: Dependency name cannot be empty"
-                )
-            if len(stripped_name) < 2:
-                raise ValueError(
-                    f"dependencies__remove[{i}]: Dependency name too short: {stripped_name!r}"
-                )
-            validated.append(stripped_name)
-        return validated
+        return validate_string_list(v, "dependencies__remove", min_length=2)
 
     @field_validator("consumed_events__add", "consumed_events__remove", mode="before")
     @classmethod
@@ -334,6 +351,8 @@ class ModelContractPatch(BaseModel):
 
         Event type names are stripped of whitespace. Empty strings are rejected.
         Event types typically use dot-separated format (e.g., 'user.created').
+
+        Uses shared validation from validation_utils to reduce code duplication.
 
         Args:
             v: List of event type names, or None.
@@ -344,19 +363,7 @@ class ModelContractPatch(BaseModel):
         Raises:
             ValueError: If any name is empty.
         """
-        if v is None:
-            return v
-
-        validated: list[str] = []
-        for i, raw_name in enumerate(v):
-            # Type narrowing: use explicit variable for stripped value
-            stripped_name = raw_name.strip()
-            if not stripped_name:
-                raise ValueError(
-                    f"consumed_events[{i}]: Event type name cannot be empty"
-                )
-            validated.append(stripped_name)
-        return validated
+        return validate_string_list(v, "consumed_events")
 
     @field_validator(
         "capability_inputs__add", "capability_inputs__remove", mode="before"
@@ -369,6 +376,8 @@ class ModelContractPatch(BaseModel):
         for consistent matching. Must contain only alphanumeric characters
         and underscores.
 
+        Uses shared validation from validation_utils to reduce code duplication.
+
         Args:
             v: List of capability names, or None.
 
@@ -378,25 +387,7 @@ class ModelContractPatch(BaseModel):
         Raises:
             ValueError: If any name is empty or contains invalid characters.
         """
-        if v is None:
-            return v
-
-        validated: list[str] = []
-        for i, raw_name in enumerate(v):
-            # Type narrowing: use explicit variable for stripped value
-            stripped_name = raw_name.strip()
-            if not stripped_name:
-                raise ValueError(
-                    f"capability_inputs[{i}]: Capability name cannot be empty"
-                )
-            if not is_valid_onex_name(stripped_name):
-                raise ValueError(
-                    f"capability_inputs[{i}]: Capability name must contain only "
-                    f"alphanumeric characters and underscores: {stripped_name!r}"
-                )
-            # Normalize to lowercase for consistent matching
-            validated.append(stripped_name.lower())
-        return validated
+        return validate_onex_name_list(v, "capability_inputs", normalize_lowercase=True)
 
     @field_validator("capability_outputs__remove", mode="before")
     @classmethod
@@ -409,6 +400,8 @@ class ModelContractPatch(BaseModel):
         for consistent matching. Must contain only alphanumeric characters
         and underscores.
 
+        Uses shared validation from validation_utils to reduce code duplication.
+
         Args:
             v: List of capability names to remove, or None.
 
@@ -418,25 +411,9 @@ class ModelContractPatch(BaseModel):
         Raises:
             ValueError: If any name is empty or contains invalid characters.
         """
-        if v is None:
-            return v
-
-        validated: list[str] = []
-        for i, raw_name in enumerate(v):
-            # Type narrowing: use explicit variable for stripped value
-            stripped_name = raw_name.strip()
-            if not stripped_name:
-                raise ValueError(
-                    f"capability_outputs__remove[{i}]: Capability name cannot be empty"
-                )
-            if not is_valid_onex_name(stripped_name):
-                raise ValueError(
-                    f"capability_outputs__remove[{i}]: Capability name must contain "
-                    f"only alphanumeric characters and underscores: {stripped_name!r}"
-                )
-            # Normalize to lowercase for consistent matching
-            validated.append(stripped_name.lower())
-        return validated
+        return validate_onex_name_list(
+            v, "capability_outputs__remove", normalize_lowercase=True
+        )
 
     # =========================================================================
     # Model Validators

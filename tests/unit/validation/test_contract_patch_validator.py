@@ -60,10 +60,10 @@ class TestContractPatchValidator:
     def test_validate_empty_descriptor_warning(
         self, validator: ContractPatchValidator, profile_ref: ModelProfileReference
     ) -> None:
-        """Test warning for empty descriptor patch."""
+        """Test warning for empty behavior patch."""
         patch = ModelContractPatch(
             extends=profile_ref,
-            descriptor=ModelDescriptorPatch(),  # Empty descriptor
+            descriptor=ModelDescriptorPatch(),  # Empty behavior patch
         )
         result = validator.validate(patch)
         assert result.is_valid is True  # Warning, not error
@@ -87,81 +87,106 @@ class TestContractPatchValidator:
     def test_validate_conflicting_handlers(
         self, validator: ContractPatchValidator, profile_ref: ModelProfileReference
     ) -> None:
-        """Test error for conflicting handler operations."""
-        patch = ModelContractPatch(
-            extends=profile_ref,
-            handlers__add=[
-                ModelHandlerSpec(name="test_handler", handler_type="http"),
-            ],
-            handlers__remove=["test_handler"],
-        )
-        result = validator.validate(patch)
-        assert result.is_valid is False
-        assert any("CONFLICTING_LIST_OPERATIONS" in str(i.code) for i in result.issues)
+        """Test error for conflicting handler operations.
+
+        Note: Conflicts are now caught at Pydantic validation time (model_validator),
+        so we test that patch creation fails with ValidationError.
+        """
+        from pydantic import ValidationError
+
+        with pytest.raises(ValidationError) as exc_info:
+            ModelContractPatch(
+                extends=profile_ref,
+                handlers__add=[
+                    ModelHandlerSpec(name="test_handler", handler_type="http"),
+                ],
+                handlers__remove=["test_handler"],
+            )
+        assert "Conflicting add/remove" in str(exc_info.value)
 
     def test_validate_conflicting_dependencies(
         self, validator: ContractPatchValidator, profile_ref: ModelProfileReference
     ) -> None:
-        """Test error for conflicting dependency operations."""
-        patch = ModelContractPatch(
-            extends=profile_ref,
-            dependencies__add=[
-                ModelDependency(name="ProtocolLogger"),
-            ],
-            dependencies__remove=["ProtocolLogger"],
-        )
-        result = validator.validate(patch)
-        assert result.is_valid is False
-        assert any("CONFLICTING_LIST_OPERATIONS" in str(i.code) for i in result.issues)
+        """Test error for conflicting dependency operations.
+
+        Note: Conflicts are now caught at Pydantic validation time (model_validator),
+        so we test that patch creation fails with ValidationError.
+        """
+        from pydantic import ValidationError
+
+        with pytest.raises(ValidationError) as exc_info:
+            ModelContractPatch(
+                extends=profile_ref,
+                dependencies__add=[
+                    ModelDependency(name="ProtocolLogger"),
+                ],
+                dependencies__remove=["ProtocolLogger"],
+            )
+        assert "Conflicting add/remove" in str(exc_info.value)
 
     def test_validate_conflicting_events(
         self, validator: ContractPatchValidator, profile_ref: ModelProfileReference
     ) -> None:
-        """Test error for conflicting event operations."""
-        patch = ModelContractPatch(
-            extends=profile_ref,
-            consumed_events__add=["user.created"],
-            consumed_events__remove=["user.created"],
-        )
-        result = validator.validate(patch)
-        assert result.is_valid is False
-        assert any("CONFLICTING_LIST_OPERATIONS" in str(i.code) for i in result.issues)
+        """Test error for conflicting event operations.
+
+        Note: Conflicts are now caught at Pydantic validation time (model_validator),
+        so we test that patch creation fails with ValidationError.
+        """
+        from pydantic import ValidationError
+
+        with pytest.raises(ValidationError) as exc_info:
+            ModelContractPatch(
+                extends=profile_ref,
+                consumed_events__add=["user.created"],
+                consumed_events__remove=["user.created"],
+            )
+        assert "Conflicting add/remove" in str(exc_info.value)
 
     def test_validate_conflicting_capability_inputs(
         self, validator: ContractPatchValidator, profile_ref: ModelProfileReference
     ) -> None:
-        """Test error for conflicting capability input operations."""
-        patch = ModelContractPatch(
-            extends=profile_ref,
-            capability_inputs__add=["database_read", "cache_write"],
-            capability_inputs__remove=["database_read"],
-        )
-        result = validator.validate(patch)
-        assert result.is_valid is False
-        assert any("CONFLICTING_LIST_OPERATIONS" in str(i.code) for i in result.issues)
+        """Test error for conflicting capability input operations.
+
+        Note: Conflicts are now caught at Pydantic validation time (model_validator),
+        so we test that patch creation fails with ValidationError.
+        """
+        from pydantic import ValidationError
+
+        with pytest.raises(ValidationError) as exc_info:
+            ModelContractPatch(
+                extends=profile_ref,
+                capability_inputs__add=["database_read", "cache_write"],
+                capability_inputs__remove=["database_read"],
+            )
+        assert "Conflicting add/remove" in str(exc_info.value)
         # Check that the error message mentions the conflicting capability
-        assert any("database_read" in str(i.message) for i in result.issues)
+        assert "database_read" in str(exc_info.value)
 
     def test_validate_conflicting_capability_outputs(
         self, validator: ContractPatchValidator, profile_ref: ModelProfileReference
     ) -> None:
-        """Test error for conflicting capability output operations."""
+        """Test error for conflicting capability output operations.
+
+        Note: Conflicts are now caught at Pydantic validation time (model_validator),
+        so we test that patch creation fails with ValidationError.
+        """
+        from pydantic import ValidationError
+
         from omnibase_core.models.contracts.model_capability_provided import (
             ModelCapabilityProvided,
         )
 
-        patch = ModelContractPatch(
-            extends=profile_ref,
-            capability_outputs__add=[
-                ModelCapabilityProvided(name="file_write", version="1.0.0"),
-            ],
-            capability_outputs__remove=["file_write"],
-        )
-        result = validator.validate(patch)
-        assert result.is_valid is False
-        assert any("CONFLICTING_LIST_OPERATIONS" in str(i.code) for i in result.issues)
+        with pytest.raises(ValidationError) as exc_info:
+            ModelContractPatch(
+                extends=profile_ref,
+                capability_outputs__add=[
+                    ModelCapabilityProvided(name="file_write", version="1.0.0"),
+                ],
+                capability_outputs__remove=["file_write"],
+            )
+        assert "Conflicting add/remove" in str(exc_info.value)
         # Check that the error message mentions the conflicting capability
-        assert any("file_write" in str(i.message) for i in result.issues)
+        assert "file_write" in str(exc_info.value)
 
     def test_validate_capability_no_conflict_different_items(
         self, validator: ContractPatchValidator, profile_ref: ModelProfileReference

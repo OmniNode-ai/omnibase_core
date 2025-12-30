@@ -91,8 +91,11 @@ def is_valid_python_identifier(name: str) -> bool:
         False
     """
     if not name:
+        logger.debug("Python identifier validation failed: empty name")
         return False
-    return bool(_PYTHON_IDENTIFIER_PATTERN.match(name))
+    is_valid = bool(_PYTHON_IDENTIFIER_PATTERN.match(name))
+    logger.debug(f"Python identifier validation for {name!r}: {is_valid}")
+    return is_valid
 
 
 def is_valid_onex_name(name: str, *, lowercase_only: bool = False) -> bool:
@@ -121,10 +124,16 @@ def is_valid_onex_name(name: str, *, lowercase_only: bool = False) -> bool:
         True
     """
     if not name:
+        logger.debug("ONEX name validation failed: empty name")
         return False
     if lowercase_only:
-        return bool(_ONEX_LOWERCASE_NAME_PATTERN.match(name))
-    return bool(_ONEX_NAME_PATTERN.match(name))
+        is_valid = bool(_ONEX_LOWERCASE_NAME_PATTERN.match(name))
+    else:
+        is_valid = bool(_ONEX_NAME_PATTERN.match(name))
+    logger.debug(
+        f"ONEX name validation for {name!r} (lowercase_only={lowercase_only}): {is_valid}"
+    )
+    return is_valid
 
 
 # =============================================================================
@@ -336,6 +345,7 @@ def validate_import_path_format(import_path: str) -> tuple[bool, str | None]:
         (False, "Import path segment 'class' is a Python reserved keyword")
     """
     if not import_path or not import_path.strip():
+        logger.debug("Import path validation failed: empty path")
         return False, "Import path cannot be empty"
 
     import_path = import_path.strip()
@@ -343,24 +353,33 @@ def validate_import_path_format(import_path: str) -> tuple[bool, str | None]:
     # Security check: reject dangerous characters
     found_dangerous = [c for c in _DANGEROUS_IMPORT_CHARS if c in import_path]
     if found_dangerous:
+        logger.debug(
+            f"Import path validation failed: dangerous characters {found_dangerous}"
+        )
         return False, f"Import path contains invalid characters: {found_dangerous}"
 
     # Security check: reject path traversal
     if ".." in import_path or "/" in import_path or "\\" in import_path:
+        logger.debug("Import path validation failed: path traversal detected")
         return False, "Import path cannot contain path separators or '..'"
 
     # Split into segments and validate structure
     parts = import_path.split(".")
     if len(parts) < 2:
+        logger.debug("Import path validation failed: fewer than 2 segments")
         return False, "Import path must include module and class (at least 2 segments)"
 
     # Check for empty segments
     if any(not part for part in parts):
+        logger.debug("Import path validation failed: empty segment")
         return False, "Import path contains empty segment"
 
     # Validate each segment is a valid Python identifier
     for part in parts:
         if not is_valid_python_identifier(part):
+            logger.debug(
+                f"Import path validation failed: segment {part!r} is not a valid identifier"
+            )
             return (
                 False,
                 f"Import path segment '{part}' is not a valid Python identifier",
@@ -369,11 +388,15 @@ def validate_import_path_format(import_path: str) -> tuple[bool, str | None]:
     # Check for Python reserved keywords (cannot be used as module/class names)
     for part in parts:
         if keyword.iskeyword(part):
+            logger.debug(
+                f"Import path validation failed: segment {part!r} is a reserved keyword"
+            )
             return (
                 False,
                 f"Import path segment '{part}' is a Python reserved keyword",
             )
 
+    logger.debug(f"Import path validation passed: {import_path!r}")
     return True, None
 
 
@@ -405,20 +428,23 @@ def extract_protocol_signature(file_path: Path) -> ModelProtocolInfo | None:
         )
 
     except OSError as e:
-        logger.exception(f"Error reading file {file_path}: {e}. Skipping file.")
+        # Expected error: file access issues (permissions, not found, etc.)
+        logger.warning(f"Skipping file due to read error: {file_path}: {e}")
         return None
     except UnicodeDecodeError as e:
-        logger.exception(f"Encoding error in file {file_path}: {e}. Skipping file.")
+        # Expected error: file encoding issues
+        logger.warning(f"Skipping file due to encoding error: {file_path}: {e}")
         return None
     except SyntaxError as e:
+        # Expected error: Python syntax errors in file
         logger.warning(
             f"Skipping file with syntax error: {file_path}, "
             f"line {e.lineno}, offset {e.offset}: {e.msg}",
         )
         return None
     except Exception:  # fallback-ok: File processing errors should not stop the entire validation process
-        # This is a safety net for truly unexpected errors.
-        # logger.exception provides a full stack trace.
+        # Unexpected error: safety net for truly unexpected issues.
+        # logger.exception includes full stack trace for debugging.
         logger.exception(f"Unexpected error processing {file_path}. Skipping file.")
         return None
 
@@ -520,9 +546,13 @@ def is_protocol_file(file_path: Path) -> bool:
         return "class Protocol" in content_sample
 
     except OSError as e:
+        # Expected error: file access issues
         logger.debug(f"Could not read file {file_path} for protocol check: {e}")
         return False
-    except Exception as e:
+    except (
+        Exception
+    ) as e:  # fallback-ok: Protocol check errors should not stop file discovery
+        # Unexpected error: safety net for truly unexpected issues
         logger.debug(f"Unexpected error checking protocol file {file_path}: {e}")
         return False
 
@@ -532,12 +562,14 @@ def find_protocol_files(directory: Path) -> list[Path]:
     protocol_files: list[Path] = []
 
     if not directory.exists():
+        logger.debug(f"Directory does not exist for protocol search: {directory}")
         return protocol_files
 
     for py_file in directory.rglob("*.py"):
         if is_protocol_file(py_file):
             protocol_files.append(py_file)
 
+    logger.debug(f"Found {len(protocol_files)} protocol files in {directory}")
     return protocol_files
 
 

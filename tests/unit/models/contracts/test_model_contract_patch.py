@@ -106,7 +106,7 @@ class TestModelContractPatch:
 
     @pytest.mark.unit
     def test_descriptor_patch(self, profile_ref: ModelProfileReference) -> None:
-        """Test nested descriptor patch."""
+        """Test nested behavior patch."""
         patch = ModelContractPatch(
             extends=profile_ref,
             descriptor=ModelDescriptorPatch(
@@ -435,7 +435,8 @@ class TestModelContractPatchValidation:
                 extends=profile_ref,
                 dependencies__remove=["X"],
             )
-        assert "too short" in str(exc_info.value)
+        # Shared validation uses "must be at least N characters" format
+        assert "must be at least 2 characters" in str(exc_info.value)
 
     # =========================================================================
     # consumed_events validation
@@ -556,3 +557,620 @@ class TestModelContractPatchValidation:
         )
         assert patch.capability_outputs__remove is not None
         assert patch.capability_outputs__remove == ["eventemit", "http_response"]
+
+
+@pytest.mark.unit
+class TestEmptyListNormalization:
+    """Tests for empty list normalization to None."""
+
+    @pytest.fixture
+    def profile_ref(self) -> ModelProfileReference:
+        """Create a profile reference fixture."""
+        return ModelProfileReference(profile="compute_pure", version="1.0.0")
+
+    # =========================================================================
+    # handlers__add / handlers__remove
+    # =========================================================================
+
+    @pytest.mark.unit
+    def test_handlers_add_empty_list_becomes_none(
+        self, profile_ref: ModelProfileReference
+    ) -> None:
+        """Test that empty handlers__add list is normalized to None."""
+        patch = ModelContractPatch(
+            extends=profile_ref,
+            handlers__add=[],
+        )
+        assert patch.handlers__add is None
+
+    @pytest.mark.unit
+    def test_handlers_remove_empty_list_becomes_none(
+        self, profile_ref: ModelProfileReference
+    ) -> None:
+        """Test that empty handlers__remove list is normalized to None."""
+        patch = ModelContractPatch(
+            extends=profile_ref,
+            handlers__remove=[],
+        )
+        assert patch.handlers__remove is None
+
+    # =========================================================================
+    # dependencies__add / dependencies__remove
+    # =========================================================================
+
+    @pytest.mark.unit
+    def test_dependencies_add_empty_list_becomes_none(
+        self, profile_ref: ModelProfileReference
+    ) -> None:
+        """Test that empty dependencies__add list is normalized to None."""
+        patch = ModelContractPatch(
+            extends=profile_ref,
+            dependencies__add=[],
+        )
+        assert patch.dependencies__add is None
+
+    @pytest.mark.unit
+    def test_dependencies_remove_empty_list_becomes_none(
+        self, profile_ref: ModelProfileReference
+    ) -> None:
+        """Test that empty dependencies__remove list is normalized to None."""
+        patch = ModelContractPatch(
+            extends=profile_ref,
+            dependencies__remove=[],
+        )
+        assert patch.dependencies__remove is None
+
+    # =========================================================================
+    # consumed_events__add / consumed_events__remove
+    # =========================================================================
+
+    @pytest.mark.unit
+    def test_consumed_events_add_empty_list_becomes_none(
+        self, profile_ref: ModelProfileReference
+    ) -> None:
+        """Test that empty consumed_events__add list is normalized to None."""
+        patch = ModelContractPatch(
+            extends=profile_ref,
+            consumed_events__add=[],
+        )
+        assert patch.consumed_events__add is None
+
+    @pytest.mark.unit
+    def test_consumed_events_remove_empty_list_becomes_none(
+        self, profile_ref: ModelProfileReference
+    ) -> None:
+        """Test that empty consumed_events__remove list is normalized to None."""
+        patch = ModelContractPatch(
+            extends=profile_ref,
+            consumed_events__remove=[],
+        )
+        assert patch.consumed_events__remove is None
+
+    # =========================================================================
+    # capability_inputs__add / capability_inputs__remove
+    # =========================================================================
+
+    @pytest.mark.unit
+    def test_capability_inputs_add_empty_list_becomes_none(
+        self, profile_ref: ModelProfileReference
+    ) -> None:
+        """Test that empty capability_inputs__add list is normalized to None."""
+        patch = ModelContractPatch(
+            extends=profile_ref,
+            capability_inputs__add=[],
+        )
+        assert patch.capability_inputs__add is None
+
+    @pytest.mark.unit
+    def test_capability_inputs_remove_empty_list_becomes_none(
+        self, profile_ref: ModelProfileReference
+    ) -> None:
+        """Test that empty capability_inputs__remove list is normalized to None."""
+        patch = ModelContractPatch(
+            extends=profile_ref,
+            capability_inputs__remove=[],
+        )
+        assert patch.capability_inputs__remove is None
+
+    # =========================================================================
+    # capability_outputs__add / capability_outputs__remove
+    # =========================================================================
+
+    @pytest.mark.unit
+    def test_capability_outputs_add_empty_list_becomes_none(
+        self, profile_ref: ModelProfileReference
+    ) -> None:
+        """Test that empty capability_outputs__add list is normalized to None."""
+        patch = ModelContractPatch(
+            extends=profile_ref,
+            capability_outputs__add=[],
+        )
+        assert patch.capability_outputs__add is None
+
+    @pytest.mark.unit
+    def test_capability_outputs_remove_empty_list_becomes_none(
+        self, profile_ref: ModelProfileReference
+    ) -> None:
+        """Test that empty capability_outputs__remove list is normalized to None."""
+        patch = ModelContractPatch(
+            extends=profile_ref,
+            capability_outputs__remove=[],
+        )
+        assert patch.capability_outputs__remove is None
+
+    # =========================================================================
+    # Comprehensive / Integration tests
+    # =========================================================================
+
+    @pytest.mark.unit
+    def test_all_empty_lists_become_none(
+        self, profile_ref: ModelProfileReference
+    ) -> None:
+        """Test that all empty lists are normalized to None simultaneously."""
+        patch = ModelContractPatch(
+            extends=profile_ref,
+            handlers__add=[],
+            handlers__remove=[],
+            dependencies__add=[],
+            dependencies__remove=[],
+            consumed_events__add=[],
+            consumed_events__remove=[],
+            capability_inputs__add=[],
+            capability_inputs__remove=[],
+            capability_outputs__add=[],
+            capability_outputs__remove=[],
+        )
+        assert patch.handlers__add is None
+        assert patch.handlers__remove is None
+        assert patch.dependencies__add is None
+        assert patch.dependencies__remove is None
+        assert patch.consumed_events__add is None
+        assert patch.consumed_events__remove is None
+        assert patch.capability_inputs__add is None
+        assert patch.capability_inputs__remove is None
+        assert patch.capability_outputs__add is None
+        assert patch.capability_outputs__remove is None
+        # Also verify that has_list_operations returns False
+        assert patch.has_list_operations() is False
+
+    @pytest.mark.unit
+    def test_non_empty_lists_preserved(
+        self, profile_ref: ModelProfileReference
+    ) -> None:
+        """Test that non-empty lists are preserved correctly."""
+        patch = ModelContractPatch(
+            extends=profile_ref,
+            handlers__remove=["old_handler"],
+            consumed_events__add=["user.created"],
+            capability_inputs__add=["http"],
+        )
+        assert patch.handlers__remove is not None
+        assert len(patch.handlers__remove) == 1
+        assert patch.consumed_events__add is not None
+        assert len(patch.consumed_events__add) == 1
+        assert patch.capability_inputs__add is not None
+        assert len(patch.capability_inputs__add) == 1
+
+    @pytest.mark.unit
+    def test_mixed_empty_and_nonempty_lists(
+        self, profile_ref: ModelProfileReference
+    ) -> None:
+        """Test that empty lists become None while non-empty are preserved."""
+        patch = ModelContractPatch(
+            extends=profile_ref,
+            handlers__add=[],  # Should become None
+            handlers__remove=["old_handler"],  # Should be preserved
+            dependencies__add=[],  # Should become None
+            consumed_events__add=["user.created"],  # Should be preserved
+        )
+        assert patch.handlers__add is None
+        assert patch.handlers__remove is not None
+        assert patch.dependencies__add is None
+        assert patch.consumed_events__add is not None
+
+
+@pytest.mark.unit
+class TestModelContractPatchConflicts:
+    """Tests for ModelContractPatch add/remove conflict detection."""
+
+    @pytest.fixture
+    def profile_ref(self) -> ModelProfileReference:
+        """Create a profile reference fixture."""
+        return ModelProfileReference(profile="compute_pure", version="1.0.0")
+
+    # =========================================================================
+    # handlers conflict detection
+    # =========================================================================
+
+    @pytest.mark.unit
+    def test_handlers_conflict_detected(
+        self, profile_ref: ModelProfileReference
+    ) -> None:
+        """Test that adding and removing the same handler is rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelContractPatch(
+                extends=profile_ref,
+                handlers__add=[
+                    ModelHandlerSpec(name="http_client", handler_type="http"),
+                ],
+                handlers__remove=["http_client"],
+            )
+        assert "Conflicting" in str(exc_info.value)
+        assert "handlers" in str(exc_info.value)
+
+    @pytest.mark.unit
+    def test_handlers_conflict_case_insensitive(
+        self, profile_ref: ModelProfileReference
+    ) -> None:
+        """Test that handler conflict detection is case-insensitive."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelContractPatch(
+                extends=profile_ref,
+                handlers__add=[
+                    ModelHandlerSpec(name="HTTP_Client", handler_type="http"),
+                ],
+                handlers__remove=["http_client"],
+            )
+        assert "Conflicting" in str(exc_info.value)
+
+    @pytest.mark.unit
+    def test_handlers_no_conflict_different_names(
+        self, profile_ref: ModelProfileReference
+    ) -> None:
+        """Test that different handler names don't conflict."""
+        patch = ModelContractPatch(
+            extends=profile_ref,
+            handlers__add=[
+                ModelHandlerSpec(name="http_client", handler_type="http"),
+            ],
+            handlers__remove=["kafka_producer"],
+        )
+        assert patch.handlers__add is not None
+        assert patch.handlers__remove is not None
+
+    @pytest.mark.unit
+    def test_handlers_add_only_no_conflict(
+        self, profile_ref: ModelProfileReference
+    ) -> None:
+        """Test that handlers__add without handlers__remove has no conflict."""
+        patch = ModelContractPatch(
+            extends=profile_ref,
+            handlers__add=[
+                ModelHandlerSpec(name="http_client", handler_type="http"),
+            ],
+        )
+        assert patch.handlers__add is not None
+        assert patch.handlers__remove is None
+
+    @pytest.mark.unit
+    def test_handlers_remove_only_no_conflict(
+        self, profile_ref: ModelProfileReference
+    ) -> None:
+        """Test that handlers__remove without handlers__add has no conflict."""
+        patch = ModelContractPatch(
+            extends=profile_ref,
+            handlers__remove=["old_handler"],
+        )
+        assert patch.handlers__remove is not None
+        assert patch.handlers__add is None
+
+    # =========================================================================
+    # dependencies conflict detection
+    # =========================================================================
+
+    @pytest.mark.unit
+    def test_dependencies_conflict_detected(
+        self, profile_ref: ModelProfileReference
+    ) -> None:
+        """Test that adding and removing the same dependency is rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelContractPatch(
+                extends=profile_ref,
+                dependencies__add=[
+                    ModelDependency(name="ProtocolLogger"),
+                ],
+                dependencies__remove=["ProtocolLogger"],
+            )
+        assert "Conflicting" in str(exc_info.value)
+        assert "dependencies" in str(exc_info.value)
+
+    @pytest.mark.unit
+    def test_dependencies_no_conflict_different_names(
+        self, profile_ref: ModelProfileReference
+    ) -> None:
+        """Test that different dependency names don't conflict."""
+        patch = ModelContractPatch(
+            extends=profile_ref,
+            dependencies__add=[
+                ModelDependency(name="ProtocolLogger"),
+            ],
+            dependencies__remove=["OldProtocol"],
+        )
+        assert patch.dependencies__add is not None
+        assert patch.dependencies__remove is not None
+
+    # =========================================================================
+    # consumed_events conflict detection
+    # =========================================================================
+
+    @pytest.mark.unit
+    def test_consumed_events_conflict_detected(
+        self, profile_ref: ModelProfileReference
+    ) -> None:
+        """Test that adding and removing the same event is rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelContractPatch(
+                extends=profile_ref,
+                consumed_events__add=["user.created"],
+                consumed_events__remove=["user.created"],
+            )
+        assert "Conflicting" in str(exc_info.value)
+        assert "consumed_events" in str(exc_info.value)
+
+    @pytest.mark.unit
+    def test_consumed_events_no_conflict_different_events(
+        self, profile_ref: ModelProfileReference
+    ) -> None:
+        """Test that different event types don't conflict."""
+        patch = ModelContractPatch(
+            extends=profile_ref,
+            consumed_events__add=["user.created"],
+            consumed_events__remove=["user.deleted"],
+        )
+        assert patch.consumed_events__add is not None
+        assert patch.consumed_events__remove is not None
+
+    @pytest.mark.unit
+    def test_consumed_events_add_only_no_conflict(
+        self, profile_ref: ModelProfileReference
+    ) -> None:
+        """Test that consumed_events__add without remove has no conflict."""
+        patch = ModelContractPatch(
+            extends=profile_ref,
+            consumed_events__add=["user.created", "order.placed"],
+        )
+        assert patch.consumed_events__add is not None
+        assert patch.consumed_events__remove is None
+
+    @pytest.mark.unit
+    def test_consumed_events_remove_only_no_conflict(
+        self, profile_ref: ModelProfileReference
+    ) -> None:
+        """Test that consumed_events__remove without add has no conflict."""
+        patch = ModelContractPatch(
+            extends=profile_ref,
+            consumed_events__remove=["deprecated.event"],
+        )
+        assert patch.consumed_events__remove is not None
+        assert patch.consumed_events__add is None
+
+    # =========================================================================
+    # capability_inputs conflict detection
+    # =========================================================================
+
+    @pytest.mark.unit
+    def test_capability_inputs_conflict_detected(
+        self, profile_ref: ModelProfileReference
+    ) -> None:
+        """Test that adding and removing the same capability input is rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelContractPatch(
+                extends=profile_ref,
+                capability_inputs__add=["http"],
+                capability_inputs__remove=["http"],
+            )
+        assert "Conflicting" in str(exc_info.value)
+        assert "capability_inputs" in str(exc_info.value)
+
+    @pytest.mark.unit
+    def test_capability_inputs_conflict_case_insensitive(
+        self, profile_ref: ModelProfileReference
+    ) -> None:
+        """Test that capability_inputs conflict detection is case-insensitive."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelContractPatch(
+                extends=profile_ref,
+                capability_inputs__add=["HTTP"],
+                capability_inputs__remove=["http"],
+            )
+        assert "Conflicting" in str(exc_info.value)
+        assert "capability_inputs" in str(exc_info.value)
+
+    @pytest.mark.unit
+    def test_capability_inputs_no_conflict_different_capabilities(
+        self, profile_ref: ModelProfileReference
+    ) -> None:
+        """Test that different capability inputs don't conflict."""
+        patch = ModelContractPatch(
+            extends=profile_ref,
+            capability_inputs__add=["http"],
+            capability_inputs__remove=["database_read"],
+        )
+        assert patch.capability_inputs__add is not None
+        assert patch.capability_inputs__remove is not None
+
+    @pytest.mark.unit
+    def test_capability_inputs_add_only_no_conflict(
+        self, profile_ref: ModelProfileReference
+    ) -> None:
+        """Test that capability_inputs__add without remove has no conflict."""
+        patch = ModelContractPatch(
+            extends=profile_ref,
+            capability_inputs__add=["http", "json"],
+        )
+        assert patch.capability_inputs__add is not None
+        assert patch.capability_inputs__remove is None
+
+    @pytest.mark.unit
+    def test_capability_inputs_remove_only_no_conflict(
+        self, profile_ref: ModelProfileReference
+    ) -> None:
+        """Test that capability_inputs__remove without add has no conflict."""
+        patch = ModelContractPatch(
+            extends=profile_ref,
+            capability_inputs__remove=["deprecated_capability"],
+        )
+        assert patch.capability_inputs__remove is not None
+        assert patch.capability_inputs__add is None
+
+    @pytest.mark.unit
+    def test_capability_inputs_conflict_multiple_items(
+        self, profile_ref: ModelProfileReference
+    ) -> None:
+        """Test that multiple capability inputs conflicts are detected."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelContractPatch(
+                extends=profile_ref,
+                capability_inputs__add=["http", "json", "xml"],
+                capability_inputs__remove=["json", "xml"],
+            )
+        assert "Conflicting" in str(exc_info.value)
+        # At least one conflicting capability should be mentioned
+        error_str = str(exc_info.value)
+        assert "json" in error_str or "xml" in error_str
+
+    # =========================================================================
+    # capability_outputs conflict detection
+    # =========================================================================
+
+    @pytest.mark.unit
+    def test_capability_outputs_conflict_detected(
+        self, profile_ref: ModelProfileReference
+    ) -> None:
+        """Test that adding and removing the same capability output is rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelContractPatch(
+                extends=profile_ref,
+                capability_outputs__add=[
+                    ModelCapabilityProvided(name="event_emit"),
+                ],
+                capability_outputs__remove=["event_emit"],
+            )
+        assert "Conflicting" in str(exc_info.value)
+        assert "capability_outputs" in str(exc_info.value)
+
+    @pytest.mark.unit
+    def test_capability_outputs_conflict_case_insensitive(
+        self, profile_ref: ModelProfileReference
+    ) -> None:
+        """Test that capability_outputs conflict detection is case-insensitive."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelContractPatch(
+                extends=profile_ref,
+                capability_outputs__add=[
+                    ModelCapabilityProvided(name="EventEmit"),
+                ],
+                capability_outputs__remove=["eventemit"],
+            )
+        assert "Conflicting" in str(exc_info.value)
+        assert "capability_outputs" in str(exc_info.value)
+
+    @pytest.mark.unit
+    def test_capability_outputs_no_conflict_different_capabilities(
+        self, profile_ref: ModelProfileReference
+    ) -> None:
+        """Test that different capability outputs don't conflict."""
+        patch = ModelContractPatch(
+            extends=profile_ref,
+            capability_outputs__add=[
+                ModelCapabilityProvided(name="event_emit"),
+            ],
+            capability_outputs__remove=["logging"],
+        )
+        assert patch.capability_outputs__add is not None
+        assert patch.capability_outputs__remove is not None
+
+    @pytest.mark.unit
+    def test_capability_outputs_add_only_no_conflict(
+        self, profile_ref: ModelProfileReference
+    ) -> None:
+        """Test that capability_outputs__add without remove has no conflict."""
+        patch = ModelContractPatch(
+            extends=profile_ref,
+            capability_outputs__add=[
+                ModelCapabilityProvided(name="event_emit"),
+                ModelCapabilityProvided(name="logging"),
+            ],
+        )
+        assert patch.capability_outputs__add is not None
+        assert patch.capability_outputs__remove is None
+
+    @pytest.mark.unit
+    def test_capability_outputs_remove_only_no_conflict(
+        self, profile_ref: ModelProfileReference
+    ) -> None:
+        """Test that capability_outputs__remove without add has no conflict."""
+        patch = ModelContractPatch(
+            extends=profile_ref,
+            capability_outputs__remove=["deprecated_capability"],
+        )
+        assert patch.capability_outputs__remove is not None
+        assert patch.capability_outputs__add is None
+
+    @pytest.mark.unit
+    def test_capability_outputs_conflict_multiple_items(
+        self, profile_ref: ModelProfileReference
+    ) -> None:
+        """Test that multiple capability outputs conflicts are detected."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelContractPatch(
+                extends=profile_ref,
+                capability_outputs__add=[
+                    ModelCapabilityProvided(name="event_emit"),
+                    ModelCapabilityProvided(name="logging"),
+                ],
+                capability_outputs__remove=["event_emit", "logging"],
+            )
+        assert "Conflicting" in str(exc_info.value)
+
+    # =========================================================================
+    # Mixed conflict detection
+    # =========================================================================
+
+    @pytest.mark.unit
+    def test_multiple_list_type_conflicts(
+        self, profile_ref: ModelProfileReference
+    ) -> None:
+        """Test that conflicts across multiple list types are all reported."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelContractPatch(
+                extends=profile_ref,
+                handlers__add=[
+                    ModelHandlerSpec(name="http_client", handler_type="http"),
+                ],
+                handlers__remove=["http_client"],
+                consumed_events__add=["user.created"],
+                consumed_events__remove=["user.created"],
+            )
+        error_str = str(exc_info.value)
+        assert "Conflicting" in error_str
+        assert "handlers" in error_str
+        assert "consumed_events" in error_str
+
+    @pytest.mark.unit
+    def test_no_conflicts_with_different_items_in_all_lists(
+        self, profile_ref: ModelProfileReference
+    ) -> None:
+        """Test that non-conflicting items in all list types work."""
+        patch = ModelContractPatch(
+            extends=profile_ref,
+            handlers__add=[
+                ModelHandlerSpec(name="new_handler", handler_type="http"),
+            ],
+            handlers__remove=["old_handler"],
+            dependencies__add=[
+                ModelDependency(name="ProtocolLogger"),
+            ],
+            dependencies__remove=["OldProtocol"],
+            consumed_events__add=["new.event"],
+            consumed_events__remove=["old.event"],
+            capability_inputs__add=["new_capability"],
+            capability_inputs__remove=["old_capability"],
+            capability_outputs__add=[
+                ModelCapabilityProvided(name="new_output"),
+            ],
+            capability_outputs__remove=["old_output"],
+        )
+        assert patch.has_list_operations() is True
+        assert len(patch.get_add_operations()) == 5
+        assert len(patch.get_remove_operations()) == 5
