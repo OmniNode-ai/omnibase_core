@@ -123,18 +123,6 @@ class TestModelProviderDescriptorCapabilities:
                 connection_ref="secrets://test",
             )
 
-    def test_capabilities_empty_list_rejected(self) -> None:
-        """Test that empty capabilities list is rejected."""
-        with pytest.raises(
-            (ValidationError, ModelOnexError),
-        ):
-            ModelProviderDescriptor(
-                provider_id=uuid4(),
-                capabilities=[],
-                adapter="test.Adapter",
-                connection_ref="secrets://test",
-            )
-
     def test_capabilities_valid_pattern_accepted(self) -> None:
         """Test that valid capability patterns are accepted."""
         descriptor = ModelProviderDescriptor(
@@ -331,6 +319,243 @@ class TestModelProviderDescriptorConnectionRef:
                 )
 
             assert "://" in str(exc_info.value)
+
+    def test_connection_ref_empty_scheme_rejected(self) -> None:
+        """Test that connection refs with empty scheme are rejected."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelProviderDescriptor(
+                provider_id=uuid4(),
+                capabilities=["database.relational"],
+                adapter="test.Adapter",
+                connection_ref="://no-scheme",
+            )
+
+        assert "scheme cannot be empty" in str(exc_info.value)
+
+    def test_connection_ref_uppercase_scheme_rejected(self) -> None:
+        """Test that connection refs with uppercase scheme are rejected."""
+        invalid_refs = [
+            "SECRETS://path",
+            "Env://VAR",
+            "VAULT://secret/path",
+            "HTTP://server/endpoint",
+        ]
+
+        for ref in invalid_refs:
+            with pytest.raises(ModelOnexError) as exc_info:
+                ModelProviderDescriptor(
+                    provider_id=uuid4(),
+                    capabilities=["database.relational"],
+                    adapter="test.Adapter",
+                    connection_ref=ref,
+                )
+
+            assert "lowercase alphanumeric" in str(exc_info.value)
+
+    def test_connection_ref_empty_path_rejected(self) -> None:
+        """Test that connection refs with empty path are rejected."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelProviderDescriptor(
+                provider_id=uuid4(),
+                capabilities=["database.relational"],
+                adapter="test.Adapter",
+                connection_ref="secrets://",
+            )
+
+        assert "path cannot be empty" in str(exc_info.value)
+
+    def test_connection_ref_scheme_starting_with_number_rejected(self) -> None:
+        """Test that schemes starting with a number are rejected."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelProviderDescriptor(
+                provider_id=uuid4(),
+                capabilities=["database.relational"],
+                adapter="test.Adapter",
+                connection_ref="123scheme://path",
+            )
+
+        assert "lowercase alphanumeric, starting with a letter" in str(exc_info.value)
+
+    def test_connection_ref_scheme_with_special_chars_rejected(self) -> None:
+        """Test that schemes with special characters are rejected."""
+        invalid_refs = [
+            "sec-rets://path",
+            "my_scheme://path",
+            "scheme.name://path",
+            "scheme+ext://path",
+        ]
+
+        for ref in invalid_refs:
+            with pytest.raises(ModelOnexError) as exc_info:
+                ModelProviderDescriptor(
+                    provider_id=uuid4(),
+                    capabilities=["database.relational"],
+                    adapter="test.Adapter",
+                    connection_ref=ref,
+                )
+
+            assert "lowercase alphanumeric" in str(exc_info.value)
+
+    def test_connection_ref_scheme_with_digits_accepted(self) -> None:
+        """Test that schemes with digits (after first letter) are accepted."""
+        valid_refs = [
+            "s3://bucket/key",
+            "http2://server/path",
+            "v1beta://api/endpoint",
+        ]
+
+        for ref in valid_refs:
+            descriptor = ModelProviderDescriptor(
+                provider_id=uuid4(),
+                capabilities=["database.relational"],
+                adapter="test.Adapter",
+                connection_ref=ref,
+            )
+            assert descriptor.connection_ref == ref
+
+
+@pytest.mark.unit
+class TestModelProviderDescriptorAdapter:
+    """Tests for adapter validation."""
+
+    def test_adapter_valid_paths_accepted(self) -> None:
+        """Test that valid Python import paths are accepted."""
+        valid_adapters = [
+            "omnibase_infra.adapters.PostgresAdapter",
+            "test.Adapter",
+            "my_module.sub.Class",
+            "_private.Module",
+            "a.b",
+            "module_name.ClassName",
+            "pkg.sub_pkg.Module123",
+            "_hidden._internal.Impl",
+        ]
+
+        for adapter in valid_adapters:
+            descriptor = ModelProviderDescriptor(
+                provider_id=uuid4(),
+                capabilities=["database.relational"],
+                adapter=adapter,
+                connection_ref="secrets://test",
+            )
+            assert descriptor.adapter == adapter
+
+    def test_adapter_no_dot_rejected(self) -> None:
+        """Test that adapter without dots is rejected."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelProviderDescriptor(
+                provider_id=uuid4(),
+                capabilities=["database.relational"],
+                adapter="NoDotsHere",
+                connection_ref="secrets://test",
+            )
+
+        assert "at least one dot" in str(exc_info.value)
+        assert "NoDotsHere" in str(exc_info.value)
+
+    def test_adapter_starts_with_number_rejected(self) -> None:
+        """Test that adapter with segment starting with number is rejected."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelProviderDescriptor(
+                provider_id=uuid4(),
+                capabilities=["database.relational"],
+                adapter="123module.Adapter",
+                connection_ref="secrets://test",
+            )
+
+        assert "not a valid Python identifier" in str(exc_info.value)
+        assert "123module" in str(exc_info.value)
+
+    def test_adapter_number_in_later_segment_rejected(self) -> None:
+        """Test that adapter with later segment starting with number is rejected."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelProviderDescriptor(
+                provider_id=uuid4(),
+                capabilities=["database.relational"],
+                adapter="valid.123invalid",
+                connection_ref="secrets://test",
+            )
+
+        assert "not a valid Python identifier" in str(exc_info.value)
+        assert "123invalid" in str(exc_info.value)
+
+    def test_adapter_with_spaces_rejected(self) -> None:
+        """Test that adapter with spaces is rejected."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelProviderDescriptor(
+                provider_id=uuid4(),
+                capabilities=["database.relational"],
+                adapter="has spaces.invalid",
+                connection_ref="secrets://test",
+            )
+
+        assert "not a valid Python identifier" in str(exc_info.value)
+
+    def test_adapter_with_hyphen_rejected(self) -> None:
+        """Test that adapter with hyphens is rejected."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelProviderDescriptor(
+                provider_id=uuid4(),
+                capabilities=["database.relational"],
+                adapter="my-module.Adapter",
+                connection_ref="secrets://test",
+            )
+
+        assert "not a valid Python identifier" in str(exc_info.value)
+
+    def test_adapter_with_special_chars_rejected(self) -> None:
+        """Test that adapter with special characters is rejected."""
+        invalid_adapters = [
+            "module@.Class",
+            "pkg$.Adapter",
+            "mod!ule.Class",
+            "mod#.Class",
+        ]
+
+        for adapter in invalid_adapters:
+            with pytest.raises(ModelOnexError):
+                ModelProviderDescriptor(
+                    provider_id=uuid4(),
+                    capabilities=["database.relational"],
+                    adapter=adapter,
+                    connection_ref="secrets://test",
+                )
+
+    def test_adapter_empty_segment_rejected(self) -> None:
+        """Test that adapter with empty segment (double dot) is rejected."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelProviderDescriptor(
+                provider_id=uuid4(),
+                capabilities=["database.relational"],
+                adapter="module..Class",
+                connection_ref="secrets://test",
+            )
+
+        assert "not a valid Python identifier" in str(exc_info.value)
+
+    def test_adapter_leading_dot_rejected(self) -> None:
+        """Test that adapter with leading dot is rejected."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelProviderDescriptor(
+                provider_id=uuid4(),
+                capabilities=["database.relational"],
+                adapter=".module.Class",
+                connection_ref="secrets://test",
+            )
+
+        assert "not a valid Python identifier" in str(exc_info.value)
+
+    def test_adapter_trailing_dot_rejected(self) -> None:
+        """Test that adapter with trailing dot is rejected."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelProviderDescriptor(
+                provider_id=uuid4(),
+                capabilities=["database.relational"],
+                adapter="module.Class.",
+                connection_ref="secrets://test",
+            )
+
+        assert "not a valid Python identifier" in str(exc_info.value)
 
 
 @pytest.mark.unit

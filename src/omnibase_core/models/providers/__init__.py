@@ -18,10 +18,11 @@ Example Usage
 -------------
 Creating a provider descriptor:
 
+    >>> from uuid import uuid4
     >>> from omnibase_core.models.providers import ModelProviderDescriptor
     >>>
     >>> descriptor = ModelProviderDescriptor(
-    ...     provider_id="postgres-primary",
+    ...     provider_id=uuid4(),
     ...     capabilities=["database.relational", "database.postgresql"],
     ...     adapter="omnibase_infra.adapters.PostgresAdapter",
     ...     connection_ref="secrets://postgres/primary",

@@ -56,8 +56,6 @@ See Also:
     Initial implementation as part of OMN-1153 provider registry models.
 """
 
-from __future__ import annotations
-
 import re
 from typing import TYPE_CHECKING, Any
 from uuid import UUID
@@ -80,6 +78,15 @@ else:
 # Capability naming pattern: lowercase alphanumeric with dots, at least one dot
 # Examples: "database.relational", "cache.redis", "storage.s3"
 _CAPABILITY_PATTERN = re.compile(r"^[a-z0-9]+(\.[a-z0-9]+)+$")
+
+# Python identifier pattern: starts with letter or underscore, followed by
+# alphanumeric or underscores. Used for validating adapter import paths.
+# Examples: "MyClass", "_private", "module_name", "Class123"
+_PYTHON_IDENTIFIER_PATTERN = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]*$")
+
+# Connection reference scheme pattern: lowercase alphanumeric, must start with letter
+# Examples: "secrets", "env", "vault", "file", "http", "https", "s3"
+_SCHEME_PATTERN = re.compile(r"^[a-z][a-z0-9]*$")
 
 
 class ModelProviderDescriptor(BaseModel):
@@ -318,10 +325,12 @@ class ModelProviderDescriptor(BaseModel):
     @field_validator("connection_ref")
     @classmethod
     def validate_connection_ref(cls, v: str) -> str:
-        """Validate connection reference contains scheme pattern.
+        """Validate connection reference has valid scheme and path.
 
-        Connection references must contain "://" to indicate a valid
-        scheme (e.g., "secrets://", "env://", "vault://").
+        Connection references must follow the format "scheme://path" where:
+        - scheme: lowercase alphanumeric, starting with a letter
+          (e.g., "secrets", "env", "vault", "file", "http", "s3")
+        - path: non-empty string after the "://" separator
 
         Args:
             v: Connection reference string to validate.
@@ -331,11 +340,16 @@ class ModelProviderDescriptor(BaseModel):
 
         Raises:
             ModelOnexError: If the connection reference does not contain
-                the "://" scheme separator. Error code is VALIDATION_ERROR.
+                the "://" scheme separator, has an empty/invalid scheme,
+                or has an empty path. Error code is VALIDATION_ERROR.
 
         Examples:
-            Valid: "secrets://postgres/primary", "env://DB_URL"
-            Invalid: "postgres/primary", "just-a-string"
+            Valid: "secrets://postgres/primary", "env://DB_URL",
+                   "file:///etc/config.yaml", "s3://bucket/key"
+            Invalid: "postgres/primary" (no scheme separator),
+                     "://no-scheme" (empty scheme),
+                     "SECRETS://path" (uppercase scheme),
+                     "secrets://" (empty path)
         """
         if "://" not in v:
             raise ModelOnexError(
@@ -345,6 +359,92 @@ class ModelProviderDescriptor(BaseModel):
                     "'://' (e.g., 'secrets://postgres/primary', 'env://DB_URL')"
                 ),
             )
+
+        # Split on first occurrence of "://" to get scheme and path
+        scheme, path = v.split("://", 1)
+
+        # Validate scheme is non-empty and matches pattern
+        if not scheme:
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=(
+                    f"Invalid connection_ref '{v}': scheme cannot be empty. "
+                    "Must start with a valid scheme "
+                    "(e.g., 'secrets://path', 'env://VAR')"
+                ),
+            )
+
+        if not _SCHEME_PATTERN.match(scheme):
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=(
+                    f"Invalid connection_ref '{v}': scheme '{scheme}' must be "
+                    "lowercase alphanumeric, starting with a letter "
+                    "(e.g., 'secrets', 'env', 'vault', 'file', 'http', 's3')"
+                ),
+            )
+
+        # Validate path is non-empty
+        if not path:
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=(
+                    f"Invalid connection_ref '{v}': path cannot be empty. "
+                    "Must have content after '://' "
+                    "(e.g., 'secrets://postgres/primary', 'env://DB_URL')"
+                ),
+            )
+
+        return v
+
+    @field_validator("adapter")
+    @classmethod
+    def validate_adapter(cls, v: str) -> str:
+        """Validate adapter is a valid Python import path.
+
+        Adapter paths must look like valid Python module import paths,
+        containing at least one dot and having each segment be a valid
+        Python identifier (alphanumeric + underscore, not starting with number).
+
+        Args:
+            v: Adapter import path string to validate.
+
+        Returns:
+            The validated adapter path (unchanged if valid).
+
+        Raises:
+            ModelOnexError: If the adapter path does not contain at least one
+                dot, or if any segment is not a valid Python identifier.
+                Error code is VALIDATION_ERROR.
+
+        Examples:
+            Valid: "omnibase_infra.adapters.PostgresAdapter", "test.Adapter",
+                   "my_module.sub.Class", "_private.Module"
+            Invalid: "NoDotsHere", "123.invalid", "has spaces.invalid"
+        """
+        if "." not in v:
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=(
+                    f"Invalid adapter '{v}': must be a valid Python import path "
+                    "containing at least one dot "
+                    "(e.g., 'omnibase_infra.adapters.PostgresAdapter', 'test.Adapter')"
+                ),
+            )
+
+        parts = v.split(".")
+        for part in parts:
+            if not _PYTHON_IDENTIFIER_PATTERN.match(part):
+                raise ModelOnexError(
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message=(
+                        f"Invalid adapter '{v}': segment '{part}' is not a valid "
+                        "Python identifier. Each segment must start with a letter "
+                        "or underscore and contain only alphanumeric characters "
+                        "or underscores."
+                    ),
+                )
+
         return v
 
     def get_effective_features(self) -> dict[str, JsonValue]:
