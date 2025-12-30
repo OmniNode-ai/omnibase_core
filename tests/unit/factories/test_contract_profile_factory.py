@@ -338,6 +338,8 @@ class TestDescriptorEmbedding:
         assert isinstance(contract.descriptor, ModelHandlerDescriptor)
         assert contract.descriptor.handler_kind == "orchestrator"
         assert contract.descriptor.concurrency_policy == "serialized"
+        # Safe profile is NOT idempotent by default (conservative)
+        assert contract.descriptor.idempotent is False
 
     def test_orchestrator_parallel_has_parallel_policy(self) -> None:
         """Test orchestrator_parallel allows parallel execution."""
@@ -348,7 +350,10 @@ class TestDescriptorEmbedding:
             version="1.0.0",
         )
         assert contract.descriptor is not None
+        assert contract.descriptor.handler_kind == "orchestrator"
         assert contract.descriptor.concurrency_policy == "parallel_ok"
+        # Parallel profile is NOT idempotent by default
+        assert contract.descriptor.idempotent is False
 
     def test_orchestrator_resilient_has_retry_policy(self) -> None:
         """Test orchestrator_resilient has retry and circuit breaker."""
@@ -359,6 +364,8 @@ class TestDescriptorEmbedding:
             version="1.0.0",
         )
         assert contract.descriptor is not None
+        assert contract.descriptor.handler_kind == "orchestrator"
+        # Resilient profile IS idempotent for safe retries
         assert contract.descriptor.idempotent is True
         assert contract.descriptor.retry_policy is not None
         assert contract.descriptor.retry_policy.enabled is True
@@ -405,3 +412,46 @@ class TestDescriptorEmbedding:
         assert contract.descriptor.purity == "pure"
         assert contract.descriptor.idempotent is True
         assert contract.descriptor.concurrency_policy == "parallel_ok"
+
+    def test_all_profiles_have_non_none_descriptor(self) -> None:
+        """Test that ALL available profiles have a non-None descriptor.
+
+        This comprehensive test ensures no profile is missing descriptor
+        configuration, which is critical for contract-driven execution.
+        """
+        from omnibase_core.factories import (
+            available_profiles,
+            get_default_contract_profile,
+        )
+
+        # Map node types to their expected handler_kind
+        profile_handler_kinds = {
+            EnumNodeType.ORCHESTRATOR_GENERIC: "orchestrator",
+            EnumNodeType.REDUCER_GENERIC: "reducer",
+            EnumNodeType.EFFECT_GENERIC: "effect",
+            EnumNodeType.COMPUTE_GENERIC: "compute",
+        }
+
+        for node_type, expected_handler_kind in profile_handler_kinds.items():
+            profiles = available_profiles(node_type)
+            assert len(profiles) > 0, f"No profiles found for {node_type}"
+
+            for profile_name in profiles:
+                contract = get_default_contract_profile(
+                    node_type=node_type,
+                    profile=profile_name,
+                    version="1.0.0",
+                )
+                # Every profile MUST have a descriptor
+                assert contract.descriptor is not None, (
+                    f"Profile '{profile_name}' for {node_type} has None descriptor"
+                )
+                # Descriptor MUST be proper type
+                assert isinstance(contract.descriptor, ModelHandlerDescriptor), (
+                    f"Profile '{profile_name}' descriptor is not ModelHandlerDescriptor"
+                )
+                # handler_kind MUST match node type
+                assert contract.descriptor.handler_kind == expected_handler_kind, (
+                    f"Profile '{profile_name}' has handler_kind "
+                    f"'{contract.descriptor.handler_kind}', expected '{expected_handler_kind}'"
+                )

@@ -17,9 +17,6 @@ from omnibase_core.models.contracts import (
     ModelHandlerDescriptor,
     ModelPerformanceRequirements,
 )
-from omnibase_core.models.contracts.subcontracts.model_event_type_subcontract import (
-    ModelEventTypeSubcontract,
-)
 from omnibase_core.models.contracts.subcontracts.model_fsm_state_definition import (
     ModelFSMStateDefinition,
 )
@@ -32,7 +29,7 @@ from omnibase_core.models.contracts.subcontracts.model_fsm_subcontract import (
 from omnibase_core.models.fsm.model_fsm_operation import ModelFSMOperation
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
-from ._utils import _parse_version
+from ._utils import _create_minimal_event_type_subcontract, _parse_version
 
 
 def _create_minimal_fsm_subcontract(version: ModelSemVer) -> ModelFSMSubcontract:
@@ -141,25 +138,6 @@ def _create_minimal_fsm_subcontract(version: ModelSemVer) -> ModelFSMSubcontract
     )
 
 
-def _create_minimal_event_type_subcontract(
-    version: ModelSemVer,
-) -> ModelEventTypeSubcontract:
-    """
-    Create a minimal valid event type subcontract for reducer profiles.
-
-    Provides basic event configuration for reducer participation
-    in event-driven workflows.
-    """
-    return ModelEventTypeSubcontract(
-        version=version,
-        primary_events=["state_changed", "reduction_completed"],
-        event_categories=["state", "reducer"],
-        publish_events=True,
-        subscribe_events=True,
-        event_routing="default",
-    )
-
-
 def get_reducer_fsm_basic_profile(version: str = "1.0.0") -> ModelContractReducer:
     """
     Create a reducer_fsm_basic profile.
@@ -199,7 +177,12 @@ def get_reducer_fsm_basic_profile(version: str = "1.0.0") -> ModelContractReduce
         partial_results_enabled=True,
         # Subcontracts (use alias name for mypy compatibility)
         state_transitions=_create_minimal_fsm_subcontract(semver),
-        event_type=_create_minimal_event_type_subcontract(semver),
+        event_type=_create_minimal_event_type_subcontract(
+            version=semver,
+            primary_events=["state_changed", "reduction_completed"],
+            event_categories=["state", "reducer"],
+            subscribe_events=True,
+        ),
         # Execution profile
         execution=ModelExecutionProfile(
             ordering_policy=ModelExecutionOrderingPolicy(

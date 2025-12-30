@@ -16,6 +16,11 @@ from omnibase_core.models.contracts.subcontracts.model_event_type_subcontract im
 )
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
+__all__ = [
+    "_create_minimal_event_type_subcontract",
+    "_parse_version",
+]
+
 
 def _create_minimal_event_type_subcontract(
     version: ModelSemVer,

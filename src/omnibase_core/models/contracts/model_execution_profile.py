@@ -49,4 +49,5 @@ class ModelExecutionProfile(BaseModel):
         frozen=True,
         extra="forbid",
         use_enum_values=False,
+        from_attributes=True,
     )
