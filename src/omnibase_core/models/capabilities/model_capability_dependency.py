@@ -526,5 +526,46 @@ class ModelCapabilityDependency(BaseModel):
         """
         return f"{self.alias} -> {self.capability}"
 
+    def __hash__(self) -> int:
+        """
+        Enable use in sets and as dict keys for dependency deduplication.
+
+        Hash is computed from immutable identity fields (capability, alias).
+        The requirements (must/prefer/forbid/hints), selection_policy, and
+        strict flag are NOT included since two dependencies with the same
+        identity but different configuration should hash to the same value
+        for deduplication purposes.
+
+        Note:
+            While Pydantic frozen models with dict fields are not automatically
+            hashable (dicts are unhashable), this custom __hash__ uses only
+            immutable string fields, making the hash stable and safe.
+
+            The hash contract is maintained: equal objects have equal hashes.
+            Hash collisions between objects with same identity but different
+            requirements are intentional and acceptable.
+
+        Examples:
+            Using dependencies in sets for deduplication:
+
+            >>> dep1 = ModelCapabilityDependency(alias="db", capability="database.relational")
+            >>> dep2 = ModelCapabilityDependency(alias="db", capability="database.relational")
+            >>> dep3 = ModelCapabilityDependency(alias="cache", capability="cache.kv")
+            >>> deps = {dep1, dep2, dep3}
+            >>> len(deps)  # dep1 and dep2 deduplicate
+            2
+
+            Using dependencies as dict keys for caching:
+
+            >>> dep = ModelCapabilityDependency(alias="db", capability="database.relational")
+            >>> cache = {dep: "resolved_provider"}
+            >>> cache[dep]
+            'resolved_provider'
+
+        Returns:
+            Hash value computed from (capability, alias) tuple.
+        """
+        return hash((self.capability, self.alias))
+
 
 __all__ = ["ModelCapabilityDependency", "SelectionPolicy"]

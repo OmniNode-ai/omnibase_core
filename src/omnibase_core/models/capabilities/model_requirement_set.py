@@ -50,7 +50,7 @@ Runtime Validation:
 """
 
 import json
-from typing import Any
+from typing import Any, TypeGuard
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -87,6 +87,192 @@ type RequirementValue = (
 # Type alias for requirement dictionaries.
 # Maps attribute names (str) to their required/preferred/forbidden values.
 RequirementDict = dict[str, RequirementValue]
+
+
+# =============================================================================
+# TypeGuard Functions for Runtime Type Narrowing
+# =============================================================================
+#
+# These TypeGuard functions enable better type inference in resolver code by
+# providing runtime type checks that narrow types for static analysis tools.
+#
+# Usage in resolvers:
+#     if is_requirement_dict(data):
+#         # Type narrowed: data is dict[str, RequirementValue]
+#         for key, val in data.items():
+#             process_requirement(key, val)
+#
+# Benefits:
+#     - Better IDE autocompletion and type hints
+#     - Mypy recognizes narrowed types after the guard
+#     - Eliminates need for cast() or type: ignore comments
+#     - Runtime validation with type-safe static analysis
+#
+
+
+def is_json_primitive(value: Any) -> TypeGuard[str | int | float | bool | None]:
+    """Type guard for JSON primitive values.
+
+    Enables type narrowing for scalar JSON values that are valid
+    RequirementValue leaves (non-container types).
+
+    Args:
+        value: Any value to check.
+
+    Returns:
+        True if value is a JSON primitive (str, int, float, bool, or None),
+        False otherwise.
+
+    Examples:
+        >>> is_json_primitive("hello")
+        True
+        >>> is_json_primitive(42)
+        True
+        >>> is_json_primitive(3.14)
+        True
+        >>> is_json_primitive(True)
+        True
+        >>> is_json_primitive(None)
+        True
+        >>> is_json_primitive([1, 2, 3])
+        False
+        >>> is_json_primitive({"key": "value"})
+        False
+
+    Note:
+        This explicitly checks for bool before int because in Python,
+        ``isinstance(True, int)`` returns True (bool is a subclass of int).
+    """
+    # Check None first (common case)
+    if value is None:
+        return True
+    # Check bool before int (bool is subclass of int in Python)
+    if isinstance(value, bool):
+        return True
+    # Check remaining primitives
+    return isinstance(value, (str, int, float))
+
+
+def is_requirement_dict(value: Any) -> TypeGuard[dict[str, RequirementValue]]:
+    """Type guard for requirement dictionaries.
+
+    Enables type narrowing in resolver code for better IDE support
+    and static type checking. Validates that the value is a dict
+    with string keys (values are not deeply validated for performance).
+
+    Args:
+        value: Any value to check.
+
+    Returns:
+        True if value is a dict with all string keys, False otherwise.
+
+    Examples:
+        >>> is_requirement_dict({"key": "value", "count": 42})
+        True
+        >>> is_requirement_dict({"nested": {"a": 1}})
+        True
+        >>> is_requirement_dict({})
+        True
+        >>> is_requirement_dict({1: "value"})  # Non-string key
+        False
+        >>> is_requirement_dict("not a dict")
+        False
+        >>> is_requirement_dict([1, 2, 3])
+        False
+
+    Note:
+        This performs a shallow check - it validates that all keys are strings
+        but does not recursively validate that all values are valid
+        RequirementValue types. For full validation, use
+        ``ModelRequirementSet`` which performs JSON serializability checks.
+    """
+    if not isinstance(value, dict):
+        return False
+    return all(isinstance(k, str) for k in value)
+
+
+def is_requirement_list(value: Any) -> TypeGuard[list[RequirementValue]]:
+    """Type guard for requirement lists.
+
+    Enables type narrowing for list values that are valid RequirementValue
+    containers. Validates that the value is a list (values are not deeply
+    validated for performance).
+
+    Args:
+        value: Any value to check.
+
+    Returns:
+        True if value is a list, False otherwise.
+
+    Examples:
+        >>> is_requirement_list([1, 2, 3])
+        True
+        >>> is_requirement_list(["a", "b", "c"])
+        True
+        >>> is_requirement_list([{"nested": True}])
+        True
+        >>> is_requirement_list([])
+        True
+        >>> is_requirement_list("not a list")
+        False
+        >>> is_requirement_list({"key": "value"})
+        False
+
+    Note:
+        This performs a shallow check - it validates that the value is a list
+        but does not recursively validate that all elements are valid
+        RequirementValue types. For full validation, use
+        ``ModelRequirementSet`` which performs JSON serializability checks.
+    """
+    return isinstance(value, list)
+
+
+def is_requirement_value(value: Any) -> TypeGuard[RequirementValue]:
+    """Type guard for any valid RequirementValue.
+
+    Enables type narrowing for values that conform to the RequirementValue
+    recursive type alias. Performs a shallow check for the top-level type.
+
+    Args:
+        value: Any value to check.
+
+    Returns:
+        True if value is a valid RequirementValue type (primitive, list, or
+        dict with string keys), False otherwise.
+
+    Examples:
+        >>> is_requirement_value("string")
+        True
+        >>> is_requirement_value(42)
+        True
+        >>> is_requirement_value(None)
+        True
+        >>> is_requirement_value([1, 2, 3])
+        True
+        >>> is_requirement_value({"key": "value"})
+        True
+        >>> is_requirement_value({1: "value"})  # Non-string key
+        False
+        >>> is_requirement_value({1, 2, 3})  # Set is not JSON-serializable
+        False
+        >>> is_requirement_value(lambda x: x)  # Function is not allowed
+        False
+
+    Note:
+        This performs a shallow validation - for deeply nested structures,
+        it validates only the top-level type. Use ``ModelRequirementSet``
+        for full JSON serializability validation at construction time.
+    """
+    # Check primitives
+    if is_json_primitive(value):
+        return True
+    # Check list (shallow)
+    if isinstance(value, list):
+        return True
+    # Check dict with string keys (shallow)
+    if isinstance(value, dict):
+        return all(isinstance(k, str) for k in value)
+    return False
 
 
 class ModelRequirementSet(BaseModel):
@@ -406,4 +592,13 @@ class ModelRequirementSet(BaseModel):
         return f"ModelRequirementSet({', '.join(parts)})"
 
 
-__all__ = ["ModelRequirementSet", "RequirementDict", "RequirementValue"]
+__all__ = [
+    "ModelRequirementSet",
+    "RequirementDict",
+    "RequirementValue",
+    # TypeGuard functions for runtime type narrowing
+    "is_json_primitive",
+    "is_requirement_dict",
+    "is_requirement_list",
+    "is_requirement_value",
+]

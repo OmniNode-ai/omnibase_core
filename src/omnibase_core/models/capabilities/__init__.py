@@ -145,6 +145,10 @@ from omnibase_core.models.capabilities.model_requirement_set import (
     ModelRequirementSet,
     RequirementDict,
     RequirementValue,
+    is_json_primitive,
+    is_requirement_dict,
+    is_requirement_list,
+    is_requirement_value,
 )
 
 __all__ = [
@@ -154,4 +158,9 @@ __all__ = [
     "RequirementDict",
     "RequirementValue",
     "SelectionPolicy",
+    # TypeGuard functions for runtime type narrowing
+    "is_json_primitive",
+    "is_requirement_dict",
+    "is_requirement_list",
+    "is_requirement_value",
 ]

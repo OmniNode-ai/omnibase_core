@@ -11,7 +11,13 @@ from pydantic import ValidationError
 from omnibase_core.models.capabilities.model_capability_dependency import (
     ModelCapabilityDependency,
 )
-from omnibase_core.models.capabilities.model_requirement_set import ModelRequirementSet
+from omnibase_core.models.capabilities.model_requirement_set import (
+    ModelRequirementSet,
+    is_json_primitive,
+    is_requirement_dict,
+    is_requirement_list,
+    is_requirement_value,
+)
 
 
 @pytest.mark.unit
@@ -602,42 +608,21 @@ def _create_model_capability_dependency() -> ModelCapabilityDependency:
 class TestCapabilityModelsHashability:
     """Consolidated tests for hashability behavior across capability models.
 
-    This class uses pytest.mark.parametrize to test hashability behavior
-    consistently across all capability models that contain dict fields.
-    Models with dict[str, Any] fields are frozen (immutable) but NOT hashable
-    because dicts are mutable and thus unhashable.
+    This class tests hashability behavior for capability models:
 
-    This consolidation:
-    - Reduces code duplication across model-specific test files
-    - Ensures consistent testing of this critical behavior
-    - Makes it easy to add new models to the test suite
+    **Unhashable models** (contain dict fields directly):
+    - ModelRequirementSet: Has must/prefer/forbid/hints dict fields
 
-    Note: Individual model test files may retain their own hashability tests
-    for backwards compatibility, but this parametrized test is the canonical
-    source for cross-model hashability verification.
+    **Hashable models** (custom __hash__ based on identity fields):
+    - ModelCapabilityDependency: Hash based on (capability, alias) only
+
+    Note: ModelCapabilityDependency contains ModelRequirementSet (which has dicts)
+    but implements a custom __hash__ using only immutable identity fields
+    (capability, alias), making it safely hashable.
     """
 
-    @pytest.mark.parametrize(
-        ("model_factory", "model_name"),
-        [
-            pytest.param(
-                _create_model_requirement_set,
-                "ModelRequirementSet",
-                id="ModelRequirementSet",
-            ),
-            pytest.param(
-                _create_model_capability_dependency,
-                "ModelCapabilityDependency",
-                id="ModelCapabilityDependency",
-            ),
-        ],
-    )
-    def test_models_with_dict_fields_are_not_hashable(
-        self,
-        model_factory: Any,
-        model_name: str,
-    ) -> None:
-        """Test that capability models with dict fields are NOT hashable.
+    def test_model_requirement_set_not_hashable(self) -> None:
+        """Test that ModelRequirementSet with dict fields is NOT hashable.
 
         Pydantic models with frozen=True are immutable but this does NOT make
         them hashable if they contain dict fields. This is because:
@@ -649,12 +634,8 @@ class TestCapabilityModelsHashability:
         - Direct hash() call raises TypeError
         - Cannot be used in sets (sets require hashable elements)
         - Cannot be used as dict keys (keys must be hashable)
-
-        Args:
-            model_factory: Callable that creates a test instance of the model.
-            model_name: Name of the model for error messages.
         """
-        instance = model_factory()
+        instance = _create_model_requirement_set()
 
         # Direct hash() call should fail
         with pytest.raises(TypeError, match="unhashable"):
@@ -667,6 +648,42 @@ class TestCapabilityModelsHashability:
         # Cannot use as dict key (dict keys must be hashable)
         with pytest.raises(TypeError, match="unhashable"):
             _ = {instance: "value"}
+
+    def test_model_capability_dependency_is_hashable(self) -> None:
+        """Test that ModelCapabilityDependency IS hashable via custom __hash__.
+
+        ModelCapabilityDependency implements __hash__ based on identity fields
+        (capability, alias), enabling:
+        - Use in sets for dependency deduplication
+        - Use as dict keys for caching resolution results
+
+        The hash is computed from immutable string fields only, making it
+        stable and safe despite containing ModelRequirementSet (unhashable).
+        """
+        instance = _create_model_capability_dependency()
+
+        # Direct hash() call should succeed
+        h = hash(instance)
+        assert isinstance(h, int)
+
+        # Can add to set
+        s = {instance}
+        assert len(s) == 1
+
+        # Can use as dict key
+        d = {instance: "value"}
+        assert d[instance] == "value"
+
+    def test_model_capability_dependency_hash_contract(self) -> None:
+        """Test that equal ModelCapabilityDependency objects have equal hashes.
+
+        This verifies the hash contract: equal objects must have equal hashes.
+        """
+        dep1 = _create_model_capability_dependency()
+        dep2 = _create_model_capability_dependency()
+
+        assert dep1 == dep2
+        assert hash(dep1) == hash(dep2)
 
 
 # =============================================================================
@@ -1407,3 +1424,360 @@ class TestCapabilityDependencyIntegration:
         # old_client is excluded despite perfect prefer score
         assert len(filtered) == 1
         assert filtered[0]["name"] == "new_client"
+
+
+# =============================================================================
+# TypeGuard Function Tests
+# =============================================================================
+
+
+@pytest.mark.unit
+class TestIsJsonPrimitive:
+    """Tests for is_json_primitive TypeGuard function.
+
+    This TypeGuard enables type narrowing for JSON primitive values in resolver code.
+    """
+
+    def test_string_is_primitive(self) -> None:
+        """Test that strings are recognized as JSON primitives."""
+        assert is_json_primitive("hello") is True
+        assert is_json_primitive("") is True
+        assert is_json_primitive("with spaces") is True
+
+    def test_int_is_primitive(self) -> None:
+        """Test that integers are recognized as JSON primitives."""
+        assert is_json_primitive(42) is True
+        assert is_json_primitive(0) is True
+        assert is_json_primitive(-100) is True
+
+    def test_float_is_primitive(self) -> None:
+        """Test that floats are recognized as JSON primitives."""
+        assert is_json_primitive(3.14) is True
+        assert is_json_primitive(0.0) is True
+        assert is_json_primitive(-2.5) is True
+
+    def test_bool_is_primitive(self) -> None:
+        """Test that booleans are recognized as JSON primitives."""
+        assert is_json_primitive(True) is True
+        assert is_json_primitive(False) is True
+
+    def test_none_is_primitive(self) -> None:
+        """Test that None is recognized as a JSON primitive."""
+        assert is_json_primitive(None) is True
+
+    def test_list_is_not_primitive(self) -> None:
+        """Test that lists are NOT JSON primitives."""
+        assert is_json_primitive([1, 2, 3]) is False
+        assert is_json_primitive([]) is False
+        assert is_json_primitive(["a", "b"]) is False
+
+    def test_dict_is_not_primitive(self) -> None:
+        """Test that dicts are NOT JSON primitives."""
+        assert is_json_primitive({"key": "value"}) is False
+        assert is_json_primitive({}) is False
+
+    def test_set_is_not_primitive(self) -> None:
+        """Test that sets are NOT JSON primitives."""
+        assert is_json_primitive({1, 2, 3}) is False
+
+    def test_tuple_is_not_primitive(self) -> None:
+        """Test that tuples are NOT JSON primitives."""
+        assert is_json_primitive((1, 2, 3)) is False
+
+    def test_custom_object_is_not_primitive(self) -> None:
+        """Test that custom objects are NOT JSON primitives."""
+
+        class CustomClass:
+            pass
+
+        assert is_json_primitive(CustomClass()) is False
+
+    def test_callable_is_not_primitive(self) -> None:
+        """Test that callables are NOT JSON primitives."""
+        assert is_json_primitive(lambda x: x) is False
+        assert is_json_primitive(len) is False
+
+
+@pytest.mark.unit
+class TestIsRequirementDict:
+    """Tests for is_requirement_dict TypeGuard function.
+
+    This TypeGuard enables type narrowing for requirement dictionaries in resolver code.
+    """
+
+    def test_empty_dict_is_requirement_dict(self) -> None:
+        """Test that empty dict is recognized as requirement dict."""
+        assert is_requirement_dict({}) is True
+
+    def test_string_keys_dict_is_requirement_dict(self) -> None:
+        """Test that dict with string keys is recognized as requirement dict."""
+        assert is_requirement_dict({"key": "value"}) is True
+        assert is_requirement_dict({"a": 1, "b": 2}) is True
+
+    def test_nested_dict_is_requirement_dict(self) -> None:
+        """Test that nested dicts with string keys are requirement dicts."""
+        assert is_requirement_dict({"nested": {"a": 1}}) is True
+        assert is_requirement_dict({"deep": {"level1": {"level2": 3}}}) is True
+
+    def test_dict_with_list_values_is_requirement_dict(self) -> None:
+        """Test that dicts with list values are requirement dicts."""
+        assert is_requirement_dict({"vendors": ["a", "b", "c"]}) is True
+
+    def test_int_keys_dict_is_not_requirement_dict(self) -> None:
+        """Test that dict with int keys is NOT a requirement dict."""
+        assert is_requirement_dict({1: "value"}) is False
+        assert is_requirement_dict({0: "zero", 1: "one"}) is False
+
+    def test_mixed_keys_dict_is_not_requirement_dict(self) -> None:
+        """Test that dict with mixed key types is NOT a requirement dict."""
+        assert is_requirement_dict({"string": 1, 2: "int_key"}) is False
+
+    def test_list_is_not_requirement_dict(self) -> None:
+        """Test that lists are NOT requirement dicts."""
+        assert is_requirement_dict([1, 2, 3]) is False
+        assert is_requirement_dict([]) is False
+
+    def test_string_is_not_requirement_dict(self) -> None:
+        """Test that strings are NOT requirement dicts."""
+        assert is_requirement_dict("string") is False
+
+    def test_none_is_not_requirement_dict(self) -> None:
+        """Test that None is NOT a requirement dict."""
+        assert is_requirement_dict(None) is False
+
+    def test_primitive_is_not_requirement_dict(self) -> None:
+        """Test that primitives are NOT requirement dicts."""
+        assert is_requirement_dict(42) is False
+        assert is_requirement_dict(3.14) is False
+        assert is_requirement_dict(True) is False
+
+
+@pytest.mark.unit
+class TestIsRequirementList:
+    """Tests for is_requirement_list TypeGuard function.
+
+    This TypeGuard enables type narrowing for requirement lists in resolver code.
+    """
+
+    def test_empty_list_is_requirement_list(self) -> None:
+        """Test that empty list is recognized as requirement list."""
+        assert is_requirement_list([]) is True
+
+    def test_list_of_primitives_is_requirement_list(self) -> None:
+        """Test that list of primitives is requirement list."""
+        assert is_requirement_list([1, 2, 3]) is True
+        assert is_requirement_list(["a", "b", "c"]) is True
+        assert is_requirement_list([True, False]) is True
+
+    def test_list_of_dicts_is_requirement_list(self) -> None:
+        """Test that list of dicts is requirement list."""
+        assert is_requirement_list([{"a": 1}, {"b": 2}]) is True
+
+    def test_nested_list_is_requirement_list(self) -> None:
+        """Test that nested list is requirement list."""
+        assert is_requirement_list([[1, 2], [3, 4]]) is True
+
+    def test_mixed_list_is_requirement_list(self) -> None:
+        """Test that mixed-type list is requirement list."""
+        assert is_requirement_list([1, "string", {"key": "value"}]) is True
+
+    def test_dict_is_not_requirement_list(self) -> None:
+        """Test that dicts are NOT requirement lists."""
+        assert is_requirement_list({"key": "value"}) is False
+        assert is_requirement_list({}) is False
+
+    def test_string_is_not_requirement_list(self) -> None:
+        """Test that strings are NOT requirement lists (even though iterable)."""
+        assert is_requirement_list("string") is False
+
+    def test_tuple_is_not_requirement_list(self) -> None:
+        """Test that tuples are NOT requirement lists."""
+        assert is_requirement_list((1, 2, 3)) is False
+
+    def test_none_is_not_requirement_list(self) -> None:
+        """Test that None is NOT a requirement list."""
+        assert is_requirement_list(None) is False
+
+    def test_set_is_not_requirement_list(self) -> None:
+        """Test that sets are NOT requirement lists."""
+        assert is_requirement_list({1, 2, 3}) is False
+
+
+@pytest.mark.unit
+class TestIsRequirementValue:
+    """Tests for is_requirement_value TypeGuard function.
+
+    This TypeGuard enables type narrowing for any valid RequirementValue in resolver code.
+    """
+
+    def test_string_is_requirement_value(self) -> None:
+        """Test that strings are valid requirement values."""
+        assert is_requirement_value("hello") is True
+
+    def test_int_is_requirement_value(self) -> None:
+        """Test that integers are valid requirement values."""
+        assert is_requirement_value(42) is True
+
+    def test_float_is_requirement_value(self) -> None:
+        """Test that floats are valid requirement values."""
+        assert is_requirement_value(3.14) is True
+
+    def test_bool_is_requirement_value(self) -> None:
+        """Test that booleans are valid requirement values."""
+        assert is_requirement_value(True) is True
+        assert is_requirement_value(False) is True
+
+    def test_none_is_requirement_value(self) -> None:
+        """Test that None is a valid requirement value."""
+        assert is_requirement_value(None) is True
+
+    def test_list_is_requirement_value(self) -> None:
+        """Test that lists are valid requirement values."""
+        assert is_requirement_value([1, 2, 3]) is True
+        assert is_requirement_value([]) is True
+        assert is_requirement_value(["a", "b"]) is True
+
+    def test_dict_with_string_keys_is_requirement_value(self) -> None:
+        """Test that dicts with string keys are valid requirement values."""
+        assert is_requirement_value({"key": "value"}) is True
+        assert is_requirement_value({}) is True
+
+    def test_nested_structures_are_requirement_value(self) -> None:
+        """Test that nested structures are valid requirement values."""
+        assert is_requirement_value({"nested": {"deep": [1, 2, 3]}}) is True
+        assert is_requirement_value([{"a": 1}, [2, 3]]) is True
+
+    def test_dict_with_int_keys_is_not_requirement_value(self) -> None:
+        """Test that dict with non-string keys is NOT a valid requirement value."""
+        assert is_requirement_value({1: "value"}) is False
+        assert is_requirement_value({0: "a", 1: "b"}) is False
+
+    def test_set_is_not_requirement_value(self) -> None:
+        """Test that sets are NOT valid requirement values."""
+        assert is_requirement_value({1, 2, 3}) is False
+
+    def test_tuple_is_not_requirement_value(self) -> None:
+        """Test that tuples are NOT valid requirement values."""
+        assert is_requirement_value((1, 2, 3)) is False
+
+    def test_custom_object_is_not_requirement_value(self) -> None:
+        """Test that custom objects are NOT valid requirement values."""
+
+        class CustomClass:
+            pass
+
+        assert is_requirement_value(CustomClass()) is False
+
+    def test_callable_is_not_requirement_value(self) -> None:
+        """Test that callables are NOT valid requirement values."""
+        assert is_requirement_value(lambda x: x) is False
+
+
+@pytest.mark.unit
+class TestTypeGuardTypeNarrowing:
+    """Tests verifying TypeGuard enables proper type narrowing.
+
+    These tests demonstrate the static analysis benefits of TypeGuards,
+    ensuring mypy/pyright recognize narrowed types after the guard.
+    """
+
+    def test_is_json_primitive_narrows_in_conditional(self) -> None:
+        """Test that is_json_primitive enables type narrowing in conditionals.
+
+        After the guard, mypy should recognize the value as a JSON primitive type.
+        """
+        value: Any = "test"
+        if is_json_primitive(value):
+            # After this check, mypy knows value is str | int | float | bool | None
+            # We can safely use primitive operations
+            result = str(value)  # No type: ignore needed
+            assert result == "test"
+
+    def test_is_requirement_dict_narrows_in_conditional(self) -> None:
+        """Test that is_requirement_dict enables type narrowing for dict operations.
+
+        After the guard, mypy should recognize dict[str, RequirementValue].
+        """
+        value: Any = {"key": "value", "count": 42}
+        if is_requirement_dict(value):
+            # After this check, mypy knows value is dict[str, RequirementValue]
+            # We can safely use dict operations without type: ignore
+            keys = list(value.keys())
+            assert "key" in keys
+            assert "count" in keys
+
+    def test_is_requirement_list_narrows_in_conditional(self) -> None:
+        """Test that is_requirement_list enables type narrowing for list operations.
+
+        After the guard, mypy should recognize list[RequirementValue].
+        """
+        value: Any = [1, 2, 3]
+        if is_requirement_list(value):
+            # After this check, mypy knows value is list[RequirementValue]
+            # We can safely use list operations without type: ignore
+            length = len(value)
+            assert length == 3
+
+    def test_is_requirement_value_enables_resolver_pattern(self) -> None:
+        """Test that is_requirement_value enables the resolver pattern.
+
+        This demonstrates the common pattern in capability resolvers where
+        we need to process arbitrary values from requirement dicts.
+        """
+        data: dict[str, Any] = {
+            "primitive": "hello",
+            "list": [1, 2, 3],
+            "dict": {"nested": True},
+            "invalid": {1, 2, 3},  # Set - invalid
+        }
+
+        valid_keys: list[str] = []
+        invalid_keys: list[str] = []
+
+        for key, value in data.items():
+            if is_requirement_value(value):
+                valid_keys.append(key)
+            else:
+                invalid_keys.append(key)
+
+        assert set(valid_keys) == {"primitive", "list", "dict"}
+        assert invalid_keys == ["invalid"]
+
+    def test_chained_type_guards_for_nested_processing(self) -> None:
+        """Test using multiple TypeGuards for nested structure processing.
+
+        Demonstrates using TypeGuards together to process complex structures
+        with full type safety.
+        """
+        data: Any = {"config": {"timeout": 30, "retries": 3}, "vendors": ["a", "b"]}
+
+        processed: dict[str, str] = {}
+
+        if is_requirement_dict(data):
+            for key, value in data.items():
+                if is_requirement_dict(value):
+                    # Nested dict - could process recursively
+                    processed[key] = f"dict with {len(value)} keys"
+                elif is_requirement_list(value):
+                    processed[key] = f"list with {len(value)} items"
+                elif is_json_primitive(value):
+                    processed[key] = f"primitive: {value}"
+
+        assert processed["config"] == "dict with 2 keys"
+        assert processed["vendors"] == "list with 2 items"
+
+    def test_type_guard_in_list_comprehension(self) -> None:
+        """Test TypeGuard works in list comprehension filters.
+
+        This is a common pattern for filtering valid values from mixed data.
+        """
+        mixed_data: list[Any] = ["a", 1, {1, 2}, {"key": "value"}, lambda x: x]
+
+        # Filter to only valid requirement values
+        valid_values = [v for v in mixed_data if is_requirement_value(v)]
+
+        # Should have string, int, and dict (not set or lambda)
+        assert len(valid_values) == 3
+        assert "a" in valid_values
+        assert 1 in valid_values
+        assert {"key": "value"} in valid_values
