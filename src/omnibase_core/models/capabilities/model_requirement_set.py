@@ -177,6 +177,20 @@ class ModelRequirementSet(BaseModel):
         Creates a new requirement set combining constraints from both.
         For conflicts (same key in both), the other's values take precedence.
 
+        .. warning:: Shallow Merge Semantics
+
+            This method performs a **SHALLOW merge** for each constraint tier
+            (must, prefer, forbid, hints). This means:
+
+            - Top-level keys from ``other`` override keys from ``self``
+            - Nested dictionaries are **NOT** recursively merged; they are
+              replaced entirely
+            - Lists and other complex values are replaced, not concatenated
+
+            If you need deep merge behavior (recursive merging of nested dicts),
+            you must implement it separately before calling merge, or use a
+            utility like ``copy.deepcopy`` combined with recursive dict update.
+
         Args:
             other: Another requirement set to merge.
 
@@ -184,6 +198,8 @@ class ModelRequirementSet(BaseModel):
             New ModelRequirementSet with merged constraints.
 
         Examples:
+            Basic merge with override:
+
             >>> base = ModelRequirementSet(must={"a": 1}, prefer={"b": 2})
             >>> override = ModelRequirementSet(must={"a": 10, "c": 3})
             >>> merged = base.merge(override)
@@ -191,6 +207,19 @@ class ModelRequirementSet(BaseModel):
             {'a': 10, 'c': 3}
             >>> merged.prefer
             {'b': 2}
+
+            Shallow merge behavior with nested dicts (values replaced, not merged):
+
+            >>> base = ModelRequirementSet(
+            ...     must={"config": {"timeout": 30, "retries": 3}}
+            ... )
+            >>> override = ModelRequirementSet(
+            ...     must={"config": {"timeout": 60}}  # Only has timeout
+            ... )
+            >>> merged = base.merge(override)
+            >>> # Note: "retries" is lost because the entire nested dict is replaced
+            >>> merged.must
+            {'config': {'timeout': 60}}
         """
         return ModelRequirementSet(
             must={**self.must, **other.must},

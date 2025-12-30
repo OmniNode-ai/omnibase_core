@@ -78,11 +78,16 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 # Regex pattern for valid capability names
 # Must be lowercase letters and digits, dot-separated tokens
 # At least two tokens (one dot required): domain.type[.variant]
+# Note: Single-character tokens are intentionally allowed (e.g., "a.b") to support
+# short, idiomatic names common in capability systems. The min_length=3 field
+# constraint ensures the overall capability has reasonable length ("a.b" is valid).
 _CAPABILITY_PATTERN = re.compile(r"^[a-z0-9]+(\.[a-z0-9]+)+$")
 
 # Regex pattern for valid alias names
 # More permissive: lowercase letters, digits, underscores
 # Single token (no dots), must start with letter
+# Note: Single-character aliases are intentionally allowed (e.g., "a", "x") to support
+# terse binding names in handler code. Common short aliases include "db", "c" (cache).
 _ALIAS_PATTERN = re.compile(r"^[a-z][a-z0-9_]*$")
 
 # Type alias for selection policies
@@ -120,7 +125,13 @@ class ModelCapabilityDependency(BaseModel):
         **auto_if_unique**:
             1. Filter providers by must/forbid requirements
             2. If exactly one provider matches, select it automatically
-            3. If multiple match, resolution is unresolved (error or escalate)
+            3. If multiple match, the dependency remains unresolved
+
+            Note: The exact behavior when multiple providers match is
+            resolver-specific. Common implementations may: raise an error,
+            return an "ambiguous" status for user resolution, or fall back
+            to a secondary selection strategy. This model only declares the
+            policy; the resolver determines enforcement semantics.
 
         **best_score**:
             1. Filter providers by must/forbid requirements
@@ -283,6 +294,8 @@ class ModelCapabilityDependency(BaseModel):
             >>> dep.domain
             'database'
         """
+        # Safe: field_validator guarantees capability matches _CAPABILITY_PATTERN,
+        # which requires at least one dot separator (pattern: ^[a-z0-9]+(\.[a-z0-9]+)+$)
         return self.capability.split(".")[0]
 
     @property
@@ -298,6 +311,8 @@ class ModelCapabilityDependency(BaseModel):
             >>> dep.capability_type
             'relational'
         """
+        # Safe: field_validator guarantees capability matches _CAPABILITY_PATTERN,
+        # which requires at least two tokens (pattern enforces at least one dot)
         return self.capability.split(".")[1]
 
     @property

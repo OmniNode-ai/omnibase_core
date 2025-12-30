@@ -371,12 +371,28 @@ class TestModelCapabilityDependencyStringRepresentation:
 class TestModelCapabilityDependencyEquality:
     """Tests for equality (not hashable due to dict fields)."""
 
-    def test_not_hashable_due_to_dict_fields(self) -> None:
-        """Test that ModelCapabilityDependency is NOT hashable (contains dicts)."""
+    def test_unhashable_due_to_dict_fields(self) -> None:
+        """Test that ModelCapabilityDependency is NOT hashable due to dict fields.
+
+        Models with dict[str, Any] fields (like ModelRequirementSet's must/prefer/forbid/hints)
+        are frozen but cannot be hashed. This test verifies all unhashability scenarios:
+        - Direct hash() call fails
+        - Cannot be used in sets (sets require hashable elements)
+        - Cannot be used as dict keys (dict keys require hashable elements)
+        """
         dep = ModelCapabilityDependency(alias="db", capability="database.relational")
-        # Models with dict[str, Any] fields are frozen but not hashable
+
+        # Direct hash() call should fail
         with pytest.raises(TypeError, match="unhashable"):
             hash(dep)
+
+        # Cannot add to set (sets use hashing internally)
+        with pytest.raises(TypeError, match="unhashable"):
+            _ = {dep}
+
+        # Cannot use as dict key (dict keys must be hashable)
+        with pytest.raises(TypeError, match="unhashable"):
+            _ = {dep: "value"}
 
     def test_equality_same_dependencies(self) -> None:
         """Test equality for identical dependencies."""
@@ -397,13 +413,6 @@ class TestModelCapabilityDependencyEquality:
         dep1 = ModelCapabilityDependency(alias="db", capability="database.relational")
         dep2 = ModelCapabilityDependency(alias="db", capability="database.document")
         assert dep1 != dep2
-
-    def test_cannot_use_in_set_due_to_unhashable(self) -> None:
-        """Test that dependencies cannot be used in sets (unhashable)."""
-        dep = ModelCapabilityDependency(alias="db", capability="database.relational")
-        # Cannot add to set due to dict fields being unhashable
-        with pytest.raises(TypeError, match="unhashable"):
-            _ = {dep}
 
 
 @pytest.mark.unit
