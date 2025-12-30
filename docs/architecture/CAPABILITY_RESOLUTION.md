@@ -54,7 +54,7 @@ Capabilities follow a hierarchical pattern: `<domain>.<type>[.<variant>]`
 
 ## Resolution Flow
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                        CAPABILITY RESOLUTION FLOW                        │
 └─────────────────────────────────────────────────────────────────────────┘
@@ -305,7 +305,7 @@ assert secrets_dep.requires_explicit_binding is True
 
 Ambiguity occurs with `auto_if_unique` when multiple providers pass filtering:
 
-```
+```text
 Request: capability="database.relational", must={"supports_transactions": True}
 
 Available Providers:
@@ -319,7 +319,7 @@ Result: AMBIGUOUS (3 providers match)
 ### Resolution Strategies
 
 **1. Error with Provider List** (Recommended for development):
-```
+```text
 ResolutionError: Ambiguous capability resolution for 'database.relational'
 Multiple providers match:
   - postgres_primary
