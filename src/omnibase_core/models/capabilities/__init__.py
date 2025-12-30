@@ -2,11 +2,15 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 """
-Capability models for vendor-agnostic dependency declaration.
+Capability models for ONEX nodes.
 
-This module provides models for declaring dependencies on capabilities
-rather than specific vendors. The core principle is:
+This module provides models for:
+1. Vendor-agnostic capability dependencies - declaring what capabilities are needed
+   without binding to specific vendors
+2. Contract-derived capabilities - capability-based auto-discovery and registration
 
+Core Principle
+--------------
     "Contracts declare capabilities + constraints. Registry resolves to providers."
 
 Key Models
@@ -23,6 +27,10 @@ ModelRequirementSet
     - prefer: Soft preferences (scoring)
     - forbid: Exclusion constraints (filter)
     - hints: Tie-breaking (advisory)
+
+ModelContractCapabilities
+    Contract-derived capabilities for auto-discovery. Captures what capabilities
+    a node provides based on its contract definition.
 
 Capability Naming Convention
 ----------------------------
@@ -65,6 +73,19 @@ Declaring dependencies in a handler contract:
     ...         strict=False,
     ...     ),
     ... ]
+
+Contract-derived capabilities for auto-discovery:
+
+    >>> from omnibase_core.models.capabilities import ModelContractCapabilities
+    >>> from omnibase_core.models.primitives.model_semver import ModelSemVer
+    >>>
+    >>> capabilities = ModelContractCapabilities(
+    ...     contract_type="compute",
+    ...     contract_version=ModelSemVer(major=1, minor=0, patch=0),
+    ...     intent_types=["ProcessData"],
+    ...     protocols=["ProtocolCompute"],
+    ...     capability_tags=["pure", "cacheable"],
+    ... )
 
 Integration with ModelHandlerContract
 -------------------------------------
@@ -117,10 +138,14 @@ from omnibase_core.models.capabilities.model_capability_dependency import (
     ModelCapabilityDependency,
     SelectionPolicy,
 )
+from omnibase_core.models.capabilities.model_contract_capabilities import (
+    ModelContractCapabilities,
+)
 from omnibase_core.models.capabilities.model_requirement_set import ModelRequirementSet
 
 __all__ = [
     "ModelCapabilityDependency",
+    "ModelContractCapabilities",
     "ModelRequirementSet",
     "SelectionPolicy",
 ]

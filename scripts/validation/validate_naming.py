@@ -178,6 +178,14 @@ class NamingConventionValidator:
         "utils/": [
             "Util*",  # All Util* classes in utils/ directory
         ],
+        # FACTORY CLASSES: Contract profile factory for creating default contracts
+        # Location: factories/ - Factory pattern implementations
+        # Rationale: ContractProfileFactory creates contract profiles, not a Protocol interface.
+        #            The heuristic flags "contract" as a Protocol indicator, but this is a factory
+        #            that PRODUCES contracts, not a Protocol interface.
+        "factories/": [
+            "ContractProfileFactory",  # Factory for creating default contract profiles
+        ],
     }
 
     @staticmethod

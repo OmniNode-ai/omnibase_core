@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2025 OmniNode Team
+# SPDX-License-Identifier: Apache-2.0
 """Contract Models for ONEX Four-Node Architecture.
 
 This module provides Pydantic models for validating and managing contract
@@ -62,6 +64,15 @@ See Also:
 
 from omnibase_core.mixins.mixin_node_type_validator import MixinNodeTypeValidator
 from omnibase_core.models.discovery.model_event_descriptor import ModelEventDescriptor
+from omnibase_core.models.runtime.model_descriptor_circuit_breaker import (
+    ModelDescriptorCircuitBreaker,
+)
+from omnibase_core.models.runtime.model_descriptor_retry_policy import (
+    ModelDescriptorRetryPolicy,
+)
+from omnibase_core.models.runtime.model_handler_descriptor import (
+    ModelHandlerDescriptor,
+)
 from omnibase_core.models.security.model_condition_value import ModelConditionValue
 from omnibase_core.models.services.model_external_service_config import (
     ModelExternalServiceConfig,
@@ -96,12 +107,19 @@ from .model_contract_orchestrator import ModelContractOrchestrator
 from .model_contract_reducer import ModelContractReducer
 from .model_contract_version import ModelContractVersion
 from .model_dependency import ModelDependency
+from .model_dependency_spec import (
+    DependencyType,
+    ModelDependencySpec,
+    SelectionStrategy,
+)
 from .model_drift_details import ModelDriftDetails
 from .model_drift_result import ModelDriftResult
 from .model_effect_retry_config import ModelEffectRetryConfig
 from .model_event_coordination_config import ModelEventCoordinationConfig
 from .model_event_registry_config import ModelEventRegistryConfig
 from .model_event_subscription import ModelEventSubscription
+from .model_execution_ordering_policy import ModelExecutionOrderingPolicy
+from .model_execution_profile import DEFAULT_EXECUTION_PHASES, ModelExecutionProfile
 from .model_filter_conditions import ModelFilterConditions
 from .model_input_validation_config import ModelInputValidationConfig
 from .model_io_operation_config import ModelIOOperationConfig
@@ -137,6 +155,9 @@ __all__ = [
     "ModelContractNormalizationConfig",
     "ModelContractVersion",
     "ModelDependency",
+    "ModelDependencySpec",
+    "DependencyType",
+    "SelectionStrategy",
     "ModelDriftDetails",
     "ModelDriftResult",
     "ModelNodeExtensions",
@@ -163,6 +184,13 @@ __all__ = [
     "ModelRuntimeEventBusConfig",
     "ModelEventCoordinationConfig",
     "ModelEventDescriptor",
+    "ModelExecutionOrderingPolicy",
+    "ModelExecutionProfile",
+    "DEFAULT_EXECUTION_PHASES",
+    # Handler descriptor models (for contract-driven execution)
+    "ModelHandlerDescriptor",
+    "ModelDescriptorRetryPolicy",
+    "ModelDescriptorCircuitBreaker",
     "ModelEventRegistryConfig",
     "ModelEventSubscription",
     "ModelExternalServiceConfig",
