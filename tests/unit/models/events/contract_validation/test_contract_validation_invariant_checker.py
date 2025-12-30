@@ -23,7 +23,7 @@ from pydantic import ValidationError
 
 from omnibase_core.validation.contract_validation_invariant_checker import (
     ContractValidationInvariantChecker,
-    EnumContractValidationEventType,
+    ContractValidationEventType,
     ModelContractValidationEvent,
 )
 
@@ -865,17 +865,17 @@ class TestCheckInvariantMethod:
 
 
 # =============================================================================
-# EnumContractValidationEventType Tests
+# ContractValidationEventType Tests
 # =============================================================================
 
 
 @pytest.mark.unit
-class TestEnumContractValidationEventType:
+class TestContractValidationEventType:
     """Tests for the event type literal type."""
 
     def test_all_event_types_are_valid(self) -> None:
         """Test that all expected event types are accepted."""
-        valid_types: list[EnumContractValidationEventType] = [
+        valid_types: list[ContractValidationEventType] = [
             "validation_started",
             "validation_passed",
             "validation_failed",

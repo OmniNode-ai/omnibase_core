@@ -211,7 +211,7 @@ def __getattr__(name: str) -> type:
 # Import contract validation invariant checker (OMN-1146)
 from .contract_validation_invariant_checker import (
     ContractValidationInvariantChecker,
-    EnumContractValidationEventType,
+    ContractValidationEventType,
     ModelContractValidationEvent,
 )
 from .contracts import (
@@ -378,7 +378,7 @@ __all__ = [
     # Contract validation invariant checker (OMN-1146)
     "ContractValidationInvariantChecker",
     "ModelContractValidationEvent",
-    "EnumContractValidationEventType",
+    "ContractValidationEventType",
     # Reserved enum validation (OMN-669, OMN-675)
     # NOTE: validate_execution_mode takes EnumExecutionMode (type-safe)
     # while validate_execution_mode_string takes str (for YAML/config parsing)

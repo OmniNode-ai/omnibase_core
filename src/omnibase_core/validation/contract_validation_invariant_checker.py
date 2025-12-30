@@ -28,11 +28,11 @@ from pydantic import BaseModel, ConfigDict, Field
 __all__ = [
     "ContractValidationInvariantChecker",
     "ModelContractValidationEvent",
-    "EnumContractValidationEventType",
+    "ContractValidationEventType",
 ]
 
 # Type alias for valid event types
-EnumContractValidationEventType = Literal[
+ContractValidationEventType = Literal[
     "validation_started",
     "validation_passed",
     "validation_failed",
@@ -60,7 +60,7 @@ class ModelContractValidationEvent(BaseModel):
         frozen=True,
     )
 
-    event_type: EnumContractValidationEventType = Field(
+    event_type: ContractValidationEventType = Field(
         ...,
         description="The type of contract validation event",
     )
@@ -87,8 +87,8 @@ class ContractValidationInvariantChecker:
     4. merge_completed cannot occur if validation_failed occurred for the same run_id
 
     Thread Safety:
-        This implementation is NOT thread-safe. Use separate instances per thread
-        or wrap with external synchronization if needed.
+        This implementation is thread-safe as it maintains no internal state.
+        Each method call is independent and can be safely called from multiple threads.
 
     Example:
         .. code-block:: python
@@ -193,7 +193,7 @@ class ContractValidationInvariantChecker:
             List of violation error strings
         """
         violations: list[str] = []
-        event_types_seen: set[EnumContractValidationEventType] = set()
+        event_types_seen: set[ContractValidationEventType] = set()
 
         for event in events:
             violation = self._check_event_invariants(
@@ -208,8 +208,8 @@ class ContractValidationInvariantChecker:
     def _check_event_invariants(
         self,
         run_id: str,
-        event_type: EnumContractValidationEventType,
-        event_types_seen: set[EnumContractValidationEventType],
+        event_type: ContractValidationEventType,
+        event_types_seen: set[ContractValidationEventType],
     ) -> str | None:
         """
         Check invariants for a single event against what's been seen.

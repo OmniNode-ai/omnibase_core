@@ -30,7 +30,7 @@ See Also:
 
 from uuid import UUID
 
-from pydantic import ConfigDict, Field
+from pydantic import ConfigDict, Field, field_validator
 
 from omnibase_core.models.events.contract_validation.model_contract_ref import (
     ModelContractRef,
@@ -39,7 +39,20 @@ from omnibase_core.models.events.contract_validation.model_contract_validation_e
     ModelContractValidationEventBase,
 )
 
-__all__ = ["ModelContractValidationFailedEvent", "CONTRACT_VALIDATION_FAILED_EVENT"]
+MAX_VIOLATION_ENTRIES = 100
+"""
+Maximum number of violation entries in events.
+
+Bounded to prevent event payload bloat in event streams and message queues.
+For full violation details, use the result_ref to retrieve the complete
+validation result from storage.
+"""
+
+__all__ = [
+    "ModelContractValidationFailedEvent",
+    "CONTRACT_VALIDATION_FAILED_EVENT",
+    "MAX_VIOLATION_ENTRIES",
+]
 
 CONTRACT_VALIDATION_FAILED_EVENT = "onex.contract.validation.failed"
 
@@ -60,7 +73,7 @@ class ModelContractValidationFailedEvent(ModelContractValidationEventBase):
         error_count: Number of validation errors encountered (minimum 1).
         first_error_code: Error code of the first/primary validation error.
         duration_ms: Time taken for validation in milliseconds.
-        violations: List of violation descriptions (bounded to 100 entries).
+        violations: List of violation descriptions (max MAX_VIOLATION_ENTRIES).
         result_ref: Optional pointer to stored detailed validation result.
 
     Example:
@@ -125,9 +138,9 @@ class ModelContractValidationFailedEvent(ModelContractValidationEventBase):
 
     violations: list[str] = Field(
         default_factory=list,
-        max_length=100,
-        description="List of violation descriptions. Bounded to 100 entries "
-        "to prevent unbounded growth. For full details, use result_ref.",
+        max_length=MAX_VIOLATION_ENTRIES,
+        description=f"List of violation descriptions (max {MAX_VIOLATION_ENTRIES}). "
+        "For full details, use result_ref.",
     )
 
     result_ref: str | None = Field(
@@ -136,6 +149,16 @@ class ModelContractValidationFailedEvent(ModelContractValidationEventBase):
         "Use this to retrieve full validation details when violations list "
         "is truncated or for auditing purposes.",
     )
+
+    @field_validator("event_type")
+    @classmethod
+    def validate_event_type(cls, v: str) -> str:
+        """Validate that event_type matches the expected constant."""
+        if v != CONTRACT_VALIDATION_FAILED_EVENT:
+            raise ValueError(
+                f"event_type must be '{CONTRACT_VALIDATION_FAILED_EVENT}', got '{v}'"
+            )
+        return v
 
     @classmethod
     def create(

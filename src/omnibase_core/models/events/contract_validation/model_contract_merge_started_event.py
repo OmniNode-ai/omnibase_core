@@ -30,7 +30,7 @@ See Also:
 
 from uuid import UUID
 
-from pydantic import ConfigDict, Field
+from pydantic import ConfigDict, Field, field_validator
 
 from omnibase_core.models.events.contract_validation.model_contract_ref import (
     ModelContractRef,
@@ -116,6 +116,16 @@ class ModelContractMergeStartedEvent(ModelContractValidationEventBase):
         description="Optional hash of the resolver configuration. Used for "
         "cache invalidation tracking when resolver settings change.",
     )
+
+    @field_validator("event_type")
+    @classmethod
+    def validate_event_type(cls, v: str) -> str:
+        """Validate that event_type matches the expected constant."""
+        if v != CONTRACT_MERGE_STARTED_EVENT:
+            raise ValueError(
+                f"event_type must be '{CONTRACT_MERGE_STARTED_EVENT}', got '{v}'"
+            )
+        return v
 
     @classmethod
     def create(

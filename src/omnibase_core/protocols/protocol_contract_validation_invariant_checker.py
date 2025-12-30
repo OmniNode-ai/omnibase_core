@@ -52,6 +52,10 @@ class ProtocolContractValidationInvariantChecker(Protocol):
         - merge_completed: Merge operation completed
 
     Thread Safety:
+        Implementations SHOULD be stateless to maximize thread safety.
+        If state is required, implementations MUST document their thread
+        safety guarantees explicitly.
+
         WARNING: Thread safety is implementation-specific. Callers should verify
         the thread safety guarantees of their chosen implementation.
 
