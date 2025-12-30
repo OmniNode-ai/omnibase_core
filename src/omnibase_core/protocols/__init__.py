@@ -14,9 +14,12 @@ Design Principles:
 
 Module Organization:
 - base/: Common type aliases and base protocols (ContextValue, SemVer, etc.)
+- capabilities/: Capability provider protocols (OMN-1124)
 - container/: DI container and service registry protocols
 - event_bus/: Event-driven messaging protocols
 - intents/: Intent-related protocols (ProtocolRegistrationRecord)
+- notifications/: State transition notification protocols (OMN-1122)
+- resolution/: Capability-based dependency resolution protocols (OMN-1123)
 - runtime/: Runtime handler protocols (ProtocolHandler)
 - types/: Type constraint protocols (Configurable, Executable, etc.)
 - core.py: Core operation protocols (CanonicalSerializer)
@@ -67,6 +70,11 @@ from omnibase_core.protocols.base import (  # Literal Types; Protocols; Type Var
     TImplementation,
     TInterface,
 )
+
+# =============================================================================
+# Capabilities Module Exports
+# =============================================================================
+from omnibase_core.protocols.capabilities import ProtocolCapabilityProvider
 
 # =============================================================================
 # Compute Module Exports
@@ -126,6 +134,11 @@ from omnibase_core.protocols.event_bus import (
 from omnibase_core.protocols.handler import ProtocolHandlerContext
 
 # =============================================================================
+# Handlers Module Exports (Handler Type Resolution)
+# =============================================================================
+from omnibase_core.protocols.handlers import ProtocolHandlerTypeResolver
+
+# =============================================================================
 # HTTP Module Exports
 # =============================================================================
 from omnibase_core.protocols.http import ProtocolHttpClient, ProtocolHttpResponse
@@ -134,6 +147,19 @@ from omnibase_core.protocols.http import ProtocolHttpClient, ProtocolHttpRespons
 # Intents Module Exports
 # =============================================================================
 from omnibase_core.protocols.intents import ProtocolRegistrationRecord
+
+# =============================================================================
+# Notifications Module Exports
+# =============================================================================
+from omnibase_core.protocols.notifications import (
+    ProtocolTransitionNotificationConsumer,
+    ProtocolTransitionNotificationPublisher,
+)
+
+# =============================================================================
+# Resolution Module Exports (OMN-1123)
+# =============================================================================
+from omnibase_core.protocols.resolution import ProtocolDependencyResolver
 
 # =============================================================================
 # Runtime Module Exports
@@ -224,6 +250,10 @@ __all__ = [
     "ProtocolModelJsonSerializable",
     "ProtocolModelValidatable",
     # ==========================================================================
+    # Capabilities Module (OMN-1124)
+    # ==========================================================================
+    "ProtocolCapabilityProvider",
+    # ==========================================================================
     # Container Module
     # ==========================================================================
     "ProtocolServiceRegistrationMetadata",
@@ -298,9 +328,22 @@ __all__ = [
     # ==========================================================================
     "ProtocolRegistrationRecord",
     # ==========================================================================
+    # Notifications Module (OMN-1122)
+    # ==========================================================================
+    "ProtocolTransitionNotificationPublisher",
+    "ProtocolTransitionNotificationConsumer",
+    # ==========================================================================
+    # Resolution Module (OMN-1123)
+    # ==========================================================================
+    "ProtocolDependencyResolver",
+    # ==========================================================================
     # Handler Module
     # ==========================================================================
     "ProtocolHandlerContext",
+    # ==========================================================================
+    # Handlers Module (Handler Type Resolution)
+    # ==========================================================================
+    "ProtocolHandlerTypeResolver",
     # ==========================================================================
     # Runtime Module
     # ==========================================================================
