@@ -589,9 +589,7 @@ class TestSelectionPolicyWithRequirements:
             providers: list[dict[str, Any]], reqs: ModelRequirementSet
         ) -> list[dict[str, Any]]:
             return [
-                p
-                for p in providers
-                if all(p.get(k) == v for k, v in reqs.must.items())
+                p for p in providers if all(p.get(k) == v for k, v in reqs.must.items())
             ]
 
         # auto_if_unique resolution logic
@@ -636,9 +634,7 @@ class TestSelectionPolicyWithRequirements:
             providers: list[dict[str, Any]], reqs: ModelRequirementSet
         ) -> dict[str, Any] | None:
             filtered = [
-                p
-                for p in providers
-                if all(p.get(k) == v for k, v in reqs.must.items())
+                p for p in providers if all(p.get(k) == v for k, v in reqs.must.items())
             ]
             if len(filtered) == 1:
                 return filtered[0]
@@ -692,9 +688,7 @@ class TestSelectionPolicyWithRequirements:
             """Resolve using best_score policy: select highest-scoring provider."""
             # Filter by must constraints
             filtered = [
-                p
-                for p in providers
-                if all(p.get(k) == v for k, v in reqs.must.items())
+                p for p in providers if all(p.get(k) == v for k, v in reqs.must.items())
             ]
             if not filtered:
                 return None
@@ -702,7 +696,9 @@ class TestSelectionPolicyWithRequirements:
             # Score by prefer constraints
             def score_provider(p: dict[str, Any]) -> float:
                 return sum(
-                    1.0 for key, preferred in reqs.prefer.items() if p.get(key) == preferred
+                    1.0
+                    for key, preferred in reqs.prefer.items()
+                    if p.get(key) == preferred
                 )
 
             # Select highest-scoring
@@ -730,7 +726,11 @@ class TestSelectionPolicyWithRequirements:
 
         # Two providers with EQUAL preference scores (both match region)
         providers = [
-            {"name": "memcached", "distributed": True, "region": "us-east-1"},  # Score: 1
+            {
+                "name": "memcached",
+                "distributed": True,
+                "region": "us-east-1",
+            },  # Score: 1
             {"name": "redis", "distributed": True, "region": "us-east-1"},  # Score: 1
         ]
 
@@ -738,17 +738,13 @@ class TestSelectionPolicyWithRequirements:
             providers: list[dict[str, Any]], reqs: ModelRequirementSet
         ) -> dict[str, Any] | None:
             filtered = [
-                p
-                for p in providers
-                if all(p.get(k) == v for k, v in reqs.must.items())
+                p for p in providers if all(p.get(k) == v for k, v in reqs.must.items())
             ]
             if not filtered:
                 return None
 
             def score_provider(p: dict[str, Any]) -> float:
-                return sum(
-                    1.0 for k, v in reqs.prefer.items() if p.get(k) == v
-                )
+                return sum(1.0 for k, v in reqs.prefer.items() if p.get(k) == v)
 
             max_score = max(score_provider(p) for p in filtered)
             tied = [p for p in filtered if score_provider(p) == max_score]
