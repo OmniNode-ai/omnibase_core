@@ -31,7 +31,7 @@ class TestModelEventBusRuntimeStateFactoryMethods:
         assert state is not None
         assert isinstance(state, ModelEventBusRuntimeState)
         assert state.is_bound is False
-        assert state.node_name == ""
+        assert state.node_name is None
         assert state.contract_path is None
 
     def test_create_unbound_returns_new_instance_each_call(self) -> None:
@@ -67,7 +67,11 @@ class TestModelEventBusRuntimeStateFactoryMethods:
         assert state.contract_path is None
 
     def test_create_bound_with_empty_node_name(self) -> None:
-        """Test create_bound() with empty node name."""
+        """Test create_bound() with empty node name.
+
+        Note: Empty string is still allowed for backwards compatibility,
+        but the preferred "not set" value is None.
+        """
         state = ModelEventBusRuntimeState.create_bound(node_name="")
 
         assert state.is_bound is True
@@ -97,8 +101,17 @@ class TestModelEventBusRuntimeStateIsReady:
 
         assert state.is_ready() is False
 
+    def test_is_ready_returns_false_when_node_name_none(self) -> None:
+        """Test is_ready() returns False when node_name is None."""
+        state = ModelEventBusRuntimeState(
+            node_name=None,
+            is_bound=True,
+        )
+
+        assert state.is_ready() is False
+
     def test_is_ready_returns_false_when_node_name_empty(self) -> None:
-        """Test is_ready() returns False when node_name is empty."""
+        """Test is_ready() returns False when node_name is empty string."""
         state = ModelEventBusRuntimeState(
             node_name="",
             is_bound=True,
@@ -117,13 +130,15 @@ class TestModelEventBusRuntimeStateIsReady:
         [
             ("node", True, True),
             ("node", False, False),
+            (None, True, False),
+            (None, False, False),
             ("", True, False),
             ("", False, False),
             ("   ", True, True),  # Whitespace-only is truthy
         ],
     )
     def test_is_ready_parametrized(
-        self, node_name: str, is_bound: bool, expected: bool
+        self, node_name: str | None, is_bound: bool, expected: bool
     ) -> None:
         """Test is_ready() with various combinations of node_name and is_bound."""
         state = ModelEventBusRuntimeState(
@@ -132,6 +147,41 @@ class TestModelEventBusRuntimeStateIsReady:
         )
 
         assert state.is_ready() is expected
+
+
+@pytest.mark.unit
+class TestModelEventBusRuntimeStateHasNodeName:
+    """Test ModelEventBusRuntimeState.has_node_name() method."""
+
+    def test_has_node_name_returns_true_when_set(self) -> None:
+        """Test has_node_name() returns True when node_name is set."""
+        state = ModelEventBusRuntimeState(node_name="my_node")
+
+        assert state.has_node_name() is True
+
+    def test_has_node_name_returns_false_when_none(self) -> None:
+        """Test has_node_name() returns False when node_name is None."""
+        state = ModelEventBusRuntimeState(node_name=None)
+
+        assert state.has_node_name() is False
+
+    def test_has_node_name_returns_false_when_empty_string(self) -> None:
+        """Test has_node_name() returns False when node_name is empty string."""
+        state = ModelEventBusRuntimeState(node_name="")
+
+        assert state.has_node_name() is False
+
+    def test_has_node_name_returns_false_for_default_state(self) -> None:
+        """Test has_node_name() returns False for default state."""
+        state = ModelEventBusRuntimeState()
+
+        assert state.has_node_name() is False
+
+    def test_has_node_name_returns_true_for_whitespace(self) -> None:
+        """Test has_node_name() returns True for whitespace-only (truthy)."""
+        state = ModelEventBusRuntimeState(node_name="   ")
+
+        assert state.has_node_name() is True
 
 
 @pytest.mark.unit
@@ -196,7 +246,7 @@ class TestModelEventBusRuntimeStateReset:
         state.reset()
 
         assert state.is_bound is False
-        assert state.node_name == ""
+        assert state.node_name is None
         assert state.contract_path is None
 
     def test_reset_multiple_times(self) -> None:
@@ -435,7 +485,7 @@ class TestModelEventBusRuntimeStateDefaults:
         """Test default values when creating empty instance."""
         state = ModelEventBusRuntimeState()
 
-        assert state.node_name == ""
+        assert state.node_name is None
         assert state.contract_path is None
         assert state.is_bound is False
 

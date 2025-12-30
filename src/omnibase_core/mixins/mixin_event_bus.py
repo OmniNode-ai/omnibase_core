@@ -426,19 +426,11 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
         Args:
             node_name: The human-readable name of this node. Should be
                 unique within the system for proper event correlation.
-                An empty string is treated as "not bound" and will cause
-                get_node_name() to return the class name as a fallback.
 
         Note:
             This affects get_node_name() return value and all log output.
-
-        Empty String Handling:
-            Passing an empty string ("") is semantically equivalent to not
-            binding a node name at all. The get_node_name() method uses
-            `if state.node_name:` to check truthiness, so empty string
-            evaluates to False and triggers the class name fallback. If you
-            want to explicitly clear a previously bound node name, pass an
-            empty string.
+            If no node name is bound (state.node_name is None), the
+            get_node_name() method returns the class name as a fallback.
         """
         self._warn_if_binding_locked("bind_node_name")
         self._event_bus_runtime_state.node_name = node_name
@@ -1184,15 +1176,25 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
             # Lock released - other threads can access state
 
             # === Phase 2: Stop listener (lock NOT held - may block) ===
-            # handle.stop() is already thread-safe with its own internal lock
+            # Use stop_event_listener() to properly unsubscribe from the event bus
+            # before stopping. This prevents memory leaks where the event bus retains
+            # references to dead subscriptions. stop_event_listener() handles its own
+            # thread safety with internal locks.
             if handle is not None:
                 try:
-                    stopped = handle.stop()
+                    # stop_event_listener() properly:
+                    # 1. Gets event bus reference
+                    # 2. Unsubscribes from all events
+                    # 3. Calls handle.stop()
+                    # This prevents memory leaks in the event bus
+                    stopped = self.stop_event_listener(handle)
                     if not stopped:
                         cleanup_errors.append(
                             "Event listener did not stop within timeout"
                         )
                 except Exception as e:
+                    # stop_event_listener() may raise ModelOnexError if event bus
+                    # doesn't support unsubscribe, but it still stops the listener
                     cleanup_errors.append(f"Failed to stop event listener: {e!r}")
                     emit_log_event(
                         LogLevel.ERROR,

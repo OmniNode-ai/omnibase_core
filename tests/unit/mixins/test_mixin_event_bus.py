@@ -84,7 +84,7 @@ class TestMixinEventBusInitialization:
 
         assert state is not None
         assert state.is_bound is False
-        assert state.node_name == ""
+        assert state.node_name is None
 
     def test_lazy_listener_handle_is_none_initially(self) -> None:
         """Test that listener handle is None before starting listener."""
