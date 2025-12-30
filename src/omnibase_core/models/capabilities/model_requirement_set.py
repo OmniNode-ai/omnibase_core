@@ -30,12 +30,48 @@ Thread Safety:
     This model is immutable (frozen=True) after creation, making it
     thread-safe for concurrent read access.
 
+Type Safety:
+    Requirement values are constrained to JSON-compatible types via
+    ``RequirementValue`` and ``RequirementDict``. This prevents arbitrary
+    Python objects from being stored as requirement values, ensuring
+    serialization safety and consistent resolver behavior.
+
+    Uses PEP 695 type alias syntax for proper recursive type handling
+    with Pydantic 2.x.
+
 .. versionadded:: 0.4.0
 """
 
-from typing import Any
-
 from pydantic import BaseModel, ConfigDict, Field
+
+
+# PEP 695 recursive type alias (Python 3.12+)
+# Pydantic requires this syntax for recursive types to avoid RecursionError.
+#
+# RequirementValue represents any JSON-serializable value that can be used
+# in requirement constraints:
+#   - Primitives: str, int, float, bool, None
+#   - Containers: list of RequirementValue, dict mapping str to RequirementValue
+#
+# This provides type safety over `Any` by restricting values to JSON-compatible
+# types, preventing runtime serialization errors and ensuring consistent
+# behavior across resolvers.
+#
+# Examples of valid values:
+#   True                                    # bool
+#   20                                      # int
+#   0.95                                    # float
+#   "us-east-1"                             # str
+#   None                                    # null
+#   ["postgres", "mysql"]                   # list
+#   {"timeout": 30, "retries": 3}           # nested dict
+type RequirementValue = (
+    str | int | float | bool | None | list[RequirementValue] | dict[str, RequirementValue]
+)
+
+# Type alias for requirement dictionaries.
+# Maps attribute names (str) to their required/preferred/forbidden values.
+RequirementDict = dict[str, RequirementValue]
 
 
 class ModelRequirementSet(BaseModel):
@@ -102,22 +138,22 @@ class ModelRequirementSet(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
-    must: dict[str, Any] = Field(
+    must: RequirementDict = Field(
         default_factory=dict,
         description="Hard constraints that must be satisfied for a provider to match",
     )
 
-    prefer: dict[str, Any] = Field(
+    prefer: RequirementDict = Field(
         default_factory=dict,
         description="Soft preferences that affect provider scoring",
     )
 
-    forbid: dict[str, Any] = Field(
+    forbid: RequirementDict = Field(
         default_factory=dict,
         description="Hard exclusion constraints that disqualify providers",
     )
 
-    hints: dict[str, Any] = Field(
+    hints: RequirementDict = Field(
         default_factory=dict,
         description="Advisory information for tie-breaking between equal providers",
     )
@@ -249,4 +285,4 @@ class ModelRequirementSet(BaseModel):
         return f"ModelRequirementSet({', '.join(parts)})"
 
 
-__all__ = ["ModelRequirementSet"]
+__all__ = ["ModelRequirementSet", "RequirementDict", "RequirementValue"]

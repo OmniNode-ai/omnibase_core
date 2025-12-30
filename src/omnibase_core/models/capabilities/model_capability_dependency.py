@@ -16,12 +16,17 @@ at runtime.
 Capability Naming Convention:
     Capabilities follow the pattern: ``<domain>.<type>[.<variant>]``
 
+    - Tokens contain lowercase letters, digits, and underscores
+    - Dots are semantic separators between tokens
+    - Hyphens are NOT allowed (use underscores for multi-word tokens)
+
     Examples:
         - ``database.relational`` - Any relational database
         - ``database.document`` - Document/NoSQL database
         - ``storage.vector`` - Vector storage capability
         - ``storage.vector.qdrant`` - Qdrant-compatible vector store
-        - ``messaging.eventbus`` - Event bus capability
+        - ``messaging.event_bus`` - Event bus capability
+        - ``cache.key_value`` - Key-value cache capability
         - ``cache.distributed`` - Distributed cache
         - ``secrets.vault`` - Secrets management
         - ``http.client`` - HTTP client capability
@@ -81,7 +86,12 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 # Note: Single-character tokens are intentionally allowed (e.g., "a.b") to support
 # short, idiomatic names common in capability systems. The min_length=3 field
 # constraint ensures the overall capability has reasonable length ("a.b" is valid).
-_CAPABILITY_PATTERN = re.compile(r"^[a-z0-9]+(\.[a-z0-9]+)+$")
+#
+# Why hyphens are excluded: Dots serve as semantic separators (domain.type.variant),
+# so allowing hyphens within tokens (e.g., "event-bus") would create ambiguity about
+# token boundaries. Use underscores instead for multi-word tokens (e.g., "event_bus",
+# "key_value"). This keeps the grammar unambiguous: dots separate, underscores join.
+_CAPABILITY_PATTERN = re.compile(r"^[a-z0-9_]+(\.[a-z0-9_]+)+$")
 
 # Regex pattern for valid alias names
 # More permissive: lowercase letters, digits, underscores
@@ -108,8 +118,9 @@ class ModelCapabilityDependency(BaseModel):
             the resolved provider in handler code (e.g., "db", "cache", "vectors").
             Must be lowercase letters, digits, or underscores, starting with a letter.
         capability: Capability identifier following the naming convention
-            ``<domain>.<type>[.<variant>]``. Examples: "database.relational",
-            "storage.vector", "cache.distributed".
+            ``<domain>.<type>[.<variant>]``. Tokens may contain lowercase letters,
+            digits, and underscores (no hyphens). Examples: "database.relational",
+            "storage.vector", "cache.key_value".
         requirements: Constraint set defining must/prefer/forbid/hints for
             provider matching. See ModelRequirementSet for details.
         selection_policy: How to select among matching providers:
@@ -132,6 +143,10 @@ class ModelCapabilityDependency(BaseModel):
             return an "ambiguous" status for user resolution, or fall back
             to a secondary selection strategy. This model only declares the
             policy; the resolver determines enforcement semantics.
+
+            .. todo::
+                See ``docs/architecture/CAPABILITY_RESOLUTION.md`` for canonical
+                resolver behavior semantics (planned documentation).
 
         **best_score**:
             1. Filter providers by must/forbid requirements
@@ -260,9 +275,10 @@ class ModelCapabilityDependency(BaseModel):
         Validate that capability follows naming convention.
 
         The capability must follow the pattern: ``<domain>.<type>[.<variant>]``
-            - All lowercase letters and digits
+            - All lowercase letters, digits, and underscores
             - Dot-separated tokens (at least one dot required)
             - No consecutive dots, leading/trailing dots
+            - No hyphens (use underscores for multi-word tokens)
 
         Args:
             v: The capability string to validate.
@@ -274,15 +290,16 @@ class ModelCapabilityDependency(BaseModel):
             ModelOnexError: If the capability format is invalid.
 
         Examples:
-            Valid: "database.relational", "storage.vector.qdrant", "cache.kv.redis"
-            Invalid: "Database.Relational", "database", "database..relational"
+            Valid: "database.relational", "storage.vector.qdrant", "cache.key_value"
+            Invalid: "Database.Relational", "database", "event-bus.handler"
         """
         if not _CAPABILITY_PATTERN.match(v):
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=(
                     f"Invalid capability '{v}': must follow pattern '<domain>.<type>[.<variant>]' "
-                    "with lowercase letters/digits and at least one dot separator"
+                    "with lowercase letters/digits/underscores and at least one dot separator "
+                    "(use underscores, not hyphens, for multi-word tokens)"
                 ),
             )
         return v

@@ -141,11 +141,17 @@ from omnibase_core.models.capabilities.model_capability_dependency import (
 from omnibase_core.models.capabilities.model_contract_capabilities import (
     ModelContractCapabilities,
 )
-from omnibase_core.models.capabilities.model_requirement_set import ModelRequirementSet
+from omnibase_core.models.capabilities.model_requirement_set import (
+    ModelRequirementSet,
+    RequirementDict,
+    RequirementValue,
+)
 
 __all__ = [
     "ModelCapabilityDependency",
     "ModelContractCapabilities",
     "ModelRequirementSet",
+    "RequirementDict",
+    "RequirementValue",
     "SelectionPolicy",
 ]

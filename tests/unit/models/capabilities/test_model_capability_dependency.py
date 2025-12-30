@@ -533,3 +533,108 @@ class TestModelCapabilityDependencyCaching:
         cache_ref = dep._cached_capability_parts
         _ = dep.domain
         assert dep._cached_capability_parts is cache_ref
+
+
+@pytest.mark.unit
+class TestModelCapabilityDependencySelectionPolicySemantics:
+    """Tests documenting selection policy expected behaviors.
+
+    Note: These tests document the CONTRACT for policy behavior.
+    Actual enforcement is resolver-specific. See Selection Policy Semantics
+    in ModelCapabilityDependency docstring for details.
+    """
+
+    def test_auto_if_unique_semantic_contract(self) -> None:
+        """Document auto_if_unique semantic: auto-select only if exactly one matches.
+
+        Contract:
+        - If exactly one provider matches must/forbid filters: auto-select
+        - If multiple providers match: dependency remains unresolved (resolver-specific)
+        - If zero providers match: resolution fails
+        """
+        dep = ModelCapabilityDependency(
+            alias="db",
+            capability="database.relational",
+            selection_policy="auto_if_unique",
+        )
+        # This model declares the policy; resolver enforces it
+        assert dep.selection_policy == "auto_if_unique"
+        assert not dep.requires_explicit_binding
+
+    def test_best_score_semantic_contract(self) -> None:
+        """Document best_score semantic: select highest-scoring provider.
+
+        Contract:
+        - Filter providers by must/forbid requirements
+        - Score remaining providers using prefer requirements
+        - Select highest-scoring provider
+        - Break ties using hints (advisory only)
+        """
+        dep = ModelCapabilityDependency(
+            alias="cache",
+            capability="cache.distributed",
+            selection_policy="best_score",
+            requirements=ModelRequirementSet(
+                prefer={"region": "us-east-1", "latency_ms": 10}
+            ),
+        )
+        assert dep.selection_policy == "best_score"
+        assert dep.requirements.prefer == {"region": "us-east-1", "latency_ms": 10}
+
+    def test_require_explicit_semantic_contract(self) -> None:
+        """Document require_explicit semantic: never auto-select.
+
+        Contract:
+        - Never auto-select, even if only one provider matches
+        - Always require explicit provider binding via config/user
+        - Use for security-sensitive dependencies
+        """
+        dep = ModelCapabilityDependency(
+            alias="secrets",
+            capability="secrets.vault",
+            selection_policy="require_explicit",
+        )
+        assert dep.selection_policy == "require_explicit"
+        assert dep.requires_explicit_binding
+
+    def test_auto_if_unique_with_hard_constraints(self) -> None:
+        """Show auto_if_unique respects must/forbid constraints for filtering."""
+        dep = ModelCapabilityDependency(
+            alias="db",
+            capability="database.relational",
+            selection_policy="auto_if_unique",
+            requirements=ModelRequirementSet(
+                must={"supports_transactions": True},
+                forbid={"deprecated": True},
+            ),
+        )
+        assert dep.requirements.has_hard_constraints
+        assert not dep.requires_explicit_binding
+
+    def test_best_score_with_hints_for_tie_breaking(self) -> None:
+        """Show hints provide advisory tie-breaking guidance."""
+        dep = ModelCapabilityDependency(
+            alias="cache",
+            capability="cache.distributed",
+            selection_policy="best_score",
+            requirements=ModelRequirementSet(
+                prefer={"latency_ms": 10},
+                hints={"vendor_preference": ["redis", "memcached"]},
+            ),
+        )
+        assert dep.requirements.hints == {"vendor_preference": ["redis", "memcached"]}
+
+    def test_require_explicit_ignores_soft_constraints_for_selection(self) -> None:
+        """Show prefer/hints can still be specified for documentation purposes."""
+        dep = ModelCapabilityDependency(
+            alias="secrets",
+            capability="secrets.vault",
+            selection_policy="require_explicit",
+            requirements=ModelRequirementSet(
+                must={"encryption": "aes-256"},
+                prefer={"region": "us-east-1"},
+            ),
+        )
+        # Even with preferences, explicit binding is required
+        assert dep.requires_explicit_binding
+        assert dep.requirements.has_soft_constraints
