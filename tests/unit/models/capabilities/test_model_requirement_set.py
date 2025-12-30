@@ -174,6 +174,26 @@ class TestModelRequirementSetMerge:
         assert b.must == {"key": "b"}  # Original unchanged
         assert merged.must == {"key": "b"}
 
+    def test_merge_shallow_replaces_nested_dicts(self) -> None:
+        """Test that merge performs SHALLOW merge - nested dicts are replaced entirely.
+
+        This test codifies the documented warning in merge() that nested dictionaries
+        are NOT recursively merged. The entire nested dict is replaced by other's value.
+        """
+        base = ModelRequirementSet(
+            must={"config": {"timeout": 30, "retries": 3, "host": "localhost"}}
+        )
+        override = ModelRequirementSet(
+            must={"config": {"timeout": 60}}  # Only has timeout, missing retries/host
+        )
+        merged = base.merge(override)
+
+        # IMPORTANT: This demonstrates shallow merge - "retries" and "host" are LOST
+        # because the entire "config" dict is replaced, not recursively merged
+        assert merged.must == {"config": {"timeout": 60}}
+        assert "retries" not in merged.must.get("config", {})
+        assert "host" not in merged.must.get("config", {})
+
 
 @pytest.mark.unit
 class TestModelRequirementSetImmutability:
@@ -254,11 +274,27 @@ class TestModelRequirementSetEquality:
     """Tests for ModelRequirementSet equality (not hashable due to dict fields)."""
 
     def test_not_hashable_due_to_dict_fields(self) -> None:
-        """Test that ModelRequirementSet is NOT hashable (contains dicts)."""
+        """Test that ModelRequirementSet is NOT hashable due to dict fields.
+
+        Models with dict[str, Any] fields are frozen but cannot be hashed.
+        This test verifies all unhashability scenarios:
+        - Direct hash() call fails
+        - Cannot be used in sets (sets require hashable elements)
+        - Cannot be used as dict keys (dict keys require hashable elements)
+        """
         reqs = ModelRequirementSet(must={"key": "value"})
-        # Models with dict[str, Any] fields are frozen but not hashable
+
+        # Direct hash() call should fail
         with pytest.raises(TypeError, match="unhashable"):
             hash(reqs)
+
+        # Cannot add to set (sets use hashing internally)
+        with pytest.raises(TypeError, match="unhashable"):
+            _ = {reqs}
+
+        # Cannot use as dict key (dict keys must be hashable)
+        with pytest.raises(TypeError, match="unhashable"):
+            _ = {reqs: "value"}
 
     def test_equality_same_requirements(self) -> None:
         """Test equality for identical requirements."""

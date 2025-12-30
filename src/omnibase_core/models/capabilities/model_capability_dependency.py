@@ -235,7 +235,6 @@ class ModelCapabilityDependency(BaseModel):
             Valid: "db", "my_cache", "vector_store_1"
             Invalid: "DB", "1cache", "my-cache", "cache.main"
         """
-        # Note: Empty check handled by min_length=1 constraint on field
         if not _ALIAS_PATTERN.match(v):
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -270,7 +269,6 @@ class ModelCapabilityDependency(BaseModel):
             Valid: "database.relational", "storage.vector.qdrant", "cache.kv.redis"
             Invalid: "Database.Relational", "database", "database..relational"
         """
-        # Note: Empty check handled by min_length=3 constraint on field
         if not _CAPABILITY_PATTERN.match(v):
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
