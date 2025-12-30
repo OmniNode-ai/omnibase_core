@@ -481,6 +481,29 @@ class TestModelPhaseStepEdgeCases:
         assert step.handler_ids == ["handler_a"]
         assert step.ordering_rationale == "Test"
 
+    def test_from_attributes_with_init_method(self) -> None:
+        """Test from_attributes=True with object using __init__ method.
+
+        Complements test_from_attributes_allows_object_creation which uses
+        class attributes. This tests the more common pattern of instance
+        attributes set in __init__.
+        """
+
+        class MockPhaseStepWithInit:
+            def __init__(self) -> None:
+                self.phase = EnumHandlerExecutionPhase.EXECUTE
+                self.handler_ids = ["mock_handler"]
+                self.ordering_rationale = None
+                self.metadata = None
+
+        mock_step = MockPhaseStepWithInit()
+        step = ModelPhaseStep.model_validate(mock_step, from_attributes=True)
+
+        assert step.phase == EnumHandlerExecutionPhase.EXECUTE
+        assert step.handler_ids == ["mock_handler"]
+        assert step.ordering_rationale is None
+        assert step.metadata is None
+
     def test_long_handler_list(self) -> None:
         """Test handling of a large number of handlers."""
         handlers = [f"handler_{i}" for i in range(100)]
@@ -495,11 +518,30 @@ class TestModelPhaseStepEdgeCases:
         assert step.get_handler_index("handler_50") == 50
 
     def test_unicode_handler_ids(self) -> None:
-        """Test that unicode handler IDs are supported."""
+        """Test that Unicode handler IDs are supported.
+
+        Validates that the model correctly handles handler IDs containing:
+        - Chinese characters
+        - Japanese characters
+        - Emoji characters
+        - Mixed Unicode and ASCII
+        """
+        unicode_handlers = [
+            "handler_\u4e2d\u6587",  # Chinese characters (handler_中文)
+            "\u30cf\u30f3\u30c9\u30e9\u30fc_\u65e5\u672c",  # Japanese (ハンドラー_日本)
+            "emoji_handler_\u2728\u2705",  # Emoji (emoji_handler_✨✅)
+            "mixed_\u03b1\u03b2\u03b3_handler",  # Greek letters (mixed_αβγ_handler)
+        ]
         step = ModelPhaseStep(
             phase=EnumHandlerExecutionPhase.EXECUTE,
-            handler_ids=["handler_valid", "handler_test"],
+            handler_ids=unicode_handlers,
         )
 
-        assert step.has_handler("handler_valid") is True
-        assert step.handler_count() == 2
+        # Verify all Unicode handlers are present and retrievable
+        assert step.handler_count() == 4
+        assert step.has_handler("handler_\u4e2d\u6587") is True
+        assert step.has_handler("\u30cf\u30f3\u30c9\u30e9\u30fc_\u65e5\u672c") is True
+        assert step.has_handler("emoji_handler_\u2728\u2705") is True
+        assert step.has_handler("mixed_\u03b1\u03b2\u03b3_handler") is True
+        assert step.get_handler_index("handler_\u4e2d\u6587") == 0
+        assert step.get_handler_index("emoji_handler_\u2728\u2705") == 2

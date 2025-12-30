@@ -11,7 +11,10 @@ the execution submodule and the parent infrastructure module.
     Added as part of Runtime Execution Sequencing Model (OMN-1108)
 """
 
+import pytest
 
+
+@pytest.mark.unit
 class TestExecutionModuleExports:
     """Tests for imports from omnibase_core.infrastructure.execution."""
 
@@ -111,6 +114,7 @@ class TestExecutionModuleExports:
         assert len(execution.__all__) > 0
 
 
+@pytest.mark.unit
 class TestInfrastructureModuleExports:
     """Tests for imports from omnibase_core.infrastructure."""
 
@@ -141,6 +145,7 @@ class TestInfrastructureModuleExports:
         assert "create_execution_plan" in infrastructure.__all__
 
 
+@pytest.mark.unit
 class TestFunctionalExports:
     """Functional tests verifying exported items work correctly."""
 

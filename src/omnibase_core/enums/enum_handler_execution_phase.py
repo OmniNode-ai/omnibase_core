@@ -40,13 +40,18 @@ class EnumHandlerExecutionPhase(str, Enum):
         >>> phase.value
         'execute'
 
-        >>> # Phases support ordering comparison
-        >>> EnumHandlerExecutionPhase.PREFLIGHT < EnumHandlerExecutionPhase.EXECUTE
+        >>> # Use is_before() / is_after() for execution order comparison
+        >>> EnumHandlerExecutionPhase.PREFLIGHT.is_before(EnumHandlerExecutionPhase.EXECUTE)
         True
 
         >>> # Create from string value
         >>> EnumHandlerExecutionPhase("before")
         <EnumHandlerExecutionPhase.BEFORE: 'before'>
+
+    Note:
+        The ``<`` and ``>`` operators compare string values lexicographically,
+        NOT by execution order. Use :meth:`is_before` and :meth:`is_after` for
+        execution order comparisons.
 
     See Also:
         - :const:`~omnibase_core.models.contracts.model_execution_profile.DEFAULT_EXECUTION_PHASES`:

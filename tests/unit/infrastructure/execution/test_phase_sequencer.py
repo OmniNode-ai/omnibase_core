@@ -628,15 +628,29 @@ class TestDeterminism:
         assert all(r == results[0] for r in results)
 
     def test_group_handlers_deterministic(self) -> None:
-        """Test that group_handlers_by_phase is deterministic."""
+        """Test that group_handlers_by_phase is deterministic.
+
+        Verifies both:
+        1. The phase keys are consistent across invocations
+        2. The handler lists within each phase are identical
+        """
         mapping = {
             "h1": EnumHandlerExecutionPhase.EXECUTE,
             "h2": EnumHandlerExecutionPhase.BEFORE,
             "h3": EnumHandlerExecutionPhase.EXECUTE,
         }
         results = [group_handlers_by_phase(mapping) for _ in range(10)]
+        first_result = results[0]
+
         for r in results:
-            assert r.keys() == results[0].keys()
+            # Verify keys match
+            assert r.keys() == first_result.keys()
+            # Verify handler lists within each phase match
+            for phase_key in first_result:
+                assert r[phase_key] == first_result[phase_key], (
+                    f"Handler list mismatch for phase {phase_key}: "
+                    f"expected {first_result[phase_key]}, got {r[phase_key]}"
+                )
 
     def test_order_handlers_deterministic(self) -> None:
         """Test that order_handlers_in_phase is deterministic."""

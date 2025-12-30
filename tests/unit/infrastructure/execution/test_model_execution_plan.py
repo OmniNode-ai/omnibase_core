@@ -18,7 +18,7 @@ Coverage Requirements:
     Added as part of Runtime Execution Sequencing Model (OMN-1108)
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 import pytest
 
@@ -77,7 +77,7 @@ class TestModelExecutionPlan:
 
     def test_valid_construction_all_fields(self) -> None:
         """Test valid construction with all fields populated."""
-        now = datetime.now()
+        now = datetime.now(tz=UTC)
         plan = ModelExecutionPlan(
             phases=[self.preflight_step, self.execute_step],
             source_profile="orchestrator_safe",
@@ -359,7 +359,7 @@ class TestModelExecutionPlan:
 
     def test_model_dump_returns_dict(self) -> None:
         """Test model_dump returns proper dictionary."""
-        now = datetime.now()
+        now = datetime.now(tz=UTC)
         plan = ModelExecutionPlan(
             phases=[self.preflight_step, self.execute_step],
             source_profile="test_profile",
@@ -411,7 +411,7 @@ class TestModelExecutionPlan:
 
     def test_model_roundtrip_serialization(self) -> None:
         """Test model can be serialized and deserialized."""
-        now = datetime.now()
+        now = datetime.now(tz=UTC)
         original = ModelExecutionPlan(
             phases=[self.preflight_step, self.execute_step],
             source_profile="roundtrip_profile",
@@ -489,12 +489,33 @@ class TestModelExecutionPlan:
     # =================== EDGE CASE TESTS ===================
 
     def test_duplicate_phases_allowed(self) -> None:
-        """Test that duplicate phases are allowed (valid use case)."""
+        """Test that duplicate phases are allowed in ModelExecutionPlan.
+
+        Duplicate phases are intentionally permitted for valid use cases:
+        1. Multiple execution rounds (e.g., retry with different parameters)
+        2. Composite workflows that merge multiple execution plans
+        3. Staged processing where same phase type runs at different points
+
+        Note: The get_phase() method returns the FIRST matching phase when
+        duplicates exist. Use direct iteration over plan.phases if you need
+        to access all instances of a duplicate phase.
+
+        Behavior summary:
+        - get_phase_count(): Counts ALL phases including duplicates
+        - total_handlers(): Sums handlers from ALL phases including duplicates
+        - get_phase(phase_type): Returns FIRST matching phase only
+        - has_phase(phase_type): Returns True if ANY instance exists
+        """
         # Same phase can appear multiple times (e.g., multiple EXECUTE phases)
         plan = ModelExecutionPlan(phases=[self.execute_step, self.execute_step])
 
         assert plan.get_phase_count() == 2
         assert plan.total_handlers() == 6  # 3 + 3
+
+        # Verify get_phase returns the first occurrence
+        first_phase = plan.get_phase(EnumHandlerExecutionPhase.EXECUTE)
+        assert first_phase is not None
+        assert first_phase is plan.phases[0]
 
     def test_metadata_accepts_basic_types(self) -> None:
         """Test that metadata accepts basic typed values only."""
@@ -526,19 +547,3 @@ class TestModelExecutionPlan:
                 phases=[],
                 metadata={"array": ["a", "b", "c"]},  # type: ignore[dict-item]
             )
-
-    def test_from_attributes_enables_orm_mode(self) -> None:
-        """Test that from_attributes=True allows creating from object attributes."""
-
-        class MockPhaseStep:
-            def __init__(self) -> None:
-                self.phase = EnumHandlerExecutionPhase.EXECUTE
-                self.handler_ids = ["mock_handler"]
-                self.ordering_rationale = None
-                self.metadata = None
-
-        mock_step = MockPhaseStep()
-        step = ModelPhaseStep.model_validate(mock_step, from_attributes=True)
-
-        assert step.phase == EnumHandlerExecutionPhase.EXECUTE
-        assert step.handler_ids == ["mock_handler"]

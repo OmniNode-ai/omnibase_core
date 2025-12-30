@@ -6,7 +6,7 @@ Part of the three-layer architecture: Profile -> Descriptor -> Contract.
 
 Related:
     - OMN-1125: Default Profile Factory for Contracts
-    - ModelHandlerDescriptor: Parent handler descriptor model
+    - ModelHandlerBehaviorDescriptor: Parent handler behavior descriptor model
     - ModelRetryPolicy: Full-featured retry policy with execution tracking
 
 .. versionadded:: 0.4.0

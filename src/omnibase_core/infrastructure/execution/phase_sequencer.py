@@ -4,20 +4,33 @@
 """
 Phase Sequencer for Runtime Execution Sequencing.
 
-This module provides pure functions for converting execution profiles and handler
+This module provides functions for converting execution profiles and handler
 mappings into executable plans. It validates phase list integrity and enforces
 canonical phase ordering.
 
-All functions in this module are PURE:
-- No side effects
-- Deterministic output for same input
-- No global state modification
+Purity Constraints
+------------------
+Most functions in this module are PURE (no side effects, deterministic output
+for same input, no global state modification). However, functions that create
+execution plans (``create_execution_plan``, ``create_empty_execution_plan``,
+``create_default_execution_plan``) use the current timestamp by default.
+
+To achieve pure/deterministic behavior with these functions, provide an explicit
+``created_at`` parameter:
+
+.. code-block:: python
+
+    # Impure (uses current time)
+    plan = create_execution_plan(profile, mapping)
+
+    # Pure (deterministic)
+    plan = create_execution_plan(profile, mapping, created_at=fixed_timestamp)
 
 Thread Safety
 -------------
-All functions in this module are pure and stateless, making them inherently
-thread-safe. The returned ModelExecutionPlan and ModelPhaseStep instances
-are frozen Pydantic models that can be safely shared across threads.
+All functions in this module are stateless, making them inherently thread-safe.
+The returned ModelExecutionPlan and ModelPhaseStep instances are frozen Pydantic
+models that can be safely shared across threads.
 
 .. versionadded:: 0.4.0
     Added as part of Runtime Execution Sequencing Model (OMN-1108)
@@ -25,6 +38,7 @@ are frozen Pydantic models that can be safely shared across threads.
 
 from __future__ import annotations
 
+from collections import defaultdict
 from datetime import UTC, datetime
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -190,14 +204,12 @@ def group_handlers_by_phase(
         >>> sorted(grouped[EnumHandlerExecutionPhase.EXECUTE])
         ['h1', 'h3']
     """
-    result: dict[EnumHandlerExecutionPhase, list[str]] = {}
+    result: dict[EnumHandlerExecutionPhase, list[str]] = defaultdict(list)
 
     for handler_id, phase in handler_phase_mapping.items():
-        if phase not in result:
-            result[phase] = []
         result[phase].append(handler_id)
 
-    return result
+    return dict(result)
 
 
 def order_handlers_in_phase(
@@ -235,15 +247,17 @@ def order_handlers_in_phase(
     # Apply tie-breakers in order
     # Currently, we only support alphabetical ordering as the base
     # Priority-based ordering would require additional handler metadata
-
-    if "alphabetical" in policy.tie_breakers:
-        # Alphabetical sorting ensures deterministic output
-        handlers_copy.sort()
-
+    #
+    # Note: Alphabetical sort is ALWAYS applied as a final fallback to ensure
+    # deterministic ordering, regardless of whether the policy explicitly
+    # includes "alphabetical" in tie_breakers. This prevents non-deterministic
+    # iteration order from dict keys from affecting the output.
+    #
     # For topological_sort strategy, we would need dependency information
     # which is not available at this level. The current implementation
     # uses alphabetical as the fallback for determinism.
 
+    handlers_copy.sort()
     return handlers_copy
 
 
@@ -391,14 +405,22 @@ def _get_profile_identifier(profile: ModelExecutionProfile) -> str:
 
 def create_empty_execution_plan(
     source_profile: str | None = None,
+    created_at: datetime | None = None,
 ) -> ModelExecutionPlan:
     """
     Create an empty execution plan with no phases or handlers.
 
     Useful for representing a null/empty state or for testing.
 
+    This function is PURE when ``created_at`` is provided: same inputs always
+    produce same output. When ``created_at`` is None, uses current time as
+    the default.
+
     Args:
         source_profile: Optional identifier for the source profile
+        created_at: Optional timestamp for the plan creation. If None, uses
+            ``datetime.now(UTC)``. Providing an explicit value enables
+            deterministic/pure behavior for testing.
 
     Returns:
         Empty ModelExecutionPlan
@@ -410,16 +432,18 @@ def create_empty_execution_plan(
         >>> plan.total_handlers()
         0
     """
+    effective_created_at = created_at if created_at is not None else datetime.now(UTC)
     return ModelExecutionPlan(
         phases=[],
         source_profile=source_profile or "empty",
         ordering_policy="none",
-        created_at=datetime.now(UTC),
+        created_at=effective_created_at,
     )
 
 
 def create_default_execution_plan(
     handler_phase_mapping: dict[str, EnumHandlerExecutionPhase],
+    created_at: datetime | None = None,
 ) -> ModelExecutionPlan:
     """
     Create an execution plan using default profile settings.
@@ -427,8 +451,15 @@ def create_default_execution_plan(
     Convenience function that uses DEFAULT_EXECUTION_PHASES and default
     ordering policy.
 
+    This function is PURE when ``created_at`` is provided: same inputs always
+    produce same output. When ``created_at`` is None, uses current time as
+    the default.
+
     Args:
         handler_phase_mapping: Mapping of handler_id -> phase they belong to
+        created_at: Optional timestamp for the plan creation. If None, uses
+            ``datetime.now(UTC)``. Providing an explicit value enables
+            deterministic/pure behavior for testing.
 
     Returns:
         ModelExecutionPlan with default settings
@@ -443,7 +474,7 @@ def create_default_execution_plan(
         phases=list(DEFAULT_EXECUTION_PHASES),
         ordering_policy=ModelExecutionOrderingPolicy(),
     )
-    return create_execution_plan(profile, handler_phase_mapping)
+    return create_execution_plan(profile, handler_phase_mapping, created_at=created_at)
 
 
 def get_phases_for_handlers(
