@@ -22,31 +22,8 @@ from omnibase_core.models.contracts import (
     ModelParallelConfig,
     ModelPerformanceRequirements,
 )
-from omnibase_core.models.contracts.subcontracts.model_event_type_subcontract import (
-    ModelEventTypeSubcontract,
-)
-from omnibase_core.models.primitives.model_semver import ModelSemVer
 
-from ._utils import _parse_version
-
-
-def _create_minimal_event_type_subcontract(
-    version: ModelSemVer,
-) -> ModelEventTypeSubcontract:
-    """
-    Create a minimal valid event type subcontract for compute profiles.
-
-    Provides basic event configuration for compute participation
-    in event-driven workflows.
-    """
-    return ModelEventTypeSubcontract(
-        version=version,
-        primary_events=["compute_started", "compute_completed"],
-        event_categories=["compute", "processing"],
-        publish_events=True,
-        subscribe_events=False,
-        event_routing="default",
-    )
+from ._utils import _create_minimal_event_type_subcontract, _parse_version
 
 
 def get_compute_pure_profile(version: str = "1.0.0") -> ModelContractCompute:
@@ -112,7 +89,11 @@ def get_compute_pure_profile(version: str = "1.0.0") -> ModelContractCompute:
         memory_optimization_enabled=True,
         intermediate_result_caching=False,  # No caching for pure computation
         # Subcontracts
-        event_type=_create_minimal_event_type_subcontract(semver),
+        event_type=_create_minimal_event_type_subcontract(
+            version=semver,
+            primary_events=["compute_started", "compute_completed"],
+            event_categories=["compute", "processing"],
+        ),
         # Execution profile
         execution=ModelExecutionProfile(
             ordering_policy=ModelExecutionOrderingPolicy(

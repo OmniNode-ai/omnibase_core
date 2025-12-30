@@ -22,31 +22,8 @@ from omnibase_core.models.contracts import (
     ModelPerformanceRequirements,
     ModelTransactionConfig,
 )
-from omnibase_core.models.contracts.subcontracts.model_event_type_subcontract import (
-    ModelEventTypeSubcontract,
-)
-from omnibase_core.models.primitives.model_semver import ModelSemVer
 
-from ._utils import _parse_version
-
-
-def _create_minimal_event_type_subcontract(
-    version: ModelSemVer,
-) -> ModelEventTypeSubcontract:
-    """
-    Create a minimal valid event type subcontract for effect profiles.
-
-    Provides basic event configuration for effect participation
-    in event-driven workflows.
-    """
-    return ModelEventTypeSubcontract(
-        version=version,
-        primary_events=["effect_executed", "effect_completed"],
-        event_categories=["effect", "io"],
-        publish_events=True,
-        subscribe_events=False,
-        event_routing="default",
-    )
+from ._utils import _create_minimal_event_type_subcontract, _parse_version
 
 
 def get_effect_idempotent_profile(version: str = "1.0.0") -> ModelContractEffect:
@@ -116,7 +93,11 @@ def get_effect_idempotent_profile(version: str = "1.0.0") -> ModelContractEffect
         audit_trail_enabled=True,
         consistency_validation_enabled=True,
         # Subcontracts
-        event_type=_create_minimal_event_type_subcontract(semver),
+        event_type=_create_minimal_event_type_subcontract(
+            version=semver,
+            primary_events=["effect_executed", "effect_completed"],
+            event_categories=["effect", "io"],
+        ),
         # Execution profile
         execution=ModelExecutionProfile(
             ordering_policy=ModelExecutionOrderingPolicy(
