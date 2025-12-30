@@ -20,6 +20,8 @@ from omnibase_core.constants.constants_field_limits import (
     MAX_NAME_LENGTH,
     MAX_PATH_LENGTH,
 )
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 class ModelEventBusRuntimeState(BaseModel):
@@ -242,7 +244,8 @@ class ModelEventBusRuntimeState(BaseModel):
                 if explicitly set.
 
         Raises:
-            ValueError: If node_name is empty or whitespace-only.
+            ModelOnexError: If node_name is empty or whitespace-only
+                (error code: VALIDATION_FAILED).
 
         Example:
             >>> state = ModelEventBusRuntimeState.create_unbound()
@@ -259,9 +262,12 @@ class ModelEventBusRuntimeState(BaseModel):
             create_bound(): One-step factory for creating a bound instance.
         """
         if not node_name or not node_name.strip():
-            raise ValueError(
-                "node_name must be a non-empty string for binding; "
-                "use reset() to unbind without clearing configuration"
+            raise ModelOnexError(
+                message=(
+                    "node_name must be a non-empty string for binding; "
+                    "use reset() to unbind without clearing configuration"
+                ),
+                error_code=EnumCoreErrorCode.VALIDATION_FAILED,
             )
         self.node_name = node_name
         self.contract_path = contract_path

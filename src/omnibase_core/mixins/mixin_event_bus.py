@@ -54,7 +54,15 @@ Thread Safety:
 import threading
 import uuid
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, Generic, Protocol, TypeVar, cast, runtime_checkable
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Generic,
+    Protocol,
+    TypeVar,
+    cast,
+    runtime_checkable,
+)
 from uuid import UUID
 
 # Generic type parameters for typed event processing
@@ -81,6 +89,7 @@ class ProtocolFromEvent(Protocol):
     def from_event(cls, event: Any) -> Any:
         """Construct an instance from a ModelOnexEvent."""
         ...
+
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_execution_shape import EnumMessageCategory

@@ -290,6 +290,25 @@ affinity = ModelSessionAffinity(hash_algorithm="sha512")  # ✅ Strongest
 
 3. **Fail-Fast Semantics**: Publishing without binding raises `ModelOnexError` immediately.
 
+4. **Input Validation on Binding**: `bind_node_name()` and `bind_contract_path()` now raise `ModelOnexError` for invalid input (empty strings, None values, whitespace-only strings). Previously these might have been silently accepted.
+
+5. **Binding Reset via reset() Method**: To clear a binding, use `ModelEventBusRuntimeState.reset()` instead of binding an empty string. Empty string binding now raises `ModelOnexError`.
+
+6. **Runtime Misuse Detection**: Binding methods now emit warnings if called after the object has been shared across threads (detected via binding lock state). This helps catch thread-safety violations early.
+
+##### New Features
+
+1. **Generic Type Parameters**: `MixinEventBus[InputStateT, OutputStateT]` now supports generic type parameters for type-safe event processing. This enables IDE autocomplete and static type checking for event payloads.
+
+2. **Thread-Safe stop() and dispose()**: `ModelEventBusListenerHandle.stop()` and `dispose_event_bus_resources()` are now fully thread-safe with lock-protected operations. Multiple threads can safely call these methods concurrently (idempotent).
+
+3. **Runtime Misuse Detection**: The mixin now detects and warns about common misuse patterns:
+   - Binding after object is shared across threads
+   - Publishing without proper binding
+   - Listener lifecycle violations
+
+4. **Serializable Runtime State**: `ModelEventBusRuntimeState` is a Pydantic model that can be serialized/deserialized, enabling state persistence and debugging.
+
 ##### Deprecation Timeline
 
 | Version | Status | Changes |
@@ -376,6 +395,38 @@ node_name = self.get_node_name()  # Falls back to class name if not bound
 # Contract path is accessed internally by get_event_patterns()
 ```
 
+###### 5. Clearing Bindings
+
+```python
+# Before (v0.4.x) - Empty string binding (no longer works)
+self.bind_node_name("")  # ❌ Now raises ModelOnexError
+
+# After (v0.5.x) - Use reset() method
+self._event_bus_state.reset()  # ✅ Clears all bindings properly
+
+# Or for selective reset, create a new state:
+from omnibase_core.models.mixins import ModelEventBusRuntimeState
+self._event_bus_state = ModelEventBusRuntimeState()  # Fresh state
+```
+
+###### 6. Handle Input Validation Errors
+
+```python
+# Before (v0.4.x) - Invalid input might be silently accepted
+self.bind_node_name(None)  # Might have worked (undefined behavior)
+self.bind_contract_path("  ")  # Whitespace might have been accepted
+
+# After (v0.5.x) - Invalid input raises ModelOnexError
+from omnibase_core.errors import ModelOnexError
+
+try:
+    self.bind_node_name(user_provided_name)
+except ModelOnexError as e:
+    # Handle invalid input - empty, None, or whitespace-only
+    self.logger.warning(f"Invalid node name: {e}")
+    self.bind_node_name(self.__class__.__name__)  # Use fallback
+```
+
 ##### Thread Safety Notes
 
 | Method/Operation | Thread-Safe? | Notes |
@@ -415,6 +466,10 @@ self.dispose_event_bus_resources()
 - [ ] Update listener management to use `start_event_listener()` / `stop_event_listener()`
 - [ ] Add `dispose_event_bus_resources()` call to shutdown/cleanup methods
 - [ ] Review thread safety requirements - `ModelEventBusListenerHandle` is now thread-safe
+- [ ] **NEW**: Ensure all `bind_*()` calls are in `__init__` before object is shared across threads
+- [ ] **NEW**: Add error handling for `bind_node_name()` and `bind_contract_path()` which now validate input
+- [ ] **NEW**: Replace empty string binding with `ModelEventBusRuntimeState.reset()` to clear bindings
+- [ ] **NEW**: Watch for binding lock warnings indicating thread-safety violations
 
 ### Changed
 - Renamed `ModelOnexEnvelopeV1` to `ModelOnexEnvelope` ()
