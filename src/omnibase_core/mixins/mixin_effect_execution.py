@@ -590,7 +590,8 @@ class MixinEffectExecution:
         except ModelOnexError:
             transaction_state = EnumTransactionState.ROLLED_BACK
             raise
-        except BaseException as e:  # catch-all-ok: top-level error boundary wraps all non-ModelOnexError into structured error
+        except Exception as e:  # fallback-ok: top-level error boundary wraps non-ModelOnexError into structured error
+            # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit/CancelledError to propagate
             transaction_state = EnumTransactionState.ROLLED_BACK
             raise ModelOnexError(
                 message=f"Effect execution failed: {e!s}",
@@ -1374,9 +1375,8 @@ class MixinEffectExecution:
         # Execute handler with resolved context
         try:
             result = await handler.execute(resolved_context)
-        except (
-            BaseException
-        ) as exec_error:  # catch-all-ok: handlers can raise any exception type
+        except Exception as exec_error:  # fallback-ok: handler errors wrapped in ModelOnexError
+            # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit/CancelledError to propagate
             raise ModelOnexError(
                 message=f"Handler execution failed for {handler_protocol}: {exec_error!s}",
                 error_code=EnumCoreErrorCode.HANDLER_EXECUTION_ERROR,
