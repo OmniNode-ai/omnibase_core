@@ -1375,7 +1375,9 @@ class MixinEffectExecution:
         # Execute handler with resolved context
         try:
             result = await handler.execute(resolved_context)
-        except Exception as exec_error:  # fallback-ok: handler errors wrapped in ModelOnexError
+        except (
+            Exception
+        ) as exec_error:  # fallback-ok: handler errors wrapped in ModelOnexError
             # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit/CancelledError to propagate
             raise ModelOnexError(
                 message=f"Handler execution failed for {handler_protocol}: {exec_error!s}",
