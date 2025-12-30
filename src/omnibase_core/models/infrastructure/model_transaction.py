@@ -84,9 +84,8 @@ class ModelTransaction:
                         "transaction_id": str(self.transaction_id),
                     },
                 )
-            except (
-                Exception
-            ) as e:  # cleanup-resilience-ok: ensures all rollback ops are attempted
+            # cleanup-resilience-ok: ensures all rollback ops are attempted
+            except Exception as e:
                 # Catch all Exception subclasses (including MemoryError, OSError, etc.)
                 # to ensure all rollback operations are attempted even if one fails.
                 # BaseException subclasses (KeyboardInterrupt, SystemExit, GeneratorExit)

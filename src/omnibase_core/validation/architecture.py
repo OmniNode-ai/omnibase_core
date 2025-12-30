@@ -128,7 +128,8 @@ def validate_one_model_per_file(file_path: Path) -> list[str]:
         errors.append(f"❌ Syntax error: {e}")
     except (ValueError, UnicodeDecodeError, OSError) as e:
         errors.append(f"❌ Parse error: {e}")
-    except Exception as e:  # fallback-ok: validation should report errors, not crash
+    except (TypeError, RecursionError, MemoryError) as e:
+        # Handle AST parsing edge cases: malformed input, deeply nested code, large files
         errors.append(f"❌ Unexpected error: {e}")
 
     return errors

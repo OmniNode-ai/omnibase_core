@@ -61,12 +61,17 @@ def extract_protocol_signature(file_path: Path) -> ModelProtocolInfo | None:
             f"line {e.lineno}, offset {e.offset}: {e.msg}",
         )
         return None
-    except (
-        Exception
-    ):  # fallback-ok: File processing errors should not stop the entire validation process
-        # This is a safety net for truly unexpected errors.
-        # logger.exception provides a full stack trace.
-        logger.exception(f"Unexpected error processing {file_path}. Skipping file.")
+    except ValueError as e:
+        # ast.parse raises ValueError for source containing null bytes
+        logger.warning(f"Invalid source content in {file_path}: {e}. Skipping file.")
+        return None
+    except RecursionError:
+        # Deeply nested AST structures can exceed recursion limit
+        logger.warning(f"Recursion limit exceeded parsing {file_path}. Skipping file.")
+        return None
+    except MemoryError:
+        # Extremely large files may exhaust memory during AST parsing
+        logger.warning(f"Memory exhausted parsing {file_path}. Skipping file.")
         return None
 
 

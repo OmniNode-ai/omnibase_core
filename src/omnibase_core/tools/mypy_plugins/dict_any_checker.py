@@ -120,9 +120,7 @@ class DictAnyCheckerPlugin(Plugin):
             "allow_decorator": self.ALLOW_DECORATOR,
         }
 
-    def get_function_hook(
-        self, fullname: str
-    ) -> None:  # pyright: ignore[reportReturnType]  # stub-ok: mypy plugin API
+    def get_function_hook(self, fullname: str) -> None:  # pyright: ignore[reportReturnType]  # stub-ok: mypy plugin API
         """
         Return a hook for function calls if needed.
 
@@ -138,9 +136,7 @@ class DictAnyCheckerPlugin(Plugin):
         """
         return
 
-    def get_method_hook(
-        self, fullname: str
-    ) -> None:  # pyright: ignore[reportReturnType]  # stub-ok: mypy plugin API
+    def get_method_hook(self, fullname: str) -> None:  # pyright: ignore[reportReturnType]  # stub-ok: mypy plugin API
         """
         Return a hook for method calls if needed.
 
@@ -421,7 +417,6 @@ class DictAnyCheckerPlugin(Plugin):
             AttributeError,
             KeyError,
             TypeError,
-            RuntimeError,
             IndexError,
         ):
             pass
@@ -484,7 +479,6 @@ class DictAnyCheckerPlugin(Plugin):
             AttributeError,
             KeyError,
             TypeError,
-            RuntimeError,
         ):
             pass
 
@@ -561,7 +555,6 @@ class DictAnyCheckerPlugin(Plugin):
             AttributeError,
             KeyError,
             TypeError,
-            RuntimeError,
             IndexError,
         ):
             pass

@@ -190,9 +190,7 @@ class MixinHealthCheck:
                     {"check_name": check_func.__name__, "status": result.status},
                 )
 
-            except (
-                Exception
-            ) as e:  # fallback-ok: health check should return UNHEALTHY status, not crash
+            except Exception as e:  # fallback-ok: health check should return UNHEALTHY status, not crash
                 # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
                 emit_log_event(
                     LogLevel.ERROR,
@@ -373,9 +371,7 @@ class MixinHealthCheck:
                     for issue in result.issues:
                         messages.append(f"{check_name}: {issue.message}")
 
-            except (
-                Exception
-            ) as e:  # fallback-ok: async health check should return UNHEALTHY status, not crash
+            except Exception as e:  # fallback-ok: async health check should return UNHEALTHY status, not crash
                 # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
                 emit_log_event(
                     LogLevel.ERROR,

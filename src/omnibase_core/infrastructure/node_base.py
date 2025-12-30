@@ -158,13 +158,10 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
             # Re-raise ONEX errors without wrapping to preserve original error code/context
             self._emit_initialization_failure(e)
             raise
-        except (  # init-errors-ok: these exceptions are legitimate initialization failures
-            ValueError,
-            TypeError,
-            AttributeError,
-            RuntimeError,
-            OSError,  # Required: FileNotFoundError for missing contract files in _load_contract_and_initialize
-        ) as e:
+        except (
+            Exception
+        ) as e:  # init-errors-ok: top-level error boundary for node initialization
+            # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
             self._emit_initialization_failure(e)
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.OPERATION_FAILED,
