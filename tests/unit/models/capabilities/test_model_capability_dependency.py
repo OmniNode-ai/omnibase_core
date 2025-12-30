@@ -474,3 +474,62 @@ class TestModelCapabilityDependencyFromAttributes:
         dep = ModelCapabilityDependency.model_validate(MockDep())
         assert dep.alias == "db"
         assert dep.capability == "database.relational"
+
+
+@pytest.mark.unit
+class TestModelCapabilityDependencyCaching:
+    """Tests for capability parsing cache behavior."""
+
+    def test_capability_parts_are_cached(self) -> None:
+        """Test that capability parts are computed once and cached.
+
+        The _cached_capability_parts PrivateAttr should be None before first access
+        and populated after accessing any of domain/capability_type/variant.
+        """
+        dep = ModelCapabilityDependency(
+            alias="store", capability="object.storage.s3.compatible"
+        )
+        # Before any property access, cache should be None
+        assert dep._cached_capability_parts is None
+
+        # Access domain (triggers parsing)
+        _ = dep.domain
+        # Now cache should be populated
+        assert dep._cached_capability_parts is not None
+        assert dep._cached_capability_parts == ("object", "storage", "s3.compatible")
+
+    def test_multiple_property_accesses_use_same_cache(self) -> None:
+        """Test that multiple property accesses use the same cached tuple."""
+        dep = ModelCapabilityDependency(alias="db", capability="database.relational")
+
+        # Access all properties
+        domain = dep.domain
+        cap_type = dep.capability_type
+        variant = dep.variant
+
+        # Verify correctness
+        assert domain == "database"
+        assert cap_type == "relational"
+        assert variant is None
+
+        # Verify all came from the same cached tuple
+        cached = dep._cached_capability_parts
+        assert cached is not None
+        assert cached[0] == domain
+        assert cached[1] == cap_type
+        assert cached[2] == variant
+
+    def test_cache_stability_across_repeated_accesses(self) -> None:
+        """Test that repeated accesses return consistent values from cache."""
+        dep = ModelCapabilityDependency(alias="vec", capability="storage.vector.qdrant")
+
+        # Multiple accesses should all use the same cached tuple
+        for _ in range(10):
+            assert dep.domain == "storage"
+            assert dep.capability_type == "vector"
+            assert dep.variant == "qdrant"
+
+        # Cache object identity should remain stable
+        cache_ref = dep._cached_capability_parts
+        _ = dep.domain
+        assert dep._cached_capability_parts is cache_ref

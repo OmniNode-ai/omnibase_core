@@ -69,7 +69,7 @@ Thread Safety:
 import re
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.capabilities.model_requirement_set import ModelRequirementSet
@@ -182,6 +182,14 @@ class ModelCapabilityDependency(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
+    # Private cache for parsed capability parts - PrivateAttr allows mutation on frozen models.
+    # Caching is safe because the model is frozen (immutable after creation) -
+    # the capability field never changes, so the parsed parts are stable.
+    # tuple[str, str, str | None] = (domain, capability_type, variant)
+    _cached_capability_parts: tuple[str, str, str | None] | None = PrivateAttr(
+        default=None
+    )
+
     alias: str = Field(
         ...,
         description="Local name for binding (e.g., 'db', 'cache', 'vectors')",
@@ -279,6 +287,26 @@ class ModelCapabilityDependency(BaseModel):
             )
         return v
 
+    def _get_capability_parts(self) -> tuple[str, str, str | None]:
+        """Get or create the cached parsed capability parts.
+
+        This internal method manages the cache for capability parsing. Caching is
+        safe because the model is frozen (immutable) - the capability field never
+        changes after construction, so the parsed parts are stable.
+
+        Returns:
+            tuple[str, str, str | None]: (domain, capability_type, variant)
+        """
+        if self._cached_capability_parts is None:
+            # Safe: field_validator guarantees capability matches _CAPABILITY_PATTERN,
+            # which requires at least two tokens (pattern: ^[a-z0-9]+(\.[a-z0-9]+)+$)
+            parts = self.capability.split(".")
+            domain = parts[0]
+            capability_type = parts[1]
+            variant = ".".join(parts[2:]) if len(parts) > 2 else None
+            self._cached_capability_parts = (domain, capability_type, variant)
+        return self._cached_capability_parts
+
     @property
     def domain(self) -> str:
         """
@@ -287,14 +315,16 @@ class ModelCapabilityDependency(BaseModel):
         Returns:
             The domain portion of the capability.
 
+        Performance Note:
+            The capability string is parsed once and cached. Subsequent accesses
+            to domain, capability_type, and variant reuse the cached parts.
+
         Examples:
             >>> dep = ModelCapabilityDependency(alias="db", capability="database.relational")
             >>> dep.domain
             'database'
         """
-        # Safe: field_validator guarantees capability matches _CAPABILITY_PATTERN,
-        # which requires at least one dot separator (pattern: ^[a-z0-9]+(\.[a-z0-9]+)+$)
-        return self.capability.split(".")[0]
+        return self._get_capability_parts()[0]
 
     @property
     def capability_type(self) -> str:
@@ -304,14 +334,16 @@ class ModelCapabilityDependency(BaseModel):
         Returns:
             The type portion of the capability.
 
+        Performance Note:
+            The capability string is parsed once and cached. Subsequent accesses
+            to domain, capability_type, and variant reuse the cached parts.
+
         Examples:
             >>> dep = ModelCapabilityDependency(alias="db", capability="database.relational")
             >>> dep.capability_type
             'relational'
         """
-        # Safe: field_validator guarantees capability matches _CAPABILITY_PATTERN,
-        # which requires at least two tokens (pattern enforces at least one dot)
-        return self.capability.split(".")[1]
+        return self._get_capability_parts()[1]
 
     @property
     def variant(self) -> str | None:
@@ -321,6 +353,10 @@ class ModelCapabilityDependency(BaseModel):
         Returns:
             The variant portion if present, None otherwise.
 
+        Performance Note:
+            The capability string is parsed once and cached. Subsequent accesses
+            to domain, capability_type, and variant reuse the cached parts.
+
         Examples:
             >>> dep1 = ModelCapabilityDependency(alias="db", capability="database.relational")
             >>> dep1.variant is None
@@ -329,10 +365,7 @@ class ModelCapabilityDependency(BaseModel):
             >>> dep2.variant
             'redis'
         """
-        parts = self.capability.split(".")
-        if len(parts) > 2:
-            return ".".join(parts[2:])
-        return None
+        return self._get_capability_parts()[2]
 
     @property
     def has_requirements(self) -> bool:
