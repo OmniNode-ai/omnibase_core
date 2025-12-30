@@ -85,11 +85,16 @@ class ModelTransaction:
                     },
                 )
             # cleanup-resilience-ok: ensures all rollback ops are attempted
-            except Exception as e:
-                # Catch all Exception subclasses (including MemoryError, OSError, etc.)
-                # to ensure all rollback operations are attempted even if one fails.
-                # BaseException subclasses (KeyboardInterrupt, SystemExit, GeneratorExit)
-                # propagate through. asyncio.CancelledError is handled separately above.
+            except BaseException as e:
+                # Re-raise process signals immediately to honor termination requests.
+                # KeyboardInterrupt and SystemExit indicate the process should stop.
+                if isinstance(e, (KeyboardInterrupt, SystemExit)):
+                    raise
+                # Catch all other exceptions (Exception subclasses like MemoryError,
+                # OSError, etc., plus GeneratorExit) to ensure all rollback operations
+                # are attempted even if one fails. asyncio.CancelledError is a
+                # BaseException subclass but is handled separately above and re-raised
+                # after all rollback operations complete to honor task cancellation.
                 emit_log_event(
                     LogLevel.ERROR,
                     f"Rollback operation failed during cleanup: {e!s}",

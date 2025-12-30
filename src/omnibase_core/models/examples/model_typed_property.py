@@ -78,8 +78,11 @@ class ModelTypedProperty(BaseModel):
                 return cast("T", self.value.as_bool())
             if isinstance(self.value.value, expected_type):
                 return self.value.value
-        except (AttributeError, ValueError, TypeError, AssertionError, ModelOnexError):
+        except (ValueError, AssertionError, ModelOnexError):
             # fallback-ok: type conversion failures return default value
+            # ValueError: int()/float() conversion of invalid strings
+            # AssertionError: assert statements in accessor methods
+            # ModelOnexError: explicit type conversion errors from accessors
             pass
         return default
 

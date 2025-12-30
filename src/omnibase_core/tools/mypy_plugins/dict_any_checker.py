@@ -417,7 +417,6 @@ class DictAnyCheckerPlugin(Plugin):
             AttributeError,
             KeyError,
             TypeError,
-            IndexError,
         ):
             pass
 
@@ -555,7 +554,6 @@ class DictAnyCheckerPlugin(Plugin):
             AttributeError,
             KeyError,
             TypeError,
-            IndexError,
         ):
             pass
 
