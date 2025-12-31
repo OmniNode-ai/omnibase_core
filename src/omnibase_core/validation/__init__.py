@@ -68,6 +68,13 @@ from .circular_import_validator import CircularImportValidator
 # ModelValidationSuite is available via __getattr__ (emits deprecation warning)
 from .cli import ServiceValidationSuite
 
+# Import contract validation invariant checker (OMN-1146)
+from .contract_validation_invariant_checker import (
+    ContractValidationEventType,
+    ContractValidationInvariantChecker,
+    ModelContractValidationEvent,
+)
+
 # =============================================================================
 # ALIAS LOADING STRATEGY: __getattr__ vs Direct Alias
 # =============================================================================
@@ -208,12 +215,6 @@ def __getattr__(name: str) -> type:
     )
 
 
-# Import contract validation invariant checker (OMN-1146)
-from .contract_validation_invariant_checker import (
-    ContractValidationEventType,
-    ContractValidationInvariantChecker,
-    ModelContractValidationEvent,
-)
 from .contracts import (
     validate_contracts_directory,
     validate_no_manual_yaml,

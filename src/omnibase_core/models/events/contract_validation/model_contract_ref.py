@@ -44,6 +44,7 @@ class ModelContractRef(BaseModel):
 
     contract_id: str = Field(
         ...,
+        min_length=1,
         description="Stable identifier for the contract",
     )
     path: Path | None = Field(
