@@ -35,6 +35,7 @@ class TestContractPatchValidator:
         """Create a profile reference fixture."""
         return ModelProfileReference(profile="compute_pure", version="1.0.0")
 
+    @pytest.mark.unit
     def test_validate_minimal_patch(
         self, validator: ContractPatchValidator, profile_ref: ModelProfileReference
     ) -> None:
@@ -44,6 +45,7 @@ class TestContractPatchValidator:
         assert result.is_valid is True
         assert result.error_count == 0
 
+    @pytest.mark.unit
     def test_validate_new_contract_patch(
         self, validator: ContractPatchValidator, profile_ref: ModelProfileReference
     ) -> None:
@@ -58,6 +60,7 @@ class TestContractPatchValidator:
         # Should have info about new contract identity
         assert any("NEW_CONTRACT_IDENTITY" in str(i.code) for i in result.issues)
 
+    @pytest.mark.unit
     def test_validate_empty_descriptor_warning(
         self, validator: ContractPatchValidator, profile_ref: ModelProfileReference
     ) -> None:
@@ -70,6 +73,7 @@ class TestContractPatchValidator:
         assert result.is_valid is True  # Warning, not error
         assert any("EMPTY_DESCRIPTOR_PATCH" in str(i.code) for i in result.issues)
 
+    @pytest.mark.unit
     def test_validate_purity_idempotent_warning(
         self, validator: ContractPatchValidator, profile_ref: ModelProfileReference
     ) -> None:
@@ -85,6 +89,7 @@ class TestContractPatchValidator:
         assert result.is_valid is True  # Warning, not error
         assert any("PURITY_IDEMPOTENT_MISMATCH" in str(i.code) for i in result.issues)
 
+    @pytest.mark.unit
     def test_validate_conflicting_handlers(
         self, validator: ContractPatchValidator, profile_ref: ModelProfileReference
     ) -> None:
@@ -105,6 +110,7 @@ class TestContractPatchValidator:
             )
         assert "Conflicting add/remove" in str(exc_info.value)
 
+    @pytest.mark.unit
     def test_validate_conflicting_dependencies(
         self, validator: ContractPatchValidator, profile_ref: ModelProfileReference
     ) -> None:
@@ -125,6 +131,7 @@ class TestContractPatchValidator:
             )
         assert "Conflicting add/remove" in str(exc_info.value)
 
+    @pytest.mark.unit
     def test_validate_conflicting_events(
         self, validator: ContractPatchValidator, profile_ref: ModelProfileReference
     ) -> None:
@@ -143,6 +150,7 @@ class TestContractPatchValidator:
             )
         assert "Conflicting add/remove" in str(exc_info.value)
 
+    @pytest.mark.unit
     def test_validate_conflicting_capability_inputs(
         self, validator: ContractPatchValidator, profile_ref: ModelProfileReference
     ) -> None:
@@ -163,6 +171,7 @@ class TestContractPatchValidator:
         # Check that the error message mentions the conflicting capability
         assert "database_read" in str(exc_info.value)
 
+    @pytest.mark.unit
     def test_validate_conflicting_capability_outputs(
         self, validator: ContractPatchValidator, profile_ref: ModelProfileReference
     ) -> None:
@@ -189,6 +198,7 @@ class TestContractPatchValidator:
         # Check that the error message mentions the conflicting capability
         assert "file_write" in str(exc_info.value)
 
+    @pytest.mark.unit
     def test_validate_capability_no_conflict_different_items(
         self, validator: ContractPatchValidator, profile_ref: ModelProfileReference
     ) -> None:
@@ -212,6 +222,7 @@ class TestContractPatchValidator:
             "CONFLICTING_LIST_OPERATIONS" in str(i.code) for i in result.issues
         )
 
+    @pytest.mark.unit
     def test_validate_non_standard_profile_warning(
         self, validator: ContractPatchValidator
     ) -> None:
@@ -226,6 +237,7 @@ class TestContractPatchValidator:
         assert result.is_valid is True  # Warning, not error
         assert any("NON_STANDARD_PROFILE_NAME" in str(i.code) for i in result.issues)
 
+    @pytest.mark.unit
     def test_validate_non_standard_version_warning(
         self, validator: ContractPatchValidator
     ) -> None:
@@ -240,6 +252,7 @@ class TestContractPatchValidator:
         assert result.is_valid is True  # Warning, not error
         assert any("NON_STANDARD_VERSION_FORMAT" in str(i.code) for i in result.issues)
 
+    @pytest.mark.unit
     def test_validate_dict_valid(self, validator: ContractPatchValidator) -> None:
         """Test validate_dict with valid data."""
         data = {
@@ -252,6 +265,7 @@ class TestContractPatchValidator:
         assert result.validated_value is not None
         assert result.validated_value.name == "my_handler"
 
+    @pytest.mark.unit
     def test_validate_dict_invalid_structure(
         self, validator: ContractPatchValidator
     ) -> None:
@@ -264,6 +278,7 @@ class TestContractPatchValidator:
         assert result.is_valid is False
         assert any("PYDANTIC_VALIDATION_ERROR" in str(i.code) for i in result.issues)
 
+    @pytest.mark.unit
     def test_validate_dict_missing_extends(
         self, validator: ContractPatchValidator
     ) -> None:
@@ -272,6 +287,7 @@ class TestContractPatchValidator:
         result = validator.validate_dict(data)
         assert result.is_valid is False
 
+    @pytest.mark.unit
     def test_validate_file_valid(
         self, validator: ContractPatchValidator, tmp_path: Path
     ) -> None:
@@ -288,12 +304,14 @@ class TestContractPatchValidator:
         assert result.is_valid is True
         assert result.validated_value is not None
 
+    @pytest.mark.unit
     def test_validate_file_not_found(self, validator: ContractPatchValidator) -> None:
         """Test validate_file with non-existent file."""
         result = validator.validate_file(Path("/non/existent/file.yaml"))
         assert result.is_valid is False
         assert any("FILE_NOT_FOUND" in str(i.code) for i in result.issues)
 
+    @pytest.mark.unit
     def test_validate_file_wrong_extension_warning(
         self, validator: ContractPatchValidator, tmp_path: Path
     ) -> None:
@@ -308,6 +326,7 @@ class TestContractPatchValidator:
         # Should still validate but warn about extension
         assert any("UNEXPECTED_EXTENSION" in str(i.code) for i in result.issues)
 
+    @pytest.mark.unit
     def test_validate_file_invalid_yaml(
         self, validator: ContractPatchValidator, tmp_path: Path
     ) -> None:
@@ -322,6 +341,7 @@ class TestContractPatchValidator:
             "YAML" in str(i.code) or "VALIDATION" in str(i.code) for i in result.issues
         )
 
+    @pytest.mark.unit
     def test_validate_file_not_dict(
         self, validator: ContractPatchValidator, tmp_path: Path
     ) -> None:
@@ -336,10 +356,12 @@ class TestContractPatchValidator:
             "VALIDATION" in str(i.code) or "YAML" in str(i.code) for i in result.issues
         )
 
+    @pytest.mark.unit
     def test_protocol_conformance(self, validator: ContractPatchValidator) -> None:
         """Test that validator conforms to ProtocolPatchValidator."""
         assert isinstance(validator, ProtocolPatchValidator)
 
+    @pytest.mark.unit
     def test_validate_complex_patch(
         self, validator: ContractPatchValidator, profile_ref: ModelProfileReference
     ) -> None:
@@ -364,6 +386,7 @@ class TestContractPatchValidator:
         result = validator.validate(patch)
         assert result.is_valid is True
 
+    @pytest.mark.unit
     def test_validate_duplicate_capability_outputs(
         self, validator: ContractPatchValidator, profile_ref: ModelProfileReference
     ) -> None:
@@ -381,6 +404,7 @@ class TestContractPatchValidator:
         assert any("DUPLICATE_LIST_ENTRIES" in str(i.code) for i in result.issues)
         assert any("event_emit" in str(i.message) for i in result.issues)
 
+    @pytest.mark.unit
     def test_validate_duplicate_capability_inputs(
         self, validator: ContractPatchValidator, profile_ref: ModelProfileReference
     ) -> None:
@@ -398,6 +422,7 @@ class TestContractPatchValidator:
         assert any("DUPLICATE_LIST_ENTRIES" in str(i.code) for i in result.issues)
         assert any("http_client" in str(i.message) for i in result.issues)
 
+    @pytest.mark.unit
     def test_validate_unique_capability_outputs_passes(
         self, validator: ContractPatchValidator, profile_ref: ModelProfileReference
     ) -> None:
@@ -414,6 +439,7 @@ class TestContractPatchValidator:
         assert result.is_valid is True
         assert not any("DUPLICATE_LIST_ENTRIES" in str(i.code) for i in result.issues)
 
+    @pytest.mark.unit
     def test_validate_unique_capability_inputs_passes(
         self, validator: ContractPatchValidator, profile_ref: ModelProfileReference
     ) -> None:
@@ -430,6 +456,7 @@ class TestContractPatchValidator:
         assert result.is_valid is True
         assert not any("DUPLICATE_LIST_ENTRIES" in str(i.code) for i in result.issues)
 
+    @pytest.mark.unit
     def test_validate_multiple_duplicate_capabilities(
         self, validator: ContractPatchValidator, profile_ref: ModelProfileReference
     ) -> None:
@@ -450,3 +477,38 @@ class TestContractPatchValidator:
         # Both duplicates should be reported
         assert any("cap_a" in str(i.message) for i in result.issues)
         assert any("cap_b" in str(i.message) for i in result.issues)
+
+    @pytest.mark.unit
+    def test_validate_duplicate_consumed_events(
+        self, validator: ContractPatchValidator, profile_ref: ModelProfileReference
+    ) -> None:
+        """Test error for duplicate consumed events in add list."""
+        patch = ModelContractPatch(
+            extends=profile_ref,
+            consumed_events__add=[
+                "user.created",
+                "order.completed",
+                "user.created",  # Duplicate
+            ],
+        )
+        result = validator.validate(patch)
+        assert result.is_valid is False
+        assert any("DUPLICATE_LIST_ENTRIES" in str(i.code) for i in result.issues)
+        assert any("user.created" in str(i.message) for i in result.issues)
+
+    @pytest.mark.unit
+    def test_validate_unique_consumed_events_passes(
+        self, validator: ContractPatchValidator, profile_ref: ModelProfileReference
+    ) -> None:
+        """Test that unique consumed events pass validation."""
+        patch = ModelContractPatch(
+            extends=profile_ref,
+            consumed_events__add=[
+                "user.created",
+                "order.completed",
+                "payment.processed",
+            ],
+        )
+        result = validator.validate(patch)
+        assert result.is_valid is True
+        assert not any("DUPLICATE_LIST_ENTRIES" in str(i.code) for i in result.issues)

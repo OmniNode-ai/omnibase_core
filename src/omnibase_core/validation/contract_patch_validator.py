@@ -331,6 +331,7 @@ class ContractPatchValidator:
             - dependencies__add (duplicate dependency names)
             - capability_outputs__add (duplicate capability names)
             - capability_inputs__add (duplicate input names)
+            - consumed_events__add (duplicate event type names)
 
         Args:
             patch: The contract patch to validate.
@@ -392,6 +393,20 @@ class ContractPatchValidator:
             if duplicate_inputs:
                 result.add_error(
                     f"Duplicate capability input(s) in add list: {duplicate_inputs}",
+                    code="DUPLICATE_LIST_ENTRIES",
+                )
+
+        # Check for duplicate consumed events within __add
+        if patch.consumed_events__add:
+            seen_events: set[str] = set()
+            duplicate_events: set[str] = set()
+            for event in patch.consumed_events__add:
+                if event in seen_events:
+                    duplicate_events.add(event)
+                seen_events.add(event)
+            if duplicate_events:
+                result.add_error(
+                    f"Duplicate consumed event(s) in add list: {duplicate_events}",
                     code="DUPLICATE_LIST_ENTRIES",
                 )
 

@@ -102,13 +102,15 @@ class ModelDescriptorPatch(BaseModel):
     # that could cause resource exhaustion or effectively disable timeouts
     MAX_TIMEOUT_MS: ClassVar[int] = 3_600_000
 
+    # Note: le= must use literal value because Pydantic Field() evaluates at class
+    # definition time before ClassVar is available. Keep in sync with MAX_TIMEOUT_MS.
     timeout_ms: int | None = Field(
         default=None,
         ge=0,
-        le=3_600_000,  # 1 hour max
+        le=3_600_000,
         description=(
             "Override handler timeout in milliseconds. "
-            "Maximum allowed value is 3,600,000 (1 hour)."
+            "Maximum allowed value is 3,600,000 (1 hour). See MAX_TIMEOUT_MS."
         ),
     )
 

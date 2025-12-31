@@ -1,7 +1,7 @@
 # Contract Patching Guide
 
-**Version**: 1.0.0
-**Last Updated**: 2025-12-30
+**Version**: 1.0.1
+**Last Updated**: 2025-12-31
 **Status**: Comprehensive Reference
 
 > **New in v0.4.0**: Contract patches provide a declarative way to extend base contracts produced by profile factories. This guide explains the patching system architecture, model reference, and end-to-end usage examples.
@@ -24,7 +24,7 @@
 
 Contract patching is a system that allows you to extend base contracts with partial specifications rather than writing complete contracts from scratch. The core principle is:
 
-> **"User authored files are patches, not full contracts."**
+> **"User-authored files are patches, not full contracts."**
 
 Instead of manually configuring dozens of fields with complex interdependencies, you:
 
@@ -159,7 +159,7 @@ patch = ModelContractPatch(
     description=...,          # Optional: Description override
     input_model=...,          # Optional: Input model reference
     output_model=...,         # Optional: Output model reference
-    descriptor=...,           # Optional: Behavior overrides
+    descriptor=...,           # Optional: Behavior overrides (ModelDescriptorPatch)
     handlers__add=...,        # Optional: Handlers to add
     handlers__remove=...,     # Optional: Handler names to remove
     dependencies__add=...,    # Optional: Dependencies to add
@@ -198,14 +198,14 @@ ref = ModelProfileReference(
 | `>=1.0.0` | Minimum version | 1.0.0 or higher |
 | `~1.0.0` | Approximate version | ~1.0.x |
 
-### ModelDescriptorPatch
+### ModelDescriptorPatch (Behavior Patch)
 
-Partial behavior overrides for handler settings.
+Partial behavior overrides for handler settings. This model is used in the `descriptor` field of `ModelContractPatch`. The field name is "descriptor" for historical reasons, but it conceptually represents handler behavior configuration.
 
 ```python
 from omnibase_core.models.contracts.model_descriptor_patch import ModelDescriptorPatch
 
-descriptor = ModelDescriptorPatch(
+behavior = ModelDescriptorPatch(
     purity="pure",                        # "pure" | "side_effecting"
     idempotent=True,                      # Safe to retry?
     timeout_ms=30000,                     # Max execution time
@@ -280,6 +280,39 @@ model_class = ref.resolve()  # Returns the actual class or None
 ## Profile Reference
 
 Profiles are pre-configured contract templates for each node type. Use the profile that best matches your use case.
+
+### Profile Naming Conventions
+
+Profiles follow a consistent naming pattern:
+
+```text
+{node_type}_{variant}
+```
+
+| Component | Description | Examples |
+|-----------|-------------|----------|
+| **node_type** | The ONEX node type (lowercase) | `compute`, `effect`, `reducer`, `orchestrator` |
+| **variant** | Specific behavior pattern | `pure`, `stateful`, `http`, `kafka`, `fsm`, `saga` |
+
+**Standard Profile Names**:
+
+| Profile | Purpose |
+|---------|---------|
+| `compute_pure` | Pure, side-effect-free computation (caching safe, parallelizable) |
+| `compute_stateful` | Computation with internal state (aggregations, caching) |
+| `effect_http` | HTTP/REST API interactions with retry and circuit breaker |
+| `effect_kafka` | Kafka/message queue producers with idempotency and audit |
+| `effect_db` | Database operations with transaction isolation and audit |
+| `orchestrator_safe` | Conservative serial execution (debugging, critical paths) |
+| `orchestrator_full` | Full parallel execution (independent steps, high performance) |
+| `reducer_fsm` | Finite state machine for entity lifecycles and approvals |
+| `reducer_saga` | Saga pattern for distributed compensating transactions |
+
+**Naming Rules** (enforced with warnings):
+
+- Use lowercase letters only
+- Use underscores to separate words (not hyphens or camelCase)
+- Format: `{node_type}_{variant}` (e.g., `effect_http`, not `HttpEffect`)
 
 ### Compute Profiles
 
@@ -727,33 +760,53 @@ order_processor_patch = ModelContractPatch(
 
 ### What Gets Validated
 
-The `ContractPatchValidator` performs validation at three levels:
+Validation occurs at two stages: during Pydantic model construction and during `ContractPatchValidator` semantic checks.
 
-#### 1. Structural Validation (via Pydantic)
+#### 1. Pydantic Model Validation (Automatic)
 
-- **Field Types**: All fields match expected types
-- **Required Fields**: `extends` is always required
-- **Extra Fields**: Unknown fields are rejected (`extra="forbid"`)
-- **Constraints**: min_length, max_length, ge, le, etc.
+These validations run automatically when a `ModelContractPatch` is constructed:
 
-#### 2. Semantic Validation
+| Check | Description | Raised As |
+|-------|-------------|-----------|
+| **Field Types** | All fields match expected types | `ValidationError` |
+| **Required Fields** | `extends` is always required | `ValidationError` |
+| **Extra Fields** | Unknown fields are rejected (`extra="forbid"`) | `ValidationError` |
+| **Constraints** | min_length, max_length, ge, le, etc. | `ValidationError` |
+| **Identity Consistency** | If `name` is set, `node_version` must also be set (and vice versa) | `ValueError` |
+| **Add/Remove Conflicts** | Same item cannot appear in both `__add` and `__remove` | `ValueError` |
+| **Behavior Consistency** | Cannot enable retries with `timeout_ms=0` or `idempotent=False` | `ValueError` |
 
-| Check | Description | Error Code |
-|-------|-------------|------------|
-| Identity Consistency | If `name` is set, `node_version` must also be set (and vice versa) | `IDENTITY_INCONSISTENT` |
-| Add/Remove Conflicts | Same item cannot appear in both `__add` and `__remove` | `CONFLICTING_LIST_OPERATIONS` |
-| Duplicate Entries | Items in `__add` lists must be unique | `DUPLICATE_LIST_ENTRIES` |
-| Empty Descriptor | Warning if descriptor patch has no overrides | `EMPTY_DESCRIPTOR_PATCH` |
-| Purity/Idempotent | Warning if `purity="pure"` but `idempotent=False` | `PURITY_IDEMPOTENT_MISMATCH` |
+#### 2. ContractPatchValidator Semantic Checks
 
-#### 3. Format Validation
+These run when you call `validator.validate(patch)`:
+
+| Check | Severity | Error Code |
+|-------|----------|------------|
+| Duplicate handlers in `handlers__add` | Error | `DUPLICATE_LIST_ENTRIES` |
+| Duplicate dependencies in `dependencies__add` | Error | `DUPLICATE_LIST_ENTRIES` |
+| Duplicate capabilities in `capability_outputs__add` | Error | `DUPLICATE_LIST_ENTRIES` |
+| Duplicate inputs in `capability_inputs__add` | Error | `DUPLICATE_LIST_ENTRIES` |
+| Empty behavior patch (no overrides) | Warning | `EMPTY_DESCRIPTOR_PATCH` |
+| `purity="pure"` with `idempotent=False` | Warning | `PURITY_IDEMPOTENT_MISMATCH` |
+
+#### 3. Format Validation (Warnings)
 
 | Check | Description | Error Code |
 |-------|-------------|------------|
 | Profile Name | Should be lowercase_with_underscores | `NON_STANDARD_PROFILE_NAME` |
 | Version Format | Should contain digits (semver) | `NON_STANDARD_VERSION_FORMAT` |
-| Handler Names | Alphanumeric and underscores only | `INVALID_HANDLER_NAME` |
-| Import Paths | Valid Python dotted paths | `INVALID_IMPORT_PATH` |
+
+#### 4. File Validation Error Codes
+
+When using `validate_file()`:
+
+| Condition | Error Code |
+|-----------|------------|
+| File does not exist | `FILE_NOT_FOUND` |
+| Cannot read file | `FILE_READ_ERROR` |
+| Non-.yaml/.yml extension | `UNEXPECTED_EXTENSION` (warning) |
+| YAML parsing or validation error | `YAML_VALIDATION_ERROR` |
+| Pydantic validation error | `PYDANTIC_VALIDATION_ERROR` |
 
 ### What Is NOT Validated (Deferred)
 
@@ -973,6 +1026,6 @@ patch = ModelContractPatch(
 
 ---
 
-**Last Updated**: 2025-12-30
-**Version**: 1.0.0
+**Last Updated**: 2025-12-31
+**Version**: 1.0.1
 **Maintainer**: ONEX Framework Team

@@ -168,6 +168,7 @@ def validate_string_list(
     *,
     min_length: int = 1,
     strip_whitespace: bool = True,
+    reject_empty_list: bool = False,
 ) -> list[str] | None:
     """Validate a list of strings, ensuring no empty values.
 
@@ -179,12 +180,15 @@ def validate_string_list(
         field_name: Name of the field being validated (for error messages).
         min_length: Minimum length for each string after stripping.
         strip_whitespace: If True, strip whitespace from each value.
+        reject_empty_list: If True, raise ValueError for empty lists.
+            Use for add/remove operations where an empty list is likely a user error.
 
     Returns:
         Validated list of strings, or None if input was None.
 
     Raises:
-        ValueError: If any string is empty or too short after processing.
+        ValueError: If any string is empty or too short after processing,
+            or if reject_empty_list is True and the list is empty.
             Note: This function raises ValueError (not ModelOnexError) because
             it is designed for use in Pydantic @field_validator methods, which
             require ValueError for validation failures.
@@ -196,9 +200,16 @@ def validate_string_list(
         ['foo', 'bar']
         >>> validate_string_list(["", "bar"], "events")
         ValueError: events[0]: Value cannot be empty
+        >>> validate_string_list([], "events", reject_empty_list=True)
+        ValueError: events: List cannot be empty
     """
     if values is None:
         return None
+
+    if reject_empty_list and len(values) == 0:
+        logger.debug(f"Validation failed for {field_name}: empty list rejected")
+        # error-ok: Pydantic validators require ValueError
+        raise ValueError(f"{field_name}: List cannot be empty")
 
     validated: list[str] = []
     for i, value in enumerate(values):
@@ -232,6 +243,7 @@ def validate_onex_name_list(
     field_name: str,
     *,
     normalize_lowercase: bool = True,
+    reject_empty_list: bool = False,
 ) -> list[str] | None:
     """Validate a list of ONEX-compliant names.
 
@@ -242,12 +254,15 @@ def validate_onex_name_list(
         values: List of names to validate, or None.
         field_name: Name of the field being validated (for error messages).
         normalize_lowercase: If True, normalize all names to lowercase.
+        reject_empty_list: If True, raise ValueError for empty lists.
+            Use for add/remove operations where an empty list is likely a user error.
 
     Returns:
         Validated and optionally normalized list of names, or None if input was None.
 
     Raises:
-        ValueError: If any name is empty or contains invalid characters.
+        ValueError: If any name is empty or contains invalid characters,
+            or if reject_empty_list is True and the list is empty.
             Note: This function raises ValueError (not ModelOnexError) because
             it is designed for use in Pydantic @field_validator methods, which
             require ValueError for validation failures.
@@ -260,9 +275,16 @@ def validate_onex_name_list(
         >>> validate_onex_name_list(["http-client"], "handlers")
         ValueError: handlers[0]: Name must contain only alphanumeric characters
         and underscores: 'http-client'
+        >>> validate_onex_name_list([], "handlers", reject_empty_list=True)
+        ValueError: handlers: List cannot be empty
     """
     if values is None:
         return None
+
+    if reject_empty_list and len(values) == 0:
+        logger.debug(f"Validation failed for {field_name}: empty list rejected")
+        # error-ok: Pydantic validators require ValueError
+        raise ValueError(f"{field_name}: List cannot be empty")
 
     validated: list[str] = []
     for i, name in enumerate(values):

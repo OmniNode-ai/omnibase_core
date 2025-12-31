@@ -179,7 +179,9 @@ class ModelContractPatch(BaseModel):
     # List Operations - Handlers
     # =========================================================================
 
-    # Maximum number of items in list operations to prevent excessive patches
+    # Maximum number of items in list operations to prevent excessive patches.
+    # Note: max_length= in Field() must use literal values because Pydantic Field()
+    # evaluates at class definition time before ClassVar is available. Keep in sync.
     MAX_LIST_ITEMS: ClassVar[int] = 100
 
     handlers__add: list[ModelHandlerSpec] | None = Field(
