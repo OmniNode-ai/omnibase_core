@@ -80,7 +80,7 @@ class ModelTransaction:
                 cancelled_error = e
                 emit_log_event(
                     LogLevel.WARNING,
-                    "Rollback operation cancelled - continuing with remaining operations",
+                    "Rollback cancelled - continuing with remaining operations",
                     {
                         "transaction_id": str(self.transaction_id),
                     },
