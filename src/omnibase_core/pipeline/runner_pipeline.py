@@ -307,13 +307,16 @@ class RunnerPipeline:
                 finalize_errors = await self._execute_phase("finalize", context)
                 errors.extend(finalize_errors)
             except Exception as finalize_exc:
-                # Even finalize errors should be captured, not raised
+                # This exception handler catches framework-level errors only.
+                # Hook execution errors are captured inside _execute_phase with
+                # proper hook_id because finalize has fail_fast=False.
+                # Framework errors (e.g., plan access failures) have no hook context.
                 errors.append(
                     ModelHookError(
                         phase="finalize",
-                        hook_id="unknown",
+                        hook_id="[framework]",
                         error_type=type(finalize_exc).__name__,
-                        error_message=str(finalize_exc),
+                        error_message=f"Framework error during finalize phase: {finalize_exc}",
                     )
                 )
 

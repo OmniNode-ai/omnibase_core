@@ -1259,13 +1259,3 @@ class TestRegistryHookLinearScaling:
             print(f"  {num_hooks} hooks: {time_ms:.3f}ms")
         print(f"  Ratio 500/100: {ratio_500_to_100:.1f}x")
         print(f"  Ratio 1000/100: {ratio_1000_to_100:.1f}x")
-
-
-__all__ = [
-    "TestRegistryHookLinearScaling",
-    "TestRegistryHookLookupPerformance",
-    "TestRegistryHookMemoryUsage",
-    "TestRegistryHookRegistrationPerformance",
-    "TestRunnerPipelineExecutionPerformance",
-    "TestTopologicalSortPerformance",
-]

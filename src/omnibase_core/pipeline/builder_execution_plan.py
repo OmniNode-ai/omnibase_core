@@ -7,8 +7,6 @@ import heapq
 import logging
 from collections import defaultdict
 
-logger = logging.getLogger(__name__)
-
 from omnibase_core.enums.enum_handler_type_category import EnumHandlerTypeCategory
 from omnibase_core.pipeline.exceptions import (
     DependencyCycleError,
@@ -23,6 +21,8 @@ from omnibase_core.pipeline.models import (
     PipelinePhase,
 )
 from omnibase_core.pipeline.registry_hook import RegistryHook
+
+logger = logging.getLogger(__name__)
 
 # Phase fail_fast semantics:
 # - preflight, before, execute: fail_fast=True (critical phases, abort on first error)

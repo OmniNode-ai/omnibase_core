@@ -8,7 +8,6 @@ from typing import TypeVar
 
 # Type variable for the result type
 T = TypeVar("T")
-R = TypeVar("R")
 
 # Type for middleware: takes next_fn, returns wrapped result
 # Using object as the most general type that doesn't require explicit Any
