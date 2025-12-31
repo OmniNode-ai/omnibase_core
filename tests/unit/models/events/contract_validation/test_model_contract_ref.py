@@ -417,21 +417,14 @@ class TestModelContractRefEquality:
 class TestModelContractRefEdgeCases:
     """Tests for edge cases and boundary conditions."""
 
-    def test_contract_ref_empty_contract_id_is_accepted(self) -> None:
-        """Test that empty string contract_id is technically accepted.
+    def test_contract_ref_empty_contract_id_raises_validation_error(self) -> None:
+        """Test that empty string contract_id is rejected.
 
-        Note: The model doesn't enforce min_length on contract_id, so empty
-        strings are accepted by Pydantic validation. Business logic should
-        validate this separately if needed.
+        The model enforces min_length=1 on contract_id, so empty strings
+        are rejected by Pydantic validation.
         """
-        # This might pass or fail depending on implementation
-        # Test to document the current behavior
-        try:
-            contract_ref = ModelContractRef(contract_id="")
-            assert contract_ref.contract_id == ""
-        except ValidationError:
-            # If the model enforces min_length, that's also valid
-            pass
+        with pytest.raises(ValidationError):
+            ModelContractRef(contract_id="")
 
     def test_contract_ref_with_unicode_contract_id(self) -> None:
         """Test that unicode characters in contract_id are handled."""
