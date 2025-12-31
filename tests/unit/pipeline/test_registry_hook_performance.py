@@ -19,7 +19,7 @@ from collections.abc import Callable
 
 import pytest
 
-from omnibase_core.pipeline.models import (
+from omnibase_core.models.pipeline import (
     ModelExecutionPlan,
     ModelPhaseExecutionPlan,
     ModelPipelineHook,

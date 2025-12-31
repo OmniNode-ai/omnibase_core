@@ -1,9 +1,16 @@
 """
-Requirement set model for expressing requirements with graduated strictness.
+Requirement evaluator model for expressing and evaluating requirements with graduated strictness.
 
-This module provides the ModelRequirementSet class which enables expressing
+This module provides the ModelRequirementEvaluator class which enables expressing
 requirements across four tiers: must (hard requirements), prefer (soft preferences),
 forbid (exclusions), and hints (non-binding tie-breakers).
+
+The evaluator includes matching, scoring, and sorting functionality for provider selection.
+
+Note:
+    This is distinct from omnibase_core.models.capabilities.ModelRequirementSet which
+    is a simpler data model without evaluation logic. Use ModelRequirementEvaluator
+    when you need `matches()`, `sort_key()`, and operator support ($eq, $ne, etc.).
 """
 
 from __future__ import annotations
@@ -15,15 +22,17 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from omnibase_core.types.json_types import JsonType
+
 __all__ = [
-    "ModelRequirementSet",
+    "ModelRequirementEvaluator",
 ]
 
 logger = logging.getLogger(__name__)
 
 
-class ModelRequirementSet(BaseModel):
-    """Expresses requirements with graduated strictness.
+class ModelRequirementEvaluator(BaseModel):
+    """Evaluates requirements with graduated strictness and provider matching.
 
     Four tiers of requirement strictness:
     - must: Hard requirements. Provider MUST satisfy all. Failure = no match.
@@ -72,7 +81,7 @@ class ModelRequirementSet(BaseModel):
         where additional warnings are helpful.
 
         Example:
-            >>> reqs = ModelRequirementSet(
+            >>> reqs = ModelRequirementEvaluator(
             ...     must={"region": "us-east-1"},
             ...     prefer={"region": "us-west-2"},  # Same key in different tier
             ... )
@@ -83,7 +92,7 @@ class ModelRequirementSet(BaseModel):
             Warning: Key 'region' appears in multiple tiers: ['must', 'prefer']. ...
 
     Example:
-        >>> reqs = ModelRequirementSet(
+        >>> reqs = ModelRequirementEvaluator(
         ...     must={"region": "us-east-1", "max_latency_ms": 20},
         ...     prefer={"memory_gb": 16},
         ...     forbid={"deprecated": True},
@@ -93,19 +102,19 @@ class ModelRequirementSet(BaseModel):
         >>> matches, score, warnings = reqs.matches(provider)
     """
 
-    must: dict[str, Any] = Field(
+    must: dict[str, JsonType] = Field(
         default_factory=dict,
         description="Hard requirements. Provider MUST satisfy all. Failure = no match.",
     )
-    prefer: dict[str, Any] = Field(
+    prefer: dict[str, JsonType] = Field(
         default_factory=dict,
         description="Soft preferences. Improves score if satisfied. Failure = warning.",
     )
-    forbid: dict[str, Any] = Field(
+    forbid: dict[str, JsonType] = Field(
         default_factory=dict,
         description="Exclusions. Provider MUST NOT have these. Presence = no match.",
     )
-    hints: dict[str, Any] = Field(
+    hints: dict[str, JsonType] = Field(
         default_factory=dict,
         description="Non-binding hints. May influence tie-breaking. Never causes failure.",
     )
@@ -113,7 +122,7 @@ class ModelRequirementSet(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     @model_validator(mode="after")
-    def _validate_no_conflicts(self) -> ModelRequirementSet:
+    def _validate_no_conflicts(self) -> ModelRequirementEvaluator:
         """Validate that there are no logical conflicts in requirements.
 
         Checks for:
@@ -158,7 +167,7 @@ class ModelRequirementSet(BaseModel):
             Critical errors are raised as exceptions during model construction.
 
         Example:
-            >>> reqs = ModelRequirementSet(must={"region": "us-east-1"})
+            >>> reqs = ModelRequirementEvaluator(must={"region": "us-east-1"})
             >>> warnings = reqs.validate_requirements()
             >>> if warnings:
             ...     print("Warnings:", warnings)
@@ -308,7 +317,7 @@ class ModelRequirementSet(BaseModel):
                 Uses provider 'id', 'name', or hash of provider.
 
         Example:
-            >>> reqs = ModelRequirementSet(prefer={"speed": "fast"})
+            >>> reqs = ModelRequirementEvaluator(prefer={"speed": "fast"})
             >>> providers = [{"name": "A", "speed": "fast"}, {"name": "B"}]
             >>> sorted_providers = sorted(providers, key=reqs.sort_key)
             >>> [p["name"] for p in sorted_providers]
@@ -379,7 +388,7 @@ class ModelRequirementSet(BaseModel):
             Best matches appear first unless reverse=True.
 
         Example:
-            >>> reqs = ModelRequirementSet(must={"active": True})
+            >>> reqs = ModelRequirementEvaluator(must={"active": True})
             >>> providers = [
             ...     {"name": "A", "active": False},
             ...     {"name": "B", "active": True},
@@ -499,7 +508,7 @@ class ModelRequirementSet(BaseModel):
             return key[4:]  # Strip "min_" prefix
         return key
 
-    def _has_operator(self, requirement: dict[str, Any]) -> bool:
+    def _has_operator(self, requirement: dict[str, JsonType]) -> bool:
         """Check if a dict requirement contains operator syntax.
 
         Args:
@@ -512,7 +521,7 @@ class ModelRequirementSet(BaseModel):
 
     def _evaluate_operators(
         self,
-        requirement: dict[str, Any],
+        requirement: dict[str, JsonType],
         provider_value: Any,
     ) -> bool:
         """Evaluate explicit operator expressions.

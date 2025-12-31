@@ -6,14 +6,14 @@
 import pytest
 
 from omnibase_core.enums.enum_handler_type_category import EnumHandlerTypeCategory
+from omnibase_core.models.pipeline import (
+    ModelPipelineHook,
+)
 from omnibase_core.pipeline.builder_execution_plan import BuilderExecutionPlan
 from omnibase_core.pipeline.exceptions import (
     DependencyCycleError,
     HookTypeMismatchError,
     UnknownDependencyError,
-)
-from omnibase_core.pipeline.models import (
-    ModelPipelineHook,
 )
 from omnibase_core.pipeline.registry_hook import RegistryHook
 

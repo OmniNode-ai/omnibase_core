@@ -130,11 +130,10 @@ class ModelContractIdentity(BaseModel):
         Get the version as a string if available.
 
         Returns:
-            Version string in format 'major.minor.patch' or None
+            Version string in SemVer format or None
         """
         if self.contract_version:
-            v = self.contract_version
-            return f"{v.major}.{v.minor}.{v.patch}"
+            return str(self.contract_version)
         return None
 
     def get_short_hash(self, length: int = 8) -> str | None:

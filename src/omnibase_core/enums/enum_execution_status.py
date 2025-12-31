@@ -71,3 +71,21 @@ class EnumExecutionStatus(str, Enum):
         """
         successful_statuses = {cls.COMPLETED, cls.SUCCESS}
         return status in successful_statuses
+
+    @classmethod
+    def is_failure(cls, status: "EnumExecutionStatus") -> bool:
+        """
+        Check if the status indicates failure.
+
+        Note that CANCELLED is neither a success nor a failure - it represents
+        an intentional termination. Use ``status == EnumExecutionStatus.CANCELLED``
+        to check for cancellation specifically.
+
+        Args:
+            status: The status to check
+
+        Returns:
+            True if failed, False otherwise
+        """
+        failure_statuses = {cls.FAILED, cls.TIMEOUT}
+        return status in failure_statuses

@@ -5,13 +5,13 @@
 
 import pytest
 
-from omnibase_core.pipeline.exceptions import CallableNotFoundError
-from omnibase_core.pipeline.models import (
+from omnibase_core.models.pipeline import (
     ModelExecutionPlan,
     ModelPhaseExecutionPlan,
     ModelPipelineHook,
     PipelinePhase,
 )
+from omnibase_core.pipeline.exceptions import CallableNotFoundError
 from omnibase_core.pipeline.runner_pipeline import (
     HookCallable,
     PipelineContext,

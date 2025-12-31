@@ -12,11 +12,9 @@ pipeline execution.
     Added as part of Manifest Generation & Observability (OMN-1113)
 """
 
-from __future__ import annotations
-
 import json
 from pathlib import Path
-from typing import Literal
+from typing import Literal, assert_never, cast
 
 import click
 from pydantic import ValidationError
@@ -267,16 +265,18 @@ def composition_report(
         onex composition-report manifest.json --show-timing
     """
     # Inherit verbose from parent context if not explicitly set
-    verbose = verbose or ctx.obj.get("verbose", False)
+    verbose = verbose or (ctx.obj.get("verbose", False) if ctx.obj else False)
 
     try:
         # Load manifest
         manifest_data = json.loads(manifest_path.read_text())
         manifest = ModelExecutionManifest.model_validate(manifest_data)
 
-        # Format output
+        # Format output - cast to OutputFormat for exhaustiveness checking
+        # Click's Choice validator guarantees output_format is one of the valid values
+        format_typed: OutputFormat = cast(OutputFormat, output_format)
         result: str
-        match output_format:
+        match format_typed:
             case "json":
                 result = ManifestLogger.to_json(manifest)
             case "yaml":
@@ -290,10 +290,12 @@ def composition_report(
                     show_predicates=show_predicates,
                     show_timing=show_timing,
                 )
-            case _:
-                raise click.ClickException(
-                    f"Unsupported output format: {output_format}"
-                )
+            case _ as unreachable:
+                # This case is unreachable due to Click's Choice validator
+                # and the Literal type. assert_never ensures compile-time
+                # exhaustiveness checking - if a new format is added to
+                # OutputFormat, mypy will error here until it's handled.
+                assert_never(unreachable)
 
         # Output
         if output:

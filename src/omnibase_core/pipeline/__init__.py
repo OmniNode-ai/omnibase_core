@@ -8,10 +8,10 @@ This module provides pipeline execution infrastructure and observability:
 
 **Execution Infrastructure:**
 
-- **RegistryHook / HookRegistry**: Hook registration and management
-- **ComposerMiddleware / MiddlewareComposer**: Middleware composition
-- **BuilderExecutionPlan / RuntimePlanBuilder**: Execution plan building
-- **RunnerPipeline / PipelineRunner**: Pipeline execution
+- **RegistryHook**: Hook registration and management
+- **ComposerMiddleware**: Middleware composition
+- **BuilderExecutionPlan**: Execution plan building
+- **RunnerPipeline**: Pipeline execution
 
 **Observability (OMN-1113):**
 
@@ -52,15 +52,23 @@ See Also:
     Added Manifest Generation & Observability (OMN-1113)
 """
 
+from omnibase_core.models.pipeline import (
+    ModelExecutionPlan,
+    ModelHookError,
+    ModelPhaseExecutionPlan,
+    ModelPipelineHook,
+    ModelValidationWarning,
+    PipelineContext,
+    PipelinePhase,
+    PipelineResult,
+)
 from omnibase_core.pipeline.builder_execution_plan import (
     FAIL_FAST_PHASES,
     BuilderExecutionPlan,
-    RuntimePlanBuilder,
 )
 from omnibase_core.pipeline.composer_middleware import (
     ComposerMiddleware,
     Middleware,
-    MiddlewareComposer,
 )
 from omnibase_core.pipeline.exceptions import (
     CallableNotFoundError,
@@ -75,21 +83,10 @@ from omnibase_core.pipeline.exceptions import (
 from omnibase_core.pipeline.manifest_generator import ManifestGenerator
 from omnibase_core.pipeline.manifest_logger import ManifestLogger
 from omnibase_core.pipeline.manifest_observer import ManifestObserver
-from omnibase_core.pipeline.models import (
-    ModelExecutionPlan,
-    ModelPhaseExecutionPlan,
-    ModelPipelineHook,
-    ModelValidationWarning,
-    PipelinePhase,
-)
-from omnibase_core.pipeline.registry_hook import HookRegistry, RegistryHook
+from omnibase_core.pipeline.registry_hook import RegistryHook
 from omnibase_core.pipeline.runner_pipeline import (
     CANONICAL_PHASE_ORDER,
     HookCallable,
-    ModelHookError,
-    PipelineContext,
-    PipelineResult,
-    PipelineRunner,
     RunnerPipeline,
 )
 
@@ -103,25 +100,21 @@ __all__ = [
     "HookTypeMismatchError",
     "PipelineError",
     "UnknownDependencyError",
-    # Registry (new name first, then backwards compat)
+    # Registry
     "RegistryHook",
-    "HookRegistry",
-    # Middleware (new name first, then backwards compat)
+    # Middleware
     "ComposerMiddleware",
     "Middleware",
-    "MiddlewareComposer",
-    # Builder (new name first, then backwards compat)
+    # Builder
     "BuilderExecutionPlan",
     "FAIL_FAST_PHASES",
-    "RuntimePlanBuilder",
-    # Runner (new name first, then backwards compat)
+    # Runner
     "RunnerPipeline",
     "CANONICAL_PHASE_ORDER",
     "HookCallable",
     "ModelHookError",
     "PipelineContext",
     "PipelineResult",
-    "PipelineRunner",
     # Models
     "ModelExecutionPlan",
     "ModelPhaseExecutionPlan",

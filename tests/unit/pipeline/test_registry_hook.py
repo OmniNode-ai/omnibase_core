@@ -5,11 +5,11 @@
 
 import pytest
 
+from omnibase_core.models.pipeline import ModelPipelineHook
 from omnibase_core.pipeline.exceptions import (
     DuplicateHookError,
     HookRegistryFrozenError,
 )
-from omnibase_core.pipeline.models import ModelPipelineHook
 from omnibase_core.pipeline.registry_hook import RegistryHook
 
 
