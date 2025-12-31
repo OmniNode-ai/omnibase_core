@@ -754,15 +754,13 @@ class TestRunnerPipelineCallableResolution:
         assert runner is not None
 
     @pytest.mark.unit
-    @pytest.mark.asyncio
-    async def test_runtime_check_still_exists_for_defense_in_depth(self) -> None:
+    def test_callable_registry_is_immutable(self) -> None:
         """
-        Runtime check is still performed for defense-in-depth.
+        Callable registry is immutable after initialization.
 
-        Even though init-time validation catches missing callables,
-        the runtime check provides an additional safety layer in case
-        the registry is modified after initialization (which callers
-        should NOT do, but we defend against it).
+        The registry uses MappingProxyType to prevent accidental modification.
+        This is better than defense-in-depth runtime checks because mutation
+        is impossible, not just detected.
         """
 
         def hook_fn(ctx: PipelineContext) -> None:
@@ -777,16 +775,14 @@ class TestRunnerPipelineCallableResolution:
         ]
         plan = make_plan_with_hooks(("execute", hooks))
 
-        # Initialize with valid registry
         runner = RunnerPipeline(plan=plan, callable_registry={"test.hook": hook_fn})
 
-        # Simulate external mutation (callers should NOT do this)
-        # This tests that runtime check still works
-        runner._callable_registry.clear()
+        # MappingProxyType prevents mutation
+        with pytest.raises(TypeError):
+            runner._callable_registry["new_key"] = hook_fn  # type: ignore[index]
 
-        # Runtime check should catch the missing callable
-        with pytest.raises(CallableNotFoundError, match=r"test\.hook"):
-            await runner.run()
+        # Verify original callable is still accessible
+        assert runner._callable_registry["test.hook"] is hook_fn
 
 
 @pytest.mark.unit

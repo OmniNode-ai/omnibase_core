@@ -8,6 +8,7 @@ from __future__ import annotations
 import asyncio
 import inspect
 from collections.abc import Callable, Coroutine
+from types import MappingProxyType
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -29,6 +30,12 @@ class ModelHookError(BaseModel):
 
     Thread Safety: This class is thread-safe. Instances are immutable
     (frozen=True) and can be safely shared across threads.
+
+    Note:
+        The special ``hook_id`` value ``"[framework]"`` indicates a framework-level
+        error during phase execution, not from a specific hook. This can occur in
+        the finalize phase if the execution plan itself cannot be accessed or if
+        an unexpected error occurs outside of hook invocation.
     """
 
     # TODO(pydantic-v3): Re-evaluate from_attributes=True when Pydantic v3 is released.
@@ -239,14 +246,15 @@ class RunnerPipeline:
 
         Args:
             plan: The execution plan containing hooks organized by phase
-            callable_registry: Registry mapping callable_ref strings to actual callables
+            callable_registry: Registry mapping callable_ref strings to actual callables.
+                An immutable view is created to prevent accidental modification.
 
         Raises:
             CallableNotFoundError: If any hook's callable_ref is not in the registry.
                 This fail-fast validation prevents runtime surprises.
         """
         self._plan = plan
-        self._callable_registry = callable_registry
+        self._callable_registry = MappingProxyType(callable_registry)
 
         # Fail-fast: validate all callable_refs at initialization time
         self._validate_callable_refs()

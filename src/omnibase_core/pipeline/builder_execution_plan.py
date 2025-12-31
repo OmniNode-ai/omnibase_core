@@ -283,6 +283,9 @@ class BuilderExecutionPlan:
         """
         Topologically sort hooks using Kahn's algorithm with priority tie-breaker.
 
+        Algorithm: Kahn's topological sort with min-heap for stable priority ordering.
+        Reference: https://en.wikipedia.org/wiki/Topological_sorting#Kahn's_algorithm
+
         Args:
             hooks: List of hooks to sort.
             hook_map: Mapping of hook_id to hook.
