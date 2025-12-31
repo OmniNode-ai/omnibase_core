@@ -35,21 +35,29 @@ class ModelDescriptorPatch(BaseModel):
     """Partial behavior overrides within a contract patch.
 
     Behavior patches allow selective override of handler behavior settings
-    without specifying a complete behavior. Only the fields that need to
-    change are included; unspecified fields retain their values from the
-    base contract's behavior.
+    without specifying a complete behavior configuration. Only the fields
+    that need to change are included; unspecified fields retain their values
+    from the base contract's behavior.
+
+    This model is used in the `descriptor` field of ModelContractPatch.
+    The field name is 'descriptor' for historical reasons, but the concept
+    is handler behavior configuration.
 
     All fields are optional since patches only specify overrides.
 
     Attributes:
-        purity: Override purity (pure vs side-effecting).
-        idempotent: Override idempotency flag.
-        timeout_ms: Override handler timeout in milliseconds.
-        retry_policy: Override retry configuration.
-        circuit_breaker: Override circuit breaker configuration.
-        concurrency_policy: Override concurrency handling.
-        isolation_policy: Override process/container isolation.
-        observability_level: Override telemetry verbosity.
+        purity: Override purity (pure vs side-effecting). Pure handlers
+            have no side effects and are safe to cache/parallelize.
+        idempotent: Override idempotency flag. Idempotent handlers can be
+            safely retried without causing duplicate effects.
+        timeout_ms: Override handler timeout in milliseconds. Maximum
+            allowed value is 3,600,000 (1 hour).
+        retry_policy: Override retry configuration for transient failures.
+        circuit_breaker: Override circuit breaker for fault tolerance.
+        concurrency_policy: Override how concurrent invocations are handled
+            (parallel_ok, serialized, or singleflight).
+        isolation_policy: Override process/container isolation level.
+        observability_level: Override telemetry and logging verbosity.
 
     Example:
         >>> # Override just timeout and retry for an effect handler
@@ -66,6 +74,10 @@ class ModelDescriptorPatch(BaseModel):
         ...     concurrency_policy="parallel_ok",
         ...     observability_level="verbose",
         ... )
+
+        >>> # Check if patch has any overrides
+        >>> if patch.has_overrides():
+        ...     print(f"Overriding: {patch.get_override_fields()}")
 
     See Also:
         - ModelContractPatch: Parent patch model that contains this
@@ -193,25 +205,49 @@ class ModelDescriptorPatch(BaseModel):
     # =========================================================================
 
     def has_overrides(self) -> bool:
-        """Check if this patch contains any overrides.
+        """Check if this behavior patch contains any overrides.
 
         Returns:
-            True if at least one field is set to a non-None value.
+            True if at least one behavior field is set to a non-None value.
+            Returns False if the patch is empty (no-op).
+
+        Example:
+            >>> empty_patch = ModelDescriptorPatch()
+            >>> assert not empty_patch.has_overrides()
+            >>> timeout_patch = ModelDescriptorPatch(timeout_ms=5000)
+            >>> assert timeout_patch.has_overrides()
         """
         return any(getattr(self, field) is not None for field in self.model_fields)
 
     def get_override_fields(self) -> list[str]:
-        """Get list of field names that have overrides.
+        """Get list of behavior field names that have overrides.
 
         Returns:
-            List of field names with non-None values.
+            List of field names with non-None values. Empty list if no
+            overrides are set.
+
+        Example:
+            >>> patch = ModelDescriptorPatch(timeout_ms=5000, idempotent=True)
+            >>> patch.get_override_fields()
+            ['idempotent', 'timeout_ms']  # Order may vary
         """
         return [
             field for field in self.model_fields if getattr(self, field) is not None
         ]
 
     def __repr__(self) -> str:
-        """Return a concise representation for debugging."""
+        """Return a concise representation for debugging.
+
+        Returns:
+            String representation showing either 'empty' or the list of
+            overridden field names.
+
+        Example:
+            >>> str(ModelDescriptorPatch())
+            'ModelDescriptorPatch(empty)'
+            >>> str(ModelDescriptorPatch(timeout_ms=5000))
+            "ModelDescriptorPatch(overrides=['timeout_ms'])"
+        """
         overrides = self.get_override_fields()
         if not overrides:
             return "ModelDescriptorPatch(empty)"

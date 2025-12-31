@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
 #
 # SPDX-License-Identifier: Apache-2.0
-"""Tests for ModelDescriptorPatch."""
+"""Tests for ModelDescriptorPatch (behavior patch model)."""
 
 import pytest
 from pydantic import ValidationError
@@ -17,7 +17,7 @@ from omnibase_core.models.runtime.model_descriptor_retry_policy import (
 
 @pytest.mark.unit
 class TestModelDescriptorPatch:
-    """Tests for ModelDescriptorPatch model."""
+    """Tests for ModelDescriptorPatch (behavior patch) model."""
 
     @pytest.mark.unit
     def test_empty_patch(self) -> None:
@@ -250,7 +250,7 @@ class TestModelDescriptorPatch:
 
 @pytest.mark.unit
 class TestModelDescriptorPatchConflictValidation:
-    """Tests for ModelDescriptorPatch settings consistency validation."""
+    """Tests for ModelDescriptorPatch (behavior patch) settings consistency validation."""
 
     # =========================================================================
     # timeout_ms=0 with retry_policy conflicts

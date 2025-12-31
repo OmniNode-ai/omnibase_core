@@ -21,6 +21,7 @@ from omnibase_core.validation.contract_patch_validator import ContractPatchValid
 from omnibase_core.validation.protocol_patch_validator import ProtocolPatchValidator
 
 
+@pytest.mark.unit
 class TestContractPatchValidator:
     """Tests for ContractPatchValidator."""
 

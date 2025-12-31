@@ -208,3 +208,36 @@ class TestModelHandlerSpec:
         )
         assert spec.name == "http_client"
         assert spec.handler_type == "http"
+
+    @pytest.mark.unit
+    def test_name_normalized_to_lowercase(self) -> None:
+        """Test that handler name is normalized to lowercase for consistent matching."""
+        spec = ModelHandlerSpec(
+            name="HTTP_Client",
+            handler_type="http",
+        )
+        assert spec.name == "http_client"
+
+    @pytest.mark.unit
+    def test_name_normalization_preserves_underscores(self) -> None:
+        """Test that name normalization preserves underscores."""
+        spec = ModelHandlerSpec(
+            name="MyKafkaProducer_V2",
+            handler_type="kafka",
+        )
+        assert spec.name == "mykafkaproducer_v2"
+
+    @pytest.mark.unit
+    def test_name_normalization_with_mixed_case(self) -> None:
+        """Test that mixed case names are fully lowercased."""
+        test_cases = [
+            ("HttpClient", "httpclient"),
+            ("HTTP_CLIENT", "http_client"),
+            ("kafkaProducer", "kafkaproducer"),
+            ("DB_Handler_V2", "db_handler_v2"),
+        ]
+        for input_name, expected_name in test_cases:
+            spec = ModelHandlerSpec(name=input_name, handler_type="test")
+            assert spec.name == expected_name, (
+                f"Expected {expected_name} for {input_name}"
+            )

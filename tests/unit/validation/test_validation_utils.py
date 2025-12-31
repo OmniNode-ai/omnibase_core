@@ -13,7 +13,7 @@ from pathlib import Path
 
 import pytest
 
-from omnibase_core.errors.exceptions import ExceptionInputValidationError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.validation.model_protocol_info import ModelProtocolInfo
 from omnibase_core.models.validation.model_protocol_signature_extractor import (
     ModelProtocolSignatureExtractor,
@@ -211,7 +211,7 @@ class TestPathValidation:
         """Test validation fails for nonexistent directory."""
         nonexistent_path = Path("/nonexistent/directory")
 
-        with pytest.raises(ExceptionInputValidationError, match="does not exist"):
+        with pytest.raises(ModelOnexError, match="does not exist"):
             validate_directory_path(nonexistent_path, "test")
 
     def test_validate_file_as_directory(self):
@@ -219,7 +219,7 @@ class TestPathValidation:
         with tempfile.NamedTemporaryFile() as temp_file:
             temp_path = Path(temp_file.name)
 
-            with pytest.raises(ExceptionInputValidationError, match="not a directory"):
+            with pytest.raises(ModelOnexError, match="not a directory"):
                 validate_directory_path(temp_path, "test")
 
     def test_validate_existing_file(self):
@@ -234,7 +234,7 @@ class TestPathValidation:
         """Test validation fails for nonexistent file."""
         nonexistent_path = Path("/nonexistent/file.py")
 
-        with pytest.raises(ExceptionInputValidationError, match="does not exist"):
+        with pytest.raises(ModelOnexError, match="does not exist"):
             validate_file_path(nonexistent_path, "test")
 
     def test_validate_directory_as_file(self):
@@ -242,7 +242,7 @@ class TestPathValidation:
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
 
-            with pytest.raises(ExceptionInputValidationError, match="not a file"):
+            with pytest.raises(ModelOnexError, match="not a file"):
                 validate_file_path(temp_path, "test")
 
     def test_directory_traversal_warning(self, caplog):
@@ -319,7 +319,7 @@ class TestProtocol(Protocol):
         """Test extraction fails for invalid directory."""
         invalid_path = Path("/nonexistent/directory")
 
-        with pytest.raises(ExceptionInputValidationError):
+        with pytest.raises(ModelOnexError):
             extract_protocols_from_directory(invalid_path)
 
 
@@ -885,7 +885,7 @@ class TestInvalidPathHandling:
             # Monkeypatch the resolve method to raise OSError
             monkeypatch.setattr(Path, "resolve", mock_resolve)
 
-            with pytest.raises(ExceptionInputValidationError, match="Invalid"):
+            with pytest.raises(ModelOnexError, match="Invalid"):
                 validate_directory_path(temp_path, "test")
 
     def test_validate_file_with_invalid_path(self, monkeypatch):
@@ -899,7 +899,7 @@ class TestInvalidPathHandling:
             # Monkeypatch the resolve method to raise ValueError
             monkeypatch.setattr(Path, "resolve", mock_resolve)
 
-            with pytest.raises(ExceptionInputValidationError, match="Invalid"):
+            with pytest.raises(ModelOnexError, match="Invalid"):
                 validate_file_path(temp_path, "test")
 
 

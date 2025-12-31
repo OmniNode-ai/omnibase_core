@@ -107,13 +107,18 @@ class ModelCapabilityProvided(BaseModel):
     def matches(self, requirement_name: str) -> bool:
         """Check if this capability matches a requirement name.
 
+        Performs case-insensitive comparison. The requirement_name is
+        lowercased before comparison since self.name is already stored
+        in lowercase (normalized during validation).
+
         Args:
             requirement_name: Name of the required capability.
 
         Returns:
             True if names match (case-insensitive).
         """
-        return self.name.lower() == requirement_name.lower()
+        # self.name is already lowercase (normalized in validate_name)
+        return self.name == requirement_name.lower()
 
     def __repr__(self) -> str:
         """Return a concise representation for debugging."""

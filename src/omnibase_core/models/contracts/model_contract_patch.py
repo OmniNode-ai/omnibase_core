@@ -16,6 +16,8 @@ Related:
 .. versionadded:: 0.4.0
 """
 
+from typing import ClassVar
+
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from omnibase_core.models.contracts.model_capability_provided import (
@@ -178,7 +180,7 @@ class ModelContractPatch(BaseModel):
     # =========================================================================
 
     # Maximum number of items in list operations to prevent excessive patches
-    MAX_LIST_ITEMS: int = 100
+    MAX_LIST_ITEMS: ClassVar[int] = 100
 
     handlers__add: list[ModelHandlerSpec] | None = Field(
         default=None,
@@ -550,8 +552,19 @@ class ModelContractPatch(BaseModel):
     def has_list_operations(self) -> bool:
         """Check if this patch contains any list operations.
 
+        List operations use the __add and __remove suffix convention to
+        declaratively specify items to add or remove from base contract lists.
+
         Returns:
-            True if any __add or __remove field is set.
+            True if any __add or __remove field is set to a non-None value.
+            Returns False if the patch only contains scalar overrides.
+
+        Example:
+            >>> patch = ModelContractPatch(
+            ...     extends=ref,
+            ...     handlers__add=[handler_spec]
+            ... )
+            >>> assert patch.has_list_operations()
         """
         list_fields = [
             self.handlers__add,
@@ -568,10 +581,23 @@ class ModelContractPatch(BaseModel):
         return any(f is not None for f in list_fields)
 
     def get_add_operations(self) -> dict[str, list[object]]:
-        """Get all __add list operations.
+        """Get all __add list operations as a dictionary.
+
+        Collects all non-None __add fields into a dictionary keyed by
+        the base field name (without the __add suffix).
 
         Returns:
-            Dictionary mapping field names to their add lists.
+            Dictionary mapping field names to their add lists. Only includes
+            fields that have non-None values. Empty dict if no add operations.
+
+        Example:
+            >>> patch = ModelContractPatch(
+            ...     extends=ref,
+            ...     handlers__add=[handler1],
+            ...     consumed_events__add=["event.created"]
+            ... )
+            >>> adds = patch.get_add_operations()
+            >>> # adds == {"handlers": [handler1], "consumed_events": ["event.created"]}
         """
         result: dict[str, list[object]] = {}
         if self.handlers__add:
@@ -587,10 +613,24 @@ class ModelContractPatch(BaseModel):
         return result
 
     def get_remove_operations(self) -> dict[str, list[str]]:
-        """Get all __remove list operations.
+        """Get all __remove list operations as a dictionary.
+
+        Collects all non-None __remove fields into a dictionary keyed by
+        the base field name (without the __remove suffix). Remove operations
+        contain string identifiers (names) of items to remove.
 
         Returns:
-            Dictionary mapping field names to their remove lists.
+            Dictionary mapping field names to their remove lists. Only includes
+            fields that have non-None values. Empty dict if no remove operations.
+
+        Example:
+            >>> patch = ModelContractPatch(
+            ...     extends=ref,
+            ...     handlers__remove=["old_handler"],
+            ...     dependencies__remove=["deprecated_dep"]
+            ... )
+            >>> removes = patch.get_remove_operations()
+            >>> # removes == {"handlers": ["old_handler"], "dependencies": ["deprecated_dep"]}
         """
         result: dict[str, list[str]] = {}
         if self.handlers__remove:
@@ -606,7 +646,21 @@ class ModelContractPatch(BaseModel):
         return result
 
     def __repr__(self) -> str:
-        """Return a concise representation for debugging."""
+        """Return a concise representation for debugging.
+
+        Returns:
+            String representation indicating whether this is a new contract
+            (with name) or an override patch (without identity fields).
+
+        Example:
+            >>> # New contract patch
+            >>> str(new_patch)
+            "ModelContractPatch(new='my_handler', extends='compute_pure')"
+
+            >>> # Override patch
+            >>> str(override_patch)
+            "ModelContractPatch(override, extends='effect_http')"
+        """
         if self.is_new_contract:
             return (
                 f"ModelContractPatch(new={self.name!r}, "

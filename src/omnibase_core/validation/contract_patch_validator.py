@@ -43,13 +43,18 @@ class ContractPatchValidator:
     Validation Checks:
         - Structural: Pydantic model validation (extra="forbid")
         - Identity: New contracts must have name + version
-        - List Operations: Valid __add/__remove syntax
-        - Descriptor: Nested descriptor patch validation
+        - List Operations: Duplicate detection within add lists
+        - Behavior: Nested behavior patch validation (via descriptor field)
 
     Non-Validation (Deferred):
         - Profile existence (deferred to factory)
         - Model resolution (deferred to expansion)
         - Capability compatibility (deferred to merge)
+
+    Note:
+        Conflict checks (items in both __add and __remove) are handled by
+        Pydantic model validation in ModelContractPatch.validate_no_add_remove_conflicts().
+        This validator focuses on duplicate detection within lists.
 
     Example:
         >>> validator = ContractPatchValidator()
@@ -66,27 +71,49 @@ class ContractPatchValidator:
     """
 
     def validate(self, patch: ModelContractPatch) -> ModelValidationResult[None]:
-        """Validate a contract patch.
+        """Validate a contract patch for semantic correctness.
 
         Performs all validation checks on an already-parsed patch.
         Since the patch is already a ModelContractPatch, Pydantic validation
         has already passed; this method adds semantic validation.
 
+        Validation includes:
+            - Duplicate detection within add lists
+            - Behavior patch consistency (timeout vs retry, purity vs idempotent)
+            - Identity field verification (name + version pairing)
+            - Profile reference format checking
+
+        Note:
+            Conflict checks (add vs remove) are already handled by Pydantic
+            model validation and are not duplicated here.
+
         Args:
-            patch: The contract patch to validate.
+            patch: The contract patch to validate. Must be a valid
+                ModelContractPatch instance (Pydantic validation passed).
 
         Returns:
-            Validation result with is_valid flag and any issues found.
+            ModelValidationResult with:
+                - is_valid: True if all checks pass
+                - issues: List of validation issues (errors, warnings, info)
+                - summary: Human-readable validation summary
+
+        Example:
+            >>> validator = ContractPatchValidator()
+            >>> result = validator.validate(patch)
+            >>> if not result.is_valid:
+            ...     for error in result.errors:
+            ...         print(f"Error: {error}")
         """
         result: ModelValidationResult[None] = ModelValidationResult(
             is_valid=True,
             summary="Patch validation started",
         )
 
-        # Check for conflicting list operations
-        self._validate_list_operation_conflicts(patch, result)
+        # Check for duplicate entries within add lists
+        # Note: Conflict checks (add vs remove) are handled by Pydantic model validation
+        self._validate_list_operation_duplicates(patch, result)
 
-        # Check descriptor patch if present
+        # Check behavior patch (descriptor field) if present
         if patch.descriptor is not None:
             self._validate_descriptor_patch(patch, result)
 
@@ -110,13 +137,33 @@ class ContractPatchValidator:
         """Validate a dictionary as a contract patch.
 
         Parses the dictionary into a ModelContractPatch and validates it.
-        This is useful for validating user-provided data before processing.
+        This is useful for validating user-provided data (e.g., from API
+        requests or configuration files) before processing.
+
+        Performs both Pydantic structural validation and semantic validation.
+        If Pydantic validation fails, the result contains detailed error
+        messages including field paths.
 
         Args:
-            data: Dictionary representation of a contract patch.
+            data: Dictionary representation of a contract patch. Must contain
+                at least an 'extends' field with profile reference.
 
         Returns:
-            Validation result with parsed patch if valid.
+            ModelValidationResult with:
+                - is_valid: True if both parsing and validation pass
+                - validated_value: Parsed ModelContractPatch if valid
+                - errors: List of validation errors if invalid
+                - summary: Human-readable validation summary
+
+        Example:
+            >>> validator = ContractPatchValidator()
+            >>> data = {
+            ...     "extends": {"profile": "compute_pure", "version": "1.0.0"},
+            ...     "description": "My patch"
+            ... }
+            >>> result = validator.validate_dict(data)
+            >>> if result.is_valid:
+            ...     patch = result.validated_value
         """
         result: ModelValidationResult[ModelContractPatch] = ModelValidationResult(
             is_valid=True,
@@ -159,11 +206,32 @@ class ContractPatchValidator:
         Uses Pydantic model validation for type-safe YAML loading.
         Handles file I/O errors and YAML parsing errors gracefully.
 
+        Validation stages:
+            1. File existence check
+            2. File extension check (warning for non-.yaml/.yml)
+            3. File read (with encoding handling)
+            4. YAML parsing
+            5. Pydantic model validation
+            6. Semantic validation
+
         Args:
-            path: Path to the YAML file.
+            path: Path to the YAML file. Should have .yaml or .yml extension.
 
         Returns:
-            Validation result with parsed patch if valid.
+            ModelValidationResult with:
+                - is_valid: True if file is valid contract patch
+                - validated_value: Parsed ModelContractPatch if valid
+                - errors: List of validation errors if invalid
+                - warnings: Non-fatal issues (e.g., unexpected extension)
+                - summary: Human-readable validation summary
+
+        Example:
+            >>> from pathlib import Path
+            >>> validator = ContractPatchValidator()
+            >>> result = validator.validate_file(Path("my_patch.yaml"))
+            >>> if result.is_valid:
+            ...     patch = result.validated_value
+            ...     print(f"Validated: {patch.extends.profile}")
         """
         result: ModelValidationResult[ModelContractPatch] = ModelValidationResult(
             is_valid=True,
@@ -243,59 +311,59 @@ class ContractPatchValidator:
     # Private Validation Methods
     # =========================================================================
 
-    def _validate_list_operation_conflicts(
+    def _validate_list_operation_duplicates(
         self,
         patch: ModelContractPatch,
         result: ModelValidationResult[None],
     ) -> None:
-        """Check for conflicting list operations.
+        """Check for duplicate entries within add lists.
 
-        Validates that no item appears in both __add and __remove lists
-        for the same field, which would be semantically contradictory.
-        Also checks for duplicate entries within add lists.
+        Validates that no duplicate entries exist within __add lists,
+        which would be semantically redundant and could indicate errors.
 
-        Validates the following fields:
-            - handlers__add / handlers__remove
-            - dependencies__add / dependencies__remove
-            - consumed_events__add / consumed_events__remove
-            - capability_inputs__add / capability_inputs__remove
-            - capability_outputs__add / capability_outputs__remove
+        Note:
+            Conflict checks (items in both __add and __remove) are handled
+            by Pydantic model validation via validate_no_add_remove_conflicts.
+            This method only checks for duplicates within individual lists.
+
+        Validates the following add lists:
+            - handlers__add (duplicate handler names)
+            - dependencies__add (duplicate dependency names)
+            - capability_outputs__add (duplicate capability names)
+            - capability_inputs__add (duplicate input names)
 
         Args:
             patch: The contract patch to validate.
             result: The validation result to append issues to.
         """
-        # Check handlers
-        if patch.handlers__add and patch.handlers__remove:
-            add_names = {h.name for h in patch.handlers__add}
-            remove_names = set(patch.handlers__remove)
-            conflicts = add_names & remove_names
-            if conflicts:
+        # Check for duplicate handlers within __add
+        if patch.handlers__add:
+            handler_names = [h.name for h in patch.handlers__add]
+            seen_handlers: set[str] = set()
+            duplicate_handlers: set[str] = set()
+            for name in handler_names:
+                if name in seen_handlers:
+                    duplicate_handlers.add(name)
+                seen_handlers.add(name)
+            if duplicate_handlers:
                 result.add_error(
-                    f"Handler(s) appear in both add and remove: {conflicts}",
-                    code="CONFLICTING_LIST_OPERATIONS",
+                    f"Duplicate handler(s) in add list: {duplicate_handlers}",
+                    code="DUPLICATE_LIST_ENTRIES",
                 )
 
-        # Check dependencies
-        if patch.dependencies__add and patch.dependencies__remove:
-            add_names = {d.name for d in patch.dependencies__add}
-            remove_names = set(patch.dependencies__remove)
-            conflicts = add_names & remove_names
-            if conflicts:
+        # Check for duplicate dependencies within __add
+        if patch.dependencies__add:
+            dep_names = [d.name for d in patch.dependencies__add]
+            seen_deps: set[str] = set()
+            duplicate_deps: set[str] = set()
+            for name in dep_names:
+                if name in seen_deps:
+                    duplicate_deps.add(name)
+                seen_deps.add(name)
+            if duplicate_deps:
                 result.add_error(
-                    f"Dependency(s) appear in both add and remove: {conflicts}",
-                    code="CONFLICTING_LIST_OPERATIONS",
-                )
-
-        # Check events
-        if patch.consumed_events__add and patch.consumed_events__remove:
-            add_events = set(patch.consumed_events__add)
-            remove_events = set(patch.consumed_events__remove)
-            conflicts = add_events & remove_events
-            if conflicts:
-                result.add_error(
-                    f"Event(s) appear in both add and remove: {conflicts}",
-                    code="CONFLICTING_LIST_OPERATIONS",
+                    f"Duplicate dependency(s) in add list: {duplicate_deps}",
+                    code="DUPLICATE_LIST_ENTRIES",
                 )
 
         # Check for duplicate capability outputs within __add
@@ -311,28 +379,6 @@ class ContractPatchValidator:
                 result.add_error(
                     f"Duplicate capability output(s) in add list: {duplicates}",
                     code="DUPLICATE_LIST_ENTRIES",
-                )
-
-        # Check capability inputs for add/remove conflicts
-        if patch.capability_inputs__add and patch.capability_inputs__remove:
-            add_inputs = set(patch.capability_inputs__add)
-            remove_inputs = set(patch.capability_inputs__remove)
-            conflicts = add_inputs & remove_inputs
-            if conflicts:
-                result.add_error(
-                    f"Capability input(s) appear in both add and remove: {conflicts}",
-                    code="CONFLICTING_LIST_OPERATIONS",
-                )
-
-        # Check capability outputs for add/remove conflicts
-        if patch.capability_outputs__add and patch.capability_outputs__remove:
-            add_output_names = {cap.name for cap in patch.capability_outputs__add}
-            remove_output_names = set(patch.capability_outputs__remove)
-            conflicts = add_output_names & remove_output_names
-            if conflicts:
-                result.add_error(
-                    f"Capability output(s) appear in both add and remove: {conflicts}",
-                    code="CONFLICTING_LIST_OPERATIONS",
                 )
 
         # Check for duplicate capability inputs within __add
@@ -354,26 +400,34 @@ class ContractPatchValidator:
         patch: ModelContractPatch,
         result: ModelValidationResult[None],
     ) -> None:
-        """Validate the nested descriptor patch.
+        """Validate the nested behavior patch in the descriptor field.
 
-        Checks the descriptor patch for semantic consistency:
-            - Warns if descriptor patch is present but empty (no overrides)
+        Checks the behavior patch (stored in the `descriptor` field) for
+        semantic consistency. The descriptor field contains handler behavior
+        overrides such as timeout, retry, and concurrency settings.
+
+        Validates:
+            - Warns if behavior patch is present but empty (no overrides)
             - Warns if purity='pure' conflicts with idempotent=False
 
         Args:
-            patch: The contract patch containing the descriptor to validate.
+            patch: The contract patch containing the behavior patch to validate.
             result: The validation result to append issues to.
+
+        Note:
+            The field is named 'descriptor' but conceptually represents
+            handler behavior configuration (timeout, retry, concurrency).
         """
         if patch.descriptor is None:
             return
 
-        # Check for empty descriptor patch (warning, not error)
+        # Check for empty behavior patch (warning, not error)
         if not patch.descriptor.has_overrides():
             result.add_issue(
                 severity=EnumValidationSeverity.WARNING,
-                message="Descriptor patch is present but has no overrides",
+                message="Behavior patch is present but has no overrides",
                 code="EMPTY_DESCRIPTOR_PATCH",
-                suggestion="Remove the empty descriptor field or add overrides",
+                suggestion="Remove the empty descriptor field or add behavior overrides",
             )
 
         # Check purity/idempotent consistency
@@ -381,7 +435,7 @@ class ContractPatchValidator:
             result.add_issue(
                 severity=EnumValidationSeverity.WARNING,
                 message=(
-                    "Descriptor declares purity='pure' but idempotent=False. "
+                    "Behavior declares purity='pure' but idempotent=False. "
                     "Pure functions are typically idempotent."
                 ),
                 code="PURITY_IDEMPOTENT_MISMATCH",
@@ -393,15 +447,23 @@ class ContractPatchValidator:
         patch: ModelContractPatch,
         result: ModelValidationResult[None],
     ) -> None:
-        """Validate identity field consistency.
+        """Validate identity field consistency and add context.
 
         Checks that identity fields (name, node_version) are consistent.
         Pydantic already validates that both must be present or both absent;
         this method adds informational context about the patch type.
 
+        For new contracts (those with identity fields), an INFO-level issue
+        is added to document the contract name being declared.
+
         Args:
             patch: The contract patch to validate.
             result: The validation result to append issues to.
+
+        Note:
+            Identity validation is also performed by Pydantic in
+            ModelContractPatch.validate_identity_consistency(). This method
+            provides additional context rather than duplicate validation.
         """
         # This is already validated by Pydantic, but add informational context
         if patch.is_new_contract:
@@ -419,17 +481,29 @@ class ContractPatchValidator:
         """Validate profile reference format (structural only).
 
         Performs structural validation of the profile reference without
-        attempting to resolve the profile. Checks:
-            - Profile name follows lowercase_with_underscores convention
-            - Version string contains digits (basic semver format check)
+        attempting to resolve the profile. This is intentional: profile
+        resolution is deferred to the factory at contract expansion time.
 
-        Note:
-            Profile existence is NOT validated here; that is deferred to
-            the factory at contract expansion time.
+        Validates:
+            - Profile name follows lowercase_with_underscores convention
+            - Profile name contains only alphanumeric characters and underscores
+            - Version string contains at least one digit (basic semver check)
+
+        Non-standard names or versions generate warnings (not errors) to allow
+        flexibility while encouraging best practices.
 
         Args:
             patch: The contract patch to validate.
             result: The validation result to append issues to.
+
+        Note:
+            Profile existence is NOT validated here; that is deferred to
+            the factory at contract expansion time. This ensures validation
+            is environment-agnostic and can run without profile registry access.
+
+        Example:
+            Valid profiles: 'compute_pure', 'effect_http_v2'
+            Non-standard: 'ComputePure' (uppercase), 'my-profile' (hyphens)
         """
         profile = patch.extends.profile
         version = patch.extends.version

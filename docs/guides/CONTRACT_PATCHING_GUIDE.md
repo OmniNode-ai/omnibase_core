@@ -59,7 +59,7 @@ contract = ModelContractCompute(
         batch_operation_max_s=30,
         memory_limit_mb=512,
     ),
-    descriptor=ModelHandlerBehaviorDescriptor(
+    behavior=ModelHandlerBehavior(
         handler_kind="compute",
         purity="pure",
         idempotent=True,
@@ -94,7 +94,7 @@ patch = ModelContractPatch(
 
 Contract patching uses a three-layer architecture:
 
-```
+```text
 Profile (Environment Policy)
     |
     | influences
@@ -112,7 +112,7 @@ Factory --> Base Contract + Patch = Expanded Contract
 
 ### Expansion Flow
 
-```
+```text
 +-------------------+     +------------------+     +--------------------+
 | ModelProfileRef   |---->| Profile Factory  |---->| Base Contract      |
 | (e.g., compute_   |     | (resolves        |     | (fully configured  |

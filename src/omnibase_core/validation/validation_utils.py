@@ -9,6 +9,26 @@ This module provides common validation functions used throughout the ONEX framew
 - Import path format validation
 - Protocol signature extraction
 - File and directory path validation
+
+Error Handling Patterns
+-----------------------
+This module uses two error handling patterns depending on the use case:
+
+1. **Pydantic Validators** (validate_string_list, validate_onex_name_list):
+   Raise ValueError because Pydantic @field_validator requires it.
+
+2. **Standalone Validators** (validate_directory_path, validate_file_path):
+   Raise ModelOnexError with proper EnumCoreErrorCode for structured error handling.
+
+3. **Batch Processing** (extract_protocol_signature):
+   Return None on errors to allow continued processing of remaining files.
+
+Logging Conventions
+-------------------
+- DEBUG: Detailed trace information (validation results, successful operations)
+- INFO: High-level operation summaries (number of files processed)
+- WARNING: Recoverable issues that don't stop processing (skipped files)
+- ERROR: Failures that will raise exceptions
 """
 
 
@@ -19,8 +39,9 @@ import logging
 import re
 from pathlib import Path
 
-from omnibase_core.errors.exceptions import ExceptionInputValidationError
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_validation_result import ModelValidationResult
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.validation.model_duplication_info import ModelDuplicationInfo
 from omnibase_core.models.validation.model_protocol_info import ModelProtocolInfo
 from omnibase_core.models.validation.model_protocol_signature_extractor import (
@@ -150,7 +171,7 @@ def validate_string_list(
 ) -> list[str] | None:
     """Validate a list of strings, ensuring no empty values.
 
-    This is a shared helper for patch validation that handles common
+    This is a shared helper for Pydantic field validation that handles common
     string list validation patterns.
 
     Args:
@@ -164,6 +185,9 @@ def validate_string_list(
 
     Raises:
         ValueError: If any string is empty or too short after processing.
+            Note: This function raises ValueError (not ModelOnexError) because
+            it is designed for use in Pydantic @field_validator methods, which
+            require ValueError for validation failures.
 
     Example:
         >>> validate_string_list(["foo", "bar"], "events")
@@ -211,7 +235,7 @@ def validate_onex_name_list(
 ) -> list[str] | None:
     """Validate a list of ONEX-compliant names.
 
-    This is a shared helper for patch validation that validates names
+    This is a shared helper for Pydantic field validation that validates names
     conform to ONEX naming conventions (alphanumeric + underscores).
 
     Args:
@@ -224,6 +248,9 @@ def validate_onex_name_list(
 
     Raises:
         ValueError: If any name is empty or contains invalid characters.
+            Note: This function raises ValueError (not ModelOnexError) because
+            it is designed for use in Pydantic @field_validator methods, which
+            require ValueError for validation failures.
 
     Example:
         >>> validate_onex_name_list(["http_client", "kafka_producer"], "handlers")
@@ -401,7 +428,24 @@ def validate_import_path_format(import_path: str) -> tuple[bool, str | None]:
 
 
 def extract_protocol_signature(file_path: Path) -> ModelProtocolInfo | None:
-    """Extract protocol signature from Python file."""
+    """Extract protocol signature from Python file.
+
+    Args:
+        file_path: Path to the Python file to analyze.
+
+    Returns:
+        ModelProtocolInfo if a protocol class is found, None otherwise.
+
+    Note:
+        This function returns None rather than raising exceptions for file
+        processing errors, as it's designed for batch processing where
+        individual file failures should not stop the entire operation.
+
+        Logging levels used:
+        - DEBUG: Normal operations (no protocol found, successful extraction)
+        - WARNING: Expected/recoverable errors (file access, encoding, syntax)
+        - ERROR: Unexpected errors (logged via logger.exception)
+    """
     try:
         with open(file_path, encoding="utf-8") as f:
             content = f.read()
@@ -411,13 +455,14 @@ def extract_protocol_signature(file_path: Path) -> ModelProtocolInfo | None:
         extractor.visit(tree)
 
         if not extractor.class_name or not extractor.methods:
+            logger.debug(f"No protocol class found in {file_path}")
             return None
 
         # Create signature hash from methods using SHA256 for security
         methods_str = "|".join(sorted(extractor.methods))
         signature_hash = hashlib.sha256(methods_str.encode()).hexdigest()
 
-        return ModelProtocolInfo(
+        protocol_info = ModelProtocolInfo(
             name=extractor.class_name,
             file_path=str(file_path),
             repository=determine_repository_name(file_path),
@@ -426,6 +471,11 @@ def extract_protocol_signature(file_path: Path) -> ModelProtocolInfo | None:
             line_count=len(content.splitlines()),
             imports=extractor.imports,
         )
+        logger.debug(
+            f"Extracted protocol {extractor.class_name!r} with "
+            f"{len(extractor.methods)} methods from {file_path}"
+        )
+        return protocol_info
 
     except OSError as e:
         # Expected error: file access issues (permissions, not found, etc.)
@@ -585,14 +635,19 @@ def validate_directory_path(directory_path: Path, context: str = "directory") ->
         Resolved absolute path
 
     Raises:
-        ExceptionInputValidation: If path is invalid
-        PathTraversalError: If path attempts directory traversal
+        ModelOnexError: If path is invalid, does not exist, or is not a directory
     """
     try:
         resolved_path = directory_path.resolve()
     except (OSError, ValueError) as e:
         msg = f"Invalid {context} path: {directory_path} ({e})"
-        raise ExceptionInputValidationError(msg)
+        logger.exception(msg)
+        raise ModelOnexError(
+            message=msg,
+            error_code=EnumCoreErrorCode.INVALID_INPUT,
+            path=str(directory_path),
+            context=context,
+        )
 
     # Check for potential directory traversal
     if ".." in str(directory_path):
@@ -603,16 +658,25 @@ def validate_directory_path(directory_path: Path, context: str = "directory") ->
 
     if not resolved_path.exists():
         msg = f"{context.capitalize()} path does not exist: {resolved_path}"
-        raise ExceptionInputValidationError(
-            msg,
+        logger.error(msg)
+        raise ModelOnexError(
+            message=msg,
+            error_code=EnumCoreErrorCode.DIRECTORY_NOT_FOUND,
+            path=str(resolved_path),
+            context=context,
         )
 
     if not resolved_path.is_dir():
         msg = f"{context.capitalize()} path is not a directory: {resolved_path}"
-        raise ExceptionInputValidationError(
-            msg,
+        logger.error(msg)
+        raise ModelOnexError(
+            message=msg,
+            error_code=EnumCoreErrorCode.INVALID_INPUT,
+            path=str(resolved_path),
+            context=context,
         )
 
+    logger.debug(f"Validated {context} path: {resolved_path}")
     return resolved_path
 
 
@@ -628,26 +692,41 @@ def validate_file_path(file_path: Path, context: str = "file") -> Path:
         Resolved absolute path
 
     Raises:
-        ExceptionInputValidation: If path is invalid
+        ModelOnexError: If path is invalid, does not exist, or is not a file
     """
     try:
         resolved_path = file_path.resolve()
     except (OSError, ValueError) as e:
         msg = f"Invalid {context} path: {file_path} ({e})"
-        raise ExceptionInputValidationError(msg)
+        logger.exception(msg)
+        raise ModelOnexError(
+            message=msg,
+            error_code=EnumCoreErrorCode.INVALID_INPUT,
+            path=str(file_path),
+            context=context,
+        )
 
     if not resolved_path.exists():
         msg = f"{context.capitalize()} does not exist: {resolved_path}"
-        raise ExceptionInputValidationError(
-            msg,
+        logger.error(msg)
+        raise ModelOnexError(
+            message=msg,
+            error_code=EnumCoreErrorCode.FILE_NOT_FOUND,
+            path=str(resolved_path),
+            context=context,
         )
 
     if not resolved_path.is_file():
         msg = f"{context.capitalize()} is not a file: {resolved_path}"
-        raise ExceptionInputValidationError(
-            msg,
+        logger.error(msg)
+        raise ModelOnexError(
+            message=msg,
+            error_code=EnumCoreErrorCode.INVALID_INPUT,
+            path=str(resolved_path),
+            context=context,
         )
 
+    logger.debug(f"Validated {context} path: {resolved_path}")
     return resolved_path
 
 
