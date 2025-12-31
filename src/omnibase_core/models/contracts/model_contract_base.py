@@ -27,11 +27,11 @@ from omnibase_core.models.contracts.model_execution_profile import (
     ModelExecutionProfile,
 )
 
-# Import ModelHandlerDescriptor for type checking only (avoid circular import)
+# Import ModelHandlerBehaviorDescriptor for type checking only (avoid circular import)
 # The runtime module imports model_runtime_node_instance which imports ModelContractBase
 if TYPE_CHECKING:
-    from omnibase_core.models.runtime.model_handler_descriptor import (
-        ModelHandlerDescriptor,
+    from omnibase_core.models.runtime.model_handler_behavior_descriptor import (
+        ModelHandlerBehaviorDescriptor,
     )
 from omnibase_core.models.contracts.model_lifecycle_config import ModelLifecycleConfig
 from omnibase_core.models.contracts.model_performance_requirements import (
@@ -148,7 +148,7 @@ class ModelContractBase(BaseModel, ABC):
     # Handler behavior descriptor for contract-driven execution
     # Optional: Only set when created via profile factory
     # Note: String annotation used to avoid circular import with runtime module
-    descriptor: "ModelHandlerDescriptor | None" = Field(
+    descriptor: "ModelHandlerBehaviorDescriptor | None" = Field(
         default=None,
         description="Handler behavior descriptor defining purity, idempotency, "
         "concurrency, isolation, and observability. "
@@ -625,18 +625,20 @@ class ModelContractBase(BaseModel, ABC):
     )
 
 
-# Resolve forward reference for ModelHandlerDescriptor after class definition.
+# Resolve forward reference for ModelHandlerBehaviorDescriptor after class definition.
 # This import is deferred to avoid circular import during module loading.
 # The TYPE_CHECKING import above is used for static type checking only.
 def _rebuild_model_contract_base() -> None:
     """Rebuild ModelContractBase to resolve forward references."""
-    from omnibase_core.models.runtime.model_handler_descriptor import (
-        ModelHandlerDescriptor,
+    from omnibase_core.models.runtime.model_handler_behavior_descriptor import (
+        ModelHandlerBehaviorDescriptor,
     )
 
     # Pass the type in the namespace so Pydantic can resolve the forward reference
     ModelContractBase.model_rebuild(
-        _types_namespace={"ModelHandlerDescriptor": ModelHandlerDescriptor}
+        _types_namespace={
+            "ModelHandlerBehaviorDescriptor": ModelHandlerBehaviorDescriptor
+        }
     )
 
 

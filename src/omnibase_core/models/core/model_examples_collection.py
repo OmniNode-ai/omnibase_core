@@ -32,7 +32,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validat
 # Safe runtime import - error_codes only imports from types.core_types
 from omnibase_core.models.examples.model_example import ModelExample
 from omnibase_core.models.examples.model_example_metadata import ModelExampleMetadata
-from omnibase_core.types.json_types import JsonValue
+from omnibase_core.types.json_types import JsonType
 from omnibase_core.types.type_serializable_value import SerializedDict
 
 
@@ -156,7 +156,7 @@ class ModelExamplesCollection(BaseModel):
         return cls(examples=[example])
 
     @classmethod
-    def _create_example_from_data(cls, data: JsonValue) -> ModelExample:
+    def _create_example_from_data(cls, data: JsonType) -> ModelExample:
         """Create ModelExample from various data formats."""
         from omnibase_core.models.examples.model_example_context_data import (
             ModelExampleContextData,

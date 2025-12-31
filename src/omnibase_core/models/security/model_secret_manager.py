@@ -201,7 +201,7 @@ class ModelSecretManager(BaseModel):
             # standard
             return "***MASKED***"
 
-        # union-ok: mask_recursive - domain-specific union includes ModelMaskData, not pure JsonValue
+        # union-ok: mask_recursive - domain-specific union includes ModelMaskData, not pure JsonType
         def mask_recursive(
             obj: str | int | bool | list[object] | SerializedDict | ModelMaskData,
         ) -> str | int | bool | list[object] | SerializedDict | ModelMaskData:
