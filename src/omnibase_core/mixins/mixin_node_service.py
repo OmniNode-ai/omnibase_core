@@ -151,9 +151,8 @@ class MixinNodeService:
             # Main service event loop
             await self._service_event_loop()
 
-        except (
-            Exception
-        ) as e:  # fallback-ok: service startup requires cleanup on any error
+        # fallback-ok: service startup requires cleanup on any error
+        except Exception as e:
             self._log_error(f"Failed to start service: {e}")
             await self.stop_service_mode()
             raise
@@ -194,9 +193,8 @@ class MixinNodeService:
             for callback in self._shutdown_callbacks:
                 try:
                     callback()
-                except (
-                    Exception
-                ) as e:  # fallback-ok: user callbacks must not crash shutdown
+                # fallback-ok: user callbacks must not crash shutdown
+                except Exception as e:
                     self._log_error(f"Shutdown callback failed: {e}")
 
             # Cleanup event handlers if available
@@ -206,9 +204,8 @@ class MixinNodeService:
             self._service_running = False
             self._log_info("Service stopped successfully")
 
-        except (
-            Exception
-        ) as e:  # fallback-ok: shutdown must complete even if cleanup fails
+        # fallback-ok: shutdown must complete even if cleanup fails
+        except Exception as e:
             self._log_error(f"Error during service shutdown: {e}")
             self._service_running = False
 
@@ -333,10 +330,9 @@ class MixinNodeService:
             self._failed_invocations += 1
             self._log_error(f"Tool invocation failed: {e}")
 
-        except (
-            Exception
-        ) as e:  # fallback-ok: service must emit error response for any failure
-            # Fallback for truly unexpected exceptions not covered above.
+        # fallback-ok: service must emit error response for any failure
+        # Fallback for truly unexpected exceptions not covered above.
+        except Exception as e:
             execution_time_ms = int((time.time() - start_time) * 1000)
             response_event = ModelToolResponseEvent.create_error_response(
                 correlation_id=correlation_id,
@@ -425,9 +421,8 @@ class MixinNodeService:
                 container = self.container
                 if hasattr(container, "get_service"):
                     event_bus = container.get_service("event_bus")
-            except (
-                Exception
-            ):  # fallback-ok: service lookup failure continues to next strategy
+            # fallback-ok: service lookup failure continues to next strategy
+            except Exception:
                 pass
 
         # Raise error if no event bus found

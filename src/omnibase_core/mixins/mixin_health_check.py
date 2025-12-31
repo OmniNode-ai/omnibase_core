@@ -481,9 +481,8 @@ class MixinHealthCheck:
                     ],
                 )
 
-        except (
-            Exception
-        ) as e:  # fallback-ok: health check should return UNHEALTHY status, not crash
+        # fallback-ok: health check should return UNHEALTHY status, not crash
+        except Exception as e:
             from omnibase_core.models.health.model_health_issue import ModelHealthIssue
 
             return ModelHealthStatus.create_unhealthy(
@@ -562,9 +561,8 @@ async def check_postgresql_health(
             ],
         )
 
-    except (
-        Exception
-    ) as e:  # fallback-ok: health check should return UNHEALTHY status, not crash
+    # fallback-ok: health check should return UNHEALTHY status, not crash
+    except Exception as e:
         emit_log_event(
             LogLevel.ERROR,
             "PostgreSQL health check failed",
@@ -668,9 +666,8 @@ async def check_kafka_health(
             ],
         )
 
-    except (
-        Exception
-    ) as e:  # fallback-ok: health check should return DEGRADED status, not crash
+    # fallback-ok: health check should return DEGRADED status, not crash
+    except Exception as e:
         emit_log_event(
             LogLevel.ERROR,
             "Kafka health check failed",
@@ -763,9 +760,8 @@ async def check_redis_health(
             ],
         )
 
-    except (
-        Exception
-    ) as e:  # fallback-ok: health check should return UNHEALTHY status, not crash
+    # fallback-ok: health check should return UNHEALTHY status, not crash
+    except Exception as e:
         emit_log_event(
             LogLevel.ERROR,
             "Redis health check failed",
@@ -960,9 +956,8 @@ async def check_http_service_health(
             ],
         )
 
-    except (
-        Exception
-    ) as e:  # fallback-ok: health check should return UNHEALTHY status, not crash
+    # fallback-ok: health check should return UNHEALTHY status, not crash
+    except Exception as e:
         emit_log_event(
             LogLevel.ERROR,
             "HTTP service health check failed",

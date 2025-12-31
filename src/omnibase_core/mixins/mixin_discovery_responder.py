@@ -196,9 +196,8 @@ class MixinDiscoveryResponder:
         if self._discovery_unsubscribe:
             try:
                 await self._discovery_unsubscribe()
-            except (
-                Exception
-            ):  # fallback-ok: cleanup errors during shutdown are non-critical
+            # fallback-ok: cleanup errors during shutdown are non-critical
+            except Exception:
                 pass
 
         emit_log_event(
