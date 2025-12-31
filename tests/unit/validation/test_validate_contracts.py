@@ -1146,7 +1146,13 @@ class TestExampleContractsValidation:
             if not isinstance(content, dict):
                 continue
 
-            # Check if this looks like a contract (has contract indicators)
+            # Skip handler contracts - they have their own schema and don't use
+            # contract_version/node_type. Handler contracts are validated by
+            # test_handler_contract_examples.py
+            if "handler_id" in content:
+                continue
+
+            # Check if this looks like an ONEX metadata contract (has contract indicators)
             contract_indicators = {
                 "contract_version",
                 "node_type",

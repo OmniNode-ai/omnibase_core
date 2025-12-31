@@ -112,7 +112,14 @@ def validate_yaml_file(file_path: Path) -> list[str]:
 
     # YAML contract validation using Pydantic models
     if isinstance(content, dict):
-        # Check if this appears to be a contract (has any contract-related fields)
+        # Check if this is a handler contract (has handler_id) - skip ONEX metadata validation
+        # Handler contracts use ModelHandlerContract schema and don't require contract_version/node_type
+        if "handler_id" in content:
+            # Handler contracts have their own schema validation
+            # They are validated separately and don't follow ONEX metadata contract structure
+            return errors
+
+        # Check if this appears to be an ONEX metadata contract (has any contract-related fields)
         contract_indicators = {
             "contract_version",
             "node_type",
