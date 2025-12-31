@@ -32,6 +32,7 @@ __all__ = [
     "nodes",
     "notifications",
     "projection",
+    "providers",
     "registration",
     "results",
     "state",

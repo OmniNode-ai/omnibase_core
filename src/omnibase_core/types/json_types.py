@@ -12,30 +12,27 @@ These type aliases follow ONEX patterns by:
 
 Type Hierarchy:
     JsonPrimitive: Basic JSON scalar values (str, int, float, bool, None)
-    JsonValue: Any JSON-compatible value including containers
-    JsonType: Recursive type for full JSON structure with proper nesting
+    JsonType: Recursive type for full JSON structure with proper nesting (PEP 695)
 
 Design Decisions:
     - Uses PEP 604 syntax (X | Y) instead of Union[X, Y] for modern Python 3.12+
-    - JsonValue uses Any for container contents to avoid recursive complexity
-    - JsonType uses forward reference for true recursive definition
+    - JsonType uses PEP 695 ``type`` statement for proper recursive definition
     - Separate PrimitiveValue (without None) for non-nullable contexts
 
 Usage:
     >>> from omnibase_core.types.json_types import (
     ...     JsonPrimitive,
-    ...     JsonValue,
     ...     JsonType,
     ...     PrimitiveValue,
     ...     ToolParameterValue,
     ... )
     >>>
     >>> # Use in function signatures
-    >>> def process_json(data: JsonValue) -> JsonType:
+    >>> def process_json(data: JsonType) -> JsonType:
     ...     pass
     >>>
     >>> # Use for configuration values
-    >>> config: dict[str, JsonValue] = {"key": "value", "count": 42}
+    >>> config: dict[str, JsonType] = {"key": "value", "count": 42}
     >>>
     >>> # Use for tool parameters with constrained types
     >>> params: dict[str, ToolParameterValue] = {"name": "test", "tags": ["a", "b"]}
@@ -46,11 +43,8 @@ See Also:
     - docs/architecture/ONEX_FOUR_NODE_ARCHITECTURE.md: Node architecture patterns
 """
 
-from typing import Any
-
 __all__ = [
     "JsonPrimitive",
-    "JsonValue",
     "JsonType",
     "PrimitiveValue",
     "PrimitiveContainer",
@@ -96,37 +90,15 @@ PrimitiveValue = str | int | float | bool
 
 
 # ==============================================================================
-# JSON Value Types (Non-Recursive)
+# JSON Type (Recursive - PEP 695)
 # ==============================================================================
 
-# Type alias for JSON-compatible values including containers.
-# This is the most commonly used type for JSON data where you need
-# to accept any valid JSON value but don't need recursive type checking.
+# PEP 695 recursive type alias (Python 3.12+)
+# Pydantic 2.x requires this syntax for recursive types to avoid RecursionError.
 #
-# Includes:
-# - All JsonPrimitive types (str, int, float, bool, None)
-# - list[Any]: JSON arrays (nested content not type-checked)
-# - dict[str, Any]: JSON objects (nested content not type-checked)
-#
-# NOTE: Uses Any for container contents to avoid recursive type complexity.
-# For full recursive type checking, use JsonType instead.
-#
-# Replaces inline unions like:
-#     str | int | float | bool | list[Any] | dict[str, Any] | None
-#
-# Example:
-#     >>> data: JsonValue = {"users": [{"name": "Alice", "age": 30}]}
-#     >>> data: JsonValue = [1, 2, 3]
-#     >>> data: JsonValue = "simple string"
-JsonValue = str | int | float | bool | list[Any] | dict[str, Any] | None
-
-
-# ==============================================================================
-# JSON Type (Recursive)
-# ==============================================================================
-
-# Type alias for full recursive JSON structure.
-# Provides proper nested type definition for complete JSON documents.
+# JsonType represents any JSON-serializable value:
+#   - Primitives: str, int, float, bool, None
+#   - Containers: list of JsonType, dict mapping str to JsonType
 #
 # This type is recursive, meaning:
 # - dict values can themselves be JsonType
@@ -136,11 +108,18 @@ JsonValue = str | int | float | bool | list[Any] | dict[str, Any] | None
 # - Full type coverage for deeply nested JSON
 # - Type checking of nested structures
 # - JSON schema validation contexts
+# - Requirement values in capability matching
 #
-# NOTE: The forward reference "JsonType" enables recursive definition.
-# Mypy and other type checkers will properly resolve this recursion.
+# Examples of valid values:
+#   True                                    # bool
+#   20                                      # int
+#   0.95                                    # float
+#   "us-east-1"                             # str
+#   None                                    # null
+#   ["postgres", "mysql"]                   # list
+#   {"timeout": 30, "retries": 3}           # nested dict
 #
-# Example:
+# Example usage:
 #     >>> # Deeply nested structure is fully typed
 #     >>> config: JsonType = {
 #     ...     "database": {
@@ -151,7 +130,7 @@ JsonValue = str | int | float | bool | list[Any] | dict[str, Any] | None
 #     ...         }
 #     ...     }
 #     ... }
-JsonType = dict[str, "JsonType"] | list["JsonType"] | str | int | float | bool | None
+type JsonType = JsonPrimitive | list[JsonType] | dict[str, JsonType]
 
 
 # ==============================================================================
@@ -167,9 +146,9 @@ JsonType = dict[str, "JsonType"] | list["JsonType"] | str | int | float | bool |
 # - list[PrimitiveValue]: Flat list of primitives
 # - dict[str, PrimitiveValue]: Flat dict mapping to primitives
 #
-# NOTE: None is NOT included (unlike JsonPrimitive/JsonValue).
+# NOTE: None is NOT included (unlike JsonPrimitive/JsonType).
 # This type is for contexts where values must be present and non-null.
-# Use JsonValue if you need to allow None in containers.
+# Use JsonType if you need to allow None in containers.
 #
 # Use cases:
 # - Simple configuration values
@@ -196,7 +175,7 @@ PrimitiveContainer = PrimitiveValue | list[PrimitiveValue] | dict[str, Primitive
 # - list[str]: String arrays (common for tags, options, etc.)
 # - dict[str, str]: String-to-string mappings (headers, env vars, etc.)
 #
-# NOTE: This is intentionally more constrained than JsonValue:
+# NOTE: This is intentionally more constrained than JsonType:
 # - No None (parameters should be explicit)
 # - No arbitrary nested structures
 # - List/dict values are strings only
