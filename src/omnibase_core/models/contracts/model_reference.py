@@ -155,6 +155,11 @@ class ModelReference(BaseModel):
         specified class. It handles common import errors gracefully by returning
         None rather than raising exceptions.
 
+        Security:
+            This method uses ``importlib.import_module()`` which executes module
+            initialization code. Only call with trusted reference strings from
+            validated contract files. Never use with untrusted user input.
+
         Args:
             reference: Fully qualified module.class path
                 (e.g., 'omnibase_core.models.events.ModelEventEnvelope')
@@ -187,6 +192,11 @@ class ModelReference(BaseModel):
 
         This method is similar to resolve_import but raises a structured
         ModelOnexError instead of returning None when resolution fails.
+
+        Security:
+            This method uses ``importlib.import_module()`` which executes module
+            initialization code. Only call with trusted reference strings from
+            validated contract files. Never use with untrusted user input.
 
         Args:
             reference: Fully qualified module.class path
@@ -255,6 +265,11 @@ class ModelReference(BaseModel):
 
         Uses the instance's module and class_name to resolve the reference.
 
+        Security:
+            This method uses ``importlib.import_module()`` which executes module
+            initialization code. Only call on ModelReference instances created
+            from trusted contract files. Never use with untrusted user input.
+
         Returns:
             The resolved class/type, or None if resolution fails
 
@@ -273,6 +288,11 @@ class ModelReference(BaseModel):
 
         Uses the instance's module and class_name to resolve the reference.
         Raises ModelOnexError if resolution fails.
+
+        Security:
+            This method uses ``importlib.import_module()`` which executes module
+            initialization code. Only call on ModelReference instances created
+            from trusted contract files. Never use with untrusted user input.
 
         Returns:
             The resolved class/type

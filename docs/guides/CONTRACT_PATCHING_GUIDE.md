@@ -275,6 +275,8 @@ print(ref.fully_qualified_name)  # mypackage.models.events.OrderCreatedEvent
 model_class = ref.resolve()  # Returns the actual class or None
 ```
 
+**Security Note**: The `resolve()` method uses `importlib.import_module()` which executes module initialization code. Only call `resolve()` on ModelReference instances created from trusted contract files. Never use with untrusted user input.
+
 ---
 
 ## Profile Reference

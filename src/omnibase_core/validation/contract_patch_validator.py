@@ -12,12 +12,33 @@ Validation Philosophy:
     - Semantic: Validates internal consistency
     - NOT Resolutive: Does not resolve profiles or models
 
+Logging Conventions:
+    - DEBUG: Detailed trace information (validation steps, field checks)
+    - INFO: High-level operation summaries (validation started/passed/failed)
+    - WARNING: Recoverable issues that don't fail validation
+    - ERROR: Failures that will fail validation
+
+Error Code Conventions:
+    Error codes in this module follow these patterns:
+    - DUPLICATE_LIST_ENTRIES: Duplicate items within an add list
+    - EMPTY_DESCRIPTOR_PATCH: Descriptor patch with no overrides
+    - PURITY_IDEMPOTENT_MISMATCH: Conflicting purity/idempotent settings
+    - NEW_CONTRACT_IDENTITY: Informational - new contract identity declared
+    - NON_STANDARD_PROFILE_NAME: Profile name doesn't follow conventions
+    - NON_STANDARD_VERSION_FORMAT: Version string format is non-standard
+    - FILE_NOT_FOUND: File does not exist
+    - FILE_READ_ERROR: File could not be read
+    - UNEXPECTED_EXTENSION: File has unexpected extension
+    - YAML_VALIDATION_ERROR: YAML parsing or validation error
+    - PYDANTIC_VALIDATION_ERROR: Pydantic model validation error
+
 Related:
     - OMN-1126: ModelContractPatch & Patch Validation
 
 .. versionadded:: 0.4.0
 """
 
+import logging
 from pathlib import Path
 
 from pydantic import ValidationError
@@ -31,6 +52,9 @@ from omnibase_core.utils.util_safe_yaml_loader import load_yaml_content_as_model
 __all__ = [
     "ContractPatchValidator",
 ]
+
+# Configure logger for this module
+logger = logging.getLogger(__name__)
 
 
 class ContractPatchValidator:
@@ -109,6 +133,11 @@ class ContractPatchValidator:
             summary="Patch validation started",
         )
 
+        logger.debug(
+            f"Starting patch validation for profile={patch.extends.profile}, "
+            f"is_new_contract={patch.is_new_contract}"
+        )
+
         # Check for duplicate entries within add lists
         # Note: Conflict checks (add vs remove) are handled by Pydantic model validation
         self._validate_list_operation_duplicates(patch, result)
@@ -126,8 +155,16 @@ class ContractPatchValidator:
         # Update summary based on results
         if result.is_valid:
             result.summary = "Patch validation passed"
+            logger.debug(
+                f"Patch validation passed for profile={patch.extends.profile} "
+                f"(warnings={result.warning_count})"
+            )
         else:
             result.summary = f"Patch validation failed with {result.error_count} errors"
+            logger.info(
+                f"Patch validation failed for profile={patch.extends.profile}: "
+                f"{result.error_count} errors, {result.warning_count} warnings"
+            )
 
         return result
 
@@ -186,6 +223,7 @@ class ContractPatchValidator:
                 result.summary = "Dictionary validation passed"
 
         except ValidationError as e:
+            logger.debug(f"Dictionary validation failed: {len(e.errors())} errors")
             result.is_valid = False
             for error in e.errors():
                 field_path = ".".join(str(loc) for loc in error["loc"])
@@ -240,6 +278,7 @@ class ContractPatchValidator:
 
         # Check file exists
         if not path.exists():
+            logger.error(f"File not found: {path}")
             result.is_valid = False
             result.add_error(
                 f"File not found: {path}",
@@ -251,6 +290,7 @@ class ContractPatchValidator:
 
         # Check file extension
         if path.suffix.lower() not in (".yaml", ".yml"):
+            logger.warning(f"Unexpected file extension for {path}: {path.suffix}")
             result.add_warning(
                 f"Expected .yaml or .yml extension, got: {path.suffix}",
                 code="UNEXPECTED_EXTENSION",
@@ -261,6 +301,7 @@ class ContractPatchValidator:
         try:
             content = path.read_text(encoding="utf-8")
         except OSError as e:
+            logger.warning(f"File read error for {path}: {e}")
             result.is_valid = False
             result.add_error(
                 f"File read error: {e}",
@@ -287,6 +328,7 @@ class ContractPatchValidator:
                 result.summary = "File validation passed"
 
         except ModelOnexError as e:
+            logger.warning(f"YAML parsing or validation error for {path}: {e.message}")
             result.is_valid = False
             result.add_error(
                 f"YAML parsing or validation error: {e.message}",
@@ -296,6 +338,9 @@ class ContractPatchValidator:
             result.summary = "File validation failed: YAML validation error"
 
         except ValidationError as e:
+            logger.warning(
+                f"Pydantic validation failed for {path}: {len(e.errors())} errors"
+            )
             result.is_valid = False
             for error in e.errors():
                 field_path = ".".join(str(loc) for loc in error["loc"])
@@ -347,6 +392,9 @@ class ContractPatchValidator:
                     duplicate_handlers.add(name)
                 seen_handlers.add(name)
             if duplicate_handlers:
+                logger.debug(
+                    f"Found duplicate handlers in add list: {duplicate_handlers}"
+                )
                 result.add_error(
                     f"Duplicate handler(s) in add list: {duplicate_handlers}",
                     code="DUPLICATE_LIST_ENTRIES",
@@ -362,6 +410,9 @@ class ContractPatchValidator:
                     duplicate_deps.add(name)
                 seen_deps.add(name)
             if duplicate_deps:
+                logger.debug(
+                    f"Found duplicate dependencies in add list: {duplicate_deps}"
+                )
                 result.add_error(
                     f"Duplicate dependency(s) in add list: {duplicate_deps}",
                     code="DUPLICATE_LIST_ENTRIES",
@@ -377,6 +428,9 @@ class ContractPatchValidator:
                     duplicates.add(name)
                 seen.add(name)
             if duplicates:
+                logger.debug(
+                    f"Found duplicate capability outputs in add list: {duplicates}"
+                )
                 result.add_error(
                     f"Duplicate capability output(s) in add list: {duplicates}",
                     code="DUPLICATE_LIST_ENTRIES",
@@ -391,6 +445,9 @@ class ContractPatchValidator:
                     duplicate_inputs.add(name)
                 seen_inputs.add(name)
             if duplicate_inputs:
+                logger.debug(
+                    f"Found duplicate capability inputs in add list: {duplicate_inputs}"
+                )
                 result.add_error(
                     f"Duplicate capability input(s) in add list: {duplicate_inputs}",
                     code="DUPLICATE_LIST_ENTRIES",
@@ -405,6 +462,9 @@ class ContractPatchValidator:
                     duplicate_events.add(event)
                 seen_events.add(event)
             if duplicate_events:
+                logger.debug(
+                    f"Found duplicate consumed events in add list: {duplicate_events}"
+                )
                 result.add_error(
                     f"Duplicate consumed event(s) in add list: {duplicate_events}",
                     code="DUPLICATE_LIST_ENTRIES",
@@ -432,12 +492,19 @@ class ContractPatchValidator:
         Note:
             The field is named 'descriptor' but conceptually represents
             handler behavior configuration (timeout, retry, concurrency).
+
+            Empty descriptor patches generate a WARNING (not ERROR) because:
+            1. An empty descriptor is semantically valid (just a no-op)
+            2. It's likely a user mistake but doesn't break merge operations
+            3. The patch system should be permissive for forward compatibility
+            Users are encouraged to remove empty descriptors for clarity.
         """
         if patch.descriptor is None:
             return
 
-        # Check for empty behavior patch (warning, not error)
+        # Check for empty behavior patch (warning, not error - see docstring rationale)
         if not patch.descriptor.has_overrides():
+            logger.debug("Descriptor patch has no overrides - issuing warning")
             result.add_issue(
                 severity=EnumValidationSeverity.WARNING,
                 message="Behavior patch is present but has no overrides",
@@ -447,6 +514,9 @@ class ContractPatchValidator:
 
         # Check purity/idempotent consistency
         if patch.descriptor.purity == "pure" and patch.descriptor.idempotent is False:
+            logger.debug(
+                "Descriptor patch has purity/idempotent mismatch - issuing warning"
+            )
             result.add_issue(
                 severity=EnumValidationSeverity.WARNING,
                 message=(

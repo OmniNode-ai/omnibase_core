@@ -5,7 +5,7 @@
 Contract Patch Model.
 
 Partial contract overrides applied to default profiles.
-Core principle: "User authored files are patches, not full contracts."
+Core principle: "User-authored files are patches, not full contracts."
 
 Part of the contract patching system for OMN-1126.
 
@@ -45,7 +45,7 @@ class ModelContractPatch(BaseModel):
 
     Contract patches represent user-authored partial specifications that
     extend a base contract produced by a profile factory. The core principle
-    is: **"User authored files are patches, not full contracts."**
+    is: **"User-authored files are patches, not full contracts."**
 
     Architecture:
         Profile (Environment Policy)
@@ -183,6 +183,11 @@ class ModelContractPatch(BaseModel):
     # Note: max_length= in Field() must use literal values because Pydantic Field()
     # evaluates at class definition time before ClassVar is available. Keep in sync.
     MAX_LIST_ITEMS: ClassVar[int] = 100
+
+    # Maximum number of items for capability list operations (more constrained).
+    # Capabilities are typically fewer and more significant than handlers/events.
+    # Note: max_length= in Field() must use literal value (50). Keep in sync.
+    MAX_CAPABILITY_LIST_ITEMS: ClassVar[int] = 50
 
     handlers__add: list[ModelHandlerSpec] | None = Field(
         default=None,
@@ -420,6 +425,33 @@ class ModelContractPatch(BaseModel):
         )
 
     # =========================================================================
+    # Private Helper Methods
+    # =========================================================================
+
+    def _collect_conflicts(
+        self,
+        add_names: list[str] | None,
+        remove_names: list[str] | None,
+        field_name: str,
+        all_conflicts: list[str],
+    ) -> None:
+        """Detect conflicts and append to results list if any found.
+
+        Helper method to DRY up the repeated conflict detection pattern
+        in validate_no_add_remove_conflicts. Detects if the same item
+        appears in both add and remove lists.
+
+        Args:
+            add_names: List of names being added (already extracted from models).
+            remove_names: List of names being removed.
+            field_name: Name of the field for error messages.
+            all_conflicts: Mutable list to append conflict messages to.
+        """
+        conflicts = detect_add_remove_conflicts(add_names, remove_names, field_name)
+        if conflicts:
+            all_conflicts.append(f"{field_name}: {conflicts}")
+
+    # =========================================================================
     # Model Validators
     # =========================================================================
 
@@ -475,51 +507,49 @@ class ModelContractPatch(BaseModel):
         all_conflicts: list[str] = []
 
         # Check handlers (extract names from ModelHandlerSpec)
-        if self.handlers__add and self.handlers__remove:
-            handler_add_names = [h.name for h in self.handlers__add]
-            conflicts = detect_add_remove_conflicts(
-                handler_add_names, self.handlers__remove, "handlers"
-            )
-            if conflicts:
-                all_conflicts.append(f"handlers: {conflicts}")
+        handler_add_names = (
+            [h.name for h in self.handlers__add] if self.handlers__add else None
+        )
+        self._collect_conflicts(
+            handler_add_names, self.handlers__remove, "handlers", all_conflicts
+        )
 
         # Check dependencies (extract names from ModelDependency)
-        if self.dependencies__add and self.dependencies__remove:
-            dep_add_names = [d.name for d in self.dependencies__add]
-            conflicts = detect_add_remove_conflicts(
-                dep_add_names, self.dependencies__remove, "dependencies"
-            )
-            if conflicts:
-                all_conflicts.append(f"dependencies: {conflicts}")
+        dep_add_names = (
+            [d.name for d in self.dependencies__add] if self.dependencies__add else None
+        )
+        self._collect_conflicts(
+            dep_add_names, self.dependencies__remove, "dependencies", all_conflicts
+        )
 
-        # Check consumed_events
-        conflicts = detect_add_remove_conflicts(
+        # Check consumed_events (string lists, no extraction needed)
+        self._collect_conflicts(
             self.consumed_events__add,
             self.consumed_events__remove,
             "consumed_events",
+            all_conflicts,
         )
-        if conflicts:
-            all_conflicts.append(f"consumed_events: {conflicts}")
 
-        # Check capability_inputs
-        conflicts = detect_add_remove_conflicts(
+        # Check capability_inputs (string lists, no extraction needed)
+        self._collect_conflicts(
             self.capability_inputs__add,
             self.capability_inputs__remove,
             "capability_inputs",
+            all_conflicts,
         )
-        if conflicts:
-            all_conflicts.append(f"capability_inputs: {conflicts}")
 
         # Check capability_outputs (extract names from ModelCapabilityProvided)
-        if self.capability_outputs__add and self.capability_outputs__remove:
-            cap_out_add_names = [c.name for c in self.capability_outputs__add]
-            conflicts = detect_add_remove_conflicts(
-                cap_out_add_names,
-                self.capability_outputs__remove,
-                "capability_outputs",
-            )
-            if conflicts:
-                all_conflicts.append(f"capability_outputs: {conflicts}")
+        cap_out_add_names = (
+            [c.name for c in self.capability_outputs__add]
+            if self.capability_outputs__add
+            else None
+        )
+        self._collect_conflicts(
+            cap_out_add_names,
+            self.capability_outputs__remove,
+            "capability_outputs",
+            all_conflicts,
+        )
 
         if all_conflicts:
             raise ValueError(
