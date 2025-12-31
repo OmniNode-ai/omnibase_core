@@ -169,57 +169,66 @@ class ModelExamplesCollection(BaseModel):
         if isinstance(data, dict):
             # Check if it has required ModelExample fields
             if all(k in data for k in ["input_data", "output_data"]):
-                # Convert dicts to proper types
-                input_data = None
-                if "input_data" in data and data["input_data"] is not None:
-                    input_data = (
-                        ModelExampleInputData(**data["input_data"])
-                        if isinstance(data["input_data"], dict)
-                        else data["input_data"]
-                    )
+                # Convert dicts to proper types using model_validate for type-safe coercion
+                input_data: ModelExampleInputData | None = None
+                input_raw = data.get("input_data")
+                if input_raw is not None:
+                    if isinstance(input_raw, dict):
+                        input_data = ModelExampleInputData.model_validate(input_raw)
+                    elif isinstance(input_raw, ModelExampleInputData):
+                        input_data = input_raw
+                    # Other types are skipped (leave as None)
 
-                output_data = None
-                if "output_data" in data and data["output_data"] is not None:
-                    output_data = (
-                        ModelExampleOutputData(**data["output_data"])
-                        if isinstance(data["output_data"], dict)
-                        else data["output_data"]
-                    )
+                output_data: ModelExampleOutputData | None = None
+                output_raw = data.get("output_data")
+                if output_raw is not None:
+                    if isinstance(output_raw, dict):
+                        output_data = ModelExampleOutputData.model_validate(output_raw)
+                    elif isinstance(output_raw, ModelExampleOutputData):
+                        output_data = output_raw
+                    # Other types are skipped (leave as None)
 
-                context = None
-                if "context" in data and data["context"] is not None:
-                    context = (
-                        ModelExampleContextData(**data["context"])
-                        if isinstance(data["context"], dict)
-                        else data["context"]
-                    )
+                context: ModelExampleContextData | None = None
+                context_raw = data.get("context")
+                if context_raw is not None:
+                    if isinstance(context_raw, dict):
+                        context = ModelExampleContextData.model_validate(context_raw)
+                    elif isinstance(context_raw, ModelExampleContextData):
+                        context = context_raw
+                    # Other types are skipped (leave as None)
+
+                # Get values with type-safe defaults
+                name_val = data.get("name")
+                name = str(name_val) if name_val is not None else "Example"
+                desc_val = data.get("description")
+                description = str(desc_val) if desc_val is not None else ""
+                tags_val = data.get("tags")
+                tags = list(tags_val) if isinstance(tags_val, list) else []
+                is_valid_val = data.get("is_valid")
+                is_valid = bool(is_valid_val) if is_valid_val is not None else True
+                notes_val = data.get("validation_notes")
+                validation_notes = str(notes_val) if notes_val is not None else ""
 
                 return ModelExample(
-                    name=data.get("name") or "Example",  # Provide default
-                    description=data.get("description") or "",
+                    name=name,
+                    description=description,
                     input_data=input_data,
                     output_data=output_data,
                     context=context,
-                    tags=data.get("tags", []),
-                    is_valid=data.get("is_valid", True),
-                    validation_notes=data.get("validation_notes") or "",
+                    tags=tags,  # type: ignore[arg-type]
+                    is_valid=is_valid,
+                    validation_notes=validation_notes,
                 )
             else:
-                # Treat as input_data
-                input_data = (
-                    ModelExampleInputData(**data)
-                    if isinstance(data, dict)
-                    else ModelExampleInputData()
-                )
+                # Treat as input_data - use model_validate for type-safe coercion
+                input_data = ModelExampleInputData.model_validate(data)
+                name_val = data.get("name")
+                name = str(name_val) if name_val is not None else "Example"
+                desc_val = data.get("description")
+                description = str(desc_val) if desc_val is not None else ""
                 return ModelExample(
-                    name=(
-                        data.get("name", "Example")
-                        if isinstance(data, dict)
-                        else "Example"
-                    ),
-                    description=(
-                        data.get("description", "") if isinstance(data, dict) else ""
-                    ),
+                    name=name,
+                    description=description,
                     input_data=input_data,
                 )
         else:

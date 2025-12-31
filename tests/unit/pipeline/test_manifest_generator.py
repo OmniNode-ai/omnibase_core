@@ -521,5 +521,77 @@ class TestManifestGeneratorBuild:
         assert manifest.node_identity.node_kind == sample_node_identity.node_kind
 
 
+@pytest.mark.unit
+class TestManifestGeneratorSizeEstimation:
+    """Test ManifestGenerator size estimation."""
+
+    def test_estimate_empty_manifest(
+        self,
+        generator: ManifestGenerator,
+    ) -> None:
+        """Test size estimation for empty manifest."""
+        size = generator.estimate_json_size_bytes()
+        # Empty manifest has base overhead for structure, identities, etc.
+        assert size > 0
+        assert size < 2000  # Should be small for empty manifest
+
+    def test_estimate_with_hook_traces(
+        self,
+        generator: ManifestGenerator,
+    ) -> None:
+        """Test size estimation increases with hook traces."""
+        base_size = generator.estimate_json_size_bytes()
+
+        # Add some hook traces
+        for i in range(10):
+            generator.start_hook(
+                f"hook-{i}", f"handler-{i}", EnumHandlerExecutionPhase.EXECUTE
+            )
+            generator.complete_hook(f"hook-{i}", EnumExecutionStatus.SUCCESS)
+
+        new_size = generator.estimate_json_size_bytes()
+        # Size should have increased significantly (10 hooks * ~500 bytes each)
+        assert new_size > base_size
+        assert new_size > base_size + 4000  # At least 400 bytes per hook
+
+    def test_estimate_with_capabilities(
+        self,
+        generator: ManifestGenerator,
+    ) -> None:
+        """Test size estimation increases with capabilities."""
+        base_size = generator.estimate_json_size_bytes()
+
+        # Add some capability activations
+        for i in range(5):
+            generator.record_capability_activation(
+                capability_name=f"cap-{i}",
+                activated=True,
+                reason=EnumActivationReason.PREDICATE_TRUE,
+            )
+            generator.record_capability_activation(
+                capability_name=f"skip-{i}",
+                activated=False,
+                reason=EnumActivationReason.PREDICATE_FALSE,
+            )
+
+        new_size = generator.estimate_json_size_bytes()
+        assert new_size > base_size
+
+    def test_estimate_with_emissions(
+        self,
+        generator: ManifestGenerator,
+    ) -> None:
+        """Test size estimation increases with emissions."""
+        base_size = generator.estimate_json_size_bytes()
+
+        # Add emissions
+        for i in range(20):
+            generator.record_event(f"EventType{i}")
+            generator.record_intent(f"IntentType{i}")
+
+        new_size = generator.estimate_json_size_bytes()
+        assert new_size > base_size
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

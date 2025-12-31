@@ -458,6 +458,91 @@ class ManifestGenerator:
         """
         self._phase_durations[phase] = duration_ms
 
+    # === Size Estimation ===
+
+    def estimate_json_size_bytes(self) -> int:
+        """
+        Estimate the JSON-serialized size of the manifest in bytes.
+
+        This method provides a quick approximation of the manifest size without
+        actually building and serializing it. Useful for:
+
+        - Detecting large manifests before serialization (e.g., >1MB warning)
+        - Making decisions about storage strategy (streaming vs. batch)
+        - Monitoring manifest growth during long-running pipelines
+
+        The estimate uses average byte sizes for different data types:
+
+        - UUID: ~36 bytes (string representation)
+        - datetime: ~24 bytes (ISO format)
+        - Hook trace: ~500 bytes (includes all fields)
+        - Capability activation: ~200 bytes
+        - Dependency edge: ~150 bytes
+        - Emission type: ~50 bytes
+
+        Returns:
+            Estimated size in bytes. Actual size may vary ±20% due to
+            field value lengths and JSON formatting choices.
+
+        Example:
+            >>> generator = ManifestGenerator(...)
+            >>> # ... record observations ...
+            >>> size = generator.estimate_json_size_bytes()
+            >>> if size > 1_000_000:  # 1MB
+            ...     logger.warning(f"Large manifest detected: ~{size/1024:.0f}KB")
+
+        .. versionadded:: 0.4.0
+        """
+        # Base overhead: manifest structure, IDs, timestamps
+        base_size = 500  # UUIDs, timestamps, wrapper structure
+
+        # Node and contract identity
+        identity_size = 300  # Approximate size for identity models
+
+        # Hook traces (largest contributor for long pipelines)
+        hook_trace_size = 500  # Average bytes per trace
+        traces_size = len(self._hook_traces) * hook_trace_size
+        pending_size = len(self._pending_hooks) * hook_trace_size
+
+        # Capability activations
+        activation_size = 200  # Average bytes per activation
+        activations_size = (
+            len(self._activated_capabilities) + len(self._skipped_capabilities)
+        ) * activation_size
+
+        # Dependency edges
+        edge_size = 150  # Average bytes per edge
+        edges_size = len(self._dependency_edges) * edge_size
+
+        # Emissions (type names as strings)
+        emission_size = 50  # Average bytes per emission type
+        emissions_count = (
+            len(self._events)
+            + len(self._intents)
+            + len(self._projections)
+            + len(self._actions)
+        )
+        emissions_size = emissions_count * emission_size
+
+        # Failures
+        failure_size = 400  # Average bytes per failure (includes stack trace estimate)
+        failures_size = len(self._failures) * failure_size
+
+        # Phase durations and resolved order
+        metadata_size = len(self._phase_durations) * 50 + len(self._resolved_order) * 50
+
+        return (
+            base_size
+            + identity_size
+            + traces_size
+            + pending_size
+            + activations_size
+            + edges_size
+            + emissions_size
+            + failures_size
+            + metadata_size
+        )
+
     # === Build Method ===
 
     def build(self) -> ModelExecutionManifest:

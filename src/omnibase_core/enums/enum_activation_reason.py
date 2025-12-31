@@ -12,8 +12,6 @@ explainability for activation decisions.
     Added as part of Manifest Generation & Observability (OMN-1113)
 """
 
-from __future__ import annotations
-
 from enum import Enum, unique
 
 
@@ -129,7 +127,7 @@ class EnumActivationReason(str, Enum):
         return not self.is_activation_reason()
 
     @classmethod
-    def get_activation_reasons(cls) -> list[EnumActivationReason]:
+    def get_activation_reasons(cls) -> list["EnumActivationReason"]:
         """
         Get all reasons that result in activation.
 
@@ -144,7 +142,7 @@ class EnumActivationReason(str, Enum):
         ]
 
     @classmethod
-    def get_skip_reasons(cls) -> list[EnumActivationReason]:
+    def get_skip_reasons(cls) -> list["EnumActivationReason"]:
         """
         Get all reasons that result in skipping.
 

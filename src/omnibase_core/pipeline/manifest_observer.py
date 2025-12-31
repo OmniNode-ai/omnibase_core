@@ -68,8 +68,13 @@ class ManifestObserver:
         Added as part of Manifest Generation & Observability (OMN-1113)
     """
 
-    CONTEXT_KEY = "_manifest_generator"  # env-var-ok: internal context key constant
-    """Key used to store the generator in pipeline context data."""
+    CONTEXT_KEY = (
+        "__omnibase_manifest_generator__"  # env-var-ok: internal context key constant
+    )
+    """Key used to store the generator in pipeline context data.
+
+    Uses dunder naming convention to minimize collision risk with user keys.
+    """
 
     @classmethod
     def attach(
