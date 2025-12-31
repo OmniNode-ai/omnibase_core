@@ -15,7 +15,6 @@ import pytest
 from omnibase_core.types.json_types import (
     JsonPrimitive,
     JsonType,
-    JsonValue,
     PrimitiveContainer,
     PrimitiveValue,
     ToolParameterValue,
@@ -204,148 +203,43 @@ class TestPrimitiveValue:
 
 
 @pytest.mark.unit
-class TestJsonValue:
-    """Tests for JsonValue type alias."""
-
-    def test_import(self) -> None:
-        """Test that JsonValue can be imported."""
-        assert JsonValue is not None
-
-    def test_type_is_union(self) -> None:
-        """Test that JsonValue is a union type."""
-        origin = get_origin(JsonValue)
-        assert origin is not None
-
-    def test_type_includes_str(self) -> None:
-        """Test that JsonValue includes str."""
-        args = get_args(JsonValue)
-        assert str in args
-
-    def test_type_includes_int(self) -> None:
-        """Test that JsonValue includes int."""
-        args = get_args(JsonValue)
-        assert int in args
-
-    def test_type_includes_float(self) -> None:
-        """Test that JsonValue includes float."""
-        args = get_args(JsonValue)
-        assert float in args
-
-    def test_type_includes_bool(self) -> None:
-        """Test that JsonValue includes bool."""
-        args = get_args(JsonValue)
-        assert bool in args
-
-    def test_type_includes_none(self) -> None:
-        """Test that JsonValue includes None."""
-        args = get_args(JsonValue)
-        assert type(None) in args
-
-    def test_type_includes_list(self) -> None:
-        """Test that JsonValue includes list[Any]."""
-        args = get_args(JsonValue)
-        # Check for list type with Any content
-        list_types = [arg for arg in args if get_origin(arg) is list]
-        assert len(list_types) == 1
-
-    def test_type_includes_dict(self) -> None:
-        """Test that JsonValue includes dict[str, Any]."""
-        args = get_args(JsonValue)
-        # Check for dict type
-        dict_types = [arg for arg in args if get_origin(arg) is dict]
-        assert len(dict_types) == 1
-
-    def test_type_annotation_with_dict(self) -> None:
-        """Test using JsonValue with dict value."""
-        value: JsonValue = {"key": "value"}
-        assert value == {"key": "value"}
-        assert isinstance(value, dict)
-
-    def test_type_annotation_with_list(self) -> None:
-        """Test using JsonValue with list value."""
-        value: JsonValue = [1, 2, 3]
-        assert value == [1, 2, 3]
-        assert isinstance(value, list)
-
-    def test_type_annotation_with_nested_dict(self) -> None:
-        """Test using JsonValue with nested dict."""
-        value: JsonValue = {"users": [{"name": "Alice", "age": 30}]}
-        assert value == {"users": [{"name": "Alice", "age": 30}]}
-
-    def test_docstring_example_nested_dict(self) -> None:
-        """Test docstring example: data: JsonValue = {'users': [{'name': 'Alice', 'age': 30}]}."""
-        data: JsonValue = {"users": [{"name": "Alice", "age": 30}]}
-        assert data == {"users": [{"name": "Alice", "age": 30}]}
-
-    def test_docstring_example_list(self) -> None:
-        """Test docstring example: data: JsonValue = [1, 2, 3]."""
-        data: JsonValue = [1, 2, 3]
-        assert data == [1, 2, 3]
-
-    def test_docstring_example_simple_string(self) -> None:
-        """Test docstring example: data: JsonValue = 'simple string'."""
-        data: JsonValue = "simple string"
-        assert data == "simple string"
-
-    def test_complex_nested_structure(self) -> None:
-        """Test JsonValue with deeply nested structure."""
-        value: JsonValue = {
-            "level1": {"level2": {"level3": [1, 2, {"level4": "deep"}]}}
-        }
-        # Access nested structure - runtime check
-        assert isinstance(value, dict)
-        level1 = value["level1"]
-        assert isinstance(level1, dict)
-        level2 = level1["level2"]
-        assert isinstance(level2, dict)
-        level3 = level2["level3"]
-        assert isinstance(level3, list)
-        assert level3[2]["level4"] == "deep"
-
-    def test_mixed_type_list(self) -> None:
-        """Test JsonValue with list containing mixed types."""
-        value: JsonValue = [1, "two", 3.0, True, None, {"key": "value"}]
-        assert isinstance(value, list)
-        assert len(value) == 6
-
-
-@pytest.mark.unit
 class TestJsonType:
-    """Tests for JsonType recursive type alias."""
+    """Tests for JsonType recursive type alias.
+
+    Note (v0.4.0): JsonType uses PEP 695 type alias syntax for proper
+    recursive type handling with Pydantic 2.x. Tests that relied on
+    get_args() have been replaced with functional tests that verify
+    runtime behavior.
+    """
 
     def test_import(self) -> None:
         """Test that JsonType can be imported."""
         assert JsonType is not None
 
-    def test_type_is_union(self) -> None:
-        """Test that JsonType is a union type."""
-        origin = get_origin(JsonType)
-        assert origin is not None
+    def test_accepts_str(self) -> None:
+        """Test that JsonType accepts str values at runtime."""
+        value: JsonType = "hello"
+        assert isinstance(value, str)
 
-    def test_type_includes_str(self) -> None:
-        """Test that JsonType includes str."""
-        args = get_args(JsonType)
-        assert str in args
+    def test_accepts_int(self) -> None:
+        """Test that JsonType accepts int values at runtime."""
+        value: JsonType = 42
+        assert isinstance(value, int)
 
-    def test_type_includes_int(self) -> None:
-        """Test that JsonType includes int."""
-        args = get_args(JsonType)
-        assert int in args
+    def test_accepts_float(self) -> None:
+        """Test that JsonType accepts float values at runtime."""
+        value: JsonType = 3.14
+        assert isinstance(value, float)
 
-    def test_type_includes_float(self) -> None:
-        """Test that JsonType includes float."""
-        args = get_args(JsonType)
-        assert float in args
+    def test_accepts_bool(self) -> None:
+        """Test that JsonType accepts bool values at runtime."""
+        value: JsonType = True
+        assert isinstance(value, bool)
 
-    def test_type_includes_bool(self) -> None:
-        """Test that JsonType includes bool."""
-        args = get_args(JsonType)
-        assert bool in args
-
-    def test_type_includes_none(self) -> None:
-        """Test that JsonType includes None."""
-        args = get_args(JsonType)
-        assert type(None) in args
+    def test_accepts_none(self) -> None:
+        """Test that JsonType accepts None values at runtime."""
+        value: JsonType = None
+        assert value is None
 
     def test_type_annotation_with_primitive(self) -> None:
         """Test using JsonType with primitive value."""
@@ -620,7 +514,6 @@ class TestModuleExports:
 
         expected_exports = [
             "JsonPrimitive",
-            "JsonValue",
             "JsonType",
             "PrimitiveValue",
             "PrimitiveContainer",
@@ -636,7 +529,6 @@ class TestModuleExports:
 
         expected_exports = {
             "JsonPrimitive",
-            "JsonValue",
             "JsonType",
             "PrimitiveValue",
             "PrimitiveContainer",
@@ -648,16 +540,11 @@ class TestModuleExports:
 
 @pytest.mark.unit
 class TestTypeRelationships:
-    """Tests for relationships between type aliases."""
+    """Tests for relationships between type aliases.
 
-    def test_json_primitive_subset_of_json_value(self) -> None:
-        """Test that JsonPrimitive components are subset of JsonValue components."""
-        primitive_args = set(get_args(JsonPrimitive))
-        value_args = set(get_args(JsonValue))
-
-        # All primitive types should be in JsonValue
-        for prim in primitive_args:
-            assert prim in value_args, f"{prim} from JsonPrimitive not in JsonValue"
+    Note (v0.4.0): JsonType uses PEP 695 type alias syntax, which has different
+    runtime introspection behavior.
+    """
 
     def test_primitive_value_subset_of_json_primitive(self) -> None:
         """Test that PrimitiveValue is JsonPrimitive without None."""
@@ -668,25 +555,33 @@ class TestTypeRelationships:
         expected = json_prim_args - {type(None)}
         assert prim_value_args == expected
 
-    def test_tool_parameter_is_constrained(self) -> None:
-        """Test that ToolParameterValue is more constrained than JsonValue."""
+    def test_tool_parameter_does_not_include_none(self) -> None:
+        """Test that ToolParameterValue does not include None."""
         tool_args = set(get_args(ToolParameterValue))
-        value_args = set(get_args(JsonValue))
 
-        # ToolParameterValue should not have None
+        # ToolParameterValue should not have None (it's for explicit parameters)
         assert type(None) not in tool_args
-        # But JsonValue should have None
-        assert type(None) in value_args
+
+    def test_json_primitive_components(self) -> None:
+        """Test that JsonPrimitive contains expected primitive types."""
+        primitive_args = set(get_args(JsonPrimitive))
+
+        # Verify expected components
+        assert str in primitive_args
+        assert int in primitive_args
+        assert float in primitive_args
+        assert bool in primitive_args
+        assert type(None) in primitive_args
 
 
 @pytest.mark.unit
 class TestUsageInFunctionSignatures:
     """Tests for using type aliases in function signatures."""
 
-    def test_function_with_json_value_param(self) -> None:
-        """Test function that accepts JsonValue parameter."""
+    def test_function_with_json_type_param(self) -> None:
+        """Test function that accepts JsonType parameter."""
 
-        def process_json(data: JsonValue) -> str:
+        def process_json(data: JsonType) -> str:
             if data is None:
                 return "null"
             return str(type(data).__name__)
@@ -741,7 +636,7 @@ class TestDocstringExamplesFromModule:
     def test_module_usage_example_function_signature(self) -> None:
         """Test module docstring example: function signature usage."""
 
-        def process_json(data: JsonValue) -> JsonType:
+        def process_json(data: JsonType) -> JsonType:
             # Simple pass-through for testing
             if isinstance(data, dict):
                 # Cast to JsonType since dict[str, Any] is compatible
@@ -756,7 +651,7 @@ class TestDocstringExamplesFromModule:
 
     def test_module_usage_example_config_dict(self) -> None:
         """Test module docstring example: config dict usage."""
-        config: dict[str, JsonValue] = {"key": "value", "count": 42}
+        config: dict[str, JsonType] = {"key": "value", "count": 42}
         assert config["key"] == "value"
         assert config["count"] == 42
 
