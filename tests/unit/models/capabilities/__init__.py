@@ -1,3 +1,4 @@
-# SPDX-License-Identifier: MIT
-# Copyright (c) 2025 OmniNode Team
-"""Unit tests for capabilities models."""
+# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
+#
+# SPDX-License-Identifier: Apache-2.0
+"""Unit tests for capability models."""

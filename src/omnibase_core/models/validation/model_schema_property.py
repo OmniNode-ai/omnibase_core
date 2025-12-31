@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 
 from pydantic import BaseModel
 
-from omnibase_core.types.json_types import JsonValue, PrimitiveValue
+from omnibase_core.types.json_types import JsonType, PrimitiveValue
 
 if TYPE_CHECKING:
     from omnibase_core.models.validation.model_required_fields_model import (
@@ -28,7 +28,7 @@ class ModelSchemaProperty(BaseModel):
     type: str | None = None
     title: str | None = None
     description: str | None = None
-    default: JsonValue = None
+    default: JsonType = None
     enum: list[PrimitiveValue] | None = None
     format: str | None = None
     items: ModelSchemaProperty | None = None
