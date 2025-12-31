@@ -110,7 +110,7 @@ asyncio.run(run_pipeline())
 
 The pipeline executes hooks in a canonical phase order:
 
-```
+```text
 preflight -> before -> execute -> after -> emit -> finalize
 ```
 
@@ -187,7 +187,7 @@ custom_plan = ModelExecutionPlan(
 
 ### Component Overview
 
-```
+```text
                     +-----------------+
                     |  RegistryHook   |
                     |  (registration) |

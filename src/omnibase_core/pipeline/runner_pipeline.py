@@ -75,6 +75,24 @@ class PipelineContext(BaseModel):
     The context is shared and mutable across all hooks within a pipeline run,
     allowing hooks to communicate state between each other.
 
+    .. warning:: **Mutable Context Caveat**
+
+        The ``data`` dict passed to hooks is **mutable and shared**. Any hook can
+        modify the context, and those changes persist to all subsequent hooks in
+        the pipeline. This is intentional for inter-hook communication but requires
+        hooks to coordinate their key usage to avoid conflicts.
+
+        Example::
+
+            # Hook A writes to context
+            def hook_a(ctx: PipelineContext) -> None:
+                ctx.data["result"] = {"status": "processed"}
+
+            # Hook B can read and modify the same data
+            def hook_b(ctx: PipelineContext) -> None:
+                result = ctx.data.get("result", {})
+                result["validated"] = True
+
     Thread Safety
     -------------
     **This class is NOT thread-safe.**
@@ -310,23 +328,9 @@ class RunnerPipeline:
                     exception_to_raise = e
                     break  # Stop executing phases, but finalize will still run
         finally:
-            # Finalize ALWAYS runs
-            try:
-                finalize_errors = await self._execute_phase("finalize", context)
-                errors.extend(finalize_errors)
-            except Exception as finalize_exc:
-                # This exception handler catches framework-level errors only.
-                # Hook execution errors are captured inside _execute_phase with
-                # proper hook_id because finalize has fail_fast=False.
-                # Framework errors (e.g., plan access failures) have no hook context.
-                errors.append(
-                    ModelHookError(
-                        phase="finalize",
-                        hook_id="[framework]",
-                        error_type=type(finalize_exc).__name__,
-                        error_message=f"Framework error during finalize phase: {finalize_exc}",
-                    )
-                )
+            # Finalize phase is extracted for clarity and always runs
+            finalize_errors = await self._execute_finalize_phase(context)
+            errors.extend(finalize_errors)
 
         # Re-raise exception from fail-fast phase if any
         if exception_to_raise is not None:
@@ -338,6 +342,73 @@ class RunnerPipeline:
             context=context,
         )
 
+    async def _execute_finalize_phase(
+        self,
+        context: PipelineContext,
+    ) -> list[ModelHookError]:
+        """
+        Execute the finalize phase with guaranteed error capture.
+
+        The finalize phase ALWAYS runs regardless of earlier phase failures.
+        It uses continue-on-error semantics (fail_fast=False) so all finalize
+        hooks execute even if some fail.
+
+        This method wraps finalize execution to ensure:
+        1. Hook-level errors are captured with proper hook_id context
+        2. Framework-level errors (outside hook execution) are captured gracefully
+        3. No exception escapes - all errors become ModelHookError entries
+
+        Args:
+            context: The shared pipeline context
+
+        Returns:
+            List of errors captured during finalize (never raises)
+        """
+        errors: list[ModelHookError] = []
+        current_hook_id: str | None = None
+
+        try:
+            # Get hooks to track which hook we're executing for error context
+            hooks = self._plan.get_phase_hooks("finalize")
+
+            for hook in hooks:
+                current_hook_id = hook.hook_id
+                try:
+                    await self._execute_hook(hook, context)
+                    # Only clear hook_id after successful execution
+                    current_hook_id = None
+                except Exception as e:
+                    # Capture error with proper hook_id context
+                    errors.append(
+                        ModelHookError(
+                            phase="finalize",
+                            hook_id=hook.hook_id,
+                            error_type=type(e).__name__,
+                            error_message=str(e),
+                        )
+                    )
+                    # Clear after capturing - hook processing complete
+                    current_hook_id = None
+
+        except Exception as framework_exc:
+            # Framework-level error (e.g., plan access failure, hook retrieval error)
+            # Include last known hook_id if available for debugging context
+            hook_id_context = (
+                f"[framework:after:{current_hook_id}]"
+                if current_hook_id
+                else "[framework]"
+            )
+            errors.append(
+                ModelHookError(
+                    phase="finalize",
+                    hook_id=hook_id_context,
+                    error_type=type(framework_exc).__name__,
+                    error_message=f"Framework error during finalize phase: {framework_exc}",
+                )
+            )
+
+        return errors
+
     async def _execute_phase(
         self,
         phase: PipelinePhase,
@@ -346,17 +417,33 @@ class RunnerPipeline:
         """
         Execute all hooks in a phase.
 
+        Phase Semantics (fail_fast behavior):
+            - **preflight, before, execute**: fail_fast=True
+              Abort immediately on first error. These phases must complete
+              successfully for the pipeline to be in a valid state.
+            - **after, emit, finalize**: fail_fast=False
+              Continue executing remaining hooks even if one fails. Errors are
+              collected and returned. These phases handle cleanup/notification
+              where partial execution is acceptable.
+
+        Note:
+            The fail_fast behavior is determined by the execution plan via
+            ``self._plan.is_phase_fail_fast(phase)``. The semantic defaults above
+            match CANONICAL_PHASE_ORDER but can be overridden in custom plans.
+
         Args:
             phase: The phase to execute
             context: The shared pipeline context
 
         Returns:
-            List of errors captured (for continue phases)
+            List of errors captured (for continue phases, i.e., fail_fast=False)
 
         Raises:
             Exception: For fail-fast phases, re-raises the first exception
         """
         hooks = self._plan.get_phase_hooks(phase)
+        # Fail-fast semantics: preflight/before/execute abort on error,
+        # after/emit/finalize continue and collect errors
         fail_fast = self._plan.is_phase_fail_fast(phase)
         errors: list[ModelHookError] = []
 
@@ -415,6 +502,15 @@ class RunnerPipeline:
                         callable_fn(context), timeout=hook.timeout_seconds
                     )
                 else:
+                    # NOTE: Sync hook timeout limitation
+                    # asyncio.to_thread() runs the sync callable in a thread pool executor.
+                    # Thread cancellation in Python is cooperative, not preemptive.
+                    # When a timeout occurs:
+                    #   - The asyncio.wait_for() will raise TimeoutError immediately
+                    #   - BUT the sync code continues running in the background thread
+                    #     until it completes naturally or hits an interruptible point
+                    # Long-running CPU-bound sync hooks may not respect timeout precisely.
+                    # For strict timeout enforcement, prefer async hooks that yield control.
                     await asyncio.wait_for(
                         asyncio.to_thread(callable_fn, context),
                         timeout=hook.timeout_seconds,

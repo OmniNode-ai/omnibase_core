@@ -4,10 +4,11 @@
 """Runtime plan builder for pipeline execution."""
 
 import heapq
-import logging
 from collections import defaultdict
 
 from omnibase_core.enums.enum_handler_type_category import EnumHandlerTypeCategory
+from omnibase_core.enums.enum_log_level import EnumLogLevel
+from omnibase_core.logging.core_logging import emit_log_event
 from omnibase_core.pipeline.exceptions import (
     DependencyCycleError,
     HookTypeMismatchError,
@@ -21,8 +22,6 @@ from omnibase_core.pipeline.models import (
     PipelinePhase,
 )
 from omnibase_core.pipeline.registry_hook import RegistryHook
-
-logger = logging.getLogger(__name__)
 
 # Phase fail_fast semantics:
 # - preflight, before, execute: fail_fast=True (critical phases, abort on first error)
@@ -379,7 +378,7 @@ class BuilderExecutionPlan:
             f"{chr(10).join(graph_lines)}\n"
             f"  Hooks in cycle: {cycle_str}"
         )
-        logger.debug(log_message)
+        emit_log_event(EnumLogLevel.DEBUG, log_message)
 
 
 # Backwards compatibility alias

@@ -3,8 +3,6 @@
 # SPDX-License-Identifier: Apache-2.0
 """Tests for BuilderExecutionPlan."""
 
-import logging
-
 import pytest
 
 from omnibase_core.enums.enum_handler_type_category import EnumHandlerTypeCategory
@@ -493,9 +491,13 @@ class TestBuilderExecutionPlanCycleLogging:
 
     @pytest.mark.unit
     def test_cycle_detection_logs_dependency_graph(
-        self, caplog: pytest.LogCaptureFixture
+        self, capsys: pytest.CaptureFixture[str]
     ) -> None:
-        """Verify that dependency cycle detection logs the dependency graph."""
+        """Verify that dependency cycle detection logs the dependency graph.
+
+        Note: Cycle detection logging uses emit_log_event which writes to stdout,
+        so we use capsys instead of caplog to capture the output.
+        """
         hook_a = ModelPipelineHook(
             hook_id="hook-a",
             phase="execute",
@@ -511,25 +513,20 @@ class TestBuilderExecutionPlanCycleLogging:
         registry = create_frozen_registry(hook_a, hook_b)
         builder = BuilderExecutionPlan(registry=registry)
 
-        with caplog.at_level(logging.DEBUG):
-            with pytest.raises(DependencyCycleError):
-                builder.build()
+        with pytest.raises(DependencyCycleError):
+            builder.build()
+
+        # Capture stdout where emit_log_event writes
+        captured = capsys.readouterr()
+        log_text = captured.out
 
         # Verify log message was captured
-        assert len(caplog.records) >= 1
-
-        # Find the cycle detection log message
-        cycle_log = None
-        for record in caplog.records:
-            if "Dependency cycle detected" in record.message:
-                cycle_log = record
-                break
-
-        assert cycle_log is not None, "Expected cycle detection log not found"
-        assert cycle_log.levelno == logging.DEBUG
+        assert "Dependency cycle detected" in log_text, (
+            "Expected cycle detection log not found"
+        )
+        assert "[DEBUG]" in log_text
 
         # Verify log content includes required information
-        log_text = cycle_log.message
         assert "phase 'execute'" in log_text
         assert "hook-a" in log_text
         assert "hook-b" in log_text
@@ -539,9 +536,13 @@ class TestBuilderExecutionPlanCycleLogging:
 
     @pytest.mark.unit
     def test_cycle_detection_logs_longer_cycle(
-        self, caplog: pytest.LogCaptureFixture
+        self, capsys: pytest.CaptureFixture[str]
     ) -> None:
-        """Verify that longer cycles log all involved hooks."""
+        """Verify that longer cycles log all involved hooks.
+
+        Note: Cycle detection logging uses emit_log_event which writes to stdout,
+        so we use capsys instead of caplog to capture the output.
+        """
         # A -> B -> C -> A
         hook_a = ModelPipelineHook(
             hook_id="A",
@@ -564,19 +565,15 @@ class TestBuilderExecutionPlanCycleLogging:
         registry = create_frozen_registry(hook_a, hook_b, hook_c)
         builder = BuilderExecutionPlan(registry=registry)
 
-        with caplog.at_level(logging.DEBUG):
-            with pytest.raises(DependencyCycleError):
-                builder.build()
+        with pytest.raises(DependencyCycleError):
+            builder.build()
 
-        # Find and verify the cycle log
-        cycle_log = None
-        for record in caplog.records:
-            if "Dependency cycle detected" in record.message:
-                cycle_log = record
-                break
+        # Capture stdout where emit_log_event writes
+        captured = capsys.readouterr()
+        log_text = captured.out
 
-        assert cycle_log is not None
-        log_text = cycle_log.message
+        # Verify log message was captured
+        assert "Dependency cycle detected" in log_text
 
         # All three hooks should be mentioned in the graph
         assert "A:" in log_text

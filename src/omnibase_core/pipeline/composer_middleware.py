@@ -4,10 +4,6 @@
 """Middleware composer for onion-style wrapping."""
 
 from collections.abc import Awaitable, Callable
-from typing import TypeVar
-
-# Type variable for the result type
-T = TypeVar("T")
 
 # Type for middleware: takes next_fn, returns wrapped result
 # Using object as the most general type that doesn't require explicit Any
@@ -81,7 +77,7 @@ class ComposerMiddleware:
 
     def compose(
         self,
-        core: Callable[[], Awaitable[T]],
+        core: Callable[[], Awaitable[object]],
     ) -> Callable[[], Awaitable[object]]:
         """
         Compose all middleware around the core function.
