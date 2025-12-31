@@ -374,7 +374,7 @@ class TimeInjector:
         self._fixed = fixed_time
 
     def now(self) -> datetime:
-        return self._fixed or datetime.utcnow()
+        return self._fixed or datetime.now(timezone.utc)
 ```
 
 ### RNG Injection
