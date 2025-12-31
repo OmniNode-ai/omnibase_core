@@ -306,8 +306,7 @@ class ModelExecutionManifest(BaseModel):
         Returns:
             Version string in format 'major.minor.patch'
         """
-        v = self.manifest_version
-        return f"{v.major}.{v.minor}.{v.patch}"
+        return str(self.manifest_version)
 
     def __str__(self) -> str:
         """Return a human-readable string representation."""

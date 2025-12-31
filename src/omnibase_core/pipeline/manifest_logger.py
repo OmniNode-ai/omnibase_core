@@ -43,6 +43,10 @@ class ManifestLogger:
         >>> # Get text summary
         >>> summary = ManifestLogger.to_text(manifest)
 
+    Thread Safety:
+        All methods are static and stateless. ManifestLogger can be safely
+        used from multiple threads concurrently.
+
     .. versionadded:: 0.4.0
         Added as part of Manifest Generation & Observability (OMN-1113)
     """
@@ -79,7 +83,7 @@ class ManifestLogger:
             import yaml
         except ImportError as e:
             raise ModelOnexError(
-                message="PyYAML is required for YAML output. Install with: pip install pyyaml",
+                message="PyYAML is required for YAML output. Install with: poetry add pyyaml",
                 error_code=EnumCoreErrorCode.DEPENDENCY_UNAVAILABLE,
                 dependency="pyyaml",
                 operation="to_yaml",
@@ -337,14 +341,28 @@ class ManifestLogger:
         Log manifest summary using structured logger.
 
         Uses duck typing - logger must have an info() method that accepts
-        a message string and optional extra dict.
+        a message string and optional ``extra`` dict for structured metadata.
+        The ``extra`` parameter is passed as a keyword argument containing
+        manifest summary data for structured logging backends.
 
         Args:
             manifest: The manifest to log
-            logger: Logger with info(message, extra=None) method
+            logger: Logger with ``info(message, *, extra=None)`` method
 
         Raises:
             ModelOnexError: If logger does not have the expected interface
+
+        Example:
+            >>> import logging
+            >>> logger = logging.getLogger("pipeline")
+            >>> ManifestLogger.log_summary(manifest, logger)
+            # Logs: "Execution manifest generated" with extra={
+            #     "manifest_id": "...",
+            #     "node_id": "...",
+            #     "duration_ms": 123.4,
+            #     "successful": True,
+            #     ...
+            # }
         """
         try:
             info_method = logger.info

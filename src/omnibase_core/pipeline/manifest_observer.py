@@ -52,6 +52,14 @@ class ManifestObserver:
         >>> # After pipeline completes
         >>> manifest = ManifestObserver.build_manifest(context_data)
 
+    Thread Safety:
+        ManifestObserver class methods are stateless and do not maintain internal
+        state. However, the ``context_data`` dict and the stored ManifestGenerator
+        are NOT thread-safe. Concurrent access to the same ``context_data`` dict
+        from multiple threads requires external synchronization.
+
+        See :class:`ManifestGenerator` for detailed thread safety considerations.
+
     See Also:
         - :class:`~omnibase_core.pipeline.manifest_generator.ManifestGenerator`:
           The generator that this observer manages
@@ -120,15 +128,16 @@ class ManifestObserver:
     @classmethod
     def has_generator(cls, context_data: dict[str, object]) -> bool:
         """
-        Check if a manifest generator is attached.
+        Check if a manifest generator is attached and valid.
 
         Args:
             context_data: The pipeline context data dict
 
         Returns:
-            True if a generator is attached
+            True if a generator is attached and is a valid ManifestGenerator instance
         """
-        return cls.CONTEXT_KEY in context_data
+        value = context_data.get(cls.CONTEXT_KEY)
+        return isinstance(value, ManifestGenerator)
 
     @classmethod
     def build_manifest(

@@ -220,6 +220,15 @@ class ModelHookTrace(BaseModel):
         """
         return self.status == EnumExecutionStatus.RUNNING
 
+    def is_cancelled(self) -> bool:
+        """
+        Check if the hook was cancelled.
+
+        Returns:
+            True if status is CANCELLED
+        """
+        return self.status == EnumExecutionStatus.CANCELLED
+
     def has_error(self) -> bool:
         """
         Check if there is an error message.

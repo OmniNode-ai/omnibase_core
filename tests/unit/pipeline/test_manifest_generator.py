@@ -295,6 +295,102 @@ class TestManifestGeneratorHookExecution:
         assert manifest.get_hook_count() == 1
         assert manifest.hook_traces[0].status == EnumExecutionStatus.CANCELLED
 
+    def test_handler_durations_aggregate_multiple_phases(
+        self, generator: ManifestGenerator
+    ) -> None:
+        """Test that handler durations are summed when a handler has multiple hook traces.
+
+        When a handler executes across multiple phases (e.g., PREPARE, EXECUTE, CLEANUP),
+        each phase creates a separate hook trace. The metrics summary should aggregate
+        (sum) all durations for the same handler_id rather than keeping only the last one.
+        """
+        # Record three hooks for the same handler (different phases)
+        generator.start_hook(
+            hook_id="hook-prepare",
+            handler_id="handler_test",
+            phase=EnumHandlerExecutionPhase.PREFLIGHT,
+        )
+        time.sleep(0.01)  # 10ms
+        generator.complete_hook("hook-prepare", EnumExecutionStatus.SUCCESS)
+
+        generator.start_hook(
+            hook_id="hook-execute",
+            handler_id="handler_test",
+            phase=EnumHandlerExecutionPhase.EXECUTE,
+        )
+        time.sleep(0.02)  # 20ms
+        generator.complete_hook("hook-execute", EnumExecutionStatus.SUCCESS)
+
+        generator.start_hook(
+            hook_id="hook-cleanup",
+            handler_id="handler_test",
+            phase=EnumHandlerExecutionPhase.FINALIZE,
+        )
+        time.sleep(0.01)  # 10ms
+        generator.complete_hook("hook-cleanup", EnumExecutionStatus.SUCCESS)
+
+        manifest = generator.build()
+
+        # Should have 3 hook traces
+        assert manifest.get_hook_count() == 3
+
+        # Handler duration should be the SUM of all three phases (at least 40ms)
+        handler_duration = manifest.metrics_summary.handler_durations_ms.get(
+            "handler_test"
+        )
+        assert handler_duration is not None
+        assert handler_duration >= 40  # Sum of 10 + 20 + 10 = 40ms minimum
+
+    def test_handler_durations_separate_handlers(
+        self, generator: ManifestGenerator
+    ) -> None:
+        """Test that different handlers maintain separate duration totals."""
+        # Handler A
+        generator.start_hook(
+            hook_id="hook-a1",
+            handler_id="handler_a",
+            phase=EnumHandlerExecutionPhase.EXECUTE,
+        )
+        time.sleep(0.01)  # 10ms
+        generator.complete_hook("hook-a1", EnumExecutionStatus.SUCCESS)
+
+        # Handler B
+        generator.start_hook(
+            hook_id="hook-b1",
+            handler_id="handler_b",
+            phase=EnumHandlerExecutionPhase.EXECUTE,
+        )
+        time.sleep(0.02)  # 20ms
+        generator.complete_hook("hook-b1", EnumExecutionStatus.SUCCESS)
+
+        # Handler A second phase
+        generator.start_hook(
+            hook_id="hook-a2",
+            handler_id="handler_a",
+            phase=EnumHandlerExecutionPhase.FINALIZE,
+        )
+        time.sleep(0.01)  # 10ms
+        generator.complete_hook("hook-a2", EnumExecutionStatus.SUCCESS)
+
+        manifest = generator.build()
+
+        # Should have 3 hook traces
+        assert manifest.get_hook_count() == 3
+
+        # Handler A should have sum of its two phases (at least 20ms)
+        handler_a_duration = manifest.metrics_summary.handler_durations_ms.get(
+            "handler_a"
+        )
+        assert handler_a_duration is not None
+        assert handler_a_duration >= 20
+
+        # Handler B should have only its single phase (at least 20ms)
+        handler_b_duration = manifest.metrics_summary.handler_durations_ms.get(
+            "handler_b"
+        )
+        assert handler_b_duration is not None
+        assert handler_b_duration >= 20
+
 
 @pytest.mark.unit
 class TestManifestGeneratorEmissions:

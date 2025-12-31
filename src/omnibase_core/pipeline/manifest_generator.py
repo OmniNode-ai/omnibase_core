@@ -87,6 +87,8 @@ class ManifestGenerator:
         >>> from omnibase_core.pipeline import ManifestGenerator
         >>> from omnibase_core.models.manifest import ModelNodeIdentity, ModelContractIdentity
         >>> from omnibase_core.enums.enum_node_kind import EnumNodeKind
+        >>> from omnibase_core.enums.enum_handler_execution_phase import EnumHandlerExecutionPhase
+        >>> from omnibase_core.enums.enum_execution_status import EnumExecutionStatus
         >>> from omnibase_core.models.primitives.model_semver import ModelSemVer
         >>>
         >>> generator = ManifestGenerator(
@@ -508,9 +510,15 @@ class ManifestGenerator:
         )
 
         # Build handler durations from traces
-        handler_durations = {
-            trace.handler_id: trace.duration_ms for trace in self._hook_traces
-        }
+        # Note: Handlers may have multiple hook traces (e.g., different phases like
+        # PREPARE, EXECUTE, CLEANUP). We sum all durations for the same handler_id
+        # to get total time spent in that handler across all its hooks.
+        handler_durations: dict[str, float] = {}
+        for trace in self._hook_traces:
+            if trace.handler_id in handler_durations:
+                handler_durations[trace.handler_id] += trace.duration_ms
+            else:
+                handler_durations[trace.handler_id] = trace.duration_ms
 
         metrics_summary = ModelMetricsSummary(
             total_duration_ms=total_duration_ms,

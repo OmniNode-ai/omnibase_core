@@ -21,6 +21,7 @@ from typing import Literal
 import click
 from pydantic import ValidationError
 
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.manifest.model_execution_manifest import (
     ModelExecutionManifest,
 )
@@ -304,12 +305,12 @@ def composition_report(
     except ValidationError as e:
         # Pydantic validation failed - manifest structure is invalid
         raise click.ClickException(f"Invalid manifest structure: {e}") from e
+    except ModelOnexError as e:
+        # ONEX-specific errors (e.g., missing PyYAML for YAML output)
+        raise click.ClickException(str(e)) from e
     except OSError as e:
         # File I/O errors (read or write)
         raise click.ClickException(f"File I/O error: {e}") from e
-    except Exception as e:
-        # Catch-all for unexpected errors (formatting issues, etc.)
-        raise click.ClickException(f"Error processing manifest: {e}") from e
 
 
 # Export for use
