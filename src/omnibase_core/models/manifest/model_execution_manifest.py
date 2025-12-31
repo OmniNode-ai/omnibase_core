@@ -16,8 +16,6 @@ JSON-serializable and makes no persistence assumptions.
     Added as part of Manifest Generation & Observability (OMN-1113)
 """
 
-from __future__ import annotations
-
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
@@ -71,6 +69,7 @@ class ModelExecutionManifest(BaseModel):
         parent_manifest_id: Parent manifest ID if nested execution
 
     Example:
+        >>> from datetime import UTC, datetime
         >>> from omnibase_core.enums.enum_node_kind import EnumNodeKind
         >>> from omnibase_core.models.primitives.model_semver import ModelSemVer
         >>> manifest = ModelExecutionManifest(
@@ -80,6 +79,7 @@ class ModelExecutionManifest(BaseModel):
         ...         node_version=ModelSemVer(major=1, minor=0, patch=0),
         ...     ),
         ...     contract_identity=ModelContractIdentity(contract_id="contract-001"),
+        ...     created_at=datetime.now(UTC),  # Explicit UTC timestamp
         ... )
         >>> manifest.is_successful()
         True

@@ -14,8 +14,6 @@ This is a pure data model with no side effects.
     Added as part of Manifest Generation & Observability (OMN-1113)
 """
 
-from __future__ import annotations
-
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.manifest.model_dependency_edge import ModelDependencyEdge

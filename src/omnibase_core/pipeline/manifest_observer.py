@@ -14,9 +14,6 @@ execution without modifying the core runner implementation.
     Added as part of Manifest Generation & Observability (OMN-1113)
 """
 
-from __future__ import annotations
-
-from typing import cast
 from uuid import UUID
 
 from omnibase_core.models.manifest.model_contract_identity import ModelContractIdentity
@@ -113,10 +110,12 @@ class ManifestObserver:
             context_data: The pipeline context data dict
 
         Returns:
-            The ManifestGenerator if attached, None otherwise
+            The ManifestGenerator if attached and valid type, None otherwise
         """
         value = context_data.get(cls.CONTEXT_KEY)
-        return cast(ManifestGenerator | None, value)
+        if isinstance(value, ManifestGenerator):
+            return value
+        return None
 
     @classmethod
     def has_generator(cls, context_data: dict[str, object]) -> bool:
@@ -162,10 +161,12 @@ class ManifestObserver:
             context_data: The pipeline context data dict
 
         Returns:
-            The removed generator if present, None otherwise
+            The removed generator if present and valid type, None otherwise
         """
         value = context_data.pop(cls.CONTEXT_KEY, None)
-        return cast(ManifestGenerator | None, value)
+        if isinstance(value, ManifestGenerator):
+            return value
+        return None
 
 
 # Export for use

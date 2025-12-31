@@ -32,8 +32,12 @@ class ProtocolLoggerLike(Protocol):
         >>> def log_message(logger: ProtocolLoggerLike, msg: str) -> None:
         ...     logger.info(msg)
         >>>
+        >>> def log_with_context(logger: ProtocolLoggerLike, msg: str, user_id: str) -> None:
+        ...     logger.info(msg, extra={"user_id": user_id, "action": "process"})
+        >>>
         >>> # Works with stdlib logger
         >>> log_message(logging.getLogger(), "Hello")
+        >>> log_with_context(logging.getLogger(), "Processing request", user_id="user-123")
     """
 
     def info(self, message: str, *, extra: dict[str, object] | None = None) -> None:

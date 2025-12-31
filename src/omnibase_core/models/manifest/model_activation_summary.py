@@ -14,8 +14,6 @@ This is a pure data model with no side effects.
     Added as part of Manifest Generation & Observability (OMN-1113)
 """
 
-from __future__ import annotations
-
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.manifest.model_capability_activation import (
@@ -152,8 +150,19 @@ class ModelActivationSummary(BaseModel):
 
         Returns:
             True if capability was evaluated (activated or skipped)
+
+        Note:
+            Uses direct iteration for O(n) lookup without creating intermediate lists.
         """
-        return capability_name in self.get_capability_names()
+        # Check activated capabilities first (more likely to match in typical usage)
+        for cap in self.activated_capabilities:
+            if cap.capability_name == capability_name:
+                return True
+        # Then check skipped capabilities
+        for cap in self.skipped_capabilities:
+            if cap.capability_name == capability_name:
+                return True
+        return False
 
     def was_activated(self, capability_name: str) -> bool:
         """
@@ -164,8 +173,14 @@ class ModelActivationSummary(BaseModel):
 
         Returns:
             True if capability was activated, False if skipped or not found
+
+        Note:
+            Uses direct iteration for O(n) lookup without creating intermediate lists.
         """
-        return capability_name in self.get_capability_names(activated_only=True)
+        for cap in self.activated_capabilities:
+            if cap.capability_name == capability_name:
+                return True
+        return False
 
     def __str__(self) -> str:
         """Return a human-readable string representation."""

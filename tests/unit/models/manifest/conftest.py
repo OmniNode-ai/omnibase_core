@@ -119,30 +119,38 @@ def sample_ordering_summary(
 @pytest.fixture
 def sample_hook_trace_success() -> ModelHookTrace:
     """Create a sample successful hook trace."""
+    from datetime import timedelta
+
+    duration_ms = 45.2
     started = datetime.now(UTC)
+    ended = started + timedelta(milliseconds=duration_ms)
     return ModelHookTrace(
         hook_id="hook-001",
         handler_id="handler_transform",
         phase=EnumHandlerExecutionPhase.EXECUTE,
         status=EnumExecutionStatus.SUCCESS,
         started_at=started,
-        ended_at=started,
-        duration_ms=45.2,
+        ended_at=ended,
+        duration_ms=duration_ms,
     )
 
 
 @pytest.fixture
 def sample_hook_trace_failed() -> ModelHookTrace:
     """Create a sample failed hook trace."""
+    from datetime import timedelta
+
+    duration_ms = 10.0
     started = datetime.now(UTC)
+    ended = started + timedelta(milliseconds=duration_ms)
     return ModelHookTrace(
         hook_id="hook-002",
         handler_id="handler_save",
         phase=EnumHandlerExecutionPhase.EXECUTE,
         status=EnumExecutionStatus.FAILED,
         started_at=started,
-        ended_at=started,
-        duration_ms=10.0,
+        ended_at=ended,
+        duration_ms=duration_ms,
         error_message="Connection timeout",
         error_code="CONN_TIMEOUT",
     )

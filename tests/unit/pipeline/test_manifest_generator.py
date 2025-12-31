@@ -260,12 +260,21 @@ class TestManifestGeneratorHookExecution:
         assert manifest.hook_traces[0].duration_ms >= 10
 
     def test_complete_unknown_hook(self, generator: ManifestGenerator) -> None:
-        """Test completing a hook that wasn't started."""
-        generator.complete_hook(
-            hook_id="unknown-hook",
-            status=EnumExecutionStatus.SUCCESS,
-        )
-        manifest = generator.build()
+        """Test completing a hook that wasn't started emits a warning."""
+        import warnings
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            generator.complete_hook(
+                hook_id="unknown-hook",
+                status=EnumExecutionStatus.SUCCESS,
+            )
+            manifest = generator.build()
+
+            # Should emit a warning about the unexpected hook completion
+            assert len(w) == 1
+            assert "unknown-hook" in str(w[0].message)
+            assert "never started" in str(w[0].message)
 
         # Should still create a trace
         assert manifest.get_hook_count() == 1

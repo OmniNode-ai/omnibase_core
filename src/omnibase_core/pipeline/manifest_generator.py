@@ -14,8 +14,7 @@ what ran, why it ran, in what order, and what it produced.
     Added as part of Manifest Generation & Observability (OMN-1113)
 """
 
-from __future__ import annotations
-
+import warnings
 from datetime import UTC, datetime
 from typing import Literal
 from uuid import UUID, uuid4
@@ -57,8 +56,32 @@ class ManifestGenerator:
     - Failures
 
     Thread Safety:
-        This class is NOT thread-safe. Use separate instances for concurrent
-        executions. Each pipeline run should have its own ManifestGenerator.
+        This class is NOT thread-safe. Each ManifestGenerator instance should
+        be used by a single thread/coroutine at a time.
+
+        **Why not thread-safe**: The generator maintains mutable state (lists and
+        dicts) that are modified without synchronization during recording operations.
+        Concurrent calls to recording methods (e.g., ``record_capability_activation()``,
+        ``start_hook()``, ``complete_hook()``) from multiple threads could result in:
+
+        - Lost updates to accumulator lists
+        - Corrupted ``_pending_hooks`` dict state
+        - Inconsistent manifest output
+
+        **Intended usage pattern**: Create one ManifestGenerator per pipeline
+        execution. The generator accumulates observations throughout a single
+        pipeline run and produces one manifest via ``build()``.
+
+        **What IS safe**:
+
+        - Creating multiple ManifestGenerator instances in different threads
+        - Passing the built ``ModelExecutionManifest`` (immutable) across threads
+        - Calling ``build()`` multiple times from the same thread (returns new
+          manifest snapshot each time)
+
+        **If you need concurrent recording**: Create separate ManifestGenerator
+        instances for each concurrent execution context, then aggregate the
+        resulting manifests at a higher level if needed.
 
     Example:
         >>> from omnibase_core.pipeline import ManifestGenerator
@@ -300,7 +323,13 @@ class ManifestGenerator:
             metadata: Additional metadata
         """
         if hook_id not in self._pending_hooks:
-            # Hook wasn't started - create a minimal trace
+            # Hook wasn't started - this is unexpected, log a warning
+            warnings.warn(
+                f"Completing hook '{hook_id}' that was never started. "
+                "This may indicate a programming error or out-of-order hook completion.",
+                stacklevel=2,
+            )
+            # Create a minimal trace to record the completion
             ended_at = datetime.now(UTC)
             trace = ModelHookTrace(
                 hook_id=hook_id,
