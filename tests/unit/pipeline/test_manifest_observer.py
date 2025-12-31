@@ -75,6 +75,43 @@ class TestManifestObserverAttach:
         manifest = generator.build()
         assert manifest.correlation_id == correlation_id
 
+    def test_attach_warns_on_overwrite(
+        self,
+        sample_node_identity: ModelNodeIdentity,
+        sample_contract_identity: ModelContractIdentity,
+    ) -> None:
+        """Test that attach warns when overwriting existing generator."""
+        import warnings
+
+        context_data: dict = {}
+
+        # Attach first generator
+        first_generator = ManifestObserver.attach(
+            context_data,
+            node_identity=sample_node_identity,
+            contract_identity=sample_contract_identity,
+        )
+
+        # Attach second generator - should warn
+        with warnings.catch_warnings(record=True) as caught_warnings:
+            warnings.simplefilter("always")
+            second_generator = ManifestObserver.attach(
+                context_data,
+                node_identity=sample_node_identity,
+                contract_identity=sample_contract_identity,
+            )
+
+            # Verify warning was emitted
+            assert len(caught_warnings) == 1
+            assert "Overwriting existing ManifestGenerator" in str(
+                caught_warnings[0].message
+            )
+            assert issubclass(caught_warnings[0].category, UserWarning)
+
+        # Verify overwrite still occurred
+        assert second_generator is not first_generator
+        assert ManifestObserver.get_generator(context_data) is second_generator
+
 
 @pytest.mark.unit
 class TestManifestObserverGet:

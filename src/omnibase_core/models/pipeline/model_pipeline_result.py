@@ -3,8 +3,6 @@
 # SPDX-License-Identifier: Apache-2.0
 """Pipeline result model for execution outcomes."""
 
-from __future__ import annotations
-
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.pipeline.model_hook_error import ModelHookError

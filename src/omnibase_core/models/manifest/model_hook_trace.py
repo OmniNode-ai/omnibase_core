@@ -192,10 +192,7 @@ class ModelHookTrace(BaseModel):
         Returns:
             True if status is SUCCESS or COMPLETED
         """
-        return self.status in {
-            EnumExecutionStatus.SUCCESS,
-            EnumExecutionStatus.COMPLETED,
-        }
+        return EnumExecutionStatus.is_successful(self.status)
 
     def is_failure(self) -> bool:
         """
@@ -204,7 +201,7 @@ class ModelHookTrace(BaseModel):
         Returns:
             True if status is FAILED or TIMEOUT
         """
-        return self.status in {EnumExecutionStatus.FAILED, EnumExecutionStatus.TIMEOUT}
+        return EnumExecutionStatus.is_failure(self.status)
 
     def is_skipped(self) -> bool:
         """

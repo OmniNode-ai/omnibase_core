@@ -26,6 +26,8 @@ Example:
     >>> from omnibase_core.pipeline import ManifestGenerator, ManifestObserver
     >>> from omnibase_core.models.manifest import ModelNodeIdentity, ModelContractIdentity
     >>> from omnibase_core.enums.enum_node_kind import EnumNodeKind
+    >>> from omnibase_core.enums.enum_handler_execution_phase import EnumHandlerExecutionPhase
+    >>> from omnibase_core.enums.enum_execution_status import EnumExecutionStatus
     >>> from omnibase_core.models.primitives.model_semver import ModelSemVer
     >>>
     >>> # Create generator

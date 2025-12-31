@@ -356,13 +356,25 @@ class ManifestLogger:
             >>> import logging
             >>> logger = logging.getLogger("pipeline")
             >>> ManifestLogger.log_summary(manifest, logger)
-            # Logs: "Execution manifest generated" with extra={
-            #     "manifest_id": "...",
-            #     "node_id": "...",
-            #     "duration_ms": 123.4,
-            #     "successful": True,
-            #     ...
-            # }
+            # Logs: "Execution manifest generated"
+            #
+            # The ``extra`` dict passed to logger.info() contains manifest metadata
+            # for structured logging backends (e.g., structlog, python-json-logger):
+            #
+            #   extra = {
+            #       "manifest_id": "abc-123-def",
+            #       "node_id": "compute-001",
+            #       "contract_id": "my-contract",
+            #       "hooks_executed": 3,
+            #       "duration_ms": 45.2,
+            #       "successful": True,
+            #       "failures": 0,
+            #       "events_emitted": 2,
+            #       "intents_emitted": 1,
+            #   }
+            #
+            # With JSON logging configured, output appears as:
+            # {"message": "Execution manifest generated", "manifest_id": "abc-123-def", ...}
         """
         try:
             info_method = logger.info

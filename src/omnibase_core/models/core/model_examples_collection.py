@@ -203,9 +203,18 @@ class ModelExamplesCollection(BaseModel):
                 desc_val = data.get("description")
                 description = str(desc_val) if desc_val is not None else ""
                 tags_val = data.get("tags")
-                tags = list(tags_val) if isinstance(tags_val, list) else []
+                # Properly coerce tags to list[str] - convert all elements to strings
+                if isinstance(tags_val, list):
+                    tags: list[str] = [str(t) for t in tags_val]
+                else:
+                    tags = []
                 is_valid_val = data.get("is_valid")
-                is_valid = bool(is_valid_val) if is_valid_val is not None else True
+                # Only accept actual bool values to avoid surprising coercion
+                # (e.g., bool("false") == True which is unexpected)
+                if isinstance(is_valid_val, bool):
+                    is_valid = is_valid_val
+                else:
+                    is_valid = True  # Default to valid if not explicitly a bool
                 notes_val = data.get("validation_notes")
                 validation_notes = str(notes_val) if notes_val is not None else ""
 
@@ -215,7 +224,7 @@ class ModelExamplesCollection(BaseModel):
                     input_data=input_data,
                     output_data=output_data,
                     context=context,
-                    tags=tags,  # type: ignore[arg-type]
+                    tags=tags,
                     is_valid=is_valid,
                     validation_notes=validation_notes,
                 )

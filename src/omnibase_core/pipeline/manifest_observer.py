@@ -14,6 +14,7 @@ execution without modifying the core runner implementation.
     Added as part of Manifest Generation & Observability (OMN-1113)
 """
 
+import warnings
 from uuid import UUID
 
 from omnibase_core.models.manifest.model_contract_identity import ModelContractIdentity
@@ -92,6 +93,10 @@ class ManifestObserver:
         dict under the CONTEXT_KEY. The generator can then be accessed
         throughout the pipeline execution.
 
+        If a generator already exists in the context, a warning is emitted
+        but the new generator will still replace it. This ensures backward
+        compatibility while alerting developers to potential issues.
+
         Args:
             context_data: The pipeline context data dict
             node_identity: Identity of the executing node
@@ -101,7 +106,18 @@ class ManifestObserver:
 
         Returns:
             The created ManifestGenerator
+
+        Warns:
+            UserWarning: If a generator already exists in the context
         """
+        # Check for existing generator - warn but still overwrite
+        if cls.CONTEXT_KEY in context_data:
+            warnings.warn(
+                "Overwriting existing ManifestGenerator in context. "
+                "This may indicate a programming error or nested pipeline execution.",
+                stacklevel=2,
+            )
+
         generator = ManifestGenerator(
             node_identity=node_identity,
             contract_identity=contract_identity,
