@@ -83,8 +83,6 @@ def get_service[T](protocol_type: type[T]) -> T | None:
     except (
         Exception
     ):  # fallback-ok: bootstrap service discovery, fallback to minimal services
-        # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
-        # Registry not available, try fallback
         pass
 
     # Try fallback implementations
@@ -106,7 +104,6 @@ def get_logging_service() -> Any:
                 # Return protocol directly (no wrapper needed)
                 return logger_protocol
     except Exception:  # fallback-ok: minimal logging service unavailable
-        # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
         pass
 
     # Return inline minimal logger for bootstrap
@@ -132,7 +129,6 @@ def emit_log_event(
     except (
         Exception
     ):  # fallback-ok: bootstrap logging unavailable, silent fallback acceptable
-        # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
         pass
 
     # Fallback to stderr when structured logging unavailable
@@ -163,7 +159,6 @@ def emit_log_event_sync(
     except (
         Exception
     ):  # fallback-ok: bootstrap logging unavailable, silent fallback acceptable
-        # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
         pass
 
     # Fallback to stderr when structured logging unavailable
@@ -250,7 +245,6 @@ def get_available_services() -> list[str]:
     except (
         Exception
     ):  # fallback-ok: bootstrap registry unavailable, return minimal services
-        # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
         pass
 
     # Return minimal list for bootstrap

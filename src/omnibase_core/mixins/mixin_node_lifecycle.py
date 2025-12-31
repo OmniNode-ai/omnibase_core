@@ -193,7 +193,9 @@ class MixinNodeLifecycle:
                 context=context,
             )
 
-        except Exception as e:  # fallback-ok: event publishing is non-critical, log and continue
+        except (
+            Exception
+        ) as e:  # fallback-ok: event publishing is non-critical, log and continue
             context = ModelLogContext(
                 calling_module=_COMPONENT_NAME,
                 calling_function="_register_node",
@@ -255,7 +257,9 @@ class MixinNodeLifecycle:
                 context=context,
             )
 
-        except Exception as e:  # fallback-ok: shutdown event is non-critical, log and continue
+        except (
+            Exception
+        ) as e:  # fallback-ok: shutdown event is non-critical, log and continue
             context = ModelLogContext(
                 calling_module=_COMPONENT_NAME,
                 calling_function="_publish_shutdown_event",
@@ -467,7 +471,9 @@ class MixinNodeLifecycle:
         if hasattr(self, "cleanup_event_handlers"):
             try:
                 self.cleanup_event_handlers()
-            except Exception as e:  # fallback-ok: cleanup failure is non-critical, log and continue
+            except (
+                Exception
+            ) as e:  # fallback-ok: cleanup failure is non-critical, log and continue
                 node_id = _get_node_id_as_uuid(self)
                 context = ModelLogContext(
                     calling_module=_COMPONENT_NAME,
