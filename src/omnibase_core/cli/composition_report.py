@@ -290,6 +290,10 @@ def composition_report(
                     show_predicates=show_predicates,
                     show_timing=show_timing,
                 )
+            case _:
+                raise click.ClickException(
+                    f"Unsupported output format: {output_format}"
+                )
 
         # Output
         if output:

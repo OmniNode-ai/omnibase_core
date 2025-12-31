@@ -260,7 +260,7 @@ class ModelSemVer(BaseModel):
             "1.0.0-beta+build.123")
 
         Example:
-            >>> ModelSemVer(major=1, minor=2, patch=3)
+            >>> version = ModelSemVer(major=1, minor=2, patch=3)
             >>> str(version)
             '1.2.3'
             >>> str(ModelSemVer(major=1, minor=0, patch=0, prerelease=("alpha", 1)))

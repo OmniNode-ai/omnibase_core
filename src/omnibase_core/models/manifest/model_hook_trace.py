@@ -50,6 +50,19 @@ class ModelHookTrace(BaseModel):
         output_hash: Hash of output data for correlation
         metadata: Additional metadata about the execution
 
+    Status Classification:
+        The status can be checked using utility methods:
+
+        - ``is_success()``: True for SUCCESS or COMPLETED
+        - ``is_failure()``: True for FAILED or TIMEOUT
+        - ``is_skipped()``: True for SKIPPED
+        - ``is_cancelled()``: True for CANCELLED
+        - ``is_running()``: True for RUNNING
+
+        Note that CANCELLED is neither a success nor a failure - it represents
+        an intentional termination. Use ``is_cancelled()`` to check for this
+        specific status.
+
     Example:
         >>> from datetime import datetime, UTC
         >>> from omnibase_core.enums.enum_execution_status import EnumExecutionStatus
