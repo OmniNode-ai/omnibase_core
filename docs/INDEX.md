@@ -72,6 +72,7 @@ omnibase_core/docs/
 
 | Document | Description | Status |
 |----------|-------------|--------|
+| [**Pipeline Hook Registry**](guides/PIPELINE_HOOK_REGISTRY.md) | Pipeline runner and hook registry with usage examples ⭐ **NEW** | ✅ Complete |
 | [**Migrating to Declarative Nodes**](guides/MIGRATING_TO_DECLARATIVE_NODES.md) | Migration guide for v0.4.0 FSM/workflow-driven nodes ⭐ **v0.4.0** | ✅ Complete |
 | [**Migrating to MixinEventBus v0.4**](guides/MIGRATING_TO_MIXIN_EVENT_BUS_V0_4.md) | v1.0 deprecations and migration paths for MixinEventBus ⭐ **v0.4.0** | ✅ Complete |
 | [**ISP Protocol Migration**](guides/ISP_PROTOCOL_MIGRATION.md) | Guide for migrating to ISP-compliant protocols | ✅ Complete |
@@ -324,6 +325,7 @@ def serialize_error(error: ModelOnexError) -> TypedDictValidationErrorSerialized
 | **Use TypedDict for serialization** | [TypedDict Types](#typeddict-types-serialization-boundaries) - Strongly-typed serialization boundaries |
 | **Validate mixin metadata** | [ModelMixinMetadata](../src/omnibase_core/models/core/model_mixin_metadata.py) - Mixin discovery & validation |
 | **Validate docker-compose.yaml** | [ModelDockerComposeManifest](../src/omnibase_core/models/docker/model_docker_compose_manifest.py) - Docker validation |
+| **Use pipeline hooks** | [Pipeline Hook Registry](guides/PIPELINE_HOOK_REGISTRY.md) - Phase-based hook execution |
 
 ---
 
