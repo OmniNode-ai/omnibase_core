@@ -17,6 +17,7 @@ from omnibase_core.services.registry.registry_provider import RegistryProvider
 TEST_UUID_1 = UUID("11111111-1111-1111-1111-111111111111")
 TEST_UUID_2 = UUID("22222222-2222-2222-2222-222222222222")
 TEST_UUID_3 = UUID("33333333-3333-3333-3333-333333333333")
+NONEXISTENT_UUID = UUID("00000000-0000-0000-0000-000000000000")
 
 
 @pytest.fixture
@@ -72,7 +73,7 @@ class TestRegistryProviderLifecycle:
         registry.register(db_provider)
 
         assert len(registry) == 1
-        assert str(db_provider.provider_id) in registry
+        assert db_provider.provider_id in registry
 
     def test_register_multiple_providers(
         self,
@@ -85,8 +86,8 @@ class TestRegistryProviderLifecycle:
         registry.register(cache_provider)
 
         assert len(registry) == 2
-        assert str(db_provider.provider_id) in registry
-        assert str(cache_provider.provider_id) in registry
+        assert db_provider.provider_id in registry
+        assert cache_provider.provider_id in registry
 
     def test_unregister_existing_provider(
         self, registry: RegistryProvider, db_provider: ModelProviderDescriptor
@@ -94,15 +95,15 @@ class TestRegistryProviderLifecycle:
         """Test unregistering an existing provider returns True."""
         registry.register(db_provider)
 
-        result = registry.unregister(str(db_provider.provider_id))
+        result = registry.unregister(db_provider.provider_id)
 
         assert result is True
         assert len(registry) == 0
-        assert str(db_provider.provider_id) not in registry
+        assert db_provider.provider_id not in registry
 
     def test_unregister_nonexistent_provider(self, registry: RegistryProvider) -> None:
         """Test unregistering a nonexistent provider returns False."""
-        result = registry.unregister("nonexistent-id")
+        result = registry.unregister(NONEXISTENT_UUID)
 
         assert result is False
 
@@ -112,8 +113,8 @@ class TestRegistryProviderLifecycle:
         """Test unregistering the same provider twice."""
         registry.register(db_provider)
 
-        first_result = registry.unregister(str(db_provider.provider_id))
-        second_result = registry.unregister(str(db_provider.provider_id))
+        first_result = registry.unregister(db_provider.provider_id)
+        second_result = registry.unregister(db_provider.provider_id)
 
         assert first_result is True
         assert second_result is False
@@ -153,7 +154,7 @@ class TestRegistryProviderDuplicateHandling:
         registry.register(updated_provider, replace=True)
 
         assert len(registry) == 1
-        retrieved = registry.get(str(db_provider.provider_id))
+        retrieved = registry.get(db_provider.provider_id)
         assert retrieved is not None
         assert "updated" in retrieved.tags
         assert "new-tag" in retrieved.tags
@@ -179,7 +180,7 @@ class TestRegistryProviderGet:
         """Test getting an existing provider returns it."""
         registry.register(db_provider)
 
-        result = registry.get(str(db_provider.provider_id))
+        result = registry.get(db_provider.provider_id)
 
         assert result is not None
         assert result.provider_id == db_provider.provider_id
@@ -189,7 +190,7 @@ class TestRegistryProviderGet:
         self, registry: RegistryProvider
     ) -> None:
         """Test getting a nonexistent provider returns None."""
-        result = registry.get("nonexistent-id")
+        result = registry.get(NONEXISTENT_UUID)
 
         assert result is None
 
@@ -198,9 +199,9 @@ class TestRegistryProviderGet:
     ) -> None:
         """Test getting a provider after unregistering returns None."""
         registry.register(db_provider)
-        registry.unregister(str(db_provider.provider_id))
+        registry.unregister(db_provider.provider_id)
 
-        result = registry.get(str(db_provider.provider_id))
+        result = registry.get(db_provider.provider_id)
 
         assert result is None
 
@@ -424,7 +425,7 @@ class TestRegistryProviderListAll:
         """Test list_all after unregistering a provider."""
         registry.register(db_provider)
         registry.register(cache_provider)
-        registry.unregister(str(db_provider.provider_id))
+        registry.unregister(db_provider.provider_id)
 
         results = registry.list_all()
 
@@ -536,7 +537,7 @@ class TestRegistryProviderThreadSafety:
 
         def read_operations() -> None:
             try:
-                registry.get(str(db_provider.provider_id))
+                registry.get(db_provider.provider_id)
                 registry.find_by_capability("database.relational")
                 registry.find_by_tags(["production"])
                 registry.list_all()
@@ -623,8 +624,8 @@ class TestRegistryProviderClear:
         registry.clear()
 
         assert len(registry) == 0
-        assert registry.get(str(db_provider.provider_id)) is None
-        assert registry.get(str(cache_provider.provider_id)) is None
+        assert registry.get(db_provider.provider_id) is None
+        assert registry.get(cache_provider.provider_id) is None
 
 
 @pytest.mark.unit
@@ -654,11 +655,11 @@ class TestRegistryProviderDunderMethods:
         """Test __contains__ for registered provider."""
         registry.register(db_provider)
 
-        assert str(db_provider.provider_id) in registry
+        assert db_provider.provider_id in registry
 
     def test_contains_not_registered(self, registry: RegistryProvider) -> None:
         """Test __contains__ for unregistered provider."""
-        assert "nonexistent-id" not in registry
+        assert NONEXISTENT_UUID not in registry
 
     def test_repr(self, registry: RegistryProvider) -> None:
         """Test __repr__ shows provider count."""

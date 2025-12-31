@@ -234,7 +234,7 @@ class PythonASTValidator(ast.NodeVisitor):
             # REGISTRY_LOOKUP_IDS (method parameters for registry lookup by semantic ID)
             # See: src/omnibase_core/services/registry/ for registry implementations
             # These are lookup keys that accept string representations of IDs
-            "provider_id",  # Registry lookup key (string form of UUID for convenience)
+            # NOTE: provider_id was removed - RegistryProvider now accepts UUID directly
             "capability_id",  # Semantic capability identifier (e.g., "database.relational")
             # TEST_FIXTURES (test helper fields removed - production code should use UUID)
             # TYPED_DICT_SERIALIZATION_BOUNDARY (TypedDicts for logging/monitoring/introspection)

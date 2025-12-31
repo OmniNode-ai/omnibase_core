@@ -48,6 +48,7 @@ __all__ = ["RegistryProvider"]
 
 import threading
 from typing import TYPE_CHECKING
+from uuid import UUID
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -89,8 +90,8 @@ class RegistryProvider:
             # Register provider
             registry.register(provider)
 
-            # Lookup by ID
-            found = registry.get(str(provider.provider_id))
+            # Lookup by ID (accepts UUID directly)
+            found = registry.get(provider.provider_id)
             assert found is not None
 
             # Find by capability
@@ -177,15 +178,13 @@ class RegistryProvider:
                 )
             self._providers[provider_id] = provider
 
-    def unregister(
-        self, provider_id: str
-    ) -> bool:  # id-ok: semantic provider identifier
+    def unregister(self, provider_id: UUID) -> bool:
         """Unregister a provider by ID.
 
         Removes the provider with the given ID from the registry.
 
         Args:
-            provider_id: The provider ID (as string) to remove.
+            provider_id: The provider UUID to remove.
 
         Returns:
             True if the provider was found and removed, False if not found.
@@ -196,12 +195,12 @@ class RegistryProvider:
                 registry = RegistryProvider()
                 registry.register(provider)
 
-                # Remove returns True
-                removed = registry.unregister(str(provider.provider_id))
+                # Remove returns True (accepts UUID directly)
+                removed = registry.unregister(provider.provider_id)
                 assert removed is True
 
                 # Removing again returns False
-                removed = registry.unregister(str(provider.provider_id))
+                removed = registry.unregister(provider.provider_id)
                 assert removed is False
 
         Thread Safety:
@@ -209,18 +208,17 @@ class RegistryProvider:
 
         .. versionadded:: 0.4.0
         """
+        str_id = str(provider_id)
         with self._lock:
-            return self._providers.pop(provider_id, None) is not None
+            return self._providers.pop(str_id, None) is not None
 
-    def get(
-        self, provider_id: str
-    ) -> ModelProviderDescriptor | None:  # id-ok: semantic provider identifier
+    def get(self, provider_id: UUID) -> ModelProviderDescriptor | None:
         """Get a provider by ID.
 
         Retrieves the provider with the given ID.
 
         Args:
-            provider_id: The provider ID (as string) to look up.
+            provider_id: The provider UUID to look up.
 
         Returns:
             The ModelProviderDescriptor if found, None otherwise.
@@ -228,15 +226,18 @@ class RegistryProvider:
         Example:
             .. code-block:: python
 
+                from uuid import UUID
+
                 registry = RegistryProvider()
                 registry.register(provider)
 
-                # Found
-                found = registry.get(str(provider.provider_id))
+                # Found (accepts UUID directly)
+                found = registry.get(provider.provider_id)
                 assert found is not None
 
                 # Not found
-                missing = registry.get("nonexistent-id")
+                nil_uuid = UUID("00000000-0000-0000-0000-000000000000")
+                missing = registry.get(nil_uuid)
                 assert missing is None
 
         Thread Safety:
@@ -244,8 +245,9 @@ class RegistryProvider:
 
         .. versionadded:: 0.4.0
         """
+        str_id = str(provider_id)
         with self._lock:
-            return self._providers.get(provider_id)
+            return self._providers.get(str_id)
 
     def find_by_capability(self, capability: str) -> list[ModelProviderDescriptor]:
         """Find all providers that offer a specific capability.
@@ -423,13 +425,11 @@ class RegistryProvider:
         with self._lock:
             return len(self._providers)
 
-    def __contains__(
-        self, provider_id: str
-    ) -> bool:  # id-ok: semantic provider identifier
+    def __contains__(self, provider_id: UUID) -> bool:
         """Check if a provider ID is registered.
 
         Args:
-            provider_id: The provider ID (as string) to check.
+            provider_id: The provider UUID to check.
 
         Returns:
             bool: True if registered, False otherwise.
@@ -437,16 +437,20 @@ class RegistryProvider:
         Example:
             .. code-block:: python
 
+                from uuid import UUID
+
                 registry = RegistryProvider()
                 registry.register(provider)
 
-                assert str(provider.provider_id) in registry
-                assert "nonexistent" not in registry
+                assert provider.provider_id in registry
+                nil_uuid = UUID("00000000-0000-0000-0000-000000000000")
+                assert nil_uuid not in registry
 
         .. versionadded:: 0.4.0
         """
+        str_id = str(provider_id)
         with self._lock:
-            return provider_id in self._providers
+            return str_id in self._providers
 
     def clear(self) -> None:
         """Remove all registered providers.
