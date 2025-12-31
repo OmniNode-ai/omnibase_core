@@ -150,12 +150,12 @@ class TestRegistryCapabilityRegistration:
         assert registry.get("database.nosql") == nosql_capability
         assert registry.get("cache.memory") == cache_capability
 
-    def test_register_duplicate_raises_valueerror(
+    def test_register_duplicate_raises_model_onex_error(
         self,
         registry: RegistryCapability,
         sample_capability: ModelCapabilityMetadata,
     ) -> None:
-        """Test that registering a duplicate raises ModelOnexError."""
+        """Test that registering a duplicate capability_id raises ModelOnexError."""
         registry.register(sample_capability)
 
         with pytest.raises(ModelOnexError) as exc_info:
@@ -725,7 +725,7 @@ class TestRegistryCapabilityThreadSafety:
                 # Try to register (may fail if exists)
                 try:
                     registry.register(cap)
-                except ValueError:
+                except ModelOnexError:
                     pass  # Expected for duplicates
 
                 # Try to unregister

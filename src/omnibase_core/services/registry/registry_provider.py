@@ -141,10 +141,12 @@ class RegistryProvider:
         Args:
             provider: The provider descriptor to register.
             replace: If True, replace existing provider with same ID.
-                If False (default), raise ValueError for duplicates.
+                If False (default), raise ModelOnexError for duplicates.
 
         Raises:
-            ValueError: If provider_id already exists and replace=False.
+            ModelOnexError: If provider_id already exists and replace=False.
+                Raised with error code EnumCoreErrorCode.DUPLICATE_REGISTRATION
+                and context containing the duplicate provider_id.
 
         Example:
             .. code-block:: python
@@ -154,8 +156,8 @@ class RegistryProvider:
                 # First registration succeeds
                 registry.register(provider)
 
-                # Duplicate raises without replace=True
-                registry.register(provider)  # Raises ValueError!
+                # Duplicate raises ModelOnexError without replace=True
+                registry.register(provider)  # Raises ModelOnexError!
 
                 # Replace existing
                 updated_provider = provider.model_copy(update={"tags": ["updated"]})

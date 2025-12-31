@@ -132,17 +132,19 @@ class RegistryCapability:
 
         Adds the capability metadata to the registry, keyed by its capability
         identifier. If a capability with the same ID already exists and
-        replace=False, raises ValueError. If replace=True, the existing
+        replace=False, raises ModelOnexError. If replace=True, the existing
         capability is overwritten.
 
         Args:
             capability: The ModelCapabilityMetadata instance to register.
             replace: If True, allows overwriting an existing capability.
-                If False (default), raises ValueError on duplicate.
+                If False (default), raises ModelOnexError on duplicate.
 
         Raises:
-            ValueError: If capability.capability already exists in the
-                registry and replace=False.
+            ModelOnexError: If capability.capability already exists in the
+                registry and replace=False. Raised with error code
+                EnumCoreErrorCode.DUPLICATE_REGISTRATION and context
+                containing the duplicate capability identifier.
 
         Example:
             .. code-block:: python
@@ -152,7 +154,7 @@ class RegistryCapability:
                 # Register a new capability
                 registry.register(cap)
 
-                # This raises ValueError (duplicate)
+                # This raises ModelOnexError (duplicate)
                 registry.register(cap)  # Raises!
 
                 # This succeeds (replace=True)

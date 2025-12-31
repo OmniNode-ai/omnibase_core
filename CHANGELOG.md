@@ -257,6 +257,52 @@ affinity = ModelSessionAffinity(hash_algorithm="sha512")  # ✅ Strongest
 
 **Recommendation**: Update configurations to use SHA-256 (default) before v0.6.0. Use SHA-384 or SHA-512 for high-security environments.
 
+#### MixinEventBus STRICT_BINDING_MODE Default Changed [OMN-1156]
+
+The default value of `MixinEventBus.STRICT_BINDING_MODE` has been changed from `False` to `True`. This is a **fail-fast behavior change** that affects code calling `bind_*()` methods after the mixin is "in use" (after `start_event_listener()` or publish operations).
+
+**Impact**:
+- **Before (v0.4.x)**: `bind_*()` calls after mixin is in use emitted a WARNING log
+- **After (v0.5.x)**: `bind_*()` calls after mixin is in use raise `ModelOnexError` with `error_code=INVALID_STATE`
+
+**Rationale**:
+- Fail-fast behavior catches thread-unsafe patterns in production before they cause subtle race conditions
+- Warnings can be missed in CI/CD pipelines and logs, but errors are immediately visible
+- This aligns with ONEX thread safety principles documented in [docs/guides/THREADING.md](docs/guides/THREADING.md)
+
+**Migration Guide**:
+
+1. **Recommended**: Ensure all `bind_*()` calls occur in `__init__` before the mixin is shared across threads:
+   ```python
+   class MyNode(MixinEventBus[InputT, OutputT]):
+       def __init__(self, event_bus: ProtocolEventBus):
+           super().__init__()
+           # All binding must happen in __init__ BEFORE any publish or listener operations
+           self.bind_event_bus(event_bus)
+           self.bind_node_name("my_node")
+   ```
+
+2. **For legacy code** that cannot be immediately refactored, disable strict mode by subclassing:
+   ```python
+   from typing import ClassVar
+
+   class MyLegacyNode(MixinEventBus[InputT, OutputT]):
+       STRICT_BINDING_MODE: ClassVar[bool] = False  # Opt-out to warning-only behavior
+   ```
+
+3. **Identify affected code** by searching for patterns where `bind_*()` is called after `start_event_listener()` or `publish_*()`:
+   ```bash
+   # Find potential issues
+   grep -rn "start_event_listener" --include="*.py" | xargs grep -l "bind_"
+   grep -rn "publish_event\|publish_completion_event" --include="*.py" | xargs grep -l "bind_"
+   ```
+
+**Quick Migration Checklist**:
+- [ ] Review all usages of `MixinEventBus` subclasses
+- [ ] Ensure `bind_*()` methods are called in `__init__` before any publish/listener operations
+- [ ] Add `STRICT_BINDING_MODE = False` to legacy classes that cannot be immediately fixed
+- [ ] Run tests to verify no `ModelOnexError` with `INVALID_STATE` is raised unexpectedly
+
 #### MixinEventBus Architecture Refactoring [OMN-1081]
 
 `MixinEventBus` has been refactored to use composition with dedicated data models, separating state management from behavior. This change improves thread safety, eliminates MRO conflicts, and enables proper serialization of runtime state.

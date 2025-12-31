@@ -473,22 +473,21 @@ class TestRegistryProviderListCapabilities:
         }
         assert results == expected
 
-    def test_list_capabilities_deduplicates(
+    def test_list_capabilities_returns_set_of_all_capabilities(
         self,
         registry: RegistryProvider,
         db_provider: ModelProviderDescriptor,
         staging_provider: ModelProviderDescriptor,
     ) -> None:
-        """Test list_capabilities deduplicates shared capabilities."""
+        """Test list_capabilities returns a set containing all capabilities."""
         registry.register(db_provider)
         registry.register(staging_provider)
 
         results = registry.list_capabilities()
 
-        # Both have database.relational, but it should appear once
+        # Returns a set, so shared capabilities appear once by definition
         assert "database.relational" in results
-        # Count occurrences - should be exactly one
-        assert len([c for c in results if c == "database.relational"]) == 1
+        assert isinstance(results, set)
 
 
 @pytest.mark.unit
