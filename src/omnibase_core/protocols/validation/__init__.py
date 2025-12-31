@@ -16,7 +16,6 @@ from __future__ import annotations
 
 # Contract Validation Invariant Checker (OMN-1146)
 # Import at package level to avoid long import paths
-# Uses lazy import pattern for circular import prevention
 from omnibase_core.protocols.protocol_contract_validation_invariant_checker import (
     ProtocolContractValidationInvariantChecker,
 )

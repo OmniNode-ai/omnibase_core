@@ -29,7 +29,7 @@ See Also:
 
 from uuid import UUID
 
-from pydantic import ConfigDict, Field, field_validator
+from pydantic import Field, field_validator
 
 from omnibase_core.models.events.contract_validation.model_contract_ref import (
     ModelContractRef,
@@ -90,8 +90,6 @@ class ModelContractMergeCompletedEvent(ModelContractValidationEventBase):
 
     .. versionadded:: 0.4.0
     """
-
-    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     event_type: str = Field(
         default=CONTRACT_MERGE_COMPLETED_EVENT,

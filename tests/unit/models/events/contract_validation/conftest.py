@@ -4,7 +4,7 @@
 """Shared fixtures for contract validation event model tests."""
 
 from pathlib import Path
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
 
@@ -23,19 +23,19 @@ def sample_contract_id() -> str:
 
 
 @pytest.fixture
-def sample_run_id():
+def sample_run_id() -> UUID:
     """Provide a unique run ID for tests."""
     return uuid4()
 
 
 @pytest.fixture
-def sample_actor_id():
+def sample_actor_id() -> UUID:
     """Provide a unique actor ID for tests."""
     return uuid4()
 
 
 @pytest.fixture
-def sample_correlation_id():
+def sample_correlation_id() -> UUID:
     """Provide a unique correlation ID for tests."""
     return uuid4()
 
