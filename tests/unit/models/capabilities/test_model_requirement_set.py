@@ -1607,7 +1607,7 @@ class TestIsRequirementList:
 class TestIsRequirementValue:
     """Tests for is_requirement_value TypeGuard function.
 
-    This TypeGuard enables type narrowing for any valid RequirementValue in resolver code.
+    This TypeGuard enables type narrowing for any valid JsonType value in resolver code.
     """
 
     def test_string_is_requirement_value(self) -> None:
@@ -1696,11 +1696,11 @@ class TestTypeGuardTypeNarrowing:
     def test_is_requirement_dict_narrows_in_conditional(self) -> None:
         """Test that is_requirement_dict enables type narrowing for dict operations.
 
-        After the guard, mypy should recognize dict[str, RequirementValue].
+        After the guard, mypy should recognize dict[str, JsonType].
         """
         value: Any = {"key": "value", "count": 42}
         if is_requirement_dict(value):
-            # After this check, mypy knows value is dict[str, RequirementValue]
+            # After this check, mypy knows value is dict[str, JsonType]
             # We can safely use dict operations without type: ignore
             keys = list(value.keys())
             assert "key" in keys
@@ -1709,11 +1709,11 @@ class TestTypeGuardTypeNarrowing:
     def test_is_requirement_list_narrows_in_conditional(self) -> None:
         """Test that is_requirement_list enables type narrowing for list operations.
 
-        After the guard, mypy should recognize list[RequirementValue].
+        After the guard, mypy should recognize list[JsonType].
         """
         value: Any = [1, 2, 3]
         if is_requirement_list(value):
-            # After this check, mypy knows value is list[RequirementValue]
+            # After this check, mypy knows value is list[JsonType]
             # We can safely use list operations without type: ignore
             length = len(value)
             assert length == 3

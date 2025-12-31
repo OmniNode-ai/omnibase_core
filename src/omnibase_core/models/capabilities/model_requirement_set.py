@@ -32,12 +32,10 @@ Thread Safety:
 
 Type Safety:
     Requirement values are constrained to JSON-compatible types via
-    ``RequirementValue`` and ``RequirementDict``. This prevents arbitrary
-    Python objects from being stored as requirement values, ensuring
-    serialization safety and consistent resolver behavior.
-
-    Uses PEP 695 type alias syntax for proper recursive type handling
-    with Pydantic 2.x.
+    ``JsonType`` (imported from ``omnibase_core.types.json_types``).
+    This prevents arbitrary Python objects from being stored as
+    requirement values, ensuring serialization safety and consistent
+    resolver behavior.
 
 Runtime Validation:
     Beyond static type hints, ``ModelRequirementSet`` enforces JSON-serializability
@@ -54,39 +52,7 @@ from typing import Any, TypeGuard
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-# PEP 695 recursive type alias (Python 3.12+)
-# Pydantic requires this syntax for recursive types to avoid RecursionError.
-#
-# RequirementValue represents any JSON-serializable value that can be used
-# in requirement constraints:
-#   - Primitives: str, int, float, bool, None
-#   - Containers: list of RequirementValue, dict mapping str to RequirementValue
-#
-# This provides type safety over `Any` by restricting values to JSON-compatible
-# types, preventing runtime serialization errors and ensuring consistent
-# behavior across resolvers.
-#
-# Examples of valid values:
-#   True                                    # bool
-#   20                                      # int
-#   0.95                                    # float
-#   "us-east-1"                             # str
-#   None                                    # null
-#   ["postgres", "mysql"]                   # list
-#   {"timeout": 30, "retries": 3}           # nested dict
-type RequirementValue = (
-    str
-    | int
-    | float
-    | bool
-    | None
-    | list[RequirementValue]
-    | dict[str, RequirementValue]
-)
-
-# Type alias for requirement dictionaries.
-# Maps attribute names (str) to their required/preferred/forbidden values.
-RequirementDict = dict[str, RequirementValue]
+from omnibase_core.types.json_types import JsonType
 
 
 # =============================================================================
@@ -98,7 +64,7 @@ RequirementDict = dict[str, RequirementValue]
 #
 # Usage in resolvers:
 #     if is_requirement_dict(data):
-#         # Type narrowed: data is dict[str, RequirementValue]
+#         # Type narrowed: data is dict[str, JsonType]
 #         for key, val in data.items():
 #             process_requirement(key, val)
 #
@@ -114,7 +80,7 @@ def is_json_primitive(value: Any) -> TypeGuard[str | int | float | bool | None]:
     """Type guard for JSON primitive values.
 
     Enables type narrowing for scalar JSON values that are valid
-    RequirementValue leaves (non-container types).
+    JsonType leaves (non-container types).
 
     Args:
         value: Any value to check.
@@ -153,7 +119,7 @@ def is_json_primitive(value: Any) -> TypeGuard[str | int | float | bool | None]:
     return isinstance(value, (str, int, float))
 
 
-def is_requirement_dict(value: Any) -> TypeGuard[dict[str, RequirementValue]]:
+def is_requirement_dict(value: Any) -> TypeGuard[dict[str, JsonType]]:
     """Type guard for requirement dictionaries.
 
     Enables type narrowing in resolver code for better IDE support
@@ -183,18 +149,18 @@ def is_requirement_dict(value: Any) -> TypeGuard[dict[str, RequirementValue]]:
     Note:
         This performs a shallow check - it validates that all keys are strings
         but does not recursively validate that all values are valid
-        RequirementValue types. For full validation, use
-        ``ModelRequirementSet`` which performs JSON serializability checks.
+        JsonType values. For full validation, use ``ModelRequirementSet``
+        which performs JSON serializability checks.
     """
     if not isinstance(value, dict):
         return False
     return all(isinstance(k, str) for k in value)
 
 
-def is_requirement_list(value: Any) -> TypeGuard[list[RequirementValue]]:
+def is_requirement_list(value: Any) -> TypeGuard[list[JsonType]]:
     """Type guard for requirement lists.
 
-    Enables type narrowing for list values that are valid RequirementValue
+    Enables type narrowing for list values that are valid JsonType
     containers. Validates that the value is a list (values are not deeply
     validated for performance).
 
@@ -221,23 +187,23 @@ def is_requirement_list(value: Any) -> TypeGuard[list[RequirementValue]]:
     Note:
         This performs a shallow check - it validates that the value is a list
         but does not recursively validate that all elements are valid
-        RequirementValue types. For full validation, use
-        ``ModelRequirementSet`` which performs JSON serializability checks.
+        JsonType values. For full validation, use ``ModelRequirementSet``
+        which performs JSON serializability checks.
     """
     return isinstance(value, list)
 
 
-def is_requirement_value(value: Any) -> TypeGuard[RequirementValue]:
-    """Type guard for any valid RequirementValue.
+def is_requirement_value(value: Any) -> TypeGuard[JsonType]:
+    """Type guard for any valid JsonType value.
 
-    Enables type narrowing for values that conform to the RequirementValue
+    Enables type narrowing for values that conform to the JsonType
     recursive type alias. Performs a shallow check for the top-level type.
 
     Args:
         value: Any value to check.
 
     Returns:
-        True if value is a valid RequirementValue type (primitive, list, or
+        True if value is a valid JsonType (primitive, list, or
         dict with string keys), False otherwise.
 
     Examples:
@@ -339,22 +305,22 @@ class ModelRequirementSet(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
-    must: RequirementDict = Field(
+    must: dict[str, JsonType] = Field(
         default_factory=dict,
         description="Hard constraints that must be satisfied for a provider to match",
     )
 
-    prefer: RequirementDict = Field(
+    prefer: dict[str, JsonType] = Field(
         default_factory=dict,
         description="Soft preferences that affect provider scoring",
     )
 
-    forbid: RequirementDict = Field(
+    forbid: dict[str, JsonType] = Field(
         default_factory=dict,
         description="Hard exclusion constraints that disqualify providers",
     )
 
-    hints: RequirementDict = Field(
+    hints: dict[str, JsonType] = Field(
         default_factory=dict,
         description="Advisory information for tie-breaking between equal providers",
     )
@@ -368,7 +334,7 @@ class ModelRequirementSet(BaseModel):
         can be serialized to JSON, preventing runtime errors during serialization
         and ensuring consistent behavior across resolvers.
 
-        This is a runtime enforcement of the ``RequirementValue`` type constraint,
+        This is a runtime enforcement of the ``JsonType`` type constraint,
         since Pydantic's type checking alone cannot catch all non-JSON-serializable
         objects (e.g., custom classes, datetime objects, lambdas).
 
@@ -594,8 +560,6 @@ class ModelRequirementSet(BaseModel):
 
 __all__ = [
     "ModelRequirementSet",
-    "RequirementDict",
-    "RequirementValue",
     # TypeGuard functions for runtime type narrowing
     "is_json_primitive",
     "is_requirement_dict",

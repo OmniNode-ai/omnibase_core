@@ -32,6 +32,11 @@ ModelContractCapabilities
     Contract-derived capabilities for auto-discovery. Captures what capabilities
     a node provides based on its contract definition.
 
+Type System
+-----------
+Requirement values use ``JsonType`` from ``omnibase_core.types.json_types``.
+Requirement dictionaries are typed as ``dict[str, JsonType]``.
+
 Capability Naming Convention
 ----------------------------
 Capabilities follow the pattern: ``<domain>.<type>[.<variant>]``
@@ -143,8 +148,6 @@ from omnibase_core.models.capabilities.model_contract_capabilities import (
 )
 from omnibase_core.models.capabilities.model_requirement_set import (
     ModelRequirementSet,
-    RequirementDict,
-    RequirementValue,
     is_json_primitive,
     is_requirement_dict,
     is_requirement_list,
@@ -155,8 +158,6 @@ __all__ = [
     "ModelCapabilityDependency",
     "ModelContractCapabilities",
     "ModelRequirementSet",
-    "RequirementDict",
-    "RequirementValue",
     "SelectionPolicy",
     # TypeGuard functions for runtime type narrowing
     "is_json_primitive",
