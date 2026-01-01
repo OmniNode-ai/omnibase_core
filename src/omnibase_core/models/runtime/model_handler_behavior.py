@@ -179,5 +179,3 @@ class ModelHandlerBehavior(BaseModel):
         default_factory=list,
         description="Provided output capabilities (e.g., ['event', 'log'])",
     )
-
-

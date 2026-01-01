@@ -194,6 +194,7 @@
           "type": "array"
         },
         "indexes": {
+          "default": [],
           "description": "Optional list of index definitions for the projection table. Defaults to an empty list if not specified.",
           "items": {
             "$ref": "#/$defs/ModelProjectorIndex"

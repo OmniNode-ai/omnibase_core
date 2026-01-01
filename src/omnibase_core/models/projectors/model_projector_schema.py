@@ -164,6 +164,7 @@ class ModelProjectorSchema(BaseModel):
             "Optional list of index definitions for the projection table. "
             "Defaults to an empty list if not specified."
         ),
+        json_schema_extra={"default": []},
     )
 
     version: ModelSemVer | None = Field(
