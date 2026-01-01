@@ -420,3 +420,203 @@ class TestMetricsIntegration:
         assert "api.requests.total" in metrics
         assert "cache:hit_rate" in metrics
         assert "errors/rate" in metrics
+
+
+@pytest.mark.unit
+class TestMixinMetricsBackendSupport:
+    """Test suite for MixinMetrics backend integration (v0.5.7+)."""
+
+    def test_init_sets_backend_to_none(self) -> None:
+        """Test that __init__ sets _metrics_backend to None."""
+        node = MockNode()
+        backend = object.__getattribute__(node, "_metrics_backend")
+        assert backend is None
+
+    def test_set_metrics_backend(self) -> None:
+        """Test setting a metrics backend."""
+        from omnibase_core.backends.metrics import BackendMetricsInMemory
+
+        node = MockNode()
+        backend = BackendMetricsInMemory()
+
+        node.set_metrics_backend(backend)
+
+        assert node.get_metrics_backend() is backend
+
+    def test_set_metrics_backend_to_none(self) -> None:
+        """Test clearing the metrics backend."""
+        from omnibase_core.backends.metrics import BackendMetricsInMemory
+
+        node = MockNode()
+        backend = BackendMetricsInMemory()
+
+        node.set_metrics_backend(backend)
+        node.set_metrics_backend(None)
+
+        assert node.get_metrics_backend() is None
+
+    def test_get_metrics_backend_returns_none_by_default(self) -> None:
+        """Test that get_metrics_backend returns None by default."""
+        node = MockNode()
+        assert node.get_metrics_backend() is None
+
+    def test_record_metric_forwards_to_backend(self) -> None:
+        """Test that record_metric forwards to configured backend."""
+        from omnibase_core.backends.metrics import BackendMetricsInMemory
+
+        node = MockNode()
+        backend = BackendMetricsInMemory()
+        node.set_metrics_backend(backend)
+
+        node.record_metric("cpu_usage", 45.2, tags={"host": "server1"})
+
+        # Verify in-memory storage (backward compatible)
+        metrics = node.get_metrics()
+        assert metrics["cpu_usage"]["value"] == 45.2
+
+        # Verify backend received the metric
+        backend_gauges = backend.get_gauges()
+        assert "cpu_usage{host=server1}" in backend_gauges
+        assert backend_gauges["cpu_usage{host=server1}"] == 45.2
+
+    def test_increment_counter_forwards_to_backend(self) -> None:
+        """Test that increment_counter forwards to configured backend."""
+        from omnibase_core.backends.metrics import BackendMetricsInMemory
+
+        node = MockNode()
+        backend = BackendMetricsInMemory()
+        node.set_metrics_backend(backend)
+
+        node.increment_counter("requests_total", value=5, tags={"status": "200"})
+
+        # Verify in-memory storage
+        metrics = node.get_metrics()
+        assert metrics["requests_total"]["value"] == 5
+
+        # Verify backend received the counter
+        backend_counters = backend.get_counters()
+        assert "requests_total{status=200}" in backend_counters
+        assert backend_counters["requests_total{status=200}"] == 5.0
+
+
+@pytest.mark.unit
+class TestMixinMetricsHistogram:
+    """Test suite for record_histogram method (v0.5.7+)."""
+
+    def test_record_histogram_basic(self) -> None:
+        """Test basic histogram recording."""
+        node = MockNode()
+
+        node.record_histogram("response_time", 0.123)
+
+        metrics = node.get_metrics()
+        assert "response_time" in metrics
+        assert metrics["response_time"]["value"] == 0.123
+
+    def test_record_histogram_with_tags(self) -> None:
+        """Test histogram recording with tags."""
+        node = MockNode()
+
+        node.record_histogram(
+            "request_duration", 0.5, tags={"endpoint": "/api/users"}
+        )
+
+        metrics = node.get_metrics()
+        assert metrics["request_duration"]["value"] == 0.5
+        assert metrics["request_duration"]["tags"] == {"endpoint": "/api/users"}
+
+    def test_record_histogram_forwards_to_backend(self) -> None:
+        """Test that record_histogram forwards to configured backend."""
+        from omnibase_core.backends.metrics import BackendMetricsInMemory
+
+        node = MockNode()
+        backend = BackendMetricsInMemory()
+        node.set_metrics_backend(backend)
+
+        node.record_histogram("latency", 0.15, tags={"method": "GET"})
+
+        # Verify in-memory storage
+        metrics = node.get_metrics()
+        assert metrics["latency"]["value"] == 0.15
+
+        # Verify backend received the histogram
+        backend_histograms = backend.get_histograms()
+        assert "latency{method=GET}" in backend_histograms
+        assert backend_histograms["latency{method=GET}"] == [0.15]
+
+
+@pytest.mark.unit
+class TestMixinMetricsPush:
+    """Test suite for push_metrics method (v0.5.7+)."""
+
+    def test_push_metrics_without_backend(self) -> None:
+        """Test that push_metrics is a no-op without backend."""
+        node = MockNode()
+
+        # Should not raise
+        node.push_metrics()
+
+    def test_push_metrics_calls_backend_push(self) -> None:
+        """Test that push_metrics calls backend.push()."""
+        from omnibase_core.backends.metrics import BackendMetricsInMemory
+
+        node = MockNode()
+        backend = BackendMetricsInMemory()
+        node.set_metrics_backend(backend)
+
+        node.record_metric("test", 1.0)
+
+        # Should not raise (BackendMetricsInMemory.push() is a no-op)
+        node.push_metrics()
+
+
+@pytest.mark.unit
+class TestMixinMetricsBackwardCompatibility:
+    """Test suite for backward compatibility after v0.5.7 changes."""
+
+    def test_existing_code_works_without_backend(self) -> None:
+        """Test that existing code works unchanged without backend."""
+        node = MockNode()
+
+        # Record metrics (should work as before)
+        node.record_metric("metric1", 100.0)
+        node.increment_counter("counter1")
+
+        # Get metrics (should work as before)
+        metrics = node.get_metrics()
+        assert metrics["metric1"]["value"] == 100.0
+        assert metrics["counter1"]["value"] == 1
+
+        # Reset metrics (should work as before)
+        node.reset_metrics()
+        assert node.get_metrics() == {}
+
+    def test_in_memory_storage_always_populated(self) -> None:
+        """Test that in-memory storage is always populated with backend."""
+        from omnibase_core.backends.metrics import BackendMetricsInMemory
+
+        node = MockNode()
+        backend = BackendMetricsInMemory()
+        node.set_metrics_backend(backend)
+
+        node.record_metric("test", 42.0)
+
+        # In-memory storage should still work
+        assert node.get_metrics()["test"]["value"] == 42.0
+
+    def test_reset_only_affects_in_memory(self) -> None:
+        """Test that reset_metrics only clears in-memory storage."""
+        from omnibase_core.backends.metrics import BackendMetricsInMemory
+
+        node = MockNode()
+        backend = BackendMetricsInMemory()
+        node.set_metrics_backend(backend)
+
+        node.record_metric("test", 1.0)
+        node.reset_metrics()
+
+        # In-memory should be cleared
+        assert node.get_metrics() == {}
+
+        # Backend should still have the metric
+        assert backend.get_gauges()["test"] == 1.0

@@ -50,8 +50,8 @@ from omnibase_core.models.infrastructure.model_node_workflow_result import (
 )
 from omnibase_core.models.infrastructure.model_state import ModelState
 
-# Simple stub models for reducer pattern (ONEX 2.0 minimal implementation)
-# Import from separate files: ModelAction, ModelState, ModelNodeState
+# Reducer pattern models imported from separate files (ONEX 2.0 architecture)
+# See: ModelAction, ModelState, ModelNodeState for full implementations
 
 
 class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](

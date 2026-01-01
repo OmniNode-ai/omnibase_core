@@ -3,6 +3,10 @@
 This module contains node bases and infrastructure services.
 """
 
+from omnibase_core.infrastructure.cache_backends import (
+    REDIS_AVAILABLE,
+    BackendCacheRedis,
+)
 from omnibase_core.infrastructure.execution.phase_sequencer import (
     create_execution_plan,
 )
@@ -24,6 +28,9 @@ __all__ = [
     "ModelCircuitBreaker",
     "ModelComputeCache",
     "ModelEffectTransaction",
+    # Cache backends (OMN-1188)
+    "BackendCacheRedis",
+    "REDIS_AVAILABLE",
     # Execution sequencing
     "ModelPhaseStep",
     "ModelExecutionPlan",
