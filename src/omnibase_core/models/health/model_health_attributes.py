@@ -4,9 +4,11 @@ Health Attributes Model
 Type-safe health attributes that replace Dict[str, Any] usage.
 """
 
+from __future__ import annotations
+
 from pydantic import BaseModel, Field
 
-from omnibase_core.models.services.model_custom_fields import ModelCustomFields
+from omnibase_core.types.json_types import JsonType
 
 
 class ModelHealthAttributes(BaseModel):
@@ -81,7 +83,9 @@ class ModelHealthAttributes(BaseModel):
     )
 
     # Custom fields for future extensibility
-    custom_fields: ModelCustomFields | None = Field(
+    # Using dict[str, JsonType] instead of ModelCustomFields to avoid circular imports.
+    # ModelCustomFields triggers a complex import chain that circles back to health models.
+    custom_fields: dict[str, JsonType] | None = Field(
         default=None,
         description="Additional custom attributes",
     )

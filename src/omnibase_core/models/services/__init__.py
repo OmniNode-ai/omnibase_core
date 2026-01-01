@@ -1,19 +1,16 @@
 """
 Service domain models for ONEX.
-"""
 
-from omnibase_core.models.configuration.model_event_bus_config import (
-    ModelEventBusConfig,
-)
-from omnibase_core.models.configuration.model_monitoring_config import (
-    ModelMonitoringConfig,
-)
-from omnibase_core.models.configuration.model_resource_limits import ModelResourceLimits
-from omnibase_core.models.examples.model_security_config import ModelSecurityConfig
-from omnibase_core.models.health.model_health_check_config import ModelHealthCheckConfig
-from omnibase_core.models.operations.model_workflow_parameters import (
-    ModelWorkflowParameters,
-)
+NOTE: Cross-package imports (examples, health, operations, configuration) have been
+removed from this __init__.py to prevent circular imports. Import these directly
+from their respective packages:
+    - ModelSecurityConfig: from omnibase_core.models.examples import ModelSecurityConfig
+    - ModelHealthCheckConfig: from omnibase_core.models.health import ModelHealthCheckConfig
+    - ModelEventBusConfig: from omnibase_core.models.configuration import ModelEventBusConfig
+    - ModelMonitoringConfig: from omnibase_core.models.configuration import ModelMonitoringConfig
+    - ModelResourceLimits: from omnibase_core.models.configuration import ModelResourceLimits
+    - ModelWorkflowParameters: from omnibase_core.models.operations import ModelWorkflowParameters
+"""
 
 from .model_custom_field_definition import ModelCustomFieldDefinition
 from .model_error_details import ErrorContext, ModelErrorDetails, TContext
@@ -68,22 +65,16 @@ __all__ = [
     "ModelCustomFieldDefinition",
     "ModelErrorDetails",
     "TContext",
-    "ModelEventBusConfig",
     "ModelExecutionPriority",
     "ModelExternalServiceConfig",
     "ModelFallbackStrategy",
-    "ModelHealthCheckConfig",
-    "ModelMonitoringConfig",
     "ModelNetworkConfig",
     "ModelNodeServiceConfig",
     "ModelNodeWeights",
-    "ModelResourceLimits",
     "ModelRetryStrategy",
     "ModelRoutingPreferences",
-    "ModelSecurityConfig",
     "ModelServiceConfiguration",
     "ModelServiceHealth",
     "ModelServiceRegistryConfig",
     "ModelServiceType",
-    "ModelWorkflowParameters",
 ]
