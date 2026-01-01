@@ -235,7 +235,7 @@ class MixinCaching:
                     # Note: We don't know the original TTL, so use default
                     self._set_l1(cache_key, l2_value, self._default_ttl_seconds)
                     return l2_value
-            except Exception as e:
+            except (ConnectionError, TimeoutError, OSError) as e:
                 # Graceful degradation - log and continue with L1 miss
                 logger.warning("L2 cache get failed for key %s: %s", cache_key, e)
 
@@ -269,7 +269,7 @@ class MixinCaching:
         if self._cache_backend is not None:
             try:
                 await self._cache_backend.set(cache_key, value, ttl)
-            except Exception as e:
+            except (ConnectionError, TimeoutError, OSError) as e:
                 # Graceful degradation - log and continue with L1 only
                 logger.warning("L2 cache set failed for key %s: %s", cache_key, e)
 
@@ -287,7 +287,7 @@ class MixinCaching:
         if self._cache_backend is not None:
             try:
                 await self._cache_backend.delete(cache_key)
-            except Exception as e:
+            except (ConnectionError, TimeoutError, OSError) as e:
                 logger.warning("L2 cache delete failed for key %s: %s", cache_key, e)
 
     async def clear_cache(self) -> None:
@@ -299,7 +299,7 @@ class MixinCaching:
         if self._cache_backend is not None:
             try:
                 await self._cache_backend.clear()
-            except Exception as e:
+            except (ConnectionError, TimeoutError, OSError) as e:
                 logger.warning("L2 cache clear failed: %s", e)
 
     def get_cache_stats(self) -> TypedDictCacheStats:

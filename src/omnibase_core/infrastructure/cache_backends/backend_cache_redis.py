@@ -173,6 +173,11 @@ class BackendCacheRedis:
             logger.debug("Connected to Redis at %s", self._url)
         except Exception as e:
             logger.error("Failed to connect to Redis: %s", e)
+            # Cleanup on failure to prevent resource leaks
+            if self._pool:
+                await self._pool.disconnect()
+                self._pool = None
+            self._client = None
             self._connected = False
             raise ConnectionError(f"Failed to connect to Redis: {e}") from e
 
