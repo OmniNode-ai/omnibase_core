@@ -22,10 +22,12 @@ from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
 from omnibase_core.types.typed_dict_documentation_summary_filtered import (
     TypedDictDocumentationSummaryFiltered,
 )
+from omnibase_core.types.typed_dict_function_metadata_summary import (
+    TypedDictFunctionMetadataSummary,
+)
 
 from .model_function_deprecation_info import ModelFunctionDeprecationInfo
 from .model_function_documentation import ModelFunctionDocumentation
-from .model_function_metadata_summary import ModelFunctionMetadataSummary
 from .model_function_relationships import ModelFunctionRelationships
 
 
@@ -247,7 +249,7 @@ class ModelFunctionNodeMetadata(BaseModel):
 
         return min(doc_score + rel_score, 1.0)
 
-    def get_metadata_summary(self) -> ModelFunctionMetadataSummary:
+    def get_metadata_summary(self) -> TypedDictFunctionMetadataSummary:
         """Get comprehensive metadata summary."""
         doc_summary = self.documentation.get_documentation_summary()
         dep_summary = self.deprecation.get_deprecation_summary()
@@ -268,19 +270,17 @@ class ModelFunctionNodeMetadata(BaseModel):
             for key, value in rel_summary.items()
         }
 
-        return ModelFunctionMetadataSummary(
-            {
-                "documentation": doc_filtered,
-                "deprecation": dep_summary,
-                "relationships": rel_converted,  # type: ignore[typeddict-item]
-                "documentation_quality_score": self.get_documentation_quality_score(),
-                # Consider "fully documented" based on documentation, not recency
-                "is_fully_documented": (
-                    doc_filtered.get("has_documentation", False)
-                    and doc_filtered.get("has_examples", False)
-                ),
-                "deprecation_status": self.deprecation.get_deprecation_status().value,
-            }
+        return TypedDictFunctionMetadataSummary(
+            documentation=doc_filtered,
+            deprecation=dep_summary,
+            relationships=rel_converted,  # type: ignore[typeddict-item]
+            documentation_quality_score=self.get_documentation_quality_score(),
+            # Consider "fully documented" based on documentation, not recency
+            is_fully_documented=(
+                doc_filtered.get("has_documentation", False)
+                and doc_filtered.get("has_examples", False)
+            ),
+            deprecation_status=self.deprecation.get_deprecation_status().value,
         )
 
     @classmethod

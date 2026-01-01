@@ -19,8 +19,6 @@ Core Principle:
 
 from __future__ import annotations
 
-import json
-
 import pytest
 from pydantic import ValidationError
 
@@ -1029,6 +1027,7 @@ class TestModelProjectorContractSerialization:
 
     def test_to_dict_roundtrip(self) -> None:
         """Model -> dict -> Model produces identical result."""
+        from omnibase_core.models.primitives.model_semver import ModelSemVer
         from omnibase_core.models.projectors import (
             ModelIdempotencyConfig,
             ModelProjectorBehavior,
@@ -1037,7 +1036,6 @@ class TestModelProjectorContractSerialization:
             ModelProjectorIndex,
             ModelProjectorSchema,
         )
-        from omnibase_core.models.primitives.model_semver import ModelSemVer
 
         columns = [
             ModelProjectorColumn(

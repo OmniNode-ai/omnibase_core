@@ -60,7 +60,7 @@ class ModelAuditMetadata(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
-    audit_id: str | None = Field(
+    audit_id: str | None = Field(  # string-id-ok: external audit system identifier
         default=None,
         description="Audit record identifier",
     )

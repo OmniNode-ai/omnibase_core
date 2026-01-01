@@ -21,6 +21,11 @@ from .model_custom_properties import ModelCustomProperties
 from .model_envelope_metadata import ModelEnvelopeMetadata
 from .model_environment_accessor import ModelEnvironmentAccessor
 
+# Feature flags pattern
+from .model_feature_flag_metadata import ModelFeatureFlagMetadata
+from .model_feature_flag_summary import ModelFeatureFlagSummary
+from .model_feature_flags import ModelFeatureFlags
+
 # Field accessor patterns
 from .model_field_accessor import ModelFieldAccessor
 
@@ -57,6 +62,7 @@ from .model_tool_integration import ModelToolIntegration
 from .model_tool_integration_summary import ModelToolIntegrationSummary
 from .model_tool_resource_requirements import ModelToolResourceRequirements
 from .model_tool_timeout_settings import ModelToolTimeoutSettings
+from .model_tool_version_summary import ModelToolVersionSummary
 from .model_typed_accessor import ModelTypedAccessor
 from .model_typed_configuration import ModelTypedConfiguration
 
@@ -128,6 +134,10 @@ __all__ = [
     "ModelTypedConfiguration",
     # Custom properties pattern
     "ModelCustomProperties",
+    # Feature flags pattern
+    "ModelFeatureFlagMetadata",
+    "ModelFeatureFlagSummary",
+    "ModelFeatureFlags",
     # Version information
     "ModelOnexVersionInfo",
     # Event envelope patterns
@@ -198,4 +208,5 @@ __all__ = [
     "ModelToolIntegrationSummary",
     "ModelToolResourceRequirements",
     "ModelToolTimeoutSettings",
+    "ModelToolVersionSummary",
 ]

@@ -60,7 +60,7 @@ class ModelStorageCheckpointMetadata(BaseModel):
         description="Human-readable description of the checkpoint",
     )
 
-    parent_checkpoint_id: str | None = Field(
+    parent_checkpoint_id: str | None = Field(  # string-id-ok: checkpoint identifier
         default=None,
         description="ID of parent checkpoint if this is an incremental checkpoint",
     )

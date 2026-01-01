@@ -120,8 +120,8 @@ class ModelProjectorContract(BaseModel):
         projector_id: Unique identifier for the projector. Used for registration
             and routing.
         name: Human-readable name for the projector.
-        version: Contract version string (e.g., "1.0.0"). Used for compatibility
-            checking and migration tracking.
+        version: Contract version string (e.g., "1.0.0"). Used for version
+            validation and migration tracking.
         aggregate_type: Semantic string identifier for the aggregate type this
             projector handles.
         consumed_events: List of event names this projector subscribes to.
@@ -191,7 +191,7 @@ class ModelProjectorContract(BaseModel):
         description="Type of projector. Currently only 'materialized_view' is supported.",
     )
 
-    projector_id: str = Field(
+    projector_id: str = Field(  # string-id-ok: user-facing projector identifier
         ...,
         description="Unique identifier for the projector",
         min_length=1,

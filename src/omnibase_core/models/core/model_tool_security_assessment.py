@@ -1,7 +1,7 @@
 """
 Tool security assessment models.
 
-Provides typed models for tool security assessment and summary data,
+Provides typed models for tool security assessment data,
 replacing dict[str, Any] return types in ModelToolSecurity methods.
 """
 
@@ -54,37 +54,9 @@ class ModelToolSecurityAssessment(BaseModel):
     )
 
 
-class ModelToolSecuritySummary(BaseModel):
-    """
-    Typed model for tool security configuration summary.
-
-    Replaces dict[str, Any] return from get_summary() in ModelToolSecurity.
-    """
-
-    processes_sensitive_data: bool = Field(
-        default=False,
-        description="Whether the tool processes sensitive data",
-    )
-    data_classification: str = Field(
-        default="internal",
-        description="Data classification level",
-    )
-    requires_network_access: bool = Field(
-        default=False,
-        description="Whether the tool requires network access",
-    )
-    external_endpoints: list[str] = Field(
-        default_factory=list,
-        description="List of external endpoints accessed",
-    )
-    security_profile_required: str = Field(
-        default="SP0_BOOTSTRAP",
-        description="Required security profile level",
-    )
-    security_assessment: ModelToolSecurityAssessment = Field(
-        default_factory=ModelToolSecurityAssessment,
-        description="Detailed security assessment",
-    )
-
+# Re-export from split module
+from omnibase_core.models.core.model_tool_security_summary import (
+    ModelToolSecuritySummary,
+)
 
 __all__ = ["ModelToolSecurityAssessment", "ModelToolSecuritySummary"]

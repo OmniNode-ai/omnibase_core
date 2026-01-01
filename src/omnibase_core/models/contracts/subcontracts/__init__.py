@@ -74,13 +74,7 @@ from .model_effect_operation import ModelEffectOperation
 from .model_effect_operation_result import ModelEffectOperationResult
 
 # Effect resolved context imports (Contract-Driven NodeEffect v1.0)
-from .model_effect_resolved_context import (
-    ModelResolvedDbContext,
-    ModelResolvedFilesystemContext,
-    ModelResolvedHttpContext,
-    ModelResolvedKafkaContext,
-    ResolvedIOContext,
-)
+from .model_effect_resolved_context import ResolvedIOContext
 from .model_effect_response_handling import ModelEffectResponseHandling
 from .model_effect_retry_policy import ModelEffectRetryPolicy
 from .model_effect_subcontract import ModelEffectSubcontract
@@ -108,6 +102,10 @@ from .model_node_progress import ModelNodeProgress
 from .model_observability_subcontract import ModelObservabilitySubcontract
 from .model_progress_status import ModelProgressStatus
 from .model_request_transformation import ModelRequestTransformation
+from .model_resolved_db_context import ModelResolvedDbContext
+from .model_resolved_filesystem_context import ModelResolvedFilesystemContext
+from .model_resolved_http_context import ModelResolvedHttpContext
+from .model_resolved_kafka_context import ModelResolvedKafkaContext
 from .model_retry_subcontract import ModelRetrySubcontract
 from .model_route_definition import ModelRouteDefinition
 from .model_routing_metrics import ModelRoutingMetrics
