@@ -309,7 +309,7 @@ class MixinCLIHandler[InputStateT, OutputStateT]:
             )
             return 130
 
-        except BaseException as e:  # catch-all-ok: CLI handler returns error exit code with logging, appropriate for CLI
+        except Exception as e:  # catch-all-ok: CLI handler returns error exit code with logging, appropriate for CLI
             emit_log_event(
                 LogLevel.ERROR,
                 f"Tool execution failed: {e}",

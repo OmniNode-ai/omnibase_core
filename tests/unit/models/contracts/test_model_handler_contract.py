@@ -15,6 +15,9 @@ Tests handler contract specification including:
 import pytest
 from pydantic import ValidationError
 
+from omnibase_core.models.capabilities.model_capability_requirement_set import (
+    ModelRequirementSet,
+)
 from omnibase_core.models.contracts.model_capability_dependency import (
     ModelCapabilityDependency,
 )
@@ -23,9 +26,6 @@ from omnibase_core.models.contracts.model_execution_constraints import (
 )
 from omnibase_core.models.contracts.model_handler_contract import ModelHandlerContract
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.capabilities.model_capability_requirement_set import (
-    ModelRequirementSet,
-)
 from omnibase_core.models.runtime.model_handler_behavior import (
     ModelHandlerBehavior,
 )

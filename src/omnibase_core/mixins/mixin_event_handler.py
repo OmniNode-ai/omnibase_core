@@ -230,7 +230,7 @@ class MixinEventHandler:
                 context=context,
             )
 
-        except BaseException as e:  # catch-all-ok: introspection request handling errors are logged but shouldn't crash
+        except Exception as e:  # catch-all-ok: introspection request handling errors are logged but shouldn't crash
             node_id = getattr(self, "_node_id", None) or "<unset>"
             context = ModelLogContext(
                 calling_module=_COMPONENT_NAME,
@@ -280,7 +280,7 @@ class MixinEventHandler:
             if not is_event_equal(event.event_type, discovery_request_type):
                 return
 
-        except BaseException:  # catch-all-ok: event handler returns early if type check fails, malformed events shouldn't crash
+        except Exception:  # catch-all-ok: event handler returns early if type check fails, malformed events shouldn't crash
             # If we can't create the event type, skip
             return
 
@@ -308,7 +308,7 @@ class MixinEventHandler:
                 context=context,
             )
 
-        except BaseException as e:  # catch-all-ok: discovery request handling errors are logged but shouldn't crash
+        except Exception as e:  # catch-all-ok: discovery request handling errors are logged but shouldn't crash
             node_id = getattr(self, "_node_id", None) or "<unset>"
             context = ModelLogContext(
                 calling_module=_COMPONENT_NAME,
@@ -357,7 +357,7 @@ class MixinEventHandler:
             # No specific filters, respond
             return True
 
-        except BaseException:  # catch-all-ok: filter error defaults to responding, safe fallback for event handling
+        except Exception:  # catch-all-ok: filter error defaults to responding, safe fallback for event handling
             # On error, default to responding
             return True
 
@@ -421,7 +421,7 @@ class MixinEventHandler:
                     context=context,
                 )
             except (
-                BaseException
+                Exception
             ) as e:  # catch-all-ok: cleanup errors are logged but shouldn't crash
                 node_id = getattr(self, "_node_id", None) or "<unset>"
                 context = ModelLogContext(

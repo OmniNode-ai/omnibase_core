@@ -130,7 +130,7 @@ class MixinDebugDiscoveryLogging:
 
             return result
 
-        except BaseException as e:  # catch-all-ok: introspection handler can raise anything during node inspection
+        except Exception as e:  # catch-all-ok: introspection handler can raise anything during node inspection
             emit_log_event(
                 LogLevel.ERROR,
                 f"🔍 {node_name.upper()} DEBUG: Introspection handler failed",

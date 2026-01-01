@@ -163,11 +163,6 @@ from omnibase_core.protocols.notifications import (
 from omnibase_core.protocols.protocol_logger_like import ProtocolLoggerLike
 
 # =============================================================================
-# Event Construction Protocol Exports
-# =============================================================================
-from omnibase_core.protocols.protocol_from_event import ProtocolFromEvent
-
-# =============================================================================
 # Resolution Module Exports (OMN-1123)
 # =============================================================================
 from omnibase_core.protocols.resolution import ProtocolDependencyResolver

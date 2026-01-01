@@ -634,7 +634,9 @@ def is_protocol_file(file_path: Path) -> bool:
         # UnicodeDecodeError not caught: read_text uses errors="ignore"
         logger.debug(f"Error checking protocol file {file_path}: {e}")
         return False
-    except Exception as e:  # fallback-ok: Protocol check errors should not stop file discovery
+    except (
+        Exception
+    ) as e:  # fallback-ok: Protocol check errors should not stop file discovery
         # Unexpected error: safety net for truly unexpected issues
         logger.debug(f"Unexpected error checking protocol file {file_path}: {e}")
         return False

@@ -203,7 +203,7 @@ class MixinRequestResponseIntrospection:
                     },
                 )
                 return
-        except BaseException as e:  # catch-all-ok: event handler returns early with logging, malformed events shouldn't crash node
+        except Exception as e:  # catch-all-ok: event handler returns early with logging, malformed events shouldn't crash node
             emit_log_event_sync(
                 LogLevel.WARNING,
                 "🔍 INTROSPECTION: Failed to reconstruct ModelRequestIntrospectionEvent",
@@ -390,7 +390,7 @@ class MixinRequestResponseIntrospection:
                     {"node_name": getattr(self, "node_name", "unknown")},
                 )
 
-        except BaseException as e:  # catch-all-ok: request handling errors should be caught and reported via error response
+        except Exception as e:  # catch-all-ok: request handling errors should be caught and reported via error response
             emit_log_event_sync(
                 LogLevel.ERROR,
                 f"❌ INTROSPECTION: Error handling request: {e!s}",
@@ -459,7 +459,7 @@ class MixinRequestResponseIntrospection:
                     )
 
             except (
-                BaseException
+                Exception
             ) as nested_e:  # catch-all-ok: error response sending is best-effort
                 if hasattr(self, "_logger") and self._logger:
                     self._logger.exception(f"Failed to send error response: {nested_e}")
@@ -545,7 +545,7 @@ class MixinRequestResponseIntrospection:
                 and hasattr(self._event_bus, "is_connected")
             ) and not self._event_bus.is_connected():
                 return EnumNodeCurrentStatus.DEGRADED
-        except BaseException:  # catch-all-ok: catches non-fatal exceptions, returns DEGRADED for health reporting
+        except Exception:  # catch-all-ok: catches non-fatal exceptions, returns DEGRADED for health reporting
             return EnumNodeCurrentStatus.DEGRADED
 
         return EnumNodeCurrentStatus.READY

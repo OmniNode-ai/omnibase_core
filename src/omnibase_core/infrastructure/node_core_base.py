@@ -531,7 +531,9 @@ class NodeCoreBase(ABC):
                     # Event bus doesn't have emit_event method - that's OK
                     pass
 
-        except Exception as e:  # fallback-ok: event emission failure is logged but not fatal
+        except (
+            Exception
+        ) as e:  # fallback-ok: event emission failure is logged but not fatal
             # Event emission failure is not fatal
             emit_log_event(
                 LogLevel.WARNING,

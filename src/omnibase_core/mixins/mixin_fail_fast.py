@@ -81,7 +81,7 @@ class MixinFailFast:
                 # Re-raise our own fail fast errors
                 raise
             except (
-                BaseException
+                Exception
             ) as e:  # catch-all-ok: convert all exceptions to fail-fast errors
                 # Convert other exceptions to fail fast
                 self._handle_critical_error(
