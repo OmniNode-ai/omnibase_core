@@ -690,6 +690,272 @@ class TestModelProviderDescriptorFeatures:
 
 
 @pytest.mark.unit
+class TestModelProviderDescriptorAttributes:
+    """Tests for attributes field with JsonType (aliased as JsonValue).
+
+    The attributes field uses dict[str, JsonValue] where JsonValue is an alias
+    for JsonType. JsonType is the recursive PEP 695 type:
+        type JsonType = JsonPrimitive | list[JsonType] | dict[str, JsonType]
+    where JsonPrimitive = str | int | float | bool | None
+
+    These tests verify that all JSON-compatible value types work correctly
+    in the attributes dictionary.
+    """
+
+    def test_attributes_default_empty_dict(
+        self, valid_descriptor_kwargs: dict
+    ) -> None:
+        """Test that attributes default to empty dict."""
+        descriptor = ModelProviderDescriptor(**valid_descriptor_kwargs)
+        assert descriptor.attributes == {}
+
+    def test_attributes_accept_string_values(
+        self, valid_descriptor_kwargs: dict
+    ) -> None:
+        """Test that string values are accepted in attributes."""
+        descriptor = ModelProviderDescriptor(
+            **valid_descriptor_kwargs,
+            attributes={"version": "15.4", "region": "us-east-1", "tier": "premium"},
+        )
+
+        assert descriptor.attributes["version"] == "15.4"
+        assert descriptor.attributes["region"] == "us-east-1"
+        assert descriptor.attributes["tier"] == "premium"
+
+    def test_attributes_accept_int_values(
+        self, valid_descriptor_kwargs: dict
+    ) -> None:
+        """Test that integer values are accepted in attributes."""
+        descriptor = ModelProviderDescriptor(
+            **valid_descriptor_kwargs,
+            attributes={"max_connections": 100, "port": 5432, "timeout_ms": 5000},
+        )
+
+        assert descriptor.attributes["max_connections"] == 100
+        assert descriptor.attributes["port"] == 5432
+        assert descriptor.attributes["timeout_ms"] == 5000
+
+    def test_attributes_accept_float_values(
+        self, valid_descriptor_kwargs: dict
+    ) -> None:
+        """Test that float values are accepted in attributes."""
+        descriptor = ModelProviderDescriptor(
+            **valid_descriptor_kwargs,
+            attributes={
+                "uptime_percent": 99.95,
+                "latency_ms": 0.5,
+                "threshold": 0.75,
+            },
+        )
+
+        assert descriptor.attributes["uptime_percent"] == 99.95
+        assert descriptor.attributes["latency_ms"] == 0.5
+        assert descriptor.attributes["threshold"] == 0.75
+
+    def test_attributes_accept_bool_values(
+        self, valid_descriptor_kwargs: dict
+    ) -> None:
+        """Test that boolean values are accepted in attributes."""
+        descriptor = ModelProviderDescriptor(
+            **valid_descriptor_kwargs,
+            attributes={
+                "ssl_enabled": True,
+                "read_only": False,
+                "auto_reconnect": True,
+            },
+        )
+
+        assert descriptor.attributes["ssl_enabled"] is True
+        assert descriptor.attributes["read_only"] is False
+        assert descriptor.attributes["auto_reconnect"] is True
+
+    def test_attributes_accept_none_values(
+        self, valid_descriptor_kwargs: dict
+    ) -> None:
+        """Test that None values are accepted in attributes."""
+        descriptor = ModelProviderDescriptor(
+            **valid_descriptor_kwargs,
+            attributes={
+                "optional_config": None,
+                "fallback_host": None,
+            },
+        )
+
+        assert descriptor.attributes["optional_config"] is None
+        assert descriptor.attributes["fallback_host"] is None
+
+    def test_attributes_accept_list_values(
+        self, valid_descriptor_kwargs: dict
+    ) -> None:
+        """Test that list values are accepted in attributes."""
+        descriptor = ModelProviderDescriptor(
+            **valid_descriptor_kwargs,
+            attributes={
+                "supported_formats": ["json", "xml", "csv"],
+                "replica_hosts": ["host1.db.local", "host2.db.local"],
+                "ports": [5432, 5433, 5434],
+            },
+        )
+
+        assert descriptor.attributes["supported_formats"] == ["json", "xml", "csv"]
+        assert descriptor.attributes["replica_hosts"] == [
+            "host1.db.local",
+            "host2.db.local",
+        ]
+        assert descriptor.attributes["ports"] == [5432, 5433, 5434]
+
+    def test_attributes_accept_dict_values(
+        self, valid_descriptor_kwargs: dict
+    ) -> None:
+        """Test that dict values are accepted in attributes."""
+        descriptor = ModelProviderDescriptor(
+            **valid_descriptor_kwargs,
+            attributes={
+                "connection_pool": {"min_size": 5, "max_size": 20},
+                "retry_config": {"max_retries": 3, "backoff_ms": 1000},
+            },
+        )
+
+        assert descriptor.attributes["connection_pool"]["min_size"] == 5
+        assert descriptor.attributes["connection_pool"]["max_size"] == 20
+        assert descriptor.attributes["retry_config"]["max_retries"] == 3
+        assert descriptor.attributes["retry_config"]["backoff_ms"] == 1000
+
+    def test_attributes_accept_deeply_nested_structures(
+        self, valid_descriptor_kwargs: dict
+    ) -> None:
+        """Test that deeply nested JSON structures are accepted in attributes.
+
+        This tests the recursive nature of JsonType:
+            type JsonType = JsonPrimitive | list[JsonType] | dict[str, JsonType]
+        """
+        descriptor = ModelProviderDescriptor(
+            **valid_descriptor_kwargs,
+            attributes={
+                "database": {
+                    "hosts": ["host1", "host2"],
+                    "settings": {
+                        "timeout": 30,
+                        "retry": True,
+                        "nested": {
+                            "deep_value": 42,
+                            "deep_list": [1, 2, {"even_deeper": "value"}],
+                        },
+                    },
+                },
+            },
+        )
+
+        # Verify deep nesting works
+        assert descriptor.attributes["database"]["hosts"] == ["host1", "host2"]
+        assert descriptor.attributes["database"]["settings"]["timeout"] == 30
+        assert descriptor.attributes["database"]["settings"]["retry"] is True
+        assert (
+            descriptor.attributes["database"]["settings"]["nested"]["deep_value"] == 42
+        )
+        assert descriptor.attributes["database"]["settings"]["nested"]["deep_list"][2][
+            "even_deeper"
+        ] == "value"
+
+    def test_attributes_accept_mixed_value_types(
+        self, valid_descriptor_kwargs: dict
+    ) -> None:
+        """Test that mixed value types work together in attributes."""
+        descriptor = ModelProviderDescriptor(
+            **valid_descriptor_kwargs,
+            attributes={
+                "name": "primary-db",
+                "port": 5432,
+                "uptime": 99.9,
+                "enabled": True,
+                "deprecated_field": None,
+                "hosts": ["host1", "host2"],
+                "config": {"retries": 3, "timeout_ms": 5000},
+            },
+        )
+
+        assert isinstance(descriptor.attributes["name"], str)
+        assert isinstance(descriptor.attributes["port"], int)
+        assert isinstance(descriptor.attributes["uptime"], float)
+        assert isinstance(descriptor.attributes["enabled"], bool)
+        assert descriptor.attributes["deprecated_field"] is None
+        assert isinstance(descriptor.attributes["hosts"], list)
+        assert isinstance(descriptor.attributes["config"], dict)
+
+    def test_attributes_accept_list_with_mixed_types(
+        self, valid_descriptor_kwargs: dict
+    ) -> None:
+        """Test that lists with mixed JSON types work in attributes."""
+        descriptor = ModelProviderDescriptor(
+            **valid_descriptor_kwargs,
+            attributes={
+                "mixed_list": [
+                    "string",
+                    42,
+                    3.14,
+                    True,
+                    None,
+                    {"key": "value"},
+                    ["nested", "list"],
+                ],
+            },
+        )
+
+        mixed = descriptor.attributes["mixed_list"]
+        assert mixed[0] == "string"
+        assert mixed[1] == 42
+        assert mixed[2] == 3.14
+        assert mixed[3] is True
+        assert mixed[4] is None
+        assert mixed[5] == {"key": "value"}
+        assert mixed[6] == ["nested", "list"]
+
+    def test_attributes_preserved_in_serialization_roundtrip(
+        self, valid_descriptor_kwargs: dict
+    ) -> None:
+        """Test that attributes survive JSON serialization roundtrip."""
+        original = ModelProviderDescriptor(
+            **valid_descriptor_kwargs,
+            attributes={
+                "string": "value",
+                "int": 42,
+                "float": 3.14,
+                "bool": True,
+                "null": None,
+                "list": [1, 2, 3],
+                "dict": {"nested": "value"},
+            },
+        )
+
+        # Roundtrip through JSON
+        json_str = original.model_dump_json()
+        restored = ModelProviderDescriptor.model_validate_json(json_str)
+
+        assert restored.attributes == original.attributes
+
+    def test_attributes_preserved_in_model_dump_roundtrip(
+        self, valid_descriptor_kwargs: dict
+    ) -> None:
+        """Test that attributes survive model_dump/validate roundtrip."""
+        original = ModelProviderDescriptor(
+            **valid_descriptor_kwargs,
+            attributes={
+                "complex": {
+                    "nested": {
+                        "values": [1, 2, {"deep": True}],
+                    },
+                },
+            },
+        )
+
+        # Roundtrip through dict
+        data = original.model_dump()
+        restored = ModelProviderDescriptor(**data)
+
+        assert restored.attributes == original.attributes
+
+
+@pytest.mark.unit
 class TestModelProviderDescriptorImmutability:
     """Tests for ModelProviderDescriptor frozen immutability."""
 

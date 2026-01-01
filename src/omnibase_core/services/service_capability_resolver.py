@@ -47,7 +47,7 @@ import json
 import logging
 import time
 from datetime import datetime, timezone
-from typing import Any, TypedDict
+from typing import Any, Protocol, TypedDict
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.bindings.model_binding import ModelBinding
@@ -66,8 +66,18 @@ from omnibase_core.protocols.resolution.protocol_capability_resolver import (
 
 logger = logging.getLogger(__name__)
 
-# Type alias for profile (placeholder until ModelProfile is implemented)
-ModelProfile = Any
+class ProtocolProfile(Protocol):
+    """Protocol stub for profile until ModelProfile is implemented.
+
+    Defines the minimal interface expected by the resolver.
+    """
+
+    profile_id: str
+    provider_weights: dict[str, float] | None
+    explicit_bindings: dict[str, str] | None
+
+
+ModelProfile = ProtocolProfile | None
 
 
 class _AuditData(TypedDict):
@@ -162,15 +172,6 @@ class ServiceCapabilityResolver:
 
     .. versionadded:: 0.4.0
     """
-
-    def __init__(self) -> None:
-        """
-        Initialize ServiceCapabilityResolver.
-
-        The resolver is stateless and does not require any configuration.
-        All resolution parameters are passed via method arguments.
-        """
-        pass
 
     def resolve(
         self,
@@ -374,7 +375,7 @@ class ServiceCapabilityResolver:
             )
 
         # Sort providers by provider_id for deterministic ordering
-        sorted_providers = sorted(providers, key=lambda p: str(p.provider_id))
+        sorted_providers = sorted(providers, key=lambda p: p.provider_id)
 
         # Track candidates for audit
         candidates = [str(p.provider_id) for p in sorted_providers]
@@ -713,7 +714,7 @@ class ServiceCapabilityResolver:
         }
 
         json_str = json.dumps(hashable_data, sort_keys=True, separators=(",", ":"))
-        hash_value = hashlib.sha256(json_str.encode("utf-8")).hexdigest()[:16]
+        hash_value = hashlib.sha256(json_str.encode("utf-8")).hexdigest()
 
         return f"sha256:{hash_value}"
 

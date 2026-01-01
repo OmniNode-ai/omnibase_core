@@ -65,6 +65,13 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+# JsonValue is a semantic alias for JsonType in this module.
+# JsonType is defined as the recursive PEP 695 type:
+#   type JsonType = JsonPrimitive | list[JsonType] | dict[str, JsonType]
+# where JsonPrimitive = str | int | float | bool | None
+#
+# The alias provides clarity: "JsonValue" describes what the type represents
+# in the context of provider attributes and features - any JSON-serializable value.
 from omnibase_core.types.json_types import JsonType as JsonValue
 
 if TYPE_CHECKING:
