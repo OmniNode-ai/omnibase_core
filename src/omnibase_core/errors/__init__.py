@@ -10,6 +10,14 @@ if TYPE_CHECKING:
         PurityViolationError,
         UnsupportedCapabilityError,
     )
+    from omnibase_core.errors.error_callable_not_found import CallableNotFoundError
+    from omnibase_core.errors.error_dependency_cycle import DependencyCycleError
+    from omnibase_core.errors.error_duplicate_hook import DuplicateHookError
+    from omnibase_core.errors.error_hook_registry_frozen import HookRegistryFrozenError
+    from omnibase_core.errors.error_hook_timeout import HookTimeoutError
+    from omnibase_core.errors.error_hook_type_mismatch import HookTypeMismatchError
+    from omnibase_core.errors.error_pipeline import PipelineError
+    from omnibase_core.errors.error_unknown_dependency import UnknownDependencyError
     from omnibase_core.errors.exception_compute_pipeline_error import (
         ComputePipelineError,
     )
@@ -71,13 +79,19 @@ __all__ = [
     "YAML_PARSING_ERRORS",
     # Error Classes
     "AdapterBindingError",
+    "CallableNotFoundError",
     "ComputePipelineError",
     "ContractValidationError",
+    "DependencyCycleError",
+    "DuplicateHookError",
     "EnumCLIExitCode",
     "EnumCoreErrorCode",
     "EnumRegistryErrorCode",
     "EventBusError",
     "HandlerExecutionError",
+    "HookRegistryFrozenError",
+    "HookTimeoutError",
+    "HookTypeMismatchError",
     "InvalidOperationError",
     "ModelCLIAdapter",
     "ModelOnexError",
@@ -85,8 +99,10 @@ __all__ = [
     "ModelRegistryError",
     "NodeExecutionError",
     "OnexError",
+    "PipelineError",
     "PurityViolationError",
     "RuntimeHostError",
+    "UnknownDependencyError",
     "UnsupportedCapabilityError",
     # Functions
     "get_core_error_description",
@@ -109,6 +125,7 @@ __all__ = [
 # - ModelCLIAdapter - from models.core
 # - RuntimeHostError, HandlerExecutionError, etc. - from errors.runtime_errors
 # - AdapterBindingError, PurityViolationError, etc. - from errors.declarative_errors
+# - PipelineError, CallableNotFoundError, etc. - from errors.error_* modules
 # =============================================================================
 def __getattr__(name: str) -> Any:
     """
@@ -190,6 +207,29 @@ def __getattr__(name: str) -> Any:
         from omnibase_core.errors import declarative_errors
 
         return getattr(declarative_errors, name)
+
+    # -------------------------------------------------------------------------
+    # Pipeline errors - consolidated import from individual modules
+    # These errors were moved from pipeline/ to errors/ per ONEX file location
+    # convention (error_*.py files must be in errors/ directory)
+    # -------------------------------------------------------------------------
+    _pipeline_error_classes = {
+        "PipelineError": "error_pipeline",
+        "CallableNotFoundError": "error_callable_not_found",
+        "DependencyCycleError": "error_dependency_cycle",
+        "DuplicateHookError": "error_duplicate_hook",
+        "HookRegistryFrozenError": "error_hook_registry_frozen",
+        "HookTimeoutError": "error_hook_timeout",
+        "HookTypeMismatchError": "error_hook_type_mismatch",
+        "UnknownDependencyError": "error_unknown_dependency",
+    }
+    if name in _pipeline_error_classes:
+        import importlib
+
+        module = importlib.import_module(
+            f"omnibase_core.errors.{_pipeline_error_classes[name]}"
+        )
+        return getattr(module, name)
 
     # Raise standard AttributeError for unknown attributes
     # Cannot use ModelOnexError here as it would cause circular import

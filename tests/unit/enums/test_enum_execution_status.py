@@ -119,6 +119,71 @@ class TestEnumExecutionStatus:
         for status in non_successful_statuses:
             assert EnumExecutionStatus.is_successful(status) is False
 
+    def test_is_skipped(self):
+        """Test the is_skipped class method."""
+        # Only SKIPPED should return True
+        assert EnumExecutionStatus.is_skipped(EnumExecutionStatus.SKIPPED) is True
+
+        # All other statuses should return False
+        non_skipped_statuses = [
+            EnumExecutionStatus.PENDING,
+            EnumExecutionStatus.RUNNING,
+            EnumExecutionStatus.COMPLETED,
+            EnumExecutionStatus.SUCCESS,
+            EnumExecutionStatus.FAILED,
+            EnumExecutionStatus.CANCELLED,
+            EnumExecutionStatus.TIMEOUT,
+        ]
+
+        for status in non_skipped_statuses:
+            assert EnumExecutionStatus.is_skipped(status) is False
+
+    def test_is_running(self):
+        """Test the is_running class method."""
+        # Only RUNNING should return True
+        assert EnumExecutionStatus.is_running(EnumExecutionStatus.RUNNING) is True
+
+        # All other statuses should return False
+        non_running_statuses = [
+            EnumExecutionStatus.PENDING,
+            EnumExecutionStatus.COMPLETED,
+            EnumExecutionStatus.SUCCESS,
+            EnumExecutionStatus.FAILED,
+            EnumExecutionStatus.SKIPPED,
+            EnumExecutionStatus.CANCELLED,
+            EnumExecutionStatus.TIMEOUT,
+        ]
+
+        for status in non_running_statuses:
+            assert EnumExecutionStatus.is_running(status) is False
+
+        # Verify distinction from is_active (which includes PENDING)
+        assert EnumExecutionStatus.is_active(EnumExecutionStatus.PENDING) is True
+        assert EnumExecutionStatus.is_running(EnumExecutionStatus.PENDING) is False
+
+    def test_is_cancelled(self):
+        """Test the is_cancelled class method."""
+        # Only CANCELLED should return True
+        assert EnumExecutionStatus.is_cancelled(EnumExecutionStatus.CANCELLED) is True
+
+        # All other statuses should return False
+        non_cancelled_statuses = [
+            EnumExecutionStatus.PENDING,
+            EnumExecutionStatus.RUNNING,
+            EnumExecutionStatus.COMPLETED,
+            EnumExecutionStatus.SUCCESS,
+            EnumExecutionStatus.FAILED,
+            EnumExecutionStatus.SKIPPED,
+            EnumExecutionStatus.TIMEOUT,
+        ]
+
+        for status in non_cancelled_statuses:
+            assert EnumExecutionStatus.is_cancelled(status) is False
+
+        # Verify CANCELLED is neither success nor failure
+        assert EnumExecutionStatus.is_successful(EnumExecutionStatus.CANCELLED) is False
+        assert EnumExecutionStatus.is_failure(EnumExecutionStatus.CANCELLED) is False
+
     def test_enum_equality(self):
         """Test enum equality comparison."""
         assert EnumExecutionStatus.SUCCESS == EnumExecutionStatus.SUCCESS

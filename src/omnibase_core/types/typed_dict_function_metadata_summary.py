@@ -1,7 +1,11 @@
-"""Function Metadata Summary Model.
-
-Type-safe dictionary for function metadata summary.
 """
+TypedDict for function metadata summary.
+
+Strongly-typed representation for function metadata summary information.
+Follows ONEX one-model-per-file and TypedDict naming conventions.
+"""
+
+from __future__ import annotations
 
 from typing import TypedDict
 
@@ -16,8 +20,8 @@ from omnibase_core.types.typed_dict_function_relationships_summary import (
 )
 
 
-class ModelFunctionMetadataSummary(TypedDict):
-    """Type-safe dictionary for function metadata summary."""
+class TypedDictFunctionMetadataSummary(TypedDict):
+    """Strongly-typed dictionary for function metadata summary."""
 
     documentation: TypedDictDocumentationSummaryFiltered
     deprecation: TypedDictDeprecationSummary
@@ -27,4 +31,4 @@ class ModelFunctionMetadataSummary(TypedDict):
     deprecation_status: str
 
 
-__all__ = ["ModelFunctionMetadataSummary"]
+__all__ = ["TypedDictFunctionMetadataSummary"]

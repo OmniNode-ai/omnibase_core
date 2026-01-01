@@ -15,6 +15,7 @@ from omnibase_core.constants.constants_field_limits import (
     MAX_NAME_LENGTH,
     MAX_PATH_LENGTH,
 )
+from omnibase_core.errors import ModelOnexError
 from omnibase_core.models.event_bus.model_event_bus_runtime_state import (
     ModelEventBusRuntimeState,
 )
@@ -363,7 +364,7 @@ class TestModelEventBusRuntimeStateFieldValidation:
         state = ModelEventBusRuntimeState()
         too_long_name = "x" * (MAX_NAME_LENGTH + 1)
 
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             state.bind(node_name=too_long_name)
 
         assert "node_name exceeds max length" in str(exc_info.value)
@@ -379,7 +380,7 @@ class TestModelEventBusRuntimeStateFieldValidation:
         state = ModelEventBusRuntimeState()
         too_long_path = "/" + "x" * MAX_PATH_LENGTH  # exceeds by 1
 
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             state.bind(node_name="valid_name", contract_path=too_long_path)
 
         assert "contract_path exceeds max length" in str(exc_info.value)

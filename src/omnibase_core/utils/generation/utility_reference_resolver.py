@@ -7,11 +7,12 @@ Provides consistent reference resolution across all ONEX tools.
 
 import re
 from pathlib import Path
-from typing import Any
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.utils.generation.model_ref_info import ModelRefInfo
+from omnibase_core.protocols.protocol_generation_config import ProtocolGenerationConfig
+from omnibase_core.protocols.protocol_import_tracker import ProtocolImportTracker
 
 
 class UtilityReferenceResolver:
@@ -52,8 +53,8 @@ class UtilityReferenceResolver:
 
     def __init__(
         self,
-        config: Any | None = None,
-        import_tracker: Any | None = None,
+        config: ProtocolGenerationConfig | None = None,
+        import_tracker: ProtocolImportTracker | None = None,
     ):
         """
         Initialize the reference resolver.
@@ -65,11 +66,11 @@ class UtilityReferenceResolver:
         self.config = config
         self.import_tracker = import_tracker
 
-    def set_config(self, config: Any) -> None:
+    def set_config(self, config: ProtocolGenerationConfig | None) -> None:
         """Set the generation config after initialization."""
         self.config = config
 
-    def set_import_tracker(self, import_tracker: Any) -> None:
+    def set_import_tracker(self, import_tracker: ProtocolImportTracker | None) -> None:
         """Set the import tracker after initialization."""
         self.import_tracker = import_tracker
 

@@ -9,9 +9,11 @@ All complex functionality has been moved to service nodes following the
 registry-centric architecture pattern.
 """
 
-from typing import Any, cast
+from collections.abc import Callable
+from typing import cast
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
+from omnibase_core.protocols.logging import ProtocolRegistryNode
 
 
 class _BootstrapMinimalLogger:
@@ -22,7 +24,7 @@ class _BootstrapMinimalLogger:
         level: LogLevel,
         event_type: str,
         message: str,
-        **kwargs: Any,
+        **kwargs: object,
     ) -> None:
         """No-op emit_log_event for bootstrap fallback."""
 
@@ -31,7 +33,7 @@ class _BootstrapMinimalLogger:
         level: LogLevel,
         message: str,
         event_type: str = "generic",
-        **kwargs: Any,
+        **kwargs: object,
     ) -> None:
         """No-op emit_log_event_sync for bootstrap fallback."""
 
@@ -40,20 +42,22 @@ class _BootstrapMinimalLogger:
         level: LogLevel,
         message: str,
         event_type: str = "generic",
-        **kwargs: Any,
+        **kwargs: object,
     ) -> None:
         """No-op emit_log_event_async for bootstrap fallback."""
 
     @staticmethod
-    def trace_function_lifecycle(func: Any) -> Any:
+    def trace_function_lifecycle[F: Callable[..., object]](func: F) -> F:
         """No-op decorator for bootstrap."""
         return func
 
     @staticmethod
-    def tool_logger_performance_metrics(_threshold_ms: int = 1000) -> Any:
+    def tool_logger_performance_metrics[F: Callable[..., object]](
+        _threshold_ms: int = 1000,
+    ) -> Callable[[F], F]:
         """Minimal tool logger performance metrics decorator."""
 
-        def decorator(func: Any) -> Any:
+        def decorator(func: F) -> F:
             return func
 
         return decorator
@@ -89,7 +93,7 @@ def get_service[T](protocol_type: type[T]) -> T | None:
     return _get_fallback_service(protocol_type)
 
 
-def get_logging_service() -> Any:
+def get_logging_service() -> object:
     """
     Get the logging service with special bootstrap handling.
 
@@ -114,7 +118,7 @@ def emit_log_event(
     level: LogLevel,
     event_type: str,
     message: str,
-    **kwargs: Any,
+    **kwargs: object,
 ) -> None:
     """
     Bootstrap emit_log_event function.
@@ -139,7 +143,7 @@ def emit_log_event_sync(
     level: LogLevel,
     message: str,
     event_type: str = "generic",
-    **kwargs: Any,
+    **kwargs: object,
 ) -> None:
     """
     Bootstrap emit_log_event_sync function.
@@ -168,7 +172,7 @@ def emit_log_event_sync(
 # Private helper functions
 
 
-def _get_registry_node() -> Any | None:
+def _get_registry_node() -> ProtocolRegistryNode | None:
     """
     Attempt to find and return the registry node.
 
@@ -206,7 +210,7 @@ def _get_fallback_service[T](protocol_type: type[T]) -> T | None:
     return None
 
 
-def _get_minimal_logging_service() -> Any:
+def _get_minimal_logging_service() -> _BootstrapMinimalLogger:
     """
     Get minimal logging service for bootstrap scenarios.
 
@@ -238,7 +242,7 @@ def get_available_services() -> list[str]:
     """
     try:
         registry = _get_registry_node()
-        if registry and hasattr(registry, "list_services"):
+        if registry:
             services = registry.list_services()
             # Type narrowing: ensure list[str]
             return list(services) if services else []

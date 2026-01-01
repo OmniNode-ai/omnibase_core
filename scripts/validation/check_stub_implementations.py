@@ -138,9 +138,20 @@ class StubImplementationDetector(ast.NodeVisitor):
         self.current_class = node.name
 
         # Check if this is a Protocol class
+        # Handles: Protocol, typing.Protocol, Protocol[T], typing.Protocol[T_co]
         self.in_protocol = any(
             (isinstance(base, ast.Name) and base.id == "Protocol")
             or (isinstance(base, ast.Attribute) and base.attr == "Protocol")
+            or (
+                isinstance(base, ast.Subscript)
+                and (
+                    (isinstance(base.value, ast.Name) and base.value.id == "Protocol")
+                    or (
+                        isinstance(base.value, ast.Attribute)
+                        and base.value.attr == "Protocol"
+                    )
+                )
+            )
             for base in node.bases
         )
 

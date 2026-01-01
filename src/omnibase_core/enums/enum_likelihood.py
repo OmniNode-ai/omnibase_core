@@ -163,7 +163,7 @@ class EnumLikelihood(str, Enum):
             <EnumLikelihood.CERTAIN: 'certain'>
         """
         if not 0.0 <= probability <= 1.0:
-            raise ValueError(
+            raise ValueError(  # error-ok: enum module cannot import errors (circular)
                 f"probability must be between 0.0 and 1.0, got {probability}"
             )
         if probability <= 0.0:

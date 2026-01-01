@@ -60,6 +60,7 @@ See Also:
 
 from omnibase_core.protocols.resolution.protocol_capability_resolver import (
     ProtocolCapabilityResolver,
+    ProtocolProfile,
     ProtocolProviderRegistry,
 )
 from omnibase_core.protocols.resolution.protocol_dependency_resolver import (
@@ -69,5 +70,6 @@ from omnibase_core.protocols.resolution.protocol_dependency_resolver import (
 __all__ = [
     "ProtocolCapabilityResolver",
     "ProtocolDependencyResolver",
+    "ProtocolProfile",
     "ProtocolProviderRegistry",
 ]

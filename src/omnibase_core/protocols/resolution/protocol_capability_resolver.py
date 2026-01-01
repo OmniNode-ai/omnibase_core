@@ -51,19 +51,13 @@ from __future__ import annotations
 
 __all__ = [
     "ProtocolCapabilityResolver",
+    "ProtocolProfile",
     "ProtocolProviderRegistry",
 ]
 
 from typing import TYPE_CHECKING, Protocol, runtime_checkable
 
 if TYPE_CHECKING:
-    from omnibase_core.models.capabilities.model_capability_dependency import (
-        ModelCapabilityDependency,
-    )
-    from omnibase_core.models.providers.model_provider_descriptor import (
-        ModelProviderDescriptor,
-    )
-
     # Forward references for models not yet implemented (OMN-1157, OMN-1158)
     # These will be replaced with proper imports when the models are created.
     #
@@ -78,9 +72,18 @@ if TYPE_CHECKING:
     # resolution preferences (e.g., prefer certain regions, vendors).
     from typing import Any
 
+    from omnibase_core.models.capabilities.model_capability_dependency import (
+        ModelCapabilityDependency,
+    )
+    from omnibase_core.models.providers.model_provider_descriptor import (
+        ModelProviderDescriptor,
+    )
+
     # Type aliases for forward-referenced models
     ModelBinding = Any  # Will be: omnibase_core.models.bindings.model_binding
-    ModelResolutionResult = Any  # Will be: omnibase_core.models.resolution.model_resolution_result
+    ModelResolutionResult = (
+        Any  # Will be: omnibase_core.models.resolution.model_resolution_result
+    )
     ModelProfile = Any  # Will be: omnibase_core.models.profiles.model_profile
 
 
@@ -123,6 +126,42 @@ class ProtocolProviderRegistry(Protocol):
                 for provider in providers:
                     print(f"Found: {provider.provider_id}")
         """
+        ...
+
+
+@runtime_checkable
+class ProtocolProfile(Protocol):
+    """Protocol stub for profile until ModelProfile is implemented.
+
+    Defines the minimal interface expected by the resolver for profile-based
+    resolution preferences such as explicit bindings and provider weights.
+
+    Note:
+        This is a temporary stub that will be replaced by ModelProfile
+        when that model is implemented. The stub allows the resolver
+        to be implemented and tested before the profile model is complete.
+
+    Attributes:
+        profile_id: Unique identifier for this profile.
+        provider_weights: Optional mapping of provider_id to weight adjustment.
+        explicit_bindings: Optional mapping of alias to pinned provider_id.
+
+    .. versionadded:: 0.4.0
+    """
+
+    @property
+    def profile_id(self) -> str:
+        """Get the profile ID."""
+        ...
+
+    @property
+    def provider_weights(self) -> dict[str, float] | None:
+        """Get provider weight adjustments."""
+        ...
+
+    @property
+    def explicit_bindings(self) -> dict[str, str] | None:
+        """Get explicit provider bindings by alias."""
         ...
 
 

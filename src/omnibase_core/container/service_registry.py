@@ -3,17 +3,24 @@
 import asyncio
 import time
 from datetime import datetime
-from typing import Any, Literal, TypeVar, cast
+from typing import Literal, TypeVar, cast
 from uuid import UUID, uuid4
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
+from omnibase_core.models.container.model_injection_context import ModelInjectionContext
 from omnibase_core.models.container.model_registry_config import (
     ModelServiceRegistryConfig,
 )
 from omnibase_core.models.container.model_registry_status import (
     ModelServiceRegistryStatus,
+)
+from omnibase_core.models.container.model_service_dependency_graph import (
+    ModelServiceDependencyGraph,
+)
+from omnibase_core.models.container.model_service_health_validation_result import (
+    ModelServiceHealthValidationResult,
 )
 from omnibase_core.models.container.model_service_instance import ModelServiceInstance
 from omnibase_core.models.container.model_service_metadata import ModelServiceMetadata
@@ -21,7 +28,12 @@ from omnibase_core.models.container.model_service_registration import (
     ModelServiceRegistration,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.protocols import LiteralInjectionScope, LiteralServiceLifecycle
+from omnibase_core.protocols import (
+    LiteralInjectionScope,
+    LiteralServiceLifecycle,
+    ProtocolServiceFactory,
+    ProtocolServiceValidator,
+)
 from omnibase_core.types.type_serializable_value import SerializedDict
 from omnibase_core.types.typed_dict_resolution_context import TypedDictResolutionContext
 
@@ -105,12 +117,12 @@ class ServiceRegistry:
         return self._config
 
     @property
-    def validator(self) -> Any | None:
+    def validator(self) -> ProtocolServiceValidator | None:
         """Get service validator (not implemented in v1.0)."""
         return None
 
     @property
-    def factory(self) -> Any | None:
+    def factory(self) -> ProtocolServiceFactory | None:
         """Get service factory (not implemented in v1.0)."""
         return None
 
@@ -334,7 +346,7 @@ class ServiceRegistry:
     async def register_factory(
         self,
         interface: type[TInterface],
-        factory: Any,
+        factory: ProtocolServiceFactory,
         lifecycle: LiteralServiceLifecycle = "transient",
         scope: LiteralInjectionScope = "global",
     ) -> UUID:
@@ -343,7 +355,7 @@ class ServiceRegistry:
 
         Args:
             interface: Interface protocol type
-            factory: Service factory
+            factory: Service factory implementing ProtocolServiceFactory
             lifecycle: Lifecycle pattern
             scope: Injection scope
 
@@ -577,7 +589,7 @@ class ServiceRegistry:
             instance = await self._resolve_by_lifecycle(
                 registration_id, registration, scope or registration.scope, None
             )
-            instances.append(instance)
+            instances.append(cast(TInterface, instance))
 
         return instances
 
@@ -731,17 +743,39 @@ class ServiceRegistry:
         # Not implemented in v1.0 - no dependency tracking yet
         return []
 
-    async def get_dependency_graph(self, service_id: UUID) -> Any | None:
+    async def get_dependency_graph(
+        self, service_id: UUID
+    ) -> ModelServiceDependencyGraph | None:
         """
-        Get dependency graph (not implemented in v1.0).
+        Get dependency graph for a service.
+
+        Returns the dependency graph for the specified service, including
+        its dependencies, dependents, and resolution order.
+
+        Note: Dependency tracking is not fully implemented in v1.0.
+        This method returns a minimal graph with only basic information.
 
         Args:
-            service_id: Service ID
+            service_id: Service registration ID
 
         Returns:
-            None (not implemented in v1.0)
+            ModelServiceDependencyGraph with dependency information,
+            or None if service not found
         """
-        return None
+        # Check if service exists
+        if service_id not in self._registrations:
+            return None
+
+        # In v1.0, we don't track dependencies, so return a minimal graph
+        return ModelServiceDependencyGraph(
+            service_id=service_id,
+            dependencies=[],
+            dependents=[],
+            depth_level=0,
+            circular_references=[],
+            resolution_order=[service_id],
+            metadata={"note": "Dependency tracking not implemented in v1.0"},
+        )
 
     async def get_registry_status(self) -> ModelServiceRegistryStatus:
         """
@@ -803,21 +837,78 @@ class ServiceRegistry:
             last_updated=datetime.now(),
         )
 
-    async def validate_service_health(self, registration_id: UUID) -> Any:
+    async def validate_service_health(
+        self, registration_id: UUID
+    ) -> ModelServiceHealthValidationResult:
         """
-        Validate service health (not fully implemented in v1.0).
+        Validate service health.
+
+        Performs health validation on the specified service registration,
+        checking instance availability and basic health metrics.
 
         Args:
-            registration_id: Registration ID
+            registration_id: Registration ID to validate
 
         Returns:
-            Validation result
+            ModelServiceHealthValidationResult with health information
+
+        Raises:
+            ModelOnexError: If registration not found
         """
-        msg = "Service health validation not yet fully implemented (planned for v2.0)"
-        raise ModelOnexError(
-            message=msg,
-            error_code=EnumCoreErrorCode.METHOD_NOT_IMPLEMENTED,
+        start_time = time.perf_counter()
+
+        # Check if registration exists
+        if registration_id not in self._registrations:
+            return ModelServiceHealthValidationResult.unhealthy(
+                registration_id=registration_id,
+                error_message=f"Registration not found: {registration_id}",
+                diagnostics={"available_registrations": len(self._registrations)},
+            )
+
+        registration = self._registrations[registration_id]
+        instances = self._instances.get(registration_id, [])
+        active_instances = [inst for inst in instances if inst.is_active()]
+
+        end_time = time.perf_counter()
+        response_time_ms = (end_time - start_time) * 1000
+
+        # Check for issues
+        warnings: list[str] = []
+
+        if not active_instances and registration.lifecycle == "singleton":
+            # Singleton with no instances might indicate a problem
+            warnings.append("Singleton service has no active instances")
+
+        # Check last access time
+        last_access: datetime | None = None
+        if active_instances:
+            last_access = max(inst.last_accessed for inst in active_instances)
+
+        # Determine health status
+        if registration.health_status == "unhealthy":
+            return ModelServiceHealthValidationResult.unhealthy(
+                registration_id=registration_id,
+                error_message="Service marked as unhealthy",
+                diagnostics={
+                    "registration_status": registration.registration_status,
+                    "lifecycle": registration.lifecycle,
+                },
+            )
+
+        if warnings:
+            return ModelServiceHealthValidationResult.degraded(
+                registration_id=registration_id,
+                warnings=warnings,
+                instance_count=len(active_instances),
+            )
+
+        result = ModelServiceHealthValidationResult.healthy(
+            registration_id=registration_id,
+            instance_count=len(active_instances),
+            response_time_ms=response_time_ms,
         )
+        result.last_access_time = last_access
+        return result
 
     async def update_service_configuration(
         self, registration_id: UUID, configuration: SerializedDict
@@ -882,16 +973,26 @@ class ServiceRegistry:
             error_code=EnumCoreErrorCode.METHOD_NOT_IMPLEMENTED,
         )
 
-    async def get_injection_context(self, context_id: UUID) -> Any | None:
+    async def get_injection_context(
+        self, context_id: UUID
+    ) -> ModelInjectionContext | None:
         """
-        Get injection context (not implemented in v1.0).
+        Get injection context by ID.
+
+        Returns the injection context for the specified context ID,
+        including resolution status and dependency path information.
+
+        Note: Context tracking is not fully implemented in v1.0.
+        This method currently returns None as contexts are not persisted.
 
         Args:
-            context_id: Context ID
+            context_id: Context ID to look up
 
         Returns:
-            None (not implemented in v1.0)
+            ModelInjectionContext if found, None otherwise
         """
+        # In v1.0, we don't persist injection contexts
+        # Full context tracking is planned for v2.0
         return None
 
     # Private helper methods
@@ -899,7 +1000,7 @@ class ServiceRegistry:
     async def _store_instance(
         self,
         registration_id: UUID,
-        instance: Any,
+        instance: object,
         lifecycle: LiteralServiceLifecycle,
         scope: LiteralInjectionScope,
     ) -> ModelServiceInstance:
@@ -931,7 +1032,7 @@ class ServiceRegistry:
         registration: ModelServiceRegistration,
         scope: LiteralInjectionScope,
         context: TypedDictResolutionContext | None,
-    ) -> Any:
+    ) -> object:
         """Resolve service based on lifecycle pattern."""
         lifecycle = registration.lifecycle
 

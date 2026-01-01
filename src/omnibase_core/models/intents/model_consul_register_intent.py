@@ -173,6 +173,7 @@ class ModelConsulRegisterIntent(ModelCoreIntent):
             "'node_type:compute', 'env:production', 'version:1.2.3'."
         ),
     )
+    # ONEX_EXCLUDE: dict_str_any - consul api health check configuration format
     health_check: dict[str, Any] | None = Field(
         default=None,
         description=(
