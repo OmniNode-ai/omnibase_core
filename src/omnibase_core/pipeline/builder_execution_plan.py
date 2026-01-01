@@ -103,7 +103,7 @@ class BuilderExecutionPlan:
         self,
         registry: RegistryHook,
         contract_category: EnumHandlerTypeCategory | None = None,
-        enforce_hook_typing: bool = False,
+        enforce_hook_typing: bool = True,
     ) -> None:
         """
         Initialize the BuilderExecutionPlan.

@@ -285,17 +285,17 @@ Builds execution plans from a frozen registry with validation.
 from omnibase_core.pipeline import BuilderExecutionPlan, RegistryHook
 from omnibase_core.enums import EnumHandlerTypeCategory
 
-# Create builder
+# Create builder (enforce_hook_typing=True is the default)
 builder = BuilderExecutionPlan(
     registry=registry,                          # Must be frozen
     contract_category=EnumHandlerTypeCategory.COMPUTE,  # Optional type validation
-    enforce_hook_typing=True,                   # Raise error on type mismatch
+    # enforce_hook_typing=True is the default - raises error on type mismatch
 )
 
 # Build plan (validates and sorts hooks)
 plan, warnings = builder.build()
 
-# Check warnings (type mismatches when enforce_hook_typing=False)
+# Check warnings (type mismatches when enforce_hook_typing=False is explicitly set)
 for warning in warnings:
     print(f"Warning: {warning.code} - {warning.message}")
 ```
@@ -305,7 +305,8 @@ for warning in warnings:
 1. **Hook type validation** (if `contract_category` set):
    - Generic hooks (`handler_type_category=None`) pass for any contract
    - Typed hooks must match contract type
-   - Mismatch behavior controlled by `enforce_hook_typing`
+   - By default (`enforce_hook_typing=True`), type mismatches raise `HookTypeMismatchError`
+   - Set `enforce_hook_typing=False` for warning-only mode (useful for gradual migration)
 
 2. **Dependency validation**:
    - All dependencies must exist within the same phase
@@ -552,14 +553,14 @@ compute_hook = ModelPipelineHook(
     callable_ref="app.compute",
 )
 
-# Build with type enforcement
+# Build with type enforcement (default behavior)
 builder = BuilderExecutionPlan(
     registry=registry,
     contract_category=EnumHandlerTypeCategory.COMPUTE,
-    enforce_hook_typing=True,  # Raises HookTypeMismatchError on mismatch
+    # enforce_hook_typing=True is the default - raises HookTypeMismatchError on mismatch
 )
 
-# Or with warnings only
+# Opt-in to warning-only mode (for gradual migration or backwards compatibility)
 builder = BuilderExecutionPlan(
     registry=registry,
     contract_category=EnumHandlerTypeCategory.COMPUTE,
@@ -572,6 +573,8 @@ plan, warnings = builder.build()
 - Generic hooks (`handler_type_category=None`) pass for any contract
 - Typed hooks must exactly match the contract type
 - No contract type (`contract_category=None`) skips validation
+- **Default behavior** (`enforce_hook_typing=True`): Type mismatches raise `HookTypeMismatchError`
+- **Warning-only mode** (`enforce_hook_typing=False`): Type mismatches produce warnings but allow execution
 
 ### Timeout Enforcement
 
@@ -773,7 +776,7 @@ For detailed threading guidance, see [Threading Guide](THREADING.md).
 | `DuplicateHookError` | Registering hook with existing ID | Registration |
 | `UnknownDependencyError` | Dependency references unknown hook | Build |
 | `DependencyCycleError` | Dependencies form a cycle | Build |
-| `HookTypeMismatchError` | Hook type doesn't match contract (when enforced) | Build |
+| `HookTypeMismatchError` | Hook type doesn't match contract (default behavior; use `enforce_hook_typing=False` for warnings only) | Build |
 | `CallableNotFoundError` | `callable_ref` not in registry | Execution |
 | `HookTimeoutError` | Hook exceeded `timeout_seconds` | Execution |
 
@@ -1215,6 +1218,6 @@ from omnibase_core.pipeline import (
 
 ---
 
-**Last Updated**: 2025-12-30
-**Version**: 1.0.0
-**Related PR**: #291 (OMN-1114)
+**Last Updated**: 2026-01-01
+**Version**: 1.1.0
+**Related PR**: #291 (OMN-1114), OMN-1157 (enforce_hook_typing default change)
