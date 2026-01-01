@@ -36,17 +36,3 @@ class EnumValidationLevel(str, Enum):
     STANDARD = "STANDARD"
     COMPREHENSIVE = "COMPREHENSIVE"
     PARANOID = "PARANOID"
-
-
-class EnumValidationMode(Enum):
-    """
-    Validation modes for tool testing and validation operations.
-
-    Enumeration of validation modes for different testing scenarios.
-    """
-
-    STRICT = "strict"
-    LENIENT = "lenient"
-    SMOKE = "smoke"
-    REGRESSION = "regression"
-    INTEGRATION = "integration"
