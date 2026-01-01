@@ -9,7 +9,6 @@ Typing: Strongly typed with strategic Any usage for mixin kwargs and configurati
 
 from __future__ import annotations
 
-from collections.abc import Callable, Coroutine
 from typing import TYPE_CHECKING, cast
 from uuid import UUID
 

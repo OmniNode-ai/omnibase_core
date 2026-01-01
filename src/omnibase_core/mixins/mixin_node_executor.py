@@ -1,5 +1,5 @@
-from collections.abc import Callable
 import types
+from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
