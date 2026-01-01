@@ -22,14 +22,13 @@ See Also:
     - ModelEventPayloadUnion for the complete list of typed payloads
 """
 
-from typing import Any
 from uuid import UUID
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
-# Type alias for legacy dict payloads - intentionally accepts Any values for migration
-# ONEX_EXCLUDE: dict_str_any - migration utility requires untyped dict input
-LegacyDictPayload = dict[str, Any]
+# Type alias for legacy dict payloads - accepts object values for migration
+# This migration utility handles untyped dict input from legacy code
+LegacyDictPayload = dict[str, object]
 from omnibase_core.enums.enum_node_kind import EnumNodeKind
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.events.payloads.model_event_payload_union import (
@@ -268,9 +267,10 @@ def _prepare_dict_for_conversion(
     # Convert string UUIDs to UUID objects for common UUID fields
     uuid_fields = ["node_id", "runtime_id", "graph_id", "subscription_id", "event_id"]
     for field in uuid_fields:
-        if field in data and isinstance(data[field], str):
+        field_value = data.get(field)
+        if isinstance(field_value, str):
             try:
-                data[field] = UUID(data[field])
+                data[field] = UUID(field_value)
             except ValueError:
                 # Leave as-is; Pydantic will handle the validation error
                 pass

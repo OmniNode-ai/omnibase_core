@@ -40,13 +40,11 @@ See Also:
     - ModelFSMTransitionCondition: Defines condition expressions
 """
 
-from typing import Any
-
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
-def evaluate_equals(lhs: Any, rhs: Any) -> bool:
+def evaluate_equals(lhs: object, rhs: object) -> bool:
     """
     Evaluate equals operator with string coercion.
 
@@ -90,7 +88,7 @@ def evaluate_equals(lhs: Any, rhs: Any) -> bool:
     return str(lhs) == str(rhs)
 
 
-def evaluate_not_equals(lhs: Any, rhs: Any) -> bool:
+def evaluate_not_equals(lhs: object, rhs: object) -> bool:
     """
     Evaluate not_equals operator with string coercion.
 
@@ -161,8 +159,8 @@ def is_string_operator(operator: str) -> bool:
 
 def evaluate_string_operator(
     operator: str,
-    lhs: Any,
-    rhs: Any,
+    lhs: object,
+    rhs: object,
 ) -> bool:
     """
     Evaluate a string comparison operator.
