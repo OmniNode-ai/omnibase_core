@@ -28,9 +28,7 @@ class ProtocolEventBusListener(Protocol):
     hasattr() checks before method calls.
     """
 
-    def subscribe(
-        self, handler: Callable[..., object], event_type: str
-    ) -> object:
+    def subscribe(self, handler: Callable[..., object], event_type: str) -> object:
         """Subscribe to events with a handler."""
         ...
 
@@ -41,6 +39,7 @@ class ProtocolEventBusListener(Protocol):
     async def publish_async(self, envelope: object) -> object:
         """Asynchronous publish method."""
         ...
+
 
 from pydantic import ValidationError
 

@@ -90,7 +90,9 @@ class ProtocolRedisClient(Protocol):
 
 
 # Union types for flexible health check parameters
-ConnectionPoolType = ProtocolConnectionPool | ProtocolConnectionPoolWithConnection | object
+ConnectionPoolType = (
+    ProtocolConnectionPool | ProtocolConnectionPoolWithConnection | object
+)
 KafkaProducerType = ProtocolKafkaProducerAio | ProtocolKafkaProducerConfluent | object
 RedisClientType = ProtocolRedisClient | object
 

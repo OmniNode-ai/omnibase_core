@@ -86,15 +86,14 @@ class ProtocolEventBusDuckTyped(Protocol):
         """Asynchronous publish method."""
         ...
 
-    def subscribe(
-        self, handler: Callable[..., object], event_type: str
-    ) -> object:
+    def subscribe(self, handler: Callable[..., object], event_type: str) -> object:
         """Subscribe to events with a handler."""
         ...
 
     def unsubscribe(self, subscription: object) -> None:
         """Unsubscribe from events."""
         ...
+
 
 # Generic type parameters for typed event processing
 InputStateT = TypeVar("InputStateT")
@@ -993,7 +992,9 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
                 # between message category and topic name using _validate_topic_alignment().
                 await cast(ProtocolEventBusDuckTyped, bus).publish_async(envelope)
             elif hasattr(bus, "publish"):
-                cast(ProtocolEventBusDuckTyped, bus).publish(event)  # Synchronous method - no await
+                cast(ProtocolEventBusDuckTyped, bus).publish(
+                    event
+                )  # Synchronous method - no await
             else:
                 raise ModelOnexError(
                     message="Event bus does not support publishing (missing 'publish_async' and 'publish' methods)",
@@ -1114,7 +1115,9 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
                 await cast(ProtocolEventBusDuckTyped, bus).publish_async(envelope)
             # Fallback to sync method
             elif hasattr(bus, "publish"):
-                cast(ProtocolEventBusDuckTyped, bus).publish(event)  # Synchronous method - no await
+                cast(ProtocolEventBusDuckTyped, bus).publish(
+                    event
+                )  # Synchronous method - no await
             else:
                 raise ModelOnexError(
                     message="Event bus has no publish method (missing 'publish_async' and 'publish')",

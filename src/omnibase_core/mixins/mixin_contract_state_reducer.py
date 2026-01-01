@@ -177,7 +177,9 @@ class MixinContractStateReducer:
         """
         try:
             tool_name = getattr(self, "node_name", "unknown_tool")
-            action_name = getattr(getattr(input_state, "action", None), "action_name", "unknown_action")
+            action_name = getattr(
+                getattr(input_state, "action", None), "action_name", "unknown_action"
+            )
 
             emit_log_event(
                 LogLevel.INFO,

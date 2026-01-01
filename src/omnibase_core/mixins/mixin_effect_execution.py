@@ -703,7 +703,9 @@ class MixinEffectExecution:
                 secret_key = placeholder[7:]  # Remove "secret."
                 try:
                     # String-based lookup for extensibility (protocol not defined in core)
-                    secret_service: object = self.container.get_service("ProtocolSecretService")  # type: ignore[arg-type]
+                    secret_service: object = self.container.get_service(
+                        "ProtocolSecretService"
+                    )  # type: ignore[arg-type]
                     secret_value = secret_service.get_secret(secret_key)  # type: ignore[attr-defined]
                     if secret_value is None:
                         raise ModelOnexError(

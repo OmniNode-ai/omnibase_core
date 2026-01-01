@@ -480,7 +480,9 @@ class MixinNodeIntrospection(ABC):
         )
 
     @classmethod
-    def handle_introspect_command(cls, event_bus: "ProtocolEventBus | None" = None) -> None:
+    def handle_introspect_command(
+        cls, event_bus: "ProtocolEventBus | None" = None
+    ) -> None:
         """
         Handle the --introspect command by generating and emitting the response via the event bus/logger node.
         This method should be called from the node's main() function when --introspect is detected in the command line arguments.

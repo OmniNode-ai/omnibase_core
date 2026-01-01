@@ -76,10 +76,14 @@ class MixinToolExecution:
         try:
             # Extract request data
             event_data_raw = getattr(event, "data", None)
-            event_data: dict[str, object] = event_data_raw if isinstance(event_data_raw, dict) else {}
+            event_data: dict[str, object] = (
+                event_data_raw if isinstance(event_data_raw, dict) else {}
+            )
             requested_tool = event_data.get("tool_name", "")
             parameters_raw = event_data.get("parameters", [])
-            parameters: list[object] = parameters_raw if isinstance(parameters_raw, list) else []
+            parameters: list[object] = (
+                parameters_raw if isinstance(parameters_raw, list) else []
+            )
             event_data.get("timeout", 30)
 
             # Check if this request is for this tool

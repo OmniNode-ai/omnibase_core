@@ -126,7 +126,9 @@ class MixinNodeExecutor(MixinEventDrivenNode):
             self._log_error(f"Error during executor shutdown: {e}")
             self._executor_running = False
 
-    async def handle_tool_invocation(self, envelope: "ModelEventEnvelope[object]") -> None:
+    async def handle_tool_invocation(
+        self, envelope: "ModelEventEnvelope[object]"
+    ) -> None:
         """
         Handle a TOOL_INVOCATION event.
 
