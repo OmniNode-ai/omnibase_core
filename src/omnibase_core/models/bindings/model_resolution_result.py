@@ -334,8 +334,8 @@ class ModelResolutionResult(BaseModel):
         for alias, binding in self.bindings.items():
             alias_scores = self.scores_by_alias.get(alias, {})
             # Try to get score for the bound provider
-            if binding.provider_id in alias_scores:
-                total_score += alias_scores[binding.provider_id]
+            if binding.resolved_provider in alias_scores:
+                total_score += alias_scores[binding.resolved_provider]
                 count += 1
 
         return total_score / count if count > 0 else 0.0
