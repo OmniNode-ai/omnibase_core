@@ -746,3 +746,344 @@ class TestModelProjectorSchemaPrimaryKeyValidation:
         assert "alpha" in error_str
         assert "beta" in error_str
         assert "gamma" in error_str
+
+
+@pytest.mark.unit
+class TestModelProjectorSchemaIndexColumnValidation:
+    """Tests for index column validation against schema columns."""
+
+    def test_index_column_must_exist_in_schema(self) -> None:
+        """Validation fails when index references non-existent column."""
+        from omnibase_core.models.projectors import (
+            ModelProjectorColumn,
+            ModelProjectorIndex,
+            ModelProjectorSchema,
+        )
+
+        columns = [
+            ModelProjectorColumn(
+                name="node_id",
+                type="UUID",
+                source="event.payload.node_id",
+            ),
+            ModelProjectorColumn(
+                name="status",
+                type="TEXT",
+                source="event.payload.status",
+            ),
+        ]
+
+        indexes = [
+            ModelProjectorIndex(columns=["non_existent_column"]),
+        ]
+
+        with pytest.raises(ValidationError) as exc_info:
+            ModelProjectorSchema(
+                table="node_projections",
+                primary_key="node_id",
+                columns=columns,
+                indexes=indexes,
+            )
+
+        error_str = str(exc_info.value)
+        assert "non_existent_column" in error_str
+        assert "node_id" in error_str
+        assert "status" in error_str
+
+    def test_composite_index_all_columns_must_exist(self) -> None:
+        """Validation fails when composite index has any non-existent column."""
+        from omnibase_core.models.projectors import (
+            ModelProjectorColumn,
+            ModelProjectorIndex,
+            ModelProjectorSchema,
+        )
+
+        columns = [
+            ModelProjectorColumn(
+                name="node_id",
+                type="UUID",
+                source="event.payload.node_id",
+            ),
+            ModelProjectorColumn(
+                name="status",
+                type="TEXT",
+                source="event.payload.status",
+            ),
+        ]
+
+        # First column exists, second does not
+        indexes = [
+            ModelProjectorIndex(columns=["status", "missing_column"]),
+        ]
+
+        with pytest.raises(ValidationError) as exc_info:
+            ModelProjectorSchema(
+                table="node_projections",
+                primary_key="node_id",
+                columns=columns,
+                indexes=indexes,
+            )
+
+        error_str = str(exc_info.value)
+        assert "missing_column" in error_str
+
+    def test_multiple_indexes_all_validated(self) -> None:
+        """Validation checks all indexes, not just the first one."""
+        from omnibase_core.models.projectors import (
+            ModelProjectorColumn,
+            ModelProjectorIndex,
+            ModelProjectorSchema,
+        )
+
+        columns = [
+            ModelProjectorColumn(
+                name="node_id",
+                type="UUID",
+                source="event.payload.node_id",
+            ),
+            ModelProjectorColumn(
+                name="status",
+                type="TEXT",
+                source="event.payload.status",
+            ),
+        ]
+
+        # First index is valid, second is not
+        indexes = [
+            ModelProjectorIndex(columns=["status"]),
+            ModelProjectorIndex(columns=["invalid_column"]),
+        ]
+
+        with pytest.raises(ValidationError) as exc_info:
+            ModelProjectorSchema(
+                table="node_projections",
+                primary_key="node_id",
+                columns=columns,
+                indexes=indexes,
+            )
+
+        error_str = str(exc_info.value)
+        assert "invalid_column" in error_str
+
+    def test_valid_index_columns_pass_validation(self) -> None:
+        """Validation passes when all index columns exist in schema."""
+        from omnibase_core.models.projectors import (
+            ModelProjectorColumn,
+            ModelProjectorIndex,
+            ModelProjectorSchema,
+        )
+
+        columns = [
+            ModelProjectorColumn(
+                name="node_id",
+                type="UUID",
+                source="event.payload.node_id",
+            ),
+            ModelProjectorColumn(
+                name="status",
+                type="TEXT",
+                source="event.payload.status",
+            ),
+            ModelProjectorColumn(
+                name="created_at",
+                type="TIMESTAMPTZ",
+                source="event.payload.created_at",
+            ),
+        ]
+
+        indexes = [
+            ModelProjectorIndex(columns=["status"]),
+            ModelProjectorIndex(columns=["status", "created_at"]),
+            ModelProjectorIndex(columns=["node_id", "status", "created_at"]),
+        ]
+
+        # Should not raise - all index columns exist
+        schema = ModelProjectorSchema(
+            table="node_projections",
+            primary_key="node_id",
+            columns=columns,
+            indexes=indexes,
+        )
+
+        assert len(schema.indexes) == 3
+
+    def test_empty_indexes_pass_validation(self) -> None:
+        """Validation passes when no indexes are defined."""
+        from omnibase_core.models.projectors import (
+            ModelProjectorColumn,
+            ModelProjectorSchema,
+        )
+
+        columns = [
+            ModelProjectorColumn(
+                name="node_id",
+                type="UUID",
+                source="event.payload.node_id",
+            ),
+        ]
+
+        # No indexes - should not raise
+        schema = ModelProjectorSchema(
+            table="node_projections",
+            primary_key="node_id",
+            columns=columns,
+            indexes=[],
+        )
+
+        assert schema.indexes == []
+
+    def test_index_validation_error_shows_available_columns(self) -> None:
+        """Validation error message lists all available column names."""
+        from omnibase_core.models.projectors import (
+            ModelProjectorColumn,
+            ModelProjectorIndex,
+            ModelProjectorSchema,
+        )
+
+        columns = [
+            ModelProjectorColumn(
+                name="alpha",
+                type="TEXT",
+                source="event.payload.alpha",
+            ),
+            ModelProjectorColumn(
+                name="beta",
+                type="TEXT",
+                source="event.payload.beta",
+            ),
+            ModelProjectorColumn(
+                name="gamma",
+                type="TEXT",
+                source="event.payload.gamma",
+            ),
+        ]
+
+        indexes = [
+            ModelProjectorIndex(columns=["delta"]),
+        ]
+
+        with pytest.raises(ValidationError) as exc_info:
+            ModelProjectorSchema(
+                table="test",
+                primary_key="alpha",
+                columns=columns,
+                indexes=indexes,
+            )
+
+        error_str = str(exc_info.value)
+        # Error should mention the invalid column
+        assert "delta" in error_str
+        # Error should show available columns
+        assert "alpha" in error_str
+        assert "beta" in error_str
+        assert "gamma" in error_str
+
+
+@pytest.mark.unit
+class TestModelProjectorSchemaRepr:
+    """Tests for __repr__ method of ModelProjectorSchema."""
+
+    def test_repr_basic(self) -> None:
+        """Test basic repr output contains class name and table."""
+        from omnibase_core.models.projectors import (
+            ModelProjectorColumn,
+            ModelProjectorSchema,
+        )
+
+        column = ModelProjectorColumn(
+            name="node_id",
+            type="UUID",
+            source="event.payload.node_id",
+        )
+
+        schema = ModelProjectorSchema(
+            table="node_projections",
+            primary_key="node_id",
+            columns=[column],
+        )
+        result = repr(schema)
+
+        assert "ModelProjectorSchema" in result
+        assert "node_projections" in result
+        assert "columns=1" in result
+
+    def test_repr_with_multiple_columns(self) -> None:
+        """Test repr correctly shows column count for multiple columns."""
+        from omnibase_core.models.projectors import (
+            ModelProjectorColumn,
+            ModelProjectorSchema,
+        )
+
+        columns = [
+            ModelProjectorColumn(
+                name="id",
+                type="UUID",
+                source="event.payload.id",
+            ),
+            ModelProjectorColumn(
+                name="name",
+                type="TEXT",
+                source="event.payload.name",
+            ),
+            ModelProjectorColumn(
+                name="status",
+                type="TEXT",
+                source="event.payload.status",
+            ),
+        ]
+
+        schema = ModelProjectorSchema(
+            table="test_table",
+            primary_key="id",
+            columns=columns,
+        )
+        result = repr(schema)
+
+        assert "ModelProjectorSchema" in result
+        assert "test_table" in result
+        assert "columns=3" in result
+
+    def test_repr_concise_format(self) -> None:
+        """Test repr is concise and doesn't include all details."""
+        from omnibase_core.models.primitives.model_semver import ModelSemVer
+        from omnibase_core.models.projectors import (
+            ModelProjectorColumn,
+            ModelProjectorIndex,
+            ModelProjectorSchema,
+        )
+
+        columns = [
+            ModelProjectorColumn(
+                name="node_id",
+                type="UUID",
+                source="event.payload.node_id",
+            ),
+            ModelProjectorColumn(
+                name="status",
+                type="TEXT",
+                source="event.payload.status",
+            ),
+        ]
+
+        indexes = [
+            ModelProjectorIndex(columns=["status"]),
+        ]
+
+        version = ModelSemVer(major=1, minor=0, patch=0)
+
+        schema = ModelProjectorSchema(
+            table="complex_table",
+            primary_key="node_id",
+            columns=columns,
+            indexes=indexes,
+            version=version,
+        )
+        result = repr(schema)
+
+        # Repr should be concise - showing table and count only
+        assert "ModelProjectorSchema" in result
+        assert "complex_table" in result
+        assert "columns=2" in result
+        # These details should NOT be in the concise repr
+        assert "indexes" not in result.lower()
+        assert "version" not in result.lower()

@@ -179,3 +179,67 @@ class TestModelProjectorIndexSerialization:
         restored = ModelProjectorIndex.model_validate_json(json_str)
 
         assert restored == original
+
+
+@pytest.mark.unit
+class TestModelProjectorIndexRepr:
+    """Tests for __repr__ method of ModelProjectorIndex."""
+
+    def test_repr_basic(self) -> None:
+        """Test basic repr output contains class name and key fields."""
+        from omnibase_core.models.projectors import ModelProjectorIndex
+
+        index = ModelProjectorIndex(columns=["user_id"])
+        result = repr(index)
+
+        assert "ModelProjectorIndex" in result
+        assert "user_id" in result
+        assert "name=None" in result
+        assert "type='btree'" in result
+        assert "unique=False" in result
+
+    def test_repr_with_all_fields(self) -> None:
+        """Test repr with all fields set."""
+        from omnibase_core.models.projectors import ModelProjectorIndex
+
+        index = ModelProjectorIndex(
+            name="idx_test",
+            columns=["col1", "col2"],
+            type="gin",
+            unique=True,
+        )
+        result = repr(index)
+
+        assert "ModelProjectorIndex" in result
+        assert "idx_test" in result
+        assert "col1" in result
+        assert "col2" in result
+        assert "gin" in result
+        assert "unique=True" in result
+
+    def test_repr_with_hash_index(self) -> None:
+        """Test repr with hash index type."""
+        from omnibase_core.models.projectors import ModelProjectorIndex
+
+        index = ModelProjectorIndex(
+            columns=["lookup_key"],
+            type="hash",
+        )
+        result = repr(index)
+
+        assert "ModelProjectorIndex" in result
+        assert "lookup_key" in result
+        assert "hash" in result
+
+    def test_repr_multiple_columns(self) -> None:
+        """Test repr correctly shows multiple columns."""
+        from omnibase_core.models.projectors import ModelProjectorIndex
+
+        index = ModelProjectorIndex(
+            columns=["status", "created_at", "updated_at"],
+        )
+        result = repr(index)
+
+        assert "status" in result
+        assert "created_at" in result
+        assert "updated_at" in result

@@ -1377,3 +1377,140 @@ class TestModelProjectorContractFromAttributes:
         # Should be able to use contract as dict key
         contract_dict = {contract: "value"}
         assert contract_dict[contract] == "value"
+
+
+@pytest.mark.unit
+class TestModelProjectorContractRepr:
+    """Tests for __repr__ method of ModelProjectorContract."""
+
+    def test_repr_basic(self) -> None:
+        """Test basic repr output contains class name and projector_id."""
+        from omnibase_core.models.projectors import (
+            ModelProjectorBehavior,
+            ModelProjectorColumn,
+            ModelProjectorContract,
+            ModelProjectorSchema,
+        )
+
+        column = ModelProjectorColumn(
+            name="node_id",
+            type="UUID",
+            source="event.payload.node_id",
+        )
+
+        schema = ModelProjectorSchema(
+            table="node_projections",
+            primary_key="node_id",
+            columns=[column],
+        )
+
+        behavior = ModelProjectorBehavior(mode="upsert")
+
+        contract = ModelProjectorContract(
+            projector_kind="materialized_view",
+            projector_id="node-status-projector",
+            name="Node Status Projector",
+            version="1.0.0",
+            aggregate_type="node",
+            consumed_events=["node.created.v1"],
+            projection_schema=schema,
+            behavior=behavior,
+        )
+        result = repr(contract)
+
+        assert "ModelProjectorContract" in result
+        assert "node-status-projector" in result
+        assert "events=1" in result
+
+    def test_repr_with_multiple_events(self) -> None:
+        """Test repr correctly shows event count for multiple events."""
+        from omnibase_core.models.projectors import (
+            ModelProjectorBehavior,
+            ModelProjectorColumn,
+            ModelProjectorContract,
+            ModelProjectorSchema,
+        )
+
+        column = ModelProjectorColumn(
+            name="order_id",
+            type="UUID",
+            source="event.payload.order_id",
+        )
+
+        schema = ModelProjectorSchema(
+            table="orders",
+            primary_key="order_id",
+            columns=[column],
+        )
+
+        behavior = ModelProjectorBehavior(mode="insert_only")
+
+        contract = ModelProjectorContract(
+            projector_kind="materialized_view",
+            projector_id="order-projector",
+            name="Order Projector",
+            version="1.0.0",
+            aggregate_type="order",
+            consumed_events=[
+                "order_management.order_created.v1",
+                "order_management.order_updated.v1",
+                "order_management.order_cancelled.v1",
+            ],
+            projection_schema=schema,
+            behavior=behavior,
+        )
+        result = repr(contract)
+
+        assert "ModelProjectorContract" in result
+        assert "order-projector" in result
+        assert "events=3" in result
+
+    def test_repr_concise_format(self) -> None:
+        """Test repr is concise and doesn't include all details."""
+        from omnibase_core.models.projectors import (
+            ModelIdempotencyConfig,
+            ModelProjectorBehavior,
+            ModelProjectorColumn,
+            ModelProjectorContract,
+            ModelProjectorSchema,
+        )
+
+        column = ModelProjectorColumn(
+            name="id",
+            type="UUID",
+            source="event.payload.id",
+        )
+
+        schema = ModelProjectorSchema(
+            table="test_table",
+            primary_key="id",
+            columns=[column],
+        )
+
+        behavior = ModelProjectorBehavior(
+            mode="upsert",
+            upsert_key="id",
+            idempotency=ModelIdempotencyConfig(enabled=True, key="event_id"),
+        )
+
+        contract = ModelProjectorContract(
+            projector_kind="materialized_view",
+            projector_id="complex-projector",
+            name="Complex Projector",
+            version="2.0.0",
+            aggregate_type="test",
+            consumed_events=["test.created.v1", "test.updated.v1"],
+            projection_schema=schema,
+            behavior=behavior,
+        )
+        result = repr(contract)
+
+        # Repr should be concise - showing id and event count only
+        assert "ModelProjectorContract" in result
+        assert "complex-projector" in result
+        assert "events=2" in result
+        # These details should NOT be in the concise repr
+        assert "materialized_view" not in result
+        assert "aggregate_type" not in result
+        assert "behavior" not in result.lower()
+        assert "schema" not in result.lower()

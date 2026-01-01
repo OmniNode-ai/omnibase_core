@@ -187,6 +187,27 @@ class ModelProjectorSchema(BaseModel):
             )
         return self
 
+    @model_validator(mode="after")
+    def validate_index_columns_exist_in_schema(self) -> Self:
+        """Validate that all index columns reference existing schema columns.
+
+        Each index can specify one or more columns. This validator ensures that
+        every column referenced by an index actually exists in the schema's
+        column definitions.
+
+        Raises:
+            ValueError: If any index column does not match an existing column name.
+        """
+        column_names = {col.name for col in self.columns}
+        for index in self.indexes:
+            for col_name in index.columns:
+                if col_name not in column_names:
+                    raise ValueError(
+                        f"Index column '{col_name}' must reference an existing column. "
+                        f"Available columns: {sorted(column_names)}"
+                    )
+        return self
+
     def __hash__(self) -> int:
         """Return hash value for the schema.
 
