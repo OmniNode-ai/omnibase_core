@@ -79,7 +79,9 @@ class ModelTransaction:
             except asyncio.CancelledError as e:
                 # Note cancellation but continue with remaining rollback operations
                 # to maintain transaction consistency. Re-raise after all operations.
-                cancelled_error = e
+                # Store the first cancellation to preserve its context and traceback.
+                if cancelled_error is None:
+                    cancelled_error = e
                 emit_log_event(
                     LogLevel.WARNING,
                     "Rollback cancelled - continuing with remaining operations",
@@ -87,27 +89,30 @@ class ModelTransaction:
                         "transaction_id": str(self.transaction_id),
                     },
                 )
-            except (GeneratorExit, KeyboardInterrupt, SystemExit) as e:
-                # cleanup-resilience-ok: Store process signals to re-raise after
-                # completing all rollback operations. This ensures transaction
-                # consistency while still honoring termination requests.
+            except (GeneratorExit, KeyboardInterrupt, MemoryError, SystemExit) as e:
+                # cleanup-resilience-ok: Store critical system exceptions to re-raise
+                # after completing all rollback operations. This ensures transaction
+                # consistency while still honoring termination requests and
+                # propagating critical system conditions.
+                # - GeneratorExit: Generator cleanup signal
+                # - KeyboardInterrupt: User interrupt (Ctrl+C)
+                # - MemoryError: Critical system resource exhaustion
+                # - SystemExit: System shutdown request
                 if deferred_base_exception is None:
                     deferred_base_exception = e
                 emit_log_event(
                     LogLevel.WARNING,
-                    f"Process signal during rollback - deferring until cleanup complete: {type(e).__name__}",
+                    f"Critical exception during rollback - deferring: {type(e).__name__}",
                     {
                         "transaction_id": str(self.transaction_id),
-                        "signal_type": type(e).__name__,
+                        "exception_type": type(e).__name__,
                     },
                 )
             except Exception as e:  # cleanup-resilience-ok: rollback must complete
-                # Catch all Exception subclasses (including MemoryError, RuntimeError,
-                # etc.) to ensure all rollback operations are attempted even if one
-                # fails. Errors are logged but not re-raised to maximize rollback
-                # completion. Note: MemoryError is caught here and NOT propagated,
-                # as completing transaction rollback takes priority over resource
-                # exhaustion handling. asyncio.CancelledError is a BaseException
+                # Catch remaining Exception subclasses (ValueError, RuntimeError,
+                # OSError, etc.) to ensure all rollback operations are attempted
+                # even if one fails. These are logged but not re-raised to maximize
+                # rollback completion. Note: asyncio.CancelledError is a BaseException
                 # subclass (not Exception) and is handled separately above.
                 emit_log_event(
                     LogLevel.ERROR,
@@ -118,11 +123,27 @@ class ModelTransaction:
                         "error_type": type(e).__name__,
                     },
                 )
+            except (
+                BaseException
+            ) as e:  # cleanup-resilience-ok: catch-all for resilience
+                # Catch any remaining BaseException subclasses not explicitly handled
+                # above (e.g., custom BaseException subclasses). Store first occurrence
+                # to re-raise after cleanup completes.
+                if deferred_base_exception is None:
+                    deferred_base_exception = e
+                emit_log_event(
+                    LogLevel.WARNING,
+                    f"Unexpected BaseException during rollback - deferring: {type(e).__name__}",
+                    {
+                        "transaction_id": str(self.transaction_id),
+                        "exception_type": type(e).__name__,
+                    },
+                )
 
         # After all rollback operations complete, honor any pending exceptions.
         # CancelledError takes priority to properly honor async task cancellation.
-        # Process signals (GeneratorExit, KeyboardInterrupt, SystemExit) are
-        # re-raised after to honor termination requests.
+        # Critical system exceptions (MemoryError, process signals, etc.) are
+        # re-raised after to honor system requirements.
         if cancelled_error is not None:
             raise cancelled_error
         if deferred_base_exception is not None:

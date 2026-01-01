@@ -526,10 +526,10 @@ def extract_protocol_signature(file_path: Path) -> ModelProtocolInfo | None:
         # Extremely large files may exhaust memory during AST parsing
         logger.warning(f"Memory exhausted parsing {file_path}. Skipping file.")
         return None
-    except Exception:  # fallback-ok: File processing errors should not stop the entire validation process
-        # Unexpected error: safety net for truly unexpected issues.
-        # logger.exception includes full stack trace for debugging.
-        logger.exception(f"Unexpected error processing {file_path}. Skipping file.")
+    except (AttributeError, KeyError, TypeError) as e:
+        # Handle AST processing errors: malformed tree structures, missing attributes,
+        # or unexpected types from extractor operations
+        logger.warning(f"Error processing AST in {file_path}: {e}. Skipping file.")
         return None
 
 
@@ -634,11 +634,9 @@ def is_protocol_file(file_path: Path) -> bool:
         # UnicodeDecodeError not caught: read_text uses errors="ignore"
         logger.debug(f"Error checking protocol file {file_path}: {e}")
         return False
-    except (
-        Exception
-    ) as e:  # fallback-ok: Protocol check errors should not stop file discovery
-        # Unexpected error: safety net for truly unexpected issues
-        logger.debug(f"Unexpected error checking protocol file {file_path}: {e}")
+    except (AttributeError, TypeError) as e:
+        # Handle path operation errors: missing attributes or unexpected types
+        logger.debug(f"Path operation error checking protocol file {file_path}: {e}")
         return False
 
 

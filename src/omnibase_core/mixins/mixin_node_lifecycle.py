@@ -36,6 +36,7 @@ from uuid import UUID, uuid4
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_node_status import EnumNodeStatus
 from omnibase_core.enums.enum_registry_execution_mode import EnumRegistryExecutionMode
+from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
 from omnibase_core.logging.structured import emit_log_event_sync
 from omnibase_core.models.core.model_event_type import create_event_type_from_registry
 from omnibase_core.models.core.model_log_context import ModelLogContext
@@ -117,8 +118,9 @@ class MixinNodeLifecycle:
                     description="Event-driven ONEX node",
                     author="ONEX",
                 )
-        except Exception as e:  # fallback-ok: registration failure returns early with logging, node registration is non-critical
-            # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
+        except PYDANTIC_MODEL_ERRORS as e:  # fallback-ok: registration failure returns early with logging, node registration is non-critical
+            # Uses PYDANTIC_MODEL_ERRORS (AttributeError, TypeError, ValidationError, ValueError)
+            # to catch metadata loading failures while allowing other exceptions to propagate
             context = ModelLogContext(
                 calling_module=_COMPONENT_NAME,
                 calling_function="_register_node",

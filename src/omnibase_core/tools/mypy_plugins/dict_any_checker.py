@@ -413,11 +413,12 @@ class DictAnyCheckerPlugin(Plugin):
                     if result is not None:
                         return result
 
-        except (  # tool-resilience-ok: mypy internal API may vary across versions
-            AttributeError,
-            KeyError,
-            TypeError,
-        ):
+        except (AttributeError, KeyError, TypeError):
+            # tool-resilience-ok: mypy plugin version compatibility
+            # These specific exceptions are caught because mypy's internal API varies
+            # across versions (0.9xx, 1.x). Symbol table structure, attribute names,
+            # and method signatures may differ. Using a specific tuple (not Exception
+            # or BaseException) preserves interruptibility while handling API drift.
             pass
 
         return None
@@ -474,11 +475,11 @@ class DictAnyCheckerPlugin(Plugin):
                     if modules is not None:
                         return cast("dict[str, MypyFile]", modules)
 
-        except (  # tool-resilience-ok: mypy API access may fail on version differences
-            AttributeError,
-            KeyError,
-            TypeError,
-        ):
+        except (AttributeError, KeyError, TypeError):
+            # tool-resilience-ok: mypy plugin version compatibility
+            # Mypy's checker API (api.modules, api.chk, etc.) varies across versions.
+            # These specific exceptions handle missing attributes, changed structures,
+            # or type mismatches without catching KeyboardInterrupt/SystemExit.
             pass
 
         return None
@@ -550,11 +551,11 @@ class DictAnyCheckerPlugin(Plugin):
             if isinstance(node, Decorator):
                 return node
 
-        except (  # tool-resilience-ok: symbol lookup may fail for unanalyzed code
-            AttributeError,
-            KeyError,
-            TypeError,
-        ):
+        except (AttributeError, KeyError, TypeError):
+            # tool-resilience-ok: symbol lookup may fail for unanalyzed code
+            # Symbol table traversal can fail when code hasn't been fully analyzed,
+            # when ClassDef/info structures differ across mypy versions, or when
+            # names dicts are not yet populated. Specific tuple preserves interruptibility.
             pass
 
         return None

@@ -4,7 +4,9 @@ import re
 from abc import ABC, abstractmethod
 from typing import Any, TypeVar
 
-from pydantic import BaseModel, SecretStr, ValidationError
+from pydantic import BaseModel, SecretStr
+
+from omnibase_core.errors.exception_groups import VALIDATION_ERRORS
 
 from .model_audit_data import ModelAuditData
 from .model_credential_validation_result import ModelCredentialValidationResult
@@ -243,7 +245,7 @@ class ModelSecureCredentials(BaseModel, ABC):
                             setattr(self, field_name, SecretStr(env_value))
                         else:
                             setattr(self, field_name, env_value)
-                except (TypeError, ValidationError, ValueError) as e:
+                except VALIDATION_ERRORS as e:
                     # Exception handling for field value assignment:
                     # - TypeError: Type mismatch during assignment
                     # - ValidationError: Pydantic field validator rejects the value
@@ -441,7 +443,7 @@ class ModelSecureCredentials(BaseModel, ABC):
         if has_env_vars(env_prefix):
             try:
                 return cls.load_from_env(env_prefix)
-            except (TypeError, ValidationError, ValueError) as e:
+            except VALIDATION_ERRORS as e:
                 # Exception handling for load_from_env abstract method:
                 # - TypeError: Type conversion fails for field value
                 # - ValidationError: Pydantic model validation fails during construction
@@ -457,7 +459,7 @@ class ModelSecureCredentials(BaseModel, ABC):
             if has_env_vars(fallback_prefix):
                 try:
                     return cls.load_from_env(fallback_prefix)
-                except (TypeError, ValidationError, ValueError) as e:
+                except VALIDATION_ERRORS as e:
                     # Exception handling for load_from_env abstract method:
                     # - TypeError: Type conversion fails for field value
                     # - ValidationError: Pydantic model validation fails during construction
