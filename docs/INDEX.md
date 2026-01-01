@@ -287,6 +287,7 @@ def serialize_error(error: ModelOnexError) -> TypedDictValidationErrorSerialized
 | Document | Description | Status |
 |----------|-------------|--------|
 | [**Subcontract Architecture**](architecture/SUBCONTRACT_ARCHITECTURE.md) | Contract system design | ✅ Excellent |
+| [**Handler Contract Guide**](contracts/HANDLER_CONTRACT_GUIDE.md) | Handler contract authoring, ID prefix convention | ✅ Complete |
 | [Approved Union Patterns](patterns/APPROVED_UNION_PATTERNS.md) | Type union patterns | ✅ Available |
 
 ### Project Documentation
@@ -322,6 +323,7 @@ def serialize_error(error: ModelOnexError) -> TypedDictValidationErrorSerialized
 | **Fix slow performance tests** | [Performance Benchmark Thresholds](performance/PERFORMANCE_BENCHMARK_THRESHOLDS.md#ci-performance-degradation) |
 | **Debug async hangs** | [Async Hang Debugging](troubleshooting/ASYNC_HANG_DEBUGGING.md) |
 | **Understand contracts** | [Subcontract Architecture](architecture/SUBCONTRACT_ARCHITECTURE.md) |
+| **Create handler contracts** | [Handler Contract Guide](contracts/HANDLER_CONTRACT_GUIDE.md) |
 | **Use TypedDict for serialization** | [TypedDict Types](#typeddict-types-serialization-boundaries) - Strongly-typed serialization boundaries |
 | **Validate mixin metadata** | [ModelMixinMetadata](../src/omnibase_core/models/core/model_mixin_metadata.py) - Mixin discovery & validation |
 | **Validate docker-compose.yaml** | [ModelDockerComposeManifest](../src/omnibase_core/models/docker/model_docker_compose_manifest.py) - Docker validation |
