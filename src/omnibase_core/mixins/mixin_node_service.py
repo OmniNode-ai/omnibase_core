@@ -292,14 +292,14 @@ class MixinNodeService:
             )
 
         except (
-            ValueError,
-            TypeError,
-            RuntimeError,
             AttributeError,
             KeyError,
-            OSError,
-            TimeoutError,
             ModelOnexError,
+            OSError,
+            RuntimeError,
+            TimeoutError,
+            TypeError,
+            ValueError,
         ) as e:
             # Specific expected exceptions from tool invocation:
             # - ValueError/TypeError: validation and type conversion errors
@@ -458,7 +458,7 @@ class MixinNodeService:
             # CRITICAL: Do not log here - file handles may be closed during teardown
             # Re-raise immediately without any I/O operations
             raise
-        except (RuntimeError, ValueError, OSError) as e:
+        except (OSError, RuntimeError, ValueError) as e:
             self._log_error(f"Service event loop error: {e}")
             raise
 
@@ -495,7 +495,7 @@ class MixinNodeService:
                 # CRITICAL: Do not log here - file handles may be closed during teardown
                 # Re-raise immediately without any I/O operations
                 raise
-            except (RuntimeError, ValueError, OSError) as e:
+            except (OSError, RuntimeError, ValueError) as e:
                 self._log_error(f"Health monitor error: {e}")
                 break  # Exit loop on exception
 
@@ -665,7 +665,7 @@ class MixinNodeService:
             if event_bus:
                 await event_bus.publish(shutdown_event)
 
-        except (RuntimeError, ValueError, ModelOnexError) as e:
+        except (ModelOnexError, RuntimeError, ValueError) as e:
             self._log_error(f"Failed to emit shutdown event: {e}")
 
     async def _cleanup_health_task(self) -> None:
@@ -755,7 +755,7 @@ class MixinNodeService:
             signal.signal(signal.SIGTERM, signal_handler)
             signal.signal(signal.SIGINT, signal_handler)
 
-        except (RuntimeError, ValueError, OSError) as e:
+        except (OSError, RuntimeError, ValueError) as e:
             self._log_warning(f"Could not register signal handlers: {e}")
 
     def _extract_node_name(self) -> str:

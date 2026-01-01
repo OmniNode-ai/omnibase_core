@@ -243,11 +243,11 @@ class ModelSecureCredentials(BaseModel, ABC):
                             setattr(self, field_name, SecretStr(env_value))
                         else:
                             setattr(self, field_name, env_value)
-                except (ValueError, TypeError, ValidationError) as e:
+                except (TypeError, ValidationError, ValueError) as e:
                     # Exception handling for field value assignment:
-                    # - ValueError: Invalid value format (e.g., wrong string format)
                     # - TypeError: Type mismatch during assignment
                     # - ValidationError: Pydantic field validator rejects the value
+                    # - ValueError: Invalid value format (e.g., wrong string format)
                     # Log the specific error for debugging while adding to issues
                     logger.warning(
                         f"Failed to load environment variable {env_var} for field {field_name}: {e!s}",
@@ -441,11 +441,11 @@ class ModelSecureCredentials(BaseModel, ABC):
         if has_env_vars(env_prefix):
             try:
                 return cls.load_from_env(env_prefix)
-            except (ValidationError, ValueError, TypeError) as e:
+            except (TypeError, ValidationError, ValueError) as e:
                 # Exception handling for load_from_env abstract method:
+                # - TypeError: Type conversion fails for field value
                 # - ValidationError: Pydantic model validation fails during construction
                 # - ValueError: Invalid field value format in environment variable
-                # - TypeError: Type conversion fails for field value
                 # We continue to fallback prefixes on failure.
                 logger.debug(
                     f"Failed to load credentials with primary prefix {env_prefix}: {e!s}",
@@ -457,11 +457,11 @@ class ModelSecureCredentials(BaseModel, ABC):
             if has_env_vars(fallback_prefix):
                 try:
                     return cls.load_from_env(fallback_prefix)
-                except (ValidationError, ValueError, TypeError) as e:
+                except (TypeError, ValidationError, ValueError) as e:
                     # Exception handling for load_from_env abstract method:
+                    # - TypeError: Type conversion fails for field value
                     # - ValidationError: Pydantic model validation fails during construction
                     # - ValueError: Invalid field value format in environment variable
-                    # - TypeError: Type conversion fails for field value
                     # We continue to next fallback prefix on failure.
                     logger.debug(
                         f"Failed to load credentials with fallback prefix {fallback_prefix}: {e!s}",

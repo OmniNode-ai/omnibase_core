@@ -610,12 +610,13 @@ class ModelContractReducer(MixinNodeTypeValidator, ModelContractBase):
                     },
                 ),
             ) from e
-        except (  # fallback-ok: wraps unexpected parsing errors in ModelOnexError
+        except (
             AttributeError,
-            ValueError,
-            TypeError,
             KeyError,
+            TypeError,
+            ValueError,
         ) as e:
+            # fallback-ok: wraps unexpected parsing errors in ModelOnexError
             raise ModelOnexError(
                 message=f"Failed to load contract YAML: {e}",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,

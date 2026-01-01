@@ -75,7 +75,7 @@ class ModelConnectionMetrics(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except (ValueError, TypeError, ValidationError) as e:
+        except (TypeError, ValidationError, ValueError) as e:
             raise ModelOnexError(
                 message=f"Operation failed: {e}",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,

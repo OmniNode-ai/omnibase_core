@@ -74,7 +74,7 @@ def _get_node_id_as_uuid(obj: object) -> UUID:
     if isinstance(node_id, str):
         try:
             return UUID(node_id)
-        except (ValueError, AttributeError):
+        except (AttributeError, ValueError):
             pass
     # Fallback: generate new UUID if invalid
     return uuid4()
