@@ -70,7 +70,11 @@ class ModelJsonData(BaseModel):
         # Handle string representation of int
         if isinstance(v, str) and v.isdigit():
             return int(v)
-        return 0
+        # Raise error for unexpected types instead of silently returning 0
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message=f"total_field_count must be int, str (digit), or None, got {type(v).__name__}",
+        )
 
     def get_field_value(self, field_name: str) -> str | float | bool | list[str] | None:
         """ONEX-compatible field value accessor."""

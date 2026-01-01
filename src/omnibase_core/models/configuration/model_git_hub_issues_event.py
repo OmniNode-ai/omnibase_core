@@ -78,7 +78,14 @@ class ModelGitHubIssuesEvent(BaseModel):
         cls, v: ModelGitHubLabel | None, info: ValidationInfo
     ) -> ModelGitHubLabel | None:
         """Ensure label is provided when action requires it."""
-        action = info.data.get("action", "")
+        action_raw = info.data.get("action", "")
+        # Runtime type check for action from info.data
+        if not isinstance(action_raw, str):
+            raise ModelOnexError(
+                f"action must be str, got {type(action_raw).__name__}",
+                EnumCoreErrorCode.VALIDATION_ERROR,
+            )
+        action: str = action_raw
         if action in {"labeled", "unlabeled"} and v is None:
             raise ModelOnexError(
                 f"Action '{action}' requires label data",
@@ -95,7 +102,14 @@ class ModelGitHubIssuesEvent(BaseModel):
         cls, v: ModelGitHubUser | None, info: ValidationInfo
     ) -> ModelGitHubUser | None:
         """Ensure assignee is provided when action requires it."""
-        action = info.data.get("action", "")
+        action_raw = info.data.get("action", "")
+        # Runtime type check for action from info.data
+        if not isinstance(action_raw, str):
+            raise ModelOnexError(
+                f"action must be str, got {type(action_raw).__name__}",
+                EnumCoreErrorCode.VALIDATION_ERROR,
+            )
+        action: str = action_raw
         if action in {"assigned", "unassigned"} and v is None:
             raise ModelOnexError(
                 f"Action '{action}' requires assignee data",

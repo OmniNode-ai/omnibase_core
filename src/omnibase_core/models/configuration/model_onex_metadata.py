@@ -67,9 +67,7 @@ class ModelOnexMetadata(BaseModel):
         default=None,
         description="Optional description of the validator/tool",
     )
-    tags: list[str] | None = Field(
-        default=None, description="Optional list of tags"
-    )
+    tags: list[str] | None = Field(default=None, description="Optional list of tags")
     dependencies: list[str] | None = Field(
         default=None,
         description="Optional list of dependencies",
