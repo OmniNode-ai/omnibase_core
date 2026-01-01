@@ -39,6 +39,7 @@ Related:
 """
 
 import logging
+from collections import Counter
 from pathlib import Path
 
 from pydantic import ValidationError
@@ -74,6 +75,12 @@ class ContractPatchValidator:
         - Profile existence (deferred to factory)
         - Model resolution (deferred to expansion)
         - Capability compatibility (deferred to merge)
+
+    Thread Safety:
+        This validator is stateless and thread-safe. All validation methods
+        create local variables and do not modify instance state. Multiple
+        threads can safely share a single ContractPatchValidator instance,
+        making singleton pattern usage safe for production deployments.
 
     Note:
         Conflict checks (items in both __add and __remove) are handled by
@@ -359,8 +366,7 @@ class ContractPatchValidator:
     def _find_duplicates_in_list(self, names: list[str]) -> set[str]:
         """Find duplicate entries in a list of names.
 
-        Iterates through the list tracking seen items and returns
-        any names that appear more than once.
+        Uses Counter for efficient O(n) duplicate detection.
 
         Args:
             names: List of string names to check for duplicates.
@@ -368,13 +374,7 @@ class ContractPatchValidator:
         Returns:
             Set of names that appear more than once. Empty set if no duplicates.
         """
-        seen: set[str] = set()
-        duplicates: set[str] = set()
-        for name in names:
-            if name in seen:
-                duplicates.add(name)
-            seen.add(name)
-        return duplicates
+        return {name for name, count in Counter(names).items() if count > 1}
 
     def _check_duplicates_in_list(
         self,
@@ -491,7 +491,7 @@ class ContractPatchValidator:
             logger.debug("Descriptor patch has no overrides - issuing warning")
             result.add_issue(
                 severity=EnumValidationSeverity.WARNING,
-                message="Behavior patch is present but has no overrides",
+                message="Behavior patch is present but has no overrides (non-breaking, but likely unintended)",
                 code="EMPTY_DESCRIPTOR_PATCH",
                 suggestion="Remove the empty descriptor field or add behavior overrides",
             )
