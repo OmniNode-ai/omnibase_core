@@ -21,6 +21,9 @@ import re
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors import ModelOnexError
+
 __all__ = ["ModelMetricsContext"]
 
 # W3C Trace Context format patterns
@@ -53,13 +56,19 @@ def _validate_semver(value: str) -> str:
         The validated version string (unchanged if valid)
 
     Raises:
-        ValueError: If the format is invalid
+        ModelOnexError: If the format is invalid
     """
     if not value:
-        raise ValueError("Semantic version cannot be empty")
+        raise ModelOnexError(
+            message="Semantic version cannot be empty",
+            error_code=EnumCoreErrorCode.VALIDATION_FAILED,
+        )
 
     if not _SEMVER_PATTERN.match(value):
-        raise ValueError(f"Invalid semantic version format: '{value}'")
+        raise ModelOnexError(
+            message=f"Invalid semantic version format: '{value}'",
+            error_code=EnumCoreErrorCode.VALIDATION_FAILED,
+        )
 
     return value
 

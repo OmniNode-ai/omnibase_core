@@ -21,6 +21,7 @@ import yaml
 from pydantic import BaseModel, ValidationError
 
 from omnibase_core.enums.enum_handler_capability import EnumHandlerCapability
+from omnibase_core.errors import ModelOnexError
 
 
 @pytest.mark.unit
@@ -224,11 +225,11 @@ class TestEnumHandlerCapabilityHelperMethods:
 
         assert set(values_method) == set(values_iteration)
 
-    def test_assert_exhaustive_raises_assertion_error(self):
-        """Test that assert_exhaustive raises AssertionError."""
+    def test_assert_exhaustive_raises_model_onex_error(self):
+        """Test that assert_exhaustive raises ModelOnexError."""
         # Create a mock "Never" type value - in practice this would be caught
         # by the type checker before runtime, but we test runtime behavior
-        with pytest.raises(AssertionError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             # We need to bypass type checking for this test
             EnumHandlerCapability.assert_exhaustive("unexpected_value")  # type: ignore[arg-type]
 
@@ -237,11 +238,11 @@ class TestEnumHandlerCapabilityHelperMethods:
 
     def test_assert_exhaustive_error_message_format(self):
         """Test the error message format of assert_exhaustive."""
-        with pytest.raises(AssertionError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             EnumHandlerCapability.assert_exhaustive(42)  # type: ignore[arg-type]
 
         error_msg = str(exc_info.value)
-        assert error_msg == "Unhandled enum value: 42"
+        assert "Unhandled enum value: 42" in error_msg
 
 
 @pytest.mark.unit

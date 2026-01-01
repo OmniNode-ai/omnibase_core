@@ -135,11 +135,24 @@ except ImportError:
 class PythonASTValidator(ast.NodeVisitor):
     """AST visitor to validate ID and version field types in Python files."""
 
-    def __init__(self, file_path: str):
+    def __init__(self, file_path: str, source_lines: list[str] | None = None):
         self.file_path = file_path
         self.violations: list[ValidationViolation] = []
         self.imports = set()
         self.current_call_func = None  # Track current function being called
+        # Store source lines for inline comment checking
+        self.source_lines = source_lines or []
+
+        # Bypass comment patterns for inline exemptions
+        self.id_bypass_patterns = [
+            "string-id-ok:",
+            "id-ok:",
+        ]
+        self.version_bypass_patterns = [
+            "string-version-ok:",
+            "version-ok:",
+            "semver-ok:",
+        ]
 
         # Patterns for version fields that should use ModelSemVer
         self.version_patterns = [
@@ -369,6 +382,35 @@ class PythonASTValidator(ast.NodeVisitor):
             return func_node.attr
         return ""
 
+    def _has_bypass_comment(self, line_number: int, bypass_patterns: list[str]) -> bool:
+        """Check if a line has a bypass comment.
+
+        Args:
+            line_number: 1-based line number to check
+            bypass_patterns: List of bypass comment patterns to look for
+
+        Returns:
+            True if a bypass comment is found on the line
+        """
+        if not self.source_lines:
+            return False
+
+        # Convert to 0-based index
+        line_idx = line_number - 1
+        if line_idx < 0 or line_idx >= len(self.source_lines):
+            return False
+
+        line = self.source_lines[line_idx]
+
+        # Check for inline comment with bypass pattern
+        if "#" in line:
+            comment_part = line.split("#", 1)[1]
+            for pattern in bypass_patterns:
+                if pattern in comment_part:
+                    return True
+
+        return False
+
     def _check_field_annotation(
         self, field_name: str, annotation: ast.AST, line_number: int, column: int
     ):
@@ -382,6 +424,9 @@ class PythonASTValidator(ast.NodeVisitor):
         # Check version fields
         if self._matches_patterns(field_name, self.version_patterns):
             if self._is_string_type(annotation_str):
+                # Check for bypass comment
+                if self._has_bypass_comment(line_number, self.version_bypass_patterns):
+                    return
                 suggestion = "Use ModelSemVer instead of str for version fields"
                 self.violations.append(
                     ValidationViolation(
@@ -397,6 +442,9 @@ class PythonASTValidator(ast.NodeVisitor):
         # Check ID fields
         elif self._matches_patterns(field_name, self.id_patterns):
             if self._is_string_type(annotation_str):
+                # Check for bypass comment
+                if self._has_bypass_comment(line_number, self.id_bypass_patterns):
+                    return
                 suggestion = "Use UUID instead of str for ID fields"
                 self.violations.append(
                     ValidationViolation(
@@ -566,7 +614,9 @@ class StringVersionValidator:
         # AST-based validation for ID and version field types
         try:
             tree = ast.parse(content, filename=str(python_path))
-            ast_validator = PythonASTValidator(str(python_path))
+            # Pass source lines to enable inline comment bypass checking
+            source_lines = content.split("\n")
+            ast_validator = PythonASTValidator(str(python_path), source_lines)
             ast_validator.visit(tree)
 
             # Add AST violations to our list

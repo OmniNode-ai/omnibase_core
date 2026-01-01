@@ -1,19 +1,15 @@
-from pydantic import BaseModel, Field
-
 """
 Environment Override Model for ONEX Configuration System.
 
 Strongly typed model for environment variable overrides.
 """
 
+from pydantic import BaseModel, Field
 
-class ModelEnvironmentConfigOverride(BaseModel):
-    """Typed configuration override result from environment variables."""
+from .model_environment_config_override import ModelEnvironmentConfigOverride
 
-    default_mode: str | None = Field(
-        default=None,
-        description="Default mode override from environment",
-    )
+# Re-export from split module
+__all__ = ["ModelEnvironmentOverride", "ModelEnvironmentConfigOverride"]
 
 
 class ModelEnvironmentOverride(BaseModel):

@@ -46,7 +46,7 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.contracts.model_capability_dependency import (
+from omnibase_core.models.contracts.model_contract_capability_dependency import (
     ModelCapabilityDependency,
 )
 from omnibase_core.models.contracts.model_execution_constraints import (
@@ -261,6 +261,7 @@ class ModelHandlerContract(BaseModel):
         description="Tags for categorization and discovery",
     )
 
+    # ONEX_EXCLUDE: dict_str_any - extensibility metadata for contract customization
     metadata: dict[str, Any] = Field(
         default_factory=dict,
         description="Additional metadata for extensibility",

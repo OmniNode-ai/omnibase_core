@@ -376,15 +376,9 @@ class TestHashability:
 
     def test_can_be_used_in_set(self) -> None:
         """Test that dependencies can be added to sets."""
-        dep1 = ModelCapabilityDependency(
-            alias="db", capability="database.relational"
-        )
-        dep2 = ModelCapabilityDependency(
-            alias="db", capability="database.relational"
-        )
-        dep3 = ModelCapabilityDependency(
-            alias="cache", capability="cache.distributed"
-        )
+        dep1 = ModelCapabilityDependency(alias="db", capability="database.relational")
+        dep2 = ModelCapabilityDependency(alias="db", capability="database.relational")
+        dep3 = ModelCapabilityDependency(alias="cache", capability="cache.distributed")
 
         deps = {dep1, dep2, dep3}
         # dep1 and dep2 should deduplicate (same alias + capability)
@@ -392,9 +386,7 @@ class TestHashability:
 
     def test_can_be_used_as_dict_key(self) -> None:
         """Test that dependencies can be used as dict keys."""
-        dep = ModelCapabilityDependency(
-            alias="db", capability="database.relational"
-        )
+        dep = ModelCapabilityDependency(alias="db", capability="database.relational")
         cache = {dep: "resolved_provider"}
         assert cache[dep] == "resolved_provider"
 

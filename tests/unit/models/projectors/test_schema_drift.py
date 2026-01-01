@@ -54,11 +54,11 @@ class TestSchemaDrift:
         # Verify schema file exists
         assert schema_path.exists(), (
             f"Schema file not found: {schema_path}\n"
-            "Generate it with: poetry run python -c \"import json; "
+            'Generate it with: poetry run python -c "import json; '
             "from omnibase_core.models.projectors import ModelProjectorContract; "
             "schema = ModelProjectorContract.model_json_schema(); "
             "open('src/omnibase_core/schemas/projector_contract.schema.json', 'w').write("
-            "json.dumps(schema, indent=2))\""
+            'json.dumps(schema, indent=2))"'
         )
 
         # Load committed schema
@@ -69,13 +69,13 @@ class TestSchemaDrift:
         assert generated == committed, (
             "Schema drift detected! The generated schema differs from the committed file.\n\n"
             "If this change is intentional, regenerate the schema file:\n"
-            "    poetry run python -c \"\n"
+            '    poetry run python -c "\n'
             "    import json\n"
             "    from omnibase_core.models.projectors import ModelProjectorContract\n"
             "    schema = ModelProjectorContract.model_json_schema()\n"
             "    with open('src/omnibase_core/schemas/projector_contract.schema.json', 'w') as f:\n"
             "        json.dump(schema, f, indent=2)\n"
-            "    \"\n\n"
+            '    "\n\n'
             "If unintentional, revert the model changes that caused the drift."
         )
 

@@ -4,12 +4,15 @@ Re-export module for function node metadata components including documentation s
 metadata summary, and the main metadata class.
 """
 
-from .model_function_metadata_summary import ModelFunctionMetadataSummary
+from omnibase_core.types.typed_dict_function_metadata_summary import (
+    TypedDictFunctionMetadataSummary,
+)
+
 from .model_function_node_metadata_class import ModelFunctionNodeMetadata
 from .model_function_node_metadata_config import ModelFunctionNodeMetadataConfig
 
 __all__ = [
-    "ModelFunctionMetadataSummary",
+    "TypedDictFunctionMetadataSummary",
     "ModelFunctionNodeMetadata",
     "ModelFunctionNodeMetadataConfig",
 ]
