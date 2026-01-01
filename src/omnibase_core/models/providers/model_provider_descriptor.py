@@ -65,7 +65,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.types.json_types import JsonValue
+from omnibase_core.types.json_types import JsonType as JsonValue
 
 if TYPE_CHECKING:
     from omnibase_core.models.health.model_health_status import ModelHealthStatus
