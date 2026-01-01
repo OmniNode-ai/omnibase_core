@@ -337,6 +337,7 @@ class ModelSecureEventEnvelope(ModelEventEnvelope[ModelOnexEvent]):
         # For encrypted envelopes, use a sentinel for payload to ensure consistent
         # hashing regardless of whether plaintext has been cleared.
         # The encrypted_payload provides cryptographic integrity via AES-GCM.
+        # ONEX_EXCLUDE: dict_str_any - hash computation from model_dump serialization
         payload_for_hash: dict[str, Any] | str
         if self.is_encrypted and self.encrypted_payload:
             payload_for_hash = "[ENCRYPTED_PAYLOAD]"
@@ -347,6 +348,7 @@ class ModelSecureEventEnvelope(ModelEventEnvelope[ModelOnexEvent]):
                 else str(self.payload)
             )
 
+        # ONEX_EXCLUDE: dict_str_any - hash computation from model_dump serialization
         hash_input: dict[str, Any] = {
             "envelope_id": self.envelope_id,
             "payload": payload_for_hash,

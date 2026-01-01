@@ -22,6 +22,7 @@ class ModelWorkflowFactory:
     def create_workflow(
         self,
         workflow_type: str,
+        # ONEX_EXCLUDE: dict_str_any - factory method config varies by workflow_type
         config: dict[str, Any] | None = None,
     ) -> Any:
         """Create workflow instance by type."""

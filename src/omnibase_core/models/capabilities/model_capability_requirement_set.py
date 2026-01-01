@@ -536,6 +536,65 @@ class ModelRequirementSet(BaseModel):
             hints={**self.hints, **other.hints},
         )
 
+    def matches(
+        self,
+        # ONEX_EXCLUDE: dict_str_any - provider attributes for matching
+        provider: dict[str, JsonType],
+    ) -> tuple[bool, float, list[str]]:
+        """
+        Check if a provider satisfies this requirement set.
+
+        Evaluates the provider against all constraint tiers:
+        1. must - All must match or provider is excluded
+        2. forbid - Any match excludes the provider
+        3. prefer - Matching preferences increase score
+        4. hints - Not evaluated (tie-breaking only)
+
+        Args:
+            provider: Provider attributes to check against requirements.
+
+        Returns:
+            Tuple of (matches: bool, score: float, warnings: list[str]).
+            - matches: True if provider passes must/forbid constraints
+            - score: Number of prefer constraints satisfied (0.0 if not matching)
+            - warnings: List of unmet prefer constraints
+        """
+        warnings: list[str] = []
+
+        # Check must constraints - all must be satisfied
+        for key, required_value in self.must.items():
+            if key not in provider:
+                return (False, 0.0, [f"Missing required attribute '{key}'"])
+            if provider[key] != required_value:
+                return (
+                    False,
+                    0.0,
+                    [
+                        f"Attribute '{key}' value '{provider[key]}' != required '{required_value}'"
+                    ],
+                )
+
+        # Check forbid constraints - none must match
+        for key, forbidden_value in self.forbid.items():
+            if key in provider and provider[key] == forbidden_value:
+                return (
+                    False,
+                    0.0,
+                    [f"Has forbidden attribute '{key}'='{forbidden_value}'"],
+                )
+
+        # Score by prefer constraints
+        score = 0.0
+        for key, preferred_value in self.prefer.items():
+            if key in provider and provider[key] == preferred_value:
+                score += 1.0
+            else:
+                warnings.append(
+                    f"Prefer constraint '{key}'='{preferred_value}' not met"
+                )
+
+        return (True, score, warnings)
+
     def __repr__(self) -> str:
         """
         Return detailed representation for debugging.

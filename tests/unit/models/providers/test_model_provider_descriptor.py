@@ -702,9 +702,7 @@ class TestModelProviderDescriptorAttributes:
     in the attributes dictionary.
     """
 
-    def test_attributes_default_empty_dict(
-        self, valid_descriptor_kwargs: dict
-    ) -> None:
+    def test_attributes_default_empty_dict(self, valid_descriptor_kwargs: dict) -> None:
         """Test that attributes default to empty dict."""
         descriptor = ModelProviderDescriptor(**valid_descriptor_kwargs)
         assert descriptor.attributes == {}
@@ -722,9 +720,7 @@ class TestModelProviderDescriptorAttributes:
         assert descriptor.attributes["region"] == "us-east-1"
         assert descriptor.attributes["tier"] == "premium"
 
-    def test_attributes_accept_int_values(
-        self, valid_descriptor_kwargs: dict
-    ) -> None:
+    def test_attributes_accept_int_values(self, valid_descriptor_kwargs: dict) -> None:
         """Test that integer values are accepted in attributes."""
         descriptor = ModelProviderDescriptor(
             **valid_descriptor_kwargs,
@@ -752,9 +748,7 @@ class TestModelProviderDescriptorAttributes:
         assert descriptor.attributes["latency_ms"] == 0.5
         assert descriptor.attributes["threshold"] == 0.75
 
-    def test_attributes_accept_bool_values(
-        self, valid_descriptor_kwargs: dict
-    ) -> None:
+    def test_attributes_accept_bool_values(self, valid_descriptor_kwargs: dict) -> None:
         """Test that boolean values are accepted in attributes."""
         descriptor = ModelProviderDescriptor(
             **valid_descriptor_kwargs,
@@ -769,9 +763,7 @@ class TestModelProviderDescriptorAttributes:
         assert descriptor.attributes["read_only"] is False
         assert descriptor.attributes["auto_reconnect"] is True
 
-    def test_attributes_accept_none_values(
-        self, valid_descriptor_kwargs: dict
-    ) -> None:
+    def test_attributes_accept_none_values(self, valid_descriptor_kwargs: dict) -> None:
         """Test that None values are accepted in attributes."""
         descriptor = ModelProviderDescriptor(
             **valid_descriptor_kwargs,
@@ -784,9 +776,7 @@ class TestModelProviderDescriptorAttributes:
         assert descriptor.attributes["optional_config"] is None
         assert descriptor.attributes["fallback_host"] is None
 
-    def test_attributes_accept_list_values(
-        self, valid_descriptor_kwargs: dict
-    ) -> None:
+    def test_attributes_accept_list_values(self, valid_descriptor_kwargs: dict) -> None:
         """Test that list values are accepted in attributes."""
         descriptor = ModelProviderDescriptor(
             **valid_descriptor_kwargs,
@@ -804,9 +794,7 @@ class TestModelProviderDescriptorAttributes:
         ]
         assert descriptor.attributes["ports"] == [5432, 5433, 5434]
 
-    def test_attributes_accept_dict_values(
-        self, valid_descriptor_kwargs: dict
-    ) -> None:
+    def test_attributes_accept_dict_values(self, valid_descriptor_kwargs: dict) -> None:
         """Test that dict values are accepted in attributes."""
         descriptor = ModelProviderDescriptor(
             **valid_descriptor_kwargs,
@@ -853,9 +841,12 @@ class TestModelProviderDescriptorAttributes:
         assert (
             descriptor.attributes["database"]["settings"]["nested"]["deep_value"] == 42
         )
-        assert descriptor.attributes["database"]["settings"]["nested"]["deep_list"][2][
-            "even_deeper"
-        ] == "value"
+        assert (
+            descriptor.attributes["database"]["settings"]["nested"]["deep_list"][2][
+                "even_deeper"
+            ]
+            == "value"
+        )
 
     def test_attributes_accept_mixed_value_types(
         self, valid_descriptor_kwargs: dict

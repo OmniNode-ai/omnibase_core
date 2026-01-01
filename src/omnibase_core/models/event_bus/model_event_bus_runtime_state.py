@@ -249,10 +249,10 @@ class ModelEventBusRuntimeState(BaseModel):
                 Use ``has_contract_path()`` to check if explicitly set.
 
         Raises:
-            ModelOnexError: If node_name is empty or whitespace-only
+            ModelOnexError: If node_name is empty or whitespace-only,
+                or if node_name exceeds MAX_NAME_LENGTH,
+                or if contract_path exceeds MAX_PATH_LENGTH
                 (error code: VALIDATION_FAILED).
-            ValueError: If node_name exceeds MAX_NAME_LENGTH or contract_path
-                exceeds MAX_PATH_LENGTH.
 
         Example:
             >>> state = ModelEventBusRuntimeState.create_unbound()
@@ -279,14 +279,20 @@ class ModelEventBusRuntimeState(BaseModel):
         # Explicit max_length validation since direct field assignment bypasses
         # Pydantic's field validation. This ensures consistency with field constraints.
         if len(node_name) > MAX_NAME_LENGTH:
-            raise ValueError(
-                f"node_name exceeds max length of {MAX_NAME_LENGTH} "
-                f"(got {len(node_name)} characters)"
+            raise ModelOnexError(
+                message=(
+                    f"node_name exceeds max length of {MAX_NAME_LENGTH} "
+                    f"(got {len(node_name)} characters)"
+                ),
+                error_code=EnumCoreErrorCode.VALIDATION_FAILED,
             )
         if contract_path is not None and len(contract_path) > MAX_PATH_LENGTH:
-            raise ValueError(
-                f"contract_path exceeds max length of {MAX_PATH_LENGTH} "
-                f"(got {len(contract_path)} characters)"
+            raise ModelOnexError(
+                message=(
+                    f"contract_path exceeds max length of {MAX_PATH_LENGTH} "
+                    f"(got {len(contract_path)} characters)"
+                ),
+                error_code=EnumCoreErrorCode.VALIDATION_FAILED,
             )
         self.node_name = node_name
         self.contract_path = contract_path

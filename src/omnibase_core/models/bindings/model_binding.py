@@ -37,11 +37,11 @@ Example Usage:
     >>> binding = ModelBinding(
     ...     dependency_alias="db",
     ...     capability="database.relational",
-    ...     provider_id="550e8400-e29b-41d4-a716-446655440000",
+    ...     resolved_provider="550e8400-e29b-41d4-a716-446655440000",
     ...     adapter="omnibase_infra.adapters.PostgresAdapter",
     ...     connection_ref="secrets://postgres/primary",
     ...     requirements_hash="a1b2c3d4e5f6",
-    ...     profile_id="production",
+    ...     resolution_profile="production",
     ...     resolved_at=datetime.now(timezone.utc),
     ...     resolution_notes=["Selected based on transaction support requirement"],
     ...     candidates_considered=3,
@@ -58,7 +58,7 @@ Integration with Capability Resolution:
         # Resolution produces bindings
         bindings = resolver.resolve(
             dependencies=handler.capability_dependencies,
-            profile_id="production",
+            resolution_profile="production",
         )
 
         # Bindings map aliases to providers
@@ -96,8 +96,8 @@ class ModelBinding(BaseModel):
 
     A binding captures the complete result of capability resolution, including:
     - What was requested (dependency_alias, capability)
-    - What was selected (provider_id, adapter, connection_ref)
-    - Resolution context (requirements_hash, profile_id, resolved_at)
+    - What was selected (resolved_provider, adapter, connection_ref)
+    - Resolution context (requirements_hash, resolution_profile, resolved_at)
     - Audit information (resolution_notes, candidates_considered)
 
     Bindings are immutable records that can be cached, serialized, and used
@@ -109,7 +109,7 @@ class ModelBinding(BaseModel):
             the resolved provider (e.g., "db", "cache", "vectors").
         capability: The capability identifier that was requested. Follows
             the dotted notation pattern (e.g., "database.relational").
-        provider_id: The UUID of the selected provider as a string. Uses
+        resolved_provider: The UUID of the selected provider as a string. Uses
             string representation for JSON serialization compatibility.
         adapter: Python import path for the adapter class that provides
             the capability (e.g., "omnibase_infra.adapters.PostgresAdapter").
@@ -118,7 +118,7 @@ class ModelBinding(BaseModel):
         requirements_hash: Hash of the requirements that were used for
             resolution. Used for cache invalidation - if requirements
             change, cached bindings become invalid.
-        profile_id: Identifier of the profile that influenced resolution.
+        resolution_profile: Identifier of the profile that influenced resolution.
             Profiles can affect provider selection, scoring, and preferences.
         resolved_at: Timestamp when this binding was created. Used for
             cache expiration and audit trails.
@@ -134,11 +134,11 @@ class ModelBinding(BaseModel):
         >>> binding = ModelBinding(
         ...     dependency_alias="db",
         ...     capability="database.relational",
-        ...     provider_id="550e8400-e29b-41d4-a716-446655440000",
+        ...     resolved_provider="550e8400-e29b-41d4-a716-446655440000",
         ...     adapter="omnibase_infra.adapters.PostgresAdapter",
         ...     connection_ref="secrets://postgres/primary",
         ...     requirements_hash="sha256:abc123",
-        ...     profile_id="production",
+        ...     resolution_profile="production",
         ...     resolved_at=datetime.now(timezone.utc),
         ... )
 
@@ -147,11 +147,11 @@ class ModelBinding(BaseModel):
         >>> binding_with_notes = ModelBinding(
         ...     dependency_alias="cache",
         ...     capability="cache.distributed",
-        ...     provider_id="660e8400-e29b-41d4-a716-446655440001",
+        ...     resolved_provider="660e8400-e29b-41d4-a716-446655440001",
         ...     adapter="omnibase_infra.adapters.RedisAdapter",
         ...     connection_ref="secrets://redis/primary",
         ...     requirements_hash="sha256:def456",
-        ...     profile_id="production",
+        ...     resolution_profile="production",
         ...     resolved_at=datetime.now(timezone.utc),
         ...     resolution_notes=[
         ...         "Selected redis provider for cache.distributed",
@@ -203,7 +203,7 @@ class ModelBinding(BaseModel):
     )
 
     # What it resolved to
-    provider_id: str = Field(
+    resolved_provider: str = Field(
         ...,
         description=(
             "UUID of the selected provider as a string for JSON serialization "
@@ -240,7 +240,7 @@ class ModelBinding(BaseModel):
         min_length=1,
     )
 
-    profile_id: str = Field(
+    resolution_profile: str = Field(
         ...,
         description=(
             "Identifier of the profile that influenced resolution. "
@@ -326,10 +326,10 @@ class ModelBinding(BaseModel):
             )
         return stripped
 
-    @field_validator("provider_id", mode="after")
+    @field_validator("resolved_provider", mode="after")
     @classmethod
-    def validate_provider_id(cls, v: str) -> str:
-        """Validate that provider_id is non-empty after stripping.
+    def validate_resolved_provider(cls, v: str) -> str:
+        """Validate that resolved_provider is non-empty after stripping.
 
         Args:
             v: The provider ID string to validate.
@@ -338,7 +338,7 @@ class ModelBinding(BaseModel):
             The validated provider ID string (stripped of whitespace).
 
         Raises:
-            ModelOnexError: If the provider_id is empty or whitespace-only.
+            ModelOnexError: If the resolved_provider is empty or whitespace-only.
 
         Note:
             This validator only ensures non-empty. UUID format validation
@@ -348,8 +348,8 @@ class ModelBinding(BaseModel):
         if not stripped:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message="provider_id cannot be empty or whitespace-only",
-                context={"provider_id": v},
+                message="resolved_provider cannot be empty or whitespace-only",
+                context={"resolved_provider": v},
             )
         return stripped
 
@@ -430,10 +430,10 @@ class ModelBinding(BaseModel):
             )
         return stripped
 
-    @field_validator("profile_id", mode="after")
+    @field_validator("resolution_profile", mode="after")
     @classmethod
-    def validate_profile_id(cls, v: str) -> str:
-        """Validate that profile_id is non-empty after stripping.
+    def validate_resolution_profile(cls, v: str) -> str:
+        """Validate that resolution_profile is non-empty after stripping.
 
         Args:
             v: The profile ID string to validate.
@@ -442,14 +442,14 @@ class ModelBinding(BaseModel):
             The validated profile ID string (stripped of whitespace).
 
         Raises:
-            ModelOnexError: If the profile_id is empty or whitespace-only.
+            ModelOnexError: If the resolution_profile is empty or whitespace-only.
         """
         stripped = v.strip()
         if not stripped:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message="profile_id cannot be empty or whitespace-only",
-                context={"profile_id": v},
+                message="resolution_profile cannot be empty or whitespace-only",
+                context={"resolution_profile": v},
             )
         return stripped
 
@@ -509,18 +509,18 @@ class ModelBinding(BaseModel):
         """Return a concise representation for debugging.
 
         Returns:
-            String representation showing alias, capability, and provider_id.
+            String representation showing alias, capability, and resolved_provider.
 
         Examples:
             >>> from datetime import datetime, timezone
             >>> binding = ModelBinding(
             ...     dependency_alias="db",
             ...     capability="database.relational",
-            ...     provider_id="550e8400-e29b-41d4-a716-446655440000",
+            ...     resolved_provider="550e8400-e29b-41d4-a716-446655440000",
             ...     adapter="test.Adapter",
             ...     connection_ref="env://TEST",
             ...     requirements_hash="hash123",
-            ...     profile_id="prod",
+            ...     resolution_profile="prod",
             ...     resolved_at=datetime.now(timezone.utc),
             ... )
             >>> "db -> database.relational" in repr(binding)
@@ -530,42 +530,44 @@ class ModelBinding(BaseModel):
             f"ModelBinding("
             f"alias={self.dependency_alias!r}, "
             f"capability={self.capability!r}, "
-            f"provider_id={self.provider_id!r})"
+            f"resolved_provider={self.resolved_provider!r})"
         )
 
     def __str__(self) -> str:
         """Return concise string representation.
 
         Returns:
-            String in format 'alias -> capability @ provider_id'.
+            String in format 'alias -> capability @ resolved_provider'.
 
         Examples:
             >>> from datetime import datetime, timezone
             >>> binding = ModelBinding(
             ...     dependency_alias="db",
             ...     capability="database.relational",
-            ...     provider_id="550e8400",
+            ...     resolved_provider="550e8400",
             ...     adapter="test.Adapter",
             ...     connection_ref="env://TEST",
             ...     requirements_hash="hash123",
-            ...     profile_id="prod",
+            ...     resolution_profile="prod",
             ...     resolved_at=datetime.now(timezone.utc),
             ... )
             >>> str(binding)
             'db -> database.relational @ 550e8400'
         """
-        return f"{self.dependency_alias} -> {self.capability} @ {self.provider_id}"
+        return (
+            f"{self.dependency_alias} -> {self.capability} @ {self.resolved_provider}"
+        )
 
     def __eq__(self, other: object) -> bool:
         """Compare bindings by identity fields for deduplication consistency.
 
-        Compares only identity fields (dependency_alias, capability, provider_id)
+        Compares only identity fields (dependency_alias, capability, resolved_provider)
         to match ``__hash__`` behavior. This ensures the hash/equality contract
         is satisfied: if ``hash(a) == hash(b)``, then ``a == b`` must also be
         possible to return True.
 
         Metadata fields (resolved_at, resolution_notes, candidates_considered,
-        adapter, connection_ref, requirements_hash, profile_id) are intentionally
+        adapter, connection_ref, requirements_hash, resolution_profile) are intentionally
         NOT compared. Two bindings representing the same logical resolution
         (same alias, capability, and provider) are considered equal even if they
         have different timestamps or audit metadata.
@@ -588,15 +590,15 @@ class ModelBinding(BaseModel):
             >>> t2 = datetime(2024, 6, 1, tzinfo=timezone.utc)
             >>> b1 = ModelBinding(
             ...     dependency_alias="db", capability="database.relational",
-            ...     provider_id="uuid-1", adapter="pkg.Adapter",
+            ...     resolved_provider="uuid-1", adapter="pkg.Adapter",
             ...     connection_ref="env://DB", requirements_hash="h1",
-            ...     profile_id="prod", resolved_at=t1,
+            ...     resolution_profile="prod", resolved_at=t1,
             ... )
             >>> b2 = ModelBinding(
             ...     dependency_alias="db", capability="database.relational",
-            ...     provider_id="uuid-1", adapter="pkg.Adapter",
+            ...     resolved_provider="uuid-1", adapter="pkg.Adapter",
             ...     connection_ref="env://DB", requirements_hash="h1",
-            ...     profile_id="prod", resolved_at=t2,  # Different timestamp
+            ...     resolution_profile="prod", resolved_at=t2,  # Different timestamp
             ... )
             >>> b1 == b2  # Same identity, different metadata
             True
@@ -611,14 +613,14 @@ class ModelBinding(BaseModel):
         return (
             self.dependency_alias == other.dependency_alias
             and self.capability == other.capability
-            and self.provider_id == other.provider_id
+            and self.resolved_provider == other.resolved_provider
         )
 
     def __hash__(self) -> int:
         """Enable use in sets and as dict keys for binding deduplication.
 
         Hash is computed from identity fields (dependency_alias, capability,
-        provider_id). Metadata fields (resolved_at, resolution_notes, etc.) are
+        resolved_provider). Metadata fields (resolved_at, resolution_notes, etc.) are
         not included since two bindings with the same resolution but different
         timestamps should hash to the same value for deduplication purposes.
 
@@ -627,12 +629,12 @@ class ModelBinding(BaseModel):
         equal have the same hash value.
 
         Returns:
-            Hash value computed from (dependency_alias, capability, provider_id).
+            Hash value computed from (dependency_alias, capability, resolved_provider).
 
         See Also:
             ``__eq__``: Uses the same identity fields for consistency.
         """
-        return hash((self.dependency_alias, self.capability, self.provider_id))
+        return hash((self.dependency_alias, self.capability, self.resolved_provider))
 
 
 __all__ = ["ModelBinding"]

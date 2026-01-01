@@ -210,8 +210,10 @@ class ManualYamlValidationDetector:
 
         # Pattern 2: Direct YAML field checking
         if isinstance(node, ast.Subscript):
-            if self._is_yaml_field_access(node) and not self._is_in_safe_yaml_loader(
-                file_path
+            if (
+                self._is_yaml_field_access(node)
+                and not self._is_in_safe_yaml_loader(file_path)
+                and not self._is_in_test_file(file_path)
             ):
                 errors.append(
                     f"Line {node.lineno}: Direct YAML field access detected - "

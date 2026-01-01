@@ -37,11 +37,11 @@ from pydantic import Field, field_validator
 from omnibase_core.models.events.contract_validation.model_contract_ref import (
     ModelContractRef,
 )
+from omnibase_core.models.events.contract_validation.model_contract_validation_context import (
+    ModelValidationContext,
+)
 from omnibase_core.models.events.contract_validation.model_contract_validation_event_base import (
     ModelContractValidationEventBase,
-)
-from omnibase_core.models.events.contract_validation.model_validation_context import (
-    ModelValidationContext,
 )
 
 __all__ = ["ModelContractValidationStartedEvent", "CONTRACT_VALIDATION_STARTED_EVENT"]
@@ -93,7 +93,7 @@ class ModelContractValidationStartedEvent(ModelContractValidationEventBase):
         description="Event type identifier.",
     )
 
-    validator_set_id: str | None = Field(
+    validator_set_id: str | None = Field(  # string-id-ok: validator set identifier
         default=None,
         description="Optional identifier of the validator set being used for validation.",
     )
@@ -121,7 +121,7 @@ class ModelContractValidationStartedEvent(ModelContractValidationEventBase):
         run_id: UUID,
         context: ModelValidationContext,
         *,
-        validator_set_id: str | None = None,
+        validator_set_id: str | None = None,  # string-id-ok: validator set identifier
         actor: UUID | None = None,
         contract_ref: ModelContractRef | None = None,
         correlation_id: UUID | None = None,

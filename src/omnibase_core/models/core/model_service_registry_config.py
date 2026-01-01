@@ -85,7 +85,7 @@ class ModelDiscoveryFilters(BaseModel):
         default=None,
         description="Filter by namespace",
     )
-    version_prefix: str | None = Field(
+    version_prefix: str | None = Field(  # string-version-ok: filter prefix pattern
         default=None,
         description="Filter by version prefix",
     )

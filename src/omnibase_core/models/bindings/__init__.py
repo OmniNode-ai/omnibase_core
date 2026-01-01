@@ -48,11 +48,11 @@ Creating a binding after resolution:
     >>> binding = ModelBinding(
     ...     dependency_alias="db",
     ...     capability="database.relational",
-    ...     provider_id="550e8400-e29b-41d4-a716-446655440000",
+    ...     resolved_provider="550e8400-e29b-41d4-a716-446655440000",
     ...     adapter="omnibase_infra.adapters.PostgresAdapter",
     ...     connection_ref="secrets://postgres/primary",
     ...     requirements_hash="sha256:abc123",
-    ...     profile_id="production",
+    ...     resolution_profile="production",
     ...     resolved_at=datetime.now(timezone.utc),
     ...     resolution_notes=["Selected based on transaction support"],
     ...     candidates_considered=3,
