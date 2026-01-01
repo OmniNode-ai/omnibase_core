@@ -10,7 +10,9 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.capabilities.model_capability_dependency import (
     ModelCapabilityDependency,
 )
-from omnibase_core.models.capabilities.model_requirement_set import ModelRequirementSet
+from omnibase_core.models.capabilities.model_capability_requirement_set import (
+    ModelRequirementSet,
+)
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 

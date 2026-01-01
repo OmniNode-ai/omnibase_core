@@ -57,7 +57,6 @@ class BuilderExecutionPlan:
         builder = BuilderExecutionPlan(
             registry=registry,
             contract_category=EnumHandlerTypeCategory.COMPUTE,
-            enforce_hook_typing=True,
         )
         plan, warnings = builder.build()
 
@@ -103,7 +102,7 @@ class BuilderExecutionPlan:
         self,
         registry: RegistryHook,
         contract_category: EnumHandlerTypeCategory | None = None,
-        enforce_hook_typing: bool = False,
+        enforce_hook_typing: bool = True,
     ) -> None:
         """
         Initialize the BuilderExecutionPlan.

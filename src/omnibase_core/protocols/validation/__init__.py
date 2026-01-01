@@ -14,6 +14,11 @@ Design Principles:
 
 from __future__ import annotations
 
+# Contract Validation Invariant Checker (OMN-1146)
+# Import at package level to avoid long import paths
+from omnibase_core.protocols.protocol_contract_validation_invariant_checker import (
+    ProtocolContractValidationInvariantChecker,
+)
 from omnibase_core.protocols.validation.protocol_architecture_compliance import (
     ProtocolArchitectureCompliance,
 )
@@ -52,6 +57,8 @@ __all__ = [
     "ProtocolValidationResult",
     "ProtocolValidator",
     "ProtocolValidationDecorator",
+    # Contract Validation Invariant Checker (OMN-1146)
+    "ProtocolContractValidationInvariantChecker",
     # Compliance
     "ProtocolComplianceRule",
     "ProtocolComplianceViolation",

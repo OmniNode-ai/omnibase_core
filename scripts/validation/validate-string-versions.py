@@ -236,7 +236,7 @@ class PythonASTValidator(ast.NodeVisitor):
             # These are human-readable identifiers for pipeline observability, not UUIDs
             "contract_id",  # Contract identifier (human-readable, e.g., "my-contract")
             "hook_id",  # Hook identifier (human-readable, e.g., "pre-validation-hook")
-            "capability_id",  # Capability identifier (human-readable, e.g., "cache-support")
+            "capability_id",  # Capability identifier (human-readable, e.g., "database.relational")
             "from_handler_id",  # Dependency edge source handler (human-readable)
             "to_handler_id",  # Dependency edge target handler (human-readable)
             "handler_descriptor_id",  # Handler descriptor ID (human-readable)
