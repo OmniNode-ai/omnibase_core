@@ -9,7 +9,9 @@ from pydantic import ValidationError
 from omnibase_core.models.capabilities.model_capability_dependency import (
     ModelCapabilityDependency,
 )
-from omnibase_core.models.capabilities.model_requirement_set import ModelRequirementSet
+from omnibase_core.models.capabilities.model_capability_requirement_set import (
+    ModelRequirementSet,
+)
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 

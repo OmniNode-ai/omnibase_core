@@ -504,7 +504,7 @@ The following enhancements are planned for future releases:
 ## Related Documentation
 
 - [ModelCapabilityDependency](../../src/omnibase_core/models/capabilities/model_capability_dependency.py) - Source implementation
-- [ModelRequirementSet](../../src/omnibase_core/models/capabilities/model_requirement_set.py) - Requirement tiers
+- [ModelRequirementSet](../../src/omnibase_core/models/capabilities/model_capability_requirement_set.py) - Requirement tiers
 - [Dependency Injection](DEPENDENCY_INJECTION.md) - Container-based DI
 - [Contract System](CONTRACT_SYSTEM.md) - Contract architecture
 

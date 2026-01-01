@@ -157,6 +157,11 @@ from omnibase_core.protocols.notifications import (
 )
 
 # =============================================================================
+# Event Construction Protocol Exports
+# =============================================================================
+from omnibase_core.protocols.protocol_from_event import ProtocolFromEvent
+
+# =============================================================================
 # Resolution Module Exports (OMN-1123)
 # =============================================================================
 from omnibase_core.protocols.resolution import ProtocolDependencyResolver
@@ -208,6 +213,7 @@ from omnibase_core.protocols.validation import (
     ProtocolComplianceRule,
     ProtocolComplianceValidator,
     ProtocolComplianceViolation,
+    ProtocolContractValidationInvariantChecker,
     ProtocolONEXStandards,
     ProtocolQualityValidator,
     ProtocolValidationDecorator,
@@ -311,6 +317,10 @@ __all__ = [
     # ==========================================================================
     "ProtocolCanonicalSerializer",
     # ==========================================================================
+    # Event Construction Protocol
+    # ==========================================================================
+    "ProtocolFromEvent",
+    # ==========================================================================
     # Compute Module
     # ==========================================================================
     "ProtocolAsyncCircuitBreaker",
@@ -368,4 +378,6 @@ __all__ = [
     "ProtocolComplianceReport",
     "ProtocolComplianceValidator",
     "ProtocolQualityValidator",
+    # Contract Validation Invariant Checker (OMN-1146)
+    "ProtocolContractValidationInvariantChecker",
 ]

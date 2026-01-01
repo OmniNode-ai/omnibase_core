@@ -68,6 +68,13 @@ from .circular_import_validator import CircularImportValidator
 # ModelValidationSuite is available via __getattr__ (emits deprecation warning)
 from .cli import ServiceValidationSuite
 
+# Import contract validation invariant checker (OMN-1146)
+from .contract_validation_invariant_checker import (
+    ContractValidationEventType,
+    ContractValidationInvariantChecker,
+    ModelContractValidationEvent,
+)
+
 # =============================================================================
 # ALIAS LOADING STRATEGY: __getattr__ vs Direct Alias
 # =============================================================================
@@ -369,6 +376,10 @@ __all__ = [
     "validate_execution_mode_string",
     "validate_unique_step_ids",
     "validate_workflow_definition",
+    # Contract validation invariant checker (OMN-1146)
+    "ContractValidationInvariantChecker",
+    "ModelContractValidationEvent",
+    "ContractValidationEventType",
     # Reserved enum validation (OMN-669, OMN-675)
     # NOTE: validate_execution_mode takes EnumExecutionMode (type-safe)
     # while validate_execution_mode_string takes str (for YAML/config parsing)

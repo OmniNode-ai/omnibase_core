@@ -11,7 +11,7 @@ from pydantic import ValidationError
 from omnibase_core.models.capabilities.model_capability_dependency import (
     ModelCapabilityDependency,
 )
-from omnibase_core.models.capabilities.model_requirement_set import (
+from omnibase_core.models.capabilities.model_capability_requirement_set import (
     ModelRequirementSet,
     is_json_primitive,
     is_requirement_dict,
