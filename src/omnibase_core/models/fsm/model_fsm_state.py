@@ -15,6 +15,11 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from omnibase_core.utils.util_validators import (
+    convert_dict_to_frozen_pairs,
+    convert_list_to_tuple,
+)
+
 
 class ModelFsmState(BaseModel):
     """
@@ -83,9 +88,7 @@ class ModelFsmState(BaseModel):
         cls, v: list[str] | tuple[str, ...] | object
     ) -> tuple[str, ...]:
         """Convert list of entry actions to tuple for deep immutability."""
-        if isinstance(v, list):
-            return tuple(v)
-        return v  # type: ignore[return-value]
+        return convert_list_to_tuple(v)
 
     @field_validator("exit_actions", mode="before")
     @classmethod
@@ -93,9 +96,7 @@ class ModelFsmState(BaseModel):
         cls, v: list[str] | tuple[str, ...] | object
     ) -> tuple[str, ...]:
         """Convert list of exit actions to tuple for deep immutability."""
-        if isinstance(v, list):
-            return tuple(v)
-        return v  # type: ignore[return-value]
+        return convert_list_to_tuple(v)
 
     @field_validator("properties", mode="before")
     @classmethod
@@ -107,9 +108,7 @@ class ModelFsmState(BaseModel):
         Keys are sorted for deterministic ordering, which ensures consistent
         hashing and comparison of model instances.
         """
-        if isinstance(v, dict):
-            return tuple(sorted(v.items()))
-        return v  # type: ignore[return-value]
+        return convert_dict_to_frozen_pairs(v, sort_keys=True)
 
     model_config = ConfigDict(
         extra="ignore",

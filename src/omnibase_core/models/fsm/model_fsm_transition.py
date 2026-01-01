@@ -14,6 +14,8 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from omnibase_core.utils.util_validators import convert_list_to_tuple
+
 
 class ModelFsmTransition(BaseModel):
     """
@@ -55,9 +57,7 @@ class ModelFsmTransition(BaseModel):
         cls, v: list[object] | tuple[object, ...] | object
     ) -> tuple[str, ...]:
         """Convert list of conditions to tuple for deep immutability."""
-        if isinstance(v, list):
-            return tuple(v)  # type: ignore[return-value]
-        return v  # type: ignore[return-value]
+        return convert_list_to_tuple(v)
 
     @field_validator("actions", mode="before")
     @classmethod
@@ -65,9 +65,7 @@ class ModelFsmTransition(BaseModel):
         cls, v: list[object] | tuple[object, ...] | object
     ) -> tuple[str, ...]:
         """Convert list of actions to tuple for deep immutability."""
-        if isinstance(v, list):
-            return tuple(v)  # type: ignore[return-value]
-        return v  # type: ignore[return-value]
+        return convert_list_to_tuple(v)
 
     model_config = ConfigDict(
         extra="ignore",

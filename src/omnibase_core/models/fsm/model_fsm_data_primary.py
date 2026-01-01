@@ -15,6 +15,11 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from omnibase_core.utils.util_validators import (
+    convert_dict_to_frozen_pairs,
+    convert_list_to_tuple,
+)
+
 from .model_fsm_state import ModelFsmState
 from .model_fsm_transition import ModelFsmTransition
 
@@ -82,9 +87,7 @@ class ModelFsmData(BaseModel):
         cls, v: list[object] | tuple[object, ...] | object
     ) -> tuple[object, ...]:
         """Convert list of states to tuple for deep immutability."""
-        if isinstance(v, list):
-            return tuple(v)
-        return v  # type: ignore[return-value]
+        return convert_list_to_tuple(v)
 
     @field_validator("transitions", mode="before")
     @classmethod
@@ -92,9 +95,7 @@ class ModelFsmData(BaseModel):
         cls, v: list[object] | tuple[object, ...] | object
     ) -> tuple[object, ...]:
         """Convert list of transitions to tuple for deep immutability."""
-        if isinstance(v, list):
-            return tuple(v)
-        return v  # type: ignore[return-value]
+        return convert_list_to_tuple(v)
 
     @field_validator("global_actions", mode="before")
     @classmethod
@@ -102,9 +103,7 @@ class ModelFsmData(BaseModel):
         cls, v: list[str] | tuple[str, ...] | object
     ) -> tuple[str, ...]:
         """Convert list of global actions to tuple for deep immutability."""
-        if isinstance(v, list):
-            return tuple(v)
-        return v  # type: ignore[return-value]
+        return convert_list_to_tuple(v)
 
     @field_validator("variables", mode="before")
     @classmethod
@@ -116,9 +115,7 @@ class ModelFsmData(BaseModel):
         Keys are sorted for deterministic ordering, which ensures consistent
         hashing and comparison of model instances.
         """
-        if isinstance(v, dict):
-            return tuple(sorted(v.items()))
-        return v  # type: ignore[return-value]
+        return convert_dict_to_frozen_pairs(v, sort_keys=True)
 
     @field_validator("metadata", mode="before")
     @classmethod
@@ -130,9 +127,7 @@ class ModelFsmData(BaseModel):
         Keys are sorted for deterministic ordering, which ensures consistent
         hashing and comparison of model instances.
         """
-        if isinstance(v, dict):
-            return tuple(sorted(v.items()))
-        return v  # type: ignore[return-value]
+        return convert_dict_to_frozen_pairs(v, sort_keys=True)
 
     def get_state_by_name(self, name: str) -> ModelFsmState | None:
         """Get a state by name."""
