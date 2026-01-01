@@ -1,27 +1,13 @@
-from pydantic import Field
-
 """
 Connection pool recommendations model to replace Dict[str, Any] usage.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
-
-class ModelPoolPerformanceProfile(BaseModel):
-    """Driver-specific performance profile for connection pools."""
-
-    recommended_pool_size: int = Field(
-        default=10, description="Recommended pool size for this driver"
-    )
-    recommended_max_overflow: int = Field(
-        default=20, description="Recommended max overflow for this driver"
-    )
-    connection_overhead: str = Field(
-        default="medium", description="Connection overhead level (low/medium/high)"
-    )
-    concurrent_connections_limit: int = Field(
-        default=100, description="Maximum concurrent connections supported"
-    )
+# Re-export from split module
+from omnibase_core.models.configuration.model_pool_performance_profile import (
+    ModelPoolPerformanceProfile,
+)
 
 
 class ModelPoolRecommendations(BaseModel):
@@ -86,3 +72,9 @@ class ModelPoolRecommendations(BaseModel):
         default=None,
         description="Driver-specific performance profile",
     )
+
+
+__all__ = [
+    "ModelPoolPerformanceProfile",  # Re-export from split module
+    "ModelPoolRecommendations",
+]

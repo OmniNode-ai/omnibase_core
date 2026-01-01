@@ -88,6 +88,9 @@ from omnibase_core.models.events.contract_validation.model_contract_merge_starte
 from omnibase_core.models.events.contract_validation.model_contract_ref import (
     ModelContractRef,
 )
+from omnibase_core.models.events.contract_validation.model_contract_validation_context import (
+    ModelValidationContext,
+)
 from omnibase_core.models.events.contract_validation.model_contract_validation_event_base import (
     ModelContractValidationEventBase,
 )
@@ -102,9 +105,6 @@ from omnibase_core.models.events.contract_validation.model_contract_validation_p
 from omnibase_core.models.events.contract_validation.model_contract_validation_started_event import (
     CONTRACT_VALIDATION_STARTED_EVENT,
     ModelContractValidationStartedEvent,
-)
-from omnibase_core.models.events.contract_validation.model_validation_context import (
-    ModelValidationContext,
 )
 
 __all__ = [

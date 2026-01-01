@@ -5,12 +5,12 @@ Pure functions for executing FSM transitions from ModelFSMSubcontract.
 No side effects - returns results and intents.
 
 Typing: Strongly typed with FSMContextType for runtime context flexibility.
-Context dictionaries use FSMContextType (dict[str, Any]) to allow dynamic execution data
+Context dictionaries use FSMContextType (dict[str, object]) to allow dynamic execution data
 while maintaining type clarity for FSM-specific usage.
 """
 
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Any, Literal, cast
+from typing import TYPE_CHECKING, Literal, cast
 
 if TYPE_CHECKING:
     from typing import SupportsFloat
@@ -420,7 +420,7 @@ async def _evaluate_conditions(
     return True
 
 
-def _get_nested_field_value(context: FSMContextType, field_path: str) -> Any:
+def _get_nested_field_value(context: FSMContextType, field_path: str) -> object:
     """
     Get value from nested dict using dot notation path.
 
@@ -453,7 +453,7 @@ def _get_nested_field_value(context: FSMContextType, field_path: str) -> Any:
 
     # Split and traverse for nested paths
     segments = field_path.split(".")
-    current: Any = context
+    current: object = context
 
     for segment in segments:
         if not isinstance(current, dict):

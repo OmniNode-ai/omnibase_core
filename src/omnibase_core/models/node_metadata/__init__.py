@@ -11,9 +11,6 @@ from omnibase_core.models.node_metadata.model_function_deprecation_info import (
 from omnibase_core.models.node_metadata.model_function_documentation import (
     ModelFunctionDocumentation,
 )
-from omnibase_core.models.node_metadata.model_function_metadata_summary import (
-    ModelFunctionMetadataSummary,
-)
 from omnibase_core.models.node_metadata.model_function_node import ModelFunctionNode
 from omnibase_core.models.node_metadata.model_function_node_core import (
     ModelFunctionNodeCore,
@@ -103,12 +100,15 @@ from omnibase_core.models.node_metadata.model_node_type import ModelNodeType
 from omnibase_core.models.node_metadata.model_nodeconfigurationnumericvalue import (
     ModelNodeConfigurationNumericValue,
 )
+from omnibase_core.types.typed_dict_function_metadata_summary import (
+    TypedDictFunctionMetadataSummary,
+)
 
 __all__ = [
     # Function node metadata
     "ModelFunctionDeprecationInfo",
     "ModelFunctionDocumentation",
-    "ModelFunctionMetadataSummary",
+    "TypedDictFunctionMetadataSummary",
     "ModelFunctionNode",
     "ModelFunctionNodeCore",
     "ModelFunctionNodeMetadata",

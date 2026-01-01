@@ -137,11 +137,12 @@ class ModelCapabilityDependency(BaseModel):
         description="If True, missing capability is fatal. If False, allows degraded mode.",
     )
 
-    version_range: str | None = Field(
+    version_range: str | None = Field(  # string-version-ok: semver range expression
         default=None,
         description="Optional semver range for capability version (e.g., '>=1.0.0 <2.0.0')",
     )
 
+    # ONEX_EXCLUDE: dict_str_any - vendor hints are arbitrary key-value pairs
     vendor_hints: dict[str, Any] = Field(
         default_factory=dict,
         description="Non-binding vendor preference hints (documentation only)",
@@ -195,7 +196,9 @@ class ModelCapabilityDependency(BaseModel):
         return v
 
     def matches_provider(
-        self, provider: dict[str, Any]
+        self,
+        # ONEX_EXCLUDE: dict_str_any - provider capability mapping
+        provider: dict[str, Any],
     ) -> tuple[bool, float, list[str]]:
         """
         Check if a provider satisfies this capability dependency.
