@@ -21,7 +21,7 @@ Logging Conventions:
 Error Code Conventions:
     Error codes in this module follow these patterns:
     - DUPLICATE_LIST_ENTRIES: Duplicate items within an add list
-    - EMPTY_DESCRIPTOR_PATCH: Descriptor patch with no overrides
+    - EMPTY_DESCRIPTOR_PATCH: Behavior patch (descriptor field) with no overrides
     - PURITY_IDEMPOTENT_MISMATCH: Conflicting purity/idempotent settings
     - NEW_CONTRACT_IDENTITY: Informational - new contract identity declared
     - NON_STANDARD_PROFILE_NAME: Profile name doesn't follow conventions
@@ -356,6 +356,51 @@ class ContractPatchValidator:
     # Private Validation Methods
     # =========================================================================
 
+    def _find_duplicates_in_list(self, names: list[str]) -> set[str]:
+        """Find duplicate entries in a list of names.
+
+        Iterates through the list tracking seen items and returns
+        any names that appear more than once.
+
+        Args:
+            names: List of string names to check for duplicates.
+
+        Returns:
+            Set of names that appear more than once. Empty set if no duplicates.
+        """
+        seen: set[str] = set()
+        duplicates: set[str] = set()
+        for name in names:
+            if name in seen:
+                duplicates.add(name)
+            seen.add(name)
+        return duplicates
+
+    def _check_duplicates_in_list(
+        self,
+        names: list[str],
+        field_name: str,
+        result: ModelValidationResult[None],
+    ) -> None:
+        """Check for duplicate entries in a list and add errors if found.
+
+        Uses _find_duplicates_in_list to detect duplicates and adds an error
+        to the validation result with the DUPLICATE_LIST_ENTRIES code.
+
+        Args:
+            names: List of string names to check for duplicates.
+            field_name: Human-readable field name for error messages
+                (e.g., "handler", "dependency", "capability output").
+            result: The validation result to append issues to.
+        """
+        duplicates = self._find_duplicates_in_list(names)
+        if duplicates:
+            logger.debug(f"Found duplicate {field_name}s in add list: {duplicates}")
+            result.add_error(
+                f"Duplicate {field_name}(s) in add list: {duplicates}",
+                code="DUPLICATE_LIST_ENTRIES",
+            )
+
     def _validate_list_operation_duplicates(
         self,
         patch: ModelContractPatch,
@@ -385,90 +430,29 @@ class ContractPatchValidator:
         # Check for duplicate handlers within __add
         if patch.handlers__add:
             handler_names = [h.name for h in patch.handlers__add]
-            seen_handlers: set[str] = set()
-            duplicate_handlers: set[str] = set()
-            for name in handler_names:
-                if name in seen_handlers:
-                    duplicate_handlers.add(name)
-                seen_handlers.add(name)
-            if duplicate_handlers:
-                logger.debug(
-                    f"Found duplicate handlers in add list: {duplicate_handlers}"
-                )
-                result.add_error(
-                    f"Duplicate handler(s) in add list: {duplicate_handlers}",
-                    code="DUPLICATE_LIST_ENTRIES",
-                )
+            self._check_duplicates_in_list(handler_names, "handler", result)
 
         # Check for duplicate dependencies within __add
         if patch.dependencies__add:
             dep_names = [d.name for d in patch.dependencies__add]
-            seen_deps: set[str] = set()
-            duplicate_deps: set[str] = set()
-            for name in dep_names:
-                if name in seen_deps:
-                    duplicate_deps.add(name)
-                seen_deps.add(name)
-            if duplicate_deps:
-                logger.debug(
-                    f"Found duplicate dependencies in add list: {duplicate_deps}"
-                )
-                result.add_error(
-                    f"Duplicate dependency(s) in add list: {duplicate_deps}",
-                    code="DUPLICATE_LIST_ENTRIES",
-                )
+            self._check_duplicates_in_list(dep_names, "dependency", result)
 
         # Check for duplicate capability outputs within __add
         if patch.capability_outputs__add:
             cap_names = [cap.name for cap in patch.capability_outputs__add]
-            seen: set[str] = set()
-            duplicates: set[str] = set()
-            for name in cap_names:
-                if name in seen:
-                    duplicates.add(name)
-                seen.add(name)
-            if duplicates:
-                logger.debug(
-                    f"Found duplicate capability outputs in add list: {duplicates}"
-                )
-                result.add_error(
-                    f"Duplicate capability output(s) in add list: {duplicates}",
-                    code="DUPLICATE_LIST_ENTRIES",
-                )
+            self._check_duplicates_in_list(cap_names, "capability output", result)
 
         # Check for duplicate capability inputs within __add
         if patch.capability_inputs__add:
-            seen_inputs: set[str] = set()
-            duplicate_inputs: set[str] = set()
-            for name in patch.capability_inputs__add:
-                if name in seen_inputs:
-                    duplicate_inputs.add(name)
-                seen_inputs.add(name)
-            if duplicate_inputs:
-                logger.debug(
-                    f"Found duplicate capability inputs in add list: {duplicate_inputs}"
-                )
-                result.add_error(
-                    f"Duplicate capability input(s) in add list: {duplicate_inputs}",
-                    code="DUPLICATE_LIST_ENTRIES",
-                )
+            self._check_duplicates_in_list(
+                list(patch.capability_inputs__add), "capability input", result
+            )
 
         # Check for duplicate consumed events within __add
         if patch.consumed_events__add:
-            seen_events: set[str] = set()
-            duplicate_events: set[str] = set()
-            for event in patch.consumed_events__add:
-                if event in seen_events:
-                    duplicate_events.add(event)
-                seen_events.add(event)
-            if duplicate_events:
-                logger.debug(
-                    f"Found duplicate consumed events in add list: {duplicate_events}"
-                )
-                result.add_error(
-                    f"Duplicate consumed event(s) in add list: {duplicate_events}",
-                    code="DUPLICATE_LIST_ENTRIES",
-                )
+            self._check_duplicates_in_list(
+                list(patch.consumed_events__add), "consumed event", result
+            )
 
     def _validate_descriptor_patch(
         self,
