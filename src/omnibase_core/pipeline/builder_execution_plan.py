@@ -57,7 +57,6 @@ class BuilderExecutionPlan:
         builder = BuilderExecutionPlan(
             registry=registry,
             contract_category=EnumHandlerTypeCategory.COMPUTE,
-            enforce_hook_typing=True,
         )
         plan, warnings = builder.build()
 

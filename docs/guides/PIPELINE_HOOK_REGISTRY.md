@@ -1188,6 +1188,118 @@ cleanup = ModelPipelineHook(
 
 ## Migration Notes
 
+### Hook Typing Enforcement (OMN-1157) - Breaking Change
+
+**Version**: v0.6.0+
+
+**What Changed**: The `enforce_hook_typing` parameter in `BuilderExecutionPlan` now defaults to `True` (was `False`).
+
+| Aspect | Before (v0.5.x) | After (v0.6.0+) |
+|--------|-----------------|-----------------|
+| **Default behavior** | Type mismatches produce warnings | Type mismatches raise `HookTypeMismatchError` |
+| **Parameter default** | `enforce_hook_typing=False` | `enforce_hook_typing=True` |
+| **Impact** | Silent failures possible | Fail-fast on type errors |
+
+#### Impact on Existing Code
+
+If your code:
+1. **Uses typed hooks** (`handler_type_category` set on hooks)
+2. **Has a `contract_category`** set on the builder
+3. **Has type mismatches** between hook types and contract category
+
+**Then**: Your code will now raise `HookTypeMismatchError` at build time instead of producing a warning.
+
+#### How to Identify Affected Code
+
+```bash
+# Find code that uses BuilderExecutionPlan with contract_category
+grep -rn "BuilderExecutionPlan" --include="*.py" | grep "contract_category"
+
+# Find hooks with handler_type_category set
+grep -rn "handler_type_category=" --include="*.py"
+```
+
+#### Migration Steps
+
+**Option 1: Fix Type Mismatches (Recommended)**
+
+Ensure your hook types match the contract category:
+
+```python
+from omnibase_core.pipeline import BuilderExecutionPlan, ModelPipelineHook
+from omnibase_core.enums import EnumHandlerTypeCategory
+
+# Hook type MUST match contract_category
+hook = ModelPipelineHook(
+    hook_id="my-hook",
+    phase="execute",
+    callable_ref="my.hook",
+    handler_type_category=EnumHandlerTypeCategory.COMPUTE,  # Must match builder
+)
+
+registry.register(hook)
+registry.freeze()
+
+builder = BuilderExecutionPlan(
+    registry=registry,
+    contract_category=EnumHandlerTypeCategory.COMPUTE,  # Matches hook type
+    # enforce_hook_typing=True is now the default
+)
+plan, warnings = builder.build()  # No error - types match
+```
+
+**Option 2: Use Generic Hooks**
+
+Generic hooks (no `handler_type_category`) pass validation for any contract:
+
+```python
+# Generic hook - passes for any contract_category
+hook = ModelPipelineHook(
+    hook_id="generic-hook",
+    phase="execute",
+    callable_ref="my.hook",
+    # handler_type_category not set - this is a generic hook
+)
+```
+
+**Option 3: Opt-Out (Not Recommended for Production)**
+
+For gradual migration, explicitly set `enforce_hook_typing=False`:
+
+```python
+# Opt-out: warning-only mode (not recommended for production)
+builder = BuilderExecutionPlan(
+    registry=registry,
+    contract_category=EnumHandlerTypeCategory.COMPUTE,
+    enforce_hook_typing=False,  # Explicit opt-out to legacy behavior
+)
+plan, warnings = builder.build()
+
+# Check warnings for type mismatches
+for warning in warnings:
+    if warning.code == "HOOK_TYPE_MISMATCH":
+        print(f"Warning: {warning.message}")
+```
+
+**Warning**: Opting out masks potential configuration errors. Use only during migration.
+
+#### Why This Change?
+
+1. **Fail-fast behavior**: Catches configuration errors at build time, not runtime
+2. **Type safety**: Ensures hooks are compatible with their intended contract
+3. **Production reliability**: Prevents silent failures from misconfigured pipelines
+4. **ONEX principles**: Aligns with strict type enforcement across the framework
+
+#### Quick Migration Checklist
+
+- [ ] Search codebase for `BuilderExecutionPlan` usage with `contract_category`
+- [ ] Review hooks for `handler_type_category` settings
+- [ ] Fix type mismatches OR use generic hooks (no `handler_type_category`)
+- [ ] Remove explicit `enforce_hook_typing=False` after migration is complete
+- [ ] Run tests to verify no `HookTypeMismatchError` is raised unexpectedly
+
+**See also**: [CHANGELOG.md](../../CHANGELOG.md) for full release notes and additional migration examples.
+
 ### Backwards Compatibility Aliases
 
 The module provides backwards compatibility aliases:
