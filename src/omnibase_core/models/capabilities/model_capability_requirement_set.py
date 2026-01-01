@@ -54,7 +54,6 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.types.json_types import JsonType
 
-
 # =============================================================================
 # TypeGuard Functions for Runtime Type Narrowing
 # =============================================================================

@@ -46,9 +46,9 @@ Thread Safety:
         - start_event_listener() is called (listener thread started)
         - publish_event() or publish_completion_event() operations occur
 
-        If bind_*() methods are called after the flag is set, a WARNING is
-        emitted via structured logging. This helps developers identify
-        thread-unsafe binding patterns without breaking backwards compatibility.
+        If bind_*() methods are called after the flag is set, a ModelOnexError
+        is raised (fail-fast behavior). This prevents thread-unsafe binding
+        patterns from causing subtle race conditions in production.
 """
 
 import threading
@@ -59,38 +59,14 @@ from typing import (
     Any,
     ClassVar,
     Generic,
-    Protocol,
     TypeVar,
     cast,
-    runtime_checkable,
 )
 from uuid import UUID
 
 # Generic type parameters for typed event processing
 InputStateT = TypeVar("InputStateT")
 OutputStateT = TypeVar("OutputStateT")
-
-
-@runtime_checkable
-class ProtocolFromEvent(Protocol):
-    """Protocol for classes that support construction from ModelOnexEvent.
-
-    This protocol enables type-safe checking of the from_event class method
-    pattern used by input state classes that can be constructed from events.
-
-    Example:
-        >>> class MyInputState:
-        ...     @classmethod
-        ...     def from_event(cls, event: ModelOnexEvent) -> "MyInputState":
-        ...         return cls(...)
-        >>> isinstance(MyInputState, ProtocolFromEvent)  # True at runtime
-    """
-
-    @classmethod
-    def from_event(cls, event: Any) -> Any:
-        """Construct an instance from a ModelOnexEvent."""
-        ...
-
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_execution_shape import EnumMessageCategory
@@ -103,7 +79,7 @@ from omnibase_core.models.events.model_topic_naming import (
 )
 from omnibase_core.models.mixins.model_completion_data import ModelCompletionData
 from omnibase_core.models.mixins.model_log_data import ModelLogData
-from omnibase_core.protocols import ProtocolEventEnvelope
+from omnibase_core.protocols import ProtocolEventEnvelope, ProtocolFromEvent
 from omnibase_core.protocols.event_bus import (
     ProtocolEventBus,
     ProtocolEventBusRegistry,
@@ -187,22 +163,23 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
         See module docstring for detailed lock hierarchy and thread lifecycle documentation.
 
     Strict Binding Mode:
-        By default, calling bind_*() methods after the mixin is "in use" (i.e., after
-        start_event_listener() or publish operations) only emits a WARNING log. This
-        maintains backwards compatibility while alerting developers to potential issues.
+        By default (STRICT_BINDING_MODE=True), calling bind_*() methods after the mixin
+        is "in use" (i.e., after start_event_listener() or publish operations) raises
+        ModelOnexError with error_code=INVALID_STATE. This fail-fast behavior prevents
+        subtle race conditions from reaching production.
 
-        For stricter enforcement, enable STRICT_BINDING_MODE by subclassing:
+        For gradual migration or compatibility with legacy code, disable strict mode:
 
-            class MyStrictNode(MixinEventBus[InputT, OutputT]):
-                STRICT_BINDING_MODE: ClassVar[bool] = True
+            class MyLegacyNode(MixinEventBus[InputT, OutputT]):
+                STRICT_BINDING_MODE: ClassVar[bool] = False
 
-        When STRICT_BINDING_MODE is True, bind_*() calls after the mixin is in use will
-        raise ModelOnexError with error_code=INVALID_STATE instead of just warning.
+        When STRICT_BINDING_MODE is False, bind_*() calls after the mixin is in use will
+        emit a WARNING log instead of raising an error.
 
-        This is useful for:
-        - Development/testing environments where you want to catch misuse early
-        - High-reliability systems where thread-unsafe patterns must be hard failures
-        - CI/CD pipelines where warnings might be missed but errors are caught
+        The default strict mode is recommended for:
+        - Production systems where thread-unsafe patterns must be hard failures
+        - CI/CD pipelines where errors are caught but warnings might be missed
+        - New code where you want to enforce correct patterns from the start
     """
 
     # Class-level lock for thread-safe lazy initialization of instance locks.
@@ -214,15 +191,15 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
     # free-threaded Python builds (PEP 703).
     _class_init_lock: threading.Lock = threading.Lock()
 
-    # Strict binding mode flag. When True, bind_*() calls after the mixin is
-    # "in use" (after start_event_listener() or publish operations) will raise
-    # ModelOnexError instead of just emitting a warning. Override in subclasses
-    # to enable strict enforcement.
+    # Strict binding mode flag. When True (the default), bind_*() calls after
+    # the mixin is "in use" (after start_event_listener() or publish operations)
+    # will raise ModelOnexError instead of just emitting a warning. Override in
+    # subclasses to disable strict enforcement for legacy compatibility.
     #
-    # Example:
-    #     class MyStrictNode(MixinEventBus[InputT, OutputT]):
-    #         STRICT_BINDING_MODE: ClassVar[bool] = True
-    STRICT_BINDING_MODE: ClassVar[bool] = False
+    # Example (to disable strict mode for legacy code):
+    #     class MyLegacyNode(MixinEventBus[InputT, OutputT]):
+    #         STRICT_BINDING_MODE: ClassVar[bool] = False
+    STRICT_BINDING_MODE: ClassVar[bool] = True
 
     # --- Lazy State Accessors (avoid MRO hazards) ---
 
@@ -379,25 +356,36 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
         """Mark the mixin as 'in use', locking further bind_*() calls.
 
         After this method is called, any subsequent bind_*() calls will
-        emit a WARNING to alert developers of potential thread-safety issues.
+        raise ModelOnexError (if STRICT_BINDING_MODE is True, the default)
+        or emit a WARNING to alert developers of potential thread-safety issues.
 
         This is called automatically when:
         - start_event_listener() creates a listener thread
         - publish_event() or publish_completion_event() performs publishing
+
+        Thread Safety:
+            This method is thread-safe - the flag is set atomically under
+            the mixin lock to prevent race conditions between check and bind.
         """
-        object.__setattr__(self, "_mixin_binding_locked", True)
+        with self._mixin_lock:
+            object.__setattr__(self, "_mixin_binding_locked", True)
 
     def _warn_if_binding_locked(self, method_name: str) -> None:
         """Emit a warning or raise an error if bind_*() is called after mixin is in use.
 
+        .. deprecated::
+            This method is deprecated and will be removed in v1.0.
+            The check-and-bind logic is now inlined into bind_*() methods
+            and executed atomically under the mixin lock to prevent race conditions.
+
         This method implements runtime misuse detection for thread-unsafe
         binding patterns. The behavior depends on the STRICT_BINDING_MODE class variable:
 
-        - STRICT_BINDING_MODE = False (default): Emits a structured WARNING log.
-          This maintains backwards compatibility while alerting developers.
+        - STRICT_BINDING_MODE = True (default): Raises ModelOnexError with INVALID_STATE.
+          This is the recommended mode for production to catch misuse early.
 
-        - STRICT_BINDING_MODE = True: Raises ModelOnexError with INVALID_STATE.
-          This is useful for development/testing or high-reliability systems.
+        - STRICT_BINDING_MODE = False: Emits a structured WARNING log.
+          Use this for gradual migration or compatibility with legacy code.
 
         Args:
             method_name: The name of the bind method being called
@@ -407,26 +395,22 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
             ModelOnexError: If STRICT_BINDING_MODE is True and the mixin is already
                 in use (binding is locked). Error code is INVALID_STATE.
 
+        Thread Safety:
+            This method MUST only be called while holding self._mixin_lock.
+            The bind_*() methods now inline this logic to ensure atomic
+            check-and-bind operations, eliminating the previous race condition.
+
         Note:
             The warning/error includes the method name and node name for easy
             identification of problematic code paths in logs.
 
-            This is a best-effort detection mechanism for debugging. It is NOT a
-            hard guarantee and may miss concurrent bind-after-publish scenarios
-            due to race conditions between the check and bind operations. The
-            _is_binding_locked() check and subsequent bind_*() operations are not
-            atomic, so Thread A could check the lock, Thread B could publish
-            (setting the lock), and then Thread A continues binding without
-            warning. Always call bind_*() in __init__ before sharing the instance
-            across threads.
-
         Example:
-            To enable strict mode, subclass and override STRICT_BINDING_MODE:
+            To disable strict mode (allow warn-only), subclass and override:
 
-                class MyStrictNode(MixinEventBus[InputT, OutputT]):
-                    STRICT_BINDING_MODE: ClassVar[bool] = True
+                class MyLegacyNode(MixinEventBus[InputT, OutputT]):
+                    STRICT_BINDING_MODE: ClassVar[bool] = False
 
-            Now bind_*() calls after start_event_listener() or publish will raise.
+            Now bind_*() calls after start_event_listener() or publish will warn.
         """
         if self._is_binding_locked():
             message = (
@@ -461,14 +445,20 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
         subsequent publish operations.
 
         Thread Safety:
-            This method is NOT thread-safe. It should only be called during
-            __init__ before the mixin instance is shared across threads.
-            A WARNING is emitted if called after the mixin is in use
-            (e.g., after start_event_listener() or publish operations).
+            This method uses atomic check-and-bind under the mixin lock.
+            It should only be called during __init__ before the mixin
+            instance is shared across threads. If called after the mixin
+            is in use (after start_event_listener() or publish operations),
+            a ModelOnexError is raised (STRICT_BINDING_MODE=True, default)
+            or a WARNING is emitted (STRICT_BINDING_MODE=False).
 
         Args:
             event_bus: The event bus instance implementing ProtocolEventBus.
                 Must support publish() or publish_async() methods.
+
+        Raises:
+            ModelOnexError: If STRICT_BINDING_MODE is True and the mixin is
+                already in use (binding is locked). Error code is INVALID_STATE.
 
         Note:
             After binding, is_bound flag is set to True on the runtime state.
@@ -479,13 +469,36 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
             >>> node.bind_event_bus(event_bus)
             >>> node.publish_completion_event("complete", data)  # Now works
         """
-        # Ensure runtime state exists BEFORE any calls to get_node_name()
-        # (used by _warn_if_binding_locked and logging)
+        # Ensure runtime state exists BEFORE acquiring lock
+        # (state creation doesn't need lock protection)
         state = self._ensure_runtime_state()
-        self._warn_if_binding_locked("bind_event_bus")
-        object.__setattr__(self, "_bound_event_bus", event_bus)
-        state.is_bound = True
 
+        # Atomic check-and-bind under lock to prevent race conditions
+        with self._mixin_lock:
+            if self._is_binding_locked():
+                message = (
+                    "MIXIN_BIND: bind_event_bus() called after mixin is in use. "
+                    "bind_*() methods should be called in __init__ before sharing across threads."
+                )
+                if self.STRICT_BINDING_MODE:
+                    raise ModelOnexError(
+                        message=message,
+                        error_code=EnumCoreErrorCode.INVALID_STATE,
+                        context={
+                            "method_name": "bind_event_bus",
+                            "node_name": self.get_node_name(),
+                            "class_name": self.__class__.__name__,
+                        },
+                    )
+                emit_log_event(
+                    LogLevel.WARNING,
+                    message,
+                    ModelLogData(node_name=self.get_node_name()),
+                )
+            object.__setattr__(self, "_bound_event_bus", event_bus)
+            state.is_bound = True
+
+        # Log outside lock (avoid holding locks during I/O)
         emit_log_event(
             LogLevel.DEBUG,
             "MIXIN_BIND: Event bus bound to mixin",
@@ -500,14 +513,20 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
         will be used for all publishing operations.
 
         Thread Safety:
-            This method is NOT thread-safe. It should only be called during
-            __init__ before the mixin instance is shared across threads.
-            A WARNING is emitted if called after the mixin is in use
-            (e.g., after start_event_listener() or publish operations).
+            This method uses atomic check-and-bind under the mixin lock.
+            It should only be called during __init__ before the mixin
+            instance is shared across threads. If called after the mixin
+            is in use (after start_event_listener() or publish operations),
+            a ModelOnexError is raised (STRICT_BINDING_MODE=True, default)
+            or a WARNING is emitted (STRICT_BINDING_MODE=False).
 
         Args:
             registry: A registry implementing ProtocolEventBusRegistry.
                 Must have an event_bus property that returns ProtocolEventBus.
+
+        Raises:
+            ModelOnexError: If STRICT_BINDING_MODE is True and the mixin is
+                already in use (binding is locked). Error code is INVALID_STATE.
 
         Note:
             If registry.event_bus is not None, is_bound flag is set to True.
@@ -518,14 +537,37 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
             >>> node.bind_registry(my_registry)
             >>> # Event bus is accessed via registry.event_bus
         """
-        # Ensure runtime state exists BEFORE any calls to get_node_name()
-        # (used by _warn_if_binding_locked and logging)
+        # Ensure runtime state exists BEFORE acquiring lock
+        # (state creation doesn't need lock protection)
         state = self._ensure_runtime_state()
-        self._warn_if_binding_locked("bind_registry")
-        object.__setattr__(self, "_bound_registry", registry)
-        if registry.event_bus is not None:
-            state.is_bound = True
 
+        # Atomic check-and-bind under lock to prevent race conditions
+        with self._mixin_lock:
+            if self._is_binding_locked():
+                message = (
+                    "MIXIN_BIND: bind_registry() called after mixin is in use. "
+                    "bind_*() methods should be called in __init__ before sharing across threads."
+                )
+                if self.STRICT_BINDING_MODE:
+                    raise ModelOnexError(
+                        message=message,
+                        error_code=EnumCoreErrorCode.INVALID_STATE,
+                        context={
+                            "method_name": "bind_registry",
+                            "node_name": self.get_node_name(),
+                            "class_name": self.__class__.__name__,
+                        },
+                    )
+                emit_log_event(
+                    LogLevel.WARNING,
+                    message,
+                    ModelLogData(node_name=self.get_node_name()),
+                )
+            object.__setattr__(self, "_bound_registry", registry)
+            if registry.event_bus is not None:
+                state.is_bound = True
+
+        # Log outside lock (avoid holding locks during I/O)
         emit_log_event(
             LogLevel.DEBUG,
             "MIXIN_BIND: Registry bound to mixin",
@@ -539,10 +581,12 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
         which event types this node should listen to and publish.
 
         Thread Safety:
-            This method is NOT thread-safe. It should only be called during
-            __init__ before the mixin instance is shared across threads.
-            A WARNING is emitted if called after the mixin is in use
-            (e.g., after start_event_listener() or publish operations).
+            This method uses atomic check-and-bind under the mixin lock.
+            It should only be called during __init__ before the mixin
+            instance is shared across threads. If called after the mixin
+            is in use (after start_event_listener() or publish operations),
+            a ModelOnexError is raised (STRICT_BINDING_MODE=True, default)
+            or a WARNING is emitted (STRICT_BINDING_MODE=False).
 
         Args:
             contract_path: Absolute or relative path to the ONEX contract
@@ -552,6 +596,8 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
 
         Raises:
             ModelOnexError: If contract_path is empty or whitespace-only.
+            ModelOnexError: If STRICT_BINDING_MODE is True and the mixin is
+                already in use (binding is locked). Error code is INVALID_STATE.
 
         Note:
             The contract file is not loaded immediately; it is read when
@@ -563,12 +609,7 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
             a previously bound contract path, use _event_bus_runtime_state.reset()
             followed by re-binding with the desired configuration.
         """
-        # Ensure runtime state exists BEFORE any calls to get_node_name()
-        # (used by _warn_if_binding_locked and logging)
-        state = self._ensure_runtime_state()
-        self._warn_if_binding_locked("bind_contract_path")
-
-        # Validate contract_path - consistent with ModelEventBusRuntimeState.bind()
+        # Validate contract_path BEFORE acquiring lock (fail-fast validation)
         if not contract_path or not contract_path.strip():
             raise ModelOnexError(
                 message="contract_path must be a non-empty string for binding; "
@@ -580,7 +621,33 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
                 },
             )
 
-        state.contract_path = contract_path
+        # Ensure runtime state exists BEFORE acquiring lock
+        # (state creation doesn't need lock protection)
+        state = self._ensure_runtime_state()
+
+        # Atomic check-and-bind under lock to prevent race conditions
+        with self._mixin_lock:
+            if self._is_binding_locked():
+                message = (
+                    "MIXIN_BIND: bind_contract_path() called after mixin is in use. "
+                    "bind_*() methods should be called in __init__ before sharing across threads."
+                )
+                if self.STRICT_BINDING_MODE:
+                    raise ModelOnexError(
+                        message=message,
+                        error_code=EnumCoreErrorCode.INVALID_STATE,
+                        context={
+                            "method_name": "bind_contract_path",
+                            "node_name": self.get_node_name(),
+                            "class_name": self.__class__.__name__,
+                        },
+                    )
+                emit_log_event(
+                    LogLevel.WARNING,
+                    message,
+                    ModelLogData(node_name=self.get_node_name()),
+                )
+            state.contract_path = contract_path
 
     def bind_node_name(self, node_name: str) -> None:
         """Bind the node name used for event publishing and logging.
@@ -590,10 +657,12 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
         class name is used as a fallback.
 
         Thread Safety:
-            This method is NOT thread-safe. It should only be called during
-            __init__ before the mixin instance is shared across threads.
-            A WARNING is emitted if called after the mixin is in use
-            (e.g., after start_event_listener() or publish operations).
+            This method uses atomic check-and-bind under the mixin lock.
+            It should only be called during __init__ before the mixin
+            instance is shared across threads. If called after the mixin
+            is in use (after start_event_listener() or publish operations),
+            a ModelOnexError is raised (STRICT_BINDING_MODE=True, default)
+            or a WARNING is emitted (STRICT_BINDING_MODE=False).
 
         Args:
             node_name: The human-readable name of this node. Must be a
@@ -602,6 +671,8 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
 
         Raises:
             ModelOnexError: If node_name is empty or whitespace-only.
+            ModelOnexError: If STRICT_BINDING_MODE is True and the mixin is
+                already in use (binding is locked). Error code is INVALID_STATE.
 
         Note:
             This affects get_node_name() return value and all log output.
@@ -614,12 +685,7 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
             the node name binding, use _event_bus_runtime_state.reset() followed
             by re-binding with the desired configuration.
         """
-        # Ensure runtime state exists BEFORE any calls to get_node_name()
-        # (used by _warn_if_binding_locked and logging)
-        state = self._ensure_runtime_state()
-        self._warn_if_binding_locked("bind_node_name")
-
-        # Validate node_name - consistent with ModelEventBusRuntimeState.bind()
+        # Validate node_name BEFORE acquiring lock (fail-fast validation)
         if not node_name or not node_name.strip():
             raise ModelOnexError(
                 message="node_name must be a non-empty string for binding; "
@@ -631,7 +697,33 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
                 },
             )
 
-        state.node_name = node_name
+        # Ensure runtime state exists BEFORE acquiring lock
+        # (state creation doesn't need lock protection)
+        state = self._ensure_runtime_state()
+
+        # Atomic check-and-bind under lock to prevent race conditions
+        with self._mixin_lock:
+            if self._is_binding_locked():
+                message = (
+                    "MIXIN_BIND: bind_node_name() called after mixin is in use. "
+                    "bind_*() methods should be called in __init__ before sharing across threads."
+                )
+                if self.STRICT_BINDING_MODE:
+                    raise ModelOnexError(
+                        message=message,
+                        error_code=EnumCoreErrorCode.INVALID_STATE,
+                        context={
+                            "method_name": "bind_node_name",
+                            "node_name": self.get_node_name(),
+                            "class_name": self.__class__.__name__,
+                        },
+                    )
+                emit_log_event(
+                    LogLevel.WARNING,
+                    message,
+                    ModelLogData(node_name=self.get_node_name()),
+                )
+            state.node_name = node_name
 
     # --- Fail-Fast Event Bus Access ---
 

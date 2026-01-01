@@ -231,6 +231,11 @@ class PythonASTValidator(ast.NodeVisitor):
             "route_id",  # Dispatch route identifier (human-readable, not UUID)
             "target_handler_id",  # Runtime directive target handler (human-readable, not UUID)
             "matched_route_id",  # Dispatch result matched route (human-readable)
+            # REGISTRY_LOOKUP_IDS (method parameters for registry lookup by semantic ID)
+            # See: src/omnibase_core/services/registry/ for registry implementations
+            # These are lookup keys that accept string representations of IDs
+            # NOTE: provider_id was removed - RegistryProvider now accepts UUID directly
+            "capability_id",  # Semantic capability identifier (e.g., "database.relational")
             # TEST_FIXTURES (test helper fields removed - production code should use UUID)
             # TYPED_DICT_SERIALIZATION_BOUNDARY (TypedDicts for logging/monitoring/introspection)
             # See: src/omnibase_core/types/ for TypedDict definitions

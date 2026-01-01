@@ -173,7 +173,7 @@ class ModelExamplesCollection(BaseModel):
                 input_data = None
                 if "input_data" in data and data["input_data"] is not None:
                     input_data = (
-                        ModelExampleInputData(**data["input_data"])
+                        ModelExampleInputData(**data["input_data"])  # type: ignore[arg-type]
                         if isinstance(data["input_data"], dict)
                         else data["input_data"]
                     )
@@ -181,7 +181,7 @@ class ModelExamplesCollection(BaseModel):
                 output_data = None
                 if "output_data" in data and data["output_data"] is not None:
                     output_data = (
-                        ModelExampleOutputData(**data["output_data"])
+                        ModelExampleOutputData(**data["output_data"])  # type: ignore[arg-type]
                         if isinstance(data["output_data"], dict)
                         else data["output_data"]
                     )
@@ -189,35 +189,35 @@ class ModelExamplesCollection(BaseModel):
                 context = None
                 if "context" in data and data["context"] is not None:
                     context = (
-                        ModelExampleContextData(**data["context"])
+                        ModelExampleContextData(**data["context"])  # type: ignore[arg-type]
                         if isinstance(data["context"], dict)
                         else data["context"]
                     )
 
                 return ModelExample(
-                    name=data.get("name") or "Example",  # Provide default
-                    description=data.get("description") or "",
-                    input_data=input_data,
-                    output_data=output_data,
-                    context=context,
-                    tags=data.get("tags", []),
-                    is_valid=data.get("is_valid", True),
-                    validation_notes=data.get("validation_notes") or "",
+                    name=str(data.get("name") or "Example"),
+                    description=str(data.get("description") or ""),
+                    input_data=input_data,  # type: ignore[arg-type]
+                    output_data=output_data,  # type: ignore[arg-type]
+                    context=context,  # type: ignore[arg-type]
+                    tags=list(data.get("tags", [])),  # type: ignore[arg-type]
+                    is_valid=bool(data.get("is_valid", True)),
+                    validation_notes=str(data.get("validation_notes") or ""),
                 )
             else:
                 # Treat as input_data
                 input_data = (
-                    ModelExampleInputData(**data)
+                    ModelExampleInputData(**data)  # type: ignore[arg-type]
                     if isinstance(data, dict)
                     else ModelExampleInputData()
                 )
                 return ModelExample(
-                    name=(
+                    name=str(
                         data.get("name", "Example")
                         if isinstance(data, dict)
                         else "Example"
                     ),
-                    description=(
+                    description=str(
                         data.get("description", "") if isinstance(data, dict) else ""
                     ),
                     input_data=input_data,
