@@ -37,13 +37,16 @@ Thread Safety:
 .. versionadded:: 0.4.0
 """
 
-from typing import Literal
+import logging
+from typing import Literal, Self
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.models.projectors.model_idempotency_config import (
     ModelIdempotencyConfig,
 )
+
+_logger = logging.getLogger(__name__)
 
 
 class ModelProjectorBehavior(BaseModel):
@@ -92,9 +95,22 @@ class ModelProjectorBehavior(BaseModel):
         >>> behavior = ModelProjectorBehavior(mode="upsert", idempotency=idempotency)
         >>> behavior.idempotency.enabled
         True
+
+    Note:
+        **Why from_attributes=True is Required**
+
+        This model uses ``from_attributes=True`` in its ConfigDict to ensure
+        pytest-xdist compatibility. When running tests with pytest-xdist,
+        each worker process imports the class independently, creating separate
+        class objects. The ``from_attributes=True`` flag enables Pydantic's
+        "duck typing" mode, allowing fixtures from one worker to be validated
+        in another.
+
+        **Thread Safety**: This model is frozen (immutable) after creation,
+        making it thread-safe for concurrent read access.
     """
 
-    model_config = ConfigDict(frozen=True, extra="forbid")
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     mode: Literal["upsert", "insert_only", "append"] = Field(
         default="upsert",
@@ -103,13 +119,36 @@ class ModelProjectorBehavior(BaseModel):
 
     upsert_key: str | None = Field(
         default=None,
-        description="Field to use for upsert conflict detection",
+        description=(
+            "Column to use for upsert conflict detection. When mode is 'upsert' "
+            "and upsert_key is not specified, the schema's primary_key is used. "
+            "Specify explicitly when the upsert key differs from primary key."
+        ),
     )
 
     idempotency: ModelIdempotencyConfig | None = Field(
         default=None,
         description="Idempotency configuration for exactly-once processing",
     )
+
+    @model_validator(mode="after")
+    def validate_upsert_key_for_mode(self) -> Self:
+        """Validate that upsert_key is provided when mode is 'upsert'.
+
+        When mode is 'upsert' and upsert_key is not specified, a warning is
+        emitted to inform the user that the schema's primary key will be used
+        as the default upsert key. This is informational only - the default
+        behavior is valid and functional.
+
+        Returns:
+            Self: The validated model instance.
+        """
+        if self.mode == "upsert" and self.upsert_key is None:
+            _logger.warning(
+                "upsert_key not specified for mode='upsert'. "
+                "Primary key will be used as the upsert key by default."
+            )
+        return self
 
 
 __all__ = ["ModelProjectorBehavior"]

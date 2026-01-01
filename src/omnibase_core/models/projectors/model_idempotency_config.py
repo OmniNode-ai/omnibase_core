@@ -69,9 +69,22 @@ class ModelIdempotencyConfig(BaseModel):
         >>> config = ModelIdempotencyConfig(enabled=False, key="event_id")
         >>> config.enabled
         False
+
+    Note:
+        **Why from_attributes=True is Required**
+
+        This model uses ``from_attributes=True`` in its ConfigDict to ensure
+        pytest-xdist compatibility. When running tests with pytest-xdist,
+        each worker process imports the class independently, creating separate
+        class objects. The ``from_attributes=True`` flag enables Pydantic's
+        "duck typing" mode, allowing fixtures from one worker to be validated
+        in another.
+
+        **Thread Safety**: This model is frozen (immutable) after creation,
+        making it thread-safe for concurrent read access.
     """
 
-    model_config = ConfigDict(frozen=True, extra="forbid")
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     enabled: bool = Field(
         default=True,

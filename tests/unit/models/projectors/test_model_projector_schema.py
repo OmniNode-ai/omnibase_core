@@ -614,3 +614,135 @@ class TestModelProjectorSchemaWithVersion:
 
         assert schema.version is not None
         assert schema.version.major == 1
+
+
+@pytest.mark.unit
+class TestModelProjectorSchemaPrimaryKeyValidation:
+    """Tests for primary key validation against columns."""
+
+    def test_primary_key_must_exist_in_columns(self) -> None:
+        """Validation fails when primary_key references non-existent column."""
+        from omnibase_core.models.projectors import (
+            ModelProjectorColumn,
+            ModelProjectorSchema,
+        )
+
+        column = ModelProjectorColumn(
+            name="node_id",
+            type="UUID",
+            source="event.payload.node_id",
+        )
+
+        with pytest.raises(ValidationError) as exc_info:
+            ModelProjectorSchema(
+                table="node_projections",
+                primary_key="non_existent_column",
+                columns=[column],
+            )
+
+        error_str = str(exc_info.value)
+        assert "primary_key" in error_str
+        assert "non_existent_column" in error_str
+        assert "node_id" in error_str
+
+    def test_primary_key_valid_when_in_columns(self) -> None:
+        """Validation passes when primary_key matches an existing column."""
+        from omnibase_core.models.projectors import (
+            ModelProjectorColumn,
+            ModelProjectorSchema,
+        )
+
+        columns = [
+            ModelProjectorColumn(
+                name="node_id",
+                type="UUID",
+                source="event.payload.node_id",
+            ),
+            ModelProjectorColumn(
+                name="status",
+                type="TEXT",
+                source="event.payload.status",
+            ),
+        ]
+
+        # Should not raise - primary_key matches existing column
+        schema = ModelProjectorSchema(
+            table="node_projections",
+            primary_key="node_id",
+            columns=columns,
+        )
+
+        assert schema.primary_key == "node_id"
+        assert len(schema.columns) == 2
+
+    def test_primary_key_can_reference_any_column(self) -> None:
+        """Primary key can reference any column, not just the first one."""
+        from omnibase_core.models.projectors import (
+            ModelProjectorColumn,
+            ModelProjectorSchema,
+        )
+
+        columns = [
+            ModelProjectorColumn(
+                name="id",
+                type="UUID",
+                source="event.payload.id",
+            ),
+            ModelProjectorColumn(
+                name="external_ref",
+                type="TEXT",
+                source="event.payload.external_ref",
+            ),
+            ModelProjectorColumn(
+                name="status",
+                type="TEXT",
+                source="event.payload.status",
+            ),
+        ]
+
+        # Using second column as primary key
+        schema = ModelProjectorSchema(
+            table="refs",
+            primary_key="external_ref",
+            columns=columns,
+        )
+
+        assert schema.primary_key == "external_ref"
+
+    def test_primary_key_validation_error_shows_available_columns(self) -> None:
+        """Validation error message lists all available column names."""
+        from omnibase_core.models.projectors import (
+            ModelProjectorColumn,
+            ModelProjectorSchema,
+        )
+
+        columns = [
+            ModelProjectorColumn(
+                name="alpha",
+                type="TEXT",
+                source="event.payload.alpha",
+            ),
+            ModelProjectorColumn(
+                name="beta",
+                type="TEXT",
+                source="event.payload.beta",
+            ),
+            ModelProjectorColumn(
+                name="gamma",
+                type="TEXT",
+                source="event.payload.gamma",
+            ),
+        ]
+
+        with pytest.raises(ValidationError) as exc_info:
+            ModelProjectorSchema(
+                table="test",
+                primary_key="delta",
+                columns=columns,
+            )
+
+        error_str = str(exc_info.value)
+        # Error should show available columns sorted
+        assert "alpha" in error_str
+        assert "beta" in error_str
+        assert "gamma" in error_str

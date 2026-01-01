@@ -58,7 +58,9 @@ Example Usage:
     Initial implementation as part of OMN-1166 projector contract models.
 """
 
-from pydantic import BaseModel, ConfigDict, Field
+from typing import Self
+
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.models.projectors.model_projector_column import ModelProjectorColumn
@@ -158,13 +160,31 @@ class ModelProjectorSchema(BaseModel):
 
     indexes: list[ModelProjectorIndex] = Field(
         default_factory=list,
-        description="Optional list of index definitions for the projection table",
+        description=(
+            "Optional list of index definitions for the projection table. "
+            "Defaults to an empty list if not specified."
+        ),
     )
 
     version: ModelSemVer | None = Field(
         default=None,
         description="Optional schema version for migration tracking",
     )
+
+    @model_validator(mode="after")
+    def validate_primary_key_exists_in_columns(self) -> Self:
+        """Validate that primary_key refers to an existing column.
+
+        Raises:
+            ValueError: If primary_key does not match any column name.
+        """
+        column_names = {col.name for col in self.columns}
+        if self.primary_key not in column_names:
+            raise ValueError(
+                f"primary_key '{self.primary_key}' must reference an existing column. "
+                f"Available columns: {sorted(column_names)}"
+            )
+        return self
 
     def __hash__(self) -> int:
         """Return hash value for the schema.

@@ -86,9 +86,9 @@ Thread Safety:
 """
 
 import re
-from typing import ClassVar, Literal
+from typing import ClassVar, Literal, Self
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from omnibase_core.models.projectors.model_projector_behavior import (
     ModelProjectorBehavior,
@@ -217,7 +217,11 @@ class ModelProjectorContract(BaseModel):
 
     consumed_events: list[str] = Field(
         ...,
-        description="List of event names to consume. Must match pattern: lowercase.segments.vN",
+        description=(
+            "List of event names to consume. Must contain at least one event. "
+            "Each event name must match pattern: lowercase.segments.vN"
+        ),
+        min_length=1,
     )
 
     projection_schema: ModelProjectorSchema = Field(
@@ -270,6 +274,28 @@ class ModelProjectorContract(BaseModel):
                     f"(e.g., 'node.created.v1')"
                 )
         return v
+
+    @model_validator(mode="after")
+    def validate_consumed_events_not_empty(self) -> Self:
+        """Validate that at least one event is consumed.
+
+        This validator provides a clear error message when consumed_events
+        is empty. While min_length=1 on the field also enforces this,
+        the model_validator provides semantic validation.
+
+        Returns:
+            The validated model instance.
+
+        Raises:
+            ValueError: If consumed_events is empty.
+        """
+        if not self.consumed_events:
+            # error-ok: Pydantic validator requires ValueError
+            raise ValueError(
+                "consumed_events must contain at least one event type. "
+                "Projectors must subscribe to at least one event to function."
+            )
+        return self
 
     def __hash__(self) -> int:
         """Return hash value for the contract.
