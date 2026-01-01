@@ -9,6 +9,83 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### ⚠️ BREAKING CHANGES
 
+#### Hook Typing Enforcement Enabled by Default [OMN-1157]
+
+The default value of `BuilderExecutionPlan.enforce_hook_typing` has been changed from `False` to `True`. This is a **fail-fast behavior change** that affects code building execution plans with typed hooks.
+
+**Impact**:
+- **Before (v0.5.x)**: Hook type mismatches produced `ModelValidationWarning` objects in the warnings list
+- **After (v0.6.x)**: Hook type mismatches raise `HookTypeMismatchError` immediately during `build()`
+
+**Rationale**:
+- Fail-fast behavior catches type mismatches during development rather than allowing silent degradation
+- Type validation errors in production indicate configuration issues that should be addressed, not ignored
+- This aligns with ONEX's philosophy of explicit, type-safe contracts
+
+**Migration Guide**:
+
+1. **Recommended**: Ensure all hooks have correct `handler_type_category` values:
+   ```python
+   from omnibase_core.pipeline import BuilderExecutionPlan, ModelPipelineHook
+   from omnibase_core.enums import EnumHandlerTypeCategory
+
+   # Typed hook - must match contract_category
+   hook = ModelPipelineHook(
+       hook_id="my-compute-hook",
+       phase="execute",
+       callable_ref="app.hooks.compute",
+       handler_type_category=EnumHandlerTypeCategory.COMPUTE,  # Must match builder
+   )
+
+   # Generic hook - passes for any contract (no handler_type_category)
+   generic_hook = ModelPipelineHook(
+       hook_id="my-generic-hook",
+       phase="execute",
+       callable_ref="app.hooks.generic",
+       # No handler_type_category = generic, passes all type validation
+   )
+
+   # Build with type enforcement (now the default)
+   builder = BuilderExecutionPlan(
+       registry=registry,
+       contract_category=EnumHandlerTypeCategory.COMPUTE,
+       # enforce_hook_typing=True is now the default
+   )
+   plan, warnings = builder.build()  # Raises HookTypeMismatchError on type mismatch
+   ```
+
+2. **For gradual migration**, explicitly disable enforcement:
+   ```python
+   # Opt-in to warning-only mode for backwards compatibility
+   builder = BuilderExecutionPlan(
+       registry=registry,
+       contract_category=EnumHandlerTypeCategory.COMPUTE,
+       enforce_hook_typing=False,  # Explicit opt-out to warning-only mode
+   )
+   plan, warnings = builder.build()
+
+   # Check warnings for type mismatches
+   for warning in warnings:
+       if warning.code == "HOOK_TYPE_MISMATCH":
+           logger.warning(f"Type mismatch: {warning.message}")
+   ```
+
+3. **Identify affected code** by searching for `BuilderExecutionPlan` usage:
+   ```bash
+   # Find all usages
+   grep -rn "BuilderExecutionPlan" --include="*.py"
+
+   # Find usages that might rely on warning-only behavior
+   grep -rn "enforce_hook_typing" --include="*.py"
+   ```
+
+**Quick Migration Checklist**:
+- [ ] Review all `BuilderExecutionPlan` instantiations
+- [ ] Ensure typed hooks have correct `handler_type_category` matching `contract_category`
+- [ ] Use generic hooks (no `handler_type_category`) for hooks that should work with any contract
+- [ ] Add `enforce_hook_typing=False` to builders that need gradual migration
+- [ ] Run tests to verify no `HookTypeMismatchError` is raised unexpectedly
+
 #### Workflow Contract Model Hardening [OMN-654]
 
 The following workflow contract models now enforce **immutability** (`frozen=True`) and **strict field validation** (`extra="forbid"`):
