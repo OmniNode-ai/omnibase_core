@@ -8,7 +8,7 @@ combined with Pydantic model validation to ensure proper structure and security.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, cast
+from typing import Unpack, cast
 
 import yaml
 from pydantic import BaseModel, ValidationError
@@ -19,7 +19,8 @@ from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.examples.model_schema_example import ModelSchemaExample
-from omnibase_core.models.utils import ModelYamlOption, ModelYamlValue
+from omnibase_core.models.utils import ModelYamlValue
+from omnibase_core.types.typed_dict_yaml_dump_options import TypedDictYamlDumpOptions
 
 # ModelYamlWithExamples import removed - using direct YAML parsing
 
@@ -184,20 +185,20 @@ def load_yaml_content_as_model[T: BaseModel](content: str, model_cls: type[T]) -
 
 def _dump_yaml_content(
     data: object,
-    sort_keys: bool = False,
-    default_flow_style: bool = False,
-    allow_unicode: bool = True,
-    explicit_start: bool = False,
-    explicit_end: bool = False,
-    indent: int = 2,
-    width: int = 120,
-    **kwargs: Any,  # Any: required for yaml.dump() external API compatibility
+    **kwargs: Unpack[TypedDictYamlDumpOptions],
 ) -> str:
     """
     Internal function to dump data to YAML format with security restrictions.
 
     This is the only place where yaml.dump should be used in the codebase.
     All other code should use this function through proper Pydantic model serialization.
+
+    Args:
+        data: Data to serialize to YAML
+        **kwargs: Type-safe YAML dump options (see TypedDictYamlDumpOptions)
+
+    Returns:
+        YAML string representation of the data
     """
     try:
         # Convert ModelYamlValue to serializable data
@@ -205,14 +206,17 @@ def _dump_yaml_content(
             data.to_serializable() if isinstance(data, ModelYamlValue) else data
         )
 
-        # Convert ModelYamlOption values to Python values
-        # ONEX_EXCLUDE: dict_str_any - required for yaml.dump() external API compatibility
-        yaml_kwargs: dict[str, Any] = {
-            k: v.to_value() if isinstance(v, ModelYamlOption) else v
-            for k, v in kwargs.items()
-        }
+        # Extract options with defaults
+        sort_keys = kwargs.get("sort_keys", False)
+        default_flow_style = kwargs.get("default_flow_style", False)
+        allow_unicode = kwargs.get("allow_unicode", True)
+        explicit_start = kwargs.get("explicit_start", False)
+        explicit_end = kwargs.get("explicit_end", False)
+        indent = kwargs.get("indent", 2)
+        width = kwargs.get("width", 120)
 
-        yaml_str = yaml.dump(
+        # Call yaml.dump with explicit parameters for type safety
+        yaml_str: str = yaml.dump(
             serializable_data,
             sort_keys=sort_keys,
             default_flow_style=default_flow_style,
@@ -221,7 +225,6 @@ def _dump_yaml_content(
             explicit_end=explicit_end,
             indent=indent,
             width=width,
-            **yaml_kwargs,
         )
         # Normalize line endings and Unicode characters
         yaml_str = yaml_str.replace("\xa0", " ")
@@ -263,7 +266,7 @@ def _dump_yaml_content(
 def serialize_pydantic_model_to_yaml(
     model: BaseModel,
     comment_prefix: str = "",
-    **yaml_options: Any,  # Any: required for yaml.dump() external API compatibility
+    **yaml_options: Unpack[TypedDictYamlDumpOptions],
 ) -> str:
     """
     Serialize a Pydantic model to YAML format through the centralized dumper.
@@ -271,7 +274,7 @@ def serialize_pydantic_model_to_yaml(
     Args:
         model: Pydantic model instance to serialize
         comment_prefix: Optional prefix for each line (for comment blocks)
-        **yaml_options: Additional options to pass to YAML dumper
+        **yaml_options: Type-safe YAML dump options (see TypedDictYamlDumpOptions)
 
     Returns:
         YAML string representation of the model
@@ -315,7 +318,7 @@ def serialize_pydantic_model_to_yaml(
 def serialize_data_to_yaml(
     data: object,
     comment_prefix: str = "",
-    **yaml_options: Any,  # Any: required for yaml.dump() external API compatibility
+    **yaml_options: Unpack[TypedDictYamlDumpOptions],
 ) -> str:
     """
     Serialize arbitrary data to YAML format through the centralized dumper.
@@ -326,7 +329,7 @@ def serialize_data_to_yaml(
     Args:
         data: Data to serialize (dict, list, or other YAML-serializable types)
         comment_prefix: Optional prefix for each line (for comment blocks)
-        **yaml_options: Additional options to pass to YAML dumper
+        **yaml_options: Type-safe YAML dump options (see TypedDictYamlDumpOptions)
 
     Returns:
         YAML string representation of the data
@@ -416,7 +419,7 @@ def extract_example_from_schema(
         if not isinstance(example, dict):
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Example at index {example_index} is not a dict[str, Any]in schema: {schema_path}",
+                message=f"Example at index {example_index} is not a dict[str, Any] in schema: {schema_path}",
                 details=ModelErrorContext.with_context(
                     {
                         "operation": ModelSchemaValue.from_value(
@@ -431,7 +434,7 @@ def extract_example_from_schema(
                 ),
             )
 
-        # Convert example dict[str, Any]to ModelCustomProperties
+        # Convert example dict[str, Any] to ModelCustomProperties
         custom_props = ModelCustomProperties()
         if isinstance(example, dict):
             for key, value in example.items():

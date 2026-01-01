@@ -2,7 +2,6 @@
 
 import re
 from collections.abc import Mapping, Sequence
-from typing import Any
 
 from omnibase_core.enums.enum_credential_strength import EnumCredentialStrength
 from omnibase_core.models.security.model_credential_audit_report import (
@@ -99,7 +98,7 @@ class UtilSecurity:
 
     @staticmethod
     def mask_dict_credentials(
-        data: Mapping[str, Any],
+        data: Mapping[str, object],
         sensitive_patterns: set[str] | None = None,
         recursive: bool = True,
     ) -> dict[str, object]:
@@ -148,7 +147,7 @@ class UtilSecurity:
 
     @staticmethod
     def _mask_list_credentials(
-        data: Sequence[Any],
+        data: Sequence[object],
         sensitive_patterns: set[str],
     ) -> list[object]:
         """
@@ -338,7 +337,7 @@ class UtilSecurity:
 
     @staticmethod
     def audit_credential_usage(
-        data: Mapping[str, Any],
+        data: Mapping[str, object],
         config: ModelSecureMaskConfig | None = None,
     ) -> ModelCredentialAuditReport:
         """
@@ -360,7 +359,7 @@ class UtilSecurity:
 
         audit_report = ModelCredentialAuditReport()
 
-        def _audit_recursive(obj: Any, path: str = "") -> None:
+        def _audit_recursive(obj: object, path: str = "") -> None:
             """Recursively audit object for credentials."""
             if isinstance(obj, Mapping):
                 for key, value in obj.items():

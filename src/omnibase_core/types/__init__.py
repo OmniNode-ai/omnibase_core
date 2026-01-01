@@ -23,7 +23,8 @@ error_codes → types.__init__ → constraints → (circular back to error_codes
 Solution: Use TYPE_CHECKING and __getattr__ for lazy loading, similar to ModelBaseCollection.
 """
 
-# All constraint imports are now lazy-loaded via __getattr__ to prevent circular imports
+# Constraint imports are direct at module level for IDE support and import performance.
+# The __getattr__ fallback at the bottom provides lazy-loading as a backup mechanism.
 # Core types for breaking circular dependencies
 # Converter functions
 from .constraints import (
@@ -80,6 +81,15 @@ from .json_types import (
     PrimitiveContainer,
     PrimitiveValue,
     ToolParameterValue,
+)
+
+# Compute pipeline type aliases (for pipeline data flows)
+from .type_compute_pipeline import (
+    PathResolvedValue,
+    PipelineData,
+    PipelineDataDict,
+    StepResultMapping,
+    TransformInputT,
 )
 
 # Effect result type aliases (centralized to avoid primitive soup unions)
@@ -369,6 +379,7 @@ from .typed_dict_workflow_context import TypedDictWorkflowContext
 from .typed_dict_workflow_outputs import TypedDictWorkflowOutputsDict
 from .typed_dict_workflow_state import TypedDictWorkflowState
 from .typed_dict_yaml_dump_kwargs import TypedDictYamlDumpKwargs
+from .typed_dict_yaml_dump_options import TypedDictYamlDumpOptions
 
 # Utility functions
 from .util_datetime_parser import parse_datetime
@@ -392,6 +403,12 @@ __all__ = [
     # Schema type aliases
     "SchemaDict",
     "StepOutputs",
+    # Compute pipeline type aliases
+    "PathResolvedValue",
+    "PipelineData",
+    "PipelineDataDict",
+    "StepResultMapping",
+    "TransformInputT",
     # JSON type aliases
     "JsonPrimitive",
     "JsonType",
@@ -615,6 +632,7 @@ __all__ = [
     "MappingResultDict",
     "TypedDictPathResolutionContext",
     "TypedDictYamlDumpKwargs",
+    "TypedDictYamlDumpOptions",
     # Metadata tool collection types
     "TypedDictCollectionMetadata",
     "TypedDictCollectionValidation",
