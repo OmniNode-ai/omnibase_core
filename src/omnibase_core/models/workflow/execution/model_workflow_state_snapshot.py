@@ -30,7 +30,7 @@ import json
 import os
 import re
 from datetime import UTC, datetime
-from typing import Any, ClassVar, Self
+from typing import ClassVar, Self
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -511,7 +511,7 @@ class ModelWorkflowStateSnapshot(BaseModel):
             patterns.extend(additional_patterns)
         redact_keys_lower = {k.lower() for k in (redact_keys or [])}
 
-        def _sanitize_value(value: Any, key: str | None = None) -> Any:
+        def _sanitize_value(value: object, key: str | None = None) -> object:
             """Recursively sanitize a value."""
             # Check if this key should be fully redacted
             if key is not None and key.lower() in redact_keys_lower:
@@ -640,7 +640,7 @@ class ModelWorkflowStateSnapshot(BaseModel):
 
         violations: list[str] = []
 
-        def _scan_value(value: Any, path: str) -> None:
+        def _scan_value(value: object, path: str) -> None:
             """Recursively scan a value for PII patterns."""
             if isinstance(value, str):
                 for pattern, label, _replacement in pattern_labels:
@@ -719,7 +719,7 @@ class ModelWorkflowStateSnapshot(BaseModel):
         warnings: list[str] = []
 
         # Count total keys at all levels
-        def _count_keys(obj: Any) -> int:
+        def _count_keys(obj: object) -> int:
             if isinstance(obj, dict):
                 count = len(obj)
                 for value in obj.values():
@@ -754,7 +754,7 @@ class ModelWorkflowStateSnapshot(BaseModel):
         # as "flat" containers. This is intentional: a list of 100 items at
         # depth 1 is still depth 1, not depth 100. The concern is deeply nested
         # dicts which make debugging harder, not large flat collections.
-        def _max_depth(obj: Any, current: int = 0) -> int:
+        def _max_depth(obj: object, current: int = 0) -> int:
             if isinstance(obj, dict):
                 if not obj:
                     return current

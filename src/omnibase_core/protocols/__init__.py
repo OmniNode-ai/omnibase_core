@@ -124,6 +124,7 @@ from omnibase_core.protocols.event_bus import (
     ProtocolEventBusRegistry,
     ProtocolEventEnvelope,
     ProtocolEventMessage,
+    ProtocolFromEvent,
     ProtocolKafkaEventBusAdapter,
     ProtocolSyncEventBus,
 )
@@ -157,9 +158,9 @@ from omnibase_core.protocols.notifications import (
 )
 
 # =============================================================================
-# Event Construction Protocol
+# Logger Module Exports
 # =============================================================================
-from omnibase_core.protocols.protocol_from_event import ProtocolFromEvent
+from omnibase_core.protocols.protocol_logger_like import ProtocolLoggerLike
 
 # =============================================================================
 # Resolution Module Exports (OMN-1123)
@@ -213,6 +214,7 @@ from omnibase_core.protocols.validation import (
     ProtocolComplianceRule,
     ProtocolComplianceValidator,
     ProtocolComplianceViolation,
+    ProtocolContractValidationInvariantChecker,
     ProtocolONEXStandards,
     ProtocolQualityValidator,
     ProtocolValidationDecorator,
@@ -283,6 +285,7 @@ __all__ = [
     "ProtocolSyncEventBus",
     "ProtocolAsyncEventBus",
     "ProtocolEventEnvelope",
+    "ProtocolFromEvent",
     "ProtocolEventBusRegistry",
     "ProtocolEventBusLogEmitter",
     # ==========================================================================
@@ -315,6 +318,10 @@ __all__ = [
     # Core Module
     # ==========================================================================
     "ProtocolCanonicalSerializer",
+    # ==========================================================================
+    # Logger Module
+    # ==========================================================================
+    "ProtocolLoggerLike",
     # ==========================================================================
     # Compute Module
     # ==========================================================================
@@ -360,10 +367,6 @@ __all__ = [
     "ProtocolSchemaModel",
     "ProtocolSchemaLoader",
     # ==========================================================================
-    # Event Construction Protocol
-    # ==========================================================================
-    "ProtocolFromEvent",
-    # ==========================================================================
     # Validation Module
     # ==========================================================================
     "ProtocolValidationError",
@@ -377,4 +380,6 @@ __all__ = [
     "ProtocolComplianceReport",
     "ProtocolComplianceValidator",
     "ProtocolQualityValidator",
+    # Contract Validation Invariant Checker (OMN-1146)
+    "ProtocolContractValidationInvariantChecker",
 ]

@@ -227,7 +227,7 @@ class MyNode(MixinEventBus[MyInputState, MyOutput]):
 #### After (v1.0 - Required Pattern)
 
 ```python
-from omnibase_core.mixins.mixin_event_bus import ProtocolFromEvent
+from omnibase_core.protocols import ProtocolFromEvent
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 
 class MyInputState(ProtocolFromEvent):

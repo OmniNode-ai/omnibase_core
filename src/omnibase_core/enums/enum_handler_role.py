@@ -146,6 +146,7 @@ class EnumHandlerRole(str, Enum):
     @staticmethod
     def assert_exhaustive(value: Never) -> NoReturn:
         """Ensure exhaustive handling in match statements."""
+        # error-ok: enum module cannot import errors (circular dependency)
         raise AssertionError(f"Unhandled enum value: {value}")
 
 

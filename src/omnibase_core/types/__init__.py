@@ -77,7 +77,6 @@ from .core_types import ProtocolSchemaValue, TypedDictBasicErrorContext
 from .json_types import (
     JsonPrimitive,
     JsonType,
-    JsonValue,
     PrimitiveContainer,
     PrimitiveValue,
     ToolParameterValue,
@@ -187,6 +186,7 @@ from .typed_dict_field_value import TypedDictFieldValue
 from .typed_dict_function_documentation_summary_type import (
     TypedDictFunctionDocumentationSummaryType,
 )
+from .typed_dict_function_metadata_summary import TypedDictFunctionMetadataSummary
 from .typed_dict_function_relationships_summary import (
     TypedDictFunctionRelationshipsSummary,
 )
@@ -394,7 +394,6 @@ __all__ = [
     "StepOutputs",
     # JSON type aliases
     "JsonPrimitive",
-    "JsonValue",
     "JsonType",
     "PrimitiveValue",
     "PrimitiveContainer",
@@ -472,6 +471,7 @@ __all__ = [
     "TypedDictFactoryKwargs",
     "TypedDictFieldValue",
     "TypedDictFunctionDocumentationSummaryType",
+    "TypedDictFunctionMetadataSummary",
     "TypedDictFunctionRelationshipsSummary",
     "TypedDictGenericMetadataDict",
     "TypedDictHandlerMetadata",

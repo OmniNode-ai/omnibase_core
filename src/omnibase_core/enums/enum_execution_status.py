@@ -71,3 +71,67 @@ class EnumExecutionStatus(str, Enum):
         """
         successful_statuses = {cls.COMPLETED, cls.SUCCESS}
         return status in successful_statuses
+
+    @classmethod
+    def is_failure(cls, status: "EnumExecutionStatus") -> bool:
+        """
+        Check if the status indicates failure.
+
+        Note that CANCELLED is neither a success nor a failure - it represents
+        an intentional termination. Use :meth:`is_cancelled` to check for
+        cancellation specifically.
+
+        Args:
+            status: The status to check
+
+        Returns:
+            True if failed, False otherwise
+        """
+        failure_statuses = {cls.FAILED, cls.TIMEOUT}
+        return status in failure_statuses
+
+    @classmethod
+    def is_skipped(cls, status: "EnumExecutionStatus") -> bool:
+        """
+        Check if the status indicates the execution was skipped.
+
+        Args:
+            status: The status to check
+
+        Returns:
+            True if skipped, False otherwise
+        """
+        return status == cls.SKIPPED
+
+    @classmethod
+    def is_running(cls, status: "EnumExecutionStatus") -> bool:
+        """
+        Check if the status indicates the execution is currently running.
+
+        Note: This differs from :meth:`is_active` which also includes PENDING.
+        Use ``is_running`` when you specifically need to check if execution
+        has started and is in progress.
+
+        Args:
+            status: The status to check
+
+        Returns:
+            True if running, False otherwise
+        """
+        return status == cls.RUNNING
+
+    @classmethod
+    def is_cancelled(cls, status: "EnumExecutionStatus") -> bool:
+        """
+        Check if the status indicates the execution was cancelled.
+
+        CANCELLED represents an intentional termination and is neither
+        a success nor a failure.
+
+        Args:
+            status: The status to check
+
+        Returns:
+            True if cancelled, False otherwise
+        """
+        return status == cls.CANCELLED

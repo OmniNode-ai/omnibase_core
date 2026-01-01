@@ -9,7 +9,6 @@ Extracted from node_orchestrator.py to eliminate embedded class anti-pattern.
 
 from collections.abc import Callable
 from datetime import datetime
-from typing import Any
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -44,7 +43,7 @@ class ModelWorkflowStepExecution(BaseModel):
 
     model_config = ConfigDict(
         extra="ignore",
-        arbitrary_types_allowed=True,  # For Callable[..., Any] and Exception
+        arbitrary_types_allowed=True,  # For Callable[..., object] and Exception
         use_enum_values=False,
         validate_assignment=True,
         from_attributes=True,
@@ -77,7 +76,7 @@ class ModelWorkflowStepExecution(BaseModel):
         description="Conditional branching type",
     )
 
-    condition_function: Callable[..., Any] | None = Field(
+    condition_function: Callable[..., object] | None = Field(
         default=None,
         description="Custom condition function for branching",
         exclude=True,  # Not serializable
@@ -119,7 +118,7 @@ class ModelWorkflowStepExecution(BaseModel):
         exclude=True,  # Not serializable
     )
 
-    results: list[Any] = Field(
+    results: list[object] = Field(
         default_factory=list,
         description="Execution results from this step",
     )

@@ -72,6 +72,7 @@ omnibase_core/docs/
 
 | Document | Description | Status |
 |----------|-------------|--------|
+| [**Pipeline Hook Registry**](guides/PIPELINE_HOOK_REGISTRY.md) | Pipeline runner and hook registry with usage examples ⭐ **NEW** | ✅ Complete |
 | [**Migrating to Declarative Nodes**](guides/MIGRATING_TO_DECLARATIVE_NODES.md) | Migration guide for v0.4.0 FSM/workflow-driven nodes ⭐ **v0.4.0** | ✅ Complete |
 | [**Migrating to MixinEventBus v0.4**](guides/MIGRATING_TO_MIXIN_EVENT_BUS_V0_4.md) | v1.0 deprecations and migration paths for MixinEventBus ⭐ **v0.4.0** | ✅ Complete |
 | [**ISP Protocol Migration**](guides/ISP_PROTOCOL_MIGRATION.md) | Guide for migrating to ISP-compliant protocols | ✅ Complete |
@@ -103,10 +104,12 @@ omnibase_core/docs/
 | [**Container Types**](architecture/CONTAINER_TYPES.md) | ModelContainer vs ModelONEXContainer ⚠️ **CRITICAL** | ✅ Complete |
 | [Dependency Injection](architecture/DEPENDENCY_INJECTION.md) | ModelONEXContainer patterns | ✅ Complete |
 | [Contract System](architecture/CONTRACT_SYSTEM.md) | Contract architecture | ✅ Complete |
+| [**Capability Resolution**](architecture/CAPABILITY_RESOLUTION.md) | Selection policies and ambiguity handling ⭐ **NEW** | Draft |
 | [Type System](architecture/TYPE_SYSTEM.md) | Typing patterns and conventions | ✅ Complete |
 | [Documentation Architecture](architecture/DOCUMENTATION_ARCHITECTURE.md) | Documentation structure and organization | ✅ Complete |
 | [Subcontract Architecture](architecture/SUBCONTRACT_ARCHITECTURE.md) | Contract system design and subcontract patterns | ✅ Complete |
 | [Mixin Architecture](architecture/MIXIN_ARCHITECTURE.md) | Mixin system design and patterns | ✅ Complete |
+| [**Mixins to Handlers Refactor**](architecture/MIXINS_TO_HANDLERS_REFACTOR.md) | Handler-based architecture, manifest spec, replay invariants ⭐ **BETA** | ✅ Draft |
 | [Protocol Architecture](architecture/PROTOCOL_ARCHITECTURE.md) | Protocol design and compliance | ✅ Complete |
 | [Effect Timeout Behavior](architecture/EFFECT_TIMEOUT_BEHAVIOR.md) | Timeout check points and retry behavior | ✅ Complete |
 | [Ecosystem Directory Structure](architecture/ECOSYSTEM_DIRECTORY_STRUCTURE.md) | Repository organization and patterns across ONEX ecosystem | ✅ Available |
@@ -285,6 +288,7 @@ def serialize_error(error: ModelOnexError) -> TypedDictValidationErrorSerialized
 | Document | Description | Status |
 |----------|-------------|--------|
 | [**Subcontract Architecture**](architecture/SUBCONTRACT_ARCHITECTURE.md) | Contract system design | ✅ Excellent |
+| [**Handler Contract Guide**](contracts/HANDLER_CONTRACT_GUIDE.md) | Handler contract authoring, ID prefix convention | ✅ Complete |
 | [Approved Union Patterns](patterns/APPROVED_UNION_PATTERNS.md) | Type union patterns | ✅ Available |
 
 ### Project Documentation
@@ -320,9 +324,11 @@ def serialize_error(error: ModelOnexError) -> TypedDictValidationErrorSerialized
 | **Fix slow performance tests** | [Performance Benchmark Thresholds](performance/PERFORMANCE_BENCHMARK_THRESHOLDS.md#ci-performance-degradation) |
 | **Debug async hangs** | [Async Hang Debugging](troubleshooting/ASYNC_HANG_DEBUGGING.md) |
 | **Understand contracts** | [Subcontract Architecture](architecture/SUBCONTRACT_ARCHITECTURE.md) |
+| **Create handler contracts** | [Handler Contract Guide](contracts/HANDLER_CONTRACT_GUIDE.md) |
 | **Use TypedDict for serialization** | [TypedDict Types](#typeddict-types-serialization-boundaries) - Strongly-typed serialization boundaries |
 | **Validate mixin metadata** | [ModelMixinMetadata](../src/omnibase_core/models/core/model_mixin_metadata.py) - Mixin discovery & validation |
 | **Validate docker-compose.yaml** | [ModelDockerComposeManifest](../src/omnibase_core/models/docker/model_docker_compose_manifest.py) - Docker validation |
+| **Use pipeline hooks** | [Pipeline Hook Registry](guides/PIPELINE_HOOK_REGISTRY.md) - Phase-based hook execution |
 
 ---
 

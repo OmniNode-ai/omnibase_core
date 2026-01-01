@@ -113,6 +113,7 @@ class ModelPolicyValue(BaseModel):
     MAX_LIST_SIZE: int = 10000
     MAX_DICT_SIZE: int = 1000
 
+    # ONEX_EXCLUDE: dict_str_any - security policy values support arbitrary nested data
     value: None | bool | int | float | str | list[Any] | dict[str, Any] = Field(
         description="The actual policy value (supports None for optional policies)",
     )
@@ -133,6 +134,7 @@ class ModelPolicyValue(BaseModel):
 
     @model_validator(mode="before")
     @classmethod
+    # ONEX_EXCLUDE: dict_str_any - pydantic validator return type
     def infer_value_type(cls, data: Any) -> dict[str, Any]:
         """
         Automatically infer value_type from value if not provided.
@@ -160,6 +162,7 @@ class ModelPolicyValue(BaseModel):
             - Prevents type confusion attacks by explicit type checking
         """
         # Ensure data is a dict (help mypy with type narrowing)
+        # ONEX_EXCLUDE: dict_str_any - pydantic validator input data
         data_dict: dict[str, Any]
         if not isinstance(data, dict):
             data_dict = {"value": data}
@@ -328,6 +331,7 @@ class ModelPolicyValue(BaseModel):
 
         return self
 
+    # ONEX_EXCLUDE: dict_str_any - returns stored policy value which may contain arbitrary dict
     def get_value(
         self,
     ) -> None | bool | int | float | str | list[Any] | dict[str, Any]:

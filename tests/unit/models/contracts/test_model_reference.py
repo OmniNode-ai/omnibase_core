@@ -15,7 +15,6 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 class TestModelReference:
     """Tests for ModelReference model."""
 
-    @pytest.mark.unit
     def test_valid_reference(self) -> None:
         """Test creating a valid model reference."""
         ref = ModelReference(
@@ -26,7 +25,6 @@ class TestModelReference:
         assert ref.class_name == "ModelEventEnvelope"
         assert ref.version is None
 
-    @pytest.mark.unit
     def test_reference_with_version(self) -> None:
         """Test creating a reference with version."""
         ref = ModelReference(
@@ -36,7 +34,6 @@ class TestModelReference:
         )
         assert ref.version == "1.0.0"
 
-    @pytest.mark.unit
     def test_fully_qualified_name(self) -> None:
         """Test fully qualified name property."""
         ref = ModelReference(
@@ -47,31 +44,26 @@ class TestModelReference:
             ref.fully_qualified_name == "omnibase_core.models.events.ModelEventEnvelope"
         )
 
-    @pytest.mark.unit
     def test_module_required(self) -> None:
         """Test that module is required."""
         with pytest.raises(ValidationError):
             ModelReference(class_name="MyModel")  # type: ignore[call-arg]
 
-    @pytest.mark.unit
     def test_class_name_required(self) -> None:
         """Test that class_name is required."""
         with pytest.raises(ValidationError):
             ModelReference(module="mypackage")  # type: ignore[call-arg]
 
-    @pytest.mark.unit
     def test_empty_module_rejected(self) -> None:
         """Test that empty module is rejected."""
         with pytest.raises(ValidationError):
             ModelReference(module="", class_name="MyModel")
 
-    @pytest.mark.unit
     def test_empty_class_name_rejected(self) -> None:
         """Test that empty class_name is rejected."""
         with pytest.raises(ValidationError):
             ModelReference(module="mypackage", class_name="")
 
-    @pytest.mark.unit
     def test_module_validation_valid_paths(self) -> None:
         """Test module path validation with valid paths."""
         valid_paths = [
@@ -84,7 +76,6 @@ class TestModelReference:
             ref = ModelReference(module=path, class_name="MyModel")
             assert ref.module == path
 
-    @pytest.mark.unit
     def test_module_validation_invalid_paths(self) -> None:
         """Test module path validation with invalid paths."""
         invalid_paths = [
@@ -97,14 +88,12 @@ class TestModelReference:
             with pytest.raises(ValidationError):
                 ModelReference(module=path, class_name="MyModel")
 
-    @pytest.mark.unit
     def test_class_name_must_start_uppercase(self) -> None:
         """Test that class name must start with uppercase."""
         with pytest.raises(ValidationError) as exc_info:
             ModelReference(module="mypackage", class_name="lowercase")
         assert "uppercase" in str(exc_info.value).lower()
 
-    @pytest.mark.unit
     def test_valid_class_names(self) -> None:
         """Test valid class name formats."""
         valid_names = [
@@ -117,7 +106,6 @@ class TestModelReference:
             ref = ModelReference(module="mypackage", class_name=name)
             assert ref.class_name == name
 
-    @pytest.mark.unit
     def test_extra_fields_rejected(self) -> None:
         """Test that extra fields are rejected."""
         with pytest.raises(ValidationError):
@@ -127,14 +115,12 @@ class TestModelReference:
                 extra="not_allowed",  # type: ignore[call-arg]
             )
 
-    @pytest.mark.unit
     def test_frozen_model(self) -> None:
         """Test that the model is immutable."""
         ref = ModelReference(module="mypackage", class_name="MyModel")
         with pytest.raises(ValidationError):
             ref.module = "changed"  # type: ignore[misc]
 
-    @pytest.mark.unit
     def test_repr(self) -> None:
         """Test string representation."""
         ref = ModelReference(
@@ -146,14 +132,12 @@ class TestModelReference:
         assert "mypackage.models.MyModel" in repr_str
         assert "1.0.0" in repr_str
 
-    @pytest.mark.unit
     def test_repr_without_version(self) -> None:
         """Test string representation without version."""
         ref = ModelReference(module="mypackage", class_name="MyModel")
         repr_str = repr(ref)
         assert "mypackage.MyModel" in repr_str
 
-    @pytest.mark.unit
     def test_equality(self) -> None:
         """Test equality comparison."""
         ref1 = ModelReference(module="mypackage", class_name="MyModel")
@@ -162,7 +146,6 @@ class TestModelReference:
         assert ref1 == ref2
         assert ref1 != ref3
 
-    @pytest.mark.unit
     def test_from_dict(self) -> None:
         """Test creating from dictionary."""
         data = {
@@ -175,7 +158,6 @@ class TestModelReference:
         assert ref.class_name == "MyModel"
         assert ref.version == "1.0.0"
 
-    @pytest.mark.unit
     def test_whitespace_stripping(self) -> None:
         """Test that whitespace is stripped from module and class_name."""
         ref = ModelReference(
@@ -190,7 +172,6 @@ class TestModelReference:
 class TestModelReferenceResolveImport:
     """Tests for ModelReference.resolve_import classmethod."""
 
-    @pytest.mark.unit
     def test_resolve_valid_reference(self) -> None:
         """Test resolving a valid module/class reference."""
         # Use a known class from the codebase
@@ -199,7 +180,6 @@ class TestModelReferenceResolveImport:
         )
         assert result is ModelReference
 
-    @pytest.mark.unit
     def test_resolve_builtin_types(self) -> None:
         """Test resolving references to trusted omnibase types."""
         # Use an omnibase_core type (pydantic.BaseModel is blocked by allowlist)
@@ -208,7 +188,6 @@ class TestModelReferenceResolveImport:
         )
         assert result is ModelOnexError
 
-    @pytest.mark.unit
     def test_resolve_nested_module(self) -> None:
         """Test resolving a class from a nested module."""
         result = ModelReference.resolve_import(
@@ -216,13 +195,11 @@ class TestModelReferenceResolveImport:
         )
         assert result is EnumCoreErrorCode
 
-    @pytest.mark.unit
     def test_resolve_nonexistent_module(self) -> None:
         """Test that nonexistent module returns None."""
         result = ModelReference.resolve_import("nonexistent.module.SomeClass")
         assert result is None
 
-    @pytest.mark.unit
     def test_resolve_nonexistent_class(self) -> None:
         """Test that nonexistent class in existing module returns None."""
         result = ModelReference.resolve_import(
@@ -230,17 +207,14 @@ class TestModelReferenceResolveImport:
         )
         assert result is None
 
-    @pytest.mark.unit
     def test_resolve_empty_reference(self) -> None:
         """Test that empty reference returns None."""
         assert ModelReference.resolve_import("") is None
 
-    @pytest.mark.unit
     def test_resolve_no_separator(self) -> None:
         """Test that reference without dot returns None."""
         assert ModelReference.resolve_import("nodot") is None
 
-    @pytest.mark.unit
     def test_resolve_single_module(self) -> None:
         """Test resolving from a nested module with allowed prefix."""
         # Use an omnibase_core enum (os.path is blocked by allowlist)
@@ -249,7 +223,6 @@ class TestModelReferenceResolveImport:
         )
         assert result is EnumCoreErrorCode
 
-    @pytest.mark.unit
     def test_resolve_with_invalid_module_path(self) -> None:
         """Test that malformed module path returns None gracefully."""
         # Double dots, which would cause import errors
@@ -261,7 +234,6 @@ class TestModelReferenceResolveImport:
 class TestModelReferenceResolveImportOrRaise:
     """Tests for ModelReference.resolve_import_or_raise classmethod."""
 
-    @pytest.mark.unit
     def test_resolve_valid_reference(self) -> None:
         """Test resolving a valid reference returns the class."""
         result = ModelReference.resolve_import_or_raise(
@@ -269,7 +241,6 @@ class TestModelReferenceResolveImportOrRaise:
         )
         assert result is ModelReference
 
-    @pytest.mark.unit
     def test_resolve_empty_reference_raises(self) -> None:
         """Test that empty reference raises ModelOnexError."""
         with pytest.raises(ModelOnexError) as exc_info:
@@ -277,7 +248,6 @@ class TestModelReferenceResolveImportOrRaise:
         assert exc_info.value.error_code == EnumCoreErrorCode.IMPORT_ERROR
         assert "empty" in exc_info.value.message.lower()
 
-    @pytest.mark.unit
     def test_resolve_no_separator_raises(self) -> None:
         """Test that reference without dot raises ModelOnexError."""
         with pytest.raises(ModelOnexError) as exc_info:
@@ -285,7 +255,6 @@ class TestModelReferenceResolveImportOrRaise:
         assert exc_info.value.error_code == EnumCoreErrorCode.IMPORT_ERROR
         assert "module.class" in exc_info.value.message.lower()
 
-    @pytest.mark.unit
     def test_resolve_nonexistent_module_raises(self) -> None:
         """Test that nonexistent module in allowlist raises with MODULE_NOT_FOUND."""
         # Use a module with allowed prefix that doesn't exist
@@ -296,7 +265,6 @@ class TestModelReferenceResolveImportOrRaise:
         assert exc_info.value.error_code == EnumCoreErrorCode.MODULE_NOT_FOUND
         assert "module not found" in exc_info.value.message.lower()
 
-    @pytest.mark.unit
     def test_resolve_nonexistent_class_raises(self) -> None:
         """Test that nonexistent class raises with IMPORT_ERROR."""
         with pytest.raises(ModelOnexError) as exc_info:
@@ -306,7 +274,6 @@ class TestModelReferenceResolveImportOrRaise:
         assert exc_info.value.error_code == EnumCoreErrorCode.IMPORT_ERROR
         assert "not found in module" in exc_info.value.message.lower()
 
-    @pytest.mark.unit
     def test_error_context_includes_reference(self) -> None:
         """Test that error context includes the original reference."""
         # Use a module with allowed prefix that doesn't exist
@@ -329,7 +296,6 @@ class TestModelReferenceResolveImportOrRaise:
 class TestModelReferenceInstanceResolve:
     """Tests for ModelReference instance resolve methods."""
 
-    @pytest.mark.unit
     def test_resolve_valid_instance(self) -> None:
         """Test resolving a valid ModelReference instance."""
         ref = ModelReference(
@@ -339,7 +305,6 @@ class TestModelReferenceInstanceResolve:
         result = ref.resolve()
         assert result is ModelReference
 
-    @pytest.mark.unit
     def test_resolve_invalid_instance(self) -> None:
         """Test that invalid instance returns None."""
         ref = ModelReference(
@@ -349,7 +314,6 @@ class TestModelReferenceInstanceResolve:
         result = ref.resolve()
         assert result is None
 
-    @pytest.mark.unit
     def test_resolve_or_raise_valid_instance(self) -> None:
         """Test resolve_or_raise with valid ModelReference instance."""
         ref = ModelReference(
@@ -359,7 +323,6 @@ class TestModelReferenceInstanceResolve:
         result = ref.resolve_or_raise()
         assert result is ModelReference
 
-    @pytest.mark.unit
     def test_resolve_or_raise_invalid_module(self) -> None:
         """Test resolve_or_raise raises for nonexistent module in allowlist."""
         # Use a module with allowed prefix that doesn't exist
@@ -371,7 +334,6 @@ class TestModelReferenceInstanceResolve:
             ref.resolve_or_raise()
         assert exc_info.value.error_code == EnumCoreErrorCode.MODULE_NOT_FOUND
 
-    @pytest.mark.unit
     def test_resolve_or_raise_invalid_class(self) -> None:
         """Test resolve_or_raise raises for invalid class in valid module."""
         ref = ModelReference(
@@ -382,7 +344,6 @@ class TestModelReferenceInstanceResolve:
             ref.resolve_or_raise()
         assert exc_info.value.error_code == EnumCoreErrorCode.IMPORT_ERROR
 
-    @pytest.mark.unit
     def test_resolve_uses_fully_qualified_name(self) -> None:
         """Test that resolve uses the fully_qualified_name property."""
         # Use an omnibase_core type (pydantic is blocked by allowlist)
@@ -398,7 +359,6 @@ class TestModelReferenceInstanceResolve:
             == "omnibase_core.models.errors.model_onex_error.ModelOnexError"
         )
 
-    @pytest.mark.unit
     def test_resolve_real_world_model(self) -> None:
         """Test resolving a real-world model from the codebase."""
         ref = ModelReference(
@@ -408,7 +368,6 @@ class TestModelReferenceInstanceResolve:
         result = ref.resolve()
         assert result is EnumCoreErrorCode
 
-    @pytest.mark.unit
     def test_resolve_with_version_ignores_version(self) -> None:
         """Test that version field does not affect resolution."""
         ref = ModelReference(

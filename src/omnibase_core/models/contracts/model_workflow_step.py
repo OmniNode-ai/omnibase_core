@@ -53,7 +53,6 @@ class ModelWorkflowStep(BaseModel):
         from_attributes=True,
         frozen=True,
         use_enum_values=False,
-        validate_assignment=True,
     )
 
     # ONEX correlation tracking

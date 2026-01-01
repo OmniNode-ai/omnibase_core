@@ -13,9 +13,12 @@ Deep Immutability:
 
 from __future__ import annotations
 
-from typing import Any
-
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+from omnibase_core.utils.util_validators import (
+    convert_dict_to_frozen_pairs,
+    convert_list_to_tuple,
+)
 
 
 class ModelFsmState(BaseModel):
@@ -82,32 +85,30 @@ class ModelFsmState(BaseModel):
     @field_validator("entry_actions", mode="before")
     @classmethod
     def _convert_entry_actions_to_tuple(
-        cls, v: list[str] | tuple[str, ...] | Any
+        cls, v: list[str] | tuple[str, ...] | object
     ) -> tuple[str, ...]:
         """Convert list of entry actions to tuple for deep immutability."""
-        if isinstance(v, list):
-            return tuple(v)
-        return v
+        return convert_list_to_tuple(v)
 
     @field_validator("exit_actions", mode="before")
     @classmethod
     def _convert_exit_actions_to_tuple(
-        cls, v: list[str] | tuple[str, ...] | Any
+        cls, v: list[str] | tuple[str, ...] | object
     ) -> tuple[str, ...]:
         """Convert list of exit actions to tuple for deep immutability."""
-        if isinstance(v, list):
-            return tuple(v)
-        return v
+        return convert_list_to_tuple(v)
 
     @field_validator("properties", mode="before")
     @classmethod
     def _convert_properties_to_frozen(
-        cls, v: dict[str, str] | tuple[tuple[str, str], ...] | Any
+        cls, v: dict[str, str] | tuple[tuple[str, str], ...] | object
     ) -> tuple[tuple[str, str], ...]:
-        """Convert dict to tuple of tuples for deep immutability."""
-        if isinstance(v, dict):
-            return tuple(v.items())
-        return v
+        """Convert dict to tuple of tuples for deep immutability.
+
+        Keys are sorted for deterministic ordering, which ensures consistent
+        hashing and comparison of model instances.
+        """
+        return convert_dict_to_frozen_pairs(v, sort_keys=True)
 
     model_config = ConfigDict(
         extra="ignore",

@@ -30,7 +30,7 @@ sdist/
 wheels/
 *.egg-info/
 *.egg
-MANIFEST
+/MANIFEST
 
 # Legacy packaging formats
 .Python
