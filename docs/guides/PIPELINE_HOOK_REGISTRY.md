@@ -350,7 +350,7 @@ empty = ModelExecutionPlan.empty()
 Executes the pipeline using an execution plan.
 
 ```python
-from omnibase_core.pipeline import RunnerPipeline, ModelPipelineContext, PipelineResult
+from omnibase_core.pipeline import RunnerPipeline, ModelPipelineContext, ModelPipelineResult
 
 # Create runner
 runner = RunnerPipeline(
@@ -359,7 +359,7 @@ runner = RunnerPipeline(
 )
 
 # Execute (async)
-result: PipelineResult = await runner.run()
+result: ModelPipelineResult = await runner.run()
 
 # Check result
 if result.success:
