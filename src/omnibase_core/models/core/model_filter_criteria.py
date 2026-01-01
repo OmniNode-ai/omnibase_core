@@ -5,7 +5,6 @@ Filter criteria model to replace Dict[str, Any] usage for filter fields.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -126,7 +125,12 @@ class ModelFilterCriteria(BaseModel):
 
         return cls(**data)
 
-    def add_condition(self, field: str, operator: str, value: Any) -> None:
+    def add_condition(
+        self,
+        field: str,
+        operator: str,
+        value: str | int | float | bool | list[str | int | float | bool],
+    ) -> None:
         """Add a filter condition."""
         self.conditions.append(
             ModelFilterCondition(

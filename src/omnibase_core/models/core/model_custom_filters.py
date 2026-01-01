@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 from pydantic import BaseModel, Field
 
@@ -54,17 +54,19 @@ class ModelCustomFilters(BaseModel):
     def add_list_filter(
         self,
         name: str,
-        values: list[Any] | list[ModelSchemaValue],
+        values: list[object] | list[ModelSchemaValue],
         **kwargs: Any,
     ) -> None:
         """Add a list filter.
 
         Values are automatically converted to ModelSchemaValue for type safety.
         """
-        self.filters[name] = ModelListFilter(values=values, **kwargs)
+        self.filters[name] = ModelListFilter(
+            values=cast(list[ModelSchemaValue], values), **kwargs
+        )
 
     def add_metadata_filter(
-        self, name: str, key: str, value: Any, **kwargs: Any
+        self, name: str, key: str, value: object, **kwargs: Any
     ) -> None:
         """Add a metadata filter."""
         self.filters[name] = ModelMetadataFilter(

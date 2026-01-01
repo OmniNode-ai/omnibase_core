@@ -1,5 +1,3 @@
-from typing import Any
-
 from pydantic import field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -64,8 +62,8 @@ class ModelOnexInputState(BaseModel):
 
     @field_validator("version", mode="before")
     @classmethod
-    def parse_input_version(cls, v: Any) -> Any:
-        """Parse version from string, dict[str, Any], or ModelSemVer"""
+    def parse_input_version(cls, v: object) -> ModelSemVer:
+        """Parse version from string, dict, or ModelSemVer"""
         if isinstance(v, ModelSemVer):
             return v
         if isinstance(v, str):
@@ -75,13 +73,13 @@ class ModelOnexInputState(BaseModel):
 
         raise ModelOnexError(
             error_code=EnumCoreErrorCode.PARAMETER_TYPE_MISMATCH,
-            message="version must be a string, dict[str, Any], or ModelSemVer",
+            message="version must be a string, dict, or ModelSemVer",
         )
 
     @field_validator("node_version", mode="before")
     @classmethod
-    def parse_input_node_version(cls, v: Any) -> Any:
-        """Parse node_version from string, dict[str, Any], or ModelSemVer"""
+    def parse_input_node_version(cls, v: object) -> ModelSemVer | None:
+        """Parse node_version from string, dict, or ModelSemVer"""
         if v is None:
             return v
         if isinstance(v, ModelSemVer):
@@ -93,12 +91,12 @@ class ModelOnexInputState(BaseModel):
 
         raise ModelOnexError(
             error_code=EnumCoreErrorCode.PARAMETER_TYPE_MISMATCH,
-            message="node_version must be a string, dict[str, Any], or ModelSemVer",
+            message="node_version must be a string, dict, or ModelSemVer",
         )
 
     @field_validator("event_id", "correlation_id")
     @classmethod
-    def validate_input_uuid_fields(cls, v: Any) -> Any:
+    def validate_input_uuid_fields(cls, v: object) -> object:
         """Validate UUID fields - Pydantic handles UUID conversion automatically"""
         # Pydantic automatically converts string UUIDs to UUID objects
         # and validates format, so we just need to handle None
@@ -106,7 +104,7 @@ class ModelOnexInputState(BaseModel):
 
     @field_validator("timestamp")
     @classmethod
-    def validate_input_timestamp(cls, v: Any) -> Any:
+    def validate_input_timestamp(cls, v: object) -> object:
         """Validate timestamp - Pydantic handles datetime conversion automatically"""
         # Pydantic automatically converts ISO8601 strings to datetime objects
         # and validates format, so we just need to handle None

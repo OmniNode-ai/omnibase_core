@@ -4,7 +4,7 @@ Tool Manifest Model - Main Class.
 Tier 2: Tool-level metadata model with comprehensive tool definition.
 """
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -136,7 +136,7 @@ class ModelToolManifest(BaseModel):
         "current_stable_version", "current_development_version", mode="before"
     )
     @classmethod
-    def validate_version_fields(cls, v: Any) -> ModelSemVer | None:
+    def validate_version_fields(cls, v: object) -> ModelSemVer | None:
         """Validate and convert version fields to ModelSemVer."""
         if v is None:
             return None

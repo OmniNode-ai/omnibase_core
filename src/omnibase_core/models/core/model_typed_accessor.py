@@ -6,8 +6,6 @@ Provides type-safe field access with generic type support.
 
 from __future__ import annotations
 
-from typing import Any
-
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -44,7 +42,7 @@ class ModelTypedAccessor[T](ModelFieldAccessor):
 
     # Protocol method implementations
 
-    def configure(self, **kwargs: Any) -> bool:
+    def configure(self, **kwargs: object) -> bool:
         """Configure instance with provided parameters (Configurable protocol)."""
         try:
             for key, value in kwargs.items():

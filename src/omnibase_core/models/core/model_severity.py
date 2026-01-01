@@ -5,8 +5,6 @@ Unified severity model with strong typing and immutable constructor patterns.
 Phase 3I remediation: Eliminated all factory methods and conversion anti-patterns.
 """
 
-from typing import Any
-
 from pydantic import BaseModel, Field, field_validator
 from pydantic_core.core_schema import ValidationInfo
 
@@ -80,7 +78,7 @@ class ModelSeverity(BaseModel):
     # ONEX validation constraints
     @field_validator("name")
     @classmethod
-    def validate_name_consistency(cls, v: Any, info: ValidationInfo) -> Any:
+    def validate_name_consistency(cls, v: str, info: ValidationInfo) -> str:
         """Ensure name and value are consistent."""
         value = info.data.get("value")
         if value is not None and v.lower() != value:
@@ -92,7 +90,7 @@ class ModelSeverity(BaseModel):
 
     @field_validator("numeric_value")
     @classmethod
-    def validate_severity_ranges(cls, v: Any, info: ValidationInfo) -> Any:
+    def validate_severity_ranges(cls, v: int, info: ValidationInfo) -> int:
         """Validate numeric values align with severity expectations."""
         name = info.data.get("name", "")
         expected_ranges = {
@@ -115,7 +113,7 @@ class ModelSeverity(BaseModel):
 
     @field_validator("is_critical")
     @classmethod
-    def validate_critical_consistency(cls, v: Any, info: ValidationInfo) -> Any:
+    def validate_critical_consistency(cls, v: bool, info: ValidationInfo) -> bool:
         """Ensure critical flag aligns with severity level."""
         name = info.data.get("name", "")
         numeric = info.data.get("numeric_value", 0)
@@ -142,7 +140,7 @@ class ModelSeverity(BaseModel):
         """ONEX-compatible string representation."""
         return self.value
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         """ONEX-compatible equality comparison - type-safe only."""
         if isinstance(other, ModelSeverity):
             return self.name == other.name and self.numeric_value == other.numeric_value

@@ -5,7 +5,7 @@ Type-safe parsed CLI arguments with validation results, command definition,
 and parsing metadata for complete argument handling.
 """
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, Field
 
@@ -165,14 +165,14 @@ class ModelParsedArguments(BaseModel):
 
         return result
 
-    def get_argument_value(self, name: str, default: Any = None) -> Any:
+    def get_argument_value(self, name: str, default: object = None) -> object:
         """Get argument value by name with optional default."""
         if self.arguments.has_argument(name):
             return self.arguments.named_args[name].value
         return default
 
     def get_required_arguments(self) -> list[str]:
-        """Get list[Any]of required argument names from command definition."""
+        """Get list of required argument names from command definition."""
         return [arg.name for arg in self.command_definition.required_args]
 
     def validate_required_arguments(self) -> list[ModelValidationError]:

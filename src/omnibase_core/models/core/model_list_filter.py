@@ -26,15 +26,13 @@ class ModelListFilter(ModelCustomFilterBase):
 
     @field_validator("values", mode="before")
     @classmethod
-    def convert_values_to_schema(
-        cls, v: list[Any] | list[ModelSchemaValue]
-    ) -> list[ModelSchemaValue]:
+    def convert_values_to_schema(cls, v: Any) -> list[ModelSchemaValue]:
         """Convert values to ModelSchemaValue for type safety."""
         if not v:
             return []
         # If already ModelSchemaValue instances, return as-is
         # Note: len(v) > 0 check removed - guaranteed non-empty after early return
         if isinstance(v[0], ModelSchemaValue):
-            return v
+            return v  # type: ignore[return-value]
         # Convert raw values to ModelSchemaValue
         return [ModelSchemaValue.from_value(item) for item in v]

@@ -7,7 +7,6 @@ different data types in a type-safe manner for validation and testing.
 """
 
 import json
-from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 
@@ -185,7 +184,9 @@ class ModelGenericValue(BaseModel):
             )
         return v
 
-    def get_python_value(self) -> Any:
+    def get_python_value(
+        self,
+    ) -> str | int | float | bool | list[str] | list[int] | dict[str, object] | None:
         """Get the actual Python value based on the type"""
         if self.value_type == EnumValueType.STRING:
             return self.string_value
@@ -210,43 +211,52 @@ class ModelGenericValue(BaseModel):
         )
 
     @classmethod
-    def from_python_value(cls, value: Any) -> "ModelGenericValue":
+    def from_python_value(
+        cls,
+        value: str
+        | int
+        | float
+        | bool
+        | list[str]
+        | list[int]
+        | dict[str, object]
+        | None,
+    ) -> "ModelGenericValue":
         """Create ModelGenericValue from a Python value"""
         if value is None:
             return cls(value_type=EnumValueType.NULL)
         if isinstance(value, str):
             return cls(value_type=EnumValueType.STRING, string_value=value)
+        if isinstance(
+            value, bool
+        ):  # Must check bool before int (bool is subclass of int)
+            return cls(value_type=EnumValueType.BOOLEAN, boolean_value=value)
         if isinstance(value, int):
             return cls(value_type=EnumValueType.INTEGER, integer_value=value)
         if isinstance(value, float):
             return cls(value_type=EnumValueType.FLOAT, float_value=value)
-        if isinstance(value, bool):
-            return cls(value_type=EnumValueType.BOOLEAN, boolean_value=value)
         if isinstance(value, list):
             if all(isinstance(item, str) for item in value):
+                # Narrow type after all() check - mypy can't infer this
+                str_list: list[str] = [str(item) for item in value]
                 return cls(
                     value_type=EnumValueType.LIST_STRING,
-                    list_string_value=value,
+                    list_string_value=str_list,
                 )
             if all(isinstance(item, int) for item in value):
+                # Narrow type after all() check - mypy can't infer this
+                int_list: list[int] = [int(item) for item in value]
                 return cls(
                     value_type=EnumValueType.LIST_INTEGER,
-                    list_integer_value=value,
+                    list_integer_value=int_list,
                 )
-            msg = (
-                f"Unsupported list[Any]type with mixed or unsupported elements: {value}"
-            )
+            msg = f"Unsupported list type with mixed or unsupported elements: {value}"
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
         if isinstance(value, dict):
             return cls(value_type=EnumValueType.DICT, dict_value=json.dumps(value))
-        msg = f"Unsupported value type: {type(value)}"
-        raise ModelOnexError(
-            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-            message=msg,
-        )
 
     model_config = ConfigDict(
         json_schema_extra={

@@ -9,7 +9,7 @@ with validation and utility methods.
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, Field
 
@@ -459,7 +459,7 @@ class ModelCustomProperties(BaseModel):
 
     # Protocol method implementations
 
-    def configure(self, **kwargs: Any) -> bool:
+    def configure(self, **kwargs: object) -> bool:
         """Configure instance with provided parameters.
 
         Implements the Configurable protocol. Sets attributes on the instance

@@ -1,5 +1,3 @@
-from typing import Any
-
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -63,7 +61,7 @@ class ModelProjectMetadataBlock(BaseModel):
     model_config = {"extra": "allow"}
 
     @classmethod
-    def _parse_entrypoint(cls, value: Any) -> str:
+    def _parse_entrypoint(cls, value: object) -> str:
         # Accept EntrypointBlock or URI string, always return URI string
         if isinstance(value, str) and "://" in value:
             return value
@@ -137,7 +135,7 @@ class ModelProjectMetadataBlock(BaseModel):
         d = self.model_dump(exclude_none=True)
         d[ENTRYPOINT_KEY] = self._parse_entrypoint(self.entrypoint)
         # Omit empty/null/empty-string fields except protocol-required
-        for k in list[Any](d.keys()):
+        for k in list(d.keys()):
             if d[k] in (None, "", [], {}) and k not in {TOOLS_KEY}:
                 d.pop(k)
         return d

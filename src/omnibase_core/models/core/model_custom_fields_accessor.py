@@ -8,7 +8,6 @@ typed custom fields with automatic initialization and type safety.
 from __future__ import annotations
 
 import copy
-from typing import Any
 
 from pydantic import Field, model_validator
 
@@ -230,11 +229,18 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
         except Exception:  # fallback-ok: set_field method signature returns bool for success/failure rather than raising
             return False
 
-    def get_field(self, path: str, default: Any = None) -> Any:
+    def get_field(  # type: ignore[override]
+        self, path: str, default: object = None
+    ) -> object:
         """Get a field value from the appropriate typed storage.
 
         For simple field names, returns raw values from typed storages.
         For nested paths (containing '.'), returns ModelResult.
+
+        Note:
+            This method intentionally overrides the parent's return type.
+            Parent returns ModelResult[ModelSchemaValue, str], but this
+            implementation returns raw values for simple paths (no dots).
         """
         try:
             # Handle nested field paths - return ModelResult for dot notation support
@@ -554,7 +560,9 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
             # Initialize our custom_fields if other has them but we don't
             self.custom_fields = copy.deepcopy(other_custom_fields)
 
-    def model_dump(self, exclude_none: bool = False, **kwargs: Any) -> SerializedDict:
+    def model_dump(
+        self, exclude_none: bool = False, **kwargs: object
+    ) -> SerializedDict:
         """Override model_dump to include all field data."""
         data: SerializedDict = {}
 
@@ -642,7 +650,7 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
 
     # Protocol method implementations
 
-    def configure(self, **kwargs: Any) -> bool:
+    def configure(self, **kwargs: object) -> bool:
         """Configure instance with provided parameters (Configurable protocol)."""
         try:
             for key, value in kwargs.items():

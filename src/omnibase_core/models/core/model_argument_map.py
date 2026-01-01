@@ -5,7 +5,7 @@ Type-safe container for parsed CLI arguments that provides both positional
 and named argument access with type conversion capabilities.
 """
 
-from typing import Any, TypeVar
+from typing import TypeVar
 
 from pydantic import BaseModel, Field
 
@@ -203,21 +203,23 @@ class ModelArgumentMap(BaseModel):
     def add_named_argument(
         self,
         name: str,
-        value: Any,
+        value: object,
         arg_type: str = "string",
     ) -> None:
         """Add a named argument to the map."""
+        # Cast to ArgumentValueType - caller is responsible for passing compatible values
         arg_value = ModelArgumentValue(
-            value=value,
+            value=value,  # type: ignore[arg-type]
             original_string=str(value),
             type_name=arg_type,
         )
         self.named_args[name] = arg_value
 
-    def add_positional_argument(self, value: Any, arg_type: str = "string") -> None:
+    def add_positional_argument(self, value: object, arg_type: str = "string") -> None:
         """Add a positional argument to the map."""
+        # Cast to ArgumentValueType - caller is responsible for passing compatible values
         arg_value = ModelArgumentValue(
-            value=value,
+            value=value,  # type: ignore[arg-type]
             original_string=str(value),
             type_name=arg_type,
         )

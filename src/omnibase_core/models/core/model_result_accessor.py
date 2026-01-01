@@ -6,8 +6,6 @@ Specialized accessor for handling CLI execution results and metadata.
 
 from __future__ import annotations
 
-from typing import Any
-
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.types.constraints import PrimitiveValueType
 from omnibase_core.types.type_serializable_value import SerializedDict
@@ -69,7 +67,7 @@ class ModelResultAccessor(ModelFieldAccessor):
 
     # Protocol method implementations
 
-    def configure(self, **kwargs: Any) -> bool:
+    def configure(self, **kwargs: object) -> bool:
         """Configure instance with provided parameters (Configurable protocol)."""
         try:
             for key, value in kwargs.items():

@@ -6,7 +6,6 @@ where all traceability information is guaranteed to be present.
 """
 
 from datetime import UTC, datetime
-from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -57,7 +56,7 @@ class ModelOnexInternalProcessingContext(BaseModel):
         correlation_id: UUID | None = None,
         event_id: UUID | None = None,
         session_id: UUID | None = None,
-        **additional_data: Any,
+        **additional_data: object,
     ) -> "ModelOnexInternalProcessingContext":
         """
         Create processing context for an operation, generating UUIDs as needed.

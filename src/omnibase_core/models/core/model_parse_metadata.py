@@ -6,7 +6,6 @@ metrics, source information, and parsing context.
 """
 
 from datetime import UTC, datetime
-from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -120,13 +119,13 @@ class ModelParseMetadata(BaseModel):
             duration = self.parse_end_time - self.parse_start_time
             self.parse_duration_ms = int(duration.total_seconds() * 1000)
 
-    def add_debug_info(self, key: str, value: Any) -> None:
+    def add_debug_info(self, key: str, value: object) -> None:
         """Add debug information."""
-        self.debug_info[key] = value
+        self.debug_info[key] = value  # type: ignore[assignment]
 
-    def add_context(self, key: str, value: Any) -> None:
+    def add_context(self, key: str, value: object) -> None:
         """Add parsing context information."""
-        self.parsing_context[key] = value
+        self.parsing_context[key] = value  # type: ignore[assignment]
 
     def get_performance_summary(self) -> SerializedDict:
         """Get performance summary for monitoring."""
