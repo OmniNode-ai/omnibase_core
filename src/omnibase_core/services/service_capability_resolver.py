@@ -62,9 +62,7 @@ from omnibase_core.protocols.resolution.protocol_capability_resolver import (
     ProtocolProfile,
     ProtocolProviderRegistry,
 )
-from omnibase_core.types.typed_dict_provider_attributes import (
-    TypedDictProviderAttributeValue,
-)
+from omnibase_core.types.json_types import JsonType
 from omnibase_core.types.typed_dict_resolution_audit_data import (
     TypedDictResolutionAuditData,
 )
@@ -458,7 +456,7 @@ class ServiceCapabilityResolver:
 
         # Combine attributes and features for constraint checking
         # Attributes are static metadata, features are capabilities
-        provider_values: dict[str, TypedDictProviderAttributeValue] = {
+        provider_values: dict[str, JsonType] = {
             **provider.attributes,
             **effective_features,
         }
@@ -507,7 +505,7 @@ class ServiceCapabilityResolver:
         for provider in providers:
             score = 0.0
             effective_features = provider.get_effective_features()
-            provider_values: dict[str, TypedDictProviderAttributeValue] = {
+            provider_values: dict[str, JsonType] = {
                 **provider.attributes,
                 **effective_features,
             }
