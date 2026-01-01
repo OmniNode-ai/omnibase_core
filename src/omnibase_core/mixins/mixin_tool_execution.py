@@ -84,7 +84,6 @@ class MixinToolExecution:
             parameters: list[object] = (
                 parameters_raw if isinstance(parameters_raw, list) else []
             )
-            event_data.get("timeout", 30)
 
             # Check if this request is for this tool
             if requested_tool != self.get_node_name():

@@ -236,9 +236,7 @@ class MixinHybridExecution[InputStateT, OutputStateT]:
 
             return cast("OutputStateT", result)
 
-        except (
-            Exception
-        ) as e:  # fallback-ok: workflow failure falls back to direct execution with logging
+        except Exception as e:  # fallback-ok: workflow failure falls back to direct execution with logging
             emit_log_event(
                 LogLevel.ERROR,
                 f"❌ WORKFLOW_EXECUTION: Workflow failed: {e}",
@@ -310,11 +308,11 @@ class MixinHybridExecution[InputStateT, OutputStateT]:
 
         return min(score, 1.0)
 
-    def _get_supported_modes(self) -> list[object]:
+    def _get_supported_modes(self) -> list[str]:
         """Get supported execution modes from contract."""
         # Try to get from contract data
         if hasattr(self, "contract_data") and self.contract_data:
-            modes: list[object] = self.contract_data.get(cf.EXECUTION_MODES, [])
+            modes: list[str] = self.contract_data.get(cf.EXECUTION_MODES, [])
             if modes:
                 return modes
 
