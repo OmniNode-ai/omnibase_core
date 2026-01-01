@@ -1,5 +1,3 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team
-# SPDX-License-Identifier: Apache-2.0
 """Contract Models for ONEX Four-Node Architecture.
 
 This module provides Pydantic models for validating and managing contract
@@ -70,8 +68,8 @@ from omnibase_core.models.runtime.model_descriptor_circuit_breaker import (
 from omnibase_core.models.runtime.model_descriptor_retry_policy import (
     ModelDescriptorRetryPolicy,
 )
-from omnibase_core.models.runtime.model_handler_behavior_descriptor import (
-    ModelHandlerBehaviorDescriptor,
+from omnibase_core.models.runtime.model_handler_behavior import (
+    ModelHandlerBehavior,
 )
 from omnibase_core.models.security.model_condition_value import ModelConditionValue
 from omnibase_core.models.services.model_external_service_config import (
@@ -89,10 +87,6 @@ from .model_algorithm_factor_config import ModelAlgorithmFactorConfig
 from .model_backup_config import ModelBackupConfig
 from .model_branching_config import ModelBranchingConfig
 from .model_caching_config import ModelCachingConfig
-from .model_capability_dependency import (
-    ModelCapabilityDependency,
-    SelectionPolicy,
-)
 from .model_compensation_plan import ModelCompensationPlan
 from .model_condition_value_list import ModelConditionValueList
 from .model_conflict_resolution_config import ModelConflictResolutionConfig
@@ -122,11 +116,9 @@ from .model_effect_retry_config import ModelEffectRetryConfig
 from .model_event_coordination_config import ModelEventCoordinationConfig
 from .model_event_registry_config import ModelEventRegistryConfig
 from .model_event_subscription import ModelEventSubscription
-from .model_execution_constraints import ModelExecutionConstraints
 from .model_execution_ordering_policy import ModelExecutionOrderingPolicy
 from .model_execution_profile import DEFAULT_EXECUTION_PHASES, ModelExecutionProfile
 from .model_filter_conditions import ModelFilterConditions
-from .model_handler_contract import ModelHandlerContract
 from .model_input_validation_config import ModelInputValidationConfig
 from .model_io_operation_config import ModelIOOperationConfig
 from .model_lifecycle_config import ModelLifecycleConfig
@@ -164,11 +156,6 @@ __all__ = [
     "ModelDependencySpec",
     "DependencyType",
     "SelectionStrategy",
-    # Handler contract models (OMN-1117)
-    "ModelCapabilityDependency",
-    "SelectionPolicy",
-    "ModelExecutionConstraints",
-    "ModelHandlerContract",
     "ModelDriftDetails",
     "ModelDriftResult",
     "ModelNodeExtensions",
@@ -198,8 +185,8 @@ __all__ = [
     "ModelExecutionOrderingPolicy",
     "ModelExecutionProfile",
     "DEFAULT_EXECUTION_PHASES",
-    # Handler behavior descriptor models (for contract-driven execution)
-    "ModelHandlerBehaviorDescriptor",
+    # Handler behavior models (for contract-driven execution)
+    "ModelHandlerBehavior",
     "ModelDescriptorRetryPolicy",
     "ModelDescriptorCircuitBreaker",
     "ModelEventRegistryConfig",

@@ -6,8 +6,8 @@ from omnibase_core.models.runtime.model_descriptor_circuit_breaker import (
 from omnibase_core.models.runtime.model_descriptor_retry_policy import (
     ModelDescriptorRetryPolicy,
 )
-from omnibase_core.models.runtime.model_handler_behavior_descriptor import (
-    ModelHandlerBehaviorDescriptor,
+from omnibase_core.models.runtime.model_handler_behavior import (
+    ModelHandlerBehavior,
 )
 from omnibase_core.models.runtime.model_handler_metadata import ModelHandlerMetadata
 from omnibase_core.models.runtime.model_runtime_directive import ModelRuntimeDirective
@@ -27,7 +27,7 @@ from omnibase_core.models.runtime.payloads import (
 
 __all__ = [
     # Core runtime models
-    "ModelHandlerBehaviorDescriptor",
+    "ModelHandlerBehavior",
     "ModelDescriptorRetryPolicy",
     "ModelDescriptorCircuitBreaker",
     "ModelHandlerMetadata",

@@ -77,7 +77,6 @@ from .core_types import ProtocolSchemaValue, TypedDictBasicErrorContext
 from .json_types import (
     JsonPrimitive,
     JsonType,
-    JsonValue,
     PrimitiveContainer,
     PrimitiveValue,
     ToolParameterValue,
@@ -394,7 +393,6 @@ __all__ = [
     "StepOutputs",
     # JSON type aliases
     "JsonPrimitive",
-    "JsonValue",
     "JsonType",
     "PrimitiveValue",
     "PrimitiveContainer",

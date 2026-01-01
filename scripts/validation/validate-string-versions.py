@@ -231,6 +231,15 @@ class PythonASTValidator(ast.NodeVisitor):
             "route_id",  # Dispatch route identifier (human-readable, not UUID)
             "target_handler_id",  # Runtime directive target handler (human-readable, not UUID)
             "matched_route_id",  # Dispatch result matched route (human-readable)
+            # MANIFEST_IDENTIFIERS (execution manifest observability identifiers)
+            # See: src/omnibase_core/models/manifest/ for manifest model definitions
+            # These are human-readable identifiers for pipeline observability, not UUIDs
+            "contract_id",  # Contract identifier (human-readable, e.g., "my-contract")
+            "hook_id",  # Hook identifier (human-readable, e.g., "pre-validation-hook")
+            "capability_id",  # Capability identifier (human-readable, e.g., "cache-support")
+            "from_handler_id",  # Dependency edge source handler (human-readable)
+            "to_handler_id",  # Dependency edge target handler (human-readable)
+            "handler_descriptor_id",  # Handler descriptor ID (human-readable)
             # TEST_FIXTURES (test helper fields removed - production code should use UUID)
             # TYPED_DICT_SERIALIZATION_BOUNDARY (TypedDicts for logging/monitoring/introspection)
             # See: src/omnibase_core/types/ for TypedDict definitions

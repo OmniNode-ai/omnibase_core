@@ -10,7 +10,7 @@ from typing import cast
 from pydantic import BaseModel, Field
 
 from omnibase_core.models.common.model_typed_value import ModelTypedMapping
-from omnibase_core.types.json_types import JsonValue
+from omnibase_core.types.json_types import JsonType
 
 
 class ModelSecurityPolicyData(BaseModel):
@@ -24,17 +24,17 @@ class ModelSecurityPolicyData(BaseModel):
 
     # Current standards property
     @property
-    def data(self) -> dict[str, JsonValue]:
+    def data(self) -> dict[str, JsonType]:
         """Get policy data as a regular dictionary for current standards."""
         return cast(
-            "dict[str, JsonValue]",
+            "dict[str, JsonType]",
             self.typed_data.to_python_dict(),
         )
 
     def set_policy_value(
         self,
         key: str,
-        value: JsonValue,
+        value: JsonType,
     ) -> None:
         """
         Set a policy value with automatic type conversion.
@@ -48,8 +48,8 @@ class ModelSecurityPolicyData(BaseModel):
     def get_policy_value(
         self,
         key: str,
-        default: JsonValue = None,
-    ) -> JsonValue:
+        default: JsonType = None,
+    ) -> JsonType:
         """
         Get a policy value.
 
@@ -62,14 +62,14 @@ class ModelSecurityPolicyData(BaseModel):
         """
 
         return cast(
-            JsonValue,
+            JsonType,
             self.typed_data.get_value(key, default),
         )
 
     @classmethod
     def from_dict(
         cls,
-        data: dict[str, JsonValue],
+        data: dict[str, JsonType],
     ) -> "ModelSecurityPolicyData":
         """
         Create from a regular dictionary using ONEX-compatible patterns.

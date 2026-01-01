@@ -1,30 +1,23 @@
 """
-Handler Behavior Descriptor Model.
+Handler Behavior Model.
 
 Defines runtime behavior characteristics for handlers embedded in contracts.
-Part of the three-layer architecture: Profile -> Descriptor -> Contract.
+Part of the three-layer architecture: Profile -> Behavior -> Contract.
 
 This model configures how handlers behave at runtime including purity,
 idempotency, concurrency, isolation, and observability settings.
 
 Note:
-    This is the **behavior descriptor** (runtime configuration), distinct from
-    ``ModelHandlerDescriptor`` in ``models/handlers/`` which is the **registry
-    descriptor** (identity, classification, instantiation).
-
-    - ``ModelHandlerBehaviorDescriptor``: How the handler BEHAVES (this model)
-    - ``ModelHandlerDescriptor``: What the handler IS (registry/discovery)
+    This model was renamed from ModelHandlerDescriptor to ModelHandlerBehavior
+    to avoid collision with the registry-focused ModelHandlerDescriptor in
+    omnibase_core.models.handlers.model_handler_descriptor.
 
 Related:
-    - OMN-1117: Handler Contract Model & YAML Schema
     - OMN-1125: Default Profile Factory for Contracts
     - ModelExecutionProfile: Profile layer (execution resource allocation)
     - ModelContractBase: Contract layer (declarative node specification)
 
 .. versionadded:: 0.4.0
-.. versionchanged:: 0.4.1
-    Renamed from ModelHandlerDescriptor to ModelHandlerBehaviorDescriptor
-    to disambiguate from the registry descriptor in models/handlers/.
 """
 
 from typing import Literal
@@ -39,12 +32,12 @@ from omnibase_core.models.runtime.model_descriptor_retry_policy import (
 )
 
 __all__ = [
-    "ModelHandlerBehaviorDescriptor",
+    "ModelHandlerBehavior",
 ]
 
 
-class ModelHandlerBehaviorDescriptor(BaseModel):
-    """Handler behavior descriptor embedded in contracts.
+class ModelHandlerBehavior(BaseModel):
+    """Handler behavior configuration embedded in contracts.
 
     Defines runtime behavior characteristics for handlers including purity,
     idempotency, concurrency, isolation, and observability. This model is
@@ -52,7 +45,7 @@ class ModelHandlerBehaviorDescriptor(BaseModel):
 
     1. **Profile** (ModelExecutionProfile): Resource allocation and execution
        environment settings (CPU, memory, timeout defaults).
-    2. **Descriptor** (this model): Handler behavior configuration embedded
+    2. **Behavior** (this model): Handler behavior configuration embedded
        in contracts defining how the handler operates.
     3. **Contract** (ModelContractBase): Full declarative node specification
        including I/O schemas, dependencies, and metadata.
@@ -98,7 +91,7 @@ class ModelHandlerBehaviorDescriptor(BaseModel):
         capability_outputs: Provided output capabilities (e.g., ["event", "log"]).
 
     Example:
-        >>> descriptor = ModelHandlerBehaviorDescriptor(
+        >>> behavior = ModelHandlerBehavior(
         ...     handler_kind="compute",
         ...     purity="pure",
         ...     idempotent=True,
@@ -108,7 +101,7 @@ class ModelHandlerBehaviorDescriptor(BaseModel):
         ... )
 
         >>> # Effect handler with retry and circuit breaker
-        >>> effect_descriptor = ModelHandlerBehaviorDescriptor(
+        >>> effect_behavior = ModelHandlerBehavior(
         ...     handler_kind="effect",
         ...     purity="side_effecting",
         ...     idempotent=True,  # Required for retry
