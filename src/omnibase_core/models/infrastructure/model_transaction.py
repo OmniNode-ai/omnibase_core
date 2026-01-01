@@ -100,12 +100,13 @@ class ModelTransaction:
                 # - SystemExit: System shutdown request
                 if deferred_base_exception is None:
                     deferred_base_exception = e
+                exc_name = type(e).__name__
                 emit_log_event(
                     LogLevel.WARNING,
-                    f"Critical exception during rollback - deferring: {type(e).__name__}",
+                    f"Critical exception during rollback - deferring: {exc_name}",
                     {
                         "transaction_id": str(self.transaction_id),
-                        "exception_type": type(e).__name__,
+                        "exception_type": exc_name,
                     },
                 )
             except Exception as e:  # cleanup-resilience-ok: rollback must complete
@@ -131,12 +132,13 @@ class ModelTransaction:
                 # to re-raise after cleanup completes.
                 if deferred_base_exception is None:
                     deferred_base_exception = e
+                exc_name = type(e).__name__
                 emit_log_event(
                     LogLevel.WARNING,
-                    f"Unexpected BaseException during rollback - deferring: {type(e).__name__}",
+                    f"Unexpected BaseException during rollback - deferring: {exc_name}",
                     {
                         "transaction_id": str(self.transaction_id),
-                        "exception_type": type(e).__name__,
+                        "exception_type": exc_name,
                     },
                 )
 
