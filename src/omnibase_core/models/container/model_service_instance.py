@@ -45,7 +45,7 @@ class ModelServiceInstance(BaseModel):
 
     instance_id: UUID = Field(description="Unique instance identifier")
     service_registration_id: UUID = Field(description="Registration ID")
-    instance: object = Field(description="Actual service instance")
+    instance: object | None = Field(default=None, description="Actual service instance")
     lifecycle: LiteralServiceLifecycle = Field(description="Lifecycle pattern")
     scope: LiteralInjectionScope = Field(description="Injection scope")
     created_at: datetime = Field(

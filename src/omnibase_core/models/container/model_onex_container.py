@@ -112,6 +112,13 @@ except ImportError:
 # Future: Replace with proper protocol imports once implemented:
 #   from omnibase_core.protocols.database import ProtocolDatabaseConnection
 #   from omnibase_core.protocols.discovery import ProtocolServiceDiscovery
+#
+# TODO(OMN-XXXX): Define proper protocol types for ProtocolDatabaseConnection and ProtocolServiceDiscovery
+# - ProtocolDatabaseConnection: Should define async methods for connection lifecycle, query execution,
+#   transaction management, and connection pooling
+# - ProtocolServiceDiscovery: Should define methods for service registration, lookup, health checks,
+#   and service metadata retrieval
+# See: docs/protocols/README.md for protocol design guidelines
 ProtocolDatabaseConnection = object
 ProtocolServiceDiscovery = object
 

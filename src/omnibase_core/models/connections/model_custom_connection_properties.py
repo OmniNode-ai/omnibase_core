@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, ValidationError, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_instance_type import EnumInstanceType
@@ -21,6 +21,38 @@ from .model_cloud_service_properties import ModelCloudServiceProperties
 from .model_database_properties import ModelDatabaseProperties
 from .model_message_queue_properties import ModelMessageQueueProperties
 from .model_performance_properties import ModelPerformanceProperties
+
+
+def _coerce_to_model[ModelT: BaseModel](value: object, model_type: type[ModelT]) -> ModelT:
+    """Coerce a value to a Pydantic model using duck typing.
+
+    Uses Pydantic's model_validate() which handles structural validation:
+    - Dict/mapping inputs: Coerces to model instance
+    - Existing model instances: Validates and returns
+    - None: Returns default model instance
+    - Invalid inputs: Returns default model instance (lenient mode)
+
+    This follows duck typing principles - validation is based on
+    structural compatibility rather than explicit isinstance checks.
+    See ONEX guidelines: "Use duck typing with protocols instead of
+    isinstance checks for type validation."
+
+    Args:
+        value: The value to coerce (dict, model instance, or None)
+        model_type: The target Pydantic model class
+
+    Returns:
+        A validated instance of model_type
+    """
+    if value is None:
+        return model_type()
+    try:
+        # model_validate handles both dicts and existing instances via duck typing
+        return model_type.model_validate(value)
+    except ValidationError:
+        # Lenient mode: return default on validation failure
+        # This maintains backward compatibility with the original behavior
+        return model_type()
 
 
 class ModelCustomConnectionProperties(BaseModel):
@@ -151,43 +183,25 @@ class ModelCustomConnectionProperties(BaseModel):
             collation=collation,
         )
 
-        # Extract known parameters from kwargs and validate types
-        kwargs_dict = dict(kwargs)  # Convert to mutable dict[str, Any]for type safety
-        message_queue = kwargs_dict.pop("message_queue", None)
-        if message_queue is not None and not isinstance(
-            message_queue,
-            ModelMessageQueueProperties,
-        ):
-            message_queue = ModelMessageQueueProperties()
+        # Extract known parameters from kwargs and coerce to models using duck typing.
+        # Uses Pydantic validation instead of isinstance checks per ONEX guidelines.
+        kwargs_dict = dict(kwargs)  # Convert to mutable dict for type safety
 
-        cloud_service = kwargs_dict.pop("cloud_service", None)
-        if cloud_service is not None and not isinstance(
-            cloud_service,
-            ModelCloudServiceProperties,
-        ):
-            cloud_service = ModelCloudServiceProperties()
-
-        performance = kwargs_dict.pop("performance", None)
-        if performance is not None and not isinstance(
-            performance,
-            ModelPerformanceProperties,
-        ):
-            performance = ModelPerformanceProperties()
-
-        custom_properties = kwargs_dict.pop("custom_properties", None)
-        if custom_properties is not None and not isinstance(
-            custom_properties,
-            ModelCustomProperties,
-        ):
-            custom_properties = ModelCustomProperties()
-
-        # Call constructor with explicit parameters
+        # Call constructor with coerced parameters
         return cls(
             database=database_props,
-            message_queue=message_queue or ModelMessageQueueProperties(),
-            cloud_service=cloud_service or ModelCloudServiceProperties(),
-            performance=performance or ModelPerformanceProperties(),
-            custom_properties=custom_properties or ModelCustomProperties(),
+            message_queue=_coerce_to_model(
+                kwargs_dict.pop("message_queue", None), ModelMessageQueueProperties
+            ),
+            cloud_service=_coerce_to_model(
+                kwargs_dict.pop("cloud_service", None), ModelCloudServiceProperties
+            ),
+            performance=_coerce_to_model(
+                kwargs_dict.pop("performance", None), ModelPerformanceProperties
+            ),
+            custom_properties=_coerce_to_model(
+                kwargs_dict.pop("custom_properties", None), ModelCustomProperties
+            ),
         )
 
     @classmethod
@@ -207,40 +221,25 @@ class ModelCustomConnectionProperties(BaseModel):
             durable=durable,
         )
 
-        # Extract known parameters from kwargs and validate types
-        kwargs_dict = dict(kwargs)  # Convert to mutable dict[str, Any]for type safety
-        database = kwargs_dict.pop("database", None)
-        if database is not None and not isinstance(database, ModelDatabaseProperties):
-            database = ModelDatabaseProperties()
+        # Extract known parameters from kwargs and coerce to models using duck typing.
+        # Uses Pydantic validation instead of isinstance checks per ONEX guidelines.
+        kwargs_dict = dict(kwargs)  # Convert to mutable dict for type safety
 
-        cloud_service = kwargs_dict.pop("cloud_service", None)
-        if cloud_service is not None and not isinstance(
-            cloud_service,
-            ModelCloudServiceProperties,
-        ):
-            cloud_service = ModelCloudServiceProperties()
-
-        performance = kwargs_dict.pop("performance", None)
-        if performance is not None and not isinstance(
-            performance,
-            ModelPerformanceProperties,
-        ):
-            performance = ModelPerformanceProperties()
-
-        custom_properties = kwargs_dict.pop("custom_properties", None)
-        if custom_properties is not None and not isinstance(
-            custom_properties,
-            ModelCustomProperties,
-        ):
-            custom_properties = ModelCustomProperties()
-
-        # Call constructor with explicit parameters
+        # Call constructor with coerced parameters
         return cls(
-            database=database or ModelDatabaseProperties(),
+            database=_coerce_to_model(
+                kwargs_dict.pop("database", None), ModelDatabaseProperties
+            ),
             message_queue=queue_props,
-            cloud_service=cloud_service or ModelCloudServiceProperties(),
-            performance=performance or ModelPerformanceProperties(),
-            custom_properties=custom_properties or ModelCustomProperties(),
+            cloud_service=_coerce_to_model(
+                kwargs_dict.pop("cloud_service", None), ModelCloudServiceProperties
+            ),
+            performance=_coerce_to_model(
+                kwargs_dict.pop("performance", None), ModelPerformanceProperties
+            ),
+            custom_properties=_coerce_to_model(
+                kwargs_dict.pop("custom_properties", None), ModelCustomProperties
+            ),
         )
 
     @classmethod
@@ -254,7 +253,10 @@ class ModelCustomConnectionProperties(BaseModel):
     ) -> ModelCustomConnectionProperties:
         """Create service connection properties."""
 
-        # Handle instance_type conversion with fallback for unknown strings
+        # Handle instance_type conversion with fallback for unknown strings.
+        # NOTE: The isinstance checks below for EnumInstanceType and str are justified
+        # for type-based dispatch during enum coercion. This is different from type
+        # validation - we need to know the type to apply the correct conversion logic.
         final_instance_type: EnumInstanceType | None = None
 
         if instance_type is None:
@@ -286,40 +288,25 @@ class ModelCustomConnectionProperties(BaseModel):
             availability_zone=availability_zone,
         )
 
-        # Extract known parameters from kwargs and validate types
-        kwargs_dict = dict(kwargs)  # Convert to mutable dict[str, Any]for type safety
-        database = kwargs_dict.pop("database", None)
-        if database is not None and not isinstance(database, ModelDatabaseProperties):
-            database = ModelDatabaseProperties()
+        # Extract known parameters from kwargs and coerce to models using duck typing.
+        # Uses Pydantic validation instead of isinstance checks per ONEX guidelines.
+        kwargs_dict = dict(kwargs)  # Convert to mutable dict for type safety
 
-        message_queue = kwargs_dict.pop("message_queue", None)
-        if message_queue is not None and not isinstance(
-            message_queue,
-            ModelMessageQueueProperties,
-        ):
-            message_queue = ModelMessageQueueProperties()
-
-        performance = kwargs_dict.pop("performance", None)
-        if performance is not None and not isinstance(
-            performance,
-            ModelPerformanceProperties,
-        ):
-            performance = ModelPerformanceProperties()
-
-        custom_properties = kwargs_dict.pop("custom_properties", None)
-        if custom_properties is not None and not isinstance(
-            custom_properties,
-            ModelCustomProperties,
-        ):
-            custom_properties = ModelCustomProperties()
-
-        # Call constructor with explicit parameters
+        # Call constructor with coerced parameters
         return cls(
-            database=database or ModelDatabaseProperties(),
-            message_queue=message_queue or ModelMessageQueueProperties(),
+            database=_coerce_to_model(
+                kwargs_dict.pop("database", None), ModelDatabaseProperties
+            ),
+            message_queue=_coerce_to_model(
+                kwargs_dict.pop("message_queue", None), ModelMessageQueueProperties
+            ),
             cloud_service=cloud_props,
-            performance=performance or ModelPerformanceProperties(),
-            custom_properties=custom_properties or ModelCustomProperties(),
+            performance=_coerce_to_model(
+                kwargs_dict.pop("performance", None), ModelPerformanceProperties
+            ),
+            custom_properties=_coerce_to_model(
+                kwargs_dict.pop("custom_properties", None), ModelCustomProperties
+            ),
         )
 
     # Property accessors
@@ -543,29 +530,38 @@ class ModelCustomConnectionProperties(BaseModel):
     # Protocol method implementations
 
     def configure(self, **kwargs: object) -> bool:
-        """Configure instance with provided parameters (Configurable protocol)."""
+        """Configure instance with provided parameters (Configurable protocol).
+
+        Raises:
+            ModelOnexError: If configuration fails due to validation errors,
+                type mismatches, or attribute access issues.
+        """
         try:
             for key, value in kwargs.items():
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception as e:
+        except (ValidationError, ValueError, TypeError, AttributeError) as e:
+            # ValidationError: Pydantic validation failure (validate_assignment=True)
+            # ValueError: Custom validator rejection or invalid value
+            # TypeError: Type coercion failure
+            # AttributeError: Read-only attribute or access issue
             raise ModelOnexError(
-                message=f"Operation failed: {e}",
+                message=f"Configuration failed for property: {e}",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                context={"failed_keys": list(kwargs.keys())},
             ) from e
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except Exception as e:
-            raise ModelOnexError(
-                message=f"Operation failed: {e}",
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-            ) from e
+        """Validate instance integrity (ProtocolValidatable protocol).
+
+        This base implementation always returns True. Subclasses should override
+        this method to perform custom validation and catch specific exceptions
+        (e.g., ValidationError, ValueError) when implementing validation logic.
+        """
+        # Basic validation - ensure required fields exist
+        # Override in specific models for custom validation
+        return True
 
     def serialize(self) -> SerializedDict:
         """Serialize to dictionary (Serializable protocol)."""
