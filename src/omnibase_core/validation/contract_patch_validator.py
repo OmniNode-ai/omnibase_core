@@ -19,18 +19,19 @@ Logging Conventions:
     - ERROR: Failures that will fail validation
 
 Error Code Conventions:
-    Error codes in this module follow these patterns:
-    - DUPLICATE_LIST_ENTRIES: Duplicate items within an add list
-    - EMPTY_DESCRIPTOR_PATCH: Behavior patch (descriptor field) with no overrides
-    - PURITY_IDEMPOTENT_MISMATCH: Conflicting purity/idempotent settings
-    - NEW_CONTRACT_IDENTITY: Informational - new contract identity declared
-    - NON_STANDARD_PROFILE_NAME: Profile name doesn't follow conventions
-    - NON_STANDARD_VERSION_FORMAT: Version string format is non-standard
-    - FILE_NOT_FOUND: File does not exist
-    - FILE_READ_ERROR: File could not be read
-    - UNEXPECTED_EXTENSION: File has unexpected extension
-    - YAML_VALIDATION_ERROR: YAML parsing or validation error
-    - PYDANTIC_VALIDATION_ERROR: Pydantic model validation error
+    Error codes in this module use the CONTRACT_PATCH_* prefix for consistent
+    categorization per PR #289. All codes are defined in EnumPatchValidationErrorCode:
+    - CONTRACT_PATCH_DUPLICATE_LIST_ENTRIES: Duplicate items within an add list
+    - CONTRACT_PATCH_EMPTY_DESCRIPTOR: Behavior patch with no overrides
+    - CONTRACT_PATCH_PURITY_IDEMPOTENT_MISMATCH: Conflicting purity/idempotent settings
+    - CONTRACT_PATCH_NEW_IDENTITY: Informational - new contract identity declared
+    - CONTRACT_PATCH_NON_STANDARD_PROFILE_NAME: Profile name doesn't follow conventions
+    - CONTRACT_PATCH_NON_STANDARD_VERSION_FORMAT: Version format is non-standard
+    - CONTRACT_PATCH_FILE_NOT_FOUND: File does not exist
+    - CONTRACT_PATCH_FILE_READ_ERROR: File could not be read
+    - CONTRACT_PATCH_UNEXPECTED_EXTENSION: File has unexpected extension
+    - CONTRACT_PATCH_YAML_VALIDATION_ERROR: YAML parsing or validation error
+    - CONTRACT_PATCH_PYDANTIC_VALIDATION_ERROR: Pydantic model validation error
 
 Related:
     - OMN-1126: ModelContractPatch & Patch Validation
@@ -43,6 +44,9 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
+from omnibase_core.enums.enum_patch_validation_error_code import (
+    EnumPatchValidationErrorCode,
+)
 from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
 from omnibase_core.models.common.model_validation_result import ModelValidationResult
 from omnibase_core.models.contracts.model_contract_patch import ModelContractPatch
@@ -229,7 +233,7 @@ class ContractPatchValidator:
                 field_path = ".".join(str(loc) for loc in error["loc"])
                 result.add_error(
                     f"Validation error at '{field_path}': {error['msg']}",
-                    code="PYDANTIC_VALIDATION_ERROR",
+                    code=EnumPatchValidationErrorCode.CONTRACT_PATCH_PYDANTIC_VALIDATION_ERROR.value,
                 )
             result.summary = (
                 f"Dictionary validation failed with {len(e.errors())} errors"
@@ -282,7 +286,7 @@ class ContractPatchValidator:
             result.is_valid = False
             result.add_error(
                 f"File not found: {path}",
-                code="FILE_NOT_FOUND",
+                code=EnumPatchValidationErrorCode.CONTRACT_PATCH_FILE_NOT_FOUND.value,
                 file_path=path,
             )
             result.summary = "File validation failed: file not found"
@@ -293,7 +297,7 @@ class ContractPatchValidator:
             logger.warning(f"Unexpected file extension for {path}: {path.suffix}")
             result.add_warning(
                 f"Expected .yaml or .yml extension, got: {path.suffix}",
-                code="UNEXPECTED_EXTENSION",
+                code=EnumPatchValidationErrorCode.CONTRACT_PATCH_UNEXPECTED_EXTENSION.value,
                 file_path=path,
             )
 
@@ -305,7 +309,7 @@ class ContractPatchValidator:
             result.is_valid = False
             result.add_error(
                 f"File read error: {e}",
-                code="FILE_READ_ERROR",
+                code=EnumPatchValidationErrorCode.CONTRACT_PATCH_FILE_READ_ERROR.value,
                 file_path=path,
             )
             result.summary = "File validation failed: file read error"
@@ -332,23 +336,14 @@ class ContractPatchValidator:
             result.is_valid = False
             result.add_error(
                 f"YAML parsing or validation error: {e.message}",
-                code="YAML_VALIDATION_ERROR",
+                code=EnumPatchValidationErrorCode.CONTRACT_PATCH_YAML_VALIDATION_ERROR.value,
                 file_path=path,
             )
             result.summary = "File validation failed: YAML validation error"
 
-        except ValidationError as e:
-            logger.warning(
-                f"Pydantic validation failed for {path}: {len(e.errors())} errors"
-            )
-            result.is_valid = False
-            for error in e.errors():
-                field_path = ".".join(str(loc) for loc in error["loc"])
-                result.add_error(
-                    f"Validation error at '{field_path}': {error['msg']}",
-                    code="PYDANTIC_VALIDATION_ERROR",
-                )
-            result.summary = f"File validation failed with {len(e.errors())} errors"
+        # Note: ValidationError is not caught here because load_yaml_content_as_model
+        # wraps ValidationError in ModelOnexError (see util_safe_yaml_loader.py).
+        # The ModelOnexError handler above handles all validation-related errors.
 
         return result
 
@@ -398,7 +393,7 @@ class ContractPatchValidator:
             logger.debug(f"Found duplicate {field_name}s in add list: {duplicates}")
             result.add_error(
                 f"Duplicate {field_name}(s) in add list: {duplicates}",
-                code="DUPLICATE_LIST_ENTRIES",
+                code=EnumPatchValidationErrorCode.CONTRACT_PATCH_DUPLICATE_LIST_ENTRIES.value,
             )
 
     def _validate_list_operation_duplicates(
@@ -492,7 +487,7 @@ class ContractPatchValidator:
             result.add_issue(
                 severity=EnumValidationSeverity.INFO,
                 message="Behavior patch is present but has no overrides",
-                code="EMPTY_DESCRIPTOR_PATCH",
+                code=EnumPatchValidationErrorCode.CONTRACT_PATCH_EMPTY_DESCRIPTOR.value,
                 suggestion="Remove the empty descriptor field or add behavior overrides",
             )
 
@@ -507,7 +502,7 @@ class ContractPatchValidator:
                     "Behavior declares purity='pure' but idempotent=False. "
                     "Pure functions are typically idempotent."
                 ),
-                code="PURITY_IDEMPOTENT_MISMATCH",
+                code=EnumPatchValidationErrorCode.CONTRACT_PATCH_PURITY_IDEMPOTENT_MISMATCH.value,
                 suggestion="Consider setting idempotent=True for pure handlers",
             )
 
@@ -539,7 +534,7 @@ class ContractPatchValidator:
             result.add_issue(
                 severity=EnumValidationSeverity.INFO,
                 message=f"Patch declares new contract identity: {patch.name}",
-                code="NEW_CONTRACT_IDENTITY",
+                code=EnumPatchValidationErrorCode.CONTRACT_PATCH_NEW_IDENTITY.value,
             )
 
     def _validate_profile_reference(
@@ -582,13 +577,13 @@ class ContractPatchValidator:
             result.add_warning(
                 f"Profile name '{profile}' contains non-standard characters. "
                 "Recommended format: lowercase_with_underscores",
-                code="NON_STANDARD_PROFILE_NAME",
+                code=EnumPatchValidationErrorCode.CONTRACT_PATCH_NON_STANDARD_PROFILE_NAME.value,
             )
         elif any(c.isupper() for c in profile):
             result.add_warning(
                 f"Profile name '{profile}' contains uppercase characters. "
                 "Recommended format: lowercase_with_underscores",
-                code="NON_STANDARD_PROFILE_NAME",
+                code=EnumPatchValidationErrorCode.CONTRACT_PATCH_NON_STANDARD_PROFILE_NAME.value,
             )
 
         # Check version format (basic semver check)
@@ -596,5 +591,5 @@ class ContractPatchValidator:
             result.add_warning(
                 f"Version '{version}' does not contain digits. "
                 "Expected semantic version format (e.g., '1.0.0').",
-                code="NON_STANDARD_VERSION_FORMAT",
+                code=EnumPatchValidationErrorCode.CONTRACT_PATCH_NON_STANDARD_VERSION_FORMAT.value,
             )

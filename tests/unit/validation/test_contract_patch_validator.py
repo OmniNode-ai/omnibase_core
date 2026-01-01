@@ -58,7 +58,7 @@ class TestContractPatchValidator:
         result = validator.validate(patch)
         assert result.is_valid is True
         # Should have info about new contract identity
-        assert any("NEW_CONTRACT_IDENTITY" in str(i.code) for i in result.issues)
+        assert any("CONTRACT_PATCH_NEW_IDENTITY" in str(i.code) for i in result.issues)
 
     @pytest.mark.unit
     def test_validate_empty_descriptor_warning(
@@ -71,7 +71,9 @@ class TestContractPatchValidator:
         )
         result = validator.validate(patch)
         assert result.is_valid is True  # Warning, not error
-        assert any("EMPTY_DESCRIPTOR_PATCH" in str(i.code) for i in result.issues)
+        assert any(
+            "CONTRACT_PATCH_EMPTY_DESCRIPTOR" in str(i.code) for i in result.issues
+        )
 
     @pytest.mark.unit
     def test_validate_purity_idempotent_warning(
@@ -87,7 +89,10 @@ class TestContractPatchValidator:
         )
         result = validator.validate(patch)
         assert result.is_valid is True  # Warning, not error
-        assert any("PURITY_IDEMPOTENT_MISMATCH" in str(i.code) for i in result.issues)
+        assert any(
+            "CONTRACT_PATCH_PURITY_IDEMPOTENT_MISMATCH" in str(i.code)
+            for i in result.issues
+        )
 
     @pytest.mark.unit
     def test_validate_conflicting_handlers(
@@ -235,7 +240,10 @@ class TestContractPatchValidator:
         )
         result = validator.validate(patch)
         assert result.is_valid is True  # Warning, not error
-        assert any("NON_STANDARD_PROFILE_NAME" in str(i.code) for i in result.issues)
+        assert any(
+            "CONTRACT_PATCH_NON_STANDARD_PROFILE_NAME" in str(i.code)
+            for i in result.issues
+        )
 
     @pytest.mark.unit
     def test_validate_non_standard_version_warning(
@@ -250,7 +258,10 @@ class TestContractPatchValidator:
         )
         result = validator.validate(patch)
         assert result.is_valid is True  # Warning, not error
-        assert any("NON_STANDARD_VERSION_FORMAT" in str(i.code) for i in result.issues)
+        assert any(
+            "CONTRACT_PATCH_NON_STANDARD_VERSION_FORMAT" in str(i.code)
+            for i in result.issues
+        )
 
     @pytest.mark.unit
     def test_validate_dict_valid(self, validator: ContractPatchValidator) -> None:
@@ -276,7 +287,10 @@ class TestContractPatchValidator:
         }
         result = validator.validate_dict(data)
         assert result.is_valid is False
-        assert any("PYDANTIC_VALIDATION_ERROR" in str(i.code) for i in result.issues)
+        assert any(
+            "CONTRACT_PATCH_PYDANTIC_VALIDATION_ERROR" in str(i.code)
+            for i in result.issues
+        )
 
     @pytest.mark.unit
     def test_validate_dict_missing_extends(
@@ -309,7 +323,9 @@ class TestContractPatchValidator:
         """Test validate_file with non-existent file."""
         result = validator.validate_file(Path("/non/existent/file.yaml"))
         assert result.is_valid is False
-        assert any("FILE_NOT_FOUND" in str(i.code) for i in result.issues)
+        assert any(
+            "CONTRACT_PATCH_FILE_NOT_FOUND" in str(i.code) for i in result.issues
+        )
 
     @pytest.mark.unit
     def test_validate_file_wrong_extension_warning(
@@ -324,7 +340,9 @@ class TestContractPatchValidator:
         result = validator.validate_file(json_file)
 
         # Should still validate but warn about extension
-        assert any("UNEXPECTED_EXTENSION" in str(i.code) for i in result.issues)
+        assert any(
+            "CONTRACT_PATCH_UNEXPECTED_EXTENSION" in str(i.code) for i in result.issues
+        )
 
     @pytest.mark.unit
     def test_validate_file_invalid_yaml(
@@ -401,7 +419,10 @@ class TestContractPatchValidator:
         )
         result = validator.validate(patch)
         assert result.is_valid is False
-        assert any("DUPLICATE_LIST_ENTRIES" in str(i.code) for i in result.issues)
+        assert any(
+            "CONTRACT_PATCH_DUPLICATE_LIST_ENTRIES" in str(i.code)
+            for i in result.issues
+        )
         assert any("event_emit" in str(i.message) for i in result.issues)
 
     @pytest.mark.unit
@@ -419,7 +440,10 @@ class TestContractPatchValidator:
         )
         result = validator.validate(patch)
         assert result.is_valid is False
-        assert any("DUPLICATE_LIST_ENTRIES" in str(i.code) for i in result.issues)
+        assert any(
+            "CONTRACT_PATCH_DUPLICATE_LIST_ENTRIES" in str(i.code)
+            for i in result.issues
+        )
         assert any("http_client" in str(i.message) for i in result.issues)
 
     @pytest.mark.unit
@@ -437,7 +461,10 @@ class TestContractPatchValidator:
         )
         result = validator.validate(patch)
         assert result.is_valid is True
-        assert not any("DUPLICATE_LIST_ENTRIES" in str(i.code) for i in result.issues)
+        assert not any(
+            "CONTRACT_PATCH_DUPLICATE_LIST_ENTRIES" in str(i.code)
+            for i in result.issues
+        )
 
     @pytest.mark.unit
     def test_validate_unique_capability_inputs_passes(
@@ -454,7 +481,10 @@ class TestContractPatchValidator:
         )
         result = validator.validate(patch)
         assert result.is_valid is True
-        assert not any("DUPLICATE_LIST_ENTRIES" in str(i.code) for i in result.issues)
+        assert not any(
+            "CONTRACT_PATCH_DUPLICATE_LIST_ENTRIES" in str(i.code)
+            for i in result.issues
+        )
 
     @pytest.mark.unit
     def test_validate_multiple_duplicate_capabilities(
@@ -473,7 +503,10 @@ class TestContractPatchValidator:
         )
         result = validator.validate(patch)
         assert result.is_valid is False
-        assert any("DUPLICATE_LIST_ENTRIES" in str(i.code) for i in result.issues)
+        assert any(
+            "CONTRACT_PATCH_DUPLICATE_LIST_ENTRIES" in str(i.code)
+            for i in result.issues
+        )
         # Both duplicates should be reported
         assert any("cap_a" in str(i.message) for i in result.issues)
         assert any("cap_b" in str(i.message) for i in result.issues)
@@ -493,7 +526,10 @@ class TestContractPatchValidator:
         )
         result = validator.validate(patch)
         assert result.is_valid is False
-        assert any("DUPLICATE_LIST_ENTRIES" in str(i.code) for i in result.issues)
+        assert any(
+            "CONTRACT_PATCH_DUPLICATE_LIST_ENTRIES" in str(i.code)
+            for i in result.issues
+        )
         assert any("user.created" in str(i.message) for i in result.issues)
 
     @pytest.mark.unit
@@ -511,4 +547,7 @@ class TestContractPatchValidator:
         )
         result = validator.validate(patch)
         assert result.is_valid is True
-        assert not any("DUPLICATE_LIST_ENTRIES" in str(i.code) for i in result.issues)
+        assert not any(
+            "CONTRACT_PATCH_DUPLICATE_LIST_ENTRIES" in str(i.code)
+            for i in result.issues
+        )

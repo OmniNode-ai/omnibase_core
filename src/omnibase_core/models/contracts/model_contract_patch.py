@@ -28,8 +28,6 @@ from pydantic import (
     model_validator,
 )
 
-logger = logging.getLogger(__name__)
-
 from omnibase_core.models.contracts.model_capability_provided import (
     ModelCapabilityProvided,
 )
@@ -44,6 +42,9 @@ from omnibase_core.validation.validation_utils import (
     validate_onex_name_list,
     validate_string_list,
 )
+
+# Configure logger for this module (placed after imports per convention)
+logger = logging.getLogger(__name__)
 
 __all__ = [
     "ModelContractPatch",

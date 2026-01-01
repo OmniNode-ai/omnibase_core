@@ -25,7 +25,7 @@ Import Example:
         from omnibase_core.models.events.contract_validation import (
             # Base and reference models
             ModelContractRef,
-            ModelValidationContext,
+            ModelContractValidationContext,
             ModelContractValidationEventBase,
             # Validation events
             ModelContractValidationStartedEvent,
@@ -49,7 +49,7 @@ Usage Example:
         from omnibase_core.models.events.contract_validation import (
             ModelContractValidationStartedEvent,
             ModelContractValidationPassedEvent,
-            ModelValidationContext,
+            ModelContractValidationContext,
         )
 
         # Start validation
@@ -57,7 +57,7 @@ Usage Example:
         started_event = ModelContractValidationStartedEvent.create(
             contract_id="my-contract",
             run_id=run_id,
-            context=ModelValidationContext(),
+            context=ModelContractValidationContext(),
         )
 
         # ... perform validation ...
@@ -89,8 +89,11 @@ from omnibase_core.models.events.contract_validation.model_contract_ref import (
     ModelContractRef,
 )
 from omnibase_core.models.events.contract_validation.model_contract_validation_context import (
-    ModelValidationContext,
+    ModelContractValidationContext,
 )
+
+# Backwards compat alias for ModelValidationContext -> ModelContractValidationContext
+ModelValidationContext = ModelContractValidationContext
 from omnibase_core.models.events.contract_validation.model_contract_validation_event_base import (
     ModelContractValidationEventBase,
 )
@@ -110,7 +113,8 @@ from omnibase_core.models.events.contract_validation.model_contract_validation_s
 __all__ = [
     # Base and reference models
     "ModelContractRef",
-    "ModelValidationContext",
+    "ModelContractValidationContext",  # Canonical name (OMN-1126)
+    "ModelValidationContext",  # Backwards compat alias
     "ModelContractValidationEventBase",
     # Validation event models
     "ModelContractValidationStartedEvent",

@@ -788,7 +788,7 @@ These run when you call `validator.validate(patch)`:
 | Duplicate dependencies in `dependencies__add` | Error | `DUPLICATE_LIST_ENTRIES` |
 | Duplicate capabilities in `capability_outputs__add` | Error | `DUPLICATE_LIST_ENTRIES` |
 | Duplicate inputs in `capability_inputs__add` | Error | `DUPLICATE_LIST_ENTRIES` |
-| Empty behavior patch (no overrides) | Warning | `EMPTY_DESCRIPTOR_PATCH` |
+| Empty behavior patch (no overrides) | Info | `EMPTY_DESCRIPTOR_PATCH` |
 | `purity="pure"` with `idempotent=False` | Warning | `PURITY_IDEMPOTENT_MISMATCH` |
 
 #### 3. Format Validation (Warnings)

@@ -41,9 +41,6 @@ class ModelGitHubReleaseEvent(BaseModel):
         return cls(**data.model_dump())
 
 
-# Re-export from split module
-from .model_git_hub_release_event_data import (
-    ModelGitHubReleaseEventData,
-)
-
+# Note: ModelGitHubReleaseEventData is already imported at module level (line 10)
+# and re-exported via __all__ for external consumers
 __all__ = ["ModelGitHubReleaseEvent", "ModelGitHubReleaseEventData"]

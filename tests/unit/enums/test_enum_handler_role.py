@@ -22,7 +22,6 @@ from enum import Enum
 import pytest
 
 from omnibase_core.enums.enum_handler_role import EnumHandlerRole
-from omnibase_core.errors import ModelOnexError
 
 
 @pytest.mark.unit
@@ -136,12 +135,16 @@ class TestEnumHandlerRoleValues:
 class TestEnumHandlerRoleAssertExhaustive:
     """Test cases for EnumHandlerRole assert_exhaustive() method."""
 
-    def test_assert_exhaustive_raises_model_onex_error(self) -> None:
-        """Test that assert_exhaustive raises ModelOnexError."""
+    def test_assert_exhaustive_raises_assertion_error(self) -> None:
+        """Test that assert_exhaustive raises AssertionError.
+
+        Note: The enum module cannot import ModelOnexError due to circular
+        dependency issues, so assert_exhaustive raises AssertionError instead.
+        """
         # We need to pass a value that would be typed as Never
         # In practice this is used in match statements after all cases handled
         # Testing by passing an invalid value
-        with pytest.raises(ModelOnexError) as exc_info:
+        with pytest.raises(AssertionError) as exc_info:
             # type: ignore is needed since we're intentionally passing wrong type
             EnumHandlerRole.assert_exhaustive("invalid")  # type: ignore[arg-type]
 
@@ -151,7 +154,7 @@ class TestEnumHandlerRoleAssertExhaustive:
     def test_assert_exhaustive_message_contains_value(self) -> None:
         """Test that assert_exhaustive error message contains the value."""
         test_value = "test_unhandled_value"
-        with pytest.raises(ModelOnexError) as exc_info:
+        with pytest.raises(AssertionError) as exc_info:
             EnumHandlerRole.assert_exhaustive(test_value)  # type: ignore[arg-type]
 
         assert test_value in str(exc_info.value)

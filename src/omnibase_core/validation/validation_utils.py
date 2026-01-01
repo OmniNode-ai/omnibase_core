@@ -320,17 +320,22 @@ def detect_add_remove_conflicts(
     field_name: str,
     *,
     case_sensitive: bool = False,
+    warn_empty_lists: bool = False,
 ) -> list[str]:
     """Detect conflicts between add and remove operations.
 
     A conflict occurs when the same value appears in both the add and
     remove lists, which would result in undefined or contradictory behavior.
 
+    Uses O(n) set-based duplicate detection for efficient conflict checking.
+
     Args:
         add_values: Values being added (may be pre-normalized).
         remove_values: Values being removed (may be pre-normalized).
         field_name: Name of the field (for logging).
         case_sensitive: If True, compare values case-sensitively.
+        warn_empty_lists: If True, log a warning when both lists are empty.
+            Useful for detecting potential user errors in patch operations.
 
     Returns:
         List of conflicting values (empty if no conflicts).
@@ -344,10 +349,26 @@ def detect_add_remove_conflicts(
         ...     ["foo"], ["bar"], "handlers"
         ... )
         []
+        >>> detect_add_remove_conflicts(
+        ...     [], [], "handlers", warn_empty_lists=True
+        ... )
+        []  # Logs warning about empty lists
     """
     if add_values is None or remove_values is None:
+        logger.debug(
+            f"Skipping conflict detection for {field_name}: "
+            f"add_values={add_values is not None}, remove_values={remove_values is not None}"
+        )
         return []
 
+    # Check for empty lists when both are provided
+    if warn_empty_lists and len(add_values) == 0 and len(remove_values) == 0:
+        logger.warning(
+            f"Both add and remove lists are empty for {field_name}. "
+            "This may indicate a user error in the patch definition."
+        )
+
+    # O(n) set-based conflict detection
     if case_sensitive:
         add_set = set(add_values)
         remove_set = set(remove_values)
@@ -361,6 +382,11 @@ def detect_add_remove_conflicts(
         logger.warning(
             f"Detected {len(conflicts)} add/remove conflicts for {field_name}: "
             f"{conflicts}"
+        )
+    else:
+        logger.debug(
+            f"No conflicts detected for {field_name} "
+            f"(add={len(add_values)}, remove={len(remove_values)})"
         )
 
     return conflicts
@@ -605,27 +631,51 @@ def suggest_spi_location(protocol: ModelProtocolInfo) -> str:
 
 
 def is_protocol_file(file_path: Path) -> bool:
-    """Check if file likely contains protocols."""
+    """Check if file likely contains protocols.
+
+    Args:
+        file_path: Path to the Python file to check.
+
+    Returns:
+        True if file likely contains protocols, False otherwise.
+
+    Note:
+        This function returns False rather than raising exceptions for
+        file access errors, as it's designed for file discovery where
+        individual file failures should not stop the entire operation.
+
+        Logging levels used:
+        - DEBUG: Normal operations (filename check passed)
+        - WARNING: Expected/recoverable errors (file access, encoding)
+    """
     try:
         # Check filename
         if "protocol" in file_path.name.lower() or file_path.name.startswith(
             "protocol_",
         ):
+            logger.debug(f"File {file_path} matches protocol filename pattern")
             return True
 
         # Check file content (first 1000 chars for performance)
         content_sample = file_path.read_text(encoding="utf-8", errors="ignore")[:1000]
-        return "class Protocol" in content_sample
+        is_protocol = "class Protocol" in content_sample
+        if is_protocol:
+            logger.debug(f"File {file_path} contains protocol class definition")
+        return is_protocol
 
     except OSError as e:
-        # Expected error: file access issues
-        logger.debug(f"Could not read file {file_path} for protocol check: {e}")
+        # Expected error: file access issues (permissions, not found, etc.)
+        logger.warning(
+            f"Skipping file during protocol check due to read error: {file_path}: {e}"
+        )
         return False
     except (
         Exception
     ) as e:  # fallback-ok: Protocol check errors should not stop file discovery
         # Unexpected error: safety net for truly unexpected issues
-        logger.debug(f"Unexpected error checking protocol file {file_path}: {e}")
+        logger.warning(
+            f"Skipping file during protocol check due to unexpected error: {file_path}: {e}"
+        )
         return False
 
 

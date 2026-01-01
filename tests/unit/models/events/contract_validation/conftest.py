@@ -11,7 +11,7 @@ import pytest
 from omnibase_core.enums.enum_validation_mode import EnumValidationMode
 from omnibase_core.models.events.contract_validation import (
     ModelContractRef,
-    ModelValidationContext,
+    ModelContractValidationContext,
 )
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
@@ -58,24 +58,24 @@ def minimal_contract_ref() -> ModelContractRef:
 
 
 @pytest.fixture
-def sample_validation_context_strict() -> ModelValidationContext:
+def sample_validation_context_strict() -> ModelContractValidationContext:
     """Provide a strict validation context."""
-    return ModelValidationContext(
+    return ModelContractValidationContext(
         mode=EnumValidationMode.STRICT,
         flags={"validate_schema": True, "validate_references": True},
     )
 
 
 @pytest.fixture
-def sample_validation_context_permissive() -> ModelValidationContext:
+def sample_validation_context_permissive() -> ModelContractValidationContext:
     """Provide a permissive validation context."""
-    return ModelValidationContext(
+    return ModelContractValidationContext(
         mode=EnumValidationMode.PERMISSIVE,
         flags={"skip_optional_checks": True},
     )
 
 
 @pytest.fixture
-def default_validation_context() -> ModelValidationContext:
+def default_validation_context() -> ModelContractValidationContext:
     """Provide a default validation context (STRICT mode, no flags)."""
-    return ModelValidationContext()
+    return ModelContractValidationContext()

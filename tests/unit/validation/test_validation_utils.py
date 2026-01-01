@@ -19,6 +19,7 @@ from omnibase_core.models.validation.model_protocol_signature_extractor import (
     ModelProtocolSignatureExtractor,
 )
 from omnibase_core.validation.validation_utils import (
+    detect_add_remove_conflicts,
     determine_repository_name,
     extract_protocol_signature,
     extract_protocols_from_directory,
@@ -769,13 +770,13 @@ class TestIsProtocolFile:
         """Test handling of OSError during file reading."""
         nonexistent_path = Path("/nonexistent/file.py")
 
-        with caplog.at_level(logging.DEBUG):
+        with caplog.at_level(logging.WARNING):
             result = is_protocol_file(nonexistent_path)
 
             assert result is False
             assert len(caplog.records) == 1
-            assert caplog.records[0].levelname == "DEBUG"
-            assert "could not read file" in caplog.records[0].message.lower()
+            assert caplog.records[0].levelname == "WARNING"
+            assert "read error" in caplog.records[0].message.lower()
 
     def test_generic_exception_handling(self, caplog, monkeypatch):
         """Test handling of unexpected exceptions."""
@@ -791,12 +792,12 @@ class TestIsProtocolFile:
             # Monkeypatch the read_text method
             monkeypatch.setattr(Path, "read_text", mock_read_text)
 
-            with caplog.at_level(logging.DEBUG):
+            with caplog.at_level(logging.WARNING):
                 result = is_protocol_file(temp_path)
 
                 assert result is False
                 assert len(caplog.records) == 1
-                assert caplog.records[0].levelname == "DEBUG"
+                assert caplog.records[0].levelname == "WARNING"
                 assert "unexpected error" in caplog.records[0].message.lower()
         finally:
             temp_path.unlink()
@@ -1079,3 +1080,149 @@ class TestValidateImportPathFormat:
         is_valid, error = validate_import_path_format("my-module.Class")
         assert is_valid is False
         assert "not a valid Python identifier" in error
+
+
+@pytest.mark.unit
+class TestDetectAddRemoveConflicts:
+    """Test add/remove conflict detection."""
+
+    def test_detects_conflicts(self):
+        """Test that conflicts are properly detected."""
+        conflicts = detect_add_remove_conflicts(
+            ["foo", "bar", "baz"],
+            ["bar", "qux"],
+            "handlers",
+        )
+        assert conflicts == ["bar"]
+
+    def test_detects_multiple_conflicts(self):
+        """Test detection of multiple conflicts."""
+        conflicts = detect_add_remove_conflicts(
+            ["a", "b", "c", "d"],
+            ["b", "d", "e"],
+            "handlers",
+        )
+        assert sorted(conflicts) == ["b", "d"]
+
+    def test_no_conflicts(self):
+        """Test when there are no conflicts."""
+        conflicts = detect_add_remove_conflicts(
+            ["foo", "bar"],
+            ["baz", "qux"],
+            "handlers",
+        )
+        assert conflicts == []
+
+    def test_none_add_values(self):
+        """Test with None add_values."""
+        conflicts = detect_add_remove_conflicts(
+            None,
+            ["bar", "baz"],
+            "handlers",
+        )
+        assert conflicts == []
+
+    def test_none_remove_values(self):
+        """Test with None remove_values."""
+        conflicts = detect_add_remove_conflicts(
+            ["foo", "bar"],
+            None,
+            "handlers",
+        )
+        assert conflicts == []
+
+    def test_both_none(self):
+        """Test with both values None."""
+        conflicts = detect_add_remove_conflicts(None, None, "handlers")
+        assert conflicts == []
+
+    def test_empty_lists(self):
+        """Test with empty lists."""
+        conflicts = detect_add_remove_conflicts([], [], "handlers")
+        assert conflicts == []
+
+    def test_case_insensitive_default(self):
+        """Test case-insensitive comparison (default)."""
+        conflicts = detect_add_remove_conflicts(
+            ["Foo", "BAR"],
+            ["foo", "baz"],
+            "handlers",
+        )
+        assert conflicts == ["foo"]
+
+    def test_case_sensitive(self):
+        """Test case-sensitive comparison."""
+        conflicts = detect_add_remove_conflicts(
+            ["Foo", "BAR"],
+            ["foo", "baz"],
+            "handlers",
+            case_sensitive=True,
+        )
+        assert conflicts == []
+
+        conflicts = detect_add_remove_conflicts(
+            ["Foo", "BAR"],
+            ["Foo", "baz"],
+            "handlers",
+            case_sensitive=True,
+        )
+        assert conflicts == ["Foo"]
+
+    def test_warn_empty_lists_no_warning_when_false(self, caplog):
+        """Test that no warning is logged when warn_empty_lists is False."""
+        with caplog.at_level(logging.WARNING):
+            conflicts = detect_add_remove_conflicts(
+                [],
+                [],
+                "handlers",
+                warn_empty_lists=False,
+            )
+            assert conflicts == []
+            # Should not have any warning about empty lists
+            assert not any(
+                "empty" in record.message.lower() for record in caplog.records
+            )
+
+    def test_warn_empty_lists_warning_when_true(self, caplog):
+        """Test that warning is logged when warn_empty_lists is True."""
+        with caplog.at_level(logging.WARNING):
+            conflicts = detect_add_remove_conflicts(
+                [],
+                [],
+                "handlers",
+                warn_empty_lists=True,
+            )
+            assert conflicts == []
+            # Should have warning about empty lists
+            assert len(caplog.records) == 1
+            assert caplog.records[0].levelname == "WARNING"
+            assert "empty" in caplog.records[0].message.lower()
+
+    def test_warn_empty_lists_no_warning_when_lists_not_empty(self, caplog):
+        """Test that no warning about empty lists when lists have content."""
+        with caplog.at_level(logging.WARNING):
+            conflicts = detect_add_remove_conflicts(
+                ["foo"],
+                ["bar"],
+                "handlers",
+                warn_empty_lists=True,
+            )
+            assert conflicts == []
+            # Should not have warning about empty lists (only debug log)
+            assert not any(
+                "empty" in record.message.lower() and record.levelname == "WARNING"
+                for record in caplog.records
+            )
+
+    def test_logging_when_conflicts_found(self, caplog):
+        """Test that conflicts are logged at WARNING level."""
+        with caplog.at_level(logging.WARNING):
+            conflicts = detect_add_remove_conflicts(
+                ["foo", "bar"],
+                ["bar", "baz"],
+                "handlers",
+            )
+            assert conflicts == ["bar"]
+            assert len(caplog.records) == 1
+            assert caplog.records[0].levelname == "WARNING"
+            assert "conflicts" in caplog.records[0].message.lower()

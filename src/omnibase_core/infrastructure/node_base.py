@@ -12,6 +12,43 @@ This module provides the NodeBase class that implements
 LlamaIndex workflow integration, observable state transitions,
 and contract-driven orchestration.
 
+Security:
+    NodeBase performs dynamic imports of tool classes specified in contract
+    files via the main_tool_class field. This is a potential code execution
+    vector if contracts come from untrusted sources.
+
+    **Dynamic Import Security** (_resolve_main_tool):
+        - The main_tool_class is loaded from contract YAML files
+        - Contract files should come from TRUSTED sources only
+        - The module path is NOT validated against an allowlist (unlike ModelReference)
+        - Any module path specified in main_tool_class will be imported and
+          its initialization code executed
+
+    Trust Model:
+        - Contract file source: MUST BE TRUSTED (controls code execution)
+        - main_tool_class path: TRUSTED (comes from trusted contract)
+        - Contract file content: Validated via UtilContractLoader security checks
+
+    Security Assumptions:
+        1. Contract files are provided by trusted sources (system administrators,
+           verified node packages, or trusted configuration management)
+        2. The file system permissions on contract directories prevent
+           unauthorized modification
+        3. Third-party node packages are reviewed before installation
+
+    WARNING:
+        Do NOT load contract files from untrusted sources (user uploads,
+        network requests, untrusted file paths). The main_tool_class field
+        can execute arbitrary Python code via module initialization.
+
+    Future Enhancement (Recommended):
+        Consider adding an allowlist for main_tool_class similar to
+        ModelReference.ALLOWED_MODULE_PREFIXES. This would provide
+        defense-in-depth even if a malicious contract is loaded.
+
+    See Also:
+        - UtilContractLoader: YAML parsing security and content validation
+        - ModelReference: Uses ALLOWED_MODULE_PREFIXES for import validation
 """
 
 import asyncio
@@ -294,6 +331,21 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
 
         ONEX 2.0 Pattern: Direct importlib-based tool instantiation.
         No auto-discovery service needed.
+
+        Security Warning:
+            This method uses importlib.import_module() to load the main_tool_class
+            specified in the contract file. This executes module initialization code.
+
+            - The main_tool_class path is NOT validated against an allowlist
+            - Any valid Python module path will be imported and executed
+            - Contract files MUST come from trusted sources only
+
+            Unlike ModelReference.resolve() which validates against ALLOWED_MODULE_PREFIXES,
+            this method trusts the contract file source entirely. The security model
+            assumes contracts are provided by system administrators or verified packages.
+
+            If implementing allowlist validation in the future, consider reusing
+            the ALLOWED_MODULE_PREFIXES pattern from ModelReference.
         """
         import importlib
 

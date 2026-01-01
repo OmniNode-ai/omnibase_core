@@ -6,11 +6,13 @@ Metadata for a feature flag including description, ownership, and rollout percen
 
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelFeatureFlagMetadata(BaseModel):
     """Metadata for a feature flag."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     description: str = Field(default="", description="Description of the feature flag")
     created_at: datetime | None = Field(

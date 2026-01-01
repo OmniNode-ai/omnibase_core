@@ -1,21 +1,26 @@
 # SPDX-FileCopyrightText: 2025 OmniNode Team
 #
 # SPDX-License-Identifier: Apache-2.0
-"""Unit tests for ModelValidationContext.
+"""Unit tests for ModelContractValidationContext.
 
-Tests the validation context model used to configure validation behavior,
+Tests the validation context model used to configure contract validation behavior,
 including validation mode and extensible flags.
 
 Related:
     - OMN-1146: Contract validation event models
-    - ModelValidationContext: Validation context model
+    - OMN-1126: Naming collision fix (renamed from ModelValidationContext)
+    - ModelContractValidationContext: Canonical name for contract validation context
+    - ModelValidationContext: Backwards compat alias
 """
 
 import pytest
 from pydantic import ValidationError
 
 from omnibase_core.enums.enum_validation_mode import EnumValidationMode
-from omnibase_core.models.events.contract_validation import ModelValidationContext
+from omnibase_core.models.events.contract_validation import (
+    ModelContractValidationContext,
+    ModelValidationContext,  # Backwards compat alias
+)
 
 
 @pytest.mark.unit
@@ -370,7 +375,8 @@ class TestModelValidationContextRepr:
 
         repr_str = repr(context)
 
-        assert "ModelValidationContext" in repr_str
+        # Check for canonical class name (OMN-1126 rename)
+        assert "ModelContractValidationContext" in repr_str
         # Mode should be represented
         assert "mode=" in repr_str
 
@@ -439,3 +445,46 @@ class TestModelValidationContextUsagePatterns:
         # Should work with all defaults
         assert context.mode == EnumValidationMode.STRICT
         assert context.flags == {}
+
+
+@pytest.mark.unit
+class TestModelContractValidationContextNaming:
+    """Tests for canonical and backwards compat naming (OMN-1126)."""
+
+    def test_canonical_name_works(self) -> None:
+        """Test that the canonical name ModelContractValidationContext works."""
+        context = ModelContractValidationContext(
+            mode=EnumValidationMode.STRICT,
+            flags={"test": True},
+        )
+
+        assert context.mode == EnumValidationMode.STRICT
+        assert context.flags == {"test": True}
+
+    def test_backwards_compat_alias_works(self) -> None:
+        """Test that the backwards compat alias ModelValidationContext works."""
+        context = ModelValidationContext(
+            mode=EnumValidationMode.PERMISSIVE,
+            flags={"alias_test": True},
+        )
+
+        assert context.mode == EnumValidationMode.PERMISSIVE
+        assert context.flags == {"alias_test": True}
+
+    def test_alias_is_same_class_as_canonical(self) -> None:
+        """Test that the alias refers to the same class as the canonical name."""
+        assert ModelValidationContext is ModelContractValidationContext
+
+    def test_instances_are_equivalent(self) -> None:
+        """Test that instances created with either name are equivalent."""
+        canonical = ModelContractValidationContext(
+            mode=EnumValidationMode.STRICT,
+            flags={"flag1": True},
+        )
+        alias = ModelValidationContext(
+            mode=EnumValidationMode.STRICT,
+            flags={"flag1": True},
+        )
+
+        assert canonical == alias
+        assert type(canonical) is type(alias)
