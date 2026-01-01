@@ -61,7 +61,6 @@ class ModelEmissionsSummary(BaseModel):
         extra="forbid",
         from_attributes=True,
         use_enum_values=False,
-        validate_assignment=True,
     )
 
     # === Events ===
@@ -179,10 +178,14 @@ class ModelEmissionsSummary(BaseModel):
 
     def get_all_types(self) -> list[str]:
         """
-        Get all unique emission types across all categories.
+        Get all emission types across all categories.
+
+        Note: This returns the concatenated lists and may contain duplicates
+        if the same type appears in multiple categories. Use get_unique_type_count()
+        for deduplicated counting.
 
         Returns:
-            Combined list of all emission type names
+            Combined list of all emission type names (may contain duplicates)
         """
         return (
             self.event_types

@@ -194,7 +194,6 @@ class ModelActionConfigParameter(BaseModel):
     model_config = ConfigDict(
         extra="ignore",
         use_enum_values=False,
-        validate_assignment=True,
         frozen=True,
     )
 

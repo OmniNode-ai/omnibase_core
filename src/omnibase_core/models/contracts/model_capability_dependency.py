@@ -38,7 +38,9 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from omnibase_core.models.requirements.model_requirement_set import ModelRequirementSet
+from omnibase_core.models.capabilities.model_capability_requirement_set import (
+    ModelRequirementSet,
+)
 
 # Selection policy determines how the registry resolves multiple matching providers
 SelectionPolicy = Literal["auto_if_unique", "best_score", "require_explicit"]
@@ -155,7 +157,6 @@ class ModelCapabilityDependency(BaseModel):
         frozen=True,
         extra="forbid",
         from_attributes=True,
-        validate_assignment=True,
         str_strip_whitespace=True,
     )
 
