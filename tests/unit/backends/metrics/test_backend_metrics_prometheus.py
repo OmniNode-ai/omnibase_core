@@ -2,9 +2,16 @@
 Tests for BackendMetricsPrometheus - Prometheus metrics backend.
 
 Coverage target: 85%+ (core functionality, mocking external dependencies)
+
+Note:
+    These tests require the prometheus-client package. They will be
+    skipped automatically if the package is not installed.
 """
 
 import pytest
+
+# Skip entire module if prometheus-client is not available
+pytest.importorskip("prometheus_client")
 
 from omnibase_core.backends.metrics import BackendMetricsPrometheus
 from omnibase_core.protocols.metrics import ProtocolMetricsBackend
@@ -92,13 +99,13 @@ class TestBackendMetricsPrometheusGauges:
         assert len(backend._gauges) == 1
 
     def test_record_gauge_same_metric_different_labels_fails(self) -> None:
-        """Test that same metric with different label sets fails."""
+        """Test that same metric with different label sets fails with helpful error."""
         backend = BackendMetricsPrometheus()
 
         backend.record_gauge("http_requests", 100.0, tags={"method": "GET"})
 
-        # Trying to record with different labels should fail
-        with pytest.raises(ValueError, match="already exists with different labels"):
+        # Trying to record with different labels should fail with a helpful message
+        with pytest.raises(ValueError, match="Label mismatch for gauge metric"):
             backend.record_gauge(
                 "http_requests", 50.0, tags={"method": "GET", "status": "200"}
             )
@@ -287,3 +294,148 @@ class TestBackendMetricsPrometheusIntegration:
         backend.record_gauge("metric1", 1.0, tags={"b": "2", "a": "1"})
 
         assert backend._gauge_labels["metric1"] == ("a", "b")
+
+
+@pytest.mark.unit
+class TestBackendMetricsPrometheusPushReturnValue:
+    """Test suite for push() return value behavior."""
+
+    def test_push_returns_false_without_gateway_url(self) -> None:
+        """Test that push returns False when no gateway URL is configured."""
+        backend = BackendMetricsPrometheus()
+
+        result = backend.push()
+
+        assert result is False
+
+    def test_push_returns_false_without_job_name(self) -> None:
+        """Test that push returns False when no job name is configured."""
+        backend = BackendMetricsPrometheus(
+            push_gateway_url="http://localhost:9091",
+            push_job_name="",  # Empty job name
+        )
+
+        result = backend.push()
+
+        assert result is False
+
+
+@pytest.mark.unit
+class TestBackendMetricsPrometheusLabelMismatchErrors:
+    """Test suite for label mismatch error messages."""
+
+    def test_gauge_label_mismatch_error_message_content(self) -> None:
+        """Test that gauge label mismatch error contains helpful information."""
+        backend = BackendMetricsPrometheus()
+        backend.record_gauge("test_metric", 1.0, tags={"label_a": "value"})
+
+        try:
+            backend.record_gauge(
+                "test_metric", 2.0, tags={"label_b": "value", "label_c": "value"}
+            )
+            pytest.fail("Should have raised ValueError")
+        except ValueError as e:
+            error_msg = str(e)
+            # Check that the error message contains helpful information
+            assert "Label mismatch" in error_msg
+            assert "test_metric" in error_msg
+            assert "expected labels" in error_msg
+            assert "Prometheus requires consistent label names" in error_msg
+            assert "To fix this issue" in error_msg
+
+    def test_counter_label_mismatch_error_message_content(self) -> None:
+        """Test that counter label mismatch error contains helpful information."""
+        backend = BackendMetricsPrometheus()
+        backend.increment_counter("test_counter", tags={"method": "GET"})
+
+        try:
+            backend.increment_counter("test_counter", tags={"status": "200"})
+            pytest.fail("Should have raised ValueError")
+        except ValueError as e:
+            error_msg = str(e)
+            assert "Label mismatch for counter metric" in error_msg
+            assert "test_counter" in error_msg
+            assert "'method'" in error_msg
+
+    def test_histogram_label_mismatch_error_message_content(self) -> None:
+        """Test that histogram label mismatch error contains helpful information."""
+        backend = BackendMetricsPrometheus()
+        backend.record_histogram("test_histogram", 0.5, tags={"endpoint": "/api"})
+
+        try:
+            backend.record_histogram("test_histogram", 0.8, tags={"region": "us"})
+            pytest.fail("Should have raised ValueError")
+        except ValueError as e:
+            error_msg = str(e)
+            assert "Label mismatch for histogram metric" in error_msg
+            assert "test_histogram" in error_msg
+
+
+@pytest.mark.unit
+class TestBackendMetricsPrometheusCounterTagTracking:
+    """Test suite for counter tag value combination tracking."""
+
+    def test_counter_tag_combinations_tracked(self) -> None:
+        """Test that counter tag value combinations are tracked."""
+        backend = BackendMetricsPrometheus()
+
+        backend.increment_counter("requests", tags={"method": "GET", "status": "200"})
+
+        combinations = backend.get_counter_tag_combinations("requests")
+        assert combinations is not None
+        assert len(combinations) == 1
+        assert frozenset([("method", "GET"), ("status", "200")]) in combinations
+
+    def test_counter_multiple_tag_combinations_tracked(self) -> None:
+        """Test that multiple tag value combinations are tracked."""
+        backend = BackendMetricsPrometheus()
+
+        backend.increment_counter("requests", tags={"method": "GET", "status": "200"})
+        backend.increment_counter("requests", tags={"method": "POST", "status": "201"})
+        backend.increment_counter("requests", tags={"method": "GET", "status": "404"})
+
+        combinations = backend.get_counter_tag_combinations("requests")
+        assert combinations is not None
+        assert len(combinations) == 3
+
+    def test_counter_same_combination_not_duplicated(self) -> None:
+        """Test that same tag value combination is not duplicated."""
+        backend = BackendMetricsPrometheus()
+
+        backend.increment_counter("requests", tags={"method": "GET"})
+        backend.increment_counter("requests", tags={"method": "GET"})
+        backend.increment_counter("requests", tags={"method": "GET"})
+
+        combinations = backend.get_counter_tag_combinations("requests")
+        assert combinations is not None
+        assert len(combinations) == 1
+
+    def test_get_counter_tag_combinations_returns_none_for_unknown(self) -> None:
+        """Test that get_counter_tag_combinations returns None for unknown counter."""
+        backend = BackendMetricsPrometheus()
+
+        combinations = backend.get_counter_tag_combinations("unknown_counter")
+
+        assert combinations is None
+
+    def test_counter_tag_combinations_with_prefix(self) -> None:
+        """Test that tag combinations work correctly with prefixed counters."""
+        backend = BackendMetricsPrometheus(prefix="myapp")
+
+        backend.increment_counter("requests", tags={"method": "GET"})
+
+        # Should be able to query by unprefixed name
+        combinations = backend.get_counter_tag_combinations("requests")
+        assert combinations is not None
+        assert len(combinations) == 1
+
+    def test_counter_without_tags_not_tracked(self) -> None:
+        """Test that counters without tags don't create empty tracking."""
+        backend = BackendMetricsPrometheus()
+
+        backend.increment_counter("simple_counter")
+
+        # Counter is created but no tag combinations should be tracked
+        assert "simple_counter" in backend._counters
+        # No entry in tag combinations for counters without tags
+        assert "simple_counter" not in backend._counter_tag_combinations

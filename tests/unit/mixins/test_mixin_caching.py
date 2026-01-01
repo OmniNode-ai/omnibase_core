@@ -208,7 +208,7 @@ class TestGetCached:
     """Test suite for get_cached method."""
 
     @pytest.mark.asyncio
-    @pytest.mark.timeout(90)
+    @pytest.mark.timeout(60)
     async def test_get_cached_returns_none_when_not_found(self):
         """Test that get_cached returns None for non-existent key."""
         node = MockNode()
@@ -218,7 +218,7 @@ class TestGetCached:
         assert result is None
 
     @pytest.mark.asyncio
-    @pytest.mark.timeout(90)
+    @pytest.mark.timeout(60)
     async def test_get_cached_returns_value_when_found_in_l1(self):
         """Test that get_cached returns L1 cached value."""
         node = MockNode()
@@ -233,7 +233,7 @@ class TestGetCached:
         assert result == cache_value
 
     @pytest.mark.asyncio
-    @pytest.mark.timeout(90)
+    @pytest.mark.timeout(60)
     async def test_get_cached_respects_disabled_flag(self):
         """Test that get_cached returns None when caching is disabled."""
         node = MockNode()
@@ -256,7 +256,7 @@ class TestSetCached:
     """Test suite for set_cached method."""
 
     @pytest.mark.asyncio
-    @pytest.mark.timeout(90)
+    @pytest.mark.timeout(60)
     async def test_set_cached_stores_value_in_l1(self):
         """Test that set_cached stores value in L1 cache."""
         node = MockNode()
@@ -270,7 +270,7 @@ class TestSetCached:
         assert expiry is None  # No TTL set
 
     @pytest.mark.asyncio
-    @pytest.mark.timeout(90)
+    @pytest.mark.timeout(60)
     async def test_set_cached_with_ttl(self):
         """Test that set_cached stores value with TTL."""
         node = MockNode()
@@ -285,7 +285,7 @@ class TestSetCached:
         assert expiry > time.time()  # Expiry is in the future
 
     @pytest.mark.asyncio
-    @pytest.mark.timeout(90)
+    @pytest.mark.timeout(60)
     async def test_set_cached_overwrites_existing_value(self):
         """Test that set_cached overwrites existing cached value."""
         node = MockNode()
@@ -300,7 +300,7 @@ class TestSetCached:
         assert value2 == "value2"
 
     @pytest.mark.asyncio
-    @pytest.mark.timeout(90)
+    @pytest.mark.timeout(60)
     async def test_set_cached_respects_disabled_flag(self):
         """Test that set_cached does not store when caching is disabled."""
         node = MockNode()
@@ -311,7 +311,7 @@ class TestSetCached:
         assert "test_key" not in node._cache_data
 
     @pytest.mark.asyncio
-    @pytest.mark.timeout(90)
+    @pytest.mark.timeout(60)
     async def test_set_cached_handles_complex_values(self):
         """Test that set_cached can store complex data structures."""
         node = MockNode()
@@ -331,7 +331,7 @@ class TestInvalidateCache:
     """Test suite for invalidate_cache method."""
 
     @pytest.mark.asyncio
-    @pytest.mark.timeout(90)
+    @pytest.mark.timeout(60)
     async def test_invalidate_cache_removes_key(self):
         """Test that invalidate_cache removes specified key."""
         node = MockNode()
@@ -347,7 +347,7 @@ class TestInvalidateCache:
         assert cache_key not in node._cache_data
 
     @pytest.mark.asyncio
-    @pytest.mark.timeout(90)
+    @pytest.mark.timeout(60)
     async def test_invalidate_cache_nonexistent_key(self):
         """Test that invalidate_cache handles non-existent key gracefully."""
         node = MockNode()
@@ -356,7 +356,7 @@ class TestInvalidateCache:
         await node.invalidate_cache("nonexistent_key")
 
     @pytest.mark.asyncio
-    @pytest.mark.timeout(90)
+    @pytest.mark.timeout(60)
     async def test_invalidate_cache_leaves_other_keys(self):
         """Test that invalidate_cache only removes specified key."""
         node = MockNode()
@@ -380,7 +380,7 @@ class TestClearCache:
     """Test suite for clear_cache method."""
 
     @pytest.mark.asyncio
-    @pytest.mark.timeout(90)
+    @pytest.mark.timeout(60)
     async def test_clear_cache_removes_all_entries(self):
         """Test that clear_cache removes all cached entries."""
         node = MockNode()
@@ -399,7 +399,7 @@ class TestClearCache:
         assert node._cache_data == {}
 
     @pytest.mark.asyncio
-    @pytest.mark.timeout(90)
+    @pytest.mark.timeout(60)
     async def test_clear_cache_on_empty_cache(self):
         """Test that clear_cache handles empty cache gracefully."""
         node = MockNode()
@@ -471,7 +471,7 @@ class TestCachingIntegration:
     """Integration tests for MixinCaching workflow."""
 
     @pytest.mark.asyncio
-    @pytest.mark.timeout(90)
+    @pytest.mark.timeout(60)
     async def test_full_cache_workflow(self):
         """Test complete caching workflow: generate key, set, get, invalidate."""
         node = MockNode()
@@ -497,7 +497,7 @@ class TestCachingIntegration:
         assert await node.get_cached(cache_key) is None
 
     @pytest.mark.asyncio
-    @pytest.mark.timeout(90)
+    @pytest.mark.timeout(60)
     async def test_cache_with_ttl_parameter(self):
         """Test caching workflow with TTL."""
         node = MockNode()
@@ -513,7 +513,7 @@ class TestCachingIntegration:
         assert result == "cached_result"
 
     @pytest.mark.asyncio
-    @pytest.mark.timeout(90)
+    @pytest.mark.timeout(60)
     async def test_disabled_cache_workflow(self):
         """Test that caching can be disabled and re-enabled."""
         node = MockNode()
@@ -544,7 +544,7 @@ class TestTTLEnforcement:
     """Test suite for TTL enforcement in L1 cache."""
 
     @pytest.mark.asyncio
-    @pytest.mark.timeout(90)
+    @pytest.mark.timeout(60)
     async def test_expired_entry_returns_none(self):
         """Test that expired entries return None on get."""
         node = MockNode()
@@ -559,7 +559,7 @@ class TestTTLEnforcement:
         assert result is None
 
     @pytest.mark.asyncio
-    @pytest.mark.timeout(90)
+    @pytest.mark.timeout(60)
     async def test_expired_entry_is_removed(self):
         """Test that expired entries are removed on access."""
         node = MockNode()
@@ -576,7 +576,7 @@ class TestTTLEnforcement:
         assert cache_key not in node._cache_data
 
     @pytest.mark.asyncio
-    @pytest.mark.timeout(90)
+    @pytest.mark.timeout(60)
     async def test_non_expired_entry_returns_value(self):
         """Test that non-expired entries return their value."""
         node = MockNode()
@@ -591,7 +591,7 @@ class TestTTLEnforcement:
         assert result == "cached_value"
 
     @pytest.mark.asyncio
-    @pytest.mark.timeout(90)
+    @pytest.mark.timeout(60)
     async def test_no_ttl_entry_never_expires(self):
         """Test that entries without TTL never expire."""
         node = MockNode()
@@ -605,7 +605,7 @@ class TestTTLEnforcement:
         assert result == "cached_value"
 
     @pytest.mark.asyncio
-    @pytest.mark.timeout(90)
+    @pytest.mark.timeout(60)
     async def test_default_ttl_is_applied(self):
         """Test that default TTL is applied when no explicit TTL is set."""
         node = MockNode(default_ttl_seconds=300)
@@ -642,7 +642,7 @@ class TestL2Coordination:
     """Test suite for L1/L2 cache coordination."""
 
     @pytest.mark.asyncio
-    @pytest.mark.timeout(90)
+    @pytest.mark.timeout(60)
     async def test_get_from_l2_on_l1_miss(self):
         """Test that L2 is checked when L1 misses."""
         backend = MockCacheBackend()
@@ -654,7 +654,7 @@ class TestL2Coordination:
         assert result == {"from": "l2"}
 
     @pytest.mark.asyncio
-    @pytest.mark.timeout(90)
+    @pytest.mark.timeout(60)
     async def test_l1_populated_from_l2_hit(self):
         """Test that L1 is populated when L2 hits."""
         backend = MockCacheBackend()
@@ -670,7 +670,7 @@ class TestL2Coordination:
         assert value == {"from": "l2"}
 
     @pytest.mark.asyncio
-    @pytest.mark.timeout(90)
+    @pytest.mark.timeout(60)
     async def test_l1_hit_does_not_check_l2(self):
         """Test that L2 is not checked when L1 hits."""
         backend = MockCacheBackend()
@@ -686,7 +686,7 @@ class TestL2Coordination:
         assert result == {"from": "l1"}
 
     @pytest.mark.asyncio
-    @pytest.mark.timeout(90)
+    @pytest.mark.timeout(60)
     async def test_set_writes_to_both_l1_and_l2(self):
         """Test that set_cached writes to both L1 and L2."""
         backend = MockCacheBackend()
@@ -703,7 +703,7 @@ class TestL2Coordination:
         assert backend._ttls["test_key"] == 600
 
     @pytest.mark.asyncio
-    @pytest.mark.timeout(90)
+    @pytest.mark.timeout(60)
     async def test_invalidate_removes_from_both_l1_and_l2(self):
         """Test that invalidate removes from both L1 and L2."""
         backend = MockCacheBackend()
@@ -722,7 +722,7 @@ class TestL2Coordination:
         assert "test_key" not in backend._data
 
     @pytest.mark.asyncio
-    @pytest.mark.timeout(90)
+    @pytest.mark.timeout(60)
     async def test_clear_clears_both_l1_and_l2(self):
         """Test that clear_cache clears both L1 and L2."""
         backend = MockCacheBackend()
@@ -745,7 +745,7 @@ class TestGracefulDegradation:
     """Test suite for graceful degradation when L2 fails."""
 
     @pytest.mark.asyncio
-    @pytest.mark.timeout(90)
+    @pytest.mark.timeout(60)
     async def test_get_falls_back_to_l1_on_l2_error(self):
         """Test that get returns L1 value when L2 fails."""
         backend = FailingCacheBackend()
@@ -760,7 +760,7 @@ class TestGracefulDegradation:
         assert result == "from_l1"
 
     @pytest.mark.asyncio
-    @pytest.mark.timeout(90)
+    @pytest.mark.timeout(60)
     async def test_get_returns_none_when_both_l1_and_l2_miss(self):
         """Test that get returns None when both L1 and L2 miss (L2 error)."""
         backend = FailingCacheBackend()
@@ -772,7 +772,7 @@ class TestGracefulDegradation:
         assert result is None
 
     @pytest.mark.asyncio
-    @pytest.mark.timeout(90)
+    @pytest.mark.timeout(60)
     async def test_set_succeeds_in_l1_despite_l2_error(self):
         """Test that set stores in L1 even when L2 fails."""
         backend = FailingCacheBackend()
@@ -786,7 +786,7 @@ class TestGracefulDegradation:
         assert value == "value"
 
     @pytest.mark.asyncio
-    @pytest.mark.timeout(90)
+    @pytest.mark.timeout(60)
     async def test_invalidate_removes_l1_despite_l2_error(self):
         """Test that invalidate removes from L1 even when L2 fails."""
         backend = FailingCacheBackend()
@@ -802,7 +802,7 @@ class TestGracefulDegradation:
         assert "test_key" not in node._cache_data
 
     @pytest.mark.asyncio
-    @pytest.mark.timeout(90)
+    @pytest.mark.timeout(60)
     async def test_clear_clears_l1_despite_l2_error(self):
         """Test that clear clears L1 even when L2 fails."""
         backend = FailingCacheBackend()
@@ -824,7 +824,7 @@ class TestBackwardCompatibility:
     """Test suite for backward compatibility with existing behavior."""
 
     @pytest.mark.asyncio
-    @pytest.mark.timeout(90)
+    @pytest.mark.timeout(60)
     async def test_works_without_backend(self):
         """Test that mixin works without L2 backend (existing behavior)."""
         node = MockNode()
@@ -837,7 +837,7 @@ class TestBackwardCompatibility:
         assert result == "result"
 
     @pytest.mark.asyncio
-    @pytest.mark.timeout(90)
+    @pytest.mark.timeout(60)
     async def test_existing_test_patterns_still_work(self):
         """Test that existing test patterns still work."""
         node = MockNode()

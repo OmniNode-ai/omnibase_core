@@ -142,9 +142,7 @@ class ProtocolCacheBackend(Protocol):
         """
         ...
 
-    async def set(
-        self, key: str, value: Any, ttl_seconds: int | None = None
-    ) -> None:
+    async def set(self, key: str, value: Any, ttl_seconds: int | None = None) -> None:
         """
         Store value in cache with optional TTL.
 

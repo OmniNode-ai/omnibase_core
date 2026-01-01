@@ -35,7 +35,7 @@ Usage:
             push_job_name="my_batch_job",
         )
         backend.record_gauge("batch_progress", 0.75)
-        backend.push()  # Push to gateway
+        success = backend.push()  # Push to gateway, returns True on success
 
 .. versionadded:: 0.5.7
 """
@@ -46,7 +46,10 @@ __all__ = [
     "BackendMetricsPrometheus",
 ]
 
+import logging
 from typing import TYPE_CHECKING
+
+logger = logging.getLogger(__name__)
 
 # Attempt to import prometheus_client, fail gracefully if not installed
 try:
@@ -150,6 +153,10 @@ class BackendMetricsPrometheus:
         self._counter_labels: dict[str, tuple[str, ...]] = {}
         self._histogram_labels: dict[str, tuple[str, ...]] = {}
 
+        # Track observed tag value combinations for counters (for consistency warnings)
+        # Maps counter name -> set of frozenset of (label_name, label_value) tuples
+        self._counter_tag_combinations: dict[str, set[frozenset[tuple[str, str]]]] = {}
+
     def record_gauge(
         self,
         name: str,
@@ -193,7 +200,9 @@ class BackendMetricsPrometheus:
 
         counter = self._get_or_create_counter(full_name, label_names)
 
+        # Track tag value combinations and warn on new combinations
         if tags:
+            self._track_counter_tag_combination(full_name, tags)
             counter.labels(**tags).inc(value)
         else:
             counter.inc(value)
@@ -222,21 +231,33 @@ class BackendMetricsPrometheus:
         else:
             histogram.observe(value)
 
-    def push(self) -> None:
+    def push(self) -> bool:
         """
         Push metrics to Prometheus push gateway.
 
-        If no push gateway URL is configured, this method is a no-op.
+        If no push gateway URL is configured, this method returns False.
+        Push failures are caught and logged, not propagated.
 
-        Raises:
-            Exception: If push to gateway fails (network error, etc.)
+        Returns:
+            True if push was successful, False if no gateway configured or push failed.
         """
-        if self._push_gateway_url:
+        if not self._push_gateway_url or not self._push_job_name:
+            return False
+
+        try:
             push_to_gateway(
                 self._push_gateway_url,
                 job=self._push_job_name,
                 registry=self._registry,
             )
+            return True
+        except Exception as e:
+            logger.warning(
+                "Failed to push metrics to gateway at %s: %s",
+                self._push_gateway_url,
+                e,
+            )
+            return False
 
     def get_registry(self) -> CollectorRegistryType:
         """
@@ -263,9 +284,7 @@ class BackendMetricsPrometheus:
             return f"{prefix}_{name}"
         return name
 
-    def _get_or_create_gauge(
-        self, name: str, label_names: tuple[str, ...]
-    ) -> Gauge:
+    def _get_or_create_gauge(self, name: str, label_names: tuple[str, ...]) -> Gauge:
         """
         Get existing gauge or create new one.
 
@@ -280,13 +299,16 @@ class BackendMetricsPrometheus:
             ValueError: If metric exists with different label names
         """
         if name in self._gauges:
-            if self._gauge_labels.get(name) != label_names:
-                msg = (
-                    f"Gauge '{name}' already exists with different labels. "
-                    f"Existing: {self._gauge_labels.get(name)}, "
-                    f"Requested: {label_names}"
+            expected_labels = self._gauge_labels.get(name)
+            if expected_labels != label_names:
+                raise ValueError(
+                    self._format_label_mismatch_error(
+                        metric_type="Gauge",
+                        name=name,
+                        expected_labels=expected_labels,
+                        provided_labels=label_names,
+                    )
                 )
-                raise ValueError(msg)
             return self._gauges[name]
 
         gauge = Gauge(
@@ -316,13 +338,16 @@ class BackendMetricsPrometheus:
             ValueError: If metric exists with different label names
         """
         if name in self._counters:
-            if self._counter_labels.get(name) != label_names:
-                msg = (
-                    f"Counter '{name}' already exists with different labels. "
-                    f"Existing: {self._counter_labels.get(name)}, "
-                    f"Requested: {label_names}"
+            expected_labels = self._counter_labels.get(name)
+            if expected_labels != label_names:
+                raise ValueError(
+                    self._format_label_mismatch_error(
+                        metric_type="Counter",
+                        name=name,
+                        expected_labels=expected_labels,
+                        provided_labels=label_names,
+                    )
                 )
-                raise ValueError(msg)
             return self._counters[name]
 
         counter = Counter(
@@ -352,13 +377,16 @@ class BackendMetricsPrometheus:
             ValueError: If metric exists with different label names
         """
         if name in self._histograms:
-            if self._histogram_labels.get(name) != label_names:
-                msg = (
-                    f"Histogram '{name}' already exists with different labels. "
-                    f"Existing: {self._histogram_labels.get(name)}, "
-                    f"Requested: {label_names}"
+            expected_labels = self._histogram_labels.get(name)
+            if expected_labels != label_names:
+                raise ValueError(
+                    self._format_label_mismatch_error(
+                        metric_type="Histogram",
+                        name=name,
+                        expected_labels=expected_labels,
+                        provided_labels=label_names,
+                    )
                 )
-                raise ValueError(msg)
             return self._histograms[name]
 
         kwargs: dict[str, object] = {
@@ -374,3 +402,93 @@ class BackendMetricsPrometheus:
         self._histograms[name] = histogram
         self._histogram_labels[name] = label_names
         return histogram
+
+    def _format_label_mismatch_error(
+        self,
+        metric_type: str,
+        name: str,
+        expected_labels: tuple[str, ...] | None,
+        provided_labels: tuple[str, ...],
+    ) -> str:
+        """
+        Format a helpful error message for label mismatches.
+
+        Args:
+            metric_type: Type of metric (Gauge, Counter, Histogram)
+            name: Full metric name
+            expected_labels: Labels the metric was registered with
+            provided_labels: Labels provided in this call
+
+        Returns:
+            Formatted error message with guidance on how to fix the issue.
+        """
+        expected_str = (
+            f"({', '.join(repr(l) for l in expected_labels)})"
+            if expected_labels
+            else "(no labels)"
+        )
+        provided_str = (
+            f"({', '.join(repr(l) for l in provided_labels)})"
+            if provided_labels
+            else "(no labels)"
+        )
+
+        return (
+            f"Label mismatch for {metric_type.lower()} metric '{name}': "
+            f"expected labels {expected_str}, got {provided_str}. "
+            f"Prometheus requires consistent label names across all recordings of a metric. "
+            f"To fix this issue: ensure all calls to record this metric use the same set of "
+            f"label keys. If you need different labels, use a different metric name."
+        )
+
+    def _track_counter_tag_combination(self, name: str, tags: dict[str, str]) -> None:
+        """
+        Track tag value combinations for a counter and warn on new combinations.
+
+        This helps identify potential cardinality issues or inconsistent tag usage
+        across the codebase.
+
+        Args:
+            name: Full metric name
+            tags: Tags provided for this increment
+        """
+        # Create a frozenset of (key, value) tuples for hashability
+        tag_combination = frozenset(tags.items())
+
+        if name not in self._counter_tag_combinations:
+            self._counter_tag_combinations[name] = set()
+
+        existing_combinations = self._counter_tag_combinations[name]
+
+        if tag_combination not in existing_combinations:
+            # This is a new tag value combination
+            if existing_combinations:
+                # Warn only if there are already existing combinations
+                # (first combination is expected, subsequent ones are noteworthy)
+                sorted_tags = dict(sorted(tags.items()))
+                logger.debug(
+                    "New tag value combination observed for counter '%s': %s. "
+                    "Previously seen %d different combination(s). "
+                    "Consider if this indicates high cardinality.",
+                    name,
+                    sorted_tags,
+                    len(existing_combinations),
+                )
+            existing_combinations.add(tag_combination)
+
+    def get_counter_tag_combinations(
+        self, name: str
+    ) -> set[frozenset[tuple[str, str]]] | None:
+        """
+        Get observed tag value combinations for a counter.
+
+        Useful for testing and monitoring cardinality.
+
+        Args:
+            name: Metric name (without prefix - will be added automatically)
+
+        Returns:
+            Set of observed tag combinations, or None if counter not found.
+        """
+        full_name = self._make_name(name)
+        return self._counter_tag_combinations.get(full_name)

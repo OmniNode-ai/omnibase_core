@@ -86,7 +86,8 @@ IMPORT_PATTERN="^[[:space:]]*(from[[:space:]]+($PATTERN)(\\.|[[:space:]])|import
 # Files/patterns to exclude:
 # - Protocol definition files with documentation examples showing adapter usage
 # - __pycache__ and compiled files
-EXCLUDE_PATTERN="protocols/http/__init__.py|protocols/http/protocol_http_client.py|__pycache__|\.pyc$"
+# - Backend implementations (allowed to use transport libraries per ADR-005)
+EXCLUDE_PATTERN="protocols/http/__init__.py|protocols/http/protocol_http_client.py|__pycache__|\.pyc$|backends/cache/backend_cache_redis.py"
 
 # Find violations - actual import statements only
 # We use -P for Perl regex to enable extended regex features

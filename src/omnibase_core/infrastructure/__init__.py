@@ -3,7 +3,8 @@
 This module contains node bases and infrastructure services.
 """
 
-from omnibase_core.infrastructure.cache_backends import (
+# Re-export from canonical location (backends.cache)
+from omnibase_core.backends.cache import (
     REDIS_AVAILABLE,
     BackendCacheRedis,
 )

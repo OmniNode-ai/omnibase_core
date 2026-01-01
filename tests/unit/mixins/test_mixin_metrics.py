@@ -517,9 +517,7 @@ class TestMixinMetricsHistogram:
         """Test histogram recording with tags."""
         node = MockNode()
 
-        node.record_histogram(
-            "request_duration", 0.5, tags={"endpoint": "/api/users"}
-        )
+        node.record_histogram("request_duration", 0.5, tags={"endpoint": "/api/users"})
 
         metrics = node.get_metrics()
         assert metrics["request_duration"]["value"] == 0.5

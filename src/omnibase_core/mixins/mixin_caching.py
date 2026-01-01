@@ -29,7 +29,7 @@ Usage:
             return result
 
     # With L2 Redis backend
-    from omnibase_core.infrastructure.cache_backends import BackendCacheRedis
+    from omnibase_core.backends.cache import BackendCacheRedis
 
     backend = BackendCacheRedis(url="redis://localhost:6379/0")
     await backend.connect()
@@ -41,7 +41,7 @@ Usage:
 Related:
     - OMN-1188: Redis/Valkey L2 backend for MixinCaching
     - ProtocolCacheBackend: Protocol for L2 cache backends
-    - BackendCacheRedis: Default Redis implementation
+    - BackendCacheRedis: Default Redis implementation (in ``omnibase_core.backends.cache``)
 
 .. versionchanged:: 0.5.0
     Added L2 cache support, TTL enforcement, and backend abstraction.
@@ -81,6 +81,13 @@ class MixinCaching:
         L1 cache entries include timestamp and TTL for time-based expiration.
         Expired entries are lazily removed on access.
 
+    TTL Behavior on L2 Hit:
+        When L1 is populated from an L2 cache hit, the original L2 TTL is NOT
+        preserved. Instead, the L1 entry uses ``default_ttl_seconds``. This is
+        because the remaining L2 TTL is not available through the cache protocol.
+        As a result, L1 entries populated from L2 may expire at different times
+        than the original L2 entries.
+
     Graceful Degradation:
         If L2 backend is unavailable or operations fail, the mixin
         falls back to L1 cache only without raising errors.
@@ -94,7 +101,7 @@ class MixinCaching:
     Example:
         .. code-block:: python
 
-            from omnibase_core.infrastructure.cache_backends import BackendCacheRedis
+            from omnibase_core.backends.cache import BackendCacheRedis
 
             # Create Redis backend for L2
             backend = BackendCacheRedis(url="redis://localhost:6379/0")
@@ -237,7 +244,7 @@ class MixinCaching:
                     return l2_value
             except (ConnectionError, TimeoutError, OSError) as e:
                 # Graceful degradation - log and continue with L1 miss
-                logger.warning("L2 cache get failed for key %s: %s", cache_key, e)
+                logger.warning("L2 cache get failed for key '%s': %s", cache_key, e)
 
         return None
 
@@ -271,7 +278,7 @@ class MixinCaching:
                 await self._cache_backend.set(cache_key, value, ttl)
             except (ConnectionError, TimeoutError, OSError) as e:
                 # Graceful degradation - log and continue with L1 only
-                logger.warning("L2 cache set failed for key %s: %s", cache_key, e)
+                logger.warning("L2 cache set failed for key '%s': %s", cache_key, e)
 
     async def invalidate_cache(self, cache_key: str) -> None:
         """
@@ -288,7 +295,7 @@ class MixinCaching:
             try:
                 await self._cache_backend.delete(cache_key)
             except (ConnectionError, TimeoutError, OSError) as e:
-                logger.warning("L2 cache delete failed for key %s: %s", cache_key, e)
+                logger.warning("L2 cache delete failed for key '%s': %s", cache_key, e)
 
     async def clear_cache(self) -> None:
         """Clear all cache entries from both L1 and L2."""
@@ -319,7 +326,8 @@ class MixinCaching:
         # Clean up expired entries for accurate count
         now = time.time()
         expired_keys = [
-            k for k, (_, expiry) in self._cache_data.items()
+            k
+            for k, (_, expiry) in self._cache_data.items()
             if expiry is not None and now > expiry
         ]
         for k in expired_keys:

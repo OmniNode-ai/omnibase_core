@@ -1,34 +1,35 @@
 """
 Cache backends for L2 distributed caching.
 
-This module provides implementations of ProtocolCacheBackend for various
-distributed caching systems.
+.. deprecated:: 0.5.1
+    This module is deprecated. Import from ``omnibase_core.backends.cache`` instead.
+
+This module re-exports from ``omnibase_core.backends.cache`` for backwards
+compatibility. The canonical location is now ``omnibase_core.backends.cache``.
 
 Available Backends:
     - BackendCacheRedis: Redis/Valkey backend with async support
 
 Usage:
+    # Preferred (new location):
+    from omnibase_core.backends.cache import BackendCacheRedis
+
+    # Deprecated (this module - still works):
     from omnibase_core.infrastructure.cache_backends import BackendCacheRedis
-
-    # Create Redis backend
-    backend = BackendCacheRedis(url="redis://localhost:6379/0")
-    await backend.connect()
-
-    # Use with MixinCaching
-    class MyNode(NodeCompute, MixinCaching):
-        def __init__(self, container):
-            super().__init__(container, backend=backend)
 
 Requirements:
     The redis package is an optional dependency. Install with:
     poetry install -E cache
 
 .. versionadded:: 0.5.0
+.. versionchanged:: 0.5.1
+    Moved to ``omnibase_core.backends.cache``. This module now re-exports.
 """
 
-from omnibase_core.infrastructure.cache_backends.backend_cache_redis import (
-    BackendCacheRedis,
+# Re-export from canonical location for backwards compatibility
+from omnibase_core.backends.cache import (
     REDIS_AVAILABLE,
+    BackendCacheRedis,
 )
 
 __all__ = ["BackendCacheRedis", "REDIS_AVAILABLE"]

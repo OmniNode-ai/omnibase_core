@@ -14,7 +14,7 @@ Requirements:
     cache = ["redis>=5.0.0"]
 
 Usage:
-    from omnibase_core.infrastructure.cache_backends import BackendCacheRedis
+    from omnibase_core.backends.cache import BackendCacheRedis
 
     # Create and connect
     backend = BackendCacheRedis(url="redis://localhost:6379/0")
@@ -41,18 +41,24 @@ __all__ = ["BackendCacheRedis", "REDIS_AVAILABLE"]
 
 import json
 import logging
-from typing import Any
+from typing import TYPE_CHECKING
 
 # Check if redis is available (optional dependency)
 try:
     import redis.asyncio as aioredis
     from redis.asyncio.connection import ConnectionPool
+    from redis.exceptions import RedisError
 
     REDIS_AVAILABLE = True
 except ImportError:
-    aioredis = None  # type: ignore[assignment]
-    ConnectionPool = None  # type: ignore[assignment, misc]
+    aioredis = None
+    ConnectionPool = None
+    RedisError = Exception
     REDIS_AVAILABLE = False
+
+if TYPE_CHECKING:
+    from redis.asyncio import Redis
+    from redis.asyncio.connection import ConnectionPool as ConnectionPoolType
 
 logger = logging.getLogger(__name__)
 
@@ -77,7 +83,7 @@ class BackendCacheRedis:
     Example:
         .. code-block:: python
 
-            from omnibase_core.infrastructure.cache_backends import BackendCacheRedis
+            from omnibase_core.backends.cache import BackendCacheRedis
 
             async def main():
                 # Create backend with connection pool
@@ -139,8 +145,8 @@ class BackendCacheRedis:
         self._prefix = prefix
         self._default_ttl = default_ttl
         self._max_connections = max_connections
-        self._pool: ConnectionPool | None = None
-        self._client: aioredis.Redis | None = None  # type: ignore[name-defined]
+        self._pool: ConnectionPoolType | None = None
+        self._client: Redis[str] | None = None
         self._connected = False
 
     def _make_key(self, key: str) -> str:
@@ -156,9 +162,16 @@ class BackendCacheRedis:
 
         Raises:
             ConnectionError: If unable to connect to Redis.
+            RuntimeError: If redis package is not installed.
         """
         if self._connected:
             return
+
+        # Type guard: verify redis is available at runtime
+        if aioredis is None or ConnectionPool is None:
+            raise RuntimeError(
+                "Redis package not installed. Install with: poetry install -E cache"
+            )
 
         try:
             self._pool = aioredis.ConnectionPool.from_url(
@@ -167,36 +180,64 @@ class BackendCacheRedis:
                 decode_responses=True,
             )
             self._client = aioredis.Redis(connection_pool=self._pool)
-            # Verify connection
+            # Verify connection - assert for type narrowing
+            assert self._client is not None  # Narrow type for pyright
             await self._client.ping()
             self._connected = True
-            logger.debug("Connected to Redis at %s", self._url)
-        except Exception as e:
+            # Don't log URL - may contain credentials
+            logger.debug("Connected to Redis")
+        except (RedisError, ConnectionError, TimeoutError, OSError) as e:
             logger.error("Failed to connect to Redis: %s", e)
             # Cleanup on failure to prevent resource leaks
-            if self._pool:
+            await self._cleanup_on_connect_failure()
+            raise ConnectionError(f"Failed to connect to Redis: {e}") from e
+        except Exception as e:
+            # Catch unexpected errors during connection setup
+            logger.error("Unexpected error connecting to Redis: %s", e)
+            await self._cleanup_on_connect_failure()
+            raise ConnectionError(f"Failed to connect to Redis: {e}") from e
+
+    async def _cleanup_on_connect_failure(self) -> None:
+        """Clean up resources after a connection failure."""
+        try:
+            if self._pool is not None:
                 await self._pool.disconnect()
-                self._pool = None
+        except Exception as e:
+            logger.warning("Error during connection cleanup: %s", e)
+        finally:
+            self._pool = None
             self._client = None
             self._connected = False
-            raise ConnectionError(f"Failed to connect to Redis: {e}") from e
 
     async def close(self) -> None:
         """
         Close Redis connection and cleanup resources.
 
         Should be called when the backend is no longer needed.
+        Uses robust cleanup to ensure all resources are released
+        even if individual cleanup steps fail.
         """
-        if self._client:
-            await self._client.close()
+        # Close client first, then pool - ensure partial failures don't prevent full cleanup
+        try:
+            if self._client:
+                await self._client.close()
+        except Exception as e:
+            logger.warning("Error closing Redis client: %s", e)
+        finally:
             self._client = None
-        if self._pool:
-            await self._pool.disconnect()
+
+        try:
+            if self._pool:
+                await self._pool.disconnect()
+        except Exception as e:
+            logger.warning("Error disconnecting Redis pool: %s", e)
+        finally:
             self._pool = None
-        self._connected = False
+            self._connected = False
+
         logger.debug("Disconnected from Redis")
 
-    async def get(self, key: str) -> Any | None:
+    async def get(self, key: str) -> object | None:
         """
         Get cached value by key.
 
@@ -215,16 +256,17 @@ class BackendCacheRedis:
             data = await self._client.get(prefixed_key)
             if data is None:
                 return None
-            return json.loads(data)
+            result: object = json.loads(data)
+            return result
         except json.JSONDecodeError as e:
-            logger.warning("Failed to deserialize cache value for key %s: %s", key, e)
+            logger.warning("Failed to deserialize cache value for key '%s': %s", key, e)
             return None
-        except Exception as e:
-            logger.warning("Redis get failed for key %s: %s", key, e)
+        except (RedisError, ConnectionError, TimeoutError, OSError) as e:
+            logger.warning("Redis get failed for key '%s': %s", key, e)
             return None
 
     async def set(
-        self, key: str, value: Any, ttl_seconds: int | None = None
+        self, key: str, value: object, ttl_seconds: int | None = None
     ) -> None:
         """
         Store value in cache with optional TTL.
@@ -247,9 +289,9 @@ class BackendCacheRedis:
             else:
                 await self._client.set(prefixed_key, data)
         except (TypeError, ValueError) as e:
-            logger.warning("Failed to serialize cache value for key %s: %s", key, e)
-        except Exception as e:
-            logger.warning("Redis set failed for key %s: %s", key, e)
+            logger.warning("Failed to serialize cache value for key '%s': %s", key, e)
+        except (RedisError, ConnectionError, TimeoutError, OSError) as e:
+            logger.warning("Redis set failed for key '%s': %s", key, e)
 
     async def delete(self, key: str) -> None:
         """
@@ -264,8 +306,8 @@ class BackendCacheRedis:
         try:
             prefixed_key = self._make_key(key)
             await self._client.delete(prefixed_key)
-        except Exception as e:
-            logger.warning("Redis delete failed for key %s: %s", key, e)
+        except (RedisError, ConnectionError, TimeoutError, OSError) as e:
+            logger.warning("Redis delete failed for key '%s': %s", key, e)
 
     async def clear(self) -> None:
         """
@@ -294,7 +336,7 @@ class BackendCacheRedis:
             else:
                 # No prefix - flush entire database
                 await self._client.flushdb()
-        except Exception as e:
+        except (RedisError, ConnectionError, TimeoutError, OSError) as e:
             logger.warning("Redis clear failed: %s", e)
 
     async def exists(self, key: str) -> bool:
@@ -314,9 +356,9 @@ class BackendCacheRedis:
         try:
             prefixed_key = self._make_key(key)
             result = await self._client.exists(prefixed_key)
-            return result > 0
-        except Exception as e:
-            logger.warning("Redis exists check failed for key %s: %s", key, e)
+            return bool(result > 0)
+        except (RedisError, ConnectionError, TimeoutError, OSError) as e:
+            logger.warning("Redis exists check failed for key '%s': %s", key, e)
             return False
 
     @property
