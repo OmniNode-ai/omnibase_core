@@ -31,7 +31,8 @@ class ModelOutputConfig(BaseModel):
         allowed = {"json", "yaml", "text"}
         if v not in allowed:
             raise ModelOnexError(
-                f"format must be one of {allowed}", EnumCoreErrorCode.VALIDATION_ERROR
+                message=f"format must be one of {allowed}",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
         return v
 
@@ -41,7 +42,7 @@ class ModelOutputConfig(BaseModel):
         allowed = {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}
         if v not in allowed:
             raise ModelOnexError(
-                f"log_level must be one of {allowed}",
-                EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"log_level must be one of {allowed}",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
         return v

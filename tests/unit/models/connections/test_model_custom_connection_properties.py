@@ -234,3 +234,411 @@ class TestModelCustomConnectionProperties:
         # Should be able to add custom properties using the correct API
         props.custom_properties.set_custom_value("custom_key", "custom_value")
         assert props.custom_properties.get_custom_value("custom_key") == "custom_value"
+
+
+@pytest.mark.unit
+class TestFactoryMethodsExtraKwargs:
+    """Test cases for extra kwargs handling in factory methods.
+
+    These tests verify that the factory methods properly coerce **kwargs
+    to nested model objects using duck typing and Pydantic validation.
+    The _coerce_to_model helper handles:
+    - Dict/mapping inputs: Coerces to model instance
+    - Existing model instances: Validates and returns
+    - None: Returns default model instance
+    - Invalid inputs: Returns default model instance (lenient mode)
+    """
+
+    # ==========================================================================
+    # create_database_connection() tests
+    # ==========================================================================
+
+    def test_create_database_connection_with_dict_kwargs(self):
+        """Test that dict kwargs are properly coerced to nested models."""
+        props = ModelCustomConnectionProperties.create_database_connection(
+            database_name="test_db",
+            message_queue={"queue_display_name": "test_queue", "durable": True},
+            cloud_service={"region": "us-west-2", "availability_zone": "us-west-2a"},
+            performance={"max_connections": 200, "enable_compression": True},
+        )
+
+        # Verify primary database properties
+        assert props.database.database_display_name == "test_db"
+
+        # Verify message_queue was coerced from dict
+        assert props.message_queue.queue_display_name == "test_queue"
+        assert props.message_queue.durable is True
+
+        # Verify cloud_service was coerced from dict
+        assert props.cloud_service.region == "us-west-2"
+        assert props.cloud_service.availability_zone == "us-west-2a"
+
+        # Verify performance was coerced from dict
+        assert props.performance.max_connections == 200
+        assert props.performance.enable_compression is True
+
+    def test_create_database_connection_with_model_objects(self):
+        """Test that model objects are passed through correctly."""
+        from omnibase_core.models.connections.model_cloud_service_properties import (
+            ModelCloudServiceProperties,
+        )
+        from omnibase_core.models.connections.model_message_queue_properties import (
+            ModelMessageQueueProperties,
+        )
+        from omnibase_core.models.connections.model_performance_properties import (
+            ModelPerformanceProperties,
+        )
+        from omnibase_core.models.core.model_custom_properties import (
+            ModelCustomProperties,
+        )
+
+        perf = ModelPerformanceProperties(max_connections=50, enable_caching=False)
+        queue = ModelMessageQueueProperties(
+            queue_display_name="my_queue", routing_key="orders.created"
+        )
+        cloud = ModelCloudServiceProperties(region="eu-central-1")
+        custom = ModelCustomProperties()
+        custom.set_custom_string("env", "production")
+
+        props = ModelCustomConnectionProperties.create_database_connection(
+            database_name="orders_db",
+            performance=perf,
+            message_queue=queue,
+            cloud_service=cloud,
+            custom_properties=custom,
+        )
+
+        assert props.database.database_display_name == "orders_db"
+        assert props.performance.max_connections == 50
+        assert props.performance.enable_caching is False
+        assert props.message_queue.queue_display_name == "my_queue"
+        assert props.message_queue.routing_key == "orders.created"
+        assert props.cloud_service.region == "eu-central-1"
+        assert props.custom_properties.get_custom_value("env") == "production"
+
+    def test_create_database_connection_with_none_kwargs(self):
+        """Test that None kwargs return default model instances."""
+        props = ModelCustomConnectionProperties.create_database_connection(
+            database_name="test_db",
+            message_queue=None,
+            cloud_service=None,
+            performance=None,
+            custom_properties=None,
+        )
+
+        # All should be default instances with default values
+        assert props.database.database_display_name == "test_db"
+        assert props.message_queue.queue_display_name is None
+        assert props.message_queue.durable is None
+        assert props.cloud_service.region is None
+        assert props.performance.max_connections == 100  # Default value
+        assert props.custom_properties.is_empty() is True
+
+    def test_create_database_connection_with_invalid_kwargs(self):
+        """Test that invalid kwargs return defaults (lenient mode)."""
+        props = ModelCustomConnectionProperties.create_database_connection(
+            database_name="test_db",
+            message_queue="invalid_string",  # Invalid type
+            cloud_service=12345,  # Invalid type
+            performance=["list", "of", "items"],  # Invalid type
+        )
+
+        # Should get default instances due to lenient mode
+        assert props.database.database_display_name == "test_db"
+        assert props.message_queue.queue_display_name is None  # Default
+        assert props.cloud_service.region is None  # Default
+        assert props.performance.max_connections == 100  # Default
+
+    def test_create_database_connection_with_partial_dict(self):
+        """Test that partial dicts are properly handled with defaults."""
+        props = ModelCustomConnectionProperties.create_database_connection(
+            database_name="test_db",
+            performance={"max_connections": 500},  # Only one field
+        )
+
+        # Specified field should be set
+        assert props.performance.max_connections == 500
+        # Other fields should have defaults
+        assert props.performance.enable_compression is False
+        assert props.performance.enable_caching is True
+        assert props.performance.command_timeout == 30
+
+    # ==========================================================================
+    # create_queue_connection() tests
+    # ==========================================================================
+
+    def test_create_queue_connection_with_dict_kwargs(self):
+        """Test that dict kwargs are properly coerced to nested models."""
+        props = ModelCustomConnectionProperties.create_queue_connection(
+            queue_name="events_queue",
+            exchange_name="events_exchange",
+            routing_key="events.#",
+            durable=True,
+            database={"database_display_name": "events_db", "charset": "utf8mb4"},
+            cloud_service={"service_display_name": "RabbitMQ", "region": "ap-south-1"},
+            performance={"max_connections": 150, "connection_limit": 75},
+        )
+
+        # Verify primary queue properties
+        assert props.message_queue.queue_display_name == "events_queue"
+        assert props.message_queue.exchange_display_name == "events_exchange"
+        assert props.message_queue.routing_key == "events.#"
+        assert props.message_queue.durable is True
+
+        # Verify database was coerced from dict
+        assert props.database.database_display_name == "events_db"
+        assert props.database.charset == "utf8mb4"
+
+        # Verify cloud_service was coerced from dict
+        assert props.cloud_service.service_display_name == "RabbitMQ"
+        assert props.cloud_service.region == "ap-south-1"
+
+        # Verify performance was coerced from dict
+        assert props.performance.max_connections == 150
+        assert props.performance.connection_limit == 75
+
+    def test_create_queue_connection_with_model_objects(self):
+        """Test that model objects are passed through correctly."""
+        from omnibase_core.models.connections.model_database_properties import (
+            ModelDatabaseProperties,
+        )
+        from omnibase_core.models.connections.model_performance_properties import (
+            ModelPerformanceProperties,
+        )
+
+        db = ModelDatabaseProperties(
+            database_display_name="queue_db", collation="utf8_unicode_ci"
+        )
+        perf = ModelPerformanceProperties(compression_level=9)
+
+        props = ModelCustomConnectionProperties.create_queue_connection(
+            queue_name="audit_queue",
+            database=db,
+            performance=perf,
+        )
+
+        assert props.message_queue.queue_display_name == "audit_queue"
+        assert props.database.database_display_name == "queue_db"
+        assert props.database.collation == "utf8_unicode_ci"
+        assert props.performance.compression_level == 9
+
+    def test_create_queue_connection_with_none_kwargs(self):
+        """Test that None kwargs return default model instances."""
+        props = ModelCustomConnectionProperties.create_queue_connection(
+            queue_name="test_queue",
+            database=None,
+            cloud_service=None,
+            performance=None,
+            custom_properties=None,
+        )
+
+        assert props.message_queue.queue_display_name == "test_queue"
+        assert props.database.database_display_name is None
+        assert props.cloud_service.service_display_name is None
+        assert props.performance.max_connections == 100  # Default
+        assert props.custom_properties.is_empty() is True
+
+    def test_create_queue_connection_with_invalid_kwargs(self):
+        """Test that invalid kwargs return defaults (lenient mode)."""
+        props = ModelCustomConnectionProperties.create_queue_connection(
+            queue_name="test_queue",
+            database=object(),  # Invalid type
+            performance={"invalid_nested": {"too_deep": True}},  # Ignored extra field
+        )
+
+        # database should get default due to lenient mode
+        assert props.database.database_display_name is None
+
+        # Performance should still work (extra fields ignored by model config)
+        assert props.performance.max_connections == 100
+
+    # ==========================================================================
+    # create_service_connection() tests
+    # ==========================================================================
+
+    def test_create_service_connection_with_dict_kwargs(self):
+        """Test that dict kwargs are properly coerced to nested models."""
+        props = ModelCustomConnectionProperties.create_service_connection(
+            service_name="api-gateway",
+            instance_type=EnumInstanceType.T3_LARGE,
+            region="us-east-1",
+            availability_zone="us-east-1a",
+            database={"database_display_name": "gateway_db"},
+            message_queue={"queue_display_name": "gateway_queue", "routing_key": "api.*"},
+            performance={"max_connections": 1000, "enable_compression": True},
+        )
+
+        # Verify primary service properties
+        assert props.cloud_service.service_display_name == "api-gateway"
+        assert props.cloud_service.instance_type == EnumInstanceType.T3_LARGE
+        assert props.cloud_service.region == "us-east-1"
+        assert props.cloud_service.availability_zone == "us-east-1a"
+
+        # Verify database was coerced from dict
+        assert props.database.database_display_name == "gateway_db"
+
+        # Verify message_queue was coerced from dict
+        assert props.message_queue.queue_display_name == "gateway_queue"
+        assert props.message_queue.routing_key == "api.*"
+
+        # Verify performance was coerced from dict
+        assert props.performance.max_connections == 1000
+        assert props.performance.enable_compression is True
+
+    def test_create_service_connection_with_model_objects(self):
+        """Test that model objects are passed through correctly."""
+        from omnibase_core.models.connections.model_database_properties import (
+            ModelDatabaseProperties,
+        )
+        from omnibase_core.models.connections.model_message_queue_properties import (
+            ModelMessageQueueProperties,
+        )
+        from omnibase_core.models.connections.model_performance_properties import (
+            ModelPerformanceProperties,
+        )
+        from omnibase_core.models.core.model_custom_properties import (
+            ModelCustomProperties,
+        )
+
+        db = ModelDatabaseProperties(database_display_name="service_db")
+        queue = ModelMessageQueueProperties(exchange_display_name="service_exchange")
+        perf = ModelPerformanceProperties(enable_compression=True, compression_level=5)
+        custom = ModelCustomProperties()
+        custom.set_custom_flag("active", True)
+        custom.set_custom_number("priority", 1.0)
+
+        props = ModelCustomConnectionProperties.create_service_connection(
+            service_name="worker-service",
+            database=db,
+            message_queue=queue,
+            performance=perf,
+            custom_properties=custom,
+        )
+
+        assert props.cloud_service.service_display_name == "worker-service"
+        assert props.database.database_display_name == "service_db"
+        assert props.message_queue.exchange_display_name == "service_exchange"
+        assert props.performance.enable_compression is True
+        assert props.performance.compression_level == 5
+        assert props.custom_properties.get_custom_value("active") is True
+        assert props.custom_properties.get_custom_value("priority") == 1.0
+
+    def test_create_service_connection_with_none_kwargs(self):
+        """Test that None kwargs return default model instances."""
+        props = ModelCustomConnectionProperties.create_service_connection(
+            service_name="test_service",
+            database=None,
+            message_queue=None,
+            performance=None,
+            custom_properties=None,
+        )
+
+        assert props.cloud_service.service_display_name == "test_service"
+        assert props.database.database_display_name is None
+        assert props.message_queue.queue_display_name is None
+        assert props.performance.max_connections == 100  # Default
+        assert props.custom_properties.is_empty() is True
+
+    def test_create_service_connection_with_invalid_kwargs(self):
+        """Test that invalid kwargs return defaults (lenient mode)."""
+        props = ModelCustomConnectionProperties.create_service_connection(
+            service_name="test_service",
+            database=set(),  # Invalid type (set is not dict-like)
+            message_queue=lambda x: x,  # Invalid type (function)
+            performance=True,  # Invalid type (bool)
+        )
+
+        # All should get defaults due to lenient mode
+        assert props.cloud_service.service_display_name == "test_service"
+        assert props.database.database_display_name is None
+        assert props.message_queue.queue_display_name is None
+        assert props.performance.max_connections == 100
+
+    def test_create_service_connection_with_custom_properties_dict(self):
+        """Test custom_properties kwarg with dict format."""
+        props = ModelCustomConnectionProperties.create_service_connection(
+            service_name="test_service",
+            custom_properties={
+                "custom_strings": {"env": "staging"},
+                "custom_numbers": {"timeout": 30.0},
+                "custom_flags": {"debug": True},
+            },
+        )
+
+        assert props.custom_properties.get_custom_value("env") == "staging"
+        assert props.custom_properties.get_custom_value("timeout") == 30.0
+        assert props.custom_properties.get_custom_value("debug") is True
+
+    # ==========================================================================
+    # Cross-cutting coercion behavior tests
+    # ==========================================================================
+
+    def test_coercion_preserves_model_identity_check(self):
+        """Test that coerced models are proper instances of their types."""
+        from omnibase_core.models.connections.model_performance_properties import (
+            ModelPerformanceProperties,
+        )
+
+        props = ModelCustomConnectionProperties.create_database_connection(
+            database_name="test",
+            performance={"max_connections": 50},
+        )
+
+        # The coerced performance should be a proper ModelPerformanceProperties
+        assert isinstance(props.performance, ModelPerformanceProperties)
+
+    def test_coercion_handles_empty_dict(self):
+        """Test that empty dicts produce default model instances."""
+        props = ModelCustomConnectionProperties.create_database_connection(
+            database_name="test",
+            performance={},
+            message_queue={},
+            cloud_service={},
+        )
+
+        # Empty dicts should produce models with all defaults
+        assert props.performance.max_connections == 100
+        assert props.performance.enable_compression is False
+        assert props.message_queue.queue_display_name is None
+        assert props.cloud_service.region is None
+
+    def test_all_factory_methods_support_all_kwargs(self):
+        """Test that all factory methods accept all optional nested model kwargs."""
+        # Each factory should support message_queue, cloud_service, database,
+        # performance, and custom_properties (except its own primary concern)
+
+        db_props = ModelCustomConnectionProperties.create_database_connection(
+            database_name="db",
+            message_queue={"queue_display_name": "q"},
+            cloud_service={"region": "r"},
+            performance={"max_connections": 1},
+            custom_properties={"custom_strings": {"k": "v"}},
+        )
+        assert db_props.message_queue.queue_display_name == "q"
+        assert db_props.cloud_service.region == "r"
+        assert db_props.performance.max_connections == 1
+        assert db_props.custom_properties.get_custom_value("k") == "v"
+
+        queue_props = ModelCustomConnectionProperties.create_queue_connection(
+            queue_name="q",
+            database={"database_display_name": "db"},
+            cloud_service={"region": "r"},
+            performance={"max_connections": 2},
+            custom_properties={"custom_numbers": {"n": 1.5}},
+        )
+        assert queue_props.database.database_display_name == "db"
+        assert queue_props.cloud_service.region == "r"
+        assert queue_props.performance.max_connections == 2
+        assert queue_props.custom_properties.get_custom_value("n") == 1.5
+
+        service_props = ModelCustomConnectionProperties.create_service_connection(
+            service_name="s",
+            database={"database_display_name": "db"},
+            message_queue={"queue_display_name": "q"},
+            performance={"max_connections": 3},
+            custom_properties={"custom_flags": {"f": True}},
+        )
+        assert service_props.database.database_display_name == "db"
+        assert service_props.message_queue.queue_display_name == "q"
+        assert service_props.performance.max_connections == 3
+        assert service_props.custom_properties.get_custom_value("f") is True

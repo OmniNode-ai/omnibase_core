@@ -23,7 +23,9 @@ from .model_message_queue_properties import ModelMessageQueueProperties
 from .model_performance_properties import ModelPerformanceProperties
 
 
-def _coerce_to_model[ModelT: BaseModel](value: object, model_type: type[ModelT]) -> ModelT:
+def _coerce_to_model[ModelT: BaseModel](
+    value: object, model_type: type[ModelT]
+) -> ModelT:
     """Coerce a value to a Pydantic model using duck typing.
 
     Uses Pydantic's model_validate() which handles structural validation:
@@ -246,13 +248,25 @@ class ModelCustomConnectionProperties(BaseModel):
     def create_service_connection(
         cls,
         service_name: str | None = None,
-        instance_type: object = None,
+        instance_type: EnumInstanceType | str | None = None,
         region: str | None = None,
         availability_zone: str | None = None,
         **kwargs: object,
     ) -> ModelCustomConnectionProperties:
-        """Create service connection properties."""
+        """Create service connection properties.
 
+        Args:
+            service_name: Display name for the service
+            instance_type: Instance type as enum or string (e.g., "MEDIUM", "LARGE").
+                Accepts EnumInstanceType values directly, string representations that
+                will be coerced to the enum, or None for no instance type.
+            region: Cloud region identifier
+            availability_zone: Availability zone within the region
+            **kwargs: Additional properties passed to nested models
+
+        Returns:
+            Configured ModelCustomConnectionProperties instance
+        """
         # Handle instance_type conversion with fallback for unknown strings.
         # NOTE: The isinstance checks below for EnumInstanceType and str are justified
         # for type-based dispatch during enum coercion. This is different from type

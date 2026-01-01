@@ -65,8 +65,8 @@ def coerce_to_semver(value: object, field_name: str) -> ModelSemVer:
     if isinstance(value, str):
         return parse_semver_from_string(value)
     raise ModelOnexError(
-        f"{field_name} must be ModelSemVer, dict, or str, got {type(value).__name__}",
-        EnumCoreErrorCode.VALIDATION_ERROR,
+        message=f"{field_name} must be ModelSemVer, dict, or str, got {type(value).__name__}",
+        error_code=EnumCoreErrorCode.VALIDATION_ERROR,
     )
 
 

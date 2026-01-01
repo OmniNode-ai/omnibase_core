@@ -78,8 +78,8 @@ class ModelCLIConfig(BaseModel):
         """Load configuration from file."""
         if not config_path.exists():
             raise ModelOnexError(
-                f"Configuration file not found: {config_path}",
-                EnumCoreErrorCode.FILE_NOT_FOUND,
+                message=f"Configuration file not found: {config_path}",
+                error_code=EnumCoreErrorCode.FILE_NOT_FOUND,
             )
 
         # In a real implementation, you would load from YAML/JSON here

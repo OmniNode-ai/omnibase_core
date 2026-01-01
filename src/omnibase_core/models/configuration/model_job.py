@@ -71,6 +71,15 @@ class ModelJob(BaseModel):
     timeout_minutes: int | None = Field(default=None, alias="timeout-minutes")
     strategy: WorkflowStrategy | None = None
     continue_on_error: bool | None = Field(default=None, alias="continue-on-error")
-    container: str | dict[str, str] | None = None
+    # GitHub Actions container config supports complex nested structures:
+    # - image: str (container image)
+    # - credentials: dict[str, str] (username/password)
+    # - env: dict[str, str] (environment variables)
+    # - ports: list[str | int] (port mappings like "80:80" or 443)
+    # - volumes: list[str] (volume mounts)
+    # - options: str (additional docker options)
+    container: str | dict[str, str | int | list[str | int] | dict[str, str]] | None = (
+        None
+    )
     services: WorkflowServices | None = None
     outputs: dict[str, str] | None = None

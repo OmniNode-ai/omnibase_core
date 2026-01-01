@@ -382,9 +382,8 @@ class ModelONEXContainer:
                     },
                 )
 
-                # Use object cast since T is a TypeVar resolved at runtime
-                typed_service = cast(T, service_instance)
-                return typed_service
+                # service_instance is already typed as T from resolve_service[T]
+                return service_instance
 
             except Exception as registry_error:
                 # Fail fast - ServiceRegistry is the only resolution mechanism when enabled
@@ -845,7 +844,9 @@ async def create_model_onex_container(
     if enable_cache:
         await container.warm_cache()
 
-    return container
+    # Explicit type annotation to satisfy mypy (from_dict returns Any from dependency_injector)
+    result: ModelONEXContainer = container
+    return result
 
 
 # === GLOBAL ENHANCED CONTAINER ===

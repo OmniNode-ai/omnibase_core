@@ -82,14 +82,14 @@ class ModelGitHubIssuesEvent(BaseModel):
         # Runtime type check for action from info.data
         if not isinstance(action_raw, str):
             raise ModelOnexError(
-                f"action must be str, got {type(action_raw).__name__}",
-                EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"action must be str, got {type(action_raw).__name__}",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
         action: str = action_raw
         if action in {"labeled", "unlabeled"} and v is None:
             raise ModelOnexError(
-                f"Action '{action}' requires label data",
-                EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Action '{action}' requires label data",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
         if action not in {"labeled", "unlabeled"} and v is not None:
             # Note: This might be too strict - GitHub may include label in other contexts
@@ -106,14 +106,14 @@ class ModelGitHubIssuesEvent(BaseModel):
         # Runtime type check for action from info.data
         if not isinstance(action_raw, str):
             raise ModelOnexError(
-                f"action must be str, got {type(action_raw).__name__}",
-                EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"action must be str, got {type(action_raw).__name__}",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
         action: str = action_raw
         if action in {"assigned", "unassigned"} and v is None:
             raise ModelOnexError(
-                f"Action '{action}' requires assignee data",
-                EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Action '{action}' requires assignee data",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
         if action not in {"assigned", "unassigned"} and v is not None:
             # Allow assignee in other contexts for flexibility
