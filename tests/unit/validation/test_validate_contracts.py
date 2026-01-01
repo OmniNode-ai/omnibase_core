@@ -1146,7 +1146,13 @@ class TestExampleContractsValidation:
             if not isinstance(content, dict):
                 continue
 
-            # Check if this looks like a contract (has contract indicators)
+            # Skip handler contracts - they have their own schema and don't use
+            # contract_version/node_type. Handler contracts are validated by
+            # test_handler_contract_examples.py
+            if "handler_id" in content:
+                continue
+
+            # Check if this looks like an ONEX metadata contract (has contract indicators)
             contract_indicators = {
                 "contract_version",
                 "node_type",
@@ -1161,6 +1167,427 @@ class TestExampleContractsValidation:
                 assert "node_type" in content, (
                     f"{yaml_file.name} is missing required field: node_type"
                 )
+
+
+@pytest.mark.unit
+class TestHandlerContractValidation:
+    """Test handler contract validation (handler_id-based contracts).
+
+    Handler contracts have a different schema than ONEX metadata contracts:
+    - They have handler_id instead of contract_version/node_type
+    - They define handler behavior through the descriptor field
+    - They specify capability dependencies and execution constraints
+    """
+
+    def test_valid_handler_contract(self, temp_repo):
+        """Valid handler contract passes validation."""
+        valid_handler = """
+handler_id: compute.schema.validator
+name: Schema Validator
+version: 1.0.0
+description: Validates input data against JSON schemas
+
+descriptor:
+  handler_kind: compute
+  purity: pure
+  idempotent: true
+  timeout_ms: 5000
+
+input_model: myapp.models.ValidationRequest
+output_model: myapp.models.ValidationResult
+
+capability_outputs:
+  - validation.result
+
+tags:
+  - validation
+  - compute
+"""
+        yaml_file = temp_repo / "handler_contract.yaml"
+        yaml_file.write_text(valid_handler)
+
+        errors = validate_yaml_file(yaml_file)
+        assert len(errors) == 0, f"Valid handler contract should pass. Errors: {errors}"
+
+    def test_handler_contract_missing_handler_id(self, temp_repo):
+        """Missing handler_id triggers error."""
+        invalid_handler = """
+name: Schema Validator
+version: 1.0.0
+descriptor:
+  handler_kind: compute
+  purity: pure
+  idempotent: true
+input_model: myapp.models.Input
+output_model: myapp.models.Output
+"""
+        yaml_file = temp_repo / "missing_handler_id.yaml"
+        yaml_file.write_text(invalid_handler)
+
+        # This should be detected as a regular YAML file, not a handler contract
+        # since handler_id is the key discriminator
+        errors = validate_yaml_file(yaml_file)
+        assert isinstance(errors, list)
+
+    def test_handler_contract_missing_name(self, temp_repo):
+        """Missing name triggers error."""
+        invalid_handler = """
+handler_id: compute.schema.validator
+version: 1.0.0
+descriptor:
+  handler_kind: compute
+  purity: pure
+  idempotent: true
+input_model: myapp.models.Input
+output_model: myapp.models.Output
+"""
+        yaml_file = temp_repo / "missing_name.yaml"
+        yaml_file.write_text(invalid_handler)
+
+        errors = validate_yaml_file(yaml_file)
+        assert len(errors) >= 1
+        assert any("name" in error.lower() for error in errors)
+
+    def test_handler_contract_missing_version(self, temp_repo):
+        """Missing version triggers error."""
+        invalid_handler = """
+handler_id: compute.schema.validator
+name: Schema Validator
+descriptor:
+  handler_kind: compute
+  purity: pure
+  idempotent: true
+input_model: myapp.models.Input
+output_model: myapp.models.Output
+"""
+        yaml_file = temp_repo / "missing_version.yaml"
+        yaml_file.write_text(invalid_handler)
+
+        errors = validate_yaml_file(yaml_file)
+        assert len(errors) >= 1
+        assert any("version" in error.lower() for error in errors)
+
+    def test_handler_contract_missing_descriptor(self, temp_repo):
+        """Missing descriptor triggers error."""
+        invalid_handler = """
+handler_id: compute.schema.validator
+name: Schema Validator
+version: 1.0.0
+input_model: myapp.models.Input
+output_model: myapp.models.Output
+"""
+        yaml_file = temp_repo / "missing_descriptor.yaml"
+        yaml_file.write_text(invalid_handler)
+
+        errors = validate_yaml_file(yaml_file)
+        assert len(errors) >= 1
+        assert any("descriptor" in error.lower() for error in errors)
+
+    def test_handler_contract_missing_input_model(self, temp_repo):
+        """Missing input_model triggers error."""
+        invalid_handler = """
+handler_id: compute.schema.validator
+name: Schema Validator
+version: 1.0.0
+descriptor:
+  handler_kind: compute
+  purity: pure
+  idempotent: true
+output_model: myapp.models.Output
+"""
+        yaml_file = temp_repo / "missing_input_model.yaml"
+        yaml_file.write_text(invalid_handler)
+
+        errors = validate_yaml_file(yaml_file)
+        assert len(errors) >= 1
+        assert any("input_model" in error.lower() for error in errors)
+
+    def test_handler_contract_missing_output_model(self, temp_repo):
+        """Missing output_model triggers error."""
+        invalid_handler = """
+handler_id: compute.schema.validator
+name: Schema Validator
+version: 1.0.0
+descriptor:
+  handler_kind: compute
+  purity: pure
+  idempotent: true
+input_model: myapp.models.Input
+"""
+        yaml_file = temp_repo / "missing_output_model.yaml"
+        yaml_file.write_text(invalid_handler)
+
+        errors = validate_yaml_file(yaml_file)
+        assert len(errors) >= 1
+        assert any("output_model" in error.lower() for error in errors)
+
+    def test_handler_contract_invalid_handler_id_format(self, temp_repo):
+        """Invalid handler_id format triggers error."""
+        invalid_handler = """
+handler_id: single_segment
+name: Schema Validator
+version: 1.0.0
+descriptor:
+  handler_kind: compute
+  purity: pure
+  idempotent: true
+input_model: myapp.models.Input
+output_model: myapp.models.Output
+"""
+        yaml_file = temp_repo / "invalid_handler_id.yaml"
+        yaml_file.write_text(invalid_handler)
+
+        errors = validate_yaml_file(yaml_file)
+        assert len(errors) >= 1
+        # handler_id must have at least 2 segments (dot-separated)
+        assert any("segment" in error.lower() or "handler_id" in error.lower() for error in errors)
+
+    def test_handler_contract_invalid_version_format(self, temp_repo):
+        """Invalid version format triggers error."""
+        invalid_handler = """
+handler_id: compute.schema.validator
+name: Schema Validator
+version: not-a-version
+descriptor:
+  handler_kind: compute
+  purity: pure
+  idempotent: true
+input_model: myapp.models.Input
+output_model: myapp.models.Output
+"""
+        yaml_file = temp_repo / "invalid_version.yaml"
+        yaml_file.write_text(invalid_handler)
+
+        errors = validate_yaml_file(yaml_file)
+        assert len(errors) >= 1
+        assert any("version" in error.lower() for error in errors)
+
+    def test_handler_contract_invalid_handler_kind(self, temp_repo):
+        """Invalid handler_kind triggers error."""
+        invalid_handler = """
+handler_id: compute.schema.validator
+name: Schema Validator
+version: 1.0.0
+descriptor:
+  handler_kind: invalid_kind
+  purity: pure
+  idempotent: true
+input_model: myapp.models.Input
+output_model: myapp.models.Output
+"""
+        yaml_file = temp_repo / "invalid_handler_kind.yaml"
+        yaml_file.write_text(invalid_handler)
+
+        errors = validate_yaml_file(yaml_file)
+        assert len(errors) >= 1
+        assert any("handler_kind" in error.lower() for error in errors)
+
+    def test_handler_contract_invalid_purity(self, temp_repo):
+        """Invalid purity value triggers error."""
+        invalid_handler = """
+handler_id: compute.schema.validator
+name: Schema Validator
+version: 1.0.0
+descriptor:
+  handler_kind: compute
+  purity: invalid_purity
+  idempotent: true
+input_model: myapp.models.Input
+output_model: myapp.models.Output
+"""
+        yaml_file = temp_repo / "invalid_purity.yaml"
+        yaml_file.write_text(invalid_handler)
+
+        errors = validate_yaml_file(yaml_file)
+        assert len(errors) >= 1
+        assert any("purity" in error.lower() for error in errors)
+
+    def test_handler_contract_id_kind_mismatch(self, temp_repo):
+        """Handler ID prefix must match handler_kind."""
+        invalid_handler = """
+handler_id: compute.schema.validator
+name: Schema Validator
+version: 1.0.0
+descriptor:
+  handler_kind: effect
+  purity: side_effecting
+  idempotent: true
+input_model: myapp.models.Input
+output_model: myapp.models.Output
+"""
+        yaml_file = temp_repo / "id_kind_mismatch.yaml"
+        yaml_file.write_text(invalid_handler)
+
+        errors = validate_yaml_file(yaml_file)
+        assert len(errors) >= 1
+        # The compute prefix should require handler_kind: compute
+        assert any("compute" in error.lower() or "handler_kind" in error.lower() or "prefix" in error.lower() for error in errors)
+
+    def test_handler_contract_all_valid_kinds(self, temp_repo):
+        """All valid handler_kind values are accepted."""
+        valid_kinds = ["compute", "effect", "reducer", "orchestrator"]
+
+        for kind in valid_kinds:
+            valid_handler = f"""
+handler_id: handler.test.{kind}
+name: Test Handler
+version: 1.0.0
+descriptor:
+  handler_kind: {kind}
+  purity: {"pure" if kind == "compute" else "side_effecting"}
+  idempotent: true
+input_model: myapp.models.Input
+output_model: myapp.models.Output
+"""
+            yaml_file = temp_repo / f"valid_{kind}_handler.yaml"
+            yaml_file.write_text(valid_handler)
+
+            errors = validate_yaml_file(yaml_file)
+            assert len(errors) == 0, f"Handler kind '{kind}' should be valid. Errors: {errors}"
+
+    def test_handler_contract_with_capability_inputs(self, temp_repo):
+        """Handler contract with capability inputs validates."""
+        valid_handler = """
+handler_id: reducer.registration.user
+name: User Registration Reducer
+version: 1.2.0
+descriptor:
+  handler_kind: reducer
+  purity: side_effecting
+  idempotent: true
+  timeout_ms: 30000
+
+capability_inputs:
+  - alias: db
+    capability: database.relational
+    strict: true
+  - alias: cache
+    capability: cache.distributed
+    strict: false
+
+capability_outputs:
+  - registration.completed
+  - registration.failed
+
+input_model: myapp.models.RegistrationEvent
+output_model: myapp.models.RegistrationState
+"""
+        yaml_file = temp_repo / "handler_with_capabilities.yaml"
+        yaml_file.write_text(valid_handler)
+
+        errors = validate_yaml_file(yaml_file)
+        assert len(errors) == 0, f"Valid handler with capabilities should pass. Errors: {errors}"
+
+    def test_handler_contract_duplicate_capability_aliases(self, temp_repo):
+        """Duplicate capability aliases trigger error."""
+        invalid_handler = """
+handler_id: reducer.registration.user
+name: User Registration Reducer
+version: 1.2.0
+descriptor:
+  handler_kind: reducer
+  purity: side_effecting
+  idempotent: true
+
+capability_inputs:
+  - alias: db
+    capability: database.relational
+    strict: true
+  - alias: db
+    capability: cache.distributed
+    strict: false
+
+input_model: myapp.models.Input
+output_model: myapp.models.Output
+"""
+        yaml_file = temp_repo / "duplicate_aliases.yaml"
+        yaml_file.write_text(invalid_handler)
+
+        errors = validate_yaml_file(yaml_file)
+        assert len(errors) >= 1
+        assert any("alias" in error.lower() or "duplicate" in error.lower() for error in errors)
+
+    def test_handler_contract_with_execution_constraints(self, temp_repo):
+        """Handler contract with execution constraints validates."""
+        valid_handler = """
+handler_id: effect.database.user_repo
+name: User Repository
+version: 2.0.0
+descriptor:
+  handler_kind: effect
+  purity: side_effecting
+  idempotent: true
+  timeout_ms: 30000
+
+input_model: myapp.models.UserRequest
+output_model: myapp.models.UserResult
+
+execution_constraints:
+  requires_before:
+    - capability:auth
+    - capability:validation
+  requires_after:
+    - capability:audit
+  can_run_parallel: false
+  must_run: true
+  nondeterministic_effect: true
+"""
+        yaml_file = temp_repo / "handler_with_constraints.yaml"
+        yaml_file.write_text(valid_handler)
+
+        errors = validate_yaml_file(yaml_file)
+        assert len(errors) == 0, f"Valid handler with constraints should pass. Errors: {errors}"
+
+    def test_handler_contract_with_retry_policy(self, temp_repo):
+        """Handler contract with retry policy validates."""
+        valid_handler = """
+handler_id: effect.api.external_service
+name: External Service Handler
+version: 1.0.0
+descriptor:
+  handler_kind: effect
+  purity: side_effecting
+  idempotent: false
+  timeout_ms: 60000
+  retry_policy:
+    enabled: true
+    max_retries: 3
+    backoff_strategy: exponential
+    base_delay_ms: 200
+    max_delay_ms: 10000
+
+input_model: myapp.models.ApiRequest
+output_model: myapp.models.ApiResponse
+"""
+        yaml_file = temp_repo / "handler_with_retry.yaml"
+        yaml_file.write_text(valid_handler)
+
+        errors = validate_yaml_file(yaml_file)
+        assert len(errors) == 0, f"Valid handler with retry policy should pass. Errors: {errors}"
+
+    def test_example_handler_contracts_validate(self):
+        """Example handler contracts pass validation (regression test)."""
+        example_path = (
+            Path(__file__).parent.parent.parent.parent / "examples" / "contracts" / "handlers"
+        )
+
+        if not example_path.exists():
+            pytest.skip("examples/contracts/handlers directory not found")
+
+        yaml_files = list(example_path.glob("*.yaml"))
+
+        if not yaml_files:
+            pytest.skip("No YAML files found in examples/contracts/handlers")
+
+        all_errors = []
+        for yaml_file in yaml_files:
+            errors = validate_yaml_file(yaml_file)
+            if errors:
+                all_errors.append(f"{yaml_file.name}: {errors}")
+
+        assert len(all_errors) == 0, (
+            "Example handler contracts failed validation:\n" + "\n".join(all_errors)
+        )
 
 
 @pytest.mark.unit

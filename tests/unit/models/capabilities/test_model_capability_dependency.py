@@ -6,10 +6,13 @@
 import pytest
 from pydantic import ValidationError
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.capabilities.model_capability_dependency import (
     ModelCapabilityDependency,
 )
-from omnibase_core.models.capabilities.model_requirement_set import ModelRequirementSet
+from omnibase_core.models.capabilities.model_capability_requirement_set import (
+    ModelRequirementSet,
+)
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
@@ -1183,3 +1186,222 @@ class TestCapabilityNameRegexEdgeCases:
         assert dep.domain == "event-bus"
         assert dep.capability_type == "message-queue"
         assert dep.variant == "rabbit-mq"
+
+
+@pytest.mark.unit
+class TestVersionRangeValidation:
+    """Tests for version_range field validation.
+
+    The version_range field accepts semver-compatible version constraints
+    following strict semver 2.0 syntax with optional operators for ranges.
+    """
+
+    # Valid patterns - should pass
+
+    def test_version_range_none_allowed(self) -> None:
+        """None is valid (optional field)."""
+        dep = ModelCapabilityDependency(
+            alias="db",
+            capability="database.relational",
+            version_range=None,
+        )
+        assert dep.version_range is None
+
+    def test_version_range_simple_version(self) -> None:
+        """Simple version without operator."""
+        dep = ModelCapabilityDependency(
+            alias="db",
+            capability="database.relational",
+            version_range="1.0.0",
+        )
+        assert dep.version_range == "1.0.0"
+
+    def test_version_range_with_gte_operator(self) -> None:
+        """Greater than or equal operator."""
+        dep = ModelCapabilityDependency(
+            alias="db",
+            capability="database.relational",
+            version_range=">=1.0.0",
+        )
+        assert dep.version_range == ">=1.0.0"
+
+    def test_version_range_with_lte_operator(self) -> None:
+        """Less than or equal operator."""
+        dep = ModelCapabilityDependency(
+            alias="db",
+            capability="database.relational",
+            version_range="<=2.0.0",
+        )
+        assert dep.version_range == "<=2.0.0"
+
+    def test_version_range_with_gt_operator(self) -> None:
+        """Greater than operator."""
+        dep = ModelCapabilityDependency(
+            alias="db",
+            capability="database.relational",
+            version_range=">1.0.0",
+        )
+        assert dep.version_range == ">1.0.0"
+
+    def test_version_range_with_lt_operator(self) -> None:
+        """Less than operator."""
+        dep = ModelCapabilityDependency(
+            alias="db",
+            capability="database.relational",
+            version_range="<2.0.0",
+        )
+        assert dep.version_range == "<2.0.0"
+
+    def test_version_range_with_eq_operator(self) -> None:
+        """Equal operator."""
+        dep = ModelCapabilityDependency(
+            alias="db",
+            capability="database.relational",
+            version_range="=1.0.0",
+        )
+        assert dep.version_range == "=1.0.0"
+
+    def test_version_range_space_separated(self) -> None:
+        """Space-separated range."""
+        dep = ModelCapabilityDependency(
+            alias="db",
+            capability="database.relational",
+            version_range=">=1.0.0 <2.0.0",
+        )
+        assert dep.version_range == ">=1.0.0 <2.0.0"
+
+    def test_version_range_caret(self) -> None:
+        """Caret syntax for compatible versions."""
+        dep = ModelCapabilityDependency(
+            alias="db",
+            capability="database.relational",
+            version_range="^1.2.3",
+        )
+        assert dep.version_range == "^1.2.3"
+
+    def test_version_range_tilde(self) -> None:
+        """Tilde syntax for approximate versions."""
+        dep = ModelCapabilityDependency(
+            alias="db",
+            capability="database.relational",
+            version_range="~1.2.3",
+        )
+        assert dep.version_range == "~1.2.3"
+
+    def test_version_range_prerelease(self) -> None:
+        """Pre-release versions."""
+        dep = ModelCapabilityDependency(
+            alias="db",
+            capability="database.relational",
+            version_range="1.0.0-alpha",
+        )
+        assert dep.version_range == "1.0.0-alpha"
+
+    def test_version_range_prerelease_with_dots(self) -> None:
+        """Pre-release with dot-separated identifiers."""
+        dep = ModelCapabilityDependency(
+            alias="db",
+            capability="database.relational",
+            version_range="1.0.0-beta.1",
+        )
+        assert dep.version_range == "1.0.0-beta.1"
+
+    def test_version_range_build_metadata(self) -> None:
+        """Build metadata."""
+        dep = ModelCapabilityDependency(
+            alias="db",
+            capability="database.relational",
+            version_range="1.0.0+build.123",
+        )
+        assert dep.version_range == "1.0.0+build.123"
+
+    def test_version_range_strips_whitespace(self) -> None:
+        """Whitespace should be stripped."""
+        dep = ModelCapabilityDependency(
+            alias="db",
+            capability="database.relational",
+            version_range="  >=1.0.0  ",
+        )
+        assert dep.version_range == ">=1.0.0"
+
+    # Invalid patterns - should raise ModelOnexError
+
+    def test_version_range_empty_string_rejected(self) -> None:
+        """Empty string should be rejected."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelCapabilityDependency(
+                alias="db",
+                capability="database.relational",
+                version_range="",
+            )
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+
+    def test_version_range_whitespace_only_rejected(self) -> None:
+        """Whitespace-only should be rejected."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelCapabilityDependency(
+                alias="db",
+                capability="database.relational",
+                version_range="   ",
+            )
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+
+    def test_version_range_missing_patch_rejected(self) -> None:
+        """Missing patch version should be rejected."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelCapabilityDependency(
+                alias="db",
+                capability="database.relational",
+                version_range="1.0",
+            )
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+
+    def test_version_range_invalid_operator_rejected(self) -> None:
+        """Invalid operator should be rejected."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelCapabilityDependency(
+                alias="db",
+                capability="database.relational",
+                version_range="==1.0.0",
+            )
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+
+    def test_version_range_leading_v_rejected(self) -> None:
+        """Leading 'v' should be rejected."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelCapabilityDependency(
+                alias="db",
+                capability="database.relational",
+                version_range="v1.0.0",
+            )
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+
+    def test_version_range_leading_zeros_rejected(self) -> None:
+        """Leading zeros should be rejected."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelCapabilityDependency(
+                alias="db",
+                capability="database.relational",
+                version_range="01.0.0",
+            )
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+
+    def test_version_range_wildcard_rejected(self) -> None:
+        """Wildcards should be rejected."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelCapabilityDependency(
+                alias="db",
+                capability="database.relational",
+                version_range="1.0.*",
+            )
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+
+    def test_version_range_or_operator_rejected(self) -> None:
+        """OR operator should be rejected."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelCapabilityDependency(
+                alias="db",
+                capability="database.relational",
+                version_range="1.0.0 || 2.0.0",
+            )
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR

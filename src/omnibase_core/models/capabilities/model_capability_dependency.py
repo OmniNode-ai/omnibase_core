@@ -78,7 +78,9 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.capabilities.model_requirement_set import ModelRequirementSet
+from omnibase_core.models.capabilities.model_capability_requirement_set import (
+    ModelRequirementSet,
+)
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 # Regex pattern for valid capability names
@@ -99,6 +101,22 @@ _CAPABILITY_PATTERN = re.compile(r"^[a-z0-9_-]+(\.[a-z0-9_-]+)+$")
 # Note: Single-character aliases are intentionally allowed (e.g., "a", "x") to support
 # terse binding names in handler code. Common short aliases include "db", "c" (cache).
 _ALIAS_PATTERN = re.compile(r"^[a-z][a-z0-9_]*$")
+
+# Semver validation patterns
+# Matches versions like 1.0.0, 1.0.0-alpha, 1.0.0+build
+_SEMVER_VERSION = r"(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)(?:-[\da-zA-Z-]+(?:\.[\da-zA-Z-]+)*)?(?:\+[\da-zA-Z-]+(?:\.[\da-zA-Z-]+)*)?"
+# Matches operators: >=, <=, >, <, =
+_SEMVER_OPERATOR = r"(?:>=|<=|>|<|=)"
+# Single constraint: operator + version (e.g., ">=1.0.0")
+_SEMVER_CONSTRAINT = rf"(?:{_SEMVER_OPERATOR})?{_SEMVER_VERSION}"
+# Caret syntax: ^1.2.3
+_SEMVER_CARET = rf"\^{_SEMVER_VERSION}"
+# Tilde syntax: ~1.2.3
+_SEMVER_TILDE = rf"~{_SEMVER_VERSION}"
+# Full pattern: space-separated constraints, caret, or tilde
+_SEMVER_RANGE_PATTERN = re.compile(
+    rf"^(?:{_SEMVER_CONSTRAINT}(?:\s+{_SEMVER_CONSTRAINT})*|{_SEMVER_CARET}|{_SEMVER_TILDE})$"
+)
 
 # Type alias for selection policies
 type SelectionPolicy = Literal["auto_if_unique", "best_score", "require_explicit"]
@@ -131,6 +149,16 @@ class ModelCapabilityDependency(BaseModel):
             - ``True``: Unmet preferences cause match failure
             - ``False``: Unmet preferences generate warnings only
             Note: ``must`` and ``forbid`` always hard-filter regardless of strict.
+        version_range: Optional semver version constraint for the capability.
+            When specified, only providers whose capability version satisfies
+            the range will be considered. Supports:
+            - Simple versions: "1.0.0"
+            - Operators: ">=1.0.0", "<=2.0.0", ">1.0.0", "<2.0.0", "=1.0.0"
+            - Ranges: ">=1.0.0 <2.0.0" (space-separated constraints)
+            - Caret: "^1.2.3" (compatible with major version)
+            - Tilde: "~1.2.3" (approximately equivalent to minor version)
+            - Pre-release: "1.0.0-alpha", "1.0.0-beta.1"
+            - Build metadata: "1.0.0+build.123"
 
     Resolver Behavior:
         The resolver is responsible for matching dependencies to concrete providers.
@@ -264,6 +292,12 @@ class ModelCapabilityDependency(BaseModel):
         description="Whether unmet prefer constraints cause failure (True) or warnings (False)",
     )
 
+    version_range: str | None = Field(
+        default=None,
+        description="Optional semver range for capability version (e.g., '>=1.0.0 <2.0.0', '^1.2.3', '~1.2.3')",
+        max_length=128,
+    )
+
     @field_validator("alias")
     @classmethod
     def validate_alias(cls, v: str) -> str:
@@ -374,6 +408,56 @@ class ModelCapabilityDependency(BaseModel):
                 invalid_value=v,
                 pattern=_CAPABILITY_PATTERN.pattern,
             )
+        return v
+
+    @field_validator("version_range")
+    @classmethod
+    def validate_version_range(cls, v: str | None) -> str | None:
+        """
+        Validate that version_range follows semver range syntax.
+
+        Supports:
+            - Simple versions: "1.0.0"
+            - Operators: ">=1.0.0", "<=2.0.0", ">1.0.0", "<2.0.0", "=1.0.0"
+            - Ranges: ">=1.0.0 <2.0.0" (space-separated)
+            - Caret: "^1.2.3" (compatible with)
+            - Tilde: "~1.2.3" (approximately equivalent)
+            - Pre-release: "1.0.0-alpha", "1.0.0-beta.1"
+            - Build metadata: "1.0.0+build.123"
+
+        Args:
+            v: The version range string to validate, or None.
+
+        Returns:
+            The validated version range string (stripped), or None.
+
+        Raises:
+            ModelOnexError: If the version range format is invalid.
+        """
+        if v is None:
+            return None
+
+        v = v.strip()
+        if not v:
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="version_range cannot be empty string; use None for no constraint",
+                field="version_range",
+                invalid_value=v,
+            )
+
+        if not _SEMVER_RANGE_PATTERN.match(v):
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=(
+                    f"Invalid version_range '{v}': must be valid semver range "
+                    "(e.g., '>=1.0.0 <2.0.0', '^1.2.3', '~1.2.3')"
+                ),
+                field="version_range",
+                invalid_value=v,
+                pattern=_SEMVER_RANGE_PATTERN.pattern,
+            )
+
         return v
 
     def _get_capability_parts(self) -> tuple[str, str, str | None]:
@@ -521,6 +605,8 @@ class ModelCapabilityDependency(BaseModel):
             parts.append(f"selection_policy={self.selection_policy!r}")
         if not self.strict:
             parts.append("strict=False")
+        if self.version_range is not None:
+            parts.append(f"version_range={self.version_range!r}")
         return f"ModelCapabilityDependency({', '.join(parts)})"
 
     def __str__(self) -> str:

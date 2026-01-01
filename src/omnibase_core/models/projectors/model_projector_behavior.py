@@ -94,7 +94,7 @@ class ModelProjectorBehavior(BaseModel):
         True
     """
 
-    model_config = ConfigDict(frozen=True, extra="forbid")
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     mode: Literal["upsert", "insert_only", "append"] = Field(
         default="upsert",

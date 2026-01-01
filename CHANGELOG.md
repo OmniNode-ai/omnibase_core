@@ -9,6 +9,123 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### ⚠️ BREAKING CHANGES
 
+#### ModelHandlerBehaviorDescriptor Renamed to ModelHandlerBehavior [OMN-1117]
+
+The `ModelHandlerBehaviorDescriptor` class has been renamed to `ModelHandlerBehavior`. The backwards compatibility shim (`model_handler_behavior_descriptor.py`) and alias have been **removed**.
+
+**Impact**:
+- Code importing `ModelHandlerBehaviorDescriptor` will raise `ImportError`
+- Code importing from `model_handler_behavior_descriptor` will raise `ImportError`
+
+**Migration Guide**:
+
+```python
+# Before (v0.3.x)
+from omnibase_core.models.runtime.model_handler_behavior_descriptor import (
+    ModelHandlerBehaviorDescriptor,
+)
+contract = ModelHandlerContract(
+    descriptor=ModelHandlerBehaviorDescriptor(handler_kind="compute", ...),
+    ...
+)
+
+# After (v0.4.0+)
+from omnibase_core.models.runtime.model_handler_behavior import (
+    ModelHandlerBehavior,
+)
+contract = ModelHandlerContract(
+    descriptor=ModelHandlerBehavior(handler_kind="compute", ...),
+    ...
+)
+```
+
+**Quick Migration**:
+```bash
+# Find affected imports
+grep -rn "ModelHandlerBehaviorDescriptor\|model_handler_behavior_descriptor" --include="*.py"
+
+# Replace in files (Linux/macOS)
+find . -name "*.py" -exec sed -i 's/ModelHandlerBehaviorDescriptor/ModelHandlerBehavior/g' {} \;
+find . -name "*.py" -exec sed -i 's/model_handler_behavior_descriptor/model_handler_behavior/g' {} \;
+```
+
+#### Hook Typing Enforcement Enabled by Default [OMN-1157]
+
+The default value of `BuilderExecutionPlan.enforce_hook_typing` has been changed from `False` to `True`. This is a **fail-fast behavior change** that affects code building execution plans with typed hooks.
+
+**Impact**:
+- **Before (v0.5.x)**: Hook type mismatches produced `ModelValidationWarning` objects in the warnings list
+- **After (v0.6.x)**: Hook type mismatches raise `HookTypeMismatchError` immediately during `build()`
+
+**Rationale**:
+- Fail-fast behavior catches type mismatches during development rather than allowing silent degradation
+- Type validation errors in production indicate configuration issues that should be addressed, not ignored
+- This aligns with ONEX's philosophy of explicit, type-safe contracts
+
+**Migration Guide**:
+
+1. **Recommended**: Ensure all hooks have correct `handler_type_category` values:
+   ```python
+   from omnibase_core.pipeline import BuilderExecutionPlan, ModelPipelineHook
+   from omnibase_core.enums import EnumHandlerTypeCategory
+
+   # Typed hook - must match contract_category
+   hook = ModelPipelineHook(
+       hook_id="my-compute-hook",
+       phase="execute",
+       callable_ref="app.hooks.compute",
+       handler_type_category=EnumHandlerTypeCategory.COMPUTE,  # Must match builder
+   )
+
+   # Generic hook - passes for any contract (no handler_type_category)
+   generic_hook = ModelPipelineHook(
+       hook_id="my-generic-hook",
+       phase="execute",
+       callable_ref="app.hooks.generic",
+       # No handler_type_category = generic, passes all type validation
+   )
+
+   # Build with type enforcement (now the default)
+   builder = BuilderExecutionPlan(
+       registry=registry,
+       contract_category=EnumHandlerTypeCategory.COMPUTE,
+       # enforce_hook_typing=True is now the default
+   )
+   plan, warnings = builder.build()  # Raises HookTypeMismatchError on type mismatch
+   ```
+
+2. **For gradual migration**, explicitly disable enforcement:
+   ```python
+   # Opt-in to warning-only mode for backwards compatibility
+   builder = BuilderExecutionPlan(
+       registry=registry,
+       contract_category=EnumHandlerTypeCategory.COMPUTE,
+       enforce_hook_typing=False,  # Explicit opt-out to warning-only mode
+   )
+   plan, warnings = builder.build()
+
+   # Check warnings for type mismatches
+   for warning in warnings:
+       if warning.code == "HOOK_TYPE_MISMATCH":
+           logger.warning(f"Type mismatch: {warning.message}")
+   ```
+
+3. **Identify affected code** by searching for `BuilderExecutionPlan` usage:
+   ```bash
+   # Find all usages
+   grep -rn "BuilderExecutionPlan" --include="*.py"
+
+   # Find usages that might rely on warning-only behavior
+   grep -rn "enforce_hook_typing" --include="*.py"
+   ```
+
+**Quick Migration Checklist**:
+- [ ] Review all `BuilderExecutionPlan` instantiations
+- [ ] Ensure typed hooks have correct `handler_type_category` matching `contract_category`
+- [ ] Use generic hooks (no `handler_type_category`) for hooks that should work with any contract
+- [ ] Add `enforce_hook_typing=False` to builders that need gradual migration
+- [ ] Run tests to verify no `HookTypeMismatchError` is raised unexpectedly
+
 #### Workflow Contract Model Hardening [OMN-654]
 
 The following workflow contract models now enforce **immutability** (`frozen=True`) and **strict field validation** (`extra="forbid"`):
@@ -256,6 +373,52 @@ affinity = ModelSessionAffinity(hash_algorithm="sha512")  # ✅ Strongest
 ```
 
 **Recommendation**: Update configurations to use SHA-256 (default) before v0.6.0. Use SHA-384 or SHA-512 for high-security environments.
+
+#### MixinEventBus STRICT_BINDING_MODE Default Changed [OMN-1156]
+
+The default value of `MixinEventBus.STRICT_BINDING_MODE` has been changed from `False` to `True`. This is a **fail-fast behavior change** that affects code calling `bind_*()` methods after the mixin is "in use" (after `start_event_listener()` or publish operations).
+
+**Impact**:
+- **Before (v0.4.x)**: `bind_*()` calls after mixin is in use emitted a WARNING log
+- **After (v0.5.x)**: `bind_*()` calls after mixin is in use raise `ModelOnexError` with `error_code=INVALID_STATE`
+
+**Rationale**:
+- Fail-fast behavior catches thread-unsafe patterns in production before they cause subtle race conditions
+- Warnings can be missed in CI/CD pipelines and logs, but errors are immediately visible
+- This aligns with ONEX thread safety principles documented in [docs/guides/THREADING.md](docs/guides/THREADING.md)
+
+**Migration Guide**:
+
+1. **Recommended**: Ensure all `bind_*()` calls occur in `__init__` before the mixin is shared across threads:
+   ```python
+   class MyNode(MixinEventBus[InputT, OutputT]):
+       def __init__(self, event_bus: ProtocolEventBus):
+           super().__init__()
+           # All binding must happen in __init__ BEFORE any publish or listener operations
+           self.bind_event_bus(event_bus)
+           self.bind_node_name("my_node")
+   ```
+
+2. **For legacy code** that cannot be immediately refactored, disable strict mode by subclassing:
+   ```python
+   from typing import ClassVar
+
+   class MyLegacyNode(MixinEventBus[InputT, OutputT]):
+       STRICT_BINDING_MODE: ClassVar[bool] = False  # Opt-out to warning-only behavior
+   ```
+
+3. **Identify affected code** by searching for patterns where `bind_*()` is called after `start_event_listener()` or `publish_*()`:
+   ```bash
+   # Find potential issues
+   grep -rn "start_event_listener" --include="*.py" | xargs grep -l "bind_"
+   grep -rn "publish_event\|publish_completion_event" --include="*.py" | xargs grep -l "bind_"
+   ```
+
+**Quick Migration Checklist**:
+- [ ] Review all usages of `MixinEventBus` subclasses
+- [ ] Ensure `bind_*()` methods are called in `__init__` before any publish/listener operations
+- [ ] Add `STRICT_BINDING_MODE = False` to legacy classes that cannot be immediately fixed
+- [ ] Run tests to verify no `ModelOnexError` with `INVALID_STATE` is raised unexpectedly
 
 #### MixinEventBus Architecture Refactoring [OMN-1081]
 

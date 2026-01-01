@@ -387,7 +387,6 @@ class ModelContractMeta(BaseModel):
     model_config = ConfigDict(
         extra="forbid",  # Strict - no extra fields allowed (ZERO TOLERANCE)
         use_enum_values=False,  # Keep enum objects, don't convert to strings
-        validate_assignment=True,  # Validate on attribute assignment
         str_strip_whitespace=True,  # Strip whitespace from strings
         validate_default=True,  # Validate default values
         frozen=True,  # Immutable after creation for hashability

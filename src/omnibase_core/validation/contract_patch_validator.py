@@ -477,7 +477,7 @@ class ContractPatchValidator:
             The field is named 'descriptor' but conceptually represents
             handler behavior configuration (timeout, retry, concurrency).
 
-            Empty descriptor patches generate a WARNING (not ERROR) because:
+            Empty descriptor patches generate an INFO (not WARNING/ERROR) because:
             1. An empty descriptor is semantically valid (just a no-op)
             2. It's likely a user mistake but doesn't break merge operations
             3. The patch system should be permissive for forward compatibility
@@ -486,11 +486,11 @@ class ContractPatchValidator:
         if patch.descriptor is None:
             return
 
-        # Check for empty behavior patch (warning, not error - see docstring rationale)
+        # Check for empty behavior patch (info, not warning/error - see docstring rationale)
         if not patch.descriptor.has_overrides():
-            logger.debug("Descriptor patch has no overrides - issuing warning")
+            logger.debug("Descriptor patch has no overrides - issuing info")
             result.add_issue(
-                severity=EnumValidationSeverity.WARNING,
+                severity=EnumValidationSeverity.INFO,
                 message="Behavior patch is present but has no overrides",
                 code="EMPTY_DESCRIPTOR_PATCH",
                 suggestion="Remove the empty descriptor field or add behavior overrides",

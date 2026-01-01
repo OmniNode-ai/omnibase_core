@@ -8,6 +8,7 @@ This module provides models for:
 1. Vendor-agnostic capability dependencies - declaring what capabilities are needed
    without binding to specific vendors
 2. Contract-derived capabilities - capability-based auto-discovery and registration
+3. Capability metadata - documentation and discovery metadata for capabilities
 
 Core Principle
 --------------
@@ -31,6 +32,10 @@ ModelRequirementSet
 ModelContractCapabilities
     Contract-derived capabilities for auto-discovery. Captures what capabilities
     a node provides based on its contract definition.
+
+ModelCapabilityMetadata
+    Capability metadata for documentation and discovery. Provides human-readable
+    name, description, version, tags, and required features for a capability.
 
 Type System
 -----------
@@ -92,6 +97,20 @@ Contract-derived capabilities for auto-discovery:
     ...     capability_tags=["pure", "cacheable"],
     ... )
 
+Capability metadata for documentation/discovery:
+
+    >>> from omnibase_core.models.capabilities import ModelCapabilityMetadata
+    >>> from omnibase_core.models.primitives.model_semver import ModelSemVer
+    >>>
+    >>> metadata = ModelCapabilityMetadata(
+    ...     capability="database.relational",
+    ...     name="Relational Database",
+    ...     version=ModelSemVer(major=1, minor=0, patch=0),
+    ...     description="SQL-based relational database operations",
+    ...     tags=("storage", "sql"),
+    ...     required_features=("query", "transactions"),
+    ... )
+
 Integration with ModelHandlerContract
 -------------------------------------
 Handler contracts can declare capability dependencies that are resolved
@@ -137,25 +156,33 @@ omnibase_core.models.handlers.ModelHandlerDescriptor : Handler descriptors
 omnibase_core.models.contracts : Contract models
 
 .. versionadded:: 0.4.0
+    ModelCapabilityDependency, ModelRequirementSet, ModelContractCapabilities
+
+OMN-1124: Capabilities models package.
+OMN-1156: ModelCapabilityMetadata for documentation/discovery.
 """
 
 from omnibase_core.models.capabilities.model_capability_dependency import (
     ModelCapabilityDependency,
     SelectionPolicy,
 )
-from omnibase_core.models.capabilities.model_contract_capabilities import (
-    ModelContractCapabilities,
+from omnibase_core.models.capabilities.model_capability_metadata import (
+    ModelCapabilityMetadata,
 )
-from omnibase_core.models.capabilities.model_requirement_set import (
+from omnibase_core.models.capabilities.model_capability_requirement_set import (
     ModelRequirementSet,
     is_json_primitive,
     is_requirement_dict,
     is_requirement_list,
     is_requirement_value,
 )
+from omnibase_core.models.capabilities.model_contract_capabilities import (
+    ModelContractCapabilities,
+)
 
 __all__ = [
     "ModelCapabilityDependency",
+    "ModelCapabilityMetadata",
     "ModelContractCapabilities",
     "ModelRequirementSet",
     "SelectionPolicy",

@@ -121,7 +121,7 @@ class ModelProjectorContract(BaseModel):
             and routing.
         name: Human-readable name for the projector.
         version: Contract version string (e.g., "1.0.0"). Used for version
-            validation and migration tracking.
+            validation, compatibility checking, and migration tracking.
         aggregate_type: Semantic string identifier for the aggregate type this
             projector handles.
         consumed_events: List of event names this projector subscribes to.
