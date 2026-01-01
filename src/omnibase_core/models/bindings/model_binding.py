@@ -268,7 +268,7 @@ class ModelBinding(BaseModel):
         ge=0,
     )
 
-    @field_validator("dependency_alias")
+    @field_validator("dependency_alias", mode="after")
     @classmethod
     def validate_dependency_alias(cls, v: str) -> str:
         """Validate that dependency_alias is non-empty after stripping.
@@ -295,7 +295,7 @@ class ModelBinding(BaseModel):
             )
         return stripped
 
-    @field_validator("capability")
+    @field_validator("capability", mode="after")
     @classmethod
     def validate_capability(cls, v: str) -> str:
         """Validate that capability is non-empty after stripping.
@@ -322,7 +322,7 @@ class ModelBinding(BaseModel):
             )
         return stripped
 
-    @field_validator("provider_id")
+    @field_validator("provider_id", mode="after")
     @classmethod
     def validate_provider_id(cls, v: str) -> str:
         """Validate that provider_id is non-empty after stripping.
@@ -349,7 +349,7 @@ class ModelBinding(BaseModel):
             )
         return stripped
 
-    @field_validator("adapter")
+    @field_validator("adapter", mode="after")
     @classmethod
     def validate_adapter(cls, v: str) -> str:
         """Validate that adapter is non-empty after stripping.
@@ -376,7 +376,7 @@ class ModelBinding(BaseModel):
             )
         return stripped
 
-    @field_validator("connection_ref")
+    @field_validator("connection_ref", mode="after")
     @classmethod
     def validate_connection_ref(cls, v: str) -> str:
         """Validate that connection_ref is non-empty after stripping.
@@ -403,7 +403,7 @@ class ModelBinding(BaseModel):
             )
         return stripped
 
-    @field_validator("requirements_hash")
+    @field_validator("requirements_hash", mode="after")
     @classmethod
     def validate_requirements_hash(cls, v: str) -> str:
         """Validate that requirements_hash is non-empty after stripping.
@@ -426,7 +426,7 @@ class ModelBinding(BaseModel):
             )
         return stripped
 
-    @field_validator("profile_id")
+    @field_validator("profile_id", mode="after")
     @classmethod
     def validate_profile_id(cls, v: str) -> str:
         """Validate that profile_id is non-empty after stripping.

@@ -26,7 +26,7 @@ Usage:
         from omnibase_core.protocols.resolution import ProtocolCapabilityResolver
         from omnibase_core.models.capabilities import ModelCapabilityDependency
 
-        async def resolve_database(
+        def resolve_database(
             resolver: ProtocolCapabilityResolver,
             registry: ProtocolProviderRegistry,
         ) -> ModelBinding:

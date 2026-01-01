@@ -16,6 +16,7 @@ Tests cover:
 
 from __future__ import annotations
 
+import random
 from datetime import datetime, timezone
 from typing import Any
 from uuid import UUID, uuid4
@@ -1242,8 +1243,6 @@ class TestDeterminism:
         # Run multiple times with shuffled provider order
         results = []
         for _ in range(5):
-            import random
-
             shuffled = all_providers.copy()
             random.shuffle(shuffled)
             registry = MockProviderRegistry(shuffled)

@@ -58,9 +58,11 @@ Thread Safety:
 
 from datetime import datetime, timezone
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.bindings.model_binding import ModelBinding
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 class ModelResolutionResult(BaseModel):
@@ -201,6 +203,40 @@ class ModelResolutionResult(BaseModel):
         default_factory=list,
         description="Error messages encountered during resolution",
     )
+
+    @field_validator("errors", mode="before")
+    @classmethod
+    def validate_errors(cls, v: list[str]) -> list[str]:
+        """Validate and filter error messages.
+
+        Strips whitespace from each error message and removes empty strings.
+        Ensures consistency with other string list validators in the codebase.
+
+        Args:
+            v: List of error strings to validate.
+
+        Returns:
+            List of non-empty error messages with whitespace stripped.
+
+        Raises:
+            ModelOnexError: If any error is not a string.
+        """
+        if not v:
+            return []
+
+        validated: list[str] = []
+        for error in v:
+            if not isinstance(error, str):
+                raise ModelOnexError(
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message=f"error must be a string, got {type(error).__name__}",
+                    context={"error": error, "error_type": type(error).__name__},
+                )
+            stripped = error.strip()
+            if stripped:  # Only include non-empty errors
+                validated.append(stripped)
+
+        return validated
 
     @property
     def is_successful(self) -> bool:

@@ -47,7 +47,7 @@ import json
 import logging
 import time
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, TypedDict
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.bindings.model_binding import ModelBinding
@@ -68,6 +68,23 @@ logger = logging.getLogger(__name__)
 
 # Type alias for profile (placeholder until ModelProfile is implemented)
 ModelProfile = Any
+
+
+class _AuditData(TypedDict):
+    """Internal audit data captured during resolution.
+
+    This TypedDict captures detailed resolution information for debugging
+    and audit purposes. Used internally by _resolve_with_audit().
+
+    Attributes:
+        candidates: List of provider IDs considered before filtering.
+        scores: Mapping of provider_id -> score for providers that passed filtering.
+        rejection_reasons: Mapping of provider_id -> reason for rejected providers.
+    """
+
+    candidates: list[str]
+    scores: dict[str, float]
+    rejection_reasons: dict[str, str]
 
 
 class ServiceCapabilityResolver:
@@ -203,91 +220,8 @@ class ServiceCapabilityResolver:
 
         .. versionadded:: 0.4.0
         """
-        # Step 1: Query registry for providers offering this capability
-        providers = registry.get_providers_for_capability(dependency.capability)
-
-        if not providers:
-            raise ModelOnexError(
-                message=(
-                    f"No providers found for capability '{dependency.capability}'. "
-                    f"Ensure at least one provider is registered with this capability."
-                ),
-                error_code=EnumCoreErrorCode.REGISTRY_RESOLUTION_FAILED,
-                context={
-                    "alias": dependency.alias,
-                    "capability": dependency.capability,
-                },
-            )
-
-        # Sort providers by provider_id for deterministic ordering
-        sorted_providers = sorted(providers, key=lambda p: str(p.provider_id))
-
-        # Step 2: Filter by hard constraints (must/forbid)
-        filtered_providers: list[ModelProviderDescriptor] = []
-        rejection_reasons: dict[str, str] = {}
-
-        for provider in sorted_providers:
-            rejection = self._check_hard_constraints(provider, dependency)
-            if rejection:
-                rejection_reasons[str(provider.provider_id)] = rejection
-            else:
-                filtered_providers.append(provider)
-
-        if not filtered_providers:
-            raise ModelOnexError(
-                message=(
-                    f"No providers for capability '{dependency.capability}' "
-                    f"satisfy the required constraints. "
-                    f"{len(sorted_providers)} provider(s) were rejected."
-                ),
-                error_code=EnumCoreErrorCode.REGISTRY_RESOLUTION_FAILED,
-                context={
-                    "alias": dependency.alias,
-                    "capability": dependency.capability,
-                    "candidates_considered": len(sorted_providers),
-                    "rejection_reasons": rejection_reasons,
-                },
-            )
-
-        # Step 3: Score remaining candidates by prefer satisfaction
-        scored_providers = self._score_providers(
-            filtered_providers, dependency, profile
-        )
-
-        # Step 4: Apply selection policy
-        selected_provider, resolution_notes = self._apply_selection_policy(
-            scored_providers,
-            dependency,
-            profile,
-            len(sorted_providers),
-            rejection_reasons,
-        )
-
-        # Step 5: Create binding with audit trail
-        requirements_hash = self._compute_requirements_hash(dependency)
-        profile_id = self._get_profile_id(profile)
-
-        binding = ModelBinding(
-            dependency_alias=dependency.alias,
-            capability=dependency.capability,
-            provider_id=str(selected_provider.provider_id),
-            adapter=selected_provider.adapter,
-            connection_ref=selected_provider.connection_ref,
-            requirements_hash=requirements_hash,
-            profile_id=profile_id,
-            resolved_at=datetime.now(timezone.utc),
-            resolution_notes=resolution_notes,
-            candidates_considered=len(sorted_providers),
-        )
-
-        logger.debug(
-            "Resolved '%s' -> '%s' to provider '%s' (%d candidates considered)",
-            dependency.alias,
-            dependency.capability,
-            selected_provider.provider_id,
-            len(sorted_providers),
-        )
-
+        # Delegate to _resolve_with_audit and discard audit data
+        binding, _ = self._resolve_with_audit(dependency, registry, profile)
         return binding
 
     def resolve_all(
@@ -353,37 +287,19 @@ class ServiceCapabilityResolver:
 
         for dep in dependencies:
             try:
-                # Get providers for audit trail
-                providers = registry.get_providers_for_capability(dep.capability)
-                sorted_providers = sorted(providers, key=lambda p: str(p.provider_id))
-                candidates_by_alias[dep.alias] = [
-                    str(p.provider_id) for p in sorted_providers
-                ]
+                # Use _resolve_with_audit to get both binding and audit data
+                # This avoids duplicate provider querying/filtering/scoring
+                binding, audit = self._resolve_with_audit(dep, registry, profile)
 
-                # Track rejections
-                dep_rejections: dict[str, str] = {}
-                filtered: list[ModelProviderDescriptor] = []
-
-                for provider in sorted_providers:
-                    rejection = self._check_hard_constraints(provider, dep)
-                    if rejection:
-                        dep_rejections[str(provider.provider_id)] = rejection
-                    else:
-                        filtered.append(provider)
-
-                if dep_rejections:
-                    rejection_reasons[dep.alias] = dep_rejections
-
-                # Score filtered providers
-                if filtered:
-                    scored = self._score_providers(filtered, dep, profile)
-                    scores_by_alias[dep.alias] = {
-                        str(p.provider_id): score for p, score in scored
-                    }
-
-                # Resolve dependency
-                binding = self.resolve(dep, registry, profile)
+                # Store the binding
                 bindings[dep.alias] = binding
+
+                # Extract audit data
+                candidates_by_alias[dep.alias] = audit["candidates"]
+                if audit["scores"]:
+                    scores_by_alias[dep.alias] = audit["scores"]
+                if audit["rejection_reasons"]:
+                    rejection_reasons[dep.alias] = audit["rejection_reasons"]
 
             except ModelOnexError as e:
                 error_msg = f"Failed to resolve '{dep.alias}' ({dep.capability}): {e.message}"
@@ -407,6 +323,134 @@ class ServiceCapabilityResolver:
             profile_id=profile_id,
             errors=errors,
         )
+
+    def _resolve_with_audit(
+        self,
+        dependency: ModelCapabilityDependency,
+        registry: ProtocolProviderRegistry,
+        profile: ModelProfile | None = None,
+    ) -> tuple[ModelBinding, _AuditData]:
+        """
+        Internal method that resolves a dependency and returns audit data.
+
+        This method performs the full resolution algorithm and captures detailed
+        audit information about the resolution process. It is used by both
+        resolve() and resolve_all() to avoid duplicating resolution logic.
+
+        Args:
+            dependency: The capability dependency to resolve.
+            registry: The provider registry to search for matching providers.
+            profile: Optional profile for resolution preferences.
+
+        Returns:
+            A tuple of (binding, audit_data) where:
+            - binding: The resolved ModelBinding
+            - audit_data: A dict containing:
+                - candidates: List of all provider IDs considered
+                - scores: Dict of provider_id -> score for filtered providers
+                - rejection_reasons: Dict of provider_id -> reason for rejected providers
+
+        Raises:
+            ModelOnexError: Resolution failures (same as resolve()).
+        """
+        # Step 1: Query registry for providers offering this capability
+        providers = registry.get_providers_for_capability(dependency.capability)
+
+        if not providers:
+            raise ModelOnexError(
+                message=(
+                    f"No providers found for capability '{dependency.capability}'. "
+                    f"Ensure at least one provider is registered with this capability."
+                ),
+                error_code=EnumCoreErrorCode.REGISTRY_RESOLUTION_FAILED,
+                context={
+                    "alias": dependency.alias,
+                    "capability": dependency.capability,
+                },
+            )
+
+        # Sort providers by provider_id for deterministic ordering
+        sorted_providers = sorted(providers, key=lambda p: str(p.provider_id))
+
+        # Track candidates for audit
+        candidates = [str(p.provider_id) for p in sorted_providers]
+
+        # Step 2: Filter by hard constraints (must/forbid)
+        filtered_providers: list[ModelProviderDescriptor] = []
+        rejection_reasons: dict[str, str] = {}
+
+        for provider in sorted_providers:
+            rejection = self._check_hard_constraints(provider, dependency)
+            if rejection:
+                rejection_reasons[str(provider.provider_id)] = rejection
+            else:
+                filtered_providers.append(provider)
+
+        if not filtered_providers:
+            raise ModelOnexError(
+                message=(
+                    f"No providers for capability '{dependency.capability}' "
+                    f"satisfy the required constraints. "
+                    f"{len(sorted_providers)} provider(s) were rejected."
+                ),
+                error_code=EnumCoreErrorCode.REGISTRY_RESOLUTION_FAILED,
+                context={
+                    "alias": dependency.alias,
+                    "capability": dependency.capability,
+                    "candidates_considered": len(sorted_providers),
+                    "rejection_reasons": rejection_reasons,
+                },
+            )
+
+        # Step 3: Score remaining candidates by prefer satisfaction
+        scored_providers = self._score_providers(
+            filtered_providers, dependency, profile
+        )
+
+        # Track scores for audit
+        scores = {str(p.provider_id): score for p, score in scored_providers}
+
+        # Step 4: Apply selection policy
+        selected_provider, resolution_notes = self._apply_selection_policy(
+            scored_providers,
+            dependency,
+            profile,
+            len(sorted_providers),
+            rejection_reasons,
+        )
+
+        # Step 5: Create binding with audit trail
+        requirements_hash = self._compute_requirements_hash(dependency)
+        profile_id = self._get_profile_id(profile)
+
+        binding = ModelBinding(
+            dependency_alias=dependency.alias,
+            capability=dependency.capability,
+            provider_id=str(selected_provider.provider_id),
+            adapter=selected_provider.adapter,
+            connection_ref=selected_provider.connection_ref,
+            requirements_hash=requirements_hash,
+            profile_id=profile_id,
+            resolved_at=datetime.now(timezone.utc),
+            resolution_notes=resolution_notes,
+            candidates_considered=len(sorted_providers),
+        )
+
+        logger.debug(
+            "Resolved '%s' -> '%s' to provider '%s' (%d candidates considered)",
+            dependency.alias,
+            dependency.capability,
+            selected_provider.provider_id,
+            len(sorted_providers),
+        )
+
+        audit_data: _AuditData = {
+            "candidates": candidates,
+            "scores": scores,
+            "rejection_reasons": rejection_reasons,
+        }
+
+        return binding, audit_data
 
     def _check_hard_constraints(
         self,

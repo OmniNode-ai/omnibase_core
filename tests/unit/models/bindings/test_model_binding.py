@@ -901,6 +901,9 @@ class TestModelBindingHashability:
 
     def test_hashable_can_use_in_set(self) -> None:
         """Test that bindings can be added to sets."""
+        # Use fixed timestamp so binding1 and binding2 have identical values
+        fixed_timestamp = datetime.now(timezone.utc)
+
         binding1 = ModelBinding(
             dependency_alias="db",
             capability="database.relational",
@@ -909,7 +912,7 @@ class TestModelBindingHashability:
             connection_ref="env://TEST",
             requirements_hash="hash123",
             profile_id="default",
-            resolved_at=datetime.now(timezone.utc),
+            resolved_at=fixed_timestamp,
         )
         binding2 = ModelBinding(
             dependency_alias="db",
@@ -919,7 +922,7 @@ class TestModelBindingHashability:
             connection_ref="env://TEST",
             requirements_hash="hash123",
             profile_id="default",
-            resolved_at=datetime.now(timezone.utc),
+            resolved_at=fixed_timestamp,
         )
         binding3 = ModelBinding(
             dependency_alias="cache",
@@ -929,7 +932,7 @@ class TestModelBindingHashability:
             connection_ref="env://TEST",
             requirements_hash="hash456",
             profile_id="default",
-            resolved_at=datetime.now(timezone.utc),
+            resolved_at=fixed_timestamp,
         )
 
         bindings = {binding1, binding2, binding3}
