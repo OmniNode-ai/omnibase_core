@@ -194,7 +194,7 @@ class ModelOrchestratorOutput(BaseModel):
         if isinstance(v[0], ModelAction):
             return v  # type: ignore[return-value]  # Already list[ModelAction]
         # Let Pydantic validate dicts as ModelAction
-        return v  # type: ignore[return-value]
+        return v  # type: ignore[return-value]  # Passthrough for dicts; Pydantic validates as ModelAction
 
     # Custom outputs for extensibility
     custom_outputs: ModelCustomFields | None = Field(
