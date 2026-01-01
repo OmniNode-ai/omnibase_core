@@ -9,6 +9,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### ⚠️ BREAKING CHANGES
 
+#### ModelHandlerBehaviorDescriptor Renamed to ModelHandlerBehavior [OMN-1117]
+
+The `ModelHandlerBehaviorDescriptor` class has been renamed to `ModelHandlerBehavior`. The backwards compatibility shim (`model_handler_behavior_descriptor.py`) and alias have been **removed**.
+
+**Impact**:
+- Code importing `ModelHandlerBehaviorDescriptor` will raise `ImportError`
+- Code importing from `model_handler_behavior_descriptor` will raise `ImportError`
+
+**Migration Guide**:
+
+```python
+# Before (v0.3.x)
+from omnibase_core.models.runtime.model_handler_behavior_descriptor import (
+    ModelHandlerBehaviorDescriptor,
+)
+contract = ModelHandlerContract(
+    descriptor=ModelHandlerBehaviorDescriptor(handler_kind="compute", ...),
+    ...
+)
+
+# After (v0.4.0+)
+from omnibase_core.models.runtime.model_handler_behavior import (
+    ModelHandlerBehavior,
+)
+contract = ModelHandlerContract(
+    descriptor=ModelHandlerBehavior(handler_kind="compute", ...),
+    ...
+)
+```
+
+**Quick Migration**:
+```bash
+# Find affected imports
+grep -rn "ModelHandlerBehaviorDescriptor\|model_handler_behavior_descriptor" --include="*.py"
+
+# Replace in files (Linux/macOS)
+find . -name "*.py" -exec sed -i 's/ModelHandlerBehaviorDescriptor/ModelHandlerBehavior/g' {} \;
+find . -name "*.py" -exec sed -i 's/model_handler_behavior_descriptor/model_handler_behavior/g' {} \;
+```
+
 #### Hook Typing Enforcement Enabled by Default [OMN-1157]
 
 The default value of `BuilderExecutionPlan.enforce_hook_typing` has been changed from `False` to `True`. This is a **fail-fast behavior change** that affects code building execution plans with typed hooks.
