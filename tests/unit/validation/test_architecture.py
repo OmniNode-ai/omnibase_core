@@ -5,7 +5,8 @@ from pathlib import Path
 
 import pytest
 
-from omnibase_core.errors.exceptions import ExceptionConfigurationError
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.validation.model_audit_result import ModelAuditResult
 from omnibase_core.models.validation.model_duplication_info import ModelDuplicationInfo
 from omnibase_core.models.validation.model_duplication_report import (
@@ -727,9 +728,10 @@ class TestServiceProtocolAuditor:
         assert auditor.repository_name is not None
 
     def test_init_with_invalid_path(self):
-        """Test initialization with invalid path raises ExceptionConfigurationError."""
-        with pytest.raises(ExceptionConfigurationError):
+        """Test initialization with invalid path raises ModelOnexError."""
+        with pytest.raises(ModelOnexError) as exc_info:
             ServiceProtocolAuditor("/nonexistent/path/that/does/not/exist")
+        assert exc_info.value.error_code == EnumCoreErrorCode.DIRECTORY_NOT_FOUND
 
     def test_init_with_current_directory(self):
         """Test initialization with current directory."""
@@ -966,8 +968,9 @@ class ProtocolDuplicate(Protocol):
         """Test check_against_spi with invalid SPI path."""
         auditor = ServiceProtocolAuditor(str(tmp_path))
 
-        with pytest.raises(ExceptionConfigurationError):
+        with pytest.raises(ModelOnexError) as exc_info:
             auditor.check_against_spi("/nonexistent/spi/path")
+        assert exc_info.value.error_code == EnumCoreErrorCode.DIRECTORY_NOT_FOUND
 
     def test_check_against_spi_no_protocols_dir(self, tmp_path: Path):
         """Test check_against_spi when SPI protocols directory doesn't exist."""

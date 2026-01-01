@@ -1,0 +1,88 @@
+# Handler Contract Example: EFFECT Handler
+# This handler performs external I/O operations (database queries).
+#
+# Key characteristics:
+#   - handler_kind: effect (external I/O)
+#   - purity: side_effecting (modifies external state)
+#   - idempotent: true (for safe retries)
+#   - Requires capability dependencies (database)
+
+handler_id: effect.database.user_repository
+name: User Repository
+version: 2.0.0
+description: Handles user persistence operations with PostgreSQL
+
+descriptor:
+  handler_kind: effect
+  purity: side_effecting
+  idempotent: true
+  timeout_ms: 30000
+  retry_policy:
+    enabled: true
+    max_retries: 3
+    backoff_strategy: exponential
+    base_delay_ms: 100
+    max_delay_ms: 5000
+  circuit_breaker:
+    enabled: true
+    failure_threshold: 5
+    timeout_ms: 30000
+  concurrency_policy: serialized
+  isolation_policy: none
+  observability_level: standard
+
+capability_inputs:
+  - alias: db
+    capability: database.relational
+    requirements:
+      must:
+        supports_transactions: true
+        supports_json: true
+      prefer:
+        max_latency_ms: 20
+        supports_connection_pooling: true
+      forbid:
+        deprecated: true
+    selection_policy: auto_if_unique
+    strict: true
+    description: Primary database for user data persistence
+
+  - alias: cache
+    capability: cache.distributed
+    requirements:
+      prefer:
+        eviction_policy: lru
+        max_memory_mb: 512
+    selection_policy: best_score
+    strict: false  # Optional - can work without cache
+    description: Optional cache for read-heavy operations
+
+capability_outputs:
+  - user.created
+  - user.updated
+  - user.deleted
+
+input_model: myapp.models.UserRepositoryRequest
+output_model: myapp.models.UserRepositoryResult
+
+execution_constraints:
+  requires_before:
+    - capability:auth
+  requires_after:
+    - capability:audit
+  can_run_parallel: false
+  nondeterministic_effect: true
+
+supports_lifecycle: true
+supports_health_check: true
+supports_provisioning: true
+
+tags:
+  - database
+  - user-management
+  - effect
+
+metadata:
+  owner: user-platform-team
+  sla_tier: gold
+  data_classification: pii

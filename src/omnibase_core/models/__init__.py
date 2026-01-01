@@ -31,6 +31,7 @@ __all__ = [
     "metadata",
     "nodes",
     "notifications",
+    "pipeline",
     "projection",
     "providers",
     "registration",

@@ -95,7 +95,6 @@ class ModelContractFingerprint(BaseModel):
     model_config = ConfigDict(
         frozen=True,
         extra="forbid",
-        validate_assignment=True,
     )
 
     def __str__(self) -> str:

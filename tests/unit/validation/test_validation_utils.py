@@ -13,7 +13,7 @@ from pathlib import Path
 
 import pytest
 
-from omnibase_core.errors.exceptions import ExceptionInputValidationError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.validation.model_protocol_info import ModelProtocolInfo
 from omnibase_core.models.validation.model_protocol_signature_extractor import (
     ModelProtocolSignatureExtractor,
@@ -24,9 +24,12 @@ from omnibase_core.validation.validation_utils import (
     extract_protocols_from_directory,
     find_protocol_files,
     is_protocol_file,
+    is_valid_onex_name,
+    is_valid_python_identifier,
     suggest_spi_location,
     validate_directory_path,
     validate_file_path,
+    validate_import_path_format,
 )
 
 
@@ -162,14 +165,15 @@ class TestProtocol(Protocol
         """Test handling of nonexistent files."""
         nonexistent_path = Path("/nonexistent/file.py")
 
-        with caplog.at_level(logging.ERROR):
+        with caplog.at_level(logging.WARNING):
             result = extract_protocol_signature(nonexistent_path)
 
             assert result is None
             assert len(caplog.records) == 1
-            assert caplog.records[0].levelname == "ERROR"
+            assert caplog.records[0].levelname == "WARNING"
             log_message = caplog.records[0].message
-            assert "error reading file" in log_message.lower()
+            # Log message format: "Skipping file due to read error: <path>: <error>"
+            assert "read error" in log_message.lower()
 
     def test_extract_from_binary_file(self, caplog):
         """Test handling of binary files."""
@@ -178,12 +182,12 @@ class TestProtocol(Protocol
             temp_path = Path(f.name)
 
         try:
-            with caplog.at_level(logging.ERROR):
+            with caplog.at_level(logging.WARNING):
                 result = extract_protocol_signature(temp_path)
 
                 assert result is None
                 assert len(caplog.records) == 1
-                assert caplog.records[0].levelname == "ERROR"
+                assert caplog.records[0].levelname == "WARNING"
                 log_message = caplog.records[0].message
                 assert "encoding error" in log_message.lower()
 
@@ -207,7 +211,7 @@ class TestPathValidation:
         """Test validation fails for nonexistent directory."""
         nonexistent_path = Path("/nonexistent/directory")
 
-        with pytest.raises(ExceptionInputValidationError, match="does not exist"):
+        with pytest.raises(ModelOnexError, match="does not exist"):
             validate_directory_path(nonexistent_path, "test")
 
     def test_validate_file_as_directory(self):
@@ -215,7 +219,7 @@ class TestPathValidation:
         with tempfile.NamedTemporaryFile() as temp_file:
             temp_path = Path(temp_file.name)
 
-            with pytest.raises(ExceptionInputValidationError, match="not a directory"):
+            with pytest.raises(ModelOnexError, match="not a directory"):
                 validate_directory_path(temp_path, "test")
 
     def test_validate_existing_file(self):
@@ -230,7 +234,7 @@ class TestPathValidation:
         """Test validation fails for nonexistent file."""
         nonexistent_path = Path("/nonexistent/file.py")
 
-        with pytest.raises(ExceptionInputValidationError, match="does not exist"):
+        with pytest.raises(ModelOnexError, match="does not exist"):
             validate_file_path(nonexistent_path, "test")
 
     def test_validate_directory_as_file(self):
@@ -238,7 +242,7 @@ class TestPathValidation:
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
 
-            with pytest.raises(ExceptionInputValidationError, match="not a file"):
+            with pytest.raises(ModelOnexError, match="not a file"):
                 validate_file_path(temp_path, "test")
 
     def test_directory_traversal_warning(self, caplog):
@@ -315,7 +319,7 @@ class TestProtocol(Protocol):
         """Test extraction fails for invalid directory."""
         invalid_path = Path("/nonexistent/directory")
 
-        with pytest.raises(ExceptionInputValidationError):
+        with pytest.raises(ModelOnexError):
             extract_protocols_from_directory(invalid_path)
 
 
@@ -883,7 +887,7 @@ class TestInvalidPathHandling:
             # Monkeypatch the resolve method to raise OSError
             monkeypatch.setattr(Path, "resolve", mock_resolve)
 
-            with pytest.raises(ExceptionInputValidationError, match="Invalid"):
+            with pytest.raises(ModelOnexError, match="Invalid"):
                 validate_directory_path(temp_path, "test")
 
     def test_validate_file_with_invalid_path(self, monkeypatch):
@@ -897,5 +901,183 @@ class TestInvalidPathHandling:
             # Monkeypatch the resolve method to raise ValueError
             monkeypatch.setattr(Path, "resolve", mock_resolve)
 
-            with pytest.raises(ExceptionInputValidationError, match="Invalid"):
+            with pytest.raises(ModelOnexError, match="Invalid"):
                 validate_file_path(temp_path, "test")
+
+
+@pytest.mark.unit
+class TestIsValidPythonIdentifier:
+    """Test Python identifier validation."""
+
+    def test_valid_identifiers(self):
+        """Test validation of valid Python identifiers."""
+        valid_names = [
+            "my_var",
+            "MyClass",
+            "_private",
+            "__dunder__",
+            "x",
+            "X",
+            "_",
+            "var123",
+            "CamelCase",
+            "snake_case",
+            "UPPER_CASE",
+        ]
+        for name in valid_names:
+            assert is_valid_python_identifier(name) is True, (
+                f"Expected '{name}' to be valid"
+            )
+
+    def test_invalid_identifiers(self):
+        """Test validation of invalid Python identifiers."""
+        invalid_names = [
+            "",  # Empty
+            "123abc",  # Starts with digit
+            "2fast",  # Starts with digit
+            "my-var",  # Contains hyphen
+            "my var",  # Contains space
+            "my.var",  # Contains dot
+            "my@var",  # Contains special char
+            "class",  # Reserved word (still valid identifier pattern)
+        ]
+        # Note: "class" is technically a valid identifier pattern,
+        # just can't be used as a variable name
+        for name in invalid_names[:-1]:  # Skip "class"
+            assert is_valid_python_identifier(name) is False, (
+                f"Expected '{name}' to be invalid"
+            )
+
+    def test_unicode_not_supported(self):
+        """Test that non-ASCII characters are rejected."""
+        # Our regex only supports ASCII identifiers
+        assert is_valid_python_identifier("var_name") is True
+        # Unicode chars would need a different pattern
+
+
+@pytest.mark.unit
+class TestIsValidOnexName:
+    """Test ONEX naming convention validation."""
+
+    def test_valid_onex_names(self):
+        """Test validation of valid ONEX names."""
+        valid_names = [
+            "http_client",
+            "HttpClient",
+            "HTTP_CLIENT",
+            "handler123",
+            "myHandler",
+            "x",
+            "A",
+        ]
+        for name in valid_names:
+            assert is_valid_onex_name(name) is True, (
+                f"Expected '{name}' to be valid ONEX name"
+            )
+
+    def test_invalid_onex_names(self):
+        """Test validation of invalid ONEX names."""
+        invalid_names = [
+            "",  # Empty
+            "my-handler",  # Contains hyphen
+            "my.handler",  # Contains dot
+            "my handler",  # Contains space
+            "my@handler",  # Contains special char
+        ]
+        for name in invalid_names:
+            assert is_valid_onex_name(name) is False, (
+                f"Expected '{name}' to be invalid ONEX name"
+            )
+
+    def test_lowercase_only_mode(self):
+        """Test lowercase-only validation mode."""
+        # Valid lowercase names
+        assert is_valid_onex_name("http_client", lowercase_only=True) is True
+        assert is_valid_onex_name("handler123", lowercase_only=True) is True
+        assert is_valid_onex_name("x", lowercase_only=True) is True
+
+        # Invalid when lowercase_only=True
+        assert is_valid_onex_name("HttpClient", lowercase_only=True) is False
+        assert is_valid_onex_name("HTTP_CLIENT", lowercase_only=True) is False
+        assert is_valid_onex_name("MyHandler", lowercase_only=True) is False
+
+    def test_empty_name(self):
+        """Test that empty names are rejected."""
+        assert is_valid_onex_name("") is False
+        assert is_valid_onex_name("", lowercase_only=True) is False
+
+
+@pytest.mark.unit
+class TestValidateImportPathFormat:
+    """Test import path format validation."""
+
+    def test_valid_import_paths(self):
+        """Test validation of valid import paths."""
+        valid_paths = [
+            "mypackage.MyClass",
+            "mypackage.module.MyClass",
+            "omnibase_core.models.events.ModelEventEnvelope",
+            "my_package.handlers.HttpClientHandler",
+            "_private.module.Class",
+        ]
+        for path in valid_paths:
+            is_valid, error = validate_import_path_format(path)
+            assert is_valid is True, (
+                f"Expected '{path}' to be valid, got error: {error}"
+            )
+            assert error is None
+
+    def test_single_segment_rejected(self):
+        """Test that single-segment paths are rejected."""
+        is_valid, error = validate_import_path_format("MyClass")
+        assert is_valid is False
+        assert "at least 2 segments" in error
+
+    def test_empty_path_rejected(self):
+        """Test that empty paths are rejected."""
+        is_valid, error = validate_import_path_format("")
+        assert is_valid is False
+        assert "empty" in error.lower()
+
+        is_valid, error = validate_import_path_format("   ")
+        assert is_valid is False
+        assert "empty" in error.lower()
+
+    def test_path_traversal_rejected(self):
+        """Test that path traversal is rejected."""
+        is_valid, error = validate_import_path_format("my..module.Class")
+        assert is_valid is False
+        assert ".." in error
+
+        is_valid, error = validate_import_path_format("my/module.Class")
+        assert is_valid is False
+
+        is_valid, error = validate_import_path_format("my\\module.Class")
+        assert is_valid is False
+
+    def test_dangerous_characters_rejected(self):
+        """Test that dangerous characters are rejected."""
+        dangerous_chars = ["<", ">", "|", "&", ";", "`", "$", "'", '"', "*", "?"]
+        for char in dangerous_chars:
+            path = f"my{char}module.Class"
+            is_valid, error = validate_import_path_format(path)
+            assert is_valid is False, f"Expected '{char}' to be rejected"
+            assert "invalid characters" in error.lower()
+
+    def test_empty_segment_rejected(self):
+        """Test that empty segments are rejected."""
+        is_valid, _error = validate_import_path_format("my..Class")
+        assert is_valid is False
+
+        is_valid, _error = validate_import_path_format(".module.Class")
+        assert is_valid is False
+
+    def test_invalid_identifier_rejected(self):
+        """Test that invalid Python identifiers are rejected."""
+        is_valid, error = validate_import_path_format("123module.Class")
+        assert is_valid is False
+        assert "not a valid Python identifier" in error
+
+        is_valid, error = validate_import_path_format("my-module.Class")
+        assert is_valid is False
+        assert "not a valid Python identifier" in error

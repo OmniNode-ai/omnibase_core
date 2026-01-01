@@ -124,6 +124,7 @@ from omnibase_core.protocols.event_bus import (
     ProtocolEventBusRegistry,
     ProtocolEventEnvelope,
     ProtocolEventMessage,
+    ProtocolFromEvent,
     ProtocolKafkaEventBusAdapter,
     ProtocolSyncEventBus,
 )
@@ -155,6 +156,11 @@ from omnibase_core.protocols.notifications import (
     ProtocolTransitionNotificationConsumer,
     ProtocolTransitionNotificationPublisher,
 )
+
+# =============================================================================
+# Logger Module Exports
+# =============================================================================
+from omnibase_core.protocols.protocol_logger_like import ProtocolLoggerLike
 
 # =============================================================================
 # Event Construction Protocol Exports
@@ -284,6 +290,7 @@ __all__ = [
     "ProtocolSyncEventBus",
     "ProtocolAsyncEventBus",
     "ProtocolEventEnvelope",
+    "ProtocolFromEvent",
     "ProtocolEventBusRegistry",
     "ProtocolEventBusLogEmitter",
     # ==========================================================================
@@ -316,6 +323,10 @@ __all__ = [
     # Core Module
     # ==========================================================================
     "ProtocolCanonicalSerializer",
+    # ==========================================================================
+    # Logger Module
+    # ==========================================================================
+    "ProtocolLoggerLike",
     # ==========================================================================
     # Event Construction Protocol
     # ==========================================================================

@@ -14,7 +14,7 @@ from omnibase_core.models.contracts import (
     ModelContractReducer,
     ModelExecutionOrderingPolicy,
     ModelExecutionProfile,
-    ModelHandlerBehaviorDescriptor,
+    ModelHandlerBehavior,
     ModelPerformanceRequirements,
 )
 from omnibase_core.models.contracts.subcontracts.model_fsm_state_definition import (
@@ -190,8 +190,8 @@ def get_reducer_fsm_basic_profile(version: str = "1.0.0") -> ModelContractReduce
                 deterministic_seed=True,
             ),
         ),
-        # Handler behavior descriptor
-        descriptor=ModelHandlerBehaviorDescriptor(
+        # Handler behavior configuration
+        behavior=ModelHandlerBehavior(
             handler_kind="reducer",
             purity="side_effecting",  # Reducers modify state
             idempotent=True,  # FSM transitions should be idempotent

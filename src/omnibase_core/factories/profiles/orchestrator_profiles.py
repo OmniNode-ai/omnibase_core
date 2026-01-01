@@ -22,7 +22,7 @@ from omnibase_core.models.contracts import (
     ModelEventRegistryConfig,
     ModelExecutionOrderingPolicy,
     ModelExecutionProfile,
-    ModelHandlerBehaviorDescriptor,
+    ModelHandlerBehavior,
     ModelPerformanceRequirements,
     ModelWorkflowConfig,
 )
@@ -92,8 +92,8 @@ def get_orchestrator_safe_profile(version: str = "1.0.0") -> ModelContractOrches
                 deterministic_seed=True,
             ),
         ),
-        # Handler descriptor - conservative, serial execution
-        descriptor=ModelHandlerBehaviorDescriptor(
+        # Handler behavior configuration - conservative, serial execution
+        behavior=ModelHandlerBehavior(
             handler_kind="orchestrator",
             purity="side_effecting",
             idempotent=False,
@@ -167,8 +167,8 @@ def get_orchestrator_parallel_profile(
                 deterministic_seed=True,
             ),
         ),
-        # Handler descriptor - parallel execution allowed
-        descriptor=ModelHandlerBehaviorDescriptor(
+        # Handler behavior configuration - parallel execution allowed
+        behavior=ModelHandlerBehavior(
             handler_kind="orchestrator",
             purity="side_effecting",
             idempotent=False,
@@ -246,8 +246,8 @@ def get_orchestrator_resilient_profile(
                 deterministic_seed=True,
             ),
         ),
-        # Handler descriptor - resilient with retries and circuit breaker
-        descriptor=ModelHandlerBehaviorDescriptor(
+        # Handler behavior configuration - resilient with retries and circuit breaker
+        behavior=ModelHandlerBehavior(
             handler_kind="orchestrator",
             purity="side_effecting",
             idempotent=True,  # Resilient implies idempotent for safe retries

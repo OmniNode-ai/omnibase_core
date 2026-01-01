@@ -9,17 +9,17 @@ from collections import defaultdict
 from omnibase_core.enums.enum_handler_type_category import EnumHandlerTypeCategory
 from omnibase_core.enums.enum_log_level import EnumLogLevel
 from omnibase_core.logging.core_logging import emit_log_event
-from omnibase_core.pipeline.exceptions import (
-    DependencyCycleError,
-    HookTypeMismatchError,
-    UnknownDependencyError,
-)
-from omnibase_core.pipeline.models import (
+from omnibase_core.models.pipeline import (
     ModelExecutionPlan,
     ModelPhaseExecutionPlan,
     ModelPipelineHook,
     ModelValidationWarning,
     PipelinePhase,
+)
+from omnibase_core.pipeline.exceptions import (
+    DependencyCycleError,
+    HookTypeMismatchError,
+    UnknownDependencyError,
 )
 from omnibase_core.pipeline.registry_hook import RegistryHook
 
@@ -57,7 +57,6 @@ class BuilderExecutionPlan:
         builder = BuilderExecutionPlan(
             registry=registry,
             contract_category=EnumHandlerTypeCategory.COMPUTE,
-            enforce_hook_typing=True,
         )
         plan, warnings = builder.build()
 
@@ -103,7 +102,7 @@ class BuilderExecutionPlan:
         self,
         registry: RegistryHook,
         contract_category: EnumHandlerTypeCategory | None = None,
-        enforce_hook_typing: bool = False,
+        enforce_hook_typing: bool = True,
     ) -> None:
         """
         Initialize the BuilderExecutionPlan.
@@ -381,7 +380,4 @@ class BuilderExecutionPlan:
         emit_log_event(EnumLogLevel.DEBUG, log_message)
 
 
-# Backwards compatibility alias
-RuntimePlanBuilder = BuilderExecutionPlan
-
-__all__ = ["BuilderExecutionPlan", "FAIL_FAST_PHASES", "RuntimePlanBuilder"]
+__all__ = ["BuilderExecutionPlan", "FAIL_FAST_PHASES"]
