@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Unit tests for ModelBinding."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 from pydantic import ValidationError
@@ -18,7 +18,7 @@ class TestModelBindingCreation:
 
     def test_create_with_all_required_fields(self) -> None:
         """Test creating ModelBinding with all required fields."""
-        resolved_at = datetime.now(timezone.utc)
+        resolved_at = datetime.now(UTC)
         binding = ModelBinding(
             dependency_alias="db",
             capability="database.relational",
@@ -48,7 +48,7 @@ class TestModelBindingCreation:
             connection_ref="env://TEST",
             requirements_hash="hash123",
             profile_id="default",
-            resolved_at=datetime.now(timezone.utc),
+            resolved_at=datetime.now(UTC),
         )
         assert binding.resolution_notes == []
 
@@ -62,7 +62,7 @@ class TestModelBindingCreation:
             connection_ref="env://TEST",
             requirements_hash="hash123",
             profile_id="default",
-            resolved_at=datetime.now(timezone.utc),
+            resolved_at=datetime.now(UTC),
         )
         assert binding.candidates_considered == 0
 
@@ -80,7 +80,7 @@ class TestModelBindingCreation:
             connection_ref="secrets://redis/primary",
             requirements_hash="sha256:def456",
             profile_id="production",
-            resolved_at=datetime.now(timezone.utc),
+            resolved_at=datetime.now(UTC),
             resolution_notes=notes,
         )
         assert binding.resolution_notes == notes
@@ -96,14 +96,14 @@ class TestModelBindingCreation:
             connection_ref="env://TEST",
             requirements_hash="hash123",
             profile_id="default",
-            resolved_at=datetime.now(timezone.utc),
+            resolved_at=datetime.now(UTC),
             candidates_considered=5,
         )
         assert binding.candidates_considered == 5
 
     def test_create_with_all_fields(self) -> None:
         """Test creating binding with all fields including optional ones."""
-        resolved_at = datetime.now(timezone.utc)
+        resolved_at = datetime.now(UTC)
         notes = ["Note 1", "Note 2", "Note 3"]
         binding = ModelBinding(
             dependency_alias="vectors",
@@ -143,7 +143,7 @@ class TestModelBindingDependencyAliasValidation:
             connection_ref="env://TEST",
             requirements_hash="hash123",
             profile_id="default",
-            resolved_at=datetime.now(timezone.utc),
+            resolved_at=datetime.now(UTC),
         )
         assert binding.dependency_alias == "db"
 
@@ -157,7 +157,7 @@ class TestModelBindingDependencyAliasValidation:
             connection_ref="env://TEST",
             requirements_hash="hash123",
             profile_id="default",
-            resolved_at=datetime.now(timezone.utc),
+            resolved_at=datetime.now(UTC),
         )
         assert binding.dependency_alias == "my_database"
 
@@ -172,7 +172,7 @@ class TestModelBindingDependencyAliasValidation:
                 connection_ref="env://TEST",
                 requirements_hash="hash123",
                 profile_id="default",
-                resolved_at=datetime.now(timezone.utc),
+                resolved_at=datetime.now(UTC),
             )
 
     def test_whitespace_only_alias_raises_error(self) -> None:
@@ -186,7 +186,7 @@ class TestModelBindingDependencyAliasValidation:
                 connection_ref="env://TEST",
                 requirements_hash="hash123",
                 profile_id="default",
-                resolved_at=datetime.now(timezone.utc),
+                resolved_at=datetime.now(UTC),
             )
         assert "cannot be empty or whitespace-only" in str(exc_info.value)
 
@@ -200,7 +200,7 @@ class TestModelBindingDependencyAliasValidation:
             connection_ref="env://TEST",
             requirements_hash="hash123",
             profile_id="default",
-            resolved_at=datetime.now(timezone.utc),
+            resolved_at=datetime.now(UTC),
         )
         assert binding.dependency_alias == "db"
 
@@ -215,7 +215,7 @@ class TestModelBindingDependencyAliasValidation:
             connection_ref="env://TEST",
             requirements_hash="hash123",
             profile_id="default",
-            resolved_at=datetime.now(timezone.utc),
+            resolved_at=datetime.now(UTC),
         )
         assert binding.dependency_alias == long_alias
 
@@ -231,7 +231,7 @@ class TestModelBindingDependencyAliasValidation:
                 connection_ref="env://TEST",
                 requirements_hash="hash123",
                 profile_id="default",
-                resolved_at=datetime.now(timezone.utc),
+                resolved_at=datetime.now(UTC),
             )
 
 
@@ -249,7 +249,7 @@ class TestModelBindingCapabilityValidation:
             connection_ref="env://TEST",
             requirements_hash="hash123",
             profile_id="default",
-            resolved_at=datetime.now(timezone.utc),
+            resolved_at=datetime.now(UTC),
         )
         assert binding.capability == "database.relational"
 
@@ -263,7 +263,7 @@ class TestModelBindingCapabilityValidation:
             connection_ref="env://TEST",
             requirements_hash="hash123",
             profile_id="default",
-            resolved_at=datetime.now(timezone.utc),
+            resolved_at=datetime.now(UTC),
         )
         assert binding.capability == "cache.kv.redis"
 
@@ -278,7 +278,7 @@ class TestModelBindingCapabilityValidation:
                 connection_ref="env://TEST",
                 requirements_hash="hash123",
                 profile_id="default",
-                resolved_at=datetime.now(timezone.utc),
+                resolved_at=datetime.now(UTC),
             )
 
     def test_whitespace_only_capability_raises_error(self) -> None:
@@ -292,7 +292,7 @@ class TestModelBindingCapabilityValidation:
                 connection_ref="env://TEST",
                 requirements_hash="hash123",
                 profile_id="default",
-                resolved_at=datetime.now(timezone.utc),
+                resolved_at=datetime.now(UTC),
             )
         assert "cannot be empty or whitespace-only" in str(exc_info.value)
 
@@ -306,7 +306,7 @@ class TestModelBindingCapabilityValidation:
             connection_ref="env://TEST",
             requirements_hash="hash123",
             profile_id="default",
-            resolved_at=datetime.now(timezone.utc),
+            resolved_at=datetime.now(UTC),
         )
         assert binding.capability == "database.relational"
 
@@ -321,7 +321,7 @@ class TestModelBindingCapabilityValidation:
                 connection_ref="env://TEST",
                 requirements_hash="hash123",
                 profile_id="default",
-                resolved_at=datetime.now(timezone.utc),
+                resolved_at=datetime.now(UTC),
             )
 
     def test_capability_max_length_accepted(self) -> None:
@@ -335,7 +335,7 @@ class TestModelBindingCapabilityValidation:
             connection_ref="env://TEST",
             requirements_hash="hash123",
             profile_id="default",
-            resolved_at=datetime.now(timezone.utc),
+            resolved_at=datetime.now(UTC),
         )
         assert binding.capability == long_capability
 
@@ -354,7 +354,7 @@ class TestModelBindingProviderIdValidation:
             connection_ref="env://TEST",
             requirements_hash="hash123",
             profile_id="default",
-            resolved_at=datetime.now(timezone.utc),
+            resolved_at=datetime.now(UTC),
         )
         assert binding.provider_id == "550e8400-e29b-41d4-a716-446655440000"
 
@@ -368,7 +368,7 @@ class TestModelBindingProviderIdValidation:
             connection_ref="env://TEST",
             requirements_hash="hash123",
             profile_id="default",
-            resolved_at=datetime.now(timezone.utc),
+            resolved_at=datetime.now(UTC),
         )
         assert binding.provider_id == "custom-provider-id-123"
 
@@ -383,7 +383,7 @@ class TestModelBindingProviderIdValidation:
                 connection_ref="env://TEST",
                 requirements_hash="hash123",
                 profile_id="default",
-                resolved_at=datetime.now(timezone.utc),
+                resolved_at=datetime.now(UTC),
             )
 
     def test_whitespace_only_provider_id_raises_error(self) -> None:
@@ -397,7 +397,7 @@ class TestModelBindingProviderIdValidation:
                 connection_ref="env://TEST",
                 requirements_hash="hash123",
                 profile_id="default",
-                resolved_at=datetime.now(timezone.utc),
+                resolved_at=datetime.now(UTC),
             )
         assert "cannot be empty or whitespace-only" in str(exc_info.value)
 
@@ -411,7 +411,7 @@ class TestModelBindingProviderIdValidation:
             connection_ref="env://TEST",
             requirements_hash="hash123",
             profile_id="default",
-            resolved_at=datetime.now(timezone.utc),
+            resolved_at=datetime.now(UTC),
         )
         assert binding.provider_id == "provider-123"
 
@@ -430,7 +430,7 @@ class TestModelBindingAdapterValidation:
             connection_ref="env://TEST",
             requirements_hash="hash123",
             profile_id="default",
-            resolved_at=datetime.now(timezone.utc),
+            resolved_at=datetime.now(UTC),
         )
         assert binding.adapter == "omnibase_infra.adapters.PostgresAdapter"
 
@@ -445,7 +445,7 @@ class TestModelBindingAdapterValidation:
                 connection_ref="env://TEST",
                 requirements_hash="hash123",
                 profile_id="default",
-                resolved_at=datetime.now(timezone.utc),
+                resolved_at=datetime.now(UTC),
             )
 
     def test_whitespace_only_adapter_raises_error(self) -> None:
@@ -459,7 +459,7 @@ class TestModelBindingAdapterValidation:
                 connection_ref="env://TEST",
                 requirements_hash="hash123",
                 profile_id="default",
-                resolved_at=datetime.now(timezone.utc),
+                resolved_at=datetime.now(UTC),
             )
         assert "cannot be empty or whitespace-only" in str(exc_info.value)
 
@@ -473,7 +473,7 @@ class TestModelBindingAdapterValidation:
             connection_ref="env://TEST",
             requirements_hash="hash123",
             profile_id="default",
-            resolved_at=datetime.now(timezone.utc),
+            resolved_at=datetime.now(UTC),
         )
         assert binding.adapter == "my.Adapter"
 
@@ -492,7 +492,7 @@ class TestModelBindingConnectionRefValidation:
             connection_ref="secrets://postgres/primary",
             requirements_hash="hash123",
             profile_id="default",
-            resolved_at=datetime.now(timezone.utc),
+            resolved_at=datetime.now(UTC),
         )
         assert binding.connection_ref == "secrets://postgres/primary"
 
@@ -506,7 +506,7 @@ class TestModelBindingConnectionRefValidation:
             connection_ref="env://DATABASE_URL",
             requirements_hash="hash123",
             profile_id="default",
-            resolved_at=datetime.now(timezone.utc),
+            resolved_at=datetime.now(UTC),
         )
         assert binding.connection_ref == "env://DATABASE_URL"
 
@@ -521,7 +521,7 @@ class TestModelBindingConnectionRefValidation:
                 connection_ref="",
                 requirements_hash="hash123",
                 profile_id="default",
-                resolved_at=datetime.now(timezone.utc),
+                resolved_at=datetime.now(UTC),
             )
 
     def test_whitespace_only_connection_ref_raises_error(self) -> None:
@@ -535,7 +535,7 @@ class TestModelBindingConnectionRefValidation:
                 connection_ref="   ",
                 requirements_hash="hash123",
                 profile_id="default",
-                resolved_at=datetime.now(timezone.utc),
+                resolved_at=datetime.now(UTC),
             )
         assert "cannot be empty or whitespace-only" in str(exc_info.value)
 
@@ -554,7 +554,7 @@ class TestModelBindingRequirementsHashValidation:
             connection_ref="env://TEST",
             requirements_hash="sha256:abc123def456",
             profile_id="default",
-            resolved_at=datetime.now(timezone.utc),
+            resolved_at=datetime.now(UTC),
         )
         assert binding.requirements_hash == "sha256:abc123def456"
 
@@ -569,7 +569,7 @@ class TestModelBindingRequirementsHashValidation:
                 connection_ref="env://TEST",
                 requirements_hash="",
                 profile_id="default",
-                resolved_at=datetime.now(timezone.utc),
+                resolved_at=datetime.now(UTC),
             )
 
     def test_whitespace_only_requirements_hash_raises_error(self) -> None:
@@ -583,7 +583,7 @@ class TestModelBindingRequirementsHashValidation:
                 connection_ref="env://TEST",
                 requirements_hash="   ",
                 profile_id="default",
-                resolved_at=datetime.now(timezone.utc),
+                resolved_at=datetime.now(UTC),
             )
         assert "cannot be empty or whitespace-only" in str(exc_info.value)
 
@@ -602,7 +602,7 @@ class TestModelBindingProfileIdValidation:
             connection_ref="env://TEST",
             requirements_hash="hash123",
             profile_id="production",
-            resolved_at=datetime.now(timezone.utc),
+            resolved_at=datetime.now(UTC),
         )
         assert binding.profile_id == "production"
 
@@ -617,7 +617,7 @@ class TestModelBindingProfileIdValidation:
                 connection_ref="env://TEST",
                 requirements_hash="hash123",
                 profile_id="",
-                resolved_at=datetime.now(timezone.utc),
+                resolved_at=datetime.now(UTC),
             )
 
     def test_whitespace_only_profile_id_raises_error(self) -> None:
@@ -631,7 +631,7 @@ class TestModelBindingProfileIdValidation:
                 connection_ref="env://TEST",
                 requirements_hash="hash123",
                 profile_id="   ",
-                resolved_at=datetime.now(timezone.utc),
+                resolved_at=datetime.now(UTC),
             )
         assert "cannot be empty or whitespace-only" in str(exc_info.value)
 
@@ -650,7 +650,7 @@ class TestModelBindingResolutionNotesValidation:
             connection_ref="env://TEST",
             requirements_hash="hash123",
             profile_id="default",
-            resolved_at=datetime.now(timezone.utc),
+            resolved_at=datetime.now(UTC),
             resolution_notes=["  Note with whitespace  ", "  Another note  "],
         )
         assert binding.resolution_notes == [
@@ -668,7 +668,7 @@ class TestModelBindingResolutionNotesValidation:
             connection_ref="env://TEST",
             requirements_hash="hash123",
             profile_id="default",
-            resolved_at=datetime.now(timezone.utc),
+            resolved_at=datetime.now(UTC),
             resolution_notes=["Note 1", "", "   ", "Note 2"],
         )
         assert binding.resolution_notes == ["Note 1", "Note 2"]
@@ -684,7 +684,7 @@ class TestModelBindingResolutionNotesValidation:
                 connection_ref="env://TEST",
                 requirements_hash="hash123",
                 profile_id="default",
-                resolved_at=datetime.now(timezone.utc),
+                resolved_at=datetime.now(UTC),
                 resolution_notes=["Valid note", 123],  # type: ignore[list-item]
             )
         assert "must be a string" in str(exc_info.value)
@@ -700,7 +700,7 @@ class TestModelBindingResolutionNotesValidation:
             connection_ref="env://TEST",
             requirements_hash="hash123",
             profile_id="default",
-            resolved_at=datetime.now(timezone.utc),
+            resolved_at=datetime.now(UTC),
             resolution_notes=notes,
         )
         assert len(binding.resolution_notes) == 10
@@ -721,7 +721,7 @@ class TestModelBindingCandidatesConsideredValidation:
             connection_ref="env://TEST",
             requirements_hash="hash123",
             profile_id="default",
-            resolved_at=datetime.now(timezone.utc),
+            resolved_at=datetime.now(UTC),
             candidates_considered=0,
         )
         assert binding.candidates_considered == 0
@@ -736,7 +736,7 @@ class TestModelBindingCandidatesConsideredValidation:
             connection_ref="env://TEST",
             requirements_hash="hash123",
             profile_id="default",
-            resolved_at=datetime.now(timezone.utc),
+            resolved_at=datetime.now(UTC),
             candidates_considered=100,
         )
         assert binding.candidates_considered == 100
@@ -752,7 +752,7 @@ class TestModelBindingCandidatesConsideredValidation:
                 connection_ref="env://TEST",
                 requirements_hash="hash123",
                 profile_id="default",
-                resolved_at=datetime.now(timezone.utc),
+                resolved_at=datetime.now(UTC),
                 candidates_considered=-1,
             )
 
@@ -766,7 +766,7 @@ class TestModelBindingCandidatesConsideredValidation:
             connection_ref="env://TEST",
             requirements_hash="hash123",
             profile_id="default",
-            resolved_at=datetime.now(timezone.utc),
+            resolved_at=datetime.now(UTC),
             candidates_considered=1000000,
         )
         assert binding.candidates_considered == 1000000
@@ -786,7 +786,7 @@ class TestModelBindingImmutability:
             connection_ref="env://TEST",
             requirements_hash="hash123",
             profile_id="default",
-            resolved_at=datetime.now(timezone.utc),
+            resolved_at=datetime.now(UTC),
         )
         with pytest.raises(ValidationError, match="frozen"):
             binding.dependency_alias = "modified"  # type: ignore[misc]
@@ -801,7 +801,7 @@ class TestModelBindingImmutability:
             connection_ref="env://TEST",
             requirements_hash="hash123",
             profile_id="default",
-            resolved_at=datetime.now(timezone.utc),
+            resolved_at=datetime.now(UTC),
         )
         with pytest.raises(ValidationError, match="frozen"):
             binding.capability = "cache.kv"  # type: ignore[misc]
@@ -816,7 +816,7 @@ class TestModelBindingImmutability:
             connection_ref="env://TEST",
             requirements_hash="hash123",
             profile_id="default",
-            resolved_at=datetime.now(timezone.utc),
+            resolved_at=datetime.now(UTC),
         )
         with pytest.raises(ValidationError, match="frozen"):
             binding.provider_id = "modified"  # type: ignore[misc]
@@ -831,7 +831,7 @@ class TestModelBindingImmutability:
             connection_ref="env://TEST",
             requirements_hash="hash123",
             profile_id="default",
-            resolved_at=datetime.now(timezone.utc),
+            resolved_at=datetime.now(UTC),
         )
         with pytest.raises(ValidationError, match="frozen"):
             binding.adapter = "other.Adapter"  # type: ignore[misc]
@@ -846,7 +846,7 @@ class TestModelBindingImmutability:
             connection_ref="env://TEST",
             requirements_hash="hash123",
             profile_id="default",
-            resolved_at=datetime.now(timezone.utc),
+            resolved_at=datetime.now(UTC),
             resolution_notes=["Original note"],
         )
         with pytest.raises(ValidationError, match="frozen"):
@@ -862,7 +862,7 @@ class TestModelBindingImmutability:
             connection_ref="env://TEST",
             requirements_hash="hash123",
             profile_id="default",
-            resolved_at=datetime.now(timezone.utc),
+            resolved_at=datetime.now(UTC),
             candidates_considered=5,
         )
         with pytest.raises(ValidationError, match="frozen"):
@@ -884,7 +884,7 @@ class TestModelBindingExtraFields:
                 connection_ref="env://TEST",
                 requirements_hash="hash123",
                 profile_id="default",
-                resolved_at=datetime.now(timezone.utc),
+                resolved_at=datetime.now(UTC),
                 extra_field="should_fail",  # type: ignore[call-arg]
             )
 
@@ -902,7 +902,7 @@ class TestModelBindingHashability:
     def test_hashable_can_use_in_set(self) -> None:
         """Test that bindings can be added to sets."""
         # Use fixed timestamp so binding1 and binding2 have identical values
-        fixed_timestamp = datetime.now(timezone.utc)
+        fixed_timestamp = datetime.now(UTC)
 
         binding1 = ModelBinding(
             dependency_alias="db",
@@ -949,7 +949,7 @@ class TestModelBindingHashability:
             connection_ref="env://TEST",
             requirements_hash="hash123",
             profile_id="default",
-            resolved_at=datetime.now(timezone.utc),
+            resolved_at=datetime.now(UTC),
         )
         cache: dict[ModelBinding, str] = {binding: "cached_value"}
         assert cache[binding] == "cached_value"
@@ -964,7 +964,7 @@ class TestModelBindingHashability:
             connection_ref="env://TEST",
             requirements_hash="hash123",
             profile_id="default",
-            resolved_at=datetime.now(timezone.utc),
+            resolved_at=datetime.now(UTC),
         )
         h1 = hash(binding)
         h2 = hash(binding)
@@ -972,7 +972,7 @@ class TestModelBindingHashability:
 
     def test_hash_consistency_equal_identity_fields(self) -> None:
         """Test that bindings with same identity fields have same hash."""
-        resolved_at = datetime.now(timezone.utc)
+        resolved_at = datetime.now(UTC)
         binding1 = ModelBinding(
             dependency_alias="db",
             capability="database.relational",
@@ -997,7 +997,7 @@ class TestModelBindingHashability:
 
     def test_hash_differs_for_different_alias(self) -> None:
         """Test that hash differs when dependency_alias differs."""
-        resolved_at = datetime.now(timezone.utc)
+        resolved_at = datetime.now(UTC)
         binding1 = ModelBinding(
             dependency_alias="db",
             capability="database.relational",
@@ -1022,7 +1022,7 @@ class TestModelBindingHashability:
 
     def test_hash_differs_for_different_capability(self) -> None:
         """Test that hash differs when capability differs."""
-        resolved_at = datetime.now(timezone.utc)
+        resolved_at = datetime.now(UTC)
         binding1 = ModelBinding(
             dependency_alias="db",
             capability="database.relational",
@@ -1047,7 +1047,7 @@ class TestModelBindingHashability:
 
     def test_hash_differs_for_different_provider_id(self) -> None:
         """Test that hash differs when provider_id differs."""
-        resolved_at = datetime.now(timezone.utc)
+        resolved_at = datetime.now(UTC)
         binding1 = ModelBinding(
             dependency_alias="db",
             capability="database.relational",
@@ -1085,7 +1085,7 @@ class TestModelBindingHashability:
             connection_ref="env://TEST",
             requirements_hash="hash123",
             profile_id="default",
-            resolved_at=datetime(2024, 1, 1, tzinfo=timezone.utc),
+            resolved_at=datetime(2024, 1, 1, tzinfo=UTC),
             resolution_notes=["Note 1"],
             candidates_considered=5,
         )
@@ -1097,7 +1097,7 @@ class TestModelBindingHashability:
             connection_ref="env://TEST",
             requirements_hash="hash123",
             profile_id="default",
-            resolved_at=datetime(2025, 6, 15, tzinfo=timezone.utc),
+            resolved_at=datetime(2025, 6, 15, tzinfo=UTC),
             resolution_notes=["Different note"],
             candidates_considered=10,
         )
@@ -1123,7 +1123,7 @@ class TestModelBindingHashability:
             connection_ref="env://TEST",
             requirements_hash="hash123",
             profile_id="default",
-            resolved_at=datetime(2024, 1, 1, tzinfo=timezone.utc),
+            resolved_at=datetime(2024, 1, 1, tzinfo=UTC),
             resolution_notes=["Note 1"],
             candidates_considered=5,
         )
@@ -1135,7 +1135,7 @@ class TestModelBindingHashability:
             connection_ref="env://TEST",
             requirements_hash="hash456",  # Different metadata
             profile_id="production",  # Different metadata
-            resolved_at=datetime(2025, 6, 15, tzinfo=timezone.utc),  # Different metadata
+            resolved_at=datetime(2025, 6, 15, tzinfo=UTC),  # Different metadata
             resolution_notes=["Different note"],  # Different metadata
             candidates_considered=10,  # Different metadata
         )
@@ -1153,7 +1153,7 @@ class TestModelBindingEquality:
 
     def test_equality_same_bindings(self) -> None:
         """Test equality for identical bindings."""
-        resolved_at = datetime.now(timezone.utc)
+        resolved_at = datetime.now(UTC)
         binding1 = ModelBinding(
             dependency_alias="db",
             capability="database.relational",
@@ -1178,7 +1178,7 @@ class TestModelBindingEquality:
 
     def test_inequality_different_alias(self) -> None:
         """Test inequality for different aliases."""
-        resolved_at = datetime.now(timezone.utc)
+        resolved_at = datetime.now(UTC)
         binding1 = ModelBinding(
             dependency_alias="db",
             capability="database.relational",
@@ -1203,7 +1203,7 @@ class TestModelBindingEquality:
 
     def test_inequality_different_capability(self) -> None:
         """Test inequality for different capabilities."""
-        resolved_at = datetime.now(timezone.utc)
+        resolved_at = datetime.now(UTC)
         binding1 = ModelBinding(
             dependency_alias="db",
             capability="database.relational",
@@ -1228,7 +1228,7 @@ class TestModelBindingEquality:
 
     def test_inequality_different_provider_id(self) -> None:
         """Test inequality for different provider_ids."""
-        resolved_at = datetime.now(timezone.utc)
+        resolved_at = datetime.now(UTC)
         binding1 = ModelBinding(
             dependency_alias="db",
             capability="database.relational",
@@ -1266,7 +1266,7 @@ class TestModelBindingEquality:
             connection_ref="env://TEST",
             requirements_hash="hash123",
             profile_id="default",
-            resolved_at=datetime(2024, 1, 1, tzinfo=timezone.utc),
+            resolved_at=datetime(2024, 1, 1, tzinfo=UTC),
             resolution_notes=["Note 1"],
             candidates_considered=5,
         )
@@ -1278,7 +1278,7 @@ class TestModelBindingEquality:
             connection_ref="env://TEST",
             requirements_hash="hash456",  # Different metadata
             profile_id="production",  # Different metadata
-            resolved_at=datetime(2025, 1, 1, tzinfo=timezone.utc),  # Different metadata
+            resolved_at=datetime(2025, 1, 1, tzinfo=UTC),  # Different metadata
             resolution_notes=["Different note"],  # Different metadata
             candidates_considered=10,  # Different metadata
         )
@@ -1300,7 +1300,7 @@ class TestModelBindingStringRepresentation:
             connection_ref="env://TEST",
             requirements_hash="hash123",
             profile_id="default",
-            resolved_at=datetime.now(timezone.utc),
+            resolved_at=datetime.now(UTC),
         )
         assert str(binding) == "db -> database.relational @ 550e8400"
 
@@ -1314,7 +1314,7 @@ class TestModelBindingStringRepresentation:
             connection_ref="env://TEST",
             requirements_hash="hash123",
             profile_id="default",
-            resolved_at=datetime.now(timezone.utc),
+            resolved_at=datetime.now(UTC),
         )
         repr_str = repr(binding)
         assert "ModelBinding" in repr_str
@@ -1338,7 +1338,7 @@ class TestModelBindingFromAttributes:
             connection_ref = "env://TEST"
             requirements_hash = "hash123"
             profile_id = "default"
-            resolved_at = datetime.now(timezone.utc)
+            resolved_at = datetime.now(UTC)
             resolution_notes: list[str] = []
             candidates_considered = 0
 
@@ -1363,7 +1363,7 @@ class TestModelBindingEdgeCases:
             connection_ref="secrets://my-vault/postgres@primary?ssl=true&timeout=30",
             requirements_hash="hash123",
             profile_id="default",
-            resolved_at=datetime.now(timezone.utc),
+            resolved_at=datetime.now(UTC),
         )
         assert (
             binding.connection_ref
@@ -1380,7 +1380,7 @@ class TestModelBindingEdgeCases:
             connection_ref="env://TEST",
             requirements_hash="hash123",
             profile_id="default",
-            resolved_at=datetime.now(timezone.utc),
+            resolved_at=datetime.now(UTC),
             resolution_notes=["Selected provider in region eu-west-1"],
         )
         assert "eu-west-1" in binding.resolution_notes[0]
@@ -1396,7 +1396,7 @@ class TestModelBindingEdgeCases:
             connection_ref="env://TEST",
             requirements_hash="hash123",
             profile_id="default",
-            resolved_at=datetime.now(timezone.utc),
+            resolved_at=datetime.now(UTC),
         )
         assert binding.adapter == long_adapter
 
@@ -1410,7 +1410,7 @@ class TestModelBindingEdgeCases:
             connection_ref="env://TEST",
             requirements_hash="hash123",
             profile_id="default",
-            resolved_at=datetime.now(timezone.utc),
+            resolved_at=datetime.now(UTC),
         )
         assert binding.provider_id == "12345"
 
@@ -1424,13 +1424,13 @@ class TestModelBindingEdgeCases:
             connection_ref="env://TEST",
             requirements_hash="hash123",
             profile_id="default",
-            resolved_at=datetime.now(timezone.utc),
+            resolved_at=datetime.now(UTC),
         )
         assert binding.capability == "llm.text-embedding.v1"
 
     def test_resolved_at_with_different_timezones(self) -> None:
         """Test resolved_at with UTC timezone."""
-        resolved_at = datetime(2024, 6, 15, 10, 30, 0, tzinfo=timezone.utc)
+        resolved_at = datetime(2024, 6, 15, 10, 30, 0, tzinfo=UTC)
         binding = ModelBinding(
             dependency_alias="db",
             capability="database.relational",
@@ -1442,7 +1442,7 @@ class TestModelBindingEdgeCases:
             resolved_at=resolved_at,
         )
         assert binding.resolved_at == resolved_at
-        assert binding.resolved_at.tzinfo == timezone.utc
+        assert binding.resolved_at.tzinfo == UTC
 
     def test_model_copy_creates_independent_instance(self) -> None:
         """Test that model_copy creates an independent instance."""
@@ -1454,7 +1454,7 @@ class TestModelBindingEdgeCases:
             connection_ref="env://TEST",
             requirements_hash="hash123",
             profile_id="default",
-            resolved_at=datetime.now(timezone.utc),
+            resolved_at=datetime.now(UTC),
             candidates_considered=5,
         )
         copied = binding.model_copy(update={"candidates_considered": 10})
@@ -1469,7 +1469,7 @@ class TestModelBindingSerialization:
 
     def test_model_dump_produces_dict(self) -> None:
         """Test that model_dump produces a dictionary."""
-        resolved_at = datetime.now(timezone.utc)
+        resolved_at = datetime.now(UTC)
         binding = ModelBinding(
             dependency_alias="db",
             capability="database.relational",
@@ -1500,7 +1500,7 @@ class TestModelBindingSerialization:
             connection_ref="env://TEST",
             requirements_hash="hash123",
             profile_id="default",
-            resolved_at=datetime.now(timezone.utc),
+            resolved_at=datetime.now(UTC),
         )
         json_str = binding.model_dump_json()
         assert isinstance(json_str, str)
@@ -1508,7 +1508,7 @@ class TestModelBindingSerialization:
 
     def test_model_validate_from_dict(self) -> None:
         """Test that model_validate can reconstruct from dict."""
-        resolved_at = datetime.now(timezone.utc)
+        resolved_at = datetime.now(UTC)
         data = {
             "dependency_alias": "db",
             "capability": "database.relational",

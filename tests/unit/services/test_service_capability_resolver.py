@@ -17,11 +17,12 @@ Tests cover:
 from __future__ import annotations
 
 import random
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID, uuid4
 
 import pytest
+from omnibase_core.models.requirements.model_requirement_set import ModelRequirementSet
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.bindings.model_binding import ModelBinding
@@ -29,13 +30,11 @@ from omnibase_core.models.bindings.model_resolution_result import ModelResolutio
 from omnibase_core.models.capabilities.model_capability_dependency import (
     ModelCapabilityDependency,
 )
-from omnibase_core.models.requirements.model_requirement_set import ModelRequirementSet
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.providers.model_provider_descriptor import (
     ModelProviderDescriptor,
 )
 from omnibase_core.services.service_capability_resolver import ServiceCapabilityResolver
-
 
 # =============================================================================
 # Mock Implementations
@@ -300,12 +299,12 @@ class TestResolveBasic:
         registry = MockProviderRegistry([provider])
         dependency = create_dependency()
 
-        before = datetime.now(timezone.utc)
+        before = datetime.now(UTC)
 
         # Act
         binding = resolver.resolve(dependency, registry)
 
-        after = datetime.now(timezone.utc)
+        after = datetime.now(UTC)
 
         # Assert
         assert before <= binding.resolved_at <= after
@@ -924,7 +923,9 @@ class TestResolveAll:
 
         dependencies = [
             create_dependency(alias="db", capability="database.relational"),
-            create_dependency(alias="cache", capability="cache.distributed"),  # No provider
+            create_dependency(
+                alias="cache", capability="cache.distributed"
+            ),  # No provider
         ]
 
         # Act
@@ -1084,9 +1085,10 @@ class TestAuditTrail:
         assert "00000000-0000-0000-0000-000000000001" in scores
         assert "00000000-0000-0000-0000-000000000002" in scores
         # Provider1 should have higher score (matches prefer)
-        assert scores["00000000-0000-0000-0000-000000000001"] > scores[
-            "00000000-0000-0000-0000-000000000002"
-        ]
+        assert (
+            scores["00000000-0000-0000-0000-000000000001"]
+            > scores["00000000-0000-0000-0000-000000000002"]
+        )
 
     def test_resolve_all_records_candidates_by_alias(self) -> None:
         """Test that resolve_all records which candidates were considered."""
