@@ -105,7 +105,7 @@ class TestBackendMetricsPrometheusGauges:
         backend.record_gauge("http_requests", 100.0, tags={"method": "GET"})
 
         # Trying to record with different labels should fail with a helpful message
-        with pytest.raises(ValueError, match="Label mismatch for gauge metric"):
+        with pytest.raises(ValueError, match="PROMETHEUS LABEL MISMATCH for gauge metric"):
             backend.record_gauge(
                 "http_requests", 50.0, tags={"method": "GET", "status": "200"}
             )
@@ -337,11 +337,11 @@ class TestBackendMetricsPrometheusLabelMismatchErrors:
         except ValueError as e:
             error_msg = str(e)
             # Check that the error message contains helpful information
-            assert "Label mismatch" in error_msg
+            assert "PROMETHEUS LABEL MISMATCH" in error_msg
             assert "test_metric" in error_msg
-            assert "expected labels" in error_msg
+            assert "First registration used labels:" in error_msg
             assert "Prometheus requires consistent label names" in error_msg
-            assert "To fix this issue" in error_msg
+            assert "HOW TO FIX:" in error_msg
 
     def test_counter_label_mismatch_error_message_content(self) -> None:
         """Test that counter label mismatch error contains helpful information."""
@@ -353,7 +353,7 @@ class TestBackendMetricsPrometheusLabelMismatchErrors:
             pytest.fail("Should have raised ValueError")
         except ValueError as e:
             error_msg = str(e)
-            assert "Label mismatch for counter metric" in error_msg
+            assert "PROMETHEUS LABEL MISMATCH for counter metric" in error_msg
             assert "test_counter" in error_msg
             assert "'method'" in error_msg
 
@@ -367,7 +367,7 @@ class TestBackendMetricsPrometheusLabelMismatchErrors:
             pytest.fail("Should have raised ValueError")
         except ValueError as e:
             error_msg = str(e)
-            assert "Label mismatch for histogram metric" in error_msg
+            assert "PROMETHEUS LABEL MISMATCH for histogram metric" in error_msg
             assert "test_histogram" in error_msg
 
 
@@ -455,7 +455,7 @@ class TestBackendMetricsPrometheusEnhancedLabelErrors:
             pytest.fail("Should have raised ValueError")
         except ValueError as e:
             error_msg = str(e)
-            assert "Missing labels:" in error_msg
+            assert "Missing labels (required but not provided):" in error_msg
             assert "'b'" in error_msg
 
     def test_error_shows_extra_labels(self) -> None:
@@ -468,7 +468,7 @@ class TestBackendMetricsPrometheusEnhancedLabelErrors:
             pytest.fail("Should have raised ValueError")
         except ValueError as e:
             error_msg = str(e)
-            assert "Unexpected labels:" in error_msg
+            assert "Extra labels (provided but not expected):" in error_msg
             assert "'b'" in error_msg
 
     def test_error_shows_both_missing_and_extra(self) -> None:
@@ -481,9 +481,9 @@ class TestBackendMetricsPrometheusEnhancedLabelErrors:
             pytest.fail("Should have raised ValueError")
         except ValueError as e:
             error_msg = str(e)
-            assert "Missing labels:" in error_msg
+            assert "Missing labels (required but not provided):" in error_msg
             assert "'b'" in error_msg
-            assert "Unexpected labels:" in error_msg
+            assert "Extra labels (provided but not expected):" in error_msg
             assert "'c'" in error_msg
 
 

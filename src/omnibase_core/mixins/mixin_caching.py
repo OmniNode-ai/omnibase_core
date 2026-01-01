@@ -171,6 +171,7 @@ class MixinCaching:
         *args: Any,
         backend: ProtocolCacheBackend | None = None,
         default_ttl_seconds: int | None = None,
+        max_consecutive_failures: int = 3,
         **kwargs: Any,
     ) -> None:
         """
@@ -182,6 +183,8 @@ class MixinCaching:
                 If None, only L1 in-memory caching is used.
             default_ttl_seconds: Default TTL for cache entries. If None,
                 entries don't expire unless explicitly set.
+            max_consecutive_failures: Number of consecutive L2 failures before
+                attempting backend cleanup. Defaults to 3.
             **kwargs: Keyword arguments passed to parent class.
         """
         super().__init__(*args, **kwargs)
@@ -191,6 +194,9 @@ class MixinCaching:
         # L2 backend (optional)
         self._cache_backend: ProtocolCacheBackend | None = backend
         self._default_ttl_seconds = default_ttl_seconds
+        # Failure tracking for cleanup triggering
+        self._consecutive_failures = 0
+        self._max_consecutive_failures = max_consecutive_failures
 
     def generate_cache_key(self, data: Any) -> str:
         """
@@ -295,6 +301,106 @@ class MixinCaching:
         # If no is_connected method, assume connected if backend exists
         return True
 
+    def _reset_failure_count(self) -> None:
+        """Reset consecutive failure counter after successful operation."""
+        self._consecutive_failures = 0
+
+    def _increment_failure_count(self) -> bool:
+        """
+        Increment failure counter and check if cleanup is needed.
+
+        Returns:
+            True if cleanup should be triggered (exceeded max failures).
+        """
+        self._consecutive_failures += 1
+        return self._consecutive_failures >= self._max_consecutive_failures
+
+    async def _attempt_backend_cleanup(self) -> None:
+        """
+        Attempt to clean up the L2 backend connection after repeated failures.
+
+        This method attempts graceful cleanup of the backend connection pool
+        to release resources and reset connection state. It is called after
+        consecutive failures exceed the configured threshold.
+
+        The cleanup is best-effort:
+        - If the backend has a `close()` method, it will be called
+        - Any errors during cleanup are logged and suppressed
+        - The backend reference is preserved (not set to None) to allow
+          potential reconnection on next operation
+
+        Note:
+            This method resets the failure counter regardless of cleanup success
+            to prevent infinite cleanup loops.
+        """
+        if self._cache_backend is None:
+            return
+
+        logger.warning(
+            "Attempting L2 cache backend cleanup after %d consecutive failures",
+            self._consecutive_failures,
+        )
+
+        # Reset failure count to prevent repeated cleanup attempts
+        self._reset_failure_count()
+
+        # Attempt graceful cleanup if backend supports it
+        if hasattr(self._cache_backend, "close"):
+            try:
+                await self._cache_backend.close()  # type: ignore[union-attr]
+                logger.info("L2 cache backend cleanup completed successfully")
+            except Exception as e:
+                # Log but suppress cleanup errors - we're already in error recovery
+                error = self._wrap_cache_error(e, "cleanup")
+                logger.warning(
+                    "L2 cache backend cleanup failed: %s (exception type: %s)",
+                    error,
+                    type(e).__name__,
+                )
+
+    async def _handle_l2_error(
+        self,
+        exception: Exception,
+        operation: str,
+        cache_key: str | None = None,
+    ) -> None:
+        """
+        Handle L2 cache error with proper logging and cleanup triggering.
+
+        This method:
+        1. Wraps the exception in ModelOnexError
+        2. Logs the error appropriately
+        3. Increments failure counter
+        4. Triggers backend cleanup if failure threshold exceeded
+
+        Args:
+            exception: The caught exception
+            operation: Description of the operation that failed
+            cache_key: The cache key involved, if applicable
+        """
+        error = self._wrap_cache_error(exception, operation, cache_key)
+
+        # Log with appropriate detail level
+        if cache_key is not None:
+            logger.warning(
+                "L2 cache %s failed for key '%s': %s (exception type: %s)",
+                operation,
+                cache_key,
+                error,
+                type(exception).__name__,
+            )
+        else:
+            logger.warning(
+                "L2 cache %s failed: %s (exception type: %s)",
+                operation,
+                error,
+                type(exception).__name__,
+            )
+
+        # Check if cleanup is needed after this failure
+        if self._increment_failure_count():
+            await self._attempt_backend_cleanup()
+
     def _wrap_cache_error(
         self,
         exception: Exception,
@@ -387,7 +493,11 @@ class MixinCaching:
                     # Populate L1 from L2 hit
                     # Note: We don't know the original TTL, so use default
                     self._set_l1(cache_key, l2_value, self._default_ttl_seconds)
+                    # Reset failure count on successful L2 operation
+                    self._reset_failure_count()
                     return l2_value
+                # L2 miss is not a failure - reset count on successful communication
+                self._reset_failure_count()
             except (
                 ConnectionError,
                 TimeoutError,
@@ -396,25 +506,13 @@ class MixinCaching:
                 TypeError,
                 AttributeError,
             ) as e:
-                # Graceful degradation - log structured error and continue with L1 miss
+                # Graceful degradation with cleanup triggering
                 # Catches: network errors, serialization issues, backend interface problems
-                error = self._wrap_cache_error(e, "get", cache_key)
-                logger.warning(
-                    "L2 cache get failed for key '%s': %s",
-                    cache_key,
-                    error,
-                )
+                await self._handle_l2_error(e, "get", cache_key)
             except Exception as e:
                 # Safety net for truly unexpected exceptions from backend implementations
                 # All expected exceptions should be caught above
-                error = self._wrap_cache_error(e, "get", cache_key)
-                logger.warning(
-                    "L2 cache get failed with unexpected error for key '%s': %s "
-                    "(exception type: %s)",
-                    cache_key,
-                    error,
-                    type(e).__name__,
-                )
+                await self._handle_l2_error(e, "get", cache_key)
 
         return None
 
@@ -464,6 +562,8 @@ class MixinCaching:
 
             try:
                 await self._cache_backend.set(cache_key, value, ttl)
+                # Reset failure count on successful L2 operation
+                self._reset_failure_count()
             except (
                 ConnectionError,
                 TimeoutError,
@@ -472,25 +572,13 @@ class MixinCaching:
                 TypeError,
                 AttributeError,
             ) as e:
-                # Graceful degradation - log structured error and continue with L1 only
+                # Graceful degradation with cleanup triggering
                 # Catches: network errors, serialization issues, backend interface problems
-                error = self._wrap_cache_error(e, "set", cache_key)
-                logger.warning(
-                    "L2 cache set failed for key '%s': %s",
-                    cache_key,
-                    error,
-                )
+                await self._handle_l2_error(e, "set", cache_key)
             except Exception as e:
                 # Safety net for truly unexpected exceptions from backend implementations
                 # All expected exceptions should be caught above
-                error = self._wrap_cache_error(e, "set", cache_key)
-                logger.warning(
-                    "L2 cache set failed with unexpected error for key '%s': %s "
-                    "(exception type: %s)",
-                    cache_key,
-                    error,
-                    type(e).__name__,
-                )
+                await self._handle_l2_error(e, "set", cache_key)
 
     async def invalidate_cache(self, cache_key: str) -> None:
         """
@@ -513,6 +601,8 @@ class MixinCaching:
 
             try:
                 await self._cache_backend.delete(cache_key)
+                # Reset failure count on successful L2 operation
+                self._reset_failure_count()
             except (
                 ConnectionError,
                 TimeoutError,
@@ -521,25 +611,13 @@ class MixinCaching:
                 TypeError,
                 AttributeError,
             ) as e:
-                # Graceful degradation - log structured error and continue
+                # Graceful degradation with cleanup triggering
                 # Catches: network errors, serialization issues, backend interface problems
-                error = self._wrap_cache_error(e, "delete", cache_key)
-                logger.warning(
-                    "L2 cache delete failed for key '%s': %s",
-                    cache_key,
-                    error,
-                )
+                await self._handle_l2_error(e, "delete", cache_key)
             except Exception as e:
                 # Safety net for truly unexpected exceptions from backend implementations
                 # All expected exceptions should be caught above
-                error = self._wrap_cache_error(e, "delete", cache_key)
-                logger.warning(
-                    "L2 cache delete failed with unexpected error for key '%s': %s "
-                    "(exception type: %s)",
-                    cache_key,
-                    error,
-                    type(e).__name__,
-                )
+                await self._handle_l2_error(e, "delete", cache_key)
 
     async def clear_cache(self) -> None:
         """Clear all cache entries from both L1 and L2."""
@@ -554,6 +632,8 @@ class MixinCaching:
 
             try:
                 await self._cache_backend.clear()
+                # Reset failure count on successful L2 operation
+                self._reset_failure_count()
             except (
                 ConnectionError,
                 TimeoutError,
@@ -562,19 +642,13 @@ class MixinCaching:
                 TypeError,
                 AttributeError,
             ) as e:
-                # Graceful degradation - log structured error and continue
+                # Graceful degradation with cleanup triggering
                 # Catches: network errors, serialization issues, backend interface problems
-                error = self._wrap_cache_error(e, "clear")
-                logger.warning("L2 cache clear failed: %s", error)
+                await self._handle_l2_error(e, "clear")
             except Exception as e:
                 # Safety net for truly unexpected exceptions from backend implementations
                 # All expected exceptions should be caught above
-                error = self._wrap_cache_error(e, "clear")
-                logger.warning(
-                    "L2 cache clear failed with unexpected error: %s (exception type: %s)",
-                    error,
-                    type(e).__name__,
-                )
+                await self._handle_l2_error(e, "clear")
 
     def get_cache_stats(self) -> TypedDictCacheStats:
         """

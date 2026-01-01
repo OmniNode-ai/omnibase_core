@@ -622,38 +622,47 @@ class BackendMetricsPrometheus:
 
         # Format the label sets for display
         expected_str = (
-            f"({', '.join(repr(label) for label in sorted(expected_labels))})"
+            f"[{', '.join(repr(label) for label in sorted(expected_labels))}]"
             if expected_labels
-            else "(no labels)"
+            else "[no labels]"
         )
         provided_str = (
-            f"({', '.join(repr(label) for label in sorted(provided_labels))})"
+            f"[{', '.join(repr(label) for label in sorted(provided_labels))}]"
             if provided_labels
-            else "(no labels)"
+            else "[no labels]"
         )
 
-        # Build the error message
-        parts = [
-            f"Label mismatch for {metric_type.lower()} metric '{name}': "
-            f"expected labels {expected_str}, got {provided_str}."
+        # Build the error message with clear structure
+        lines = [
+            f"PROMETHEUS LABEL MISMATCH for {metric_type.lower()} metric '{name}'",
+            "",
+            f"  First registration used labels: {expected_str}",
+            f"  This call provided labels:      {provided_str}",
         ]
 
         # Add specific difference details
         if missing_labels:
             missing_str = ", ".join(repr(label) for label in sorted(missing_labels))
-            parts.append(f"Missing labels: {missing_str}.")
+            lines.append(f"  Missing labels (required but not provided): {missing_str}")
         if extra_labels:
             extra_str = ", ".join(repr(label) for label in sorted(extra_labels))
-            parts.append(f"Unexpected labels: {extra_str}.")
+            lines.append(f"  Extra labels (provided but not expected): {extra_str}")
 
-        # Add guidance
-        parts.append(
-            "Prometheus requires consistent label names across all recordings of a metric. "
-            "To fix this issue: ensure all calls to record this metric use the same set of "
-            "label keys. If you need different labels, use a different metric name."
-        )
+        # Add guidance section
+        lines.extend([
+            "",
+            "HOW TO FIX:",
+            "  1. Find all places where this metric is recorded",
+            "  2. Ensure ALL calls use the EXACT same set of label keys",
+            "  3. If different labels are needed, use a different metric name",
+            "",
+            "WHY THIS HAPPENS:",
+            "  Prometheus requires consistent label names for each metric.",
+            "  The first call to record a metric defines its label schema.",
+            "  All subsequent calls must use the same label keys (values can differ).",
+        ])
 
-        return " ".join(parts)
+        return "\n".join(lines)
 
     def _track_tag_combination(
         self,

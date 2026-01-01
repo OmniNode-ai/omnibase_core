@@ -61,30 +61,105 @@ __all__ = [
     "sanitize_error_message",
 ]
 
+import importlib
+import importlib.util
 import json
 import logging
 import re
+from types import ModuleType
 from typing import TYPE_CHECKING
 from urllib.parse import urlparse, urlunparse
 
-# Check if redis is available (optional dependency)
-try:
-    import redis.asyncio as aioredis
-    from redis.asyncio.connection import ConnectionPool
-    from redis.exceptions import RedisError
-
-    REDIS_AVAILABLE = True
-except ImportError:
-    aioredis = None  # type: ignore[assignment]
-    ConnectionPool = None  # type: ignore[assignment,misc]
-    RedisError = Exception  # type: ignore[assignment,misc]
-    REDIS_AVAILABLE = False
-
+# Type-only imports for static analysis (ADR-005 compliant)
+# These are only evaluated by type checkers, not at runtime
 if TYPE_CHECKING:
     from redis.asyncio import Redis
     from redis.asyncio.connection import ConnectionPool as ConnectionPoolType
 
 logger = logging.getLogger(__name__)
+
+
+def _check_redis_available() -> bool:
+    """Check if redis package is available without violating ADR-005.
+
+    Uses importlib.util.find_spec to check module availability without
+    actually importing the transport library at module level.
+
+    Returns:
+        True if redis.asyncio is importable, False otherwise.
+    """
+    try:
+        spec = importlib.util.find_spec("redis.asyncio")
+        return spec is not None
+    except (ImportError, ModuleNotFoundError, ValueError):
+        return False
+
+
+# Check if redis is available (optional dependency)
+REDIS_AVAILABLE = _check_redis_available()
+
+# Cached module references (lazily loaded via importlib)
+_redis_module: ModuleType | None = None
+_redis_exceptions_module: ModuleType | None = None
+
+
+def _get_redis_module() -> ModuleType:
+    """Lazy-load and cache redis.asyncio module.
+
+    Uses importlib.import_module to load the redis library at runtime,
+    avoiding direct import statements that would violate ADR-005.
+    The module is cached after first load.
+
+    Returns:
+        The redis.asyncio module.
+
+    Raises:
+        RuntimeError: If redis package is not installed.
+    """
+    global _redis_module
+    if _redis_module is None:
+        if not REDIS_AVAILABLE:
+            raise RuntimeError(
+                "Redis package not installed. Install with: poetry install -E cache"
+            )
+        _redis_module = importlib.import_module("redis.asyncio")
+    return _redis_module
+
+
+def _get_connection_pool_class() -> type:
+    """Get the ConnectionPool class from redis.asyncio.connection.
+
+    Returns:
+        The ConnectionPool class.
+
+    Raises:
+        RuntimeError: If redis package is not installed.
+    """
+    connection_module = importlib.import_module("redis.asyncio.connection")
+    return connection_module.ConnectionPool  # type: ignore[no-any-return]
+
+
+def _get_redis_exceptions() -> ModuleType:
+    """Lazy-load and cache redis.exceptions module.
+
+    Returns:
+        The redis.exceptions module.
+    """
+    global _redis_exceptions_module
+    if _redis_exceptions_module is None:
+        _redis_exceptions_module = importlib.import_module("redis.exceptions")
+    return _redis_exceptions_module
+
+
+def _get_redis_error_class() -> type[Exception]:
+    """Get the RedisError exception class, or Exception as fallback.
+
+    Returns:
+        RedisError class if redis is available, otherwise Exception.
+    """
+    if REDIS_AVAILABLE:
+        return _get_redis_exceptions().RedisError  # type: ignore[no-any-return]
+    return Exception
 
 
 def sanitize_redis_url(url: str) -> str:
@@ -340,19 +415,22 @@ class BackendCacheRedis:
         if self._connected:
             return
 
-        # Type guard: verify redis is available at runtime
-        if aioredis is None or ConnectionPool is None:
+        # Get redis module lazily (ADR-005 compliant)
+        if not REDIS_AVAILABLE:
             raise RuntimeError(
                 "Redis package not installed. Install with: poetry install -E cache"
             )
 
+        redis_module = _get_redis_module()
+        RedisError = _get_redis_error_class()
+
         try:
-            self._pool = aioredis.ConnectionPool.from_url(
+            self._pool = redis_module.ConnectionPool.from_url(
                 self._url,
                 max_connections=self._max_connections,
                 decode_responses=True,
             )
-            self._client = aioredis.Redis(connection_pool=self._pool)
+            self._client = redis_module.Redis(connection_pool=self._pool)
             # Verify connection - assert for type narrowing
             assert self._client is not None  # Narrow type for pyright
             await self._client.ping()
@@ -441,6 +519,8 @@ class BackendCacheRedis:
         # Type narrowing: _validate_connection ensures _client is not None
         assert self._client is not None
 
+        RedisError = _get_redis_error_class()
+
         try:
             prefixed_key = self._make_key(key)
             data = await self._client.get(prefixed_key)
@@ -452,7 +532,9 @@ class BackendCacheRedis:
             logger.warning("Failed to deserialize cache value for key '%s': %s", key, e)
             return None
         except (RedisError, ConnectionError, TimeoutError, OSError) as e:
-            logger.warning("Redis get failed for key '%s': %s", key, e)
+            logger.warning(
+                "Redis get failed for key '%s': %s", key, sanitize_error_message(str(e))
+            )
             return None
 
     async def set(
@@ -484,6 +566,8 @@ class BackendCacheRedis:
         if ttl is not None and ttl <= 0:
             return
 
+        RedisError = _get_redis_error_class()
+
         try:
             prefixed_key = self._make_key(key)
             data = json.dumps(value, default=str)
@@ -495,7 +579,9 @@ class BackendCacheRedis:
         except (TypeError, ValueError) as e:
             logger.warning("Failed to serialize cache value for key '%s': %s", key, e)
         except (RedisError, ConnectionError, TimeoutError, OSError) as e:
-            logger.warning("Redis set failed for key '%s': %s", key, e)
+            logger.warning(
+                "Redis set failed for key '%s': %s", key, sanitize_error_message(str(e))
+            )
 
     async def delete(self, key: str) -> None:
         """
@@ -509,43 +595,107 @@ class BackendCacheRedis:
         # Type narrowing: _validate_connection ensures _client is not None
         assert self._client is not None
 
+        RedisError = _get_redis_error_class()
+
         try:
             prefixed_key = self._make_key(key)
             await self._client.delete(prefixed_key)
         except (RedisError, ConnectionError, TimeoutError, OSError) as e:
-            logger.warning("Redis delete failed for key '%s': %s", key, e)
+            logger.warning(
+                "Redis delete failed for key '%s': %s",
+                key,
+                sanitize_error_message(str(e)),
+            )
 
-    async def clear(self) -> None:
+    # Default batch size for SCAN operations
+    SCAN_BATCH_SIZE: int = 100
+
+    async def clear(self, batch_size: int | None = None) -> None:
         """
         Clear all cache entries with the configured prefix.
 
+        Performance Warning:
+            When a prefix is configured, this method uses Redis SCAN to find
+            and delete matching keys. SCAN is O(N) where N is the total number
+            of keys in the database (not just matching keys). For large datasets
+            (100k+ keys), this operation may take several seconds or longer.
+
+            Performance characteristics:
+            - SCAN iterates through ALL keys in the database
+            - Each batch requires a round-trip to Redis
+            - Deletion is batched but still O(N) for matching keys
+
+            Alternatives for large datasets:
+            - Use a dedicated Redis database and call FLUSHDB (no prefix)
+            - Use key expiration (TTL) instead of manual clearing
+            - Consider Redis keyspace notifications for cache invalidation
+
+        Args:
+            batch_size: Number of keys to scan per iteration. Higher values
+                reduce round-trips but increase memory usage per batch.
+                Defaults to SCAN_BATCH_SIZE (100).
+
         Warning:
-            This scans for keys with the prefix and deletes them.
-            For large caches, consider FLUSHDB on a dedicated database.
+            Without a prefix, this calls FLUSHDB which deletes ALL keys
+            in the current database instantly. Use with caution in shared
+            Redis instances.
         """
         if not self._validate_connection():
             return
         # Type narrowing: _validate_connection ensures _client is not None
         assert self._client is not None
 
+        effective_batch_size = batch_size if batch_size is not None else self.SCAN_BATCH_SIZE
+        RedisError = _get_redis_error_class()
+
         try:
             if self._prefix:
                 # Scan and delete keys with prefix
+                # Note: SCAN is O(N) across ALL keys, not just matching ones
                 pattern = f"{self._prefix}*"
                 cursor = 0
+                total_deleted = 0
+                iterations = 0
+
+                logger.debug(
+                    "Starting Redis clear with prefix '%s' (batch_size=%d). "
+                    "This may be slow for large datasets.",
+                    self._prefix,
+                    effective_batch_size,
+                )
+
                 while True:
                     cursor, keys = await self._client.scan(
-                        cursor=cursor, match=pattern, count=100
+                        cursor=cursor, match=pattern, count=effective_batch_size
                     )
                     if keys:
                         await self._client.delete(*keys)
+                        total_deleted += len(keys)
+                    iterations += 1
                     if cursor == 0:
                         break
+
+                # Warn if the operation required many iterations (indicates large dataset)
+                if iterations > 10:
+                    logger.warning(
+                        "Redis clear completed after %d iterations (%d keys deleted). "
+                        "Consider using a dedicated database with FLUSHDB for better "
+                        "performance, or increase batch_size.",
+                        iterations,
+                        total_deleted,
+                    )
+                else:
+                    logger.debug(
+                        "Redis clear completed: %d keys deleted in %d iterations",
+                        total_deleted,
+                        iterations,
+                    )
             else:
                 # No prefix - flush entire database
+                logger.debug("Flushing entire Redis database (no prefix configured)")
                 await self._client.flushdb()
         except (RedisError, ConnectionError, TimeoutError, OSError) as e:
-            logger.warning("Redis clear failed: %s", e)
+            logger.warning("Redis clear failed: %s", sanitize_error_message(str(e)))
 
     async def exists(self, key: str) -> bool:
         """
@@ -563,12 +713,18 @@ class BackendCacheRedis:
         # Type narrowing: _validate_connection ensures _client is not None
         assert self._client is not None
 
+        RedisError = _get_redis_error_class()
+
         try:
             prefixed_key = self._make_key(key)
             result = await self._client.exists(prefixed_key)
             return bool(result > 0)
         except (RedisError, ConnectionError, TimeoutError, OSError) as e:
-            logger.warning("Redis exists check failed for key '%s': %s", key, e)
+            logger.warning(
+                "Redis exists check failed for key '%s': %s",
+                key,
+                sanitize_error_message(str(e)),
+            )
             return False
 
     @property
