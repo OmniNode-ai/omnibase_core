@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from pydantic import Field, ValidationError, model_validator
+from pydantic import Field, model_validator
 
+from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 """
@@ -163,7 +164,9 @@ class ModelConnectionSecurity(BaseModel):
             return True
         except ModelOnexError:
             raise  # Re-raise without double-wrapping
-        except (TypeError, ValidationError, ValueError) as e:
+        except PYDANTIC_MODEL_ERRORS as e:
+            # PYDANTIC_MODEL_ERRORS covers: AttributeError, TypeError, ValidationError, ValueError
+            # These are raised by setattr with Pydantic validate_assignment=True
             raise ModelOnexError(
                 message=f"Operation failed: {e}",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,

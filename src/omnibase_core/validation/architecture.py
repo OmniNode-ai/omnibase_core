@@ -142,7 +142,7 @@ def validate_one_model_per_file(file_path: Path) -> list[str]:
                 "offset": e.offset,
             },
         )
-        logger.debug(f"Syntax error: {wrapped_error.message}")
+        logger.exception(f"Syntax error: {wrapped_error.message}")
         errors.append(wrapped_error.message)
     except (UnicodeDecodeError, ValueError) as e:
         # Handle content parsing errors: invalid source content, encoding issues
@@ -154,7 +154,7 @@ def validate_one_model_per_file(file_path: Path) -> list[str]:
                 "exception_type": type(e).__name__,
             },
         )
-        logger.debug(f"Parse error: {wrapped_error.message}")
+        logger.exception(f"Parse error: {wrapped_error.message}")
         errors.append(wrapped_error.message)
     except OSError as e:
         # Handle file system errors: permission denied, file not found
@@ -166,7 +166,7 @@ def validate_one_model_per_file(file_path: Path) -> list[str]:
                 "exception_type": type(e).__name__,
             },
         )
-        logger.debug(f"File read error: {wrapped_error.message}")
+        logger.exception(f"File read error: {wrapped_error.message}")
         errors.append(wrapped_error.message)
     except TypeError as e:
         # Handle malformed AST input (e.g., wrong type passed to ast.parse)
@@ -178,7 +178,7 @@ def validate_one_model_per_file(file_path: Path) -> list[str]:
                 "exception_type": type(e).__name__,
             },
         )
-        logger.debug(f"Type error: {wrapped_error.message}")
+        logger.exception(f"Type error: {wrapped_error.message}")
         errors.append(wrapped_error.message)
     except RecursionError:
         # Handle deeply nested code that exceeds Python's recursion limit
@@ -190,7 +190,7 @@ def validate_one_model_per_file(file_path: Path) -> list[str]:
                 "exception_type": "RecursionError",
             },
         )
-        logger.debug(f"Recursion error: {wrapped_error.message}")
+        logger.exception(f"Recursion error: {wrapped_error.message}")
         errors.append(wrapped_error.message)
     except MemoryError:
         # Handle extremely large files that exhaust memory during AST parsing
@@ -202,7 +202,7 @@ def validate_one_model_per_file(file_path: Path) -> list[str]:
                 "exception_type": "MemoryError",
             },
         )
-        logger.debug(f"Memory error: {wrapped_error.message}")
+        logger.exception(f"Memory error: {wrapped_error.message}")
         errors.append(wrapped_error.message)
 
     return errors
