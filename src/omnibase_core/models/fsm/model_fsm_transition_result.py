@@ -17,6 +17,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.models.reducer.model_intent import ModelIntent
 from omnibase_core.types.type_serializable_value import SerializableValue
+from omnibase_core.utils.util_validators import convert_list_to_tuple
 
 
 class ModelFSMTransitionResult(BaseModel):
@@ -95,9 +96,7 @@ class ModelFSMTransitionResult(BaseModel):
         cls, v: list[object] | tuple[object, ...] | object
     ) -> tuple[object, ...]:
         """Convert list of intents to tuple for deep immutability."""
-        if isinstance(v, list):
-            return tuple(v)
-        return v  # type: ignore[return-value]
+        return convert_list_to_tuple(v)
 
     @field_validator("metadata", mode="before")
     @classmethod
@@ -113,6 +112,10 @@ class ModelFSMTransitionResult(BaseModel):
 
         Keys are sorted for deterministic ordering, which ensures consistent
         hashing and comparison of model instances.
+
+        Note: This validator has custom logic that differs from the standard
+        convert_dict_to_frozen_pairs utility - it re-sorts existing tuples
+        to guarantee deterministic ordering even for pre-validated data.
         """
         if v is None:
             return ()
