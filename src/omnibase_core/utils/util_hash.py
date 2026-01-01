@@ -15,7 +15,6 @@ Security Notes:
 """
 
 import hashlib
-from typing import Any
 from uuid import UUID
 
 
@@ -56,7 +55,7 @@ def deterministic_hash_int(value: str) -> int:
     return int(hashlib.sha256(value.encode()).hexdigest(), 16)
 
 
-def deterministic_cache_key(*args: Any, **kwargs: Any) -> str:
+def deterministic_cache_key(*args: object, **kwargs: object) -> str:
     """Generate a deterministic cache key from arguments.
 
     Creates a stable cache key by hashing the string representation
