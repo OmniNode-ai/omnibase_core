@@ -119,6 +119,30 @@ class ManifestGenerator:
         Added as part of Manifest Generation & Observability (OMN-1113)
     """
 
+    __slots__ = (
+        "_manifest_id",
+        "_started_at",
+        "_node_identity",
+        "_contract_identity",
+        "_correlation_id",
+        "_parent_manifest_id",
+        "_activated_capabilities",
+        "_skipped_capabilities",
+        "_phases",
+        "_resolved_order",
+        "_dependency_edges",
+        "_ordering_policy",
+        "_ordering_rationale",
+        "_hook_traces",
+        "_pending_hooks",
+        "_failures",
+        "_events",
+        "_intents",
+        "_projections",
+        "_actions",
+        "_phase_durations",
+    )
+
     def __init__(
         self,
         node_identity: ModelNodeIdentity,
