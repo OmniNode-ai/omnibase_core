@@ -44,7 +44,7 @@ import asyncio
 import logging
 import threading
 import time
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING
 
 from omnibase_core.decorators.error_handling import standard_error_handling
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -953,11 +953,10 @@ class EnvelopeRouter(ProtocolNodeRuntime):
 
             # Validate handler return type to harden against misbehaving handlers.
             # Handlers MUST return ModelOnexEnvelope per ProtocolHandler contract.
-            # Note: We cast to Any for runtime validation because mypy knows
-            # ProtocolHandler.execute() is typed to return ModelOnexEnvelope.
-            # However, runtime validation is essential for defensive programming
-            # against misbehaving handler implementations that violate the contract.
-            response_unchecked: Any = cast(Any, response)
+            # We use object typing for runtime validation: object is a supertype of
+            # all types, allowing isinstance checks while avoiding Any.
+            # This defensive programming catches misbehaving handler implementations.
+            response_unchecked: object = response
             if not isinstance(response_unchecked, ModelOnexEnvelope):
                 logger.warning(
                     "Handler returned invalid type %s instead of ModelOnexEnvelope "

@@ -6,7 +6,6 @@ formatting logic from ModelCliResult to maintain separation of concerns.
 """
 
 import json
-from typing import Any
 
 from omnibase_core.models.cli.model_cli_output_data import ModelCliOutputData
 
@@ -79,7 +78,7 @@ class UtilCliResultFormatter:
     def format_error(
         error_message: str | None,
         error_details: str | None = None,
-        validation_errors: list[Any] | None = None,
+        validation_errors: list[object] | None = None,
     ) -> str:
         """
         Format error information for display.

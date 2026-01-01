@@ -50,11 +50,15 @@ import warnings
 from collections.abc import Mapping
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import TimeoutError as FuturesTimeoutError
-from typing import Any
+
+from pydantic import BaseModel
 
 from omnibase_core.types.typed_dict_mapping_result import MappingResultDict
 
 logger = logging.getLogger(__name__)
+
+# Type alias for pipeline data - can be dict, Pydantic model, or object with attributes
+PipelineDataType = dict[str, object] | BaseModel | object
 
 from omnibase_core.enums.enum_compute_step_type import EnumComputeStepType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -119,9 +123,9 @@ from omnibase_core.utils.compute_path_resolver import resolve_pipeline_path
 
 def resolve_mapping_path(
     path: str,
-    input_data: Any,  # Any: accepts dict, Pydantic models, or other objects with attributes
+    input_data: PipelineDataType,
     step_results: dict[str, ModelComputeStepResult],
-) -> Any:  # Any: return type depends on the path being resolved
+) -> object:
     """
     Resolve a v1.0 mapping path expression to its value.
 
@@ -187,11 +191,9 @@ def resolve_mapping_path(
 
 def execute_mapping_step(
     step: ModelComputePipelineStep,
-    input_data: Any,  # Any: accepts dict, Pydantic models, or other objects with attributes
+    input_data: PipelineDataType,
     step_results: dict[str, ModelComputeStepResult],
-) -> (
-    MappingResultDict
-):  # Returns dict with field mappings; values are path-resolved objects
+) -> MappingResultDict:
     """
     Execute a mapping step, building output from path expressions.
 
@@ -233,13 +235,13 @@ def execute_mapping_step(
     return result
 
 
-def execute_validation_step(
+def execute_validation_step[ValidationT](
     step: ModelComputePipelineStep,
-    data: Any,  # Any: validation accepts any data type for schema checking
+    data: ValidationT,
     schema_registry: (
         Mapping[str, object] | None
     ) = None,  # schema definitions vary; reserved for v1.1
-) -> Any:  # Any: returns input unchanged (v1.0 pass-through)
+) -> ValidationT:
     """
     Execute a validation step against a schema.
 
@@ -302,12 +304,10 @@ def execute_validation_step(
 
 def execute_pipeline_step(
     step: ModelComputePipelineStep,
-    current_data: Any,  # Any: data flows through pipeline with varying types per step
-    input_data: Any,  # Any: original input preserved for mapping step references
+    current_data: PipelineDataType,
+    input_data: PipelineDataType,
     step_results: dict[str, ModelComputeStepResult],
-) -> (
-    Any
-):  # Any: output type depends on step_type (transformation, mapping, or validation)
+) -> PipelineDataType | MappingResultDict:
     """
     Execute a single pipeline step and return the result.
 
@@ -366,7 +366,7 @@ def execute_pipeline_step(
 
 def _execute_pipeline_steps(
     contract: ModelComputeSubcontract,
-    input_data: Any,  # Any: pipeline input can be any JSON-compatible or Pydantic model
+    input_data: PipelineDataType,
     context: ModelComputeExecutionContext,
     start_time: float,
 ) -> ModelComputePipelineResult:
@@ -570,7 +570,7 @@ def _execute_pipeline_steps(
 
 def execute_compute_pipeline(
     contract: ModelComputeSubcontract,
-    input_data: Any,  # Any: pipeline input can be any JSON-compatible or Pydantic model
+    input_data: PipelineDataType,
     context: ModelComputeExecutionContext,
 ) -> ModelComputePipelineResult:
     """

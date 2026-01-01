@@ -82,6 +82,15 @@ from .json_types import (
     ToolParameterValue,
 )
 
+# Compute pipeline type aliases (for pipeline data flows)
+from .type_compute_pipeline import (
+    PathResolvedValue,
+    PipelineData,
+    PipelineDataDict,
+    StepResultMapping,
+    TransformInputT,
+)
+
 # Effect result type aliases (centralized to avoid primitive soup unions)
 from .type_effect_result import DbParamType, EffectResultType
 
@@ -368,6 +377,7 @@ from .typed_dict_workflow_context import TypedDictWorkflowContext
 from .typed_dict_workflow_outputs import TypedDictWorkflowOutputsDict
 from .typed_dict_workflow_state import TypedDictWorkflowState
 from .typed_dict_yaml_dump_kwargs import TypedDictYamlDumpKwargs
+from .typed_dict_yaml_dump_options import TypedDictYamlDumpOptions
 
 # Utility functions
 from .util_datetime_parser import parse_datetime
@@ -391,6 +401,12 @@ __all__ = [
     # Schema type aliases
     "SchemaDict",
     "StepOutputs",
+    # Compute pipeline type aliases
+    "PathResolvedValue",
+    "PipelineData",
+    "PipelineDataDict",
+    "StepResultMapping",
+    "TransformInputT",
     # JSON type aliases
     "JsonPrimitive",
     "JsonType",
@@ -613,6 +629,7 @@ __all__ = [
     "MappingResultDict",
     "TypedDictPathResolutionContext",
     "TypedDictYamlDumpKwargs",
+    "TypedDictYamlDumpOptions",
     # Metadata tool collection types
     "TypedDictCollectionMetadata",
     "TypedDictCollectionValidation",

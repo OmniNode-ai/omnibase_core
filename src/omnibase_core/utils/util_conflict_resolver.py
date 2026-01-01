@@ -41,7 +41,6 @@ See Also:
 """
 
 from collections.abc import Callable
-from typing import Any
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_reducer_types import EnumConflictResolution
@@ -80,7 +79,7 @@ class UtilConflictResolver:
     def __init__(
         self,
         strategy: EnumConflictResolution,
-        custom_resolver: Callable[..., Any] | None = None,
+        custom_resolver: Callable[..., object] | None = None,
     ):
         """
         Initialize conflict resolver.
@@ -95,10 +94,10 @@ class UtilConflictResolver:
 
     def resolve(
         self,
-        existing_value: Any,
-        new_value: Any,
+        existing_value: object,
+        new_value: object,
         key: str | None = None,
-    ) -> Any:
+    ) -> object:
         """
         Resolve conflict between existing and new values.
 
@@ -136,7 +135,7 @@ class UtilConflictResolver:
         # Default to last wins
         return new_value
 
-    def _merge_values(self, existing: Any, new: Any) -> Any:
+    def _merge_values(self, existing: object, new: object) -> object:
         """
         Attempt to merge two values intelligently.
 
@@ -169,7 +168,7 @@ class UtilConflictResolver:
         return new
 
 
-def __getattr__(name: str) -> Any:
+def __getattr__(name: str) -> type[UtilConflictResolver]:
     """
     Lazy loading for deprecated aliases per OMN-1071 renaming.
 

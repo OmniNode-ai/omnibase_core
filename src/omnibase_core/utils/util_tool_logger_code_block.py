@@ -14,20 +14,17 @@ Safe Runtime Imports (OK to import at module level):
 """
 
 
-from typing import Any
-
-
 class ToolLoggerCodeBlock:
     """Tool logger code block for performance tracking."""
 
     def __init__(  # stub-ok: Minimal logging service provides pass-through implementation
-        self, *args: Any, **kwargs: Any
+        self, *args: object, **kwargs: object
     ) -> None:
         """Initialize tool logger code block."""
 
-    def __enter__(self) -> Any:
+    def __enter__(self) -> ToolLoggerCodeBlock:
         """Enter context manager."""
         return self
 
-    def __exit__(self, *args: Any) -> None:
+    def __exit__(self, *args: object) -> None:
         """Exit context manager."""
