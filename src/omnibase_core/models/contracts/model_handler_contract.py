@@ -15,7 +15,7 @@ Core Design Decisions:
 
 Three-Layer Architecture:
     1. Profile (ModelExecutionProfile): Resource allocation, execution environment
-    2. Descriptor (ModelHandlerBehaviorDescriptor): Handler behavior configuration
+    2. Behavior (ModelHandlerBehavior): Handler behavior configuration
     3. Contract (this model): Full declarative handler specification
 
 Example:
@@ -23,7 +23,7 @@ Example:
     ...     handler_id="node.user.reducer",
     ...     name="User Registration Reducer",
     ...     version="1.0.0",
-    ...     descriptor=ModelHandlerBehaviorDescriptor(
+    ...     descriptor=ModelHandlerBehavior(
     ...         handler_kind="reducer",
     ...         purity="side_effecting",
     ...         idempotent=True,
@@ -34,7 +34,7 @@ Example:
 
 See Also:
     - OMN-1117: Handler Contract Model & YAML Schema
-    - ModelHandlerBehaviorDescriptor: Runtime behavior configuration
+    - ModelHandlerBehavior: Runtime behavior configuration
     - ModelCapabilityDependency: Vendor-agnostic capability dependencies
     - ModelExecutionConstraints: Execution ordering constraints
 
@@ -53,8 +53,8 @@ from omnibase_core.models.contracts.model_execution_constraints import (
     ModelExecutionConstraints,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.runtime.model_handler_behavior_descriptor import (
-    ModelHandlerBehaviorDescriptor,
+from omnibase_core.models.runtime.model_handler_behavior import (
+    ModelHandlerBehavior,
 )
 
 
@@ -76,7 +76,7 @@ class ModelHandlerContract(BaseModel):
         - description: Optional detailed description
 
     Behavior Configuration:
-        - descriptor: Embedded ModelHandlerBehaviorDescriptor for runtime semantics
+        - descriptor: Embedded ModelHandlerBehavior for runtime semantics
 
     Capability Dependencies:
         - capability_inputs: Required input capabilities (vendor-agnostic)
@@ -115,7 +115,7 @@ class ModelHandlerContract(BaseModel):
         ...     handler_id="node.user.reducer",
         ...     name="User Registration Reducer",
         ...     version="1.0.0",
-        ...     descriptor=ModelHandlerBehaviorDescriptor(
+        ...     descriptor=ModelHandlerBehavior(
         ...         handler_kind="reducer",
         ...         purity="side_effecting",
         ...         idempotent=True,
@@ -139,7 +139,7 @@ class ModelHandlerContract(BaseModel):
         ...     handler_id="handler.email.sender",
         ...     name="Email Sender",
         ...     version="2.0.0",
-        ...     descriptor=ModelHandlerBehaviorDescriptor(
+        ...     descriptor=ModelHandlerBehavior(
         ...         handler_kind="effect",
         ...         purity="side_effecting",
         ...         idempotent=False,
@@ -154,7 +154,7 @@ class ModelHandlerContract(BaseModel):
         This model is immutable (frozen=True) and safe for concurrent access.
 
     See Also:
-        - ModelHandlerBehaviorDescriptor: Runtime behavior configuration
+        - ModelHandlerBehavior: Runtime behavior configuration
         - ModelCapabilityDependency: Capability dependency specification
         - ModelExecutionConstraints: Execution ordering constraints
     """
@@ -193,7 +193,7 @@ class ModelHandlerContract(BaseModel):
     # Embedded Descriptor (runtime semantics)
     # ==========================================================================
 
-    descriptor: ModelHandlerBehaviorDescriptor = Field(
+    descriptor: ModelHandlerBehavior = Field(
         ...,
         description="Embedded behavior descriptor defining runtime semantics",
     )

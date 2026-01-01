@@ -26,8 +26,8 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.capabilities.model_capability_requirement_set import (
     ModelRequirementSet,
 )
-from omnibase_core.models.runtime.model_handler_behavior_descriptor import (
-    ModelHandlerBehaviorDescriptor,
+from omnibase_core.models.runtime.model_handler_behavior import (
+    ModelHandlerBehavior,
 )
 
 
@@ -41,7 +41,7 @@ class TestModelHandlerContractCreation:
             handler_id="node.test.handler",
             name="Test Handler",
             version="1.0.0",
-            descriptor=ModelHandlerBehaviorDescriptor(handler_kind="compute"),
+            descriptor=ModelHandlerBehavior(handler_kind="compute"),
             input_model="myapp.models.Input",
             output_model="myapp.models.Output",
         )
@@ -57,7 +57,7 @@ class TestModelHandlerContractCreation:
             name="User Registration Reducer",
             version="2.1.0-beta.1",
             description="Handles user registration lifecycle",
-            descriptor=ModelHandlerBehaviorDescriptor(
+            descriptor=ModelHandlerBehavior(
                 handler_kind="reducer",
                 purity="side_effecting",
                 idempotent=True,
@@ -102,7 +102,7 @@ class TestHandlerIdValidation:
             handler_id="node.handler",
             name="Test",
             version="1.0.0",
-            descriptor=ModelHandlerBehaviorDescriptor(handler_kind="compute"),
+            descriptor=ModelHandlerBehavior(handler_kind="compute"),
             input_model="a.Input",
             output_model="a.Output",
         )
@@ -114,7 +114,7 @@ class TestHandlerIdValidation:
             handler_id="effect.database.user.repository",
             name="Test",
             version="1.0.0",
-            descriptor=ModelHandlerBehaviorDescriptor(handler_kind="effect"),
+            descriptor=ModelHandlerBehavior(handler_kind="effect"),
             input_model="a.Input",
             output_model="a.Output",
         )
@@ -127,7 +127,7 @@ class TestHandlerIdValidation:
                 handler_id="handler",
                 name="Test",
                 version="1.0.0",
-                descriptor=ModelHandlerBehaviorDescriptor(handler_kind="compute"),
+                descriptor=ModelHandlerBehavior(handler_kind="compute"),
                 input_model="a.Input",
                 output_model="a.Output",
             )
@@ -139,7 +139,7 @@ class TestHandlerIdValidation:
                 handler_id="node..handler",
                 name="Test",
                 version="1.0.0",
-                descriptor=ModelHandlerBehaviorDescriptor(handler_kind="compute"),
+                descriptor=ModelHandlerBehavior(handler_kind="compute"),
                 input_model="a.Input",
                 output_model="a.Output",
             )
@@ -150,7 +150,7 @@ class TestHandlerIdValidation:
             handler_id="node._internal.handler",
             name="Test",
             version="1.0.0",
-            descriptor=ModelHandlerBehaviorDescriptor(handler_kind="compute"),
+            descriptor=ModelHandlerBehavior(handler_kind="compute"),
             input_model="a.Input",
             output_model="a.Output",
         )
@@ -180,7 +180,7 @@ class TestVersionValidation:
             handler_id="node.test",
             name="Test",
             version=version,
-            descriptor=ModelHandlerBehaviorDescriptor(handler_kind="compute"),
+            descriptor=ModelHandlerBehavior(handler_kind="compute"),
             input_model="a.Input",
             output_model="a.Output",
         )
@@ -204,7 +204,7 @@ class TestVersionValidation:
                 handler_id="node.test",
                 name="Test",
                 version=version,
-                descriptor=ModelHandlerBehaviorDescriptor(handler_kind="compute"),
+                descriptor=ModelHandlerBehavior(handler_kind="compute"),
                 input_model="a.Input",
                 output_model="a.Output",
             )
@@ -220,7 +220,7 @@ class TestDescriptorConsistencyValidation:
             handler_id="compute.data.transformer",
             name="Test",
             version="1.0.0",
-            descriptor=ModelHandlerBehaviorDescriptor(handler_kind="compute"),
+            descriptor=ModelHandlerBehavior(handler_kind="compute"),
             input_model="a.Input",
             output_model="a.Output",
         )
@@ -232,7 +232,7 @@ class TestDescriptorConsistencyValidation:
             handler_id="effect.database.writer",
             name="Test",
             version="1.0.0",
-            descriptor=ModelHandlerBehaviorDescriptor(handler_kind="effect"),
+            descriptor=ModelHandlerBehavior(handler_kind="effect"),
             input_model="a.Input",
             output_model="a.Output",
         )
@@ -244,7 +244,7 @@ class TestDescriptorConsistencyValidation:
             handler_id="reducer.user.state",
             name="Test",
             version="1.0.0",
-            descriptor=ModelHandlerBehaviorDescriptor(handler_kind="reducer"),
+            descriptor=ModelHandlerBehavior(handler_kind="reducer"),
             input_model="a.Input",
             output_model="a.Output",
         )
@@ -257,7 +257,7 @@ class TestDescriptorConsistencyValidation:
                 handler_id="node.test.handler",
                 name="Test",
                 version="1.0.0",
-                descriptor=ModelHandlerBehaviorDescriptor(handler_kind=kind),  # type: ignore[arg-type]
+                descriptor=ModelHandlerBehavior(handler_kind=kind),  # type: ignore[arg-type]
                 input_model="a.Input",
                 output_model="a.Output",
             )
@@ -270,7 +270,7 @@ class TestDescriptorConsistencyValidation:
                 handler_id="handler.test.impl",
                 name="Test",
                 version="1.0.0",
-                descriptor=ModelHandlerBehaviorDescriptor(handler_kind=kind),  # type: ignore[arg-type]
+                descriptor=ModelHandlerBehavior(handler_kind=kind),  # type: ignore[arg-type]
                 input_model="a.Input",
                 output_model="a.Output",
             )
@@ -283,7 +283,7 @@ class TestDescriptorConsistencyValidation:
                 handler_id="compute.data.transformer",
                 name="Test",
                 version="1.0.0",
-                descriptor=ModelHandlerBehaviorDescriptor(handler_kind="effect"),
+                descriptor=ModelHandlerBehavior(handler_kind="effect"),
                 input_model="a.Input",
                 output_model="a.Output",
             )
@@ -300,7 +300,7 @@ class TestCapabilityDependencyHandling:
                 handler_id="node.test",
                 name="Test",
                 version="1.0.0",
-                descriptor=ModelHandlerBehaviorDescriptor(handler_kind="effect"),
+                descriptor=ModelHandlerBehavior(handler_kind="effect"),
                 capability_inputs=[
                     ModelCapabilityDependency(alias="db", capability="database"),
                     ModelCapabilityDependency(alias="db", capability="cache"),
@@ -315,7 +315,7 @@ class TestCapabilityDependencyHandling:
             handler_id="node.test",
             name="Test",
             version="1.0.0",
-            descriptor=ModelHandlerBehaviorDescriptor(handler_kind="effect"),
+            descriptor=ModelHandlerBehavior(handler_kind="effect"),
             capability_inputs=[
                 ModelCapabilityDependency(alias="db", capability="database"),
                 ModelCapabilityDependency(alias="cache", capability="cache"),
@@ -332,7 +332,7 @@ class TestCapabilityDependencyHandling:
             handler_id="node.test",
             name="Test",
             version="1.0.0",
-            descriptor=ModelHandlerBehaviorDescriptor(handler_kind="effect"),
+            descriptor=ModelHandlerBehavior(handler_kind="effect"),
             capability_inputs=[
                 ModelCapabilityDependency(
                     alias="db", capability="database", strict=True
@@ -353,7 +353,7 @@ class TestCapabilityDependencyHandling:
             handler_id="node.test",
             name="Test",
             version="1.0.0",
-            descriptor=ModelHandlerBehaviorDescriptor(handler_kind="effect"),
+            descriptor=ModelHandlerBehavior(handler_kind="effect"),
             capability_inputs=[
                 ModelCapabilityDependency(
                     alias="db", capability="database", strict=True
@@ -379,7 +379,7 @@ class TestExecutionConstraintsHelpers:
             handler_id="node.test",
             name="Test",
             version="1.0.0",
-            descriptor=ModelHandlerBehaviorDescriptor(handler_kind="compute"),
+            descriptor=ModelHandlerBehavior(handler_kind="compute"),
             input_model="a.Input",
             output_model="a.Output",
         )
@@ -391,7 +391,7 @@ class TestExecutionConstraintsHelpers:
             handler_id="node.test",
             name="Test",
             version="1.0.0",
-            descriptor=ModelHandlerBehaviorDescriptor(handler_kind="compute"),
+            descriptor=ModelHandlerBehavior(handler_kind="compute"),
             execution_constraints=ModelExecutionConstraints(),
             input_model="a.Input",
             output_model="a.Output",
@@ -404,7 +404,7 @@ class TestExecutionConstraintsHelpers:
             handler_id="node.test",
             name="Test",
             version="1.0.0",
-            descriptor=ModelHandlerBehaviorDescriptor(handler_kind="compute"),
+            descriptor=ModelHandlerBehavior(handler_kind="compute"),
             execution_constraints=ModelExecutionConstraints(
                 requires_before=["capability:auth"],
             ),
@@ -424,7 +424,7 @@ class TestImmutability:
             handler_id="node.test",
             name="Test",
             version="1.0.0",
-            descriptor=ModelHandlerBehaviorDescriptor(handler_kind="compute"),
+            descriptor=ModelHandlerBehavior(handler_kind="compute"),
             input_model="a.Input",
             output_model="a.Output",
         )
@@ -438,7 +438,7 @@ class TestImmutability:
                 handler_id="node.test",
                 name="Test",
                 version="1.0.0",
-                descriptor=ModelHandlerBehaviorDescriptor(handler_kind="compute"),
+                descriptor=ModelHandlerBehavior(handler_kind="compute"),
                 input_model="a.Input",
                 output_model="a.Output",
                 unknown_field="value",  # type: ignore[call-arg]

@@ -33,7 +33,6 @@ from omnibase_core.models.runtime.model_descriptor_retry_policy import (
 
 __all__ = [
     "ModelHandlerBehavior",
-    "ModelHandlerBehaviorDescriptor",  # Backward compatibility alias
 ]
 
 
@@ -182,6 +181,3 @@ class ModelHandlerBehavior(BaseModel):
     )
 
 
-# Backward compatibility alias - old name for the same class
-# TODO: Remove after all code is updated to use ModelHandlerBehavior
-ModelHandlerBehaviorDescriptor = ModelHandlerBehavior

@@ -6,7 +6,7 @@ Part of the three-layer architecture: Profile -> Descriptor -> Contract.
 
 Related:
     - OMN-1125: Default Profile Factory for Contracts
-    - ModelHandlerBehaviorDescriptor: Parent handler behavior descriptor model
+    - ModelHandlerBehavior: Parent handler behavior model
     - ModelCircuitBreaker: Full-featured circuit breaker with state management
 
 .. versionadded:: 0.4.0
