@@ -39,7 +39,15 @@ class ProtocolMinimalLogger(Protocol):
         event_type: str = ...,
         **kwargs: object,
     ) -> None:
-        """Synchronous log event emission."""
+        """
+        Synchronous log event emission.
+
+        Args:
+            level: Log level for the event.
+            message: Primary log message.
+            event_type: Type of event. Defaults to "generic".
+            **kwargs: Additional structured data.
+        """
         ...
 
     async def emit_log_event_async(
@@ -49,7 +57,15 @@ class ProtocolMinimalLogger(Protocol):
         event_type: str = ...,
         **kwargs: object,
     ) -> None:
-        """Asynchronous log event emission."""
+        """
+        Asynchronous log event emission.
+
+        Args:
+            level: Log level for the event.
+            message: Primary log message.
+            event_type: Type of event. Defaults to "generic".
+            **kwargs: Additional structured data.
+        """
         ...
 
     def trace_function_lifecycle[F: Callable[..., object]](self, func: F) -> F:
@@ -60,7 +76,18 @@ class ProtocolMinimalLogger(Protocol):
         self,
         _threshold_ms: int = ...,
     ) -> Callable[[Callable[..., object]], Callable[..., object]]:
-        """Decorator for performance metrics logging."""
+        """
+        Decorator for performance metrics logging.
+
+        Args:
+            _threshold_ms: Performance threshold in milliseconds.
+                Logs warning if execution exceeds this threshold.
+                Defaults to 1000.
+
+        Returns:
+            Decorator function that wraps the target function with
+            performance metrics logging.
+        """
         ...
 
 

@@ -23,7 +23,8 @@ error_codes → types.__init__ → constraints → (circular back to error_codes
 Solution: Use TYPE_CHECKING and __getattr__ for lazy loading, similar to ModelBaseCollection.
 """
 
-# All constraint imports are now lazy-loaded via __getattr__ to prevent circular imports
+# Constraint imports are direct at module level for IDE support and import performance.
+# The __getattr__ fallback at the bottom provides lazy-loading as a backup mechanism.
 # Core types for breaking circular dependencies
 # Converter functions
 from .constraints import (

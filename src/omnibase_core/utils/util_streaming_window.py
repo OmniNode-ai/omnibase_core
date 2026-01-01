@@ -139,7 +139,7 @@ class UtilStreamingWindow:
         self.window_start = datetime.now()
 
 
-def __getattr__(name: str) -> type[UtilStreamingWindow]:
+def __getattr__(name: str) -> object:
     """
     Lazy loading for deprecated aliases per OMN-1071 renaming.
 

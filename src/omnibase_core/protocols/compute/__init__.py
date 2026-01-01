@@ -24,8 +24,8 @@ from omnibase_core.protocols.compute.protocol_parallel_executor import (
     ProtocolParallelExecutor,
 )
 from omnibase_core.protocols.compute.protocol_payload_data import (
+    ProtocolComputePayloadData,
     ProtocolDictLike,
-    ProtocolPayloadData,
 )
 from omnibase_core.protocols.compute.protocol_performance_monitor import (
     ProtocolPerformanceMonitor,
@@ -38,9 +38,9 @@ __all__ = [
     "ProtocolAsyncCircuitBreaker",
     "ProtocolCircuitBreaker",
     "ProtocolComputeCache",
+    "ProtocolComputePayloadData",
     "ProtocolDictLike",
     "ProtocolParallelExecutor",
-    "ProtocolPayloadData",
     "ProtocolPerformanceMonitor",
     "ProtocolTimingService",
 ]

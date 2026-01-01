@@ -52,6 +52,12 @@ class ModelInjectionContext(BaseModel):
             resolution_status="resolved",
         )
         ```
+
+    Thread Safety:
+        This context is designed for single-threaded use during
+        service resolution. Each resolution operation should use
+        its own context instance. Do not share contexts across
+        concurrent resolution operations.
     """
 
     model_config = ConfigDict(

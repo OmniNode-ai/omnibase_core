@@ -79,15 +79,28 @@ class UtilConflictResolver:
     def __init__(
         self,
         strategy: EnumConflictResolution,
-        custom_resolver: Callable[..., object] | None = None,
+        custom_resolver: Callable[[object, object, str | None], object] | None = None,
     ):
         """
         Initialize conflict resolver.
 
         Args:
             strategy: Conflict resolution strategy to use
-            custom_resolver: Optional custom resolution function for CUSTOM strategy
+            custom_resolver: Optional custom resolution function for CUSTOM strategy.
+                Signature: (existing_value, new_value, key) -> resolved_value
+
+        Raises:
+            ModelOnexError: If CUSTOM strategy is specified without a custom_resolver
         """
+        if strategy == EnumConflictResolution.CUSTOM and custom_resolver is None:
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="CUSTOM conflict resolution strategy requires a custom_resolver function",
+                context={
+                    "strategy": strategy.value,
+                    "custom_resolver": "None",
+                },
+            )
         self.strategy = strategy
         self.custom_resolver = custom_resolver
         self.conflicts_count = 0

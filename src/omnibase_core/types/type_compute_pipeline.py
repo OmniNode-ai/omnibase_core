@@ -41,12 +41,12 @@ __all__ = [
 # Pipeline data can be:
 # - A dictionary with string keys and arbitrary values
 # - A Pydantic BaseModel instance
-# - Any other object with accessible attributes
 #
-# This type is intentionally broad to support the polymorphic nature
-# of pipeline data, which may come from user input, previous steps,
-# or external sources.
-PipelineData = dict[str, object] | BaseModel | object
+# Note: The `| object` was intentionally removed as it would cause
+# the union to collapse to just `object` (all types inherit from object),
+# defeating type narrowing. If truly arbitrary objects are needed,
+# use `object` directly or a protocol for duck typing.
+PipelineData = dict[str, object] | BaseModel
 
 # Type alias for dictionary-based pipeline data
 # Used when the data is known to be a dict structure

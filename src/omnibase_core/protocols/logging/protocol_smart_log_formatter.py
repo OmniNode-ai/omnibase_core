@@ -13,6 +13,10 @@ if TYPE_CHECKING:
     from omnibase_core.enums.enum_log_level import EnumLogLevel
     from omnibase_core.models.core.model_log_context import ModelLogContext
 
+# Type alias for log data values - JSON-compatible types
+# Consistent with omnibase_core.protocols.protocol_smart_log_formatter.LogDataValue
+LogDataValue = str | int | float | bool | None
+
 
 @runtime_checkable
 class ProtocolSmartLogFormatter(Protocol):
@@ -29,7 +33,7 @@ class ProtocolSmartLogFormatter(Protocol):
         event_type: str,
         message: str,
         context: ModelLogContext,
-        data: dict[str, object],
+        data: dict[str, LogDataValue],
         correlation_id: str,
     ) -> str:
         """
@@ -49,4 +53,4 @@ class ProtocolSmartLogFormatter(Protocol):
         ...
 
 
-__all__ = ["ProtocolSmartLogFormatter"]
+__all__ = ["ProtocolSmartLogFormatter", "LogDataValue"]

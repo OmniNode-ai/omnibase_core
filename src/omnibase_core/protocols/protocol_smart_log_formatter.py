@@ -46,7 +46,7 @@ class ProtocolSmartLogFormatter(Protocol):
                 event_type: str,
                 message: str,
                 context: ModelLogContext,
-                data: dict[str, LogDataValue | None],
+                data: dict[str, LogDataValue],
                 correlation_id: str,
             ) -> str:
                 return f"[{level.name}] {correlation_id}: {message}"
@@ -58,7 +58,7 @@ class ProtocolSmartLogFormatter(Protocol):
         event_type: str,
         message: str,
         context: ModelLogContext,
-        data: dict[str, LogDataValue | None],
+        data: dict[str, LogDataValue],
         correlation_id: str,
     ) -> str:
         """

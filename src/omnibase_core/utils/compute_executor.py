@@ -57,7 +57,11 @@ from omnibase_core.types.typed_dict_mapping_result import MappingResultDict
 
 logger = logging.getLogger(__name__)
 
-# Type alias for pipeline data - can be dict, Pydantic model, or object with attributes
+# Type alias for pipeline data - can be dict, Pydantic model, or arbitrary object
+# Note: `| object` is intentionally kept here (unlike PipelineData in types module)
+# because execute_transformation() can return any type (e.g., JSON_PATH extracts
+# arbitrary values from nested structures). This local type differs from the
+# stricter PipelineData type alias used for documentation purposes.
 PipelineDataType = dict[str, object] | BaseModel | object
 
 from omnibase_core.enums.enum_compute_step_type import EnumComputeStepType

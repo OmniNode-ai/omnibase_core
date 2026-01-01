@@ -21,3 +21,6 @@ class TypedDictYamlDumpOptions(TypedDict, total=False):
     explicit_end: bool
     indent: int
     width: int
+
+
+__all__ = ["TypedDictYamlDumpOptions"]

@@ -12,7 +12,7 @@ import threading
 class _LoggerCache:
     """Thread-safe logger cache holder."""
 
-    _instance: object = None
+    _instance: object | None = None
     _lock = threading.Lock()
 
     @classmethod

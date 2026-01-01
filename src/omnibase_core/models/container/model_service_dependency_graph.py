@@ -97,10 +97,12 @@ class ModelServiceDependencyGraph(BaseModel):
         """Check if any services depend on this one."""
         return len(self.dependents) > 0
 
-    def add_dependency(self, service_id: UUID) -> None:
+    def add_dependency(self, dependency_id: UUID) -> None:
         """Add a dependency to this service."""
-        if service_id not in self.dependencies:
-            self.dependencies.append(service_id)
+        if dependency_id == self.service_id:
+            return  # Ignore self-reference
+        if dependency_id not in self.dependencies:
+            self.dependencies.append(dependency_id)
 
     def add_dependent(self, service_id: UUID) -> None:
         """Add a service that depends on this one."""

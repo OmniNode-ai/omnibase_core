@@ -419,7 +419,7 @@ def extract_example_from_schema(
         if not isinstance(example, dict):
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Example at index {example_index} is not a dict[str, Any]in schema: {schema_path}",
+                message=f"Example at index {example_index} is not a dict[str, Any] in schema: {schema_path}",
                 details=ModelErrorContext.with_context(
                     {
                         "operation": ModelSchemaValue.from_value(
@@ -434,7 +434,7 @@ def extract_example_from_schema(
                 ),
             )
 
-        # Convert example dict[str, Any]to ModelCustomProperties
+        # Convert example dict[str, Any] to ModelCustomProperties
         custom_props = ModelCustomProperties()
         if isinstance(example, dict):
             for key, value in example.items():

@@ -1,9 +1,15 @@
 """
-ProtocolPayloadData - Protocol for polymorphic data in compute pipelines.
+ProtocolComputePayloadData - Protocol for polymorphic data in compute pipelines.
 
 This protocol defines the interface for data objects that can be traversed
 in compute pipelines. It supports dict-like access, Pydantic models, and
 regular Python objects with attributes.
+
+Note:
+    This is distinct from ProtocolPayloadData in omnibase_core.protocols which
+    provides a full dict-like interface (get, keys, values, items, etc.).
+    ProtocolComputePayloadData is a marker protocol with no required methods,
+    designed for maximum flexibility in compute pipeline data types.
 
 Design:
     This protocol uses structural subtyping (duck typing) to allow any object
@@ -13,24 +19,24 @@ Design:
 Usage:
     .. code-block:: python
 
-        from omnibase_core.protocols.compute import ProtocolPayloadData
+        from omnibase_core.protocols.compute import ProtocolComputePayloadData
 
         # Dict-like access
-        data: ProtocolPayloadData = {"key": "value"}
+        data: ProtocolComputePayloadData = {"key": "value"}
 
         # Pydantic model
         class UserModel(BaseModel):
             name: str
             age: int
 
-        user: ProtocolPayloadData = UserModel(name="Alice", age=30)
+        user: ProtocolComputePayloadData = UserModel(name="Alice", age=30)
 
         # Regular object with attributes
         @dataclass
         class Config:
             debug: bool = False
 
-        config: ProtocolPayloadData = Config()
+        config: ProtocolComputePayloadData = Config()
 
 Related:
     - compute_executor.py: Uses this for pipeline data flows
@@ -42,8 +48,9 @@ Related:
 
 from __future__ import annotations
 
-__all__ = ["ProtocolPayloadData", "ProtocolDictLike"]
+__all__ = ["ProtocolComputePayloadData", "ProtocolDictLike"]
 
+from collections.abc import Iterator
 from typing import Protocol, runtime_checkable
 
 
@@ -67,7 +74,7 @@ class ProtocolDictLike(Protocol):
         """Get a value by key."""
         ...
 
-    def keys(self) -> object:
+    def keys(self) -> Iterator[str]:
         """Return the keys of the container."""
         ...
 
@@ -77,7 +84,7 @@ class ProtocolDictLike(Protocol):
 
 
 @runtime_checkable
-class ProtocolPayloadData(Protocol):
+class ProtocolComputePayloadData(Protocol):
     """
     Protocol for polymorphic payload data in compute pipelines.
 
@@ -97,6 +104,11 @@ class ProtocolPayloadData(Protocol):
     is handled by the path resolution utilities which check for
     dict vs object at runtime.
 
+    Note:
+        This is distinct from ProtocolPayloadData in omnibase_core.protocols
+        which provides a full dict-like interface with get(), keys(), values(),
+        items(), __getitem__(), and __contains__() methods.
+
     Thread Safety:
         This protocol makes no thread safety guarantees. The underlying
         data objects should be treated as read-only during pipeline execution.
@@ -104,7 +116,7 @@ class ProtocolPayloadData(Protocol):
     Example:
         .. code-block:: python
 
-            def process_data(data: ProtocolPayloadData) -> str:
+            def process_data(data: ProtocolComputePayloadData) -> str:
                 # Data can be dict, Pydantic model, or object
                 if isinstance(data, dict):
                     return str(data.get("value", ""))

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from types import TracebackType
+
 """
 ToolLoggerCodeBlock
 
@@ -26,5 +28,10 @@ class ToolLoggerCodeBlock:
         """Enter context manager."""
         return self
 
-    def __exit__(self, *args: object) -> None:
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> bool | None:
         """Exit context manager."""
