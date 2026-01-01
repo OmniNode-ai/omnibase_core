@@ -9,11 +9,12 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, ValidationError, field_validator
+from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_environment import EnumEnvironment
 from omnibase_core.enums.enum_execution_status_v2 import EnumExecutionStatusV2
+from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import (
     ModelSemVer,
@@ -153,17 +154,10 @@ class ModelExecutionMetadata(BaseModel):
         except ModelOnexError:
             # Re-raise ModelOnexError as-is to preserve error context
             raise
-        except (
-            # AttributeError: setattr on read-only/frozen attributes
-            AttributeError,
-            # TypeError: value type incompatible with attribute type
-            TypeError,
-            # ValueError: value conversion fails
-            ValueError,
-            # ValidationError: Pydantic validator rejects the value (validate_assignment=True)
-            ValidationError,
-        ) as e:
-            # fallback-ok: Converts specific exceptions to structured ModelOnexError
+        except PYDANTIC_MODEL_ERRORS as e:
+            # fallback-ok: Converts specific exceptions to structured ModelOnexError.
+            # PYDANTIC_MODEL_ERRORS covers AttributeError, TypeError, ValidationError, ValueError
+            # which are raised by setattr with Pydantic validate_assignment=True.
             raise ModelOnexError(
                 message=f"Failed to execute metadata update: {e}",
                 error_code=EnumCoreErrorCode.OPERATION_FAILED,

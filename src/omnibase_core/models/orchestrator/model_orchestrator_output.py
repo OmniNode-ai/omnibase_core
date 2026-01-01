@@ -9,8 +9,9 @@ in orchestrator results.
 
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from omnibase_core.errors.exception_groups import VALIDATION_ERRORS
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.orchestrator.model_action import ModelAction
 from omnibase_core.models.services.model_custom_fields import ModelCustomFields
@@ -153,15 +154,10 @@ class ModelOrchestratorOutput(BaseModel):
         if isinstance(value, dict) and "value_type" in value:
             try:
                 return ModelSchemaValue.model_validate(value)
-            except (
-                # ValidationError: Pydantic validation fails (missing/invalid fields)
-                ValidationError,
-                # ValueError: Value conversion or validation rejects value
-                ValueError,
-                # TypeError: Type conversion issues during validation
-                TypeError,
-            ):
-                # fallback-ok: If validation fails, treat as raw value
+            except VALIDATION_ERRORS:
+                # fallback-ok: If validation fails, treat as raw value.
+                # VALIDATION_ERRORS covers TypeError, ValidationError, ValueError
+                # which are raised by Pydantic model_validate.
                 pass
         return ModelSchemaValue.from_value(value)
 

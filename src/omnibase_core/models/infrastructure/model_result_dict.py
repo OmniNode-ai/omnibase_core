@@ -6,9 +6,10 @@ Clean Pydantic model for Result serialization following ONEX one-model-per-file 
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.type_serializable_value import SerializedDict
 
@@ -59,7 +60,7 @@ class ModelResultDict(BaseModel):
             return True
         except ModelOnexError:
             raise  # Re-raise without double-wrapping
-        except (AttributeError, ValueError, TypeError, ValidationError) as e:
+        except PYDANTIC_MODEL_ERRORS as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
@@ -78,7 +79,7 @@ class ModelResultDict(BaseModel):
             return True
         except ModelOnexError:
             raise  # Re-raise without double-wrapping
-        except (AttributeError, ValueError, TypeError, ValidationError) as e:
+        except PYDANTIC_MODEL_ERRORS as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Configuration failed: {e}",

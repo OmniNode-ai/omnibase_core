@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from pydantic import Field, ValidationError
+from pydantic import Field
 
+from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 "\nNode Type Model\n\nReplaces EnumNodeType with a proper model that includes metadata,\ndescriptions, and categorization for each node type.\n"
@@ -790,19 +791,10 @@ class ModelNodeType(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except (
-            # AttributeError: setattr on read-only/frozen attributes
-            AttributeError,
-            # TypeError: value type incompatible with attribute type
-            TypeError,
-            # ValidationError: Pydantic validation failure (validate_assignment=True)
-            ValidationError,
-            # ValueError: Pydantic validator rejects the value
-            ValueError,
-        ):
+        except PYDANTIC_MODEL_ERRORS:
             # fallback-ok: Metadata update failures should not break the system.
-            # Each exception type is documented inline above - only catching
-            # exceptions that can actually be raised by setattr with Pydantic.
+            # PYDANTIC_MODEL_ERRORS covers AttributeError, TypeError, ValidationError, ValueError
+            # which are the exceptions raised by setattr with Pydantic validate_assignment=True.
             return False
 
     def serialize(self) -> TypedDictSerializedModel:
