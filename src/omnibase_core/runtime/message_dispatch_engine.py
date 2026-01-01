@@ -81,7 +81,7 @@ import threading
 import time
 from collections.abc import Awaitable, Callable, Sequence
 from datetime import UTC, datetime
-from typing import Any, Literal
+from typing import Literal, cast
 from uuid import uuid4
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -126,11 +126,24 @@ MetricKey = Literal[
     "category_mismatch_count",
 ]
 
+# Type alias for handler return types (without Awaitable wrapper)
+HandlerReturnType = ModelHandlerOutput[object] | str | list[object]
+
+# Type alias for sync handler functions (used for run_in_executor narrowing)
+SyncHandlerFunc = Callable[
+    [ModelEventEnvelope[object], ProtocolHandlerContext],
+    HandlerReturnType,
+]
+
 # Type alias for handler functions
 # Handlers take an envelope and context, can be sync or async
+# Return type accommodates:
+# - ModelHandlerOutput[object] (new pattern)
+# - str (legacy topic strings)
+# - list[object] (legacy list of topic strings)
 HandlerFunc = Callable[
-    [ModelEventEnvelope[Any], ProtocolHandlerContext],
-    Any | Awaitable[Any],
+    [ModelEventEnvelope[object], ProtocolHandlerContext],
+    HandlerReturnType | Awaitable[HandlerReturnType],
 ]
 
 
@@ -368,7 +381,7 @@ class MessageDispatchEngine:
         Args:
             handler_id: Unique identifier for this handler
             handler: Callable that processes messages. Can be sync or async.
-                Signature: (envelope: ModelEventEnvelope[Any], context: ProtocolHandlerContext) -> Any
+                Signature: (envelope: ModelEventEnvelope[object], context: ProtocolHandlerContext) -> ModelHandlerOutput[object]
             category: Message category this handler processes
             node_kind: The architectural node kind for this handler. Determines
                 which context type the handler receives:
@@ -421,7 +434,7 @@ class MessageDispatchEngine:
                 message=(
                     f"Handler for '{handler_id}' must be callable (function or async function). "
                     f"Got {type(handler).__name__}. "
-                    f"Expected signature: (envelope: ModelEventEnvelope[Any]) -> Any"
+                    f"Expected signature: (envelope: ModelEventEnvelope[object], context: ProtocolHandlerContext) -> ModelHandlerOutput[object]"
                 ),
                 error_code=EnumCoreErrorCode.INVALID_PARAMETER,
             )
@@ -756,7 +769,7 @@ class MessageDispatchEngine:
     async def dispatch(
         self,
         topic: str,
-        envelope: ModelEventEnvelope[Any],
+        envelope: ModelEventEnvelope[object],
     ) -> ModelDispatchResult:
         """
         Dispatch a message to matching handlers.
@@ -1017,7 +1030,7 @@ class MessageDispatchEngine:
 
         # Step 5: Execute handlers and collect outputs
         outputs: list[str] = []
-        handler_outputs: list[ModelHandlerOutput[Any]] = []
+        handler_outputs: list[ModelHandlerOutput[object]] = []
         handler_errors: list[str] = []
         executed_handler_ids: list[str] = []
 
@@ -1303,7 +1316,7 @@ class MessageDispatchEngine:
     def _build_handler_context(
         self,
         entry: MessageDispatchEngine._HandlerEntry,
-        envelope: ModelEventEnvelope[Any],
+        envelope: ModelEventEnvelope[object],
     ) -> ProtocolHandlerContext:
         """
         Build the appropriate context model for a handler based on its node_kind.
@@ -1418,8 +1431,8 @@ class MessageDispatchEngine:
     async def _execute_handler(
         self,
         entry: MessageDispatchEngine._HandlerEntry,
-        envelope: ModelEventEnvelope[Any],
-    ) -> Any:
+        envelope: ModelEventEnvelope[object],
+    ) -> ModelHandlerOutput[object] | str | list[object]:
         """
         Execute a handler (sync or async) with context injection.
 
@@ -1446,12 +1459,15 @@ class MessageDispatchEngine:
             return await handler(envelope, context)
         else:
             # Sync handler - run in executor to avoid blocking
+            # Cast to SyncHandlerFunc for type narrowing (runtime check above
+            # guarantees this is not an async function)
+            sync_handler = cast(SyncHandlerFunc, handler)
             loop = asyncio.get_running_loop()
-            return await loop.run_in_executor(None, handler, envelope, context)
+            return await loop.run_in_executor(None, sync_handler, envelope, context)
 
     async def _publish_outputs_in_order(
         self,
-        handler_outputs: Sequence[ModelHandlerOutput[Any]],
+        handler_outputs: Sequence[ModelHandlerOutput[object]],
         event_bus: ProtocolEventBus | None = None,
         publish_intents: bool = False,
     ) -> int:
@@ -1525,15 +1541,17 @@ class MessageDispatchEngine:
 
         # 1. Collect all events FIRST (facts that happened)
         # Preserves handler-returned order within category
-        all_events: list[Any] = [e for output in handler_outputs for e in output.events]
+        all_events: list[object] = [
+            e for output in handler_outputs for e in output.events
+        ]
 
         # 2. Collect all projections (derived state)
-        all_projections: list[Any] = [
+        all_projections: list[object] = [
             p for output in handler_outputs for p in output.projections
         ]
 
         # 3. Collect all intents LAST (desired future effects)
-        all_intents: list[Any] = [
+        all_intents: list[object] = [
             i for output in handler_outputs for i in output.intents
         ]
 

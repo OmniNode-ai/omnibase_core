@@ -90,13 +90,18 @@ See Also:
 """
 
 from collections.abc import Mapping
-from typing import Any
+
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.typed_dict_path_resolution_context import (
     TypedDictPathResolutionContext,
 )
+
+# Type alias for data that can be traversed during path resolution
+# Includes dictionaries, Pydantic models, and arbitrary objects with attributes
+TraversableData = dict[str, object] | BaseModel | object
 
 
 class PathResolutionError(ModelOnexError):
@@ -205,12 +210,12 @@ def _validate_private_attribute(part: str, path: str) -> None:
 
 
 def _traverse_path_segments(
-    current: Any,
+    current: TraversableData,
     parts: list[str],
     path: str,
     *,
     check_private: bool = True,
-) -> Any:
+) -> object:
     """
     Traverse through path segments to resolve nested values.
 
@@ -275,10 +280,10 @@ def _traverse_path_segments(
 
 def resolve_path(
     path: str,
-    data: Any,
+    data: TraversableData,
     *,
     check_private: bool = True,
-) -> Any:
+) -> object:
     """
     Resolve a simple dot-notation path to its value.
 
@@ -335,8 +340,8 @@ def resolve_path(
 
 def resolve_input_path(
     path: str,
-    input_data: Any,
-) -> Any:
+    input_data: TraversableData,
+) -> object:
     """
     Resolve a pipeline input path expression ($.input prefix).
 
@@ -490,7 +495,7 @@ def resolve_step_path(
 
 def resolve_pipeline_path(
     path: str,
-    input_data: Any,  # Any: input can be dict, Pydantic model, or arbitrary object
+    input_data: TraversableData,
     step_results: Mapping[str, object],
 ) -> object:
     """

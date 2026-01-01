@@ -56,4 +56,9 @@ class ModelToolSecurityAssessment(BaseModel):
     )
 
 
-__all__ = ["ModelToolSecurityAssessment"]
+# Re-export from split module
+from omnibase_core.models.core.model_tool_security_summary import (
+    ModelToolSecuritySummary,
+)
+
+__all__ = ["ModelToolSecurityAssessment", "ModelToolSecuritySummary"]
