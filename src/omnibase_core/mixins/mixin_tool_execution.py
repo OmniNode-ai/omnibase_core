@@ -7,7 +7,7 @@ enabling tools to be executed via the event bus in the unified execution model.
 
 import time
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
@@ -36,20 +36,20 @@ class MixinToolExecution:
             "Must be implemented by the mixed class"
         )
 
-    def process(self, input_state: Any) -> Any:
+    def process(self, input_state: object) -> object:
         """Process the input state. Must be implemented by the mixed class."""
         raise NotImplementedError(  # stub-ok: abstract mixin method
             "Must be implemented by the mixed class"
         )
 
-    def _get_input_state_class(self) -> type[Any]:
+    def _get_input_state_class(self) -> type[object]:
         """Get the input state class. Must be implemented by the mixed class."""
         raise NotImplementedError(  # stub-ok: abstract mixin method
             "Must be implemented by the mixed class"
         )
 
     def handle_tool_execution_request_event(
-        self, envelope: "ModelEventEnvelope[Any]"
+        self, envelope: "ModelEventEnvelope[object]"
     ) -> None:
         """
         Handle tool execution request events.
@@ -64,10 +64,10 @@ class MixinToolExecution:
             "🎯 Received tool execution request",
             {
                 "tool_name": self.get_node_name(),
-                "correlation_id": event.correlation_id,
+                "correlation_id": getattr(event, "correlation_id", None),
                 "requester": (
-                    event.data.get("caller", "unknown")
-                    if event.data is not None
+                    getattr(event, "data", {}).get("caller", "unknown")
+                    if getattr(event, "data", None) is not None
                     else "unknown"
                 ),
             },
@@ -75,9 +75,11 @@ class MixinToolExecution:
 
         try:
             # Extract request data
-            event_data = event.data if event.data is not None else {}
+            event_data_raw = getattr(event, "data", None)
+            event_data: dict[str, object] = event_data_raw if isinstance(event_data_raw, dict) else {}
             requested_tool = event_data.get("tool_name", "")
-            parameters = event_data.get("parameters", [])
+            parameters_raw = event_data.get("parameters", [])
+            parameters: list[object] = parameters_raw if isinstance(parameters_raw, list) else []
             event_data.get("timeout", 30)
 
             # Check if this request is for this tool
@@ -99,7 +101,7 @@ class MixinToolExecution:
 
             # Publish successful response
             self._publish_execution_response(
-                correlation_id=event.correlation_id,
+                correlation_id=getattr(event, "correlation_id", None),
                 success=True,
                 result=self._output_state_to_dict(output_state),
                 execution_time=execution_time,
@@ -112,21 +114,21 @@ class MixinToolExecution:
                 f"❌ Tool execution failed: {e!s}",
                 {
                     "tool_name": self.get_node_name(),
-                    "correlation_id": event.correlation_id,
+                    "correlation_id": getattr(event, "correlation_id", None),
                     "error_type": type(e).__name__,
                 },
             )
 
             # Publish error response
             self._publish_execution_response(
-                correlation_id=event.correlation_id,
+                correlation_id=getattr(event, "correlation_id", None),
                 success=False,
                 result=None,
                 execution_time=0,
                 error=str(e),
             )
 
-    def _create_input_state_from_parameters(self, parameters: list[Any]) -> Any:
+    def _create_input_state_from_parameters(self, parameters: list[object]) -> object:
         """
         Create input state from execution parameters.
 
@@ -160,13 +162,13 @@ class MixinToolExecution:
         ) as e:  # fallback-ok: resilient input parsing, fallback to dict with logging
             emit_log_event(
                 LogLevel.WARNING,
-                f"⚠️ Failed to create typed input state, using dict[str, Any]: {e!s}",
+                f"⚠️ Failed to create typed input state, using dict[str, object]: {e!s}",
                 {"tool_name": self.get_node_name()},
             )
-            # Fallback to dict[str, Any]if typed creation fails
+            # Fallback to dict[str, object] if typed creation fails
             return param_dict
 
-    def _output_state_to_dict(self, output_state: Any) -> "SerializedDict":
+    def _output_state_to_dict(self, output_state: object) -> "SerializedDict":
         """
         Convert output state to dictionary for response.
 
@@ -266,7 +268,7 @@ class MixinToolExecution:
                 },
             )
 
-    def get_execution_event_patterns(self) -> list[Any]:
+    def get_execution_event_patterns(self) -> list[str]:
         """
         Get event patterns for tool execution.
 

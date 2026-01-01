@@ -37,7 +37,7 @@ Handler Contract:
     - Handlers receive fully-resolved context (ModelResolvedIOContext)
     - Handlers NEVER perform template resolution
     - Handlers are protocol-based and registered via container
-    - Handler protocol: async def execute(context: ResolvedIOContext) -> Any
+    - Handler protocol: async def execute(context: ResolvedIOContext) -> object
 
 Performance Characteristics:
     - Template resolution: O(n) where n = number of template variables
@@ -80,8 +80,11 @@ import re
 import threading
 import time
 from collections.abc import Callable
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from uuid import UUID
+
+if TYPE_CHECKING:
+    from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
 
 # =============================================================================
@@ -230,10 +233,10 @@ class MixinEffectExecution:
 
     # Type hints for attributes that should exist on the mixing class
     node_id: UUID
-    container: Any  # ModelONEXContainer - avoiding circular import
+    container: "ModelONEXContainer"  # Forward reference to avoid circular import
     _circuit_breakers: dict[UUID, ModelCircuitBreaker]  # Initialized by concrete class
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(self, **kwargs: object) -> None:
         """
         Initialize effect execution mixin.
 
@@ -699,8 +702,9 @@ class MixinEffectExecution:
                 # Extract from secret service (if available)
                 secret_key = placeholder[7:]  # Remove "secret."
                 try:
-                    secret_service = self.container.get_service("ProtocolSecretService")
-                    secret_value = secret_service.get_secret(secret_key)
+                    # String-based lookup for extensibility (protocol not defined in core)
+                    secret_service: object = self.container.get_service("ProtocolSecretService")  # type: ignore[arg-type]
+                    secret_value = secret_service.get_secret(secret_key)  # type: ignore[attr-defined]
                     if secret_value is None:
                         raise ModelOnexError(
                             message=f"Secret not found: {secret_key}",
@@ -896,7 +900,7 @@ class MixinEffectExecution:
         field_path: str,
         max_depth: int | None = None,
         operation_id: UUID | None = None,
-    ) -> Any:
+    ) -> object:
         """
         Extract nested field from data using dotpath notation.
 
@@ -970,7 +974,7 @@ class MixinEffectExecution:
         if len(parts) > max_depth:
             return None
 
-        current: Any = data
+        current: object = data
 
         for part in parts:
             if isinstance(current, dict):
@@ -1277,7 +1281,7 @@ class MixinEffectExecution:
                 )
 
             Handler Protocol Contract:
-                async def execute(context: ResolvedIOContext) -> Any
+                async def execute(context: ResolvedIOContext) -> object
 
             If no handler is registered for a handler type, a ModelOnexError will
             be raised with HANDLER_EXECUTION_ERROR code.
@@ -1342,7 +1346,8 @@ class MixinEffectExecution:
 
         # Attempt to resolve handler with explicit error for missing registration
         try:
-            handler = self.container.get_service(handler_protocol)
+            # String-based lookup for extensibility (handler protocols not defined in core)
+            handler: object = self.container.get_service(handler_protocol)  # type: ignore[arg-type]
         except Exception as resolve_error:
             # Provide explicit guidance for handler registration
             raise ModelOnexError(
@@ -1361,7 +1366,7 @@ class MixinEffectExecution:
 
         # Execute handler with resolved context
         try:
-            result = await handler.execute(resolved_context)
+            result = await handler.execute(resolved_context)  # type: ignore[attr-defined]
         except Exception as exec_error:
             raise ModelOnexError(
                 message=f"Handler execution failed for {handler_protocol}: {exec_error!s}",
@@ -1598,7 +1603,8 @@ class MixinEffectExecution:
 
         for protocol_name in handler_protocols:
             try:
-                self.container.get_service(protocol_name)
+                # String-based lookup for extensibility check
+                self.container.get_service(protocol_name)  # type: ignore[arg-type]
                 registration_status[protocol_name] = True
             except (
                 Exception

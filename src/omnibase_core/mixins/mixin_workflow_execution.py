@@ -9,7 +9,8 @@ Typing: Strongly typed with strategic Any usage for mixin kwargs and configurati
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from collections.abc import Callable, Coroutine
+from typing import TYPE_CHECKING, cast
 from uuid import UUID
 
 if TYPE_CHECKING:
@@ -36,9 +37,9 @@ from omnibase_core.types.type_workflow_context import WorkflowContextType
 _workflow_executor_cache: (
     tuple[
         type[WorkflowExecutionResult],
-        Any,  # execute_workflow function
-        Any,  # get_execution_order function
-        Any,  # validate_workflow_definition function
+        object,  # execute_workflow function
+        object,  # get_execution_order function
+        object,  # validate_workflow_definition function
     ]
     | None
 ) = None
@@ -47,9 +48,9 @@ _workflow_executor_cache: (
 # Lazy import helper to avoid circular import with workflow_executor
 def _get_workflow_executor() -> tuple[
     type[WorkflowExecutionResult],
-    Any,  # execute_workflow function
-    Any,  # get_execution_order function
-    Any,  # validate_workflow_definition function
+    object,  # execute_workflow function
+    object,  # get_execution_order function
+    object,  # validate_workflow_definition function
 ]:
     """
     Lazily import workflow_executor to avoid circular import.
@@ -121,7 +122,7 @@ class MixinWorkflowExecution:
     # Type annotation for workflow state tracking (see __init__ for population details)
     _workflow_state: ModelWorkflowStateSnapshot | None
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(self, **kwargs: object) -> None:
         """
         Initialize workflow execution mixin.
 
@@ -243,7 +244,7 @@ class MixinWorkflowExecution:
         """
         # Lazy import to avoid circular import with workflow_executor
         _, execute_workflow, _, _ = _get_workflow_executor()
-        result = await execute_workflow(
+        result = await execute_workflow(  # type: ignore[operator]
             workflow_definition,
             workflow_steps,
             workflow_id,
@@ -278,7 +279,7 @@ class MixinWorkflowExecution:
             },
         )
 
-        return result
+        return cast("WorkflowExecutionResult", result)
 
     async def validate_workflow_contract(
         self,
@@ -310,7 +311,10 @@ class MixinWorkflowExecution:
         """
         # Lazy import to avoid circular import with workflow_executor
         _, _, _, validate_workflow_definition = _get_workflow_executor()
-        return await validate_workflow_definition(workflow_definition, workflow_steps)
+        return cast(
+            list[str],
+            await validate_workflow_definition(workflow_definition, workflow_steps),  # type: ignore[operator]
+        )
 
     def get_workflow_execution_order(
         self,
@@ -335,7 +339,7 @@ class MixinWorkflowExecution:
         """
         # Lazy import to avoid circular import with workflow_executor
         _, _, get_execution_order, _ = _get_workflow_executor()
-        return get_execution_order(workflow_steps)
+        return cast(list[UUID], get_execution_order(workflow_steps))  # type: ignore[operator]
 
     def create_workflow_steps_from_config(
         self,

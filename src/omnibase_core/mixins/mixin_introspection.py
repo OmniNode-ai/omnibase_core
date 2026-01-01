@@ -32,9 +32,12 @@ this mixin to provide consistent --introspect functionality.
 
 import sys
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel
+
+if TYPE_CHECKING:
+    from omnibase_core.protocols import ProtocolEventBus
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_node_capability import EnumNodeCapability
@@ -84,7 +87,7 @@ class MixinNodeIntrospection(ABC):
 
     @classmethod
     @abstractmethod
-    def get_metadata_loader(cls) -> Any:
+    def get_metadata_loader(cls) -> object:
         """
         Subclasses must implement this to provide a metadata loader instance.
         This enables dependency injection and avoids hardcoding.
@@ -92,17 +95,17 @@ class MixinNodeIntrospection(ABC):
 
     @classmethod
     def get_node_name(cls) -> str:
-        node_name: str = cls.get_metadata_loader().node_name
+        node_name: str = cls.get_metadata_loader().node_name  # type: ignore[attr-defined]
         return node_name
 
     @classmethod
     def get_node_version(cls) -> ModelSemVer:
-        node_version: ModelSemVer = cls.get_metadata_loader().node_version
+        node_version: ModelSemVer = cls.get_metadata_loader().node_version  # type: ignore[attr-defined]
         return node_version
 
     @classmethod
     def get_node_description(cls) -> str:
-        node_description: str = cls.get_metadata_loader().node_description
+        node_description: str = cls.get_metadata_loader().node_description  # type: ignore[attr-defined]
         return node_description
 
     @classmethod
@@ -477,7 +480,7 @@ class MixinNodeIntrospection(ABC):
         )
 
     @classmethod
-    def handle_introspect_command(cls, event_bus: Any = None) -> None:
+    def handle_introspect_command(cls, event_bus: "ProtocolEventBus | None" = None) -> None:
         """
         Handle the --introspect command by generating and emitting the response via the event bus/logger node.
         This method should be called from the node's main() function when --introspect is detected in the command line arguments.
@@ -488,7 +491,7 @@ class MixinNodeIntrospection(ABC):
         # 1. Try to extract correlation_id from event_bus (if it has one)
         correlation_id = None
         if hasattr(event_bus, "correlation_id"):
-            correlation_id = event_bus.correlation_id
+            correlation_id = event_bus.correlation_id  # type: ignore[union-attr]
         # 2. Fallback to ONEX_CORRELATION_ID env var
         if not correlation_id:
             correlation_id = os.environ.get("ONEX_CORRELATION_ID")

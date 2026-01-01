@@ -37,8 +37,21 @@ Part of omnibase_core framework - provides coordination I/O for all ONEX nodes
 """
 
 from datetime import UTC, datetime
-from typing import Any
+from typing import TYPE_CHECKING, Protocol, runtime_checkable
 from uuid import UUID, uuid4
+
+if TYPE_CHECKING:
+    from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+
+
+@runtime_checkable
+class ProtocolKafkaClient(Protocol):
+    """Protocol for Kafka client used by intent publisher."""
+
+    async def publish(self, topic: str, key: str, value: str) -> None:
+        """Publish a message to a Kafka topic."""
+        ...
+
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError as OnexError
@@ -120,7 +133,7 @@ class MixinIntentPublisher:
     # Kafka topic for intent events
     INTENT_TOPIC: str = TOPIC_EVENT_PUBLISH_INTENT
 
-    def _init_intent_publisher(self, container: Any) -> None:
+    def _init_intent_publisher(self, container: "ModelONEXContainer") -> None:
         """
         Initialize intent publishing capability.
 
@@ -137,13 +150,16 @@ class MixinIntentPublisher:
                 super().__init__(container)
                 self._init_intent_publisher(container)
         """
-        self._intent_kafka_client = container.get_service("kafka_client")
-        if self._intent_kafka_client is None:
+        # The get_service method accepts a service name string, but mypy expects a type
+        kafka_client: object | None = container.get_service("kafka_client")  # type: ignore[arg-type]
+        if kafka_client is None:
             raise OnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="MixinIntentPublisher requires 'kafka_client' service in container. "
                 "Ensure kafka_client is registered before initializing nodes.",
             )
+
+        self._intent_kafka_client: ProtocolKafkaClient = kafka_client  # type: ignore[assignment]
 
         # Store container for access to other services if needed
         self._intent_container = container

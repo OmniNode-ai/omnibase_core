@@ -36,8 +36,11 @@ Usage:
             super().__init__(node_id=node_id, event_bus=event_bus, ...)
 """
 
-from typing import Any
+from typing import TYPE_CHECKING
 from uuid import UUID
+
+if TYPE_CHECKING:
+    from omnibase_core.discovery.base_discovery_registry import BaseDiscoveryRegistry
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
@@ -76,7 +79,7 @@ class MixinEventDrivenNode(
         node_id: UUID,
         event_bus: ProtocolEventBus,
         metadata_loader: ProtocolSchemaLoader | None = None,
-        registry: Any = None,
+        registry: "BaseDiscoveryRegistry | None" = None,
         **kwargs: object,
     ) -> None:
         super().__init__(**kwargs)

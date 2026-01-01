@@ -7,7 +7,6 @@ to monitor and debug service discovery interactions.
 
 import logging
 from collections.abc import Mapping
-from typing import Any
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
@@ -63,7 +62,7 @@ class MixinDebugDiscoveryLogging:
             )
 
             # Replace with debug version (explicit type for MyPy)
-            def debug_handler(envelope_or_event: Any) -> None:
+            def debug_handler(envelope_or_event: object) -> None:
                 return self._debug_handle_introspection_request(
                     envelope_or_event, node_name
                 )
@@ -77,7 +76,7 @@ class MixinDebugDiscoveryLogging:
             )
 
     def _debug_handle_introspection_request(
-        self, envelope_or_event: Any, node_name: str
+        self, envelope_or_event: object, node_name: str
     ) -> None:
         """
         Debug wrapper for introspection request handling.

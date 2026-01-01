@@ -9,10 +9,11 @@ through event bus integration. Maintains a live registry of available tools
 and their capabilities.
 """
 
+import asyncio
 import logging
 import time
 import traceback
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
@@ -39,27 +40,39 @@ class MixinServiceRegistry:
     registries that maintain live catalogs of available tools.
     """
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, *args: object, **kwargs: object) -> None:
         """Initialize the service registry mixin."""
         # Extract mixin-specific kwargs before passing to super()
-        introspection_timeout = kwargs.pop("introspection_timeout", 30)
-        service_ttl = kwargs.pop("service_ttl", 300)
-        auto_cleanup_interval = kwargs.pop("auto_cleanup_interval", 60)
+        # Cast to dict for pop operations
+        kwargs_dict = dict(kwargs) if kwargs else {}
+        introspection_timeout_raw = kwargs_dict.pop("introspection_timeout", 30)
+        service_ttl_raw = kwargs_dict.pop("service_ttl", 300)
+        auto_cleanup_interval_raw = kwargs_dict.pop("auto_cleanup_interval", 60)
 
-        super().__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs_dict)
 
         # Service registry
         self.service_registry: dict[str, ModelServiceRegistryEntry] = {}
-        self.discovery_callbacks: list[Callable[..., Any]] = []
+        self.discovery_callbacks: list[Callable[..., object]] = []
 
-        # Configuration
-        self.introspection_timeout = introspection_timeout
-        self.service_ttl = service_ttl
-        self.auto_cleanup_interval = auto_cleanup_interval
+        # Configuration - ensure proper numeric types
+        self.introspection_timeout: int = (
+            int(introspection_timeout_raw)
+            if isinstance(introspection_timeout_raw, (int, float))
+            else 30
+        )
+        self.service_ttl: float = (
+            float(service_ttl_raw) if isinstance(service_ttl_raw, (int, float)) else 300
+        )
+        self.auto_cleanup_interval: float = (
+            float(auto_cleanup_interval_raw)
+            if isinstance(auto_cleanup_interval_raw, (int, float))
+            else 60
+        )
 
         # State
         self.registry_started = False
-        self.cleanup_task: Any = None  # asyncio.TimerHandle or None
+        self.cleanup_task: asyncio.TimerHandle | None = None
         self._event_handlers_setup = False
 
         # Don't setup event handlers during init - defer until start_service_registry
@@ -225,19 +238,18 @@ class MixinServiceRegistry:
 
             traceback.print_exc()
 
-    def _handle_node_start(self, envelope: "ModelEventEnvelope[Any]") -> None:
+    def _handle_node_start(self, envelope: "ModelEventEnvelope[object]") -> None:
         """Handle node start events - new tools coming online."""
         try:
             # Extract event data from envelope (ENVELOPE-ONLY FLOW)
-            event_data = (
-                envelope.payload.data
-                if hasattr(envelope, "payload") and hasattr(envelope.payload, "data")
-                else {}
+            payload = envelope.payload
+            event_data_raw = getattr(payload, "data", None)
+            event_data: dict[str, object] = (
+                event_data_raw if isinstance(event_data_raw, dict) else {}
             )
-            event_data = event_data if event_data is not None else {}
 
             # Always use payload.node_id as the actual node identifier
-            node_id = envelope.payload.node_id if hasattr(envelope, "payload") else None
+            node_id = getattr(payload, "node_id", None)
             if not node_id:
                 return
 
@@ -247,24 +259,28 @@ class MixinServiceRegistry:
 
             # Check domain filter if set
             if hasattr(self, "domain_filter") and self.domain_filter:
-                metadata = event_data.get("metadata", {})
+                metadata_raw = event_data.get("metadata", {})
+                metadata = metadata_raw if isinstance(metadata_raw, dict) else {}
                 service_domain = metadata.get("domain")
                 if service_domain and service_domain != self.domain_filter:
                     return
 
             # Register or update service
             # Use node_name from data as service name, fallback to node_id
-            service_name = event_data.get("node_name", str(node_id))
+            node_name_raw = event_data.get("node_name")
+            service_name = str(node_name_raw) if node_name_raw else str(node_id)
 
             # node_id is already a UUID from envelope.payload.node_id
             # Use string representation for dict key
             node_id_str = str(node_id)
 
             if node_id_str not in self.service_registry:
+                metadata_raw = event_data.get("metadata", {})
+                metadata_dict = metadata_raw if isinstance(metadata_raw, dict) else {}
                 entry = ModelServiceRegistryEntry(
                     node_id=node_id,
                     service_name=service_name,
-                    metadata=event_data.get("metadata", {}),
+                    metadata=metadata_dict,
                 )
                 self.service_registry[node_id_str] = entry
 
@@ -290,11 +306,12 @@ class MixinServiceRegistry:
         except Exception as e:
             logger.exception(f"❌ Error handling node start event: {e}")
 
-    def _handle_node_stop(self, envelope: "ModelEventEnvelope[Any]") -> None:
+    def _handle_node_stop(self, envelope: "ModelEventEnvelope[object]") -> None:
         """Handle node stop events - tools going offline."""
         try:
             # Always use payload.node_id as the actual node identifier
-            node_id = envelope.payload.node_id if hasattr(envelope, "payload") else None
+            payload = envelope.payload
+            node_id = getattr(payload, "node_id", None)
             if node_id:
                 # Ensure node_id is string for dict key
                 node_id_str = str(node_id)
@@ -318,7 +335,7 @@ class MixinServiceRegistry:
         except Exception as e:
             logger.exception(f"❌ Error handling node stop event: {e}")
 
-    def _handle_node_failure(self, envelope: "ModelEventEnvelope[Any]") -> None:
+    def _handle_node_failure(self, envelope: "ModelEventEnvelope[object]") -> None:
         """Handle node failure events - tools failing."""
         # Same logic as stop for now
         self._handle_node_stop(envelope)
@@ -389,60 +406,60 @@ class MixinServiceRegistry:
             )
 
     def _handle_introspection_response(
-        self, envelope: "ModelEventEnvelope[Any]"
+        self, envelope: "ModelEventEnvelope[object]"
     ) -> None:
         """Handle introspection responses from tools."""
         try:
             # Extract event data from envelope (ENVELOPE-ONLY FLOW)
-            node_id = envelope.payload.node_id if hasattr(envelope, "payload") else None
+            payload = envelope.payload
+            node_id = getattr(payload, "node_id", None)
             if node_id:
                 # Ensure node_id is string for dict key
                 node_id_str = str(node_id)
 
                 if node_id_str in self.service_registry:
-                    introspection_data = (
-                        envelope.payload.data
-                        if hasattr(envelope, "payload")
-                        and hasattr(envelope.payload, "data")
+                    introspection_data_raw = getattr(payload, "data", None)
+                    introspection_data: dict[str, object] = (
+                        introspection_data_raw
+                        if isinstance(introspection_data_raw, dict)
                         else {}
-                    )
-                    introspection_data = (
-                        introspection_data if introspection_data is not None else {}
                     )
                     self.service_registry[node_id_str].update_introspection(
                         introspection_data
                     )
 
+                    capabilities_raw = introspection_data.get("capabilities", [])
+                    capabilities_list = (
+                        capabilities_raw if isinstance(capabilities_raw, list) else []
+                    )
                     emit_log_event(
                         LogLevel.DEBUG,
                         f"Updated introspection data for {node_id_str}",
                         {
                             "node_id": node_id_str,
-                            "capabilities_count": len(
-                                introspection_data.get("capabilities", []),
-                            ),
+                            "capabilities_count": len(capabilities_list),
                         },
                     )
 
         except Exception as e:
             logger.exception(f"❌ Error handling introspection response: {e}")
 
-    def _handle_discovery_request(self, envelope: "ModelEventEnvelope[Any]") -> None:
+    def _handle_discovery_request(self, envelope: "ModelEventEnvelope[object]") -> None:
         """Handle discovery requests from other hubs/services."""
         from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 
         try:
             # Extract event data from envelope (ENVELOPE-ONLY FLOW)
-            event_data = (
-                envelope.payload.data
-                if hasattr(envelope, "payload") and hasattr(envelope.payload, "data")
-                else {}
+            payload = envelope.payload
+            event_data_raw = getattr(payload, "data", None)
+            event_data: dict[str, object] = (
+                event_data_raw if isinstance(event_data_raw, dict) else {}
             )
-            event_data = event_data if event_data is not None else {}
             logger.info(f"📡 Received discovery request: {envelope}")
 
             # Extract request details
-            request_type = event_data.get("request_type", "unknown")
+            request_type_raw = event_data.get("request_type", "unknown")
+            request_type = str(request_type_raw) if request_type_raw else "unknown"
             domain_filter = event_data.get("domain_filter")
             correlation_id = (
                 envelope.correlation_id if hasattr(envelope, "correlation_id") else None
@@ -517,7 +534,7 @@ class MixinServiceRegistry:
         status_filter: str | None = None,
     ) -> list[ModelServiceRegistryEntry]:
         """
-        Get list[Any]of registered tools.
+        Get list of registered tools.
 
         Args:
             status_filter: Optional status filter ("online", "offline")
@@ -549,7 +566,7 @@ class MixinServiceRegistry:
                 matching_tools.append(entry)
         return matching_tools
 
-    def add_discovery_callback(self, callback: Callable[..., Any]) -> None:
+    def add_discovery_callback(self, callback: Callable[..., object]) -> None:
         """
         Add a callback for discovery events.
 

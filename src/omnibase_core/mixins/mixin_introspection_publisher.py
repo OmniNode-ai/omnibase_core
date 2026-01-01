@@ -1,4 +1,3 @@
-from typing import Any
 from uuid import UUID, uuid4
 
 from omnibase_core.models.discovery.model_nodeintrospectionevent import (
@@ -42,7 +41,7 @@ class MixinIntrospectionPublisher:
         Publish NODE_INTROSPECTION_EVENT for automatic service discovery.
 
         This enables other services to discover this node's capabilities without
-        requiring manual registration or hardcoded node list[Any]s.
+        requiring manual registration or hardcoded node lists.
         """
         event_bus = getattr(self, "event_bus", None)
         if not event_bus:
@@ -277,9 +276,9 @@ class MixinIntrospectionPublisher:
                     if "action" in annotations:
                         action_type = annotations["action"]
                         if hasattr(action_type, "__members__"):
-                            actions.extend(list[Any](action_type.__members__.keys()))
+                            actions.extend(list(action_type.__members__.keys()))
                         elif hasattr(action_type, "__args__"):
-                            actions.extend(list[Any](action_type.__args__))
+                            actions.extend(list(action_type.__args__))
                         break
             if not actions:
                 for method_name in dir(self):
@@ -356,7 +355,7 @@ class MixinIntrospectionPublisher:
             pass
         return None
 
-    def _publish_with_retry(self, event: Any, max_retries: int = 3) -> None:
+    def _publish_with_retry(self, event: object, max_retries: int = 3) -> None:
         """Publish event with retry logic."""
         event_bus = getattr(self, "event_bus", None)
         if not event_bus:
@@ -370,7 +369,7 @@ class MixinIntrospectionPublisher:
         envelope = ModelEventEnvelope.create_broadcast(
             payload=event,
             source_node_id=source_uuid,
-            correlation_id=event.correlation_id,
+            correlation_id=getattr(event, "correlation_id", None),
         )
         for attempt in range(max_retries):
             try:

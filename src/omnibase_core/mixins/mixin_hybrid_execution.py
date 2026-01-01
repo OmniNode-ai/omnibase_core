@@ -1,5 +1,3 @@
-from typing import Any
-
 """
 Hybrid Execution Mixin for ONEX Tool Nodes.
 
@@ -30,22 +28,22 @@ class MixinHybridExecution[InputStateT, OutputStateT]:
 
     Usage:
         class MyTool(MixinHybridExecution, MixinContractMetadata, ProtocolReducer):
-            def determine_execution_mode(self, input_state: Any) -> str:
+            def determine_execution_mode(self, input_state: object) -> str:
                 # Override to customize mode selection
                 if input_state.operation_count > 10:
                     return ExecutionMode.WORKFLOW
                 return ExecutionMode.DIRECT
 
-            def process(self, input_state: Any) -> None:
+            def process(self, input_state: object) -> None:
                 # Direct execution logic
                 return output
 
-            def create_workflow(self, input_state: Any) -> None:
+            def create_workflow(self, input_state: object) -> None:
                 # Create LlamaIndex workflow
                 return MyWorkflow(input_state)
     """
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(self, **kwargs: object) -> None:
         """Initialize the hybrid execution mixin."""
         super().__init__(**kwargs)
 
@@ -204,7 +202,8 @@ class MixinHybridExecution[InputStateT, OutputStateT]:
             # Run workflow
             loop = asyncio.new_event_loop()
             try:
-                result = loop.run_until_complete(workflow.run(input_data=input_state))
+                # LlamaIndex workflow interface - run() method on external library type
+                result = loop.run_until_complete(workflow.run(input_data=input_state))  # type: ignore[attr-defined]
             finally:
                 loop.close()
 
@@ -309,18 +308,18 @@ class MixinHybridExecution[InputStateT, OutputStateT]:
 
         return min(score, 1.0)
 
-    def _get_supported_modes(self) -> list[Any]:
+    def _get_supported_modes(self) -> list[object]:
         """Get supported execution modes from contract."""
         # Try to get from contract data
         if hasattr(self, "contract_data") and self.contract_data:
-            modes: list[Any] = self.contract_data.get(cf.EXECUTION_MODES, [])
+            modes: list[object] = self.contract_data.get(cf.EXECUTION_MODES, [])
             if modes:
                 return modes
 
         # Default modes
         return [ExecutionMode.DIRECT, ExecutionMode.WORKFLOW]
 
-    def create_workflow(self, input_state: InputStateT) -> Any:
+    def create_workflow(self, input_state: InputStateT) -> object:
         """
         Create LlamaIndex workflow for complex operations.
 

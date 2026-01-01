@@ -5,7 +5,8 @@
 
 import json
 import time
-from typing import TYPE_CHECKING, Any, cast
+from collections.abc import Awaitable, Callable
+from typing import TYPE_CHECKING, cast
 from uuid import UUID
 
 from pydantic import TypeAdapter, ValidationError
@@ -33,10 +34,10 @@ _DISCOVERY_REQUEST_ADAPTER: TypeAdapter[ModelDiscoveryRequestModelMetadata] = (
 )
 
 # Lazy initialization of introspection adapter to avoid import cycle
-_INTROSPECTION_ADAPTER: TypeAdapter[Any] | None = None
+_INTROSPECTION_ADAPTER: TypeAdapter[object] | None = None
 
 
-def _get_introspection_adapter() -> TypeAdapter[Any]:
+def _get_introspection_adapter() -> TypeAdapter[object]:
     """Get or create the introspection data TypeAdapter (lazy init to avoid cycles)."""
     global _INTROSPECTION_ADAPTER
     if _INTROSPECTION_ADAPTER is None:
@@ -49,6 +50,9 @@ def _get_introspection_adapter() -> TypeAdapter[Any]:
 
 
 if TYPE_CHECKING:
+    from omnibase_core.models.core.model_introspection_data import (
+        ModelIntrospectionData,
+    )
     from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
     from omnibase_core.protocols import ProtocolEventMessage
     from omnibase_core.types.typed_dict_mixin_types import (
@@ -92,7 +96,7 @@ class MixinDiscoveryResponder:
     - See docs/guides/THREADING.md for comprehensive threading guidelines
     """
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, *args: object, **kwargs: object) -> None:
         super().__init__(*args, **kwargs)
         self._discovery_active = False
         self._last_response_time: float = 0.0
@@ -106,7 +110,7 @@ class MixinDiscoveryResponder:
             "error_count": 0,
         }
         self._discovery_event_bus: ProtocolEventBus | None = None
-        self._discovery_unsubscribe: Any = None  # Callable to unsubscribe
+        self._discovery_unsubscribe: Callable[[], Awaitable[None]] | None = None
 
     async def start_discovery_responder(
         self,
@@ -223,7 +227,7 @@ class MixinDiscoveryResponder:
 
             # Deserialize the envelope from message value
             envelope_dict = json.loads(message.value.decode("utf-8"))
-            envelope: ModelEventEnvelope[Any] = ModelEventEnvelope(**envelope_dict)
+            envelope: ModelEventEnvelope[object] = ModelEventEnvelope(**envelope_dict)
 
             # Handle the discovery request
             await self._handle_discovery_request(envelope)
@@ -265,7 +269,7 @@ class MixinDiscoveryResponder:
                 )
 
     async def _handle_discovery_request(
-        self, envelope: "ModelEventEnvelope[Any]"
+        self, envelope: "ModelEventEnvelope[object]"
     ) -> None:
         """
         Handle incoming discovery requests.
@@ -531,7 +535,7 @@ class MixinDiscoveryResponder:
                 event_type=create_event_type_from_registry("DISCOVERY_RESPONSE"),
                 node_id=node_id_value,
                 correlation_id=original_event.correlation_id,
-                data=cast(Any, response_metadata.model_dump()),
+                data=response_metadata.model_dump(),  # type: ignore[arg-type]
             )
 
             # Publish response (assuming we have access to event bus)
@@ -585,7 +589,7 @@ class MixinDiscoveryResponder:
                 error_code=EnumCoreErrorCode.OPERATION_FAILED,
             ) from e
 
-    def _get_discovery_introspection(self) -> Any:
+    def _get_discovery_introspection(self) -> "ModelIntrospectionData":
         """
         Get introspection data for discovery response.
 
@@ -616,7 +620,8 @@ class MixinDiscoveryResponder:
             data_dict = introspection_response
 
         try:
-            return adapter.validate_python(data_dict)
+            result = adapter.validate_python(data_dict)
+            return cast("ModelIntrospectionData", result)
         except ValidationError as e:
             raise ModelOnexError(
                 message="Introspection response does not match ModelIntrospectionData schema",

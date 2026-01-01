@@ -1,5 +1,6 @@
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any
+import types
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
@@ -15,7 +16,6 @@ import signal
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING
 from uuid import UUID
 
 from omnibase_core.constants import TIMEOUT_DEFAULT_MS
@@ -52,12 +52,12 @@ class MixinNodeExecutor(MixinEventDrivenNode):
 
     _node_id: UUID
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(self, **kwargs: object) -> None:
         """Initialize the executor mixin."""
-        super().__init__(**kwargs)
+        super().__init__(**kwargs)  # type: ignore[arg-type]
         self._executor_running = False
-        self._executor_task: asyncio.Task[Any] | None = None
-        self._health_task: asyncio.Task[Any] | None = None
+        self._executor_task: asyncio.Task[None] | None = None
+        self._health_task: asyncio.Task[None] | None = None
         self._active_invocations: set[UUID] = set()
         self._total_invocations = 0
         self._successful_invocations = 0
@@ -126,7 +126,7 @@ class MixinNodeExecutor(MixinEventDrivenNode):
             self._log_error(f"Error during executor shutdown: {e}")
             self._executor_running = False
 
-    async def handle_tool_invocation(self, envelope: "ModelEventEnvelope[Any]") -> None:
+    async def handle_tool_invocation(self, envelope: "ModelEventEnvelope[object]") -> None:
         """
         Handle a TOOL_INVOCATION event.
 
@@ -303,7 +303,7 @@ class MixinNodeExecutor(MixinEventDrivenNode):
 
     async def _convert_event_to_input_state(
         self, event: ModelToolInvocationEvent
-    ) -> Any:
+    ) -> object:
         """
         Convert tool invocation event to node input state.
 
@@ -340,8 +340,8 @@ class MixinNodeExecutor(MixinEventDrivenNode):
         return None
 
     async def _execute_tool(
-        self, input_state: Any, event: ModelToolInvocationEvent
-    ) -> Any:
+        self, input_state: object, event: ModelToolInvocationEvent
+    ) -> object:
         """Execute the tool via the node's run method."""
         # STRICT: Node must have run() method for executor to work
         if not hasattr(self, "run"):
@@ -362,7 +362,7 @@ class MixinNodeExecutor(MixinEventDrivenNode):
             None, run_method, input_state
         )
 
-    def _serialize_result(self, result: Any) -> "SerializedDict":
+    def _serialize_result(self, result: object) -> "SerializedDict":
         """Serialize the execution result to a dictionary."""
         from omnibase_core.types.type_serializable_value import SerializedDict
 
@@ -434,7 +434,7 @@ class MixinNodeExecutor(MixinEventDrivenNode):
         """Register signal handlers for graceful shutdown."""
         try:
 
-            def signal_handler(signum: int, _frame: Any) -> None:
+            def signal_handler(signum: int, _frame: types.FrameType | None) -> None:
                 self._log_info(
                     f"Received signal {signum}, initiating graceful shutdown"
                 )

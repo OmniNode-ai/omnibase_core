@@ -9,7 +9,6 @@ state transition capability directly to nodes.
 """
 
 from pathlib import Path
-from typing import Any
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
@@ -39,7 +38,7 @@ class MixinContractStateReducer:
                 return self.process_action_with_transitions(input_state)
     """
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, *args: object, **kwargs: object) -> None:
         """Initialize contract state reducer mixin."""
         super().__init__(*args, **kwargs)
 
@@ -164,7 +163,7 @@ class MixinContractStateReducer:
             self._transitions_loaded = True
             return []
 
-    def process_action_with_transitions(self, input_state: Any) -> Any:
+    def process_action_with_transitions(self, input_state: object) -> object:
         """
         Process action using contract-driven state transitions.
 
@@ -178,7 +177,7 @@ class MixinContractStateReducer:
         """
         try:
             tool_name = getattr(self, "node_name", "unknown_tool")
-            action_name = getattr(input_state.action, "action_name", "unknown_action")
+            action_name = getattr(getattr(input_state, "action", None), "action_name", "unknown_action")
 
             emit_log_event(
                 LogLevel.INFO,
@@ -224,7 +223,7 @@ class MixinContractStateReducer:
             ) from e
 
     def _apply_transition(
-        self, transition: ModelStateTransition, input_state: Any
+        self, transition: ModelStateTransition, input_state: object
     ) -> None:
         """
         Apply a single state transition.
@@ -265,7 +264,7 @@ class MixinContractStateReducer:
     def _apply_simple_transition(
         self,
         transition: ModelStateTransition,
-        input_state: Any,
+        input_state: object,
     ) -> None:
         """Apply simple field update transition."""
         # Simple transitions update state fields using template expressions
@@ -285,7 +284,7 @@ class MixinContractStateReducer:
     def _apply_tool_based_transition(
         self,
         transition: ModelStateTransition,
-        input_state: Any,
+        input_state: object,
     ) -> None:
         """Apply tool-based transition by delegating to specified tool."""
         tool_name = getattr(self, "node_name", "unknown_tool")
@@ -311,7 +310,7 @@ class MixinContractStateReducer:
     def _apply_conditional_transition(
         self,
         transition: ModelStateTransition,
-        input_state: Any,
+        input_state: object,
     ) -> None:
         """Apply conditional transition based on state conditions."""
         tool_name = getattr(self, "node_name", "unknown_tool")
@@ -327,7 +326,7 @@ class MixinContractStateReducer:
         )
 
     def _create_default_output_state(
-        self, input_state: Any
+        self, input_state: object
     ) -> TypedDictDefaultOutputState:
         """Create a default output state when no main tool is available."""
         # This is a fallback - each tool should implement proper processing
