@@ -16,9 +16,19 @@ Related:
 .. versionadded:: 0.4.0
 """
 
+import logging
 from typing import ClassVar
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    ValidationInfo,
+    field_validator,
+    model_validator,
+)
+
+logger = logging.getLogger(__name__)
 
 from omnibase_core.models.contracts.model_capability_provided import (
     ModelCapabilityProvided,
@@ -38,6 +48,12 @@ from omnibase_core.validation.validation_utils import (
 __all__ = [
     "ModelContractPatch",
 ]
+
+# Module-level constants for list length limits.
+# These are defined at module scope so they can be used in Field() declarations
+# which evaluate at class definition time (before ClassVar is available).
+_MAX_LIST_ITEMS: int = 100
+_MAX_CAPABILITY_LIST_ITEMS: int = 50
 
 
 class ModelContractPatch(BaseModel):
@@ -180,24 +196,23 @@ class ModelContractPatch(BaseModel):
     # =========================================================================
 
     # Maximum number of items in list operations to prevent excessive patches.
-    # Note: max_length= in Field() must use literal values because Pydantic Field()
-    # evaluates at class definition time before ClassVar is available. Keep in sync.
-    MAX_LIST_ITEMS: ClassVar[int] = 100
+    # Uses module-level constant _MAX_LIST_ITEMS for single source of truth.
+    MAX_LIST_ITEMS: ClassVar[int] = _MAX_LIST_ITEMS
 
     # Maximum number of items for capability list operations (more constrained).
     # Capabilities are typically fewer and more significant than handlers/events.
-    # Note: max_length= in Field() must use literal value (50). Keep in sync.
-    MAX_CAPABILITY_LIST_ITEMS: ClassVar[int] = 50
+    # Uses module-level constant _MAX_CAPABILITY_LIST_ITEMS for single source of truth.
+    MAX_CAPABILITY_LIST_ITEMS: ClassVar[int] = _MAX_CAPABILITY_LIST_ITEMS
 
     handlers__add: list[ModelHandlerSpec] | None = Field(
         default=None,
-        max_length=100,
+        max_length=_MAX_LIST_ITEMS,
         description="Handlers to add to the contract (max 100 items).",
     )
 
     handlers__remove: list[str] | None = Field(
         default=None,
-        max_length=100,
+        max_length=_MAX_LIST_ITEMS,
         description="Handler names to remove from the contract (max 100 items).",
     )
 
@@ -207,13 +222,13 @@ class ModelContractPatch(BaseModel):
 
     dependencies__add: list[ModelDependency] | None = Field(
         default=None,
-        max_length=100,
+        max_length=_MAX_LIST_ITEMS,
         description="Dependencies to add to the contract (max 100 items).",
     )
 
     dependencies__remove: list[str] | None = Field(
         default=None,
-        max_length=100,
+        max_length=_MAX_LIST_ITEMS,
         description="Dependency names to remove from the contract (max 100 items).",
     )
 
@@ -223,13 +238,13 @@ class ModelContractPatch(BaseModel):
 
     consumed_events__add: list[str] | None = Field(
         default=None,
-        max_length=100,
+        max_length=_MAX_LIST_ITEMS,
         description="Event types to add to consumed events (max 100 items).",
     )
 
     consumed_events__remove: list[str] | None = Field(
         default=None,
-        max_length=100,
+        max_length=_MAX_LIST_ITEMS,
         description="Event types to remove from consumed events (max 100 items).",
     )
 
@@ -242,25 +257,25 @@ class ModelContractPatch(BaseModel):
     # to use that model for richer capability requirements.
     capability_inputs__add: list[str] | None = Field(
         default=None,
-        max_length=50,
+        max_length=_MAX_CAPABILITY_LIST_ITEMS,
         description="Required capability names to add (max 50 items).",
     )
 
     capability_inputs__remove: list[str] | None = Field(
         default=None,
-        max_length=50,
+        max_length=_MAX_CAPABILITY_LIST_ITEMS,
         description="Required capability names to remove (max 50 items).",
     )
 
     capability_outputs__add: list[ModelCapabilityProvided] | None = Field(
         default=None,
-        max_length=50,
+        max_length=_MAX_CAPABILITY_LIST_ITEMS,
         description="Provided capabilities to add (max 50 items).",
     )
 
     capability_outputs__remove: list[str] | None = Field(
         default=None,
-        max_length=50,
+        max_length=_MAX_CAPABILITY_LIST_ITEMS,
         description="Provided capability names to remove (max 50 items).",
     )
 
@@ -283,7 +298,7 @@ class ModelContractPatch(BaseModel):
     )
     @classmethod
     def normalize_empty_lists_to_none(
-        cls, v: list[object] | None
+        cls, v: list[object] | None, info: ValidationInfo
     ) -> list[object] | None:
         """Convert empty lists to None for list operation fields.
 
@@ -296,6 +311,7 @@ class ModelContractPatch(BaseModel):
 
         Args:
             v: List value or None.
+            info: Pydantic validation info containing field name.
 
         Returns:
             None if the list is empty, otherwise the original list.
@@ -308,6 +324,10 @@ class ModelContractPatch(BaseModel):
             >>> assert patch2.handlers__add is None
         """
         if v is not None and len(v) == 0:
+            logger.debug(
+                "Normalized empty list to None for field: %s",
+                info.field_name,
+            )
             return None
         return v
 

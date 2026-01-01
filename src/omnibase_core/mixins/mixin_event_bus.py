@@ -48,7 +48,7 @@ Thread Safety:
 
         If bind_*() methods are called after the flag is set, a WARNING is
         emitted via structured logging. This helps developers identify
-        thread-unsafe binding patterns without breaking backwards compatibility.
+        thread-unsafe binding patterns while preserving existing behavior.
 """
 
 import threading
@@ -59,38 +59,14 @@ from typing import (
     Any,
     ClassVar,
     Generic,
-    Protocol,
     TypeVar,
     cast,
-    runtime_checkable,
 )
 from uuid import UUID
 
 # Generic type parameters for typed event processing
 InputStateT = TypeVar("InputStateT")
 OutputStateT = TypeVar("OutputStateT")
-
-
-@runtime_checkable
-class ProtocolFromEvent(Protocol):
-    """Protocol for classes that support construction from ModelOnexEvent.
-
-    This protocol enables type-safe checking of the from_event class method
-    pattern used by input state classes that can be constructed from events.
-
-    Example:
-        >>> class MyInputState:
-        ...     @classmethod
-        ...     def from_event(cls, event: ModelOnexEvent) -> "MyInputState":
-        ...         return cls(...)
-        >>> isinstance(MyInputState, ProtocolFromEvent)  # True at runtime
-    """
-
-    @classmethod
-    def from_event(cls, event: Any) -> Any:
-        """Construct an instance from a ModelOnexEvent."""
-        ...
-
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_execution_shape import EnumMessageCategory
@@ -108,6 +84,7 @@ from omnibase_core.protocols.event_bus import (
     ProtocolEventBus,
     ProtocolEventBusRegistry,
 )
+from omnibase_core.protocols.protocol_from_event import ProtocolFromEvent
 
 if TYPE_CHECKING:
     from omnibase_core.models.event_bus import (
@@ -189,7 +166,7 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
     Strict Binding Mode:
         By default, calling bind_*() methods after the mixin is "in use" (i.e., after
         start_event_listener() or publish operations) only emits a WARNING log. This
-        maintains backwards compatibility while alerting developers to potential issues.
+        preserves existing behavior while alerting developers to potential issues.
 
         For stricter enforcement, enable STRICT_BINDING_MODE by subclassing:
 
@@ -394,7 +371,7 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
         binding patterns. The behavior depends on the STRICT_BINDING_MODE class variable:
 
         - STRICT_BINDING_MODE = False (default): Emits a structured WARNING log.
-          This maintains backwards compatibility while alerting developers.
+          This preserves existing behavior while alerting developers.
 
         - STRICT_BINDING_MODE = True: Raises ModelOnexError with INVALID_STATE.
           This is useful for development/testing or high-reliability systems.

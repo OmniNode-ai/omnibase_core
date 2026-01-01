@@ -177,6 +177,9 @@ from .enum_orchestrator_types import (
 
 # Parameter and return type enums
 from .enum_parameter_type import EnumParameterType
+
+# Patch validation error codes (OMN-1126)
+from .enum_patch_validation_error_code import EnumPatchValidationErrorCode
 from .enum_query_parameter_transformation_type import (
     EnumQueryParameterTransformationType,
 )
@@ -282,6 +285,7 @@ __all__ = [
     "EnumCLIExitCode",
     "EnumOnexErrorCode",
     "EnumCoreErrorCode",
+    "EnumPatchValidationErrorCode",
     "EnumRegistryErrorCode",
     "CORE_ERROR_CODE_TO_EXIT_CODE",
     "get_core_error_description",

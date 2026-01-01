@@ -337,17 +337,14 @@ class ModelReference(BaseModel):
     def resolve(self) -> type | None:
         """Resolve this reference to its actual class/type.
 
-        Uses the instance's module and class_name to resolve the reference.
+        **Security Warning**: This method uses importlib.import_module() which executes
+        module initialization code. Only call resolve() on ModelReference instances
+        created from trusted contract files. Never use with untrusted user input.
 
-        Security:
-            This method validates the module path against ALLOWED_MODULE_PREFIXES
-            before importing. Only modules from trusted OmniNode packages
-            (omnibase_core, omnibase_spi, omnibase_infra, omnibase_runtime) can
-            be resolved. Attempts to import untrusted modules are logged and
-            return None.
+        Module imports are restricted to ALLOWED_MODULE_PREFIXES for defense-in-depth.
 
         Returns:
-            The resolved class/type, or None if resolution fails
+            The resolved type, or None if resolution fails.
 
         Example:
             >>> ref = ModelReference(
