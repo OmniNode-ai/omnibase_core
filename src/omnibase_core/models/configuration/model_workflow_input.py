@@ -2,8 +2,6 @@
 Workflow input model.
 """
 
-from typing import Any
-
 from pydantic import BaseModel, Field
 
 
@@ -12,7 +10,7 @@ class ModelWorkflowInput(BaseModel):
 
     description: str = Field(default=..., description="Input description")
     required: bool = Field(default=False, description="Whether input is required")
-    default: Any = Field(default=None, description="Default value")
+    default: object = Field(default=None, description="Default value")
     type: str = Field(
         default="string", description="Input type (string/choice/boolean)"
     )

@@ -4,8 +4,6 @@ Base dependency injection container.
 
 from __future__ import annotations
 
-from typing import Any
-
 from dependency_injector import containers, providers
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
@@ -29,7 +27,7 @@ def _create_workflow_factory() -> ModelWorkflowFactory:
     return ModelWorkflowFactory()
 
 
-def _create_workflow_coordinator(factory: Any) -> ModelWorkflowCoordinator:
+def _create_workflow_coordinator(factory: ModelWorkflowFactory) -> ModelWorkflowCoordinator:
     """Create workflow execution coordinator."""
     return ModelWorkflowCoordinator(factory)
 

@@ -4,8 +4,6 @@ ONEX-Compliant GitHub Issues Event Model
 Phase 3I remediation: Eliminated factory method anti-patterns and optional return types.
 """
 
-from typing import Any
-
 from pydantic import BaseModel, Field, field_validator
 from pydantic_core.core_schema import ValidationInfo
 
@@ -62,7 +60,7 @@ class ModelGitHubIssuesEvent(BaseModel):
     # ONEX validation constraints
     @field_validator("action")
     @classmethod
-    def validate_action_context(cls, v: Any, info: ValidationInfo) -> Any:
+    def validate_action_context(cls, v: str, info: ValidationInfo) -> str:
         """Pass-through validator for action field (validation handled by Field pattern).
 
         The action field is already validated by the Field pattern constraint, which
@@ -76,7 +74,9 @@ class ModelGitHubIssuesEvent(BaseModel):
 
     @field_validator("label")
     @classmethod
-    def validate_label_context(cls, v: Any, info: ValidationInfo) -> Any:
+    def validate_label_context(
+        cls, v: ModelGitHubLabel | None, info: ValidationInfo
+    ) -> ModelGitHubLabel | None:
         """Ensure label is provided when action requires it."""
         action = info.data.get("action", "")
         if action in {"labeled", "unlabeled"} and v is None:
@@ -91,7 +91,9 @@ class ModelGitHubIssuesEvent(BaseModel):
 
     @field_validator("assignee")
     @classmethod
-    def validate_assignee_context(cls, v: Any, info: ValidationInfo) -> Any:
+    def validate_assignee_context(
+        cls, v: ModelGitHubUser | None, info: ValidationInfo
+    ) -> ModelGitHubUser | None:
         """Ensure assignee is provided when action requires it."""
         action = info.data.get("action", "")
         if action in {"assigned", "unassigned"} and v is None:

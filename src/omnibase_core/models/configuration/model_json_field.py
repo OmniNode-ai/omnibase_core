@@ -1,5 +1,3 @@
-from typing import Any
-
 from pydantic import BaseModel, Field, field_validator
 from pydantic_core.core_schema import ValidationInfo
 
@@ -46,7 +44,9 @@ class ModelJsonField(BaseModel):
     # ONEX validation constraints
     @field_validator("string_value")
     @classmethod
-    def validate_string_type_consistency(cls, v: Any, info: ValidationInfo) -> Any:
+    def validate_string_type_consistency(
+        cls, v: str | None, info: ValidationInfo
+    ) -> str | None:
         """Ensure string_value is set only when field_type=STRING."""
         field_type = info.data.get("field_type")
         if field_type == EnumJsonValueType.STRING and v is None:
@@ -63,7 +63,9 @@ class ModelJsonField(BaseModel):
 
     @field_validator("number_value")
     @classmethod
-    def validate_number_type_consistency(cls, v: Any, info: ValidationInfo) -> Any:
+    def validate_number_type_consistency(
+        cls, v: float | None, info: ValidationInfo
+    ) -> float | None:
         """Ensure number_value is set only when field_type=NUMBER."""
         field_type = info.data.get("field_type")
         if field_type == EnumJsonValueType.NUMBER and v is None:
@@ -80,7 +82,9 @@ class ModelJsonField(BaseModel):
 
     @field_validator("boolean_value")
     @classmethod
-    def validate_boolean_type_consistency(cls, v: Any, info: ValidationInfo) -> Any:
+    def validate_boolean_type_consistency(
+        cls, v: bool | None, info: ValidationInfo
+    ) -> bool | None:
         """Ensure boolean_value is set only when field_type=BOOLEAN."""
         field_type = info.data.get("field_type")
         if field_type == EnumJsonValueType.BOOLEAN and v is None:
@@ -97,7 +101,9 @@ class ModelJsonField(BaseModel):
 
     @field_validator("array_values")
     @classmethod
-    def validate_array_type_consistency(cls, v: Any, info: ValidationInfo) -> Any:
+    def validate_array_type_consistency(
+        cls, v: list[str] | None, info: ValidationInfo
+    ) -> list[str] | None:
         """Ensure array_values is set only when field_type=ARRAY."""
         field_type = info.data.get("field_type")
         if field_type == EnumJsonValueType.ARRAY and v is None:
@@ -112,7 +118,7 @@ class ModelJsonField(BaseModel):
             )
         return v
 
-    def get_typed_value(self) -> Any:
+    def get_typed_value(self) -> str | float | bool | list[str] | None:
         """ONEX-compatible value accessor with strong typing."""
         match self.field_type:
             case EnumJsonValueType.STRING:

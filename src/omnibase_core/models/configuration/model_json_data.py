@@ -5,8 +5,6 @@ Phase 3I remediation: Eliminated factory methods and conversion anti-patterns.
 Strong typing with generic container patterns following ONEX standards.
 """
 
-from typing import Any
-
 from pydantic import BaseModel, Field, field_validator
 from pydantic_core.core_schema import ValidationInfo
 
@@ -45,7 +43,9 @@ class ModelJsonData(BaseModel):
     # ONEX validation constraints
     @field_validator("fields")
     @classmethod
-    def validate_field_consistency(cls, v: Any, info: ValidationInfo) -> Any:
+    def validate_field_consistency(
+        cls, v: dict[str, ModelJsonField], info: ValidationInfo
+    ) -> dict[str, ModelJsonField]:
         """Ensure field count matches actual fields."""
         total_field_count = info.data.get("total_field_count", 0)
         if len(v) != total_field_count:
@@ -57,12 +57,22 @@ class ModelJsonData(BaseModel):
 
     @field_validator("total_field_count", mode="before")
     @classmethod
-    def calculate_field_count(cls, v: Any, info: ValidationInfo) -> Any:
+    def calculate_field_count(cls, v: object, info: ValidationInfo) -> int:
         """Auto-calculate field count for validation."""
         fields = info.data.get("fields", {})
-        return len(fields) if isinstance(fields, dict) else v
+        if isinstance(fields, dict):
+            return len(fields)
+        # v is int or int-like when not calculating from fields
+        if isinstance(v, int):
+            return v
+        if v is None:
+            return 0
+        # Handle string representation of int
+        if isinstance(v, str) and v.isdigit():
+            return int(v)
+        return 0
 
-    def get_field_value(self, field_name: str) -> Any:
+    def get_field_value(self, field_name: str) -> str | float | bool | list[str] | None:
         """ONEX-compatible field value accessor."""
         if field_name not in self.fields:
             raise ModelOnexError(

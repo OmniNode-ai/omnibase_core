@@ -1,5 +1,3 @@
-from typing import Any
-
 from pydantic import Field, field_validator
 
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -64,11 +62,11 @@ class ModelMetadataBlock(BaseModel):
         description="Optional description of the validator/tool",
     )
     tags: list[str] | None = Field(
-        default=None, description="Optional list[Any]of tags"
+        default=None, description="Optional list of tags"
     )
     dependencies: list[str] | None = Field(
         default=None,
-        description="Optional list[Any]of dependencies",
+        description="Optional list of dependencies",
     )
     config: ModelMetadataConfig | None = Field(
         default=None,
@@ -87,7 +85,7 @@ class ModelMetadataBlock(BaseModel):
 
     @field_validator("metadata_version", mode="before")
     @classmethod
-    def check_metadata_version(cls, v: Any) -> ModelSemVer:
+    def check_metadata_version(cls, v: object) -> ModelSemVer:
         """Validate and convert metadata_version to ModelSemVer."""
         if isinstance(v, ModelSemVer):
             return v
@@ -98,6 +96,12 @@ class ModelMetadataBlock(BaseModel):
             parse_semver_from_string,
         )
 
+        # At this point, v is a string (only remaining type after dict/ModelSemVer checks)
+        if not isinstance(v, str):
+            raise ModelOnexError(
+                f"metadata_version must be ModelSemVer, dict, or str, got {type(v).__name__}",
+                EnumCoreErrorCode.VALIDATION_ERROR,
+            )
         return parse_semver_from_string(v)
 
     @field_validator("name")
@@ -110,19 +114,19 @@ class ModelMetadataBlock(BaseModel):
 
     @field_validator("namespace", mode="before")
     @classmethod
-    def check_namespace(cls, v: Any) -> Any:
+    def check_namespace(cls, v: object) -> Namespace:
         if isinstance(v, Namespace):
             return v
         if isinstance(v, str):
             return Namespace(value=v)
         if isinstance(v, dict) and "value" in v:
             return Namespace(**v)
-        msg = "Namespace must be a Namespace, str, or dict[str, Any]with 'value'"
+        msg = "Namespace must be a Namespace, str, or dict with 'value'"
         raise ModelOnexError(msg, EnumCoreErrorCode.VALIDATION_ERROR)
 
     @field_validator("version", mode="before")
     @classmethod
-    def check_version(cls, v: Any) -> ModelSemVer:
+    def check_version(cls, v: object) -> ModelSemVer:
         """Validate and convert version to ModelSemVer."""
         if isinstance(v, ModelSemVer):
             return v
@@ -133,6 +137,12 @@ class ModelMetadataBlock(BaseModel):
             parse_semver_from_string,
         )
 
+        # At this point, v is a string (only remaining type after dict/ModelSemVer checks)
+        if not isinstance(v, str):
+            raise ModelOnexError(
+                f"version must be ModelSemVer, dict, or str, got {type(v).__name__}",
+                EnumCoreErrorCode.VALIDATION_ERROR,
+            )
         return parse_semver_from_string(v)
 
     @field_validator("protocols_supported", mode="before")
@@ -144,13 +154,13 @@ class ModelMetadataBlock(BaseModel):
             try:
                 v = ast.literal_eval(v)
             except Exception:
-                msg = f"protocols_supported must be a list[Any], got: {v}"
+                msg = f"protocols_supported must be a list, got: {v}"
                 raise ModelOnexError(
                     msg,
                     EnumCoreErrorCode.VALIDATION_ERROR,
                 )
         if not isinstance(v, list):
-            msg = f"protocols_supported must be a list[Any], got: {v}"
+            msg = f"protocols_supported must be a list, got: {v}"
             raise ModelOnexError(
                 msg,
                 EnumCoreErrorCode.VALIDATION_ERROR,
@@ -159,7 +169,7 @@ class ModelMetadataBlock(BaseModel):
 
     @field_validator("entrypoint", mode="before")
     @classmethod
-    def validate_entrypoint(cls, v: Any) -> Any:
+    def validate_entrypoint(cls, v: object) -> str | None:
         if v is None or v == "":
             return None
         if isinstance(v, str) and "://" in v:

@@ -7,7 +7,6 @@ cascade failures in load balancing systems.
 
 import threading
 from datetime import UTC, datetime, timedelta
-from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
@@ -96,7 +95,7 @@ class ModelCircuitBreaker(BaseModel):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    def __new__(cls, **_data: Any) -> "ModelCircuitBreaker":
+    def __new__(cls, **_data: object) -> "ModelCircuitBreaker":
         """Override __new__ to trigger lazy model rebuild before Pydantic validation.
 
         Pydantic validates model completeness before calling model_validator,

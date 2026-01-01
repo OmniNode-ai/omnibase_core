@@ -3,7 +3,7 @@ Pydantic models and validators for OmniNode metadata block schema and validation
 """
 
 import re
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -68,11 +68,11 @@ class ModelOnexMetadata(BaseModel):
         description="Optional description of the validator/tool",
     )
     tags: list[str] | None = Field(
-        default=None, description="Optional list[Any]of tags"
+        default=None, description="Optional list of tags"
     )
     dependencies: list[str] | None = Field(
         default=None,
-        description="Optional list[Any]of dependencies",
+        description="Optional list of dependencies",
     )
     config: "ModelMetadataConfig | None" = Field(
         default=None,
@@ -91,7 +91,7 @@ class ModelOnexMetadata(BaseModel):
 
     @field_validator("metadata_version", mode="before")
     @classmethod
-    def check_metadata_version(cls, v: Any) -> ModelSemVer:
+    def check_metadata_version(cls, v: object) -> ModelSemVer:
         """Validate metadata_version and convert to ModelSemVer.
 
         Args:
@@ -138,14 +138,14 @@ class ModelOnexMetadata(BaseModel):
 
     @field_validator("namespace", mode="before")
     @classmethod
-    def check_namespace(cls, v: Any) -> Any:
+    def check_namespace(cls, v: object) -> Namespace:
         if isinstance(v, Namespace):
             return v
         if isinstance(v, str):
             return Namespace(value=v)
         if isinstance(v, dict) and "value" in v:
             return Namespace(**v)
-        msg = "Namespace must be a Namespace, str, or dict[str, Any]with 'value'"
+        msg = "Namespace must be a Namespace, str, or dict with 'value'"
         raise ModelOnexError(
             error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=msg,
@@ -153,7 +153,7 @@ class ModelOnexMetadata(BaseModel):
 
     @field_validator("version", mode="before")
     @classmethod
-    def check_version(cls, v: Any) -> ModelSemVer:
+    def check_version(cls, v: object) -> ModelSemVer:
         """Validate version and convert to ModelSemVer.
 
         Args:
@@ -188,19 +188,19 @@ class ModelOnexMetadata(BaseModel):
     @classmethod
     def check_protocols_supported(cls, v: list[str] | str) -> list[str]:
         if isinstance(v, str):
-            # Try to parse as list[Any]from string
+            # Try to parse as list from string
             import ast
 
             try:
                 v = ast.literal_eval(v)
             except Exception:
-                msg = f"protocols_supported must be a list[Any], got: {v}"
+                msg = f"protocols_supported must be a list, got: {v}"
                 raise ModelOnexError(
                     EnumCoreErrorCode.VALIDATION_ERROR,
                     msg,
                 )
         if not isinstance(v, list):
-            msg = f"protocols_supported must be a list[Any], got: {v}"
+            msg = f"protocols_supported must be a list, got: {v}"
             raise ModelOnexError(
                 EnumCoreErrorCode.VALIDATION_ERROR,
                 msg,
@@ -209,7 +209,7 @@ class ModelOnexMetadata(BaseModel):
 
     @field_validator("entrypoint", mode="before")
     @classmethod
-    def validate_entrypoint(cls, v: Any) -> Any:
+    def validate_entrypoint(cls, v: object) -> str | None:
         if v is None or v == "":
             return None
         if isinstance(v, str) and "://" in v:

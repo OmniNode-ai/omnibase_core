@@ -881,7 +881,7 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
         guides = {
             "postgresql": [
                 "Check pg_hba.conf for authentication rules",
-                "Verify PostgreSQL is list[Any]ening on configured port",
+                "Verify PostgreSQL is listening on configured port",
                 "Check postgresql.conf for ssl settings",
                 "Monitor pg_stat_activity for connection states",
             ],

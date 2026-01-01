@@ -19,7 +19,6 @@ validation, and default value management for production CLI operations.
 """
 
 from pathlib import Path
-from typing import Any
 
 from pydantic import BaseModel
 
@@ -65,7 +64,7 @@ class ModelCLIConfig(BaseModel):
     debug: bool = Field(default=False, description="Enable debug mode")
     verbose: bool = Field(default=False, description="Enable verbose output")
 
-    def model_post_init(self, __context: Any) -> None:
+    def model_post_init(self, __context: object) -> None:
         """Initialize configuration after model creation."""
         self.ensure_directories_exist()
 

@@ -7,7 +7,6 @@ Each sub-model handles a specific concern area.
 
 from __future__ import annotations
 
-from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field, model_validator
@@ -64,11 +63,11 @@ class ModelCustomConnectionProperties(BaseModel):
 
     @model_validator(mode="before")
     @classmethod
-    def handle_flat_init_kwargs(cls, data: Any) -> Any:
+    def handle_flat_init_kwargs(cls, data: object) -> object:
         """Handle flat kwargs during initialization by routing to nested models."""
         if not isinstance(data, dict):
             # Return non-dict data as-is for Pydantic to handle
-            result: Any = data
+            result: object = data
             return result
 
         # Database properties

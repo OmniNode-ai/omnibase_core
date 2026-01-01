@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, TypeVar, cast
+from typing import TYPE_CHECKING, TypeVar, cast
 
 from omnibase_core.decorators.allow_dict_any import allow_dict_any
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -8,6 +8,20 @@ from omnibase_core.types.typed_dict_performance_checkpoint_result import (
 )
 
 if TYPE_CHECKING:
+    from dependency_injector.providers import Configuration, Factory, Singleton
+
+    from omnibase_core.container.service_registry import ServiceRegistry
+    from omnibase_core.models.container.model_enhanced_logger import ModelEnhancedLogger
+    from omnibase_core.models.container.model_workflow_coordinator import (
+        ModelWorkflowCoordinator,
+    )
+    from omnibase_core.models.container.model_workflow_factory import ModelWorkflowFactory
+    from omnibase_core.models.core.model_action_registry import ModelActionRegistry
+    from omnibase_core.models.core.model_cli_command_registry import (
+        ModelCliCommandRegistry,
+    )
+    from omnibase_core.models.core.model_event_type_registry import ModelEventTypeRegistry
+    from omnibase_core.models.security.model_secret_manager import ModelSecretManager
     from omnibase_core.protocols.compute.protocol_performance_monitor import (
         ProtocolPerformanceMonitor,
     )
@@ -60,8 +74,9 @@ except ImportError:
 
 # Type aliases for protocols not yet implemented in omnibase_core
 # Future: import from omnibase_core.protocols once implemented
-ProtocolDatabaseConnection = Any
-ProtocolServiceDiscovery = Any
+# Using object as placeholder until proper protocols are defined
+ProtocolDatabaseConnection = object
+ProtocolServiceDiscovery = object
 
 T = TypeVar("T")
 
@@ -119,15 +134,15 @@ class ModelONEXContainer:
         }
 
         # Initialize service cache
-        self._service_cache: dict[str, Any] = {}
+        self._service_cache: dict[str, object] = {}
 
         # Optional performance enhancements
         self.enable_performance_cache = enable_performance_cache
-        self.tool_cache: Any = None
+        self.tool_cache: object | None = None
         self.performance_monitor: ProtocolPerformanceMonitor | None = None
 
         # Initialize ServiceRegistry (new DI system)
-        self._service_registry: Any = None
+        self._service_registry: ServiceRegistry | None = None
         self._enable_service_registry = enable_service_registry
 
         if enable_service_registry:
@@ -178,47 +193,47 @@ class ModelONEXContainer:
         return self._base_container
 
     @property
-    def config(self) -> Any:
+    def config(self) -> "Configuration":
         """Access to configuration."""
         return self._base_container.config
 
     @property
-    def enhanced_logger(self) -> Any:
+    def enhanced_logger(self) -> "Factory[ModelEnhancedLogger]":
         """Access to enhanced logger."""
         return self._base_container.enhanced_logger
 
     @property
-    def workflow_factory(self) -> Any:
+    def workflow_factory(self) -> "Factory[ModelWorkflowFactory]":
         """Access to workflow factory."""
         return self._base_container.workflow_factory
 
     @property
-    def workflow_coordinator(self) -> Any:
+    def workflow_coordinator(self) -> "Singleton[ModelWorkflowCoordinator]":
         """Access to workflow coordinator."""
         return self._base_container.workflow_coordinator
 
     @property
-    def action_registry(self) -> Any:
+    def action_registry(self) -> "Singleton[ModelActionRegistry]":
         """Access to action registry."""
         return self._base_container.action_registry
 
     @property
-    def event_type_registry(self) -> Any:
+    def event_type_registry(self) -> "Singleton[ModelEventTypeRegistry]":
         """Access to event type registry."""
         return self._base_container.event_type_registry
 
     @property
-    def command_registry(self) -> Any:
+    def command_registry(self) -> "Singleton[ModelCliCommandRegistry]":
         """Access to command registry."""
         return self._base_container.command_registry
 
     @property
-    def secret_manager(self) -> Any:
+    def secret_manager(self) -> "Singleton[ModelSecretManager]":
         """Access to secret manager."""
         return self._base_container.secret_manager
 
     @property
-    def service_registry(self) -> Any:
+    def service_registry(self) -> "ServiceRegistry | None":
         """
         Access to service registry (new DI system).
 
@@ -265,7 +280,7 @@ class ModelONEXContainer:
                     "correlation_id": str(final_correlation_id),
                 },
             )
-            cached_service: T = self._service_cache[cache_key]
+            cached_service = cast(T, self._service_cache[cache_key])
             return cached_service
 
         # Use ServiceRegistry (new DI system) - fail fast if enabled
@@ -354,15 +369,17 @@ class ModelONEXContainer:
             # Check tool cache for metadata (optimization)
             cache_hit = False
             if service_name and self.tool_cache:
-                tool_metadata = self.tool_cache.lookup_tool(
-                    service_name.replace("_registry", ""),
-                )
-                if tool_metadata:
-                    cache_hit = True
-                    emit_log_event(
-                        LogLevel.DEBUG,
-                        f"Tool metadata cache hit for {service_name}",
+                # tool_cache is MemoryMappedToolCache when not None
+                if hasattr(self.tool_cache, "lookup_tool"):
+                    tool_metadata = self.tool_cache.lookup_tool(
+                        service_name.replace("_registry", ""),
                     )
+                    if tool_metadata:
+                        cache_hit = True
+                        emit_log_event(
+                            LogLevel.DEBUG,
+                            f"Tool metadata cache hit for {service_name}",
+                        )
 
             # Perform actual service resolution
             service_instance = asyncio.run(
@@ -442,7 +459,7 @@ class ModelONEXContainer:
         except Exception:  # fallback-ok: Optional service getter intentionally returns None when service unavailable
             return None
 
-    def get_workflow_orchestrator(self) -> Any:
+    def get_workflow_orchestrator(self) -> "ModelWorkflowCoordinator":
         """Get workflow orchestration coordinator."""
         return self.workflow_coordinator()
 
@@ -553,7 +570,7 @@ class ModelONEXContainer:
             key: value.to_value() for key, value in base_metrics.items()
         }
 
-        if self.tool_cache:
+        if self.tool_cache and hasattr(self.tool_cache, "get_cache_stats"):
             stats["tool_cache"] = self.tool_cache.get_cache_stats()
 
         if self.performance_monitor:
@@ -605,7 +622,7 @@ class ModelONEXContainer:
 
     def close(self) -> None:
         """Clean up resources."""
-        if self.tool_cache:
+        if self.tool_cache and hasattr(self.tool_cache, "close"):
             self.tool_cache.close()
 
         emit_log_event(
