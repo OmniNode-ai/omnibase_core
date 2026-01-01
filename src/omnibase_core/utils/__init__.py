@@ -27,6 +27,7 @@ from .util_hash import (
     deterministic_jitter,
     string_to_uuid,
 )
+from .util_validators import convert_dict_to_frozen_pairs, convert_list_to_tuple
 
 # Note: The following utilities have heavy model dependencies and are NOT imported
 # here to avoid circular dependencies during initial module loading. Import directly:
@@ -43,6 +44,8 @@ __all__ = [
     "ProtocolContractLoader",  # DEPRECATED: Use UtilContractLoader instead
     "allow_any_type",
     "allow_dict_str_any",
+    "convert_dict_to_frozen_pairs",
+    "convert_list_to_tuple",
     "create_enum_normalizer",
     "deterministic_cache_key",
     "deterministic_error_code",

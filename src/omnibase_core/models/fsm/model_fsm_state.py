@@ -102,9 +102,13 @@ class ModelFsmState(BaseModel):
     def _convert_properties_to_frozen(
         cls, v: dict[str, str] | tuple[tuple[str, str], ...] | object
     ) -> tuple[tuple[str, str], ...]:
-        """Convert dict to tuple of tuples for deep immutability."""
+        """Convert dict to tuple of tuples for deep immutability.
+
+        Keys are sorted for deterministic ordering, which ensures consistent
+        hashing and comparison of model instances.
+        """
         if isinstance(v, dict):
-            return tuple(v.items())
+            return tuple(sorted(v.items()))
         return v  # type: ignore[return-value]
 
     model_config = ConfigDict(

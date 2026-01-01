@@ -65,6 +65,17 @@ class ModelFsmData(BaseModel):
         default=(), description="Additional metadata as frozen key-value pairs"
     )
 
+    # -------------------------------------------------------------------------
+    # Type Ignore Pattern Explanation:
+    # These validators use `# type: ignore[return-value]` because:
+    # 1. Input type is `list[...] | tuple[...] | object` to accept various inputs
+    # 2. When input is already a tuple, we return it directly
+    # 3. Type checker can't verify `object` is actually `tuple[...]`
+    # 4. This is safe because Pydantic validates the final field type
+    # This pattern is used throughout FSM/workflow models for list-to-tuple conversion.
+    # See PR #298 for context: replaced `Any` with `object` for stronger typing.
+    # -------------------------------------------------------------------------
+
     @field_validator("states", mode="before")
     @classmethod
     def _convert_states_to_tuple(
@@ -100,9 +111,13 @@ class ModelFsmData(BaseModel):
     def _convert_variables_to_frozen(
         cls, v: dict[str, str] | tuple[tuple[str, str], ...] | object
     ) -> tuple[tuple[str, str], ...]:
-        """Convert dict to tuple of tuples for deep immutability."""
+        """Convert dict to tuple of tuples for deep immutability.
+
+        Keys are sorted for deterministic ordering, which ensures consistent
+        hashing and comparison of model instances.
+        """
         if isinstance(v, dict):
-            return tuple(v.items())
+            return tuple(sorted(v.items()))
         return v  # type: ignore[return-value]
 
     @field_validator("metadata", mode="before")
@@ -110,9 +125,13 @@ class ModelFsmData(BaseModel):
     def _convert_metadata_to_frozen(
         cls, v: dict[str, str] | tuple[tuple[str, str], ...] | object
     ) -> tuple[tuple[str, str], ...]:
-        """Convert dict to tuple of tuples for deep immutability."""
+        """Convert dict to tuple of tuples for deep immutability.
+
+        Keys are sorted for deterministic ordering, which ensures consistent
+        hashing and comparison of model instances.
+        """
         if isinstance(v, dict):
-            return tuple(v.items())
+            return tuple(sorted(v.items()))
         return v  # type: ignore[return-value]
 
     def get_state_by_name(self, name: str) -> ModelFsmState | None:
