@@ -100,6 +100,7 @@ class ModelCoreIntent(BaseModel):
         from_attributes=True,
     )
 
+    # ONEX_EXCLUDE: dict_str_any - model_dump serialization output
     def serialize_for_io(self) -> dict[str, Any]:
         """Serialize intent for I/O operations.
 

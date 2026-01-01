@@ -172,13 +172,19 @@ class ServiceValidationSuite:
         Prints formatted output suitable for CLI usage. For programmatic
         access, use :meth:`get_validators` instead which returns a dict.
         """
-        print("Available Validation Tools:")
-        print("=" * 40)
+        print("Available Validation Tools:")  # print-ok: CLI user output
+        print("=" * 40)  # print-ok: CLI user output
 
         for name, description in self.get_validators().items():
-            print(f"  {name:<15} - {description}")
+            print(f"  {name:<15} - {description}")  # print-ok: CLI user output
 
-        print("\nUsage Examples:")
-        print("  python -m omnibase_core.validation.cli architecture")
-        print("  python -m omnibase_core.validation.cli union-usage --strict")
-        print("  python -m omnibase_core.validation.cli all")
+        print("\nUsage Examples:")  # print-ok: CLI user output
+        print(
+            "  python -m omnibase_core.validation.cli architecture"
+        )  # print-ok: CLI user output
+        print(
+            "  python -m omnibase_core.validation.cli union-usage --strict"
+        )  # print-ok: CLI user output
+        print(
+            "  python -m omnibase_core.validation.cli all"
+        )  # print-ok: CLI user output

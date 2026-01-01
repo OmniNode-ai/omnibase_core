@@ -16,11 +16,11 @@ class ModelRouteHopMetadata(BaseModel):
     """
 
     # Routing context
-    route_version: str | None = Field(
+    route_version: str | None = Field(  # string-version-ok: routing rules version
         default=None,
         description="Version of the routing rules applied",
     )
-    routing_table_id: str | None = Field(
+    routing_table_id: str | None = Field(  # string-id-ok: routing table identifier
         default=None,
         description="Identifier of the routing table used",
     )

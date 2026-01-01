@@ -44,7 +44,7 @@ class ModelDetectionRuleMetadata(BaseModel):
         from_attributes=True,
     )
 
-    rule_id: str | None = Field(
+    rule_id: str | None = Field(  # string-id-ok: detection rule identifier
         default=None,
         description="Identifier of the detection rule that matched",
     )

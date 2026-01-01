@@ -209,7 +209,7 @@ class ModelHookTrace(BaseModel):
         Returns:
             True if status is SKIPPED
         """
-        return self.status == EnumExecutionStatus.SKIPPED
+        return EnumExecutionStatus.is_skipped(self.status)
 
     def is_complete(self) -> bool:
         """
@@ -227,7 +227,7 @@ class ModelHookTrace(BaseModel):
         Returns:
             True if status is RUNNING
         """
-        return self.status == EnumExecutionStatus.RUNNING
+        return EnumExecutionStatus.is_running(self.status)
 
     def is_cancelled(self) -> bool:
         """
@@ -236,7 +236,7 @@ class ModelHookTrace(BaseModel):
         Returns:
             True if status is CANCELLED
         """
-        return self.status == EnumExecutionStatus.CANCELLED
+        return EnumExecutionStatus.is_cancelled(self.status)
 
     def has_error(self) -> bool:
         """

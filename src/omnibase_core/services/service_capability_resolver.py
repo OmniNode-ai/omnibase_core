@@ -46,8 +46,7 @@ import hashlib
 import json
 import logging
 import time
-from datetime import datetime, timezone
-from typing import Any, Protocol, TypedDict
+from datetime import UTC, datetime
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.bindings.model_binding import ModelBinding
@@ -60,41 +59,18 @@ from omnibase_core.models.providers.model_provider_descriptor import (
     ModelProviderDescriptor,
 )
 from omnibase_core.protocols.resolution.protocol_capability_resolver import (
-    ProtocolCapabilityResolver,
+    ProtocolProfile,
     ProtocolProviderRegistry,
+)
+from omnibase_core.types.json_types import JsonType
+from omnibase_core.types.typed_dict_resolution_audit_data import (
+    TypedDictResolutionAuditData,
 )
 
 logger = logging.getLogger(__name__)
 
-class ProtocolProfile(Protocol):
-    """Protocol stub for profile until ModelProfile is implemented.
-
-    Defines the minimal interface expected by the resolver.
-    """
-
-    profile_id: str
-    provider_weights: dict[str, float] | None
-    explicit_bindings: dict[str, str] | None
-
-
+# Type alias for profile parameter (optional)
 ModelProfile = ProtocolProfile | None
-
-
-class _AuditData(TypedDict):
-    """Internal audit data captured during resolution.
-
-    This TypedDict captures detailed resolution information for debugging
-    and audit purposes. Used internally by _resolve_with_audit().
-
-    Attributes:
-        candidates: List of provider IDs considered before filtering.
-        scores: Mapping of provider_id -> score for providers that passed filtering.
-        rejection_reasons: Mapping of provider_id -> reason for rejected providers.
-    """
-
-    candidates: list[str]
-    scores: dict[str, float]
-    rejection_reasons: dict[str, str]
 
 
 class ServiceCapabilityResolver:
@@ -307,7 +283,9 @@ class ServiceCapabilityResolver:
                     rejection_reasons[dep.alias] = audit["rejection_reasons"]
 
             except ModelOnexError as e:
-                error_msg = f"Failed to resolve '{dep.alias}' ({dep.capability}): {e.message}"
+                error_msg = (
+                    f"Failed to resolve '{dep.alias}' ({dep.capability}): {e.message}"
+                )
                 errors.append(error_msg)
                 logger.warning("Resolution failed for '%s': %s", dep.alias, e.message)
 
@@ -323,9 +301,9 @@ class ServiceCapabilityResolver:
             candidates_by_alias=candidates_by_alias,
             scores_by_alias=scores_by_alias,
             rejection_reasons=rejection_reasons,
-            resolved_at=datetime.now(timezone.utc),
+            resolved_at=datetime.now(UTC),
             resolution_duration_ms=resolution_duration_ms,
-            profile_id=profile_id,
+            resolution_profile=profile_id,
             errors=errors,
         )
 
@@ -334,7 +312,7 @@ class ServiceCapabilityResolver:
         dependency: ModelCapabilityDependency,
         registry: ProtocolProviderRegistry,
         profile: ModelProfile | None = None,
-    ) -> tuple[ModelBinding, _AuditData]:
+    ) -> tuple[ModelBinding, TypedDictResolutionAuditData]:
         """
         Internal method that resolves a dependency and returns audit data.
 
@@ -431,12 +409,12 @@ class ServiceCapabilityResolver:
         binding = ModelBinding(
             dependency_alias=dependency.alias,
             capability=dependency.capability,
-            provider_id=str(selected_provider.provider_id),
+            resolved_provider=str(selected_provider.provider_id),
             adapter=selected_provider.adapter,
             connection_ref=selected_provider.connection_ref,
             requirements_hash=requirements_hash,
-            profile_id=profile_id,
-            resolved_at=datetime.now(timezone.utc),
+            resolution_profile=profile_id,
+            resolved_at=datetime.now(UTC),
             resolution_notes=resolution_notes,
             candidates_considered=len(sorted_providers),
         )
@@ -449,7 +427,7 @@ class ServiceCapabilityResolver:
             len(sorted_providers),
         )
 
-        audit_data: _AuditData = {
+        audit_data: TypedDictResolutionAuditData = {
             "candidates": candidates,
             "scores": scores,
             "rejection_reasons": rejection_reasons,
@@ -478,7 +456,7 @@ class ServiceCapabilityResolver:
 
         # Combine attributes and features for constraint checking
         # Attributes are static metadata, features are capabilities
-        provider_values: dict[str, Any] = {
+        provider_values: dict[str, JsonType] = {
             **provider.attributes,
             **effective_features,
         }
@@ -527,7 +505,7 @@ class ServiceCapabilityResolver:
         for provider in providers:
             score = 0.0
             effective_features = provider.get_effective_features()
-            provider_values: dict[str, Any] = {
+            provider_values: dict[str, JsonType] = {
                 **provider.attributes,
                 **effective_features,
             }
@@ -626,7 +604,9 @@ class ServiceCapabilityResolver:
         if policy == "auto_if_unique":
             if len(scored_providers) == 1:
                 provider, score = scored_providers[0]
-                resolution_notes.append("Selected via auto_if_unique (single candidate)")
+                resolution_notes.append(
+                    "Selected via auto_if_unique (single candidate)"
+                )
                 resolution_notes.append(f"Score: {score:.2f}")
                 return provider, resolution_notes
 
@@ -643,22 +623,20 @@ class ServiceCapabilityResolver:
                     "alias": dependency.alias,
                     "capability": dependency.capability,
                     "candidates": [str(p.provider_id) for p, _ in scored_providers],
-                    "scores": {
-                        str(p.provider_id): s for p, s in scored_providers
-                    },
+                    "scores": {str(p.provider_id): s for p, s in scored_providers},
                 },
             )
 
         if policy == "best_score":
             # Select highest scoring (already sorted)
             provider, score = scored_providers[0]
-            resolution_notes.append("Selected via best_score (highest scoring candidate)")
+            resolution_notes.append(
+                "Selected via best_score (highest scoring candidate)"
+            )
             resolution_notes.append(f"Score: {score:.2f}")
 
             # Note if there were ties
-            tied_providers = [
-                p for p, s in scored_providers if s == score
-            ]
+            tied_providers = [p for p, s in scored_providers if s == score]
             if len(tied_providers) > 1:
                 resolution_notes.append(
                     f"Tie-breaker: selected by provider_id ordering "
@@ -685,9 +663,7 @@ class ServiceCapabilityResolver:
             },
         )
 
-    def _compute_requirements_hash(
-        self, dependency: ModelCapabilityDependency
-    ) -> str:
+    def _compute_requirements_hash(self, dependency: ModelCapabilityDependency) -> str:
         """
         Compute a deterministic hash of the dependency requirements.
 
@@ -740,14 +716,14 @@ class ServiceCapabilityResolver:
         return "default"
 
     def _get_profile_weight(
-        self, profile: ModelProfile | None, provider_id: str
+        self, profile: ModelProfile | None, provider_id_str: str
     ) -> float:
         """
         Get profile weight adjustment for a provider.
 
         Args:
             profile: Optional profile with weight configuration.
-            provider_id: The provider ID to look up.
+            provider_id_str: The provider ID string to look up in weights dict.
 
         Returns:
             Weight adjustment (0.0 if no profile or no weights defined).
@@ -761,7 +737,7 @@ class ServiceCapabilityResolver:
             weights = getattr(profile, "weights", None)
 
         if weights and isinstance(weights, dict):
-            return float(weights.get(provider_id, 0.0))
+            return float(weights.get(provider_id_str, 0.0))
 
         return 0.0
 

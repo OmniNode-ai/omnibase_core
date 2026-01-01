@@ -163,13 +163,13 @@ from omnibase_core.protocols.notifications import (
 from omnibase_core.protocols.protocol_context_aware_output_handler import (
     ProtocolContextAwareOutputHandler,
 )
-from omnibase_core.protocols.protocol_logger_like import ProtocolLoggerLike
 
 # =============================================================================
 # Generation Protocol Exports
 # =============================================================================
 from omnibase_core.protocols.protocol_generation_config import ProtocolGenerationConfig
 from omnibase_core.protocols.protocol_import_tracker import ProtocolImportTracker
+from omnibase_core.protocols.protocol_logger_like import ProtocolLoggerLike
 
 # =============================================================================
 # Data Protocol Exports

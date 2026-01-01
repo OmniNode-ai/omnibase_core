@@ -96,8 +96,6 @@ class TestSchemaDrift:
             "    with open('src/omnibase_core/schemas/projector_contract.schema.json', 'w') as f:\n"
             "        json.dump(schema, f, indent=2)\n"
             '    "\n\n'
-            "NOTE: After regenerating, manually add the pattern constraint to consumed_events:\n"
-            '    "items": {"type": "string", "pattern": "^[a-z][a-z0-9_]*(\\\\.[a-z][a-z0-9_]*)*\\\\.v[0-9]+$"}\n\n'
             "If unintentional, revert the model changes that caused the drift."
         )
 
