@@ -194,6 +194,7 @@ class NamingConventionValidator:
         #            The Protocol interface for this is ProtocolPatchValidator in protocol_patch_validator.py
         "validation/": [
             "ContractPatchValidator",  # Validator for contract patches (OMN-1126)
+            "ContractValidationInvariantChecker",  # Invariant checker for validation events (OMN-1146)
         ],
     }
 

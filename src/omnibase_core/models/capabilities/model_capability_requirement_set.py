@@ -52,6 +52,7 @@ from typing import Any, TypeGuard
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from omnibase_core.decorators.allow_dict_any import allow_dict_any
 from omnibase_core.types.json_types import JsonType
 
 # =============================================================================
@@ -535,6 +536,86 @@ class ModelRequirementSet(BaseModel):
             forbid={**self.forbid, **other.forbid},
             hints={**self.hints, **other.hints},
         )
+
+    @allow_dict_any(
+        reason="Provider capabilities are dynamic key-value pairs from external systems"
+    )
+    def matches(
+        self,
+        provider: dict[str, Any],
+    ) -> tuple[bool, float, list[str]]:
+        """
+        Check if a provider satisfies this requirement set.
+
+        Evaluates the provider against all constraint tiers and returns
+        a match result with score and warnings.
+
+        Matching Logic:
+            1. **must constraints**: All must be satisfied. If any ``must``
+               constraint is not met, the provider is rejected (matches=False).
+            2. **forbid constraints**: None should match. If any ``forbid``
+               constraint matches, the provider is rejected (matches=False).
+            3. **prefer constraints**: Affect the score. Each satisfied preference
+               adds to the score. Unmet preferences generate warnings.
+            4. **hints**: Currently advisory only, do not affect scoring.
+
+        Scoring:
+            - Base score is 1.0 for a matching provider
+            - Each satisfied ``prefer`` constraint adds 0.1 to the score
+            - Each unsatisfied ``prefer`` constraint generates a warning
+
+        Args:
+            provider: Provider capability mapping to check. Keys are attribute
+                names, values are the provider's capability values.
+
+        Returns:
+            Tuple of (matches, score, warnings):
+                - matches: True if provider satisfies all must/forbid constraints
+                - score: Float score (1.0 base + 0.1 per satisfied preference)
+                - warnings: List of warning messages for unmet preferences
+
+        Examples:
+            >>> reqs = ModelRequirementSet(
+            ...     must={"engine": "postgres"},
+            ...     prefer={"version": 14},
+            ...     forbid={"deprecated": True},
+            ... )
+            >>> # Provider matches all constraints
+            >>> reqs.matches({"engine": "postgres", "version": 14})
+            (True, 1.1, [])
+            >>> # Provider missing must constraint
+            >>> reqs.matches({"engine": "mysql"})
+            (False, 0.0, [])
+            >>> # Provider has forbidden attribute
+            >>> reqs.matches({"engine": "postgres", "deprecated": True})
+            (False, 0.0, [])
+        """
+        warnings: list[str] = []
+
+        # Check must constraints - all must be satisfied
+        for key, required_value in self.must.items():
+            if key not in provider:
+                return (False, 0.0, [])
+            if provider[key] != required_value:
+                return (False, 0.0, [])
+
+        # Check forbid constraints - none should match
+        for key, forbidden_value in self.forbid.items():
+            if key in provider and provider[key] == forbidden_value:
+                return (False, 0.0, [])
+
+        # Calculate score based on prefer matches
+        score = 1.0  # Base score for matching provider
+        for key, preferred_value in self.prefer.items():
+            if key in provider and provider[key] == preferred_value:
+                score += 0.1  # Bonus for matching preference
+            else:
+                warnings.append(
+                    f"Preference not met: {key}={preferred_value!r} "
+                    f"(provider has {provider.get(key, '<missing>')!r})"
+                )
+
+        return (True, score, warnings)
 
     def __repr__(self) -> str:
         """
