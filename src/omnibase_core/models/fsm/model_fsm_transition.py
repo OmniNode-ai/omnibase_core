@@ -12,8 +12,6 @@ Deep Immutability:
 
 from __future__ import annotations
 
-from typing import Any
-
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
@@ -54,22 +52,22 @@ class ModelFsmTransition(BaseModel):
     @field_validator("conditions", mode="before")
     @classmethod
     def _convert_conditions_to_tuple(
-        cls, v: list[Any] | tuple[Any, ...] | Any
+        cls, v: list[object] | tuple[object, ...] | object
     ) -> tuple[str, ...]:
         """Convert list of conditions to tuple for deep immutability."""
         if isinstance(v, list):
-            return tuple(v)
-        return v
+            return tuple(v)  # type: ignore[return-value]
+        return v  # type: ignore[return-value]
 
     @field_validator("actions", mode="before")
     @classmethod
     def _convert_actions_to_tuple(
-        cls, v: list[Any] | tuple[Any, ...] | Any
+        cls, v: list[object] | tuple[object, ...] | object
     ) -> tuple[str, ...]:
         """Convert list of actions to tuple for deep immutability."""
         if isinstance(v, list):
-            return tuple(v)
-        return v
+            return tuple(v)  # type: ignore[return-value]
+        return v  # type: ignore[return-value]
 
     model_config = ConfigDict(
         extra="ignore",

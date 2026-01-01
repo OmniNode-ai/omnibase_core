@@ -13,8 +13,6 @@ Deep Immutability:
 
 from __future__ import annotations
 
-from typing import Any
-
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
@@ -82,32 +80,32 @@ class ModelFsmState(BaseModel):
     @field_validator("entry_actions", mode="before")
     @classmethod
     def _convert_entry_actions_to_tuple(
-        cls, v: list[str] | tuple[str, ...] | Any
+        cls, v: list[str] | tuple[str, ...] | object
     ) -> tuple[str, ...]:
         """Convert list of entry actions to tuple for deep immutability."""
         if isinstance(v, list):
             return tuple(v)
-        return v
+        return v  # type: ignore[return-value]
 
     @field_validator("exit_actions", mode="before")
     @classmethod
     def _convert_exit_actions_to_tuple(
-        cls, v: list[str] | tuple[str, ...] | Any
+        cls, v: list[str] | tuple[str, ...] | object
     ) -> tuple[str, ...]:
         """Convert list of exit actions to tuple for deep immutability."""
         if isinstance(v, list):
             return tuple(v)
-        return v
+        return v  # type: ignore[return-value]
 
     @field_validator("properties", mode="before")
     @classmethod
     def _convert_properties_to_frozen(
-        cls, v: dict[str, str] | tuple[tuple[str, str], ...] | Any
+        cls, v: dict[str, str] | tuple[tuple[str, str], ...] | object
     ) -> tuple[tuple[str, str], ...]:
         """Convert dict to tuple of tuples for deep immutability."""
         if isinstance(v, dict):
             return tuple(v.items())
-        return v
+        return v  # type: ignore[return-value]
 
     model_config = ConfigDict(
         extra="ignore",

@@ -13,8 +13,6 @@ Deep Immutability:
 
 from __future__ import annotations
 
-from typing import Any
-
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from .model_fsm_state import ModelFsmState
@@ -70,52 +68,52 @@ class ModelFsmData(BaseModel):
     @field_validator("states", mode="before")
     @classmethod
     def _convert_states_to_tuple(
-        cls, v: list[Any] | tuple[Any, ...] | Any
-    ) -> tuple[Any, ...]:
+        cls, v: list[object] | tuple[object, ...] | object
+    ) -> tuple[object, ...]:
         """Convert list of states to tuple for deep immutability."""
         if isinstance(v, list):
             return tuple(v)
-        return v
+        return v  # type: ignore[return-value]
 
     @field_validator("transitions", mode="before")
     @classmethod
     def _convert_transitions_to_tuple(
-        cls, v: list[Any] | tuple[Any, ...] | Any
-    ) -> tuple[Any, ...]:
+        cls, v: list[object] | tuple[object, ...] | object
+    ) -> tuple[object, ...]:
         """Convert list of transitions to tuple for deep immutability."""
         if isinstance(v, list):
             return tuple(v)
-        return v
+        return v  # type: ignore[return-value]
 
     @field_validator("global_actions", mode="before")
     @classmethod
     def _convert_global_actions_to_tuple(
-        cls, v: list[str] | tuple[str, ...] | Any
+        cls, v: list[str] | tuple[str, ...] | object
     ) -> tuple[str, ...]:
         """Convert list of global actions to tuple for deep immutability."""
         if isinstance(v, list):
             return tuple(v)
-        return v
+        return v  # type: ignore[return-value]
 
     @field_validator("variables", mode="before")
     @classmethod
     def _convert_variables_to_frozen(
-        cls, v: dict[str, str] | tuple[tuple[str, str], ...] | Any
+        cls, v: dict[str, str] | tuple[tuple[str, str], ...] | object
     ) -> tuple[tuple[str, str], ...]:
         """Convert dict to tuple of tuples for deep immutability."""
         if isinstance(v, dict):
             return tuple(v.items())
-        return v
+        return v  # type: ignore[return-value]
 
     @field_validator("metadata", mode="before")
     @classmethod
     def _convert_metadata_to_frozen(
-        cls, v: dict[str, str] | tuple[tuple[str, str], ...] | Any
+        cls, v: dict[str, str] | tuple[tuple[str, str], ...] | object
     ) -> tuple[tuple[str, str], ...]:
         """Convert dict to tuple of tuples for deep immutability."""
         if isinstance(v, dict):
             return tuple(v.items())
-        return v
+        return v  # type: ignore[return-value]
 
     def get_state_by_name(self, name: str) -> ModelFsmState | None:
         """Get a state by name."""

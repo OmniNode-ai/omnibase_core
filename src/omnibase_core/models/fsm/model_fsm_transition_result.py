@@ -13,8 +13,6 @@ Deep Immutability:
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import Any
-
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.models.reducer.model_intent import ModelIntent
@@ -94,12 +92,12 @@ class ModelFSMTransitionResult(BaseModel):
     @field_validator("intents", mode="before")
     @classmethod
     def _convert_intents_to_tuple(
-        cls, v: list[Any] | tuple[Any, ...] | Any
-    ) -> tuple[Any, ...]:
+        cls, v: list[object] | tuple[object, ...] | object
+    ) -> tuple[object, ...]:
         """Convert list of intents to tuple for deep immutability."""
         if isinstance(v, list):
             return tuple(v)
-        return v
+        return v  # type: ignore[return-value]
 
     @field_validator("metadata", mode="before")
     @classmethod
