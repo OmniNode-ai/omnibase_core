@@ -297,6 +297,30 @@ class ModelProjectorContract(BaseModel):
             )
         return self
 
+    @model_validator(mode="after")
+    def validate_upsert_key_exists_in_columns(self) -> Self:
+        """Validate that upsert_key references an existing column when specified.
+
+        When the behavior mode is 'upsert' and an explicit upsert_key is provided,
+        this validator ensures the upsert_key corresponds to a column defined in
+        the projection schema.
+
+        Returns:
+            The validated model instance.
+
+        Raises:
+            ValueError: If upsert_key does not match any column name in the schema.
+        """
+        if self.behavior.mode == "upsert" and self.behavior.upsert_key is not None:
+            column_names = {col.name for col in self.projection_schema.columns}
+            if self.behavior.upsert_key not in column_names:
+                # error-ok: Pydantic validator requires ValueError
+                raise ValueError(
+                    f"upsert_key '{self.behavior.upsert_key}' must reference an existing column. "
+                    f"Available columns: {sorted(column_names)}"
+                )
+        return self
+
     def __hash__(self) -> int:
         """Return hash value for the contract.
 

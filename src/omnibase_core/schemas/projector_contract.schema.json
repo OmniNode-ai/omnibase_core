@@ -328,7 +328,8 @@
     "consumed_events": {
       "description": "List of event names to consume. Must contain at least one event. Each event name must match pattern: lowercase.segments.vN",
       "items": {
-        "type": "string"
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)*\\.v[0-9]+$"
       },
       "minItems": 1,
       "title": "Consumed Events",

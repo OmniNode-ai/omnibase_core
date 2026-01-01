@@ -13,6 +13,7 @@ from execution manifests.
 
 import json
 import tempfile
+from collections.abc import Generator
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -68,11 +69,14 @@ def sample_manifest() -> ModelExecutionManifest:
 
 
 @pytest.fixture
-def manifest_file(sample_manifest: ModelExecutionManifest) -> Path:
+def manifest_file(sample_manifest: ModelExecutionManifest) -> Generator[Path, None, None]:
     """Create a temporary manifest file."""
     with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
         f.write(sample_manifest.model_dump_json())
-        return Path(f.name)
+        path = Path(f.name)
+    yield path
+    # Cleanup
+    path.unlink(missing_ok=True)
 
 
 @pytest.fixture
