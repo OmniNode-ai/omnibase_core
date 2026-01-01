@@ -1,0 +1,48 @@
+# Handler Contract Example: COMPUTE Handler
+# This handler performs pure data transformation with no side effects.
+#
+# Key characteristics:
+#   - handler_kind: compute (pure, deterministic)
+#   - purity: pure (no side effects)
+#   - idempotent: true (safe to retry)
+#   - Can be cached and run in parallel
+
+handler_id: compute.schema.validator
+name: Schema Validator
+version: 1.0.0
+description: Validates input data against JSON schemas
+
+descriptor:
+  handler_kind: compute
+  purity: pure
+  idempotent: true
+  timeout_ms: 5000
+  concurrency_policy: parallel_ok
+  observability_level: minimal
+
+# No capability inputs - pure compute doesn't need external dependencies
+
+capability_outputs:
+  - validation.result
+
+input_model: myapp.models.ValidationRequest
+output_model: myapp.models.ValidationResult
+
+execution_constraints:
+  requires_before: []
+  requires_after: []
+  can_run_parallel: true
+  nondeterministic_effect: false
+
+supports_lifecycle: false
+supports_health_check: false
+supports_provisioning: false
+
+tags:
+  - validation
+  - schema
+  - compute
+
+metadata:
+  owner: platform-team
+  category: data-quality

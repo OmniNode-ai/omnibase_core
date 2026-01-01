@@ -57,8 +57,6 @@ assert isinstance(payload, ModelDataActionPayload)
 ```
 """
 
-from typing import Any
-
 from omnibase_core.enums.enum_workflow_execution import EnumActionType
 from omnibase_core.models.core.model_action_category import ModelActionCategory
 from omnibase_core.models.core.model_action_payload_types import (
@@ -197,7 +195,7 @@ def get_recommended_payloads_for_action_type(
 def create_action_payload(
     action_type: EnumActionType,
     semantic_action: str | None = None,
-    **kwargs: Any,
+    **kwargs: object,
 ) -> SpecificActionPayload:
     """
     Create a typed payload for an action based on action type and semantic operation.

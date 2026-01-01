@@ -12,7 +12,7 @@ from unittest.mock import patch
 
 import pytest
 
-from omnibase_core.errors.exceptions import ExceptionConfigurationError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.validation.model_audit_result import ModelAuditResult
 from omnibase_core.services.service_protocol_auditor import ServiceProtocolAuditor
 
@@ -43,22 +43,20 @@ class TestProtocolAuditorInitialization:
         """Test initialization fails with nonexistent directory."""
         nonexistent_path = "/nonexistent/repository"
 
-        with pytest.raises(
-            ExceptionConfigurationError,
-            match="Invalid repository configuration",
-        ):
+        with pytest.raises(ModelOnexError) as exc_info:
             ServiceProtocolAuditor(nonexistent_path)
+
+        assert "ONEX_CORE_024_DIRECTORY_NOT_FOUND" in str(exc_info.value)
 
     def test_init_with_file_instead_of_directory(self):
         """Test initialization fails when file is passed instead of directory."""
         with tempfile.NamedTemporaryFile() as temp_file:
             temp_path = temp_file.name
 
-            with pytest.raises(
-                ExceptionConfigurationError,
-                match="Invalid repository configuration",
-            ):
+            with pytest.raises(ModelOnexError) as exc_info:
                 ServiceProtocolAuditor(temp_path)
+
+            assert "ONEX_CORE_007_INVALID_INPUT" in str(exc_info.value)
 
     def test_init_with_current_directory(self):
         """Test initialization with current directory (default)."""
@@ -88,11 +86,10 @@ class TestProtocolAuditorValidation:
             auditor = ServiceProtocolAuditor(temp_dir)
             invalid_spi_path = "/nonexistent/spi/path"
 
-            with pytest.raises(
-                ExceptionConfigurationError,
-                match="Invalid SPI path configuration",
-            ):
+            with pytest.raises(ModelOnexError) as exc_info:
                 auditor.check_against_spi(invalid_spi_path)
+
+            assert "ONEX_CORE_024_DIRECTORY_NOT_FOUND" in str(exc_info.value)
 
     def test_check_against_spi_with_valid_path_missing_protocols(self, caplog):
         """Test check_against_spi handles missing protocols directory gracefully."""
@@ -332,18 +329,19 @@ class TestConfigurationErrorHandling:
 
     def test_configuration_error_chaining(self):
         """Test that configuration errors properly chain underlying exceptions."""
-        with pytest.raises(ExceptionConfigurationError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             ServiceProtocolAuditor("/definitely/nonexistent/path")
 
-        # Should contain information about the underlying validation error
-        assert "Invalid repository configuration" in str(exc_info.value)
+        # Should contain the error code indicating the directory was not found
+        assert "ONEX_CORE_024_DIRECTORY_NOT_FOUND" in str(exc_info.value)
 
     def test_spi_configuration_error_chaining(self):
         """Test that SPI configuration errors properly chain underlying exceptions."""
         with tempfile.TemporaryDirectory() as temp_dir:
             auditor = ServiceProtocolAuditor(temp_dir)
 
-            with pytest.raises(ExceptionConfigurationError) as exc_info:
+            with pytest.raises(ModelOnexError) as exc_info:
                 auditor.check_against_spi("/definitely/nonexistent/spi/path")
 
-            assert "Invalid SPI path configuration" in str(exc_info.value)
+            # Should contain the error code indicating the directory was not found
+            assert "ONEX_CORE_024_DIRECTORY_NOT_FOUND" in str(exc_info.value)
