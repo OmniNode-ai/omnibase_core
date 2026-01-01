@@ -1104,6 +1104,48 @@ class TestModelBindingHashability:
         # Same identity fields -> same hash
         assert hash(binding1) == hash(binding2)
 
+    def test_hash_equality_contract_satisfied(self) -> None:
+        """Test that hash/equality contract is satisfied.
+
+        Python's hash/equality contract requires:
+        - If a == b, then hash(a) == hash(b)
+        - If hash(a) == hash(b), objects SHOULD be equal (for good hash behavior)
+
+        Our implementation ensures bindings with same identity fields are
+        both hash-equal AND equality-equal, satisfying the contract.
+        """
+        # Two bindings with same identity but different metadata
+        binding1 = ModelBinding(
+            dependency_alias="db",
+            capability="database.relational",
+            provider_id="provider-1",
+            adapter="test.Adapter",
+            connection_ref="env://TEST",
+            requirements_hash="hash123",
+            profile_id="default",
+            resolved_at=datetime(2024, 1, 1, tzinfo=timezone.utc),
+            resolution_notes=["Note 1"],
+            candidates_considered=5,
+        )
+        binding2 = ModelBinding(
+            dependency_alias="db",
+            capability="database.relational",
+            provider_id="provider-1",
+            adapter="test.Adapter",
+            connection_ref="env://TEST",
+            requirements_hash="hash456",  # Different metadata
+            profile_id="production",  # Different metadata
+            resolved_at=datetime(2025, 6, 15, tzinfo=timezone.utc),  # Different metadata
+            resolution_notes=["Different note"],  # Different metadata
+            candidates_considered=10,  # Different metadata
+        )
+
+        # Contract: same hash AND same equality for same identity
+        assert hash(binding1) == hash(binding2), (
+            "Bindings with same identity should have same hash"
+        )
+        assert binding1 == binding2, "Bindings with same identity should be equal"
+
 
 @pytest.mark.unit
 class TestModelBindingEquality:
@@ -1209,8 +1251,13 @@ class TestModelBindingEquality:
         )
         assert binding1 != binding2
 
-    def test_inequality_different_resolved_at(self) -> None:
-        """Test inequality for different resolved_at timestamps."""
+    def test_equality_same_identity_different_metadata(self) -> None:
+        """Test equality for same identity fields but different metadata.
+
+        Custom __eq__ compares only identity fields (dependency_alias,
+        capability, provider_id), so bindings with same identity are
+        equal even if metadata differs.
+        """
         binding1 = ModelBinding(
             dependency_alias="db",
             capability="database.relational",
@@ -1220,6 +1267,8 @@ class TestModelBindingEquality:
             requirements_hash="hash123",
             profile_id="default",
             resolved_at=datetime(2024, 1, 1, tzinfo=timezone.utc),
+            resolution_notes=["Note 1"],
+            candidates_considered=5,
         )
         binding2 = ModelBinding(
             dependency_alias="db",
@@ -1227,12 +1276,14 @@ class TestModelBindingEquality:
             provider_id="provider-1",
             adapter="test.Adapter",
             connection_ref="env://TEST",
-            requirements_hash="hash123",
-            profile_id="default",
-            resolved_at=datetime(2025, 1, 1, tzinfo=timezone.utc),
+            requirements_hash="hash456",  # Different metadata
+            profile_id="production",  # Different metadata
+            resolved_at=datetime(2025, 1, 1, tzinfo=timezone.utc),  # Different metadata
+            resolution_notes=["Different note"],  # Different metadata
+            candidates_considered=10,  # Different metadata
         )
-        # Pydantic equality includes all fields
-        assert binding1 != binding2
+        # Custom equality uses only identity fields
+        assert binding1 == binding2
 
 
 @pytest.mark.unit

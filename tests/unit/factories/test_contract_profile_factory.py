@@ -17,7 +17,7 @@ from omnibase_core.models.contracts import (
     ModelContractReducer,
     ModelExecutionOrderingPolicy,
     ModelExecutionProfile,
-    ModelHandlerBehaviorDescriptor,
+    ModelHandlerBehavior,
 )
 
 
@@ -323,23 +323,23 @@ class TestProtocolContractProfileFactory:
 
 
 @pytest.mark.unit
-class TestDescriptorEmbedding:
-    """Tests for ModelHandlerBehaviorDescriptor embedding in profiles."""
+class TestBehaviorEmbedding:
+    """Tests for ModelHandlerBehavior embedding in profiles."""
 
-    def test_orchestrator_safe_has_descriptor(self) -> None:
-        """Test orchestrator_safe profile includes descriptor."""
+    def test_orchestrator_safe_has_behavior(self) -> None:
+        """Test orchestrator_safe profile includes behavior."""
         from omnibase_core.factories import get_default_orchestrator_profile
 
         contract = get_default_orchestrator_profile(
             profile="orchestrator_safe",
             version="1.0.0",
         )
-        assert contract.descriptor is not None
-        assert isinstance(contract.descriptor, ModelHandlerBehaviorDescriptor)
-        assert contract.descriptor.handler_kind == "orchestrator"
-        assert contract.descriptor.concurrency_policy == "serialized"
+        assert contract.behavior is not None
+        assert isinstance(contract.behavior, ModelHandlerBehavior)
+        assert contract.behavior.handler_kind == "orchestrator"
+        assert contract.behavior.concurrency_policy == "serialized"
         # Safe profile is NOT idempotent by default (conservative)
-        assert contract.descriptor.idempotent is False
+        assert contract.behavior.idempotent is False
 
     def test_orchestrator_parallel_has_parallel_policy(self) -> None:
         """Test orchestrator_parallel allows parallel execution."""
@@ -349,11 +349,11 @@ class TestDescriptorEmbedding:
             profile="orchestrator_parallel",
             version="1.0.0",
         )
-        assert contract.descriptor is not None
-        assert contract.descriptor.handler_kind == "orchestrator"
-        assert contract.descriptor.concurrency_policy == "parallel_ok"
+        assert contract.behavior is not None
+        assert contract.behavior.handler_kind == "orchestrator"
+        assert contract.behavior.concurrency_policy == "parallel_ok"
         # Parallel profile is NOT idempotent by default
-        assert contract.descriptor.idempotent is False
+        assert contract.behavior.idempotent is False
 
     def test_orchestrator_resilient_has_retry_policy(self) -> None:
         """Test orchestrator_resilient has retry and circuit breaker."""
@@ -363,14 +363,14 @@ class TestDescriptorEmbedding:
             profile="orchestrator_resilient",
             version="1.0.0",
         )
-        assert contract.descriptor is not None
-        assert contract.descriptor.handler_kind == "orchestrator"
+        assert contract.behavior is not None
+        assert contract.behavior.handler_kind == "orchestrator"
         # Resilient profile IS idempotent for safe retries
-        assert contract.descriptor.idempotent is True
-        assert contract.descriptor.retry_policy is not None
-        assert contract.descriptor.retry_policy.enabled is True
-        assert contract.descriptor.circuit_breaker is not None
-        assert contract.descriptor.circuit_breaker.enabled is True
+        assert contract.behavior.idempotent is True
+        assert contract.behavior.retry_policy is not None
+        assert contract.behavior.retry_policy.enabled is True
+        assert contract.behavior.circuit_breaker is not None
+        assert contract.behavior.circuit_breaker.enabled is True
 
     def test_reducer_fsm_has_singleflight_policy(self) -> None:
         """Test reducer_fsm_basic uses singleflight for state protection."""
@@ -380,10 +380,10 @@ class TestDescriptorEmbedding:
             profile="reducer_fsm_basic",
             version="1.0.0",
         )
-        assert contract.descriptor is not None
-        assert contract.descriptor.handler_kind == "reducer"
-        assert contract.descriptor.concurrency_policy == "singleflight"
-        assert contract.descriptor.idempotent is True
+        assert contract.behavior is not None
+        assert contract.behavior.handler_kind == "reducer"
+        assert contract.behavior.concurrency_policy == "singleflight"
+        assert contract.behavior.idempotent is True
 
     def test_effect_idempotent_has_retry_and_timeout(self) -> None:
         """Test effect_idempotent has retry policy and timeout."""
@@ -393,11 +393,11 @@ class TestDescriptorEmbedding:
             profile="effect_idempotent",
             version="1.0.0",
         )
-        assert contract.descriptor is not None
-        assert contract.descriptor.handler_kind == "effect"
-        assert contract.descriptor.idempotent is True
-        assert contract.descriptor.timeout_ms == 30000
-        assert contract.descriptor.retry_policy is not None
+        assert contract.behavior is not None
+        assert contract.behavior.handler_kind == "effect"
+        assert contract.behavior.idempotent is True
+        assert contract.behavior.timeout_ms == 30000
+        assert contract.behavior.retry_policy is not None
 
     def test_compute_pure_has_pure_purity(self) -> None:
         """Test compute_pure profile has pure purity setting."""
@@ -407,16 +407,16 @@ class TestDescriptorEmbedding:
             profile="compute_pure",
             version="1.0.0",
         )
-        assert contract.descriptor is not None
-        assert contract.descriptor.handler_kind == "compute"
-        assert contract.descriptor.purity == "pure"
-        assert contract.descriptor.idempotent is True
-        assert contract.descriptor.concurrency_policy == "parallel_ok"
+        assert contract.behavior is not None
+        assert contract.behavior.handler_kind == "compute"
+        assert contract.behavior.purity == "pure"
+        assert contract.behavior.idempotent is True
+        assert contract.behavior.concurrency_policy == "parallel_ok"
 
-    def test_all_profiles_have_non_none_descriptor(self) -> None:
-        """Test that ALL available profiles have a non-None descriptor.
+    def test_all_profiles_have_non_none_behavior(self) -> None:
+        """Test that ALL available profiles have a non-None behavior.
 
-        This comprehensive test ensures no profile is missing descriptor
+        This comprehensive test ensures no profile is missing behavior
         configuration, which is critical for contract-driven execution.
         """
         from omnibase_core.factories import (
@@ -442,18 +442,16 @@ class TestDescriptorEmbedding:
                     profile=profile_name,
                     version="1.0.0",
                 )
-                # Every profile MUST have a descriptor
-                assert contract.descriptor is not None, (
-                    f"Profile '{profile_name}' for {node_type} has None descriptor"
+                # Every profile MUST have a behavior
+                assert contract.behavior is not None, (
+                    f"Profile '{profile_name}' for {node_type} has None behavior"
                 )
-                # Descriptor MUST be proper type
-                assert isinstance(
-                    contract.descriptor, ModelHandlerBehaviorDescriptor
-                ), (
-                    f"Profile '{profile_name}' descriptor is not ModelHandlerBehaviorDescriptor"
+                # Behavior MUST be proper type
+                assert isinstance(contract.behavior, ModelHandlerBehavior), (
+                    f"Profile '{profile_name}' behavior is not ModelHandlerBehavior"
                 )
                 # handler_kind MUST match node type
-                assert contract.descriptor.handler_kind == expected_handler_kind, (
+                assert contract.behavior.handler_kind == expected_handler_kind, (
                     f"Profile '{profile_name}' has handler_kind "
-                    f"'{contract.descriptor.handler_kind}', expected '{expected_handler_kind}'"
+                    f"'{contract.behavior.handler_kind}', expected '{expected_handler_kind}'"
                 )

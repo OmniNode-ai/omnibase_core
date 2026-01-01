@@ -65,14 +65,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-# JsonValue is a semantic alias for JsonType in this module.
-# JsonType is defined as the recursive PEP 695 type:
-#   type JsonType = JsonPrimitive | list[JsonType] | dict[str, JsonType]
-# where JsonPrimitive = str | int | float | bool | None
-#
-# The alias provides clarity: "JsonValue" describes what the type represents
-# in the context of provider attributes and features - any JSON-serializable value.
-from omnibase_core.types.json_types import JsonType as JsonValue
+from omnibase_core.types.json_types import JsonType
 
 if TYPE_CHECKING:
     from omnibase_core.models.health.model_health_status import ModelHealthStatus
@@ -231,12 +224,12 @@ class ModelProviderDescriptor(BaseModel):
         min_length=1,
     )
 
-    attributes: dict[str, JsonValue] = Field(
+    attributes: dict[str, JsonType] = Field(
         default_factory=dict,
         description="Static attributes (version, region, deployment tier, etc.)",
     )
 
-    declared_features: dict[str, JsonValue] = Field(
+    declared_features: dict[str, JsonType] = Field(
         default_factory=dict,
         description=(
             "Features the adapter claims to support (static declaration). "
@@ -244,7 +237,7 @@ class ModelProviderDescriptor(BaseModel):
         ),
     )
 
-    observed_features: dict[str, JsonValue] = Field(
+    observed_features: dict[str, JsonType] = Field(
         default_factory=dict,
         description=(
             "Runtime-probed capabilities. When non-empty, completely replaces "
@@ -518,7 +511,7 @@ class ModelProviderDescriptor(BaseModel):
 
         return v
 
-    def get_effective_features(self) -> dict[str, JsonValue]:
+    def get_effective_features(self) -> dict[str, JsonType]:
         """Get effective features with observed completely replacing declared.
 
         Returns observed_features if non-empty, otherwise returns declared_features.

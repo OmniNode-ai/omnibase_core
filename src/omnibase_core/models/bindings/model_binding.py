@@ -79,6 +79,7 @@ Thread Safety:
     Initial implementation as part of OMN-1155 capability resolution models.
 """
 
+import logging
 from datetime import datetime
 from typing import Any
 
@@ -86,6 +87,8 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+
+_logger = logging.getLogger(__name__)
 
 
 class ModelBinding(BaseModel):
@@ -492,6 +495,14 @@ class ModelBinding(BaseModel):
             if stripped:  # Only include non-empty notes
                 validated.append(stripped)
 
+        # Log when notes are filtered for visibility
+        filtered_count = len(v) - len(validated)
+        if filtered_count > 0:
+            _logger.debug(
+                "Filtered %d empty/whitespace resolution notes",
+                filtered_count,
+            )
+
         return validated
 
     def __repr__(self) -> str:
@@ -545,16 +556,81 @@ class ModelBinding(BaseModel):
         """
         return f"{self.dependency_alias} -> {self.capability} @ {self.provider_id}"
 
+    def __eq__(self, other: object) -> bool:
+        """Compare bindings by identity fields for deduplication consistency.
+
+        Compares only identity fields (dependency_alias, capability, provider_id)
+        to match ``__hash__`` behavior. This ensures the hash/equality contract
+        is satisfied: if ``hash(a) == hash(b)``, then ``a == b`` must also be
+        possible to return True.
+
+        Metadata fields (resolved_at, resolution_notes, candidates_considered,
+        adapter, connection_ref, requirements_hash, profile_id) are intentionally
+        NOT compared. Two bindings representing the same logical resolution
+        (same alias, capability, and provider) are considered equal even if they
+        have different timestamps or audit metadata.
+
+        This design enables proper deduplication in sets and dicts where we want
+        to treat bindings with the same identity as duplicates regardless of
+        when they were created or what notes were attached.
+
+        Args:
+            other: Object to compare against.
+
+        Returns:
+            True if other is a ModelBinding with matching identity fields.
+            NotImplemented if other is not a ModelBinding (enables Python's
+            comparison protocol to try the reverse comparison).
+
+        Examples:
+            >>> from datetime import datetime, timezone
+            >>> t1 = datetime(2024, 1, 1, tzinfo=timezone.utc)
+            >>> t2 = datetime(2024, 6, 1, tzinfo=timezone.utc)
+            >>> b1 = ModelBinding(
+            ...     dependency_alias="db", capability="database.relational",
+            ...     provider_id="uuid-1", adapter="pkg.Adapter",
+            ...     connection_ref="env://DB", requirements_hash="h1",
+            ...     profile_id="prod", resolved_at=t1,
+            ... )
+            >>> b2 = ModelBinding(
+            ...     dependency_alias="db", capability="database.relational",
+            ...     provider_id="uuid-1", adapter="pkg.Adapter",
+            ...     connection_ref="env://DB", requirements_hash="h1",
+            ...     profile_id="prod", resolved_at=t2,  # Different timestamp
+            ... )
+            >>> b1 == b2  # Same identity, different metadata
+            True
+            >>> hash(b1) == hash(b2)
+            True
+
+        See Also:
+            ``__hash__``: Uses the same identity fields for consistency.
+        """
+        if not isinstance(other, ModelBinding):
+            return NotImplemented
+        return (
+            self.dependency_alias == other.dependency_alias
+            and self.capability == other.capability
+            and self.provider_id == other.provider_id
+        )
+
     def __hash__(self) -> int:
         """Enable use in sets and as dict keys for binding deduplication.
 
         Hash is computed from identity fields (dependency_alias, capability,
-        provider_id). Metadata fields (resolved_at, resolution_notes) are
+        provider_id). Metadata fields (resolved_at, resolution_notes, etc.) are
         not included since two bindings with the same resolution but different
         timestamps should hash to the same value for deduplication purposes.
 
+        This method is paired with ``__eq__`` which compares the same fields,
+        ensuring the hash/equality contract is satisfied: objects that compare
+        equal have the same hash value.
+
         Returns:
             Hash value computed from (dependency_alias, capability, provider_id).
+
+        See Also:
+            ``__eq__``: Uses the same identity fields for consistency.
         """
         return hash((self.dependency_alias, self.capability, self.provider_id))
 

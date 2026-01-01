@@ -1313,13 +1313,6 @@ from omnibase_core.pipeline import (
     ComposerMiddleware,
 )
 
-# Legacy aliases (still work)
-from omnibase_core.pipeline import (
-    HookRegistry,        # Alias for RegistryHook
-    RuntimePlanBuilder,  # Alias for BuilderExecutionPlan
-    PipelineRunner,      # Alias for RunnerPipeline
-    MiddlewareComposer,  # Alias for ComposerMiddleware
-)
 ```
 
 ## Related Documentation

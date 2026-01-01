@@ -3,11 +3,11 @@
 # SPDX-License-Identifier: Apache-2.0
 """Hook registry with freeze-after-init thread safety."""
 
+from omnibase_core.models.pipeline import ModelPipelineHook, PipelinePhase
 from omnibase_core.pipeline.exceptions import (
     DuplicateHookError,
     HookRegistryFrozenError,
 )
-from omnibase_core.pipeline.models import ModelPipelineHook, PipelinePhase
 
 
 class RegistryHook:
@@ -156,7 +156,4 @@ class RegistryHook:
         return self._hooks_by_id.get(hook_id)
 
 
-# Backwards compatibility alias
-HookRegistry = RegistryHook
-
-__all__ = ["RegistryHook", "HookRegistry"]
+__all__ = ["RegistryHook"]

@@ -241,7 +241,6 @@ class ModelHandlerOutput(BaseModel, Generic[T]):
         frozen=True,
         extra="forbid",
         from_attributes=True,
-        validate_assignment=True,
     )
 
     # ---- Causality Tracking (REQUIRED - from input envelope) ----
