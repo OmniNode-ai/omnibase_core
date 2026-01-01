@@ -81,23 +81,27 @@ class FailingCacheBackend:
 class TestMixinCachingInit:
     """Test suite for MixinCaching initialization."""
 
+    @pytest.mark.timeout(60)
     def test_init_sets_cache_enabled(self):
         """Test that __init__ sets _cache_enabled to True."""
         node = MockNode()
         assert node._cache_enabled is True
 
+    @pytest.mark.timeout(60)
     def test_init_creates_empty_cache_dict(self):
         """Test that __init__ creates empty _cache_data dict."""
         node = MockNode()
         assert node._cache_data == {}
         assert isinstance(node._cache_data, dict)
 
+    @pytest.mark.timeout(60)
     def test_init_with_no_backend(self):
         """Test initialization without L2 backend."""
         node = MockNode()
         assert node._cache_backend is None
         assert node.has_l2_backend() is False
 
+    @pytest.mark.timeout(60)
     def test_init_with_backend(self):
         """Test initialization with L2 backend."""
         backend = MockCacheBackend()
@@ -105,11 +109,13 @@ class TestMixinCachingInit:
         assert node._cache_backend is backend
         assert node.has_l2_backend() is True
 
+    @pytest.mark.timeout(60)
     def test_init_with_default_ttl(self):
         """Test initialization with default TTL."""
         node = MockNode(default_ttl_seconds=300)
         assert node._default_ttl_seconds == 300
 
+    @pytest.mark.timeout(60)
     def test_init_without_default_ttl(self):
         """Test initialization without default TTL."""
         node = MockNode()
@@ -120,6 +126,7 @@ class TestMixinCachingInit:
 class TestGenerateCacheKey:
     """Test suite for generate_cache_key method."""
 
+    @pytest.mark.timeout(60)
     def test_generate_key_from_dict(self):
         """Test cache key generation from dictionary."""
         node = MockNode()
@@ -132,6 +139,7 @@ class TestGenerateCacheKey:
         # Same data should produce same key
         assert cache_key == node.generate_cache_key(data)
 
+    @pytest.mark.timeout(60)
     def test_generate_key_from_string(self):
         """Test cache key generation from string."""
         node = MockNode()
@@ -144,6 +152,7 @@ class TestGenerateCacheKey:
         # Different strings should produce different keys
         assert cache_key != node.generate_cache_key("different_string")
 
+    @pytest.mark.timeout(60)
     def test_generate_key_from_int(self):
         """Test cache key generation from integer."""
         node = MockNode()
@@ -154,6 +163,7 @@ class TestGenerateCacheKey:
         assert isinstance(cache_key, str)
         assert len(cache_key) == 64
 
+    @pytest.mark.timeout(60)
     def test_generate_key_from_list(self):
         """Test cache key generation from list."""
         node = MockNode()
@@ -164,6 +174,7 @@ class TestGenerateCacheKey:
         assert isinstance(cache_key, str)
         assert len(cache_key) == 64
 
+    @pytest.mark.timeout(60)
     def test_generate_key_consistent_for_same_dict(self):
         """Test that same dictionary produces same key."""
         node = MockNode()
@@ -176,6 +187,7 @@ class TestGenerateCacheKey:
 
         assert key1 == key2
 
+    @pytest.mark.timeout(60)
     def test_generate_key_handles_non_serializable_data(self):
         """Test cache key generation with non-JSON-serializable data."""
         node = MockNode()
@@ -193,6 +205,7 @@ class TestGenerateCacheKey:
         assert isinstance(cache_key, str)
         assert len(cache_key) == 64
 
+    @pytest.mark.timeout(60)
     def test_generate_key_different_for_different_data(self):
         """Test that different data produces different keys."""
         node = MockNode()
@@ -414,6 +427,7 @@ class TestClearCache:
 class TestGetCacheStats:
     """Test suite for get_cache_stats method."""
 
+    @pytest.mark.timeout(60)
     def test_get_cache_stats_structure(self):
         """Test that get_cache_stats returns proper structure."""
         node = MockNode()
@@ -425,6 +439,7 @@ class TestGetCacheStats:
         assert "entries" in stats
         assert "keys" in stats
 
+    @pytest.mark.timeout(60)
     def test_get_cache_stats_enabled_flag(self):
         """Test that get_cache_stats includes enabled flag."""
         node = MockNode()
@@ -436,6 +451,7 @@ class TestGetCacheStats:
         stats = node.get_cache_stats()
         assert stats["enabled"] is False
 
+    @pytest.mark.timeout(60)
     def test_get_cache_stats_entry_count(self):
         """Test that get_cache_stats reports correct entry count."""
         node = MockNode()
@@ -451,6 +467,7 @@ class TestGetCacheStats:
         stats = node.get_cache_stats()
         assert stats["entries"] == 2
 
+    @pytest.mark.timeout(60)
     def test_get_cache_stats_keys_list(self):
         """Test that get_cache_stats includes list of keys."""
         node = MockNode()
@@ -619,6 +636,7 @@ class TestTTLEnforcement:
         # Expiry should be approximately 300 seconds from now
         assert 295 < (expiry - time.time()) < 305
 
+    @pytest.mark.timeout(60)
     def test_get_cache_stats_cleans_expired_entries(self):
         """Test that get_cache_stats cleans up expired entries."""
         node = MockNode()
@@ -860,6 +878,7 @@ class TestBackwardCompatibility:
 class TestProtocolCompliance:
     """Test suite for ProtocolCacheBackend compliance."""
 
+    @pytest.mark.timeout(60)
     def test_mock_backend_is_protocol_compliant(self):
         """Test that MockCacheBackend implements ProtocolCacheBackend."""
         backend = MockCacheBackend()
@@ -867,6 +886,7 @@ class TestProtocolCompliance:
         # Check protocol compliance via isinstance
         assert isinstance(backend, ProtocolCacheBackend)
 
+    @pytest.mark.timeout(60)
     def test_failing_backend_is_protocol_compliant(self):
         """Test that FailingCacheBackend implements ProtocolCacheBackend."""
         backend = FailingCacheBackend()
@@ -879,6 +899,7 @@ class TestProtocolCompliance:
 class TestRedisBackendImport:
     """Test suite for Redis backend import handling."""
 
+    @pytest.mark.timeout(60)
     def test_redis_available_flag_exists(self):
         """Test that REDIS_AVAILABLE flag is exported."""
         from omnibase_core.infrastructure.cache_backends import REDIS_AVAILABLE
@@ -886,6 +907,7 @@ class TestRedisBackendImport:
         # Should be bool (True if redis installed, False otherwise)
         assert isinstance(REDIS_AVAILABLE, bool)
 
+    @pytest.mark.timeout(60)
     def test_backend_cache_redis_exported(self):
         """Test that BackendCacheRedis is exported."""
         from omnibase_core.infrastructure.cache_backends import BackendCacheRedis

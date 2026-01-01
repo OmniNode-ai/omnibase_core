@@ -16,27 +16,36 @@ L1/L2 Coordination:
     - Invalidation: Remove from both L1 and L2
 
 Usage:
-    # Basic usage (L1 only)
-    class MyComputeNode(NodeCompute, MixinCaching):
-        async def execute_compute(self, contract):
-            cache_key = self.generate_cache_key(contract.input_data)
-            cached = await self.get_cached(cache_key)
-            if cached:
-                return cached
+    .. code-block:: python
 
-            result = await self._expensive_computation(contract)
-            await self.set_cached(cache_key, result, ttl_seconds=600)
-            return result
+        from omnibase_core.mixins import MixinCaching
+        from omnibase_core.nodes import NodeCompute
 
-    # With L2 Redis backend
-    from omnibase_core.backends.cache import BackendCacheRedis
+        # Basic usage (L1 only)
+        class MyComputeNode(NodeCompute, MixinCaching):
+            async def execute_compute(self, contract):
+                cache_key = self.generate_cache_key(contract.input_data)
+                cached = await self.get_cached(cache_key)
+                if cached:
+                    return cached
 
-    backend = BackendCacheRedis(url="redis://localhost:6379/0")
-    await backend.connect()
+                result = await self._expensive_computation(contract)
+                await self.set_cached(cache_key, result, ttl_seconds=600)
+                return result
 
-    class MyComputeNode(NodeCompute, MixinCaching):
-        def __init__(self, container):
-            super().__init__(container, backend=backend)
+    .. code-block:: python
+
+        from omnibase_core.backends.cache import BackendCacheRedis
+        from omnibase_core.mixins import MixinCaching
+        from omnibase_core.nodes import NodeCompute
+
+        # With L2 Redis backend
+        backend = BackendCacheRedis(url="redis://localhost:6379/0")
+        await backend.connect()
+
+        class MyComputeNode(NodeCompute, MixinCaching):
+            def __init__(self, container):
+                super().__init__(container, backend=backend)
 
 Related:
     - OMN-1188: Redis/Valkey L2 backend for MixinCaching
@@ -55,6 +64,8 @@ import logging
 import time
 from typing import TYPE_CHECKING, Any
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.typed_dict_mixin_types import TypedDictCacheStats
 
 if TYPE_CHECKING:
@@ -81,6 +92,11 @@ class MixinCaching:
         L1 cache entries include timestamp and TTL for time-based expiration.
         Expired entries are lazily removed on access.
 
+    TTL Values:
+        - ``ttl_seconds=None``: Uses ``default_ttl_seconds`` if set, otherwise no expiration.
+        - ``ttl_seconds=0``: Entry expires immediately (effectively no caching for L1).
+        - ``ttl_seconds > 0``: Entry expires after the specified duration.
+
     TTL Behavior on L2 Hit:
         When L1 is populated from an L2 cache hit, the original L2 TTL is NOT
         preserved. Instead, the L1 entry uses ``default_ttl_seconds``. This is
@@ -90,7 +106,8 @@ class MixinCaching:
 
     Graceful Degradation:
         If L2 backend is unavailable or operations fail, the mixin
-        falls back to L1 cache only without raising errors.
+        falls back to L1 cache only without raising errors. Errors are
+        wrapped in ModelOnexError with appropriate error codes and logged.
 
     Attributes:
         _cache_enabled: Whether caching is enabled
@@ -102,6 +119,8 @@ class MixinCaching:
         .. code-block:: python
 
             from omnibase_core.backends.cache import BackendCacheRedis
+            from omnibase_core.mixins import MixinCaching
+            from omnibase_core.nodes import NodeCompute
 
             # Create Redis backend for L2
             backend = BackendCacheRedis(url="redis://localhost:6379/0")
@@ -182,6 +201,23 @@ class MixinCaching:
             return False
         return time.time() > expiry
 
+    def _cleanup_expired_entries(self) -> list[str]:
+        """
+        Remove all expired entries from L1 cache.
+
+        Returns:
+            List of keys that were removed due to expiration.
+        """
+        now = time.time()
+        expired_keys = [
+            k
+            for k, (_, expiry) in self._cache_data.items()
+            if expiry is not None and now > expiry
+        ]
+        for k in expired_keys:
+            del self._cache_data[k]
+        return expired_keys
+
     def _get_l1(self, cache_key: str) -> tuple[Any | None, bool]:
         """
         Get value from L1 cache.
@@ -202,13 +238,85 @@ class MixinCaching:
 
         return value, True
 
+    def _compute_expiry(self, ttl_seconds: int | None) -> float | None:
+        """
+        Compute expiry timestamp based on TTL.
+
+        Args:
+            ttl_seconds: Time-to-live in seconds. If None, uses default_ttl_seconds.
+
+        Returns:
+            Expiry timestamp, or None for no expiration.
+
+        Note:
+            - ttl_seconds=0 means immediate expiration (entry expires at creation time)
+            - ttl_seconds=None with no default means no expiration
+        """
+        ttl = ttl_seconds if ttl_seconds is not None else self._default_ttl_seconds
+        if ttl is None:
+            return None
+        # ttl=0 means immediate expiration
+        return time.time() + ttl
+
     def _set_l1(
         self, cache_key: str, value: Any, ttl_seconds: int | None = None
     ) -> None:
         """Store value in L1 cache."""
-        ttl = ttl_seconds if ttl_seconds is not None else self._default_ttl_seconds
-        expiry = time.time() + ttl if ttl else None
+        expiry = self._compute_expiry(ttl_seconds)
         self._cache_data[cache_key] = (value, expiry)
+
+    def _is_backend_connected(self) -> bool:
+        """
+        Check if L2 backend is connected and ready for operations.
+
+        Returns:
+            True if backend is connected, False otherwise.
+        """
+        if self._cache_backend is None:
+            return False
+        # Check if backend has is_connected method and use it
+        if hasattr(self._cache_backend, "is_connected"):
+            return bool(self._cache_backend.is_connected())
+        # If no is_connected method, assume connected if backend exists
+        return True
+
+    def _wrap_cache_error(
+        self,
+        exception: Exception,
+        operation: str,
+        cache_key: str | None = None,
+    ) -> ModelOnexError:
+        """
+        Wrap a cache exception in ModelOnexError with appropriate error code.
+
+        Args:
+            exception: The original exception
+            operation: Description of the cache operation (e.g., "get", "set", "delete")
+            cache_key: The cache key involved, if applicable
+
+        Returns:
+            ModelOnexError wrapping the original exception
+        """
+        # Determine appropriate error code based on exception type
+        if isinstance(exception, ConnectionError):
+            error_code = EnumCoreErrorCode.CACHE_CONNECTION_ERROR
+        elif isinstance(exception, TimeoutError):
+            error_code = EnumCoreErrorCode.CACHE_TIMEOUT_ERROR
+        elif isinstance(exception, OSError):
+            # OSError can indicate network or connection issues
+            error_code = EnumCoreErrorCode.CACHE_BACKEND_ERROR
+        else:
+            error_code = EnumCoreErrorCode.CACHE_OPERATION_FAILED
+
+        context: dict[str, Any] = {"operation": operation}
+        if cache_key is not None:
+            context["cache_key"] = cache_key
+
+        return ModelOnexError.from_exception(
+            exception,
+            error_code=error_code,
+            **context,
+        )
 
     async def get_cached(self, cache_key: str) -> Any | None:
         """
@@ -233,8 +341,15 @@ class MixinCaching:
         if found:
             return value
 
-        # Try L2 if available
+        # Try L2 if available and connected
         if self._cache_backend is not None:
+            if not self._is_backend_connected():
+                logger.warning(
+                    "L2 cache backend not connected for key '%s'",
+                    cache_key,
+                )
+                return None
+
             try:
                 l2_value = await self._cache_backend.get(cache_key)
                 if l2_value is not None:
@@ -243,8 +358,21 @@ class MixinCaching:
                     self._set_l1(cache_key, l2_value, self._default_ttl_seconds)
                     return l2_value
             except (ConnectionError, TimeoutError, OSError) as e:
-                # Graceful degradation - log and continue with L1 miss
-                logger.warning("L2 cache get failed for key '%s': %s", cache_key, e)
+                # Graceful degradation - log structured error and continue with L1 miss
+                error = self._wrap_cache_error(e, "get", cache_key)
+                logger.warning(
+                    "L2 cache get failed for key '%s': %s",
+                    cache_key,
+                    error,
+                )
+            except Exception as e:
+                # Catch any other unexpected exceptions from the backend
+                error = self._wrap_cache_error(e, "get", cache_key)
+                logger.warning(
+                    "L2 cache get failed unexpectedly for key '%s': %s",
+                    cache_key,
+                    error,
+                )
 
         return None
 
@@ -262,6 +390,7 @@ class MixinCaching:
             cache_key: Cache key to store under
             value: Value to cache
             ttl_seconds: Time-to-live in seconds. If None, uses default_ttl_seconds.
+                If 0, entry expires immediately (effectively skips caching for L1).
         """
         if not self._cache_enabled:
             return
@@ -269,16 +398,39 @@ class MixinCaching:
         # Determine TTL
         ttl = ttl_seconds if ttl_seconds is not None else self._default_ttl_seconds
 
-        # Write to L1
-        self._set_l1(cache_key, value, ttl)
+        # For ttl=0, skip L1 caching as it would expire immediately
+        # But still write to L2 if available (L2 may handle ttl=0 differently)
+        if ttl != 0:
+            # Write to L1
+            self._set_l1(cache_key, value, ttl)
 
-        # Write to L2 if available
+        # Write to L2 if available and connected
         if self._cache_backend is not None:
+            if not self._is_backend_connected():
+                logger.warning(
+                    "L2 cache backend not connected for set on key '%s'",
+                    cache_key,
+                )
+                return
+
             try:
                 await self._cache_backend.set(cache_key, value, ttl)
             except (ConnectionError, TimeoutError, OSError) as e:
-                # Graceful degradation - log and continue with L1 only
-                logger.warning("L2 cache set failed for key '%s': %s", cache_key, e)
+                # Graceful degradation - log structured error and continue with L1 only
+                error = self._wrap_cache_error(e, "set", cache_key)
+                logger.warning(
+                    "L2 cache set failed for key '%s': %s",
+                    cache_key,
+                    error,
+                )
+            except Exception as e:
+                # Catch any other unexpected exceptions from the backend
+                error = self._wrap_cache_error(e, "set", cache_key)
+                logger.warning(
+                    "L2 cache set failed unexpectedly for key '%s': %s",
+                    cache_key,
+                    error,
+                )
 
     async def invalidate_cache(self, cache_key: str) -> None:
         """
@@ -290,24 +442,53 @@ class MixinCaching:
         # Remove from L1
         self._cache_data.pop(cache_key, None)
 
-        # Remove from L2 if available
+        # Remove from L2 if available and connected
         if self._cache_backend is not None:
+            if not self._is_backend_connected():
+                logger.warning(
+                    "L2 cache backend not connected for delete on key '%s'",
+                    cache_key,
+                )
+                return
+
             try:
                 await self._cache_backend.delete(cache_key)
             except (ConnectionError, TimeoutError, OSError) as e:
-                logger.warning("L2 cache delete failed for key '%s': %s", cache_key, e)
+                error = self._wrap_cache_error(e, "delete", cache_key)
+                logger.warning(
+                    "L2 cache delete failed for key '%s': %s",
+                    cache_key,
+                    error,
+                )
+            except Exception as e:
+                # Catch any other unexpected exceptions from the backend
+                error = self._wrap_cache_error(e, "delete", cache_key)
+                logger.warning(
+                    "L2 cache delete failed unexpectedly for key '%s': %s",
+                    cache_key,
+                    error,
+                )
 
     async def clear_cache(self) -> None:
         """Clear all cache entries from both L1 and L2."""
         # Clear L1
         self._cache_data.clear()
 
-        # Clear L2 if available
+        # Clear L2 if available and connected
         if self._cache_backend is not None:
+            if not self._is_backend_connected():
+                logger.warning("L2 cache backend not connected for clear operation")
+                return
+
             try:
                 await self._cache_backend.clear()
             except (ConnectionError, TimeoutError, OSError) as e:
-                logger.warning("L2 cache clear failed: %s", e)
+                error = self._wrap_cache_error(e, "clear")
+                logger.warning("L2 cache clear failed: %s", error)
+            except Exception as e:
+                # Catch any other unexpected exceptions from the backend
+                error = self._wrap_cache_error(e, "clear")
+                logger.warning("L2 cache clear failed unexpectedly: %s", error)
 
     def get_cache_stats(self) -> TypedDictCacheStats:
         """
@@ -316,22 +497,16 @@ class MixinCaching:
         Returns:
             Typed dictionary with cache statistics including:
             - enabled: Whether caching is enabled
-            - entries: Number of L1 cache entries (including expired)
+            - entries: Number of L1 cache entries (excluding expired)
             - keys: List of L1 cache keys
 
         Note:
+            This method cleans up expired entries before returning statistics.
             Does not include L2 statistics. For L2 stats, check the
             backend directly if it provides a stats method.
         """
-        # Clean up expired entries for accurate count
-        now = time.time()
-        expired_keys = [
-            k
-            for k, (_, expiry) in self._cache_data.items()
-            if expiry is not None and now > expiry
-        ]
-        for k in expired_keys:
-            del self._cache_data[k]
+        # Clean up expired entries for accurate count using helper method
+        self._cleanup_expired_entries()
 
         return TypedDictCacheStats(
             enabled=self._cache_enabled,
@@ -342,3 +517,12 @@ class MixinCaching:
     def has_l2_backend(self) -> bool:
         """Check if L2 backend is configured."""
         return self._cache_backend is not None
+
+    def is_l2_connected(self) -> bool:
+        """
+        Check if L2 backend is connected and ready.
+
+        Returns:
+            True if L2 backend is configured and connected, False otherwise.
+        """
+        return self._is_backend_connected()

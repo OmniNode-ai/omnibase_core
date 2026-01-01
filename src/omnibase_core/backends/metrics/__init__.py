@@ -9,27 +9,32 @@ Available Backends:
     - BackendMetricsPrometheus: Prometheus backend (requires prometheus-client)
 
 Usage:
-    from omnibase_core.backends.metrics import BackendMetricsInMemory
+    .. code-block:: python
 
-    # Create an in-memory backend for testing
-    backend = BackendMetricsInMemory()
-    backend.record_gauge("memory_usage", 1024.0)
-    backend.increment_counter("requests_total")
+        from omnibase_core.backends.metrics import BackendMetricsInMemory
 
-    # Get collected metrics
-    print(backend.get_gauges())
-    print(backend.get_counters())
+        # Create an in-memory backend for testing
+        backend = BackendMetricsInMemory()
+        backend.record_gauge("memory_usage", 1024.0)
+        backend.increment_counter("requests_total")
+
+        # Get collected metrics
+        print(backend.get_gauges())
+        print(backend.get_counters())
 
 Prometheus Usage (when prometheus-client is installed):
-    from omnibase_core.backends.metrics import BackendMetricsPrometheus
 
-    # Create a Prometheus backend
-    backend = BackendMetricsPrometheus(
-        prefix="myapp",
-        push_gateway_url="http://localhost:9091",  # Optional
-    )
-    backend.record_gauge("memory_usage", 1024.0)
-    backend.push()  # Push to gateway if configured
+    .. code-block:: python
+
+        from omnibase_core.backends.metrics import BackendMetricsPrometheus
+
+        # Create a Prometheus backend
+        backend = BackendMetricsPrometheus(
+            prefix="myapp",
+            push_gateway_url="http://localhost:9091",  # Optional
+        )
+        backend.record_gauge("memory_usage", 1024.0)
+        backend.push()  # Push to gateway if configured
 
 .. versionadded:: 0.5.7
 """
@@ -44,7 +49,7 @@ __all__ = [
 
 # Conditionally export Prometheus backend if available
 try:
-    from omnibase_core.backends.metrics.backend_metrics_prometheus import (
+    from omnibase_core.backends.metrics.backend_metrics_prometheus import (  # noqa: F401
         BackendMetricsPrometheus,
     )
 

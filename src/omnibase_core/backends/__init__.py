@@ -10,11 +10,13 @@ Module Organization:
     - metrics/: Metrics backend implementations (Prometheus, In-Memory, etc.)
 
 Usage:
-    from omnibase_core.backends.cache import BackendCacheRedis
-    from omnibase_core.backends.metrics import (
-        BackendMetricsInMemory,
-        BackendMetricsPrometheus,
-    )
+    .. code-block:: python
+
+        from omnibase_core.backends.cache import BackendCacheRedis
+        from omnibase_core.backends.metrics import (
+            BackendMetricsInMemory,
+            BackendMetricsPrometheus,
+        )
 
 .. versionadded:: 0.5.7
 """
@@ -34,3 +36,14 @@ __all__ = [
     # Metrics backends
     "BackendMetricsInMemory",
 ]
+
+# Conditionally export Prometheus backend if prometheus-client is installed
+try:
+    from omnibase_core.backends.metrics import (  # noqa: F401
+        BackendMetricsPrometheus,
+    )
+
+    __all__.append("BackendMetricsPrometheus")
+except ImportError:
+    # prometheus-client not installed, Prometheus backend not available
+    pass

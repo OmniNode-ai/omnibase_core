@@ -14,18 +14,35 @@ Requirements:
     cache = ["redis>=5.0.0"]
 
 Usage:
-    from omnibase_core.backends.cache import BackendCacheRedis
+    .. code-block:: python
 
-    # Create and connect
-    backend = BackendCacheRedis(url="redis://localhost:6379/0")
-    await backend.connect()
+        from omnibase_core.backends.cache import BackendCacheRedis
 
-    # Use for caching
-    await backend.set("key", {"data": "value"}, ttl_seconds=300)
-    data = await backend.get("key")
+        # Create and connect
+        backend = BackendCacheRedis(url="redis://localhost:6379/0")
+        await backend.connect()
 
-    # Cleanup
-    await backend.close()
+        # Use for caching
+        await backend.set("key", {"data": "value"}, ttl_seconds=300)
+        data = await backend.get("key")
+
+        # Cleanup
+        await backend.close()
+
+    Integration with MixinCaching:
+
+    .. code-block:: python
+
+        from omnibase_core.backends.cache import BackendCacheRedis
+        from omnibase_core.mixins import MixinCaching
+        from omnibase_core.nodes import NodeCompute
+
+        backend = BackendCacheRedis(url="redis://localhost:6379/0")
+        await backend.connect()
+
+        class MyNode(NodeCompute, MixinCaching):
+            def __init__(self, container):
+                super().__init__(container, backend=backend)
 
 Related:
     - OMN-1188: Redis/Valkey L2 backend for MixinCaching
@@ -37,11 +54,12 @@ Related:
 
 from __future__ import annotations
 
-__all__ = ["BackendCacheRedis", "REDIS_AVAILABLE"]
+__all__ = ["BackendCacheRedis", "REDIS_AVAILABLE", "sanitize_redis_url"]
 
 import json
 import logging
 from typing import TYPE_CHECKING
+from urllib.parse import urlparse, urlunparse
 
 # Check if redis is available (optional dependency)
 try:
@@ -61,6 +79,48 @@ if TYPE_CHECKING:
     from redis.asyncio.connection import ConnectionPool as ConnectionPoolType
 
 logger = logging.getLogger(__name__)
+
+
+def sanitize_redis_url(url: str) -> str:
+    """
+    Remove credentials from Redis URL for safe logging.
+
+    Strips password (and optionally username) from Redis URLs to prevent
+    credential leakage in logs, error messages, and monitoring systems.
+
+    Args:
+        url: Redis connection URL, potentially containing credentials.
+            Format: redis://[username:password@]host[:port][/database]
+
+    Returns:
+        Sanitized URL with password replaced by '***'.
+        Returns original URL if parsing fails or no password present.
+
+    Example:
+        >>> sanitize_redis_url("redis://:secretpass@localhost:6379/0")
+        'redis://:***@localhost:6379/0'
+        >>> sanitize_redis_url("redis://user:pass@host:6379")
+        'redis://user:***@host:6379'
+        >>> sanitize_redis_url("redis://localhost:6379/0")
+        'redis://localhost:6379/0'
+
+    .. versionadded:: 0.5.0
+    """
+    try:
+        parsed = urlparse(url)
+        if parsed.password:
+            # Reconstruct netloc with masked password
+            if parsed.username:
+                safe_netloc = f"{parsed.username}:***@{parsed.hostname}"
+            else:
+                safe_netloc = f":***@{parsed.hostname}"
+            if parsed.port:
+                safe_netloc += f":{parsed.port}"
+            return urlunparse(parsed._replace(netloc=safe_netloc))
+        return url
+    except Exception:
+        # If URL parsing fails, return a generic safe string
+        return "redis://***"
 
 
 class BackendCacheRedis:
@@ -149,6 +209,11 @@ class BackendCacheRedis:
         self._client: Redis[str] | None = None
         self._connected = False
 
+    @property
+    def _safe_url(self) -> str:
+        """Return URL with credentials masked for safe logging."""
+        return sanitize_redis_url(self._url)
+
     def _make_key(self, key: str) -> str:
         """Create prefixed key."""
         return f"{self._prefix}{key}"
@@ -187,13 +252,15 @@ class BackendCacheRedis:
             # Don't log URL - may contain credentials
             logger.debug("Connected to Redis")
         except (RedisError, ConnectionError, TimeoutError, OSError) as e:
-            logger.error("Failed to connect to Redis: %s", e)
+            # Use error not exception - traceback will be at caller level after re-raise
+            logger.error("Failed to connect to Redis: %s", e)  # noqa: TRY400
             # Cleanup on failure to prevent resource leaks
             await self._cleanup_on_connect_failure()
             raise ConnectionError(f"Failed to connect to Redis: {e}") from e
         except Exception as e:
             # Catch unexpected errors during connection setup
-            logger.error("Unexpected error connecting to Redis: %s", e)
+            # Use error not exception - traceback will be at caller level after re-raise
+            logger.error("Unexpected error connecting to Redis: %s", e)  # noqa: TRY400
             await self._cleanup_on_connect_failure()
             raise ConnectionError(f"Failed to connect to Redis: {e}") from e
 

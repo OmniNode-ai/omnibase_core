@@ -8,16 +8,20 @@ Available Backends:
     - BackendCacheRedis: Redis/Valkey backend with async support
 
 Usage:
-    from omnibase_core.backends.cache import BackendCacheRedis
+    .. code-block:: python
 
-    # Create Redis backend
-    backend = BackendCacheRedis(url="redis://localhost:6379/0")
-    await backend.connect()
+        from omnibase_core.backends.cache import BackendCacheRedis
+        from omnibase_core.mixins import MixinCaching
+        from omnibase_core.nodes import NodeCompute
 
-    # Use with MixinCaching
-    class MyNode(NodeCompute, MixinCaching):
-        def __init__(self, container):
-            super().__init__(container, backend=backend)
+        # Create Redis backend
+        backend = BackendCacheRedis(url="redis://localhost:6379/0")
+        await backend.connect()
+
+        # Use with MixinCaching
+        class MyNode(NodeCompute, MixinCaching):
+            def __init__(self, container):
+                super().__init__(container, backend=backend)
 
 Requirements:
     The redis package is an optional dependency. Install with:
@@ -29,6 +33,7 @@ Requirements:
 from omnibase_core.backends.cache.backend_cache_redis import (
     REDIS_AVAILABLE,
     BackendCacheRedis,
+    sanitize_redis_url,
 )
 
-__all__ = ["BackendCacheRedis", "REDIS_AVAILABLE"]
+__all__ = ["BackendCacheRedis", "REDIS_AVAILABLE", "sanitize_redis_url"]

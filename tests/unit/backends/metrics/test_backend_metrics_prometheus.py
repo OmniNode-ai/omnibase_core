@@ -439,3 +439,224 @@ class TestBackendMetricsPrometheusCounterTagTracking:
         assert "simple_counter" in backend._counters
         # No entry in tag combinations for counters without tags
         assert "simple_counter" not in backend._counter_tag_combinations
+
+
+@pytest.mark.unit
+class TestBackendMetricsPrometheusEnhancedLabelErrors:
+    """Test suite for enhanced label mismatch error messages."""
+
+    def test_error_shows_missing_labels(self) -> None:
+        """Test that error message shows which labels are missing."""
+        backend = BackendMetricsPrometheus()
+        backend.record_gauge("test", 1.0, tags={"a": "1", "b": "2"})
+
+        try:
+            backend.record_gauge("test", 2.0, tags={"a": "1"})
+            pytest.fail("Should have raised ValueError")
+        except ValueError as e:
+            error_msg = str(e)
+            assert "Missing labels:" in error_msg
+            assert "'b'" in error_msg
+
+    def test_error_shows_extra_labels(self) -> None:
+        """Test that error message shows which labels are unexpected."""
+        backend = BackendMetricsPrometheus()
+        backend.record_gauge("test", 1.0, tags={"a": "1"})
+
+        try:
+            backend.record_gauge("test", 2.0, tags={"a": "1", "b": "2"})
+            pytest.fail("Should have raised ValueError")
+        except ValueError as e:
+            error_msg = str(e)
+            assert "Unexpected labels:" in error_msg
+            assert "'b'" in error_msg
+
+    def test_error_shows_both_missing_and_extra(self) -> None:
+        """Test that error shows both missing and extra labels."""
+        backend = BackendMetricsPrometheus()
+        backend.record_gauge("test", 1.0, tags={"a": "1", "b": "2"})
+
+        try:
+            backend.record_gauge("test", 2.0, tags={"a": "1", "c": "3"})
+            pytest.fail("Should have raised ValueError")
+        except ValueError as e:
+            error_msg = str(e)
+            assert "Missing labels:" in error_msg
+            assert "'b'" in error_msg
+            assert "Unexpected labels:" in error_msg
+            assert "'c'" in error_msg
+
+
+@pytest.mark.unit
+class TestBackendMetricsPrometheusGaugeTagTracking:
+    """Test suite for gauge tag value combination tracking."""
+
+    def test_gauge_tag_combinations_tracked(self) -> None:
+        """Test that gauge tag value combinations are tracked."""
+        backend = BackendMetricsPrometheus()
+
+        backend.record_gauge("memory", 1024.0, tags={"host": "server1"})
+
+        combinations = backend.get_gauge_tag_combinations("memory")
+        assert combinations is not None
+        assert len(combinations) == 1
+        assert frozenset([("host", "server1")]) in combinations
+
+    def test_gauge_multiple_tag_combinations(self) -> None:
+        """Test that multiple gauge tag combinations are tracked."""
+        backend = BackendMetricsPrometheus()
+
+        backend.record_gauge("memory", 1024.0, tags={"host": "server1"})
+        backend.record_gauge("memory", 2048.0, tags={"host": "server2"})
+
+        combinations = backend.get_gauge_tag_combinations("memory")
+        assert combinations is not None
+        assert len(combinations) == 2
+
+
+@pytest.mark.unit
+class TestBackendMetricsPrometheusHistogramTagTracking:
+    """Test suite for histogram tag value combination tracking."""
+
+    def test_histogram_tag_combinations_tracked(self) -> None:
+        """Test that histogram tag value combinations are tracked."""
+        backend = BackendMetricsPrometheus()
+
+        backend.record_histogram("latency", 0.5, tags={"endpoint": "/api"})
+
+        combinations = backend.get_histogram_tag_combinations("latency")
+        assert combinations is not None
+        assert len(combinations) == 1
+        assert frozenset([("endpoint", "/api")]) in combinations
+
+
+@pytest.mark.unit
+class TestBackendMetricsPrometheusCardinalityReport:
+    """Test suite for cardinality report functionality."""
+
+    def test_get_cardinality_report(self) -> None:
+        """Test getting cardinality report for all metric types."""
+        backend = BackendMetricsPrometheus()
+
+        # Add metrics with various tag combinations
+        backend.record_gauge("g1", 1.0, tags={"a": "1"})
+        backend.record_gauge("g1", 2.0, tags={"a": "2"})
+        backend.increment_counter("c1", tags={"b": "1"})
+        backend.increment_counter("c1", tags={"b": "2"})
+        backend.increment_counter("c1", tags={"b": "3"})
+        backend.record_histogram("h1", 0.5, tags={"c": "1"})
+
+        report = backend.get_cardinality_report()
+
+        assert "gauge" in report
+        assert "counter" in report
+        assert "histogram" in report
+        assert report["gauge"]["g1"] == 2
+        assert report["counter"]["c1"] == 3
+        assert report["histogram"]["h1"] == 1
+
+    def test_get_all_tag_combinations(self) -> None:
+        """Test getting all tag combinations."""
+        backend = BackendMetricsPrometheus()
+
+        backend.record_gauge("g1", 1.0, tags={"a": "1"})
+        backend.increment_counter("c1", tags={"b": "1"})
+
+        all_combos = backend.get_all_tag_combinations()
+
+        assert "gauge" in all_combos
+        assert "counter" in all_combos
+        assert "histogram" in all_combos
+        assert "g1" in all_combos["gauge"]
+        assert "c1" in all_combos["counter"]
+
+
+@pytest.mark.unit
+class TestBackendMetricsPrometheusPushRetry:
+    """Test suite for push gateway retry functionality."""
+
+    def test_push_retry_configuration(self) -> None:
+        """Test that push retry parameters can be configured."""
+        backend = BackendMetricsPrometheus(
+            push_retry_count=5,
+            push_retry_delay=1.0,
+            push_retry_backoff=3.0,
+        )
+
+        assert backend._push_retry_count == 5
+        assert backend._push_retry_delay == 1.0
+        assert backend._push_retry_backoff == 3.0
+
+    def test_push_failure_stats_initial(self) -> None:
+        """Test initial push failure stats are zero."""
+        backend = BackendMetricsPrometheus()
+
+        stats = backend.get_push_failure_stats()
+
+        assert stats["consecutive_failures"] == 0
+        assert stats["last_failure_time"] is None
+
+    def test_cardinality_warning_threshold_configurable(self) -> None:
+        """Test that cardinality warning threshold is configurable."""
+        backend = BackendMetricsPrometheus(cardinality_warning_threshold=50)
+
+        assert backend._cardinality_warning_threshold == 50
+
+
+@pytest.mark.unit
+class TestBackendMetricsPrometheusPushFailureError:
+    """Test suite for push failure error formatting."""
+
+    def test_format_push_failure_connection_error(self) -> None:
+        """Test formatting of connection error with hints."""
+        backend = BackendMetricsPrometheus(push_gateway_url="http://localhost:9091")
+
+        class MockConnectionError(Exception):
+            pass
+
+        error = MockConnectionError("Connection refused")
+        result = backend._format_push_failure_error(error)
+
+        assert "MockConnectionError" in result
+        assert "Connection refused" in result
+
+    def test_format_push_failure_none_error(self) -> None:
+        """Test formatting when error is None."""
+        backend = BackendMetricsPrometheus()
+
+        result = backend._format_push_failure_error(None)
+
+        assert result == "Unknown error"
+
+    def test_format_push_failure_timeout_hints(self) -> None:
+        """Test that timeout errors get appropriate hints."""
+        backend = BackendMetricsPrometheus(push_gateway_url="http://localhost:9091")
+
+        class TimeoutError(Exception):
+            pass
+
+        error = TimeoutError("Request timed out")
+        result = backend._format_push_failure_error(error)
+
+        assert "timeout" in result.lower() or "Timeout" in result
+
+
+@pytest.mark.unit
+class TestBackendMetricsPrometheusDefaultValues:
+    """Test suite for default value constants."""
+
+    def test_default_retry_values(self) -> None:
+        """Test that default retry values are sensible."""
+        assert BackendMetricsPrometheus.DEFAULT_PUSH_RETRY_COUNT == 3
+        assert BackendMetricsPrometheus.DEFAULT_PUSH_RETRY_DELAY == 0.5
+        assert BackendMetricsPrometheus.DEFAULT_PUSH_RETRY_BACKOFF == 2.0
+        assert BackendMetricsPrometheus.DEFAULT_CARDINALITY_WARNING_THRESHOLD == 100
+
+    def test_default_values_used_when_none(self) -> None:
+        """Test that defaults are used when None is passed."""
+        backend = BackendMetricsPrometheus()
+
+        assert backend._push_retry_count == 3
+        assert backend._push_retry_delay == 0.5
+        assert backend._push_retry_backoff == 2.0
+        assert backend._cardinality_warning_threshold == 100

@@ -17,6 +17,7 @@ class MockNode(MixinMetrics):
 class TestMixinMetricsInit:
     """Test suite for MixinMetrics initialization."""
 
+    @pytest.mark.timeout(60)
     def test_init_sets_metrics_enabled(self):
         """Test that __init__ sets _metrics_enabled to True."""
         node = MockNode()
@@ -24,6 +25,7 @@ class TestMixinMetricsInit:
         metrics_enabled = object.__getattribute__(node, "_metrics_enabled")
         assert metrics_enabled is True
 
+    @pytest.mark.timeout(60)
     def test_init_creates_empty_metrics_dict(self):
         """Test that __init__ creates empty _metrics_data dict."""
         node = MockNode()
@@ -36,6 +38,7 @@ class TestMixinMetricsInit:
 class TestRecordMetric:
     """Test suite for record_metric method."""
 
+    @pytest.mark.timeout(60)
     def test_record_metric_basic(self):
         """Test basic metric recording."""
         node = MockNode()
@@ -47,6 +50,7 @@ class TestRecordMetric:
         assert metrics_data["test_metric"]["value"] == 42.5
         assert metrics_data["test_metric"]["tags"] == {}
 
+    @pytest.mark.timeout(60)
     def test_record_metric_with_tags(self):
         """Test metric recording with tags."""
         node = MockNode()
@@ -58,6 +62,7 @@ class TestRecordMetric:
         assert metrics_data["request_time"]["value"] == 123.45
         assert metrics_data["request_time"]["tags"] == tags
 
+    @pytest.mark.timeout(60)
     def test_record_metric_overwrites_existing(self):
         """Test that recording a metric overwrites existing value."""
         node = MockNode()
@@ -68,6 +73,7 @@ class TestRecordMetric:
         metrics_data = object.__getattribute__(node, "_metrics_data")
         assert metrics_data["metric1"]["value"] == 20.0
 
+    @pytest.mark.timeout(60)
     def test_record_metric_multiple_metrics(self):
         """Test recording multiple different metrics."""
         node = MockNode()
@@ -82,6 +88,7 @@ class TestRecordMetric:
         assert metrics_data["metric_b"]["value"] == 2.0
         assert metrics_data["metric_c"]["value"] == 3.0
 
+    @pytest.mark.timeout(60)
     def test_record_metric_with_empty_tags(self):
         """Test recording metric with explicitly empty tags."""
         node = MockNode()
@@ -91,6 +98,7 @@ class TestRecordMetric:
         metrics_data = object.__getattribute__(node, "_metrics_data")
         assert metrics_data["metric1"]["tags"] == {}
 
+    @pytest.mark.timeout(60)
     def test_record_metric_with_negative_value(self):
         """Test recording metric with negative value."""
         node = MockNode()
@@ -100,6 +108,7 @@ class TestRecordMetric:
         metrics_data = object.__getattribute__(node, "_metrics_data")
         assert metrics_data["temperature"]["value"] == -15.5
 
+    @pytest.mark.timeout(60)
     def test_record_metric_with_zero_value(self):
         """Test recording metric with zero value."""
         node = MockNode()
@@ -109,6 +118,7 @@ class TestRecordMetric:
         metrics_data = object.__getattribute__(node, "_metrics_data")
         assert metrics_data["error_count"]["value"] == 0.0
 
+    @pytest.mark.timeout(60)
     def test_record_metric_defensive_initialization(self):
         """Test that record_metric handles missing initialization gracefully."""
         node = MockNode()
@@ -133,6 +143,7 @@ class TestRecordMetric:
 class TestIncrementCounter:
     """Test suite for increment_counter method."""
 
+    @pytest.mark.timeout(60)
     def test_increment_counter_default_increment(self):
         """Test counter increment with default value (1)."""
         node = MockNode()
@@ -142,6 +153,7 @@ class TestIncrementCounter:
         metrics_data = object.__getattribute__(node, "_metrics_data")
         assert metrics_data["requests"]["value"] == 1
 
+    @pytest.mark.timeout(60)
     def test_increment_counter_custom_increment(self):
         """Test counter increment with custom value."""
         node = MockNode()
@@ -151,6 +163,7 @@ class TestIncrementCounter:
         metrics_data = object.__getattribute__(node, "_metrics_data")
         assert metrics_data["bytes_sent"]["value"] == 1024
 
+    @pytest.mark.timeout(60)
     def test_increment_counter_multiple_times(self):
         """Test incrementing counter multiple times."""
         node = MockNode()
@@ -162,6 +175,7 @@ class TestIncrementCounter:
         metrics_data = object.__getattribute__(node, "_metrics_data")
         assert metrics_data["api_calls"]["value"] == 3
 
+    @pytest.mark.timeout(60)
     def test_increment_counter_with_custom_values(self):
         """Test incrementing counter with varying custom values."""
         node = MockNode()
@@ -173,6 +187,7 @@ class TestIncrementCounter:
         metrics_data = object.__getattribute__(node, "_metrics_data")
         assert metrics_data["total_bytes"]["value"] == 350
 
+    @pytest.mark.timeout(60)
     def test_increment_counter_from_zero(self):
         """Test that counter starts from zero."""
         node = MockNode()
@@ -183,6 +198,7 @@ class TestIncrementCounter:
         metrics_data = object.__getattribute__(node, "_metrics_data")
         assert metrics_data["new_counter"]["value"] == 5
 
+    @pytest.mark.timeout(60)
     def test_increment_counter_negative_value(self):
         """Test incrementing counter with negative value (decrement)."""
         node = MockNode()
@@ -193,6 +209,7 @@ class TestIncrementCounter:
         metrics_data = object.__getattribute__(node, "_metrics_data")
         assert metrics_data["balance"]["value"] == 70
 
+    @pytest.mark.timeout(60)
     def test_increment_counter_defensive_initialization(self):
         """Test that increment_counter handles missing initialization gracefully."""
         node = MockNode()
@@ -208,6 +225,7 @@ class TestIncrementCounter:
 class TestGetMetrics:
     """Test suite for get_metrics method."""
 
+    @pytest.mark.timeout(60)
     def test_get_metrics_empty(self):
         """Test get_metrics on empty metrics data."""
         node = MockNode()
@@ -217,6 +235,7 @@ class TestGetMetrics:
         assert isinstance(metrics, dict)
         assert len(metrics) == 0
 
+    @pytest.mark.timeout(60)
     def test_get_metrics_returns_copy(self):
         """Test that get_metrics returns a copy, not reference."""
         node = MockNode()
@@ -230,6 +249,7 @@ class TestGetMetrics:
         assert metrics1 == metrics2
         assert metrics1 is not metrics2
 
+    @pytest.mark.timeout(60)
     def test_get_metrics_after_recording(self):
         """Test get_metrics returns all recorded metrics."""
         node = MockNode()
@@ -244,6 +264,7 @@ class TestGetMetrics:
         assert metrics["metric_a"]["value"] == 1.0
         assert metrics["counter_b"]["value"] == 5
 
+    @pytest.mark.timeout(60)
     def test_get_metrics_defensive_initialization(self):
         """Test that get_metrics handles missing initialization gracefully."""
         node = MockNode()
@@ -253,6 +274,7 @@ class TestGetMetrics:
 
         assert isinstance(metrics, dict)
 
+    @pytest.mark.timeout(60)
     def test_get_metrics_with_multiple_metrics(self):
         """Test get_metrics with various metric types."""
         node = MockNode()
@@ -274,6 +296,7 @@ class TestGetMetrics:
 class TestResetMetrics:
     """Test suite for reset_metrics method."""
 
+    @pytest.mark.timeout(60)
     def test_reset_metrics_clears_all_data(self):
         """Test that reset_metrics clears all metrics data."""
         node = MockNode()
@@ -295,6 +318,7 @@ class TestResetMetrics:
         assert len(metrics_after) == 0
         assert metrics_after == {}
 
+    @pytest.mark.timeout(60)
     def test_reset_metrics_on_empty(self):
         """Test reset_metrics on already empty metrics."""
         node = MockNode()
@@ -305,6 +329,7 @@ class TestResetMetrics:
         metrics = node.get_metrics()
         assert metrics == {}
 
+    @pytest.mark.timeout(60)
     def test_reset_metrics_defensive_initialization(self):
         """Test that reset_metrics handles missing initialization gracefully."""
         node = MockNode()
@@ -322,6 +347,7 @@ class TestResetMetrics:
 class TestMetricsIntegration:
     """Integration tests for MixinMetrics workflow."""
 
+    @pytest.mark.timeout(60)
     def test_full_metrics_workflow(self):
         """Test complete metrics workflow: record, increment, get, reset."""
         node = MockNode()
@@ -350,6 +376,7 @@ class TestMetricsIntegration:
         metrics_new = node.get_metrics()
         assert len(metrics_new) == 1
 
+    @pytest.mark.timeout(60)
     def test_counter_and_metric_coexistence(self):
         """Test that counters and regular metrics work together."""
         node = MockNode()
@@ -368,6 +395,7 @@ class TestMetricsIntegration:
         assert metrics["error_count"]["value"] == 2
         assert metrics["success_rate"]["value"] == 0.95
 
+    @pytest.mark.timeout(60)
     def test_metric_overwrite_behavior(self):
         """Test how metrics behave when overwritten."""
         node = MockNode()
@@ -391,6 +419,7 @@ class TestMetricsIntegration:
             "location": "room1",
         }
 
+    @pytest.mark.timeout(60)
     def test_large_number_of_metrics(self):
         """Test handling of many metrics."""
         node = MockNode()
@@ -407,6 +436,7 @@ class TestMetricsIntegration:
         assert metrics["metric_50"]["value"] == 50.0
         assert metrics["metric_99"]["value"] == 99.0
 
+    @pytest.mark.timeout(60)
     def test_metrics_with_special_characters_in_names(self):
         """Test metrics with special characters in names."""
         node = MockNode()
@@ -426,12 +456,14 @@ class TestMetricsIntegration:
 class TestMixinMetricsBackendSupport:
     """Test suite for MixinMetrics backend integration (v0.5.7+)."""
 
+    @pytest.mark.timeout(60)
     def test_init_sets_backend_to_none(self) -> None:
         """Test that __init__ sets _metrics_backend to None."""
         node = MockNode()
         backend = object.__getattribute__(node, "_metrics_backend")
         assert backend is None
 
+    @pytest.mark.timeout(60)
     def test_set_metrics_backend(self) -> None:
         """Test setting a metrics backend."""
         from omnibase_core.backends.metrics import BackendMetricsInMemory
@@ -443,6 +475,7 @@ class TestMixinMetricsBackendSupport:
 
         assert node.get_metrics_backend() is backend
 
+    @pytest.mark.timeout(60)
     def test_set_metrics_backend_to_none(self) -> None:
         """Test clearing the metrics backend."""
         from omnibase_core.backends.metrics import BackendMetricsInMemory
@@ -455,11 +488,13 @@ class TestMixinMetricsBackendSupport:
 
         assert node.get_metrics_backend() is None
 
+    @pytest.mark.timeout(60)
     def test_get_metrics_backend_returns_none_by_default(self) -> None:
         """Test that get_metrics_backend returns None by default."""
         node = MockNode()
         assert node.get_metrics_backend() is None
 
+    @pytest.mark.timeout(60)
     def test_record_metric_forwards_to_backend(self) -> None:
         """Test that record_metric forwards to configured backend."""
         from omnibase_core.backends.metrics import BackendMetricsInMemory
@@ -479,6 +514,7 @@ class TestMixinMetricsBackendSupport:
         assert "cpu_usage{host=server1}" in backend_gauges
         assert backend_gauges["cpu_usage{host=server1}"] == 45.2
 
+    @pytest.mark.timeout(60)
     def test_increment_counter_forwards_to_backend(self) -> None:
         """Test that increment_counter forwards to configured backend."""
         from omnibase_core.backends.metrics import BackendMetricsInMemory
@@ -503,6 +539,7 @@ class TestMixinMetricsBackendSupport:
 class TestMixinMetricsHistogram:
     """Test suite for record_histogram method (v0.5.7+)."""
 
+    @pytest.mark.timeout(60)
     def test_record_histogram_basic(self) -> None:
         """Test basic histogram recording."""
         node = MockNode()
@@ -513,6 +550,7 @@ class TestMixinMetricsHistogram:
         assert "response_time" in metrics
         assert metrics["response_time"]["value"] == 0.123
 
+    @pytest.mark.timeout(60)
     def test_record_histogram_with_tags(self) -> None:
         """Test histogram recording with tags."""
         node = MockNode()
@@ -523,6 +561,7 @@ class TestMixinMetricsHistogram:
         assert metrics["request_duration"]["value"] == 0.5
         assert metrics["request_duration"]["tags"] == {"endpoint": "/api/users"}
 
+    @pytest.mark.timeout(60)
     def test_record_histogram_forwards_to_backend(self) -> None:
         """Test that record_histogram forwards to configured backend."""
         from omnibase_core.backends.metrics import BackendMetricsInMemory
@@ -547,6 +586,7 @@ class TestMixinMetricsHistogram:
 class TestMixinMetricsPush:
     """Test suite for push_metrics method (v0.5.7+)."""
 
+    @pytest.mark.timeout(60)
     def test_push_metrics_without_backend(self) -> None:
         """Test that push_metrics is a no-op without backend."""
         node = MockNode()
@@ -554,6 +594,7 @@ class TestMixinMetricsPush:
         # Should not raise
         node.push_metrics()
 
+    @pytest.mark.timeout(60)
     def test_push_metrics_calls_backend_push(self) -> None:
         """Test that push_metrics calls backend.push()."""
         from omnibase_core.backends.metrics import BackendMetricsInMemory
@@ -572,6 +613,7 @@ class TestMixinMetricsPush:
 class TestMixinMetricsBackwardCompatibility:
     """Test suite for backward compatibility after v0.5.7 changes."""
 
+    @pytest.mark.timeout(60)
     def test_existing_code_works_without_backend(self) -> None:
         """Test that existing code works unchanged without backend."""
         node = MockNode()
@@ -589,6 +631,7 @@ class TestMixinMetricsBackwardCompatibility:
         node.reset_metrics()
         assert node.get_metrics() == {}
 
+    @pytest.mark.timeout(60)
     def test_in_memory_storage_always_populated(self) -> None:
         """Test that in-memory storage is always populated with backend."""
         from omnibase_core.backends.metrics import BackendMetricsInMemory
@@ -602,6 +645,7 @@ class TestMixinMetricsBackwardCompatibility:
         # In-memory storage should still work
         assert node.get_metrics()["test"]["value"] == 42.0
 
+    @pytest.mark.timeout(60)
     def test_reset_only_affects_in_memory(self) -> None:
         """Test that reset_metrics only clears in-memory storage."""
         from omnibase_core.backends.metrics import BackendMetricsInMemory

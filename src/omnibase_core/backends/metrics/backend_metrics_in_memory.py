@@ -135,7 +135,6 @@ class BackendMetricsInMemory:
         remote backend to push to.
         """
         # No-op for in-memory backend
-        pass
 
     def get_gauges(self) -> dict[str, float]:
         """
