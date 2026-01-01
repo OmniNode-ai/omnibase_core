@@ -208,6 +208,54 @@ class ModelProjectorSchema(BaseModel):
                     )
         return self
 
+    @model_validator(mode="after")
+    def validate_no_duplicate_column_names(self) -> Self:
+        """Validate that all column names are unique.
+
+        Column names must be unique within a schema to avoid ambiguity in
+        SQL queries and data mapping.
+
+        Raises:
+            ValueError: If any column name appears more than once.
+        """
+        column_names = [col.name for col in self.columns]
+        seen: set[str] = set()
+        duplicates: set[str] = set()
+        for name in column_names:
+            if name in seen:
+                duplicates.add(name)
+            seen.add(name)
+        if duplicates:
+            raise ValueError(
+                f"Duplicate column names are not allowed: {sorted(duplicates)}"
+            )
+        return self
+
+    @model_validator(mode="after")
+    def validate_no_duplicate_index_names(self) -> Self:
+        """Validate that all explicit index names are unique.
+
+        Index names must be unique within a schema when explicitly provided.
+        Indexes without explicit names (name=None) are allowed and do not
+        conflict with each other.
+
+        Raises:
+            ValueError: If any explicit index name appears more than once.
+        """
+        # Only check indexes with explicit names (skip None)
+        explicit_names = [idx.name for idx in self.indexes if idx.name is not None]
+        seen: set[str] = set()
+        duplicates: set[str] = set()
+        for name in explicit_names:
+            if name in seen:
+                duplicates.add(name)
+            seen.add(name)
+        if duplicates:
+            raise ValueError(
+                f"Duplicate index names are not allowed: {sorted(duplicates)}"
+            )
+        return self
+
     def __hash__(self) -> int:
         """Return hash value for the schema.
 
@@ -228,7 +276,8 @@ class ModelProjectorSchema(BaseModel):
         """Return a concise representation for debugging.
 
         Returns:
-            String representation showing table name and column count.
+            String representation showing table name, column count, index count,
+            and version for better debugging visibility.
 
         Examples:
             >>> schema = ModelProjectorSchema(
@@ -237,10 +286,22 @@ class ModelProjectorSchema(BaseModel):
             ...     columns=[...],
             ... )
             >>> repr(schema)
-            "ModelProjectorSchema(table='nodes', columns=1)"
+            "ModelProjectorSchema(table='nodes', columns=1, indexes=0, version=None)"
+
+            >>> schema_with_version = ModelProjectorSchema(
+            ...     table="nodes",
+            ...     primary_key="node_id",
+            ...     columns=[...],
+            ...     indexes=[...],
+            ...     version=ModelSemVer(major=1, minor=0, patch=0),
+            ... )
+            >>> repr(schema_with_version)
+            "ModelProjectorSchema(table='nodes', columns=1, indexes=2, version=1.0.0)"
         """
+        version_str = str(self.version) if self.version is not None else "None"
         return (
-            f"ModelProjectorSchema(table={self.table!r}, columns={len(self.columns)})"
+            f"ModelProjectorSchema(table={self.table!r}, columns={len(self.columns)}, "
+            f"indexes={len(self.indexes)}, version={version_str})"
         )
 
 

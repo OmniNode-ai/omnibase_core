@@ -984,7 +984,7 @@ class TestModelProjectorSchemaRepr:
     """Tests for __repr__ method of ModelProjectorSchema."""
 
     def test_repr_basic(self) -> None:
-        """Test basic repr output contains class name and table."""
+        """Test basic repr output contains class name, table, and defaults."""
         from omnibase_core.models.projectors import (
             ModelProjectorColumn,
             ModelProjectorSchema,
@@ -1006,6 +1006,8 @@ class TestModelProjectorSchemaRepr:
         assert "ModelProjectorSchema" in result
         assert "node_projections" in result
         assert "columns=1" in result
+        assert "indexes=0" in result
+        assert "version=None" in result
 
     def test_repr_with_multiple_columns(self) -> None:
         """Test repr correctly shows column count for multiple columns."""
@@ -1042,6 +1044,51 @@ class TestModelProjectorSchemaRepr:
         assert "ModelProjectorSchema" in result
         assert "test_table" in result
         assert "columns=3" in result
+        assert "indexes=0" in result
+        assert "version=None" in result
+
+    def test_repr_with_multiple_indexes(self) -> None:
+        """Test repr correctly shows index count for multiple indexes."""
+        from omnibase_core.models.projectors import (
+            ModelProjectorColumn,
+            ModelProjectorIndex,
+            ModelProjectorSchema,
+        )
+
+        columns = [
+            ModelProjectorColumn(
+                name="node_id",
+                type="UUID",
+                source="event.payload.node_id",
+            ),
+            ModelProjectorColumn(
+                name="status",
+                type="TEXT",
+                source="event.payload.status",
+            ),
+            ModelProjectorColumn(
+                name="created_at",
+                type="TIMESTAMPTZ",
+                source="event.payload.created_at",
+            ),
+        ]
+
+        indexes = [
+            ModelProjectorIndex(columns=["status"]),
+            ModelProjectorIndex(columns=["created_at"]),
+            ModelProjectorIndex(columns=["status", "created_at"]),
+        ]
+
+        schema = ModelProjectorSchema(
+            table="indexed_table",
+            primary_key="node_id",
+            columns=columns,
+            indexes=indexes,
+        )
+        result = repr(schema)
+
+        assert "indexes=3" in result
+        assert "version=None" in result
 
     def test_repr_concise_format(self) -> None:
         """Test repr is concise and doesn't include all details."""
@@ -1080,10 +1127,244 @@ class TestModelProjectorSchemaRepr:
         )
         result = repr(schema)
 
-        # Repr should be concise - showing table and count only
+        # Repr should be concise - showing table, counts, and version
         assert "ModelProjectorSchema" in result
         assert "complex_table" in result
         assert "columns=2" in result
-        # These details should NOT be in the concise repr
-        assert "indexes" not in result.lower()
-        assert "version" not in result.lower()
+        assert "indexes=1" in result
+        assert "version=1.0.0" in result
+
+
+@pytest.mark.unit
+class TestModelProjectorSchemaDuplicateValidation:
+    """Tests for duplicate column and index name validation."""
+
+    def test_duplicate_column_names_rejected(self) -> None:
+        """Validation fails when duplicate column names are provided."""
+        from omnibase_core.models.projectors import (
+            ModelProjectorColumn,
+            ModelProjectorSchema,
+        )
+
+        columns = [
+            ModelProjectorColumn(
+                name="node_id",
+                type="UUID",
+                source="event.payload.node_id",
+            ),
+            ModelProjectorColumn(
+                name="status",
+                type="TEXT",
+                source="event.payload.status",
+            ),
+            ModelProjectorColumn(
+                name="node_id",  # Duplicate name
+                type="TEXT",
+                source="event.payload.other_id",
+            ),
+        ]
+
+        with pytest.raises(ValidationError) as exc_info:
+            ModelProjectorSchema(
+                table="node_projections",
+                primary_key="node_id",
+                columns=columns,
+            )
+
+        error_str = str(exc_info.value)
+        assert "Duplicate column names" in error_str
+        assert "node_id" in error_str
+
+    def test_multiple_duplicate_column_names_all_listed(self) -> None:
+        """Validation error lists all duplicate column names."""
+        from omnibase_core.models.projectors import (
+            ModelProjectorColumn,
+            ModelProjectorSchema,
+        )
+
+        columns = [
+            ModelProjectorColumn(name="alpha", type="TEXT", source="event.payload.a"),
+            ModelProjectorColumn(name="beta", type="TEXT", source="event.payload.b"),
+            ModelProjectorColumn(name="alpha", type="TEXT", source="event.payload.c"),
+            ModelProjectorColumn(name="beta", type="TEXT", source="event.payload.d"),
+            ModelProjectorColumn(name="gamma", type="TEXT", source="event.payload.e"),
+        ]
+
+        with pytest.raises(ValidationError) as exc_info:
+            ModelProjectorSchema(
+                table="test",
+                primary_key="gamma",
+                columns=columns,
+            )
+
+        error_str = str(exc_info.value)
+        assert "Duplicate column names" in error_str
+        assert "alpha" in error_str
+        assert "beta" in error_str
+
+    def test_duplicate_index_names_rejected(self) -> None:
+        """Validation fails when duplicate explicit index names are provided."""
+        from omnibase_core.models.projectors import (
+            ModelProjectorColumn,
+            ModelProjectorIndex,
+            ModelProjectorSchema,
+        )
+
+        columns = [
+            ModelProjectorColumn(
+                name="node_id",
+                type="UUID",
+                source="event.payload.node_id",
+            ),
+            ModelProjectorColumn(
+                name="status",
+                type="TEXT",
+                source="event.payload.status",
+            ),
+            ModelProjectorColumn(
+                name="created_at",
+                type="TIMESTAMPTZ",
+                source="event.payload.created_at",
+            ),
+        ]
+
+        indexes = [
+            ModelProjectorIndex(name="idx_status", columns=["status"]),
+            ModelProjectorIndex(name="idx_created", columns=["created_at"]),
+            ModelProjectorIndex(name="idx_status", columns=["node_id"]),  # Duplicate
+        ]
+
+        with pytest.raises(ValidationError) as exc_info:
+            ModelProjectorSchema(
+                table="node_projections",
+                primary_key="node_id",
+                columns=columns,
+                indexes=indexes,
+            )
+
+        error_str = str(exc_info.value)
+        assert "Duplicate index names" in error_str
+        assert "idx_status" in error_str
+
+    def test_indexes_without_names_allowed(self) -> None:
+        """Multiple indexes with None names should not conflict."""
+        from omnibase_core.models.projectors import (
+            ModelProjectorColumn,
+            ModelProjectorIndex,
+            ModelProjectorSchema,
+        )
+
+        columns = [
+            ModelProjectorColumn(
+                name="node_id",
+                type="UUID",
+                source="event.payload.node_id",
+            ),
+            ModelProjectorColumn(
+                name="status",
+                type="TEXT",
+                source="event.payload.status",
+            ),
+            ModelProjectorColumn(
+                name="created_at",
+                type="TIMESTAMPTZ",
+                source="event.payload.created_at",
+            ),
+        ]
+
+        # Multiple indexes without explicit names (name=None by default)
+        indexes = [
+            ModelProjectorIndex(columns=["status"]),
+            ModelProjectorIndex(columns=["created_at"]),
+            ModelProjectorIndex(columns=["status", "created_at"]),
+        ]
+
+        # Should not raise - None names do not conflict
+        schema = ModelProjectorSchema(
+            table="node_projections",
+            primary_key="node_id",
+            columns=columns,
+            indexes=indexes,
+        )
+
+        assert len(schema.indexes) == 3
+        # Verify all indexes have None names
+        for idx in schema.indexes:
+            assert idx.name is None
+
+    def test_mixed_named_and_unnamed_indexes_allowed(self) -> None:
+        """Mix of named and unnamed indexes should work if no duplicate names."""
+        from omnibase_core.models.projectors import (
+            ModelProjectorColumn,
+            ModelProjectorIndex,
+            ModelProjectorSchema,
+        )
+
+        columns = [
+            ModelProjectorColumn(
+                name="node_id",
+                type="UUID",
+                source="event.payload.node_id",
+            ),
+            ModelProjectorColumn(
+                name="status",
+                type="TEXT",
+                source="event.payload.status",
+            ),
+            ModelProjectorColumn(
+                name="created_at",
+                type="TIMESTAMPTZ",
+                source="event.payload.created_at",
+            ),
+        ]
+
+        indexes = [
+            ModelProjectorIndex(name="idx_status", columns=["status"]),
+            ModelProjectorIndex(columns=["created_at"]),  # No name
+            ModelProjectorIndex(name="idx_composite", columns=["status", "created_at"]),
+            ModelProjectorIndex(columns=["node_id"]),  # No name
+        ]
+
+        # Should not raise - unique explicit names and multiple None names
+        schema = ModelProjectorSchema(
+            table="node_projections",
+            primary_key="node_id",
+            columns=columns,
+            indexes=indexes,
+        )
+
+        assert len(schema.indexes) == 4
+
+    def test_unique_column_names_pass_validation(self) -> None:
+        """Schema with unique column names should pass validation."""
+        from omnibase_core.models.projectors import (
+            ModelProjectorColumn,
+            ModelProjectorSchema,
+        )
+
+        columns = [
+            ModelProjectorColumn(
+                name="id",
+                type="UUID",
+                source="event.payload.id",
+            ),
+            ModelProjectorColumn(
+                name="name",
+                type="TEXT",
+                source="event.payload.name",
+            ),
+            ModelProjectorColumn(
+                name="status",
+                type="TEXT",
+                source="event.payload.status",
+            ),
+        ]
+
+        # Should not raise - all column names are unique
+        schema = ModelProjectorSchema(
+            table="test_table",
+            primary_key="id",
+            columns=columns,
+        )
+
+        assert len(schema.columns) == 3

@@ -1384,7 +1384,7 @@ class TestModelProjectorContractRepr:
     """Tests for __repr__ method of ModelProjectorContract."""
 
     def test_repr_basic(self) -> None:
-        """Test basic repr output contains class name and projector_id."""
+        """Test basic repr output contains class name, projector_id, and version."""
         from omnibase_core.models.projectors import (
             ModelProjectorBehavior,
             ModelProjectorColumn,
@@ -1420,6 +1420,7 @@ class TestModelProjectorContractRepr:
 
         assert "ModelProjectorContract" in result
         assert "node-status-projector" in result
+        assert "version='1.0.0'" in result
         assert "events=1" in result
 
     def test_repr_with_multiple_events(self) -> None:
@@ -1449,7 +1450,7 @@ class TestModelProjectorContractRepr:
             projector_kind="materialized_view",
             projector_id="order-projector",
             name="Order Projector",
-            version="1.0.0",
+            version="2.5.0",
             aggregate_type="order",
             consumed_events=[
                 "order_management.order_created.v1",
@@ -1463,10 +1464,11 @@ class TestModelProjectorContractRepr:
 
         assert "ModelProjectorContract" in result
         assert "order-projector" in result
+        assert "version='2.5.0'" in result
         assert "events=3" in result
 
     def test_repr_concise_format(self) -> None:
-        """Test repr is concise and doesn't include all details."""
+        """Test repr is concise and doesn't include excessive details."""
         from omnibase_core.models.projectors import (
             ModelIdempotencyConfig,
             ModelProjectorBehavior,
@@ -1505,9 +1507,10 @@ class TestModelProjectorContractRepr:
         )
         result = repr(contract)
 
-        # Repr should be concise - showing id and event count only
+        # Repr should be concise - showing id, version, and event count
         assert "ModelProjectorContract" in result
         assert "complex-projector" in result
+        assert "version='2.0.0'" in result
         assert "events=2" in result
         # These details should NOT be in the concise repr
         assert "materialized_view" not in result
