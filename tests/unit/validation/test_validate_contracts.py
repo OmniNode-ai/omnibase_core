@@ -1340,7 +1340,10 @@ output_model: myapp.models.Output
         errors = validate_yaml_file(yaml_file)
         assert len(errors) >= 1
         # handler_id must have at least 2 segments (dot-separated)
-        assert any("segment" in error.lower() or "handler_id" in error.lower() for error in errors)
+        assert any(
+            "segment" in error.lower() or "handler_id" in error.lower()
+            for error in errors
+        )
 
     def test_handler_contract_invalid_version_format(self, temp_repo):
         """Invalid version format triggers error."""
@@ -1421,7 +1424,12 @@ output_model: myapp.models.Output
         errors = validate_yaml_file(yaml_file)
         assert len(errors) >= 1
         # The compute prefix should require handler_kind: compute
-        assert any("compute" in error.lower() or "handler_kind" in error.lower() or "prefix" in error.lower() for error in errors)
+        assert any(
+            "compute" in error.lower()
+            or "handler_kind" in error.lower()
+            or "prefix" in error.lower()
+            for error in errors
+        )
 
     def test_handler_contract_all_valid_kinds(self, temp_repo):
         """All valid handler_kind values are accepted."""
@@ -1443,7 +1451,9 @@ output_model: myapp.models.Output
             yaml_file.write_text(valid_handler)
 
             errors = validate_yaml_file(yaml_file)
-            assert len(errors) == 0, f"Handler kind '{kind}' should be valid. Errors: {errors}"
+            assert len(errors) == 0, (
+                f"Handler kind '{kind}' should be valid. Errors: {errors}"
+            )
 
     def test_handler_contract_with_capability_inputs(self, temp_repo):
         """Handler contract with capability inputs validates."""
@@ -1476,7 +1486,9 @@ output_model: myapp.models.RegistrationState
         yaml_file.write_text(valid_handler)
 
         errors = validate_yaml_file(yaml_file)
-        assert len(errors) == 0, f"Valid handler with capabilities should pass. Errors: {errors}"
+        assert len(errors) == 0, (
+            f"Valid handler with capabilities should pass. Errors: {errors}"
+        )
 
     def test_handler_contract_duplicate_capability_aliases(self, temp_repo):
         """Duplicate capability aliases trigger error."""
@@ -1505,7 +1517,9 @@ output_model: myapp.models.Output
 
         errors = validate_yaml_file(yaml_file)
         assert len(errors) >= 1
-        assert any("alias" in error.lower() or "duplicate" in error.lower() for error in errors)
+        assert any(
+            "alias" in error.lower() or "duplicate" in error.lower() for error in errors
+        )
 
     def test_handler_contract_with_execution_constraints(self, temp_repo):
         """Handler contract with execution constraints validates."""
@@ -1536,7 +1550,9 @@ execution_constraints:
         yaml_file.write_text(valid_handler)
 
         errors = validate_yaml_file(yaml_file)
-        assert len(errors) == 0, f"Valid handler with constraints should pass. Errors: {errors}"
+        assert len(errors) == 0, (
+            f"Valid handler with constraints should pass. Errors: {errors}"
+        )
 
     def test_handler_contract_with_retry_policy(self, temp_repo):
         """Handler contract with retry policy validates."""
@@ -1563,12 +1579,17 @@ output_model: myapp.models.ApiResponse
         yaml_file.write_text(valid_handler)
 
         errors = validate_yaml_file(yaml_file)
-        assert len(errors) == 0, f"Valid handler with retry policy should pass. Errors: {errors}"
+        assert len(errors) == 0, (
+            f"Valid handler with retry policy should pass. Errors: {errors}"
+        )
 
     def test_example_handler_contracts_validate(self):
         """Example handler contracts pass validation (regression test)."""
         example_path = (
-            Path(__file__).parent.parent.parent.parent / "examples" / "contracts" / "handlers"
+            Path(__file__).parent.parent.parent.parent
+            / "examples"
+            / "contracts"
+            / "handlers"
         )
 
         if not example_path.exists():
