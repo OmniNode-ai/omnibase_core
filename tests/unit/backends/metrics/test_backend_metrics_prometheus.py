@@ -105,7 +105,9 @@ class TestBackendMetricsPrometheusGauges:
         backend.record_gauge("http_requests", 100.0, tags={"method": "GET"})
 
         # Trying to record with different labels should fail with a helpful message
-        with pytest.raises(ValueError, match="PROMETHEUS LABEL MISMATCH for gauge metric"):
+        with pytest.raises(
+            ValueError, match="PROMETHEUS LABEL MISMATCH for gauge metric"
+        ):
             backend.record_gauge(
                 "http_requests", 50.0, tags={"method": "GET", "status": "200"}
             )

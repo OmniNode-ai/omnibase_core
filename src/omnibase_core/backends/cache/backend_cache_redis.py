@@ -645,7 +645,9 @@ class BackendCacheRedis:
         # Type narrowing: _validate_connection ensures _client is not None
         assert self._client is not None
 
-        effective_batch_size = batch_size if batch_size is not None else self.SCAN_BATCH_SIZE
+        effective_batch_size = (
+            batch_size if batch_size is not None else self.SCAN_BATCH_SIZE
+        )
         RedisError = _get_redis_error_class()
 
         try:

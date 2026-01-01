@@ -649,18 +649,20 @@ class BackendMetricsPrometheus:
             lines.append(f"  Extra labels (provided but not expected): {extra_str}")
 
         # Add guidance section
-        lines.extend([
-            "",
-            "HOW TO FIX:",
-            "  1. Find all places where this metric is recorded",
-            "  2. Ensure ALL calls use the EXACT same set of label keys",
-            "  3. If different labels are needed, use a different metric name",
-            "",
-            "WHY THIS HAPPENS:",
-            "  Prometheus requires consistent label names for each metric.",
-            "  The first call to record a metric defines its label schema.",
-            "  All subsequent calls must use the same label keys (values can differ).",
-        ])
+        lines.extend(
+            [
+                "",
+                "HOW TO FIX:",
+                "  1. Find all places where this metric is recorded",
+                "  2. Ensure ALL calls use the EXACT same set of label keys",
+                "  3. If different labels are needed, use a different metric name",
+                "",
+                "WHY THIS HAPPENS:",
+                "  Prometheus requires consistent label names for each metric.",
+                "  The first call to record a metric defines its label schema.",
+                "  All subsequent calls must use the same label keys (values can differ).",
+            ]
+        )
 
         return "\n".join(lines)
 
