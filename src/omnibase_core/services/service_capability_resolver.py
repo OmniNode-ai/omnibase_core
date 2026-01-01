@@ -305,7 +305,7 @@ class ServiceCapabilityResolver:
             rejection_reasons=rejection_reasons,
             resolved_at=datetime.now(UTC),
             resolution_duration_ms=resolution_duration_ms,
-            profile_id=profile_id,
+            resolution_profile=profile_id,
             errors=errors,
         )
 
@@ -411,11 +411,11 @@ class ServiceCapabilityResolver:
         binding = ModelBinding(
             dependency_alias=dependency.alias,
             capability=dependency.capability,
-            provider_id=str(selected_provider.provider_id),
+            resolved_provider=str(selected_provider.provider_id),
             adapter=selected_provider.adapter,
             connection_ref=selected_provider.connection_ref,
             requirements_hash=requirements_hash,
-            profile_id=profile_id,
+            resolution_profile=profile_id,
             resolved_at=datetime.now(UTC),
             resolution_notes=resolution_notes,
             candidates_considered=len(sorted_providers),

@@ -218,7 +218,7 @@ class TestResolveBasic:
         assert isinstance(binding, ModelBinding)
         assert binding.dependency_alias == "db"
         assert binding.capability == "database.relational"
-        assert binding.provider_id == str(provider.provider_id)
+        assert binding.resolved_provider == str(provider.provider_id)
         assert binding.adapter == "omnibase.adapters.PostgresAdapter"
         assert binding.connection_ref == "secrets://postgres/primary"
         assert binding.candidates_considered == 1
@@ -250,7 +250,7 @@ class TestResolveBasic:
         binding = resolver.resolve(dependency, registry)
 
         # Assert
-        assert binding.provider_id == str(provider2.provider_id)
+        assert binding.resolved_provider == str(provider2.provider_id)
         assert binding.candidates_considered == 2
 
     def test_resolve_no_providers_raises_error(self) -> None:
@@ -333,7 +333,7 @@ class TestSelectionPolicyAutoIfUnique:
         binding = resolver.resolve(dependency, registry)
 
         # Assert
-        assert binding.provider_id == str(provider.provider_id)
+        assert binding.resolved_provider == str(provider.provider_id)
         assert "auto_if_unique" in " ".join(binding.resolution_notes)
 
     def test_auto_if_unique_fails_with_multiple_candidates(self) -> None:
@@ -387,7 +387,7 @@ class TestSelectionPolicyBestScore:
         binding = resolver.resolve(dependency, registry)
 
         # Assert
-        assert binding.provider_id == str(high_score.provider_id)
+        assert binding.resolved_provider == str(high_score.provider_id)
         assert "best_score" in " ".join(binding.resolution_notes)
 
     def test_best_score_deterministic_tie_breaking_by_provider_id(self) -> None:
@@ -418,7 +418,7 @@ class TestSelectionPolicyBestScore:
         binding = resolver.resolve(dependency, registry)
 
         # Assert - should pick provider_a (lower UUID lexicographically)
-        assert binding.provider_id == str(provider_a.provider_id)
+        assert binding.resolved_provider == str(provider_a.provider_id)
         assert "Tie-breaker" in " ".join(binding.resolution_notes)
 
     def test_best_score_with_zero_preferences_selects_first_by_id(self) -> None:
@@ -443,7 +443,7 @@ class TestSelectionPolicyBestScore:
         binding = resolver.resolve(dependency, registry)
 
         # Assert - both have score 0, so first alphabetically by provider_id wins
-        assert binding.provider_id == str(provider_a.provider_id)
+        assert binding.resolved_provider == str(provider_a.provider_id)
 
 
 @pytest.mark.unit
@@ -492,7 +492,7 @@ class TestSelectionPolicyRequireExplicit:
         binding = resolver.resolve(dependency, registry, profile)
 
         # Assert
-        assert binding.provider_id == str(provider.provider_id)
+        assert binding.resolved_provider == str(provider.provider_id)
         assert "profile pin" in " ".join(binding.resolution_notes).lower()
 
     def test_require_explicit_fails_if_pinned_provider_not_in_candidates(self) -> None:
@@ -556,7 +556,7 @@ class TestMustFiltering:
         binding = resolver.resolve(dependency, registry)
 
         # Assert
-        assert binding.provider_id == str(provider_with_attr.provider_id)
+        assert binding.resolved_provider == str(provider_with_attr.provider_id)
 
     def test_must_filters_providers_with_wrong_attribute_value(self) -> None:
         """Test that providers with wrong must attribute values are filtered."""
@@ -582,7 +582,7 @@ class TestMustFiltering:
         binding = resolver.resolve(dependency, registry)
 
         # Assert
-        assert binding.provider_id == str(correct_version.provider_id)
+        assert binding.resolved_provider == str(correct_version.provider_id)
 
     def test_must_requires_all_constraints_satisfied(self) -> None:
         """Test that all must constraints must be satisfied."""
@@ -623,7 +623,7 @@ class TestMustFiltering:
         binding = resolver.resolve(dependency, registry)
 
         # Assert
-        assert binding.provider_id == str(provider.provider_id)
+        assert binding.resolved_provider == str(provider.provider_id)
 
 
 @pytest.mark.unit
@@ -654,7 +654,7 @@ class TestForbidFiltering:
         binding = resolver.resolve(dependency, registry)
 
         # Assert
-        assert binding.provider_id == str(allowed_provider.provider_id)
+        assert binding.resolved_provider == str(allowed_provider.provider_id)
 
     def test_forbid_allows_providers_without_forbidden_attribute(self) -> None:
         """Test providers without the forbidden attribute are allowed."""
@@ -674,7 +674,7 @@ class TestForbidFiltering:
         binding = resolver.resolve(dependency, registry)
 
         # Assert
-        assert binding.provider_id == str(provider.provider_id)
+        assert binding.resolved_provider == str(provider.provider_id)
 
     def test_forbid_allows_providers_with_different_value(self) -> None:
         """Test forbid only excludes exact value matches."""
@@ -694,7 +694,7 @@ class TestForbidFiltering:
         binding = resolver.resolve(dependency, registry)
 
         # Assert
-        assert binding.provider_id == str(provider.provider_id)
+        assert binding.resolved_provider == str(provider.provider_id)
 
 
 @pytest.mark.unit
@@ -736,7 +736,7 @@ class TestCombinedFiltering:
         binding = resolver.resolve(dependency, registry)
 
         # Assert
-        assert binding.provider_id == str(good_both.provider_id)
+        assert binding.resolved_provider == str(good_both.provider_id)
 
 
 # =============================================================================
@@ -780,7 +780,7 @@ class TestPreferScoring:
         binding = resolver.resolve(dependency, registry)
 
         # Assert - should select provider with most prefer matches
-        assert binding.provider_id == str(two_matches.provider_id)
+        assert binding.resolved_provider == str(two_matches.provider_id)
 
     def test_prefer_checks_features_and_attributes(self) -> None:
         """Test that prefer checks both attributes and effective features."""
@@ -802,7 +802,7 @@ class TestPreferScoring:
         binding = resolver.resolve(dependency, registry)
 
         # Assert
-        assert binding.provider_id == str(provider.provider_id)
+        assert binding.resolved_provider == str(provider.provider_id)
         assert "2.00" in " ".join(binding.resolution_notes)  # Score of 2.0
 
 
@@ -842,10 +842,10 @@ class TestProfileWeights:
         binding = resolver.resolve(dependency, registry, profile)
 
         # Assert - provider2 should win due to weight boost
-        assert binding.provider_id == str(provider2.provider_id)
+        assert binding.resolved_provider == str(provider2.provider_id)
 
-    def test_profile_id_recorded_in_binding(self) -> None:
-        """Test that profile_id is recorded in the binding."""
+    def test_resolution_profile_recorded_in_binding(self) -> None:
+        """Test that resolution_profile is recorded in the binding."""
         # Setup
         resolver = ServiceCapabilityResolver()
         provider = create_provider(capabilities=["database.relational"])
@@ -857,10 +857,10 @@ class TestProfileWeights:
         binding = resolver.resolve(dependency, registry, profile)
 
         # Assert
-        assert binding.profile_id == "production-us-east"
+        assert binding.resolution_profile == "production-us-east"
 
-    def test_default_profile_id_when_no_profile(self) -> None:
-        """Test that default profile_id is used when no profile provided."""
+    def test_default_resolution_profile_when_no_profile(self) -> None:
+        """Test that default resolution_profile is used when no profile provided."""
         # Setup
         resolver = ServiceCapabilityResolver()
         provider = create_provider(capabilities=["database.relational"])
@@ -871,7 +871,7 @@ class TestProfileWeights:
         binding = resolver.resolve(dependency, registry, profile=None)
 
         # Assert
-        assert binding.profile_id == "default"
+        assert binding.resolution_profile == "default"
 
 
 # =============================================================================
@@ -1173,7 +1173,7 @@ class TestDeterminism:
         for _ in range(10):
             registry = MockProviderRegistry(providers.copy())
             binding = resolver.resolve(dependency, registry)
-            results.append(binding.provider_id)
+            results.append(binding.resolved_provider)
 
         # Assert - all results should be identical
         assert len(set(results)) == 1
@@ -1287,7 +1287,7 @@ class TestEdgeCases:
         binding = resolver.resolve(dependency, registry)
 
         # Assert
-        assert binding.provider_id == str(provider.provider_id)
+        assert binding.resolved_provider == str(provider.provider_id)
 
     def test_observed_features_take_precedence_over_declared(self) -> None:
         """Test that observed features override declared features in matching."""
@@ -1307,7 +1307,7 @@ class TestEdgeCases:
         binding = resolver.resolve(dependency, registry)
 
         # Assert - should match because observed_features takes precedence
-        assert binding.provider_id == str(provider.provider_id)
+        assert binding.resolved_provider == str(provider.provider_id)
 
     def test_all_providers_filtered_raises_error(self) -> None:
         """Test that filtering out all providers raises an error."""

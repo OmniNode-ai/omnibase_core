@@ -35,7 +35,7 @@ Example Usage:
     ...             adapter="omnibase_infra.adapters.PostgresAdapter",
     ...             connection_ref="secrets://postgres/primary",
     ...             requirements_hash="sha256:abc123",
-    ...             profile_id="production",
+    ...             resolution_profile="production",
     ...             resolved_at=datetime.now(timezone.utc),
     ...         ),
     ...     },
@@ -56,7 +56,7 @@ Thread Safety:
 .. versionadded:: 0.4.0
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -86,7 +86,7 @@ class ModelResolutionResult(BaseModel):
             Keys are aliases, values are dicts of provider_id -> reason string.
         resolved_at: Timestamp when resolution completed.
         resolution_duration_ms: How long the resolution process took in milliseconds.
-        profile_id: Optional identifier for the resolution profile used.
+        resolution_profile: Optional identifier for the resolution profile used.
             Profiles can define default bindings or constraints.
         errors: List of error messages encountered during resolution.
             Empty for successful resolutions.
@@ -104,7 +104,7 @@ class ModelResolutionResult(BaseModel):
         ...             adapter="omnibase_infra.adapters.PostgresAdapter",
         ...             connection_ref="secrets://postgres/primary",
         ...             requirements_hash="sha256:abc123",
-        ...             profile_id="production",
+        ...             resolution_profile="production",
         ...             resolved_at=datetime.now(timezone.utc),
         ...             candidates_considered=2,
         ...         ),
@@ -184,7 +184,7 @@ class ModelResolutionResult(BaseModel):
 
     # Timing and metadata
     resolved_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc),
+        default_factory=lambda: datetime.now(UTC),
         description="Timestamp when resolution completed",
     )
 
@@ -194,7 +194,7 @@ class ModelResolutionResult(BaseModel):
         ge=0.0,
     )
 
-    profile_id: str | None = Field(
+    resolution_profile: str | None = Field(
         default=None,
         description="Identifier for the resolution profile used",
     )
@@ -362,18 +362,18 @@ class ModelResolutionResult(BaseModel):
         """
         return self.candidates_by_alias.get(alias, [])
 
-    def get_rejection_reason(self, alias: str, provider_id: str) -> str | None:
+    def get_rejection_reason(self, alias: str, provider_id_str: str) -> str | None:
         """Get the rejection reason for a specific provider.
 
         Args:
             alias: The dependency alias.
-            provider_id: The provider that was rejected.
+            provider_id_str: The provider ID string that was rejected.
 
         Returns:
             Rejection reason string if found, None otherwise.
         """
         reasons = self.rejection_reasons.get(alias, {})
-        return reasons.get(provider_id)
+        return reasons.get(provider_id_str)
 
     def __repr__(self) -> str:
         """Return concise representation for debugging.
