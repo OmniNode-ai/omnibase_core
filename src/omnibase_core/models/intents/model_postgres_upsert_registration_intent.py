@@ -116,7 +116,7 @@ class ModelPostgresUpsertRegistrationIntent(ModelCoreIntent):
                    node_id=state.node_id,
                    node_type=state.node_type,
                    status="active",
-                   registered_at=datetime.utcnow(),
+                   registered_at=datetime.now(timezone.utc),
                )
                return (
                    state.with_status("registered"),

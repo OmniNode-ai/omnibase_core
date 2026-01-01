@@ -13,9 +13,12 @@ Deep Immutability:
 
 from __future__ import annotations
 
-from typing import Any
-
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+from omnibase_core.utils.util_validators import (
+    convert_dict_to_frozen_pairs,
+    convert_list_to_tuple,
+)
 
 from .model_fsm_state import ModelFsmState
 from .model_fsm_transition import ModelFsmTransition
@@ -67,55 +70,64 @@ class ModelFsmData(BaseModel):
         default=(), description="Additional metadata as frozen key-value pairs"
     )
 
+    # -------------------------------------------------------------------------
+    # Type Ignore Pattern Explanation:
+    # These validators use `# type: ignore[return-value]` because:
+    # 1. Input type is `list[...] | tuple[...] | object` to accept various inputs
+    # 2. When input is already a tuple, we return it directly
+    # 3. Type checker can't verify `object` is actually `tuple[...]`
+    # 4. This is safe because Pydantic validates the final field type
+    # This pattern is used throughout FSM/workflow models for list-to-tuple conversion.
+    # See PR #298 for context: replaced `Any` with `object` for stronger typing.
+    # -------------------------------------------------------------------------
+
     @field_validator("states", mode="before")
     @classmethod
     def _convert_states_to_tuple(
-        cls, v: list[Any] | tuple[Any, ...] | Any
-    ) -> tuple[Any, ...]:
+        cls, v: list[object] | tuple[object, ...] | object
+    ) -> tuple[object, ...]:
         """Convert list of states to tuple for deep immutability."""
-        if isinstance(v, list):
-            return tuple(v)
-        return v
+        return convert_list_to_tuple(v)
 
     @field_validator("transitions", mode="before")
     @classmethod
     def _convert_transitions_to_tuple(
-        cls, v: list[Any] | tuple[Any, ...] | Any
-    ) -> tuple[Any, ...]:
+        cls, v: list[object] | tuple[object, ...] | object
+    ) -> tuple[object, ...]:
         """Convert list of transitions to tuple for deep immutability."""
-        if isinstance(v, list):
-            return tuple(v)
-        return v
+        return convert_list_to_tuple(v)
 
     @field_validator("global_actions", mode="before")
     @classmethod
     def _convert_global_actions_to_tuple(
-        cls, v: list[str] | tuple[str, ...] | Any
+        cls, v: list[str] | tuple[str, ...] | object
     ) -> tuple[str, ...]:
         """Convert list of global actions to tuple for deep immutability."""
-        if isinstance(v, list):
-            return tuple(v)
-        return v
+        return convert_list_to_tuple(v)
 
     @field_validator("variables", mode="before")
     @classmethod
     def _convert_variables_to_frozen(
-        cls, v: dict[str, str] | tuple[tuple[str, str], ...] | Any
+        cls, v: dict[str, str] | tuple[tuple[str, str], ...] | object
     ) -> tuple[tuple[str, str], ...]:
-        """Convert dict to tuple of tuples for deep immutability."""
-        if isinstance(v, dict):
-            return tuple(v.items())
-        return v
+        """Convert dict to tuple of tuples for deep immutability.
+
+        Keys are sorted for deterministic ordering, which ensures consistent
+        hashing and comparison of model instances.
+        """
+        return convert_dict_to_frozen_pairs(v, sort_keys=True)
 
     @field_validator("metadata", mode="before")
     @classmethod
     def _convert_metadata_to_frozen(
-        cls, v: dict[str, str] | tuple[tuple[str, str], ...] | Any
+        cls, v: dict[str, str] | tuple[tuple[str, str], ...] | object
     ) -> tuple[tuple[str, str], ...]:
-        """Convert dict to tuple of tuples for deep immutability."""
-        if isinstance(v, dict):
-            return tuple(v.items())
-        return v
+        """Convert dict to tuple of tuples for deep immutability.
+
+        Keys are sorted for deterministic ordering, which ensures consistent
+        hashing and comparison of model instances.
+        """
+        return convert_dict_to_frozen_pairs(v, sort_keys=True)
 
     def get_state_by_name(self, name: str) -> ModelFsmState | None:
         """Get a state by name."""

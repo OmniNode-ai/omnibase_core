@@ -112,7 +112,4 @@ class ComposerMiddleware:
         return wrapper
 
 
-# Backwards compatibility alias
-MiddlewareComposer = ComposerMiddleware
-
-__all__ = ["ComposerMiddleware", "MiddlewareComposer", "Middleware"]
+__all__ = ["ComposerMiddleware", "Middleware"]

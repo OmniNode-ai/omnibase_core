@@ -2459,7 +2459,7 @@ async def monitor_state_timeout(
         # No timeout configured for this state
         return None
 
-    elapsed_ms = (datetime.utcnow() - state_entered_at).total_seconds() * 1000
+    elapsed_ms = (datetime.now(timezone.utc) - state_entered_at).total_seconds() * 1000
 
     if elapsed_ms < timeout_ms:
         # Still within timeout window
