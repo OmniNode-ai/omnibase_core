@@ -30,7 +30,7 @@ Usage:
             resolver: ProtocolCapabilityResolver,
             registry: ProtocolProviderRegistry,
         ) -> ModelBinding:
-            '''Resolve a database dependency to a provider binding.'''
+            '''Resolve a database dependency to a provider binding (sync).'''
             dep = ModelCapabilityDependency(
                 alias="db",
                 capability="database.relational",
