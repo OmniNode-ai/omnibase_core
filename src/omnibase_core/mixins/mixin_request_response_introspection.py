@@ -195,7 +195,8 @@ class MixinRequestResponseIntrospection:
             elif hasattr(event, "__dict__"):
                 # Convert object to dict for reconstruction
                 event_dict = event.__dict__ if hasattr(event, "__dict__") else event
-                request_event = ModelRequestIntrospectionEvent(**event_dict)  # type: ignore[arg-type]
+                # Dict unpacking to reconstruct typed event; structure validated by Pydantic at runtime
+                request_event = ModelRequestIntrospectionEvent(**event_dict)  # type: ignore[arg-type]  # Dict unpacking for event reconstruction
             elif isinstance(event, dict):
                 # Event bus delivers as dictionary - reconstruct typed object
                 request_event = ModelRequestIntrospectionEvent(**event)
@@ -209,7 +210,9 @@ class MixinRequestResponseIntrospection:
                     },
                 )
                 return
-        except Exception as e:  # fallback-ok: event handler returns early with logging, malformed events shouldn't crash node
+        except (
+            Exception
+        ) as e:  # fallback-ok: event handler returns early with logging, malformed events shouldn't crash node
             emit_log_event_sync(
                 LogLevel.WARNING,
                 "🔍 INTROSPECTION: Failed to reconstruct ModelRequestIntrospectionEvent",
@@ -550,7 +553,9 @@ class MixinRequestResponseIntrospection:
                 and hasattr(self._event_bus, "is_connected")
             ) and not self._event_bus.is_connected():
                 return EnumNodeCurrentStatus.DEGRADED
-        except Exception:  # fallback-ok: catches non-fatal exceptions, returns DEGRADED for health reporting
+        except (
+            Exception
+        ):  # fallback-ok: catches non-fatal exceptions, returns DEGRADED for health reporting
             return EnumNodeCurrentStatus.DEGRADED
 
         return EnumNodeCurrentStatus.READY
@@ -585,10 +590,11 @@ class MixinRequestResponseIntrospection:
             with contextlib.suppress(Exception):
                 metadata = self.get_metadata()
 
+        # Dict metadata passed where typed model expected; Pydantic validates at runtime
         return ModelNodeCapabilities(
             actions=actions,
             protocols=protocols,
-            metadata=metadata,  # type: ignore[arg-type]
+            metadata=metadata,  # type: ignore[arg-type]  # Dict passed for metadata; Pydantic validates at runtime
         )
 
     def _get_current_tool_availability(self) -> list[ModelCurrentToolAvailability]:

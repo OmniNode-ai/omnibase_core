@@ -308,7 +308,9 @@ class MixinCLIHandler[InputStateT, OutputStateT]:
             )
             return 130
 
-        except Exception as e:  # fallback-ok: CLI handler returns error exit code with logging, appropriate for CLI
+        except (
+            Exception
+        ) as e:  # fallback-ok: CLI handler returns error exit code with logging, appropriate for CLI
             emit_log_event(
                 LogLevel.ERROR,
                 f"Tool execution failed: {e}",
@@ -334,7 +336,7 @@ class MixinCLIHandler[InputStateT, OutputStateT]:
                 return cast("InputStateT", input_class(**data))
 
         # Fallback - return data as-is
-        return data  # type: ignore[return-value]
+        return data  # type: ignore[return-value]  # Fallback when input state class unavailable; dict substitutes for InputStateT
 
     def _handle_introspection(self) -> int:
         """Handle introspection request."""

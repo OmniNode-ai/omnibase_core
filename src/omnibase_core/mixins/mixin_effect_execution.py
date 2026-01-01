@@ -702,11 +702,12 @@ class MixinEffectExecution:
                 # Extract from secret service (if available)
                 secret_key = placeholder[7:]  # Remove "secret."
                 try:
-                    # String-based lookup for extensibility (protocol not defined in core)
+                    # String-based DI lookup for extensibility; protocol not defined in core
                     secret_service: object = self.container.get_service(
-                        "ProtocolSecretService"
-                    )  # type: ignore[arg-type]
-                    secret_value = secret_service.get_secret(secret_key)  # type: ignore[attr-defined]
+                        "ProtocolSecretService"  # type: ignore[arg-type]
+                    )  # String-based DI lookup for extensibility
+                    # Duck-typed method call; actual service implements get_secret at runtime
+                    secret_value = secret_service.get_secret(secret_key)  # type: ignore[attr-defined]  # Duck-typed protocol method
                     if secret_value is None:
                         raise ModelOnexError(
                             message=f"Secret not found: {secret_key}",
@@ -1348,8 +1349,8 @@ class MixinEffectExecution:
 
         # Attempt to resolve handler with explicit error for missing registration
         try:
-            # String-based lookup for extensibility (handler protocols not defined in core)
-            handler: object = self.container.get_service(handler_protocol)  # type: ignore[arg-type]
+            # String-based DI lookup for extensibility; handler protocols not defined in core
+            handler: object = self.container.get_service(handler_protocol)  # type: ignore[arg-type]  # String-based DI lookup for extensibility
         except Exception as resolve_error:
             # Provide explicit guidance for handler registration
             raise ModelOnexError(
@@ -1368,7 +1369,8 @@ class MixinEffectExecution:
 
         # Execute handler with resolved context
         try:
-            result = await handler.execute(resolved_context)  # type: ignore[attr-defined]
+            # Duck-typed handler execution; handler implements execute() per protocol contract
+            result = await handler.execute(resolved_context)  # type: ignore[attr-defined]  # Duck-typed protocol method
         except Exception as exec_error:
             raise ModelOnexError(
                 message=f"Handler execution failed for {handler_protocol}: {exec_error!s}",
@@ -1381,7 +1383,7 @@ class MixinEffectExecution:
 
         # Handler returns Any, validate it matches expected return type
         if isinstance(result, (str, int, float, bool, dict, list, type(None))):
-            return result  # type: ignore[return-value]
+            return result  # type: ignore[return-value]  # Handler returns Any; validated via isinstance but type system cannot narrow union
         # Convert other types to string representation
         return str(result)
 
@@ -1605,8 +1607,8 @@ class MixinEffectExecution:
 
         for protocol_name in handler_protocols:
             try:
-                # String-based lookup for extensibility check
-                self.container.get_service(protocol_name)  # type: ignore[arg-type]
+                # String-based DI lookup for extensibility check
+                self.container.get_service(protocol_name)  # type: ignore[arg-type]  # String-based DI lookup for extensibility
                 registration_status[protocol_name] = True
             except (
                 Exception

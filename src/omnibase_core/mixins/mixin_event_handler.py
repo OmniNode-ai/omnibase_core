@@ -5,6 +5,7 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 if TYPE_CHECKING:
+    from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
     from omnibase_core.models.mixins.model_node_introspection_data import (
         ModelNodeIntrospectionData,
     )
@@ -43,10 +44,6 @@ import fnmatch
 import inspect
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 
 # Import protocol to avoid circular dependencies
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
@@ -280,7 +277,9 @@ class MixinEventHandler:
             if not is_event_equal(event.event_type, discovery_request_type):
                 return
 
-        except Exception:  # fallback-ok: event handler returns early if type check fails, malformed events shouldn't crash
+        except (
+            Exception
+        ):  # fallback-ok: event handler returns early if type check fails, malformed events shouldn't crash
             # If we can't create the event type, skip
             return
 
@@ -357,7 +356,9 @@ class MixinEventHandler:
             # No specific filters, respond
             return True
 
-        except Exception:  # fallback-ok: filter error defaults to responding, safe fallback for event handling
+        except (
+            Exception
+        ):  # fallback-ok: filter error defaults to responding, safe fallback for event handling
             # On error, default to responding
             return True
 

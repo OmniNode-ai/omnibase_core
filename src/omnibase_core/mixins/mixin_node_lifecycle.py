@@ -117,7 +117,9 @@ class MixinNodeLifecycle:
                     description="Event-driven ONEX node",
                     author="ONEX",
                 )
-        except Exception as e:  # fallback-ok: registration failure returns early with logging, node registration is non-critical
+        except (
+            Exception
+        ) as e:  # fallback-ok: registration failure returns early with logging, node registration is non-critical
             context = ModelLogContext(
                 calling_module=_COMPONENT_NAME,
                 calling_function="_register_node",

@@ -487,20 +487,22 @@ class MixinNodeService:
 
         if input_state_class:
             # Create input state with action and parameters
+            # Parameters may be dict or have get_parameter_dict method; runtime duck-typing
             params_dict: dict[str, object] = (
                 event.parameters.get_parameter_dict()
                 if hasattr(event.parameters, "get_parameter_dict")
-                else event.parameters  # type: ignore[assignment]
+                else event.parameters  # type: ignore[assignment]  # Duck-typed: parameters may be dict or model
             )
             state_data: dict[str, object] = {"action": event.action, **params_dict}
             return input_state_class(**state_data)
         # Fallback to generic state object
         from types import SimpleNamespace
 
+        # Parameters may be dict or have get_parameter_dict method; runtime duck-typing
         params_dict = (
             event.parameters.get_parameter_dict()
             if hasattr(event.parameters, "get_parameter_dict")
-            else event.parameters  # type: ignore[assignment]
+            else event.parameters  # type: ignore[assignment]  # Duck-typed: parameters may be dict or model
         )
         return SimpleNamespace(action=event.action, **params_dict)
 

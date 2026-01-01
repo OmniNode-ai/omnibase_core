@@ -187,7 +187,7 @@ class MixinServiceRegistry:
                 event_type="core.discovery.realtime_request",
                 node_id=getattr(self, "node_id", uuid4()),
                 correlation_id=correlation_id,
-                data={  # type: ignore[arg-type]
+                data={  # type: ignore[arg-type]  # Event data field accepts dict for discovery protocol; validated at runtime
                     "request_type": "tool_discovery",
                     "domain_filter": getattr(self, "domain_filter", None),
                     "capabilities_required": [],
@@ -208,9 +208,11 @@ class MixinServiceRegistry:
             metadata = ModelEnvelopeMetadata(
                 tags={
                     "request_type": "tool_discovery",
-                    "domain_filter": str(domain_filter_value)
-                    if domain_filter_value is not None
-                    else "",
+                    "domain_filter": (
+                        str(domain_filter_value)
+                        if domain_filter_value is not None
+                        else ""
+                    ),
                 }
             )
 
@@ -355,7 +357,7 @@ class MixinServiceRegistry:
                 event_type="core.discovery.node_introspection",
                 node_id=getattr(self, "node_id", uuid4()),
                 correlation_id=correlation_id,
-                data={  # type: ignore[arg-type]
+                data={  # type: ignore[arg-type]  # Event data field accepts dict for introspection protocol; validated at runtime
                     "target_node_id": str(node_id),
                     "requested_info": ["capabilities", "metadata", "health_status"],
                 },
@@ -501,7 +503,7 @@ class MixinServiceRegistry:
                         event_type="core.discovery.response",
                         node_id=getattr(self, "node_id", uuid4()),
                         correlation_id=correlation_id,
-                        data=response_data,  # type: ignore[arg-type]
+                        data=response_data,  # type: ignore[arg-type]  # Event data field accepts dict for discovery response; validated at runtime
                     )
 
                     # Ensure source_node_id is UUID

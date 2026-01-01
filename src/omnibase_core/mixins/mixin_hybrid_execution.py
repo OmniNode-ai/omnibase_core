@@ -27,18 +27,18 @@ class MixinHybridExecution[InputStateT, OutputStateT]:
     - Hub orchestration for event-driven execution
 
     Usage:
-        class MyTool(MixinHybridExecution, MixinContractMetadata, ProtocolReducer):
-            def determine_execution_mode(self, input_state: object) -> str:
+        class MyTool(MixinHybridExecution[MyInputState, MyOutputState], MixinContractMetadata, ProtocolReducer):
+            def determine_execution_mode(self, input_state: MyInputState) -> str:
                 # Override to customize mode selection
                 if input_state.operation_count > 10:
                     return ExecutionMode.WORKFLOW
                 return ExecutionMode.DIRECT
 
-            def process(self, input_state: object) -> None:
+            def process(self, input_state: MyInputState) -> MyOutputState:
                 # Direct execution logic
                 return output
 
-            def create_workflow(self, input_state: object) -> None:
+            def create_workflow(self, input_state: MyInputState) -> Workflow:
                 # Create LlamaIndex workflow
                 return MyWorkflow(input_state)
     """
@@ -203,7 +203,7 @@ class MixinHybridExecution[InputStateT, OutputStateT]:
             loop = asyncio.new_event_loop()
             try:
                 # LlamaIndex workflow interface - run() method on external library type
-                result = loop.run_until_complete(workflow.run(input_data=input_state))  # type: ignore[attr-defined]
+                result = loop.run_until_complete(workflow.run(input_data=input_state))  # type: ignore[attr-defined]  # LlamaIndex Workflow.run() - external library duck-typed interface
             finally:
                 loop.close()
 
@@ -236,7 +236,9 @@ class MixinHybridExecution[InputStateT, OutputStateT]:
 
             return cast("OutputStateT", result)
 
-        except Exception as e:  # fallback-ok: workflow failure falls back to direct execution with logging
+        except (
+            Exception
+        ) as e:  # fallback-ok: workflow failure falls back to direct execution with logging
             emit_log_event(
                 LogLevel.ERROR,
                 f"❌ WORKFLOW_EXECUTION: Workflow failed: {e}",

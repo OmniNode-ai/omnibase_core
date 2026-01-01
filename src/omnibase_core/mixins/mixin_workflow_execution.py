@@ -9,6 +9,7 @@ Typing: Strongly typed with strategic Any usage for mixin kwargs and configurati
 
 from __future__ import annotations
 
+from collections.abc import Callable, Coroutine
 from typing import TYPE_CHECKING, cast
 from uuid import UUID
 
@@ -31,14 +32,34 @@ from omnibase_core.models.contracts.subcontracts.model_workflow_definition impor
 )
 from omnibase_core.types.type_workflow_context import WorkflowContextType
 
+# Type aliases for workflow executor functions.
+# These use string forward references for WorkflowExecutionResult since it's
+# imported lazily to avoid circular imports. At runtime, the actual callables
+# from workflow_executor module are stored.
+
+# execute_workflow: async (definition, steps, workflow_id, mode?) -> WorkflowExecutionResult
+ExecuteWorkflowFunc = Callable[
+    [ModelWorkflowDefinition, list[ModelWorkflowStep], UUID, EnumExecutionMode | None],
+    Coroutine[object, object, "WorkflowExecutionResult"],
+]
+
+# get_execution_order: sync (steps) -> list[UUID]
+GetExecutionOrderFunc = Callable[[list[ModelWorkflowStep]], list[UUID]]
+
+# validate_workflow_definition: async (definition, steps) -> list[str]
+ValidateWorkflowDefinitionFunc = Callable[
+    [ModelWorkflowDefinition, list[ModelWorkflowStep]],
+    Coroutine[object, object, list[str]],
+]
+
 # Module-level cache for lazy imports to avoid repeated import overhead.
 # Populated on first access by _get_workflow_executor().
 _workflow_executor_cache: (
     tuple[
         type[WorkflowExecutionResult],
-        object,  # execute_workflow function
-        object,  # get_execution_order function
-        object,  # validate_workflow_definition function
+        ExecuteWorkflowFunc,
+        GetExecutionOrderFunc,
+        ValidateWorkflowDefinitionFunc,
     ]
     | None
 ) = None
@@ -47,9 +68,9 @@ _workflow_executor_cache: (
 # Lazy import helper to avoid circular import with workflow_executor
 def _get_workflow_executor() -> tuple[
     type[WorkflowExecutionResult],
-    object,  # execute_workflow function
-    object,  # get_execution_order function
-    object,  # validate_workflow_definition function
+    ExecuteWorkflowFunc,
+    GetExecutionOrderFunc,
+    ValidateWorkflowDefinitionFunc,
 ]:
     """
     Lazily import workflow_executor to avoid circular import.
@@ -278,6 +299,9 @@ class MixinWorkflowExecution:
             },
         )
 
+        # Cast is safe: execute_workflow is typed to return WorkflowExecutionResult
+        # (see ExecuteWorkflowFunc type alias). The cast is needed because result
+        # comes from await on a dynamically-imported function.
         return cast("WorkflowExecutionResult", result)
 
     async def validate_workflow_contract(
@@ -310,9 +334,12 @@ class MixinWorkflowExecution:
         """
         # Lazy import to avoid circular import with workflow_executor
         _, _, _, validate_workflow_definition = _get_workflow_executor()
+        # Cast is safe: validate_workflow_definition is typed to return list[str]
+        # (see ValidateWorkflowDefinitionFunc type alias). The cast handles the
+        # forward reference for the async function return type.
         return cast(
             list[str],
-            await validate_workflow_definition(workflow_definition, workflow_steps),  # type: ignore[operator]
+            await validate_workflow_definition(workflow_definition, workflow_steps),
         )
 
     def get_workflow_execution_order(
@@ -338,7 +365,9 @@ class MixinWorkflowExecution:
         """
         # Lazy import to avoid circular import with workflow_executor
         _, _, get_execution_order, _ = _get_workflow_executor()
-        return cast(list[UUID], get_execution_order(workflow_steps))  # type: ignore[operator]
+        # Cast is safe: get_execution_order is typed to return list[UUID]
+        # (see GetExecutionOrderFunc type alias). Cast handles tuple unpacking.
+        return cast(list[UUID], get_execution_order(workflow_steps))
 
     def create_workflow_steps_from_config(
         self,

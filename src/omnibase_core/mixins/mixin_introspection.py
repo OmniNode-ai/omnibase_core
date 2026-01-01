@@ -95,17 +95,17 @@ class MixinNodeIntrospection(ABC):
 
     @classmethod
     def get_node_name(cls) -> str:
-        node_name: str = cls.get_metadata_loader().node_name  # type: ignore[attr-defined]
+        node_name: str = cls.get_metadata_loader().node_name  # type: ignore[attr-defined]  # Metadata loader duck-typed interface; attr exists at runtime
         return node_name
 
     @classmethod
     def get_node_version(cls) -> ModelSemVer:
-        node_version: ModelSemVer = cls.get_metadata_loader().node_version  # type: ignore[attr-defined]
+        node_version: ModelSemVer = cls.get_metadata_loader().node_version  # type: ignore[attr-defined]  # Metadata loader duck-typed interface; attr exists at runtime
         return node_version
 
     @classmethod
     def get_node_description(cls) -> str:
-        node_description: str = cls.get_metadata_loader().node_description  # type: ignore[attr-defined]
+        node_description: str = cls.get_metadata_loader().node_description  # type: ignore[attr-defined]  # Metadata loader duck-typed interface; attr exists at runtime
         return node_description
 
     @classmethod
@@ -493,7 +493,7 @@ class MixinNodeIntrospection(ABC):
         # 1. Try to extract correlation_id from event_bus (if it has one)
         correlation_id = None
         if hasattr(event_bus, "correlation_id"):
-            correlation_id = event_bus.correlation_id  # type: ignore[union-attr]
+            correlation_id = event_bus.correlation_id  # type: ignore[union-attr]  # Checked via hasattr; optional protocol extension
         # 2. Fallback to ONEX_CORRELATION_ID env var
         if not correlation_id:
             correlation_id = os.environ.get("ONEX_CORRELATION_ID")

@@ -535,7 +535,7 @@ class MixinDiscoveryResponder:
                 event_type=create_event_type_from_registry("DISCOVERY_RESPONSE"),
                 node_id=node_id_value,
                 correlation_id=original_event.correlation_id,
-                data=response_metadata.model_dump(),  # type: ignore[arg-type]
+                data=response_metadata.model_dump(),  # type: ignore[arg-type]  # Discovery protocol places metadata dict in data field; receiver deserializes directly
             )
 
             # Publish response (assuming we have access to event bus)
