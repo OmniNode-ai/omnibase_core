@@ -154,7 +154,7 @@ class MixinContractStateReducer:
             self._transitions_loaded = True
             return transitions
 
-        except BaseException as e:  # catch-all-ok: resilient loading, returns empty list with logging on failure
+        except Exception as e:  # fallback-ok: resilient loading returns empty list on failure
             tool_name = getattr(self, "node_name", "unknown_tool")
             emit_log_event(
                 LogLevel.ERROR,

@@ -696,13 +696,18 @@ class MixinNodeService:
             pass
 
         # Always await to ensure proper cleanup
-        # Use asyncio.shield to prevent cancellation from propagating
         try:
-            # Suppress cancellation to allow cleanup to complete
             await health_task
         except asyncio.CancelledError:
-            # Expected when cancelling - this is normal
-            pass
+            # Distinguish between expected cancellation (we cancelled the health_task)
+            # vs external cancellation (someone cancelled _cleanup_health_task itself)
+            if health_task.cancelled():
+                # Expected - we initiated this cancellation, cleanup is complete
+                self._log_info("Health task cleanup completed (task was cancelled)")
+            else:
+                # External cancellation - re-raise for proper propagation
+                self._log_info("Cleanup interrupted by external cancellation")
+                raise
         except Exception as e:  # fallback-ok: cleanup must complete even on error
             # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
             self._log_error(f"Unexpected error during health task cleanup: {e}")

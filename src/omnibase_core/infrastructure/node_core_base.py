@@ -465,7 +465,7 @@ class NodeCoreBase(ABC):
                     # Contract service doesn't have get_node_contract method - that's OK
                     pass
 
-        except BaseException as e:  # catch-all-ok: contract loading failure is not fatal, graceful degradation
+        except Exception as e:  # fallback-ok: contract loading failure uses defaults, graceful degradation
             # Contract loading failure is not fatal
             emit_log_event(
                 LogLevel.WARNING,
@@ -531,7 +531,7 @@ class NodeCoreBase(ABC):
                     # Event bus doesn't have emit_event method - that's OK
                     pass
 
-        except BaseException as e:  # catch-all-ok: event emission failure is not fatal, graceful degradation
+        except Exception as e:  # fallback-ok: event emission failure is logged but not fatal
             # Event emission failure is not fatal
             emit_log_event(
                 LogLevel.WARNING,

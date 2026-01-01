@@ -85,19 +85,17 @@ class ModelTransaction:
                         "transaction_id": str(self.transaction_id),
                     },
                 )
-            except BaseException as e:  # cleanup-resilience-ok: rollback must complete
+            except (GeneratorExit, KeyboardInterrupt, SystemExit):
                 # Re-raise process signals immediately to honor termination requests.
-                # KeyboardInterrupt, SystemExit, and GeneratorExit indicate the
-                # process or generator should stop - these must always propagate.
-                if isinstance(e, (KeyboardInterrupt, SystemExit, GeneratorExit)):
-                    raise
-                # Catch all other BaseException subclasses (including Exception
-                # subclasses like MemoryError and OSError) to ensure all rollback
-                # operations are attempted even if one fails. Errors are logged but
-                # not re-raised to maximize rollback completion. Note: MemoryError
-                # and OSError are Exception subclasses, so they are caught here.
-                # asyncio.CancelledError is handled separately above and re-raised
-                # after all rollback operations complete to honor task cancellation.
+                # These indicate the process or generator should stop and must always
+                # propagate without suppression.
+                raise
+            except Exception as e:  # cleanup-resilience-ok: rollback must complete
+                # Catch all Exception subclasses to ensure all rollback operations
+                # are attempted even if one fails. Errors are logged but not re-raised
+                # to maximize rollback completion. asyncio.CancelledError is handled
+                # separately above and re-raised after all rollback operations complete
+                # to honor task cancellation.
                 emit_log_event(
                     LogLevel.ERROR,
                     f"Rollback operation failed during cleanup: {e!s}",
