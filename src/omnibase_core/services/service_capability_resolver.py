@@ -287,8 +287,12 @@ class ServiceCapabilityResolver:
 
         for dep in dependencies:
             try:
-                # Use _resolve_with_audit to get both binding and audit data
-                # This avoids duplicate provider querying/filtering/scoring
+                # Design Note: Use _resolve_with_audit() directly rather than resolve().
+                # This avoids redundant work that would occur if calling resolve():
+                # - resolve() discards audit data, requiring re-computation here
+                # - Direct call captures audit data (candidates, scores, rejections)
+                #   in a single pass through the resolution algorithm
+                # Both resolve() and resolve_all() share _resolve_with_audit() for DRY.
                 binding, audit = self._resolve_with_audit(dep, registry, profile)
 
                 # Store the binding

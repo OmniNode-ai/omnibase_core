@@ -29,7 +29,7 @@ from omnibase_core.models.bindings.model_resolution_result import ModelResolutio
 from omnibase_core.models.capabilities.model_capability_dependency import (
     ModelCapabilityDependency,
 )
-from omnibase_core.models.capabilities.model_requirement_set import ModelRequirementSet
+from omnibase_core.models.requirements.model_requirement_set import ModelRequirementSet
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.providers.model_provider_descriptor import (
     ModelProviderDescriptor,

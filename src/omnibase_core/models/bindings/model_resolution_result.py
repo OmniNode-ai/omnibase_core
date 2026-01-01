@@ -57,6 +57,7 @@ Thread Safety:
 """
 
 from datetime import datetime, timezone
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -206,23 +207,34 @@ class ModelResolutionResult(BaseModel):
 
     @field_validator("errors", mode="before")
     @classmethod
-    def validate_errors(cls, v: list[str]) -> list[str]:
+    def validate_errors(cls, v: Any) -> list[str]:
         """Validate and filter error messages.
 
         Strips whitespace from each error message and removes empty strings.
         Ensures consistency with other string list validators in the codebase.
 
+        Note:
+            Uses ``Any`` type hint because ``mode="before"`` receives raw input
+            before Pydantic type coercion. The input could be any type.
+
         Args:
-            v: List of error strings to validate.
+            v: Raw input value (expected to be a list of strings).
 
         Returns:
             List of non-empty error messages with whitespace stripped.
 
         Raises:
-            ModelOnexError: If any error is not a string.
+            ModelOnexError: If input is not a list or contains non-string items.
         """
-        if not v:
+        if v is None:
             return []
+
+        if not isinstance(v, list):
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"errors must be a list, got {type(v).__name__}",
+                context={"value": v, "type": type(v).__name__},
+            )
 
         validated: list[str] = []
         for error in v:

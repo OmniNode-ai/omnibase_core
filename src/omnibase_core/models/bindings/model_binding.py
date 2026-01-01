@@ -80,6 +80,7 @@ Thread Safety:
 """
 
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -451,22 +452,33 @@ class ModelBinding(BaseModel):
 
     @field_validator("resolution_notes", mode="before")
     @classmethod
-    def validate_resolution_notes(cls, v: list[str]) -> list[str]:
+    def validate_resolution_notes(cls, v: Any) -> list[str]:
         """Validate and filter resolution notes.
 
         Strips whitespace from each note and removes empty notes.
 
+        Note:
+            Uses ``Any`` type hint because ``mode="before"`` receives raw input
+            before Pydantic type coercion. The input could be any type.
+
         Args:
-            v: List of note strings to validate.
+            v: Raw input value (expected to be a list of strings).
 
         Returns:
             List of non-empty notes with whitespace stripped.
 
         Raises:
-            ModelOnexError: If any note is not a string.
+            ModelOnexError: If input is not a list or contains non-string items.
         """
-        if not v:
+        if v is None:
             return []
+
+        if not isinstance(v, list):
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"resolution_notes must be a list, got {type(v).__name__}",
+                context={"value": v, "type": type(v).__name__},
+            )
 
         validated: list[str] = []
         for note in v:
