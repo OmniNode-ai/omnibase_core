@@ -366,7 +366,7 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
         except ModelOnexError:
             # Re-raise ONEX errors without wrapping to preserve original error code/context
             raise
-        except (TypeError, ValueError, RuntimeError) as e:
+        except (RuntimeError, TypeError, ValueError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.OPERATION_FAILED,
                 message=f"Failed to resolve main tool: {e!s}",

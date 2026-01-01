@@ -144,7 +144,7 @@ def validate_one_model_per_file(file_path: Path) -> list[str]:
         )
         logger.debug(f"Syntax error: {wrapped_error.message}")
         errors.append(wrapped_error.message)
-    except (ValueError, UnicodeDecodeError) as e:
+    except (UnicodeDecodeError, ValueError) as e:
         # Handle content parsing errors: invalid source content, encoding issues
         wrapped_error = ModelOnexError(
             error_code=EnumCoreErrorCode.FILE_READ_ERROR,

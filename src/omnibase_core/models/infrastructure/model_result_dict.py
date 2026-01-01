@@ -51,6 +51,7 @@ class ModelResultDict(BaseModel):
 
         Raises:
             ModelOnexError: If setting an attribute fails or validation error occurs
+                (including pydantic.ValidationError)
         """
         try:
             # Update any relevant execution fields
@@ -61,6 +62,8 @@ class ModelResultDict(BaseModel):
         except ModelOnexError:
             raise  # Re-raise without double-wrapping
         except PYDANTIC_MODEL_ERRORS as e:
+            # PYDANTIC_MODEL_ERRORS includes: AttributeError, TypeError,
+            # pydantic.ValidationError, ValueError (alphabetically ordered)
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
@@ -71,6 +74,7 @@ class ModelResultDict(BaseModel):
 
         Raises:
             ModelOnexError: If setting an attribute fails or validation error occurs
+                (including pydantic.ValidationError)
         """
         try:
             for key, value in kwargs.items():
@@ -80,6 +84,8 @@ class ModelResultDict(BaseModel):
         except ModelOnexError:
             raise  # Re-raise without double-wrapping
         except PYDANTIC_MODEL_ERRORS as e:
+            # PYDANTIC_MODEL_ERRORS includes: AttributeError, TypeError,
+            # pydantic.ValidationError, ValueError (alphabetically ordered)
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Configuration failed: {e}",
@@ -91,7 +97,7 @@ class ModelResultDict(BaseModel):
 
 
 # Type alias for dictionary-based data structures
-ModelResultData = dict[str, ModelValue]  # Strongly-typed dict[str, Any]for common data
+ModelResultData = dict[str, ModelValue]  # Strongly-typed dict[str, Any] for common data
 
 # Export for use
 __all__ = ["ModelResultData", "ModelResultDict"]

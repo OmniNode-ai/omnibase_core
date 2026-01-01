@@ -75,6 +75,8 @@ class ModelConnectionMetrics(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
+        except ModelOnexError:
+            raise  # Re-raise without double-wrapping
         except (TypeError, ValidationError, ValueError) as e:
             raise ModelOnexError(
                 message=f"Operation failed: {e}",
