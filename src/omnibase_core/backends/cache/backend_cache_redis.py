@@ -54,10 +54,16 @@ Related:
 
 from __future__ import annotations
 
-__all__ = ["BackendCacheRedis", "REDIS_AVAILABLE", "sanitize_redis_url"]
+__all__ = [
+    "BackendCacheRedis",
+    "REDIS_AVAILABLE",
+    "sanitize_redis_url",
+    "sanitize_error_message",
+]
 
 import json
 import logging
+import re
 from typing import TYPE_CHECKING
 from urllib.parse import urlparse, urlunparse
 
@@ -69,9 +75,9 @@ try:
 
     REDIS_AVAILABLE = True
 except ImportError:
-    aioredis = None
-    ConnectionPool = None
-    RedisError = Exception
+    aioredis = None  # type: ignore[assignment]
+    ConnectionPool = None  # type: ignore[assignment,misc]
+    RedisError = Exception  # type: ignore[assignment,misc]
     REDIS_AVAILABLE = False
 
 if TYPE_CHECKING:
@@ -121,6 +127,58 @@ def sanitize_redis_url(url: str) -> str:
     except Exception:
         # If URL parsing fails, return a generic safe string
         return "redis://***"
+
+
+# Pattern to match Redis URLs with potential credentials
+# Matches redis:// or rediss:// followed by optional user:pass@ and host:port/db
+_REDIS_URL_PATTERN = re.compile(
+    r"(rediss?://)([^@\s]+@)?([^\s/]+)(/\d+)?",
+    re.IGNORECASE,
+)
+
+
+def sanitize_error_message(message: str) -> str:
+    """
+    Sanitize error messages that may contain Redis URLs with credentials.
+
+    Scans the message for Redis URLs and replaces any credentials with '***'.
+    This prevents credential leakage when logging exception messages from
+    the Redis library.
+
+    Args:
+        message: Error message that may contain Redis URLs.
+
+    Returns:
+        Sanitized message with any Redis URL credentials masked.
+
+    Example:
+        >>> sanitize_error_message("Error connecting to redis://:secret@host:6379/0")
+        'Error connecting to redis://:***@host:6379/0'
+        >>> sanitize_error_message("Connection refused")
+        'Connection refused'
+
+    .. versionadded:: 0.5.0
+    """
+
+    def _replace_url(match: re.Match[str]) -> str:
+        scheme = match.group(1)  # redis:// or rediss://
+        auth = match.group(2)  # user:pass@ or :pass@ or None
+        host_port = match.group(3)  # host:port
+        database = match.group(4) or ""  # /0 or empty
+
+        if auth:
+            # Has credentials - mask them
+            if ":" in auth[:-1]:  # Has username:password
+                username = auth.split(":")[0]
+                return f"{scheme}{username}:***@{host_port}{database}"
+            else:
+                # Only password (:pass@) or just @ (unusual)
+                return f"{scheme}:***@{host_port}{database}"
+        else:
+            # No credentials - return as-is
+            return match.group(0)
+
+    return _REDIS_URL_PATTERN.sub(_replace_url, message)
 
 
 class BackendCacheRedis:
@@ -218,6 +276,56 @@ class BackendCacheRedis:
         """Create prefixed key."""
         return f"{self._prefix}{key}"
 
+    def _validate_connection(self) -> bool:
+        """
+        Validate that connection is established and client is available.
+
+        Centralizes connection state validation for all operations.
+        Returns False if not connected, allowing graceful fallback.
+
+        Returns:
+            True if connection is valid and client is available.
+            False if disconnected or client is None.
+        """
+        if not self._connected:
+            return False
+        if self._client is None:
+            # State inconsistency - mark as disconnected
+            self._connected = False
+            return False
+        return True
+
+    async def __aenter__(self) -> BackendCacheRedis:
+        """
+        Async context manager entry - establishes connection.
+
+        Example:
+            .. code-block:: python
+
+                async with BackendCacheRedis(url="redis://localhost:6379") as cache:
+                    await cache.set("key", "value")
+                # Connection automatically closed on exit
+
+        Returns:
+            Self for use in async with block.
+        """
+        await self.connect()
+        return self
+
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: object,
+    ) -> None:
+        """
+        Async context manager exit - ensures connection cleanup.
+
+        Cleanup happens regardless of whether an exception occurred,
+        ensuring no resource leaks.
+        """
+        await self.close()
+
     async def connect(self) -> None:
         """
         Establish connection to Redis.
@@ -252,17 +360,21 @@ class BackendCacheRedis:
             # Don't log URL - may contain credentials
             logger.debug("Connected to Redis")
         except (RedisError, ConnectionError, TimeoutError, OSError) as e:
+            # Sanitize error message to prevent credential leakage
+            safe_error = sanitize_error_message(str(e))
             # Use error not exception - traceback will be at caller level after re-raise
-            logger.error("Failed to connect to Redis: %s", e)  # noqa: TRY400
+            logger.error("Failed to connect to Redis: %s", safe_error)  # noqa: TRY400
             # Cleanup on failure to prevent resource leaks
             await self._cleanup_on_connect_failure()
-            raise ConnectionError(f"Failed to connect to Redis: {e}") from e
+            raise ConnectionError(f"Failed to connect to Redis: {safe_error}") from e
         except Exception as e:
+            # Sanitize error message to prevent credential leakage
+            safe_error = sanitize_error_message(str(e))
             # Catch unexpected errors during connection setup
             # Use error not exception - traceback will be at caller level after re-raise
-            logger.error("Unexpected error connecting to Redis: %s", e)  # noqa: TRY400
+            logger.error("Unexpected error connecting to Redis: %s", safe_error)  # noqa: TRY400
             await self._cleanup_on_connect_failure()
-            raise ConnectionError(f"Failed to connect to Redis: {e}") from e
+            raise ConnectionError(f"Failed to connect to Redis: {safe_error}") from e
 
     async def _cleanup_on_connect_failure(self) -> None:
         """Clean up resources after a connection failure."""
@@ -270,7 +382,10 @@ class BackendCacheRedis:
             if self._pool is not None:
                 await self._pool.disconnect()
         except Exception as e:
-            logger.warning("Error during connection cleanup: %s", e)
+            # Sanitize to prevent credential leakage
+            logger.warning(
+                "Error during connection cleanup: %s", sanitize_error_message(str(e))
+            )
         finally:
             self._pool = None
             self._client = None
@@ -289,7 +404,10 @@ class BackendCacheRedis:
             if self._client:
                 await self._client.close()
         except Exception as e:
-            logger.warning("Error closing Redis client: %s", e)
+            # Sanitize to prevent credential leakage
+            logger.warning(
+                "Error closing Redis client: %s", sanitize_error_message(str(e))
+            )
         finally:
             self._client = None
 
@@ -297,7 +415,10 @@ class BackendCacheRedis:
             if self._pool:
                 await self._pool.disconnect()
         except Exception as e:
-            logger.warning("Error disconnecting Redis pool: %s", e)
+            # Sanitize to prevent credential leakage
+            logger.warning(
+                "Error disconnecting Redis pool: %s", sanitize_error_message(str(e))
+            )
         finally:
             self._pool = None
             self._connected = False
@@ -315,8 +436,10 @@ class BackendCacheRedis:
             Cached value if found, None otherwise.
             Returns None on any error to allow graceful fallback.
         """
-        if not self._connected or not self._client:
+        if not self._validate_connection():
             return None
+        # Type narrowing: _validate_connection ensures _client is not None
+        assert self._client is not None
 
         try:
             prefixed_key = self._make_key(key)
@@ -342,16 +465,30 @@ class BackendCacheRedis:
             key: Cache key to store under.
             value: Value to cache. Must be JSON-serializable.
             ttl_seconds: Time-to-live in seconds. Uses default_ttl if None.
+                If 0 or negative, the operation is skipped (no caching).
+
+        Note:
+            Zero or negative TTL values are treated as "do not cache" - the method
+            returns immediately without storing. This prevents storing entries that
+            would expire immediately or have invalid TTLs.
         """
-        if not self._connected or not self._client:
+        if not self._validate_connection():
+            return
+        # Type narrowing: _validate_connection ensures _client is not None
+        assert self._client is not None
+
+        # Determine TTL
+        ttl = ttl_seconds if ttl_seconds is not None else self._default_ttl
+
+        # Skip caching entirely for zero or negative TTL values
+        if ttl is not None and ttl <= 0:
             return
 
         try:
             prefixed_key = self._make_key(key)
             data = json.dumps(value, default=str)
-            ttl = ttl_seconds if ttl_seconds is not None else self._default_ttl
 
-            if ttl:
+            if ttl is not None:
                 await self._client.setex(prefixed_key, ttl, data)
             else:
                 await self._client.set(prefixed_key, data)
@@ -367,8 +504,10 @@ class BackendCacheRedis:
         Args:
             key: Cache key to delete.
         """
-        if not self._connected or not self._client:
+        if not self._validate_connection():
             return
+        # Type narrowing: _validate_connection ensures _client is not None
+        assert self._client is not None
 
         try:
             prefixed_key = self._make_key(key)
@@ -384,8 +523,10 @@ class BackendCacheRedis:
             This scans for keys with the prefix and deletes them.
             For large caches, consider FLUSHDB on a dedicated database.
         """
-        if not self._connected or not self._client:
+        if not self._validate_connection():
             return
+        # Type narrowing: _validate_connection ensures _client is not None
+        assert self._client is not None
 
         try:
             if self._prefix:
@@ -417,8 +558,10 @@ class BackendCacheRedis:
             True if key exists, False otherwise.
             Returns False on any error.
         """
-        if not self._connected or not self._client:
+        if not self._validate_connection():
             return False
+        # Type narrowing: _validate_connection ensures _client is not None
+        assert self._client is not None
 
         try:
             prefixed_key = self._make_key(key)
@@ -440,8 +583,10 @@ class BackendCacheRedis:
         Returns:
             True if connected and responsive, False otherwise.
         """
-        if not self._connected or not self._client:
+        if not self._validate_connection():
             return False
+        # Type narrowing: _validate_connection ensures _client is not None
+        assert self._client is not None
 
         try:
             await self._client.ping()

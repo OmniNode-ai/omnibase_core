@@ -82,11 +82,6 @@ from omnibase_core.protocols.cache import ProtocolCacheBackend
 from omnibase_core.protocols.capabilities import ProtocolCapabilityProvider
 
 # =============================================================================
-# Metrics Module Exports (OMN-1188)
-# =============================================================================
-from omnibase_core.protocols.metrics import ProtocolMetricsBackend
-
-# =============================================================================
 # Compute Module Exports
 # =============================================================================
 from omnibase_core.protocols.compute import (
@@ -157,6 +152,11 @@ from omnibase_core.protocols.http import ProtocolHttpClient, ProtocolHttpRespons
 # Intents Module Exports
 # =============================================================================
 from omnibase_core.protocols.intents import ProtocolRegistrationRecord
+
+# =============================================================================
+# Metrics Module Exports (OMN-1188)
+# =============================================================================
+from omnibase_core.protocols.metrics import ProtocolMetricsBackend
 
 # =============================================================================
 # Notifications Module Exports

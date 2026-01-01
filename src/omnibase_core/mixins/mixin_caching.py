@@ -64,7 +64,7 @@ import logging
 import time
 from typing import TYPE_CHECKING, Any
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.typed_dict_mixin_types import TypedDictCacheStats
 
@@ -94,15 +94,30 @@ class MixinCaching:
 
     TTL Values:
         - ``ttl_seconds=None``: Uses ``default_ttl_seconds`` if set, otherwise no expiration.
-        - ``ttl_seconds=0``: Entry expires immediately (effectively no caching for L1).
+        - ``ttl_seconds <= 0``: Caching is skipped entirely (no L1 or L2 storage).
         - ``ttl_seconds > 0``: Entry expires after the specified duration.
 
-    TTL Behavior on L2 Hit:
+    TTL Behavior on L2 Hit (L1/L2 TTL Mismatch):
         When L1 is populated from an L2 cache hit, the original L2 TTL is NOT
         preserved. Instead, the L1 entry uses ``default_ttl_seconds``. This is
-        because the remaining L2 TTL is not available through the cache protocol.
-        As a result, L1 entries populated from L2 may expire at different times
-        than the original L2 entries.
+        a deliberate design decision because:
+
+        1. **Protocol Limitation**: The ``ProtocolCacheBackend.get()`` method
+           returns only the cached value, not the remaining TTL. This is
+           intentional to keep the protocol simple and compatible with backends
+           that don't expose TTL information (e.g., some key-value stores).
+
+        2. **Performance Trade-off**: Fetching TTL would require an additional
+           round-trip to the cache backend, negating the performance benefit of
+           the L1 cache.
+
+        3. **Acceptable Inconsistency**: L1 entries populated from L2 may expire
+           at different times than the original L2 entries. This is acceptable
+           because L1 is a short-lived optimization layer, and the L2 source of
+           truth will be consulted again after L1 expiration.
+
+        **Recommendation**: Set ``default_ttl_seconds`` to a value shorter than
+        typical L2 TTLs to ensure L1 entries refresh reasonably often.
 
     Graceful Degradation:
         If L2 backend is unavailable or operations fail, the mixin
@@ -296,8 +311,17 @@ class MixinCaching:
 
         Returns:
             ModelOnexError wrapping the original exception
+
+        Exception to Error Code Mapping:
+            - ConnectionError -> CACHE_CONNECTION_ERROR
+            - TimeoutError -> CACHE_TIMEOUT_ERROR
+            - OSError -> CACHE_BACKEND_ERROR (network/connection issues)
+            - ValueError, TypeError -> CACHE_OPERATION_FAILED (serialization issues)
+            - AttributeError -> CACHE_BACKEND_ERROR (backend interface issues)
+            - Other -> CACHE_OPERATION_FAILED (fallback)
         """
         # Determine appropriate error code based on exception type
+        # Order matters: more specific exceptions first
         if isinstance(exception, ConnectionError):
             error_code = EnumCoreErrorCode.CACHE_CONNECTION_ERROR
         elif isinstance(exception, TimeoutError):
@@ -305,7 +329,14 @@ class MixinCaching:
         elif isinstance(exception, OSError):
             # OSError can indicate network or connection issues
             error_code = EnumCoreErrorCode.CACHE_BACKEND_ERROR
+        elif isinstance(exception, (ValueError, TypeError)):
+            # Serialization/deserialization issues with cache data
+            error_code = EnumCoreErrorCode.CACHE_OPERATION_FAILED
+        elif isinstance(exception, AttributeError):
+            # Backend interface issues (missing methods, etc.)
+            error_code = EnumCoreErrorCode.CACHE_BACKEND_ERROR
         else:
+            # Catch-all for truly unexpected exceptions
             error_code = EnumCoreErrorCode.CACHE_OPERATION_FAILED
 
         context: dict[str, Any] = {"operation": operation}
@@ -357,8 +388,16 @@ class MixinCaching:
                     # Note: We don't know the original TTL, so use default
                     self._set_l1(cache_key, l2_value, self._default_ttl_seconds)
                     return l2_value
-            except (ConnectionError, TimeoutError, OSError) as e:
+            except (
+                ConnectionError,
+                TimeoutError,
+                OSError,
+                ValueError,
+                TypeError,
+                AttributeError,
+            ) as e:
                 # Graceful degradation - log structured error and continue with L1 miss
+                # Catches: network errors, serialization issues, backend interface problems
                 error = self._wrap_cache_error(e, "get", cache_key)
                 logger.warning(
                     "L2 cache get failed for key '%s': %s",
@@ -366,12 +405,15 @@ class MixinCaching:
                     error,
                 )
             except Exception as e:
-                # Catch any other unexpected exceptions from the backend
+                # Safety net for truly unexpected exceptions from backend implementations
+                # All expected exceptions should be caught above
                 error = self._wrap_cache_error(e, "get", cache_key)
                 logger.warning(
-                    "L2 cache get failed unexpectedly for key '%s': %s",
+                    "L2 cache get failed with unexpected error for key '%s': %s "
+                    "(exception type: %s)",
                     cache_key,
                     error,
+                    type(e).__name__,
                 )
 
         return None
@@ -390,7 +432,12 @@ class MixinCaching:
             cache_key: Cache key to store under
             value: Value to cache
             ttl_seconds: Time-to-live in seconds. If None, uses default_ttl_seconds.
-                If 0, entry expires immediately (effectively skips caching for L1).
+                If 0 or negative, caching is skipped entirely.
+
+        Note:
+            Zero or negative TTL values are treated as "do not cache" - the method
+            returns immediately without storing to either L1 or L2. This prevents
+            storing entries that would expire immediately or have invalid TTLs.
         """
         if not self._cache_enabled:
             return
@@ -398,11 +445,13 @@ class MixinCaching:
         # Determine TTL
         ttl = ttl_seconds if ttl_seconds is not None else self._default_ttl_seconds
 
-        # For ttl=0, skip L1 caching as it would expire immediately
-        # But still write to L2 if available (L2 may handle ttl=0 differently)
-        if ttl != 0:
-            # Write to L1
-            self._set_l1(cache_key, value, ttl)
+        # Skip caching entirely for zero or negative TTL values
+        # This prevents storing entries that would expire immediately
+        if ttl is not None and ttl <= 0:
+            return
+
+        # Write to L1
+        self._set_l1(cache_key, value, ttl)
 
         # Write to L2 if available and connected
         if self._cache_backend is not None:
@@ -415,8 +464,16 @@ class MixinCaching:
 
             try:
                 await self._cache_backend.set(cache_key, value, ttl)
-            except (ConnectionError, TimeoutError, OSError) as e:
+            except (
+                ConnectionError,
+                TimeoutError,
+                OSError,
+                ValueError,
+                TypeError,
+                AttributeError,
+            ) as e:
                 # Graceful degradation - log structured error and continue with L1 only
+                # Catches: network errors, serialization issues, backend interface problems
                 error = self._wrap_cache_error(e, "set", cache_key)
                 logger.warning(
                     "L2 cache set failed for key '%s': %s",
@@ -424,12 +481,15 @@ class MixinCaching:
                     error,
                 )
             except Exception as e:
-                # Catch any other unexpected exceptions from the backend
+                # Safety net for truly unexpected exceptions from backend implementations
+                # All expected exceptions should be caught above
                 error = self._wrap_cache_error(e, "set", cache_key)
                 logger.warning(
-                    "L2 cache set failed unexpectedly for key '%s': %s",
+                    "L2 cache set failed with unexpected error for key '%s': %s "
+                    "(exception type: %s)",
                     cache_key,
                     error,
+                    type(e).__name__,
                 )
 
     async def invalidate_cache(self, cache_key: str) -> None:
@@ -453,7 +513,16 @@ class MixinCaching:
 
             try:
                 await self._cache_backend.delete(cache_key)
-            except (ConnectionError, TimeoutError, OSError) as e:
+            except (
+                ConnectionError,
+                TimeoutError,
+                OSError,
+                ValueError,
+                TypeError,
+                AttributeError,
+            ) as e:
+                # Graceful degradation - log structured error and continue
+                # Catches: network errors, serialization issues, backend interface problems
                 error = self._wrap_cache_error(e, "delete", cache_key)
                 logger.warning(
                     "L2 cache delete failed for key '%s': %s",
@@ -461,12 +530,15 @@ class MixinCaching:
                     error,
                 )
             except Exception as e:
-                # Catch any other unexpected exceptions from the backend
+                # Safety net for truly unexpected exceptions from backend implementations
+                # All expected exceptions should be caught above
                 error = self._wrap_cache_error(e, "delete", cache_key)
                 logger.warning(
-                    "L2 cache delete failed unexpectedly for key '%s': %s",
+                    "L2 cache delete failed with unexpected error for key '%s': %s "
+                    "(exception type: %s)",
                     cache_key,
                     error,
+                    type(e).__name__,
                 )
 
     async def clear_cache(self) -> None:
@@ -482,13 +554,27 @@ class MixinCaching:
 
             try:
                 await self._cache_backend.clear()
-            except (ConnectionError, TimeoutError, OSError) as e:
+            except (
+                ConnectionError,
+                TimeoutError,
+                OSError,
+                ValueError,
+                TypeError,
+                AttributeError,
+            ) as e:
+                # Graceful degradation - log structured error and continue
+                # Catches: network errors, serialization issues, backend interface problems
                 error = self._wrap_cache_error(e, "clear")
                 logger.warning("L2 cache clear failed: %s", error)
             except Exception as e:
-                # Catch any other unexpected exceptions from the backend
+                # Safety net for truly unexpected exceptions from backend implementations
+                # All expected exceptions should be caught above
                 error = self._wrap_cache_error(e, "clear")
-                logger.warning("L2 cache clear failed unexpectedly: %s", error)
+                logger.warning(
+                    "L2 cache clear failed with unexpected error: %s (exception type: %s)",
+                    error,
+                    type(e).__name__,
+                )
 
     def get_cache_stats(self) -> TypedDictCacheStats:
         """

@@ -152,6 +152,13 @@ class ProtocolCacheBackend(Protocol):
                 handle serialization internally).
             ttl_seconds: Time-to-live in seconds. If None, the entry
                 may live indefinitely or use a backend-specific default.
+                If 0 or negative, implementations should skip caching
+                (return immediately without storing).
+
+        Note:
+            Zero or negative TTL values should be treated as "do not cache".
+            Implementations should return immediately without storing to prevent
+            storing entries that would expire immediately or have invalid TTLs.
 
         Raises:
             Should not raise exceptions - silently fail to allow
@@ -165,6 +172,9 @@ class ProtocolCacheBackend(Protocol):
 
                 # Store with no expiration
                 await backend.set("config:global", config_data)
+
+                # Skip caching (ttl=0)
+                await backend.set("temp:data", data, ttl_seconds=0)  # No-op
         """
         ...
 

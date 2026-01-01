@@ -33,7 +33,13 @@ Requirements:
 from omnibase_core.backends.cache.backend_cache_redis import (
     REDIS_AVAILABLE,
     BackendCacheRedis,
+    sanitize_error_message,
     sanitize_redis_url,
 )
 
-__all__ = ["BackendCacheRedis", "REDIS_AVAILABLE", "sanitize_redis_url"]
+__all__ = [
+    "BackendCacheRedis",
+    "REDIS_AVAILABLE",
+    "sanitize_error_message",
+    "sanitize_redis_url",
+]
