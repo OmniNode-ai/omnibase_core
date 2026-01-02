@@ -982,7 +982,7 @@ class EnvelopeRouter(ProtocolNodeRuntime):
                 routing_info["handler_type"].value,
             )
             return response
-        except (SystemExit, KeyboardInterrupt, GeneratorExit):
+        except (GeneratorExit, KeyboardInterrupt, SystemExit):
             # Never catch cancellation/exit signals - they must propagate
             raise
         except asyncio.CancelledError:

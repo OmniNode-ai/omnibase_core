@@ -53,6 +53,7 @@ Safe Runtime Imports (OK to import at module level):
 - pydantic modules
 """
 
+import logging
 import math
 from collections.abc import Callable
 
@@ -61,6 +62,9 @@ from pydantic import BaseModel, Field, model_validator
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_coercion_mode import EnumCoercionMode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+
+# Module-level logger for coercion observability
+_logger = logging.getLogger(__name__)
 
 
 class ModelOptionalInt(BaseModel):
@@ -207,16 +211,44 @@ class ModelOptionalInt(BaseModel):
                             "fractional_part": str(v - int(v)),
                         },
                     )
-                validated_data["value"] = int(v)
+                coerced_value = int(v)
+                validated_data["value"] = coerced_value
+                _logger.debug(
+                    "Coercion: field=value target_type=int original_type=float "
+                    "original_value=%s coercion_mode=STRICT -> coerced to %d (exact float)",
+                    v,
+                    coerced_value,
+                )
 
             elif coercion_mode == EnumCoercionMode.FLOOR:
-                validated_data["value"] = math.floor(v)
+                coerced_value = math.floor(v)
+                validated_data["value"] = coerced_value
+                _logger.debug(
+                    "Coercion: field=value target_type=int original_type=float "
+                    "original_value=%s coercion_mode=FLOOR -> coerced to %d",
+                    v,
+                    coerced_value,
+                )
 
             elif coercion_mode == EnumCoercionMode.CEIL:
-                validated_data["value"] = math.ceil(v)
+                coerced_value = math.ceil(v)
+                validated_data["value"] = coerced_value
+                _logger.debug(
+                    "Coercion: field=value target_type=int original_type=float "
+                    "original_value=%s coercion_mode=CEIL -> coerced to %d",
+                    v,
+                    coerced_value,
+                )
 
             elif coercion_mode == EnumCoercionMode.ROUND:
-                validated_data["value"] = round(v)
+                coerced_value = round(v)
+                validated_data["value"] = coerced_value
+                _logger.debug(
+                    "Coercion: field=value target_type=int original_type=float "
+                    "original_value=%s coercion_mode=ROUND -> coerced to %d",
+                    v,
+                    coerced_value,
+                )
 
             else:
                 # Should never reach here

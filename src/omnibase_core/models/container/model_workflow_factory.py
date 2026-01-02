@@ -13,8 +13,6 @@ Safe Runtime Imports (OK to import at module level):
 
 from __future__ import annotations
 
-from typing import Any
-
 
 class ModelWorkflowFactory:
     """Workflow factory for LlamaIndex integration."""
@@ -22,12 +20,13 @@ class ModelWorkflowFactory:
     def create_workflow(
         self,
         workflow_type: str,
-        # ONEX_EXCLUDE: dict_str_any - factory method config varies by workflow_type
-        config: dict[str, Any] | None = None,
-    ) -> Any:
+        config: dict[str, object] | None = None,
+    ) -> object:
         """Create workflow instance by type."""
         config = config or {}
         # This would be expanded with actual workflow types from LlamaIndex integration
+        # Return placeholder object until actual workflow types are implemented
+        return None
 
     def list_available_workflows(self) -> list[str]:
         """List available workflow types."""

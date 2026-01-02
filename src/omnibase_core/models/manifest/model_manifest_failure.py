@@ -61,7 +61,6 @@ class ModelManifestFailure(BaseModel):
         extra="forbid",
         from_attributes=True,
         use_enum_values=False,
-        validate_assignment=True,
     )
 
     # === Required Fields ===
