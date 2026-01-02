@@ -56,7 +56,6 @@ from enum import Enum, unique
 from typing import Never, NoReturn
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.errors import ModelOnexError
 
 
 @unique
@@ -131,6 +130,9 @@ class EnumHandlerTypeCategory(str, Enum):
     @staticmethod
     def assert_exhaustive(value: Never) -> NoReturn:
         """Ensure exhaustive handling in match statements."""
+        # Lazy import to avoid circular dependency with error_codes
+        from omnibase_core.errors import ModelOnexError
+
         raise ModelOnexError(
             message=f"Unhandled enum value: {value}",
             error_code=EnumCoreErrorCode.INVALID_OPERATION,
