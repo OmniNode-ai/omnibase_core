@@ -248,7 +248,7 @@ class MixinHybridExecution[InputStateT, OutputStateT]:
 
             return cast("OutputStateT", result)
 
-        except Exception as e:  # fallback-ok: workflow failure falls back to direct execution with logging
+        except Exception as e:  # catch-all-ok: workflow failure falls back to direct execution with logging
             emit_log_event(
                 LogLevel.ERROR,
                 f"❌ WORKFLOW_EXECUTION: Workflow failed: {e}",

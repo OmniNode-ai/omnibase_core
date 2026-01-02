@@ -593,7 +593,8 @@ class MixinEffectExecution:
         except ModelOnexError:
             transaction_state = EnumTransactionState.ROLLED_BACK
             raise
-        except Exception as e:
+        except Exception as e:  # fallback-ok: top-level error boundary wraps non-ModelOnexError into structured error
+            # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit/CancelledError to propagate
             transaction_state = EnumTransactionState.ROLLED_BACK
             raise ModelOnexError(
                 message=f"Effect execution failed: {e!s}",
@@ -734,7 +735,13 @@ class MixinEffectExecution:
                     return str(secret_value)
                 except ModelOnexError:
                     raise
-                except Exception as e:
+                except (
+                    ValueError,
+                    KeyError,
+                    RuntimeError,
+                    AttributeError,
+                    OSError,
+                ) as e:
                     raise ModelOnexError(
                         message=f"Failed to resolve secret: {secret_key}",
                         error_code=EnumCoreErrorCode.CONFIGURATION_ERROR,
@@ -1216,7 +1223,7 @@ class MixinEffectExecution:
 
                 return result, retry_count
 
-            except Exception as e:
+            except Exception as e:  # catch-all-ok: retry loop catches operation failures; KeyboardInterrupt/SystemExit propagate
                 # Increment retry_count to track failed attempts
                 # retry_count represents "number of failed attempts before success or final failure"
                 # - First attempt fails: retry_count becomes 1
@@ -1368,7 +1375,13 @@ class MixinEffectExecution:
         try:
             # String-based DI lookup for extensibility; handler protocols not defined in core
             handler: object = self.container.get_service(handler_protocol)  # type: ignore[arg-type]  # String-based DI lookup for extensibility
-        except Exception as resolve_error:
+        except (
+            AttributeError,
+            KeyError,
+            LookupError,
+            RuntimeError,
+            ValueError,
+        ) as resolve_error:
             # Provide explicit guidance for handler registration
             raise ModelOnexError(
                 message=f"Effect handler not registered: {handler_protocol}. "
@@ -1403,7 +1416,8 @@ class MixinEffectExecution:
             result = await handler.execute(resolved_context)  # type: ignore[attr-defined]  # Duck-typed protocol method
         except ModelOnexError:
             raise
-        except Exception as exec_error:
+        except Exception as exec_error:  # fallback-ok: handler errors wrapped in ModelOnexError
+            # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit/CancelledError to propagate
             raise ModelOnexError(
                 message=f"Handler execution failed for {handler_protocol}: {exec_error!s}",
                 error_code=EnumCoreErrorCode.HANDLER_EXECUTION_ERROR,
@@ -1581,7 +1595,7 @@ class MixinEffectExecution:
 
             except ModelOnexError:
                 raise
-            except Exception as e:
+            except (AttributeError, IndexError, KeyError, TypeError, ValueError) as e:
                 raise ModelOnexError(
                     message=f"Field extraction failed for {output_name}: {e!s}",
                     error_code=EnumCoreErrorCode.OPERATION_FAILED,

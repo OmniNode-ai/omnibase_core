@@ -274,7 +274,8 @@ class MixinHealthCheck:
                     {"check_name": check_func.__name__, "status": result.status},
                 )
 
-            except Exception as e:
+            except Exception as e:  # fallback-ok: health check should return UNHEALTHY status, not crash
+                # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
                 emit_log_event(
                     LogLevel.ERROR,
                     f"❌ Health check failed: {check_func.__name__}",
@@ -400,6 +401,7 @@ class MixinHealthCheck:
 
                 check_tasks.append((check_func.__name__, task))
 
+            # fallback-ok: health check task creation should not crash the async health check
             except Exception as e:
                 emit_log_event(
                     LogLevel.ERROR,
@@ -454,7 +456,8 @@ class MixinHealthCheck:
                     for issue in result.issues:
                         messages.append(f"{check_name}: {issue.message}")
 
-            except Exception as e:
+            except Exception as e:  # fallback-ok: async health check should return UNHEALTHY status, not crash
+                # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
                 emit_log_event(
                     LogLevel.ERROR,
                     f"Async health check failed: {check_name}",
@@ -563,9 +566,8 @@ class MixinHealthCheck:
                     ],
                 )
 
-        except (
-            Exception
-        ) as e:  # fallback-ok: health check should return UNHEALTHY status, not crash
+        # fallback-ok: health check should return UNHEALTHY status, not crash
+        except Exception as e:
             from omnibase_core.models.health.model_health_issue import ModelHealthIssue
 
             return ModelHealthStatus.create_unhealthy(
@@ -644,9 +646,8 @@ async def check_postgresql_health(
             ],
         )
 
-    except (
-        Exception
-    ) as e:  # fallback-ok: health check should return UNHEALTHY status, not crash
+    # fallback-ok: health check should return UNHEALTHY status, not crash
+    except Exception as e:
         emit_log_event(
             LogLevel.ERROR,
             "PostgreSQL health check failed",
@@ -750,9 +751,8 @@ async def check_kafka_health(
             ],
         )
 
-    except (
-        Exception
-    ) as e:  # fallback-ok: health check should return DEGRADED status, not crash
+    # fallback-ok: health check should return DEGRADED status, not crash
+    except Exception as e:
         emit_log_event(
             LogLevel.ERROR,
             "Kafka health check failed",
@@ -845,9 +845,8 @@ async def check_redis_health(
             ],
         )
 
-    except (
-        Exception
-    ) as e:  # fallback-ok: health check should return UNHEALTHY status, not crash
+    # fallback-ok: health check should return UNHEALTHY status, not crash
+    except Exception as e:
         emit_log_event(
             LogLevel.ERROR,
             "Redis health check failed",
@@ -971,8 +970,8 @@ async def check_http_service_health(
                 ],
             )
     except (
-        ValueError,
         AttributeError,
+        ValueError,
     ) as e:  # urlparse-specific errors: malformed URLs or invalid attribute access
         return ModelHealthStatus.create_unhealthy(
             score=0.0,
@@ -1042,9 +1041,8 @@ async def check_http_service_health(
             ],
         )
 
-    except (
-        Exception
-    ) as e:  # fallback-ok: health check should return UNHEALTHY status, not crash
+    # fallback-ok: health check should return UNHEALTHY status, not crash
+    except Exception as e:
         emit_log_event(
             LogLevel.ERROR,
             "HTTP service health check failed",

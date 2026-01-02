@@ -153,7 +153,9 @@ class MixinContractStateReducer:
             self._transitions_loaded = True
             return transitions
 
-        except Exception as e:  # fallback-ok: resilient loading, returns empty list with logging on failure
+        except (
+            Exception
+        ) as e:  # fallback-ok: resilient loading returns empty list on failure
             tool_name = getattr(self, "node_name", "unknown_tool")
             emit_log_event(
                 LogLevel.ERROR,
@@ -230,7 +232,7 @@ class MixinContractStateReducer:
             # Fallback: create basic success response
             return self._create_default_output_state(input_state)
 
-        except Exception as e:
+        except (ValueError, RuntimeError) as e:
             tool_name = getattr(self, "node_name", "unknown_tool")
             emit_log_event(
                 LogLevel.ERROR,
@@ -271,7 +273,7 @@ class MixinContractStateReducer:
                         "transition_name": transition.name,
                     },
                 )
-        except Exception as e:
+        except (ValueError, RuntimeError) as e:
             emit_log_event(
                 LogLevel.ERROR,
                 f"Failed to apply transition {transition.name}: {e!s}",

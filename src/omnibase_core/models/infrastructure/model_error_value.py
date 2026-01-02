@@ -156,7 +156,7 @@ class ModelErrorValue(BaseModel):
                 return exception_classes[self.exception_class](self.exception_message)
             # Fall back to generic RuntimeError with original class info
             return RuntimeError(f"{self.exception_class}: {self.exception_message}")
-        except Exception as e:
+        except (ValueError, TypeError, AttributeError) as e:
             # If recreation fails, raise error with context about the failure
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,

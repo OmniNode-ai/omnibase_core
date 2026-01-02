@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pydantic import Field, model_validator
 
+from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 """
@@ -161,7 +162,11 @@ class ModelConnectionSecurity(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception as e:
+        except ModelOnexError:
+            raise  # Re-raise without double-wrapping
+        except PYDANTIC_MODEL_ERRORS as e:
+            # PYDANTIC_MODEL_ERRORS covers: AttributeError, TypeError, ValidationError, ValueError
+            # These are raised by setattr with Pydantic validate_assignment=True
             raise ModelOnexError(
                 message=f"Operation failed: {e}",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -169,15 +174,9 @@ class ModelConnectionSecurity(BaseModel):
 
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except Exception as e:
-            raise ModelOnexError(
-                message=f"Operation failed: {e}",
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-            ) from e
+        # Basic validation - ensure required fields exist
+        # Override in specific models for custom validation
+        return True
 
     def serialize(self) -> SerializedDict:
         """Serialize to dictionary (Serializable protocol)."""

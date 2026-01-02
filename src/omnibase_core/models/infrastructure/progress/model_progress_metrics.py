@@ -191,7 +191,7 @@ class ModelProgressMetrics(BaseModel):
         try:
             # Return current state as execution result
             return self.model_dump(exclude_none=False, by_alias=True)
-        except Exception as e:
+        except (AttributeError, ValueError, TypeError, KeyError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
@@ -203,7 +203,7 @@ class ModelProgressMetrics(BaseModel):
             for key, value in kwargs.items():
                 if hasattr(self, key):
                     setattr(self, key, value)
-        except Exception as e:
+        except (AttributeError, ValueError, TypeError, KeyError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",

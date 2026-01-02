@@ -176,8 +176,7 @@ class MixinDiscoveryResponder:
         except ModelOnexError:
             # Re-raise ONEX errors directly (already structured)
             raise
-        except Exception as e:
-            # Convert generic exceptions to ONEX errors
+        except Exception as e:  # fallback-ok: convert generic exceptions to ONEX errors
             emit_log_event(
                 LogLevel.ERROR,
                 f"Failed to start discovery responder: {e!s}",
@@ -201,9 +200,8 @@ class MixinDiscoveryResponder:
         if self._discovery_unsubscribe:
             try:
                 await self._discovery_unsubscribe()
-            except (
-                Exception
-            ):  # fallback-ok: cleanup errors during shutdown are non-critical
+            # fallback-ok: cleanup errors during shutdown are non-critical
+            except Exception:
                 pass
 
         emit_log_event(
@@ -235,7 +233,7 @@ class MixinDiscoveryResponder:
             # Acknowledge message receipt only after successful handling
             await message.ack()
 
-        except Exception as e:
+        except (ModelOnexError, RuntimeError, ValueError) as e:
             # Log non-fatal discovery errors for observability
             from omnibase_core.logging.structured import (
                 emit_log_event_sync as emit_log_event,
@@ -257,7 +255,7 @@ class MixinDiscoveryResponder:
             # Discovery failures are non-fatal and should not block the system
             try:
                 await message.ack()
-            except Exception as ack_error:
+            except (RuntimeError, ValueError) as ack_error:
                 emit_log_event(
                     LogLevel.ERROR,
                     "Failed to acknowledge discovery message after error",
@@ -336,7 +334,7 @@ class MixinDiscoveryResponder:
             # Generate discovery response (updates metrics on success)
             await self._send_discovery_response(onex_event, request_metadata)
 
-        except Exception as e:
+        except (ModelOnexError, RuntimeError, ValueError) as e:
             # Log non-fatal discovery errors for observability
             emit_log_event(
                 LogLevel.WARNING,
@@ -569,7 +567,7 @@ class MixinDiscoveryResponder:
                 )  # Use actual publish time, not request time
                 self._discovery_stats["responses_sent"] += 1
 
-        except Exception as e:
+        except (ModelOnexError, RuntimeError, ValueError) as e:
             # Log discovery errors for observability
             emit_log_event(
                 LogLevel.WARNING,

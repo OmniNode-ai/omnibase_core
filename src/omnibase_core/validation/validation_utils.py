@@ -601,10 +601,22 @@ def extract_protocol_signature(file_path: Path) -> ModelProtocolInfo | None:
             f"line {e.lineno}, offset {e.offset}: {e.msg}",
         )
         return None
-    except Exception:  # fallback-ok: File processing errors should not stop the entire validation process
-        # Unexpected error: safety net for truly unexpected issues.
-        # logger.exception includes full stack trace for debugging.
-        logger.exception(f"Unexpected error processing {file_path}. Skipping file.")
+    except ValueError as e:
+        # ast.parse raises ValueError for source containing null bytes
+        logger.warning(f"Invalid source content in {file_path}: {e}. Skipping file.")
+        return None
+    except RecursionError:
+        # Deeply nested AST structures can exceed recursion limit
+        logger.warning(f"Recursion limit exceeded parsing {file_path}. Skipping file.")
+        return None
+    except MemoryError:
+        # Extremely large files may exhaust memory during AST parsing
+        logger.warning(f"Memory exhausted parsing {file_path}. Skipping file.")
+        return None
+    except (AttributeError, KeyError, TypeError) as e:
+        # Handle AST processing errors: malformed tree structures, missing attributes,
+        # or unexpected types from extractor operations
+        logger.warning(f"Error processing AST in {file_path}: {e}. Skipping file.")
         return None
 
 
@@ -704,15 +716,14 @@ def is_protocol_file(file_path: Path) -> bool:
         content_sample = file_path.read_text(encoding="utf-8", errors="ignore")[:1000]
         return "class Protocol" in content_sample
 
-    except OSError as e:
-        # Expected error: file access issues
-        logger.debug(f"Could not read file {file_path} for protocol check: {e}")
+    except (OSError, ValueError) as e:
+        # Expected errors: file access issues (OSError), invalid path operations (ValueError)
+        # UnicodeDecodeError not caught: read_text uses errors="ignore"
+        logger.debug(f"Error checking protocol file {file_path}: {e}")
         return False
-    except (
-        Exception
-    ) as e:  # fallback-ok: Protocol check errors should not stop file discovery
-        # Unexpected error: safety net for truly unexpected issues
-        logger.debug(f"Unexpected error checking protocol file {file_path}: {e}")
+    except (AttributeError, TypeError) as e:
+        # Handle path operation errors: missing attributes or unexpected types
+        logger.debug(f"Path operation error checking protocol file {file_path}: {e}")
         return False
 
 

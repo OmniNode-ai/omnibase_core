@@ -154,7 +154,7 @@ class MixinContractMetadata:
                 {"node_name": self._node_name, "version": self._node_version},
             )
 
-        except Exception as e:
+        except (AttributeError, ValueError) as e:
             emit_log_event(
                 LogLevel.ERROR,
                 f"Failed to load node metadata: {e}",
@@ -194,7 +194,7 @@ class MixinContractMetadata:
                 {"node_name": self._node_name, "tool_type": self._tool_type},
             )
 
-        except Exception as e:
+        except (ValueError, RuntimeError, OSError) as e:
             emit_log_event(
                 LogLevel.ERROR,
                 f"Failed to load contract: {e}",

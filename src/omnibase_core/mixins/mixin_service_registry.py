@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING
 from uuid import uuid4
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
+from omnibase_core.errors import ModelOnexError
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 from omnibase_core.types.typed_dict_mixin_types import TypedDictRegistryStats
@@ -114,7 +115,7 @@ class MixinServiceRegistry:
                     "🔔 Service registry event handlers registered successfully!",
                 )
 
-            except Exception as e:
+            except (AttributeError, RuntimeError, ValueError) as e:
                 logger.exception(f"❌ Failed to setup registry event handlers: {e}")
                 import traceback
 
@@ -235,7 +236,7 @@ class MixinServiceRegistry:
                 {"correlation_id": correlation_id},
             )
 
-        except Exception as e:
+        except (RuntimeError, ValueError, ModelOnexError) as e:
             logger.exception(f"❌ Failed to send discovery request: {e}")
 
             traceback.print_exc()
@@ -299,13 +300,16 @@ class MixinServiceRegistry:
                 for callback in self.discovery_callbacks:
                     try:
                         callback("tool_discovered", entry)
-                    except Exception as e:
+                    except (
+                        Exception
+                    ) as e:  # fallback-ok: user callbacks must not crash discovery
+                        # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
                         logger.exception(f"Discovery callback error: {e}")
             else:
                 # Update existing entry
                 self.service_registry[node_id_str].update_last_seen()
 
-        except Exception as e:
+        except (AttributeError, KeyError, TypeError, ValueError) as e:
             logger.exception(f"❌ Error handling node start event: {e}")
 
     def _handle_node_stop(self, envelope: "ModelEventEnvelope[object]") -> None:
@@ -331,10 +335,13 @@ class MixinServiceRegistry:
                     for callback in self.discovery_callbacks:
                         try:
                             callback("tool_offline", self.service_registry[node_id_str])
-                        except Exception as e:
+                        except (
+                            Exception
+                        ) as e:  # fallback-ok: user callbacks must not crash discovery
+                            # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
                             logger.exception(f"Discovery callback error: {e}")
 
-        except Exception as e:
+        except (AttributeError, KeyError, TypeError, ValueError) as e:
             logger.exception(f"❌ Error handling node stop event: {e}")
 
     def _handle_node_failure(self, envelope: "ModelEventEnvelope[object]") -> None:
@@ -402,7 +409,7 @@ class MixinServiceRegistry:
                 {"target_node_id": node_id, "correlation_id": correlation_id},
             )
 
-        except Exception as e:
+        except (RuntimeError, ValueError, ModelOnexError) as e:
             logger.exception(
                 f"❌ Failed to send introspection request to {node_id}: {e}",
             )
@@ -443,7 +450,7 @@ class MixinServiceRegistry:
                         },
                     )
 
-        except Exception as e:
+        except (AttributeError, KeyError, TypeError, ValueError) as e:
             logger.exception(f"❌ Error handling introspection response: {e}")
 
     def _handle_discovery_request(self, envelope: "ModelEventEnvelope[object]") -> None:
@@ -528,7 +535,7 @@ class MixinServiceRegistry:
                         "⚠️ Cannot send discovery response - no event bus available",
                     )
 
-        except Exception as e:
+        except (RuntimeError, ValueError, ModelOnexError) as e:
             logger.exception(f"❌ Error handling discovery request: {e}")
 
     def get_registered_tools(
@@ -605,14 +612,14 @@ class MixinServiceRegistry:
                     self.auto_cleanup_interval,
                     self._cleanup_and_reschedule,
                 )
-            except Exception as e:
+            except (RuntimeError, ValueError, AttributeError) as e:
                 logger.debug(f"Could not schedule cleanup task: {e}")
 
     def _cleanup_and_reschedule(self) -> None:
         """Cleanup and reschedule next cleanup."""
         try:
             self.cleanup_stale_entries()
-        except Exception as e:
+        except (RuntimeError, ValueError) as e:
             logger.exception(f"❌ Error during cleanup: {e}")
         finally:
             if self.registry_started:

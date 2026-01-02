@@ -103,7 +103,7 @@ class MixinIntrospectionPublisher:
                 context=context,
             )
             raise
-        except Exception as e:
+        except (RuntimeError, ModelOnexError) as e:
             context = ModelLogContext(
                 calling_module=_COMPONENT_NAME,
                 calling_function="_publish_introspection_event",
@@ -138,40 +138,50 @@ class MixinIntrospectionPublisher:
                 tags=tags,
                 health_endpoint=health_endpoint,
             )
-        except Exception as e:
+        except (AttributeError, TypeError, ValueError) as e:
             # fallback-ok: Introspection failures use fallback data with logging
-            node_id_raw = getattr(self, "_node_id", None)
-            node_id = node_id_raw if node_id_raw is not None else "<unset>"
-            context = ModelLogContext(
-                calling_module=_COMPONENT_NAME,
-                calling_function="_gather_introspection_data",
-                calling_line=127,
-                timestamp=datetime.now().isoformat(),
-                node_id=node_id_raw if isinstance(node_id_raw, UUID) else None,
-            )
-            emit_log_event_sync(
-                LogLevel.WARNING,
-                f"Failed to gather full introspection data for node {node_id}, using fallback: {e}",
-                context=context,
-            )
-            # Import typed metadata model for proper Pydantic usage
-            from omnibase_core.models.common.model_typed_metadata import (
-                ModelNodeCapabilitiesMetadata,
-            )
+            return self._create_fallback_introspection_data(e)
+        except (
+            Exception
+        ) as e:  # fallback-ok: unexpected errors should not crash introspection
+            return self._create_fallback_introspection_data(e)
 
-            return ModelNodeIntrospectionData(
-                node_name=self.__class__.__name__.lower(),
-                version=ModelSemVer(major=1, minor=0, patch=0),
-                capabilities=ModelNodeCapabilities(
-                    actions=["health_check"],
-                    protocols=["event_bus"],
-                    metadata=ModelNodeCapabilitiesMetadata(
-                        author=DEFAULT_AUTHOR,
-                    ),
+    def _create_fallback_introspection_data(
+        self, error: Exception
+    ) -> ModelNodeIntrospectionData:
+        """Create fallback introspection data when normal gathering fails."""
+        node_id_raw = getattr(self, "_node_id", None)
+        node_id = node_id_raw if node_id_raw is not None else "<unset>"
+        context = ModelLogContext(
+            calling_module=_COMPONENT_NAME,
+            calling_function="_gather_introspection_data",
+            calling_line=127,
+            timestamp=datetime.now().isoformat(),
+            node_id=node_id_raw if isinstance(node_id_raw, UUID) else None,
+        )
+        emit_log_event_sync(
+            LogLevel.WARNING,
+            f"Failed to gather full introspection data for node {node_id}, using fallback: {error}",
+            context=context,
+        )
+        # Import typed metadata model for proper Pydantic usage
+        from omnibase_core.models.common.model_typed_metadata import (
+            ModelNodeCapabilitiesMetadata,
+        )
+
+        return ModelNodeIntrospectionData(
+            node_name=self.__class__.__name__.lower(),
+            version=ModelSemVer(major=1, minor=0, patch=0),
+            capabilities=ModelNodeCapabilities(
+                actions=["health_check"],
+                protocols=["event_bus"],
+                metadata=ModelNodeCapabilitiesMetadata(
+                    author=DEFAULT_AUTHOR,
                 ),
-                tags=["event_driven"],
-                health_endpoint=None,
-            )
+            ),
+            tags=["event_driven"],
+            health_endpoint=None,
+        )
 
     def _extract_node_name(self) -> str:
         """Extract node name from class name or metadata."""
@@ -375,7 +385,7 @@ class MixinIntrospectionPublisher:
             try:
                 event_bus.publish(envelope)
                 return
-            except Exception as e:
+            except (RuntimeError, ValueError, ModelOnexError) as e:
                 if attempt == max_retries - 1:
                     context = ModelLogContext(
                         calling_module=_COMPONENT_NAME,

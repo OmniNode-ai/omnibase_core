@@ -211,7 +211,7 @@ class TestStartStopDiscoveryResponder:
 
         node = TestNode()
         mock_event_bus = AsyncMock()
-        mock_event_bus.subscribe = AsyncMock(side_effect=Exception("Bus error"))
+        mock_event_bus.subscribe = AsyncMock(side_effect=RuntimeError("Bus error"))
 
         with pytest.raises(ModelOnexError):
             await node.start_discovery_responder(mock_event_bus)
