@@ -16,14 +16,12 @@ Related:
 .. versionadded:: 0.4.0
 """
 
-import logging
 from typing import ClassVar
 
 from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
-    ValidationInfo,
     field_validator,
     model_validator,
 )
@@ -42,9 +40,6 @@ from omnibase_core.validation.validation_utils import (
     validate_onex_name_list,
     validate_string_list,
 )
-
-# Configure logger for this module (placed after imports per convention)
-logger = logging.getLogger(__name__)
 
 __all__ = [
     "ModelContractPatch",
@@ -94,8 +89,6 @@ class ModelContractPatch(BaseModel):
         - **Consistency**: Normalizing ensures that ``has_list_operations()``
           and ``get_add_operations()`` behave consistently regardless of
           whether the user passed ``[]`` or omitted the field.
-        - **Logging**: A DEBUG-level log message is emitted when normalization
-          occurs, useful for troubleshooting unexpected behavior.
 
         Example equivalence::
 
@@ -330,7 +323,7 @@ class ModelContractPatch(BaseModel):
     )
     @classmethod
     def normalize_empty_lists_to_none(
-        cls, v: list[object] | None, info: ValidationInfo
+        cls, v: list[object] | None
     ) -> list[object] | None:
         """Convert empty lists to None for list operation fields.
 
@@ -356,7 +349,6 @@ class ModelContractPatch(BaseModel):
         Args:
             v: List value or None. Type is ``list[object]`` to handle all
                 list types (ModelHandlerSpec, ModelDependency, str, etc.).
-            info: Pydantic validation info containing field name.
 
         Returns:
             None if the list is empty, otherwise the original list unchanged.
@@ -367,10 +359,6 @@ class ModelContractPatch(BaseModel):
             (e.g., validate_handlers_remove, validate_consumed_events).
         """
         if v is not None and len(v) == 0:
-            logger.debug(
-                "Normalized empty list to None for field: %s",
-                info.field_name,
-            )
             return None
         return v
 

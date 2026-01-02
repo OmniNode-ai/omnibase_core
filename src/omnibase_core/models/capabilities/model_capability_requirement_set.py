@@ -564,6 +564,19 @@ class ModelRequirementSet(BaseModel):
             - Each satisfied ``prefer`` constraint adds 0.1 to the score
             - Each unsatisfied ``prefer`` constraint generates a warning
 
+        Note on Scoring Design:
+            This scoring scheme (1.0 base + 0.1 per preference) differs
+            intentionally from ``ServiceCapabilityResolver._score_providers()``
+            which uses (0.0 base + 1.0 per preference). The difference exists
+            because they serve different purposes:
+
+            - ``matches()`` is a **boolean check with quality score** where
+              1.0 base represents "valid match" and 0.1 increments provide
+              fine-grained quality differentiation within the valid range.
+            - ``_score_providers()`` is a **relative ranking function** for
+              already-filtered providers where only relative scores matter
+              for sorting, not absolute values.
+
         Args:
             provider: Provider capability mapping to check. Keys are attribute
                 names, values are the provider's capability values.
