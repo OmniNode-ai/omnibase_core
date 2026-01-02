@@ -188,13 +188,15 @@ class NamingConventionValidator:
         ],
         # VALIDATION INFRASTRUCTURE: Validators and checkers for ONEX contracts and workflows
         # Location: validation/ - Validation framework implementations
-        # Rationale: These are validators/checkers that implement validation logic, not Protocol interfaces.
-        #            The heuristic flags "contract" as a Protocol indicator, but these are
-        #            implementations that VALIDATE/CHECK, not Protocol interfaces.
-        #            The Protocol interface for invariant checking is ProtocolContractValidationInvariantChecker
+        # Rationale: ContractPatchValidator validates contract patches, not a Protocol interface.
+        #            The heuristic flags "contract" as a Protocol indicator, but this is a
+        #            validator that VALIDATES patches, not a Protocol interface.
+        #            The Protocol interface for this is ProtocolPatchValidator in protocol_patch_validator.py
+        #            ContractValidationInvariantChecker is a concrete implementation (OMN-1146),
+        #            not a Protocol. The Protocol interface is ProtocolContractValidationInvariantChecker.
         "validation/": [
             "ContractPatchValidator",  # Validator for contract patches (OMN-1126)
-            "ContractValidationInvariantChecker",  # Invariant checker for contract validation (OMN-1146)
+            "ContractValidationInvariantChecker",  # Invariant checker implementation (OMN-1146)
         ],
     }
 

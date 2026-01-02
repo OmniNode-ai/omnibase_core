@@ -135,8 +135,12 @@ class TestEnumHandlerRoleValues:
 class TestEnumHandlerRoleAssertExhaustive:
     """Test cases for EnumHandlerRole assert_exhaustive() method."""
 
-    def test_assert_exhaustive_raises_model_onex_error(self) -> None:
-        """Test that assert_exhaustive raises ModelOnexError."""
+    def test_assert_exhaustive_raises_assertion_error(self) -> None:
+        """Test that assert_exhaustive raises AssertionError.
+
+        Note: Uses AssertionError instead of ModelOnexError to avoid
+        circular imports in the enum module.
+        """
         # We need to pass a value that would be typed as Never
         # In practice this is used in match statements after all cases handled
         # Testing by passing an invalid value

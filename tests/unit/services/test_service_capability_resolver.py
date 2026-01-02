@@ -1258,7 +1258,7 @@ class TestDeterminism:
                 )
             )
 
-        # Assert - all results should have same resolved providers
+        # Assert - all results should have same provider IDs
         db_ids = {r[0].resolved_provider if r[0] else None for r in results}
         cache_ids = {r[1].resolved_provider if r[1] else None for r in results}
         assert len(db_ids) == 1

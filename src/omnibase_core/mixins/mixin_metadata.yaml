@@ -223,7 +223,7 @@ mixin_retry:
           )
 
       - name: "should_retry"
-        signature: "def should_retry(self, error: Exception, status_code: Optional[int] = None) -> bool"
+        signature: "def should_retry(self, error: Exception, status_code: int | None = None) -> bool"
         description: "Determine if operation should be retried"
         example: |
           if self.should_retry(error, status_code=503):
@@ -238,7 +238,7 @@ mixin_retry:
           await asyncio.sleep(delay)
 
       - name: "record_attempt"
-        signature: "def record_attempt(self, success: bool, error: Optional[Exception] = None) -> None"
+        signature: "def record_attempt(self, success: bool, error: Exception | None = None) -> None"
         description: "Record retry attempt result"
         example: |
           self.record_attempt(
@@ -629,7 +629,7 @@ mixin_health_check:
         description: "Current overall health status"
 
       - name: "last_health_check"
-        type: "Optional[ModelHealthStatus]"
+        type: "ModelHealthStatus | None"
         description: "Result of most recent health check"
 
       - name: "health_check_count"
@@ -941,17 +941,17 @@ mixin_health_check:
         description: "ISO 8601 timestamp of health check"
 
       check_duration_ms:
-        type: "Optional[int]"
+        type: "int | None"
         required: false
         description: "Time taken to perform health check (milliseconds)"
 
       component_results:
-        type: "Optional[List[ModelHealthStatus]]"
+        type: "List[ModelHealthStatus] | None"
         required: false
         description: "Individual component health check results"
 
       dependency_results:
-        type: "Optional[Dict[str, ModelHealthStatus]]"
+        type: "Dict[str, ModelHealthStatus] | None"
         required: false
         description: "Dependency health check results by name"
 
