@@ -82,7 +82,8 @@ class MixinHybridExecution[InputStateT, OutputStateT]:
             input_state: Input state to analyze
 
         Returns:
-            Execution mode (direct, workflow, orchestrated)
+            Execution mode string. Use ExecutionMode enum values (e.g.,
+            ExecutionMode.DIRECT, ExecutionMode.WORKFLOW) which are str subclasses.
         """
         # Check contract for supported modes
         supported_modes = self._get_supported_modes()
@@ -320,7 +321,13 @@ class MixinHybridExecution[InputStateT, OutputStateT]:
         return min(score, 1.0)
 
     def _get_supported_modes(self) -> list[str]:
-        """Get supported execution modes from contract."""
+        """
+        Get supported execution modes from contract.
+
+        Returns:
+            List of execution mode strings. ExecutionMode enum values are str
+            subclasses, so both string literals and enum values are valid.
+        """
         # Try to get from contract data
         if hasattr(self, "contract_data") and self.contract_data:
             modes: list[str] = self.contract_data.get(cf.EXECUTION_MODES, [])

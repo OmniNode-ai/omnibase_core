@@ -67,6 +67,35 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.json_types import JsonType
 
+# ---------------------------------------------------------------------------
+# TYPE SAFETY PATTERN FOR CIRCULAR IMPORT AVOIDANCE
+# ---------------------------------------------------------------------------
+# This module uses a TYPE_CHECKING pattern for the `health` field to avoid
+# a complex circular import chain:
+#
+#   model_health_status.py → model_health_metadata.py → model_health_attributes.py
+#   → model_custom_fields.py → ... → mixin_health_check.py → model_health_status.py
+#
+# TRADE-OFF: At runtime, the `health` field accepts Any type (no Pydantic
+# validation of ModelHealthStatus structure). Static type checkers (mypy,
+# pyright) still see the correct type for IDE support and type checking.
+#
+# TO GET FULL RUNTIME TYPE SAFETY: After all modules are loaded, call
+# `ModelProviderDescriptor.model_rebuild()` to resolve the forward reference.
+# This is done automatically in test fixtures - see test_model_provider_descriptor.py
+# for the `_get_health_status_class()` pattern.
+#
+# WHY NOT USE model_rebuild() AT MODULE LEVEL?
+# The circular import prevents importing ModelHealthStatus at module load time.
+# model_rebuild() requires the referenced class to be importable, which fails
+# during the initial import cycle. The rebuild must happen after all modules
+# are fully loaded (e.g., in application startup or test fixtures).
+#
+# Alternative approaches considered:
+# - Forward reference string + model_rebuild(): Fails at module load (circular import)
+# - Lazy import in __init__.py: Adds complexity, still fails during import cycle
+# - Restructuring imports: Would require significant refactoring of health module
+# ---------------------------------------------------------------------------
 if TYPE_CHECKING:
     from omnibase_core.models.health.model_health_status import ModelHealthStatus
 
@@ -74,7 +103,8 @@ if TYPE_CHECKING:
     # Cannot use PEP 695 `type` keyword with TYPE_CHECKING conditional
     HealthStatusType: TypeAlias = ModelHealthStatus | None  # noqa: UP040
 else:
-    # At runtime, use Any to avoid circular import issues
+    # At runtime, use Any to avoid circular import issues.
+    # See documentation block above for full explanation.
     # Cannot use PEP 695 `type` keyword with TYPE_CHECKING conditional
     HealthStatusType: TypeAlias = Any  # noqa: UP040
 
@@ -252,13 +282,17 @@ class ModelProviderDescriptor(BaseModel):
         description="Tags for filtering (e.g., 'production', 'us-east', 'primary')",
     )
 
-    # Type alias provides static type safety via TYPE_CHECKING while avoiding
-    # circular import issues at runtime. At static analysis time, this is
-    # ModelHealthStatus | None; at runtime, it's Any to avoid forward reference
-    # resolution requirements.
+    # See TYPE SAFETY PATTERN documentation block at module level for details.
+    # Static type: ModelHealthStatus | None (for type checkers)
+    # Runtime type: Any (to avoid circular import)
+    # To get runtime validation: call ModelProviderDescriptor.model_rebuild()
     health: HealthStatusType = Field(
         default=None,
-        description="Current health status of this provider (ModelHealthStatus)",
+        description=(
+            "Current health status of this provider. At runtime, accepts "
+            "ModelHealthStatus instances or dicts. Call model_rebuild() after "
+            "all modules are loaded for full Pydantic validation."
+        ),
     )
 
     @field_validator("capabilities", mode="before")

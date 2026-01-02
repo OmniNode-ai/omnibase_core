@@ -1,10 +1,5 @@
-from typing import TYPE_CHECKING
-from uuid import uuid4
-
-from omnibase_core.models.primitives.model_semver import ModelSemVer
-
 """
-Request-Response Introspection Mixin
+Request-Response Introspection Mixin.
 
 Enables nodes to respond to REQUEST_INTROSPECTION events with real-time status information.
 Provides the "request-response" half of the hybrid discovery system.
@@ -13,6 +8,10 @@ Provides the "request-response" half of the hybrid discovery system.
 import contextlib
 import time
 from datetime import UTC
+from typing import TYPE_CHECKING
+from uuid import uuid4
+
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 if TYPE_CHECKING:
     from omnibase_core.models.core.model_onex_event import ModelOnexEvent as OnexEvent

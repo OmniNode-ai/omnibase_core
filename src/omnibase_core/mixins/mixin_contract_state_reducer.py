@@ -185,12 +185,14 @@ class MixinContractStateReducer:
                 else None
             )
 
-            # Safely access action_name - handle None or missing attribute
-            action_name: str = (
-                getattr(action, "action_name", None) or "unknown_action"
-                if action is not None
-                else "unknown_action"
-            )
+            # Safely access action_name - handle None, missing attribute, or empty string
+            # Note: Empty strings are intentionally treated as "unknown_action" since
+            # action_name must be a non-empty string per FSM model validation rules
+            action_name: str = "unknown_action"
+            if action is not None:
+                raw_action_name: object = getattr(action, "action_name", None)
+                if isinstance(raw_action_name, str) and raw_action_name:
+                    action_name = raw_action_name
 
             emit_log_event(
                 LogLevel.INFO,
