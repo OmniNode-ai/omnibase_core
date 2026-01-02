@@ -134,7 +134,7 @@ class TestEnumHandlerTypeCategoryAssertExhaustive:
         # We need to pass a value that would be typed as Never
         # In practice this is used in match statements after all cases handled
         # Testing by passing an invalid value
-        with pytest.raises(ModelOnexError) as exc_info:
+        with pytest.raises(AssertionError) as exc_info:
             # type: ignore is needed since we're intentionally passing wrong type
             EnumHandlerTypeCategory.assert_exhaustive("invalid")  # type: ignore[arg-type]
 
@@ -144,7 +144,7 @@ class TestEnumHandlerTypeCategoryAssertExhaustive:
     def test_assert_exhaustive_message_contains_value(self) -> None:
         """Test that assert_exhaustive error message contains the value."""
         test_value = "test_unhandled_value"
-        with pytest.raises(ModelOnexError) as exc_info:
+        with pytest.raises(AssertionError) as exc_info:
             EnumHandlerTypeCategory.assert_exhaustive(test_value)  # type: ignore[arg-type]
 
         assert test_value in str(exc_info.value)

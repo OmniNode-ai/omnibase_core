@@ -187,14 +187,14 @@ class TestEnumHandlerCommandTypeHelperMethods:
         # Create a mock value that would represent an unhandled case
         # In practice, this should never be called with a valid enum value
         # We test it with a string that's not a valid enum member
-        with pytest.raises(ModelOnexError) as exc_info:
+        with pytest.raises(AssertionError) as exc_info:
             # Intentionally passing invalid type to test runtime behavior
             EnumHandlerCommandType.assert_exhaustive("unhandled_value")
         assert "Unhandled enum value: unhandled_value" in str(exc_info.value)
 
     def test_assert_exhaustive_message_format(self) -> None:
         """Test that assert_exhaustive error message is properly formatted."""
-        with pytest.raises(ModelOnexError) as exc_info:
+        with pytest.raises(AssertionError) as exc_info:
             EnumHandlerCommandType.assert_exhaustive(42)
         assert "Unhandled enum value: 42" in str(exc_info.value)
 

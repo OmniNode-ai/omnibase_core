@@ -517,10 +517,10 @@ class TestEnumLikelihoodEdgeCases:
 
     def test_from_probability_error_message_includes_value(self) -> None:
         """Test that error message includes the invalid value."""
-        with pytest.raises(ModelOnexError) as exc_info:
+        with pytest.raises(AssertionError) as exc_info:
             EnumLikelihood.from_probability(1.5)
         assert "1.5" in str(exc_info.value)
 
-        with pytest.raises(ModelOnexError) as exc_info:
+        with pytest.raises(AssertionError) as exc_info:
             EnumLikelihood.from_probability(-0.5)
         assert "-0.5" in str(exc_info.value)
