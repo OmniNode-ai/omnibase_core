@@ -450,7 +450,11 @@ class BackendCacheRedis:
             raise ModelOnexError(
                 message=f"Failed to connect to Redis: {safe_error}",
                 error_code=EnumCoreErrorCode.CACHE_CONNECTION_ERROR,
-                context={"operation": "connect", "cache_type": "L2", "backend": "redis"},
+                context={
+                    "operation": "connect",
+                    "cache_type": "L2",
+                    "backend": "redis",
+                },
             ) from e
         except Exception as e:
             # Sanitize error message to prevent credential leakage
