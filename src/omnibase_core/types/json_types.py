@@ -43,6 +43,9 @@ See Also:
     - docs/architecture/ONEX_FOUR_NODE_ARCHITECTURE.md: Node architecture patterns
 """
 
+from datetime import datetime
+from uuid import UUID
+
 __all__ = [
     "JsonPrimitive",
     "JsonType",
@@ -64,12 +67,20 @@ __all__ = [
 # - float: JSON floating-point number
 # - bool: JSON boolean (true/false)
 # - None: JSON null
+# - UUID: UUID objects (Pydantic's model_dump() preserves these by default)
+# - datetime: datetime objects (Pydantic's model_dump() preserves these by default)
+#
+# Note: UUID and datetime are included because Pydantic's default serialization
+# behavior (model_dump()) preserves these types. Including them ensures that
+# JsonType can properly type nested structures that contain Pydantic model data.
 #
 # Example:
 #     >>> value: JsonPrimitive = "hello"
 #     >>> value: JsonPrimitive = 42
 #     >>> value: JsonPrimitive = None
-JsonPrimitive = str | int | float | bool | None
+#     >>> value: JsonPrimitive = UUID("...")
+#     >>> value: JsonPrimitive = datetime.now()
+JsonPrimitive = str | int | float | bool | None | UUID | datetime
 
 
 # Type alias for non-nullable primitive values.
