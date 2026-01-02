@@ -8,10 +8,20 @@ This module defines the ModelExecutionPlan model which represents a resolved pha
 ordering derived from a merged contract. It contains an ordered list of ModelPhaseStep
 instances representing the complete execution sequence.
 
+The model also supports the richer resolution metadata from OMN-1106, including
+conflict detection, constraint satisfaction tracking, and tie-breaker decisions.
+
 This is a pure data model with no side effects.
+
+See Also:
+    - OMN-1108: Runtime Execution Sequencing Model (original)
+    - OMN-1106: Beta Execution Order Resolution Pure Function (resolution metadata)
 
 .. versionadded:: 0.4.0
     Added as part of Runtime Execution Sequencing Model (OMN-1108)
+
+.. versionchanged:: 0.4.1
+    Added resolution metadata, conflicts, and validity tracking (OMN-1106)
 """
 
 from __future__ import annotations
@@ -21,7 +31,13 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_handler_execution_phase import EnumHandlerExecutionPhase
+from omnibase_core.models.execution.model_execution_conflict import (
+    ModelExecutionConflict,
+)
 from omnibase_core.models.execution.model_phase_step import ModelPhaseStep
+from omnibase_core.models.execution.model_resolution_metadata import (
+    ModelResolutionMetadata,
+)
 
 
 class ModelExecutionPlan(BaseModel):
@@ -32,6 +48,10 @@ class ModelExecutionPlan(BaseModel):
     of phase steps. It is the result of merging and resolving execution profiles
     according to an ordering policy.
 
+    The plan includes resolution metadata (OMN-1106) that captures tie-breaker
+    decisions, constraint satisfaction, and any conflicts detected during
+    resolution. This enables debugging and auditing of the ordering process.
+
     The model is immutable (frozen) to ensure thread safety and prevent
     accidental modification during execution.
 
@@ -41,10 +61,16 @@ class ModelExecutionPlan(BaseModel):
         ordering_policy: Description of the ordering policy used to create this plan
         created_at: Timestamp when this plan was created
         metadata: Optional metadata about this execution plan
+        resolution_metadata: Detailed metadata about the resolution process (OMN-1106)
+        conflicts: List of conflicts detected during resolution (OMN-1106)
+        is_valid: Whether the plan is valid (no blocking conflicts) (OMN-1106)
 
     Example:
         >>> from omnibase_core.enums.enum_handler_execution_phase import EnumHandlerExecutionPhase
         >>> from omnibase_core.models.execution.model_phase_step import ModelPhaseStep
+        >>> from omnibase_core.models.execution.model_resolution_metadata import (
+        ...     ModelResolutionMetadata,
+        ... )
         >>> plan = ModelExecutionPlan(
         ...     phases=[
         ...         ModelPhaseStep(
@@ -57,16 +83,27 @@ class ModelExecutionPlan(BaseModel):
         ...         ),
         ...     ],
         ...     source_profile="orchestrator_safe",
-        ...     ordering_policy="topological_sort"
+        ...     ordering_policy="topological_sort",
+        ...     resolution_metadata=ModelResolutionMetadata(
+        ...         strategy="topological_sort",
+        ...         total_handlers_resolved=3,
+        ...     ),
+        ...     is_valid=True,
         ... )
         >>> plan.total_handlers()
         3
         >>> plan.is_empty()
         False
+        >>> plan.is_valid
+        True
 
     See Also:
         - :class:`~omnibase_core.models.execution.model_phase_step.ModelPhaseStep`:
           The phase step model that makes up this plan
+        - :class:`~omnibase_core.models.execution.model_resolution_metadata.ModelResolutionMetadata`:
+          Metadata about the resolution process
+        - :class:`~omnibase_core.models.execution.model_execution_conflict.ModelExecutionConflict`:
+          Conflicts detected during resolution
         - :class:`~omnibase_core.models.contracts.model_execution_profile.ModelExecutionProfile`:
           The profile model that this plan is derived from
         - :class:`~omnibase_core.enums.enum_handler_execution_phase.EnumHandlerExecutionPhase`:
@@ -74,6 +111,9 @@ class ModelExecutionPlan(BaseModel):
 
     .. versionadded:: 0.4.0
         Added as part of Runtime Execution Sequencing Model (OMN-1108)
+
+    .. versionchanged:: 0.4.1
+        Added resolution_metadata, conflicts, and is_valid fields (OMN-1106)
     """
 
     model_config = ConfigDict(
@@ -107,6 +147,25 @@ class ModelExecutionPlan(BaseModel):
     metadata: dict[str, str | int | float | bool | None] | None = Field(
         default=None,
         description="Optional metadata about this execution plan",
+    )
+
+    # =========================================================================
+    # Resolution Fields (OMN-1106)
+    # =========================================================================
+
+    resolution_metadata: ModelResolutionMetadata | None = Field(
+        default=None,
+        description="Detailed metadata about the resolution process (tie-breakers, timing, etc.)",
+    )
+
+    conflicts: list[ModelExecutionConflict] = Field(
+        default_factory=list,
+        description="List of conflicts detected during resolution (empty if valid)",
+    )
+
+    is_valid: bool = Field(
+        default=True,
+        description="Whether the plan is valid (no blocking conflicts, all constraints satisfied)",
     )
 
     def get_phase(self, phase: EnumHandlerExecutionPhase) -> ModelPhaseStep | None:
@@ -209,13 +268,94 @@ class ModelExecutionPlan(BaseModel):
         """
         return [phase_step for phase_step in self.phases if not phase_step.is_empty()]
 
+    # =========================================================================
+    # Resolution Methods (OMN-1106)
+    # =========================================================================
+
+    def has_conflicts(self) -> bool:
+        """
+        Check if any conflicts were detected during resolution.
+
+        Returns:
+            True if conflicts list is non-empty.
+        """
+        return len(self.conflicts) > 0
+
+    def has_blocking_conflicts(self) -> bool:
+        """
+        Check if any blocking (error-severity) conflicts exist.
+
+        Blocking conflicts prevent the plan from being executed safely.
+
+        Returns:
+            True if any conflict has severity='error'.
+        """
+        return any(c.is_blocking() for c in self.conflicts)
+
+    def get_blocking_conflicts(self) -> list[ModelExecutionConflict]:
+        """
+        Get all blocking (error-severity) conflicts.
+
+        Returns:
+            List of conflicts with severity='error'.
+        """
+        return [c for c in self.conflicts if c.is_blocking()]
+
+    def get_warnings(self) -> list[ModelExecutionConflict]:
+        """
+        Get all warning-severity conflicts.
+
+        Returns:
+            List of conflicts with severity='warning'.
+        """
+        return [c for c in self.conflicts if not c.is_blocking()]
+
+    def get_cycle_conflicts(self) -> list[ModelExecutionConflict]:
+        """
+        Get all cycle conflicts.
+
+        Returns:
+            List of conflicts with conflict_type='cycle'.
+        """
+        return [c for c in self.conflicts if c.is_cycle()]
+
+    def had_tie_breakers(self) -> bool:
+        """
+        Check if any tie-breaker decisions were made during resolution.
+
+        Returns:
+            True if resolution_metadata exists and had ties.
+        """
+        if self.resolution_metadata is None:
+            return False
+        return self.resolution_metadata.had_ties()
+
+    def can_execute(self) -> bool:
+        """
+        Check if this plan can be safely executed.
+
+        A plan can be executed if:
+        - is_valid is True
+        - No blocking conflicts exist
+        - Plan is not empty
+
+        Returns:
+            True if the plan can be executed.
+        """
+        return (
+            self.is_valid and not self.has_blocking_conflicts() and not self.is_empty()
+        )
+
     def __str__(self) -> str:
         """Return a human-readable string representation."""
         phase_summaries = [
             f"{step.phase.value}({step.handler_count()})" for step in self.phases
         ]
         phases_str = " -> ".join(phase_summaries) if phase_summaries else "(empty)"
-        return f"ExecutionPlan[{phases_str}]"
+        validity = (
+            "VALID" if self.is_valid else f"INVALID({len(self.conflicts)} conflicts)"
+        )
+        return f"ExecutionPlan[{phases_str}] {validity}"
 
     def __repr__(self) -> str:
         """Return a detailed string representation for debugging."""
@@ -224,7 +364,9 @@ class ModelExecutionPlan(BaseModel):
             f"source_profile={self.source_profile!r}, "
             f"ordering_policy={self.ordering_policy!r}, "
             f"created_at={self.created_at!r}, "
-            f"metadata={self.metadata!r})"
+            f"is_valid={self.is_valid}, "
+            f"conflicts={len(self.conflicts)}, "
+            f"resolution_metadata={self.resolution_metadata!r})"
         )
 
 
