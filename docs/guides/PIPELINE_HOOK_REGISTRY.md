@@ -388,14 +388,14 @@ def my_hook(ctx: ModelPipelineContext) -> None:
     ctx.data["my_output"] = {"status": "done"}
 ```
 
-### PipelineResult
+### ModelPipelineResult
 
 Result of pipeline execution.
 
 ```python
-from omnibase_core.pipeline import PipelineResult
+from omnibase_core.pipeline import ModelPipelineResult
 
-result: PipelineResult = await runner.run()
+result: ModelPipelineResult = await runner.run()
 
 result.success    # bool - True if no errors
 result.errors     # list[ModelHookError] - Captured errors from continue phases

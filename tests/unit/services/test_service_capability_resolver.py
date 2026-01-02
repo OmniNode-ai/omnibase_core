@@ -22,13 +22,15 @@ from typing import Any
 from uuid import UUID, uuid4
 
 import pytest
-from omnibase_core.models.requirements.model_requirement_set import ModelRequirementSet
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.bindings.model_binding import ModelBinding
 from omnibase_core.models.bindings.model_resolution_result import ModelResolutionResult
 from omnibase_core.models.capabilities.model_capability_dependency import (
     ModelCapabilityDependency,
+)
+from omnibase_core.models.capabilities.model_capability_requirement_set import (
+    ModelRequirementSet,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.providers.model_provider_descriptor import (
