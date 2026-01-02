@@ -396,8 +396,8 @@ class ModelONEXContainer:
                     },
                 )
                 raise ModelOnexError(
-                    error_code=EnumCoreErrorCode.DEPENDENCY_UNAVAILABLE,
                     message=f"Service resolution failed for {protocol_name}: {registry_error!s}",
+                    error_code=EnumCoreErrorCode.DEPENDENCY_UNAVAILABLE,
                     context={
                         "protocol_type": protocol_name,
                         "service_name": service_name or "",
@@ -408,8 +408,8 @@ class ModelONEXContainer:
 
         # ServiceRegistry not enabled - raise error (no legacy fallback)
         raise ModelOnexError(
-            error_code=EnumCoreErrorCode.DEPENDENCY_UNAVAILABLE,
             message=f"Cannot resolve service {protocol_name}: ServiceRegistry is disabled",
+            error_code=EnumCoreErrorCode.DEPENDENCY_UNAVAILABLE,
             context={
                 "protocol_type": protocol_name,
                 "service_name": service_name or "",
