@@ -706,6 +706,19 @@ class MixinEffectExecution:
                     secret_service: object = self.container.get_service(
                         "ProtocolSecretService"  # type: ignore[arg-type]
                     )  # String-based DI lookup for extensibility
+                    # Runtime guard for duck-typed method call
+                    if not hasattr(secret_service, "get_secret"):
+                        raise ModelOnexError(
+                            message="Secret service does not implement get_secret method. "
+                            "Ensure ProtocolSecretService implementation provides get_secret(key: str) -> str | None.",
+                            error_code=EnumCoreErrorCode.UNSUPPORTED_OPERATION,
+                            context={
+                                "secret_key": secret_key,
+                                "placeholder": placeholder,
+                                "operation_id": str(input_data.operation_id),
+                                "service_type": type(secret_service).__name__,
+                            },
+                        )
                     # Duck-typed method call; actual service implements get_secret at runtime
                     secret_value = secret_service.get_secret(secret_key)  # type: ignore[attr-defined]  # Duck-typed protocol method
                     if secret_value is None:
@@ -903,7 +916,7 @@ class MixinEffectExecution:
         field_path: str,
         max_depth: int | None = None,
         operation_id: UUID | None = None,
-    ) -> object:
+    ) -> str | int | float | bool | dict[str, object] | list[object] | None:
         """
         Extract nested field from data using dotpath notation.
 
@@ -987,7 +1000,11 @@ class MixinEffectExecution:
             else:
                 return None
 
-        return current
+        # Validate extracted value matches expected types for type safety
+        # Return None for unexpected types (e.g., custom objects, callables)
+        if isinstance(current, (str, int, float, bool, dict, list, type(None))):
+            return current  # type: ignore[return-value]  # isinstance narrows to valid union member
+        return None
 
     def _coerce_param_value(self, value: str) -> DbParamType:
         """
@@ -1369,8 +1386,23 @@ class MixinEffectExecution:
 
         # Execute handler with resolved context
         try:
+            # Runtime guard for duck-typed handler execution
+            if not hasattr(handler, "execute"):
+                raise ModelOnexError(
+                    message=f"Effect handler {handler_protocol} does not implement execute method. "
+                    f"Handler implementations must provide async execute(context: ResolvedIOContext) -> object.",
+                    error_code=EnumCoreErrorCode.UNSUPPORTED_OPERATION,
+                    context={
+                        "operation_id": str(input_data.operation_id),
+                        "handler_type": handler_type.value,
+                        "handler_protocol": handler_protocol,
+                        "handler_class": type(handler).__name__,
+                    },
+                )
             # Duck-typed handler execution; handler implements execute() per protocol contract
             result = await handler.execute(resolved_context)  # type: ignore[attr-defined]  # Duck-typed protocol method
+        except ModelOnexError:
+            raise
         except Exception as exec_error:
             raise ModelOnexError(
                 message=f"Handler execution failed for {handler_protocol}: {exec_error!s}",
