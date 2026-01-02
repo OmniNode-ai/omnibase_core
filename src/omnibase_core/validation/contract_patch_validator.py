@@ -40,6 +40,7 @@ Related:
 """
 
 import logging
+import re
 from pathlib import Path
 
 from pydantic import ValidationError
@@ -59,6 +60,13 @@ __all__ = [
 
 # Configure logger for this module
 logger = logging.getLogger(__name__)
+
+# Semver pattern for version validation
+# Matches: 1.0.0, ^1.0.0, ~1.0, >=1.0.0, <2.0.0, etc.
+# Optional prefix: ^, ~, >=, >, <=, <, =
+# Core version: major.minor with optional .patch
+# Optional suffix: -alpha, -beta.1, +build.123, etc.
+SEMVER_PATTERN = re.compile(r"^[~^>=<]*\d+\.\d+(\.\d+)?([-.+][\w.]+)?$")
 
 
 class ContractPatchValidator:
@@ -362,6 +370,10 @@ class ContractPatchValidator:
 
         Returns:
             Set of names that appear more than once. Empty set if no duplicates.
+
+        Complexity:
+            Time: O(n) - single pass through the list with O(1) set operations.
+            Space: O(n) - stores up to n items in the `seen` set.
         """
         seen: set[str] = set()
         duplicates: set[str] = set()
@@ -586,10 +598,19 @@ class ContractPatchValidator:
                 code=EnumPatchValidationErrorCode.CONTRACT_PATCH_NON_STANDARD_PROFILE_NAME.value,
             )
 
-        # Check version format (basic semver check)
-        if version and not any(c.isdigit() for c in version):
-            result.add_warning(
-                f"Version '{version}' does not contain digits. "
-                "Expected semantic version format (e.g., '1.0.0').",
-                code=EnumPatchValidationErrorCode.CONTRACT_PATCH_NON_STANDARD_VERSION_FORMAT.value,
-            )
+        # Check version format (semver validation)
+        if version:
+            if not any(c.isdigit() for c in version):
+                # No digits at all - definitely not a version
+                result.add_warning(
+                    f"Version '{version}' does not contain digits. "
+                    "Expected semantic version format (e.g., '1.0.0').",
+                    code=EnumPatchValidationErrorCode.CONTRACT_PATCH_NON_STANDARD_VERSION_FORMAT.value,
+                )
+            elif not SEMVER_PATTERN.match(version):
+                # Has digits but not in standard semver format
+                result.add_warning(
+                    f"Version '{version}' is not in standard semantic version format. "
+                    "Expected formats: '1.0.0', '^1.0.0', '~1.0', '>=1.0.0'.",
+                    code=EnumPatchValidationErrorCode.CONTRACT_PATCH_NON_STANDARD_VERSION_FORMAT.value,
+                )

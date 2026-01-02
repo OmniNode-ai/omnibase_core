@@ -83,6 +83,37 @@ class ModelContractPatch(BaseModel):
         - **New contracts**: Must specify name and node_version
         - **Override patches**: Cannot redefine identity fields
 
+    List Field Normalization:
+        Empty lists (``[]``) are automatically normalized to ``None`` for all
+        ``__add`` and ``__remove`` list operation fields. This normalization
+        is intentional for patch semantics:
+
+        - **Rationale**: An empty list means "add/remove nothing" which is
+          semantically equivalent to "no operation" and thus equivalent to
+          omitting the field entirely (``None``).
+        - **Consistency**: Normalizing ensures that ``has_list_operations()``
+          and ``get_add_operations()`` behave consistently regardless of
+          whether the user passed ``[]`` or omitted the field.
+        - **Logging**: A DEBUG-level log message is emitted when normalization
+          occurs, useful for troubleshooting unexpected behavior.
+
+        Example equivalence::
+
+            # These three forms are all equivalent after normalization:
+            patch1 = ModelContractPatch(extends=ref, handlers__add=[])
+            patch2 = ModelContractPatch(extends=ref, handlers__add=None)
+            patch3 = ModelContractPatch(extends=ref)  # handlers__add omitted
+
+            assert patch1.handlers__add is None
+            assert patch2.handlers__add is None
+            assert patch3.handlers__add is None
+
+        This applies to all list operation fields: ``handlers__add``,
+        ``handlers__remove``, ``dependencies__add``, ``dependencies__remove``,
+        ``consumed_events__add``, ``consumed_events__remove``,
+        ``capability_inputs__add``, ``capability_inputs__remove``,
+        ``capability_outputs__add``, and ``capability_outputs__remove``.
+
     Attributes:
         extends: Reference to the profile this patch extends.
         name: Contract name (required for new contracts).
@@ -467,6 +498,25 @@ class ModelContractPatch(BaseModel):
             remove_names: List of names being removed.
             field_name: Name of the field for error messages.
             all_conflicts: Mutable list to append conflict messages to.
+                **This parameter is mutated in-place.** Conflict messages are
+                appended directly to this list rather than returned.
+
+        Returns:
+            None. Results are accumulated via mutation of ``all_conflicts``.
+
+        Note:
+            **Mutation Pattern**: This method intentionally mutates ``all_conflicts``
+            in-place rather than returning a new list. This design choice:
+
+            1. **Reduces allocations**: Avoids creating intermediate lists when
+               checking 5+ field pairs for conflicts in validate_no_add_remove_conflicts.
+            2. **Simplifies aggregation**: The caller can check multiple field pairs
+               in sequence, accumulating all conflicts into a single list.
+            3. **Follows collector pattern**: Common in validation scenarios where
+               multiple checks contribute to a unified error report.
+
+            The tradeoff is reduced functional purity for improved performance
+            and reduced boilerplate in the calling code.
         """
         conflicts = detect_add_remove_conflicts(add_names, remove_names, field_name)
         if conflicts:
