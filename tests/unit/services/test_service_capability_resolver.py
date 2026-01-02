@@ -22,13 +22,15 @@ from typing import Any
 from uuid import UUID, uuid4
 
 import pytest
-from omnibase_core.models.requirements.model_requirement_set import ModelRequirementSet
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.bindings.model_binding import ModelBinding
 from omnibase_core.models.bindings.model_resolution_result import ModelResolutionResult
 from omnibase_core.models.capabilities.model_capability_dependency import (
     ModelCapabilityDependency,
+)
+from omnibase_core.models.capabilities.model_capability_requirement_set import (
+    ModelRequirementSet,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.providers.model_provider_descriptor import (
@@ -1207,7 +1209,7 @@ class TestDeterminism:
         binding2 = resolver.resolve(dependency, registry2)
 
         # Assert - both should select same provider (lexicographically first by ID)
-        assert binding1.provider_id == binding2.provider_id
+        assert binding1.resolved_provider == binding2.resolved_provider
 
     def test_determinism_across_multiple_dependencies(self) -> None:
         """Test determinism with batch resolution of multiple dependencies."""
@@ -1257,8 +1259,8 @@ class TestDeterminism:
             )
 
         # Assert - all results should have same provider IDs
-        db_ids = {r[0].provider_id if r[0] else None for r in results}
-        cache_ids = {r[1].provider_id if r[1] else None for r in results}
+        db_ids = {r[0].resolved_provider if r[0] else None for r in results}
+        cache_ids = {r[1].resolved_provider if r[1] else None for r in results}
         assert len(db_ids) == 1
         assert len(cache_ids) == 1
 
@@ -1358,8 +1360,8 @@ class TestEdgeCases:
         binding2 = resolver.resolve(dependency2, registry2)
 
         # Assert - resolutions are independent
-        assert binding1.provider_id == str(provider1.provider_id)
-        assert binding2.provider_id == str(provider2.provider_id)
+        assert binding1.resolved_provider == str(provider1.provider_id)
+        assert binding2.resolved_provider == str(provider2.provider_id)
         assert binding1.dependency_alias == "db1"
         assert binding2.dependency_alias == "cache"
 

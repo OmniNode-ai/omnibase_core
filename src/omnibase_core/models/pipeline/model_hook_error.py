@@ -22,7 +22,7 @@ class ModelHookError(BaseModel):
 
     # TODO(pydantic-v3): Re-evaluate from_attributes=True when Pydantic v3 is released.
     # This workaround addresses Pydantic 2.x class identity validation issues where
-    # frozen models nested in other models (e.g., in PipelineResult.errors list)
+    # frozen models nested in other models (e.g., in ModelPipelineResult.errors list)
     # fail isinstance() checks across pytest-xdist worker processes.
     # See model_pipeline_hook.py module docstring for detailed explanation.
     # Track: https://github.com/pydantic/pydantic/issues (no specific issue yet)
