@@ -14,6 +14,7 @@ from pydantic import BaseModel, Field, field_validator
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_environment import EnumEnvironment
 from omnibase_core.enums.enum_execution_status_v2 import EnumExecutionStatusV2
+from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import (
     ModelSemVer,
@@ -150,9 +151,13 @@ class ModelExecutionMetadata(BaseModel):
                 if isinstance(cpu_value, (int, float)):
                     self.cpu_usage_percent = float(cpu_value)
             return True
-        except (
-            Exception
-        ) as e:  # error-ok: Converts any exception to structured ModelOnexError
+        except ModelOnexError:
+            # Re-raise ModelOnexError as-is to preserve error context
+            raise
+        except PYDANTIC_MODEL_ERRORS as e:
+            # fallback-ok: Converts specific exceptions to structured ModelOnexError.
+            # PYDANTIC_MODEL_ERRORS covers AttributeError, TypeError, ValidationError, ValueError
+            # which are raised by setattr with Pydantic validate_assignment=True.
             raise ModelOnexError(
                 message=f"Failed to execute metadata update: {e}",
                 error_code=EnumCoreErrorCode.OPERATION_FAILED,

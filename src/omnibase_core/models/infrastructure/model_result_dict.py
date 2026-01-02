@@ -9,6 +9,7 @@ from __future__ import annotations
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.type_serializable_value import SerializedDict
 
@@ -46,30 +47,48 @@ class ModelResultDict(BaseModel):
 
     # Protocol method implementations
     def execute(self, **kwargs: object) -> bool:
-        """Execute or update execution status (Executable protocol)."""
+        """Execute or update execution status (Executable protocol).
+
+        Raises:
+            ModelOnexError: If setting an attribute fails or validation error occurs
+                (including pydantic.ValidationError)
+        """
         try:
             # Update any relevant execution fields
             for key, value in kwargs.items():
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception as e:
+        except ModelOnexError:
+            raise  # Re-raise without double-wrapping
+        except PYDANTIC_MODEL_ERRORS as e:
+            # PYDANTIC_MODEL_ERRORS includes: AttributeError, TypeError,
+            # pydantic.ValidationError, ValueError (alphabetically ordered)
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
     def configure(self, **kwargs: object) -> bool:
-        """Configure instance with provided parameters (Configurable protocol)."""
+        """Configure instance with provided parameters (Configurable protocol).
+
+        Raises:
+            ModelOnexError: If setting an attribute fails or validation error occurs
+                (including pydantic.ValidationError)
+        """
         try:
             for key, value in kwargs.items():
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception as e:
+        except ModelOnexError:
+            raise  # Re-raise without double-wrapping
+        except PYDANTIC_MODEL_ERRORS as e:
+            # PYDANTIC_MODEL_ERRORS includes: AttributeError, TypeError,
+            # pydantic.ValidationError, ValueError (alphabetically ordered)
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Operation failed: {e}",
+                message=f"Configuration failed: {e}",
             ) from e
 
     def serialize(self) -> SerializedDict:
@@ -78,7 +97,7 @@ class ModelResultDict(BaseModel):
 
 
 # Type alias for dictionary-based data structures
-ModelResultData = dict[str, ModelValue]  # Strongly-typed dict[str, Any]for common data
+ModelResultData = dict[str, ModelValue]  # Strongly-typed dict[str, Any] for common data
 
 # Export for use
 __all__ = ["ModelResultData", "ModelResultDict"]

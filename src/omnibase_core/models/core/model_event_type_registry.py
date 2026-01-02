@@ -155,7 +155,7 @@ class ModelEventTypeRegistry:
                     self.register_event_type(event_type)
                     events_discovered += 1
 
-        except Exception as e:
+        except (OSError, ValueError, KeyError, AttributeError) as e:
             msg = f"Failed to parse contract {contract_file}: {e}"
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.INTERNAL_ERROR,
@@ -226,7 +226,7 @@ def get_event_type_registry() -> ModelEventTypeRegistry:
             registry.bootstrap_core_event_types()
 
         return registry
-    except Exception as e:
+    except (ModelOnexError, AttributeError, RuntimeError) as e:
         raise ModelOnexError(
             message="DI container not initialized - cannot get event type registry. "
             "Initialize the container first.",

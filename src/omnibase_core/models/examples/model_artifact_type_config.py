@@ -45,7 +45,7 @@ class ModelArtifactTypeConfig(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception as e:
+        except (AttributeError, ValueError, TypeError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
@@ -59,7 +59,7 @@ class ModelArtifactTypeConfig(BaseModel):
         """Validate instance integrity (ProtocolValidatable protocol)."""
         try:
             return True
-        except Exception as e:
+        except (AttributeError, ValueError, TypeError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",

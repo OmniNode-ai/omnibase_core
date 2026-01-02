@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pydantic import Field
 
+from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 "\nNode Type Model\n\nReplaces EnumNodeType with a proper model that includes metadata,\ndescriptions, and categorization for each node type.\n"
@@ -742,9 +743,9 @@ class ModelNodeType(BaseModel):
             "is_validator": self.is_validator,
             "requires_contract": self.requires_contract,
             # output_type is optional, use explicit None check
-            "output_type": self.output_type.value
-            if self.output_type is not None
-            else None,
+            "output_type": (
+                self.output_type.value if self.output_type is not None else None
+            ),
         }
         return result
 
@@ -790,8 +791,10 @@ class ModelNodeType(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception:
-            # fallback-ok: Metadata update failures should not break the system
+        except PYDANTIC_MODEL_ERRORS:
+            # fallback-ok: Metadata update failures should not break the system.
+            # PYDANTIC_MODEL_ERRORS covers AttributeError, TypeError, ValidationError, ValueError
+            # which are the exceptions raised by setattr with Pydantic validate_assignment=True.
             return False
 
     def serialize(self) -> TypedDictSerializedModel:
@@ -858,8 +861,6 @@ class ModelNodeType(BaseModel):
             requirements. Pydantic validation occurs automatically
             during instantiation and assignment.
         """
-        try:
-            return True
-        except Exception:
-            # fallback-ok: Validation failures should not raise exceptions
-            return False
+        # Pydantic handles validation automatically during instantiation.
+        # This method exists to satisfy the ProtocolValidatable interface.
+        return True

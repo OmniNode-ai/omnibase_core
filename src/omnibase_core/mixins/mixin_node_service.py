@@ -151,6 +151,7 @@ class MixinNodeService:
             # Main service event loop
             await self._service_event_loop()
 
+        # fallback-ok: service startup requires cleanup on any error
         except Exception as e:
             self._log_error(f"Failed to start service: {e}")
             await self.stop_service_mode()
@@ -192,6 +193,7 @@ class MixinNodeService:
             for callback in self._shutdown_callbacks:
                 try:
                     callback()
+                # fallback-ok: user callbacks must not crash shutdown
                 except Exception as e:
                     self._log_error(f"Shutdown callback failed: {e}")
 
@@ -202,6 +204,7 @@ class MixinNodeService:
             self._service_running = False
             self._log_info("Service stopped successfully")
 
+        # fallback-ok: shutdown must complete even if cleanup fails
         except Exception as e:
             self._log_error(f"Error during service shutdown: {e}")
             self._service_running = False
@@ -288,8 +291,23 @@ class MixinNodeService:
                 f"Tool invocation completed successfully in {execution_time_ms}ms",
             )
 
-        except Exception as e:
-            # Create error response
+        except (
+            AttributeError,
+            KeyError,
+            ModelOnexError,
+            OSError,
+            RuntimeError,
+            TimeoutError,
+            TypeError,
+            ValueError,
+        ) as e:
+            # Specific expected exceptions from tool invocation:
+            # - ValueError/TypeError: validation and type conversion errors
+            # - RuntimeError: execution environment errors
+            # - AttributeError/KeyError: state/parameter access errors
+            # - OSError: I/O and connection errors (includes ConnectionError)
+            # - TimeoutError: async operation timeouts
+            # - ModelOnexError: ONEX framework errors
             execution_time_ms = int((time.time() - start_time) * 1000)
             response_event = ModelToolResponseEvent.create_error_response(
                 correlation_id=correlation_id,
@@ -311,6 +329,31 @@ class MixinNodeService:
 
             self._failed_invocations += 1
             self._log_error(f"Tool invocation failed: {e}")
+
+        # fallback-ok: service must emit error response for any failure
+        # Fallback for truly unexpected exceptions not covered above.
+        except Exception as e:
+            execution_time_ms = int((time.time() - start_time) * 1000)
+            response_event = ModelToolResponseEvent.create_error_response(
+                correlation_id=correlation_id,
+                source_node_id=getattr(
+                    self, "node_id", getattr(self, "_node_id", uuid4())
+                ),
+                source_node_name=self._extract_node_name(),
+                tool_name=event.tool_name,
+                action=event.action,
+                error=str(e),
+                error_code="UNEXPECTED_ERROR",
+                execution_time_ms=execution_time_ms,
+                target_node_id=event.requester_node_id,
+                requester_id=event.requester_id,
+                execution_priority=event.priority,
+            )
+
+            await self._emit_tool_response(response_event)
+
+            self._failed_invocations += 1
+            self._log_error(f"Unexpected error during tool invocation: {e}")
 
         finally:
             # Remove from active invocations
@@ -378,9 +421,8 @@ class MixinNodeService:
                 container = self.container
                 if hasattr(container, "get_service"):
                     event_bus = container.get_service("event_bus")
-            except (
-                Exception
-            ):  # fallback-ok: service lookup failure continues to next strategy
+            except (AttributeError, KeyError, RuntimeError, TypeError, ValueError):
+                # fallback-ok: service lookup failure continues to next strategy
                 pass
 
         # Raise error if no event bus found
@@ -416,7 +458,7 @@ class MixinNodeService:
             # CRITICAL: Do not log here - file handles may be closed during teardown
             # Re-raise immediately without any I/O operations
             raise
-        except Exception as e:
+        except (OSError, RuntimeError, ValueError) as e:
             self._log_error(f"Service event loop error: {e}")
             raise
 
@@ -453,7 +495,7 @@ class MixinNodeService:
                 # CRITICAL: Do not log here - file handles may be closed during teardown
                 # Re-raise immediately without any I/O operations
                 raise
-            except Exception as e:
+            except (OSError, RuntimeError, ValueError) as e:
                 self._log_error(f"Health monitor error: {e}")
                 break  # Exit loop on exception
 
@@ -583,7 +625,8 @@ class MixinNodeService:
                 container = self.container
                 if hasattr(container, "get_service"):
                     event_bus = container.get_service("event_bus")
-            except Exception:  # fallback-ok: optional event bus for response
+            except (AttributeError, KeyError, RuntimeError, TypeError, ValueError):
+                # fallback-ok: optional event bus for response
                 pass
 
         # Emit event if bus available
@@ -617,13 +660,14 @@ class MixinNodeService:
                     container = self.container
                     if hasattr(container, "get_service"):
                         event_bus = container.get_service("event_bus")
-                except Exception:  # fallback-ok: optional event bus for shutdown
+                except (AttributeError, KeyError, RuntimeError, TypeError, ValueError):
+                    # fallback-ok: optional event bus for shutdown
                     pass
 
             if event_bus:
                 await event_bus.publish(shutdown_event)
 
-        except Exception as e:
+        except (ModelOnexError, RuntimeError, ValueError) as e:
             self._log_error(f"Failed to emit shutdown event: {e}")
 
     async def _cleanup_health_task(self) -> None:
@@ -654,15 +698,20 @@ class MixinNodeService:
             pass
 
         # Always await to ensure proper cleanup
-        # Use asyncio.shield to prevent cancellation from propagating
         try:
-            # Suppress cancellation to allow cleanup to complete
             await health_task
         except asyncio.CancelledError:
-            # Expected when cancelling - this is normal
-            pass
-        except Exception as e:
-            # Log unexpected errors during cleanup
+            # Distinguish between expected cancellation (we cancelled the health_task)
+            # vs external cancellation (someone cancelled _cleanup_health_task itself)
+            if health_task.cancelled():
+                # Expected - we initiated this cancellation, cleanup is complete
+                self._log_info("Health task cleanup completed (task was cancelled)")
+            else:
+                # External cancellation - re-raise for proper propagation
+                self._log_info("Cleanup interrupted by external cancellation")
+                raise
+        except Exception as e:  # fallback-ok: cleanup must complete even on error
+            # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
             self._log_error(f"Unexpected error during health task cleanup: {e}")
 
         # DO NOT set _health_task to None here - keep the reference
@@ -713,7 +762,7 @@ class MixinNodeService:
             signal.signal(signal.SIGTERM, signal_handler)
             signal.signal(signal.SIGINT, signal_handler)
 
-        except Exception as e:
+        except (OSError, RuntimeError, ValueError) as e:
             self._log_warning(f"Could not register signal handlers: {e}")
 
     def _extract_node_name(self) -> str:

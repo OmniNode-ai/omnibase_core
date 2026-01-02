@@ -447,7 +447,7 @@ class ModelContractBase(BaseModel, ABC):
                         description=description,
                     ),
                 )
-            except Exception as e:
+            except (ValueError, TypeError, KeyError, AttributeError) as e:
                 conversion_errors.append(
                     {
                         "index": i,

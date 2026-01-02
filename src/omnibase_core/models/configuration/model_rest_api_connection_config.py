@@ -71,7 +71,7 @@ class ModelRestApiConnectionConfig(BaseModel):
         # Parse URL to validate structure
         try:
             parsed = urlparse(v)
-        except Exception as e:
+        except ValueError as e:
             msg = f"Invalid URL format: {e}"
             raise ModelOnexError(
                 message=msg, error_code=EnumCoreErrorCode.VALIDATION_ERROR

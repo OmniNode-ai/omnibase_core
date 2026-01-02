@@ -371,7 +371,13 @@ class ModelONEXContainer:
                 # service_instance is already typed as T from resolve_service[T]
                 return service_instance
 
-            except Exception as registry_error:
+            except (
+                ModelOnexError,
+                AttributeError,
+                KeyError,
+                ValueError,
+                RuntimeError,
+            ) as registry_error:
                 # Fail fast - ServiceRegistry is the only resolution mechanism when enabled
                 emit_log_event(
                     LogLevel.ERROR,
@@ -467,7 +473,7 @@ class ModelONEXContainer:
 
             return service_instance
 
-        except Exception as e:
+        except (ModelOnexError, AttributeError, KeyError, RuntimeError) as e:
             end_time = time.perf_counter()
             resolution_time_ms = (end_time - start_time) * 1000
 
