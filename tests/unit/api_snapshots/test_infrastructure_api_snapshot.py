@@ -424,10 +424,10 @@ class TestInfrastructureReexportConsistency:
 
     def test_redis_available_reexport_identity(self) -> None:
         """Verify REDIS_AVAILABLE re-export is identical to original."""
-        from omnibase_core.backends.cache import REDIS_AVAILABLE as OriginalValue
-        from omnibase_core.infrastructure import REDIS_AVAILABLE as ReexportedValue
+        from omnibase_core.backends.cache import REDIS_AVAILABLE as ORIGINAL_VALUE
+        from omnibase_core.infrastructure import REDIS_AVAILABLE as REEXPORTED_VALUE
 
-        assert ReexportedValue is OriginalValue, (
+        assert REEXPORTED_VALUE is ORIGINAL_VALUE, (
             "REDIS_AVAILABLE re-export must be identical to original. "
             "Check the import in infrastructure/__init__.py"
         )
