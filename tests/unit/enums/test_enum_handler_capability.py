@@ -21,7 +21,6 @@ import yaml
 from pydantic import BaseModel, ValidationError
 
 from omnibase_core.enums.enum_handler_capability import EnumHandlerCapability
-from omnibase_core.errors import ModelOnexError
 
 
 @pytest.mark.unit

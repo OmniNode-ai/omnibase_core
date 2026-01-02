@@ -22,7 +22,6 @@ from enum import Enum
 import pytest
 
 from omnibase_core.enums.enum_handler_type_category import EnumHandlerTypeCategory
-from omnibase_core.errors import ModelOnexError
 
 
 @pytest.mark.unit

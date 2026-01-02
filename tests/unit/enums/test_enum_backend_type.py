@@ -4,7 +4,6 @@ import pytest
 
 from omnibase_core.enums.enum_backend_type import EnumBackendType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 @pytest.mark.unit
