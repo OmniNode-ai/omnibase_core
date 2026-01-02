@@ -23,7 +23,7 @@ from typing import Any
 
 import pytest
 
-from omnibase_core.mixins.mixin_caching import MixinCaching
+from omnibase_core.mixins import MixinCaching
 from omnibase_core.protocols.cache import ProtocolCacheBackend
 
 

@@ -51,9 +51,11 @@ __all__ = [
 try:
     from omnibase_core.backends.metrics.backend_metrics_prometheus import (  # noqa: F401
         BackendMetricsPrometheus,
+        sanitize_url,
     )
 
     __all__.append("BackendMetricsPrometheus")
+    __all__.append("sanitize_url")
 except ImportError:
     # prometheus-client not installed, Prometheus backend not available
     pass

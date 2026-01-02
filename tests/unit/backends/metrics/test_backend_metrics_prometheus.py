@@ -21,6 +21,7 @@ from omnibase_core.protocols.metrics import ProtocolMetricsBackend
 class TestBackendMetricsPrometheusInit:
     """Test suite for BackendMetricsPrometheus initialization."""
 
+    @pytest.mark.timeout(60)
     def test_init_creates_empty_storage(self) -> None:
         """Test that initialization creates empty metric storage."""
         backend = BackendMetricsPrometheus()
@@ -30,12 +31,14 @@ class TestBackendMetricsPrometheusInit:
         assert backend._counters == {}
         assert backend._histograms == {}
 
+    @pytest.mark.timeout(60)
     def test_init_with_prefix(self) -> None:
         """Test initialization with prefix."""
         backend = BackendMetricsPrometheus(prefix="myapp")
 
         assert backend._prefix == "myapp"
 
+    @pytest.mark.timeout(60)
     def test_init_with_push_gateway(self) -> None:
         """Test initialization with push gateway configuration."""
         backend = BackendMetricsPrometheus(
@@ -46,6 +49,7 @@ class TestBackendMetricsPrometheusInit:
         assert backend._push_gateway_url == "http://localhost:9091"
         assert backend._push_job_name == "test_job"
 
+    @pytest.mark.timeout(60)
     def test_implements_protocol(self) -> None:
         """Test that BackendMetricsPrometheus implements ProtocolMetricsBackend."""
         backend = BackendMetricsPrometheus()
@@ -58,6 +62,7 @@ class TestBackendMetricsPrometheusInit:
 class TestBackendMetricsPrometheusGauges:
     """Test suite for Prometheus gauge metric recording."""
 
+    @pytest.mark.timeout(60)
     def test_record_gauge_basic(self) -> None:
         """Test basic gauge recording."""
         backend = BackendMetricsPrometheus()
@@ -67,6 +72,7 @@ class TestBackendMetricsPrometheusGauges:
         # Gauge should be registered
         assert "memory_usage" in backend._gauges
 
+    @pytest.mark.timeout(60)
     def test_record_gauge_with_prefix(self) -> None:
         """Test gauge recording with prefix."""
         backend = BackendMetricsPrometheus(prefix="myapp")
@@ -76,6 +82,7 @@ class TestBackendMetricsPrometheusGauges:
         # Gauge should have prefixed name
         assert "myapp_memory_usage" in backend._gauges
 
+    @pytest.mark.timeout(60)
     def test_record_gauge_with_tags(self) -> None:
         """Test gauge recording with tags (labels)."""
         backend = BackendMetricsPrometheus()
@@ -87,6 +94,7 @@ class TestBackendMetricsPrometheusGauges:
         assert "cpu_usage" in backend._gauge_labels
         assert backend._gauge_labels["cpu_usage"] == ("host",)
 
+    @pytest.mark.timeout(60)
     def test_record_gauge_multiple_values(self) -> None:
         """Test recording multiple gauge values (overwrites)."""
         backend = BackendMetricsPrometheus()
@@ -98,6 +106,7 @@ class TestBackendMetricsPrometheusGauges:
         # Should still only have one gauge registered
         assert len(backend._gauges) == 1
 
+    @pytest.mark.timeout(60)
     def test_record_gauge_same_metric_different_labels_fails(self) -> None:
         """Test that same metric with different label sets fails with helpful error."""
         backend = BackendMetricsPrometheus()
@@ -117,6 +126,7 @@ class TestBackendMetricsPrometheusGauges:
 class TestBackendMetricsPrometheusCounters:
     """Test suite for Prometheus counter metric recording."""
 
+    @pytest.mark.timeout(60)
     def test_increment_counter_basic(self) -> None:
         """Test basic counter increment."""
         backend = BackendMetricsPrometheus()
@@ -125,6 +135,7 @@ class TestBackendMetricsPrometheusCounters:
 
         assert "requests_total" in backend._counters
 
+    @pytest.mark.timeout(60)
     def test_increment_counter_with_prefix(self) -> None:
         """Test counter increment with prefix."""
         backend = BackendMetricsPrometheus(prefix="myapp")
@@ -133,6 +144,7 @@ class TestBackendMetricsPrometheusCounters:
 
         assert "myapp_requests_total" in backend._counters
 
+    @pytest.mark.timeout(60)
     def test_increment_counter_with_tags(self) -> None:
         """Test counter increment with tags."""
         backend = BackendMetricsPrometheus()
@@ -142,6 +154,7 @@ class TestBackendMetricsPrometheusCounters:
         assert "requests_total" in backend._counters
         assert backend._counter_labels["requests_total"] == ("status",)
 
+    @pytest.mark.timeout(60)
     def test_increment_counter_custom_value(self) -> None:
         """Test counter increment with custom value."""
         backend = BackendMetricsPrometheus()
@@ -155,6 +168,7 @@ class TestBackendMetricsPrometheusCounters:
 class TestBackendMetricsPrometheusHistograms:
     """Test suite for Prometheus histogram metric recording."""
 
+    @pytest.mark.timeout(60)
     def test_record_histogram_basic(self) -> None:
         """Test basic histogram recording."""
         backend = BackendMetricsPrometheus()
@@ -163,6 +177,7 @@ class TestBackendMetricsPrometheusHistograms:
 
         assert "response_time" in backend._histograms
 
+    @pytest.mark.timeout(60)
     def test_record_histogram_with_prefix(self) -> None:
         """Test histogram recording with prefix."""
         backend = BackendMetricsPrometheus(prefix="myapp")
@@ -171,6 +186,7 @@ class TestBackendMetricsPrometheusHistograms:
 
         assert "myapp_response_time" in backend._histograms
 
+    @pytest.mark.timeout(60)
     def test_record_histogram_with_tags(self) -> None:
         """Test histogram recording with tags."""
         backend = BackendMetricsPrometheus()
@@ -182,6 +198,7 @@ class TestBackendMetricsPrometheusHistograms:
         assert "request_duration" in backend._histograms
         assert backend._histogram_labels["request_duration"] == ("endpoint",)
 
+    @pytest.mark.timeout(60)
     def test_record_histogram_with_custom_buckets(self) -> None:
         """Test histogram with custom bucket configuration."""
         backend = BackendMetricsPrometheus(
@@ -197,6 +214,7 @@ class TestBackendMetricsPrometheusHistograms:
 class TestBackendMetricsPrometheusPush:
     """Test suite for push functionality."""
 
+    @pytest.mark.timeout(60)
     def test_push_without_gateway_is_noop(self) -> None:
         """Test that push without gateway URL is a no-op."""
         backend = BackendMetricsPrometheus()
@@ -209,6 +227,7 @@ class TestBackendMetricsPrometheusPush:
 class TestBackendMetricsPrometheusRegistry:
     """Test suite for registry access."""
 
+    @pytest.mark.timeout(60)
     def test_get_registry_returns_registry(self) -> None:
         """Test that get_registry returns the collector registry."""
         from prometheus_client import CollectorRegistry
@@ -219,6 +238,7 @@ class TestBackendMetricsPrometheusRegistry:
 
         assert isinstance(registry, CollectorRegistry)
 
+    @pytest.mark.timeout(60)
     def test_custom_registry(self) -> None:
         """Test using a custom registry."""
         from prometheus_client import CollectorRegistry
@@ -233,6 +253,7 @@ class TestBackendMetricsPrometheusRegistry:
 class TestBackendMetricsPrometheusNameGeneration:
     """Test suite for metric name generation."""
 
+    @pytest.mark.timeout(60)
     def test_make_name_without_prefix(self) -> None:
         """Test name generation without prefix."""
         backend = BackendMetricsPrometheus()
@@ -241,6 +262,7 @@ class TestBackendMetricsPrometheusNameGeneration:
 
         assert result == "test_metric"
 
+    @pytest.mark.timeout(60)
     def test_make_name_with_prefix(self) -> None:
         """Test name generation with prefix."""
         backend = BackendMetricsPrometheus(prefix="myapp")
@@ -249,6 +271,7 @@ class TestBackendMetricsPrometheusNameGeneration:
 
         assert result == "myapp_test_metric"
 
+    @pytest.mark.timeout(60)
     def test_make_name_with_trailing_underscore_prefix(self) -> None:
         """Test name generation with trailing underscore in prefix."""
         backend = BackendMetricsPrometheus(prefix="myapp_")
@@ -262,6 +285,7 @@ class TestBackendMetricsPrometheusNameGeneration:
 class TestBackendMetricsPrometheusIntegration:
     """Integration tests for complete workflows."""
 
+    @pytest.mark.timeout(60)
     def test_full_metrics_workflow(self) -> None:
         """Test complete workflow with all metric types."""
         backend = BackendMetricsPrometheus(prefix="test")
@@ -276,6 +300,7 @@ class TestBackendMetricsPrometheusIntegration:
         assert "test_requests_total" in backend._counters
         assert "test_latency_seconds" in backend._histograms
 
+    @pytest.mark.timeout(60)
     def test_metrics_with_consistent_labels(self) -> None:
         """Test recording metrics with consistent label sets."""
         backend = BackendMetricsPrometheus()
@@ -288,6 +313,7 @@ class TestBackendMetricsPrometheusIntegration:
         assert len(backend._gauges) == 1
         assert backend._gauge_labels["http_requests"] == ("method",)
 
+    @pytest.mark.timeout(60)
     def test_multiple_tag_ordering(self) -> None:
         """Test that tags are consistently ordered."""
         backend = BackendMetricsPrometheus()
@@ -300,18 +326,24 @@ class TestBackendMetricsPrometheusIntegration:
 
 @pytest.mark.unit
 class TestBackendMetricsPrometheusPushReturnValue:
-    """Test suite for push() return value behavior."""
+    """Test suite for push() return value behavior.
 
-    def test_push_returns_false_without_gateway_url(self) -> None:
-        """Test that push returns False when no gateway URL is configured."""
+    Note: push() returns None per ProtocolMetricsBackend specification.
+    It does not indicate success/failure via return value.
+    """
+
+    @pytest.mark.timeout(60)
+    def test_push_returns_none_without_gateway_url(self) -> None:
+        """Test that push returns None when no gateway URL is configured."""
         backend = BackendMetricsPrometheus()
 
         result = backend.push()
 
-        assert result is False
+        assert result is None
 
-    def test_push_returns_false_without_job_name(self) -> None:
-        """Test that push returns False when no job name is configured."""
+    @pytest.mark.timeout(60)
+    def test_push_returns_none_without_job_name(self) -> None:
+        """Test that push returns None when no job name is configured."""
         backend = BackendMetricsPrometheus(
             push_gateway_url="http://localhost:9091",
             push_job_name="",  # Empty job name
@@ -319,13 +351,14 @@ class TestBackendMetricsPrometheusPushReturnValue:
 
         result = backend.push()
 
-        assert result is False
+        assert result is None
 
 
 @pytest.mark.unit
 class TestBackendMetricsPrometheusLabelMismatchErrors:
     """Test suite for label mismatch error messages."""
 
+    @pytest.mark.timeout(60)
     def test_gauge_label_mismatch_error_message_content(self) -> None:
         """Test that gauge label mismatch error contains helpful information."""
         backend = BackendMetricsPrometheus()
@@ -345,6 +378,7 @@ class TestBackendMetricsPrometheusLabelMismatchErrors:
             assert "Prometheus requires consistent label names" in error_msg
             assert "HOW TO FIX:" in error_msg
 
+    @pytest.mark.timeout(60)
     def test_counter_label_mismatch_error_message_content(self) -> None:
         """Test that counter label mismatch error contains helpful information."""
         backend = BackendMetricsPrometheus()
@@ -359,6 +393,7 @@ class TestBackendMetricsPrometheusLabelMismatchErrors:
             assert "test_counter" in error_msg
             assert "'method'" in error_msg
 
+    @pytest.mark.timeout(60)
     def test_histogram_label_mismatch_error_message_content(self) -> None:
         """Test that histogram label mismatch error contains helpful information."""
         backend = BackendMetricsPrometheus()
@@ -377,6 +412,7 @@ class TestBackendMetricsPrometheusLabelMismatchErrors:
 class TestBackendMetricsPrometheusCounterTagTracking:
     """Test suite for counter tag value combination tracking."""
 
+    @pytest.mark.timeout(60)
     def test_counter_tag_combinations_tracked(self) -> None:
         """Test that counter tag value combinations are tracked."""
         backend = BackendMetricsPrometheus()
@@ -388,6 +424,7 @@ class TestBackendMetricsPrometheusCounterTagTracking:
         assert len(combinations) == 1
         assert frozenset([("method", "GET"), ("status", "200")]) in combinations
 
+    @pytest.mark.timeout(60)
     def test_counter_multiple_tag_combinations_tracked(self) -> None:
         """Test that multiple tag value combinations are tracked."""
         backend = BackendMetricsPrometheus()
@@ -400,6 +437,7 @@ class TestBackendMetricsPrometheusCounterTagTracking:
         assert combinations is not None
         assert len(combinations) == 3
 
+    @pytest.mark.timeout(60)
     def test_counter_same_combination_not_duplicated(self) -> None:
         """Test that same tag value combination is not duplicated."""
         backend = BackendMetricsPrometheus()
@@ -412,6 +450,7 @@ class TestBackendMetricsPrometheusCounterTagTracking:
         assert combinations is not None
         assert len(combinations) == 1
 
+    @pytest.mark.timeout(60)
     def test_get_counter_tag_combinations_returns_none_for_unknown(self) -> None:
         """Test that get_counter_tag_combinations returns None for unknown counter."""
         backend = BackendMetricsPrometheus()
@@ -420,6 +459,7 @@ class TestBackendMetricsPrometheusCounterTagTracking:
 
         assert combinations is None
 
+    @pytest.mark.timeout(60)
     def test_counter_tag_combinations_with_prefix(self) -> None:
         """Test that tag combinations work correctly with prefixed counters."""
         backend = BackendMetricsPrometheus(prefix="myapp")
@@ -431,6 +471,7 @@ class TestBackendMetricsPrometheusCounterTagTracking:
         assert combinations is not None
         assert len(combinations) == 1
 
+    @pytest.mark.timeout(60)
     def test_counter_without_tags_not_tracked(self) -> None:
         """Test that counters without tags don't create empty tracking."""
         backend = BackendMetricsPrometheus()
@@ -447,6 +488,7 @@ class TestBackendMetricsPrometheusCounterTagTracking:
 class TestBackendMetricsPrometheusEnhancedLabelErrors:
     """Test suite for enhanced label mismatch error messages."""
 
+    @pytest.mark.timeout(60)
     def test_error_shows_missing_labels(self) -> None:
         """Test that error message shows which labels are missing."""
         backend = BackendMetricsPrometheus()
@@ -460,6 +502,7 @@ class TestBackendMetricsPrometheusEnhancedLabelErrors:
             assert "Missing labels (required but not provided):" in error_msg
             assert "'b'" in error_msg
 
+    @pytest.mark.timeout(60)
     def test_error_shows_extra_labels(self) -> None:
         """Test that error message shows which labels are unexpected."""
         backend = BackendMetricsPrometheus()
@@ -473,6 +516,7 @@ class TestBackendMetricsPrometheusEnhancedLabelErrors:
             assert "Extra labels (provided but not expected):" in error_msg
             assert "'b'" in error_msg
 
+    @pytest.mark.timeout(60)
     def test_error_shows_both_missing_and_extra(self) -> None:
         """Test that error shows both missing and extra labels."""
         backend = BackendMetricsPrometheus()
@@ -493,6 +537,7 @@ class TestBackendMetricsPrometheusEnhancedLabelErrors:
 class TestBackendMetricsPrometheusGaugeTagTracking:
     """Test suite for gauge tag value combination tracking."""
 
+    @pytest.mark.timeout(60)
     def test_gauge_tag_combinations_tracked(self) -> None:
         """Test that gauge tag value combinations are tracked."""
         backend = BackendMetricsPrometheus()
@@ -504,6 +549,7 @@ class TestBackendMetricsPrometheusGaugeTagTracking:
         assert len(combinations) == 1
         assert frozenset([("host", "server1")]) in combinations
 
+    @pytest.mark.timeout(60)
     def test_gauge_multiple_tag_combinations(self) -> None:
         """Test that multiple gauge tag combinations are tracked."""
         backend = BackendMetricsPrometheus()
@@ -520,6 +566,7 @@ class TestBackendMetricsPrometheusGaugeTagTracking:
 class TestBackendMetricsPrometheusHistogramTagTracking:
     """Test suite for histogram tag value combination tracking."""
 
+    @pytest.mark.timeout(60)
     def test_histogram_tag_combinations_tracked(self) -> None:
         """Test that histogram tag value combinations are tracked."""
         backend = BackendMetricsPrometheus()
@@ -536,6 +583,7 @@ class TestBackendMetricsPrometheusHistogramTagTracking:
 class TestBackendMetricsPrometheusCardinalityReport:
     """Test suite for cardinality report functionality."""
 
+    @pytest.mark.timeout(60)
     def test_get_cardinality_report(self) -> None:
         """Test getting cardinality report for all metric types."""
         backend = BackendMetricsPrometheus()
@@ -557,6 +605,7 @@ class TestBackendMetricsPrometheusCardinalityReport:
         assert report["counter"]["c1"] == 3
         assert report["histogram"]["h1"] == 1
 
+    @pytest.mark.timeout(60)
     def test_get_all_tag_combinations(self) -> None:
         """Test getting all tag combinations."""
         backend = BackendMetricsPrometheus()
@@ -577,6 +626,7 @@ class TestBackendMetricsPrometheusCardinalityReport:
 class TestBackendMetricsPrometheusPushRetry:
     """Test suite for push gateway retry functionality."""
 
+    @pytest.mark.timeout(60)
     def test_push_retry_configuration(self) -> None:
         """Test that push retry parameters can be configured."""
         backend = BackendMetricsPrometheus(
@@ -589,6 +639,7 @@ class TestBackendMetricsPrometheusPushRetry:
         assert backend._push_retry_delay == 1.0
         assert backend._push_retry_backoff == 3.0
 
+    @pytest.mark.timeout(60)
     def test_push_failure_stats_initial(self) -> None:
         """Test initial push failure stats are zero."""
         backend = BackendMetricsPrometheus()
@@ -598,6 +649,7 @@ class TestBackendMetricsPrometheusPushRetry:
         assert stats["consecutive_failures"] == 0
         assert stats["last_failure_time"] is None
 
+    @pytest.mark.timeout(60)
     def test_cardinality_warning_threshold_configurable(self) -> None:
         """Test that cardinality warning threshold is configurable."""
         backend = BackendMetricsPrometheus(cardinality_warning_threshold=50)
@@ -609,6 +661,7 @@ class TestBackendMetricsPrometheusPushRetry:
 class TestBackendMetricsPrometheusPushFailureError:
     """Test suite for push failure error formatting."""
 
+    @pytest.mark.timeout(60)
     def test_format_push_failure_connection_error(self) -> None:
         """Test formatting of connection error with hints."""
         backend = BackendMetricsPrometheus(push_gateway_url="http://localhost:9091")
@@ -622,6 +675,7 @@ class TestBackendMetricsPrometheusPushFailureError:
         assert "MockConnectionError" in result
         assert "Connection refused" in result
 
+    @pytest.mark.timeout(60)
     def test_format_push_failure_none_error(self) -> None:
         """Test formatting when error is None."""
         backend = BackendMetricsPrometheus()
@@ -630,6 +684,7 @@ class TestBackendMetricsPrometheusPushFailureError:
 
         assert result == "Unknown error"
 
+    @pytest.mark.timeout(60)
     def test_format_push_failure_timeout_hints(self) -> None:
         """Test that timeout errors get appropriate hints."""
         backend = BackendMetricsPrometheus(push_gateway_url="http://localhost:9091")
@@ -647,6 +702,7 @@ class TestBackendMetricsPrometheusPushFailureError:
 class TestBackendMetricsPrometheusDefaultValues:
     """Test suite for default value constants."""
 
+    @pytest.mark.timeout(60)
     def test_default_retry_values(self) -> None:
         """Test that default retry values are sensible."""
         assert BackendMetricsPrometheus.DEFAULT_PUSH_RETRY_COUNT == 3
@@ -654,6 +710,7 @@ class TestBackendMetricsPrometheusDefaultValues:
         assert BackendMetricsPrometheus.DEFAULT_PUSH_RETRY_BACKOFF == 2.0
         assert BackendMetricsPrometheus.DEFAULT_CARDINALITY_WARNING_THRESHOLD == 100
 
+    @pytest.mark.timeout(60)
     def test_default_values_used_when_none(self) -> None:
         """Test that defaults are used when None is passed."""
         backend = BackendMetricsPrometheus()

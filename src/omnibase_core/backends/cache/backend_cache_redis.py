@@ -70,6 +70,9 @@ from types import ModuleType
 from typing import TYPE_CHECKING
 from urllib.parse import urlparse, urlunparse
 
+from omnibase_core.enums import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+
 # Type-only imports for static analysis (ADR-005 compliant)
 # These are only evaluated by type checkers, not at runtime
 if TYPE_CHECKING:
@@ -444,7 +447,11 @@ class BackendCacheRedis:
             logger.error("Failed to connect to Redis: %s", safe_error)  # noqa: TRY400
             # Cleanup on failure to prevent resource leaks
             await self._cleanup_on_connect_failure()
-            raise ConnectionError(f"Failed to connect to Redis: {safe_error}") from e
+            raise ModelOnexError(
+                message=f"Failed to connect to Redis: {safe_error}",
+                error_code=EnumCoreErrorCode.CACHE_CONNECTION_ERROR,
+                context={"operation": "connect", "cache_type": "L2", "backend": "redis"},
+            ) from e
         except Exception as e:
             # Sanitize error message to prevent credential leakage
             safe_error = sanitize_error_message(str(e))
@@ -452,7 +459,16 @@ class BackendCacheRedis:
             # Use error not exception - traceback will be at caller level after re-raise
             logger.error("Unexpected error connecting to Redis: %s", safe_error)  # noqa: TRY400
             await self._cleanup_on_connect_failure()
-            raise ConnectionError(f"Failed to connect to Redis: {safe_error}") from e
+            raise ModelOnexError(
+                message=f"Failed to connect to Redis: {safe_error}",
+                error_code=EnumCoreErrorCode.CACHE_CONNECTION_ERROR,
+                context={
+                    "operation": "connect",
+                    "cache_type": "L2",
+                    "backend": "redis",
+                    "unexpected": True,
+                },
+            ) from e
 
     async def _cleanup_on_connect_failure(self) -> None:
         """Clean up resources after a connection failure."""

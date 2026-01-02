@@ -14,6 +14,7 @@ from omnibase_core.protocols.metrics import ProtocolMetricsBackend
 class TestBackendMetricsInMemoryInit:
     """Test suite for BackendMetricsInMemory initialization."""
 
+    @pytest.mark.timeout(60)
     def test_init_creates_empty_storage(self) -> None:
         """Test that initialization creates empty storage."""
         backend = BackendMetricsInMemory()
@@ -22,6 +23,7 @@ class TestBackendMetricsInMemoryInit:
         assert backend.get_counters() == {}
         assert backend.get_histograms() == {}
 
+    @pytest.mark.timeout(60)
     def test_implements_protocol(self) -> None:
         """Test that BackendMetricsInMemory implements ProtocolMetricsBackend."""
         backend = BackendMetricsInMemory()
@@ -34,6 +36,7 @@ class TestBackendMetricsInMemoryInit:
 class TestBackendMetricsInMemoryGauges:
     """Test suite for gauge metric recording."""
 
+    @pytest.mark.timeout(60)
     def test_record_gauge_basic(self) -> None:
         """Test basic gauge recording."""
         backend = BackendMetricsInMemory()
@@ -44,6 +47,7 @@ class TestBackendMetricsInMemoryGauges:
         assert "memory_usage" in gauges
         assert gauges["memory_usage"] == 1024.0
 
+    @pytest.mark.timeout(60)
     def test_record_gauge_with_tags(self) -> None:
         """Test gauge recording with tags."""
         backend = BackendMetricsInMemory()
@@ -54,6 +58,7 @@ class TestBackendMetricsInMemoryGauges:
         assert "cpu_usage{host=server1}" in gauges
         assert gauges["cpu_usage{host=server1}"] == 45.2
 
+    @pytest.mark.timeout(60)
     def test_record_gauge_with_multiple_tags(self) -> None:
         """Test gauge recording with multiple tags."""
         backend = BackendMetricsInMemory()
@@ -69,6 +74,7 @@ class TestBackendMetricsInMemoryGauges:
         assert "request_duration{endpoint=/api/users,method=GET}" in gauges
         assert gauges["request_duration{endpoint=/api/users,method=GET}"] == 0.5
 
+    @pytest.mark.timeout(60)
     def test_record_gauge_overwrites_existing(self) -> None:
         """Test that recording a gauge overwrites existing value."""
         backend = BackendMetricsInMemory()
@@ -79,6 +85,7 @@ class TestBackendMetricsInMemoryGauges:
         gauges = backend.get_gauges()
         assert gauges["temperature"] == 25.0
 
+    @pytest.mark.timeout(60)
     def test_record_gauge_negative_value(self) -> None:
         """Test recording gauge with negative value."""
         backend = BackendMetricsInMemory()
@@ -93,6 +100,7 @@ class TestBackendMetricsInMemoryGauges:
 class TestBackendMetricsInMemoryCounters:
     """Test suite for counter metric recording."""
 
+    @pytest.mark.timeout(60)
     def test_increment_counter_default(self) -> None:
         """Test counter increment with default value."""
         backend = BackendMetricsInMemory()
@@ -103,6 +111,7 @@ class TestBackendMetricsInMemoryCounters:
         assert "requests_total" in counters
         assert counters["requests_total"] == 1.0
 
+    @pytest.mark.timeout(60)
     def test_increment_counter_custom_value(self) -> None:
         """Test counter increment with custom value."""
         backend = BackendMetricsInMemory()
@@ -112,6 +121,7 @@ class TestBackendMetricsInMemoryCounters:
         counters = backend.get_counters()
         assert counters["bytes_sent"] == 1024.0
 
+    @pytest.mark.timeout(60)
     def test_increment_counter_with_tags(self) -> None:
         """Test counter increment with tags."""
         backend = BackendMetricsInMemory()
@@ -122,6 +132,7 @@ class TestBackendMetricsInMemoryCounters:
         assert "requests_total{status=200}" in counters
         assert counters["requests_total{status=200}"] == 1.0
 
+    @pytest.mark.timeout(60)
     def test_increment_counter_accumulates(self) -> None:
         """Test that counter increments accumulate."""
         backend = BackendMetricsInMemory()
@@ -138,6 +149,7 @@ class TestBackendMetricsInMemoryCounters:
 class TestBackendMetricsInMemoryHistograms:
     """Test suite for histogram metric recording."""
 
+    @pytest.mark.timeout(60)
     def test_record_histogram_basic(self) -> None:
         """Test basic histogram recording."""
         backend = BackendMetricsInMemory()
@@ -148,6 +160,7 @@ class TestBackendMetricsInMemoryHistograms:
         assert "response_time" in histograms
         assert histograms["response_time"] == [0.123]
 
+    @pytest.mark.timeout(60)
     def test_record_histogram_with_tags(self) -> None:
         """Test histogram recording with tags."""
         backend = BackendMetricsInMemory()
@@ -160,6 +173,7 @@ class TestBackendMetricsInMemoryHistograms:
         assert "request_duration{endpoint=/api/users}" in histograms
         assert histograms["request_duration{endpoint=/api/users}"] == [0.5]
 
+    @pytest.mark.timeout(60)
     def test_record_histogram_accumulates(self) -> None:
         """Test that histogram observations accumulate."""
         backend = BackendMetricsInMemory()
@@ -176,6 +190,7 @@ class TestBackendMetricsInMemoryHistograms:
 class TestBackendMetricsInMemoryUtilities:
     """Test suite for utility methods."""
 
+    @pytest.mark.timeout(60)
     def test_push_is_noop(self) -> None:
         """Test that push is a no-op for in-memory backend."""
         backend = BackendMetricsInMemory()
@@ -188,6 +203,7 @@ class TestBackendMetricsInMemoryUtilities:
         # Data should still be there
         assert backend.get_gauges()["test"] == 1.0
 
+    @pytest.mark.timeout(60)
     def test_clear_removes_all_metrics(self) -> None:
         """Test that clear removes all collected metrics."""
         backend = BackendMetricsInMemory()
@@ -202,6 +218,7 @@ class TestBackendMetricsInMemoryUtilities:
         assert backend.get_counters() == {}
         assert backend.get_histograms() == {}
 
+    @pytest.mark.timeout(60)
     def test_get_returns_copies(self) -> None:
         """Test that get methods return copies."""
         backend = BackendMetricsInMemory()
@@ -229,6 +246,7 @@ class TestBackendMetricsInMemoryUtilities:
 class TestBackendMetricsInMemoryKeyGeneration:
     """Test suite for metric key generation."""
 
+    @pytest.mark.timeout(60)
     def test_key_without_tags(self) -> None:
         """Test key generation without tags."""
         backend = BackendMetricsInMemory()
@@ -238,6 +256,7 @@ class TestBackendMetricsInMemoryKeyGeneration:
         gauges = backend.get_gauges()
         assert "simple_metric" in gauges
 
+    @pytest.mark.timeout(60)
     def test_key_with_empty_tags(self) -> None:
         """Test key generation with empty tags dict."""
         backend = BackendMetricsInMemory()
@@ -247,6 +266,7 @@ class TestBackendMetricsInMemoryKeyGeneration:
         gauges = backend.get_gauges()
         assert "metric" in gauges
 
+    @pytest.mark.timeout(60)
     def test_key_with_single_tag(self) -> None:
         """Test key generation with single tag."""
         backend = BackendMetricsInMemory()
@@ -256,6 +276,7 @@ class TestBackendMetricsInMemoryKeyGeneration:
         gauges = backend.get_gauges()
         assert "metric{key=value}" in gauges
 
+    @pytest.mark.timeout(60)
     def test_key_tags_sorted_alphabetically(self) -> None:
         """Test that tags are sorted alphabetically in key."""
         backend = BackendMetricsInMemory()
@@ -265,6 +286,7 @@ class TestBackendMetricsInMemoryKeyGeneration:
         gauges = backend.get_gauges()
         assert "metric{a=2,m=3,z=1}" in gauges
 
+    @pytest.mark.timeout(60)
     def test_different_tags_create_different_metrics(self) -> None:
         """Test that different tag combinations create different metrics."""
         backend = BackendMetricsInMemory()

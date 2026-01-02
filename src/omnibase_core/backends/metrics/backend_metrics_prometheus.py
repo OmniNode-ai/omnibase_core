@@ -44,11 +44,13 @@ from __future__ import annotations
 
 __all__ = [
     "BackendMetricsPrometheus",
+    "sanitize_url",
 ]
 
 import logging
 import time
 from typing import TYPE_CHECKING, TypeVar
+from urllib.parse import urlparse, urlunparse
 
 logger = logging.getLogger(__name__)
 
@@ -71,6 +73,55 @@ except ImportError:
 
 if TYPE_CHECKING:
     from prometheus_client import CollectorRegistry as CollectorRegistryType
+
+
+def sanitize_url(url: str | None) -> str:
+    """
+    Remove credentials from URL for safe logging.
+
+    Strips password (and optionally username) from URLs to prevent
+    credential leakage in logs, error messages, and monitoring systems.
+    Works with any URL scheme (http, https, redis, etc.).
+
+    Args:
+        url: Connection URL, potentially containing credentials.
+            Format: scheme://[username:password@]host[:port][/path]
+            If None, returns "<no-url>".
+
+    Returns:
+        Sanitized URL with credentials replaced by '***'.
+        Returns original URL if parsing fails or no credentials present.
+        Returns "<no-url>" if url is None.
+
+    Example:
+        >>> sanitize_url("http://user:secretpass@gateway:9091/metrics")
+        'http://***:***@gateway:9091/metrics'
+        >>> sanitize_url("https://admin:pass@pushgateway.example.com:9091")
+        'https://***:***@pushgateway.example.com:9091'
+        >>> sanitize_url("http://localhost:9091")
+        'http://localhost:9091'
+        >>> sanitize_url(None)
+        '<no-url>'
+
+    .. versionadded:: 0.5.7
+    """
+    if url is None:
+        return "<no-url>"
+
+    try:
+        parsed = urlparse(url)
+        if parsed.username or parsed.password:
+            # Reconstruct netloc with masked credentials
+            safe_netloc = "***:***@"
+            if parsed.hostname:
+                safe_netloc += parsed.hostname
+            if parsed.port:
+                safe_netloc += f":{parsed.port}"
+            return urlunparse(parsed._replace(netloc=safe_netloc))
+        return url
+    except Exception:
+        # If URL parsing fails, return a generic safe string
+        return "<url-parse-error>"
 
 
 class BackendMetricsPrometheus:
@@ -289,19 +340,16 @@ class BackendMetricsPrometheus:
         else:
             histogram.observe(value)
 
-    def push(self) -> bool:
+    def push(self) -> None:
         """
         Push metrics to Prometheus push gateway with retry logic.
 
-        If no push gateway URL is configured, this method returns False.
+        If no push gateway URL is configured, this method returns silently.
         Push failures are caught and logged with detailed error information,
         not propagated. Uses exponential backoff for retries.
-
-        Returns:
-            True if push was successful, False if no gateway configured or push failed.
         """
         if not self._push_gateway_url or not self._push_job_name:
-            return False
+            return
 
         last_exception: Exception | None = None
         delay = self._push_retry_delay
@@ -321,7 +369,7 @@ class BackendMetricsPrometheus:
                     )
                 self._consecutive_push_failures = 0
                 self._last_push_failure_time = None
-                return True
+                return
             except Exception as e:
                 last_exception = e
                 if attempt < self._push_retry_count - 1:
@@ -330,7 +378,7 @@ class BackendMetricsPrometheus:
                         "Retrying in %.2f seconds...",
                         attempt + 1,
                         self._push_retry_count,
-                        self._push_gateway_url,
+                        sanitize_url(self._push_gateway_url),
                         e,
                         delay,
                     )
@@ -346,12 +394,11 @@ class BackendMetricsPrometheus:
         logger.warning(
             "Failed to push metrics to gateway at %s after %d attempts. "
             "Consecutive failures: %d. Error: %s",
-            self._push_gateway_url,
+            sanitize_url(self._push_gateway_url),
             self._push_retry_count,
             self._consecutive_push_failures,
             error_details,
         )
-        return False
 
     def _format_push_failure_error(self, exception: Exception | None) -> str:
         """
@@ -374,7 +421,7 @@ class BackendMetricsPrometheus:
 
         if "Connection refused" in error_msg or "ConnectionError" in error_type:
             hints.append("Check if push gateway is running and accessible")
-            hints.append(f"Verify URL: {self._push_gateway_url}")
+            hints.append(f"Verify URL: {sanitize_url(self._push_gateway_url)}")
         elif "timeout" in error_msg.lower() or "Timeout" in error_type:
             hints.append("Push gateway may be overloaded or network is slow")
             hints.append("Consider increasing timeout or reducing push frequency")
@@ -382,7 +429,7 @@ class BackendMetricsPrometheus:
             hints.append("Check push gateway authentication configuration")
         elif "404" in error_msg:
             hints.append("Check push gateway URL path")
-            hints.append(f"Current URL: {self._push_gateway_url}")
+            hints.append(f"Current URL: {sanitize_url(self._push_gateway_url)}")
 
         base_msg = f"{error_type}: {error_msg}"
         if hints:
