@@ -234,5 +234,11 @@ class ModelHealthStatus(BaseModel):
         )
 
 
-# Enable forward references for recursive subsystem health
-ModelHealthStatus.model_rebuild()
+# Enable forward references for recursive subsystem health.
+# This rebuild is required for the self-referential subsystem_health field.
+# The try/except handles cases where nested models have unresolved forward references
+# during circular import resolution - these will be resolved later in __init__.py
+try:
+    ModelHealthStatus.model_rebuild()
+except Exception:  # error-ok: model_rebuild may fail during import, resolved in __init__.py
+    pass
