@@ -5,13 +5,13 @@
 
 import pytest
 
-from omnibase_core.pipeline.exceptions import CallableNotFoundError
-from omnibase_core.pipeline.models import (
+from omnibase_core.models.pipeline import (
     ModelExecutionPlan,
     ModelPhaseExecutionPlan,
     ModelPipelineHook,
     PipelinePhase,
 )
+from omnibase_core.pipeline.exceptions import CallableNotFoundError
 from omnibase_core.pipeline.runner_pipeline import (
     HookCallable,
     PipelineContext,
@@ -54,7 +54,7 @@ class TestRunnerPipelinePhaseExecutionOrder:
         for phase in ["preflight", "before", "execute", "after", "emit", "finalize"]:
             hooks_by_phase[phase] = [  # type: ignore[index]
                 ModelPipelineHook(
-                    hook_id=f"{phase}-hook",
+                    hook_name=f"{phase}-hook",
                     phase=phase,  # type: ignore[arg-type]
                     callable_ref=f"test.{phase}",
                 )
@@ -94,13 +94,13 @@ class TestRunnerPipelinePhaseExecutionOrder:
 
         hooks = [
             ModelPipelineHook(
-                hook_id="first", phase="execute", callable_ref="test.first"
+                hook_name="first", phase="execute", callable_ref="test.first"
             ),
             ModelPipelineHook(
-                hook_id="second", phase="execute", callable_ref="test.second"
+                hook_name="second", phase="execute", callable_ref="test.second"
             ),
             ModelPipelineHook(
-                hook_id="third", phase="execute", callable_ref="test.third"
+                hook_name="third", phase="execute", callable_ref="test.third"
             ),
         ]
         plan = make_plan_with_hooks(("execute", hooks))
@@ -132,7 +132,7 @@ class TestRunnerPipelineFinalizeAlwaysRuns:
 
         hooks = [
             ModelPipelineHook(
-                hook_id="finalize",
+                hook_name="finalize",
                 phase="finalize",
                 callable_ref="test.finalize",
             )
@@ -159,12 +159,12 @@ class TestRunnerPipelineFinalizeAlwaysRuns:
             finalize_ran.append(True)
 
         execute_hook = ModelPipelineHook(
-            hook_id="failing",
+            hook_name="failing",
             phase="execute",
             callable_ref="test.failing",
         )
         finalize_hook_model = ModelPipelineHook(
-            hook_id="finalize",
+            hook_name="finalize",
             phase="finalize",
             callable_ref="test.finalize",
         )
@@ -207,10 +207,10 @@ class TestRunnerPipelineErrorHandlingPerPhase:
 
         hooks = [
             ModelPipelineHook(
-                hook_id="first", phase="preflight", callable_ref="test.first"
+                hook_name="first", phase="preflight", callable_ref="test.first"
             ),
             ModelPipelineHook(
-                hook_id="second", phase="preflight", callable_ref="test.second"
+                hook_name="second", phase="preflight", callable_ref="test.second"
             ),
         ]
         plan = make_plan_with_hooks(("preflight", hooks))
@@ -240,10 +240,10 @@ class TestRunnerPipelineErrorHandlingPerPhase:
 
         hooks = [
             ModelPipelineHook(
-                hook_id="first", phase="before", callable_ref="test.first"
+                hook_name="first", phase="before", callable_ref="test.first"
             ),
             ModelPipelineHook(
-                hook_id="second", phase="before", callable_ref="test.second"
+                hook_name="second", phase="before", callable_ref="test.second"
             ),
         ]
         plan = make_plan_with_hooks(("before", hooks))
@@ -273,10 +273,10 @@ class TestRunnerPipelineErrorHandlingPerPhase:
 
         hooks = [
             ModelPipelineHook(
-                hook_id="first", phase="execute", callable_ref="test.first"
+                hook_name="first", phase="execute", callable_ref="test.first"
             ),
             ModelPipelineHook(
-                hook_id="second", phase="execute", callable_ref="test.second"
+                hook_name="second", phase="execute", callable_ref="test.second"
             ),
         ]
         plan = make_plan_with_hooks(("execute", hooks))
@@ -306,10 +306,10 @@ class TestRunnerPipelineErrorHandlingPerPhase:
 
         hooks = [
             ModelPipelineHook(
-                hook_id="first", phase="after", callable_ref="test.first"
+                hook_name="first", phase="after", callable_ref="test.first"
             ),
             ModelPipelineHook(
-                hook_id="second", phase="after", callable_ref="test.second"
+                hook_name="second", phase="after", callable_ref="test.second"
             ),
         ]
         plan = make_plan_with_hooks(("after", hooks))
@@ -339,9 +339,11 @@ class TestRunnerPipelineErrorHandlingPerPhase:
             execution_order.append("second")
 
         hooks = [
-            ModelPipelineHook(hook_id="first", phase="emit", callable_ref="test.first"),
             ModelPipelineHook(
-                hook_id="second", phase="emit", callable_ref="test.second"
+                hook_name="first", phase="emit", callable_ref="test.first"
+            ),
+            ModelPipelineHook(
+                hook_name="second", phase="emit", callable_ref="test.second"
             ),
         ]
         plan = make_plan_with_hooks(("emit", hooks))
@@ -372,10 +374,10 @@ class TestRunnerPipelineErrorHandlingPerPhase:
 
         hooks = [
             ModelPipelineHook(
-                hook_id="first", phase="finalize", callable_ref="test.first"
+                hook_name="first", phase="finalize", callable_ref="test.first"
             ),
             ModelPipelineHook(
-                hook_id="second", phase="finalize", callable_ref="test.second"
+                hook_name="second", phase="finalize", callable_ref="test.second"
             ),
         ]
         plan = make_plan_with_hooks(("finalize", hooks))
@@ -410,10 +412,10 @@ class TestRunnerPipelineAsyncHookSupport:
 
         hooks = [
             ModelPipelineHook(
-                hook_id="async", phase="execute", callable_ref="test.async"
+                hook_name="async", phase="execute", callable_ref="test.async"
             ),
             ModelPipelineHook(
-                hook_id="sync", phase="execute", callable_ref="test.sync"
+                hook_name="sync", phase="execute", callable_ref="test.sync"
             ),
         ]
         plan = make_plan_with_hooks(("execute", hooks))
@@ -443,15 +445,15 @@ class TestRunnerPipelineAsyncHookSupport:
 
         hooks = [
             ModelPipelineHook(
-                hook_id="sync_first", phase="execute", callable_ref="test.sync_first"
+                hook_name="sync_first", phase="execute", callable_ref="test.sync_first"
             ),
             ModelPipelineHook(
-                hook_id="async_middle",
+                hook_name="async_middle",
                 phase="execute",
                 callable_ref="test.async_middle",
             ),
             ModelPipelineHook(
-                hook_id="sync_last", phase="execute", callable_ref="test.sync_last"
+                hook_name="sync_last", phase="execute", callable_ref="test.sync_last"
             ),
         ]
         plan = make_plan_with_hooks(("execute", hooks))
@@ -509,10 +511,10 @@ class TestRunnerPipelinePipelineContext:
 
         hooks = [
             ModelPipelineHook(
-                hook_id="first", phase="execute", callable_ref="test.first"
+                hook_name="first", phase="execute", callable_ref="test.first"
             ),
             ModelPipelineHook(
-                hook_id="second", phase="execute", callable_ref="test.second"
+                hook_name="second", phase="execute", callable_ref="test.second"
             ),
         ]
         plan = make_plan_with_hooks(("execute", hooks))
@@ -546,7 +548,7 @@ class TestRunnerPipelinePipelineContext:
                 "preflight",
                 [
                     ModelPipelineHook(
-                        hook_id="preflight",
+                        hook_name="preflight",
                         phase="preflight",
                         callable_ref="test.preflight",
                     )
@@ -556,7 +558,9 @@ class TestRunnerPipelinePipelineContext:
                 "execute",
                 [
                     ModelPipelineHook(
-                        hook_id="execute", phase="execute", callable_ref="test.execute"
+                        hook_name="execute",
+                        phase="execute",
+                        callable_ref="test.execute",
                     )
                 ],
             ),
@@ -564,7 +568,7 @@ class TestRunnerPipelinePipelineContext:
                 "finalize",
                 [
                     ModelPipelineHook(
-                        hook_id="finalize",
+                        hook_name="finalize",
                         phase="finalize",
                         callable_ref="test.finalize",
                     )
@@ -600,7 +604,7 @@ class TestRunnerPipelinePipelineResult:
             pass
 
         hooks = [
-            ModelPipelineHook(hook_id="ok", phase="execute", callable_ref="test.ok")
+            ModelPipelineHook(hook_name="ok", phase="execute", callable_ref="test.ok")
         ]
         plan = make_plan_with_hooks(("execute", hooks))
 
@@ -620,7 +624,7 @@ class TestRunnerPipelinePipelineResult:
 
         hooks = [
             ModelPipelineHook(
-                hook_id="failing", phase="after", callable_ref="test.failing"
+                hook_name="failing", phase="after", callable_ref="test.failing"
             )
         ]
         plan = make_plan_with_hooks(("after", hooks))
@@ -632,7 +636,7 @@ class TestRunnerPipelinePipelineResult:
 
         assert result.success is False
         assert len(result.errors) == 1
-        assert result.errors[0].hook_id == "failing"
+        assert result.errors[0].hook_name == "failing"
         assert result.errors[0].phase == "after"
         assert "RuntimeError" in result.errors[0].error_type
 
@@ -646,7 +650,7 @@ class TestRunnerPipelineCallableResolution:
         """Missing callable in registry raises error at __init__ time (fail-fast)."""
         hooks = [
             ModelPipelineHook(
-                hook_id="missing",
+                hook_name="missing",
                 phase="execute",
                 callable_ref="test.nonexistent",
             )
@@ -662,12 +666,12 @@ class TestRunnerPipelineCallableResolution:
         """Multiple missing callables are all listed in the error message."""
         hooks = [
             ModelPipelineHook(
-                hook_id="first",
+                hook_name="first",
                 phase="execute",
                 callable_ref="test.missing_one",
             ),
             ModelPipelineHook(
-                hook_id="second",
+                hook_name="second",
                 phase="execute",
                 callable_ref="test.missing_two",
             ),
@@ -690,7 +694,7 @@ class TestRunnerPipelineCallableResolution:
                 "preflight",
                 [
                     ModelPipelineHook(
-                        hook_id="preflight_hook",
+                        hook_name="preflight_hook",
                         phase="preflight",
                         callable_ref="test.preflight_missing",
                     )
@@ -700,7 +704,7 @@ class TestRunnerPipelineCallableResolution:
                 "execute",
                 [
                     ModelPipelineHook(
-                        hook_id="execute_hook",
+                        hook_name="execute_hook",
                         phase="execute",
                         callable_ref="test.execute_missing",
                     )
@@ -725,12 +729,12 @@ class TestRunnerPipelineCallableResolution:
 
         hooks = [
             ModelPipelineHook(
-                hook_id="exists",
+                hook_name="exists",
                 phase="execute",
                 callable_ref="test.exists",
             ),
             ModelPipelineHook(
-                hook_id="missing",
+                hook_name="missing",
                 phase="execute",
                 callable_ref="test.missing",
             ),
@@ -768,7 +772,7 @@ class TestRunnerPipelineCallableResolution:
 
         hooks = [
             ModelPipelineHook(
-                hook_id="test",
+                hook_name="test",
                 phase="execute",
                 callable_ref="test.hook",
             )
@@ -814,7 +818,7 @@ class TestRunnerPipelineComplexPipeline:
 
         for phase in all_phases:
             hook = ModelPipelineHook(
-                hook_id=f"{phase}-hook",
+                hook_name=f"{phase}-hook",
                 phase=phase,
                 callable_ref=f"test.{phase}",
             )
@@ -852,7 +856,7 @@ class TestRunnerPipelineComplexPipeline:
                 "preflight",
                 [
                     ModelPipelineHook(
-                        hook_id="preflight",
+                        hook_name="preflight",
                         phase="preflight",
                         callable_ref="test.preflight",
                     )
@@ -862,7 +866,7 @@ class TestRunnerPipelineComplexPipeline:
                 "before",
                 [
                     ModelPipelineHook(
-                        hook_id="before", phase="before", callable_ref="test.before"
+                        hook_name="before", phase="before", callable_ref="test.before"
                     )
                 ],
             ),
@@ -870,7 +874,9 @@ class TestRunnerPipelineComplexPipeline:
                 "execute",
                 [
                     ModelPipelineHook(
-                        hook_id="execute", phase="execute", callable_ref="test.execute"
+                        hook_name="execute",
+                        phase="execute",
+                        callable_ref="test.execute",
                     )
                 ],
             ),
@@ -878,7 +884,7 @@ class TestRunnerPipelineComplexPipeline:
                 "finalize",
                 [
                     ModelPipelineHook(
-                        hook_id="finalize",
+                        hook_name="finalize",
                         phase="finalize",
                         callable_ref="test.finalize",
                     )
@@ -920,7 +926,7 @@ class TestRunnerPipelineTimeoutEnforcement:
             await asyncio.sleep(1.0)  # Sleep longer than timeout
 
         hook = ModelPipelineHook(
-            hook_id="slow",
+            hook_name="slow",
             phase="execute",
             callable_ref="test.slow",
             timeout_seconds=0.1,  # 100ms timeout
@@ -948,7 +954,7 @@ class TestRunnerPipelineTimeoutEnforcement:
             time.sleep(1.0)  # Sleep longer than timeout
 
         hook = ModelPipelineHook(
-            hook_id="slow_sync",
+            hook_name="slow_sync",
             phase="execute",
             callable_ref="test.slow_sync",
             timeout_seconds=0.1,  # 100ms timeout
@@ -979,7 +985,7 @@ class TestRunnerPipelineTimeoutEnforcement:
             executed.append(True)
 
         hook = ModelPipelineHook(
-            hook_id="fast",
+            hook_name="fast",
             phase="execute",
             callable_ref="test.fast",
             timeout_seconds=1.0,  # 1 second timeout
@@ -1005,7 +1011,7 @@ class TestRunnerPipelineTimeoutEnforcement:
             executed.append(True)
 
         hook = ModelPipelineHook(
-            hook_id="fast_sync",
+            hook_name="fast_sync",
             phase="execute",
             callable_ref="test.fast_sync",
             timeout_seconds=1.0,  # 1 second timeout
@@ -1033,7 +1039,7 @@ class TestRunnerPipelineTimeoutEnforcement:
             executed.append(True)
 
         hook = ModelPipelineHook(
-            hook_id="no_timeout",
+            hook_name="no_timeout",
             phase="execute",
             callable_ref="test.no_timeout",
             # No timeout_seconds specified - defaults to None
@@ -1058,7 +1064,7 @@ class TestRunnerPipelineTimeoutEnforcement:
             await asyncio.sleep(1.0)
 
         hook = ModelPipelineHook(
-            hook_id="slow_after",
+            hook_name="slow_after",
             phase="after",
             callable_ref="test.slow_after",
             timeout_seconds=0.1,
@@ -1073,7 +1079,7 @@ class TestRunnerPipelineTimeoutEnforcement:
         # Continue phase captures errors
         assert result.success is False
         assert len(result.errors) == 1
-        assert result.errors[0].hook_id == "slow_after"
+        assert result.errors[0].hook_name == "slow_after"
         assert "HookTimeoutError" in result.errors[0].error_type
 
     @pytest.mark.unit
@@ -1096,13 +1102,13 @@ class TestRunnerPipelineTimeoutEnforcement:
 
         hooks = [
             ModelPipelineHook(
-                hook_id="slow",
+                hook_name="slow",
                 phase="execute",
                 callable_ref="test.slow",
                 timeout_seconds=0.1,
             ),
             ModelPipelineHook(
-                hook_id="second",
+                hook_name="second",
                 phase="execute",
                 callable_ref="test.second",
             ),
@@ -1157,7 +1163,7 @@ class TestRunnerPipelineExceptionModels:
         # Context is stored in additional_context -> context for custom keys
         additional = error.context.get("additional_context", {})
         context_dict = additional.get("context", {})
-        assert context_dict.get("hook_id") == "my_hook"
+        assert context_dict.get("hook_name") == "my_hook"
         assert context_dict.get("timeout_seconds") == 5.0
 
     @pytest.mark.unit

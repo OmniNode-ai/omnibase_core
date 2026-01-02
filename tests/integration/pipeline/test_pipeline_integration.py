@@ -93,7 +93,7 @@ class TestPipelineEndToEndExecution:
         callable_registry: dict[str, HookCallable] = {}
         for phase in phases:
             hook = ModelPipelineHook(
-                hook_id=f"{phase}_hook",
+                hook_name=f"{phase}_hook",
                 phase=phase,
                 callable_ref=f"hooks.{phase}",
             )
@@ -154,21 +154,21 @@ class TestPipelineEndToEndExecution:
 
         # In execute phase: c depends on b, b depends on a
         hook_a = ModelPipelineHook(
-            hook_id="hook_a",
+            hook_name="hook_a",
             phase="execute",
             callable_ref="hooks.a",
             priority=100,
             dependencies=[],
         )
         hook_b = ModelPipelineHook(
-            hook_id="hook_b",
+            hook_name="hook_b",
             phase="execute",
             callable_ref="hooks.b",
             priority=100,
             dependencies=["hook_a"],
         )
         hook_c = ModelPipelineHook(
-            hook_id="hook_c",
+            hook_name="hook_c",
             phase="execute",
             callable_ref="hooks.c",
             priority=100,
@@ -217,19 +217,19 @@ class TestPipelineEndToEndExecution:
         # Register hooks with different priorities (no dependencies)
         hooks = [
             ModelPipelineHook(
-                hook_id="high_priority",
+                hook_name="high_priority",
                 phase="execute",
                 callable_ref="hooks.high",
                 priority=10,
             ),
             ModelPipelineHook(
-                hook_id="low_priority",
+                hook_name="low_priority",
                 phase="execute",
                 callable_ref="hooks.low",
                 priority=200,
             ),
             ModelPipelineHook(
-                hook_id="medium_priority",
+                hook_name="medium_priority",
                 phase="execute",
                 callable_ref="hooks.medium",
                 priority=100,
@@ -290,22 +290,22 @@ class TestPipelineErrorHandlingIntegration:
         registry = RegistryHook()
         registry.register(
             ModelPipelineHook(
-                hook_id="preflight", phase="preflight", callable_ref="hooks.preflight"
+                hook_name="preflight", phase="preflight", callable_ref="hooks.preflight"
             )
         )
         registry.register(
             ModelPipelineHook(
-                hook_id="before", phase="before", callable_ref="hooks.before"
+                hook_name="before", phase="before", callable_ref="hooks.before"
             )
         )
         registry.register(
             ModelPipelineHook(
-                hook_id="execute", phase="execute", callable_ref="hooks.execute"
+                hook_name="execute", phase="execute", callable_ref="hooks.execute"
             )
         )
         registry.register(
             ModelPipelineHook(
-                hook_id="finalize", phase="finalize", callable_ref="hooks.finalize"
+                hook_name="finalize", phase="finalize", callable_ref="hooks.finalize"
             )
         )
         registry.freeze()
@@ -357,7 +357,7 @@ class TestPipelineErrorHandlingIntegration:
         # Register multiple hooks in after phase (continue-on-error)
         registry.register(
             ModelPipelineHook(
-                hook_id="after_1",
+                hook_name="after_1",
                 phase="after",
                 callable_ref="hooks.after_1",
                 priority=10,
@@ -365,7 +365,7 @@ class TestPipelineErrorHandlingIntegration:
         )
         registry.register(
             ModelPipelineHook(
-                hook_id="after_2",
+                hook_name="after_2",
                 phase="after",
                 callable_ref="hooks.after_2",
                 priority=20,
@@ -373,7 +373,7 @@ class TestPipelineErrorHandlingIntegration:
         )
         registry.register(
             ModelPipelineHook(
-                hook_id="after_3",
+                hook_name="after_3",
                 phase="after",
                 callable_ref="hooks.after_3",
                 priority=30,
@@ -400,8 +400,8 @@ class TestPipelineErrorHandlingIntegration:
         # Two errors should be collected
         assert result.success is False
         assert len(result.errors) == 2
-        assert result.errors[0].hook_id == "after_1"
-        assert result.errors[1].hook_id == "after_3"
+        assert result.errors[0].hook_name == "after_1"
+        assert result.errors[1].hook_name == "after_3"
 
     @pytest.mark.asyncio
     async def test_dependency_cycle_detection(self) -> None:
@@ -416,7 +416,7 @@ class TestPipelineErrorHandlingIntegration:
         # Create circular dependency: a -> b -> c -> a
         registry.register(
             ModelPipelineHook(
-                hook_id="hook_a",
+                hook_name="hook_a",
                 phase="execute",
                 callable_ref="hooks.a",
                 dependencies=["hook_c"],
@@ -424,7 +424,7 @@ class TestPipelineErrorHandlingIntegration:
         )
         registry.register(
             ModelPipelineHook(
-                hook_id="hook_b",
+                hook_name="hook_b",
                 phase="execute",
                 callable_ref="hooks.b",
                 dependencies=["hook_a"],
@@ -432,7 +432,7 @@ class TestPipelineErrorHandlingIntegration:
         )
         registry.register(
             ModelPipelineHook(
-                hook_id="hook_c",
+                hook_name="hook_c",
                 phase="execute",
                 callable_ref="hooks.c",
                 dependencies=["hook_b"],
@@ -465,7 +465,7 @@ class TestPipelineErrorHandlingIntegration:
 
         registry.register(
             ModelPipelineHook(
-                hook_id="hook_a",
+                hook_name="hook_a",
                 phase="execute",
                 callable_ref="hooks.a",
                 dependencies=["nonexistent_hook"],
@@ -482,7 +482,7 @@ class TestPipelineErrorHandlingIntegration:
         assert exc_info.value.context is not None
         additional_ctx = exc_info.value.context.get("additional_context", {})
         inner_ctx = additional_ctx.get("context", {})
-        assert inner_ctx.get("hook_id") == "hook_a"
+        assert inner_ctx.get("hook_name") == "hook_a"
         assert inner_ctx.get("unknown_dependency") == "nonexistent_hook"
 
 
@@ -504,7 +504,7 @@ class TestPipelineHookRegistryIntegration:
 
         registry.register(
             ModelPipelineHook(
-                hook_id="hook_1", phase="execute", callable_ref="hooks.one"
+                hook_name="hook_1", phase="execute", callable_ref="hooks.one"
             )
         )
 
@@ -515,7 +515,7 @@ class TestPipelineHookRegistryIntegration:
         with pytest.raises(HookRegistryFrozenError):
             registry.register(
                 ModelPipelineHook(
-                    hook_id="hook_2", phase="execute", callable_ref="hooks.two"
+                    hook_name="hook_2", phase="execute", callable_ref="hooks.two"
                 )
             )
 
@@ -523,8 +523,8 @@ class TestPipelineHookRegistryIntegration:
         registry.freeze()
         assert registry.is_frozen
 
-    def test_duplicate_hook_id_detection(self) -> None:
-        """Test that duplicate hook IDs are detected.
+    def test_duplicate_hook_name_detection(self) -> None:
+        """Test that duplicate hook names are detected.
 
         Verifies:
         - Registering hook with same ID raises error
@@ -533,12 +533,12 @@ class TestPipelineHookRegistryIntegration:
         registry = RegistryHook()
 
         hook_1 = ModelPipelineHook(
-            hook_id="duplicate_id", phase="execute", callable_ref="hooks.first"
+            hook_name="duplicate_id", phase="execute", callable_ref="hooks.first"
         )
         registry.register(hook_1)
 
         hook_2 = ModelPipelineHook(
-            hook_id="duplicate_id", phase="before", callable_ref="hooks.second"
+            hook_name="duplicate_id", phase="before", callable_ref="hooks.second"
         )
 
         with pytest.raises(DuplicateHookError) as exc_info:
@@ -548,10 +548,10 @@ class TestPipelineHookRegistryIntegration:
         assert exc_info.value.context is not None
         additional_ctx = exc_info.value.context.get("additional_context", {})
         inner_ctx = additional_ctx.get("context", {})
-        assert inner_ctx.get("hook_id") == "duplicate_id"
+        assert inner_ctx.get("hook_name") == "duplicate_id"
 
         # Original hook should still be retrievable
-        retrieved = registry.get_hook_by_id("duplicate_id")
+        retrieved = registry.get_hook_by_name("duplicate_id")
         assert retrieved is not None
         assert retrieved.callable_ref == "hooks.first"
 
@@ -574,13 +574,13 @@ class TestPipelineHookRegistryIntegration:
             "after": ["af_1"],
         }
 
-        for phase, hook_ids in phases_hooks.items():
-            for hook_id in hook_ids:
+        for phase, hook_names in phases_hooks.items():
+            for hook_name in hook_names:
                 registry.register(
                     ModelPipelineHook(
-                        hook_id=hook_id,
+                        hook_name=hook_name,
                         phase=phase,
-                        callable_ref=f"hooks.{hook_id}",
+                        callable_ref=f"hooks.{hook_name}",
                     )
                 )
 
@@ -589,7 +589,7 @@ class TestPipelineHookRegistryIntegration:
         # Verify phase grouping
         for phase, expected_ids in phases_hooks.items():
             phase_hooks = registry.get_hooks_by_phase(phase)
-            actual_ids = [h.hook_id for h in phase_hooks]
+            actual_ids = [h.hook_name for h in phase_hooks]
             assert sorted(actual_ids) == sorted(expected_ids)
 
         # Verify total count
@@ -676,7 +676,7 @@ class TestPipelineMiddlewareIntegration:
         registry = RegistryHook()
         registry.register(
             ModelPipelineHook(
-                hook_id="test_hook", phase="execute", callable_ref="hooks.test"
+                hook_name="test_hook", phase="execute", callable_ref="hooks.test"
             )
         )
         registry.freeze()
@@ -743,7 +743,7 @@ class TestPipelineAsyncHookIntegration:
         registry = RegistryHook()
         registry.register(
             ModelPipelineHook(
-                hook_id="sync_1",
+                hook_name="sync_1",
                 phase="execute",
                 callable_ref="hooks.sync_1",
                 priority=10,
@@ -751,7 +751,7 @@ class TestPipelineAsyncHookIntegration:
         )
         registry.register(
             ModelPipelineHook(
-                hook_id="async_1",
+                hook_name="async_1",
                 phase="execute",
                 callable_ref="hooks.async_1",
                 priority=20,
@@ -759,7 +759,7 @@ class TestPipelineAsyncHookIntegration:
         )
         registry.register(
             ModelPipelineHook(
-                hook_id="sync_2",
+                hook_name="sync_2",
                 phase="execute",
                 callable_ref="hooks.sync_2",
                 priority=30,
@@ -767,7 +767,7 @@ class TestPipelineAsyncHookIntegration:
         )
         registry.register(
             ModelPipelineHook(
-                hook_id="async_2",
+                hook_name="async_2",
                 phase="execute",
                 callable_ref="hooks.async_2",
                 priority=40,
@@ -803,7 +803,7 @@ class TestPipelineAsyncHookIntegration:
         registry = RegistryHook()
         registry.register(
             ModelPipelineHook(
-                hook_id="slow_hook",
+                hook_name="slow_hook",
                 phase="execute",
                 callable_ref="hooks.slow",
                 timeout_seconds=0.1,  # 100ms timeout
@@ -828,7 +828,7 @@ class TestPipelineAsyncHookIntegration:
         assert exc_info.value.context is not None
         additional_ctx = exc_info.value.context.get("additional_context", {})
         inner_ctx = additional_ctx.get("context", {})
-        assert inner_ctx.get("hook_id") == "slow_hook"
+        assert inner_ctx.get("hook_name") == "slow_hook"
         assert inner_ctx.get("timeout_seconds") == 0.1
 
 
@@ -865,12 +865,12 @@ class TestPipelineExecutionPlanBuilding:
         #     D
         registry.register(
             ModelPipelineHook(
-                hook_id="A", phase="execute", callable_ref="hooks.A", dependencies=[]
+                hook_name="A", phase="execute", callable_ref="hooks.A", dependencies=[]
             )
         )
         registry.register(
             ModelPipelineHook(
-                hook_id="B",
+                hook_name="B",
                 phase="execute",
                 callable_ref="hooks.B",
                 dependencies=["A"],
@@ -878,7 +878,7 @@ class TestPipelineExecutionPlanBuilding:
         )
         registry.register(
             ModelPipelineHook(
-                hook_id="C",
+                hook_name="C",
                 phase="execute",
                 callable_ref="hooks.C",
                 dependencies=["A"],
@@ -886,7 +886,7 @@ class TestPipelineExecutionPlanBuilding:
         )
         registry.register(
             ModelPipelineHook(
-                hook_id="D",
+                hook_name="D",
                 phase="execute",
                 callable_ref="hooks.D",
                 dependencies=["B", "C"],
@@ -955,7 +955,7 @@ class TestPipelineExecutionPlanBuilding:
         registry = RegistryHook()
         registry.register(
             ModelPipelineHook(
-                hook_id="compute_hook",
+                hook_name="compute_hook",
                 phase="execute",
                 callable_ref="hooks.compute",
                 handler_type_category=EnumHandlerTypeCategory.COMPUTE,
@@ -1004,7 +1004,7 @@ class TestPipelineContextStateManagement:
         for i, phase in enumerate(phases):
             registry.register(
                 ModelPipelineHook(
-                    hook_id=f"{phase}_hook",
+                    hook_name=f"{phase}_hook",
                     phase=phase,
                     callable_ref=f"hooks.{phase}",
                 )
@@ -1055,19 +1055,19 @@ class TestPipelineContextStateManagement:
 
         registry.register(
             ModelPipelineHook(
-                hook_id="before_hook", phase="before", callable_ref="hooks.before"
+                hook_name="before_hook", phase="before", callable_ref="hooks.before"
             )
         )
         registry.register(
             ModelPipelineHook(
-                hook_id="failing_execute",
+                hook_name="failing_execute",
                 phase="execute",
                 callable_ref="hooks.execute",
             )
         )
         registry.register(
             ModelPipelineHook(
-                hook_id="finalize_hook",
+                hook_name="finalize_hook",
                 phase="finalize",
                 callable_ref="hooks.finalize",
             )
@@ -1134,7 +1134,7 @@ class TestPipelinePerformanceScenarios:
         for i in range(num_hooks):
             registry.register(
                 ModelPipelineHook(
-                    hook_id=f"hook_{i:03d}",
+                    hook_name=f"hook_{i:03d}",
                     phase="execute",
                     callable_ref=f"hooks.hook_{i:03d}",
                     priority=i,  # Sequential priority
@@ -1198,7 +1198,7 @@ class TestPipelinePerformanceScenarios:
             for i in range(hooks_per_phase):
                 registry.register(
                     ModelPipelineHook(
-                        hook_id=f"{phase}_{i}",
+                        hook_name=f"{phase}_{i}",
                         phase=phase,
                         callable_ref=f"hooks.{phase}_{i}",
                         priority=i,

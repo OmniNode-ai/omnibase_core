@@ -25,6 +25,7 @@ Import Example:
         from omnibase_core.models.events.contract_validation import (
             # Base and reference models
             ModelContractRef,
+            ModelContractValidationContext,
             ModelValidationContext,
             ModelContractValidationEventBase,
             # Validation events
@@ -49,22 +50,22 @@ Usage Example:
         from omnibase_core.models.events.contract_validation import (
             ModelContractValidationStartedEvent,
             ModelContractValidationPassedEvent,
-            ModelValidationContext,
+            ModelContractValidationContext,
         )
 
         # Start validation
         run_id = uuid4()
         started_event = ModelContractValidationStartedEvent.create(
-            contract_id="my-contract",
+            contract_name="my-contract",
             run_id=run_id,
-            context=ModelValidationContext(),
+            context=ModelContractValidationContext(),
         )
 
         # ... perform validation ...
 
         # Emit passed event
         passed_event = ModelContractValidationPassedEvent.create(
-            contract_id="my-contract",
+            contract_name="my-contract",
             run_id=run_id,  # Same run_id for lifecycle correlation
             duration_ms=250,
             checks_run=15,
@@ -88,6 +89,10 @@ from omnibase_core.models.events.contract_validation.model_contract_merge_starte
 from omnibase_core.models.events.contract_validation.model_contract_ref import (
     ModelContractRef,
 )
+from omnibase_core.models.events.contract_validation.model_contract_validation_context import (
+    ModelContractValidationContext,
+    ModelValidationContext,
+)
 from omnibase_core.models.events.contract_validation.model_contract_validation_event_base import (
     ModelContractValidationEventBase,
 )
@@ -103,13 +108,11 @@ from omnibase_core.models.events.contract_validation.model_contract_validation_s
     CONTRACT_VALIDATION_STARTED_EVENT,
     ModelContractValidationStartedEvent,
 )
-from omnibase_core.models.events.contract_validation.model_validation_context import (
-    ModelValidationContext,
-)
 
 __all__ = [
     # Base and reference models
     "ModelContractRef",
+    "ModelContractValidationContext",
     "ModelValidationContext",
     "ModelContractValidationEventBase",
     # Validation event models

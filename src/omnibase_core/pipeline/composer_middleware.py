@@ -112,7 +112,7 @@ class ComposerMiddleware:
         return wrapper
 
 
-# Backwards compatibility alias
+# Legacy alias for migration
 MiddlewareComposer = ComposerMiddleware
 
 __all__ = ["ComposerMiddleware", "MiddlewareComposer", "Middleware"]

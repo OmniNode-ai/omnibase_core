@@ -48,7 +48,7 @@ class MixinMetrics:
         _metrics_data: In-memory metrics storage (always populated)
         _metrics_backend: Optional external metrics backend
 
-    Backward Compatibility:
+    Note:
         The in-memory storage is always populated, regardless of whether
         an external backend is configured. This ensures existing code
         using get_metrics() continues to work.
@@ -99,7 +99,7 @@ class MixinMetrics:
 
         When a backend is set, metrics are forwarded to it in addition
         to being stored in-memory. This allows for external monitoring
-        while maintaining backward compatibility.
+        while maintaining legacy API support.
 
         Args:
             backend: Metrics backend implementing ProtocolMetricsBackend,
@@ -163,7 +163,7 @@ class MixinMetrics:
             metrics_enabled = True
 
         if metrics_enabled:
-            # Always store in-memory for backward compatibility
+            # Always store in-memory for legacy API support
             try:
                 metrics_data = object.__getattribute__(self, "_metrics_data")
             except AttributeError:

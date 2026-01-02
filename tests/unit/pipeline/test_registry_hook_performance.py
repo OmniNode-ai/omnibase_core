@@ -19,7 +19,7 @@ from collections.abc import Callable
 
 import pytest
 
-from omnibase_core.pipeline.models import (
+from omnibase_core.models.pipeline import (
     ModelExecutionPlan,
     ModelPhaseExecutionPlan,
     ModelPipelineHook,
@@ -36,7 +36,7 @@ from omnibase_core.pipeline.runner_pipeline import (
 
 
 def create_test_hook(
-    hook_id: str,
+    hook_name: str,
     phase: PipelinePhase = "execute",
     priority: int = 100,
     dependencies: list[str] | None = None,
@@ -44,18 +44,18 @@ def create_test_hook(
     """Create a test hook with minimal boilerplate.
 
     Args:
-        hook_id: Unique identifier for the hook
+        hook_name: Unique identifier for the hook
         phase: Pipeline phase for the hook
         priority: Execution priority (lower = earlier)
-        dependencies: List of hook IDs that must run first
+        dependencies: List of hook names that must run first
 
     Returns:
         ModelPipelineHook instance
     """
     return ModelPipelineHook(
-        hook_id=hook_id,
+        hook_name=hook_name,
         phase=phase,
-        callable_ref=f"test.{hook_id}",
+        callable_ref=f"test.{hook_name}",
         priority=priority,
         dependencies=dependencies or [],
     )
@@ -281,8 +281,8 @@ class TestRegistryHookLookupPerformance:
     fast hook resolution at runtime.
     """
 
-    def test_get_hook_by_id_with_1000_hooks(self) -> None:
-        """Test get_hook_by_id performance with 1000 hooks.
+    def test_get_hook_by_name_with_1000_hooks(self) -> None:
+        """Test get_hook_by_name performance with 1000 hooks.
 
         Performance Threshold:
         - Average lookup time < 0.01ms (10us)
@@ -307,10 +307,10 @@ class TestRegistryHookLookupPerformance:
         lookup_times: list[float] = []
 
         for i in range(num_lookups):
-            hook_id = f"lookup-hook-{i % num_hooks:04d}"
+            hook_name = f"lookup-hook-{i % num_hooks:04d}"
 
             start_time = time.perf_counter()
-            result = registry.get_hook_by_id(hook_id)
+            result = registry.get_hook_by_name(hook_name)
             end_time = time.perf_counter()
 
             lookup_time_us = (end_time - start_time) * 1_000_000
@@ -741,8 +741,8 @@ class TestRegistryHookMemoryUsage:
         assert phase_total == total_hooks
 
         # Verify no hooks are duplicated between phases
-        all_hook_ids = {h.hook_id for h in registry.get_all_hooks()}
-        assert len(all_hook_ids) == total_hooks
+        all_hook_names = {h.hook_name for h in registry.get_all_hooks()}
+        assert len(all_hook_names) == total_hooks
 
         print(
             f"\n[OK] Phase partitioning verified: {total_hooks} hooks, "
@@ -812,7 +812,7 @@ class TestTopologicalSortPerformance:
         assert len(execute_phase.hooks) == num_hooks
 
         # Verify ordering respects dependencies (hook-0000 should come first)
-        hook_order = [h.hook_id for h in execute_phase.hooks]
+        hook_order = [h.hook_name for h in execute_phase.hooks]
         for i in range(num_hooks):
             assert hook_order[i] == f"hook-{i:04d}", (
                 f"Hook at position {i} should be hook-{i:04d}, got {hook_order[i]}"
@@ -868,7 +868,7 @@ class TestTopologicalSortPerformance:
         assert len(execute_phase.hooks) == num_hooks
 
         # Verify first and last hooks are in correct order
-        hook_order = [h.hook_id for h in execute_phase.hooks]
+        hook_order = [h.hook_name for h in execute_phase.hooks]
         assert hook_order[0] == "hook-0000"
         assert hook_order[-1] == f"hook-{num_hooks - 1:04d}"
 
@@ -960,7 +960,7 @@ class TestTopologicalSortPerformance:
         assert len(execute_phase.hooks) == total_hooks
 
         # Verify diamond ordering constraints for first diamond
-        hook_order = [h.hook_id for h in execute_phase.hooks]
+        hook_order = [h.hook_name for h in execute_phase.hooks]
         idx_a = hook_order.index("diamond-000-a")
         idx_b = hook_order.index("diamond-000-b")
         idx_c = hook_order.index("diamond-000-c")
@@ -1134,7 +1134,7 @@ class TestTopologicalSortPerformance:
         assert len(execute_phase.hooks) == total_hooks
 
         # Verify dependency ordering for first subgraph
-        hook_order = [h.hook_id for h in execute_phase.hooks]
+        hook_order = [h.hook_name for h in execute_phase.hooks]
         root_idx = hook_order.index("sg-00-root-00")
         mid_idx = hook_order.index("sg-00-mid-00")
         leaf_idx = hook_order.index("sg-00-leaf-00")

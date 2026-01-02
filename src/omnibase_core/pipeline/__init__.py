@@ -3,6 +3,18 @@
 # SPDX-License-Identifier: Apache-2.0
 """Pipeline execution infrastructure for ONEX."""
 
+from omnibase_core.models.pipeline import (
+    ModelExecutionPlan,
+    ModelHookError,
+    ModelPhaseExecutionPlan,
+    ModelPipelineExecutionPlan,
+    ModelPipelineHook,
+    ModelPipelinePhaseExecutionPlan,
+    ModelValidationWarning,
+    PipelineContext,
+    PipelinePhase,
+    PipelineResult,
+)
 from omnibase_core.pipeline.builder_execution_plan import (
     FAIL_FAST_PHASES,
     BuilderExecutionPlan,
@@ -23,20 +35,10 @@ from omnibase_core.pipeline.exceptions import (
     PipelineError,
     UnknownDependencyError,
 )
-from omnibase_core.pipeline.models import (
-    ModelExecutionPlan,
-    ModelPhaseExecutionPlan,
-    ModelPipelineHook,
-    ModelValidationWarning,
-    PipelinePhase,
-)
 from omnibase_core.pipeline.registry_hook import HookRegistry, RegistryHook
 from omnibase_core.pipeline.runner_pipeline import (
     CANONICAL_PHASE_ORDER,
     HookCallable,
-    ModelHookError,
-    PipelineContext,
-    PipelineResult,
     PipelineRunner,
     RunnerPipeline,
 )
@@ -70,10 +72,13 @@ __all__ = [
     "PipelineContext",
     "PipelineResult",
     "PipelineRunner",
-    # Models
-    "ModelExecutionPlan",
-    "ModelPhaseExecutionPlan",
+    # Models (new canonical names first, then backwards compat)
+    "ModelPipelineExecutionPlan",
+    "ModelPipelinePhaseExecutionPlan",
     "ModelPipelineHook",
     "ModelValidationWarning",
     "PipelinePhase",
+    # Legacy aliases
+    "ModelExecutionPlan",
+    "ModelPhaseExecutionPlan",
 ]

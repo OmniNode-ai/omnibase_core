@@ -370,7 +370,8 @@ class TestModelValidationContextRepr:
 
         repr_str = repr(context)
 
-        assert "ModelValidationContext" in repr_str
+        # The actual class name is ModelContractValidationContext (ModelValidationContext is an alias)
+        assert "ModelContractValidationContext" in repr_str
         # Mode should be represented
         assert "mode=" in repr_str
 

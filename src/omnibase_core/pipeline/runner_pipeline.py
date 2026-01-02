@@ -10,158 +10,19 @@ import inspect
 from collections.abc import Callable, Coroutine
 from types import MappingProxyType
 
-from pydantic import BaseModel, ConfigDict, Field
-
-from omnibase_core.pipeline.exceptions import CallableNotFoundError, HookTimeoutError
-from omnibase_core.pipeline.models.model_execution_plan import ModelExecutionPlan
-from omnibase_core.pipeline.models.model_pipeline_hook import (
+from omnibase_core.models.pipeline import (
+    ModelExecutionPlan,
+    ModelHookError,
     ModelPipelineHook,
+    PipelineContext,
     PipelinePhase,
+    PipelineResult,
 )
+from omnibase_core.pipeline.exceptions import CallableNotFoundError, HookTimeoutError
 
 # Type alias for hook callables - they take PipelineContext and return None
 # (sync or async)
 HookCallable = Callable[["PipelineContext"], None | Coroutine[object, object, None]]
-
-
-class ModelHookError(BaseModel):
-    """
-    Represents an error captured during hook execution.
-
-    Thread Safety: This class is thread-safe. Instances are immutable
-    (frozen=True) and can be safely shared across threads.
-
-    Note:
-        The special ``hook_id`` value ``"[framework]"`` indicates a framework-level
-        error during phase execution, not from a specific hook. This can occur in
-        the finalize phase if the execution plan itself cannot be accessed or if
-        an unexpected error occurs outside of hook invocation.
-    """
-
-    # TODO(pydantic-v3): Re-evaluate from_attributes=True when Pydantic v3 is released.
-    # This workaround addresses Pydantic 2.x class identity validation issues where
-    # frozen models nested in other models (e.g., in PipelineResult.errors list)
-    # fail isinstance() checks across pytest-xdist worker processes.
-    # See model_pipeline_hook.py module docstring for detailed explanation.
-    # Track: https://github.com/pydantic/pydantic/issues (no specific issue yet)
-    model_config = ConfigDict(
-        frozen=True,
-        extra="forbid",
-        from_attributes=True,
-    )
-
-    phase: str = Field(
-        ...,
-        description="The phase where the error occurred",
-    )
-    hook_id: str = Field(
-        ...,
-        description="The hook ID that raised the error",
-    )
-    error_type: str = Field(
-        ...,
-        description="The type name of the exception",
-    )
-    error_message: str = Field(
-        ...,
-        description="The error message",
-    )
-
-
-class PipelineContext(BaseModel):
-    """
-    Context passed to each hook during pipeline execution.
-
-    The context is shared and mutable across all hooks within a pipeline run,
-    allowing hooks to communicate state between each other.
-
-    .. warning:: **Mutable Context Caveat**
-
-        The ``data`` dict passed to hooks is **mutable and shared**. Any hook can
-        modify the context, and those changes persist to all subsequent hooks in
-        the pipeline. This is intentional for inter-hook communication but requires
-        hooks to coordinate their key usage to avoid conflicts.
-
-        Example::
-
-            # Hook A writes to context
-            def hook_a(ctx: PipelineContext) -> None:
-                ctx.data["result"] = {"status": "processed"}
-
-            # Hook B can read and modify the same data
-            def hook_b(ctx: PipelineContext) -> None:
-                result = ctx.data.get("result", {})
-                result["validated"] = True
-
-    Thread Safety
-    -------------
-    **This class is NOT thread-safe.**
-
-    ``PipelineContext`` is intentionally mutable to allow hooks to communicate.
-    Each pipeline execution should use its own ``PipelineContext`` instance.
-    Do not share contexts across concurrent pipeline executions.
-
-    Pydantic Configuration Note
-    ---------------------------
-    Unlike other pipeline models (e.g., ``ModelPipelineHook``, ``ModelExecutionPlan``),
-    this class does NOT use ``from_attributes=True`` because:
-
-    1. This model is **mutable** (``frozen=False``), not frozen
-    2. It is **not nested** inside other Pydantic models during validation
-    3. The ``from_attributes=True`` workaround is only needed for frozen models
-       that are nested inside other models and validated across pytest-xdist workers
-
-    See ``model_pipeline_hook.py`` module docstring for the full explanation of
-    when ``from_attributes=True`` is required.
-    """
-
-    # Note: frozen=False is intentional - this context must be mutable for hooks
-    # to add data. This does NOT require from_attributes=True (see docstring above).
-    model_config = ConfigDict(frozen=False)
-
-    data: dict[str, object] = Field(
-        default_factory=dict,
-        description="Arbitrary data storage for hooks to share state",
-    )
-
-
-class PipelineResult(BaseModel):
-    """
-    Result of pipeline execution.
-
-    Contains success status, any captured errors (from continue phases),
-    and the final context state.
-
-    Thread Safety: This class is thread-safe. Instances are immutable
-    (frozen=True) and can be safely shared across threads. Note that the
-    nested ``context`` field may be mutable (PipelineContext), so avoid
-    modifying it after the result is created if sharing across threads.
-    """
-
-    # TODO(pydantic-v3): Re-evaluate from_attributes=True when Pydantic v3 is released.
-    # This workaround addresses Pydantic 2.x class identity validation issues where
-    # frozen models (and models containing frozen nested models like ModelHookError)
-    # fail isinstance() checks across pytest-xdist worker processes.
-    # See model_pipeline_hook.py module docstring for detailed explanation.
-    # Track: https://github.com/pydantic/pydantic/issues (no specific issue yet)
-    model_config = ConfigDict(
-        frozen=True,
-        extra="forbid",
-        from_attributes=True,
-    )
-
-    success: bool = Field(
-        ...,
-        description="Whether the pipeline completed without errors",
-    )
-    errors: list[ModelHookError] = Field(
-        default_factory=list,
-        description="Errors captured from continue-on-error phases",
-    )
-    context: PipelineContext | None = Field(
-        default=None,
-        description="Final context state after pipeline execution",
-    )
 
 
 # Canonical phase execution order
@@ -365,43 +226,43 @@ class RunnerPipeline:
             List of errors captured during finalize (never raises)
         """
         errors: list[ModelHookError] = []
-        current_hook_id: str | None = None
+        current_hook_name: str | None = None
 
         try:
             # Get hooks to track which hook we're executing for error context
             hooks = self._plan.get_phase_hooks("finalize")
 
             for hook in hooks:
-                current_hook_id = hook.hook_id
+                current_hook_name = hook.hook_name
                 try:
                     await self._execute_hook(hook, context)
-                    # Only clear hook_id after successful execution
-                    current_hook_id = None
+                    # Only clear hook_name after successful execution
+                    current_hook_name = None
                 except Exception as e:
-                    # Capture error with proper hook_id context
+                    # Capture error with proper hook_name context
                     errors.append(
                         ModelHookError(
                             phase="finalize",
-                            hook_id=hook.hook_id,
+                            hook_name=hook.hook_name,
                             error_type=type(e).__name__,
                             error_message=str(e),
                         )
                     )
                     # Clear after capturing - hook processing complete
-                    current_hook_id = None
+                    current_hook_name = None
 
         except Exception as framework_exc:
             # Framework-level error (e.g., plan access failure, hook retrieval error)
-            # Include last known hook_id if available for debugging context
-            hook_id_context = (
-                f"[framework:after:{current_hook_id}]"
-                if current_hook_id
+            # Include last known hook_name if available for debugging context
+            hook_name_context = (
+                f"[framework:after:{current_hook_name}]"
+                if current_hook_name
                 else "[framework]"
             )
             errors.append(
                 ModelHookError(
                     phase="finalize",
-                    hook_id=hook_id_context,
+                    hook_name=hook_name_context,
                     error_type=type(framework_exc).__name__,
                     error_message=f"Framework error during finalize phase: {framework_exc}",
                 )
@@ -458,7 +319,7 @@ class RunnerPipeline:
                 errors.append(
                     ModelHookError(
                         phase=phase,
-                        hook_id=hook.hook_id,
+                        hook_name=hook.hook_name,
                         error_type=type(e).__name__,
                         error_message=str(e),
                     )
@@ -516,7 +377,7 @@ class RunnerPipeline:
                         timeout=hook.timeout_seconds,
                     )
             except TimeoutError:
-                raise HookTimeoutError(hook.hook_id, hook.timeout_seconds)
+                raise HookTimeoutError(hook.hook_name, hook.timeout_seconds)
         # Original non-timeout path
         elif inspect.iscoroutinefunction(callable_fn):
             await callable_fn(context)
@@ -524,15 +385,12 @@ class RunnerPipeline:
             callable_fn(context)
 
 
-# Backwards compatibility alias
+# Legacy alias for migration
 PipelineRunner = RunnerPipeline
 
 __all__ = [
     "CANONICAL_PHASE_ORDER",
     "HookCallable",
-    "ModelHookError",
-    "PipelineContext",
-    "PipelineResult",
     "RunnerPipeline",
     "PipelineRunner",
 ]

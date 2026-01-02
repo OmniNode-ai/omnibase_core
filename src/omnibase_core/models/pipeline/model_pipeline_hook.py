@@ -3,6 +3,10 @@
 # SPDX-License-Identifier: Apache-2.0
 """Pipeline hook model.
 
+Note: This module was moved from omnibase_core.pipeline.models to
+omnibase_core.models.pipeline to comply with ONEX repository structure
+validation that requires all models in src/omnibase_core/models/.
+
 Pydantic Configuration Notes
 ----------------------------
 All pipeline models in this module use ``from_attributes=True`` in their ConfigDict.
@@ -92,7 +96,7 @@ class ModelPipelineHook(BaseModel):
         from_attributes=True,
     )
 
-    hook_id: str = Field(
+    hook_name: str = Field(
         ...,
         min_length=1,
         description="Unique identifier for this hook",
@@ -125,13 +129,13 @@ class ModelPipelineHook(BaseModel):
         description="Optional timeout for hook execution in seconds",
     )
 
-    @field_validator("hook_id")
+    @field_validator("hook_name")
     @classmethod
-    def validate_hook_id(cls, v: str) -> str:
-        """Ensure hook_id is a valid identifier."""
+    def validate_hook_name(cls, v: str) -> str:
+        """Ensure hook_name is a valid identifier."""
         if not v.replace("_", "").replace("-", "").isalnum():
             raise ValueError(
-                f"hook_id must be alphanumeric with underscores/hyphens: {v}"
+                f"hook_name must be alphanumeric with underscores/hyphens: {v}"
             )
         return v
 

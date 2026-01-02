@@ -4,8 +4,8 @@ Cache backends for L2 distributed caching.
 .. deprecated:: 0.5.1
     This module is deprecated. Import from ``omnibase_core.backends.cache`` instead.
 
-This module re-exports from ``omnibase_core.backends.cache`` for backwards
-compatibility. The canonical location is now ``omnibase_core.backends.cache``.
+This module re-exports from ``omnibase_core.backends.cache`` for legacy
+support. The canonical location is now ``omnibase_core.backends.cache``.
 
 Available Backends:
     - BackendCacheRedis: Redis/Valkey backend with async support
@@ -26,7 +26,7 @@ Requirements:
     Moved to ``omnibase_core.backends.cache``. This module now re-exports.
 """
 
-# Re-export from canonical location for backwards compatibility
+# Re-export from canonical location (deprecated module)
 from omnibase_core.backends.cache import (
     REDIS_AVAILABLE,
     BackendCacheRedis,

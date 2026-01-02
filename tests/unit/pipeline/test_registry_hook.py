@@ -5,11 +5,11 @@
 
 import pytest
 
+from omnibase_core.models.pipeline import ModelPipelineHook
 from omnibase_core.pipeline.exceptions import (
     DuplicateHookError,
     HookRegistryFrozenError,
 )
-from omnibase_core.pipeline.models import ModelPipelineHook
 from omnibase_core.pipeline.registry_hook import RegistryHook
 
 
@@ -21,7 +21,7 @@ class TestRegistryHookRegistration:
         """Test successful hook registration."""
         registry = RegistryHook()
         hook = ModelPipelineHook(
-            hook_id="test-hook",
+            hook_name="test-hook",
             phase="execute",
             callable_ref="module.path.func",
         )
@@ -32,12 +32,12 @@ class TestRegistryHookRegistration:
         """Test registering multiple hooks in same phase."""
         registry = RegistryHook()
         hook1 = ModelPipelineHook(
-            hook_id="hook-1",
+            hook_name="hook-1",
             phase="before",
             callable_ref="module.func1",
         )
         hook2 = ModelPipelineHook(
-            hook_id="hook-2",
+            hook_name="hook-2",
             phase="before",
             callable_ref="module.func2",
         )
@@ -52,12 +52,12 @@ class TestRegistryHookRegistration:
         """Test registering hooks in different phases."""
         registry = RegistryHook()
         hook1 = ModelPipelineHook(
-            hook_id="preflight-hook",
+            hook_name="preflight-hook",
             phase="preflight",
             callable_ref="module.preflight",
         )
         hook2 = ModelPipelineHook(
-            hook_id="finalize-hook",
+            hook_name="finalize-hook",
             phase="finalize",
             callable_ref="module.finalize",
         )
@@ -75,12 +75,12 @@ class TestRegistryHookRegistration:
         """Test getting all registered hooks."""
         registry = RegistryHook()
         hook1 = ModelPipelineHook(
-            hook_id="hook-1",
+            hook_name="hook-1",
             phase="before",
             callable_ref="module.func1",
         )
         hook2 = ModelPipelineHook(
-            hook_id="hook-2",
+            hook_name="hook-2",
             phase="after",
             callable_ref="module.func2",
         )
@@ -89,33 +89,33 @@ class TestRegistryHookRegistration:
         all_hooks = registry.get_all_hooks()
         assert len(all_hooks) == 2
 
-    def test_get_hook_by_id(self) -> None:
+    def test_get_hook_by_name(self) -> None:
         """Test getting a hook by its ID."""
         registry = RegistryHook()
         hook = ModelPipelineHook(
-            hook_id="my-hook",
+            hook_name="my-hook",
             phase="execute",
             callable_ref="module.func",
         )
         registry.register(hook)
-        assert registry.get_hook_by_id("my-hook") == hook
-        assert registry.get_hook_by_id("nonexistent") is None
+        assert registry.get_hook_by_name("my-hook") == hook
+        assert registry.get_hook_by_name("nonexistent") is None
 
 
 @pytest.mark.unit
 class TestRegistryHookDuplicateRejection:
-    """Test duplicate hook ID rejection."""
+    """Test duplicate hook name rejection."""
 
     def test_duplicate_hook_id_raises_error(self) -> None:
-        """Test that registering duplicate hook ID raises error."""
+        """Test that registering duplicate hook name raises error."""
         registry = RegistryHook()
         hook1 = ModelPipelineHook(
-            hook_id="duplicate-id",
+            hook_name="duplicate-id",
             phase="before",
             callable_ref="module.func1",
         )
         hook2 = ModelPipelineHook(
-            hook_id="duplicate-id",
+            hook_name="duplicate-id",
             phase="after",
             callable_ref="module.func2",
         )
@@ -133,7 +133,7 @@ class TestRegistryHookFreeze:
         """Test that freeze() prevents further registrations."""
         registry = RegistryHook()
         hook = ModelPipelineHook(
-            hook_id="pre-freeze",
+            hook_name="pre-freeze",
             phase="execute",
             callable_ref="module.func",
         )
@@ -141,7 +141,7 @@ class TestRegistryHookFreeze:
         registry.freeze()
 
         new_hook = ModelPipelineHook(
-            hook_id="post-freeze",
+            hook_name="post-freeze",
             phase="execute",
             callable_ref="module.func2",
         )
@@ -166,7 +166,7 @@ class TestRegistryHookFreeze:
         """Test that read operations work after freeze."""
         registry = RegistryHook()
         hook = ModelPipelineHook(
-            hook_id="hook",
+            hook_name="hook",
             phase="execute",
             callable_ref="module.func",
         )
@@ -176,7 +176,7 @@ class TestRegistryHookFreeze:
         # All reads should work
         assert registry.get_hooks_by_phase("execute") == [hook]
         assert registry.get_all_hooks() == [hook]
-        assert registry.get_hook_by_id("hook") == hook
+        assert registry.get_hook_by_name("hook") == hook
         assert registry.is_frozen
 
 
@@ -188,7 +188,7 @@ class TestRegistryHookThreadSafety:
         """Test that frozen registry returns copies, not internal state."""
         registry = RegistryHook()
         hook = ModelPipelineHook(
-            hook_id="hook",
+            hook_name="hook",
             phase="execute",
             callable_ref="module.func",
         )
