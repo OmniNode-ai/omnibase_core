@@ -548,17 +548,23 @@ class ModelONEXContainer:
         }
 
         # Add base container metrics
+        from typing import cast
+        from omnibase_core.types.type_serializable_value import SerializableValue
+
         base_metrics = self.get_performance_metrics()
-        stats["base_metrics"] = {
-            key: value.to_value() for key, value in base_metrics.items()
-        }
+        # Cast the comprehension result to SerializedDict since to_value() returns object
+        stats["base_metrics"] = cast(
+            dict[str, SerializableValue],
+            {key: value.to_value() for key, value in base_metrics.items()},
+        )
 
         if self.tool_cache:
             stats["tool_cache"] = self.tool_cache.get_cache_stats()
 
         if self.performance_monitor:
-            stats["performance_monitoring"] = (
-                self.performance_monitor.get_monitoring_dashboard()
+            # Cast TypedDict to JsonType for SerializedDict assignment
+            stats["performance_monitoring"] = cast(
+                SerializableValue, self.performance_monitor.get_monitoring_dashboard()
             )
 
         return stats
@@ -681,7 +687,9 @@ async def create_model_onex_container(
     if enable_cache:
         await container.warm_cache()
 
-    return container
+    # Explicitly return typed container (from_dict call may propagate Any)
+    result: ModelONEXContainer = container
+    return result
 
 
 # === GLOBAL ENHANCED CONTAINER ===

@@ -152,7 +152,7 @@ class ModelOrchestratorInfo(BaseModel):
         if "orchestrator_version" not in data:
             data["orchestrator_version"] = data.get("version", "unknown")
 
-        return cls(**data)
+        return cls.model_validate(data)
 
     def get_resource_summary(self) -> str:
         """Get resource allocation summary."""

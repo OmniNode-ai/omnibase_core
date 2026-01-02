@@ -423,15 +423,26 @@ class ModelDockerComposeManifest(BaseModel):
                 if service.build:
                     service_dict["build"] = service.build.model_dump(exclude_none=True)
                 if service.command:
-                    service_dict["command"] = service.command
+                    # command can be str | list[str], both are valid JsonType
+                    service_dict["command"] = (
+                        list(service.command)
+                        if isinstance(service.command, list)
+                        else service.command
+                    )
                 if service.environment:
-                    service_dict["environment"] = service.environment
+                    # Convert dict[str, str] to SerializedDict
+                    service_dict["environment"] = dict(service.environment)
                 if service.ports:
-                    service_dict["ports"] = service.ports
+                    # Convert list[str] to list for JsonType compatibility
+                    service_dict["ports"] = list(service.ports)
                 if service.volumes:
-                    service_dict["volumes"] = service.volumes
+                    # Convert list[str] to list for JsonType compatibility
+                    service_dict["volumes"] = list(service.volumes)
                 if service.depends_on:
-                    service_dict["depends_on"] = service.depends_on
+                    # Convert dict[str, dict[str, str]] to nested dict
+                    service_dict["depends_on"] = {
+                        k: dict(v) for k, v in service.depends_on.items()
+                    }
                 if service.healthcheck:
                     service_dict["healthcheck"] = service.healthcheck.model_dump(
                         exclude_none=True
@@ -439,9 +450,11 @@ class ModelDockerComposeManifest(BaseModel):
                 if service.restart:
                     service_dict["restart"] = service.restart
                 if service.networks:
-                    service_dict["networks"] = service.networks
+                    # Convert list[str] to list for JsonType compatibility
+                    service_dict["networks"] = list(service.networks)
                 if service.labels:
-                    service_dict["labels"] = service.labels
+                    # Convert dict[str, str] to SerializedDict
+                    service_dict["labels"] = dict(service.labels)
                 if service.deploy:
                     service_dict["deploy"] = service.deploy.model_dump(
                         exclude_none=True

@@ -5,11 +5,13 @@ Source repository model.
 from collections.abc import Callable, Iterator
 from typing import Annotated
 
-from pydantic import BaseModel, StringConstraints
+from pydantic import BaseModel, ConfigDict, StringConstraints
 
 
 class ModelSourceRepository(BaseModel):
-    """Source repository information."""
+    """Immutable source repository information."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
 
     url: str | None = None
     commit_hash: (

@@ -94,10 +94,13 @@ class ModelFilterCriteria(BaseModel):
         if data is None:
             return None
 
+        # Use mutable dict for type-safe modifications
+        mutable_data: dict[str, object] = dict(data)
+
         # Handle legacy format conversion
-        if "conditions" not in data and data:
+        if "conditions" not in mutable_data and mutable_data:
             # Convert simple key-value filters to conditions
-            conditions = []
+            conditions: list[ModelFilterCondition] = []
             for key, value in data.items():
                 if key not in [
                     "logic",
@@ -109,21 +112,37 @@ class ModelFilterCriteria(BaseModel):
                     "limit",
                     "offset",
                 ]:
+                    # Coerce value to acceptable type for ModelFilterOperator
+                    if isinstance(value, (str, int, float, bool)):
+                        coerced_value: (
+                            str | int | float | bool | list[str | int | float | bool]
+                        ) = value
+                    elif isinstance(value, list):
+                        # Filter list items to acceptable types
+                        coerced_value = [
+                            v for v in value if isinstance(v, (str, int, float, bool))
+                        ]
+                    else:
+                        # Skip unsupported types
+                        continue
                     conditions.append(
                         ModelFilterCondition(
                             field=key,
-                            operator=ModelFilterOperator(operator="eq", value=value),
+                            operator=ModelFilterOperator(
+                                operator="eq", value=coerced_value
+                            ),
                         ),
                     )
-            data["conditions"] = conditions
+            mutable_data["conditions"] = conditions
 
         # Convert custom_filters if present
-        if "custom_filters" in data and isinstance(data, dict):
-            data["custom_filters"] = ModelCustomFilters.from_dict(
-                data["custom_filters"],
+        custom_filters_raw = mutable_data.get("custom_filters")
+        if custom_filters_raw is not None and isinstance(custom_filters_raw, dict):
+            mutable_data["custom_filters"] = ModelCustomFilters.from_dict(
+                custom_filters_raw,
             )
 
-        return cls(**data)
+        return cls.model_validate(mutable_data)
 
     def add_condition(
         self,

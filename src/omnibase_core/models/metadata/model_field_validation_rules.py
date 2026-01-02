@@ -135,8 +135,10 @@ class ModelFieldValidationRules(BaseModel):
 
     def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
+        from omnibase_core.types.type_serializable_value import SerializableValue
+
         result: TypedDictMetadataDict = {}
-        metadata_dict: dict[str, object] = {
+        metadata_dict: dict[str, SerializableValue] = {
             "allow_empty": self.allow_empty,
             "has_string_validation": self.has_string_validation(),
             "has_numeric_validation": self.has_numeric_validation(),

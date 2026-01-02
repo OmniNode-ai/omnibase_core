@@ -23,7 +23,6 @@ from pydantic import field_serializer
 
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.infrastructure.model_result import ModelResult
-from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelConfigurationBase[T](BaseModel):
@@ -168,7 +167,7 @@ class ModelConfigurationBase[T](BaseModel):
 
     # Protocol method implementations
 
-    def serialize(self) -> SerializedDict:
+    def serialize(self) -> dict[str, object]:
         """Serialize configuration to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 

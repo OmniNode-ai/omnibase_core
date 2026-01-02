@@ -230,14 +230,14 @@ class ModelPermissionScope(BaseModel):
             return True
 
         # Merge scope context with provided context
-        full_context = {
-            **self.context_variables.string_variables,
-            **self.context_variables.integer_variables,
-            **self.context_variables.boolean_variables,
-            **context.string_attributes,
-            **context.integer_attributes,
-            **context.boolean_attributes,
-        }
+        # Type-safe merge: all values are str | int | bool which are valid JsonType
+        full_context: SerializedDict = {}
+        full_context.update(self.context_variables.string_variables)
+        full_context.update(self.context_variables.integer_variables)
+        full_context.update(self.context_variables.boolean_variables)
+        full_context.update(context.string_attributes)
+        full_context.update(context.integer_attributes)
+        full_context.update(context.boolean_attributes)
 
         # Simple expression evaluation (in production would use safe eval)
         for expression in self.conditional_expressions:

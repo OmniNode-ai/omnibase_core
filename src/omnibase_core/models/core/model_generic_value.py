@@ -126,7 +126,19 @@ class ModelGenericValue(BaseModel):
     def validate_list_string_value(
         cls, v: list[str] | None, info: ValidationInfo
     ) -> list[str] | None:
-        """Validate list[Any]string value is set when type is LIST_STRING"""
+        """Validate list_string_value is set when value_type is LIST_STRING.
+
+        Args:
+            v: The list[str] | None value to validate.
+            info: Pydantic validation info containing other field values.
+
+        Returns:
+            The validated value unchanged.
+
+        Raises:
+            ModelOnexError: If list_string_value is None when value_type is LIST_STRING,
+                or if list_string_value is set when value_type is not LIST_STRING.
+        """
         data = info.data if info else {}
         if data.get("value_type") == EnumValueType.LIST_STRING and v is None:
             msg = "list_string_value must be set when value_type is LIST_STRING"
@@ -147,7 +159,19 @@ class ModelGenericValue(BaseModel):
     def validate_list_integer_value(
         cls, v: list[int] | None, info: ValidationInfo
     ) -> list[int] | None:
-        """Validate list[Any]integer value is set when type is LIST_INTEGER"""
+        """Validate list_integer_value is set when value_type is LIST_INTEGER.
+
+        Args:
+            v: The list[int] | None value to validate.
+            info: Pydantic validation info containing other field values.
+
+        Returns:
+            The validated value unchanged.
+
+        Raises:
+            ModelOnexError: If list_integer_value is None when value_type is LIST_INTEGER,
+                or if list_integer_value is set when value_type is not LIST_INTEGER.
+        """
         data = info.data if info else {}
         if data.get("value_type") == EnumValueType.LIST_INTEGER and v is None:
             msg = "list_integer_value must be set when value_type is LIST_INTEGER"
@@ -168,7 +192,19 @@ class ModelGenericValue(BaseModel):
     @field_validator("dict_value")
     @classmethod
     def validate_dict_value(cls, v: str | None, info: ValidationInfo) -> str | None:
-        """Validate dict[str, Any]value is set when type is DICT"""
+        """Validate dict_value is set when value_type is DICT.
+
+        Args:
+            v: The str | None value to validate (dict stored as JSON string).
+            info: Pydantic validation info containing other field values.
+
+        Returns:
+            The validated value unchanged.
+
+        Raises:
+            ModelOnexError: If dict_value is None when value_type is DICT,
+                or if dict_value is set when value_type is not DICT.
+        """
         data = info.data if info else {}
         if data.get("value_type") == EnumValueType.DICT and v is None:
             msg = "dict_value must be set when value_type is DICT"
@@ -187,7 +223,22 @@ class ModelGenericValue(BaseModel):
     def get_python_value(
         self,
     ) -> str | int | float | bool | list[str] | list[int] | dict[str, object] | None:
-        """Get the actual Python value based on the type"""
+        """Get the actual Python value based on the value_type.
+
+        Returns:
+            The stored value as its native Python type:
+            - str for STRING
+            - int for INTEGER
+            - float for FLOAT
+            - bool for BOOLEAN
+            - list[str] for LIST_STRING
+            - list[int] for LIST_INTEGER
+            - dict[str, object] for DICT (parsed from JSON)
+            - None for NULL
+
+        Raises:
+            ModelOnexError: If value_type is not a recognized EnumValueType.
+        """
         if self.value_type == EnumValueType.STRING:
             return self.string_value
         if self.value_type == EnumValueType.INTEGER:
@@ -222,7 +273,26 @@ class ModelGenericValue(BaseModel):
         | dict[str, object]
         | None,
     ) -> "ModelGenericValue":
-        """Create ModelGenericValue from a Python value"""
+        """Create ModelGenericValue from a Python value.
+
+        Args:
+            value: A Python value to wrap. Supported types:
+                - None -> NULL
+                - str -> STRING
+                - bool -> BOOLEAN (checked before int)
+                - int -> INTEGER
+                - float -> FLOAT
+                - list[str] -> LIST_STRING
+                - list[int] -> LIST_INTEGER
+                - dict[str, object] -> DICT (serialized to JSON)
+
+        Returns:
+            A new ModelGenericValue instance with appropriate value_type.
+
+        Raises:
+            ModelOnexError: If the value type is not supported, or if a list
+                contains mixed or unsupported element types.
+        """
         if value is None:
             return cls(value_type=EnumValueType.NULL)
         if isinstance(value, str):

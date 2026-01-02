@@ -53,8 +53,6 @@ Safe Runtime Imports (OK to import at module level):
 - pydantic modules
 """
 
-from __future__ import annotations
-
 import math
 from collections.abc import Callable
 
@@ -365,7 +363,7 @@ class ModelOptionalInt(BaseModel):
         """
         return self.unwrap_or(default)
 
-    def map(self, func: Callable[[int], int]) -> ModelOptionalInt:
+    def map(self, func: Callable[[int], int]) -> "ModelOptionalInt":
         """
         Apply function to value if present.
 

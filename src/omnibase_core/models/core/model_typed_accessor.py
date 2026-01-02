@@ -9,7 +9,6 @@ from __future__ import annotations
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.types.type_serializable_value import SerializedDict
 
 from .model_field_accessor import ModelFieldAccessor
 
@@ -55,10 +54,10 @@ class ModelTypedAccessor[T](ModelFieldAccessor):
                 message=f"Operation failed: {e}",
             ) from e
 
-    def serialize(self) -> SerializedDict:
+    def serialize(self) -> dict[str, object]:
         """Serialize to dictionary (Serializable protocol)."""
         # Typed accessor classes don't have specific model fields - serialize accessible data
-        result: SerializedDict = {
+        result: dict[str, object] = {
             "accessor_type": self.__class__.__name__,
             "type_parameter": str(getattr(self, "__orig_class__", "Unknown")),
         }

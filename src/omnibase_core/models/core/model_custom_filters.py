@@ -124,19 +124,19 @@ class ModelCustomFilters(BaseModel):
                 filter_type = filter_data["filter_type"]
 
                 if filter_type == "string":
-                    filters[name] = ModelStringFilter(**filter_data)
+                    filters[name] = ModelStringFilter.model_validate(filter_data)
                 elif filter_type == "numeric":
-                    filters[name] = ModelNumericFilter(**filter_data)
+                    filters[name] = ModelNumericFilter.model_validate(filter_data)
                 elif filter_type == "datetime":
-                    filters[name] = ModelDateTimeFilter(**filter_data)
+                    filters[name] = ModelDateTimeFilter.model_validate(filter_data)
                 elif filter_type == "list" or filter_type == "list[Any]":
-                    filters[name] = ModelListFilter(**filter_data)
+                    filters[name] = ModelListFilter.model_validate(filter_data)
                 elif filter_type == "metadata":
-                    filters[name] = ModelMetadataFilter(**filter_data)
+                    filters[name] = ModelMetadataFilter.model_validate(filter_data)
                 elif filter_type == "status":
-                    filters[name] = ModelStatusFilter(**filter_data)
+                    filters[name] = ModelStatusFilter.model_validate(filter_data)
                 elif filter_type == "complex":
-                    filters[name] = ModelComplexFilter(**filter_data)
+                    filters[name] = ModelComplexFilter.model_validate(filter_data)
                 else:
                     raise ModelOnexError(
                         message=f"Unknown filter_type '{filter_type}' for filter '{name}'",

@@ -77,7 +77,7 @@ class ModelConnectionProperties(BaseModel):
     @classmethod
     def from_dict(cls, data: "SerializedDict") -> "ModelConnectionProperties":
         """Create from dictionary for easy migration."""
-        return cls(**data)
+        return cls.model_validate(data)
 
     @field_serializer("password")
     def serialize_secret(self, value: SecretStr | str | None) -> str:

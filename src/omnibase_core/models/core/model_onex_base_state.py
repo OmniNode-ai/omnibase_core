@@ -124,6 +124,8 @@ class ModelOnexInputState(BaseModel):
             ModelOnexInternalInputState,
         )
 
+        # Note: type: ignore[no-any-return] is needed below because the dynamic
+        # import causes mypy to infer Any for the return type
         result: ModelOnexInternalInputState = (
             ModelOnexInternalInputState.from_boundary_state(self)
         )

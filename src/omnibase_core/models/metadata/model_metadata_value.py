@@ -376,8 +376,7 @@ class ModelMetadataValue(BaseModel):
                         value_type_val = inner_metadata["value_type"]
                         if isinstance(value_type_val, str):
                             self.value_type = EnumCliValueType(value_type_val)
-                        elif isinstance(value_type_val, EnumCliValueType):
-                            self.value_type = value_type_val
+                        # Note: EnumCliValueType is not in SerializableValue so we only handle str
 
                     # Handle is_validated
                     if "is_validated" in inner_metadata:

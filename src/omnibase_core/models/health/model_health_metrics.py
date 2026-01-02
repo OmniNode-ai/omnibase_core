@@ -169,7 +169,11 @@ class ModelHealthMetrics(BaseModel):
         """Get a custom metric value."""
         value = self.custom_metrics.get(name, default)
         # Type narrowing: ensure we return a float
-        return float(value) if not isinstance(value, float) else value
+        if isinstance(value, float):
+            return value
+        if isinstance(value, (int, str)):
+            return float(value)
+        return default
 
     @property
     def status(self) -> str:

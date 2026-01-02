@@ -177,9 +177,10 @@ class ModelNodeCapabilitiesInfo(BaseModel):
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
         result: TypedDictMetadataDict = {}
         # Pack capabilities info into metadata dict
+        # Convert list[str] to list for JsonType compatibility
         result["metadata"] = {
-            "capabilities": self.capabilities,
-            "supported_operations": self.supported_operations,
+            "capabilities": list(self.capabilities),
+            "supported_operations": list(self.supported_operations),
             "dependencies": [str(dep) for dep in self.dependencies],
             "has_capabilities": self.has_capabilities(),
             "has_operations": self.has_operations(),

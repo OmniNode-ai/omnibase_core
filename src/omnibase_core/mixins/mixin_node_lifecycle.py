@@ -51,6 +51,7 @@ from omnibase_core.models.primitives.model_semver import (
     ModelSemVer,
     parse_semver_from_string,
 )
+from omnibase_core.types.json_types import JsonType
 from omnibase_core.types.typed_dict_lifecycle_event_fields import (
     TypedDictLifecycleEventFields,
 )
@@ -317,15 +318,16 @@ class MixinNodeLifecycle:
             event_bus.publish(envelope)
 
         except Exception as e:
+            log_context: dict[str, JsonType] = {
+                "event_type": "lifecycle_error",
+                "node_id": str(node_id),
+                "event_type_label": "NODE_START",
+                "error": str(e),
+            }
             emit_log_event_sync(
                 LogLevel.ERROR,
                 f"Failed to emit NODE_START event: {e}",
-                {
-                    "event_type": "lifecycle_error",
-                    "node_id": node_id,
-                    "event_type_label": "NODE_START",
-                    "error": str(e),
-                },
+                log_context,
             )
 
         return final_correlation_id
@@ -379,15 +381,16 @@ class MixinNodeLifecycle:
             event_bus.publish(envelope)
 
         except Exception as e:
+            log_context: dict[str, JsonType] = {
+                "event_type": "lifecycle_error",
+                "node_id": str(node_id),
+                "event_type_label": "NODE_SUCCESS",
+                "error": str(e),
+            }
             emit_log_event_sync(
                 LogLevel.ERROR,
                 f"Failed to emit NODE_SUCCESS event: {e}",
-                {
-                    "event_type": "lifecycle_error",
-                    "node_id": node_id,
-                    "event_type_label": "NODE_SUCCESS",
-                    "error": str(e),
-                },
+                log_context,
             )
 
         return final_correlation_id
@@ -441,15 +444,16 @@ class MixinNodeLifecycle:
             event_bus.publish(envelope)
 
         except Exception as e:
+            log_context: dict[str, JsonType] = {
+                "event_type": "lifecycle_error",
+                "node_id": str(node_id),
+                "event_type_label": "NODE_FAILURE",
+                "error": str(e),
+            }
             emit_log_event_sync(
                 LogLevel.ERROR,
                 f"Failed to emit NODE_FAILURE event: {e}",
-                {
-                    "event_type": "lifecycle_error",
-                    "node_id": node_id,
-                    "event_type_label": "NODE_FAILURE",
-                    "error": str(e),
-                },
+                log_context,
             )
 
         return final_correlation_id

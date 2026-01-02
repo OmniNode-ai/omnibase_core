@@ -144,11 +144,28 @@ class ModelExamplesCollection(BaseModel):
             examples = [
                 cls._create_example_from_data(item) for item in data["examples"]
             ]
+            # Extract metadata - can be None, dict, or ModelExampleMetadata
+            metadata_raw = data.get("metadata")
+            metadata: ModelExampleMetadata | None = None
+            if metadata_raw is not None:
+                if isinstance(metadata_raw, ModelExampleMetadata):
+                    metadata = metadata_raw
+                elif isinstance(metadata_raw, dict):
+                    metadata = ModelExampleMetadata.model_validate(metadata_raw)
+
+            # Extract format with type-safe default
+            format_val = data.get("format")
+            format_str = str(format_val) if isinstance(format_val, str) else "json"
+
+            # Extract schema_compliant with type-safe default
+            schema_val = data.get("schema_compliant")
+            schema_compliant = schema_val if isinstance(schema_val, bool) else True
+
             return cls(
                 examples=examples,
-                metadata=data.get("metadata"),
-                format=data.get("format", "json"),
-                schema_compliant=data.get("schema_compliant", True),
+                metadata=metadata,
+                format=format_str,
+                schema_compliant=schema_compliant,
             )
 
         # Single example as dict

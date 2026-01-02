@@ -143,7 +143,8 @@ class ModelNodePerformanceSummary(BaseModel):
             "performance_score": self.performance_score,
             "has_performance_issues": self.has_performance_issues,
             "is_reliable": self.is_reliable,
-            "improvement_suggestions": self.improvement_suggestions,
+            # Convert list[str] to list for JsonType compatibility
+            "improvement_suggestions": list(self.improvement_suggestions),
             "overall_health_status": self.get_overall_health_status(),
         }
         return result

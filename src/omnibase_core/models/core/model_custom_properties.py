@@ -18,7 +18,6 @@ from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.constraints import PrimitiveValueType
-from omnibase_core.types.type_serializable_value import SerializedDict
 
 if TYPE_CHECKING:
     from omnibase_core.models.infrastructure.model_result import ModelResult
@@ -483,7 +482,7 @@ class ModelCustomProperties(BaseModel):
         except Exception:  # fallback-ok: protocol method contract requires bool return - False indicates configuration failed safely
             return False
 
-    def serialize(self) -> SerializedDict:
+    def serialize(self) -> dict[str, object]:
         """Serialize instance to dictionary format.
 
         Implements the Serializable protocol. Uses Pydantic's model_dump()

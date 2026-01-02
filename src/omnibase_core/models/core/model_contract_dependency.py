@@ -5,6 +5,8 @@ This model supports dependency injection configuration in contracts.
 
 """
 
+from typing import cast
+
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.models.primitives.model_semver import (
@@ -56,5 +58,5 @@ class ModelContractDependency(BaseModel):
         if isinstance(v, dict):
             # Handle dict format like {"major": 1, "minor": 0, "patch": 0}
             return ModelSemVer.model_validate(v)
-        # Already a ModelSemVer instance
-        return v  # type: ignore[return-value]
+        # Already a ModelSemVer instance (only remaining type after str/dict checks)
+        return cast(ModelSemVer, v)

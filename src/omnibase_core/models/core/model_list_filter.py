@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 from pydantic import Field, field_validator
 
@@ -33,6 +33,7 @@ class ModelListFilter(ModelCustomFilterBase):
         # If already ModelSchemaValue instances, return as-is
         # Note: len(v) > 0 check removed - guaranteed non-empty after early return
         if isinstance(v[0], ModelSchemaValue):
-            return v  # type: ignore[return-value]
+            # First element is ModelSchemaValue, so list is homogeneous ModelSchemaValue list
+            return cast(list[ModelSchemaValue], v)
         # Convert raw values to ModelSchemaValue
         return [ModelSchemaValue.from_value(item) for item in v]

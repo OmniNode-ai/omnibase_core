@@ -84,11 +84,14 @@ class ModelMetadataNodeCollection(RootModel[dict[str, object]]):
 
     def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
+        from typing import cast
+
         result: TypedDictMetadataDict = {}
         # This is a RootModel container - extract metadata from analytics if available
         analytics = self.root.get("_metadata_analytics")
         if analytics is not None and hasattr(analytics, "get_metadata"):
-            return analytics.get_metadata()
+            # Cast to expected return type since analytics.get_metadata() returns Any
+            return cast(TypedDictMetadataDict, analytics.get_metadata())
         return result
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:

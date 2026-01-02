@@ -251,18 +251,22 @@ class ModelStateContract(BaseModel):
             ModelOnexError: If the data cannot be parsed or validated
         """
         try:
-            # Handle legacy field names
-            if CONTRACT_SCHEMA_VERSION_KEY in data:
-                data[CONTRACT_VERSION_KEY] = data.pop(CONTRACT_SCHEMA_VERSION_KEY)
+            # Handle legacy field names - use mutable dict for type-safe modifications
+            mutable_data: dict[str, object] = dict(data)
+
+            if CONTRACT_SCHEMA_VERSION_KEY in mutable_data:
+                mutable_data[CONTRACT_VERSION_KEY] = mutable_data.pop(
+                    CONTRACT_SCHEMA_VERSION_KEY
+                )
 
             # Ensure required fields have defaults if missing
-            if CONTRACT_VERSION_KEY not in data:
-                data[CONTRACT_VERSION_KEY] = STATE_CONTRACT_SCHEMA_VERSION
+            if CONTRACT_VERSION_KEY not in mutable_data:
+                mutable_data[CONTRACT_VERSION_KEY] = STATE_CONTRACT_SCHEMA_VERSION
 
-            if NODE_VERSION_KEY not in data:
-                data[NODE_VERSION_KEY] = "1.0.0"
+            if NODE_VERSION_KEY not in mutable_data:
+                mutable_data[NODE_VERSION_KEY] = "1.0.0"
 
-            return cls(**data)
+            return cls.model_validate(mutable_data)
 
         except Exception as e:
             raise ModelOnexError(

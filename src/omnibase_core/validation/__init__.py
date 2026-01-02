@@ -59,14 +59,15 @@ from omnibase_core.models.validation.model_module_import_result import (
     ModelModuleImportResult,
 )
 
-# Import validation functions for easy access
-from .architecture import validate_architecture_directory, validate_one_model_per_file
-from .circular_import_validator import CircularImportValidator
-
 # Import CLI for module execution (OMN-1071)
 # ServiceValidationSuite is the canonical class (lives in services/)
 # ModelValidationSuite is available via __getattr__ (emits deprecation warning)
-from .cli import ServiceValidationSuite
+# Import directly from source module to satisfy mypy explicit-export requirement
+from omnibase_core.services.service_validation_suite import ServiceValidationSuite
+
+# Import validation functions for easy access
+from .architecture import validate_architecture_directory, validate_one_model_per_file
+from .circular_import_validator import CircularImportValidator
 
 # Import contract validation invariant checker (OMN-1146)
 from .contract_validation_invariant_checker import (

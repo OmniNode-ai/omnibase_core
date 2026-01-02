@@ -182,20 +182,32 @@ class ModelWorkflowOutputs(BaseModel):
             "result": self.result,
             "status_message": self.status_message,
             "error_message": self.error_message,
-            "generated_files": self.generated_files,
-            "modified_files": self.modified_files,
+            # Convert list[str] to list for JsonType compatibility
+            "generated_files": list(self.generated_files)
+            if self.generated_files
+            else None,
+            "modified_files": list(self.modified_files)
+            if self.modified_files
+            else None,
             "execution_time_ms": self.execution_time_ms,
             "items_processed": self.items_processed,
             "success_count": self.success_count,
             "failure_count": self.failure_count,
         }
 
-        # Remove None values
-        result = {k: v for k, v in result.items() if v is not None}
+        # Remove None values - use cast for type safety
+
+        result = cast(
+            SerializedDict, {k: v for k, v in result.items() if v is not None}
+        )
 
         # Add data if present (convert ModelSchemaValue to raw values)
         if self.data:
-            result["data"] = {key: value.to_value() for key, value in self.data.items()}
+            # Cast the comprehension result to SerializedDict
+            result["data"] = cast(
+                SerializedDict,
+                {key: value.to_value() for key, value in self.data.items()},
+            )
 
         # Add custom outputs if present (convert ModelSchemaValue to primitives)
         if self.custom_outputs:

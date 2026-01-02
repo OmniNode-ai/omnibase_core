@@ -13,7 +13,6 @@ from omnibase_core.models.core.model_argument_value import (
     ArgumentValueType,
     ModelArgumentValue,
 )
-from omnibase_core.types.type_serializable_value import SerializedDict
 
 T = TypeVar("T")
 
@@ -129,8 +128,7 @@ class ModelArgumentMap(BaseModel):
         if default is None:
             default = []
         # Use bare 'list' for isinstance check at runtime (generic list[str] not valid).
-        # arg-type ignore: list != type[T] bound to list[str]
-        result = self.get_typed(name, list, default)  # type: ignore[arg-type]
+        result = self.get_typed(name, list, default)
         # Ensure we return list[str] by converting items
         if result is not None and isinstance(result, list):
             return [str(item) for item in result]
@@ -228,10 +226,10 @@ class ModelArgumentMap(BaseModel):
         )
         self.positional_args.append(arg_value)
 
-    def to_dict(self) -> SerializedDict:
+    def to_dict(self) -> dict[str, object]:
         """Convert to dictionary for easy serialization."""
         # Custom serialization logic for argument map format
-        result: SerializedDict = {}
+        result: dict[str, object] = {}
 
         # Add positional args
         for i, arg in enumerate(self.positional_args):

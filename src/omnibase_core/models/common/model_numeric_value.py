@@ -11,8 +11,6 @@ To avoid circular imports with error_codes, we use TYPE_CHECKING for type hints
 and runtime imports in validators that need to raise errors.
 """
 
-from __future__ import annotations
-
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -66,7 +64,7 @@ class ModelNumericValue(BaseModel):
         return float(v)
 
     @classmethod
-    def from_int(cls, value: int, source: str | None = None) -> ModelNumericValue:
+    def from_int(cls, value: int, source: str | None = None) -> "ModelNumericValue":
         """Create numeric value from integer."""
         return cls(
             value=float(value),
@@ -76,7 +74,7 @@ class ModelNumericValue(BaseModel):
         )
 
     @classmethod
-    def from_float(cls, value: float, source: str | None = None) -> ModelNumericValue:
+    def from_float(cls, value: float, source: str | None = None) -> "ModelNumericValue":
         """Create numeric value from float."""
         return cls(
             value=value,
@@ -90,7 +88,7 @@ class ModelNumericValue(BaseModel):
         cls,
         value: int | float,
         source: str | None = None,
-    ) -> ModelNumericValue:
+    ) -> "ModelNumericValue":
         """Create numeric value from int or float, preserving original type."""
         # Detect the original type and use appropriate method
         if isinstance(value, int):
@@ -129,7 +127,7 @@ class ModelNumericValue(BaseModel):
             )  # Ensure integer precision but return as float
         return self.value
 
-    def compare_value(self, other: ModelNumericValue) -> bool:
+    def compare_value(self, other: "ModelNumericValue") -> bool:
         """Compare with another numeric value."""
         return self.value == other.value
 
@@ -145,19 +143,19 @@ class ModelNumericValue(BaseModel):
             return self.value == float(other)
         return False
 
-    def __lt__(self, other: ModelNumericValue) -> bool:
+    def __lt__(self, other: "ModelNumericValue") -> bool:
         """Less than comparison."""
         return self.value < other.value
 
-    def __le__(self, other: ModelNumericValue) -> bool:
+    def __le__(self, other: "ModelNumericValue") -> bool:
         """Less than or equal comparison."""
         return self.value <= other.value
 
-    def __gt__(self, other: ModelNumericValue) -> bool:
+    def __gt__(self, other: "ModelNumericValue") -> bool:
         """Greater than comparison."""
         return self.value > other.value
 
-    def __ge__(self, other: ModelNumericValue) -> bool:
+    def __ge__(self, other: "ModelNumericValue") -> bool:
         """Greater than or equal comparison."""
         return self.value >= other.value
 
