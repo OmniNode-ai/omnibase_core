@@ -42,8 +42,18 @@ class MixinToolExecution:
             "Must be implemented by the mixed class"
         )
 
-    def _get_input_state_class(self) -> type[object]:
-        """Get the input state class. Must be implemented by the mixed class."""
+    def _get_input_state_class(self) -> type | None:
+        """Get the input state class for this tool.
+
+        Returns:
+            The input state class, or None if the class cannot be determined
+            (e.g., when type introspection fails). When None is returned,
+            the tool will operate with dict[str, object] parameters instead.
+
+        Note:
+            This return type matches the pattern used in MixinEventListener and
+            MixinEventBus for consistency across the mixin system.
+        """
         raise NotImplementedError(  # stub-ok: abstract mixin method
             "Must be implemented by the mixed class"
         )
@@ -146,7 +156,16 @@ class MixinToolExecution:
             if isinstance(param, dict):
                 param_dict[param.get("name", "")] = param.get("value")
 
-        # Try to create input state
+        # If no input state class is available, return the param dict directly
+        if input_state_class is None:
+            emit_log_event(
+                LogLevel.DEBUG,
+                "No input state class found, using dict[str, object]",
+                {"tool_name": self.get_node_name()},
+            )
+            return param_dict
+
+        # Try to create typed input state
         try:
             # Add any required fields that might be missing
             if hasattr(input_state_class, "__fields__"):
@@ -165,7 +184,7 @@ class MixinToolExecution:
         ) as e:  # fallback-ok: resilient input parsing, fallback to dict with logging
             emit_log_event(
                 LogLevel.WARNING,
-                f"⚠️ Failed to create typed input state, using dict[str, object]: {e!s}",
+                f"Failed to create typed input state, using dict[str, object]: {e!s}",
                 {"tool_name": self.get_node_name()},
             )
             # Fallback to dict[str, object] if typed creation fails

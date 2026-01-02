@@ -20,27 +20,38 @@ class MixinHybridExecution[InputStateT, OutputStateT]:
     """
     Mixin that provides hybrid execution capabilities to tool nodes.
 
+    Type Parameters:
+        InputStateT: The input state type for processing (user-defined)
+        OutputStateT: The output state type returned from processing (user-defined)
+
     Features:
-    - Automatic mode selection based on complexity
-    - Direct execution for simple operations
-    - Workflow execution for complex multi-step operations
-    - Hub orchestration for event-driven execution
+        - Automatic mode selection based on complexity
+        - Direct execution for simple operations
+        - Workflow execution for complex multi-step operations
+        - Hub orchestration for event-driven execution
 
-    Usage:
-        class MyTool(MixinHybridExecution[MyInputState, MyOutputState], MixinContractMetadata, ProtocolReducer):
-            def determine_execution_mode(self, input_state: MyInputState) -> str:
-                # Override to customize mode selection
-                if input_state.operation_count > 10:
-                    return ExecutionMode.WORKFLOW
-                return ExecutionMode.DIRECT
+    Example:
+        In this example, ``MyInputState`` and ``MyOutputState`` are user-defined
+        Pydantic models that bind to the generic type parameters::
 
-            def process(self, input_state: MyInputState) -> MyOutputState:
-                # Direct execution logic
-                return output
+            class MyTool(
+                MixinHybridExecution[MyInputState, MyOutputState],
+                MixinContractMetadata,
+                ProtocolReducer,
+            ):
+                def determine_execution_mode(self, input_state: MyInputState) -> str:
+                    # Override to customize mode selection
+                    if input_state.operation_count > 10:
+                        return ExecutionMode.WORKFLOW
+                    return ExecutionMode.DIRECT
 
-            def create_workflow(self, input_state: MyInputState) -> Workflow:
-                # Create LlamaIndex workflow
-                return MyWorkflow(input_state)
+                def process(self, input_state: MyInputState) -> MyOutputState:
+                    # Direct execution logic
+                    return output
+
+                def create_workflow(self, input_state: MyInputState) -> Workflow:
+                    # Create LlamaIndex workflow
+                    return MyWorkflow(input_state)
     """
 
     def __init__(self, **kwargs: object) -> None:

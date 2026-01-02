@@ -177,9 +177,17 @@ class MixinContractStateReducer:
         """
         try:
             tool_name = getattr(self, "node_name", "unknown_tool")
-            action = getattr(input_state, "action", None)
-            action_name = (
-                getattr(action, "action_name", "unknown_action")
+
+            # Safely access action attribute - handle None input_state
+            action: object | None = (
+                getattr(input_state, "action", None)
+                if input_state is not None
+                else None
+            )
+
+            # Safely access action_name - handle None or missing attribute
+            action_name: str = (
+                getattr(action, "action_name", None) or "unknown_action"
                 if action is not None
                 else "unknown_action"
             )
@@ -197,12 +205,18 @@ class MixinContractStateReducer:
             transitions = self._load_state_transitions()
 
             # Find transitions triggered by this action
+            # Safely handle potentially None triggers (defensive check)
             applicable_transitions = [
-                t for t in transitions if action_name in t.triggers
+                t
+                for t in transitions
+                if getattr(t, "triggers", None) and action_name in t.triggers
             ]
 
             # Apply transitions in priority order
-            applicable_transitions.sort(key=lambda t: t.priority, reverse=True)
+            # Use getattr for safe priority access with default of 0
+            applicable_transitions.sort(
+                key=lambda t: getattr(t, "priority", 0), reverse=True
+            )
 
             for transition in applicable_transitions:
                 self._apply_transition(transition, input_state)
