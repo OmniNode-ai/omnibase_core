@@ -464,7 +464,10 @@ class TestFactoryMethodsExtraKwargs:
             region="us-east-1",
             availability_zone="us-east-1a",
             database={"database_display_name": "gateway_db"},
-            message_queue={"queue_display_name": "gateway_queue", "routing_key": "api.*"},
+            message_queue={
+                "queue_display_name": "gateway_queue",
+                "routing_key": "api.*",
+            },
             performance={"max_connections": 1000, "enable_compression": True},
         )
 
