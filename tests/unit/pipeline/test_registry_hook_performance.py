@@ -19,9 +19,9 @@ from collections.abc import Callable
 
 import pytest
 
-from omnibase_core.models.execution import ModelExecutionPlan
 from omnibase_core.models.pipeline import (
     ModelPhaseExecutionPlan,
+    ModelPipelineExecutionPlan,
     ModelPipelineHook,
     PipelinePhase,
 )
@@ -76,14 +76,14 @@ def create_noop_callable() -> HookCallable:
 
 def make_plan_with_hooks(
     *phase_hooks: tuple[PipelinePhase, list[ModelPipelineHook]],
-) -> ModelExecutionPlan:
+) -> ModelPipelineExecutionPlan:
     """Helper to create an execution plan with hooks.
 
     Args:
         *phase_hooks: Tuples of (phase, hooks_list)
 
     Returns:
-        ModelExecutionPlan with the specified hooks
+        ModelPipelineExecutionPlan with the specified hooks
     """
     phases: dict[PipelinePhase, ModelPhaseExecutionPlan] = {}
     for phase, hooks in phase_hooks:
@@ -93,7 +93,7 @@ def make_plan_with_hooks(
             hooks=hooks,
             fail_fast=fail_fast,
         )
-    return ModelExecutionPlan(phases=phases)
+    return ModelPipelineExecutionPlan(phases=phases)
 
 
 # ===== Hook Registration Performance Tests =====

@@ -122,6 +122,7 @@ def _get_redis_module() -> ModuleType:
     global _redis_module
     if _redis_module is None:
         if not REDIS_AVAILABLE:
+            # error-ok: RuntimeError appropriate for missing optional dependency
             raise RuntimeError(
                 "Redis package not installed. Install with: poetry install -E cache"
             )
@@ -202,8 +203,7 @@ def sanitize_redis_url(url: str) -> str:
                 safe_netloc += f":{parsed.port}"
             return urlunparse(parsed._replace(netloc=safe_netloc))
         return url
-    except Exception:
-        # If URL parsing fails, return a generic safe string
+    except Exception:  # fallback-ok: return safe string if URL parsing fails
         return "redis://***"
 
 
@@ -333,6 +333,7 @@ class BackendCacheRedis:
             RuntimeError: If redis package is not installed.
         """
         if not REDIS_AVAILABLE:
+            # error-ok: RuntimeError appropriate for missing optional dependency
             raise RuntimeError(
                 "Redis package not installed. Install with: poetry install -E cache"
             )
@@ -420,6 +421,7 @@ class BackendCacheRedis:
 
         # Get redis module lazily (ADR-005 compliant)
         if not REDIS_AVAILABLE:
+            # error-ok: RuntimeError appropriate for missing optional dependency
             raise RuntimeError(
                 "Redis package not installed. Install with: poetry install -E cache"
             )
@@ -456,10 +458,9 @@ class BackendCacheRedis:
                     "backend": "redis",
                 },
             ) from e
-        except Exception as e:
+        except Exception as e:  # boundary-ok: connection boundary must catch all
             # Sanitize error message to prevent credential leakage
             safe_error = sanitize_error_message(str(e))
-            # Catch unexpected errors during connection setup
             # Use error not exception - traceback will be at caller level after re-raise
             logger.error("Unexpected error connecting to Redis: %s", safe_error)  # noqa: TRY400
             await self._cleanup_on_connect_failure()

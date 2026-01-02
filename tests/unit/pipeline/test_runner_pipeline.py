@@ -5,9 +5,9 @@
 
 import pytest
 
-from omnibase_core.models.execution import ModelExecutionPlan
 from omnibase_core.models.pipeline import (
     ModelPhaseExecutionPlan,
+    ModelPipelineExecutionPlan,
     ModelPipelineHook,
     PipelinePhase,
 )
@@ -21,7 +21,7 @@ from omnibase_core.pipeline.runner_pipeline import (
 
 def make_plan_with_hooks(
     *phase_hooks: tuple[PipelinePhase, list[ModelPipelineHook]],
-) -> ModelExecutionPlan:
+) -> ModelPipelineExecutionPlan:
     """Helper to create an execution plan with hooks."""
     phases: dict[PipelinePhase, ModelPhaseExecutionPlan] = {}
     for phase, hooks in phase_hooks:
@@ -31,7 +31,7 @@ def make_plan_with_hooks(
             hooks=hooks,
             fail_fast=fail_fast,
         )
-    return ModelExecutionPlan(phases=phases)
+    return ModelPipelineExecutionPlan(phases=phases)
 
 
 @pytest.mark.unit
@@ -479,7 +479,7 @@ class TestRunnerPipelineEmptyPipeline:
     @pytest.mark.asyncio
     async def test_no_hooks_succeeds(self) -> None:
         """Pipeline with no hooks completes successfully."""
-        plan = ModelExecutionPlan.empty()
+        plan = ModelPipelineExecutionPlan.empty()
         runner = RunnerPipeline(plan=plan, callable_registry={})
         result = await runner.run()
         assert result.success
@@ -752,7 +752,7 @@ class TestRunnerPipelineCallableResolution:
     @pytest.mark.unit
     def test_empty_plan_no_validation_error(self) -> None:
         """Empty plan with empty registry succeeds initialization."""
-        plan = ModelExecutionPlan.empty()
+        plan = ModelPipelineExecutionPlan.empty()
         # Should not raise
         runner = RunnerPipeline(plan=plan, callable_registry={})
         assert runner is not None
