@@ -197,7 +197,7 @@ class ProtocolHandler(Protocol):
                             payload={"result": result},
                             success=True,
                         )
-                    except Exception as e:
+                    except Exception as e:  # Example: Converting errors to envelope responses
                         return ModelOnexEnvelope.create_response(
                             request=envelope,
                             payload={},

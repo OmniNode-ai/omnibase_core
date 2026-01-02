@@ -173,7 +173,13 @@ class ModelCliCommandRegistry(BaseModel):
                     if command:
                         self.register_command(command)
                         commands_discovered += 1
-                except Exception as e:
+                except (
+                    AttributeError,
+                    ValueError,
+                    TypeError,
+                    KeyError,
+                    RuntimeError,
+                ) as e:
                     # Log error but continue processing other commands
                     logger.debug(
                         "Failed to create command from contract for node '%s': %s",
@@ -289,7 +295,7 @@ def get_global_command_registry() -> ModelCliCommandRegistry:
         container = get_model_onex_container_sync()
         registry: ModelCliCommandRegistry = container.command_registry()
         return registry
-    except Exception as e:
+    except (AttributeError, ValueError, TypeError, KeyError) as e:
         raise ModelOnexError(
             message="DI container not initialized - cannot get command registry. "
             "Initialize the container first.",

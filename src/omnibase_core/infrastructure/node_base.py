@@ -154,7 +154,14 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
             # Emit initialization event
             self._emit_initialization_event()
 
-        except Exception as e:
+        except ModelOnexError as e:
+            # Re-raise ONEX errors without wrapping to preserve original error code/context
+            self._emit_initialization_failure(e)
+            raise
+        except (
+            Exception
+        ) as e:  # init-errors-ok: top-level error boundary for node initialization
+            # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
             self._emit_initialization_failure(e)
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.OPERATION_FAILED,
@@ -356,7 +363,10 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
                 },
                 correlation_id=self.correlation_id,
             ) from e
-        except Exception as e:
+        except ModelOnexError:
+            # Re-raise ONEX errors without wrapping to preserve original error code/context
+            raise
+        except (RuntimeError, TypeError, ValueError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.OPERATION_FAILED,
                 message=f"Failed to resolve main tool: {e!s}",
@@ -444,8 +454,11 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
             )
             raise
 
-        except Exception as e:
+        except (
+            Exception
+        ) as e:  # catch-all-ok: top-level error boundary for node execution
             # Convert generic exceptions to ONEX errors
+            # Note: Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
             emit_log_event(
                 LogLevel.ERROR,
                 f"Node execution exception: {self.node_id}",
@@ -540,8 +553,11 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
         except ModelOnexError:
             # Re-raise ONEX errors (fail-fast)
             raise
-        except Exception as e:
+        except (
+            Exception
+        ) as e:  # catch-all-ok: top-level error boundary for tool processing
             # Convert generic exceptions to ONEX errors
+            # Note: Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
             emit_log_event(
                 LogLevel.ERROR,
                 f"Error in NodeBase processing: {e!s}",
@@ -668,8 +684,14 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
                 state_delta={},
             )
 
-        except Exception as e:
+        except ModelOnexError:
+            # Re-raise ONEX errors without wrapping to preserve original error code/context
+            raise
+        except (
+            Exception
+        ) as e:  # catch-all-ok: top-level error boundary for state dispatch
             # Log and convert to ONEX error
+            # Note: Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
             emit_log_event(
                 LogLevel.ERROR,
                 f"State dispatch failed: {self.node_id}",

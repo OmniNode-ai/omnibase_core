@@ -163,7 +163,7 @@ Error Handling:
                 return False, "Request timed out"
             except ConnectionError:
                 return False, "Connection failed"
-            except Exception as e:
+            except Exception as e:  # Example: Catch-all for other HTTP client errors
                 return False, f"Unexpected error: {e}"
 
     Note: Callers should handle both standard exceptions and be prepared

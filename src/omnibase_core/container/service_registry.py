@@ -1,5 +1,6 @@
 """Service Registry - Implementation of ProtocolServiceRegistry."""
 
+import asyncio
 import time
 from datetime import datetime
 from typing import Literal, TypeVar, cast
@@ -211,7 +212,17 @@ class ServiceRegistry:
 
             return registration_id
 
+        except (SystemExit, KeyboardInterrupt, GeneratorExit):
+            # Never catch cancellation/exit signals
+            raise
+        except asyncio.CancelledError:
+            # Never suppress async cancellation
+            raise
+        except ModelOnexError:
+            # Re-raise ONEX errors as-is
+            raise
         except Exception as e:
+            # Catch all other exceptions from registration process
             self._failed_registrations += 1
             msg = (
                 f"Failed to register service '{interface.__name__ if hasattr(interface, '__name__') else str(interface)}'. "
@@ -297,7 +308,17 @@ class ServiceRegistry:
 
             return registration_id
 
+        except (SystemExit, KeyboardInterrupt, GeneratorExit):
+            # Never catch cancellation/exit signals
+            raise
+        except asyncio.CancelledError:
+            # Never suppress async cancellation
+            raise
+        except ModelOnexError:
+            # Re-raise ONEX errors as-is
+            raise
         except Exception as e:
+            # Catch all other exceptions from instance registration
             self._failed_registrations += 1
             interface_name = (
                 interface.__name__ if hasattr(interface, "__name__") else str(interface)
@@ -474,9 +495,16 @@ class ServiceRegistry:
 
             return instance
 
+        except (SystemExit, KeyboardInterrupt, GeneratorExit):
+            # Never catch cancellation/exit signals
+            raise
+        except asyncio.CancelledError:
+            # Never suppress async cancellation
+            raise
         except ModelOnexError:
             raise
         except Exception as e:
+            # Catch all other exceptions from service resolution
             interface_name = (
                 interface.__name__ if hasattr(interface, "__name__") else str(interface)
             )

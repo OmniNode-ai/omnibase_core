@@ -846,6 +846,7 @@ async def _execute_sequential(
             # For other error actions (retry, compensate), continue for now
 
         except Exception as e:
+            # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
             # Broad exception catch justified for workflow orchestration:
             # - Workflow steps execute external code with unknown exception types
             # - Production workflows require resilient error handling
@@ -1041,6 +1042,7 @@ async def _execute_parallel(
             action, payload_size = _create_action_for_step(step, workflow_id)
             return (step, action, payload_size, None)
         except Exception as e:  # fallback-ok: parallel execution returns error in tuple for caller handling
+            # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
             return (step, None, 0, e)
 
     # For parallel execution, we execute in waves based on dependencies
