@@ -4,6 +4,7 @@ import pytest
 
 from omnibase_core.enums.enum_backend_type import EnumBackendType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors import ModelOnexError
 
 
 @pytest.mark.unit
@@ -42,7 +43,7 @@ class TestEnumBackendType:
 
     def test_from_string_invalid_value_raises_error(self) -> None:
         """Test from_string raises ModelOnexError for invalid values."""
-        with pytest.raises(AssertionError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             EnumBackendType.from_string("invalid_backend")
 
         assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
@@ -53,7 +54,7 @@ class TestEnumBackendType:
 
     def test_from_string_empty_string_raises_error(self) -> None:
         """Test from_string raises error for empty string."""
-        with pytest.raises(AssertionError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             EnumBackendType.from_string("")
 
         assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
@@ -61,14 +62,14 @@ class TestEnumBackendType:
 
     def test_from_string_whitespace_only_raises_error(self) -> None:
         """Test from_string raises error for whitespace-only string."""
-        with pytest.raises(AssertionError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             EnumBackendType.from_string("   ")
 
         assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
 
     def test_from_string_numeric_string_raises_error(self) -> None:
         """Test from_string raises error for numeric strings."""
-        with pytest.raises(AssertionError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             EnumBackendType.from_string("12345")
 
         assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
@@ -76,21 +77,21 @@ class TestEnumBackendType:
 
     def test_from_string_special_characters_raises_error(self) -> None:
         """Test from_string raises error for strings with special characters."""
-        with pytest.raises(AssertionError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             EnumBackendType.from_string("vault@#$")
 
         assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
 
     def test_from_string_partial_match_raises_error(self) -> None:
         """Test from_string doesn't accept partial matches."""
-        with pytest.raises(AssertionError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             EnumBackendType.from_string("env")  # Partial match of "environment"
 
         assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
 
     def test_error_message_contains_all_valid_options(self) -> None:
         """Test error message lists all valid backend types."""
-        with pytest.raises(AssertionError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             EnumBackendType.from_string("invalid")
 
         error_msg = exc_info.value.message.lower()

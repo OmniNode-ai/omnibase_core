@@ -10,7 +10,6 @@ from enum import Enum
 import pytest
 
 from omnibase_core.enums.enum_likelihood import EnumLikelihood
-from omnibase_core.errors import ModelOnexError
 
 
 @pytest.mark.unit
@@ -221,21 +220,21 @@ class TestEnumLikelihoodFromProbability:
         assert EnumLikelihood.from_probability(1.0) == EnumLikelihood.CERTAIN
 
     def test_from_probability_invalid_range(self):
-        """Test that out-of-range probabilities raise ModelOnexError."""
+        """Test that out-of-range probabilities raise ValueError."""
         with pytest.raises(
-            ModelOnexError, match=r"probability must be between 0\.0 and 1\.0"
+            ValueError, match=r"probability must be between 0\.0 and 1\.0"
         ):
             EnumLikelihood.from_probability(-0.5)
         with pytest.raises(
-            ModelOnexError, match=r"probability must be between 0\.0 and 1\.0"
+            ValueError, match=r"probability must be between 0\.0 and 1\.0"
         ):
             EnumLikelihood.from_probability(1.5)
         with pytest.raises(
-            ModelOnexError, match=r"probability must be between 0\.0 and 1\.0"
+            ValueError, match=r"probability must be between 0\.0 and 1\.0"
         ):
             EnumLikelihood.from_probability(-1.0)
         with pytest.raises(
-            ModelOnexError, match=r"probability must be between 0\.0 and 1\.0"
+            ValueError, match=r"probability must be between 0\.0 and 1\.0"
         ):
             EnumLikelihood.from_probability(2.0)
 
@@ -376,7 +375,7 @@ class TestEnumLikelihoodEdgeCases:
         ],
     )
     def test_from_probability_rejects_negative_values(self, probability: float) -> None:
-        """Test that negative values (except -0.0) raise ModelOnexError."""
+        """Test that negative values (except -0.0) raise ValueError."""
         # Note: -0.0 == 0.0 in Python, so it should return IMPOSSIBLE
         if probability == 0.0:  # -0.0 equals 0.0
             assert (
@@ -385,7 +384,7 @@ class TestEnumLikelihoodEdgeCases:
             )
         else:
             with pytest.raises(
-                ModelOnexError, match=r"probability must be between 0\.0 and 1\.0"
+                ValueError, match=r"probability must be between 0\.0 and 1\.0"
             ):
                 EnumLikelihood.from_probability(probability)
 
@@ -407,9 +406,9 @@ class TestEnumLikelihoodEdgeCases:
     def test_from_probability_rejects_values_above_one(
         self, probability: float
     ) -> None:
-        """Test that values > 1.0 raise ModelOnexError."""
+        """Test that values > 1.0 raise ValueError."""
         with pytest.raises(
-            ModelOnexError, match=r"probability must be between 0\.0 and 1\.0"
+            ValueError, match=r"probability must be between 0\.0 and 1\.0"
         ):
             EnumLikelihood.from_probability(probability)
 
@@ -418,12 +417,12 @@ class TestEnumLikelihoodEdgeCases:
     # =========================================================================
 
     def test_from_probability_rejects_nan(self) -> None:
-        """Test that NaN raises ModelOnexError.
+        """Test that NaN raises ValueError.
 
         NaN comparisons always return False, so 0.0 <= NaN <= 1.0 is False.
         """
         with pytest.raises(
-            ModelOnexError, match=r"probability must be between 0\.0 and 1\.0"
+            ValueError, match=r"probability must be between 0\.0 and 1\.0"
         ):
             EnumLikelihood.from_probability(float("nan"))
 
@@ -517,10 +516,10 @@ class TestEnumLikelihoodEdgeCases:
 
     def test_from_probability_error_message_includes_value(self) -> None:
         """Test that error message includes the invalid value."""
-        with pytest.raises(AssertionError) as exc_info:
+        with pytest.raises(ValueError) as exc_info:
             EnumLikelihood.from_probability(1.5)
         assert "1.5" in str(exc_info.value)
 
-        with pytest.raises(AssertionError) as exc_info:
+        with pytest.raises(ValueError) as exc_info:
             EnumLikelihood.from_probability(-0.5)
         assert "-0.5" in str(exc_info.value)
