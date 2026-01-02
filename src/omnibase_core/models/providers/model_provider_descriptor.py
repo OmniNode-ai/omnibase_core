@@ -277,7 +277,14 @@ class ModelProviderDescriptor(BaseModel):
 
         if isinstance(v, dict):
             # Allow dict-based construction for Pydantic compatibility
-            return ModelHealthStatus(**v)
+            try:
+                return ModelHealthStatus(**v)
+            except Exception as e:
+                raise ModelOnexError(
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message=f"Failed to construct health status from dict: {e}",
+                    context={"health_dict": v, "error": str(e)},
+                ) from e
 
         raise ModelOnexError(
             error_code=EnumCoreErrorCode.VALIDATION_ERROR,

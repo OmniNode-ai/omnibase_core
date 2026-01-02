@@ -121,11 +121,9 @@ class ModelProjectorBehavior(BaseModel):
         default=None,
         description=(
             "Column to use for upsert conflict detection. "
-            "Required semantics: "
-            "- When mode='upsert' and upsert_key is None: Uses schema's primary_key "
-            "(a warning is logged to inform users of this default behavior). "
-            "- When mode='upsert' and upsert_key is specified: Uses the specified column. "
-            "- When mode='insert_only' or 'append': upsert_key is ignored."
+            "Only applicable when mode='upsert'. "
+            "If None, defaults to the schema's primary_key (a warning is logged). "
+            "Ignored when mode='insert_only' or 'append'."
         ),
     )
 

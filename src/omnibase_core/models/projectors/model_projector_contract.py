@@ -344,17 +344,18 @@ class ModelProjectorContract(BaseModel):
         """Return a concise representation for debugging.
 
         Returns:
-            String representation showing projector_id, version, and event count
-            for better debugging visibility.
+            String representation showing projector_id, version, event count,
+            and index count for better debugging visibility.
 
         Examples:
             >>> contract = ModelProjectorContract(...)
             >>> repr(contract)
-            "ModelProjectorContract(id='node-projector', version='1.0.0', events=2)"
+            "ModelProjectorContract(id='node-projector', version='1.0.0', events=2, indexes=1)"
         """
         return (
             f"ModelProjectorContract(id={self.projector_id!r}, "
-            f"version={self.version!r}, events={len(self.consumed_events)})"
+            f"version={self.version!r}, events={len(self.consumed_events)}, "
+            f"indexes={len(self.projection_schema.indexes)})"
         )
 
 

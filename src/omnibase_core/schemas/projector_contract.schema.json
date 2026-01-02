@@ -47,7 +47,7 @@
             }
           ],
           "default": null,
-          "description": "Column to use for upsert conflict detection. Required semantics: - When mode='upsert' and upsert_key is None: Uses schema's primary_key (a warning is logged to inform users of this default behavior). - When mode='upsert' and upsert_key is specified: Uses the specified column. - When mode='insert_only' or 'append': upsert_key is ignored.",
+          "description": "Column to use for upsert conflict detection. Only applicable when mode='upsert'. If None, defaults to the schema's primary_key (a warning is logged). Ignored when mode='insert_only' or 'append'.",
           "title": "Upsert Key"
         },
         "idempotency": {

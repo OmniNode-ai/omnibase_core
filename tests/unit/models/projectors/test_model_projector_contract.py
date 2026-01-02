@@ -1422,6 +1422,7 @@ class TestModelProjectorContractRepr:
         assert "node-status-projector" in result
         assert "version='1.0.0'" in result
         assert "events=1" in result
+        assert "indexes=0" in result
 
     def test_repr_with_multiple_events(self) -> None:
         """Test repr correctly shows event count for multiple events."""
@@ -1466,6 +1467,7 @@ class TestModelProjectorContractRepr:
         assert "order-projector" in result
         assert "version='2.5.0'" in result
         assert "events=3" in result
+        assert "indexes=0" in result
 
     def test_repr_concise_format(self) -> None:
         """Test repr is concise and doesn't include excessive details."""
@@ -1507,13 +1509,65 @@ class TestModelProjectorContractRepr:
         )
         result = repr(contract)
 
-        # Repr should be concise - showing id, version, and event count
+        # Repr should be concise - showing id, version, event count, and index count
         assert "ModelProjectorContract" in result
         assert "complex-projector" in result
         assert "version='2.0.0'" in result
         assert "events=2" in result
+        assert "indexes=0" in result
         # These details should NOT be in the concise repr
         assert "materialized_view" not in result
         assert "aggregate_type" not in result
         assert "behavior" not in result.lower()
         assert "schema" not in result.lower()
+
+    def test_repr_with_indexes(self) -> None:
+        """Test repr correctly shows index count when indexes are present."""
+        from omnibase_core.models.projectors import (
+            ModelProjectorBehavior,
+            ModelProjectorColumn,
+            ModelProjectorContract,
+            ModelProjectorIndex,
+            ModelProjectorSchema,
+        )
+
+        column = ModelProjectorColumn(
+            name="order_id",
+            type="UUID",
+            source="event.payload.order_id",
+        )
+        status_column = ModelProjectorColumn(
+            name="status",
+            type="TEXT",
+            source="event.payload.status",
+        )
+
+        schema = ModelProjectorSchema(
+            table="orders",
+            primary_key="order_id",
+            columns=[column, status_column],
+            indexes=[
+                ModelProjectorIndex(columns=["status"]),
+                ModelProjectorIndex(columns=["order_id", "status"], unique=True),
+            ],
+        )
+
+        behavior = ModelProjectorBehavior(mode="upsert")
+
+        contract = ModelProjectorContract(
+            projector_kind="materialized_view",
+            projector_id="order-projector",
+            name="Order Projector",
+            version="1.0.0",
+            aggregate_type="order",
+            consumed_events=["order.created.v1"],
+            projection_schema=schema,
+            behavior=behavior,
+        )
+        result = repr(contract)
+
+        assert "ModelProjectorContract" in result
+        assert "order-projector" in result
+        assert "version='1.0.0'" in result
+        assert "events=1" in result
+        assert "indexes=2" in result
