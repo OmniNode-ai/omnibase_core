@@ -10,7 +10,7 @@ from pydantic import BaseModel, ConfigDict, Field
 class ModelVerificationMethod(BaseModel):
     """Immutable verification method used to establish trust."""
 
-    model_config = ConfigDict(frozen=True, extra="forbid")
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     method_name: str = Field(
         default=...,

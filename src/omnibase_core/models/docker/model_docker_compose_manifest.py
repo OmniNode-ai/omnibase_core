@@ -439,7 +439,7 @@ class ModelDockerComposeManifest(BaseModel):
                     # Convert list[str] to list for JsonType compatibility
                     service_dict["volumes"] = list(service.volumes)
                 if service.depends_on:
-                    # Convert dict[str, dict[str, str]] to nested dict
+                    # dict() creates copy for JsonType compatibility
                     service_dict["depends_on"] = {
                         k: dict(v) for k, v in service.depends_on.items()
                     }

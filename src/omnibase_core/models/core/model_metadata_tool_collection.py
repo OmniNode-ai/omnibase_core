@@ -104,9 +104,9 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
                 if isinstance(v, dict):
                     # Enhanced ModelFunctionTool creation with validation
                     try:
-                        function_tool = ModelFunctionTool(
-                            **v
-                        )  # Direct Pydantic instantiation (ONEX compliance)
+                        function_tool = ModelFunctionTool.model_validate(
+                            v
+                        )  # Pydantic model_validate for loosely-typed dict input
                         new_data[k] = function_tool
                     except (AttributeError, ValueError, TypeError, KeyError):
                         # fallback-ok: Fallback to raw dictionary if ModelFunctionTool creation fails
@@ -249,9 +249,9 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
             # Add the tool data
             if isinstance(tool_data, dict):
                 try:
-                    self.root[name] = ModelFunctionTool(
-                        **tool_data
-                    )  # Direct Pydantic instantiation (ONEX compliance)
+                    self.root[name] = ModelFunctionTool.model_validate(
+                        tool_data
+                    )  # Pydantic model_validate for loosely-typed dict input
                 except (AttributeError, ValueError, TypeError, KeyError):
                     # fallback-ok: Fallback to raw dict if ModelFunctionTool creation fails
                     self.root[name] = tool_data

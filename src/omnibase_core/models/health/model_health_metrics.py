@@ -166,13 +166,31 @@ class ModelHealthMetrics(BaseModel):
         self.custom_metrics[name] = value
 
     def get_custom_metric(self, name: str, default: float = 0.0) -> float:
-        """Get a custom metric value."""
+        """Get a custom metric value.
+
+        Args:
+            name: The name of the custom metric to retrieve.
+            default: Default value to return if metric not found or not convertible.
+
+        Returns:
+            The metric value as a float, or default if not found/convertible.
+        """
         value = self.custom_metrics.get(name, default)
         # Type narrowing: ensure we return a float
         if isinstance(value, float):
             return value
-        if isinstance(value, (int, str)):
+        # NOTE: Check bool before int since bool is a subclass of int in Python
+        # (isinstance(True, int) returns True, so bool must be checked first)
+        if isinstance(value, bool):
+            return 1.0 if value else 0.0
+        if isinstance(value, int):
             return float(value)
+        if isinstance(value, str):
+            try:
+                return float(value)
+            except ValueError:
+                # fallback-ok: return default if string is not a valid float
+                return default
         return default
 
     @property

@@ -2,7 +2,6 @@
 Audit value model to replace Dict[str, Any] usage in audit entries.
 """
 
-from typing import Optional
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
@@ -58,7 +57,7 @@ class ModelAuditValue(BaseModel):
     @classmethod
     def from_dict(
         cls, data: SerializedDict | None, is_new: bool = False
-    ) -> Optional["ModelAuditValue"]:
+    ) -> "ModelAuditValue | None":
         """Create from dictionary for easy migration."""
         if data is None:
             return None

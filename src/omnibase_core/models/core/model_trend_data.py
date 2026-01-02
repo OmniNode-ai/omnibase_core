@@ -4,7 +4,6 @@ Trend data model to replace Dict[str, Any] usage for trends fields.
 
 from collections.abc import Mapping
 from datetime import UTC, datetime
-from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
@@ -75,7 +74,7 @@ class ModelTrendData(BaseModel):
     model_config = ConfigDict()
 
     @classmethod
-    def from_dict(cls, data: Mapping[str, object] | None) -> Optional["ModelTrendData"]:
+    def from_dict(cls, data: Mapping[str, object] | None) -> "ModelTrendData | None":
         """Create from dictionary for easy migration."""
         if data is None:
             return None

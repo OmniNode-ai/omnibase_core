@@ -218,7 +218,7 @@ class ModelNodeCategorization(BaseModel):
         if self.tags:
             result["tags"] = self.tags.copy()
         # Pack other categorization fields into metadata dict
-        # Convert list[str] to list for JsonType compatibility
+        # list() creates copy for JsonType compatibility
         result["metadata"] = {
             "categories": list(self.categories),
             "dependencies": [str(dep) for dep in self.dependencies],

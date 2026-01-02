@@ -5,10 +5,10 @@ This model supports dependency injection configuration in contracts.
 
 """
 
-from typing import cast
-
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import (
     ModelSemVer,
     parse_semver_from_string,
@@ -58,5 +58,11 @@ class ModelContractDependency(BaseModel):
         if isinstance(v, dict):
             # Handle dict format like {"major": 1, "minor": 0, "patch": 0}
             return ModelSemVer.model_validate(v)
-        # Already a ModelSemVer instance (only remaining type after str/dict checks)
-        return cast(ModelSemVer, v)
+        # Runtime type validation - only accept actual ModelSemVer instances
+        if isinstance(v, ModelSemVer):
+            return v
+        # Reject unexpected types with clear error message
+        raise ModelOnexError(
+            message=f"version must be str, dict, or ModelSemVer, got {type(v).__name__}",
+            error_code=EnumCoreErrorCode.TYPE_MISMATCH,
+        )
