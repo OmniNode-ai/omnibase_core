@@ -203,6 +203,7 @@ class TestProtocolDatabaseConnectionDefinition:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(30)
 class TestMockDatabaseConnectionBehavior:
     """Test MockDatabaseConnection behavior for protocol conformance."""
 
@@ -326,6 +327,7 @@ class TestMockDatabaseConnectionBehavior:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(30)
 class TestProtocolUsagePatterns:
     """Test common usage patterns with ProtocolDatabaseConnection."""
 

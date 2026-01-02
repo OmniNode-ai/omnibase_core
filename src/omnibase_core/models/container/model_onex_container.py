@@ -372,11 +372,11 @@ class ModelONEXContainer:
                 return service_instance
 
             except (
-                ModelOnexError,
                 AttributeError,
                 KeyError,
-                ValueError,
+                ModelOnexError,
                 RuntimeError,
+                ValueError,
             ) as registry_error:
                 # Fail fast - ServiceRegistry is the only resolution mechanism when enabled
                 emit_log_event(
@@ -473,7 +473,7 @@ class ModelONEXContainer:
 
             return service_instance
 
-        except (ModelOnexError, AttributeError, KeyError, RuntimeError) as e:
+        except (AttributeError, KeyError, ModelOnexError, RuntimeError) as e:
             end_time = time.perf_counter()
             resolution_time_ms = (end_time - start_time) * 1000
 

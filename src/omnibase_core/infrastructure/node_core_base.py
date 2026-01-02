@@ -663,7 +663,7 @@ class NodeCoreBase(ABC):
                 },
             )
 
-        except (AttributeError, OSError, ValueError, RuntimeError) as e:
+        except (AttributeError, OSError, RuntimeError, ValueError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Error finding contract path: {e!s}",

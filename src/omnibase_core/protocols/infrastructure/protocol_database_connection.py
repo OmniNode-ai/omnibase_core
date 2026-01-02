@@ -113,7 +113,7 @@ class ProtocolDatabaseConnection(Protocol):
     async def execute(
         self,
         query: str,
-        *args: Any,
+        *args: object,
     ) -> list[dict[str, Any]]:
         """
         Execute a query and return results.
@@ -133,7 +133,7 @@ class ProtocolDatabaseConnection(Protocol):
     async def execute_many(
         self,
         query: str,
-        args_list: list[tuple[Any, ...]],
+        args_list: list[tuple[object, ...]],
     ) -> int:
         """
         Execute a query with multiple parameter sets.
