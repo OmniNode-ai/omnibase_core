@@ -721,7 +721,7 @@ class MixinEffectExecution:
                             },
                         )
                     # Duck-typed method call; actual service implements get_secret at runtime
-                    secret_value = secret_service.get_secret(secret_key)  # type: ignore[attr-defined]  # Duck-typed protocol method
+                    secret_value = secret_service.get_secret(secret_key)  # Duck-typed protocol method
                     if secret_value is None:
                         raise ModelOnexError(
                             message=f"Secret not found: {secret_key}",
@@ -1010,7 +1010,7 @@ class MixinEffectExecution:
         # Validate extracted value matches expected types for type safety
         # Return None for unexpected types (e.g., custom objects, callables)
         if isinstance(current, (str, int, float, bool, dict, list, type(None))):
-            return current  # type: ignore[return-value]  # isinstance narrows to valid union member
+            return current  # isinstance narrows to valid union member
         return None
 
     def _coerce_param_value(self, value: str) -> DbParamType:
@@ -1413,7 +1413,7 @@ class MixinEffectExecution:
                     },
                 )
             # Duck-typed handler execution; handler implements execute() per protocol contract
-            result = await handler.execute(resolved_context)  # type: ignore[attr-defined]  # Duck-typed protocol method
+            result = await handler.execute(resolved_context)  # Duck-typed protocol method
         except ModelOnexError:
             raise
         except Exception as exec_error:  # fallback-ok: handler errors wrapped in ModelOnexError

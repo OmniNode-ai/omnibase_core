@@ -2158,9 +2158,10 @@ class TestEdgeCases:
         with pytest.raises(ModelOnexError) as exc_info:
             await test_node.execute_effect(input_data)
 
-        # The error should be wrapped but the original should be in the chain
-        # (because handler exception is wrapped in Handler execution failed)
-        assert "Handler execution failed" in str(exc_info.value)
+        # The original ModelOnexError should be passed through unchanged
+        # Verify the original error message is preserved
+        assert "Original handler error" in str(exc_info.value)
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
 
 
 @pytest.mark.unit

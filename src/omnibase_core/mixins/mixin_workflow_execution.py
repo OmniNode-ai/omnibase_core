@@ -10,7 +10,7 @@ Typing: Strongly typed with strategic Any usage for mixin kwargs and configurati
 from __future__ import annotations
 
 from collections.abc import Callable, Coroutine
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 if TYPE_CHECKING:
@@ -264,7 +264,7 @@ class MixinWorkflowExecution:
         """
         # Lazy import to avoid circular import with workflow_executor
         _, execute_workflow, _, _ = _get_workflow_executor()
-        result = await execute_workflow(  # type: ignore[operator]
+        result = await execute_workflow(
             workflow_definition,
             workflow_steps,
             workflow_id,
@@ -299,10 +299,7 @@ class MixinWorkflowExecution:
             },
         )
 
-        # Cast is safe: execute_workflow is typed to return WorkflowExecutionResult
-        # (see ExecuteWorkflowFunc type alias). The cast is needed because result
-        # comes from await on a dynamically-imported function.
-        return cast("WorkflowExecutionResult", result)
+        return result
 
     async def validate_workflow_contract(
         self,
@@ -334,13 +331,7 @@ class MixinWorkflowExecution:
         """
         # Lazy import to avoid circular import with workflow_executor
         _, _, _, validate_workflow_definition = _get_workflow_executor()
-        # Cast is safe: validate_workflow_definition is typed to return list[str]
-        # (see ValidateWorkflowDefinitionFunc type alias). The cast handles the
-        # forward reference for the async function return type.
-        return cast(
-            list[str],
-            await validate_workflow_definition(workflow_definition, workflow_steps),
-        )
+        return await validate_workflow_definition(workflow_definition, workflow_steps)
 
     def get_workflow_execution_order(
         self,
@@ -365,9 +356,7 @@ class MixinWorkflowExecution:
         """
         # Lazy import to avoid circular import with workflow_executor
         _, _, get_execution_order, _ = _get_workflow_executor()
-        # Cast is safe: get_execution_order is typed to return list[UUID]
-        # (see GetExecutionOrderFunc type alias). Cast handles tuple unpacking.
-        return cast(list[UUID], get_execution_order(workflow_steps))
+        return get_execution_order(workflow_steps)
 
     def create_workflow_steps_from_config(
         self,

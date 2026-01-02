@@ -232,7 +232,7 @@ class MixinContractStateReducer:
             # Fallback: create basic success response
             return self._create_default_output_state(input_state)
 
-        except (ValueError, RuntimeError) as e:
+        except (AttributeError, ValueError, RuntimeError) as e:
             tool_name = getattr(self, "node_name", "unknown_tool")
             emit_log_event(
                 LogLevel.ERROR,
@@ -256,30 +256,33 @@ class MixinContractStateReducer:
             input_state: Current input state
         """
         tool_name = getattr(self, "node_name", "unknown_tool")
+        # Defensive access to transition attributes to prevent AttributeError
+        transition_name = getattr(transition, "name", "unknown_transition")
+        transition_type = getattr(transition, "transition_type", None)
 
         try:
-            if transition.transition_type == EnumTransitionType.SIMPLE:
+            if transition_type == EnumTransitionType.SIMPLE:
                 self._apply_simple_transition(transition, input_state)
-            elif transition.transition_type == EnumTransitionType.TOOL_BASED:
+            elif transition_type == EnumTransitionType.TOOL_BASED:
                 self._apply_tool_based_transition(transition, input_state)
-            elif transition.transition_type == EnumTransitionType.CONDITIONAL:
+            elif transition_type == EnumTransitionType.CONDITIONAL:
                 self._apply_conditional_transition(transition, input_state)
             else:
                 emit_log_event(
                     LogLevel.WARNING,
-                    f"Unsupported transition type: {transition.transition_type}",
+                    f"Unsupported transition type: {transition_type}",
                     {
                         "tool_name": tool_name,
-                        "transition_name": transition.name,
+                        "transition_name": transition_name,
                     },
                 )
-        except (ValueError, RuntimeError) as e:
+        except (AttributeError, ValueError, RuntimeError) as e:
             emit_log_event(
                 LogLevel.ERROR,
-                f"Failed to apply transition {transition.name}: {e!s}",
+                f"Failed to apply transition {transition_name}: {e!s}",
                 {
                     "tool_name": tool_name,
-                    "transition_name": transition.name,
+                    "transition_name": transition_name,
                     "error": str(e),
                 },
             )
@@ -293,13 +296,14 @@ class MixinContractStateReducer:
         # Simple transitions update state fields using template expressions
         # For now, just log the transition (actual field updates would require state management)
         tool_name = getattr(self, "node_name", "unknown_tool")
+        transition_name = getattr(transition, "name", "unknown_transition")
 
         emit_log_event(
             LogLevel.DEBUG,
-            f"Applied simple transition: {transition.name}",
+            f"Applied simple transition: {transition_name}",
             {
                 "tool_name": tool_name,
-                "transition_name": transition.name,
+                "transition_name": transition_name,
                 "transition_type": "simple",
             },
         )
@@ -311,20 +315,24 @@ class MixinContractStateReducer:
     ) -> None:
         """Apply tool-based transition by delegating to specified tool."""
         tool_name = getattr(self, "node_name", "unknown_tool")
+        transition_name = getattr(transition, "name", "unknown_transition")
 
-        if not transition.tool_config:
+        # Defensive access to tool_config to prevent AttributeError
+        tool_config = getattr(transition, "tool_config", None)
+        if not tool_config:
             return
 
-        target_tool_name = transition.tool_config.tool_display_name or str(
-            transition.tool_config.tool_id
-        )
+        # Safely extract tool identifiers with fallback defaults
+        tool_display_name = getattr(tool_config, "tool_display_name", None)
+        tool_id = getattr(tool_config, "tool_id", None)
+        target_tool_name = tool_display_name or str(tool_id) if tool_id else "unknown"
 
         emit_log_event(
             LogLevel.DEBUG,
-            f"Applied tool-based transition: {transition.name} -> {target_tool_name}",
+            f"Applied tool-based transition: {transition_name} -> {target_tool_name}",
             {
                 "tool_name": tool_name,
-                "transition_name": transition.name,
+                "transition_name": transition_name,
                 "transition_type": "tool_based",
                 "target_tool": target_tool_name,
             },
@@ -337,13 +345,14 @@ class MixinContractStateReducer:
     ) -> None:
         """Apply conditional transition based on state conditions."""
         tool_name = getattr(self, "node_name", "unknown_tool")
+        transition_name = getattr(transition, "name", "unknown_transition")
 
         emit_log_event(
             LogLevel.DEBUG,
-            f"Applied conditional transition: {transition.name}",
+            f"Applied conditional transition: {transition_name}",
             {
                 "tool_name": tool_name,
-                "transition_name": transition.name,
+                "transition_name": transition_name,
                 "transition_type": "conditional",
             },
         )

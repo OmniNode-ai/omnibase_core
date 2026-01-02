@@ -337,7 +337,7 @@ class MixinHybridExecution[InputStateT, OutputStateT]:
         # Default modes
         return [ExecutionMode.DIRECT, ExecutionMode.WORKFLOW]
 
-    def create_workflow(self, input_state: InputStateT) -> object:
+    def create_workflow(self, input_state: InputStateT) -> object | None:
         """
         Create LlamaIndex workflow for complex operations.
 
