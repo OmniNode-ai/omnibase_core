@@ -192,7 +192,18 @@ class ExecutionResolver:
         self,
         contracts: list[ModelHandlerContract],
     ) -> dict[str, _HandlerInfo]:
-        """Build handler info lookup from contracts."""
+        """
+        Build handler info lookup from contracts.
+
+        Creates a dictionary mapping handler IDs to their extracted info,
+        including priority, tags, capabilities, and execution constraints.
+
+        Args:
+            contracts: List of handler contracts to process.
+
+        Returns:
+            Dictionary mapping handler_id to _HandlerInfo for each contract.
+        """
         result: dict[str, _HandlerInfo] = {}
         for contract in contracts:
             # Extract priority from metadata (default to 0 - higher number = lower priority)
@@ -219,7 +230,19 @@ class ExecutionResolver:
         self,
         handler_info_map: dict[str, _HandlerInfo],
     ) -> dict[str, list[str]]:
-        """Build capability -> handler_ids index."""
+        """
+        Build capability to handler_ids index.
+
+        Creates a reverse index mapping capability names to the list of
+        handler IDs that provide that capability. Used for resolving
+        ``capability:X`` constraint references.
+
+        Args:
+            handler_info_map: Handler info lookup built from contracts.
+
+        Returns:
+            Dictionary mapping capability name to list of handler IDs.
+        """
         result: dict[str, list[str]] = defaultdict(list)
         for handler_id, info in handler_info_map.items():
             for capability in info.capability_outputs:
@@ -230,7 +253,18 @@ class ExecutionResolver:
         self,
         handler_info_map: dict[str, _HandlerInfo],
     ) -> dict[str, list[str]]:
-        """Build tag -> handler_ids index."""
+        """
+        Build tag to handler_ids index.
+
+        Creates a reverse index mapping tag names to the list of handler IDs
+        that have that tag. Used for resolving ``tag:X`` constraint references.
+
+        Args:
+            handler_info_map: Handler info lookup built from contracts.
+
+        Returns:
+            Dictionary mapping tag name to list of handler IDs.
+        """
         result: dict[str, list[str]] = defaultdict(list)
         for handler_id, info in handler_info_map.items():
             for tag in info.tags:
@@ -241,7 +275,18 @@ class ExecutionResolver:
         self,
         handler_info_map: dict[str, _HandlerInfo],
     ) -> int:
-        """Count total constraints evaluated."""
+        """
+        Count total constraints evaluated.
+
+        Sums all requires_before and requires_after constraints across all
+        handlers. Used for resolution metadata reporting.
+
+        Args:
+            handler_info_map: Handler info lookup built from contracts.
+
+        Returns:
+            Total number of constraint references across all handlers.
+        """
         count = 0
         for info in handler_info_map.values():
             if info.constraints:
@@ -262,8 +307,19 @@ class ExecutionResolver:
         """
         Build dependency graph from handler constraints.
 
+        Processes requires_before and requires_after constraints from each
+        handler's execution_constraints, resolving symbolic references
+        (capability:X, handler:Y, tag:Z) to concrete handler IDs.
+
+        Args:
+            handler_info_map: Handler info lookup built from contracts.
+            handler_by_capability: Capability to handler_ids index.
+            handler_by_tag: Tag to handler_ids index.
+
         Returns:
-            Tuple of (graph, conflicts).
+            Tuple of (dependency_graph, conflicts). The graph contains nodes
+            for all handlers and directed edges representing ordering
+            constraints. Conflicts are warnings for unresolved references.
         """
         graph = _DependencyGraph()
         conflicts: list[ModelExecutionConflict] = []
@@ -403,8 +459,16 @@ class ExecutionResolver:
         """
         Detect cycles in the dependency graph using DFS.
 
+        Uses depth-first search with a recursion stack to identify circular
+        dependencies. Each detected cycle produces an error-severity conflict
+        with the cycle path for debugging.
+
+        Args:
+            graph: Dependency graph with nodes and edges.
+
         Returns:
-            List of cycle conflicts found.
+            List of cycle conflicts found. Each conflict includes the cycle
+            path (e.g., ["A", "B", "C", "A"]) and suggested resolution.
         """
         conflicts: list[ModelExecutionConflict] = []
         visited: set[str] = set()
@@ -451,13 +515,9 @@ class ExecutionResolver:
                             ),
                         )
                     )
-                    # Reset for finding other cycles
-                    visited.clear()
-                    rec_stack.clear()
-                    path.clear()
-                    # Mark the cycle nodes as visited to skip them
-                    for n in cycle[:-1]:
-                        visited.add(n)
+                    # One blocking cycle is sufficient to invalidate the plan.
+                    # Return immediately to avoid complex state management.
+                    return conflicts
 
         return conflicts
 
@@ -482,15 +542,12 @@ class ExecutionResolver:
         """
         tie_decisions: list[ModelTieBreakerDecision] = []
 
-        # Calculate in-degrees
-        in_degree: dict[str, int] = dict.fromkeys(graph.nodes, 0)
+        # Calculate in-degrees (count of dependencies for each node)
+        in_degree: dict[str, int] = {}
         for node in graph.nodes:
-            for dep in graph.edges.get(node, set()):
-                if dep in in_degree:  # Only count edges to known nodes
-                    pass
-            # Count incoming edges
-            in_degree[node] = len(
-                [d for d in graph.edges.get(node, set()) if d in graph.nodes]
+            # Count edges to nodes in the graph (dependencies)
+            in_degree[node] = sum(
+                1 for d in graph.edges.get(node, set()) if d in graph.nodes
             )
 
         # Find nodes with no dependencies
@@ -599,14 +656,16 @@ class ExecutionResolver:
         """
         Assign handlers to execution phases.
 
-        For now, all handlers are assigned to the EXECUTE phase since we don't
-        have phase hints in the handler contracts. This can be extended later
-        to support explicit phase assignment.
+        Currently, all handlers are assigned to the EXECUTE phase since phase
+        hints are not yet supported in ModelHandlerContract.execution_constraints.
+        Future versions may support explicit phase assignment via handler contract
+        hints, allowing handlers to declare their target phase (e.g., PREFLIGHT
+        for validation, FINALIZE for cleanup).
 
         Args:
-            sorted_handlers: Handlers in dependency order
-            profile_phases: Phase names from profile
-            handler_info_map: Handler info lookup
+            sorted_handlers: Handlers in dependency order.
+            profile_phases: Phase names from profile.
+            handler_info_map: Handler info lookup.
 
         Returns:
             List of ModelPhaseStep with handlers assigned.
@@ -664,7 +723,22 @@ class ExecutionResolver:
         started_at: datetime,
         tie_breaker_decisions: list[ModelTieBreakerDecision],
     ) -> ModelExecutionPlan:
-        """Create an empty but valid plan for empty contract list."""
+        """
+        Create an empty but valid plan for empty contract list.
+
+        Args:
+            profile: Execution profile used for resolution.
+            started_at: Timestamp when resolution started.
+            tie_breaker_decisions: List of tie-breaker decisions made.
+
+        Returns:
+            Empty execution plan with is_valid=True.
+
+        Note:
+            source_profile is set to None because ModelExecutionProfile does not
+            have a name/identifier field. The ordering_policy.strategy is used
+            as a proxy identifier in resolution_metadata.
+        """
         completed_at = datetime.now(UTC)
         duration_ms = (completed_at - started_at).total_seconds() * 1000
 
@@ -699,7 +773,25 @@ class ExecutionResolver:
         handler_count: int,
         tie_breaker_decisions: list[ModelTieBreakerDecision],
     ) -> ModelExecutionPlan:
-        """Create an invalid plan due to conflicts."""
+        """
+        Create an invalid plan due to conflicts.
+
+        Args:
+            profile: Execution profile used for resolution.
+            conflicts: List of blocking conflicts that caused invalidation.
+            started_at: Timestamp when resolution started.
+            total_constraints_evaluated: Number of constraints processed.
+            handler_count: Number of handlers in the input contracts.
+            tie_breaker_decisions: List of tie-breaker decisions made.
+
+        Returns:
+            Execution plan with is_valid=False and populated conflicts.
+
+        Note:
+            source_profile is set to None because ModelExecutionProfile does not
+            have a name/identifier field. The ordering_policy.strategy is used
+            as a proxy identifier in resolution_metadata.
+        """
         completed_at = datetime.now(UTC)
         duration_ms = (completed_at - started_at).total_seconds() * 1000
 
@@ -734,7 +826,25 @@ class ExecutionResolver:
         tie_breaker_decisions: list[ModelTieBreakerDecision],
         conflicts: list[ModelExecutionConflict],
     ) -> ModelExecutionPlan:
-        """Create a valid execution plan."""
+        """
+        Create a valid execution plan.
+
+        Args:
+            profile: Execution profile used for resolution.
+            phases: List of phase steps with assigned handlers.
+            started_at: Timestamp when resolution started.
+            total_constraints_evaluated: Number of constraints processed.
+            tie_breaker_decisions: List of tie-breaker decisions made.
+            conflicts: List of non-blocking conflicts (warnings).
+
+        Returns:
+            Execution plan with is_valid=True and ordered phases.
+
+        Note:
+            source_profile is set to None because ModelExecutionProfile does not
+            have a name/identifier field. The ordering_policy.strategy is used
+            as a proxy identifier in resolution_metadata.
+        """
         completed_at = datetime.now(UTC)
         duration_ms = (completed_at - started_at).total_seconds() * 1000
 

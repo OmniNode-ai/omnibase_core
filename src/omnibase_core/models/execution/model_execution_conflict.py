@@ -18,8 +18,6 @@ See Also:
     Added as part of Execution Order Resolution (OMN-1106)
 """
 
-from __future__ import annotations
-
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -138,7 +136,7 @@ class ModelExecutionConflict(BaseModel):
     )
 
     @model_validator(mode="after")
-    def validate_cycle_path_for_cycle_type(self) -> ModelExecutionConflict:
+    def validate_cycle_path_for_cycle_type(self) -> "ModelExecutionConflict":
         """
         Validate that cycle_path is provided for cycle conflicts.
 

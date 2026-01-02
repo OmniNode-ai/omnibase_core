@@ -20,6 +20,9 @@ from typing import Any
 
 import pytest
 
+# Apply @pytest.mark.unit to all tests in this module
+pytestmark = pytest.mark.unit
+
 from omnibase_core.models.contracts.model_execution_constraints import (
     ModelExecutionConstraints,
 )
@@ -432,8 +435,12 @@ class TestTieBreaking:
 
         assert plan.is_valid
         assert plan.resolution_metadata is not None
-        # Tie-breaking should have occurred
-        # (though the specific decision may vary based on implementation)
+        # Verify deterministic resolution occurred
+        assert plan.resolution_metadata.deterministic is True
+        # Verify handlers are in expected order (alphabetical since same priority)
+        handlers = plan.get_all_handler_ids()
+        assert handlers[0] == "handler.a"  # alphabetically first
+        assert handlers[1] == "handler.b"  # alphabetically second
 
 
 # =============================================================================
@@ -797,8 +804,8 @@ class TestDeterminism:
         plan2 = resolver.resolve(default_profile, contracts2)
 
         assert plan1.is_valid and plan2.is_valid
-        # Same handlers, possibly same order (deterministic)
-        assert set(plan1.get_all_handler_ids()) == set(plan2.get_all_handler_ids())
+        # Deterministic resolution must produce SAME ordering regardless of input order
+        assert plan1.get_all_handler_ids() == plan2.get_all_handler_ids()
 
 
 # =============================================================================

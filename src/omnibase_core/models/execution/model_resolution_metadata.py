@@ -18,8 +18,6 @@ See Also:
     Added as part of Execution Order Resolution (OMN-1106)
 """
 
-from __future__ import annotations
-
 from datetime import datetime
 from typing import Literal
 

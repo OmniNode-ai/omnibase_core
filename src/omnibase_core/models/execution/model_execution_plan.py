@@ -24,8 +24,6 @@ See Also:
     Added resolution metadata, conflicts, and validity tracking (OMN-1106)
 """
 
-from __future__ import annotations
-
 from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field

@@ -18,8 +18,6 @@ See Also:
     Added as part of Execution Order Resolution (OMN-1106)
 """
 
-from __future__ import annotations
-
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.execution.model_constraint_satisfaction import (
