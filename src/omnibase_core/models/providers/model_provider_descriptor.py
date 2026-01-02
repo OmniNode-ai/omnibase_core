@@ -67,6 +67,12 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.json_types import JsonType
 
+# Note: ModelHealthStatus cannot be imported here due to circular import issues.
+# The health field uses Any type annotation at runtime but accepts ModelHealthStatus
+# instances. See OMN-1191 for tracking the circular import refactoring.
+# Type: omnibase_core.models.health.model_health_status.ModelHealthStatus | None
+
+
 # Capability naming pattern: lowercase alphanumeric with dots, at least one dot
 # Examples: "database.relational", "cache.redis", "storage.s3"
 _CAPABILITY_PATTERN = re.compile(r"^[a-z0-9]+(\.[a-z0-9]+)+$")
@@ -241,12 +247,11 @@ class ModelProviderDescriptor(BaseModel):
         description="Tags for filtering (e.g., 'production', 'us-east', 'primary')",
     )
 
-    # NOTE: Uses Any to avoid circular import with ModelHealthStatus.
-    # Type checking is preserved via TYPE_CHECKING import above.
-    # Runtime validation is performed in validate_health validator below.
+    # Note: Type is ModelHealthStatus | None but uses Any due to circular import.
+    # See module-level comment for OMN-1191 tracking issue.
     health: Any = Field(
         default=None,
-        description="Current health status of this provider (ModelHealthStatus or None)",
+        description="Current health status of this provider (ModelHealthStatus | None)",
     )
 
     @field_validator("health", mode="before")

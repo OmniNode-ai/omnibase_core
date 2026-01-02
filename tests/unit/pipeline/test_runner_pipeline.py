@@ -588,8 +588,8 @@ class TestRunnerPipelineModelPipelineContext:
 
 
 @pytest.mark.unit
-class TestRunnerPipelinePipelineResult:
-    """Test PipelineResult behavior."""
+class TestRunnerPipelineModelPipelineResult:
+    """Test ModelPipelineResult behavior."""
 
     @pytest.mark.unit
     @pytest.mark.asyncio

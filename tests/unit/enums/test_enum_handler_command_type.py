@@ -184,8 +184,8 @@ class TestEnumHandlerCommandTypeHelperMethods:
     def test_assert_exhaustive_raises_assertion_error(self) -> None:
         """Test that assert_exhaustive raises AssertionError.
 
-        Note: AssertionError is used instead of ModelOnexError due to circular
-        import constraints in enum modules (see error-ok comment in enum source).
+        Note: Uses AssertionError instead of ModelOnexError to avoid
+        circular imports in the enum module.
         """
         # Create a mock value that would represent an unhandled case
         # In practice, this should never be called with a valid enum value

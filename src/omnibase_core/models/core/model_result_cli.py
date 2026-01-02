@@ -37,8 +37,8 @@ from omnibase_core.models.results.model_simple_metadata import ModelGenericMetad
 class ModelResultCLI(ModelBaseResult):
     output: ModelCLIOutput | None = None
     errors: list[ModelBaseError] = []
-    # Use Optional[Any] instead of Optional[BaseModel] to avoid PydanticUserError.
-    # TODO: Replace Any with Union of allowed result models for stricter typing.
+    # Use Any | None instead of BaseModel | None to avoid PydanticUserError.
+    # TODO: Replace Any with union of allowed result models for stricter typing.
     result: Any | None = None
     metadata: ModelGenericMetadata | None = None
 

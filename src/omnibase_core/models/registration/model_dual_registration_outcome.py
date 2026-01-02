@@ -132,6 +132,7 @@ class ModelDualRegistrationOutcome(BaseModel):
         frozen=True,
         extra="forbid",
         from_attributes=True,
+        validate_assignment=True,
     )
 
     # ---- Identity ----

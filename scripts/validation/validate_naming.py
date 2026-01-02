@@ -192,11 +192,11 @@ class NamingConventionValidator:
         #            The heuristic flags "contract" as a Protocol indicator, but this is a
         #            validator that VALIDATES patches, not a Protocol interface.
         #            The Protocol interface for this is ProtocolPatchValidator in protocol_patch_validator.py
-        #            ContractValidationInvariantChecker enforces event ordering invariants (OMN-1146).
-        #            Its Protocol interface is ProtocolContractValidationInvariantChecker.
+        #            ContractValidationInvariantChecker is a concrete implementation (OMN-1146),
+        #            not a Protocol. The Protocol interface is ProtocolContractValidationInvariantChecker.
         "validation/": [
             "ContractPatchValidator",  # Validator for contract patches (OMN-1126)
-            "ContractValidationInvariantChecker",  # Invariant checker for validation events (OMN-1146)
+            "ContractValidationInvariantChecker",  # Invariant checker implementation (OMN-1146)
         ],
     }
 
