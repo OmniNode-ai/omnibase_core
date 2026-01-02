@@ -360,6 +360,9 @@ class ModelExamplesCollection(BaseModel):
                 ):
                     return False
             return True
-        except (AttributeError, ValueError, TypeError, KeyError):
+        except (AttributeError, TypeError, ValueError):
             # fallback-ok: validation failure defaults to invalid state
+            # AttributeError: if example lacks expected attributes
+            # TypeError: if self.examples is not iterable
+            # ValueError: if comparison operations fail
             return False

@@ -42,7 +42,7 @@ def _rebuild_provider_descriptor_forward_refs() -> bool:
             _types_namespace={"ModelHealthStatus": ModelHealthStatus}
         )
         return True
-    except (ImportError, ValidationError):
+    except (AttributeError, ImportError, TypeError, ValidationError, ValueError):
         # init-errors-ok: model rebuild may fail during import chain resolution
         return False
 
