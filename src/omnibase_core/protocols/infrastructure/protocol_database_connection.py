@@ -30,32 +30,21 @@ Usage:
 
 Migration Guide:
     Step 1: Create an adapter implementing ProtocolDatabaseConnection (in omnibase_infra)
-        # NOTE: This adapter implementation belongs in omnibase_infra, not omnibase_core.
-        # Example location: omnibase_infra/adapters/database/postgres_connection_adapter.py
 
-        import asyncpg
-        from omnibase_core.protocols.infrastructure import ProtocolDatabaseConnection
+        NOTE: This adapter implementation belongs in omnibase_infra, not omnibase_core.
+        Example location: omnibase_infra/adapters/database/postgres_connection_adapter.py
 
-        class PostgresConnectionAdapter:
-            def __init__(self, pool: asyncpg.Pool):
-                self._pool = pool
+        The adapter should:
+        - Import asyncpg (or your preferred async database library)
+        - Implement all methods defined in ProtocolDatabaseConnection
+        - Wrap a connection pool for efficient resource management
 
-            async def is_connected(self) -> bool:
-                try:
-                    async with self._pool.acquire() as conn:
-                        await conn.execute("SELECT 1")
-                    return True
-                except Exception:
-                    return False
-
-            # ... implement other methods
+        See omnibase_infra for concrete implementation examples.
 
     Step 2: Register via DI container
-        # Import adapter from omnibase_infra:
-        from omnibase_infra.adapters.database import PostgresConnectionAdapter
 
-        pool = await asyncpg.create_pool(dsn)
-        adapter = PostgresConnectionAdapter(pool)
+        # In your application bootstrap code:
+        adapter = PostgresConnectionAdapter(pool)  # Created in omnibase_infra
         container.register_service("ProtocolDatabaseConnection", adapter)
 """
 
