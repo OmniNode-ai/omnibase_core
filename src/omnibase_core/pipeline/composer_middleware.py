@@ -112,7 +112,4 @@ class ComposerMiddleware:
         return wrapper
 
 
-# Legacy alias for migration
-MiddlewareComposer = ComposerMiddleware
-
-__all__ = ["ComposerMiddleware", "MiddlewareComposer", "Middleware"]
+__all__ = ["ComposerMiddleware", "Middleware"]

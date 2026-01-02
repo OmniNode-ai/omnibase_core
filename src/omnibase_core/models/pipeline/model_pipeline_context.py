@@ -1,11 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
 #
 # SPDX-License-Identifier: Apache-2.0
-"""Pipeline context model for hook execution.
-
-This module contains the ModelPipelineContext class which is passed to each hook
-during pipeline execution.
-"""
+"""Pipeline context model for hook communication."""
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -45,7 +41,7 @@ class ModelPipelineContext(BaseModel):
 
     Pydantic Configuration Note
     ---------------------------
-    Unlike other pipeline models (e.g., ``ModelPipelineHook``, ``ModelExecutionPlan``),
+    Unlike other pipeline models (e.g., ``ModelPipelineHook``, ``ModelPipelineExecutionPlan``),
     this class does NOT use ``from_attributes=True`` because:
 
     1. This model is **mutable** (``frozen=False``), not frozen
@@ -69,9 +65,4 @@ class ModelPipelineContext(BaseModel):
 
 __all__ = [
     "ModelPipelineContext",
-    # Alias
-    "PipelineContext",
 ]
-
-# Alias
-PipelineContext = ModelPipelineContext

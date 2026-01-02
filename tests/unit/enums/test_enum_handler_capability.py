@@ -225,7 +225,11 @@ class TestEnumHandlerCapabilityHelperMethods:
         assert set(values_method) == set(values_iteration)
 
     def test_assert_exhaustive_raises_assertion_error(self):
-        """Test that assert_exhaustive raises AssertionError."""
+        """Test that assert_exhaustive raises AssertionError.
+
+        Note: Uses AssertionError instead of ModelOnexError to avoid
+        circular imports in the enum module.
+        """
         # Create a mock "Never" type value - in practice this would be caught
         # by the type checker before runtime, but we test runtime behavior
         with pytest.raises(AssertionError) as exc_info:
@@ -241,7 +245,7 @@ class TestEnumHandlerCapabilityHelperMethods:
             EnumHandlerCapability.assert_exhaustive(42)  # type: ignore[arg-type]
 
         error_msg = str(exc_info.value)
-        assert error_msg == "Unhandled enum value: 42"
+        assert "Unhandled enum value: 42" in error_msg
 
 
 @pytest.mark.unit

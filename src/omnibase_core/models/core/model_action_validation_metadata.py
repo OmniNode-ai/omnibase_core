@@ -20,7 +20,7 @@ class ModelActionValidationMetadata(BaseModel):
         default=None,
         description="Validation strategy used",
     )
-    validator_version: str | None = Field(
+    validator_version: str | None = Field(  # string-version-ok: validator version id
         default=None,
         description="Version of the validator",
     )

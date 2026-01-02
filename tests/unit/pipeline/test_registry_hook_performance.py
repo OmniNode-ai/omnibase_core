@@ -28,7 +28,7 @@ from omnibase_core.models.pipeline import (
 from omnibase_core.pipeline.registry_hook import RegistryHook
 from omnibase_core.pipeline.runner_pipeline import (
     HookCallable,
-    PipelineContext,
+    ModelPipelineContext,
     RunnerPipeline,
 )
 
@@ -68,7 +68,7 @@ def create_noop_callable() -> HookCallable:
         A callable that does nothing (minimal overhead)
     """
 
-    def noop(ctx: PipelineContext) -> None:
+    def noop(ctx: ModelPipelineContext) -> None:
         pass
 
     return noop
@@ -458,7 +458,7 @@ class TestRunnerPipelineExecutionPerformance:
         num_hooks = 100
         execution_count = 0
 
-        def counting_callable(ctx: PipelineContext) -> None:
+        def counting_callable(ctx: ModelPipelineContext) -> None:
             nonlocal execution_count
             execution_count += 1
 
@@ -507,7 +507,7 @@ class TestRunnerPipelineExecutionPerformance:
         num_hooks = 1000
         execution_count = 0
 
-        def counting_callable(ctx: PipelineContext) -> None:
+        def counting_callable(ctx: ModelPipelineContext) -> None:
             nonlocal execution_count
             execution_count += 1
 
@@ -562,7 +562,7 @@ class TestRunnerPipelineExecutionPerformance:
         execution_order: list[str] = []
 
         def make_tracking_callable(phase: str) -> HookCallable:
-            def callable_fn(ctx: PipelineContext) -> None:
+            def callable_fn(ctx: ModelPipelineContext) -> None:
                 execution_order.append(phase)
 
             return callable_fn
@@ -622,7 +622,7 @@ class TestRunnerPipelineExecutionPerformance:
         num_hooks = 100
         execution_count = 0
 
-        async def async_counting_callable(ctx: PipelineContext) -> None:
+        async def async_counting_callable(ctx: ModelPipelineContext) -> None:
             nonlocal execution_count
             execution_count += 1
 
@@ -1220,7 +1220,7 @@ class TestRegistryHookLinearScaling:
         for num_hooks in scales:
             execution_count = 0
 
-            def counting_callable(ctx: PipelineContext) -> None:
+            def counting_callable(ctx: ModelPipelineContext) -> None:
                 nonlocal execution_count
                 execution_count += 1
 

@@ -10,8 +10,8 @@ from omnibase_core.enums.enum_handler_type_category import EnumHandlerTypeCatego
 from omnibase_core.enums.enum_log_level import EnumLogLevel
 from omnibase_core.logging.core_logging import emit_log_event
 from omnibase_core.models.pipeline import (
-    ModelExecutionPlan,
     ModelPhaseExecutionPlan,
+    ModelPipelineExecutionPlan,
     ModelPipelineHook,
     ModelValidationWarning,
     PipelinePhase,
@@ -90,7 +90,7 @@ class BuilderExecutionPlan:
             return builder.build()  # Race condition on internal state!
 
     **Note**: The input ``RegistryHook`` can be safely shared IF it is frozen.
-    The output ``ModelExecutionPlan`` is frozen (immutable) and safe to share.
+    The output ``ModelPipelineExecutionPlan`` is frozen (immutable) and safe to share.
 
     See Also
     --------
@@ -118,7 +118,7 @@ class BuilderExecutionPlan:
         self._contract_category = contract_category
         self._enforce_hook_typing = enforce_hook_typing
 
-    def build(self) -> tuple[ModelExecutionPlan, list[ModelValidationWarning]]:
+    def build(self) -> tuple[ModelPipelineExecutionPlan, list[ModelValidationWarning]]:
         """
         Build an execution plan from the registry.
 
@@ -193,7 +193,7 @@ class BuilderExecutionPlan:
         contract_cat_str = (
             str(self._contract_category) if self._contract_category else None
         )
-        plan = ModelExecutionPlan(
+        plan = ModelPipelineExecutionPlan(
             phases=phases,
             contract_category=contract_cat_str,
         )
@@ -380,7 +380,4 @@ class BuilderExecutionPlan:
         emit_log_event(EnumLogLevel.DEBUG, log_message)
 
 
-# Legacy alias for migration
-RuntimePlanBuilder = BuilderExecutionPlan
-
-__all__ = ["BuilderExecutionPlan", "FAIL_FAST_PHASES", "RuntimePlanBuilder"]
+__all__ = ["BuilderExecutionPlan", "FAIL_FAST_PHASES"]

@@ -19,28 +19,28 @@ The Pipeline Runner and Hook Registry infrastructure provides a declarative, ext
 from omnibase_core.pipeline import (
     BuilderExecutionPlan,
     ModelPipelineHook,
-    PipelineContext,
+    ModelPipelineContext,
     RegistryHook,
     RunnerPipeline,
 )
 
 # Step 1: Create hooks
-def logging_hook(ctx: PipelineContext) -> None:
+def logging_hook(ctx: ModelPipelineContext) -> None:
     """Log pipeline start."""
     ctx.data["started_at"] = "2025-01-01T00:00:00Z"
     print("Pipeline started")
 
-def validation_hook(ctx: PipelineContext) -> None:
+def validation_hook(ctx: ModelPipelineContext) -> None:
     """Validate input data."""
     ctx.data["validated"] = True
     print("Validation passed")
 
-def main_processing(ctx: PipelineContext) -> None:
+def main_processing(ctx: ModelPipelineContext) -> None:
     """Main processing logic."""
     ctx.data["result"] = {"status": "success"}
     print("Processing complete")
 
-def cleanup_hook(ctx: PipelineContext) -> None:
+def cleanup_hook(ctx: ModelPipelineContext) -> None:
     """Cleanup resources."""
     print("Cleanup completed")
 
@@ -350,7 +350,7 @@ empty = ModelExecutionPlan.empty()
 Executes the pipeline using an execution plan.
 
 ```python
-from omnibase_core.pipeline import RunnerPipeline, PipelineContext, PipelineResult
+from omnibase_core.pipeline import RunnerPipeline, ModelPipelineContext, ModelPipelineResult
 
 # Create runner
 runner = RunnerPipeline(
@@ -359,7 +359,7 @@ runner = RunnerPipeline(
 )
 
 # Execute (async)
-result: PipelineResult = await runner.run()
+result: ModelPipelineResult = await runner.run()
 
 # Check result
 if result.success:
@@ -373,14 +373,14 @@ else:
         print(f"  Error: {error.error_type}: {error.error_message}")
 ```
 
-### PipelineContext
+### ModelPipelineContext
 
 Shared mutable context passed to all hooks.
 
 ```python
-from omnibase_core.pipeline import PipelineContext
+from omnibase_core.pipeline import ModelPipelineContext
 
-def my_hook(ctx: PipelineContext) -> None:
+def my_hook(ctx: ModelPipelineContext) -> None:
     # Read data from previous hooks
     previous_result = ctx.data.get("result")
 
@@ -388,18 +388,18 @@ def my_hook(ctx: PipelineContext) -> None:
     ctx.data["my_output"] = {"status": "done"}
 ```
 
-### PipelineResult
+### ModelPipelineResult
 
 Result of pipeline execution.
 
 ```python
-from omnibase_core.pipeline import PipelineResult
+from omnibase_core.pipeline import ModelPipelineResult
 
-result: PipelineResult = await runner.run()
+result: ModelPipelineResult = await runner.run()
 
 result.success    # bool - True if no errors
 result.errors     # list[ModelHookError] - Captured errors from continue phases
-result.context    # PipelineContext | None - Final context state
+result.context    # ModelPipelineContext | None - Final context state
 ```
 
 ### HookCallable Type
@@ -407,14 +407,14 @@ result.context    # PipelineContext | None - Final context state
 Type alias for hook functions.
 
 ```python
-from omnibase_core.pipeline import HookCallable, PipelineContext
+from omnibase_core.pipeline import HookCallable, ModelPipelineContext
 
 # Sync hook
-def sync_hook(ctx: PipelineContext) -> None:
+def sync_hook(ctx: ModelPipelineContext) -> None:
     ctx.data["sync"] = True
 
 # Async hook
-async def async_hook(ctx: PipelineContext) -> None:
+async def async_hook(ctx: ModelPipelineContext) -> None:
     await some_async_operation()
     ctx.data["async"] = True
 ```
@@ -601,13 +601,13 @@ Mix sync and async hooks freely:
 ```python
 import asyncio
 
-def sync_setup(ctx: PipelineContext) -> None:
+def sync_setup(ctx: ModelPipelineContext) -> None:
     ctx.data["config"] = load_config()
 
-async def async_fetch(ctx: PipelineContext) -> None:
+async def async_fetch(ctx: ModelPipelineContext) -> None:
     ctx.data["external_data"] = await fetch_from_api()
 
-async def async_process(ctx: PipelineContext) -> None:
+async def async_process(ctx: ModelPipelineContext) -> None:
     await asyncio.sleep(0.1)
     ctx.data["processed"] = True
 
@@ -625,12 +625,12 @@ result = await runner.run()
 ### Error Handling Patterns
 
 ```python
-def risky_hook(ctx: PipelineContext) -> None:
+def risky_hook(ctx: ModelPipelineContext) -> None:
     """Hook in fail-fast phase - errors abort pipeline."""
     if not ctx.data.get("valid"):
         raise ValueError("Validation failed")
 
-def optional_hook(ctx: PipelineContext) -> None:
+def optional_hook(ctx: ModelPipelineContext) -> None:
     """Hook in continue phase - errors are captured."""
     try:
         process_optional_data()
@@ -763,7 +763,7 @@ threads = [
 | `ModelExecutionPlan` | Yes | Frozen, immutable |
 | `ModelPipelineHook` | Yes | Frozen, immutable |
 | `RunnerPipeline` | No | Create per execution |
-| `PipelineContext` | No | Mutable, single execution |
+| `ModelPipelineContext` | No | Mutable, single execution |
 | `BuilderExecutionPlan` | Yes | Stateless operation |
 
 For detailed threading guidance, see [Threading Guide](THREADING.md).
@@ -788,11 +788,11 @@ Test hooks in isolation without running the full pipeline:
 
 ```python
 import pytest
-from omnibase_core.pipeline import PipelineContext
+from omnibase_core.pipeline import ModelPipelineContext
 
 def test_validation_hook_sets_flag():
     """Test that validation hook sets validated flag."""
-    ctx = PipelineContext()
+    ctx = ModelPipelineContext()
 
     # Call hook directly
     validation_hook(ctx)
@@ -802,7 +802,7 @@ def test_validation_hook_sets_flag():
 
 def test_validation_hook_rejects_invalid_data():
     """Test that validation hook raises for invalid input."""
-    ctx = PipelineContext()
+    ctx = ModelPipelineContext()
     ctx.data["input"] = {"invalid": True}
 
     with pytest.raises(ValueError, match="Invalid input"):
@@ -818,7 +818,7 @@ import pytest
 from omnibase_core.pipeline import (
     BuilderExecutionPlan,
     ModelPipelineHook,
-    PipelineContext,
+    ModelPipelineContext,
     RegistryHook,
     RunnerPipeline,
 )
@@ -845,10 +845,10 @@ def test_registry():
 @pytest.fixture
 def test_callables():
     """Create test callable registry."""
-    def setup_hook(ctx: PipelineContext) -> None:
+    def setup_hook(ctx: ModelPipelineContext) -> None:
         ctx.data["setup_complete"] = True
 
-    def execute_hook(ctx: PipelineContext) -> None:
+    def execute_hook(ctx: ModelPipelineContext) -> None:
         assert ctx.data.get("setup_complete"), "Setup must run first"
         ctx.data["result"] = "success"
 
@@ -883,7 +883,7 @@ async def test_pipeline_captures_errors_in_after_phase():
     ))
     registry.freeze()
 
-    def failing_hook(ctx: PipelineContext) -> None:
+    def failing_hook(ctx: ModelPipelineContext) -> None:
         raise RuntimeError("After hook failed")
 
     builder = BuilderExecutionPlan(registry=registry)
@@ -913,7 +913,7 @@ async def test_pipeline_raises_errors_in_execute_phase():
     ))
     registry.freeze()
 
-    def failing_hook(ctx: PipelineContext) -> None:
+    def failing_hook(ctx: ModelPipelineContext) -> None:
         raise ValueError("Execute hook failed")
 
     builder = BuilderExecutionPlan(registry=registry)
@@ -934,15 +934,15 @@ async def test_pipeline_raises_errors_in_execute_phase():
 ```python
 import asyncio
 import pytest
-from omnibase_core.pipeline import PipelineContext
+from omnibase_core.pipeline import ModelPipelineContext
 
 
 @pytest.mark.asyncio
 async def test_async_hook_completes():
     """Test async hook execution."""
-    ctx = PipelineContext()
+    ctx = ModelPipelineContext()
 
-    async def async_fetch_hook(ctx: PipelineContext) -> None:
+    async def async_fetch_hook(ctx: ModelPipelineContext) -> None:
         await asyncio.sleep(0.01)  # Simulate async operation
         ctx.data["fetched"] = True
 
@@ -971,7 +971,7 @@ async def test_hook_timeout():
     ))
     registry.freeze()
 
-    async def slow_hook(ctx: PipelineContext) -> None:
+    async def slow_hook(ctx: ModelPipelineContext) -> None:
         await asyncio.sleep(10)  # Way longer than timeout
 
     builder = BuilderExecutionPlan(registry=registry)
@@ -1071,19 +1071,19 @@ def test_priority_ordering():
 ```python
 import pytest
 from unittest.mock import AsyncMock, patch
-from omnibase_core.pipeline import PipelineContext
+from omnibase_core.pipeline import ModelPipelineContext
 
 
 @pytest.mark.asyncio
 async def test_hook_with_mocked_external_service():
     """Test hook that calls external service with mock."""
-    async def api_hook(ctx: PipelineContext) -> None:
+    async def api_hook(ctx: ModelPipelineContext) -> None:
         # In real code, this would call an external API
         from some_module import external_api
         result = await external_api.fetch_data(ctx.data["user_id"])
         ctx.data["api_result"] = result
 
-    ctx = PipelineContext()
+    ctx = ModelPipelineContext()
     ctx.data["user_id"] = "user123"
 
     with patch("some_module.external_api.fetch_data", new_callable=AsyncMock) as mock_fetch:
@@ -1313,13 +1313,6 @@ from omnibase_core.pipeline import (
     ComposerMiddleware,
 )
 
-# Legacy aliases (still work)
-from omnibase_core.pipeline import (
-    HookRegistry,        # Alias for RegistryHook
-    RuntimePlanBuilder,  # Alias for BuilderExecutionPlan
-    PipelineRunner,      # Alias for RunnerPipeline
-    MiddlewareComposer,  # Alias for ComposerMiddleware
-)
 ```
 
 ## Related Documentation

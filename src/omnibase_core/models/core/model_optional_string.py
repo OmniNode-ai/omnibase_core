@@ -9,7 +9,7 @@ class ModelOptionalString(BaseModel):
     """
     Strongly-typed model for optional string values.
 
-    Replaces Optional[str] to comply with ONEX standards
+    Replaces str | None to comply with ONEX standards
     requiring specific typed models instead of generic types.
     """
 

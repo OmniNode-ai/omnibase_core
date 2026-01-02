@@ -657,7 +657,7 @@ Use **Command to Effect** when:
 
 ```python
 from typing import Any
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
@@ -761,7 +761,7 @@ async def health_check() -> HealthResponse:
         status=status,
         database=results["database"],
         cache=results["cache"],
-        timestamp=datetime.utcnow().isoformat()
+        timestamp=datetime.now(timezone.utc).isoformat()
     )
 
 

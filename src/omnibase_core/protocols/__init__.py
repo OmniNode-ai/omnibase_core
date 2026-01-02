@@ -129,6 +129,7 @@ from omnibase_core.protocols.event_bus import (
     ProtocolEventBusRegistry,
     ProtocolEventEnvelope,
     ProtocolEventMessage,
+    ProtocolFromEvent,
     ProtocolKafkaEventBusAdapter,
     ProtocolSyncEventBus,
 )
@@ -167,9 +168,30 @@ from omnibase_core.protocols.notifications import (
 )
 
 # =============================================================================
-# Event Construction Protocol Exports
+# Logging Protocol Exports
 # =============================================================================
-from omnibase_core.protocols.protocol_from_event import ProtocolFromEvent
+from omnibase_core.protocols.protocol_context_aware_output_handler import (
+    ProtocolContextAwareOutputHandler,
+)
+
+# =============================================================================
+# Generation Protocol Exports
+# =============================================================================
+from omnibase_core.protocols.protocol_generation_config import ProtocolGenerationConfig
+from omnibase_core.protocols.protocol_import_tracker import ProtocolImportTracker
+from omnibase_core.protocols.protocol_logger_like import ProtocolLoggerLike
+
+# =============================================================================
+# Data Protocol Exports
+# =============================================================================
+from omnibase_core.protocols.protocol_payload_data import (
+    PayloadValue,
+    ProtocolPayloadData,
+)
+from omnibase_core.protocols.protocol_smart_log_formatter import (
+    LogDataValue,
+    ProtocolSmartLogFormatter,
+)
 
 # =============================================================================
 # Resolution Module Exports (OMN-1123)
@@ -302,6 +324,7 @@ __all__ = [
     "ProtocolSyncEventBus",
     "ProtocolAsyncEventBus",
     "ProtocolEventEnvelope",
+    "ProtocolFromEvent",
     "ProtocolEventBusRegistry",
     "ProtocolEventBusLogEmitter",
     # ==========================================================================
@@ -335,9 +358,22 @@ __all__ = [
     # ==========================================================================
     "ProtocolCanonicalSerializer",
     # ==========================================================================
-    # Event Construction Protocol
+    # Data Protocols
     # ==========================================================================
-    "ProtocolFromEvent",
+    "ProtocolPayloadData",
+    "PayloadValue",
+    # ==========================================================================
+    # Logging Protocols
+    # ==========================================================================
+    "ProtocolSmartLogFormatter",
+    "ProtocolContextAwareOutputHandler",
+    "ProtocolLoggerLike",
+    "LogDataValue",
+    # ==========================================================================
+    # Generation Protocols
+    # ==========================================================================
+    "ProtocolGenerationConfig",
+    "ProtocolImportTracker",
     # ==========================================================================
     # Compute Module
     # ==========================================================================

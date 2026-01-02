@@ -11,18 +11,20 @@ from collections.abc import Callable, Coroutine
 from types import MappingProxyType
 
 from omnibase_core.models.pipeline import (
-    ModelExecutionPlan,
     ModelHookError,
+    ModelPipelineContext,
+    ModelPipelineExecutionPlan,
     ModelPipelineHook,
-    PipelineContext,
+    ModelPipelineResult,
     PipelinePhase,
-    PipelineResult,
 )
 from omnibase_core.pipeline.exceptions import CallableNotFoundError, HookTimeoutError
 
-# Type alias for hook callables - they take PipelineContext and return None
+# Type alias for hook callables - they take ModelPipelineContext and return None
 # (sync or async)
-HookCallable = Callable[["PipelineContext"], None | Coroutine[object, object, None]]
+HookCallable = Callable[
+    ["ModelPipelineContext"], None | Coroutine[object, object, None]
+]
 
 
 # Canonical phase execution order
@@ -58,11 +60,11 @@ class RunnerPipeline:
     Component                        Thread-Safe?    Notes
     ===============================  ==============  =====================================
     RunnerPipeline instance          No              Mutable state during run()
-    ModelExecutionPlan               Yes             Frozen Pydantic model (frozen=True)
+    ModelPipelineExecutionPlan        Yes             Frozen Pydantic model (frozen=True)
     ModelPhaseExecutionPlan          Yes             Frozen Pydantic model (frozen=True)
     ModelPipelineHook                Yes             Frozen Pydantic model (frozen=True)
-    PipelineContext                  No              Mutable dict for hook communication
-    PipelineResult                   Yes             Frozen Pydantic model (frozen=True)
+    ModelPipelineContext             No              Mutable dict for hook communication
+    ModelPipelineResult              Yes             Frozen Pydantic model (frozen=True)
     ModelHookError                   Yes             Frozen Pydantic model (frozen=True)
     callable_registry dict           Conditional     Safe if not modified after init
     ===============================  ==============  =====================================
@@ -105,7 +107,7 @@ class RunnerPipeline:
 
     **Safe Sharing:**
 
-    - ``ModelExecutionPlan`` is frozen and can be safely shared across threads
+    - ``ModelPipelineExecutionPlan`` is frozen and can be safely shared across threads
     - ``callable_registry`` dict can be shared IF not modified after runner creation
     - Use ``plan.model_copy()`` if you need isolated plan modifications
 
@@ -117,7 +119,7 @@ class RunnerPipeline:
 
     def __init__(
         self,
-        plan: ModelExecutionPlan,
+        plan: ModelPipelineExecutionPlan,
         callable_registry: dict[str, HookCallable],
     ) -> None:
         """
@@ -163,18 +165,18 @@ class RunnerPipeline:
                 f"Multiple missing callable_refs: {', '.join(missing_refs)}"
             )
 
-    async def run(self) -> PipelineResult:
+    async def run(self) -> ModelPipelineResult:
         """
         Execute the pipeline.
 
         Returns:
-            PipelineResult containing success status, errors, and context
+            ModelPipelineResult containing success status, errors, and context
 
         Raises:
             Exception: Re-raises exceptions from fail-fast phases
             CallableNotFoundError: If a hook's callable_ref is not in the registry
         """
-        context = PipelineContext()
+        context = ModelPipelineContext()
         errors: list[ModelHookError] = []
         exception_to_raise: Exception | None = None
 
@@ -197,7 +199,7 @@ class RunnerPipeline:
         if exception_to_raise is not None:
             raise exception_to_raise
 
-        return PipelineResult(
+        return ModelPipelineResult(
             success=len(errors) == 0,
             errors=errors,
             context=context,
@@ -205,7 +207,7 @@ class RunnerPipeline:
 
     async def _execute_finalize_phase(
         self,
-        context: PipelineContext,
+        context: ModelPipelineContext,
     ) -> list[ModelHookError]:
         """
         Execute the finalize phase with guaranteed error capture.
@@ -273,7 +275,7 @@ class RunnerPipeline:
     async def _execute_phase(
         self,
         phase: PipelinePhase,
-        context: PipelineContext,
+        context: ModelPipelineContext,
     ) -> list[ModelHookError]:
         """
         Execute all hooks in a phase.
@@ -330,7 +332,7 @@ class RunnerPipeline:
     async def _execute_hook(
         self,
         hook: ModelPipelineHook,
-        context: PipelineContext,
+        context: ModelPipelineContext,
     ) -> None:
         """
         Execute a single hook.
@@ -385,12 +387,8 @@ class RunnerPipeline:
             callable_fn(context)
 
 
-# Legacy alias for migration
-PipelineRunner = RunnerPipeline
-
 __all__ = [
     "CANONICAL_PHASE_ORDER",
     "HookCallable",
     "RunnerPipeline",
-    "PipelineRunner",
 ]

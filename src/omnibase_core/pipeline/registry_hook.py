@@ -156,7 +156,4 @@ class RegistryHook:
         return self._hooks_by_name.get(hook_name)
 
 
-# Legacy alias for migration
-HookRegistry = RegistryHook
-
-__all__ = ["RegistryHook", "HookRegistry"]
+__all__ = ["RegistryHook"]

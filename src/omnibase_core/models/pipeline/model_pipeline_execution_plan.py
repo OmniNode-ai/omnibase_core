@@ -1,26 +1,16 @@
 # SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
 #
 # SPDX-License-Identifier: Apache-2.0
-"""Execution plan model for pipeline hooks.
-
-Note: This module was moved from omnibase_core.pipeline.models to
-omnibase_core.models.pipeline to comply with ONEX repository structure
-validation that requires all models in src/omnibase_core/models/.
-
-The class was renamed from ModelExecutionPlan to ModelPipelineExecutionPlan
-to avoid naming conflicts with omnibase_core.models.execution.ModelExecutionPlan
-which serves a different purpose (runtime execution sequencing).
-"""
+"""Execution plan model for pipeline hooks."""
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.models.pipeline.model_phase_execution_plan import (
+    ModelPhaseExecutionPlan,
+)
 from omnibase_core.models.pipeline.model_pipeline_hook import (
     ModelPipelineHook,
     PipelinePhase,
-)
-from omnibase_core.models.pipeline.model_pipeline_phase_execution_plan import (
-    ModelPhaseExecutionPlan,
-    ModelPipelinePhaseExecutionPlan,
 )
 
 
@@ -29,15 +19,11 @@ class ModelPipelineExecutionPlan(BaseModel):
     Complete execution plan for a pipeline run.
 
     Contains hooks organized by phase in topologically sorted order,
-    ready for execution by the PipelineRunner.
+    ready for execution by the RunnerPipeline.
 
     Thread Safety: This class is thread-safe. Instances are immutable
     (frozen=True) and can be safely shared across threads. The same
     execution plan can be used by multiple ``RunnerPipeline`` instances.
-
-    Note: This class was renamed from ModelExecutionPlan to
-    ModelPipelineExecutionPlan to avoid naming conflicts with
-    omnibase_core.models.execution.ModelExecutionPlan.
     """
 
     # TODO(pydantic-v3): Re-evaluate from_attributes=True when Pydantic v3 is released.
@@ -49,7 +35,7 @@ class ModelPipelineExecutionPlan(BaseModel):
         from_attributes=True,
     )
 
-    phases: dict[PipelinePhase, ModelPipelinePhaseExecutionPlan] = Field(
+    phases: dict[PipelinePhase, ModelPhaseExecutionPlan] = Field(
         default_factory=dict,
         description="Execution plans keyed by phase",
     )
@@ -92,15 +78,6 @@ class ModelPipelineExecutionPlan(BaseModel):
         return cls()
 
 
-# Legacy alias for migration
-ModelExecutionPlan = ModelPipelineExecutionPlan
-
-
 __all__ = [
     "ModelPipelineExecutionPlan",
-    # Re-export for convenience
-    "ModelPipelinePhaseExecutionPlan",
-    # Legacy aliases
-    "ModelExecutionPlan",
-    "ModelPhaseExecutionPlan",
 ]

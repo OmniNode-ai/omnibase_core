@@ -58,23 +58,19 @@ See Also:
 
 import fnmatch
 import re
-from typing import TYPE_CHECKING, Any
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.types.json_types import JsonValue
+from omnibase_core.types.json_types import JsonType
 
-if TYPE_CHECKING:
-    from omnibase_core.models.health.model_health_status import ModelHealthStatus
-
-    # Type alias for health field - uses ModelHealthStatus for type checking
-    HealthStatusType = ModelHealthStatus | None
-else:
-    # At runtime, use Any to avoid circular import issues
-    HealthStatusType = Any
+# Note: ModelHealthStatus cannot be imported here due to circular import issues.
+# The health field uses Any type annotation at runtime but accepts ModelHealthStatus
+# instances. See OMN-1191 for tracking the circular import refactoring.
+# Type: omnibase_core.models.health.model_health_status.ModelHealthStatus | None
 
 # Capability naming pattern: lowercase alphanumeric with dots, at least one dot
 # Examples: "database.relational", "cache.redis", "storage.s3"
@@ -224,12 +220,12 @@ class ModelProviderDescriptor(BaseModel):
         min_length=1,
     )
 
-    attributes: dict[str, JsonValue] = Field(
+    attributes: dict[str, JsonType] = Field(
         default_factory=dict,
         description="Static attributes (version, region, deployment tier, etc.)",
     )
 
-    declared_features: dict[str, JsonValue] = Field(
+    declared_features: dict[str, JsonType] = Field(
         default_factory=dict,
         description=(
             "Features the adapter claims to support (static declaration). "
@@ -237,7 +233,7 @@ class ModelProviderDescriptor(BaseModel):
         ),
     )
 
-    observed_features: dict[str, JsonValue] = Field(
+    observed_features: dict[str, JsonType] = Field(
         default_factory=dict,
         description=(
             "Runtime-probed capabilities. When non-empty, completely replaces "
@@ -250,9 +246,11 @@ class ModelProviderDescriptor(BaseModel):
         description="Tags for filtering (e.g., 'production', 'us-east', 'primary')",
     )
 
-    health: HealthStatusType = Field(
+    # Note: Type is ModelHealthStatus | None but uses Any due to circular import.
+    # See module-level comment for OMN-1191 tracking issue.
+    health: Any = Field(
         default=None,
-        description="Current health status of this provider",
+        description="Current health status of this provider (ModelHealthStatus | None)",
     )
 
     @field_validator("capabilities", mode="before")
@@ -511,7 +509,7 @@ class ModelProviderDescriptor(BaseModel):
 
         return v
 
-    def get_effective_features(self) -> dict[str, JsonValue]:
+    def get_effective_features(self) -> dict[str, JsonType]:
         """Get effective features with observed completely replacing declared.
 
         Returns observed_features if non-empty, otherwise returns declared_features.

@@ -37,7 +37,6 @@ See Also:
 import re
 import unicodedata
 from collections.abc import Callable
-from typing import Any
 
 from omnibase_core.enums.enum_case_mode import EnumCaseMode
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -63,7 +62,7 @@ from omnibase_core.models.transformations.model_transform_unicode_config import 
 from omnibase_core.models.transformations.model_types import ModelTransformationConfig
 
 
-def _validate_string_input(value: Any, transform_name: str) -> str:
+def _validate_string_input(value: object, transform_name: str) -> str:
     """
     Validate that input is a string type for string transformation functions.
 
@@ -112,12 +111,12 @@ def _validate_string_input(value: Any, transform_name: str) -> str:
 # See: docs/architecture/NODECOMPUTE_VERSIONING_ROADMAP.md
 
 
-def transform_identity(
-    data: Any,  # Any: intentionally polymorphic - accepts any input type unchanged
+def transform_identity[T](
+    data: T,
     config: (
         ModelTransformationConfig | None
     ),  # Aligned with other handlers for uniform registry usage
-) -> Any:  # Any: output type mirrors input type
+) -> T:
     """
     Identity transformation - returns data unchanged.
 
@@ -360,9 +359,9 @@ def transform_unicode(data: str, config: ModelTransformUnicodeConfig) -> str:
 #   def transform_json_path(data, config): return resolve_path(config.path, data)
 # See: compute_path_resolver.py for unified path resolution logic with EBNF grammar docs
 def transform_json_path(
-    data: Any,  # Any: accepts dict, Pydantic models, or other objects with attributes
+    data: dict[str, object] | object,
     config: ModelTransformJsonPathConfig,
-) -> Any:  # Any: return type depends on the path being resolved
+) -> object:
     """
     Extract data using simple JSONPath-like path notation.
 
@@ -468,8 +467,11 @@ def transform_json_path(
 
 
 # Transformation registry mapping type to handler
-# Callable[..., Any] used because handlers have varying signatures
-TRANSFORMATION_REGISTRY: dict[EnumTransformationType, Callable[..., Any]] = {
+# Handlers take (data, config) and return transformed data
+# Using Callable[..., object] because handlers have heterogeneous signatures
+# that share the (data, config) pattern but with specific types per transformation.
+# The ellipsis indicates unspecified argument types (distinct from Any).
+TRANSFORMATION_REGISTRY: dict[EnumTransformationType, Callable[..., object]] = {
     EnumTransformationType.IDENTITY: transform_identity,
     EnumTransformationType.REGEX: transform_regex,
     EnumTransformationType.CASE_CONVERSION: transform_case,
@@ -480,10 +482,10 @@ TRANSFORMATION_REGISTRY: dict[EnumTransformationType, Callable[..., Any]] = {
 
 
 def execute_transformation(
-    data: Any,  # Any: input varies based on transformation_type (str for regex/case, any for json_path)
+    data: str | dict[str, object] | object,
     transformation_type: EnumTransformationType,
     config: ModelTransformationConfig | None,
-) -> Any:  # Any: output type depends on transformation_type
+) -> str | dict[str, object] | object:
     """
     Execute a single transformation on input data.
 

@@ -5,41 +5,13 @@ Type-safe feature flag configuration model for enabling/disabling
 features across different environments and contexts.
 """
 
-from datetime import datetime
-
 from pydantic import BaseModel, Field
 
+from .model_feature_flag_metadata import ModelFeatureFlagMetadata
+from .model_feature_flag_summary import ModelFeatureFlagSummary
 
-class ModelFeatureFlagMetadata(BaseModel):
-    """Metadata for a feature flag."""
-
-    description: str = Field(default="", description="Description of the feature flag")
-    created_at: datetime | None = Field(
-        default=None, description="When the flag was created"
-    )
-    updated_at: datetime | None = Field(
-        default=None, description="When the flag was last updated"
-    )
-    owner: str | None = Field(default=None, description="Owner of the feature flag")
-    tags: list[str] = Field(default_factory=list, description="Tags for categorization")
-    rollout_percentage: int = Field(
-        default=100, description="Percentage rollout (0-100)"
-    )
-
-
-class ModelFeatureFlagSummary(BaseModel):
-    """Summary of feature flag state."""
-
-    total_flags: int = Field(default=0, description="Total number of flags")
-    enabled_flags: int = Field(default=0, description="Number of enabled flags")
-    disabled_flags: int = Field(default=0, description="Number of disabled flags")
-    default_enabled: bool = Field(default=False, description="Default state for flags")
-    enabled_flag_names: list[str] = Field(
-        default_factory=list, description="Names of enabled flags"
-    )
-    disabled_flag_names: list[str] = Field(
-        default_factory=list, description="Names of disabled flags"
-    )
+# Re-export from split modules
+__all__ = ["ModelFeatureFlags", "ModelFeatureFlagMetadata", "ModelFeatureFlagSummary"]
 
 
 class ModelFeatureFlags(BaseModel):

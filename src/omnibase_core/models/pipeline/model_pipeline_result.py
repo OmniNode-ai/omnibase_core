@@ -1,11 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
 #
 # SPDX-License-Identifier: Apache-2.0
-"""Pipeline result model for execution outcomes.
-
-This module contains the ModelPipelineResult class which represents the result
-of pipeline execution.
-"""
+"""Pipeline result model for execution outcomes."""
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -54,9 +50,4 @@ class ModelPipelineResult(BaseModel):
 
 __all__ = [
     "ModelPipelineResult",
-    # Alias
-    "PipelineResult",
 ]
-
-# Alias
-PipelineResult = ModelPipelineResult

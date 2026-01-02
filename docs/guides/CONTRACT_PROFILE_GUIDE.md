@@ -282,7 +282,7 @@ descriptor=ModelHandlerBehaviorDescriptor(
 ```
 
 **FSM Configuration**:
-```
+```text
 States: idle -> processing -> completed
                     |
                     v
@@ -431,7 +431,7 @@ contract = get_default_compute_profile("compute_pure")
 
 Use this decision tree to select the right profile:
 
-```
+```text
                     What type of node are you building?
                                    |
           +------------------------+------------------------+

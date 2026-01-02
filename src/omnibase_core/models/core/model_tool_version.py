@@ -8,25 +8,12 @@ from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, Field
 
+# Re-export from split module
+from omnibase_core.models.core.model_tool_version_summary import ModelToolVersionSummary
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 if TYPE_CHECKING:
     from omnibase_core.enums.enum_tool_manifest import EnumVersionStatus
-
-
-class ModelToolVersionSummary(BaseModel):
-    """Summary of tool version information."""
-
-    version: str = Field(description="Semantic version string")
-    status: str = Field(description="Version status value")
-    is_active: bool = Field(description="Whether version is active")
-    is_deprecated: bool = Field(description="Whether version is deprecated")
-    is_end_of_life: bool = Field(description="Whether version is end of life")
-    lifecycle_phase: str = Field(description="Current lifecycle phase")
-    breaking_changes: bool = Field(description="Whether has breaking changes")
-    recommended: bool = Field(description="Whether version is recommended")
-    has_deprecation_date: bool = Field(description="Whether has deprecation date")
-    has_end_of_life_date: bool = Field(description="Whether has end of life date")
 
 
 class ModelToolVersion(BaseModel):
@@ -92,3 +79,9 @@ class ModelToolVersion(BaseModel):
             has_deprecation_date=self.deprecation_date is not None,
             has_end_of_life_date=self.end_of_life_date is not None,
         )
+
+
+__all__ = [
+    "ModelToolVersion",
+    "ModelToolVersionSummary",  # Re-export from split module
+]
