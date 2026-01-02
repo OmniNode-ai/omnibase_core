@@ -901,7 +901,7 @@ class TestRedisBackendImport:
     @pytest.mark.timeout(60)
     def test_redis_available_flag_exists(self):
         """Test that REDIS_AVAILABLE flag is exported."""
-        from omnibase_core.infrastructure.cache_backends import REDIS_AVAILABLE
+        from omnibase_core.backends.cache import REDIS_AVAILABLE
 
         # Should be bool (True if redis installed, False otherwise)
         assert isinstance(REDIS_AVAILABLE, bool)
@@ -909,7 +909,7 @@ class TestRedisBackendImport:
     @pytest.mark.timeout(60)
     def test_backend_cache_redis_exported(self):
         """Test that BackendCacheRedis is exported."""
-        from omnibase_core.infrastructure.cache_backends import BackendCacheRedis
+        from omnibase_core.backends.cache import BackendCacheRedis
 
         # Class should be importable
         assert BackendCacheRedis is not None

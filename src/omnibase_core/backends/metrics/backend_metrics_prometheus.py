@@ -35,7 +35,7 @@ Usage:
             push_job_name="my_batch_job",
         )
         backend.record_gauge("batch_progress", 0.75)
-        success = backend.push()  # Push to gateway, returns True on success
+        backend.push()  # Push to gateway
 
 .. versionadded:: 0.5.7
 """

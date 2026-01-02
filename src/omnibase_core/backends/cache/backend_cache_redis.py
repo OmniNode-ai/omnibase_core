@@ -476,11 +476,13 @@ class BackendCacheRedis:
 
     async def _cleanup_on_connect_failure(self) -> None:
         """Clean up resources after a connection failure."""
+        RedisError = _get_redis_error_class()
         try:
             if self._pool is not None:
                 await self._pool.disconnect()
-        except Exception as e:
+        except (RedisError, ConnectionError, TimeoutError, OSError) as e:
             # Sanitize to prevent credential leakage
+            # Note: cleanup intentionally does not raise - must be robust
             logger.warning(
                 "Error during connection cleanup: %s", sanitize_error_message(str(e))
             )
@@ -497,12 +499,14 @@ class BackendCacheRedis:
         Uses robust cleanup to ensure all resources are released
         even if individual cleanup steps fail.
         """
+        RedisError = _get_redis_error_class()
         # Close client first, then pool - ensure partial failures don't prevent full cleanup
         try:
             if self._client:
                 await self._client.close()
-        except Exception as e:
+        except (RedisError, ConnectionError, TimeoutError, OSError) as e:
             # Sanitize to prevent credential leakage
+            # Note: cleanup intentionally does not raise - must be robust
             logger.warning(
                 "Error closing Redis client: %s", sanitize_error_message(str(e))
             )
@@ -512,8 +516,9 @@ class BackendCacheRedis:
         try:
             if self._pool:
                 await self._pool.disconnect()
-        except Exception as e:
+        except (RedisError, ConnectionError, TimeoutError, OSError) as e:
             # Sanitize to prevent credential leakage
+            # Note: cleanup intentionally does not raise - must be robust
             logger.warning(
                 "Error disconnecting Redis pool: %s", sanitize_error_message(str(e))
             )
@@ -766,8 +771,10 @@ class BackendCacheRedis:
         # Type narrowing: _validate_connection ensures _client is not None
         assert self._client is not None
 
+        RedisError = _get_redis_error_class()
         try:
             await self._client.ping()
             return True
-        except Exception:
+        except (RedisError, ConnectionError, TimeoutError, OSError):
+            # Health check returns False on failure - does not raise
             return False
