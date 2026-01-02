@@ -58,7 +58,7 @@ See Also:
 
 import fnmatch
 import re
-from typing import TYPE_CHECKING, Any, TypeAlias
+from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -70,13 +70,11 @@ from omnibase_core.types.json_types import JsonType
 if TYPE_CHECKING:
     from omnibase_core.models.health.model_health_status import ModelHealthStatus
 
-    # Type alias for health field - provides type safety for static analysis
-    HealthStatusType: TypeAlias = "ModelHealthStatus | None"
+    # Type alias for health field - uses ModelHealthStatus for type checking
+    HealthStatusType = ModelHealthStatus | None
 else:
-    # At runtime, use Any to avoid forward reference resolution requirements
-    # and circular import issues. The actual type is validated by docstrings
-    # and integration tests.
-    HealthStatusType: TypeAlias = Any
+    # At runtime, use Any to avoid circular import issues
+    HealthStatusType = Any
 
 # Capability naming pattern: lowercase alphanumeric with dots, at least one dot
 # Examples: "database.relational", "cache.redis", "storage.s3"
