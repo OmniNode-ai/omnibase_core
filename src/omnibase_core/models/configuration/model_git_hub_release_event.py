@@ -4,7 +4,7 @@ GitHub release event model to replace Dict[str, Any] usage.
 
 from typing import Self
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from .model_git_hub_release import ModelGitHubRelease
 from .model_git_hub_release_event_data import ModelGitHubReleaseEventData
@@ -17,6 +17,13 @@ class ModelGitHubReleaseEvent(BaseModel):
     GitHub release event with typed fields.
     Replaces Dict[str, Any] for release event fields.
     """
+
+    model_config = ConfigDict(
+        strict=True,
+        extra="forbid",
+        frozen=True,
+        from_attributes=True,
+    )
 
     action: str = Field(
         default=...,

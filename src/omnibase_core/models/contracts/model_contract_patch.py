@@ -338,22 +338,33 @@ class ModelContractPatch(BaseModel):
         to "no operation" and should be normalized to None to prevent confusion
         and ensure consistent behavior during patch application.
 
+        This normalization ensures the following three forms are equivalent::
+
+            patch1 = ModelContractPatch(extends=ref, handlers__add=[])
+            patch2 = ModelContractPatch(extends=ref, handlers__add=None)
+            patch3 = ModelContractPatch(extends=ref)  # handlers__add omitted
+
+            # All three result in:
+            assert patch1.handlers__add is None
+            assert patch2.handlers__add is None
+            assert patch3.handlers__add is None
+
         This validation runs first (mode="before") so subsequent validators
-        receive either None or a non-empty list.
+        receive either None or a non-empty list, simplifying type narrowing
+        in downstream code.
 
         Args:
-            v: List value or None.
+            v: List value or None. Type is ``list[object]`` to handle all
+                list types (ModelHandlerSpec, ModelDependency, str, etc.).
             info: Pydantic validation info containing field name.
 
         Returns:
-            None if the list is empty, otherwise the original list.
+            None if the list is empty, otherwise the original list unchanged.
 
-        Example:
-            >>> # These are equivalent after normalization:
-            >>> patch1 = ModelContractPatch(extends=ref, handlers__add=[])
-            >>> patch2 = ModelContractPatch(extends=ref, handlers__add=None)
-            >>> assert patch1.handlers__add is None
-            >>> assert patch2.handlers__add is None
+        Note:
+            This validator only normalizes empty lists. Non-empty lists pass
+            through unchanged and are validated by type-specific validators
+            (e.g., validate_handlers_remove, validate_consumed_events).
         """
         if v is not None and len(v) == 0:
             logger.debug(
@@ -493,9 +504,17 @@ class ModelContractPatch(BaseModel):
         in validate_no_add_remove_conflicts. Detects if the same item
         appears in both add and remove lists.
 
+        Type Narrowing:
+            Both ``add_names`` and ``remove_names`` are typed as ``list[str] | None``
+            because they may be None when the corresponding __add/__remove field
+            is not set. The ``detect_add_remove_conflicts`` function handles None
+            values gracefully, returning an empty list if either input is None.
+
         Args:
             add_names: List of names being added (already extracted from models).
+                May be None if the __add field is not set.
             remove_names: List of names being removed.
+                May be None if the __remove field is not set.
             field_name: Name of the field for error messages.
             all_conflicts: Mutable list to append conflict messages to.
                 **This parameter is mutated in-place.** Conflict messages are
@@ -520,6 +539,7 @@ class ModelContractPatch(BaseModel):
         """
         conflicts = detect_add_remove_conflicts(add_names, remove_names, field_name)
         if conflicts:
+            # Conflicts are already sorted by detect_add_remove_conflicts
             all_conflicts.append(f"{field_name}: {conflicts}")
 
     # =========================================================================

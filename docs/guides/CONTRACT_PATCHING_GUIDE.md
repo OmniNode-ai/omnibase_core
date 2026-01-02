@@ -788,8 +788,10 @@ These run when you call `validator.validate(patch)`:
 | Duplicate dependencies in `dependencies__add` | Error | `CONTRACT_PATCH_DUPLICATE_LIST_ENTRIES` |
 | Duplicate capabilities in `capability_outputs__add` | Error | `CONTRACT_PATCH_DUPLICATE_LIST_ENTRIES` |
 | Duplicate inputs in `capability_inputs__add` | Error | `CONTRACT_PATCH_DUPLICATE_LIST_ENTRIES` |
+| Duplicate events in `consumed_events__add` | Error | `CONTRACT_PATCH_DUPLICATE_LIST_ENTRIES` |
 | Empty behavior patch (no overrides) | Info | `CONTRACT_PATCH_EMPTY_DESCRIPTOR` |
 | `purity="pure"` with `idempotent=False` | Warning | `CONTRACT_PATCH_PURITY_IDEMPOTENT_MISMATCH` |
+| New contract identity declared | Info | `CONTRACT_PATCH_NEW_IDENTITY` |
 
 #### 3. Format Validation (Warnings)
 

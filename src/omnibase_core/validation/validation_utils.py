@@ -169,6 +169,7 @@ def validate_string_list(
     min_length: int = 1,
     strip_whitespace: bool = True,
     reject_empty_list: bool = False,
+    warn_empty_list: bool = False,
 ) -> list[str] | None:
     """Validate a list of strings, ensuring no empty values.
 
@@ -182,6 +183,8 @@ def validate_string_list(
         strip_whitespace: If True, strip whitespace from each value.
         reject_empty_list: If True, raise ValueError for empty lists.
             Use for add/remove operations where an empty list is likely a user error.
+        warn_empty_list: If True, log a warning for empty lists but don't reject.
+            Useful for detecting potential user errors without failing validation.
 
     Returns:
         Validated list of strings, or None if input was None.
@@ -206,10 +209,17 @@ def validate_string_list(
     if values is None:
         return None
 
-    if reject_empty_list and len(values) == 0:
-        logger.debug(f"Validation failed for {field_name}: empty list rejected")
-        # error-ok: Pydantic validators require ValueError
-        raise ValueError(f"{field_name}: List cannot be empty")
+    if len(values) == 0:
+        if reject_empty_list:
+            logger.debug(f"Validation failed for {field_name}: empty list rejected")
+            # error-ok: Pydantic validators require ValueError
+            raise ValueError(f"{field_name}: List cannot be empty")
+        if warn_empty_list:
+            logger.warning(
+                f"Empty list provided for {field_name}. "
+                "Consider omitting the field or providing values."
+            )
+        return values
 
     validated: list[str] = []
     for i, value in enumerate(values):
@@ -244,6 +254,7 @@ def validate_onex_name_list(
     *,
     normalize_lowercase: bool = True,
     reject_empty_list: bool = False,
+    warn_empty_list: bool = False,
 ) -> list[str] | None:
     """Validate a list of ONEX-compliant names.
 
@@ -256,6 +267,8 @@ def validate_onex_name_list(
         normalize_lowercase: If True, normalize all names to lowercase.
         reject_empty_list: If True, raise ValueError for empty lists.
             Use for add/remove operations where an empty list is likely a user error.
+        warn_empty_list: If True, log a warning for empty lists but don't reject.
+            Useful for detecting potential user errors without failing validation.
 
     Returns:
         Validated and optionally normalized list of names, or None if input was None.
@@ -281,10 +294,17 @@ def validate_onex_name_list(
     if values is None:
         return None
 
-    if reject_empty_list and len(values) == 0:
-        logger.debug(f"Validation failed for {field_name}: empty list rejected")
-        # error-ok: Pydantic validators require ValueError
-        raise ValueError(f"{field_name}: List cannot be empty")
+    if len(values) == 0:
+        if reject_empty_list:
+            logger.debug(f"Validation failed for {field_name}: empty list rejected")
+            # error-ok: Pydantic validators require ValueError
+            raise ValueError(f"{field_name}: List cannot be empty")
+        if warn_empty_list:
+            logger.warning(
+                f"Empty list provided for {field_name}. "
+                "Consider omitting the field or providing values."
+            )
+        return values
 
     validated: list[str] = []
     for i, name in enumerate(values):

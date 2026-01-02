@@ -156,7 +156,7 @@ class ContractPatchValidator:
 
         # Check behavior patch (descriptor field) if present
         if patch.descriptor is not None:
-            self._validate_descriptor_patch(patch, result)
+            self._validate_behavior_patch(patch, result)
 
         # Check identity field consistency (already done by Pydantic, but add context)
         self._validate_identity_fields(patch, result)
@@ -394,6 +394,10 @@ class ContractPatchValidator:
         Uses _find_duplicates_in_list to detect duplicates and adds an error
         to the validation result with the DUPLICATE_LIST_ENTRIES code.
 
+        Note:
+            Duplicates are sorted alphabetically in error messages to ensure
+            deterministic output regardless of insertion order.
+
         Args:
             names: List of string names to check for duplicates.
             field_name: Human-readable field name for error messages
@@ -402,9 +406,13 @@ class ContractPatchValidator:
         """
         duplicates = self._find_duplicates_in_list(names)
         if duplicates:
-            logger.debug(f"Found duplicate {field_name}s in add list: {duplicates}")
+            # Sort duplicates for deterministic error messages
+            sorted_duplicates = sorted(duplicates)
+            logger.debug(
+                f"Found duplicate {field_name}s in add list: {sorted_duplicates}"
+            )
             result.add_error(
-                f"Duplicate {field_name}(s) in add list: {duplicates}",
+                f"Duplicate {field_name}(s) in add list: {sorted_duplicates}",
                 code=EnumPatchValidationErrorCode.CONTRACT_PATCH_DUPLICATE_LIST_ENTRIES.value,
             )
 
@@ -461,7 +469,7 @@ class ContractPatchValidator:
                 list(patch.consumed_events__add), "consumed event", result
             )
 
-    def _validate_descriptor_patch(
+    def _validate_behavior_patch(
         self,
         patch: ModelContractPatch,
         result: ModelValidationResult[None],
@@ -469,7 +477,7 @@ class ContractPatchValidator:
         """Validate the nested behavior patch in the descriptor field.
 
         Checks the behavior patch (stored in the `descriptor` field) for
-        semantic consistency. The descriptor field contains handler behavior
+        semantic consistency. The behavior patch contains handler behavior
         overrides such as timeout, retry, and concurrency settings.
 
         Validates:
@@ -481,21 +489,22 @@ class ContractPatchValidator:
             result: The validation result to append issues to.
 
         Note:
-            The field is named 'descriptor' but conceptually represents
-            handler behavior configuration (timeout, retry, concurrency).
+            The field is named 'descriptor' for historical reasons but
+            conceptually represents handler behavior configuration
+            (timeout, retry, concurrency).
 
-            Empty descriptor patches generate an INFO (not WARNING/ERROR) because:
-            1. An empty descriptor is semantically valid (just a no-op)
+            Empty behavior patches generate an INFO (not WARNING/ERROR) because:
+            1. An empty behavior patch is semantically valid (just a no-op)
             2. It's likely a user mistake but doesn't break merge operations
             3. The patch system should be permissive for forward compatibility
-            Users are encouraged to remove empty descriptors for clarity.
+            Users are encouraged to remove empty behavior patches for clarity.
         """
         if patch.descriptor is None:
             return
 
         # Check for empty behavior patch (info, not warning/error - see docstring rationale)
         if not patch.descriptor.has_overrides():
-            logger.debug("Descriptor patch has no overrides - issuing info")
+            logger.debug("Behavior patch has no overrides - issuing info")
             result.add_issue(
                 severity=EnumValidationSeverity.INFO,
                 message="Behavior patch is present but has no overrides",
@@ -506,7 +515,7 @@ class ContractPatchValidator:
         # Check purity/idempotent consistency
         if patch.descriptor.purity == "pure" and patch.descriptor.idempotent is False:
             logger.debug(
-                "Descriptor patch has purity/idempotent mismatch - issuing warning"
+                "Behavior patch has purity/idempotent mismatch - issuing warning"
             )
             result.add_issue(
                 severity=EnumValidationSeverity.WARNING,

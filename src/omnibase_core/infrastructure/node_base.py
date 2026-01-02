@@ -398,7 +398,28 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
 
             module_path, class_name = main_tool_class.rsplit(".", 1)
 
-            # Security: Validate module path against allowlist if enforcement is enabled
+            # SECURITY: Dynamic Import Allowlist Validation
+            # =============================================
+            # This validation prevents arbitrary code execution via malicious contract YAML files.
+            # The main_tool_class field in contracts specifies a Python class to import and
+            # instantiate. Without validation, an attacker who can modify contract files could
+            # specify system modules (e.g., os, subprocess) to execute arbitrary code.
+            #
+            # Defense Strategy:
+            #   - ENFORCE_TOOL_IMPORT_ALLOWLIST (default: False) - Opt-in strict validation
+            #   - When enabled, only modules matching ALLOWED_TOOL_MODULE_PREFIXES can be imported
+            #   - Default trusted prefixes: omnibase_core., omnibase_spi., omnibase_infra.,
+            #     omnibase_runtime., tests.
+            #   - Raises SECURITY_VIOLATION error for untrusted modules
+            #
+            # Trust Assumptions (when allowlist is NOT enforced):
+            #   1. Contract files come from trusted sources (admin, verified packages)
+            #   2. File system permissions prevent unauthorized contract modification
+            #   3. Third-party node packages are reviewed before installation
+            #
+            # See Also:
+            #   - ModelReference.ALLOWED_MODULE_PREFIXES: Similar pattern for reference resolution
+            #   - docs/architecture/SECURITY.md: ONEX security architecture documentation
             if self.ENFORCE_TOOL_IMPORT_ALLOWLIST:
                 if not any(
                     module_path.startswith(prefix)
@@ -415,7 +436,10 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
                         correlation_id=self.correlation_id,
                     )
 
-            # Dynamic import using importlib (ONEX 2.0 pattern)
+            # SECURITY: Dynamic import executes module initialization code.
+            # This is safe ONLY when:
+            #   - Contract files come from trusted sources, OR
+            #   - ENFORCE_TOOL_IMPORT_ALLOWLIST is True (validated above)
             module = importlib.import_module(module_path)
             tool_class = getattr(module, class_name)
 
