@@ -1,6 +1,5 @@
 """Tests for YAML parsing of invariant definitions."""
 
-import tempfile
 from pathlib import Path
 
 import pytest
@@ -552,7 +551,7 @@ class TestYamlWithFixtures:
 class TestDirectoryLoading:
     """Test loading invariant sets from directories."""
 
-    def test_load_from_directory_yaml_extension(self) -> None:
+    def test_load_from_directory_yaml_extension(self, tmp_path: Path) -> None:
         """Load invariant sets from directory with .yaml extension."""
         yaml_content = """
 name: "Test Set from YAML"
@@ -563,16 +562,15 @@ invariants:
     config:
       max_ms: 1000
 """
-        with tempfile.TemporaryDirectory() as tmpdir:
-            yaml_file = Path(tmpdir) / "test.yaml"
-            yaml_file.write_text(yaml_content)
+        yaml_file = tmp_path / "test.yaml"
+        yaml_file.write_text(yaml_content)
 
-            sets = load_invariant_sets_from_directory(tmpdir)
+        sets = load_invariant_sets_from_directory(str(tmp_path))
 
-            assert len(sets) == 1
-            assert sets[0].name == "Test Set from YAML"
+        assert len(sets) == 1
+        assert sets[0].name == "Test Set from YAML"
 
-    def test_load_from_directory_yml_extension(self) -> None:
+    def test_load_from_directory_yml_extension(self, tmp_path: Path) -> None:
         """Load invariant sets from directory with .yml extension."""
         yaml_content = """
 name: "Test Set from YML"
@@ -583,16 +581,15 @@ invariants:
     config:
       max_ms: 2000
 """
-        with tempfile.TemporaryDirectory() as tmpdir:
-            yml_file = Path(tmpdir) / "test.yml"
-            yml_file.write_text(yaml_content)
+        yml_file = tmp_path / "test.yml"
+        yml_file.write_text(yaml_content)
 
-            sets = load_invariant_sets_from_directory(tmpdir)
+        sets = load_invariant_sets_from_directory(str(tmp_path))
 
-            assert len(sets) == 1
-            assert sets[0].name == "Test Set from YML"
+        assert len(sets) == 1
+        assert sets[0].name == "Test Set from YML"
 
-    def test_load_from_directory_both_extensions(self) -> None:
+    def test_load_from_directory_both_extensions(self, tmp_path: Path) -> None:
         """Load invariant sets from directory with both .yaml and .yml files."""
         yaml_content = """
 name: "Set from YAML"
@@ -612,17 +609,16 @@ invariants:
     config:
       max_ms: 2000
 """
-        with tempfile.TemporaryDirectory() as tmpdir:
-            yaml_file = Path(tmpdir) / "first.yaml"
-            yaml_file.write_text(yaml_content)
-            yml_file = Path(tmpdir) / "second.yml"
-            yml_file.write_text(yml_content)
+        yaml_file = tmp_path / "first.yaml"
+        yaml_file.write_text(yaml_content)
+        yml_file = tmp_path / "second.yml"
+        yml_file.write_text(yml_content)
 
-            sets = load_invariant_sets_from_directory(tmpdir)
+        sets = load_invariant_sets_from_directory(str(tmp_path))
 
-            assert len(sets) == 2
-            names = {s.name for s in sets}
-            assert names == {"Set from YAML", "Set from YML"}
+        assert len(sets) == 2
+        names = {s.name for s in sets}
+        assert names == {"Set from YAML", "Set from YML"}
 
     def test_load_from_directory_nonexistent_raises_error(self) -> None:
         """Loading from nonexistent directory raises ModelOnexError."""
@@ -630,13 +626,12 @@ invariants:
             load_invariant_sets_from_directory("/nonexistent/path")
         assert "not found" in str(exc_info.value)
 
-    def test_load_from_directory_empty(self) -> None:
+    def test_load_from_directory_empty(self, tmp_path: Path) -> None:
         """Loading from empty directory returns empty list."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            sets = load_invariant_sets_from_directory(tmpdir)
-            assert sets == []
+        sets = load_invariant_sets_from_directory(str(tmp_path))
+        assert sets == []
 
-    def test_load_from_directory_custom_patterns(self) -> None:
+    def test_load_from_directory_custom_patterns(self, tmp_path: Path) -> None:
         """Load with custom patterns filters correctly."""
         yaml_content = """
 name: "Custom Pattern Test"
@@ -647,23 +642,22 @@ invariants:
     config:
       max_ms: 1000
 """
-        with tempfile.TemporaryDirectory() as tmpdir:
-            # Create files with different extensions
-            (Path(tmpdir) / "included.yaml").write_text(yaml_content)
-            (Path(tmpdir) / "excluded.yml").write_text(yaml_content)
+        # Create files with different extensions
+        (tmp_path / "included.yaml").write_text(yaml_content)
+        (tmp_path / "excluded.yml").write_text(yaml_content)
 
-            # Load only .yaml files
-            sets = load_invariant_sets_from_directory(tmpdir, patterns=["*.yaml"])
+        # Load only .yaml files
+        sets = load_invariant_sets_from_directory(str(tmp_path), patterns=["*.yaml"])
 
-            assert len(sets) == 1
-            assert sets[0].name == "Custom Pattern Test"
+        assert len(sets) == 1
+        assert sets[0].name == "Custom Pattern Test"
 
 
 @pytest.mark.unit
 class TestPathSecurity:
     """Test path security handling in YAML loading."""
 
-    def test_load_file_resolves_path(self) -> None:
+    def test_load_file_resolves_path(self, tmp_path: Path) -> None:
         """Verify path resolution works correctly."""
         yaml_content = """
 name: "Resolve Test"
@@ -674,22 +668,20 @@ invariants:
     config:
       max_ms: 1000
 """
-        with tempfile.TemporaryDirectory() as tmpdir:
-            yaml_file = Path(tmpdir) / "test.yaml"
-            yaml_file.write_text(yaml_content)
+        yaml_file = tmp_path / "test.yaml"
+        yaml_file.write_text(yaml_content)
 
-            # Use resolved path
-            inv_set = load_invariant_set_from_file(yaml_file.resolve())
-            assert inv_set.name == "Resolve Test"
+        # Use resolved path
+        inv_set = load_invariant_set_from_file(yaml_file.resolve())
+        assert inv_set.name == "Resolve Test"
 
-    def test_load_file_not_a_file_raises_error(self) -> None:
+    def test_load_file_not_a_file_raises_error(self, tmp_path: Path) -> None:
         """Loading a directory as a file raises ModelOnexError."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            with pytest.raises(ModelOnexError) as exc_info:
-                load_invariant_set_from_file(tmpdir)
-            assert "not a file" in str(exc_info.value).lower()
+        with pytest.raises(ModelOnexError) as exc_info:
+            load_invariant_set_from_file(str(tmp_path))
+        assert "not a file" in str(exc_info.value).lower()
 
-    def test_load_directory_resolves_path(self) -> None:
+    def test_load_directory_resolves_path(self, tmp_path: Path) -> None:
         """Verify directory path resolution works correctly."""
         yaml_content = """
 name: "Dir Resolve Test"
@@ -700,14 +692,13 @@ invariants:
     config:
       max_ms: 1000
 """
-        with tempfile.TemporaryDirectory() as tmpdir:
-            yaml_file = Path(tmpdir) / "test.yaml"
-            yaml_file.write_text(yaml_content)
+        yaml_file = tmp_path / "test.yaml"
+        yaml_file.write_text(yaml_content)
 
-            # Use resolved path
-            sets = load_invariant_sets_from_directory(Path(tmpdir).resolve())
-            assert len(sets) == 1
-            assert sets[0].name == "Dir Resolve Test"
+        # Use resolved path
+        sets = load_invariant_sets_from_directory(tmp_path.resolve())
+        assert len(sets) == 1
+        assert sets[0].name == "Dir Resolve Test"
 
     def test_load_from_file_not_a_directory_raises_error(self, tmp_path: Path) -> None:
         """Loading a file as a directory raises ModelOnexError."""

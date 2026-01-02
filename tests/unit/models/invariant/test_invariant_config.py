@@ -86,10 +86,34 @@ class TestCostConfig:
         config = ModelCostConfig(max_cost=100.00, per="day")
         assert config.per == "day"
 
-    def test_cost_max_cost_must_be_non_negative(self) -> None:
-        """max_cost cannot be negative."""
-        with pytest.raises(ValidationError):
+    def test_cost_max_cost_must_be_positive(self) -> None:
+        """max_cost must be greater than 0 (positive), not just non-negative.
+
+        The model intentionally uses gt=0 (greater than), not ge=0 (greater
+        than or equal), because a cost limit of 0 would mean no operations
+        are allowed, which is better enforced through other mechanisms
+        (e.g., disabling the endpoint entirely).
+        """
+        with pytest.raises(ValidationError) as exc_info:
             ModelCostConfig(max_cost=-0.10)
+        assert "greater_than" in str(exc_info.value) or "greater than" in str(
+            exc_info.value
+        ), f"Expected 'greater than' validation error, got: {exc_info.value}"
+
+    def test_cost_max_cost_zero_is_rejected(self) -> None:
+        """max_cost=0 is rejected because cost must be strictly positive.
+
+        This is an intentional design decision: a max_cost of 0 would mean
+        'no cost allowed', which effectively disables the operation. If that
+        behavior is needed, it should be handled at the operation level
+        (e.g., by disabling the endpoint) rather than through cost limits.
+        """
+        with pytest.raises(ValidationError) as exc_info:
+            ModelCostConfig(max_cost=0.0)
+        error_str = str(exc_info.value)
+        assert "greater than 0" in error_str or "greater_than" in error_str, (
+            f"Expected validation error for max_cost=0, got: {error_str}"
+        )
 
     def test_cost_config_with_decimal_precision(self) -> None:
         """Cost config preserves decimal precision."""

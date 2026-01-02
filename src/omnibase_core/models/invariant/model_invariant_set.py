@@ -35,9 +35,11 @@ class ModelInvariantSet(BaseModel):
         version: Semantic version of this invariant set definition.
 
     Note:
-        The __eq__ and __hash__ methods exclude created_at from comparison
-        to ensure consistent equality for logically identical sets created
-        at different times.
+        The __eq__ method excludes created_at from comparison to ensure
+        consistent equality for logically identical sets created at different
+        times. The __hash__ method additionally excludes invariants and
+        description (using only id, name, target, version) to maintain
+        hashability while keeping the hash computation efficient.
 
     Thread Safety:
         This model is immutable (frozen=True) after creation, making it
@@ -82,6 +84,10 @@ class ModelInvariantSet(BaseModel):
         """
         Return only critical severity invariants.
 
+        Performance Note:
+            Creates a new list on each access via list comprehension.
+            For repeated access, consider caching the result locally.
+
         Returns:
             List of invariants with CRITICAL severity level.
         """
@@ -96,6 +102,10 @@ class ModelInvariantSet(BaseModel):
         """
         Return only enabled invariants.
 
+        Performance Note:
+            Creates a new list on each access via list comprehension.
+            For repeated access, consider caching the result locally.
+
         Returns:
             List of invariants where enabled is True.
         """
@@ -105,6 +115,10 @@ class ModelInvariantSet(BaseModel):
     def warning_invariants(self) -> list[ModelInvariant]:
         """
         Return only warning severity invariants.
+
+        Performance Note:
+            Creates a new list on each access via list comprehension.
+            For repeated access, consider caching the result locally.
 
         Returns:
             List of invariants with WARNING severity level.
@@ -120,6 +134,10 @@ class ModelInvariantSet(BaseModel):
         """
         Return only info severity invariants.
 
+        Performance Note:
+            Creates a new list on each access via list comprehension.
+            For repeated access, consider caching the result locally.
+
         Returns:
             List of invariants with INFO severity level.
         """
@@ -132,6 +150,11 @@ class ModelInvariantSet(BaseModel):
     ) -> list[ModelInvariant]:
         """
         Return invariants filtered by type.
+
+        Performance Note:
+            Creates a new list on each call via list comprehension.
+            For repeated access with the same type, consider caching
+            the result locally.
 
         Args:
             invariant_type: The type of invariant to filter by.
@@ -173,11 +196,20 @@ class ModelInvariantSet(BaseModel):
 
     def __hash__(self) -> int:
         """
-        Hash invariant set, excluding timestamps.
+        Hash invariant set using identity and structural fields.
 
-        Consistent with __eq__, we exclude created_at from the hash
-        computation to ensure that logically equivalent instances
-        hash to the same value.
+        Uses only id, name, target, and version for hash computation.
+        Excludes created_at (timestamp), invariants (unhashable list),
+        and description (optional field) to ensure:
+        1. Hashability (lists cannot be hashed)
+        2. Efficient hash computation
+        3. Stable hashes for set/dict operations
+
+        Note:
+            This is intentionally NOT consistent with __eq__, which also
+            compares invariants and description. Two sets may be equal
+            via __eq__ but have the same hash only if their id, name,
+            target, and version match.
 
         Returns:
             Hash value based on id, name, target, and version.

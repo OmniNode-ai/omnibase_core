@@ -6,30 +6,48 @@ Provides reusable fixtures for:
 - Configuration objects for testing
 """
 
+from typing import Any
+
 import pytest
 
 
 @pytest.fixture
-def sample_latency_config() -> dict:
-    """Provide sample latency invariant config."""
+def sample_latency_config() -> dict[str, int]:
+    """Provide sample latency invariant config.
+
+    Returns:
+        Dictionary with max_ms key for latency threshold.
+    """
     return {"max_ms": 5000}
 
 
 @pytest.fixture
-def sample_cost_config() -> dict:
-    """Provide sample cost invariant config."""
+def sample_cost_config() -> dict[str, float | str]:
+    """Provide sample cost invariant config.
+
+    Returns:
+        Dictionary with max_cost and per keys for cost threshold.
+    """
     return {"max_cost": 0.10, "per": "request"}
 
 
 @pytest.fixture
-def sample_field_presence_config() -> dict:
-    """Provide sample field presence invariant config."""
+def sample_field_presence_config() -> dict[str, list[str]]:
+    """Provide sample field presence invariant config.
+
+    Returns:
+        Dictionary with fields list for presence checking.
+    """
     return {"fields": ["response", "model", "usage"]}
 
 
 @pytest.fixture
-def sample_schema_config() -> dict:
-    """Provide sample schema invariant config."""
+def sample_schema_config() -> dict[str, dict[str, Any]]:
+    """Provide sample schema invariant config.
+
+    Returns:
+        Dictionary with json_schema for schema validation.
+    """
     return {
         "json_schema": {
             "type": "object",
@@ -40,14 +58,22 @@ def sample_schema_config() -> dict:
 
 
 @pytest.fixture
-def sample_threshold_config() -> dict:
-    """Provide sample threshold invariant config."""
+def sample_threshold_config() -> dict[str, str | float]:
+    """Provide sample threshold invariant config.
+
+    Returns:
+        Dictionary with metric_name and min_value for threshold checking.
+    """
     return {"metric_name": "accuracy", "min_value": 0.95}
 
 
 @pytest.fixture
 def sample_yaml_invariant_set() -> str:
-    """Provide sample YAML content for invariant set."""
+    """Provide sample YAML content for invariant set.
+
+    Returns:
+        YAML string defining an invariant set with field presence and latency checks.
+    """
     return """
 name: "Test Invariant Set"
 target: "node_llm_call"
