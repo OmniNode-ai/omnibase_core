@@ -328,7 +328,7 @@ def _convert_list_value(
         return value
     try:
         return [schema_cls.from_value(item) for item in value]
-    except Exception as e:
+    except (AttributeError, KeyError, TypeError, ValueError) as e:
         first_item_type = type(value[0]).__name__ if value else "N/A"
         _logger.warning(
             "Failed to convert list items to ModelSchemaValue. "
@@ -390,7 +390,7 @@ def _convert_dict_value(
     if first_non_none_value is None:
         try:
             return {k: schema_cls.from_value(v) for k, v in value.items()}
-        except Exception as e:
+        except (AttributeError, KeyError, TypeError, ValueError) as e:
             sample_keys = list(value.keys())[:5]
             _logger.warning(
                 "Failed to convert dict with all-None values to ModelSchemaValue. "
@@ -446,7 +446,7 @@ def _convert_dict_value(
     # Convert raw values to ModelSchemaValue
     try:
         return {k: schema_cls.from_value(v) for k, v in value.items()}
-    except Exception as e:
+    except (AttributeError, KeyError, TypeError, ValueError) as e:
         sample_keys = list(value.keys())[:5]
         _logger.warning(
             "Failed to convert dict values to ModelSchemaValue. "

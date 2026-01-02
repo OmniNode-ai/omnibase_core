@@ -49,6 +49,16 @@ from omnibase_core.errors.error_codes import (
     list_registered_components,
     register_error_codes,
 )
+from omnibase_core.errors.exception_groups import (
+    ASYNC_ERRORS,
+    ATTRIBUTE_ACCESS_ERRORS,
+    FILE_IO_ERRORS,
+    JSON_PARSING_ERRORS,
+    NETWORK_ERRORS,
+    PYDANTIC_MODEL_ERRORS,
+    VALIDATION_ERRORS,
+    YAML_PARSING_ERRORS,
+)
 
 # ModelOnexError is imported via lazy import to avoid circular dependency
 # It's available as: from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -58,6 +68,16 @@ from omnibase_core.errors.error_codes import (
 # to avoid circular dependencies
 
 __all__ = [
+    # Exception Groups (centralized exception type tuples)
+    "ASYNC_ERRORS",
+    "ATTRIBUTE_ACCESS_ERRORS",
+    "FILE_IO_ERRORS",
+    "JSON_PARSING_ERRORS",
+    "NETWORK_ERRORS",
+    "PYDANTIC_MODEL_ERRORS",
+    "VALIDATION_ERRORS",
+    "YAML_PARSING_ERRORS",
+    # Error Classes
     "AdapterBindingError",
     "CallableNotFoundError",
     "ComputePipelineError",
@@ -84,6 +104,7 @@ __all__ = [
     "RuntimeHostError",
     "UnknownDependencyError",
     "UnsupportedCapabilityError",
+    # Functions
     "get_core_error_description",
     "get_error_codes_for_component",
     "get_exit_code_for_core_error",

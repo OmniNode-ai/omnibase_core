@@ -107,28 +107,60 @@ def validate_yaml_file(file_path: Path) -> list[str]:
             # Validation successful if we reach here
 
         except yaml.YAMLError as e:
-            # Collect YAML parsing errors
-            errors.append(f"YAML parsing failed: {e}")
+            # Wrap in ModelOnexError for consistent error handling
+            wrapped_error = ModelOnexError(
+                error_code=EnumCoreErrorCode.CONFIGURATION_PARSE_ERROR,
+                message=f"YAML parsing failed: {e}",
+                context={
+                    "file_path": str(file_path),
+                    "exception_type": type(e).__name__,
+                },
+            )
+            logging.exception(f"YAML parsing error: {wrapped_error.message}")
+            errors.append(wrapped_error.message)
         except ValidationError as e:
-            # Collect Pydantic validation errors for missing/invalid fields
-            errors.append(f"Contract validation failed: {e}")
-        except ModelOnexError as e:
-            # Collect structured validation errors
-            errors.append(f"Contract validation failed: {e.message}")
-        except Exception as e:
-            # Fallback for unexpected errors - log full traceback for debugging
-            logging.exception(f"Unexpected error during contract validation: {e}")
-            errors.append(f"Contract validation failed: {e}")
-
-        # All validation is now handled by Pydantic model
-        # Manual validation removed for ONEX compliance
+            # Wrap in ModelOnexError for consistent error handling
+            wrapped_error = ModelOnexError(
+                error_code=EnumCoreErrorCode.CONTRACT_VALIDATION_ERROR,
+                message=f"Contract validation failed: {e}",
+                context={
+                    "file_path": str(file_path),
+                    "exception_type": type(e).__name__,
+                },
+            )
+            logging.exception(f"Contract validation error: {wrapped_error.message}")
+            errors.append(wrapped_error.message)
+        # Note: load_and_validate_yaml_model() only raises yaml.YAMLError
+        # and ValidationError. No ModelOnexError handler needed here.
 
     except OSError as e:
-        # Collect OS errors during file reading
-        errors.append(f"OS error reading file: {e}")
-    except (UnicodeDecodeError, yaml.YAMLError) as e:
-        # Collect encoding and YAML parsing errors
-        errors.append(f"Error reading file: {e}")
+        # boundary-ok: handles TOCTOU race conditions where file changes after
+        # preliminary checks (lines 67-91) but before open(). Wraps in ModelOnexError
+        # for consistent error handling across the validation framework.
+        wrapped_error = ModelOnexError(
+            error_code=EnumCoreErrorCode.FILE_READ_ERROR,
+            message=f"OS error reading file: {e}",
+            context={
+                "file_path": str(file_path),
+                "exception_type": type(e).__name__,
+            },
+        )
+        logging.exception(f"File read error: {wrapped_error.message}")
+        errors.append(wrapped_error.message)
+    except UnicodeDecodeError as e:
+        # boundary-ok: handles encoding errors from f.read() that can occur
+        # with invalid UTF-8 content. Wraps in ModelOnexError for consistent
+        # error handling across the validation framework.
+        wrapped_error = ModelOnexError(
+            error_code=EnumCoreErrorCode.FILE_READ_ERROR,
+            message=f"Error decoding file: {e}",
+            context={
+                "file_path": str(file_path),
+                "exception_type": type(e).__name__,
+            },
+        )
+        logging.exception(f"File read error: {wrapped_error.message}")
+        errors.append(wrapped_error.message)
 
     return errors
 
@@ -169,9 +201,29 @@ def validate_no_manual_yaml(directory: Path) -> list[str]:
                         break
 
             except OSError as e:
-                errors.append(f"Error reading {yaml_file}: {e}")
+                # Wrap in ModelOnexError for consistent error handling
+                wrapped_error = ModelOnexError(
+                    error_code=EnumCoreErrorCode.FILE_READ_ERROR,
+                    message=f"Error reading {yaml_file}: {e}",
+                    context={
+                        "file_path": str(yaml_file),
+                        "exception_type": type(e).__name__,
+                    },
+                )
+                logging.exception(f"File read error: {wrapped_error.message}")
+                errors.append(wrapped_error.message)
             except UnicodeDecodeError as e:
-                errors.append(f"Error decoding {yaml_file}: {e}")
+                # Wrap in ModelOnexError for consistent error handling
+                wrapped_error = ModelOnexError(
+                    error_code=EnumCoreErrorCode.FILE_READ_ERROR,
+                    message=f"Error decoding {yaml_file}: {e}",
+                    context={
+                        "file_path": str(yaml_file),
+                        "exception_type": type(e).__name__,
+                    },
+                )
+                logging.exception(f"File decode error: {wrapped_error.message}")
+                errors.append(wrapped_error.message)
 
     return errors
 

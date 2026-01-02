@@ -167,7 +167,7 @@ class ModelContainer[T](BaseModel):
                 is_validated=False,  # Reset validation after transformation
                 validation_notes="Value transformed, requires re-validation",
             )
-        except Exception as e:
+        except (AttributeError, ValueError, TypeError, KeyError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.OPERATION_FAILED,
                 message=f"Failed to map container value: {e!s}",
@@ -220,7 +220,7 @@ class ModelContainer[T](BaseModel):
                     },
                 ),
             )
-        except Exception as e:
+        except (ModelOnexError, AttributeError, ValueError, TypeError) as e:
             if isinstance(e, ModelOnexError):
                 raise
             raise ModelOnexError(
@@ -303,7 +303,7 @@ class ModelContainer[T](BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception as e:
+        except (AttributeError, ValueError, TypeError, KeyError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
@@ -319,7 +319,7 @@ class ModelContainer[T](BaseModel):
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except Exception as e:
+        except (AttributeError, ValueError, TypeError, KeyError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",

@@ -229,8 +229,10 @@ def validate(
             {"error_code": str(e.error_code), "message": e.message},
         )
         raise click.ClickException(str(e)) from e
-    except Exception as e:  # CLI catch-all for user-friendly error messages
-        # Catch-all for unexpected errors in validation pipeline
+    except (
+        Exception
+    ) as e:  # catch-all-ok: CLI catch-all for user-friendly error messages
+        # Catches unexpected errors in validation pipeline
         # Examples: FileNotFoundError (missing files), PermissionError (access denied),
         # OSError (disk issues), RuntimeError (validation logic bugs)
         # All other exceptions are converted to user-friendly ClickException
@@ -311,7 +313,7 @@ def info(ctx: click.Context) -> None:
                 click.echo("\nInstalled ONEX packages:")
                 for pkg in onex_packages:
                     click.echo(f"  - {pkg.metadata['Name']} {pkg.version}")
-        except (ImportError, KeyError, AttributeError, TypeError) as e:
+        except (AttributeError, ImportError, KeyError, TypeError) as e:
             # Show error in verbose mode for debugging (this block only runs when verbose=True)
             # ImportError: metadata module not available
             # KeyError: metadata field missing (e.g., "Name")
@@ -392,8 +394,8 @@ def health(ctx: click.Context, component: str | None) -> None:
                 click.echo(f"       {message}")
             if not is_healthy:
                 all_healthy = False
-        except Exception as e:  # Health checks must not crash CLI
-            # Catch-all ensures CLI stability even if health check functions fail
+        except Exception as e:  # catch-all-ok: health checks must not crash CLI
+            # Ensures CLI stability even if health check functions fail
             # Examples: ImportError (missing modules), AttributeError (API changes),
             # RuntimeError (check logic bugs), OSError (system resource issues)
             # All failures are reported gracefully without crashing the CLI

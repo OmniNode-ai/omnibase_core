@@ -775,11 +775,17 @@ class TestIsProtocolFile:
 
             assert result is False
             assert len(caplog.records) == 1
-            assert caplog.records[0].levelname == "WARNING"
-            assert "read error" in caplog.records[0].message.lower()
+            assert caplog.records[0].levelname == "DEBUG"
+            # OSError is explicitly caught and logged
+            assert "error checking protocol file" in caplog.records[0].message.lower()
 
-    def test_generic_exception_handling(self, caplog, monkeypatch):
-        """Test handling of unexpected exceptions."""
+    def test_unexpected_exceptions_propagate(self, monkeypatch):
+        """Test that unexpected exceptions propagate rather than being silently caught.
+
+        The is_protocol_file function only catches specific expected exceptions
+        (OSError, ValueError, UnicodeDecodeError). Unexpected exceptions like
+        RuntimeError should propagate to allow proper error handling upstream.
+        """
 
         def mock_read_text(*args, **kwargs):
             raise RuntimeError("Unexpected error")
@@ -792,13 +798,9 @@ class TestIsProtocolFile:
             # Monkeypatch the read_text method
             monkeypatch.setattr(Path, "read_text", mock_read_text)
 
-            with caplog.at_level(logging.WARNING):
-                result = is_protocol_file(temp_path)
-
-                assert result is False
-                assert len(caplog.records) == 1
-                assert caplog.records[0].levelname == "WARNING"
-                assert "unexpected error" in caplog.records[0].message.lower()
+            # RuntimeError should propagate, not be silently caught
+            with pytest.raises(RuntimeError, match="Unexpected error"):
+                is_protocol_file(temp_path)
         finally:
             temp_path.unlink()
 

@@ -354,8 +354,8 @@ class TestNodeBaseToolResolution:
             with pytest.raises(ModelOnexError) as exc_info:
                 NodeBase(contract_path=contract_path, container=mock_container)
 
-            # The validation error is wrapped in OPERATION_FAILED during initialization
-            assert exc_info.value.error_code == EnumCoreErrorCode.OPERATION_FAILED
+            # The validation error is preserved (not double-wrapped)
+            assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
             assert "Invalid main_tool_class format" in exc_info.value.message
 
     def test_should_fail_with_nonexistent_module(self, tmp_path, mock_container):

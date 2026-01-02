@@ -75,10 +75,8 @@ class FieldConverter[T]:
                 )
 
             return result
-        except Exception as e:
-            if isinstance(e, ModelOnexError):
-                raise
-
+        except (ValueError, TypeError, AttributeError) as e:
+            # Catch type conversion errors or attribute access issues
             # Use default if available
             if self.default_value is not None:
                 return self.default_value
@@ -94,3 +92,6 @@ class FieldConverter[T]:
                     },
                 ),
             )
+        except ModelOnexError:
+            # Re-raise ModelOnexError from validator without wrapping
+            raise

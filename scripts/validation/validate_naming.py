@@ -186,7 +186,7 @@ class NamingConventionValidator:
         "factories/": [
             "ContractProfileFactory",  # Factory for creating default contract profiles
         ],
-        # VALIDATION INFRASTRUCTURE: Validators for ONEX contracts and workflows
+        # VALIDATION INFRASTRUCTURE: Validators and checkers for ONEX contracts and workflows
         # Location: validation/ - Validation framework implementations
         # Rationale: ContractPatchValidator validates contract patches, not a Protocol interface.
         #            The heuristic flags "contract" as a Protocol indicator, but this is a
