@@ -121,21 +121,30 @@ def load_invariant_set_from_file(file_path: Path | str) -> ModelInvariantSet:
 
 def load_invariant_sets_from_directory(
     directory_path: Path | str,
-    pattern: str = "*.yaml",
+    patterns: list[str] | None = None,
 ) -> list[ModelInvariantSet]:
-    """
-    Load all ModelInvariantSet definitions from a directory.
+    """Load all ModelInvariantSet definitions from a directory.
+
+    Supports both .yaml and .yml file extensions by default. Files are
+    loaded in sorted order by filename.
 
     Args:
         directory_path: Path to the directory containing YAML files.
-        pattern: Glob pattern for matching files (default: "*.yaml").
+        patterns: Glob patterns for matching files. Defaults to
+            ["*.yaml", "*.yml"] to support both common YAML extensions.
 
     Returns:
         List of ModelInvariantSet objects parsed from matching files.
 
     Raises:
         ModelOnexError: If directory is not found or any file fails to parse.
+            Error codes:
+            - DIRECTORY_NOT_FOUND: Directory does not exist
+            - INVALID_PARAMETER: Path exists but is not a directory
     """
+    if patterns is None:
+        patterns = ["*.yaml", "*.yml"]
+
     path = Path(directory_path)
 
     if not path.exists():
@@ -150,8 +159,13 @@ def load_invariant_sets_from_directory(
             error_code=EnumCoreErrorCode.INVALID_PARAMETER,
         )
 
+    # Collect files matching any pattern, avoiding duplicates
+    yaml_files: set[Path] = set()
+    for pattern in patterns:
+        yaml_files.update(path.glob(pattern))
+
     invariant_sets: list[ModelInvariantSet] = []
-    for yaml_file in sorted(path.glob(pattern)):
+    for yaml_file in sorted(yaml_files):
         if yaml_file.is_file():
             invariant_set = load_invariant_set_from_file(yaml_file)
             invariant_sets.append(invariant_set)

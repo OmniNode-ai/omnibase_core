@@ -12,7 +12,6 @@ Tests cover:
 Target: 85%+ coverage for decorators/pattern_exclusions.py
 """
 
-import tempfile
 from pathlib import Path
 
 import pytest
@@ -383,83 +382,67 @@ class TestGetExclusionInfo:
 class TestIsExcludedFromPatternCheck:
     """Test is_excluded_from_pattern_check file-based utility."""
 
-    def test_exclusion_via_decorator_in_file(self):
+    def test_exclusion_via_decorator_in_file(self, tmp_path: Path):
         """Test detection of exclusion via decorator in source file."""
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
-            f.write(
-                """
+        test_file = tmp_path / "test_decorator.py"
+        test_file.write_text(
+            """
 @allow_any_type("Test exclusion")
 def test_function(data: Any):
     return data
-"""
-            )
-            f.flush()
-            temp_path = f.name
+""",
+            encoding="utf-8",
+        )
 
-        try:
-            # Line 3 should be excluded (in function with @allow_any_type)
-            result = is_excluded_from_pattern_check(temp_path, 3, "any_type")
-            assert result is True
-        finally:
-            Path(temp_path).unlink()
+        # Line 3 should be excluded (in function with @allow_any_type)
+        result = is_excluded_from_pattern_check(str(test_file), 3, "any_type")
+        assert result is True
 
-    def test_exclusion_via_inline_comment(self):
+    def test_exclusion_via_inline_comment(self, tmp_path: Path):
         """Test detection of exclusion via inline comment."""
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
-            f.write(
-                """
+        test_file = tmp_path / "test_inline.py"
+        test_file.write_text(
+            """
 def process_data():
     data: Any = get_data()  # ONEX_EXCLUDE: any_type
     return data
-"""
-            )
-            f.flush()
-            temp_path = f.name
+""",
+            encoding="utf-8",
+        )
 
-        try:
-            result = is_excluded_from_pattern_check(temp_path, 3, "any_type")
-            assert result is True
-        finally:
-            Path(temp_path).unlink()
+        result = is_excluded_from_pattern_check(str(test_file), 3, "any_type")
+        assert result is True
 
-    def test_exclusion_via_exclude_all_comment(self):
+    def test_exclusion_via_exclude_all_comment(self, tmp_path: Path):
         """Test detection via ONEX_EXCLUDE_ALL comment."""
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
-            f.write(
-                """
+        test_file = tmp_path / "test_exclude_all.py"
+        test_file.write_text(
+            """
 def legacy_function():
     # ONEX_EXCLUDE_ALL
     result: Dict[str, Any] = {}
     return result
-"""
-            )
-            f.flush()
-            temp_path = f.name
+""",
+            encoding="utf-8",
+        )
 
-        try:
-            result = is_excluded_from_pattern_check(temp_path, 4, "dict_str_any")
-            assert result is True
-        finally:
-            Path(temp_path).unlink()
+        result = is_excluded_from_pattern_check(str(test_file), 4, "dict_str_any")
+        assert result is True
 
-    def test_no_exclusion_in_file(self):
+    def test_no_exclusion_in_file(self, tmp_path: Path):
         """Test detection when no exclusion present."""
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
-            f.write(
-                """
+        test_file = tmp_path / "test_regular.py"
+        test_file.write_text(
+            """
 def regular_function():
     result: str = "test"
     return result
-"""
-            )
-            f.flush()
-            temp_path = f.name
+""",
+            encoding="utf-8",
+        )
 
-        try:
-            result = is_excluded_from_pattern_check(temp_path, 3, "any_type")
-            assert result is False
-        finally:
-            Path(temp_path).unlink()
+        result = is_excluded_from_pattern_check(str(test_file), 3, "any_type")
+        assert result is False
 
     def test_file_not_found(self):
         """Test behavior when file doesn't exist."""
@@ -470,71 +453,52 @@ def regular_function():
         )
         assert result is False
 
-    def test_lookback_range(self):
+    def test_lookback_range(self, tmp_path: Path):
         """Test that function looks back up to 20 lines."""
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
-            # Write decorator followed by function
-            f.write("# Header line 1\n")
-            f.write("# Header line 2\n")
-            f.write("@allow_any_type('Test')\n")  # Line 3
-            f.write("def test_function():\n")  # Line 4
-            for i in range(10):
-                f.write(f"    line_{i} = {i}\n")
-            f.flush()
-            temp_path = f.name
+        test_file = tmp_path / "test_lookback.py"
+        # Write decorator followed by function
+        content = "# Header line 1\n"
+        content += "# Header line 2\n"
+        content += "@allow_any_type('Test')\n"  # Line 3
+        content += "def test_function():\n"  # Line 4
+        for i in range(10):
+            content += f"    line_{i} = {i}\n"
+        test_file.write_text(content, encoding="utf-8")
 
-        try:
-            # Line 5 is close to decorator (within lookback range)
-            result_within_range = is_excluded_from_pattern_check(
-                temp_path,
-                5,
-                "any_type",
-            )
-            # Should find the decorator looking backward
-            assert result_within_range is True
-        finally:
-            Path(temp_path).unlink()
+        # Line 5 is close to decorator (within lookback range)
+        result_within_range = is_excluded_from_pattern_check(
+            str(test_file),
+            5,
+            "any_type",
+        )
+        # Should find the decorator looking backward
+        assert result_within_range is True
 
-    def test_unicode_handling(self):
+    def test_unicode_handling(self, tmp_path: Path):
         """Test that function handles unicode in files."""
-        with tempfile.NamedTemporaryFile(
-            mode="w",
-            suffix=".py",
-            delete=False,
-            encoding="utf-8",
-        ) as f:
-            f.write(
-                """
+        test_file = tmp_path / "test_unicode.py"
+        test_file.write_text(
+            """
 # 测试函数 with unicode
 @allow_any_type("Unicode test: 你好")
 def test_function():
     data = "🚀"  # ONEX_EXCLUDE: any_type
     return data
-"""
-            )
-            f.flush()
-            temp_path = f.name
+""",
+            encoding="utf-8",
+        )
 
-        try:
-            result = is_excluded_from_pattern_check(temp_path, 5, "any_type")
-            assert result is True
-        finally:
-            Path(temp_path).unlink()
+        result = is_excluded_from_pattern_check(str(test_file), 5, "any_type")
+        assert result is True
 
-    def test_malformed_file_handling(self):
+    def test_malformed_file_handling(self, tmp_path: Path):
         """Test graceful handling of malformed files."""
-        # Test with invalid line number
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
-            f.write("def test(): pass\n")
-            f.flush()
-            temp_path = f.name
+        test_file = tmp_path / "test_malformed.py"
+        test_file.write_text("def test(): pass\n", encoding="utf-8")
 
-        try:
-            # Line number way beyond file length
-            result = is_excluded_from_pattern_check(temp_path, 1000, "any_type")
-            assert result is False
-        finally:
-            Path(temp_path).unlink()
+        # Line number way beyond file length
+        result = is_excluded_from_pattern_check(str(test_file), 1000, "any_type")
+        assert result is False
 
 
 @pytest.mark.unit
@@ -641,24 +605,20 @@ class TestEdgeCasesAndComplexScenarios:
         assert info is not None
         assert info.reason == ""
 
-    def test_case_sensitivity_in_comments(self):
+    def test_case_sensitivity_in_comments(self, tmp_path: Path):
         """Test that inline comment checking is case-sensitive."""
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
-            f.write(
-                """
+        test_file = tmp_path / "test_case_sensitive.py"
+        test_file.write_text(
+            """
 def test_function():
     # onex_exclude: any_type (lowercase)
     data = get_data()
     return data
-"""
-            )
-            f.flush()
-            temp_path = f.name
+""",
+            encoding="utf-8",
+        )
 
-        try:
-            # Should not match because comment is lowercase
-            result = is_excluded_from_pattern_check(temp_path, 4, "any_type")
-            # Actually it should be False because we're looking for ONEX_EXCLUDE (uppercase)
-            assert result is False
-        finally:
-            Path(temp_path).unlink()
+        # Should not match because comment is lowercase
+        result = is_excluded_from_pattern_check(str(test_file), 4, "any_type")
+        # Actually it should be False because we're looking for ONEX_EXCLUDE (uppercase)
+        assert result is False

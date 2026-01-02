@@ -4,15 +4,23 @@ Enforces budget constraints on operations, useful for
 LLM API calls and other metered resources.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelCostConfig(BaseModel):
     """Configuration for cost invariant.
 
-    Enforces budget constraints on operations, useful for
-    LLM API calls and other metered resources.
+    Enforces budget constraints on operations, useful for LLM API calls
+    and other metered resources. Allows specifying maximum cost per unit
+    of operation.
+
+    Attributes:
+        max_cost: Maximum cost allowed per unit. Must be greater than zero.
+        per: Cost unit for measurement. Common values are 'request' (per API
+            call), 'token' (per input/output token), or custom units.
     """
+
+    model_config = ConfigDict(frozen=True, extra="ignore", from_attributes=True)
 
     max_cost: float = Field(
         ...,

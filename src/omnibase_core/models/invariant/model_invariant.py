@@ -9,7 +9,7 @@ be satisfied for a model to be considered production-ready.
 from typing import Self
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums.enum_invariant_severity import EnumInvariantSeverity
 from omnibase_core.enums.enum_invariant_type import EnumInvariantType
@@ -73,6 +73,8 @@ class ModelInvariant(BaseModel):
         preferred, use the specific config models from
         `omnibase_core.models.invariant.model_invariant_config` directly.
     """
+
+    model_config = ConfigDict(frozen=True, extra="ignore", from_attributes=True)
 
     id: UUID = Field(
         default_factory=uuid4,

@@ -9,6 +9,7 @@ from omnibase_core.enums import EnumInvariantSeverity, EnumInvariantType
 from omnibase_core.errors import ModelOnexError
 from omnibase_core.models.invariant import (
     load_invariant_set_from_file,
+    load_invariant_sets_from_directory,
     parse_invariant_set_from_yaml,
 )
 
@@ -557,3 +558,114 @@ class TestYamlWithFixtures:
         )
         assert latency_inv.severity == EnumInvariantSeverity.WARNING
         assert latency_inv.config["max_ms"] == 5000
+
+
+@pytest.mark.unit
+class TestDirectoryLoading:
+    """Test loading invariant sets from directories."""
+
+    def test_load_from_directory_yaml_extension(self) -> None:
+        """Load invariant sets from directory with .yaml extension."""
+        yaml_content = """
+name: "Test Set from YAML"
+target: "node_test"
+invariants:
+  - name: "Latency Check"
+    type: latency
+    config:
+      max_ms: 1000
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            yaml_file = Path(tmpdir) / "test.yaml"
+            yaml_file.write_text(yaml_content)
+
+            sets = load_invariant_sets_from_directory(tmpdir)
+
+            assert len(sets) == 1
+            assert sets[0].name == "Test Set from YAML"
+
+    def test_load_from_directory_yml_extension(self) -> None:
+        """Load invariant sets from directory with .yml extension."""
+        yaml_content = """
+name: "Test Set from YML"
+target: "node_test"
+invariants:
+  - name: "Latency Check"
+    type: latency
+    config:
+      max_ms: 2000
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            yml_file = Path(tmpdir) / "test.yml"
+            yml_file.write_text(yaml_content)
+
+            sets = load_invariant_sets_from_directory(tmpdir)
+
+            assert len(sets) == 1
+            assert sets[0].name == "Test Set from YML"
+
+    def test_load_from_directory_both_extensions(self) -> None:
+        """Load invariant sets from directory with both .yaml and .yml files."""
+        yaml_content = """
+name: "Set from YAML"
+target: "node_yaml"
+invariants:
+  - name: "Check 1"
+    type: latency
+    config:
+      max_ms: 1000
+"""
+        yml_content = """
+name: "Set from YML"
+target: "node_yml"
+invariants:
+  - name: "Check 2"
+    type: latency
+    config:
+      max_ms: 2000
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            yaml_file = Path(tmpdir) / "first.yaml"
+            yaml_file.write_text(yaml_content)
+            yml_file = Path(tmpdir) / "second.yml"
+            yml_file.write_text(yml_content)
+
+            sets = load_invariant_sets_from_directory(tmpdir)
+
+            assert len(sets) == 2
+            names = {s.name for s in sets}
+            assert names == {"Set from YAML", "Set from YML"}
+
+    def test_load_from_directory_nonexistent_raises_error(self) -> None:
+        """Loading from nonexistent directory raises ModelOnexError."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            load_invariant_sets_from_directory("/nonexistent/path")
+        assert "not found" in str(exc_info.value)
+
+    def test_load_from_directory_empty(self) -> None:
+        """Loading from empty directory returns empty list."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            sets = load_invariant_sets_from_directory(tmpdir)
+            assert sets == []
+
+    def test_load_from_directory_custom_patterns(self) -> None:
+        """Load with custom patterns filters correctly."""
+        yaml_content = """
+name: "Custom Pattern Test"
+target: "node_test"
+invariants:
+  - name: "Check"
+    type: latency
+    config:
+      max_ms: 1000
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create files with different extensions
+            (Path(tmpdir) / "included.yaml").write_text(yaml_content)
+            (Path(tmpdir) / "excluded.yml").write_text(yaml_content)
+
+            # Load only .yaml files
+            sets = load_invariant_sets_from_directory(tmpdir, patterns=["*.yaml"])
+
+            assert len(sets) == 1
+            assert sets[0].name == "Custom Pattern Test"

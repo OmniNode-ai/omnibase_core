@@ -8,7 +8,7 @@ including pass/fail status, actual vs expected values, and timing information.
 from datetime import UTC, datetime
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_invariant_severity import EnumInvariantSeverity
 
@@ -31,6 +31,8 @@ class ModelInvariantResult(BaseModel):
         message: Human-readable message describing the result.
         evaluated_at: Timestamp when the evaluation occurred.
     """
+
+    model_config = ConfigDict(frozen=True, extra="ignore", from_attributes=True)
 
     invariant_id: UUID = Field(
         ...,

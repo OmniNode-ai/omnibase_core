@@ -103,7 +103,7 @@ class TestInvariantSerialization:
         assert restored.config == complex_config
 
     def test_invariant_enum_serialization(self) -> None:
-        """Enums serialize to string values."""
+        """Enums serialize to string values by default with model_dump()."""
         inv = ModelInvariant(
             name="Test",
             type=EnumInvariantType.LATENCY,
@@ -112,10 +112,16 @@ class TestInvariantSerialization:
         )
 
         data = inv.model_dump()
-        # Enums should serialize to their values
-        assert (
-            data["type"] == EnumInvariantType.LATENCY.value
-            or data["type"] == EnumInvariantType.LATENCY
+        # Pydantic model_dump() serializes enums to their string values by default
+        assert isinstance(data["type"], str), (
+            f"Expected type to be serialized as str, got {type(data['type']).__name__}"
+        )
+        assert data["type"] == "latency", f"Expected 'latency', got {data['type']!r}"
+        assert isinstance(data["severity"], str), (
+            f"Expected severity to be serialized as str, got {type(data['severity']).__name__}"
+        )
+        assert data["severity"] == "critical", (
+            f"Expected 'critical', got {data['severity']!r}"
         )
 
 

@@ -14,7 +14,6 @@ This demonstrates the full end-to-end flow as documented in the handlers module.
 """
 
 import importlib
-import tempfile
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any
@@ -309,7 +308,7 @@ class TestYamlContractToDescriptor:
         assert descriptor.import_path is None
         assert descriptor.has_instantiation_method is False
 
-    def test_load_yaml_from_file(self) -> None:
+    def test_load_yaml_from_file(self, tmp_path: Path) -> None:
         """Test loading YAML contract from actual file."""
         # Arrange: Create temporary YAML file
         yaml_content = """
@@ -325,26 +324,22 @@ commands_accepted:
   - EXECUTE
 import_path: "mypackage.handlers.FileValidator"
 """
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
-            f.write(yaml_content)
-            temp_path = Path(f.name)
+        temp_file = tmp_path / "test_contract.yaml"
+        temp_file.write_text(yaml_content, encoding="utf-8")
 
-        try:
-            # Act: Load and parse
-            with open(temp_path) as f:
-                contract_data = yaml.safe_load(f)
+        # Act: Load and parse
+        with open(temp_file) as f:
+            contract_data = yaml.safe_load(f)
 
-            descriptor = parse_yaml_to_descriptor(contract_data)
+        descriptor = parse_yaml_to_descriptor(contract_data)
 
-            # Assert
-            assert descriptor.handler_name.namespace == "onex"
-            assert descriptor.handler_name.name == "file-validator"
-            assert descriptor.handler_version.major == 1
-            assert descriptor.handler_version.minor == 2
-            assert descriptor.handler_version.patch == 3
-            assert descriptor.has_instantiation_method is True
-        finally:
-            temp_path.unlink()
+        # Assert
+        assert descriptor.handler_name.namespace == "onex"
+        assert descriptor.handler_name.name == "file-validator"
+        assert descriptor.handler_version.major == 1
+        assert descriptor.handler_version.minor == 2
+        assert descriptor.handler_version.patch == 3
+        assert descriptor.has_instantiation_method is True
 
 
 @pytest.mark.integration

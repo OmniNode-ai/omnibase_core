@@ -199,6 +199,24 @@ class TestThresholdConfig:
         assert data["min_value"] == 0.95
         assert data["max_value"] == 1.0
 
+    def test_threshold_requires_at_least_one_bound(self) -> None:
+        """Threshold config requires at least one of min_value or max_value."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelThresholdConfig(metric_name="accuracy")
+        assert "At least one of 'min_value' or 'max_value' must be provided" in str(
+            exc_info.value
+        )
+
+    def test_threshold_rejects_min_greater_than_max(self) -> None:
+        """Threshold config rejects min_value > max_value."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelThresholdConfig(
+                metric_name="accuracy",
+                min_value=1.0,
+                max_value=0.5,
+            )
+        assert "min_value" in str(exc_info.value) and "max_value" in str(exc_info.value)
+
 
 @pytest.mark.unit
 class TestSchemaInvariantConfig:
@@ -394,7 +412,16 @@ class TestConfigModelValidation:
         assert config.min_value == 0.0
 
     def test_field_presence_duplicate_fields(self) -> None:
-        """Field presence handles duplicate fields."""
-        # Whether duplicates are allowed depends on implementation
+        """Field presence preserves duplicate fields (no automatic deduplication).
+
+        The model uses a simple list[str], so duplicates are preserved as-is.
+        Consumers are responsible for handling duplicates if needed.
+        """
         config = ModelFieldPresenceConfig(fields=["response", "response"])
-        assert len(config.fields) >= 1
+        # Duplicates are preserved - fields is a list, not a set
+        assert config.fields == ["response", "response"], (
+            f"Expected duplicates to be preserved, got {config.fields}"
+        )
+        assert len(config.fields) == 2, (
+            f"Expected 2 fields (including duplicate), got {len(config.fields)}"
+        )

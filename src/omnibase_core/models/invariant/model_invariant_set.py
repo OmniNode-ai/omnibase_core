@@ -5,8 +5,6 @@ This module provides the ModelInvariantSet class which groups multiple
 invariants together for validation of a specific node or workflow.
 """
 
-from __future__ import annotations
-
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
@@ -17,18 +15,28 @@ from omnibase_core.models.invariant.model_invariant import ModelInvariant
 
 
 class ModelInvariantSet(BaseModel):
-    """
-    Collection of invariants for a node or workflow.
+    """Collection of invariants for a node or workflow.
 
     Groups multiple invariants together that should be validated as a unit
     against a specific target node or workflow. Provides helper properties
     for filtering invariants by severity or enabled status.
+
+    Attributes:
+        id: Unique identifier for this invariant set (UUID).
+        name: Human-readable name for this invariant set.
+        target: Node or workflow identifier this set applies to.
+        invariants: List of invariants in this set.
+        description: Optional description of what this invariant set validates.
+        created_at: Timestamp when this invariant set was created.
+        version: Semantic version of this invariant set definition.
+
+    Note:
+        The __eq__ and __hash__ methods exclude created_at from comparison
+        to ensure consistent equality for logically identical sets created
+        at different times.
     """
 
-    model_config = ConfigDict(
-        extra="ignore",
-        validate_assignment=True,
-    )
+    model_config = ConfigDict(frozen=True, extra="ignore", from_attributes=True)
 
     id: UUID = Field(
         default_factory=uuid4,
