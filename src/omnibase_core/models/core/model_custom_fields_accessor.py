@@ -234,13 +234,25 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
     ) -> object:
         """Get a field value from the appropriate typed storage.
 
-        For simple field names, returns raw values from typed storages.
-        For nested paths (containing '.'), returns ModelResult.
+        Note: Intentional override of parent's ModelResult return type.
+        This class provides a simpler API for direct key-value access:
 
-        Note:
-            This method intentionally overrides the parent's return type.
-            Parent returns ModelResult[ModelSchemaValue, str], but this
-            implementation returns raw values for simple paths (no dots).
+        - Simple paths (no dots): Returns raw values directly (str, int, bool, etc.)
+        - Nested paths (with dots): Delegates to parent, returns ModelResult
+
+        Examples:
+            >>> fields.get_field("name")  # Returns "value" directly
+            >>> fields.get_field("nested.path")  # Returns ModelResult
+
+        For guaranteed type safety, use the typed accessors instead:
+        get_string(), get_int(), get_bool(), get_float(), get_list()
+
+        Args:
+            path: The field path to look up. Simple keys or dot-notation paths.
+            default: Value to return if field not found.
+
+        Returns:
+            The field value (raw type for simple paths, ModelResult for nested).
         """
         try:
             # Handle nested field paths - return ModelResult for dot notation support
