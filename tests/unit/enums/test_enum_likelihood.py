@@ -220,11 +220,7 @@ class TestEnumLikelihoodFromProbability:
         assert EnumLikelihood.from_probability(1.0) == EnumLikelihood.CERTAIN
 
     def test_from_probability_invalid_range(self):
-        """Test that out-of-range probabilities raise ValueError.
-
-        Note: The enum module cannot import ModelOnexError due to circular
-        dependency issues, so from_probability raises ValueError instead.
-        """
+        """Test that out-of-range probabilities raise ValueError."""
         with pytest.raises(
             ValueError, match=r"probability must be between 0\.0 and 1\.0"
         ):
@@ -379,11 +375,7 @@ class TestEnumLikelihoodEdgeCases:
         ],
     )
     def test_from_probability_rejects_negative_values(self, probability: float) -> None:
-        """Test that negative values (except -0.0) raise ValueError.
-
-        Note: The enum module cannot import ModelOnexError due to circular
-        dependency issues, so from_probability raises ValueError instead.
-        """
+        """Test that negative values (except -0.0) raise ValueError."""
         # Note: -0.0 == 0.0 in Python, so it should return IMPOSSIBLE
         if probability == 0.0:  # -0.0 equals 0.0
             assert (
@@ -414,11 +406,7 @@ class TestEnumLikelihoodEdgeCases:
     def test_from_probability_rejects_values_above_one(
         self, probability: float
     ) -> None:
-        """Test that values > 1.0 raise ValueError.
-
-        Note: The enum module cannot import ModelOnexError due to circular
-        dependency issues, so from_probability raises ValueError instead.
-        """
+        """Test that values > 1.0 raise ValueError."""
         with pytest.raises(
             ValueError, match=r"probability must be between 0\.0 and 1\.0"
         ):
@@ -530,11 +518,7 @@ class TestEnumLikelihoodEdgeCases:
     # =========================================================================
 
     def test_from_probability_error_message_includes_value(self) -> None:
-        """Test that error message includes the invalid value.
-
-        Note: The enum module cannot import ModelOnexError due to circular
-        dependency issues, so from_probability raises ValueError instead.
-        """
+        """Test that error message includes the invalid value."""
         with pytest.raises(ValueError) as exc_info:
             EnumLikelihood.from_probability(1.5)
         assert "1.5" in str(exc_info.value)

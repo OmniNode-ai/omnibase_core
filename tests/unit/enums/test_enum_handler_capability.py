@@ -227,8 +227,8 @@ class TestEnumHandlerCapabilityHelperMethods:
     def test_assert_exhaustive_raises_assertion_error(self) -> None:
         """Test that assert_exhaustive raises AssertionError.
 
-        Note: The enum module cannot import ModelOnexError due to circular
-        dependency issues, so assert_exhaustive raises AssertionError instead.
+        Note: Uses AssertionError instead of ModelOnexError to avoid
+        circular imports in the enum module.
         """
         # Create a mock "Never" type value - in practice this would be caught
         # by the type checker before runtime, but we test runtime behavior
