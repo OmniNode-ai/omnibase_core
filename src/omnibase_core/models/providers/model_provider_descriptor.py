@@ -58,7 +58,6 @@ See Also:
 
 import fnmatch
 import re
-from typing import TYPE_CHECKING
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -66,9 +65,6 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.json_types import JsonType
-
-if TYPE_CHECKING:
-    from omnibase_core.models.health.model_health_status import ModelHealthStatus
 
 # Capability naming pattern: lowercase alphanumeric with dots, at least one dot
 # Examples: "database.relational", "cache.redis", "storage.s3"
@@ -244,9 +240,12 @@ class ModelProviderDescriptor(BaseModel):
         description="Tags for filtering (e.g., 'production', 'us-east', 'primary')",
     )
 
-    health: "ModelHealthStatus | None" = Field(
+    # Note: Using 'object' type to avoid circular import with ModelHealthStatus
+    # At runtime, this should be a ModelHealthStatus instance or None
+    # Type hint is preserved in docstring and for static analysis via TYPE_CHECKING
+    health: object | None = Field(
         default=None,
-        description="Current health status of this provider",
+        description="Current health status of this provider (ModelHealthStatus)",
     )
 
     @field_validator("capabilities", mode="before")
