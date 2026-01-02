@@ -225,7 +225,11 @@ class TestEnumHandlerCapabilityHelperMethods:
         assert set(values_method) == set(values_iteration)
 
     def test_assert_exhaustive_raises_assertion_error(self):
-        """Test that assert_exhaustive raises AssertionError."""
+        """Test that assert_exhaustive raises AssertionError.
+
+        Note: Uses AssertionError instead of ModelOnexError to avoid
+        circular imports in the enum module.
+        """
         # Create a mock "Never" type value - in practice this would be caught
         # by the type checker before runtime, but we test runtime behavior
         with pytest.raises(AssertionError) as exc_info:

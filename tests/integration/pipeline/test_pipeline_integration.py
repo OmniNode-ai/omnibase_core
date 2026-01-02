@@ -37,10 +37,10 @@ from omnibase_core.pipeline import (
     HookCallable,
     HookRegistryFrozenError,
     HookTimeoutError,
+    ModelPipelineContext,
     ModelPipelineHook,
-    PipelineContext,
+    ModelPipelineResult,
     PipelinePhase,
-    PipelineResult,
     RegistryHook,
     RunnerPipeline,
     UnknownDependencyError,
@@ -72,7 +72,7 @@ class TestPipelineEndToEndExecution:
 
         # Create callables that log execution
         def make_logging_hook(name: str) -> HookCallable:
-            def hook(ctx: PipelineContext) -> None:
+            def hook(ctx: ModelPipelineContext) -> None:
                 execution_log.append(name)
                 ctx.data[name] = f"executed_{name}"
 
@@ -144,7 +144,7 @@ class TestPipelineEndToEndExecution:
         execution_order: list[str] = []
 
         def make_hook(name: str) -> HookCallable:
-            def hook(ctx: PipelineContext) -> None:
+            def hook(ctx: ModelPipelineContext) -> None:
                 execution_order.append(name)
 
             return hook
@@ -207,7 +207,7 @@ class TestPipelineEndToEndExecution:
         execution_order: list[str] = []
 
         def make_hook(name: str) -> HookCallable:
-            def hook(ctx: PipelineContext) -> None:
+            def hook(ctx: ModelPipelineContext) -> None:
                 execution_order.append(name)
 
             return hook
@@ -274,17 +274,17 @@ class TestPipelineErrorHandlingIntegration:
         """
         execution_log: list[str] = []
 
-        def preflight_hook(ctx: PipelineContext) -> None:
+        def preflight_hook(ctx: ModelPipelineContext) -> None:
             execution_log.append("preflight")
 
-        def failing_before(ctx: PipelineContext) -> None:
+        def failing_before(ctx: ModelPipelineContext) -> None:
             execution_log.append("before_start")
             raise ValueError("Intentional failure in before phase")
 
-        def execute_hook(ctx: PipelineContext) -> None:
+        def execute_hook(ctx: ModelPipelineContext) -> None:
             execution_log.append("execute")  # Should never run
 
-        def finalize_hook(ctx: PipelineContext) -> None:
+        def finalize_hook(ctx: ModelPipelineContext) -> None:
             execution_log.append("finalize")  # Must always run
 
         registry = RegistryHook()
@@ -340,14 +340,14 @@ class TestPipelineErrorHandlingIntegration:
         execution_log: list[str] = []
 
         def make_failing_hook(name: str) -> HookCallable:
-            def hook(ctx: PipelineContext) -> None:
+            def hook(ctx: ModelPipelineContext) -> None:
                 execution_log.append(name)
                 raise RuntimeError(f"Error in {name}")
 
             return hook
 
         def make_success_hook(name: str) -> HookCallable:
-            def hook(ctx: PipelineContext) -> None:
+            def hook(ctx: ModelPipelineContext) -> None:
                 execution_log.append(name)
 
             return hook
@@ -668,7 +668,7 @@ class TestPipelineMiddlewareIntegration:
             result = await next_fn()
             middleware_data["end_time"] = time.time()
             middleware_data["success"] = (
-                isinstance(result, PipelineResult) and result.success
+                isinstance(result, ModelPipelineResult) and result.success
             )
             return result
 
@@ -684,7 +684,7 @@ class TestPipelineMiddlewareIntegration:
         builder = BuilderExecutionPlan(registry=registry)
         plan, _ = builder.build()
 
-        def test_hook(ctx: PipelineContext) -> None:
+        def test_hook(ctx: ModelPipelineContext) -> None:
             ctx.data["executed"] = True
 
         runner = RunnerPipeline(plan=plan, callable_registry={"hooks.test": test_hook})
@@ -693,13 +693,13 @@ class TestPipelineMiddlewareIntegration:
         composer = ComposerMiddleware()
         composer.use(pipeline_wrapper_middleware)
 
-        async def run_pipeline() -> PipelineResult:
+        async def run_pipeline() -> ModelPipelineResult:
             return await runner.run()
 
         wrapped = composer.compose(run_pipeline)
         result = await wrapped()
 
-        assert isinstance(result, PipelineResult)
+        assert isinstance(result, ModelPipelineResult)
         assert result.success is True
         assert middleware_data["success"] is True
         end_time = middleware_data["end_time"]
@@ -726,17 +726,17 @@ class TestPipelineAsyncHookIntegration:
         """
         execution_log: list[str] = []
 
-        def sync_hook_1(ctx: PipelineContext) -> None:
+        def sync_hook_1(ctx: ModelPipelineContext) -> None:
             execution_log.append("sync_1")
 
-        async def async_hook_1(ctx: PipelineContext) -> None:
+        async def async_hook_1(ctx: ModelPipelineContext) -> None:
             await asyncio.sleep(0.01)  # Simulate async work
             execution_log.append("async_1")
 
-        def sync_hook_2(ctx: PipelineContext) -> None:
+        def sync_hook_2(ctx: ModelPipelineContext) -> None:
             execution_log.append("sync_2")
 
-        async def async_hook_2(ctx: PipelineContext) -> None:
+        async def async_hook_2(ctx: ModelPipelineContext) -> None:
             await asyncio.sleep(0.01)
             execution_log.append("async_2")
 
@@ -811,7 +811,7 @@ class TestPipelineAsyncHookIntegration:
         )
         registry.freeze()
 
-        async def slow_async_hook(ctx: PipelineContext) -> None:
+        async def slow_async_hook(ctx: ModelPipelineContext) -> None:
             await asyncio.sleep(1.0)  # Sleep for 1 second (exceeds timeout)
 
         builder = BuilderExecutionPlan(registry=registry)
@@ -850,7 +850,7 @@ class TestPipelineExecutionPlanBuilding:
         execution_order: list[str] = []
 
         def make_hook(name: str) -> HookCallable:
-            def hook(ctx: PipelineContext) -> None:
+            def hook(ctx: ModelPipelineContext) -> None:
                 execution_order.append(name)
 
             return hook
@@ -1013,7 +1013,7 @@ class TestPipelineContextStateManagement:
         registry.freeze()
 
         def make_accumulator_hook(phase: str, index: int) -> HookCallable:
-            def hook(ctx: PipelineContext) -> None:
+            def hook(ctx: ModelPipelineContext) -> None:
                 # Verify previous phases' data is available
                 for prev_phase in phases[:index]:
                     assert prev_phase in ctx.data, f"Missing data from {prev_phase}"
@@ -1074,14 +1074,14 @@ class TestPipelineContextStateManagement:
         )
         registry.freeze()
 
-        def before_hook(ctx: PipelineContext) -> None:
+        def before_hook(ctx: ModelPipelineContext) -> None:
             ctx.data["before_ran"] = True
 
-        def failing_execute(ctx: PipelineContext) -> None:
+        def failing_execute(ctx: ModelPipelineContext) -> None:
             ctx.data["execute_started"] = True
             raise RuntimeError("Execute failure")
 
-        def finalize_hook(ctx: PipelineContext) -> None:
+        def finalize_hook(ctx: ModelPipelineContext) -> None:
             # Verify data from before is available
             assert ctx.data.get("before_ran") is True
             assert ctx.data.get("execute_started") is True
@@ -1124,7 +1124,7 @@ class TestPipelinePerformanceScenarios:
         execution_order: list[str] = []
 
         def make_hook(index: int) -> HookCallable:
-            def hook(ctx: PipelineContext) -> None:
+            def hook(ctx: ModelPipelineContext) -> None:
                 execution_order.append(f"hook_{index:03d}")
 
             return hook
@@ -1187,7 +1187,7 @@ class TestPipelinePerformanceScenarios:
         execution_log: list[str] = []
 
         def make_hook(phase: str, index: int) -> HookCallable:
-            def hook(ctx: PipelineContext) -> None:
+            def hook(ctx: ModelPipelineContext) -> None:
                 execution_log.append(f"{phase}_{index}")
 
             return hook
