@@ -3,6 +3,10 @@ Invariant set model - collection of invariants for a node/workflow.
 
 This module provides the ModelInvariantSet class which groups multiple
 invariants together for validation of a specific node or workflow.
+
+Thread Safety:
+    ModelInvariantSet is immutable (frozen=True) after creation,
+    making it thread-safe for concurrent read access.
 """
 
 from datetime import UTC, datetime
@@ -34,6 +38,11 @@ class ModelInvariantSet(BaseModel):
         The __eq__ and __hash__ methods exclude created_at from comparison
         to ensure consistent equality for logically identical sets created
         at different times.
+
+    Thread Safety:
+        This model is immutable (frozen=True) after creation, making it
+        thread-safe for concurrent read access. No synchronization is needed
+        when sharing instances across threads.
     """
 
     model_config = ConfigDict(frozen=True, extra="ignore", from_attributes=True)

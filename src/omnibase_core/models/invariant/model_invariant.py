@@ -4,6 +4,10 @@ Invariant model for user-defined validation rules.
 Invariants are validation rules that ensure AI model changes are safe before
 production deployment. Each invariant defines a specific condition that must
 be satisfied for a model to be considered production-ready.
+
+Thread Safety:
+    ModelInvariant is immutable (frozen=True) after creation,
+    making it thread-safe for concurrent read access.
 """
 
 from typing import Self
@@ -72,6 +76,11 @@ class ModelInvariant(BaseModel):
         For strictly typed scenarios where compile-time type safety is
         preferred, use the specific config models from
         `omnibase_core.models.invariant.model_invariant_config` directly.
+
+    Thread Safety:
+        This model is immutable (frozen=True) after creation, making it
+        thread-safe for concurrent read access. No synchronization is needed
+        when sharing instances across threads.
     """
 
     model_config = ConfigDict(frozen=True, extra="ignore", from_attributes=True)

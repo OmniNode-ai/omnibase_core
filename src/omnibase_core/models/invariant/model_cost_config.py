@@ -2,6 +2,10 @@
 
 Enforces budget constraints on operations, useful for
 LLM API calls and other metered resources.
+
+Thread Safety:
+    ModelCostConfig is immutable (frozen=True) after creation,
+    making it thread-safe for concurrent read access.
 """
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -18,6 +22,11 @@ class ModelCostConfig(BaseModel):
         max_cost: Maximum cost allowed per unit. Must be greater than zero.
         per: Cost unit for measurement. Common values are 'request' (per API
             call), 'token' (per input/output token), or custom units.
+
+    Thread Safety:
+        This model is immutable (frozen=True) after creation, making it
+        thread-safe for concurrent read access. No synchronization is needed
+        when sharing instances across threads.
     """
 
     model_config = ConfigDict(frozen=True, extra="ignore", from_attributes=True)

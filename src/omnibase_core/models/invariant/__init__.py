@@ -24,6 +24,11 @@ Functions:
     load_invariant_set_from_file: Load ModelInvariantSet from YAML file.
     load_invariant_sets_from_directory: Load all invariant sets from directory.
 
+Thread Safety:
+    All invariant models in this module are immutable (frozen=True) after
+    creation, making them thread-safe for concurrent read access. No
+    synchronization is needed when sharing instances across threads.
+
 Usage:
     >>> from omnibase_core.models.invariant import (
     ...     ModelInvariantDefinition,

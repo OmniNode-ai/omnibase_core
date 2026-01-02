@@ -2,6 +2,10 @@
 
 Enforces maximum response time constraints for
 performance-sensitive operations.
+
+Thread Safety:
+    ModelLatencyConfig is immutable (frozen=True) after creation,
+    making it thread-safe for concurrent read access.
 """
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -17,6 +21,11 @@ class ModelLatencyConfig(BaseModel):
     Attributes:
         max_ms: Maximum allowed latency in milliseconds. Must be greater
             than zero.
+
+    Thread Safety:
+        This model is immutable (frozen=True) after creation, making it
+        thread-safe for concurrent read access. No synchronization is needed
+        when sharing instances across threads.
     """
 
     model_config = ConfigDict(frozen=True, extra="ignore", from_attributes=True)

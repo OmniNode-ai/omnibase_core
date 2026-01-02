@@ -3,6 +3,10 @@ Invariant result model for validation evaluation outcomes.
 
 Captures the result of evaluating a single invariant against a model,
 including pass/fail status, actual vs expected values, and timing information.
+
+Thread Safety:
+    ModelInvariantResult is immutable (frozen=True) after creation,
+    making it thread-safe for concurrent read access.
 """
 
 from datetime import UTC, datetime
@@ -30,6 +34,11 @@ class ModelInvariantResult(BaseModel):
         expected_value: Expected value per the invariant configuration.
         message: Human-readable message describing the result.
         evaluated_at: Timestamp when the evaluation occurred.
+
+    Thread Safety:
+        This model is immutable (frozen=True) after creation, making it
+        thread-safe for concurrent read access. No synchronization is needed
+        when sharing instances across threads.
     """
 
     model_config = ConfigDict(frozen=True, extra="ignore", from_attributes=True)

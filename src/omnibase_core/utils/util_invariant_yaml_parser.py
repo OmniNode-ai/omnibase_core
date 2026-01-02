@@ -6,8 +6,15 @@ or strings, with proper error handling using ModelOnexError.
 
 This module is located in utils/ to avoid circular import issues that occur
 when importing from models/ due to deep dependency chains.
+
+Security Notes:
+    - All YAML parsing uses yaml.safe_load() to prevent arbitrary code execution
+    - Path operations use pathlib.Path.resolve() for canonicalization
+    - Path traversal patterns (..) are logged as warnings for auditing
+    - Both .yaml and .yml extensions are supported by default
 """
 
+import logging
 from pathlib import Path
 
 import yaml
@@ -16,6 +23,8 @@ from pydantic import ValidationError
 from omnibase_core.enums import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.invariant.model_invariant_set import ModelInvariantSet
+
+logger = logging.getLogger(__name__)
 
 
 def parse_invariant_set_from_yaml(yaml_content: str) -> ModelInvariantSet:
@@ -91,6 +100,11 @@ def load_invariant_set_from_file(file_path: Path | str) -> ModelInvariantSet:
     """
     Load a ModelInvariantSet from a YAML file.
 
+    Security:
+        - Uses yaml.safe_load() for parsing (no arbitrary code execution)
+        - Resolves paths to canonical form before operations
+        - Logs warnings for paths containing '..' patterns for audit purposes
+
     Args:
         file_path: Path to the YAML file containing the invariant set definition.
 
@@ -102,14 +116,39 @@ def load_invariant_set_from_file(file_path: Path | str) -> ModelInvariantSet:
     """
     path = Path(file_path)
 
-    if not path.exists():
+    # Log warning for potential path traversal patterns (for security auditing)
+    # This doesn't block the operation but creates an audit trail
+    path_str = str(file_path)
+    if ".." in path_str:
+        logger.warning(
+            "Path contains traversal pattern '..': %s (resolved: %s)",
+            file_path,
+            path.resolve() if path.exists() else "path does not exist",
+        )
+
+    # Resolve to canonical path for security
+    try:
+        resolved_path = path.resolve()
+    except (OSError, ValueError) as e:
         raise ModelOnexError(
-            message=f"Invariant set file not found: {path}",
+            message=f"Invalid path: {file_path} ({e})",
+            error_code=EnumCoreErrorCode.INVALID_PARAMETER,
+        ) from e
+
+    if not resolved_path.exists():
+        raise ModelOnexError(
+            message=f"Invariant set file not found: {resolved_path}",
             error_code=EnumCoreErrorCode.FILE_NOT_FOUND,
         )
 
+    if not resolved_path.is_file():
+        raise ModelOnexError(
+            message=f"Path is not a file: {resolved_path}",
+            error_code=EnumCoreErrorCode.INVALID_PARAMETER,
+        )
+
     try:
-        content = path.read_text(encoding="utf-8")
+        content = resolved_path.read_text(encoding="utf-8")
     except OSError as e:
         raise ModelOnexError(
             message=f"Failed to read invariant set file: {e}",
@@ -127,6 +166,12 @@ def load_invariant_sets_from_directory(
 
     Supports both .yaml and .yml file extensions by default. Files are
     loaded in sorted order by filename.
+
+    Security:
+        - Uses yaml.safe_load() for parsing (no arbitrary code execution)
+        - Resolves paths to canonical form before operations
+        - Logs warnings for paths containing '..' patterns for audit purposes
+        - Only loads regular files (not symlinks to directories, etc.)
 
     Args:
         directory_path: Path to the directory containing YAML files.
@@ -147,22 +192,39 @@ def load_invariant_sets_from_directory(
 
     path = Path(directory_path)
 
-    if not path.exists():
+    # Log warning for potential path traversal patterns (for security auditing)
+    path_str = str(directory_path)
+    if ".." in path_str:
+        logger.warning(
+            "Directory path contains traversal pattern '..': %s",
+            directory_path,
+        )
+
+    # Resolve to canonical path for security
+    try:
+        resolved_path = path.resolve()
+    except (OSError, ValueError) as e:
         raise ModelOnexError(
-            message=f"Invariant sets directory not found: {path}",
+            message=f"Invalid directory path: {directory_path} ({e})",
+            error_code=EnumCoreErrorCode.INVALID_PARAMETER,
+        ) from e
+
+    if not resolved_path.exists():
+        raise ModelOnexError(
+            message=f"Invariant sets directory not found: {resolved_path}",
             error_code=EnumCoreErrorCode.DIRECTORY_NOT_FOUND,
         )
 
-    if not path.is_dir():
+    if not resolved_path.is_dir():
         raise ModelOnexError(
-            message=f"Path is not a directory: {path}",
+            message=f"Path is not a directory: {resolved_path}",
             error_code=EnumCoreErrorCode.INVALID_PARAMETER,
         )
 
     # Collect files matching any pattern, avoiding duplicates
     yaml_files: set[Path] = set()
     for pattern in patterns:
-        yaml_files.update(path.glob(pattern))
+        yaml_files.update(resolved_path.glob(pattern))
 
     invariant_sets: list[ModelInvariantSet] = []
     for yaml_file in sorted(yaml_files):

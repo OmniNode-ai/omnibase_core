@@ -3,11 +3,13 @@
 import pytest
 from pydantic import ValidationError
 
+from omnibase_core.enums import EnumInvariantType
 from omnibase_core.models.invariant import (
     ModelCostConfig,
     ModelCustomInvariantConfig,
     ModelFieldPresenceConfig,
     ModelFieldValueConfig,
+    ModelInvariantDefinition,
     ModelLatencyConfig,
     ModelSchemaInvariantConfig,
     ModelThresholdConfig,
@@ -272,6 +274,13 @@ class TestSchemaInvariantConfig:
         data = config.model_dump()
         assert data["json_schema"] == schema
 
+    def test_schema_rejects_empty_json_schema(self) -> None:
+        """Schema config rejects empty json_schema dict."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelSchemaInvariantConfig(json_schema={})
+        assert "json_schema cannot be empty" in str(exc_info.value)
+        assert "validation rule" in str(exc_info.value)
+
 
 @pytest.mark.unit
 class TestFieldValueConfig:
@@ -391,6 +400,55 @@ class TestCustomInvariantConfig:
         assert data["callable_path"] == "my_module.validator"
         assert data["kwargs"]["key"] == "value"
 
+    def test_custom_rejects_path_without_dot(self) -> None:
+        """Callable path must contain at least one dot."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelCustomInvariantConfig(callable_path="validator")
+        assert "must be a fully qualified Python path" in str(exc_info.value)
+        assert "dotted notation" in str(exc_info.value)
+
+    def test_custom_rejects_path_starting_with_dot(self) -> None:
+        """Callable path cannot start with a dot."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelCustomInvariantConfig(callable_path=".module.validator")
+        assert "cannot start or end with a dot" in str(exc_info.value)
+
+    def test_custom_rejects_path_ending_with_dot(self) -> None:
+        """Callable path cannot end with a dot."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelCustomInvariantConfig(callable_path="module.validator.")
+        assert "cannot start or end with a dot" in str(exc_info.value)
+
+    def test_custom_rejects_path_with_consecutive_dots(self) -> None:
+        """Callable path cannot contain consecutive dots."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelCustomInvariantConfig(callable_path="module..validator")
+        assert "consecutive dots" in str(exc_info.value)
+
+    def test_custom_rejects_path_with_invalid_identifier(self) -> None:
+        """Callable path segments must be valid Python identifiers."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelCustomInvariantConfig(callable_path="module.123invalid")
+        assert "invalid Python identifiers" in str(exc_info.value)
+
+    def test_custom_rejects_path_with_special_characters(self) -> None:
+        """Callable path cannot contain special characters."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelCustomInvariantConfig(callable_path="module.my-validator")
+        assert "invalid Python identifiers" in str(exc_info.value)
+
+    def test_custom_accepts_underscores_in_path(self) -> None:
+        """Callable path accepts underscores in identifiers."""
+        config = ModelCustomInvariantConfig(
+            callable_path="my_module._private_validator"
+        )
+        assert config.callable_path == "my_module._private_validator"
+
+    def test_custom_accepts_numbers_in_identifier(self) -> None:
+        """Callable path accepts numbers after first character."""
+        config = ModelCustomInvariantConfig(callable_path="module2.validator3")
+        assert config.callable_path == "module2.validator3"
+
 
 @pytest.mark.unit
 class TestConfigModelValidation:
@@ -417,11 +475,151 @@ class TestConfigModelValidation:
         The model uses a simple list[str], so duplicates are preserved as-is.
         Consumers are responsible for handling duplicates if needed.
         """
-        config = ModelFieldPresenceConfig(fields=["response", "response"])
-        # Duplicates are preserved - fields is a list, not a set
-        assert config.fields == ["response", "response"], (
-            f"Expected duplicates to be preserved, got {config.fields}"
+        input_fields = ["response", "response", "model", "response"]
+        config = ModelFieldPresenceConfig(fields=input_fields)
+
+        # Verify exact list equality - duplicates preserved in order
+        assert config.fields == ["response", "response", "model", "response"], (
+            f"Expected exact input list with duplicates preserved, got {config.fields}"
         )
-        assert len(config.fields) == 2, (
-            f"Expected 2 fields (including duplicate), got {len(config.fields)}"
+
+        # Verify count of specific duplicates
+        assert config.fields.count("response") == 3, (
+            f"Expected 3 occurrences of 'response', got {config.fields.count('response')}"
         )
+        assert config.fields.count("model") == 1, (
+            f"Expected 1 occurrence of 'model', got {config.fields.count('model')}"
+        )
+
+        # Verify total length matches input
+        assert len(config.fields) == len(input_fields), (
+            f"Expected {len(input_fields)} fields, got {len(config.fields)}"
+        )
+
+        # Verify type is list (not set or other deduplicating container)
+        assert type(config.fields) is list, (
+            f"Expected list type, got {type(config.fields).__name__}"
+        )
+
+
+@pytest.mark.unit
+class TestInvariantDefinitionConfigTypeMatching:
+    """Test ModelInvariantDefinition config/type matching validation."""
+
+    def test_definition_accepts_matching_latency_config(self) -> None:
+        """Definition accepts ModelLatencyConfig with LATENCY type."""
+        definition = ModelInvariantDefinition(
+            invariant_type=EnumInvariantType.LATENCY,
+            config=ModelLatencyConfig(max_ms=500),
+        )
+        assert definition.invariant_type == EnumInvariantType.LATENCY
+        assert isinstance(definition.config, ModelLatencyConfig)
+
+    def test_definition_accepts_matching_cost_config(self) -> None:
+        """Definition accepts ModelCostConfig with COST type."""
+        definition = ModelInvariantDefinition(
+            invariant_type=EnumInvariantType.COST,
+            config=ModelCostConfig(max_cost=1.0),
+        )
+        assert definition.invariant_type == EnumInvariantType.COST
+        assert isinstance(definition.config, ModelCostConfig)
+
+    def test_definition_accepts_matching_threshold_config(self) -> None:
+        """Definition accepts ModelThresholdConfig with THRESHOLD type."""
+        definition = ModelInvariantDefinition(
+            invariant_type=EnumInvariantType.THRESHOLD,
+            config=ModelThresholdConfig(metric_name="accuracy", min_value=0.9),
+        )
+        assert definition.invariant_type == EnumInvariantType.THRESHOLD
+        assert isinstance(definition.config, ModelThresholdConfig)
+
+    def test_definition_accepts_matching_schema_config(self) -> None:
+        """Definition accepts ModelSchemaInvariantConfig with SCHEMA type."""
+        definition = ModelInvariantDefinition(
+            invariant_type=EnumInvariantType.SCHEMA,
+            config=ModelSchemaInvariantConfig(json_schema={"type": "object"}),
+        )
+        assert definition.invariant_type == EnumInvariantType.SCHEMA
+        assert isinstance(definition.config, ModelSchemaInvariantConfig)
+
+    def test_definition_accepts_matching_field_presence_config(self) -> None:
+        """Definition accepts ModelFieldPresenceConfig with FIELD_PRESENCE type."""
+        definition = ModelInvariantDefinition(
+            invariant_type=EnumInvariantType.FIELD_PRESENCE,
+            config=ModelFieldPresenceConfig(fields=["response"]),
+        )
+        assert definition.invariant_type == EnumInvariantType.FIELD_PRESENCE
+        assert isinstance(definition.config, ModelFieldPresenceConfig)
+
+    def test_definition_accepts_matching_field_value_config(self) -> None:
+        """Definition accepts ModelFieldValueConfig with FIELD_VALUE type."""
+        definition = ModelInvariantDefinition(
+            invariant_type=EnumInvariantType.FIELD_VALUE,
+            config=ModelFieldValueConfig(field_path="status"),
+        )
+        assert definition.invariant_type == EnumInvariantType.FIELD_VALUE
+        assert isinstance(definition.config, ModelFieldValueConfig)
+
+    def test_definition_accepts_matching_custom_config(self) -> None:
+        """Definition accepts ModelCustomInvariantConfig with CUSTOM type."""
+        definition = ModelInvariantDefinition(
+            invariant_type=EnumInvariantType.CUSTOM,
+            config=ModelCustomInvariantConfig(callable_path="my_module.validator"),
+        )
+        assert definition.invariant_type == EnumInvariantType.CUSTOM
+        assert isinstance(definition.config, ModelCustomInvariantConfig)
+
+    def test_definition_rejects_mismatched_latency_type_with_cost_config(self) -> None:
+        """Definition rejects ModelCostConfig with LATENCY type."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelInvariantDefinition(
+                invariant_type=EnumInvariantType.LATENCY,
+                config=ModelCostConfig(max_cost=1.0),
+            )
+        assert "Config type mismatch" in str(exc_info.value)
+        assert "ModelLatencyConfig" in str(exc_info.value)
+        assert "ModelCostConfig" in str(exc_info.value)
+
+    def test_definition_rejects_mismatched_cost_type_with_latency_config(self) -> None:
+        """Definition rejects ModelLatencyConfig with COST type."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelInvariantDefinition(
+                invariant_type=EnumInvariantType.COST,
+                config=ModelLatencyConfig(max_ms=500),
+            )
+        assert "Config type mismatch" in str(exc_info.value)
+        assert "ModelCostConfig" in str(exc_info.value)
+        assert "ModelLatencyConfig" in str(exc_info.value)
+
+    def test_definition_rejects_mismatched_schema_type_with_threshold_config(
+        self,
+    ) -> None:
+        """Definition rejects ModelThresholdConfig with SCHEMA type."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelInvariantDefinition(
+                invariant_type=EnumInvariantType.SCHEMA,
+                config=ModelThresholdConfig(metric_name="accuracy", min_value=0.9),
+            )
+        assert "Config type mismatch" in str(exc_info.value)
+        assert "ModelSchemaInvariantConfig" in str(exc_info.value)
+
+    def test_definition_error_message_includes_expected_type(self) -> None:
+        """Config mismatch error message includes expected config type."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelInvariantDefinition(
+                invariant_type=EnumInvariantType.CUSTOM,
+                config=ModelLatencyConfig(max_ms=100),
+            )
+        error_str = str(exc_info.value)
+        assert "ModelCustomInvariantConfig" in error_str
+        assert "custom" in error_str.lower()
+
+    def test_definition_serialization(self) -> None:
+        """Definition serializes correctly."""
+        definition = ModelInvariantDefinition(
+            invariant_type=EnumInvariantType.LATENCY,
+            config=ModelLatencyConfig(max_ms=500),
+        )
+        data = definition.model_dump()
+        assert data["invariant_type"] == "latency"
+        assert data["config"]["max_ms"] == 500

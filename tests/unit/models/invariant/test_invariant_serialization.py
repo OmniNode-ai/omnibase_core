@@ -103,7 +103,15 @@ class TestInvariantSerialization:
         assert restored.config == complex_config
 
     def test_invariant_enum_serialization(self) -> None:
-        """Enums serialize to string values by default with model_dump()."""
+        """Test enum serialization behavior in model_dump() vs model_dump_json().
+
+        Pydantic's default behavior (without use_enum_values=True in ConfigDict):
+        - model_dump(): Returns enum MEMBERS (not string values)
+        - model_dump(mode="json"): Returns string VALUES for JSON compatibility
+        - model_dump_json(): Returns JSON string with enum values as strings
+
+        This test verifies the actual behavior explicitly to document the API.
+        """
         inv = ModelInvariant(
             name="Test",
             type=EnumInvariantType.LATENCY,
@@ -111,17 +119,43 @@ class TestInvariantSerialization:
             config={"max_ms": 5000},
         )
 
+        # Standard model_dump() returns enum MEMBERS, not strings
         data = inv.model_dump()
-        # Pydantic model_dump() serializes enums to their string values by default
-        assert isinstance(data["type"], str), (
-            f"Expected type to be serialized as str, got {type(data['type']).__name__}"
+
+        # Verify type is the enum class, not str
+        assert type(data["type"]) is EnumInvariantType, (
+            f"Expected model_dump() to return enum member, "
+            f"got {type(data['type']).__name__}"
         )
-        assert data["type"] == "latency", f"Expected 'latency', got {data['type']!r}"
-        assert isinstance(data["severity"], str), (
-            f"Expected severity to be serialized as str, got {type(data['severity']).__name__}"
+        assert data["type"] is EnumInvariantType.LATENCY, (
+            f"Expected EnumInvariantType.LATENCY, got {data['type']!r}"
         )
-        assert data["severity"] == "critical", (
-            f"Expected 'critical', got {data['severity']!r}"
+
+        assert type(data["severity"]) is EnumInvariantSeverity, (
+            f"Expected model_dump() to return enum member, "
+            f"got {type(data['severity']).__name__}"
+        )
+        assert data["severity"] is EnumInvariantSeverity.CRITICAL, (
+            f"Expected EnumInvariantSeverity.CRITICAL, got {data['severity']!r}"
+        )
+
+        # model_dump(mode="json") returns string values for JSON compatibility
+        json_data = inv.model_dump(mode="json")
+
+        assert type(json_data["type"]) is str, (
+            f"Expected model_dump(mode='json') to return str, "
+            f"got {type(json_data['type']).__name__}"
+        )
+        assert json_data["type"] == "latency", (
+            f"Expected 'latency', got {json_data['type']!r}"
+        )
+
+        assert type(json_data["severity"]) is str, (
+            f"Expected model_dump(mode='json') to return str, "
+            f"got {type(json_data['severity']).__name__}"
+        )
+        assert json_data["severity"] == "critical", (
+            f"Expected 'critical', got {json_data['severity']!r}"
         )
 
 

@@ -141,7 +141,7 @@ invariants:
 class TestYamlFileLoading:
     """Test loading invariant sets from YAML files."""
 
-    def test_load_from_file(self) -> None:
+    def test_load_from_file(self, tmp_path: Path) -> None:
         """Load invariant set from YAML file."""
         yaml_content = """
 name: "File Test"
@@ -152,17 +152,13 @@ invariants:
     config:
       max_ms: 1000
 """
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
-            f.write(yaml_content)
-            f.flush()
+        yaml_file = tmp_path / "test.yaml"
+        yaml_file.write_text(yaml_content)
 
-            inv_set = load_invariant_set_from_file(f.name)
-            assert inv_set.name == "File Test"
+        inv_set = load_invariant_set_from_file(str(yaml_file))
+        assert inv_set.name == "File Test"
 
-            # Clean up
-            Path(f.name).unlink()
-
-    def test_load_from_yml_extension(self) -> None:
+    def test_load_from_yml_extension(self, tmp_path: Path) -> None:
         """Load from file with .yml extension."""
         yaml_content = """
 name: "YML Test"
@@ -173,15 +169,11 @@ invariants:
     config:
       max_ms: 1000
 """
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".yml", delete=False) as f:
-            f.write(yaml_content)
-            f.flush()
+        yml_file = tmp_path / "test.yml"
+        yml_file.write_text(yaml_content)
 
-            inv_set = load_invariant_set_from_file(f.name)
-            assert inv_set.name == "YML Test"
-
-            # Clean up
-            Path(f.name).unlink()
+        inv_set = load_invariant_set_from_file(str(yml_file))
+        assert inv_set.name == "YML Test"
 
     def test_load_from_nonexistent_file_raises_error(self) -> None:
         """Loading from non-existent file raises ModelOnexError."""
@@ -196,7 +188,7 @@ invariants:
             or "found" in error_str.lower()
         )
 
-    def test_load_from_path_object(self) -> None:
+    def test_load_from_path_object(self, tmp_path: Path) -> None:
         """Load from Path object."""
         yaml_content = """
 name: "Path Test"
@@ -207,15 +199,11 @@ invariants:
     config:
       max_ms: 1000
 """
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
-            f.write(yaml_content)
-            f.flush()
+        yaml_file = tmp_path / "test.yaml"
+        yaml_file.write_text(yaml_content)
 
-            inv_set = load_invariant_set_from_file(Path(f.name))
-            assert inv_set.name == "Path Test"
-
-            # Clean up
-            Path(f.name).unlink()
+        inv_set = load_invariant_set_from_file(yaml_file)
+        assert inv_set.name == "Path Test"
 
 
 @pytest.mark.unit
@@ -669,3 +657,68 @@ invariants:
 
             assert len(sets) == 1
             assert sets[0].name == "Custom Pattern Test"
+
+
+@pytest.mark.unit
+class TestPathSecurity:
+    """Test path security handling in YAML loading."""
+
+    def test_load_file_resolves_path(self) -> None:
+        """Verify path resolution works correctly."""
+        yaml_content = """
+name: "Resolve Test"
+target: "node_test"
+invariants:
+  - name: "Check"
+    type: latency
+    config:
+      max_ms: 1000
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            yaml_file = Path(tmpdir) / "test.yaml"
+            yaml_file.write_text(yaml_content)
+
+            # Use resolved path
+            inv_set = load_invariant_set_from_file(yaml_file.resolve())
+            assert inv_set.name == "Resolve Test"
+
+    def test_load_file_not_a_file_raises_error(self) -> None:
+        """Loading a directory as a file raises ModelOnexError."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with pytest.raises(ModelOnexError) as exc_info:
+                load_invariant_set_from_file(tmpdir)
+            assert "not a file" in str(exc_info.value).lower()
+
+    def test_load_directory_resolves_path(self) -> None:
+        """Verify directory path resolution works correctly."""
+        yaml_content = """
+name: "Dir Resolve Test"
+target: "node_test"
+invariants:
+  - name: "Check"
+    type: latency
+    config:
+      max_ms: 1000
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            yaml_file = Path(tmpdir) / "test.yaml"
+            yaml_file.write_text(yaml_content)
+
+            # Use resolved path
+            sets = load_invariant_sets_from_directory(Path(tmpdir).resolve())
+            assert len(sets) == 1
+            assert sets[0].name == "Dir Resolve Test"
+
+    def test_load_from_file_not_a_directory_raises_error(self, tmp_path: Path) -> None:
+        """Loading a file as a directory raises ModelOnexError."""
+        yaml_content = """
+name: "Test"
+target: "node_test"
+invariants: []
+"""
+        yaml_file = tmp_path / "test.yaml"
+        yaml_file.write_text(yaml_content)
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            load_invariant_sets_from_directory(str(yaml_file))
+        assert "not a directory" in str(exc_info.value).lower()

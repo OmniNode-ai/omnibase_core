@@ -1,6 +1,10 @@
 """Configuration for threshold invariant.
 
 Validates that a numeric metric falls within specified bounds.
+
+Thread Safety:
+    ModelThresholdConfig is immutable (frozen=True) after creation,
+    making it thread-safe for concurrent read access.
 """
 
 from typing import Self
@@ -23,6 +27,11 @@ class ModelThresholdConfig(BaseModel):
     Raises:
         ValueError: If neither min_value nor max_value is provided.
         ValueError: If min_value is greater than max_value.
+
+    Thread Safety:
+        This model is immutable (frozen=True) after creation, making it
+        thread-safe for concurrent read access. No synchronization is needed
+        when sharing instances across threads.
     """
 
     model_config = ConfigDict(frozen=True, extra="ignore", from_attributes=True)
