@@ -360,7 +360,7 @@ class ModelDockerComposeManifest(BaseModel):
         try:
             with open(yaml_path, encoding="utf-8") as f:
                 yaml_data = yaml.safe_load(f)
-        except Exception as e:
+        except (yaml.YAMLError, OSError, ValueError, TypeError) as e:
             raise ModelOnexError(
                 message=f"Failed to load YAML from {yaml_path}: {e}",
                 error_code=EnumCoreErrorCode.VALIDATION_FAILED,

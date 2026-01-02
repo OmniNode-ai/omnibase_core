@@ -978,7 +978,7 @@ class TestPipelineExecutionPlanBuilding:
 @pytest.mark.integration
 @pytest.mark.unit
 @pytest.mark.timeout(60)
-class TestPipelineContextStateManagement:
+class TestModelPipelineContextStateManagement:
     """Integration tests for pipeline context state management."""
 
     @pytest.mark.asyncio

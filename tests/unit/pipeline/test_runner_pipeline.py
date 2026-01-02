@@ -495,8 +495,8 @@ class TestRunnerPipelineEmptyPipeline:
 
 
 @pytest.mark.unit
-class TestRunnerPipelinePipelineContext:
-    """Test PipelineContext behavior."""
+class TestRunnerPipelineModelPipelineContext:
+    """Test ModelPipelineContext behavior."""
 
     @pytest.mark.unit
     @pytest.mark.asyncio

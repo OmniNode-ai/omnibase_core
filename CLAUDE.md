@@ -403,6 +403,57 @@ async def my_operation(self):
     pass
 ```
 
+#### Exception Handling Comment Markers
+
+When using catch-all or broad exception handlers, document the intent with these standardized markers:
+
+| Marker | When to Use | Example Context |
+|--------|-------------|-----------------|
+| `# fallback-ok:` | Graceful degradation to default values | Config loading, optional features |
+| `# catch-all-ok:` | Boundary handlers that must not crash | API endpoints, CLI entry points |
+| `# cleanup-resilience-ok:` | Cleanup that must complete | Resource release, rollback |
+| `# boundary-ok:` | System/API boundaries | Event handlers, webhooks |
+| `# init-errors-ok:` | Initialization with safe defaults | Service startup, lazy loading |
+| `# tool-resilience-ok:` | Tool/plugin isolation | mypy plugins, linters |
+
+**Example Usage**:
+```python
+try:
+    config = load_config(path)
+except (OSError, ValidationError) as e:
+    # fallback-ok: use defaults if config unavailable
+    config = DEFAULT_CONFIG
+```
+
+#### Exception Tuple Ordering
+
+Exception tuples should be **alphabetically ordered** by exception class name:
+
+```python
+# Correct - alphabetical
+except (AttributeError, TypeError, ValidationError, ValueError) as e:
+
+# Wrong - not alphabetical
+except (ValueError, TypeError, AttributeError) as e:
+```
+
+#### Centralized Exception Groups
+
+Use centralized exception constants from `omnibase_core.errors.exception_groups`:
+
+```python
+from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
+
+try:
+    result = model.model_validate(data)
+except PYDANTIC_MODEL_ERRORS as e:
+    # Handle validation errors
+    pass
+```
+
+Available groups: `VALIDATION_ERRORS`, `PYDANTIC_MODEL_ERRORS`, `ATTRIBUTE_ACCESS_ERRORS`,
+`YAML_PARSING_ERRORS`, `JSON_PARSING_ERRORS`, `FILE_IO_ERRORS`, `NETWORK_ERRORS`, `ASYNC_ERRORS`
+
 ### Mixin System
 
 ```python

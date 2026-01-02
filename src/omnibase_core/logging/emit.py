@@ -739,8 +739,8 @@ def _get_default_event_bus() -> Any | None:
             return event_bus_factory.get_event_bus()
 
         return None
-    except Exception:
-        # fallback-ok: logger unavailable during bootstrap
+    except Exception:  # fallback-ok: logger unavailable during bootstrap
+        # Fallback when event bus unavailable
         return None
 
 
