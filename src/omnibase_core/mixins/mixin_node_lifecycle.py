@@ -36,6 +36,7 @@ from uuid import UUID, uuid4
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_node_status import EnumNodeStatus
 from omnibase_core.enums.enum_registry_execution_mode import EnumRegistryExecutionMode
+from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
 from omnibase_core.logging.structured import emit_log_event_sync
 from omnibase_core.models.core.model_event_type import create_event_type_from_registry
 from omnibase_core.models.core.model_log_context import ModelLogContext
@@ -75,7 +76,7 @@ def _get_node_id_as_uuid(obj: object) -> UUID:
     if isinstance(node_id, str):
         try:
             return UUID(node_id)
-        except (ValueError, AttributeError):
+        except (AttributeError, ValueError):
             pass
     # Fallback: generate new UUID if invalid
     return uuid4()
@@ -118,7 +119,9 @@ class MixinNodeLifecycle:
                     description="Event-driven ONEX node",
                     author="ONEX",
                 )
-        except Exception as e:  # fallback-ok: registration failure returns early with logging, node registration is non-critical
+        except PYDANTIC_MODEL_ERRORS as e:  # fallback-ok: registration failure returns early with logging, node registration is non-critical
+            # Uses PYDANTIC_MODEL_ERRORS (AttributeError, TypeError, ValidationError, ValueError)
+            # to catch metadata loading failures while allowing other exceptions to propagate
             context = ModelLogContext(
                 calling_module=_COMPONENT_NAME,
                 calling_function="_register_node",
@@ -193,6 +196,7 @@ class MixinNodeLifecycle:
                 context=context,
             )
 
+        # fallback-ok: event publishing is non-critical, log and continue
         except Exception as e:
             context = ModelLogContext(
                 calling_module=_COMPONENT_NAME,
@@ -255,6 +259,7 @@ class MixinNodeLifecycle:
                 context=context,
             )
 
+        # fallback-ok: shutdown event is non-critical, log and continue
         except Exception as e:
             context = ModelLogContext(
                 calling_module=_COMPONENT_NAME,
@@ -317,7 +322,8 @@ class MixinNodeLifecycle:
             )
             event_bus.publish(envelope)
 
-        except Exception as e:
+        except Exception as e:  # fallback-ok: lifecycle event emission is non-critical, log and continue
+            # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
             log_context: dict[str, JsonType] = {
                 "event_type": "lifecycle_error",
                 "node_id": str(node_id),
@@ -380,7 +386,8 @@ class MixinNodeLifecycle:
             )
             event_bus.publish(envelope)
 
-        except Exception as e:
+        except Exception as e:  # fallback-ok: lifecycle event emission is non-critical, log and continue
+            # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
             log_context: dict[str, JsonType] = {
                 "event_type": "lifecycle_error",
                 "node_id": str(node_id),
@@ -443,7 +450,8 @@ class MixinNodeLifecycle:
             )
             event_bus.publish(envelope)
 
-        except Exception as e:
+        except Exception as e:  # fallback-ok: lifecycle event emission is non-critical, log and continue
+            # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
             log_context: dict[str, JsonType] = {
                 "event_type": "lifecycle_error",
                 "node_id": str(node_id),
@@ -467,6 +475,7 @@ class MixinNodeLifecycle:
         if hasattr(self, "cleanup_event_handlers"):
             try:
                 self.cleanup_event_handlers()
+            # fallback-ok: cleanup failure is non-critical, log and continue
             except Exception as e:
                 node_id = _get_node_id_as_uuid(self)
                 context = ModelLogContext(

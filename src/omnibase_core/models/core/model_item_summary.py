@@ -110,7 +110,7 @@ class ModelItemSummary(BaseModel):
             if hasattr(self, key):
                 try:
                     setattr(self, key, value)
-                except Exception as e:
+                except (AttributeError, ValueError, TypeError, KeyError) as e:
                     raise ModelOnexError(
                         error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                         message=f"Failed to set attribute '{key}' to '{value}': {e}",

@@ -222,7 +222,7 @@ class ModelMixinMetadataCollection(BaseModel):
 
                 mixins[key] = metadata
 
-            except Exception as e:
+            except (AttributeError, ValueError, TypeError, KeyError) as e:
                 raise ModelOnexError(
                     message=f"Failed to parse mixin '{key}' from {yaml_path}: {e}",
                     error_code=EnumCoreErrorCode.PARSING_ERROR,

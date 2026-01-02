@@ -73,7 +73,7 @@ class ModelResultAccessor(ModelFieldAccessor):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception:
+        except (AttributeError, ValueError, TypeError, KeyError):
             # fallback-ok: Configurable protocol requires bool return - False signals configuration failure
             return False
 
@@ -96,7 +96,7 @@ class ModelResultAccessor(ModelFieldAccessor):
                         result[key] = value
                     else:
                         result[key] = str(value)
-                except Exception:
+                except (AttributeError, ValueError, TypeError, KeyError):
                     # Skip any attributes that can't be serialized
                     continue
 
@@ -108,7 +108,7 @@ class ModelResultAccessor(ModelFieldAccessor):
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except Exception:
+        except (AttributeError, ValueError, TypeError, KeyError):
             # fallback-ok: Validatable protocol requires bool return - False signals validation failure
             return False
 

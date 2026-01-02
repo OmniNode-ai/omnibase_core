@@ -72,7 +72,7 @@ class ModelWorkflowCoordinator:
 
             return workflow_result
 
-        except Exception as e:
+        except (AttributeError, ValueError, TypeError, KeyError, RuntimeError) as e:
             # Log workflow failure
             from omnibase_core.logging.structured import (
                 emit_log_event_sync as emit_log_event,
@@ -117,7 +117,7 @@ class ModelWorkflowCoordinator:
 
             return result
 
-        except Exception as e:
+        except (AttributeError, ValueError, TypeError, KeyError, RuntimeError) as e:
             from omnibase_core.logging.structured import (
                 emit_log_event_sync as emit_log_event,
             )

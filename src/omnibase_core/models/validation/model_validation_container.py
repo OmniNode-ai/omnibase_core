@@ -221,7 +221,7 @@ class ModelValidationContainer(BaseModel):
         try:
             # Basic validation - ensure required fields exist and no errors
             return not self.has_errors()
-        except Exception as e:
+        except (AttributeError, ValueError, TypeError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",

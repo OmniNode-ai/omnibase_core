@@ -141,7 +141,7 @@ class MixinEventDrivenNode(
             # Use ModelSemVer for default version instead of string literal
             default_version = ModelSemVer(major=0, minor=0, patch=0)
             return str(default_version)
-        except Exception as e:
+        except (AttributeError, ValueError) as e:
             msg = f"Failed to load node version from metadata: {e}"
             raise ModelOnexError(
                 EnumCoreErrorCode.METADATA_LOAD_FAILED,

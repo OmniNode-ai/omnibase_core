@@ -87,7 +87,6 @@ def get_service[T](protocol_type: type[T]) -> T | None:
     except (
         Exception
     ):  # fallback-ok: bootstrap service discovery, fallback to minimal services
-        # Registry not available, try fallback
         pass
 
     # Try fallback implementations
@@ -134,7 +133,6 @@ def emit_log_event(
     except (
         Exception
     ):  # fallback-ok: bootstrap logging unavailable, silent fallback acceptable
-        # Log to stderr as fallback when structured logging fails
         pass
 
     # Fallback to stderr when structured logging unavailable

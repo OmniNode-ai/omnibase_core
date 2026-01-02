@@ -268,7 +268,7 @@ class ModelStateContract(BaseModel):
 
             return cls.model_validate(mutable_data)
 
-        except Exception as e:
+        except (AttributeError, ValueError, TypeError, KeyError) as e:
             raise ModelOnexError(
                 EnumCoreErrorCode.VALIDATION_ERROR,
                 f"Failed to parse state contract: {e}",
@@ -298,7 +298,7 @@ def load_state_contract_from_file(file_path: str) -> ModelStateContract:
 
         # Use centralized YAML loading with full Pydantic validation
         return load_and_validate_yaml_model(path, ModelStateContract)
-    except Exception as e:
+    except (AttributeError, ValueError, TypeError, KeyError) as e:
         raise ModelOnexError(
             EnumCoreErrorCode.FILE_READ_ERROR,
             f"Failed to load contract from {file_path}: {e}",

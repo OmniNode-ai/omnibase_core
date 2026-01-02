@@ -258,7 +258,7 @@ class ModelUnifiedHubContract(BaseModel):
         try:
             # Use centralized YAML loading with full Pydantic validation
             return load_and_validate_yaml_model(contract_path, cls)
-        except Exception as e:
+        except (AttributeError, ValueError, TypeError, KeyError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Failed to load contract from {contract_path}: {e}",

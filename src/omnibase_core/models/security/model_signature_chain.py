@@ -135,7 +135,14 @@ class ModelSignatureChain(BaseModel):
             return True
         except ModelOnexError:
             raise
-        except Exception as e:
+        except (
+            AttributeError,
+            ValueError,
+            TypeError,
+            KeyError,
+            RuntimeError,
+            OSError,
+        ) as e:
             logger.exception(
                 f"Failed to add signature to chain {self.chain_id}: {e!s}",
                 extra={
@@ -224,7 +231,14 @@ class ModelSignatureChain(BaseModel):
             return True
         except ModelOnexError:
             raise
-        except Exception as e:
+        except (
+            AttributeError,
+            ValueError,
+            TypeError,
+            KeyError,
+            RuntimeError,
+            OSError,
+        ) as e:
             logger.exception(
                 f"Chain integrity validation failed for chain {self.chain_id}: {e!s}",
                 extra={
