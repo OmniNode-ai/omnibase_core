@@ -4,8 +4,6 @@ Health Attributes Model
 Type-safe health attributes that replace Dict[str, Any] usage.
 """
 
-from __future__ import annotations
-
 from pydantic import BaseModel, Field
 
 from omnibase_core.types.json_types import JsonType

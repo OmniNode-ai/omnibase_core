@@ -165,7 +165,9 @@ class ModelParsedArguments(BaseModel):
 
         return result
 
-    def get_argument_value(self, name: str, default: object = None) -> object:
+    def get_argument_value(
+        self, name: str, default: object | None = None
+    ) -> object | None:
         """Get argument value by name with optional default."""
         if self.arguments.has_argument(name):
             return self.arguments.named_args[name].value

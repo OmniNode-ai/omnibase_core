@@ -59,6 +59,9 @@ from __future__ import annotations
 from enum import Enum, unique
 from typing import Never, NoReturn
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors import ModelOnexError
+
 
 @unique
 class EnumHandlerRole(str, Enum):
@@ -146,8 +149,10 @@ class EnumHandlerRole(str, Enum):
     @staticmethod
     def assert_exhaustive(value: Never) -> NoReturn:
         """Ensure exhaustive handling in match statements."""
-        # error-ok: enum module cannot import errors (circular dependency)
-        raise AssertionError(f"Unhandled enum value: {value}")
+        raise ModelOnexError(
+            message=f"Unhandled enum value: {value}",
+            error_code=EnumCoreErrorCode.INVALID_OPERATION,
+        )
 
 
 __all__ = ["EnumHandlerRole"]

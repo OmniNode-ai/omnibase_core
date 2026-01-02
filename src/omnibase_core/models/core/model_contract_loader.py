@@ -8,6 +8,7 @@ unified contract loading and resolution.
 
 import threading
 from pathlib import Path
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -74,7 +75,7 @@ def _ensure_models_rebuilt(contract_loader_cls: type[BaseModel] | None = None) -
 class ModelContractLoader(BaseModel):
     """Model representing contract loader state and configuration."""
 
-    def __new__(cls, **_data: object) -> "ModelContractLoader":
+    def __new__(cls, **_data: Any) -> "ModelContractLoader":
         """Override __new__ to trigger lazy model rebuild before Pydantic validation.
 
         Pydantic validates model completeness before calling model_validator,

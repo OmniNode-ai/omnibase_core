@@ -257,6 +257,12 @@ class ModelGenericValue(BaseModel):
             )
         if isinstance(value, dict):
             return cls(value_type=EnumValueType.DICT, dict_value=json.dumps(value))
+        # Fallback for unhandled types
+        msg = f"Unsupported type: {type(value).__name__}"  # type: ignore[unreachable]
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message=msg,
+        )
 
     model_config = ConfigDict(
         json_schema_extra={

@@ -198,5 +198,8 @@ class ModelConfigurationBase[T](BaseModel):
         self.update_timestamp()
 
 
+# Resolve forward references before module exports
+ModelConfigurationBase.model_rebuild()
+
 # Export for use
 __all__ = ["ModelConfigurationBase"]
