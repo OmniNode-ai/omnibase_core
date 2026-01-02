@@ -11,8 +11,6 @@ from enum import Enum
 from functools import cache
 from typing import cast
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-
 __all__ = ["EnumLikelihood"]
 
 
@@ -165,13 +163,9 @@ class EnumLikelihood(str, Enum):
             <EnumLikelihood.CERTAIN: 'certain'>
         """
         if not 0.0 <= probability <= 1.0:
-            # Lazy import to avoid circular dependency with error_codes
-            from omnibase_core.errors import ModelOnexError
-
-            raise ModelOnexError(
-                message=f"probability must be between 0.0 and 1.0, got {probability}",
-                error_code=EnumCoreErrorCode.PARAMETER_OUT_OF_RANGE,
-            )
+            msg = f"probability must be between 0.0 and 1.0, got {probability}"
+            # error-ok: validation check - enums cannot import models
+            raise ValueError(msg)
         if probability <= 0.0:
             return cls.IMPOSSIBLE
         elif probability < 0.1:
