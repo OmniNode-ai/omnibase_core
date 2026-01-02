@@ -5,7 +5,7 @@
 Manifest Observer for Pipeline Integration.
 
 Provides the ManifestObserver class which integrates with pipeline execution
-via PipelineContext.data for non-invasive instrumentation.
+via ModelPipelineContext.data for non-invasive instrumentation.
 
 This observer allows the manifest generator to be attached to pipeline
 execution without modifying the core runner implementation.
@@ -33,7 +33,7 @@ class ManifestObserver:
     pipeline context data and retrieve it during execution. It enables
     non-invasive instrumentation of pipeline runs.
 
-    The observer uses PipelineContext.data (a shared dict) to store the
+    The observer uses ModelPipelineContext.data (a shared dict) to store the
     generator, making it accessible to all hooks during execution.
 
     Example:

@@ -6,7 +6,7 @@
 from pydantic import BaseModel, ConfigDict, Field
 
 
-class PipelineContext(BaseModel):
+class ModelPipelineContext(BaseModel):
     """
     Context passed to each hook during pipeline execution.
 
@@ -23,11 +23,11 @@ class PipelineContext(BaseModel):
         Example::
 
             # Hook A writes to context
-            def hook_a(ctx: PipelineContext) -> None:
+            def hook_a(ctx: ModelPipelineContext) -> None:
                 ctx.data["result"] = {"status": "processed"}
 
             # Hook B can read and modify the same data
-            def hook_b(ctx: PipelineContext) -> None:
+            def hook_b(ctx: ModelPipelineContext) -> None:
                 result = ctx.data.get("result", {})
                 result["validated"] = True
 
@@ -35,8 +35,8 @@ class PipelineContext(BaseModel):
     -------------
     **This class is NOT thread-safe.**
 
-    ``PipelineContext`` is intentionally mutable to allow hooks to communicate.
-    Each pipeline execution should use its own ``PipelineContext`` instance.
+    ``ModelPipelineContext`` is intentionally mutable to allow hooks to communicate.
+    Each pipeline execution should use its own ``ModelPipelineContext`` instance.
     Do not share contexts across concurrent pipeline executions.
 
     Pydantic Configuration Note
@@ -64,5 +64,5 @@ class PipelineContext(BaseModel):
 
 
 __all__ = [
-    "PipelineContext",
+    "ModelPipelineContext",
 ]

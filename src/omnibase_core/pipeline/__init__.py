@@ -58,11 +58,11 @@ from omnibase_core.models.pipeline import (
     ModelExecutionPlan,
     ModelHookError,
     ModelPhaseExecutionPlan,
+    ModelPipelineContext,
     ModelPipelineHook,
+    ModelPipelineResult,
     ModelValidationWarning,
-    PipelineContext,
     PipelinePhase,
-    PipelineResult,
 )
 from omnibase_core.pipeline.builder_execution_plan import (
     FAIL_FAST_PHASES,
@@ -115,8 +115,8 @@ __all__ = [
     "CANONICAL_PHASE_ORDER",
     "HookCallable",
     "ModelHookError",
-    "PipelineContext",
-    "PipelineResult",
+    "ModelPipelineContext",
+    "ModelPipelineResult",
     # Models
     "ModelExecutionPlan",
     "ModelPhaseExecutionPlan",

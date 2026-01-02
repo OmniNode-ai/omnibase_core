@@ -8,13 +8,13 @@ import pytest
 from omnibase_core.models.pipeline import (
     ModelExecutionPlan,
     ModelPhaseExecutionPlan,
+    ModelPipelineContext,
     ModelPipelineHook,
     PipelinePhase,
 )
 from omnibase_core.pipeline.exceptions import CallableNotFoundError
 from omnibase_core.pipeline.runner_pipeline import (
     HookCallable,
-    PipelineContext,
     RunnerPipeline,
 )
 
@@ -45,7 +45,7 @@ class TestRunnerPipelinePhaseExecutionOrder:
         execution_order: list[str] = []
 
         def make_hook_callable(phase_name: str) -> HookCallable:
-            def hook(ctx: PipelineContext) -> None:
+            def hook(ctx: ModelPipelineContext) -> None:
                 execution_order.append(phase_name)
 
             return hook
@@ -87,7 +87,7 @@ class TestRunnerPipelinePhaseExecutionOrder:
         execution_order: list[str] = []
 
         def make_hook(name: str) -> HookCallable:
-            def hook(ctx: PipelineContext) -> None:
+            def hook(ctx: ModelPipelineContext) -> None:
                 execution_order.append(name)
 
             return hook
@@ -127,7 +127,7 @@ class TestRunnerPipelineFinalizeAlwaysRuns:
         """Finalize runs after successful execution."""
         finalize_ran: list[bool] = []
 
-        def finalize_hook(ctx: PipelineContext) -> None:
+        def finalize_hook(ctx: ModelPipelineContext) -> None:
             finalize_ran.append(True)
 
         hooks = [
@@ -152,10 +152,10 @@ class TestRunnerPipelineFinalizeAlwaysRuns:
         """Finalize runs even when earlier phase raises exception."""
         finalize_ran: list[bool] = []
 
-        def failing_hook(ctx: PipelineContext) -> None:
+        def failing_hook(ctx: ModelPipelineContext) -> None:
             raise ValueError("Intentional failure")
 
-        def finalize_hook_fn(ctx: PipelineContext) -> None:
+        def finalize_hook_fn(ctx: ModelPipelineContext) -> None:
             finalize_ran.append(True)
 
         execute_hook = ModelPipelineHook(
@@ -198,11 +198,11 @@ class TestRunnerPipelineErrorHandlingPerPhase:
         """Preflight phase aborts on first error."""
         execution_order: list[str] = []
 
-        def first(ctx: PipelineContext) -> None:
+        def first(ctx: ModelPipelineContext) -> None:
             execution_order.append("first")
             raise ValueError("Preflight failed")
 
-        def second(ctx: PipelineContext) -> None:
+        def second(ctx: ModelPipelineContext) -> None:
             execution_order.append("second")
 
         hooks = [
@@ -231,11 +231,11 @@ class TestRunnerPipelineErrorHandlingPerPhase:
         """Before phase aborts on first error."""
         execution_order: list[str] = []
 
-        def first(ctx: PipelineContext) -> None:
+        def first(ctx: ModelPipelineContext) -> None:
             execution_order.append("first")
             raise ValueError("Before failed")
 
-        def second(ctx: PipelineContext) -> None:
+        def second(ctx: ModelPipelineContext) -> None:
             execution_order.append("second")
 
         hooks = [
@@ -264,11 +264,11 @@ class TestRunnerPipelineErrorHandlingPerPhase:
         """Execute phase aborts on first error."""
         execution_order: list[str] = []
 
-        def first(ctx: PipelineContext) -> None:
+        def first(ctx: ModelPipelineContext) -> None:
             execution_order.append("first")
             raise ValueError("Execute failed")
 
-        def second(ctx: PipelineContext) -> None:
+        def second(ctx: ModelPipelineContext) -> None:
             execution_order.append("second")
 
         hooks = [
@@ -297,11 +297,11 @@ class TestRunnerPipelineErrorHandlingPerPhase:
         """After phase continues despite errors."""
         execution_order: list[str] = []
 
-        def first(ctx: PipelineContext) -> None:
+        def first(ctx: ModelPipelineContext) -> None:
             execution_order.append("first")
             raise ValueError("After hook failed")
 
-        def second(ctx: PipelineContext) -> None:
+        def second(ctx: ModelPipelineContext) -> None:
             execution_order.append("second")
 
         hooks = [
@@ -331,11 +331,11 @@ class TestRunnerPipelineErrorHandlingPerPhase:
         """Emit phase continues despite errors."""
         execution_order: list[str] = []
 
-        def first(ctx: PipelineContext) -> None:
+        def first(ctx: ModelPipelineContext) -> None:
             execution_order.append("first")
             raise ValueError("Emit hook failed")
 
-        def second(ctx: PipelineContext) -> None:
+        def second(ctx: ModelPipelineContext) -> None:
             execution_order.append("second")
 
         hooks = [
@@ -363,11 +363,11 @@ class TestRunnerPipelineErrorHandlingPerPhase:
         """Finalize phase continues despite errors."""
         execution_order: list[str] = []
 
-        def first(ctx: PipelineContext) -> None:
+        def first(ctx: ModelPipelineContext) -> None:
             execution_order.append("first")
             raise ValueError("Finalize hook failed")
 
-        def second(ctx: PipelineContext) -> None:
+        def second(ctx: ModelPipelineContext) -> None:
             execution_order.append("second")
 
         hooks = [
@@ -402,10 +402,10 @@ class TestRunnerPipelineAsyncHookSupport:
         """Async hooks are properly awaited."""
         execution_order: list[str] = []
 
-        async def async_hook(ctx: PipelineContext) -> None:
+        async def async_hook(ctx: ModelPipelineContext) -> None:
             execution_order.append("async")
 
-        def sync_hook(ctx: PipelineContext) -> None:
+        def sync_hook(ctx: ModelPipelineContext) -> None:
             execution_order.append("sync")
 
         hooks = [
@@ -432,13 +432,13 @@ class TestRunnerPipelineAsyncHookSupport:
         """Mixed sync and async hooks execute correctly."""
         execution_order: list[str] = []
 
-        def sync_first(ctx: PipelineContext) -> None:
+        def sync_first(ctx: ModelPipelineContext) -> None:
             execution_order.append("sync_first")
 
-        async def async_middle(ctx: PipelineContext) -> None:
+        async def async_middle(ctx: ModelPipelineContext) -> None:
             execution_order.append("async_middle")
 
-        def sync_last(ctx: PipelineContext) -> None:
+        def sync_last(ctx: ModelPipelineContext) -> None:
             execution_order.append("sync_last")
 
         hooks = [
@@ -493,18 +493,18 @@ class TestRunnerPipelineEmptyPipeline:
 
 
 @pytest.mark.unit
-class TestRunnerPipelinePipelineContext:
-    """Test PipelineContext behavior."""
+class TestRunnerPipelineModelPipelineContext:
+    """Test ModelPipelineContext behavior."""
 
     @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_context_shared_across_hooks(self) -> None:
         """Context is shared and mutable across hooks."""
 
-        def first(ctx: PipelineContext) -> None:
+        def first(ctx: ModelPipelineContext) -> None:
             ctx.data["from_first"] = "value1"
 
-        def second(ctx: PipelineContext) -> None:
+        def second(ctx: ModelPipelineContext) -> None:
             ctx.data["from_second"] = ctx.data.get("from_first", "") + "_modified"
 
         hooks = [
@@ -532,13 +532,13 @@ class TestRunnerPipelinePipelineContext:
     async def test_context_preserved_across_phases(self) -> None:
         """Context data persists across phases."""
 
-        def preflight_hook(ctx: PipelineContext) -> None:
+        def preflight_hook(ctx: ModelPipelineContext) -> None:
             ctx.data["phase"] = ["preflight"]
 
-        def execute_hook(ctx: PipelineContext) -> None:
+        def execute_hook(ctx: ModelPipelineContext) -> None:
             ctx.data["phase"].append("execute")
 
-        def finalize_hook(ctx: PipelineContext) -> None:
+        def finalize_hook(ctx: ModelPipelineContext) -> None:
             ctx.data["phase"].append("finalize")
 
         hooks_by_phase = [
@@ -596,7 +596,7 @@ class TestRunnerPipelinePipelineResult:
     async def test_result_success_when_no_errors(self) -> None:
         """Result is successful when no errors occurred."""
 
-        def ok_hook(ctx: PipelineContext) -> None:
+        def ok_hook(ctx: ModelPipelineContext) -> None:
             pass
 
         hooks = [
@@ -615,7 +615,7 @@ class TestRunnerPipelinePipelineResult:
     async def test_result_contains_errors_from_continue_phases(self) -> None:
         """Result contains captured errors from continue phases."""
 
-        def failing_hook(ctx: PipelineContext) -> None:
+        def failing_hook(ctx: ModelPipelineContext) -> None:
             raise RuntimeError("Expected error")
 
         hooks = [
@@ -720,7 +720,7 @@ class TestRunnerPipelineCallableResolution:
     def test_partial_registry_detects_only_missing(self) -> None:
         """Only missing callables are reported, not ones that exist."""
 
-        def existing_hook(ctx: PipelineContext) -> None:
+        def existing_hook(ctx: ModelPipelineContext) -> None:
             pass
 
         hooks = [
@@ -763,7 +763,7 @@ class TestRunnerPipelineCallableResolution:
         is impossible, not just detected.
         """
 
-        def hook_fn(ctx: PipelineContext) -> None:
+        def hook_fn(ctx: ModelPipelineContext) -> None:
             pass
 
         hooks = [
@@ -796,7 +796,7 @@ class TestRunnerPipelineComplexPipeline:
         execution_order: list[str] = []
 
         def make_hook(name: str) -> HookCallable:
-            def hook(ctx: PipelineContext) -> None:
+            def hook(ctx: ModelPipelineContext) -> None:
                 execution_order.append(name)
 
             return hook
@@ -834,17 +834,17 @@ class TestRunnerPipelineComplexPipeline:
         """Fail-fast phase stops pipeline, but finalize still runs."""
         execution_order: list[str] = []
 
-        def preflight_hook(ctx: PipelineContext) -> None:
+        def preflight_hook(ctx: ModelPipelineContext) -> None:
             execution_order.append("preflight")
 
-        def failing_before(ctx: PipelineContext) -> None:
+        def failing_before(ctx: ModelPipelineContext) -> None:
             execution_order.append("before")
             raise ValueError("Before failed")
 
-        def execute_hook(ctx: PipelineContext) -> None:
+        def execute_hook(ctx: ModelPipelineContext) -> None:
             execution_order.append("execute")  # Should never run
 
-        def finalize_hook(ctx: PipelineContext) -> None:
+        def finalize_hook(ctx: ModelPipelineContext) -> None:
             execution_order.append("finalize")  # Must still run
 
         hooks_by_phase = [
@@ -916,7 +916,7 @@ class TestRunnerPipelineTimeoutEnforcement:
 
         from omnibase_core.pipeline.exceptions import HookTimeoutError
 
-        async def slow_hook(ctx: PipelineContext) -> None:
+        async def slow_hook(ctx: ModelPipelineContext) -> None:
             await asyncio.sleep(1.0)  # Sleep longer than timeout
 
         hook = ModelPipelineHook(
@@ -944,7 +944,7 @@ class TestRunnerPipelineTimeoutEnforcement:
 
         from omnibase_core.pipeline.exceptions import HookTimeoutError
 
-        def slow_sync_hook(ctx: PipelineContext) -> None:
+        def slow_sync_hook(ctx: ModelPipelineContext) -> None:
             time.sleep(1.0)  # Sleep longer than timeout
 
         hook = ModelPipelineHook(
@@ -974,7 +974,7 @@ class TestRunnerPipelineTimeoutEnforcement:
 
         executed: list[bool] = []
 
-        async def fast_hook(ctx: PipelineContext) -> None:
+        async def fast_hook(ctx: ModelPipelineContext) -> None:
             await asyncio.sleep(0.01)  # Sleep less than timeout
             executed.append(True)
 
@@ -1000,7 +1000,7 @@ class TestRunnerPipelineTimeoutEnforcement:
 
         executed: list[bool] = []
 
-        def fast_sync_hook(ctx: PipelineContext) -> None:
+        def fast_sync_hook(ctx: ModelPipelineContext) -> None:
             time.sleep(0.01)  # Sleep less than timeout
             executed.append(True)
 
@@ -1028,7 +1028,7 @@ class TestRunnerPipelineTimeoutEnforcement:
 
         executed: list[bool] = []
 
-        async def hook_no_timeout(ctx: PipelineContext) -> None:
+        async def hook_no_timeout(ctx: ModelPipelineContext) -> None:
             await asyncio.sleep(0.05)  # Would timeout if enforced at 0.01s
             executed.append(True)
 
@@ -1054,7 +1054,7 @@ class TestRunnerPipelineTimeoutEnforcement:
         """Timeout in continue phase (after) is captured, not raised."""
         import asyncio
 
-        async def slow_after_hook(ctx: PipelineContext) -> None:
+        async def slow_after_hook(ctx: ModelPipelineContext) -> None:
             await asyncio.sleep(1.0)
 
         hook = ModelPipelineHook(
@@ -1086,12 +1086,12 @@ class TestRunnerPipelineTimeoutEnforcement:
 
         execution_order: list[str] = []
 
-        async def slow_execute_hook(ctx: PipelineContext) -> None:
+        async def slow_execute_hook(ctx: ModelPipelineContext) -> None:
             execution_order.append("slow_start")
             await asyncio.sleep(1.0)
             execution_order.append("slow_end")  # Should never reach
 
-        def second_hook(ctx: PipelineContext) -> None:
+        def second_hook(ctx: ModelPipelineContext) -> None:
             execution_order.append("second")  # Should never run
 
         hooks = [
