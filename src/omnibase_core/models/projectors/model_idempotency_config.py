@@ -96,5 +96,18 @@ class ModelIdempotencyConfig(BaseModel):
         description="Event attribute to use as the idempotency key (e.g., 'sequence_number', 'event_id')",
     )
 
+    def __repr__(self) -> str:
+        """Return a concise representation for debugging.
+
+        Returns:
+            String representation showing enabled status and key.
+
+        Examples:
+            >>> config = ModelIdempotencyConfig(key="sequence_number")
+            >>> repr(config)
+            "ModelIdempotencyConfig(enabled=True, key='sequence_number')"
+        """
+        return f"ModelIdempotencyConfig(enabled={self.enabled}, key={self.key!r})"
+
 
 __all__ = ["ModelIdempotencyConfig"]

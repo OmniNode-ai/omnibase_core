@@ -120,9 +120,12 @@ class ModelProjectorBehavior(BaseModel):
     upsert_key: str | None = Field(
         default=None,
         description=(
-            "Column to use for upsert conflict detection. When mode is 'upsert' "
-            "and upsert_key is not specified, the schema's primary_key is used. "
-            "Specify explicitly when the upsert key differs from primary key."
+            "Column to use for upsert conflict detection. "
+            "Required semantics: "
+            "- When mode='upsert' and upsert_key is None: Uses schema's primary_key "
+            "(a warning is logged to inform users of this default behavior). "
+            "- When mode='upsert' and upsert_key is specified: Uses the specified column. "
+            "- When mode='insert_only' or 'append': upsert_key is ignored."
         ),
     )
 
@@ -149,6 +152,19 @@ class ModelProjectorBehavior(BaseModel):
                 "Primary key will be used as the upsert key by default."
             )
         return self
+
+    def __repr__(self) -> str:
+        """Return a concise representation for debugging.
+
+        Returns:
+            String representation showing mode and upsert_key.
+
+        Examples:
+            >>> behavior = ModelProjectorBehavior(mode="upsert", upsert_key="node_id")
+            >>> repr(behavior)
+            "ModelProjectorBehavior(mode='upsert', upsert_key='node_id')"
+        """
+        return f"ModelProjectorBehavior(mode={self.mode!r}, upsert_key={self.upsert_key!r})"
 
 
 __all__ = ["ModelProjectorBehavior"]
