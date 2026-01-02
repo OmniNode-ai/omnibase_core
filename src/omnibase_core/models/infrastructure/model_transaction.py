@@ -77,9 +77,9 @@ class ModelTransaction:
                 else:
                     rollback_func()
             except asyncio.CancelledError as e:
-                # Note cancellation but continue with remaining rollback operations
-                # to maintain transaction consistency. Re-raise after all operations.
-                # Store the first cancellation to preserve its context and traceback.
+                # cleanup-resilience-ok: Store cancellation to re-raise after all
+                # rollback operations complete, ensuring transaction consistency.
+                # The first CancelledError is stored to preserve its context/traceback.
                 if cancelled_error is None:
                     cancelled_error = e
                 emit_log_event(
@@ -92,11 +92,11 @@ class ModelTransaction:
             except (GeneratorExit, KeyboardInterrupt, MemoryError, SystemExit) as e:
                 # cleanup-resilience-ok: Store critical system exceptions to re-raise
                 # after completing all rollback operations. This ensures transaction
-                # consistency while still honoring termination requests and
-                # propagating critical system conditions.
+                # consistency while still honoring termination requests. These are
+                # NOT immediately propagated - they are deferred until cleanup completes.
                 # - GeneratorExit: Generator cleanup signal
                 # - KeyboardInterrupt: User interrupt (Ctrl+C)
-                # - MemoryError: Critical system resource exhaustion
+                # - MemoryError: Critical resource exhaustion (deferred, then re-raised)
                 # - SystemExit: System shutdown request
                 if deferred_base_exception is None:
                     deferred_base_exception = e
@@ -124,9 +124,8 @@ class ModelTransaction:
                         "error_type": type(e).__name__,
                     },
                 )
-            except (
-                BaseException
-            ) as e:  # cleanup-resilience-ok: catch-all for resilience
+            except BaseException as e:
+                # cleanup-resilience-ok: catch-all for resilience
                 # Catch any remaining BaseException subclasses not explicitly handled
                 # above (e.g., custom BaseException subclasses). Store first occurrence
                 # to re-raise after cleanup completes.
@@ -142,10 +141,10 @@ class ModelTransaction:
                     },
                 )
 
-        # After all rollback operations complete, honor any pending exceptions.
+        # After all rollback operations complete, re-raise any deferred exceptions.
         # CancelledError takes priority to properly honor async task cancellation.
-        # Critical system exceptions (MemoryError, process signals, etc.) are
-        # re-raised after to honor system requirements.
+        # Critical system exceptions (MemoryError, KeyboardInterrupt, etc.) are
+        # re-raised next to honor system requirements.
         if cancelled_error is not None:
             raise cancelled_error
         if deferred_base_exception is not None:

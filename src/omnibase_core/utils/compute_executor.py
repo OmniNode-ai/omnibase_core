@@ -515,8 +515,8 @@ def _execute_pipeline_steps(
         # This enables orchestration layers to inspect errors programmatically,
         # implement retry logic, or aggregate partial results from multi-step pipelines.
         # Error is logged via logger.exception for full stack trace observability.
-        except BaseException as e:  # fallback-ok: pipeline executor captures errors in result object, logged via logger.exception
-            # Uses BaseException to catch all exceptions including system-level errors
+        except Exception as e:  # fallback-ok: pipeline executor captures errors in result object, logged via logger.exception
+            # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
             step_duration = (time.perf_counter() - step_start) * 1000
             total_time = (time.perf_counter() - start_time) * 1000
 

@@ -134,7 +134,9 @@ def validate_yaml_file(file_path: Path) -> list[str]:
         # and ValidationError. No ModelOnexError handler needed here.
 
     except OSError as e:
-        # Wrap in ModelOnexError for consistent error handling
+        # boundary-ok: handles TOCTOU race conditions where file changes after
+        # preliminary checks (lines 67-91) but before open(). Wraps in ModelOnexError
+        # for consistent error handling across the validation framework.
         wrapped_error = ModelOnexError(
             error_code=EnumCoreErrorCode.FILE_READ_ERROR,
             message=f"OS error reading file: {e}",
@@ -146,9 +148,9 @@ def validate_yaml_file(file_path: Path) -> list[str]:
         logging.exception(f"File read error: {wrapped_error.message}")
         errors.append(wrapped_error.message)
     except UnicodeDecodeError as e:
-        # Wrap in ModelOnexError for consistent error handling
-        # Note: yaml.YAMLError is handled in the inner try block (line 109)
-        # since yaml.safe_load() is called within load_and_validate_yaml_model()
+        # boundary-ok: handles encoding errors from f.read() that can occur
+        # with invalid UTF-8 content. Wraps in ModelOnexError for consistent
+        # error handling across the validation framework.
         wrapped_error = ModelOnexError(
             error_code=EnumCoreErrorCode.FILE_READ_ERROR,
             message=f"Error decoding file: {e}",

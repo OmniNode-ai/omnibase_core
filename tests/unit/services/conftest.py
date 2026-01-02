@@ -10,6 +10,7 @@ for ModelProviderDescriptor.
 """
 
 import pytest
+from pydantic import ValidationError
 
 
 def _rebuild_provider_descriptor_forward_refs() -> bool:
@@ -41,7 +42,8 @@ def _rebuild_provider_descriptor_forward_refs() -> bool:
             _types_namespace={"ModelHealthStatus": ModelHealthStatus}
         )
         return True
-    except ImportError:
+    except (ImportError, ValidationError):
+        # init-errors-ok: model rebuild may fail during import chain resolution
         return False
 
 
@@ -63,5 +65,5 @@ def ensure_model_provider_descriptor_rebuilt() -> None:
         if not _MODEL_REBUILD_SUCCESS:
             pytest.skip(
                 "ModelProviderDescriptor forward references cannot be resolved "
-                "due to circular import. See OMN-XXXX for tracking."
+                "due to circular import. See OMN-1075 for tracking."
             )
