@@ -1392,10 +1392,8 @@ class TestNodeBaseSecurityAllowlist:
             with pytest.raises(ModelOnexError) as exc_info:
                 SecureNodeBase(contract_path=contract_path, container=mock_container)
 
-            # Verify SECURITY_VIOLATION error is contained in the error chain
-            # Note: The initialization wraps the error in OPERATION_FAILED,
-            # but the original SECURITY_VIOLATION is preserved in the message
-            assert "SECURITY_VIOLATION" in exc_info.value.message
+            # Verify SECURITY_VIOLATION error is raised
+            assert exc_info.value.error_code == EnumCoreErrorCode.SECURITY_VIOLATION
             assert "not in allowed prefixes" in exc_info.value.message
             assert "os.path" in exc_info.value.message
 
@@ -1523,8 +1521,7 @@ class TestNodeBaseSecurityAllowlist:
                 CustomSecureNode(contract_path=contract_path, container=mock_container)
 
             # omnibase_core is not in custom allowlist, so should be blocked
-            # Note: Error is wrapped in OPERATION_FAILED during initialization
-            assert "SECURITY_VIOLATION" in exc_info.value.message
+            assert exc_info.value.error_code == EnumCoreErrorCode.SECURITY_VIOLATION
             assert "not in allowed prefixes" in exc_info.value.message
 
     def test_default_allowed_prefixes_include_expected_values(self):
@@ -1575,9 +1572,7 @@ class TestNodeBaseSecurityAllowlist:
             with pytest.raises(ModelOnexError) as exc_info:
                 SecureNodeBase(contract_path=contract_path, container=mock_container)
 
-            # Verify error message includes the module name for debugging
-            # Note: The SECURITY_VIOLATION error is wrapped by the initialization error,
-            # so we check the message which contains the full error chain
+            # Verify SECURITY_VIOLATION error is raised with helpful context
+            assert exc_info.value.error_code == EnumCoreErrorCode.SECURITY_VIOLATION
             assert "malicious.module" in exc_info.value.message
-            assert "SECURITY_VIOLATION" in exc_info.value.message
             assert "not in allowed prefixes" in exc_info.value.message
