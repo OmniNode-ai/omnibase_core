@@ -269,7 +269,8 @@ class ModelExamplesCollection(BaseModel):
 
         self.examples.append(example)
         # Update timestamp (computed fields are auto-updated)
-        self.last_validated = datetime.now(UTC)
+        # Use object.__setattr__ to bypass validate_assignment for timestamp-only updates
+        object.__setattr__(self, "last_validated", datetime.now(UTC))
 
     def get_example(self, index: int = 0) -> ModelExample | None:
         """Get an example by index."""
@@ -286,7 +287,8 @@ class ModelExamplesCollection(BaseModel):
         if 0 <= index < len(self.examples):
             self.examples.pop(index)
             # Update timestamp (computed fields are auto-updated)
-            self.last_validated = datetime.now(UTC)
+            # Use object.__setattr__ to bypass validate_assignment for timestamp-only updates
+            object.__setattr__(self, "last_validated", datetime.now(UTC))
             return True
         return False
 
@@ -305,7 +307,8 @@ class ModelExamplesCollection(BaseModel):
         reflects the current validation state. This method updates the
         last_validated timestamp to indicate when validation was last run.
         """
-        self.last_validated = datetime.now(UTC)
+        # Use object.__setattr__ to bypass validate_assignment for timestamp-only updates
+        object.__setattr__(self, "last_validated", datetime.now(UTC))
 
     def is_healthy(self) -> bool:
         """Check if collection is healthy (has valid examples)."""

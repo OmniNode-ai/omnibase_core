@@ -276,28 +276,6 @@ class ModelProjectorContract(BaseModel):
         return v
 
     @model_validator(mode="after")
-    def validate_consumed_events_not_empty(self) -> Self:
-        """Validate that at least one event is consumed.
-
-        This validator provides a clear error message when consumed_events
-        is empty. While min_length=1 on the field also enforces this,
-        the model_validator provides semantic validation.
-
-        Returns:
-            The validated model instance.
-
-        Raises:
-            ValueError: If consumed_events is empty.
-        """
-        if not self.consumed_events:
-            # error-ok: Pydantic validator requires ValueError
-            raise ValueError(
-                "consumed_events must contain at least one event type. "
-                "Projectors must subscribe to at least one event to function."
-            )
-        return self
-
-    @model_validator(mode="after")
     def validate_upsert_key_exists_in_columns(self) -> Self:
         """Validate that upsert_key references an existing column when specified.
 

@@ -62,9 +62,14 @@ class ModelProjectorBehavior(BaseModel):
             - "upsert": Insert or update based on upsert_key (default)
             - "insert_only": Insert only, skip existing records
             - "append": Always append without deduplication
-        upsert_key: The field to use for upsert conflict detection.
-            Required when mode is "upsert" and you want to update
-            existing records. Typically a primary key or unique identifier.
+        upsert_key: The column name to use for upsert conflict detection.
+            Only applicable when ``mode='upsert'``. At runtime, if this is
+            ``None``, the projector will fall back to using the
+            ``projection_schema.primary_key`` as the conflict detection key.
+            While this fallback behavior is valid, explicit specification is
+            recommended for clarity and to avoid the warning that is logged
+            when the default is used. Ignored when ``mode='insert_only'``
+            or ``mode='append'``.
         idempotency: Optional idempotency configuration for exactly-once
             processing. When enabled, tracks processed events to prevent
             duplicate processing on retries or replay.
@@ -120,10 +125,13 @@ class ModelProjectorBehavior(BaseModel):
     upsert_key: str | None = Field(
         default=None,
         description=(
-            "Column to use for upsert conflict detection. "
+            "Column name to use for upsert conflict detection. "
             "Only applicable when mode='upsert'. "
-            "If None, defaults to the schema's primary_key (a warning is logged). "
-            "Ignored when mode='insert_only' or 'append'."
+            "When None and mode='upsert', the projector runtime falls back to "
+            "using projection_schema.primary_key as the conflict detection key; "
+            "a warning is logged in this case to encourage explicit specification. "
+            "Explicit specification is recommended for clarity and self-documenting "
+            "configuration. Ignored when mode='insert_only' or 'append'."
         ),
     )
 
