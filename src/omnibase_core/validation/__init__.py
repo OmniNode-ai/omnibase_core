@@ -39,6 +39,13 @@ from omnibase_core.models.validation.model_ambiguous_transition import (
     ModelAmbiguousTransition,
 )
 
+# Contract validation invariant checker (OMN-1146)
+# Re-exports from canonical locations
+from omnibase_core.models.validation.model_contract_validation_event import (
+    ContractValidationEventType,
+    ModelContractValidationEvent,
+)
+
 # Import model from models/validation/
 from omnibase_core.models.validation.model_contract_validation_result import (
     ModelContractValidationResult,
@@ -58,6 +65,9 @@ from omnibase_core.models.validation.model_lint_warning import ModelLintWarning
 from omnibase_core.models.validation.model_module_import_result import (
     ModelModuleImportResult,
 )
+from omnibase_core.services.service_contract_validation_invariant_checker import (
+    ServiceContractValidationInvariantChecker,
+)
 
 # Import validation functions for easy access
 from .architecture import validate_architecture_directory, validate_one_model_per_file
@@ -68,12 +78,7 @@ from .circular_import_validator import CircularImportValidator
 # ModelValidationSuite is available via __getattr__ (emits deprecation warning)
 from .cli import ServiceValidationSuite
 
-# Import contract validation invariant checker (OMN-1146)
-from .contract_validation_invariant_checker import (
-    ContractValidationEventType,
-    ContractValidationInvariantChecker,
-    ModelContractValidationEvent,
-)
+ContractValidationInvariantChecker = ServiceContractValidationInvariantChecker
 
 # =============================================================================
 # ALIAS LOADING STRATEGY: __getattr__ vs Direct Alias
@@ -377,9 +382,10 @@ __all__ = [
     "validate_unique_step_ids",
     "validate_workflow_definition",
     # Contract validation invariant checker (OMN-1146)
-    "ContractValidationInvariantChecker",
+    "ServiceContractValidationInvariantChecker",
     "ModelContractValidationEvent",
     "ContractValidationEventType",
+    "ContractValidationInvariantChecker",
     # Reserved enum validation (OMN-669, OMN-675)
     # NOTE: validate_execution_mode takes EnumExecutionMode (type-safe)
     # while validate_execution_mode_string takes str (for YAML/config parsing)

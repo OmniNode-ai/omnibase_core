@@ -7,9 +7,11 @@ from omnibase_core.models.pipeline import (
     ModelExecutionPlan,
     ModelHookError,
     ModelPhaseExecutionPlan,
+    ModelPipelineContext,
     ModelPipelineExecutionPlan,
     ModelPipelineHook,
     ModelPipelinePhaseExecutionPlan,
+    ModelPipelineResult,
     ModelValidationWarning,
     PipelineContext,
     PipelinePhase,
@@ -69,8 +71,8 @@ __all__ = [
     "CANONICAL_PHASE_ORDER",
     "HookCallable",
     "ModelHookError",
-    "PipelineContext",
-    "PipelineResult",
+    "ModelPipelineContext",
+    "ModelPipelineResult",
     "PipelineRunner",
     # Models (new canonical names first, then backwards compat)
     "ModelPipelineExecutionPlan",
@@ -81,4 +83,6 @@ __all__ = [
     # Legacy aliases
     "ModelExecutionPlan",
     "ModelPhaseExecutionPlan",
+    "PipelineContext",
+    "PipelineResult",
 ]

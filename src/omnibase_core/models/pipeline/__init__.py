@@ -15,7 +15,10 @@ Legacy aliases are provided for migration.
 """
 
 from omnibase_core.models.pipeline.model_hook_error import ModelHookError
-from omnibase_core.models.pipeline.model_pipeline_context import PipelineContext
+from omnibase_core.models.pipeline.model_pipeline_context import (
+    ModelPipelineContext,
+    PipelineContext,
+)
 from omnibase_core.models.pipeline.model_pipeline_execution_plan import (
     ModelExecutionPlan,
     ModelPhaseExecutionPlan,
@@ -26,7 +29,10 @@ from omnibase_core.models.pipeline.model_pipeline_hook import (
     ModelPipelineHook,
     PipelinePhase,
 )
-from omnibase_core.models.pipeline.model_pipeline_result import PipelineResult
+from omnibase_core.models.pipeline.model_pipeline_result import (
+    ModelPipelineResult,
+    PipelineResult,
+)
 from omnibase_core.models.pipeline.model_validation_warning import (
     ModelValidationWarning,
 )
@@ -34,14 +40,16 @@ from omnibase_core.models.pipeline.model_validation_warning import (
 __all__ = [
     # New canonical names
     "ModelHookError",
+    "ModelPipelineContext",
     "ModelPipelineExecutionPlan",
     "ModelPipelinePhaseExecutionPlan",
     "ModelPipelineHook",
+    "ModelPipelineResult",
     "ModelValidationWarning",
-    "PipelineContext",
     "PipelinePhase",
-    "PipelineResult",
     # Legacy aliases
     "ModelExecutionPlan",
     "ModelPhaseExecutionPlan",
+    "PipelineContext",
+    "PipelineResult",
 ]

@@ -3,17 +3,17 @@
 # SPDX-License-Identifier: Apache-2.0
 """Pipeline result model for execution outcomes.
 
-This module contains the PipelineResult class which represents the result
+This module contains the ModelPipelineResult class which represents the result
 of pipeline execution.
 """
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.pipeline.model_hook_error import ModelHookError
-from omnibase_core.models.pipeline.model_pipeline_context import PipelineContext
+from omnibase_core.models.pipeline.model_pipeline_context import ModelPipelineContext
 
 
-class PipelineResult(BaseModel):
+class ModelPipelineResult(BaseModel):
     """
     Result of pipeline execution.
 
@@ -22,7 +22,7 @@ class PipelineResult(BaseModel):
 
     Thread Safety: This class is thread-safe. Instances are immutable
     (frozen=True) and can be safely shared across threads. Note that the
-    nested ``context`` field may be mutable (PipelineContext), so avoid
+    nested ``context`` field may be mutable (ModelPipelineContext), so avoid
     modifying it after the result is created if sharing across threads.
     """
 
@@ -46,12 +46,17 @@ class PipelineResult(BaseModel):
         default_factory=list,
         description="Errors captured from continue-on-error phases",
     )
-    context: PipelineContext | None = Field(
+    context: ModelPipelineContext | None = Field(
         default=None,
         description="Final context state after pipeline execution",
     )
 
 
 __all__ = [
+    "ModelPipelineResult",
+    # Alias
     "PipelineResult",
 ]
+
+# Alias
+PipelineResult = ModelPipelineResult
