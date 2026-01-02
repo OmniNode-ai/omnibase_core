@@ -22,6 +22,7 @@ decorator pattern:
 """
 
 import ast
+import logging
 import re
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -31,6 +32,9 @@ from omnibase_core.models.primitives.model_semver import (
     ModelSemVer,
     parse_semver_from_string,
 )
+
+# Module-level logger for coercion observability
+_logger = logging.getLogger(__name__)
 
 
 def coerce_to_semver(value: object, field_name: str) -> ModelSemVer:
@@ -59,11 +63,32 @@ def coerce_to_semver(value: object, field_name: str) -> ModelSemVer:
         ModelSemVer(major=1, minor=2, patch=3)
     """
     if isinstance(value, ModelSemVer):
+        _logger.debug(
+            "Coercion: field=%s target_type=ModelSemVer original_type=ModelSemVer "
+            "-> no coercion needed",
+            field_name,
+        )
         return value
     if isinstance(value, dict):
-        return ModelSemVer(**value)
+        result = ModelSemVer(**value)
+        _logger.debug(
+            "Coercion: field=%s target_type=ModelSemVer original_type=dict "
+            "original_value=%r -> coerced to %s",
+            field_name,
+            value,
+            str(result),
+        )
+        return result
     if isinstance(value, str):
-        return parse_semver_from_string(value)
+        result = parse_semver_from_string(value)
+        _logger.debug(
+            "Coercion: field=%s target_type=ModelSemVer original_type=str "
+            "original_value=%r -> coerced to %s",
+            field_name,
+            value,
+            str(result),
+        )
+        return result
     raise ModelOnexError(
         message=f"{field_name} must be ModelSemVer, dict, or str, got {type(value).__name__}",
         error_code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -95,11 +120,27 @@ def coerce_to_namespace(value: object) -> Namespace:
         Namespace(value="omnibase.validators")
     """
     if isinstance(value, Namespace):
+        _logger.debug(
+            "Coercion: field=namespace target_type=Namespace original_type=Namespace "
+            "-> no coercion needed"
+        )
         return value
     if isinstance(value, str):
-        return Namespace(value=value)
+        result = Namespace(value=value)
+        _logger.debug(
+            "Coercion: field=namespace target_type=Namespace original_type=str "
+            "original_value=%r -> coerced to Namespace",
+            value,
+        )
+        return result
     if isinstance(value, dict) and "value" in value:
-        return Namespace(**value)
+        result = Namespace(**value)
+        _logger.debug(
+            "Coercion: field=namespace target_type=Namespace original_type=dict "
+            "original_value=%r -> coerced to Namespace",
+            value,
+        )
+        return result
     raise ModelOnexError(
         message="Namespace must be a Namespace, str, or dict with 'value'",
         error_code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -197,9 +238,16 @@ def coerce_protocols_to_list(value: list[str] | str) -> list[str]:
         >>> coerce_protocols_to_list("['validator/v1']")
         ['validator/v1']
     """
+    original_value = value
+    original_type = type(value).__name__
     if isinstance(value, str):
         try:
             value = ast.literal_eval(value)
+            _logger.debug(
+                "Coercion: field=protocols_supported target_type=list[str] "
+                "original_type=str original_value=%r -> coerced via ast.literal_eval",
+                original_value,
+            )
         except (ValueError, SyntaxError):
             # ast.literal_eval raises ValueError for malformed expressions
             # and SyntaxError for invalid Python syntax
@@ -211,5 +259,10 @@ def coerce_protocols_to_list(value: list[str] | str) -> list[str]:
         raise ModelOnexError(
             message=f"protocols_supported must be a list, got: {value}",
             error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+        )
+    if original_type == "list":
+        _logger.debug(
+            "Coercion: field=protocols_supported target_type=list[str] "
+            "original_type=list -> no coercion needed"
         )
     return value

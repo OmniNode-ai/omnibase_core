@@ -33,6 +33,7 @@ from omnibase_core.protocols.compute.protocol_performance_monitor import (
 from omnibase_core.protocols.compute.protocol_timing_service import (
     ProtocolTimingService,
 )
+from omnibase_core.protocols.compute.protocol_tool_cache import ProtocolToolCache
 
 __all__ = [
     "ProtocolAsyncCircuitBreaker",
@@ -43,4 +44,5 @@ __all__ = [
     "ProtocolParallelExecutor",
     "ProtocolPerformanceMonitor",
     "ProtocolTimingService",
+    "ProtocolToolCache",
 ]

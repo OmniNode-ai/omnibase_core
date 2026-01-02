@@ -91,10 +91,12 @@ class ModelWorkflowCoordinator:
                 },
             )
             raise ModelOnexError(
-                error_code=EnumCoreErrorCode.OPERATION_FAILED,
                 message=f"Workflow execution failed: {e!s}",
-                workflow_id=str(workflow_id),
-                workflow_type=workflow_type,
+                error_code=EnumCoreErrorCode.OPERATION_FAILED,
+                context={
+                    "workflow_id": str(workflow_id),
+                    "workflow_type": workflow_type,
+                },
             ) from e
 
     async def _execute_workflow_type(

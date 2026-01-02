@@ -101,26 +101,14 @@ except ImportError:
     # container can function without monitoring capabilities
     PerformanceMonitor = None
 
-# Type aliases for protocols not yet implemented in omnibase_core.
-#
-# PLACEHOLDER TYPE RATIONALE:
-# These are typed as `object` (the universal base type in Python) because:
-# 1. The actual protocol definitions don't exist yet in omnibase_core
-# 2. Using `object` allows type checking to pass while signaling "any type"
-# 3. When protocols are implemented, these aliases will be replaced with imports
-#
-# Future: Replace with proper protocol imports once implemented:
-#   from omnibase_core.protocols.database import ProtocolDatabaseConnection
-#   from omnibase_core.protocols.discovery import ProtocolServiceDiscovery
-#
-# TODO(OMN-XXXX): Define proper protocol types for ProtocolDatabaseConnection and ProtocolServiceDiscovery
-# - ProtocolDatabaseConnection: Should define async methods for connection lifecycle, query execution,
-#   transaction management, and connection pooling
-# - ProtocolServiceDiscovery: Should define methods for service registration, lookup, health checks,
-#   and service metadata retrieval
-# See: docs/protocols/README.md for protocol design guidelines
-ProtocolDatabaseConnection = object
-ProtocolServiceDiscovery = object
+# Infrastructure protocol imports for database and service discovery
+from omnibase_core.protocols.infrastructure import (
+    ProtocolDatabaseConnection,
+    ProtocolServiceDiscovery,
+)
+
+# Compute protocol imports for tool caching
+from omnibase_core.protocols.compute import ProtocolToolCache
 
 T = TypeVar("T")
 
@@ -209,12 +197,10 @@ class ModelONEXContainer:
 
         # Optional performance enhancements
         self.enable_performance_cache = enable_performance_cache
-        # tool_cache is typed as object | None because MemoryMappedToolCache may not
-        # be available (optional import). All usages include defensive guards:
-        # - None check: `if self.tool_cache:`
-        # - Method check: `hasattr(self.tool_cache, 'method_name')`
-        # This ensures safe operation when cache module is unavailable.
-        self.tool_cache: object | None = None
+        # tool_cache uses ProtocolToolCache for duck typing support.
+        # MemoryMappedToolCache may not be available (optional import).
+        # When not None, tool_cache is guaranteed to implement ProtocolToolCache.
+        self.tool_cache: ProtocolToolCache | None = None
         self.performance_monitor: ProtocolPerformanceMonitor | None = None
 
         # Initialize ServiceRegistry (new DI system)
@@ -445,17 +431,16 @@ class ModelONEXContainer:
             # Check tool cache for metadata (optimization)
             cache_hit = False
             if service_name and self.tool_cache:
-                # tool_cache is MemoryMappedToolCache when not None
-                if hasattr(self.tool_cache, "lookup_tool"):
-                    tool_metadata = self.tool_cache.lookup_tool(
-                        service_name.replace("_registry", ""),
+                # tool_cache implements ProtocolToolCache when not None
+                tool_metadata = self.tool_cache.lookup_tool(
+                    service_name.replace("_registry", ""),
+                )
+                if tool_metadata:
+                    cache_hit = True
+                    emit_log_event(
+                        LogLevel.DEBUG,
+                        f"Tool metadata cache hit for {service_name}",
                     )
-                    if tool_metadata:
-                        cache_hit = True
-                        emit_log_event(
-                            LogLevel.DEBUG,
-                            f"Tool metadata cache hit for {service_name}",
-                        )
 
             # Perform actual service resolution
             service_instance = asyncio.run(
@@ -587,7 +572,8 @@ class ModelONEXContainer:
         Raises:
             ModelOnexError: If service discovery is not registered.
         """
-        return await self.get_service_async(ProtocolServiceDiscovery)
+        # type-abstract: Protocol used for DI resolution, concrete impl registered at runtime
+        return await self.get_service_async(ProtocolServiceDiscovery)  # type: ignore[type-abstract]
 
     async def get_database(self) -> ProtocolDatabaseConnection:
         """Get the database connection implementation.
@@ -600,7 +586,8 @@ class ModelONEXContainer:
         Raises:
             ModelOnexError: If database connection is not registered.
         """
-        return await self.get_service_async(ProtocolDatabaseConnection)
+        # type-abstract: Protocol used for DI resolution, concrete impl registered at runtime
+        return await self.get_service_async(ProtocolDatabaseConnection)  # type: ignore[type-abstract]
 
     async def get_external_services_health(self) -> dict[str, object]:
         """Get health status for all external services.
@@ -712,7 +699,7 @@ class ModelONEXContainer:
             key: value.to_value() for key, value in base_metrics.items()
         }
 
-        if self.tool_cache and hasattr(self.tool_cache, "get_cache_stats"):
+        if self.tool_cache:
             stats["tool_cache"] = self.tool_cache.get_cache_stats()
 
         if self.performance_monitor:
@@ -768,7 +755,7 @@ class ModelONEXContainer:
         Closes the tool cache if enabled and emits a log event. Call this
         when shutting down the application to release memory-mapped files.
         """
-        if self.tool_cache and hasattr(self.tool_cache, "close"):
+        if self.tool_cache:
             self.tool_cache.close()
 
         emit_log_event(

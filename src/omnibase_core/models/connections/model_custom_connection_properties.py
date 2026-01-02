@@ -7,9 +7,13 @@ Each sub-model handles a specific concern area.
 
 from __future__ import annotations
 
+import logging
 from uuid import UUID
 
 from pydantic import BaseModel, Field, ValidationError, model_validator
+
+# Module-level logger for coercion observability
+_logger = logging.getLogger(__name__)
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_instance_type import EnumInstanceType
@@ -24,7 +28,7 @@ from .model_performance_properties import ModelPerformanceProperties
 
 
 def _coerce_to_model[ModelT: BaseModel](
-    value: object, model_type: type[ModelT]
+    value: object, model_type: type[ModelT], field_name: str = "unknown"
 ) -> ModelT:
     """Coerce a value to a Pydantic model using duck typing.
 
@@ -42,18 +46,42 @@ def _coerce_to_model[ModelT: BaseModel](
     Args:
         value: The value to coerce (dict, model instance, or None)
         model_type: The target Pydantic model class
+        field_name: Name of the field being coerced (for logging context)
 
     Returns:
         A validated instance of model_type
     """
     if value is None:
+        _logger.debug(
+            "Coercion: field=%s target_type=%s original_value=None "
+            "-> returning default instance",
+            field_name,
+            model_type.__name__,
+        )
         return model_type()
     try:
         # model_validate handles both dicts and existing instances via duck typing
-        return model_type.model_validate(value)
-    except ValidationError:
+        result = model_type.model_validate(value)
+        _logger.debug(
+            "Coercion: field=%s target_type=%s original_type=%s "
+            "-> validated successfully",
+            field_name,
+            model_type.__name__,
+            type(value).__name__,
+        )
+        return result
+    except ValidationError as e:
         # Lenient mode: return default on validation failure
         # This maintains backward compatibility with the original behavior
+        _logger.debug(
+            "Coercion: field=%s target_type=%s original_type=%s original_value=%r "
+            "-> validation failed, returning default instance. Error: %s",
+            field_name,
+            model_type.__name__,
+            type(value).__name__,
+            value,
+            str(e),
+        )
         return model_type()
 
 
@@ -177,7 +205,42 @@ class ModelCustomConnectionProperties(BaseModel):
         collation: str | None = None,
         **kwargs: object,
     ) -> ModelCustomConnectionProperties:
-        """Create database connection properties."""
+        """Create database connection properties with optional nested model configuration.
+
+        This factory method creates a connection properties instance configured for
+        database connections. The primary database properties are set from the explicit
+        parameters, while other nested models can be provided via kwargs.
+
+        Args:
+            database_name: Display name for the database.
+            schema_name: Display name for the schema.
+            charset: Database character set (e.g., "utf8", "utf8mb4").
+            collation: Database collation (e.g., "utf8_general_ci").
+            **kwargs: Optional nested model configuration. Supported keys:
+                - message_queue: Dict or ModelMessageQueueProperties instance
+                - cloud_service: Dict or ModelCloudServiceProperties instance
+                - performance: Dict or ModelPerformanceProperties instance
+                - custom_properties: Dict or ModelCustomProperties instance
+
+        Returns:
+            Configured ModelCustomConnectionProperties instance.
+
+        Note:
+            Kwargs handling follows duck typing principles per ONEX guidelines:
+            - Dict values are coerced to the appropriate model type via Pydantic validation
+            - Existing model instances are validated and passed through
+            - None values result in default model instances
+            - Invalid types (non-dict, non-model) return default model instances (lenient mode)
+            - Unknown kwargs (not in the supported keys list) are silently ignored
+
+        Example:
+            >>> props = ModelCustomConnectionProperties.create_database_connection(
+            ...     database_name="orders_db",
+            ...     charset="utf8mb4",
+            ...     performance={"max_connections": 200, "enable_compression": True},
+            ...     cloud_service={"region": "us-west-2"},
+            ... )
+        """
         database_props = ModelDatabaseProperties(
             database_display_name=database_name,
             schema_display_name=schema_name,
@@ -193,16 +256,24 @@ class ModelCustomConnectionProperties(BaseModel):
         return cls(
             database=database_props,
             message_queue=_coerce_to_model(
-                kwargs_dict.pop("message_queue", None), ModelMessageQueueProperties
+                kwargs_dict.pop("message_queue", None),
+                ModelMessageQueueProperties,
+                "message_queue",
             ),
             cloud_service=_coerce_to_model(
-                kwargs_dict.pop("cloud_service", None), ModelCloudServiceProperties
+                kwargs_dict.pop("cloud_service", None),
+                ModelCloudServiceProperties,
+                "cloud_service",
             ),
             performance=_coerce_to_model(
-                kwargs_dict.pop("performance", None), ModelPerformanceProperties
+                kwargs_dict.pop("performance", None),
+                ModelPerformanceProperties,
+                "performance",
             ),
             custom_properties=_coerce_to_model(
-                kwargs_dict.pop("custom_properties", None), ModelCustomProperties
+                kwargs_dict.pop("custom_properties", None),
+                ModelCustomProperties,
+                "custom_properties",
             ),
         )
 
@@ -215,7 +286,43 @@ class ModelCustomConnectionProperties(BaseModel):
         durable: bool | None = None,
         **kwargs: object,
     ) -> ModelCustomConnectionProperties:
-        """Create message queue connection properties."""
+        """Create message queue connection properties with optional nested model configuration.
+
+        This factory method creates a connection properties instance configured for
+        message queue/broker connections. The primary queue properties are set from
+        the explicit parameters, while other nested models can be provided via kwargs.
+
+        Args:
+            queue_name: Display name for the queue.
+            exchange_name: Display name for the exchange.
+            routing_key: Routing key for message routing (e.g., "orders.created").
+            durable: Whether the queue/exchange should survive broker restarts.
+            **kwargs: Optional nested model configuration. Supported keys:
+                - database: Dict or ModelDatabaseProperties instance
+                - cloud_service: Dict or ModelCloudServiceProperties instance
+                - performance: Dict or ModelPerformanceProperties instance
+                - custom_properties: Dict or ModelCustomProperties instance
+
+        Returns:
+            Configured ModelCustomConnectionProperties instance.
+
+        Note:
+            Kwargs handling follows duck typing principles per ONEX guidelines:
+            - Dict values are coerced to the appropriate model type via Pydantic validation
+            - Existing model instances are validated and passed through
+            - None values result in default model instances
+            - Invalid types (non-dict, non-model) return default model instances (lenient mode)
+            - Unknown kwargs (not in the supported keys list) are silently ignored
+
+        Example:
+            >>> props = ModelCustomConnectionProperties.create_queue_connection(
+            ...     queue_name="events_queue",
+            ...     exchange_name="events_exchange",
+            ...     routing_key="events.#",
+            ...     durable=True,
+            ...     performance={"max_connections": 150},
+            ... )
+        """
         queue_props = ModelMessageQueueProperties(
             queue_display_name=queue_name,
             exchange_display_name=exchange_name,
@@ -230,17 +337,25 @@ class ModelCustomConnectionProperties(BaseModel):
         # Call constructor with coerced parameters
         return cls(
             database=_coerce_to_model(
-                kwargs_dict.pop("database", None), ModelDatabaseProperties
+                kwargs_dict.pop("database", None),
+                ModelDatabaseProperties,
+                "database",
             ),
             message_queue=queue_props,
             cloud_service=_coerce_to_model(
-                kwargs_dict.pop("cloud_service", None), ModelCloudServiceProperties
+                kwargs_dict.pop("cloud_service", None),
+                ModelCloudServiceProperties,
+                "cloud_service",
             ),
             performance=_coerce_to_model(
-                kwargs_dict.pop("performance", None), ModelPerformanceProperties
+                kwargs_dict.pop("performance", None),
+                ModelPerformanceProperties,
+                "performance",
             ),
             custom_properties=_coerce_to_model(
-                kwargs_dict.pop("custom_properties", None), ModelCustomProperties
+                kwargs_dict.pop("custom_properties", None),
+                ModelCustomProperties,
+                "custom_properties",
             ),
         )
 
@@ -253,19 +368,45 @@ class ModelCustomConnectionProperties(BaseModel):
         availability_zone: str | None = None,
         **kwargs: object,
     ) -> ModelCustomConnectionProperties:
-        """Create service connection properties.
+        """Create service connection properties with optional nested model configuration.
+
+        This factory method creates a connection properties instance configured for
+        cloud service connections. The primary service properties are set from the
+        explicit parameters, while other nested models can be provided via kwargs.
 
         Args:
-            service_name: Display name for the service
+            service_name: Display name for the service.
             instance_type: Instance type as enum or string (e.g., "MEDIUM", "LARGE").
                 Accepts EnumInstanceType values directly, string representations that
-                will be coerced to the enum, or None for no instance type.
-            region: Cloud region identifier
-            availability_zone: Availability zone within the region
-            **kwargs: Additional properties passed to nested models
+                will be coerced to the enum, or None for no instance type. Unknown
+                strings fall back to EnumInstanceType.MEDIUM.
+            region: Cloud region identifier (e.g., "us-west-2", "eu-central-1").
+            availability_zone: Availability zone within the region (e.g., "us-west-2a").
+            **kwargs: Optional nested model configuration. Supported keys:
+                - database: Dict or ModelDatabaseProperties instance
+                - message_queue: Dict or ModelMessageQueueProperties instance
+                - performance: Dict or ModelPerformanceProperties instance
+                - custom_properties: Dict or ModelCustomProperties instance
 
         Returns:
-            Configured ModelCustomConnectionProperties instance
+            Configured ModelCustomConnectionProperties instance.
+
+        Note:
+            Kwargs handling follows duck typing principles per ONEX guidelines:
+            - Dict values are coerced to the appropriate model type via Pydantic validation
+            - Existing model instances are validated and passed through
+            - None values result in default model instances
+            - Invalid types (non-dict, non-model) return default model instances (lenient mode)
+            - Unknown kwargs (not in the supported keys list) are silently ignored
+
+        Example:
+            >>> props = ModelCustomConnectionProperties.create_service_connection(
+            ...     service_name="api-gateway",
+            ...     instance_type=EnumInstanceType.T3_LARGE,
+            ...     region="us-east-1",
+            ...     database={"database_display_name": "gateway_db"},
+            ...     performance={"max_connections": 1000},
+            ... )
         """
         # Handle instance_type conversion with fallback for unknown strings.
         # NOTE: The isinstance checks below for EnumInstanceType and str are justified
@@ -275,13 +416,27 @@ class ModelCustomConnectionProperties(BaseModel):
 
         if instance_type is None:
             # Keep final_instance_type as None
-            pass
+            _logger.debug(
+                "Coercion: field=instance_type target_type=EnumInstanceType "
+                "original_value=None -> keeping as None"
+            )
         elif isinstance(instance_type, EnumInstanceType):
             final_instance_type = instance_type
+            _logger.debug(
+                "Coercion: field=instance_type target_type=EnumInstanceType "
+                "original_type=EnumInstanceType original_value=%s -> no coercion needed",
+                instance_type.value,
+            )
         elif isinstance(instance_type, str):
             try:
                 # Try to convert string to enum
                 final_instance_type = EnumInstanceType(instance_type)
+                _logger.debug(
+                    "Coercion: field=instance_type target_type=EnumInstanceType "
+                    "original_type=str original_value=%r -> coerced to %s",
+                    instance_type,
+                    final_instance_type.value,
+                )
             except ValueError:
                 # If conversion fails, try to find a match by name
                 for enum_val in EnumInstanceType:
@@ -290,10 +445,22 @@ class ModelCustomConnectionProperties(BaseModel):
                         or enum_val.value == instance_type
                     ):
                         final_instance_type = enum_val
+                        _logger.debug(
+                            "Coercion: field=instance_type target_type=EnumInstanceType "
+                            "original_type=str original_value=%r -> coerced via name match to %s",
+                            instance_type,
+                            final_instance_type.value,
+                        )
                         break
                 else:
                     # No match found, use default fallback
                     final_instance_type = EnumInstanceType.MEDIUM
+                    _logger.debug(
+                        "Coercion: field=instance_type target_type=EnumInstanceType "
+                        "original_type=str original_value=%r -> unknown value, "
+                        "falling back to default MEDIUM",
+                        instance_type,
+                    )
 
         cloud_props = ModelCloudServiceProperties(
             service_display_name=service_name,
@@ -309,17 +476,25 @@ class ModelCustomConnectionProperties(BaseModel):
         # Call constructor with coerced parameters
         return cls(
             database=_coerce_to_model(
-                kwargs_dict.pop("database", None), ModelDatabaseProperties
+                kwargs_dict.pop("database", None),
+                ModelDatabaseProperties,
+                "database",
             ),
             message_queue=_coerce_to_model(
-                kwargs_dict.pop("message_queue", None), ModelMessageQueueProperties
+                kwargs_dict.pop("message_queue", None),
+                ModelMessageQueueProperties,
+                "message_queue",
             ),
             cloud_service=cloud_props,
             performance=_coerce_to_model(
-                kwargs_dict.pop("performance", None), ModelPerformanceProperties
+                kwargs_dict.pop("performance", None),
+                ModelPerformanceProperties,
+                "performance",
             ),
             custom_properties=_coerce_to_model(
-                kwargs_dict.pop("custom_properties", None), ModelCustomProperties
+                kwargs_dict.pop("custom_properties", None),
+                ModelCustomProperties,
+                "custom_properties",
             ),
         )
 

@@ -645,3 +645,195 @@ class TestFactoryMethodsExtraKwargs:
         assert service_props.message_queue.queue_display_name == "q"
         assert service_props.performance.max_connections == 3
         assert service_props.custom_properties.get_custom_value("f") is True
+
+
+@pytest.mark.unit
+class TestFactoryMethodsUnknownKwargs:
+    """Test cases for unknown kwargs handling in factory methods.
+
+    These tests verify that factory methods silently ignore unknown kwargs
+    (kwargs that are not one of the supported nested model keys). This
+    behavior is documented in the factory method docstrings.
+
+    The supported kwargs are:
+    - create_database_connection: message_queue, cloud_service, performance, custom_properties
+    - create_queue_connection: database, cloud_service, performance, custom_properties
+    - create_service_connection: database, message_queue, performance, custom_properties
+    """
+
+    def test_create_database_connection_ignores_unknown_kwargs(self):
+        """Test that unknown kwargs are silently ignored in create_database_connection."""
+        # Pass unknown kwargs that don't match any supported key
+        props = ModelCustomConnectionProperties.create_database_connection(
+            database_name="test_db",
+            unknown_param="should_be_ignored",
+            another_unknown=12345,
+            yet_another={"nested": "value"},
+        )
+
+        # Primary properties should be set correctly
+        assert props.database.database_display_name == "test_db"
+
+        # All other nested models should have defaults (unknown kwargs ignored)
+        assert props.message_queue.queue_display_name is None
+        assert props.cloud_service.region is None
+        assert props.performance.max_connections == 100  # Default
+
+        # The model should not have any attributes from unknown kwargs
+        # (They're silently ignored, not stored anywhere)
+        assert not hasattr(props, "unknown_param")
+        assert not hasattr(props, "another_unknown")
+        assert not hasattr(props, "yet_another")
+
+    def test_create_queue_connection_ignores_unknown_kwargs(self):
+        """Test that unknown kwargs are silently ignored in create_queue_connection."""
+        props = ModelCustomConnectionProperties.create_queue_connection(
+            queue_name="test_queue",
+            typo_parameter="ignored",
+            invalid_key=object(),
+        )
+
+        # Primary properties should be set correctly
+        assert props.message_queue.queue_display_name == "test_queue"
+
+        # All other nested models should have defaults
+        assert props.database.database_display_name is None
+        assert props.cloud_service.region is None
+        assert props.performance.max_connections == 100
+
+    def test_create_service_connection_ignores_unknown_kwargs(self):
+        """Test that unknown kwargs are silently ignored in create_service_connection."""
+        props = ModelCustomConnectionProperties.create_service_connection(
+            service_name="test_service",
+            region="us-west-2",
+            misspelled_performance={
+                "max_connections": 500
+            },  # Note: should be 'performance'
+            random_param=True,
+        )
+
+        # Primary properties should be set correctly
+        assert props.cloud_service.service_display_name == "test_service"
+        assert props.cloud_service.region == "us-west-2"
+
+        # misspelled_performance was ignored, so performance has defaults
+        assert props.performance.max_connections == 100  # Default, not 500
+
+    def test_unknown_kwargs_mixed_with_valid_kwargs(self):
+        """Test that valid kwargs work correctly when mixed with unknown kwargs."""
+        props = ModelCustomConnectionProperties.create_database_connection(
+            database_name="test_db",
+            # Valid kwarg
+            performance={"max_connections": 200},
+            # Unknown kwargs (silently ignored)
+            unknown_key="ignored",
+            another_unknown=999,
+        )
+
+        # Valid kwargs should be processed
+        assert props.database.database_display_name == "test_db"
+        assert props.performance.max_connections == 200
+
+        # Unknown kwargs should not affect the result
+        assert props.message_queue.queue_display_name is None
+        assert props.cloud_service.region is None
+
+    def test_kwargs_similar_to_valid_keys_are_ignored(self):
+        """Test that kwargs with names similar to valid keys are still ignored.
+
+        This tests that typos in kwarg names are silently ignored rather than
+        causing errors. Users should be aware that misspelled keys will not
+        raise errors but will result in default values.
+        """
+        props = ModelCustomConnectionProperties.create_database_connection(
+            database_name="test_db",
+            # Typos of valid keys (all should be silently ignored)
+            messagequeue={"queue_display_name": "queue"},  # Missing underscore
+            cloudservice={"region": "eu-west-1"},  # Missing underscore
+            Perforamnce={"max_connections": 300},  # Misspelled
+            Performance={"max_connections": 400},  # Wrong capitalization
+        )
+
+        # All should have defaults because the kwargs were ignored
+        assert props.database.database_display_name == "test_db"
+        assert props.message_queue.queue_display_name is None
+        assert props.cloud_service.region is None
+        assert props.performance.max_connections == 100  # Default
+
+    def test_empty_kwargs(self):
+        """Test that factory methods work correctly with no extra kwargs."""
+        props = ModelCustomConnectionProperties.create_database_connection(
+            database_name="test_db",
+        )
+
+        assert props.database.database_display_name == "test_db"
+        assert props.message_queue.queue_display_name is None
+        assert props.cloud_service.region is None
+        assert props.performance.max_connections == 100
+
+
+@pytest.mark.unit
+class TestCoerceToModelHelper:
+    """Test cases for the _coerce_to_model helper function behavior.
+
+    These tests verify the duck typing coercion behavior used by factory methods.
+    The helper function is tested indirectly through the factory method calls.
+    """
+
+    def test_coercion_with_valid_dict_extra_fields(self):
+        """Test that dicts with extra unknown fields are handled gracefully.
+
+        The nested model's model_config has extra='ignore', so unknown fields
+        in the dict are silently ignored during coercion.
+        """
+        props = ModelCustomConnectionProperties.create_database_connection(
+            database_name="test_db",
+            performance={
+                "max_connections": 250,
+                "unknown_nested_field": "should_be_ignored",
+                "another_unknown": 12345,
+            },
+        )
+
+        # Known field should be set
+        assert props.performance.max_connections == 250
+        # Unknown fields in the dict are ignored by the nested model
+        assert not hasattr(props.performance, "unknown_nested_field")
+        assert not hasattr(props.performance, "another_unknown")
+
+    def test_coercion_with_callable_returns_default(self):
+        """Test that passing a callable (function) returns default instance."""
+        props = ModelCustomConnectionProperties.create_database_connection(
+            database_name="test_db",
+            performance=lambda x: x,  # Callable is not a valid input
+        )
+
+        # Should get default instance (lenient mode)
+        assert props.performance.max_connections == 100
+
+    def test_coercion_with_complex_invalid_types(self):
+        """Test coercion with various invalid types returns defaults."""
+
+        # Test with generator
+        def gen():
+            yield 1
+
+        props1 = ModelCustomConnectionProperties.create_database_connection(
+            database_name="test1",
+            performance=gen(),
+        )
+        assert props1.performance.max_connections == 100
+
+        # Test with bytes
+        props2 = ModelCustomConnectionProperties.create_database_connection(
+            database_name="test2",
+            performance=b"bytes_data",
+        )
+        assert props2.performance.max_connections == 100
+
+        # Test with frozenset
+        props3 = ModelCustomConnectionProperties.create_database_connection(
+            database_name="test3",
+            cloud_service=frozenset([1, 2, 3]),
+        )
+        assert props3.cloud_service.region is None

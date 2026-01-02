@@ -240,5 +240,7 @@ class ModelHealthStatus(BaseModel):
 # during circular import resolution - these will be resolved later in __init__.py
 try:
     ModelHealthStatus.model_rebuild()
-except Exception:  # error-ok: model_rebuild may fail during import, resolved in __init__.py
+except (
+    Exception
+):  # error-ok: model_rebuild may fail during import, resolved in __init__.py
     pass

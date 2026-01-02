@@ -27,6 +27,7 @@ from omnibase_core.models.configuration.model_workflow_configuration import (
     WorkflowStrategy,
 )
 
+from .model_git_hub_actions_container import ModelGitHubActionsContainer
 from .model_step import ModelStep
 
 
@@ -47,7 +48,8 @@ class ModelJob(BaseModel):
         timeout_minutes: Maximum job duration in minutes.
         strategy: Matrix strategy for parallel job variants.
         continue_on_error: Whether workflow continues if job fails.
-        container: Docker container for job execution.
+        container: Docker container for job execution (string for image name,
+            or ModelGitHubActionsContainer for full configuration).
         services: Service containers (databases, caches) for the job.
         outputs: Job outputs available to dependent jobs.
 
@@ -71,15 +73,6 @@ class ModelJob(BaseModel):
     timeout_minutes: int | None = Field(default=None, alias="timeout-minutes")
     strategy: WorkflowStrategy | None = None
     continue_on_error: bool | None = Field(default=None, alias="continue-on-error")
-    # GitHub Actions container config supports complex nested structures:
-    # - image: str (container image)
-    # - credentials: dict[str, str] (username/password)
-    # - env: dict[str, str] (environment variables)
-    # - ports: list[str | int] (port mappings like "80:80" or 443)
-    # - volumes: list[str] (volume mounts)
-    # - options: str (additional docker options)
-    container: str | dict[str, str | int | list[str | int] | dict[str, str]] | None = (
-        None
-    )
+    container: str | ModelGitHubActionsContainer | None = None
     services: WorkflowServices | None = None
     outputs: dict[str, str] | None = None

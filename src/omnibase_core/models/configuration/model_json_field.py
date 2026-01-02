@@ -30,14 +30,14 @@ def _validate_type_consistency[T](
     field_type = info.data.get("field_type")
     if field_type == expected_type and value is None:
         raise ModelOnexError(
-            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=f"{field_name} must be provided when field_type="
             f"{expected_type.name}",
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
         )
     if field_type != expected_type and value is not None:
         raise ModelOnexError(
-            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=f"{field_name} must be None when field_type={field_type}",
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
         )
     return value
 
@@ -133,6 +133,6 @@ class ModelJsonField(BaseModel):
                 return None
             case _:
                 raise ModelOnexError(
-                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"Unknown field_type: {self.field_type}",
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 )

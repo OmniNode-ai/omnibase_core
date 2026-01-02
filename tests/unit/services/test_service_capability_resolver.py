@@ -24,7 +24,6 @@ from uuid import UUID, uuid4
 import pytest
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.capabilities import ModelRequirementSet
 from omnibase_core.models.bindings.model_binding import ModelBinding
 from omnibase_core.models.bindings.model_resolution_result import ModelResolutionResult
 from omnibase_core.models.capabilities.model_capability_dependency import (

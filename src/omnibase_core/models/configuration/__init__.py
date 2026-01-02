@@ -12,6 +12,7 @@ from .model_compute_cache_config import ModelComputeCacheConfig
 from .model_config_types import ConfigValue
 from .model_environment_config_override import ModelEnvironmentConfigOverride
 from .model_environment_override import ModelEnvironmentOverride
+from .model_git_hub_actions_container import ModelGitHubActionsContainer
 from .model_git_hub_actions_workflow import ModelGitHubActionsWorkflow
 from .model_git_hub_comment_change import ModelGitHubCommentChange
 from .model_git_hub_issue_comment_changes import ModelGitHubIssueCommentChanges
@@ -36,6 +37,7 @@ __all__ = [
     "ModelDatabaseConfig",
     "ModelEnvironmentConfigOverride",
     "ModelEnvironmentOverride",
+    "ModelGitHubActionsContainer",
     "ModelGitHubActionsWorkflow",
     "ModelGitHubCommentChange",
     "ModelGitHubIssueCommentChanges",
