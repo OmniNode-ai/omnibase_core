@@ -222,6 +222,12 @@ class ModelProjectorContract(BaseModel):
             "Each event name must match pattern: lowercase.segments.vN"
         ),
         min_length=1,
+        json_schema_extra={
+            "items": {
+                "type": "string",
+                "pattern": r"^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)*\.v[0-9]+$",
+            }
+        },
     )
 
     projection_schema: ModelProjectorSchema = Field(
