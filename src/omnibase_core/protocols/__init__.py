@@ -85,6 +85,7 @@ from omnibase_core.protocols.compute import (
     ProtocolComputeCache,
     ProtocolParallelExecutor,
     ProtocolTimingService,
+    ProtocolToolCache,
 )
 
 # =============================================================================
@@ -143,6 +144,14 @@ from omnibase_core.protocols.handlers import ProtocolHandlerTypeResolver
 # HTTP Module Exports
 # =============================================================================
 from omnibase_core.protocols.http import ProtocolHttpClient, ProtocolHttpResponse
+
+# =============================================================================
+# Infrastructure Module Exports
+# =============================================================================
+from omnibase_core.protocols.infrastructure import (
+    ProtocolDatabaseConnection,
+    ProtocolServiceDiscovery,
+)
 
 # =============================================================================
 # Intents Module Exports
@@ -364,11 +373,17 @@ __all__ = [
     "ProtocolComputeCache",
     "ProtocolParallelExecutor",
     "ProtocolTimingService",
+    "ProtocolToolCache",
     # ==========================================================================
     # HTTP Module
     # ==========================================================================
     "ProtocolHttpClient",
     "ProtocolHttpResponse",
+    # ==========================================================================
+    # Infrastructure Module
+    # ==========================================================================
+    "ProtocolDatabaseConnection",
+    "ProtocolServiceDiscovery",
     # ==========================================================================
     # Intents Module
     # ==========================================================================

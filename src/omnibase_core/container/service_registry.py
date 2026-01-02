@@ -212,7 +212,7 @@ class ServiceRegistry:
 
             return registration_id
 
-        except (SystemExit, KeyboardInterrupt, GeneratorExit):
+        except (GeneratorExit, KeyboardInterrupt, SystemExit):
             # Never catch cancellation/exit signals
             raise
         except asyncio.CancelledError:
@@ -308,7 +308,7 @@ class ServiceRegistry:
 
             return registration_id
 
-        except (SystemExit, KeyboardInterrupt, GeneratorExit):
+        except (GeneratorExit, KeyboardInterrupt, SystemExit):
             # Never catch cancellation/exit signals
             raise
         except asyncio.CancelledError:
@@ -495,7 +495,7 @@ class ServiceRegistry:
 
             return instance
 
-        except (SystemExit, KeyboardInterrupt, GeneratorExit):
+        except (GeneratorExit, KeyboardInterrupt, SystemExit):
             # Never catch cancellation/exit signals
             raise
         except asyncio.CancelledError:

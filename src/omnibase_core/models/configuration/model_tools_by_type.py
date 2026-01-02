@@ -4,8 +4,6 @@ Tools by Type Collection Model for ONEX Configuration System.
 Strongly typed model for tools filtered by type.
 """
 
-from typing import Any
-
 from pydantic import BaseModel, Field
 
 
@@ -44,6 +42,6 @@ class ModelToolsByType(BaseModel):
         """Get total count of tools."""
         return len(self.tools)
 
-    def get_tool_names(self) -> list[Any]:
-        """Get list[Any]of all tool names."""
+    def get_tool_names(self) -> list[str]:
+        """Get list of all tool names."""
         return list(self.tools.keys())

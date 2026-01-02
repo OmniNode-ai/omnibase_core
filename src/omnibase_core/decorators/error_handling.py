@@ -71,7 +71,7 @@ def standard_error_handling(
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             try:
                 return func(*args, **kwargs)
-            except (SystemExit, KeyboardInterrupt, GeneratorExit):
+            except (GeneratorExit, KeyboardInterrupt, SystemExit):
                 # Never catch cancellation/exit signals - they must propagate
                 raise
             except asyncio.CancelledError:
@@ -125,7 +125,7 @@ def validation_error_handling(
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             try:
                 return func(*args, **kwargs)
-            except (SystemExit, KeyboardInterrupt, GeneratorExit):
+            except (GeneratorExit, KeyboardInterrupt, SystemExit):
                 # Never catch cancellation/exit signals - they must propagate
                 raise
             except asyncio.CancelledError:
@@ -183,7 +183,7 @@ def io_error_handling(
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             try:
                 return func(*args, **kwargs)
-            except (SystemExit, KeyboardInterrupt, GeneratorExit):
+            except (GeneratorExit, KeyboardInterrupt, SystemExit):
                 # Never catch cancellation/exit signals - they must propagate
                 raise
             except asyncio.CancelledError:

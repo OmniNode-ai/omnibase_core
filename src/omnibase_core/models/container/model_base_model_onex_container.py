@@ -1,10 +1,29 @@
-"""
-Base dependency injection container.
+"""Base dependency injection container using dependency-injector.
+
+This module provides _BaseModelONEXContainer, a DeclarativeContainer that
+defines the core service providers for the ONEX framework. It uses the
+dependency-injector library to manage singleton and factory providers.
+
+The container is wrapped by ModelONEXContainer which adds caching, logging,
+and performance monitoring. This base container should not be used directly
+in application code.
+
+Providers:
+    - config: Configuration provider for environment settings
+    - enhanced_logger: Factory for ModelEnhancedLogger instances
+    - workflow_factory: Factory for ModelWorkflowFactory instances
+    - workflow_coordinator: Singleton ModelWorkflowCoordinator
+    - action_registry: Singleton ModelActionRegistry with core actions
+    - event_type_registry: Singleton ModelEventTypeRegistry with core types
+    - command_registry: Singleton ModelCliCommandRegistry
+    - secret_manager: Singleton ModelSecretManager
+
+See Also:
+    - ModelONEXContainer: Production container wrapping this base
+    - dependency_injector: Third-party DI library used for providers
 """
 
 from __future__ import annotations
-
-from typing import Any
 
 from dependency_injector import containers, providers
 
@@ -20,46 +39,108 @@ from .model_workflow_factory import ModelWorkflowFactory
 
 
 def _create_enhanced_logger(level: LogLevel) -> ModelEnhancedLogger:
-    """Create enhanced logger with monadic patterns."""
+    """Create enhanced logger with monadic patterns.
+
+    Args:
+        level: Logging level for the logger instance.
+
+    Returns:
+        Configured ModelEnhancedLogger instance.
+    """
     return ModelEnhancedLogger(level)
 
 
 def _create_workflow_factory() -> ModelWorkflowFactory:
-    """Create workflow factory for LlamaIndex integration."""
+    """Create workflow factory for LlamaIndex integration.
+
+    Returns:
+        New ModelWorkflowFactory instance for creating workflows.
+    """
     return ModelWorkflowFactory()
 
 
-def _create_workflow_coordinator(factory: Any) -> ModelWorkflowCoordinator:
-    """Create workflow execution coordinator."""
+def _create_workflow_coordinator(
+    factory: ModelWorkflowFactory,
+) -> ModelWorkflowCoordinator:
+    """Create workflow execution coordinator.
+
+    Args:
+        factory: Workflow factory for creating new workflow instances.
+
+    Returns:
+        Configured ModelWorkflowCoordinator for executing workflows.
+    """
     return ModelWorkflowCoordinator(factory)
 
 
 def _create_action_registry() -> ModelActionRegistry:
-    """Create action registry with core actions bootstrapped."""
+    """Create action registry with core actions bootstrapped.
+
+    Creates a new ModelActionRegistry and calls bootstrap_core_actions()
+    to register built-in actions (help, version, etc.).
+
+    Returns:
+        ModelActionRegistry with core actions pre-registered.
+    """
     registry = ModelActionRegistry()
     registry.bootstrap_core_actions()
     return registry
 
 
 def _create_event_type_registry() -> ModelEventTypeRegistry:
-    """Create event type registry with core event types bootstrapped."""
+    """Create event type registry with core event types bootstrapped.
+
+    Creates a new ModelEventTypeRegistry and calls bootstrap_core_event_types()
+    to register built-in event types.
+
+    Returns:
+        ModelEventTypeRegistry with core event types pre-registered.
+    """
     registry = ModelEventTypeRegistry()
     registry.bootstrap_core_event_types()
     return registry
 
 
 def _create_command_registry() -> ModelCliCommandRegistry:
-    """Create command registry."""
+    """Create command registry for CLI command discovery.
+
+    Returns:
+        Empty ModelCliCommandRegistry for registering CLI commands.
+    """
     return ModelCliCommandRegistry()
 
 
 def _create_secret_manager() -> ModelSecretManager:
-    """Create secret manager with auto-configuration."""
+    """Create secret manager with auto-configuration.
+
+    Uses ModelSecretManager.create_auto_configured() to detect and configure
+    the appropriate secrets backend (env vars, Vault, etc.).
+
+    Returns:
+        Auto-configured ModelSecretManager instance.
+    """
     return ModelSecretManager.create_auto_configured()
 
 
 class _BaseModelONEXContainer(containers.DeclarativeContainer):
-    """Base dependency injection container."""
+    """Base dependency injection container using dependency-injector library.
+
+    This is a DeclarativeContainer that defines providers for core ONEX services.
+    It provides singleton and factory patterns for service instantiation.
+
+    This class is internal and should not be instantiated directly. Use
+    ModelONEXContainer or create_model_onex_container() instead.
+
+    Providers:
+        config: Configuration provider for runtime settings.
+        enhanced_logger: Factory creating ModelEnhancedLogger instances.
+        workflow_factory: Factory creating ModelWorkflowFactory instances.
+        workflow_coordinator: Singleton ModelWorkflowCoordinator.
+        action_registry: Singleton ModelActionRegistry with core actions.
+        event_type_registry: Singleton ModelEventTypeRegistry with core types.
+        command_registry: Singleton ModelCliCommandRegistry.
+        secret_manager: Singleton ModelSecretManager.
+    """
 
     # === CONFIGURATION ===
     config = providers.Configuration()

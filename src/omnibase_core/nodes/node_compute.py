@@ -280,7 +280,7 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase):
                 },
             )
 
-        except (SystemExit, KeyboardInterrupt, GeneratorExit):
+        except (GeneratorExit, KeyboardInterrupt, SystemExit):
             # Never catch cancellation/exit signals
             raise
         except asyncio.CancelledError:
