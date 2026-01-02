@@ -7,10 +7,10 @@ invariants together for validation of a specific node or workflow.
 
 from __future__ import annotations
 
-import uuid
 from datetime import UTC, datetime
+from uuid import UUID, uuid4
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, PydanticUndefinedAnnotation
 
 from omnibase_core.enums import EnumInvariantSeverity, EnumInvariantType
 from omnibase_core.models.invariant.model_invariant import ModelInvariant
@@ -30,8 +30,8 @@ class ModelInvariantSet(BaseModel):
         validate_assignment=True,
     )
 
-    id: str = Field(
-        default_factory=lambda: str(uuid.uuid4()),
+    id: UUID = Field(
+        default_factory=uuid4,
         description="Unique identifier for this invariant set",
     )
     name: str = Field(
@@ -126,13 +126,55 @@ class ModelInvariantSet(BaseModel):
         # EnumInvariantType is a str enum, so direct comparison works
         return [inv for inv in self.invariants if inv.type == invariant_type]
 
+    def __eq__(self, other: object) -> bool:
+        """
+        Compare invariant sets, excluding timestamps.
+
+        The created_at field uses datetime.now(UTC) in default_factory,
+        which means two logically identical ModelInvariantSet instances
+        created at different times would have different timestamps.
+        This breaks equality checks and can cause issues with pytest-xdist
+        parallel testing. We exclude created_at from equality comparisons.
+
+        Args:
+            other: Object to compare against.
+
+        Returns:
+            True if invariant sets are logically equal, False otherwise.
+            Returns NotImplemented if other is not a ModelInvariantSet.
+        """
+        if not isinstance(other, ModelInvariantSet):
+            return NotImplemented
+        return (
+            self.id == other.id
+            and self.name == other.name
+            and self.target == other.target
+            and self.invariants == other.invariants
+            and self.description == other.description
+            and self.version == other.version
+        )
+
+    def __hash__(self) -> int:
+        """
+        Hash invariant set, excluding timestamps.
+
+        Consistent with __eq__, we exclude created_at from the hash
+        computation to ensure that logically equivalent instances
+        hash to the same value.
+
+        Returns:
+            Hash value based on id, name, target, and version.
+        """
+        return hash((self.id, self.name, self.target, self.version))
+
 
 # Rebuild model to resolve forward references
 def _rebuild_model() -> None:
     """Rebuild model after ModelInvariant is available."""
     try:
         ModelInvariantSet.model_rebuild()
-    except Exception:  # error-ok: model_rebuild may fail during import, safe to ignore
+    except PydanticUndefinedAnnotation:
+        # Forward reference not yet available - safe to ignore during import
         pass
 
 

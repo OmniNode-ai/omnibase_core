@@ -54,15 +54,27 @@ invariants:
             parse_invariant_set_from_yaml(yaml_content)
 
     def test_yaml_supports_all_invariant_types(self) -> None:
-        """Each invariant type can be defined in YAML."""
+        """Each invariant type can be defined in YAML with proper configs."""
+        # Each type requires specific config keys in YAML format
+        type_configs = {
+            EnumInvariantType.SCHEMA: 'json_schema: {"type": "object"}',
+            EnumInvariantType.FIELD_PRESENCE: 'fields: ["response"]',
+            EnumInvariantType.FIELD_VALUE: 'field_path: "status"',
+            EnumInvariantType.THRESHOLD: 'metric_name: "accuracy"',
+            EnumInvariantType.LATENCY: "max_ms: 5000",
+            EnumInvariantType.COST: "max_cost: 0.10",
+            EnumInvariantType.CUSTOM: 'callable_path: "my_module.validator"',
+        }
         for inv_type in EnumInvariantType:
+            config_yaml = type_configs[inv_type]
             yaml_content = f"""
 name: "Test {inv_type.value}"
 target: "node_test"
 invariants:
   - name: "{inv_type.value} test"
     type: {inv_type.value}
-    config: {{}}
+    config:
+      {config_yaml}
 """
             inv_set = parse_invariant_set_from_yaml(yaml_content)
             assert inv_set.invariants[0].type == inv_type

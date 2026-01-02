@@ -22,7 +22,7 @@ class ModelInvariantResult(BaseModel):
     and when the evaluation occurred.
 
     Attributes:
-        invariant_id: ID of the evaluated invariant.
+        invariant_id: ID of the evaluated invariant (UUID per ONEX standards).
         invariant_name: Name of the evaluated invariant.
         passed: Whether the invariant passed validation.
         severity: Severity of the invariant (for determining impact).

@@ -62,7 +62,7 @@ class TestInvariantSerialization:
         """Invariant should deserialize from JSON."""
         json_str = json.dumps(
             {
-                "id": "test-id",
+                "id": TEST_UUID_STR,
                 "name": "Test",
                 "type": "latency",
                 "severity": "warning",
@@ -75,6 +75,7 @@ class TestInvariantSerialization:
         assert inv.name == "Test"
         assert inv.type == EnumInvariantType.LATENCY
         assert inv.severity == EnumInvariantSeverity.WARNING
+        assert inv.id == TEST_UUID
 
     def test_invariant_preserves_complex_config(self) -> None:
         """Serialization preserves complex nested config."""
@@ -171,7 +172,7 @@ class TestInvariantResultSerialization:
         assert isinstance(json_str, str)
 
         parsed = json.loads(json_str)
-        assert parsed["invariant_id"] == TEST_UUID_STR
+        assert parsed["invariant_id"] == TEST_UUID_STR  # JSON serializes UUID to str
         assert parsed["passed"] is True
 
     def test_result_with_list_actual_value(self) -> None:

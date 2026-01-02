@@ -1,10 +1,16 @@
 """Tests for ModelInvariant model."""
 
+import uuid
+
 import pytest
 from pydantic import ValidationError
 
 from omnibase_core.enums import EnumInvariantSeverity, EnumInvariantType
 from omnibase_core.models.invariant import ModelInvariant
+
+# Test UUIDs for consistent testing
+TEST_UUID_1 = uuid.UUID("12345678-1234-5678-1234-567812345678")
+TEST_UUID_2 = uuid.UUID("87654321-4321-8765-4321-876543218765")
 
 
 @pytest.mark.unit
@@ -47,15 +53,25 @@ class TestModelInvariantValidation:
             config={"max_ms": 5000},
         )
         assert inv.id is not None
-        assert len(inv.id) == 36  # UUID format
+        assert isinstance(inv.id, uuid.UUID)
 
     def test_invariant_accepts_all_types(self) -> None:
-        """All 7 invariant types should be valid."""
+        """All 7 invariant types should be valid with proper configs."""
+        # Each type requires specific config keys
+        type_configs: dict[EnumInvariantType, dict[str, object]] = {
+            EnumInvariantType.SCHEMA: {"json_schema": {"type": "object"}},
+            EnumInvariantType.FIELD_PRESENCE: {"fields": ["response"]},
+            EnumInvariantType.FIELD_VALUE: {"field_path": "status"},
+            EnumInvariantType.THRESHOLD: {"metric_name": "accuracy"},
+            EnumInvariantType.LATENCY: {"max_ms": 5000},
+            EnumInvariantType.COST: {"max_cost": 0.10},
+            EnumInvariantType.CUSTOM: {"callable_path": "my_module.validator"},
+        }
         for inv_type in EnumInvariantType:
             inv = ModelInvariant(
                 name=f"Test {inv_type.value}",
                 type=inv_type,
-                config={},
+                config=type_configs[inv_type],
             )
             assert inv.type == inv_type
 
@@ -130,8 +146,8 @@ class TestModelInvariantOptionalFields:
         assert inv.enabled is False
 
     def test_invariant_with_custom_id(self) -> None:
-        """Invariant can accept custom ID."""
-        custom_id = "custom-invariant-id-12345"
+        """Invariant can accept custom UUID."""
+        custom_id = TEST_UUID_1
         inv = ModelInvariant(
             id=custom_id,
             name="Test",
@@ -235,14 +251,14 @@ class TestModelInvariantEquality:
     def test_invariants_with_same_values_are_equal(self) -> None:
         """Invariants with same values should be equal."""
         inv1 = ModelInvariant(
-            id="test-id",
+            id=TEST_UUID_1,
             name="Test",
             type=EnumInvariantType.LATENCY,
             severity=EnumInvariantSeverity.WARNING,
             config={"max_ms": 5000},
         )
         inv2 = ModelInvariant(
-            id="test-id",
+            id=TEST_UUID_1,
             name="Test",
             type=EnumInvariantType.LATENCY,
             severity=EnumInvariantSeverity.WARNING,
@@ -253,13 +269,13 @@ class TestModelInvariantEquality:
     def test_invariants_with_different_ids_are_not_equal(self) -> None:
         """Invariants with different IDs should not be equal."""
         inv1 = ModelInvariant(
-            id="id-1",
+            id=TEST_UUID_1,
             name="Test",
             type=EnumInvariantType.LATENCY,
             config={"max_ms": 5000},
         )
         inv2 = ModelInvariant(
-            id="id-2",
+            id=TEST_UUID_2,
             name="Test",
             type=EnumInvariantType.LATENCY,
             config={"max_ms": 5000},

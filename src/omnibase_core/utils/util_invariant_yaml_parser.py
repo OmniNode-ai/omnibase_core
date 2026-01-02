@@ -22,7 +22,31 @@ def parse_invariant_set_from_yaml(yaml_content: str) -> ModelInvariantSet:
     """
     Parse a YAML string into a ModelInvariantSet.
 
-    Handles both flat YAML structures and YAML with a nested 'invariant_set' key.
+    Supports two YAML formats for flexibility:
+
+    **Flat format** (fields at root level)::
+
+        name: "My Invariant Set"
+        target: "node_example"
+        invariants:
+          - name: "Latency Check"
+            type: latency
+            config:
+              max_latency_ms: 100
+
+    **Nested format** (wrapped in invariant_set key)::
+
+        invariant_set:
+          name: "My Invariant Set"
+          target: "node_example"
+          invariants:
+            - name: "Latency Check"
+              type: latency
+              config:
+                max_latency_ms: 100
+
+    The nested format is automatically unwrapped for consistency. Both formats
+    produce identical ModelInvariantSet objects.
 
     Args:
         yaml_content: YAML string containing invariant set definition.
@@ -32,6 +56,9 @@ def parse_invariant_set_from_yaml(yaml_content: str) -> ModelInvariantSet:
 
     Raises:
         ModelOnexError: If YAML is invalid or doesn't match the expected schema.
+            Error codes:
+            - CONFIGURATION_PARSE_ERROR: Invalid YAML syntax or empty content
+            - CONTRACT_VALIDATION_ERROR: Valid YAML but invalid schema
     """
     try:
         data = yaml.safe_load(yaml_content)
