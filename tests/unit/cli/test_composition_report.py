@@ -12,7 +12,6 @@ from execution manifests.
 """
 
 import json
-import tempfile
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -68,11 +67,11 @@ def sample_manifest() -> ModelExecutionManifest:
 
 
 @pytest.fixture
-def manifest_file(sample_manifest: ModelExecutionManifest) -> Path:
+def manifest_file(sample_manifest: ModelExecutionManifest, tmp_path: Path) -> Path:
     """Create a temporary manifest file."""
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
-        f.write(sample_manifest.model_dump_json())
-        return Path(f.name)
+    path = tmp_path / "manifest.json"
+    path.write_text(sample_manifest.model_dump_json())
+    return path  # No cleanup needed, tmp_path handles it
 
 
 @pytest.fixture
@@ -142,10 +141,11 @@ class TestCompositionReportCommand:
         # Should show timing information
         assert "ms" in result.output.lower()
 
-    def test_output_to_file(self, runner: CliRunner, manifest_file: Path) -> None:
+    def test_output_to_file(
+        self, runner: CliRunner, manifest_file: Path, tmp_path: Path
+    ) -> None:
         """Test writing output to file."""
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
-            output_path = Path(f.name)
+        output_path = tmp_path / "output.txt"
 
         result = runner.invoke(
             cli,
@@ -159,28 +159,21 @@ class TestCompositionReportCommand:
         content = output_path.read_text()
         assert "COMPOSITION REPORT" in content
 
-        # Cleanup
-        output_path.unlink()
-
     def test_invalid_manifest_file(self, runner: CliRunner) -> None:
         """Test with non-existent file."""
         result = runner.invoke(cli, ["composition-report", "nonexistent.json"])
 
         assert result.exit_code != 0
 
-    def test_invalid_json_file(self, runner: CliRunner) -> None:
+    def test_invalid_json_file(self, runner: CliRunner, tmp_path: Path) -> None:
         """Test with invalid JSON file."""
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
-            f.write("not valid json")
-            invalid_file = Path(f.name)
+        invalid_file = tmp_path / "invalid.json"
+        invalid_file.write_text("not valid json")
 
         result = runner.invoke(cli, ["composition-report", str(invalid_file)])
 
         assert result.exit_code != 0
         assert "Invalid JSON" in result.output
-
-        # Cleanup
-        invalid_file.unlink()
 
 
 @pytest.mark.unit

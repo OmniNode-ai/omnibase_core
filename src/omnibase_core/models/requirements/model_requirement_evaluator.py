@@ -13,10 +13,12 @@ Note:
     when you need `matches()`, `sort_key()`, and operator support ($eq, $ne, etc.).
 """
 
+from __future__ import annotations
+
 import logging
 import warnings
 from collections.abc import Mapping, Sequence
-from typing import Any, Self
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -120,7 +122,7 @@ class ModelRequirementEvaluator(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     @model_validator(mode="after")
-    def _validate_no_conflicts(self) -> Self:
+    def _validate_no_conflicts(self) -> ModelRequirementEvaluator:
         """Validate that there are no logical conflicts in requirements.
 
         Checks for:

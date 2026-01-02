@@ -57,7 +57,6 @@ class ModelDependencyEdge(BaseModel):
         extra="forbid",
         from_attributes=True,
         use_enum_values=False,
-        validate_assignment=True,
     )
 
     from_handler_id: str = Field(  # string-id-ok: user-facing identifier
