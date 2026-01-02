@@ -30,11 +30,11 @@ from omnibase_core.models.events.contract_validation import (
     ModelContractMergeCompletedEvent,
     ModelContractMergeStartedEvent,
     ModelContractRef,
+    ModelContractValidationContext,
     ModelContractValidationEventBase,
     ModelContractValidationFailedEvent,
     ModelContractValidationPassedEvent,
     ModelContractValidationStartedEvent,
-    ModelValidationContext,
 )
 
 # =============================================================================
@@ -129,7 +129,7 @@ class TestModelContractValidationStartedEvent:
     def test_started_event_creation_with_required_fields(self) -> None:
         """Test started event with required fields."""
         run_id = uuid4()
-        context = ModelValidationContext()
+        context = ModelContractValidationContext()
 
         event = ModelContractValidationStartedEvent(
             contract_id="test-contract",
@@ -149,7 +149,7 @@ class TestModelContractValidationStartedEvent:
         event = ModelContractValidationStartedEvent(
             contract_id="test-contract",
             run_id=run_id,
-            context=ModelValidationContext(),
+            context=ModelContractValidationContext(),
         )
 
         assert event.event_type == "onex.contract.validation.started"
@@ -172,7 +172,7 @@ class TestModelContractValidationStartedEvent:
         event = ModelContractValidationStartedEvent(
             contract_id="test-contract",
             run_id=run_id,
-            context=ModelValidationContext(),
+            context=ModelContractValidationContext(),
             validator_set_id="standard-v1",
         )
 
@@ -183,7 +183,7 @@ class TestModelContractValidationStartedEvent:
         run_id = uuid4()
         actor = uuid4()
         correlation_id = uuid4()
-        context = ModelValidationContext(mode=EnumValidationMode.STRICT)
+        context = ModelContractValidationContext(mode=EnumValidationMode.STRICT)
 
         event = ModelContractValidationStartedEvent.create(
             contract_id="factory-contract",
@@ -206,7 +206,7 @@ class TestModelContractValidationStartedEvent:
         event = ModelContractValidationStartedEvent(
             contract_id="test-contract",
             run_id=uuid4(),
-            context=ModelValidationContext(),
+            context=ModelContractValidationContext(),
         )
 
         with pytest.raises(ValidationError):
@@ -223,7 +223,7 @@ class TestModelContractValidationStartedEventSerialization:
         original = ModelContractValidationStartedEvent(
             contract_id="test-contract",
             run_id=run_id,
-            context=ModelValidationContext(mode=EnumValidationMode.PERMISSIVE),
+            context=ModelContractValidationContext(mode=EnumValidationMode.PERMISSIVE),
             validator_set_id="test-set",
         )
 
@@ -973,7 +973,7 @@ class TestEventLifecycleCorrelation:
         started = ModelContractValidationStartedEvent(
             contract_id=contract_id,
             run_id=run_id,
-            context=ModelValidationContext(),
+            context=ModelContractValidationContext(),
         )
 
         passed = ModelContractValidationPassedEvent(
@@ -1019,7 +1019,9 @@ class TestEventImmutability:
         events = [
             ModelContractValidationEventBase(contract_id="test", run_id=run_id),
             ModelContractValidationStartedEvent(
-                contract_id="test", run_id=run_id, context=ModelValidationContext()
+                contract_id="test",
+                run_id=run_id,
+                context=ModelContractValidationContext(),
             ),
             ModelContractValidationPassedEvent(
                 contract_id="test", run_id=run_id, duration_ms=100
@@ -1050,7 +1052,9 @@ class TestEventImmutability:
         events = [
             ModelContractValidationEventBase(contract_id="test", run_id=run_id),
             ModelContractValidationStartedEvent(
-                contract_id="test", run_id=run_id, context=ModelValidationContext()
+                contract_id="test",
+                run_id=run_id,
+                context=ModelContractValidationContext(),
             ),
             ModelContractValidationPassedEvent(
                 contract_id="test", run_id=run_id, duration_ms=100

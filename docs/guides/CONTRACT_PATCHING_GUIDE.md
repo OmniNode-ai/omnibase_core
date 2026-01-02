@@ -784,19 +784,19 @@ These run when you call `validator.validate(patch)`:
 
 | Check | Severity | Error Code |
 |-------|----------|------------|
-| Duplicate handlers in `handlers__add` | Error | `DUPLICATE_LIST_ENTRIES` |
-| Duplicate dependencies in `dependencies__add` | Error | `DUPLICATE_LIST_ENTRIES` |
-| Duplicate capabilities in `capability_outputs__add` | Error | `DUPLICATE_LIST_ENTRIES` |
-| Duplicate inputs in `capability_inputs__add` | Error | `DUPLICATE_LIST_ENTRIES` |
-| Empty behavior patch (no overrides) | Info | `EMPTY_DESCRIPTOR_PATCH` |
-| `purity="pure"` with `idempotent=False` | Warning | `PURITY_IDEMPOTENT_MISMATCH` |
+| Duplicate handlers in `handlers__add` | Error | `CONTRACT_PATCH_DUPLICATE_LIST_ENTRIES` |
+| Duplicate dependencies in `dependencies__add` | Error | `CONTRACT_PATCH_DUPLICATE_LIST_ENTRIES` |
+| Duplicate capabilities in `capability_outputs__add` | Error | `CONTRACT_PATCH_DUPLICATE_LIST_ENTRIES` |
+| Duplicate inputs in `capability_inputs__add` | Error | `CONTRACT_PATCH_DUPLICATE_LIST_ENTRIES` |
+| Empty behavior patch (no overrides) | Info | `CONTRACT_PATCH_EMPTY_DESCRIPTOR` |
+| `purity="pure"` with `idempotent=False` | Warning | `CONTRACT_PATCH_PURITY_IDEMPOTENT_MISMATCH` |
 
 #### 3. Format Validation (Warnings)
 
 | Check | Description | Error Code |
 |-------|-------------|------------|
-| Profile Name | Should be lowercase_with_underscores | `NON_STANDARD_PROFILE_NAME` |
-| Version Format | Should contain digits (semver) | `NON_STANDARD_VERSION_FORMAT` |
+| Profile Name | Should be lowercase_with_underscores | `CONTRACT_PATCH_NON_STANDARD_PROFILE_NAME` |
+| Version Format | Should contain digits (semver) | `CONTRACT_PATCH_NON_STANDARD_VERSION_FORMAT` |
 
 #### 4. File Validation Error Codes
 
@@ -804,11 +804,11 @@ When using `validate_file()`:
 
 | Condition | Error Code |
 |-----------|------------|
-| File does not exist | `FILE_NOT_FOUND` |
-| Cannot read file | `FILE_READ_ERROR` |
-| Non-.yaml/.yml extension | `UNEXPECTED_EXTENSION` (warning) |
-| YAML parsing or validation error | `YAML_VALIDATION_ERROR` |
-| Pydantic validation error | `PYDANTIC_VALIDATION_ERROR` |
+| File does not exist | `CONTRACT_PATCH_FILE_NOT_FOUND` |
+| Cannot read file | `CONTRACT_PATCH_FILE_READ_ERROR` |
+| Non-.yaml/.yml extension | `CONTRACT_PATCH_UNEXPECTED_EXTENSION` (warning) |
+| YAML parsing or validation error | `CONTRACT_PATCH_YAML_VALIDATION_ERROR` |
+| Pydantic validation error | `CONTRACT_PATCH_PYDANTIC_VALIDATION_ERROR` |
 
 ### What Is NOT Validated (Deferred)
 

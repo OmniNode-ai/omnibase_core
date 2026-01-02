@@ -19,6 +19,11 @@ Event Types:
     - ``onex.contract.merge.started``: Merge operation begins
     - ``onex.contract.merge.completed``: Merge operation completes
 
+Note:
+    ModelContractValidationContext is used for contract validation operations.
+    For field-level validation context (field_name, expected, actual), use
+    :class:`omnibase_core.models.context.ModelValidationContext` instead.
+
 Import Example:
     .. code-block:: python
 
@@ -91,9 +96,6 @@ from omnibase_core.models.events.contract_validation.model_contract_ref import (
 from omnibase_core.models.events.contract_validation.model_contract_validation_context import (
     ModelContractValidationContext,
 )
-
-# Backwards compat alias for ModelValidationContext -> ModelContractValidationContext
-ModelValidationContext = ModelContractValidationContext
 from omnibase_core.models.events.contract_validation.model_contract_validation_event_base import (
     ModelContractValidationEventBase,
 )
@@ -113,8 +115,7 @@ from omnibase_core.models.events.contract_validation.model_contract_validation_s
 __all__ = [
     # Base and reference models
     "ModelContractRef",
-    "ModelContractValidationContext",  # Canonical name (OMN-1126)
-    "ModelValidationContext",  # Backwards compat alias
+    "ModelContractValidationContext",
     "ModelContractValidationEventBase",
     # Validation event models
     "ModelContractValidationStartedEvent",

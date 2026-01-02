@@ -24,5 +24,8 @@ class ModelFeatureFlagMetadata(BaseModel):
     owner: str | None = Field(default=None, description="Owner of the feature flag")
     tags: list[str] = Field(default_factory=list, description="Tags for categorization")
     rollout_percentage: int = Field(
-        default=100, description="Percentage rollout (0-100)"
+        default=100,
+        ge=0,
+        le=100,
+        description="Percentage rollout (0-100)",
     )

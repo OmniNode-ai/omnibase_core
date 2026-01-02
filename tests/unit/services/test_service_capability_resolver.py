@@ -13,9 +13,9 @@ Tests cover:
 - Audit trail verification
 - Determinism guarantees
 
-Note: This test file is temporarily skipped due to circular import issues.
+Note: This test file uses lazy imports to avoid circular import issues.
 See OMN-1126 for tracking. The ModelProviderDescriptor has a forward reference
-to ModelHealthStatus that triggers a circular import chain when resolved.
+to ModelHealthStatus that required lazy import pattern to resolve.
 """
 
 from __future__ import annotations
@@ -27,28 +27,7 @@ from uuid import UUID, uuid4
 
 import pytest
 
-# Skip entire module due to circular import issue in ModelProviderDescriptor
-# The health field uses a TYPE_CHECKING import for ModelHealthStatus which
-# triggers a circular import chain when model_rebuild() is called.
-# TODO(OMN-1126): Fix circular import chain and re-enable these tests
-pytestmark = pytest.mark.skip(
-    reason="Circular import: ModelProviderDescriptor -> ModelHealthStatus -> ... -> ModelProviderDescriptor"
-)
-
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.bindings.model_binding import ModelBinding
-from omnibase_core.models.bindings.model_resolution_result import ModelResolutionResult
-from omnibase_core.models.capabilities.model_capability_dependency import (
-    ModelCapabilityDependency,
-)
-from omnibase_core.models.capabilities.model_capability_requirement_set import (
-    ModelRequirementSet,
-)
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.providers.model_provider_descriptor import (
-    ModelProviderDescriptor,
-)
-from omnibase_core.services.service_capability_resolver import ServiceCapabilityResolver
+# Use TYPE_CHECKING for type hints to avoid circular imports at runtime
 
 # =============================================================================
 # Mock Implementations
@@ -62,17 +41,15 @@ class MockProviderRegistry:
     by capability. Supports exact capability matching.
     """
 
-    def __init__(self, providers: list[ModelProviderDescriptor] | None = None) -> None:
+    def __init__(self, providers: list[Any] | None = None) -> None:
         """Initialize with optional list of providers.
 
         Args:
             providers: List of provider descriptors to register.
         """
-        self.providers: list[ModelProviderDescriptor] = providers or []
+        self.providers: list[Any] = providers or []
 
-    def get_providers_for_capability(
-        self, capability: str
-    ) -> list[ModelProviderDescriptor]:
+    def get_providers_for_capability(self, capability: str) -> list[Any]:
         """Get all providers offering the specified capability.
 
         Args:
@@ -83,7 +60,7 @@ class MockProviderRegistry:
         """
         return [p for p in self.providers if capability in p.capabilities]
 
-    def add_provider(self, provider: ModelProviderDescriptor) -> None:
+    def add_provider(self, provider: Any) -> None:
         """Add a provider to the registry.
 
         Args:
@@ -124,6 +101,42 @@ class MockProfile:
 # =============================================================================
 
 
+# Cache for the rebuilt ModelProviderDescriptor to avoid repeated rebuilds
+_MODEL_PROVIDER_DESCRIPTOR_REBUILT = False
+
+
+def _get_model_provider_descriptor() -> type:
+    """Get ModelProviderDescriptor with resolved forward references.
+
+    Uses a stub ModelHealthStatus class to avoid circular import chain.
+    """
+    global _MODEL_PROVIDER_DESCRIPTOR_REBUILT
+
+    # Lazy import to avoid circular dependency
+    from pydantic import BaseModel
+
+    from omnibase_core.models.providers.model_provider_descriptor import (
+        ModelProviderDescriptor,
+    )
+
+    if not _MODEL_PROVIDER_DESCRIPTOR_REBUILT:
+        # Create a stub class for ModelHealthStatus to satisfy Pydantic's type resolution
+        # without triggering the circular import chain.
+        class ModelHealthStatus(BaseModel):
+            """Stub class for ModelHealthStatus to avoid circular import."""
+
+            status: str = "healthy"
+            health_score: float = 1.0
+
+        # Rebuild the model with the stub class in namespace
+        ModelProviderDescriptor.model_rebuild(
+            _types_namespace={"ModelHealthStatus": ModelHealthStatus}
+        )
+        _MODEL_PROVIDER_DESCRIPTOR_REBUILT = True
+
+    return ModelProviderDescriptor
+
+
 def create_provider(
     provider_id: UUID | None = None,
     capabilities: list[str] | None = None,
@@ -133,7 +146,7 @@ def create_provider(
     adapter: str = "test.adapters.TestAdapter",
     connection_ref: str = "env://TEST_CONNECTION",
     tags: list[str] | None = None,
-) -> ModelProviderDescriptor:
+) -> Any:
     """Create a test provider descriptor with defaults.
 
     Args:
@@ -149,6 +162,8 @@ def create_provider(
     Returns:
         Configured ModelProviderDescriptor.
     """
+    ModelProviderDescriptor = _get_model_provider_descriptor()
+
     return ModelProviderDescriptor(
         provider_id=provider_id or uuid4(),
         capabilities=capabilities or ["database.relational"],
@@ -170,7 +185,7 @@ def create_dependency(
     hints: dict[str, Any] | None = None,
     selection_policy: str = "auto_if_unique",
     strict: bool = True,
-) -> ModelCapabilityDependency:
+) -> Any:
     """Create a test capability dependency with defaults.
 
     Args:
@@ -186,6 +201,14 @@ def create_dependency(
     Returns:
         Configured ModelCapabilityDependency.
     """
+    # Lazy imports to avoid circular dependency
+    from omnibase_core.models.capabilities.model_capability_dependency import (
+        ModelCapabilityDependency,
+    )
+    from omnibase_core.models.capabilities.model_capability_requirement_set import (
+        ModelRequirementSet,
+    )
+
     requirements = ModelRequirementSet(
         must=must or {},
         prefer=prefer or {},
@@ -212,6 +235,12 @@ class TestResolveBasic:
 
     def test_resolve_single_provider(self) -> None:
         """Test resolving when exactly one provider matches."""
+        # Lazy imports to avoid circular dependency
+        from omnibase_core.models.bindings.model_binding import ModelBinding
+        from omnibase_core.services.service_capability_resolver import (
+            ServiceCapabilityResolver,
+        )
+
         # Setup
         resolver = ServiceCapabilityResolver()
         provider = create_provider(
@@ -239,6 +268,11 @@ class TestResolveBasic:
 
     def test_resolve_multiple_providers_with_best_score_policy(self) -> None:
         """Test resolving with multiple providers using best_score policy."""
+        # Lazy import to avoid circular dependency
+        from omnibase_core.services.service_capability_resolver import (
+            ServiceCapabilityResolver,
+        )
+
         # Setup
         resolver = ServiceCapabilityResolver()
         provider1 = create_provider(
@@ -269,6 +303,13 @@ class TestResolveBasic:
 
     def test_resolve_no_providers_raises_error(self) -> None:
         """Test that resolving with no matching providers raises error."""
+        # Lazy imports to avoid circular dependency
+        from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
+        from omnibase_core.services.service_capability_resolver import (
+            ServiceCapabilityResolver,
+        )
+
         # Setup
         resolver = ServiceCapabilityResolver()
         registry = MockProviderRegistry([])
@@ -287,6 +328,11 @@ class TestResolveBasic:
 
     def test_resolve_preserves_capability_and_alias(self) -> None:
         """Test that resolved binding preserves dependency metadata."""
+        # Lazy import to avoid circular dependency
+        from omnibase_core.services.service_capability_resolver import (
+            ServiceCapabilityResolver,
+        )
+
         # Setup
         resolver = ServiceCapabilityResolver()
         provider = create_provider(
@@ -307,6 +353,11 @@ class TestResolveBasic:
 
     def test_resolve_records_resolved_at_timestamp(self) -> None:
         """Test that resolution records timestamp."""
+        # Lazy import to avoid circular dependency
+        from omnibase_core.services.service_capability_resolver import (
+            ServiceCapabilityResolver,
+        )
+
         # Setup
         resolver = ServiceCapabilityResolver()
         provider = create_provider(capabilities=["database.relational"])
@@ -335,6 +386,11 @@ class TestSelectionPolicyAutoIfUnique:
 
     def test_auto_if_unique_success_with_one_candidate(self) -> None:
         """Test auto_if_unique succeeds with exactly one candidate."""
+        # Lazy import to avoid circular dependency
+        from omnibase_core.services.service_capability_resolver import (
+            ServiceCapabilityResolver,
+        )
+
         # Setup
         resolver = ServiceCapabilityResolver()
         provider = create_provider(capabilities=["database.relational"])
@@ -352,6 +408,13 @@ class TestSelectionPolicyAutoIfUnique:
 
     def test_auto_if_unique_fails_with_multiple_candidates(self) -> None:
         """Test auto_if_unique fails with multiple candidates."""
+        # Lazy imports to avoid circular dependency
+        from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
+        from omnibase_core.services.service_capability_resolver import (
+            ServiceCapabilityResolver,
+        )
+
         # Setup
         resolver = ServiceCapabilityResolver()
         provider1 = create_provider(capabilities=["database.relational"])
@@ -376,6 +439,11 @@ class TestSelectionPolicyBestScore:
 
     def test_best_score_selects_highest_scoring_provider(self) -> None:
         """Test best_score selects provider with highest prefer satisfaction."""
+        # Lazy import to avoid circular dependency
+        from omnibase_core.services.service_capability_resolver import (
+            ServiceCapabilityResolver,
+        )
+
         # Setup
         resolver = ServiceCapabilityResolver()
         low_score = create_provider(
@@ -406,6 +474,11 @@ class TestSelectionPolicyBestScore:
 
     def test_best_score_deterministic_tie_breaking_by_provider_id(self) -> None:
         """Test best_score uses provider_id for deterministic tie-breaking."""
+        # Lazy import to avoid circular dependency
+        from omnibase_core.services.service_capability_resolver import (
+            ServiceCapabilityResolver,
+        )
+
         # Setup - both providers have same score
         resolver = ServiceCapabilityResolver()
 
@@ -437,6 +510,11 @@ class TestSelectionPolicyBestScore:
 
     def test_best_score_with_zero_preferences_selects_first_by_id(self) -> None:
         """Test best_score with no prefer constraints picks by provider_id order."""
+        # Lazy import to avoid circular dependency
+        from omnibase_core.services.service_capability_resolver import (
+            ServiceCapabilityResolver,
+        )
+
         # Setup
         resolver = ServiceCapabilityResolver()
         provider_z = create_provider(
@@ -466,6 +544,13 @@ class TestSelectionPolicyRequireExplicit:
 
     def test_require_explicit_fails_without_profile_pin(self) -> None:
         """Test require_explicit fails when no profile pin is provided."""
+        # Lazy imports to avoid circular dependency
+        from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
+        from omnibase_core.services.service_capability_resolver import (
+            ServiceCapabilityResolver,
+        )
+
         # Setup
         resolver = ServiceCapabilityResolver()
         provider = create_provider(capabilities=["secrets.vault"])
@@ -486,6 +571,11 @@ class TestSelectionPolicyRequireExplicit:
 
     def test_require_explicit_succeeds_with_profile_pin(self) -> None:
         """Test require_explicit succeeds when profile provides explicit binding."""
+        # Lazy import to avoid circular dependency
+        from omnibase_core.services.service_capability_resolver import (
+            ServiceCapabilityResolver,
+        )
+
         # Setup
         resolver = ServiceCapabilityResolver()
         provider = create_provider(
@@ -511,6 +601,13 @@ class TestSelectionPolicyRequireExplicit:
 
     def test_require_explicit_fails_if_pinned_provider_not_in_candidates(self) -> None:
         """Test require_explicit fails if pinned provider doesn't match filters."""
+        # Lazy imports to avoid circular dependency
+        from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
+        from omnibase_core.services.service_capability_resolver import (
+            ServiceCapabilityResolver,
+        )
+
         # Setup
         resolver = ServiceCapabilityResolver()
         provider = create_provider(
@@ -548,6 +645,11 @@ class TestMustFiltering:
 
     def test_must_filters_providers_missing_required_attribute(self) -> None:
         """Test that providers missing must attributes are filtered out."""
+        # Lazy import to avoid circular dependency
+        from omnibase_core.services.service_capability_resolver import (
+            ServiceCapabilityResolver,
+        )
+
         # Setup
         resolver = ServiceCapabilityResolver()
         provider_with_attr = create_provider(
@@ -574,6 +676,11 @@ class TestMustFiltering:
 
     def test_must_filters_providers_with_wrong_attribute_value(self) -> None:
         """Test that providers with wrong must attribute values are filtered."""
+        # Lazy import to avoid circular dependency
+        from omnibase_core.services.service_capability_resolver import (
+            ServiceCapabilityResolver,
+        )
+
         # Setup
         resolver = ServiceCapabilityResolver()
         correct_version = create_provider(
@@ -600,6 +707,13 @@ class TestMustFiltering:
 
     def test_must_requires_all_constraints_satisfied(self) -> None:
         """Test that all must constraints must be satisfied."""
+        # Lazy imports to avoid circular dependency
+        from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
+        from omnibase_core.services.service_capability_resolver import (
+            ServiceCapabilityResolver,
+        )
+
         # Setup
         resolver = ServiceCapabilityResolver()
         provider = create_provider(
@@ -621,6 +735,11 @@ class TestMustFiltering:
 
     def test_must_checks_declared_features(self) -> None:
         """Test that must constraints check declared_features."""
+        # Lazy import to avoid circular dependency
+        from omnibase_core.services.service_capability_resolver import (
+            ServiceCapabilityResolver,
+        )
+
         # Setup
         resolver = ServiceCapabilityResolver()
         provider = create_provider(
@@ -646,6 +765,11 @@ class TestForbidFiltering:
 
     def test_forbid_excludes_providers_with_forbidden_values(self) -> None:
         """Test that providers matching forbid constraints are excluded."""
+        # Lazy import to avoid circular dependency
+        from omnibase_core.services.service_capability_resolver import (
+            ServiceCapabilityResolver,
+        )
+
         # Setup
         resolver = ServiceCapabilityResolver()
         allowed_provider = create_provider(
@@ -672,6 +796,11 @@ class TestForbidFiltering:
 
     def test_forbid_allows_providers_without_forbidden_attribute(self) -> None:
         """Test providers without the forbidden attribute are allowed."""
+        # Lazy import to avoid circular dependency
+        from omnibase_core.services.service_capability_resolver import (
+            ServiceCapabilityResolver,
+        )
+
         # Setup
         resolver = ServiceCapabilityResolver()
         provider = create_provider(
@@ -692,6 +821,11 @@ class TestForbidFiltering:
 
     def test_forbid_allows_providers_with_different_value(self) -> None:
         """Test forbid only excludes exact value matches."""
+        # Lazy import to avoid circular dependency
+        from omnibase_core.services.service_capability_resolver import (
+            ServiceCapabilityResolver,
+        )
+
         # Setup
         resolver = ServiceCapabilityResolver()
         provider = create_provider(
@@ -717,6 +851,11 @@ class TestCombinedFiltering:
 
     def test_must_and_forbid_combined(self) -> None:
         """Test that both must and forbid constraints are applied."""
+        # Lazy import to avoid circular dependency
+        from omnibase_core.services.service_capability_resolver import (
+            ServiceCapabilityResolver,
+        )
+
         # Setup
         resolver = ServiceCapabilityResolver()
         # This provider passes must but fails forbid
@@ -764,6 +903,11 @@ class TestPreferScoring:
 
     def test_prefer_adds_to_score(self) -> None:
         """Test that matching prefer constraints add to provider score."""
+        # Lazy import to avoid circular dependency
+        from omnibase_core.services.service_capability_resolver import (
+            ServiceCapabilityResolver,
+        )
+
         # Setup
         resolver = ServiceCapabilityResolver()
         no_match = create_provider(
@@ -798,6 +942,11 @@ class TestPreferScoring:
 
     def test_prefer_checks_features_and_attributes(self) -> None:
         """Test that prefer checks both attributes and effective features."""
+        # Lazy import to avoid circular dependency
+        from omnibase_core.services.service_capability_resolver import (
+            ServiceCapabilityResolver,
+        )
+
         # Setup
         resolver = ServiceCapabilityResolver()
         provider = create_provider(
@@ -826,6 +975,11 @@ class TestProfileWeights:
 
     def test_profile_weights_affect_scoring(self) -> None:
         """Test that profile weights adjust provider scores."""
+        # Lazy import to avoid circular dependency
+        from omnibase_core.services.service_capability_resolver import (
+            ServiceCapabilityResolver,
+        )
+
         # Setup
         resolver = ServiceCapabilityResolver()
         provider1 = create_provider(
@@ -860,6 +1014,11 @@ class TestProfileWeights:
 
     def test_resolution_profile_recorded_in_binding(self) -> None:
         """Test that resolution_profile is recorded in the binding."""
+        # Lazy import to avoid circular dependency
+        from omnibase_core.services.service_capability_resolver import (
+            ServiceCapabilityResolver,
+        )
+
         # Setup
         resolver = ServiceCapabilityResolver()
         provider = create_provider(capabilities=["database.relational"])
@@ -875,6 +1034,11 @@ class TestProfileWeights:
 
     def test_default_resolution_profile_when_no_profile(self) -> None:
         """Test that default resolution_profile is used when no profile provided."""
+        # Lazy import to avoid circular dependency
+        from omnibase_core.services.service_capability_resolver import (
+            ServiceCapabilityResolver,
+        )
+
         # Setup
         resolver = ServiceCapabilityResolver()
         provider = create_provider(capabilities=["database.relational"])
@@ -899,6 +1063,14 @@ class TestResolveAll:
 
     def test_resolve_all_multiple_dependencies(self) -> None:
         """Test resolving multiple dependencies in a single call."""
+        # Lazy imports to avoid circular dependency
+        from omnibase_core.models.bindings.model_resolution_result import (
+            ModelResolutionResult,
+        )
+        from omnibase_core.services.service_capability_resolver import (
+            ServiceCapabilityResolver,
+        )
+
         # Setup
         resolver = ServiceCapabilityResolver()
         db_provider = create_provider(
@@ -930,6 +1102,11 @@ class TestResolveAll:
 
     def test_resolve_all_partial_success(self) -> None:
         """Test resolve_all with some resolutions failing."""
+        # Lazy import to avoid circular dependency
+        from omnibase_core.services.service_capability_resolver import (
+            ServiceCapabilityResolver,
+        )
+
         # Setup
         resolver = ServiceCapabilityResolver()
         db_provider = create_provider(capabilities=["database.relational"])
@@ -956,6 +1133,11 @@ class TestResolveAll:
 
     def test_resolve_all_complete_failure(self) -> None:
         """Test resolve_all when all resolutions fail."""
+        # Lazy import to avoid circular dependency
+        from omnibase_core.services.service_capability_resolver import (
+            ServiceCapabilityResolver,
+        )
+
         # Setup
         resolver = ServiceCapabilityResolver()
         registry = MockProviderRegistry([])  # No providers
@@ -975,6 +1157,11 @@ class TestResolveAll:
 
     def test_resolve_all_records_duration(self) -> None:
         """Test that resolve_all records resolution duration."""
+        # Lazy import to avoid circular dependency
+        from omnibase_core.services.service_capability_resolver import (
+            ServiceCapabilityResolver,
+        )
+
         # Setup
         resolver = ServiceCapabilityResolver()
         provider = create_provider(capabilities=["database.relational"])
@@ -999,6 +1186,11 @@ class TestAuditTrail:
 
     def test_candidates_considered_is_correct(self) -> None:
         """Test that candidates_considered reflects all providers checked."""
+        # Lazy import to avoid circular dependency
+        from omnibase_core.services.service_capability_resolver import (
+            ServiceCapabilityResolver,
+        )
+
         # Setup
         resolver = ServiceCapabilityResolver()
         providers = [
@@ -1019,6 +1211,11 @@ class TestAuditTrail:
 
     def test_resolution_notes_explain_selection(self) -> None:
         """Test that resolution notes explain why a provider was selected."""
+        # Lazy import to avoid circular dependency
+        from omnibase_core.services.service_capability_resolver import (
+            ServiceCapabilityResolver,
+        )
+
         # Setup
         resolver = ServiceCapabilityResolver()
         provider = create_provider(capabilities=["database.relational"])
@@ -1035,6 +1232,11 @@ class TestAuditTrail:
 
     def test_resolve_all_records_rejection_reasons(self) -> None:
         """Test that resolve_all records rejection reasons for filtered providers."""
+        # Lazy import to avoid circular dependency
+        from omnibase_core.services.service_capability_resolver import (
+            ServiceCapabilityResolver,
+        )
+
         # Setup
         resolver = ServiceCapabilityResolver()
         passing_provider = create_provider(
@@ -1067,6 +1269,11 @@ class TestAuditTrail:
 
     def test_resolve_all_records_scores_by_alias(self) -> None:
         """Test that resolve_all records scores for all candidates."""
+        # Lazy import to avoid circular dependency
+        from omnibase_core.services.service_capability_resolver import (
+            ServiceCapabilityResolver,
+        )
+
         # Setup
         resolver = ServiceCapabilityResolver()
         provider1 = create_provider(
@@ -1106,6 +1313,11 @@ class TestAuditTrail:
 
     def test_resolve_all_records_candidates_by_alias(self) -> None:
         """Test that resolve_all records which candidates were considered."""
+        # Lazy import to avoid circular dependency
+        from omnibase_core.services.service_capability_resolver import (
+            ServiceCapabilityResolver,
+        )
+
         # Setup
         resolver = ServiceCapabilityResolver()
         provider1 = create_provider(
@@ -1134,6 +1346,11 @@ class TestAuditTrail:
 
     def test_requirements_hash_is_deterministic(self) -> None:
         """Test that requirements hash is deterministic for same inputs."""
+        # Lazy import to avoid circular dependency
+        from omnibase_core.services.service_capability_resolver import (
+            ServiceCapabilityResolver,
+        )
+
         # Setup
         resolver = ServiceCapabilityResolver()
         provider = create_provider(
@@ -1167,6 +1384,11 @@ class TestDeterminism:
 
     def test_same_inputs_produce_same_output(self) -> None:
         """Test that identical inputs always produce identical results."""
+        # Lazy import to avoid circular dependency
+        from omnibase_core.services.service_capability_resolver import (
+            ServiceCapabilityResolver,
+        )
+
         # Setup
         resolver = ServiceCapabilityResolver()
         providers = [
@@ -1194,6 +1416,11 @@ class TestDeterminism:
 
     def test_provider_ordering_does_not_affect_result(self) -> None:
         """Test that provider order in registry doesn't affect selection."""
+        # Lazy import to avoid circular dependency
+        from omnibase_core.services.service_capability_resolver import (
+            ServiceCapabilityResolver,
+        )
+
         # Setup
         resolver = ServiceCapabilityResolver()
         provider_a = create_provider(
@@ -1221,10 +1448,15 @@ class TestDeterminism:
         binding2 = resolver.resolve(dependency, registry2)
 
         # Assert - both should select same provider (lexicographically first by ID)
-        assert binding1.provider_id == binding2.provider_id
+        assert binding1.resolved_provider == binding2.resolved_provider
 
     def test_determinism_across_multiple_dependencies(self) -> None:
         """Test determinism with batch resolution of multiple dependencies."""
+        # Lazy import to avoid circular dependency
+        from omnibase_core.services.service_capability_resolver import (
+            ServiceCapabilityResolver,
+        )
+
         # Setup
         resolver = ServiceCapabilityResolver()
         db_providers = [
@@ -1271,8 +1503,8 @@ class TestDeterminism:
             )
 
         # Assert - all results should have same provider IDs
-        db_ids = {r[0].provider_id if r[0] else None for r in results}
-        cache_ids = {r[1].provider_id if r[1] else None for r in results}
+        db_ids = {r[0].resolved_provider if r[0] else None for r in results}
+        cache_ids = {r[1].resolved_provider if r[1] else None for r in results}
         assert len(db_ids) == 1
         assert len(cache_ids) == 1
 
@@ -1288,6 +1520,11 @@ class TestEdgeCases:
 
     def test_empty_requirements_matches_all(self) -> None:
         """Test that empty requirements match all providers."""
+        # Lazy import to avoid circular dependency
+        from omnibase_core.services.service_capability_resolver import (
+            ServiceCapabilityResolver,
+        )
+
         # Setup
         resolver = ServiceCapabilityResolver()
         provider = create_provider(
@@ -1305,6 +1542,11 @@ class TestEdgeCases:
 
     def test_observed_features_take_precedence_over_declared(self) -> None:
         """Test that observed features override declared features in matching."""
+        # Lazy import to avoid circular dependency
+        from omnibase_core.services.service_capability_resolver import (
+            ServiceCapabilityResolver,
+        )
+
         # Setup
         resolver = ServiceCapabilityResolver()
         provider = create_provider(
@@ -1325,6 +1567,13 @@ class TestEdgeCases:
 
     def test_all_providers_filtered_raises_error(self) -> None:
         """Test that filtering out all providers raises an error."""
+        # Lazy imports to avoid circular dependency
+        from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
+        from omnibase_core.services.service_capability_resolver import (
+            ServiceCapabilityResolver,
+        )
+
         # Setup
         resolver = ServiceCapabilityResolver()
         providers = [
@@ -1350,6 +1599,11 @@ class TestEdgeCases:
 
     def test_resolver_is_stateless(self) -> None:
         """Test that resolver is stateless between calls."""
+        # Lazy import to avoid circular dependency
+        from omnibase_core.services.service_capability_resolver import (
+            ServiceCapabilityResolver,
+        )
+
         # Setup
         resolver = ServiceCapabilityResolver()
 
@@ -1372,13 +1626,18 @@ class TestEdgeCases:
         binding2 = resolver.resolve(dependency2, registry2)
 
         # Assert - resolutions are independent
-        assert binding1.provider_id == str(provider1.provider_id)
-        assert binding2.provider_id == str(provider2.provider_id)
+        assert binding1.resolved_provider == str(provider1.provider_id)
+        assert binding2.resolved_provider == str(provider2.provider_id)
         assert binding1.dependency_alias == "db1"
         assert binding2.dependency_alias == "cache"
 
     def test_repr_and_str_methods(self) -> None:
         """Test that resolver has sensible repr and str."""
+        # Lazy import to avoid circular dependency
+        from omnibase_core.services.service_capability_resolver import (
+            ServiceCapabilityResolver,
+        )
+
         resolver = ServiceCapabilityResolver()
         assert "ServiceCapabilityResolver" in repr(resolver)
         assert "ServiceCapabilityResolver" in str(resolver)

@@ -18,7 +18,12 @@ class ModelToolSecuritySummary(BaseModel):
     Replaces dict[str, Any] return from get_summary() in ModelToolSecurity.
     """
 
-    model_config = ConfigDict(strict=True, extra="forbid", frozen=True)
+    model_config = ConfigDict(
+        strict=True,
+        extra="forbid",
+        frozen=True,
+        from_attributes=True,
+    )
 
     processes_sensitive_data: bool = Field(
         default=False,
