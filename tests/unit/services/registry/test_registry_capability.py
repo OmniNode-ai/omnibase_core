@@ -104,7 +104,9 @@ def cache_capability() -> ModelCapabilityMetadata:
 class TestServiceRegistryCapabilityInstantiation:
     """Tests for registry instantiation."""
 
-    def test_empty_registry_on_creation(self, registry: ServiceRegistryCapability) -> None:
+    def test_empty_registry_on_creation(
+        self, registry: ServiceRegistryCapability
+    ) -> None:
         """Test that a new registry is empty."""
         assert registry.count == 0
         assert registry.list_all() == []
@@ -379,7 +381,9 @@ class TestServiceRegistryCapabilityListAll:
 class TestServiceRegistryCapabilityFindByTags:
     """Tests for find_by_tags method."""
 
-    def test_find_by_tags_empty_registry(self, registry: ServiceRegistryCapability) -> None:
+    def test_find_by_tags_empty_registry(
+        self, registry: ServiceRegistryCapability
+    ) -> None:
         """Test find_by_tags on empty registry."""
         result = registry.find_by_tags(["storage"])
 
@@ -629,7 +633,9 @@ class TestServiceRegistryCapabilityRepresentation:
 class TestServiceRegistryCapabilityThreadSafety:
     """Tests for thread safety."""
 
-    def test_concurrent_registrations(self, registry: ServiceRegistryCapability) -> None:
+    def test_concurrent_registrations(
+        self, registry: ServiceRegistryCapability
+    ) -> None:
         """Test concurrent registrations from multiple threads."""
         num_capabilities = 100
         errors: list[Exception] = []
@@ -710,7 +716,9 @@ class TestServiceRegistryCapabilityThreadSafety:
         # Original capability should always be accessible
         assert all(r == sample_capability for r in results if r is not None)
 
-    def test_concurrent_register_unregister(self, registry: ServiceRegistryCapability) -> None:
+    def test_concurrent_register_unregister(
+        self, registry: ServiceRegistryCapability
+    ) -> None:
         """Test concurrent register and unregister operations."""
         num_ops = 50
         errors: list[Exception] = []
@@ -783,7 +791,9 @@ class TestServiceRegistryCapabilityThreadSafety:
 class TestServiceRegistryCapabilityEdgeCases:
     """Tests for edge cases."""
 
-    def test_capability_with_dots_in_id(self, registry: ServiceRegistryCapability) -> None:
+    def test_capability_with_dots_in_id(
+        self, registry: ServiceRegistryCapability
+    ) -> None:
         """Test capability ID with dots (hierarchical naming)."""
         cap = ModelCapabilityMetadata(
             capability="cloud.aws.s3.storage",

@@ -1,19 +1,13 @@
-from collections.abc import Callable
-from datetime import datetime
+"""Core emit_log_event utility for ONEX structured logging.
 
-"""
-Core emit_log_event utility for ONEX structured logging.
-
-This module provides the main entry point for all ONEX logging, routing
-events through the logger node with smart formatting and correlation tracking.
-
-All internal ONEX logging should use emit_log_event() instead of print() or
-Python's logging module to maintain architectural purity and centralized processing.
+Provides the main entry point for all ONEX logging, routing events through
+the logger node with smart formatting and correlation tracking.
 """
 
 import inspect
 import os
-from datetime import UTC
+from collections.abc import Callable
+from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID, uuid4
 

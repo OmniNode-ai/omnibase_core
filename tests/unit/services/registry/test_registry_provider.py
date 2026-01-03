@@ -22,7 +22,9 @@ pytestmark = pytest.mark.skip(
 
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.providers import ModelProviderDescriptor
-from omnibase_core.services.registry.service_registry_provider import ServiceRegistryProvider
+from omnibase_core.services.registry.service_registry_provider import (
+    ServiceRegistryProvider,
+)
 
 # Fixed UUIDs for deterministic tests
 TEST_UUID_1 = UUID("11111111-1111-1111-1111-111111111111")
@@ -112,7 +114,9 @@ class TestServiceRegistryProviderLifecycle:
         assert len(registry) == 0
         assert db_provider.provider_id not in registry
 
-    def test_unregister_nonexistent_provider(self, registry: ServiceRegistryProvider) -> None:
+    def test_unregister_nonexistent_provider(
+        self, registry: ServiceRegistryProvider
+    ) -> None:
         """Test unregistering a nonexistent provider returns False."""
         result = registry.unregister(NONEXISTENT_UUID)
 
@@ -448,7 +452,9 @@ class TestServiceRegistryProviderListAll:
 class TestServiceRegistryProviderListCapabilities:
     """Tests for list_capabilities method."""
 
-    def test_list_capabilities_empty_registry(self, registry: ServiceRegistryProvider) -> None:
+    def test_list_capabilities_empty_registry(
+        self, registry: ServiceRegistryProvider
+    ) -> None:
         """Test list_capabilities on empty registry returns empty set."""
         results = registry.list_capabilities()
 
@@ -505,7 +511,9 @@ class TestServiceRegistryProviderListCapabilities:
 class TestServiceRegistryProviderThreadSafety:
     """Tests for thread safety."""
 
-    def test_concurrent_register_unregister(self, registry: ServiceRegistryProvider) -> None:
+    def test_concurrent_register_unregister(
+        self, registry: ServiceRegistryProvider
+    ) -> None:
         """Test concurrent register/unregister operations are thread-safe."""
         errors: list[Exception] = []
         num_operations = 100

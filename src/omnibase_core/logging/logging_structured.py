@@ -1,14 +1,12 @@
-from datetime import datetime
+"""Structured logging for ONEX core.
 
-"""
-Structured Logging for ONEX Core
-
-Provides centralized structured logging with standardized formats.
+Provides centralized structured logging with standardized JSON formats
+using Python's logging module and custom Pydantic-aware JSON encoding.
 """
 
 import json
 import logging
-from datetime import UTC
+from datetime import UTC, datetime
 from typing import Any
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
