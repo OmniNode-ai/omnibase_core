@@ -46,6 +46,9 @@ class ModelReducerContext(BaseModel):
             Used to track causality chains through the system.
         envelope_id: Source envelope ID for causality tracking. Links this
             reducer invocation to its triggering event envelope.
+        dispatch_id: Dispatch operation ID for request tracing. Uniquely identifies
+            a single dispatch() call. All handlers in the same dispatch share this ID.
+            None for legacy/custom execution paths outside the dispatch engine.
         trace_id: Optional distributed tracing ID (UUID) for observability systems
             (e.g., OpenTelemetry, Jaeger).
         span_id: Optional span ID (UUID) within the distributed trace.
@@ -79,6 +82,12 @@ class ModelReducerContext(BaseModel):
     )
     envelope_id: UUID = Field(
         description="Source envelope ID for causality tracking.",
+    )
+    dispatch_id: UUID | None = Field(
+        default=None,
+        description="Dispatch operation ID for request tracing. Uniquely identifies "
+        "a single dispatch() call. All handlers in the same dispatch share this ID. "
+        "None for legacy/custom execution paths outside the dispatch engine.",
     )
 
     # Optional distributed tracing (UUID for consistency with ModelEventEnvelope)

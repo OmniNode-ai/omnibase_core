@@ -33,4 +33,5 @@ class TypedDictLogContext(TypedDict, total=False):
     duration_ms: float
     correlation_id: str
     trace_id: str
+    dispatch_id: str
     error_code: str

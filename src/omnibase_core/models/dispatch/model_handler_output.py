@@ -203,6 +203,8 @@ class ModelHandlerOutput(BaseModel, Generic[T]):
             Required for causality tracking.
         correlation_id: MUST be copied from input envelope, not generated.
             Required for request tracing and correlation.
+        dispatch_id: Dispatch operation ID that triggered this handler.
+            Uniquely identifies the dispatch() call. None if created outside dispatch context.
         handler_id: Unique identifier from handler registry metadata.
         node_kind: The ONEX node kind from handler registry metadata.
         events: Tuple of event envelopes to publish (for ORCHESTRATOR, EFFECT only).
@@ -251,6 +253,15 @@ class ModelHandlerOutput(BaseModel, Generic[T]):
     correlation_id: UUID = Field(
         ...,
         description="MUST be copied from input envelope, not generated. Required for request tracing.",
+    )
+    dispatch_id: UUID | None = Field(
+        default=None,
+        description=(
+            "Dispatch operation ID for request tracing. Uniquely identifies "
+            "the dispatch() call that triggered this handler. All outputs from handlers "
+            "invoked in the same dispatch share this ID. None for outputs created outside "
+            "the dispatch engine context."
+        ),
     )
 
     # ---- Handler Identity (derived from registry metadata) ----

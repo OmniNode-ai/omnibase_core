@@ -82,7 +82,7 @@ import time
 from collections.abc import Awaitable, Callable, Sequence
 from datetime import UTC, datetime
 from typing import Literal, cast
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_dispatch_status import EnumDispatchStatus
@@ -726,6 +726,7 @@ class MessageDispatchEngine:
         duration_ms: float | None = None,
         correlation_id: str | None = None,
         trace_id: str | None = None,
+        dispatch_id: str | None = None,
         error_code: str | None = None,
     ) -> TypedDictLogContext:
         """
@@ -740,6 +741,7 @@ class MessageDispatchEngine:
             duration_ms: Dispatch duration in milliseconds.
             correlation_id: Correlation ID from envelope.
             trace_id: Trace ID from envelope.
+            dispatch_id: Dispatch ID for end-to-end request tracing.
             error_code: Error code if dispatch failed.
 
         Returns:
@@ -762,6 +764,8 @@ class MessageDispatchEngine:
             context["correlation_id"] = correlation_id
         if trace_id is not None:
             context["trace_id"] = trace_id
+        if dispatch_id is not None:
+            context["dispatch_id"] = dispatch_id
         if error_code is not None:
             context["error_code"] = error_code
         return context
@@ -847,11 +851,12 @@ class MessageDispatchEngine:
         dispatch_id = uuid4()
         started_at = datetime.now(UTC)
 
-        # Extract correlation/trace IDs for logging
+        # Extract correlation/trace/dispatch IDs for logging
         correlation_id_str = (
             str(envelope.correlation_id) if envelope.correlation_id else None
         )
         trace_id_str = str(envelope.trace_id) if envelope.trace_id else None
+        dispatch_id_str = str(dispatch_id)
 
         # Update dispatch count (thread-safe via _increment_metric)
         self._increment_metric("dispatch_count")
@@ -881,6 +886,7 @@ class MessageDispatchEngine:
                     duration_ms=duration_ms,
                     correlation_id=correlation_id_str,
                     trace_id=trace_id_str,
+                    dispatch_id=dispatch_id_str,
                     error_code="INVALID_TOPIC_CATEGORY",
                 ),
             )
@@ -905,6 +911,7 @@ class MessageDispatchEngine:
                 category=topic_category,
                 correlation_id=correlation_id_str,
                 trace_id=trace_id_str,
+                dispatch_id=dispatch_id_str,
             ),
         )
 
@@ -936,6 +943,7 @@ class MessageDispatchEngine:
                     duration_ms=duration_ms,
                     correlation_id=correlation_id_str,
                     trace_id=trace_id_str,
+                    dispatch_id=dispatch_id_str,
                     error_code="CATEGORY_MISMATCH",
                 ),
             )
@@ -979,6 +987,7 @@ class MessageDispatchEngine:
                 handler_count=len(matching_handlers),
                 correlation_id=correlation_id_str,
                 trace_id=trace_id_str,
+                dispatch_id=dispatch_id_str,
             ),
         )
 
@@ -1010,6 +1019,7 @@ class MessageDispatchEngine:
                     duration_ms=duration_ms,
                     correlation_id=correlation_id_str,
                     trace_id=trace_id_str,
+                    dispatch_id=dispatch_id_str,
                     error_code="NO_HANDLER_FOUND",
                 ),
             )
@@ -1049,11 +1059,14 @@ class MessageDispatchEngine:
                     handler_id=handler_entry.handler_id,
                     correlation_id=correlation_id_str,
                     trace_id=trace_id_str,
+                    dispatch_id=dispatch_id_str,
                 ),
             )
 
             try:
-                result = await self._execute_handler(handler_entry, envelope)
+                result = await self._execute_handler(
+                    handler_entry, envelope, dispatch_id
+                )
                 handler_duration_ms = (time.perf_counter() - handler_start_time) * 1000
                 executed_handler_ids.append(handler_entry.handler_id)
 
@@ -1078,6 +1091,7 @@ class MessageDispatchEngine:
                         duration_ms=handler_duration_ms,
                         correlation_id=correlation_id_str,
                         trace_id=trace_id_str,
+                        dispatch_id=dispatch_id_str,
                     ),
                 )
 
@@ -1130,6 +1144,7 @@ class MessageDispatchEngine:
                         duration_ms=handler_duration_ms,
                         correlation_id=correlation_id_str,
                         trace_id=trace_id_str,
+                        dispatch_id=dispatch_id_str,
                         error_code="HANDLER_EXCEPTION",
                     ),
                 )
@@ -1154,6 +1169,7 @@ class MessageDispatchEngine:
                     handler_count=len(handler_outputs),
                     correlation_id=correlation_id_str,
                     trace_id=trace_id_str,
+                    dispatch_id=dispatch_id_str,
                 ),
             )
 
@@ -1211,6 +1227,7 @@ class MessageDispatchEngine:
                     duration_ms=duration_ms,
                     correlation_id=correlation_id_str,
                     trace_id=trace_id_str,
+                    dispatch_id=dispatch_id_str,
                 ),
             )
         else:
@@ -1225,6 +1242,7 @@ class MessageDispatchEngine:
                     duration_ms=duration_ms,
                     correlation_id=correlation_id_str,
                     trace_id=trace_id_str,
+                    dispatch_id=dispatch_id_str,
                     error_code="HANDLER_EXECUTION_ERROR",
                 ),
             )
@@ -1317,6 +1335,7 @@ class MessageDispatchEngine:
         self,
         entry: MessageDispatchEngine._HandlerEntry,
         envelope: ModelEventEnvelope[object],
+        dispatch_id: UUID | None = None,
     ) -> ProtocolHandlerContext:
         """
         Build the appropriate context model for a handler based on its node_kind.
@@ -1330,11 +1349,15 @@ class MessageDispatchEngine:
         The context carries causality tracking fields from the envelope:
             - correlation_id: Request tracing across services
             - envelope_id: Links handler invocation to triggering event
+            - dispatch_id: Identifies the dispatch operation for correlation
             - trace_id/span_id: Optional OpenTelemetry integration
 
         Args:
             entry: Handler entry with node_kind
             envelope: Source envelope for correlation/trace IDs
+            dispatch_id: Optional dispatch operation ID for request tracing.
+                Uniquely identifies a single dispatch() call. All handlers
+                in the same dispatch share this ID.
 
         Returns:
             Appropriate context model for the handler's node_kind.
@@ -1381,6 +1404,7 @@ class MessageDispatchEngine:
             context = ModelEffectContext(
                 correlation_id=correlation_id,
                 envelope_id=envelope_id,
+                dispatch_id=dispatch_id,
                 trace_id=trace_id,
                 span_id=span_id,
                 retry_attempt=retry_attempt,
@@ -1390,6 +1414,7 @@ class MessageDispatchEngine:
             context = ModelComputeContext(
                 correlation_id=correlation_id,
                 envelope_id=envelope_id,
+                dispatch_id=dispatch_id,
                 trace_id=trace_id,
                 span_id=span_id,
             )
@@ -1398,6 +1423,7 @@ class MessageDispatchEngine:
             context = ModelReducerContext(
                 correlation_id=correlation_id,
                 envelope_id=envelope_id,
+                dispatch_id=dispatch_id,
                 trace_id=trace_id,
                 span_id=span_id,
             )
@@ -1406,6 +1432,7 @@ class MessageDispatchEngine:
             context = ModelOrchestratorContext(
                 correlation_id=correlation_id,
                 envelope_id=envelope_id,
+                dispatch_id=dispatch_id,
                 trace_id=trace_id,
                 span_id=span_id,
             )
@@ -1432,6 +1459,7 @@ class MessageDispatchEngine:
         self,
         entry: MessageDispatchEngine._HandlerEntry,
         envelope: ModelEventEnvelope[object],
+        dispatch_id: UUID | None = None,
     ) -> ModelHandlerOutput[object] | str | list[object]:
         """
         Execute a handler (sync or async) with context injection.
@@ -1442,6 +1470,8 @@ class MessageDispatchEngine:
         Args:
             entry: The handler entry containing the callable and node_kind
             envelope: The message envelope to process
+            dispatch_id: Optional dispatch operation ID for request tracing.
+                Uniquely identifies a single dispatch() call.
 
         Returns:
             Handler result (any type)
@@ -1451,8 +1481,8 @@ class MessageDispatchEngine:
         """
         handler = entry.handler
 
-        # Build context from envelope + handler's node_kind
-        context = self._build_handler_context(entry, envelope)
+        # Build context from envelope + handler's node_kind + dispatch_id
+        context = self._build_handler_context(entry, envelope, dispatch_id)
 
         # Check if handler is async
         if inspect.iscoroutinefunction(handler):

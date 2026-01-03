@@ -66,6 +66,9 @@ class ModelEffectContext(BaseModel):
             Propagated from upstream to enable end-to-end request tracing.
         envelope_id: Source envelope ID for causality tracking. Links this
             effect execution to the originating event envelope.
+        dispatch_id: Dispatch operation ID for request tracing. Uniquely identifies
+            a single dispatch() call. All handlers in the same dispatch share this ID.
+            None for legacy/custom execution paths outside the dispatch engine.
         trace_id: Optional distributed tracing ID (UUID, e.g., OpenTelemetry trace).
             Used for integration with observability platforms.
         span_id: Optional span ID (UUID) within the trace. Identifies this effect
@@ -103,6 +106,12 @@ class ModelEffectContext(BaseModel):
     )
     envelope_id: UUID = Field(
         description="Source envelope ID for causality tracking.",
+    )
+    dispatch_id: UUID | None = Field(
+        default=None,
+        description="Dispatch operation ID for request tracing. Uniquely identifies "
+        "a single dispatch() call. All handlers in the same dispatch share this ID. "
+        "None for legacy/custom execution paths outside the dispatch engine.",
     )
 
     # Optional distributed tracing (UUID for consistency with ModelEventEnvelope)
