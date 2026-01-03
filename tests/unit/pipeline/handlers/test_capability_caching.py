@@ -17,50 +17,42 @@ Coverage target: 60%+ (stub implementation with defensive attribute handling)
 
 import pytest
 
+from omnibase_core.pipeline.handlers.model_capability_caching import (
+    ModelCapabilityCaching,
+)
+
 # =============================================================================
 # Test Fixtures
 # =============================================================================
 
 
 @pytest.fixture
-def caching_handler() -> "ModelCapabilityCaching":
+def caching_handler() -> ModelCapabilityCaching:
     """Create a default ModelCapabilityCaching handler.
 
     Returns:
         ModelCapabilityCaching instance with default settings.
     """
-    from omnibase_core.pipeline.handlers.model_capability_caching import (
-        ModelCapabilityCaching,
-    )
-
     return ModelCapabilityCaching()
 
 
 @pytest.fixture
-def disabled_caching_handler() -> "ModelCapabilityCaching":
+def disabled_caching_handler() -> ModelCapabilityCaching:
     """Create a disabled ModelCapabilityCaching handler.
 
     Returns:
         ModelCapabilityCaching instance with caching disabled.
     """
-    from omnibase_core.pipeline.handlers.model_capability_caching import (
-        ModelCapabilityCaching,
-    )
-
     return ModelCapabilityCaching(enabled=False)
 
 
 @pytest.fixture
-def custom_ttl_handler() -> "ModelCapabilityCaching":
+def custom_ttl_handler() -> ModelCapabilityCaching:
     """Create a ModelCapabilityCaching handler with custom TTL.
 
     Returns:
         ModelCapabilityCaching instance with 600s TTL.
     """
-    from omnibase_core.pipeline.handlers.model_capability_caching import (
-        ModelCapabilityCaching,
-    )
-
     return ModelCapabilityCaching(default_ttl_seconds=600)
 
 
@@ -139,7 +131,9 @@ class TestModelCapabilityCachingInit:
 class TestGenerateCacheKey:
     """Test generate_cache_key method."""
 
-    def test_generate_cache_key_from_dict(self, caching_handler: object) -> None:
+    def test_generate_cache_key_from_dict(
+        self, caching_handler: ModelCapabilityCaching
+    ) -> None:
         """Cache key is generated from dict data."""
         data = {"user_id": 123, "action": "process"}
 
@@ -148,7 +142,9 @@ class TestGenerateCacheKey:
         assert isinstance(key, str)
         assert len(key) == 64  # SHA256 hex digest is 64 chars
 
-    def test_generate_cache_key_from_string(self, caching_handler: object) -> None:
+    def test_generate_cache_key_from_string(
+        self, caching_handler: ModelCapabilityCaching
+    ) -> None:
         """Cache key is generated from string data."""
         data = "simple string input"
 
@@ -157,7 +153,9 @@ class TestGenerateCacheKey:
         assert isinstance(key, str)
         assert len(key) == 64
 
-    def test_generate_cache_key_consistency(self, caching_handler: object) -> None:
+    def test_generate_cache_key_consistency(
+        self, caching_handler: ModelCapabilityCaching
+    ) -> None:
         """Same data produces same cache key (deterministic)."""
         data = {"a": 1, "b": 2}
 
@@ -167,7 +165,7 @@ class TestGenerateCacheKey:
         assert key1 == key2
 
     def test_generate_cache_key_dict_order_independence(
-        self, caching_handler: object
+        self, caching_handler: ModelCapabilityCaching
     ) -> None:
         """Dict key order does not affect cache key (uses sort_keys)."""
         data1 = {"b": 2, "a": 1}
@@ -179,7 +177,7 @@ class TestGenerateCacheKey:
         assert key1 == key2
 
     def test_generate_cache_key_different_data_different_keys(
-        self, caching_handler: object
+        self, caching_handler: ModelCapabilityCaching
     ) -> None:
         """Different data produces different cache keys."""
         data1 = {"value": 1}
@@ -191,7 +189,7 @@ class TestGenerateCacheKey:
         assert key1 != key2
 
     def test_generate_cache_key_handles_non_serializable(
-        self, caching_handler: object
+        self, caching_handler: ModelCapabilityCaching
     ) -> None:
         """Non-JSON-serializable data falls back to str() representation."""
 
@@ -207,7 +205,9 @@ class TestGenerateCacheKey:
         assert isinstance(key, str)
         assert len(key) == 64
 
-    def test_generate_cache_key_nested_dict(self, caching_handler: object) -> None:
+    def test_generate_cache_key_nested_dict(
+        self, caching_handler: ModelCapabilityCaching
+    ) -> None:
         """Cache key works with nested dictionaries."""
         data = {"outer": {"inner": {"deep": "value"}}, "list": [1, 2, 3]}
 
@@ -216,7 +216,9 @@ class TestGenerateCacheKey:
         assert isinstance(key, str)
         assert len(key) == 64
 
-    def test_generate_cache_key_with_none(self, caching_handler: object) -> None:
+    def test_generate_cache_key_with_none(
+        self, caching_handler: ModelCapabilityCaching
+    ) -> None:
         """Cache key handles None values."""
         data = {"key": None}
 
@@ -238,7 +240,7 @@ class TestGetCached:
     @pytest.mark.asyncio
     @pytest.mark.timeout(60)
     async def test_get_cached_returns_none_when_not_found(
-        self, caching_handler: object
+        self, caching_handler: ModelCapabilityCaching
     ) -> None:
         """get_cached returns None for non-existent key."""
         result = await caching_handler.get_cached("nonexistent_key")
@@ -248,7 +250,7 @@ class TestGetCached:
     @pytest.mark.asyncio
     @pytest.mark.timeout(60)
     async def test_get_cached_returns_stored_value(
-        self, caching_handler: object
+        self, caching_handler: ModelCapabilityCaching
     ) -> None:
         """get_cached returns previously stored value."""
         cache_key = "test_key"
@@ -262,7 +264,7 @@ class TestGetCached:
     @pytest.mark.asyncio
     @pytest.mark.timeout(60)
     async def test_get_cached_returns_none_when_disabled(
-        self, disabled_caching_handler: object
+        self, disabled_caching_handler: ModelCapabilityCaching
     ) -> None:
         """get_cached returns None when caching is disabled."""
         # First store something (though it won't be stored due to disabled)
@@ -277,7 +279,7 @@ class TestGetCached:
     @pytest.mark.asyncio
     @pytest.mark.timeout(60)
     async def test_get_cached_various_value_types(
-        self, caching_handler: object
+        self, caching_handler: ModelCapabilityCaching
     ) -> None:
         """get_cached works with various value types."""
         test_cases = [
@@ -307,7 +309,9 @@ class TestSetCached:
 
     @pytest.mark.asyncio
     @pytest.mark.timeout(60)
-    async def test_set_cached_stores_value(self, caching_handler: object) -> None:
+    async def test_set_cached_stores_value(
+        self, caching_handler: ModelCapabilityCaching
+    ) -> None:
         """set_cached stores value successfully."""
         cache_key = "store_key"
         test_value = {"stored": True}
@@ -320,7 +324,7 @@ class TestSetCached:
     @pytest.mark.asyncio
     @pytest.mark.timeout(60)
     async def test_set_cached_respects_enabled_flag(
-        self, disabled_caching_handler: object
+        self, disabled_caching_handler: ModelCapabilityCaching
     ) -> None:
         """set_cached does not store when disabled."""
         cache_key = "store_key"
@@ -335,7 +339,7 @@ class TestSetCached:
     @pytest.mark.asyncio
     @pytest.mark.timeout(60)
     async def test_set_cached_overwrites_existing(
-        self, caching_handler: object
+        self, caching_handler: ModelCapabilityCaching
     ) -> None:
         """set_cached overwrites existing value for same key."""
         cache_key = "overwrite_key"
@@ -350,7 +354,9 @@ class TestSetCached:
 
     @pytest.mark.asyncio
     @pytest.mark.timeout(60)
-    async def test_set_cached_with_custom_ttl(self, caching_handler: object) -> None:
+    async def test_set_cached_with_custom_ttl(
+        self, caching_handler: ModelCapabilityCaching
+    ) -> None:
         """set_cached accepts custom TTL (stored for future backend use)."""
         cache_key = "ttl_key"
         test_value = "ttl_value"
@@ -363,7 +369,9 @@ class TestSetCached:
 
     @pytest.mark.asyncio
     @pytest.mark.timeout(60)
-    async def test_set_cached_multiple_keys(self, caching_handler: object) -> None:
+    async def test_set_cached_multiple_keys(
+        self, caching_handler: ModelCapabilityCaching
+    ) -> None:
         """set_cached can store multiple different keys."""
         entries = [
             ("key1", "value1"),
@@ -390,7 +398,9 @@ class TestInvalidateCache:
 
     @pytest.mark.asyncio
     @pytest.mark.timeout(60)
-    async def test_invalidate_cache_removes_key(self, caching_handler: object) -> None:
+    async def test_invalidate_cache_removes_key(
+        self, caching_handler: ModelCapabilityCaching
+    ) -> None:
         """invalidate_cache removes the specified key."""
         cache_key = "to_remove"
         await caching_handler.set_cached(cache_key, "some_value")
@@ -403,7 +413,7 @@ class TestInvalidateCache:
     @pytest.mark.asyncio
     @pytest.mark.timeout(60)
     async def test_invalidate_cache_handles_nonexistent_key(
-        self, caching_handler: object
+        self, caching_handler: ModelCapabilityCaching
     ) -> None:
         """invalidate_cache does not raise for nonexistent key."""
         # Should not raise
@@ -416,7 +426,7 @@ class TestInvalidateCache:
     @pytest.mark.asyncio
     @pytest.mark.timeout(60)
     async def test_invalidate_cache_only_affects_specified_key(
-        self, caching_handler: object
+        self, caching_handler: ModelCapabilityCaching
     ) -> None:
         """invalidate_cache only removes the specified key, not others."""
         await caching_handler.set_cached("keep_me", "value1")
@@ -440,7 +450,7 @@ class TestClearCache:
     @pytest.mark.asyncio
     @pytest.mark.timeout(60)
     async def test_clear_cache_removes_all_entries(
-        self, caching_handler: object
+        self, caching_handler: ModelCapabilityCaching
     ) -> None:
         """clear_cache removes all cached entries."""
         # Store multiple entries
@@ -456,7 +466,9 @@ class TestClearCache:
 
     @pytest.mark.asyncio
     @pytest.mark.timeout(60)
-    async def test_clear_cache_on_empty_cache(self, caching_handler: object) -> None:
+    async def test_clear_cache_on_empty_cache(
+        self, caching_handler: ModelCapabilityCaching
+    ) -> None:
         """clear_cache works on empty cache without error."""
         # Should not raise
         await caching_handler.clear_cache()
@@ -467,7 +479,7 @@ class TestClearCache:
     @pytest.mark.asyncio
     @pytest.mark.timeout(60)
     async def test_clear_cache_stats_reflect_cleared(
-        self, caching_handler: object
+        self, caching_handler: ModelCapabilityCaching
     ) -> None:
         """Stats reflect cleared state after clear_cache."""
         await caching_handler.set_cached("key1", "value1")
@@ -492,7 +504,9 @@ class TestClearCache:
 class TestGetCacheStats:
     """Test get_cache_stats method."""
 
-    def test_get_cache_stats_returns_typed_dict(self, caching_handler: object) -> None:
+    def test_get_cache_stats_returns_typed_dict(
+        self, caching_handler: ModelCapabilityCaching
+    ) -> None:
         """get_cache_stats returns TypedDictCacheStats structure."""
         stats = caching_handler.get_cache_stats()
 
@@ -500,7 +514,9 @@ class TestGetCacheStats:
         assert "entries" in stats
         assert "keys" in stats
 
-    def test_get_cache_stats_initial_state(self, caching_handler: object) -> None:
+    def test_get_cache_stats_initial_state(
+        self, caching_handler: ModelCapabilityCaching
+    ) -> None:
         """get_cache_stats shows correct initial state."""
         stats = caching_handler.get_cache_stats()
 
@@ -509,7 +525,7 @@ class TestGetCacheStats:
         assert stats["keys"] == []
 
     def test_get_cache_stats_disabled_handler(
-        self, disabled_caching_handler: object
+        self, disabled_caching_handler: ModelCapabilityCaching
     ) -> None:
         """get_cache_stats shows disabled state."""
         stats = disabled_caching_handler.get_cache_stats()
@@ -520,7 +536,7 @@ class TestGetCacheStats:
     @pytest.mark.asyncio
     @pytest.mark.timeout(60)
     async def test_get_cache_stats_reflects_entries(
-        self, caching_handler: object
+        self, caching_handler: ModelCapabilityCaching
     ) -> None:
         """get_cache_stats correctly counts entries."""
         await caching_handler.set_cached("key1", "value1")
@@ -534,7 +550,7 @@ class TestGetCacheStats:
     @pytest.mark.asyncio
     @pytest.mark.timeout(60)
     async def test_get_cache_stats_after_invalidation(
-        self, caching_handler: object
+        self, caching_handler: ModelCapabilityCaching
     ) -> None:
         """get_cache_stats reflects invalidation."""
         await caching_handler.set_cached("key1", "value1")
@@ -688,21 +704,27 @@ class TestHandlerIndependence:
 class TestEdgeCases:
     """Test edge cases and boundary conditions."""
 
-    def test_generate_cache_key_empty_dict(self, caching_handler: object) -> None:
+    def test_generate_cache_key_empty_dict(
+        self, caching_handler: ModelCapabilityCaching
+    ) -> None:
         """Empty dict produces valid cache key."""
         key = caching_handler.generate_cache_key({})
 
         assert isinstance(key, str)
         assert len(key) == 64
 
-    def test_generate_cache_key_empty_string(self, caching_handler: object) -> None:
+    def test_generate_cache_key_empty_string(
+        self, caching_handler: ModelCapabilityCaching
+    ) -> None:
         """Empty string produces valid cache key."""
         key = caching_handler.generate_cache_key("")
 
         assert isinstance(key, str)
         assert len(key) == 64
 
-    def test_generate_cache_key_empty_list(self, caching_handler: object) -> None:
+    def test_generate_cache_key_empty_list(
+        self, caching_handler: ModelCapabilityCaching
+    ) -> None:
         """Empty list produces valid cache key."""
         key = caching_handler.generate_cache_key([])
 
@@ -711,7 +733,9 @@ class TestEdgeCases:
 
     @pytest.mark.asyncio
     @pytest.mark.timeout(60)
-    async def test_set_cached_empty_string_key(self, caching_handler: object) -> None:
+    async def test_set_cached_empty_string_key(
+        self, caching_handler: ModelCapabilityCaching
+    ) -> None:
         """Empty string key is valid."""
         await caching_handler.set_cached("", "empty_key_value")
         result = await caching_handler.get_cached("")
@@ -720,7 +744,9 @@ class TestEdgeCases:
 
     @pytest.mark.asyncio
     @pytest.mark.timeout(60)
-    async def test_set_cached_unicode_key(self, caching_handler: object) -> None:
+    async def test_set_cached_unicode_key(
+        self, caching_handler: ModelCapabilityCaching
+    ) -> None:
         """Unicode characters in key are handled."""
         unicode_key = "key_with_unicode_"
         await caching_handler.set_cached(unicode_key, "unicode_value")
@@ -730,7 +756,9 @@ class TestEdgeCases:
 
     @pytest.mark.asyncio
     @pytest.mark.timeout(60)
-    async def test_set_cached_large_value(self, caching_handler: object) -> None:
+    async def test_set_cached_large_value(
+        self, caching_handler: ModelCapabilityCaching
+    ) -> None:
         """Large values can be cached."""
         large_value = {"data": "x" * 10000}  # 10KB of data
         await caching_handler.set_cached("large_key", large_value)
@@ -739,7 +767,7 @@ class TestEdgeCases:
         assert result == large_value
 
     def test_generate_cache_key_circular_reference_fallback(
-        self, caching_handler: object
+        self, caching_handler: ModelCapabilityCaching
     ) -> None:
         """Circular references fall back to str() representation."""
         circular: dict[str, object] = {}

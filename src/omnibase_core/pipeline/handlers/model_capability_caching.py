@@ -26,7 +26,7 @@ import hashlib
 import json
 from typing import Any
 
-from pydantic import BaseModel, PrivateAttr
+from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 
 from omnibase_core.types.typed_dict_mixin_types import TypedDictCacheStats
 
@@ -57,8 +57,17 @@ class ModelCapabilityCaching(BaseModel):
         Added as part of Mixin-to-Handler conversion (OMN-1112)
     """
 
+    # TODO(OMN-XXXX): Implement production-ready cache backend
+    # Current stub implementation stores in-memory dict without TTL enforcement.
+    # Production implementation should use Redis/Memcached with proper TTL,
+    # LRU eviction, and distributed cache support.
+
+    model_config = ConfigDict(frozen=False, extra="forbid", from_attributes=True)
+
     enabled: bool = True
-    default_ttl_seconds: int = 3600
+    default_ttl_seconds: int = Field(
+        default=3600, ge=0, description="Default TTL in seconds"
+    )
 
     # Private attribute for internal cache storage (not serialized)
     _cache_data: dict[str, object] = PrivateAttr(default_factory=dict)
@@ -99,7 +108,7 @@ class ModelCapabilityCaching(BaseModel):
             return None
         return self._cache_data.get(cache_key)
 
-    async def set_cached(
+    async def set_cached(  # stub-ok: TTL enforcement deferred to production backend
         self, cache_key: str, value: Any, ttl_seconds: int | None = None
     ) -> None:
         """
@@ -116,6 +125,13 @@ class ModelCapabilityCaching(BaseModel):
             when a persistent cache backend (Redis/Memcached) is integrated.
         """
         if self.enabled:
+            # stub-impl-ok: Basic max_entries enforcement for memory safety
+            # Production implementation will use proper LRU eviction
+            MAX_STUB_ENTRIES = 10000  # Basic limit for stub implementation
+            if len(self._cache_data) >= MAX_STUB_ENTRIES:
+                # Simple eviction: remove oldest entry (first key)
+                oldest_key = next(iter(self._cache_data))
+                del self._cache_data[oldest_key]
             # stub-ok: TTL parameter accepted but not enforced in stub implementation
             self._cache_data[cache_key] = value
 

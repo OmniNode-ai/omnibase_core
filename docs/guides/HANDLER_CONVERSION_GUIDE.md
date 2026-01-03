@@ -2,7 +2,7 @@
 
 **Status**: Active
 **Version**: 1.0.0
-**Last Updated**: 2026-01-02
+**Last Updated**: 2026-01-03
 **Related Tickets**: OMN-1112, OMN-1113, OMN-1114, OMN-1162
 
 ---
@@ -35,7 +35,7 @@ from pydantic import BaseModel, ConfigDict, PrivateAttr
 class ModelCapabilityExample(BaseModel):
     """Example capability handler."""
 
-    model_config = ConfigDict(frozen=False, extra="forbid")
+    model_config = ConfigDict(frozen=False, extra="forbid", from_attributes=True)
 
     enabled: bool = True
     _internal_data: dict[str, object] = PrivateAttr(default_factory=dict)
@@ -275,7 +275,7 @@ from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 class ModelCapabilityMetrics(BaseModel):
     """Metrics capability handler - standalone, no inheritance from nodes."""
 
-    model_config = ConfigDict(frozen=False, extra="forbid")
+    model_config = ConfigDict(frozen=False, extra="forbid", from_attributes=True)
 
     # Configuration fields (public)
     namespace: str = Field(default="default", description="Metrics namespace")
@@ -308,6 +308,7 @@ class ModelCapabilityCaching(BaseModel):
     model_config = ConfigDict(
         frozen=False,  # Allow mutation of internal state
         extra="forbid",  # Strict configuration validation
+        from_attributes=True,  # Required for pytest-xdist compatibility
     )
 
     # Configuration (validated by Pydantic)
@@ -419,7 +420,7 @@ class ModelCapabilityMetrics(BaseModel):
     Provides performance metrics collection capabilities.
     """
 
-    model_config = ConfigDict(frozen=False, extra="forbid")
+    model_config = ConfigDict(frozen=False, extra="forbid", from_attributes=True)
 
     # Configuration (was implicit in mixin)
     enabled: bool = Field(default=True, description="Enable metrics collection")
@@ -596,7 +597,7 @@ from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 class ModelCapabilityMetrics(BaseModel):
     """Standalone metrics capability handler."""
 
-    model_config = ConfigDict(frozen=False, extra="forbid")
+    model_config = ConfigDict(frozen=False, extra="forbid", from_attributes=True)
 
     enabled: bool = Field(default=True, description="Enable metrics collection")
     namespace: str = Field(default="default", description="Metrics namespace")
@@ -652,7 +653,7 @@ import json
 class ModelCapabilityCaching(BaseModel):
     """Standalone caching capability handler."""
 
-    model_config = ConfigDict(frozen=False, extra="forbid")
+    model_config = ConfigDict(frozen=False, extra="forbid", from_attributes=True)
 
     enabled: bool = Field(default=True, description="Enable caching")
     ttl_seconds: int = Field(default=3600, ge=0, description="Default TTL in seconds")
@@ -921,5 +922,5 @@ poetry run pytest tests/unit/mixins/ tests/unit/pipeline/handlers/ -v
 
 ---
 
-**Last Updated**: 2026-01-02
+**Last Updated**: 2026-01-03
 **Version**: 1.0.0

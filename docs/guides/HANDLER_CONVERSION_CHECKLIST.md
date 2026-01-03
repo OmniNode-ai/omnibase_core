@@ -4,7 +4,7 @@
 
 **Related Ticket**: OMN-1112 - First Pure Handler Conversions
 
-**Last Updated**: 2026-01-02
+**Last Updated**: 2026-01-03
 
 ---
 
@@ -291,14 +291,14 @@ class ModelCapabilityExample(BaseModel):
     model_config = ConfigDict(
         frozen=False,  # or True if stateless
         extra="forbid",
-        arbitrary_types_allowed=True,
+        from_attributes=True,  # Required for pytest-xdist safety
     )
 
     # Configuration fields
     enabled: bool = True
 
     # Internal state (if needed) - use PrivateAttr for non-serialized state
-    _internal_state: dict[str, Any] = PrivateAttr(default_factory=dict)
+    _internal_state: dict[str, object] = PrivateAttr(default_factory=dict)
 
     def capability_method(self, input_data: Any) -> Any:
         """Implement capability logic."""

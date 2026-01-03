@@ -43,7 +43,7 @@ class ModelCapabilityMetrics(BaseModel):
         Added as part of Mixin-to-Handler conversion (OMN-1112)
     """
 
-    model_config = ConfigDict(frozen=False, extra="forbid")
+    model_config = ConfigDict(frozen=False, extra="forbid", from_attributes=True)
 
     namespace: str = "onex"
     enabled: bool = True
@@ -93,6 +93,12 @@ class ModelCapabilityMetrics(BaseModel):
         Returns:
             Dictionary of current metrics with typed metric entries.
             Returns a deep copy to prevent external mutation of internal state.
+
+        Note:
+            Deep copy is used (rather than shallow copy) because TypedDictMetricEntry
+            contains nested 'tags' dict that could be mutated by callers. A shallow copy
+            would allow `metrics["name"]["tags"]["key"] = "value"` to modify internal state.
+            Deep copy ensures complete isolation at a small performance cost.
         """
         return copy.deepcopy(self._metrics_data)
 
