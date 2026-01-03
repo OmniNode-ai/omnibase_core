@@ -12,7 +12,7 @@ from datetime import UTC
 from typing import Any
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.logging.pydantic_json_encoder import PydanticJSONEncoder
+from omnibase_core.logging.logging_pydantic_encoder import PydanticJSONEncoder
 
 
 def emit_log_event_sync(

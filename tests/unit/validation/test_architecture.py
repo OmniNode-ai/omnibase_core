@@ -14,7 +14,7 @@ from omnibase_core.models.validation.model_duplication_report import (
 )
 from omnibase_core.models.validation.model_protocol_info import ModelProtocolInfo
 from omnibase_core.services.service_protocol_auditor import ServiceProtocolAuditor
-from omnibase_core.validation.architecture import (
+from omnibase_core.validation.validator_architecture import (
     ModelCounter,
     validate_architecture_directory,
     validate_one_model_per_file,
@@ -487,7 +487,9 @@ class ModelUser(BaseModel):
         monkeypatch.setattr("sys.argv", ["script.py", str(tmp_path)])
 
         # Import and run CLI
-        from omnibase_core.validation.architecture import validate_architecture_cli
+        from omnibase_core.validation.validator_architecture import (
+            validate_architecture_cli,
+        )
 
         exit_code = validate_architecture_cli()
         captured = capsys.readouterr()
@@ -513,7 +515,9 @@ class ModelPost(BaseModel):
 
         monkeypatch.setattr("sys.argv", ["script.py", str(tmp_path)])
 
-        from omnibase_core.validation.architecture import validate_architecture_cli
+        from omnibase_core.validation.validator_architecture import (
+            validate_architecture_cli,
+        )
 
         exit_code = validate_architecture_cli()
         captured = capsys.readouterr()
@@ -542,7 +546,9 @@ class ModelPost(BaseModel):
             "sys.argv", ["script.py", str(tmp_path), "--max-violations", "10"]
         )
 
-        from omnibase_core.validation.architecture import validate_architecture_cli
+        from omnibase_core.validation.validator_architecture import (
+            validate_architecture_cli,
+        )
 
         exit_code = validate_architecture_cli()
         captured = capsys.readouterr()
@@ -556,7 +562,9 @@ class ModelPost(BaseModel):
 
         monkeypatch.setattr("sys.argv", ["script.py", str(nonexistent)])
 
-        from omnibase_core.validation.architecture import validate_architecture_cli
+        from omnibase_core.validation.validator_architecture import (
+            validate_architecture_cli,
+        )
 
         exit_code = validate_architecture_cli()
         captured = capsys.readouterr()
@@ -590,7 +598,9 @@ class EnumStatus(Enum):
 
         monkeypatch.setattr("sys.argv", ["script.py", str(dir1), str(dir2)])
 
-        from omnibase_core.validation.architecture import validate_architecture_cli
+        from omnibase_core.validation.validator_architecture import (
+            validate_architecture_cli,
+        )
 
         exit_code = validate_architecture_cli()
         captured = capsys.readouterr()
@@ -603,7 +613,9 @@ class EnumStatus(Enum):
         """Test CLI with default directory (src/)."""
         monkeypatch.setattr("sys.argv", ["script.py"])
 
-        from omnibase_core.validation.architecture import validate_architecture_cli
+        from omnibase_core.validation.validator_architecture import (
+            validate_architecture_cli,
+        )
 
         # This will try to scan src/ which may or may not exist
         # Just verify it doesn't crash
@@ -626,7 +638,9 @@ class ModelUser(BaseModel):
 
         monkeypatch.setattr("sys.argv", ["script.py", str(tmp_path)])
 
-        from omnibase_core.validation.architecture import validate_architecture_cli
+        from omnibase_core.validation.validator_architecture import (
+            validate_architecture_cli,
+        )
 
         exit_code = validate_architecture_cli()
         captured = capsys.readouterr()
@@ -654,7 +668,9 @@ class ModelPost(BaseModel):
 
         monkeypatch.setattr("sys.argv", ["script.py", str(tmp_path)])
 
-        from omnibase_core.validation.architecture import validate_architecture_cli
+        from omnibase_core.validation.validator_architecture import (
+            validate_architecture_cli,
+        )
 
         exit_code = validate_architecture_cli()
         captured = capsys.readouterr()
@@ -702,7 +718,9 @@ class ModelPost(BaseModel):
             ["script.py", str(valid_dir), str(nonexistent_dir), str(invalid_dir)],
         )
 
-        from omnibase_core.validation.architecture import validate_architecture_cli
+        from omnibase_core.validation.validator_architecture import (
+            validate_architecture_cli,
+        )
 
         exit_code = validate_architecture_cli()
         captured = capsys.readouterr()

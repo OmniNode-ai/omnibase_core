@@ -20,7 +20,7 @@ import pytest
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.logging.structured import emit_log_event_sync
+from omnibase_core.logging.logging_structured import emit_log_event_sync
 
 
 class SampleContext(BaseModel):

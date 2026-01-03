@@ -35,7 +35,7 @@ from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 from omnibase_core.protocols.handler.protocol_handler_context import (
     ProtocolHandlerContext,
 )
-from omnibase_core.runtime.message_dispatch_engine import MessageDispatchEngine
+from omnibase_core.runtime.runtime_message_dispatch import MessageDispatchEngine
 
 # ============================================================================
 # Test Event Types (for category inference)

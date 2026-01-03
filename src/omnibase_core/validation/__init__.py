@@ -68,8 +68,6 @@ from omnibase_core.models.validation.model_module_import_result import (
 # Import directly from source module to satisfy mypy explicit-export requirement
 from omnibase_core.services.service_validation_suite import ServiceValidationSuite
 
-# Import validation functions for easy access
-from .architecture import validate_architecture_directory, validate_one_model_per_file
 from .circular_import_validator import CircularImportValidator
 
 # Import contract patch validator (OMN-1126)
@@ -82,6 +80,12 @@ from .contract_validation_invariant_checker import (
     ModelContractValidationEvent,
 )
 
+# Import validation functions for easy access
+from .validator_architecture import (
+    validate_architecture_directory,
+    validate_one_model_per_file,
+)
+
 # =============================================================================
 # ALIAS LOADING STRATEGY: __getattr__ vs Direct Alias
 # =============================================================================
@@ -90,7 +94,7 @@ from .contract_validation_invariant_checker import (
 #
 # 1. DIRECT ALIAS (used above for ModelValidationSuite):
 #    ```python
-#    from .cli import ModelValidationSuite, ServiceValidationSuite
+#    from .validator_cli import ModelValidationSuite, ServiceValidationSuite
 #    ```
 #    Use this when: The canonical class can be imported at module load time
 #    without causing circular imports. This is simpler and provides better
@@ -222,23 +226,22 @@ def __getattr__(name: str) -> type:
     )
 
 
-from .contracts import (
-    validate_contracts_directory,
-    validate_no_manual_yaml,
-    validate_yaml_file,
-)
-
 # Import FSM analysis
 from .fsm_analysis import analyze_fsm
-from .patterns import validate_patterns_directory, validate_patterns_file
 
 # Import reserved enum validator (OMN-669, OMN-675)
 # - validate_execution_mode takes EnumExecutionMode (type-safe, for validated enum values)
 # - Rejects CONDITIONAL/STREAMING modes reserved for future versions
 # - For string input (e.g., YAML config), use validate_execution_mode_string instead
 from .reserved_enum_validator import RESERVED_EXECUTION_MODES, validate_execution_mode
-from .types import validate_union_usage_directory, validate_union_usage_file
 from .validation_utils import ModelProtocolInfo, validate_protocol_compliance
+from .validator_contracts import (
+    validate_contracts_directory,
+    validate_no_manual_yaml,
+    validate_yaml_file,
+)
+from .validator_patterns import validate_patterns_directory, validate_patterns_file
+from .validator_types import validate_union_usage_directory, validate_union_usage_file
 
 # Import common validators (OMN-1054)
 from .validators import (

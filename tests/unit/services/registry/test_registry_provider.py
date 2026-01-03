@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
 #
 # SPDX-License-Identifier: Apache-2.0
-"""Unit tests for RegistryProvider.
+"""Unit tests for ServiceRegistryProvider.
 
 Note: This test file is temporarily skipped due to circular import issues.
 See OMN-1126 for tracking. The ModelProviderDescriptor has a forward reference
@@ -22,7 +22,7 @@ pytestmark = pytest.mark.skip(
 
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.providers import ModelProviderDescriptor
-from omnibase_core.services.registry.registry_provider import RegistryProvider
+from omnibase_core.services.registry.service_registry_provider import ServiceRegistryProvider
 
 # Fixed UUIDs for deterministic tests
 TEST_UUID_1 = UUID("11111111-1111-1111-1111-111111111111")
@@ -32,9 +32,9 @@ NONEXISTENT_UUID = UUID("00000000-0000-0000-0000-000000000000")
 
 
 @pytest.fixture
-def registry() -> RegistryProvider:
-    """Fixture providing an empty RegistryProvider."""
-    return RegistryProvider()
+def registry() -> ServiceRegistryProvider:
+    """Fixture providing an empty ServiceRegistryProvider."""
+    return ServiceRegistryProvider()
 
 
 @pytest.fixture
@@ -74,11 +74,11 @@ def staging_provider() -> ModelProviderDescriptor:
 
 
 @pytest.mark.unit
-class TestRegistryProviderLifecycle:
+class TestServiceRegistryProviderLifecycle:
     """Tests for register/unregister lifecycle."""
 
     def test_register_single_provider(
-        self, registry: RegistryProvider, db_provider: ModelProviderDescriptor
+        self, registry: ServiceRegistryProvider, db_provider: ModelProviderDescriptor
     ) -> None:
         """Test registering a single provider."""
         registry.register(db_provider)
@@ -88,7 +88,7 @@ class TestRegistryProviderLifecycle:
 
     def test_register_multiple_providers(
         self,
-        registry: RegistryProvider,
+        registry: ServiceRegistryProvider,
         db_provider: ModelProviderDescriptor,
         cache_provider: ModelProviderDescriptor,
     ) -> None:
@@ -101,7 +101,7 @@ class TestRegistryProviderLifecycle:
         assert cache_provider.provider_id in registry
 
     def test_unregister_existing_provider(
-        self, registry: RegistryProvider, db_provider: ModelProviderDescriptor
+        self, registry: ServiceRegistryProvider, db_provider: ModelProviderDescriptor
     ) -> None:
         """Test unregistering an existing provider returns True."""
         registry.register(db_provider)
@@ -112,14 +112,14 @@ class TestRegistryProviderLifecycle:
         assert len(registry) == 0
         assert db_provider.provider_id not in registry
 
-    def test_unregister_nonexistent_provider(self, registry: RegistryProvider) -> None:
+    def test_unregister_nonexistent_provider(self, registry: ServiceRegistryProvider) -> None:
         """Test unregistering a nonexistent provider returns False."""
         result = registry.unregister(NONEXISTENT_UUID)
 
         assert result is False
 
     def test_unregister_twice_returns_false_second_time(
-        self, registry: RegistryProvider, db_provider: ModelProviderDescriptor
+        self, registry: ServiceRegistryProvider, db_provider: ModelProviderDescriptor
     ) -> None:
         """Test unregistering the same provider twice."""
         registry.register(db_provider)
@@ -132,11 +132,11 @@ class TestRegistryProviderLifecycle:
 
 
 @pytest.mark.unit
-class TestRegistryProviderDuplicateHandling:
+class TestServiceRegistryProviderDuplicateHandling:
     """Tests for duplicate provider_id handling."""
 
     def test_duplicate_without_replace_raises_error(
-        self, registry: RegistryProvider, db_provider: ModelProviderDescriptor
+        self, registry: ServiceRegistryProvider, db_provider: ModelProviderDescriptor
     ) -> None:
         """Test registering duplicate provider_id raises ModelOnexError."""
         registry.register(db_provider)
@@ -148,7 +148,7 @@ class TestRegistryProviderDuplicateHandling:
         assert str(db_provider.provider_id) in str(exc_info.value)
 
     def test_duplicate_with_replace_true_succeeds(
-        self, registry: RegistryProvider, db_provider: ModelProviderDescriptor
+        self, registry: ServiceRegistryProvider, db_provider: ModelProviderDescriptor
     ) -> None:
         """Test registering duplicate with replace=True overwrites."""
         registry.register(db_provider)
@@ -171,7 +171,7 @@ class TestRegistryProviderDuplicateHandling:
         assert "new-tag" in retrieved.tags
 
     def test_replace_false_is_default(
-        self, registry: RegistryProvider, db_provider: ModelProviderDescriptor
+        self, registry: ServiceRegistryProvider, db_provider: ModelProviderDescriptor
     ) -> None:
         """Test that replace=False is the default behavior."""
         registry.register(db_provider)
@@ -182,11 +182,11 @@ class TestRegistryProviderDuplicateHandling:
 
 
 @pytest.mark.unit
-class TestRegistryProviderGet:
+class TestServiceRegistryProviderGet:
     """Tests for get method."""
 
     def test_get_existing_provider(
-        self, registry: RegistryProvider, db_provider: ModelProviderDescriptor
+        self, registry: ServiceRegistryProvider, db_provider: ModelProviderDescriptor
     ) -> None:
         """Test getting an existing provider returns it."""
         registry.register(db_provider)
@@ -198,7 +198,7 @@ class TestRegistryProviderGet:
         assert result == db_provider
 
     def test_get_nonexistent_provider_returns_none(
-        self, registry: RegistryProvider
+        self, registry: ServiceRegistryProvider
     ) -> None:
         """Test getting a nonexistent provider returns None."""
         result = registry.get(NONEXISTENT_UUID)
@@ -206,7 +206,7 @@ class TestRegistryProviderGet:
         assert result is None
 
     def test_get_after_unregister_returns_none(
-        self, registry: RegistryProvider, db_provider: ModelProviderDescriptor
+        self, registry: ServiceRegistryProvider, db_provider: ModelProviderDescriptor
     ) -> None:
         """Test getting a provider after unregistering returns None."""
         registry.register(db_provider)
@@ -218,11 +218,11 @@ class TestRegistryProviderGet:
 
 
 @pytest.mark.unit
-class TestRegistryProviderFindByCapability:
+class TestServiceRegistryProviderFindByCapability:
     """Tests for find_by_capability method."""
 
     def test_find_by_capability_single_match(
-        self, registry: RegistryProvider, db_provider: ModelProviderDescriptor
+        self, registry: ServiceRegistryProvider, db_provider: ModelProviderDescriptor
     ) -> None:
         """Test finding providers with a matching capability."""
         registry.register(db_provider)
@@ -234,7 +234,7 @@ class TestRegistryProviderFindByCapability:
 
     def test_find_by_capability_multiple_matches(
         self,
-        registry: RegistryProvider,
+        registry: ServiceRegistryProvider,
         db_provider: ModelProviderDescriptor,
         staging_provider: ModelProviderDescriptor,
     ) -> None:
@@ -250,7 +250,7 @@ class TestRegistryProviderFindByCapability:
         assert staging_provider.provider_id in provider_ids
 
     def test_find_by_capability_no_match(
-        self, registry: RegistryProvider, db_provider: ModelProviderDescriptor
+        self, registry: ServiceRegistryProvider, db_provider: ModelProviderDescriptor
     ) -> None:
         """Test finding providers with no matching capability returns empty list."""
         registry.register(db_provider)
@@ -260,7 +260,7 @@ class TestRegistryProviderFindByCapability:
         assert len(results) == 0
 
     def test_find_by_capability_empty_registry(
-        self, registry: RegistryProvider
+        self, registry: ServiceRegistryProvider
     ) -> None:
         """Test finding in empty registry returns empty list."""
         results = registry.find_by_capability("database.relational")
@@ -268,7 +268,7 @@ class TestRegistryProviderFindByCapability:
         assert len(results) == 0
 
     def test_find_by_capability_exact_match_required(
-        self, registry: RegistryProvider, db_provider: ModelProviderDescriptor
+        self, registry: ServiceRegistryProvider, db_provider: ModelProviderDescriptor
     ) -> None:
         """Test that capability matching is exact (not partial)."""
         registry.register(db_provider)
@@ -280,12 +280,12 @@ class TestRegistryProviderFindByCapability:
 
 
 @pytest.mark.unit
-class TestRegistryProviderFindByTags:
+class TestServiceRegistryProviderFindByTags:
     """Tests for find_by_tags method."""
 
     def test_find_by_tags_any_match_default(
         self,
-        registry: RegistryProvider,
+        registry: ServiceRegistryProvider,
         db_provider: ModelProviderDescriptor,
         cache_provider: ModelProviderDescriptor,
         staging_provider: ModelProviderDescriptor,
@@ -305,7 +305,7 @@ class TestRegistryProviderFindByTags:
 
     def test_find_by_tags_any_match_multiple_tags(
         self,
-        registry: RegistryProvider,
+        registry: ServiceRegistryProvider,
         db_provider: ModelProviderDescriptor,
         staging_provider: ModelProviderDescriptor,
     ) -> None:
@@ -320,7 +320,7 @@ class TestRegistryProviderFindByTags:
 
     def test_find_by_tags_match_all_true(
         self,
-        registry: RegistryProvider,
+        registry: ServiceRegistryProvider,
         db_provider: ModelProviderDescriptor,
         cache_provider: ModelProviderDescriptor,
     ) -> None:
@@ -335,7 +335,7 @@ class TestRegistryProviderFindByTags:
         assert results[0] == db_provider
 
     def test_find_by_tags_match_all_no_matches(
-        self, registry: RegistryProvider, db_provider: ModelProviderDescriptor
+        self, registry: ServiceRegistryProvider, db_provider: ModelProviderDescriptor
     ) -> None:
         """Test find_by_tags match_all with no full matches."""
         registry.register(db_provider)  # production, primary
@@ -346,7 +346,7 @@ class TestRegistryProviderFindByTags:
         assert len(results) == 0
 
     def test_find_by_tags_empty_tags_list(
-        self, registry: RegistryProvider, db_provider: ModelProviderDescriptor
+        self, registry: ServiceRegistryProvider, db_provider: ModelProviderDescriptor
     ) -> None:
         """Test find_by_tags with empty tags list returns empty (any fails)."""
         registry.register(db_provider)
@@ -357,7 +357,7 @@ class TestRegistryProviderFindByTags:
         assert len(results) == 0
 
     def test_find_by_tags_empty_tags_match_all(
-        self, registry: RegistryProvider, db_provider: ModelProviderDescriptor
+        self, registry: ServiceRegistryProvider, db_provider: ModelProviderDescriptor
     ) -> None:
         """Test find_by_tags with empty tags and match_all returns empty.
 
@@ -372,7 +372,7 @@ class TestRegistryProviderFindByTags:
         assert len(results) == 0
 
     def test_find_by_tags_no_matches(
-        self, registry: RegistryProvider, db_provider: ModelProviderDescriptor
+        self, registry: ServiceRegistryProvider, db_provider: ModelProviderDescriptor
     ) -> None:
         """Test find_by_tags with no matching tags."""
         registry.register(db_provider)
@@ -383,10 +383,10 @@ class TestRegistryProviderFindByTags:
 
 
 @pytest.mark.unit
-class TestRegistryProviderListAll:
+class TestServiceRegistryProviderListAll:
     """Tests for list_all method."""
 
-    def test_list_all_empty_registry(self, registry: RegistryProvider) -> None:
+    def test_list_all_empty_registry(self, registry: ServiceRegistryProvider) -> None:
         """Test list_all on empty registry returns empty list."""
         results = registry.list_all()
 
@@ -394,7 +394,7 @@ class TestRegistryProviderListAll:
 
     def test_list_all_returns_all_providers(
         self,
-        registry: RegistryProvider,
+        registry: ServiceRegistryProvider,
         db_provider: ModelProviderDescriptor,
         cache_provider: ModelProviderDescriptor,
     ) -> None:
@@ -411,7 +411,7 @@ class TestRegistryProviderListAll:
 
     def test_list_all_preserves_insertion_order(
         self,
-        registry: RegistryProvider,
+        registry: ServiceRegistryProvider,
         db_provider: ModelProviderDescriptor,
         cache_provider: ModelProviderDescriptor,
         staging_provider: ModelProviderDescriptor,
@@ -429,7 +429,7 @@ class TestRegistryProviderListAll:
 
     def test_list_all_after_unregister(
         self,
-        registry: RegistryProvider,
+        registry: ServiceRegistryProvider,
         db_provider: ModelProviderDescriptor,
         cache_provider: ModelProviderDescriptor,
     ) -> None:
@@ -445,17 +445,17 @@ class TestRegistryProviderListAll:
 
 
 @pytest.mark.unit
-class TestRegistryProviderListCapabilities:
+class TestServiceRegistryProviderListCapabilities:
     """Tests for list_capabilities method."""
 
-    def test_list_capabilities_empty_registry(self, registry: RegistryProvider) -> None:
+    def test_list_capabilities_empty_registry(self, registry: ServiceRegistryProvider) -> None:
         """Test list_capabilities on empty registry returns empty set."""
         results = registry.list_capabilities()
 
         assert results == set()
 
     def test_list_capabilities_single_provider(
-        self, registry: RegistryProvider, db_provider: ModelProviderDescriptor
+        self, registry: ServiceRegistryProvider, db_provider: ModelProviderDescriptor
     ) -> None:
         """Test list_capabilities with single provider."""
         registry.register(db_provider)
@@ -466,7 +466,7 @@ class TestRegistryProviderListCapabilities:
 
     def test_list_capabilities_multiple_providers(
         self,
-        registry: RegistryProvider,
+        registry: ServiceRegistryProvider,
         db_provider: ModelProviderDescriptor,
         cache_provider: ModelProviderDescriptor,
     ) -> None:
@@ -486,7 +486,7 @@ class TestRegistryProviderListCapabilities:
 
     def test_list_capabilities_returns_set_of_all_capabilities(
         self,
-        registry: RegistryProvider,
+        registry: ServiceRegistryProvider,
         db_provider: ModelProviderDescriptor,
         staging_provider: ModelProviderDescriptor,
     ) -> None:
@@ -502,10 +502,10 @@ class TestRegistryProviderListCapabilities:
 
 
 @pytest.mark.unit
-class TestRegistryProviderThreadSafety:
+class TestServiceRegistryProviderThreadSafety:
     """Tests for thread safety."""
 
-    def test_concurrent_register_unregister(self, registry: RegistryProvider) -> None:
+    def test_concurrent_register_unregister(self, registry: ServiceRegistryProvider) -> None:
         """Test concurrent register/unregister operations are thread-safe."""
         errors: list[Exception] = []
         num_operations = 100
@@ -534,7 +534,7 @@ class TestRegistryProviderThreadSafety:
 
     def test_concurrent_read_operations(
         self,
-        registry: RegistryProvider,
+        registry: ServiceRegistryProvider,
         db_provider: ModelProviderDescriptor,
         cache_provider: ModelProviderDescriptor,
     ) -> None:
@@ -563,7 +563,7 @@ class TestRegistryProviderThreadSafety:
         assert len(errors) == 0
 
     def test_concurrent_register_and_read(
-        self, registry: RegistryProvider, db_provider: ModelProviderDescriptor
+        self, registry: ServiceRegistryProvider, db_provider: ModelProviderDescriptor
     ) -> None:
         """Test concurrent register and read operations."""
         registry.register(db_provider)
@@ -611,10 +611,10 @@ class TestRegistryProviderThreadSafety:
 
 
 @pytest.mark.unit
-class TestRegistryProviderClear:
+class TestServiceRegistryProviderClear:
     """Tests for clear method."""
 
-    def test_clear_empty_registry(self, registry: RegistryProvider) -> None:
+    def test_clear_empty_registry(self, registry: ServiceRegistryProvider) -> None:
         """Test clearing an empty registry is safe."""
         registry.clear()
 
@@ -622,7 +622,7 @@ class TestRegistryProviderClear:
 
     def test_clear_removes_all_providers(
         self,
-        registry: RegistryProvider,
+        registry: ServiceRegistryProvider,
         db_provider: ModelProviderDescriptor,
         cache_provider: ModelProviderDescriptor,
     ) -> None:
@@ -639,16 +639,16 @@ class TestRegistryProviderClear:
 
 
 @pytest.mark.unit
-class TestRegistryProviderDunderMethods:
+class TestServiceRegistryProviderDunderMethods:
     """Tests for dunder methods (__len__, __contains__, __repr__)."""
 
-    def test_len_empty(self, registry: RegistryProvider) -> None:
+    def test_len_empty(self, registry: ServiceRegistryProvider) -> None:
         """Test __len__ on empty registry."""
         assert len(registry) == 0
 
     def test_len_with_providers(
         self,
-        registry: RegistryProvider,
+        registry: ServiceRegistryProvider,
         db_provider: ModelProviderDescriptor,
         cache_provider: ModelProviderDescriptor,
     ) -> None:
@@ -660,24 +660,24 @@ class TestRegistryProviderDunderMethods:
         assert len(registry) == 2
 
     def test_contains_registered(
-        self, registry: RegistryProvider, db_provider: ModelProviderDescriptor
+        self, registry: ServiceRegistryProvider, db_provider: ModelProviderDescriptor
     ) -> None:
         """Test __contains__ for registered provider."""
         registry.register(db_provider)
 
         assert db_provider.provider_id in registry
 
-    def test_contains_not_registered(self, registry: RegistryProvider) -> None:
+    def test_contains_not_registered(self, registry: ServiceRegistryProvider) -> None:
         """Test __contains__ for unregistered provider."""
         assert NONEXISTENT_UUID not in registry
 
-    def test_repr(self, registry: RegistryProvider) -> None:
+    def test_repr(self, registry: ServiceRegistryProvider) -> None:
         """Test __repr__ shows provider count."""
-        assert "RegistryProvider(providers=0)" in repr(registry)
+        assert "ServiceRegistryProvider(providers=0)" in repr(registry)
 
     def test_repr_with_providers(
         self,
-        registry: RegistryProvider,
+        registry: ServiceRegistryProvider,
         db_provider: ModelProviderDescriptor,
         cache_provider: ModelProviderDescriptor,
     ) -> None:
@@ -685,4 +685,4 @@ class TestRegistryProviderDunderMethods:
         registry.register(db_provider)
         registry.register(cache_provider)
 
-        assert "RegistryProvider(providers=2)" in repr(registry)
+        assert "ServiceRegistryProvider(providers=2)" in repr(registry)

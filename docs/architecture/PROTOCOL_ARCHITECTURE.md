@@ -716,7 +716,7 @@ from typing import get_type_hints
 
 def test_pattern_checker_protocol_compliance():
     """Test that all checker implementations satisfy ProtocolPatternChecker protocol."""
-    from omnibase_core.validation.patterns import ProtocolPatternChecker
+    from omnibase_core.validation.validator_patterns import ProtocolPatternChecker
     from omnibase_core.validation.checker_pydantic_pattern import PydanticPatternChecker
 
     checker = PydanticPatternChecker("test.py")

@@ -283,8 +283,8 @@ if not arch_result.success:
 Validate individual files:
 
 ```
-from omnibase_core.validation.types import validate_union_usage_file
-from omnibase_core.validation.patterns import validate_patterns_file
+from omnibase_core.validation.validator_types import validate_union_usage_file
+from omnibase_core.validation.validator_patterns import validate_patterns_file
 from pathlib import Path
 
 # Validate single file

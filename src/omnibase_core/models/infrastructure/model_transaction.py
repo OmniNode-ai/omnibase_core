@@ -7,7 +7,9 @@ from uuid import UUID
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_transaction_state import EnumTransactionState
-from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
+from omnibase_core.logging.logging_structured import (
+    emit_log_event_sync as emit_log_event,
+)
 
 from .model_transaction_operation import (
     ModelTransactionOperation,

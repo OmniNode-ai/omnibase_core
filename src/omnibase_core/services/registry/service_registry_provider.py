@@ -2,9 +2,9 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 """
-RegistryProvider - In-memory thread-safe registry for provider descriptors.
+ServiceRegistryProvider - In-memory thread-safe registry for provider descriptors.
 
-This module provides the RegistryProvider class for managing ModelProviderDescriptor
+This module provides the ServiceRegistryProvider class for managing ModelProviderDescriptor
 instances at runtime. The registry supports registration, lookup, and filtering
 of providers by capability and tags.
 
@@ -44,7 +44,7 @@ Related:
 
 from __future__ import annotations
 
-__all__ = ["RegistryProvider"]
+__all__ = ["ServiceRegistryProvider"]
 
 import threading
 from typing import TYPE_CHECKING
@@ -59,7 +59,7 @@ if TYPE_CHECKING:
     )
 
 
-class RegistryProvider:
+class ServiceRegistryProvider:
     """In-memory thread-safe registry for provider descriptors.
 
     Provides CRUD operations for ModelProviderDescriptor instances with
@@ -74,11 +74,11 @@ class RegistryProvider:
         .. code-block:: python
 
             from uuid import uuid4
-            from omnibase_core.services.registry.registry_provider import RegistryProvider
+            from omnibase_core.services.registry.service_registry_provider import ServiceRegistryProvider
             from omnibase_core.models.providers import ModelProviderDescriptor
 
             # Create registry and provider
-            registry = RegistryProvider()
+            registry = ServiceRegistryProvider()
             provider = ModelProviderDescriptor(
                 provider_id=uuid4(),
                 capabilities=["database.relational"],
@@ -117,7 +117,7 @@ class RegistryProvider:
     """
 
     def __init__(self) -> None:
-        """Initialize an empty RegistryProvider.
+        """Initialize an empty ServiceRegistryProvider.
 
         Creates an empty provider registry with a reentrant lock for
         thread-safe operations.
@@ -151,7 +151,7 @@ class RegistryProvider:
         Example:
             .. code-block:: python
 
-                registry = RegistryProvider()
+                registry = ServiceRegistryProvider()
 
                 # First registration succeeds
                 registry.register(provider)
@@ -194,7 +194,7 @@ class RegistryProvider:
         Example:
             .. code-block:: python
 
-                registry = RegistryProvider()
+                registry = ServiceRegistryProvider()
                 registry.register(provider)
 
                 # Remove returns True (accepts UUID directly)
@@ -230,7 +230,7 @@ class RegistryProvider:
 
                 from uuid import UUID
 
-                registry = RegistryProvider()
+                registry = ServiceRegistryProvider()
                 registry.register(provider)
 
                 # Found (accepts UUID directly)
@@ -267,7 +267,7 @@ class RegistryProvider:
         Example:
             .. code-block:: python
 
-                registry = RegistryProvider()
+                registry = ServiceRegistryProvider()
                 registry.register(db_provider)  # has "database.relational"
                 registry.register(cache_provider)  # has "cache.redis"
 
@@ -309,7 +309,7 @@ class RegistryProvider:
         Example:
             .. code-block:: python
 
-                registry = RegistryProvider()
+                registry = ServiceRegistryProvider()
                 # provider1 has tags: ["production", "primary"]
                 # provider2 has tags: ["staging"]
                 registry.register(provider1)
@@ -356,7 +356,7 @@ class RegistryProvider:
         Example:
             .. code-block:: python
 
-                registry = RegistryProvider()
+                registry = ServiceRegistryProvider()
                 registry.register(provider1)
                 registry.register(provider2)
 
@@ -385,7 +385,7 @@ class RegistryProvider:
         Example:
             .. code-block:: python
 
-                registry = RegistryProvider()
+                registry = ServiceRegistryProvider()
                 # provider1: ["database.relational", "database.postgresql"]
                 # provider2: ["cache.redis", "database.relational"]
                 registry.register(provider1)
@@ -416,7 +416,7 @@ class RegistryProvider:
         Example:
             .. code-block:: python
 
-                registry = RegistryProvider()
+                registry = ServiceRegistryProvider()
                 assert len(registry) == 0
 
                 registry.register(provider)
@@ -441,7 +441,7 @@ class RegistryProvider:
 
                 from uuid import UUID
 
-                registry = RegistryProvider()
+                registry = ServiceRegistryProvider()
                 registry.register(provider)
 
                 assert provider.provider_id in registry
@@ -462,7 +462,7 @@ class RegistryProvider:
         Example:
             .. code-block:: python
 
-                registry = RegistryProvider()
+                registry = ServiceRegistryProvider()
                 registry.register(provider1)
                 registry.register(provider2)
                 assert len(registry) == 2
@@ -482,7 +482,7 @@ class RegistryProvider:
         """Return a string representation for debugging.
 
         Returns:
-            str: Format "RegistryProvider(providers=N)"
+            str: Format "ServiceRegistryProvider(providers=N)"
         """
         with self._lock:
-            return f"RegistryProvider(providers={len(self._providers)})"
+            return f"ServiceRegistryProvider(providers={len(self._providers)})"

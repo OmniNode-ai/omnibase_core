@@ -20,7 +20,7 @@ import click
 
 from omnibase_core.enums.enum_cli_exit_code import EnumCLIExitCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel
-from omnibase_core.logging.structured import emit_log_event_sync
+from omnibase_core.logging.logging_structured import emit_log_event_sync
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 if TYPE_CHECKING:
@@ -193,7 +193,7 @@ def validate(
 
     try:
         # Import validation suite lazily to avoid circular imports
-        from omnibase_core.validation.cli import ModelValidationSuite
+        from omnibase_core.validation.validator_cli import ModelValidationSuite
 
         suite = ModelValidationSuite()
         overall_success = True
@@ -486,7 +486,7 @@ def _check_validation_system() -> tuple[bool, str]:
         Tuple of (is_healthy, message).
     """
     try:
-        from omnibase_core.validation.cli import ModelValidationSuite
+        from omnibase_core.validation.validator_cli import ModelValidationSuite
 
         suite = ModelValidationSuite()
         validator_count = len(suite.validators)

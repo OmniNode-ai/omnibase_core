@@ -18,7 +18,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from omnibase_core.validation.patterns import (
+from omnibase_core.validation.validator_patterns import (
     GenericPatternChecker,
     NamingConventionChecker,
     PydanticPatternChecker,
@@ -948,7 +948,7 @@ class ModelUser(BaseModel):
 
         monkeypatch.setattr(sys, "argv", ["validate_patterns", str(test_dir)])
 
-        from omnibase_core.validation.patterns import validate_patterns_cli
+        from omnibase_core.validation.validator_patterns import validate_patterns_cli
 
         exit_code = validate_patterns_cli()
 
@@ -984,7 +984,7 @@ class DataHelper:
 
         monkeypatch.setattr(sys, "argv", ["validate_patterns", str(test_dir)])
 
-        from omnibase_core.validation.patterns import validate_patterns_cli
+        from omnibase_core.validation.validator_patterns import validate_patterns_cli
 
         exit_code = validate_patterns_cli()
 
@@ -1021,7 +1021,7 @@ class ModelUser(BaseModel):
             ["validate_patterns", str(test_dir), "--strict"],
         )
 
-        from omnibase_core.validation.patterns import validate_patterns_cli
+        from omnibase_core.validation.validator_patterns import validate_patterns_cli
 
         exit_code = validate_patterns_cli()
 
@@ -1044,7 +1044,7 @@ class ModelUser(BaseModel):
             ["validate_patterns", str(tmp_path / "nonexistent")],
         )
 
-        from omnibase_core.validation.patterns import validate_patterns_cli
+        from omnibase_core.validation.validator_patterns import validate_patterns_cli
 
         exit_code = validate_patterns_cli()
 
@@ -1074,7 +1074,7 @@ class ModelUser(BaseModel):
             ["validate_patterns", str(dir1), str(dir2)],
         )
 
-        from omnibase_core.validation.patterns import validate_patterns_cli
+        from omnibase_core.validation.validator_patterns import validate_patterns_cli
 
         exit_code = validate_patterns_cli()
 
@@ -1104,7 +1104,9 @@ class ModelUser(BaseModel):
 
             monkeypatch.setattr(sys, "argv", ["validate_patterns"])
 
-            from omnibase_core.validation.patterns import validate_patterns_cli
+            from omnibase_core.validation.validator_patterns import (
+                validate_patterns_cli,
+            )
 
             exit_code = validate_patterns_cli()
 
@@ -1134,7 +1136,7 @@ class TestClass:
 
         monkeypatch.setattr(sys, "argv", ["validate_patterns", str(test_dir)])
 
-        from omnibase_core.validation.patterns import validate_patterns_cli
+        from omnibase_core.validation.validator_patterns import validate_patterns_cli
 
         exit_code = validate_patterns_cli()
 
@@ -1165,7 +1167,7 @@ class BadManager:
 
         monkeypatch.setattr(sys, "argv", ["validate_patterns", str(test_dir)])
 
-        from omnibase_core.validation.patterns import validate_patterns_cli
+        from omnibase_core.validation.validator_patterns import validate_patterns_cli
 
         exit_code = validate_patterns_cli()
 

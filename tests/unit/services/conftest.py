@@ -8,7 +8,7 @@ services tests. The ModelProviderDescriptor model has a forward reference to
 ModelHealthStatus that must be resolved before instances can be created.
 
 The approach uses a session-scoped autouse fixture that:
-1. Imports RegistryProvider first (triggers the normal import chain)
+1. Imports ServiceRegistryProvider first (triggers the normal import chain)
 2. Gets ModelHealthStatus from sys.modules
 3. Calls model_rebuild() with the proper namespace
 

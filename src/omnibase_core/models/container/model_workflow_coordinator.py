@@ -43,7 +43,7 @@ class ModelWorkflowCoordinator:
             self.factory.create_workflow(workflow_type, config)
 
             # Log workflow start
-            from omnibase_core.logging.structured import (
+            from omnibase_core.logging.logging_structured import (
                 emit_log_event_sync as emit_log_event,
             )
 
@@ -77,7 +77,7 @@ class ModelWorkflowCoordinator:
 
         except (AttributeError, ValueError, TypeError, KeyError, RuntimeError) as e:
             # Log workflow failure
-            from omnibase_core.logging.structured import (
+            from omnibase_core.logging.logging_structured import (
                 emit_log_event_sync as emit_log_event,
             )
 
@@ -122,7 +122,7 @@ class ModelWorkflowCoordinator:
             return result
 
         except (AttributeError, ValueError, TypeError, KeyError, RuntimeError) as e:
-            from omnibase_core.logging.structured import (
+            from omnibase_core.logging.logging_structured import (
                 emit_log_event_sync as emit_log_event,
             )
 

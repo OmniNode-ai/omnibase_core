@@ -544,7 +544,7 @@ if projection is None:
 
 | Component | Description | Location |
 |-----------|-------------|----------|
-| `EnvelopeRouter` | Transport-agnostic orchestrator | `src/omnibase_core/runtime/envelope_router.py` |
+| `EnvelopeRouter` | Transport-agnostic orchestrator | `src/omnibase_core/runtime/runtime_envelope_router.py` |
 | `ModelRuntimeNodeInstance` | Node instance wrapper | `src/omnibase_core/models/runtime/model_runtime_node_instance.py` |
 | `ModelONEXContainer` | DI container for services | `src/omnibase_core/models/container/model_onex_container.py` |
 
@@ -558,7 +558,7 @@ if projection is None:
 **Code Example**:
 
 ```python
-from omnibase_core.runtime.envelope_router import EnvelopeRouter
+from omnibase_core.runtime.runtime_envelope_router import EnvelopeRouter
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
 # Initialize DI container
@@ -592,7 +592,7 @@ response = await router.route(incoming_envelope)
 | **EFFECT** | `NodeEffect` | `nodes/node_effect.py` | Position 1 |
 | **HANDLER** | `ProtocolHandler` | `protocols/runtime/protocol_handler.py` | Runtime layer |
 | **PROJECTION** | `ModelProjectionBase` | `models/projection/model_projection_base.py` | CQRS read side |
-| **RUNTIME** | `EnvelopeRouter` | `runtime/envelope_router.py` | Infrastructure |
+| **RUNTIME** | `EnvelopeRouter` | `runtime/runtime_envelope_router.py` | Infrastructure |
 
 ---
 

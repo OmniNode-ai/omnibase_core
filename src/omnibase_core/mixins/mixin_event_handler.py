@@ -47,7 +47,7 @@ from pathlib import Path
 
 # Import protocol to avoid circular dependencies
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.logging.structured import emit_log_event_sync
+from omnibase_core.logging.logging_structured import emit_log_event_sync
 from omnibase_core.models.core.model_event_type import (
     create_event_type_from_registry,
     is_event_equal,
