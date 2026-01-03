@@ -154,13 +154,13 @@ class NamingConventionValidator:
         "models/mixins/": [
             "MixinServiceRegistryEntry",  # Dataclass for service registry entries
         ],
-        # CONTRACT INFRASTRUCTURE: Contract hash registry for integrity verification
+        # CONTRACT INFRASTRUCTURE: Contract utilities and registries
         # Location: contracts/ - Contract management infrastructure
-        # Rationale: ContractHashRegistry is a stateful registry service for managing contract hashes,
-        #            not a Protocol (which would require Protocol* prefix) or a Model (Pydantic data class).
-        #            Similar to ServiceRegistry in container/, this is infrastructure for contract integrity.
+        # Rationale: These are stateful service/utility classes for contract management,
+        #            not Protocols or Models. Similar to ServiceRegistry in container/.
         "contracts/": [
             "ContractHashRegistry",  # Registry service for contract hash management
+            "ContractDiffComputer",  # Utility class for computing contract diffs (OMN-1148)
         ],
         # HANDLER INFRASTRUCTURE: Handler implementations for ONEX runtime
         # Location: runtime/handlers/ - Handler implementations for EnvelopeRouter
