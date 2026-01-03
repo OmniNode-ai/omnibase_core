@@ -14,7 +14,7 @@ See Also:
 .. versionadded:: 0.4.1
 """
 
-from omnibase_core.resolution.execution_resolver import ExecutionResolver
+from omnibase_core.resolution.resolver_execution import ExecutionResolver
 
 __all__ = [
     "ExecutionResolver",
