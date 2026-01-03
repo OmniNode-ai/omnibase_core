@@ -711,7 +711,10 @@ class ModelONEXContainer:
         )
 
         if self.tool_cache:
-            stats["tool_cache"] = self.tool_cache.get_cache_stats()
+            # Cast dict[str, object] to SerializableValue for SerializedDict assignment
+            stats["tool_cache"] = cast(
+                SerializableValue, self.tool_cache.get_cache_stats()
+            )
 
         if self.performance_monitor:
             # Cast TypedDict to JsonType for SerializedDict assignment
