@@ -1,10 +1,18 @@
+# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
+#
+# SPDX-License-Identifier: Apache-2.0
 """
 Index definition model for projection tables.
 
 This module provides the ModelProjectorIndex class for defining database
 indexes on projection tables, supporting btree, gin, and hash index types.
 
-Version: 1.0.0
+Thread Safety:
+    This model is immutable (frozen=True) after creation, making it
+    thread-safe for concurrent read access.
+
+.. versionadded:: 0.4.0
+    Initial implementation as part of OMN-1166 projector contract models.
 """
 
 from typing import Literal
@@ -52,14 +60,27 @@ class ModelProjectorIndex(BaseModel):
         )
         ```
 
-    ONEX v2.0 Compliance:
-    - Suffix-based naming: ModelProjectorIndex
-    - Pydantic v2 with ConfigDict
-    - Frozen/immutable after creation
-    - Extra fields rejected (strict validation)
+    Note:
+        **Why from_attributes=True is Required**
+
+        This model uses ``from_attributes=True`` in its ConfigDict to ensure
+        pytest-xdist compatibility. When running tests with pytest-xdist,
+        each worker process imports the class independently, creating separate
+        class objects. The ``from_attributes=True`` flag enables Pydantic's
+        "duck typing" mode, allowing fixtures from one worker to be validated
+        in another.
+
+        **Thread Safety**: This model is frozen (immutable) after creation,
+        making it thread-safe for concurrent read access.
+
+        **ONEX v2.0 Compliance**:
+            - Suffix-based naming: ModelProjectorIndex
+            - Pydantic v2 with ConfigDict
+            - Frozen/immutable after creation
+            - Extra fields rejected (strict validation)
     """
 
-    model_config = ConfigDict(frozen=True, extra="forbid")
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     name: str | None = Field(
         default=None,

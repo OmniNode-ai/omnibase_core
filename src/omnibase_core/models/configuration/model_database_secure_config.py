@@ -208,8 +208,8 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
         if not v or not v.strip():
             msg = "Database host cannot be empty"
             raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
 
         v = v.strip().lower()
@@ -224,14 +224,14 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
             if not part or len(part) > 63:
                 msg = f"Invalid hostname part: {part}"
                 raise ModelOnexError(
-                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=msg,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 )
             if part.startswith("-") or part.endswith("-"):
                 msg = f"Hostname part cannot start or end with dash: {part}"
                 raise ModelOnexError(
-                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=msg,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 )
 
         return v
@@ -245,8 +245,8 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
         if not (0 <= v <= 65535):
             msg = f"Port must be between 0 and 65535, got: {v}"
             raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
 
         return v
@@ -258,8 +258,8 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
         if not v or not v.strip():
             msg = "Database name cannot be empty"
             raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
 
         v = v.strip()
@@ -270,8 +270,8 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
             if pattern in v.lower():
                 msg = f"Database name contains potentially dangerous pattern: {pattern}"
                 raise ModelOnexError(
-                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=msg,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 )
 
         return v
@@ -308,8 +308,8 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
         if normalized not in valid_drivers:
             msg = f"Unsupported driver: {v}. Must be one of: {valid_drivers}"
             raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
 
         return normalized
@@ -331,16 +331,16 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
                     f"Port 0 is only valid for SQLite driver, got driver: {self.driver}"
                 )
                 raise ModelOnexError(
-                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=msg,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 )
 
             # Non-SQLite databases should have simple database names
             if "/" in self.database or "\\" in self.database:
                 msg = f"Database name should not contain path separators for driver: {self.driver}. Got: {self.database}"
                 raise ModelOnexError(
-                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=msg,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 )
 
         return self
@@ -367,8 +367,8 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
             return self._get_mongodb_connection_string(password_value)
         msg = f"Connection string generation not implemented for driver: {self.driver}"
         raise ModelOnexError(
-            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=msg,
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
         )
 
     def _get_postgresql_connection_string(self, password: str) -> str:
@@ -881,7 +881,7 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
         guides = {
             "postgresql": [
                 "Check pg_hba.conf for authentication rules",
-                "Verify PostgreSQL is list[Any]ening on configured port",
+                "Verify PostgreSQL is listening on configured port",
                 "Check postgresql.conf for ssl settings",
                 "Monitor pg_stat_activity for connection states",
             ],
@@ -921,8 +921,8 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
         if not password:
             msg = f"Database password required: {env_prefix}PASSWORD"
             raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
 
         config_data: dict[str, object] = {
@@ -980,9 +980,9 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
         except ValueError as e:
             msg = f"Invalid integer value in environment variables: {e}"
             raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
-            )
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            ) from e
 
         # Remove None values
         config_data = {k: v for k, v in config_data.items() if v is not None}
@@ -1003,8 +1003,8 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
         """Create PostgreSQL configuration."""
         if password is None:
             raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Password is required for database configuration",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 context={"host": host, "database": database, "username": username},
             )
         return cls(
@@ -1028,8 +1028,8 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
         """Create MySQL configuration."""
         if password is None:
             raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Password is required for database configuration",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 context={"host": host, "database": database, "username": username},
             )
         return cls(

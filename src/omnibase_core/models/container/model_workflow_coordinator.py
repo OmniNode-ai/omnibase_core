@@ -13,28 +13,31 @@ Safe Runtime Imports (OK to import at module level):
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.type_serializable_value import SerializedDict
 
+if TYPE_CHECKING:
+    from .model_workflow_factory import ModelWorkflowFactory
+
 
 class ModelWorkflowCoordinator:
     """Workflow execution coordinator."""
 
-    def __init__(self, factory: Any) -> None:
+    def __init__(self, factory: ModelWorkflowFactory) -> None:
         self.factory = factory
         self.active_workflows: SerializedDict = {}
 
     async def execute_workflow(
         self,
-        workflow_id: Any,
+        workflow_id: str,
         workflow_type: str,
-        input_data: Any,
+        input_data: object,
         config: SerializedDict | None = None,
-    ) -> Any:
+    ) -> object:
         """Execute workflow with logging and error handling."""
         try:
             self.factory.create_workflow(workflow_type, config)
@@ -88,19 +91,20 @@ class ModelWorkflowCoordinator:
                 },
             )
             raise ModelOnexError(
-                error_code=EnumCoreErrorCode.OPERATION_FAILED,
                 message=f"Workflow execution failed: {e!s}",
-                workflow_id=str(workflow_id),
-                workflow_type=workflow_type,
-                correlation_id=workflow_id,
+                error_code=EnumCoreErrorCode.OPERATION_FAILED,
+                context={
+                    "workflow_id": str(workflow_id),
+                    "workflow_type": workflow_type,
+                },
             ) from e
 
     async def _execute_workflow_type(
         self,
         workflow_type: str,
-        input_data: Any,
+        input_data: object,
         config: SerializedDict | None,
-    ) -> Any:
+    ) -> object:
         """Execute a specific workflow type with input data."""
         try:
             # Create and run workflow based on type

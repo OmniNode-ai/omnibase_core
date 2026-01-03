@@ -1096,7 +1096,7 @@ class MessageDispatchEngine:
                     outputs.append(result)
                 elif isinstance(result, list):
                     outputs.extend(str(r) for r in result if r)
-            except (SystemExit, KeyboardInterrupt, GeneratorExit):
+            except (GeneratorExit, KeyboardInterrupt, SystemExit):
                 # Never catch cancellation/exit signals
                 raise
             except asyncio.CancelledError:

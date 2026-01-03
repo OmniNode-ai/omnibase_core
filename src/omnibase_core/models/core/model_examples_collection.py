@@ -32,8 +32,8 @@ from pydantic import (
     ConfigDict,
     Field,
     ValidationError,
-    ValidationInfo,
-    field_validator,
+    computed_field,
+    model_validator,
 )
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -83,19 +83,7 @@ class ModelExamplesCollection(BaseModel):
         description="Whether examples comply with schema",
     )
 
-    # Business intelligence fields
-    total_examples: int = Field(
-        default=0,
-        description="Total number of examples (computed)",
-        ge=0,
-    )
-
-    valid_examples: int = Field(
-        default=0,
-        description="Number of valid examples (computed)",
-        ge=0,
-    )
-
+    # Timestamp field (mutable, auto-populated on creation if examples exist)
     last_validated: datetime | None = Field(
         default=None,
         description="Last validation timestamp",
@@ -107,32 +95,45 @@ class ModelExamplesCollection(BaseModel):
         validate_assignment=True,
     )
 
-    # === Validation and Computation Methods ===
+    # === Computed Fields (Business Intelligence) ===
 
-    @field_validator("total_examples", mode="before")
-    @classmethod
-    def compute_total_examples(cls, v: int, info: ValidationInfo) -> int:
-        """Compute total examples from examples list."""
-        examples = info.data.get("examples", [])
-        return len(examples)
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def total_examples(self) -> int:
+        """Total number of examples (computed from examples list).
 
-    @field_validator("valid_examples", mode="before")
-    @classmethod
-    def compute_valid_examples(cls, v: int, info: ValidationInfo) -> int:
-        """Compute valid examples count."""
-        examples = info.data.get("examples", [])
-        return sum(1 for ex in examples if ex.is_valid)
+        This is a computed field that always reflects the current examples count.
+        Type safety is guaranteed since examples are validated as ModelExample instances.
+        """
+        return len(self.examples)
 
-    @field_validator("last_validated", mode="before")
-    @classmethod
-    def update_validation_timestamp(
-        cls, v: datetime | None, info: ValidationInfo
-    ) -> datetime | None:
-        """Update validation timestamp when examples change."""
-        examples = info.data.get("examples", [])
-        if examples and v is None:
-            return datetime.now(UTC)
-        return v
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def valid_examples(self) -> int:
+        """Number of valid examples (computed from examples list).
+
+        This is a computed field that counts examples where is_valid=True.
+        Type safety is guaranteed since examples are validated as ModelExample instances.
+        """
+        return sum(1 for ex in self.examples if ex.is_valid)
+
+    # === Validation Methods ===
+
+    @model_validator(mode="after")
+    def auto_populate_timestamp(self) -> Self:
+        """Auto-populate validation timestamp when creating new collections with examples.
+
+        This validator implements "auto-timestamp on creation" behavior:
+        - If examples exist AND no timestamp was provided, sets it to now
+        - If a timestamp was explicitly provided, preserves that value
+        - If no examples exist, leaves the timestamp as None
+
+        Uses object.__setattr__ to bypass validate_assignment and avoid recursion.
+        """
+        if self.examples and self.last_validated is None:
+            # Use object.__setattr__ to bypass validate_assignment recursion
+            object.__setattr__(self, "last_validated", datetime.now(UTC))
+        return self
 
     # === Data Conversion Methods ===
 
@@ -297,7 +298,11 @@ class ModelExamplesCollection(BaseModel):
         example: ModelExample | SerializedDict,
         name: str | None = None,
     ) -> None:
-        """Add a new example to the collection."""
+        """Add a new example to the collection.
+
+        Note: total_examples and valid_examples are computed properties that
+        automatically reflect the current state of the examples list.
+        """
         if isinstance(example, dict):
             example = self._create_example_from_data(example)
 
@@ -305,11 +310,9 @@ class ModelExamplesCollection(BaseModel):
             example.name = name
 
         self.examples.append(example)
-        # Update computed fields
-        self.total_examples = len(self.examples)
-        if example.is_valid:
-            self.valid_examples += 1
-        self.last_validated = datetime.now(UTC)
+        # Update timestamp (computed fields are auto-updated)
+        # Use object.__setattr__ to bypass validate_assignment for timestamp-only updates
+        object.__setattr__(self, "last_validated", datetime.now(UTC))
 
     def get_example(self, index: int = 0) -> ModelExample | None:
         """Get an example by index."""
@@ -318,14 +321,16 @@ class ModelExamplesCollection(BaseModel):
         return None
 
     def remove_example(self, index: int) -> bool:
-        """Remove an example by index."""
+        """Remove an example by index.
+
+        Note: total_examples and valid_examples are computed properties that
+        automatically reflect the current state of the examples list.
+        """
         if 0 <= index < len(self.examples):
-            example = self.examples.pop(index)
-            # Update computed fields
-            self.total_examples = len(self.examples)
-            if example.is_valid:
-                self.valid_examples = max(0, self.valid_examples - 1)
-            self.last_validated = datetime.now(UTC)
+            self.examples.pop(index)
+            # Update timestamp (computed fields are auto-updated)
+            # Use object.__setattr__ to bypass validate_assignment for timestamp-only updates
+            object.__setattr__(self, "last_validated", datetime.now(UTC))
             return True
         return False
 
@@ -338,9 +343,14 @@ class ModelExamplesCollection(BaseModel):
         return [ex for ex in self.examples if not ex.is_valid]
 
     def validate_all_examples(self) -> None:
-        """Validate all examples and update statistics."""
-        self.valid_examples = sum(1 for ex in self.examples if ex.is_valid)
-        self.last_validated = datetime.now(UTC)
+        """Validate all examples and update timestamp.
+
+        Note: valid_examples is a computed property that automatically
+        reflects the current validation state. This method updates the
+        last_validated timestamp to indicate when validation was last run.
+        """
+        # Use object.__setattr__ to bypass validate_assignment for timestamp-only updates
+        object.__setattr__(self, "last_validated", datetime.now(UTC))
 
     def is_healthy(self) -> bool:
         """Check if collection is healthy (has valid examples)."""

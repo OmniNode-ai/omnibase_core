@@ -5,8 +5,6 @@ Burst configuration model for managing traffic spikes and burst scenarios
 in rate limiting systems with intelligent burst detection and handling.
 """
 
-from typing import Any
-
 from pydantic import BaseModel, Field
 
 
@@ -162,7 +160,7 @@ class ModelBurstConfig(BaseModel):
         return (current_time - burst_start_time) < self.burst_grace_period_seconds
 
     def get_adaptive_burst_size(
-        self, historical_peaks: list[Any], base_limit: int
+        self, historical_peaks: list[float], base_limit: int
     ) -> int:
         """Calculate adaptive burst size based on historical traffic patterns"""
         if not self.adaptive_burst_sizing or not historical_peaks:

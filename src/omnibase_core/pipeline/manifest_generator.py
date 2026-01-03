@@ -577,8 +577,11 @@ class ManifestGenerator:
             The completed execution manifest
 
         Note:
-            This method can be called multiple times, but each call creates
-            a new manifest with the current accumulated state.
+            This method is intended to be called once at the end of pipeline
+            execution. While calling multiple times is technically safe (pending
+            hooks are removed on completion), each call creates a new manifest
+            with the current accumulated state and auto-completes any remaining
+            pending hooks as CANCELLED.
         """
         ended_at = datetime.now(UTC)
         total_duration_ms = (ended_at - self._started_at).total_seconds() * 1000

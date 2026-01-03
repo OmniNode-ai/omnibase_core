@@ -4,8 +4,6 @@ External Service Collection Model for ONEX Configuration System.
 Strongly typed model for external service configurations.
 """
 
-from typing import Any
-
 from pydantic import BaseModel, Field
 
 from omnibase_core.models.services.model_external_service_config import (
@@ -52,6 +50,6 @@ class ModelExternalServiceCollection(BaseModel):
         """Get total count of services."""
         return len(self.services)
 
-    def get_service_names(self) -> list[Any]:
-        """Get list[Any]of all service names."""
+    def get_service_names(self) -> list[str]:
+        """Get list of all service names."""
         return list(self.services.keys())
