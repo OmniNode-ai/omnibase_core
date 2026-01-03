@@ -9,7 +9,7 @@ Tests cover:
 - File-based exclusion detection
 - Edge cases and complex scenarios
 
-Target: 85%+ coverage for decorators/pattern_exclusions.py
+Target: 85%+ coverage for decorators/decorator_pattern_exclusions.py
 """
 
 from pathlib import Path

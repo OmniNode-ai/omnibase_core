@@ -13,7 +13,7 @@ This document provides comprehensive API reference for utility functions and hel
 
 ### standard_error_handling
 
-**Location**: `omnibase_core.decorators.error_handling`
+**Location**: `omnibase_core.decorators.decorator_error_handling`
 
 **Purpose**: Decorator that provides standard error handling pattern for ONEX operations.
 
@@ -47,7 +47,7 @@ except Exception as e:
 
 ### validation_error_handling
 
-**Location**: `omnibase_core.decorators.error_handling`
+**Location**: `omnibase_core.decorators.decorator_error_handling`
 
 **Purpose**: Decorator for validation operations that may throw ValidationError.
 

@@ -883,8 +883,8 @@ class TestDeclarativeErrorModuleExports:
         assert UnsupportedCapabilityError is not None
 
     def test_module_has_all_definition(self) -> None:
-        """Test declarative_errors module has __all__ with all error classes."""
-        from omnibase_core.errors import declarative_errors
+        """Test error_declarative module has __all__ with all error classes."""
+        from omnibase_core.errors import error_declarative
 
         expected_exports = [
             "AdapterBindingError",
@@ -893,9 +893,9 @@ class TestDeclarativeErrorModuleExports:
             "UnsupportedCapabilityError",
         ]
 
-        assert hasattr(declarative_errors, "__all__")
+        assert hasattr(error_declarative, "__all__")
         for export in expected_exports:
-            assert export in declarative_errors.__all__
+            assert export in error_declarative.__all__
 
     def test_all_errors_importable_from_top_level_errors(self) -> None:
         """Test all error classes can be imported from top-level omnibase_core.errors.

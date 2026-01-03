@@ -1464,7 +1464,7 @@ dependencies:
         - "models.orchestrator.model_orchestrator_input"
         - "models.orchestrator.model_orchestrator_output"
         - "enums.enum_workflow_execution"
-        - "decorators.error_handling"
+        - "decorators.decorator_error_handling"
         - "errors.model_onex_error"
 
 # Interface contracts

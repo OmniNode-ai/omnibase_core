@@ -10,7 +10,7 @@ Tests cover:
 - Decorator stacking and composition
 - Edge cases and boundary conditions
 
-Target: 90%+ coverage for decorators/error_handling.py
+Target: 90%+ coverage for decorators/decorator_error_handling.py
 """
 
 import pytest
