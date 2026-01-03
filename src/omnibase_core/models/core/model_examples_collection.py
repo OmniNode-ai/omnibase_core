@@ -31,12 +31,12 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
-    ValidationError,
     computed_field,
     model_validator,
 )
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 # Safe runtime import - error_codes only imports from types.core_types
@@ -187,7 +187,8 @@ class ModelExamplesCollection(BaseModel):
                     if isinstance(input_raw, dict):
                         try:
                             input_data = ModelExampleInputData.model_validate(input_raw)
-                        except ValidationError as e:
+                        except PYDANTIC_MODEL_ERRORS as e:
+                            # boundary-ok: convert pydantic validation errors to ModelOnexError
                             raise ModelOnexError(
                                 message=f"Failed to validate input_data: {e}",
                                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -205,7 +206,8 @@ class ModelExamplesCollection(BaseModel):
                             output_data = ModelExampleOutputData.model_validate(
                                 output_raw
                             )
-                        except ValidationError as e:
+                        except PYDANTIC_MODEL_ERRORS as e:
+                            # boundary-ok: convert pydantic validation errors to ModelOnexError
                             raise ModelOnexError(
                                 message=f"Failed to validate output_data: {e}",
                                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -223,7 +225,8 @@ class ModelExamplesCollection(BaseModel):
                             context = ModelExampleContextData.model_validate(
                                 context_raw
                             )
-                        except ValidationError as e:
+                        except PYDANTIC_MODEL_ERRORS as e:
+                            # boundary-ok: convert pydantic validation errors to ModelOnexError
                             raise ModelOnexError(
                                 message=f"Failed to validate context: {e}",
                                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -268,7 +271,8 @@ class ModelExamplesCollection(BaseModel):
                 # Treat as input_data - use model_validate for type-safe coercion
                 try:
                     input_data = ModelExampleInputData.model_validate(data)
-                except ValidationError as e:
+                except PYDANTIC_MODEL_ERRORS as e:
+                    # boundary-ok: convert pydantic validation errors to ModelOnexError
                     raise ModelOnexError(
                         message=f"Failed to validate example data as input_data: {e}",
                         error_code=EnumCoreErrorCode.VALIDATION_ERROR,

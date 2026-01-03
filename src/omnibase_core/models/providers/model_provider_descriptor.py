@@ -316,8 +316,12 @@ class ModelProviderDescriptor(BaseModel):
         from omnibase_core.models.health.model_health_status import ModelHealthStatus
 
         # Duck-type check for ModelHealthStatus (handles pytest-xdist class identity issues)
+        # Check class name and verify module is from expected package (health module or test stubs)
         if type(v).__name__ == "ModelHealthStatus":
-            return v
+            module = getattr(type(v), "__module__", "")
+            # Accept if from health module or test modules (stubs)
+            if "model_health_status" in module or "test" in module or not module:
+                return v
 
         if isinstance(v, dict):
             # Allow dict-based construction for Pydantic compatibility
