@@ -203,6 +203,8 @@ class ModelHandlerOutput(BaseModel, Generic[T]):
             Required for causality tracking.
         correlation_id: MUST be copied from input envelope, not generated.
             Required for request tracing and correlation.
+        dispatch_id: Dispatch operation ID that triggered this handler.
+            Uniquely identifies the dispatch() call. None if created outside dispatch context.
         handler_id: Unique identifier from handler registry metadata.
         node_kind: The ONEX node kind from handler registry metadata.
         events: Tuple of event envelopes to publish (for ORCHESTRATOR, EFFECT only).
@@ -251,6 +253,15 @@ class ModelHandlerOutput(BaseModel, Generic[T]):
     correlation_id: UUID = Field(
         ...,
         description="MUST be copied from input envelope, not generated. Required for request tracing.",
+    )
+    dispatch_id: UUID | None = Field(
+        default=None,
+        description=(
+            "Dispatch operation ID for request tracing. Uniquely identifies "
+            "the dispatch() call that triggered this handler. All outputs from handlers "
+            "invoked in the same dispatch share this ID. None for outputs created outside "
+            "the dispatch engine context."
+        ),
     )
 
     # ---- Handler Identity (derived from registry metadata) ----
@@ -578,7 +589,8 @@ class ModelHandlerOutput(BaseModel, Generic[T]):
         cls,
         input_envelope_id: UUID,
         correlation_id: UUID,
-        handler_id: str,
+        handler_id: str = "",
+        dispatch_id: UUID | None = None,
         events: tuple[Any, ...] = (),
         intents: tuple[Any, ...] = (),
         metrics: dict[str, float] | None = None,
@@ -594,6 +606,8 @@ class ModelHandlerOutput(BaseModel, Generic[T]):
         Args:
             input_envelope_id: ID of the input envelope that triggered this handler.
             correlation_id: Correlation ID copied from the input envelope.
+            dispatch_id: Dispatch operation ID for request tracing (optional).
+                None if created outside dispatch context.
             handler_id: Unique identifier for this handler.
             events: Event envelopes to publish (optional).
             intents: Intents for side-effect execution (optional).
@@ -619,6 +633,7 @@ class ModelHandlerOutput(BaseModel, Generic[T]):
             cls(
                 input_envelope_id=input_envelope_id,
                 correlation_id=correlation_id,
+                dispatch_id=dispatch_id,
                 handler_id=handler_id,
                 node_kind=EnumNodeKind.ORCHESTRATOR,
                 events=events,
@@ -634,7 +649,8 @@ class ModelHandlerOutput(BaseModel, Generic[T]):
         cls,
         input_envelope_id: UUID,
         correlation_id: UUID,
-        handler_id: str,
+        handler_id: str = "",
+        dispatch_id: UUID | None = None,
         projections: tuple[Any, ...] = (),
         metrics: dict[str, float] | None = None,
         logs: tuple[str, ...] = (),
@@ -649,6 +665,8 @@ class ModelHandlerOutput(BaseModel, Generic[T]):
         Args:
             input_envelope_id: ID of the input envelope that triggered this handler.
             correlation_id: Correlation ID copied from the input envelope.
+            dispatch_id: Dispatch operation ID for request tracing (optional).
+                None if created outside dispatch context.
             handler_id: Unique identifier for this handler.
             projections: Projection updates (optional).
             metrics: Handler-specific metrics (optional). Defaults to empty dict if None.
@@ -672,6 +690,7 @@ class ModelHandlerOutput(BaseModel, Generic[T]):
             cls(
                 input_envelope_id=input_envelope_id,
                 correlation_id=correlation_id,
+                dispatch_id=dispatch_id,
                 handler_id=handler_id,
                 node_kind=EnumNodeKind.REDUCER,
                 projections=projections,
@@ -686,7 +705,8 @@ class ModelHandlerOutput(BaseModel, Generic[T]):
         cls,
         input_envelope_id: UUID,
         correlation_id: UUID,
-        handler_id: str,
+        handler_id: str = "",
+        dispatch_id: UUID | None = None,
         events: tuple[Any, ...] = (),
         metrics: dict[str, float] | None = None,
         logs: tuple[str, ...] = (),
@@ -702,6 +722,8 @@ class ModelHandlerOutput(BaseModel, Generic[T]):
         Args:
             input_envelope_id: ID of the input envelope that triggered this handler.
             correlation_id: Correlation ID copied from the input envelope.
+            dispatch_id: Dispatch operation ID for request tracing (optional).
+                None if created outside dispatch context.
             handler_id: Unique identifier for this handler.
             events: Event envelopes to publish (optional).
             metrics: Handler-specific metrics (optional). Defaults to empty dict if None.
@@ -725,6 +747,7 @@ class ModelHandlerOutput(BaseModel, Generic[T]):
             cls(
                 input_envelope_id=input_envelope_id,
                 correlation_id=correlation_id,
+                dispatch_id=dispatch_id,
                 handler_id=handler_id,
                 node_kind=EnumNodeKind.EFFECT,
                 events=events,
@@ -739,8 +762,9 @@ class ModelHandlerOutput(BaseModel, Generic[T]):
         cls,
         input_envelope_id: UUID,
         correlation_id: UUID,
-        handler_id: str,
-        result: T,
+        handler_id: str = "",
+        dispatch_id: UUID | None = None,
+        result: T | None = None,
         metrics: dict[str, float] | None = None,
         logs: tuple[str, ...] = (),
         processing_time_ms: float = 0.0,
@@ -759,6 +783,8 @@ class ModelHandlerOutput(BaseModel, Generic[T]):
         Args:
             input_envelope_id: ID of the input envelope that triggered this handler.
             correlation_id: Correlation ID copied from the input envelope.
+            dispatch_id: Dispatch operation ID for request tracing (optional).
+                None if created outside dispatch context.
             handler_id: Unique identifier for this handler.
             result: The typed result of the computation (REQUIRED).
             metrics: Handler-specific metrics (optional). Defaults to empty dict if None.
@@ -780,6 +806,7 @@ class ModelHandlerOutput(BaseModel, Generic[T]):
         return cls(
             input_envelope_id=input_envelope_id,
             correlation_id=correlation_id,
+            dispatch_id=dispatch_id,
             handler_id=handler_id,
             node_kind=EnumNodeKind.COMPUTE,
             result=result,
@@ -793,7 +820,8 @@ class ModelHandlerOutput(BaseModel, Generic[T]):
         cls,
         input_envelope_id: UUID,
         correlation_id: UUID,
-        handler_id: str,
+        handler_id: str = "",
+        dispatch_id: UUID | None = None,
         metrics: dict[str, float] | None = None,
         logs: tuple[str, ...] = (),
         processing_time_ms: float = 0.0,
@@ -807,6 +835,8 @@ class ModelHandlerOutput(BaseModel, Generic[T]):
         Args:
             input_envelope_id: ID of the input envelope that triggered this handler.
             correlation_id: Correlation ID copied from the input envelope.
+            dispatch_id: Dispatch operation ID for request tracing (optional).
+                None if created outside dispatch context.
             handler_id: Unique identifier for this handler.
             metrics: Handler-specific metrics (optional). Defaults to empty dict if None.
                     See module docstring "Builder Method Default Metrics Behavior" for details.
@@ -828,6 +858,7 @@ class ModelHandlerOutput(BaseModel, Generic[T]):
             cls(
                 input_envelope_id=input_envelope_id,
                 correlation_id=correlation_id,
+                dispatch_id=dispatch_id,
                 handler_id=handler_id,
                 node_kind=EnumNodeKind.COMPUTE,
                 allow_void_compute=True,
@@ -842,8 +873,9 @@ class ModelHandlerOutput(BaseModel, Generic[T]):
         cls,
         input_envelope_id: UUID,
         correlation_id: UUID,
-        handler_id: str,
-        node_kind: EnumNodeKind,
+        handler_id: str = "",
+        dispatch_id: UUID | None = None,
+        node_kind: EnumNodeKind = EnumNodeKind.EFFECT,
         processing_time_ms: float = 0.0,
     ) -> "ModelHandlerOutput[None]":
         """
@@ -858,6 +890,8 @@ class ModelHandlerOutput(BaseModel, Generic[T]):
         Args:
             input_envelope_id: ID of the input envelope that triggered this handler.
             correlation_id: Correlation ID copied from the input envelope.
+            dispatch_id: Dispatch operation ID for request tracing (optional).
+                None if created outside dispatch context.
             handler_id: Unique identifier for this handler.
             node_kind: The ONEX node kind for this handler.
             processing_time_ms: Processing time in milliseconds (optional).
@@ -882,6 +916,7 @@ class ModelHandlerOutput(BaseModel, Generic[T]):
             cls(
                 input_envelope_id=input_envelope_id,
                 correlation_id=correlation_id,
+                dispatch_id=dispatch_id,
                 handler_id=handler_id,
                 node_kind=node_kind,
                 allow_void_compute=allow_void,

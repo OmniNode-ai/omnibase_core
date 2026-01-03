@@ -823,6 +823,164 @@ class TestModelHandlerOutputBuilderMethods:
 
 
 # ============================================================================
+# Factory Methods dispatch_id Propagation Tests (OMN-972)
+# ============================================================================
+
+
+@pytest.mark.unit
+class TestFactoryMethodsDispatchIdPropagation:
+    """Test that factory methods correctly propagate dispatch_id."""
+
+    def test_for_orchestrator_propagates_dispatch_id(
+        self, sample_envelope_id, sample_correlation_id, sample_handler_id
+    ) -> None:
+        """Test for_orchestrator propagates dispatch_id."""
+        dispatch_id = uuid4()
+        output = ModelHandlerOutput.for_orchestrator(
+            input_envelope_id=sample_envelope_id,
+            correlation_id=sample_correlation_id,
+            dispatch_id=dispatch_id,
+            handler_id=sample_handler_id,
+        )
+        assert output.dispatch_id == dispatch_id
+
+    def test_for_orchestrator_defaults_dispatch_id_to_none(
+        self, sample_envelope_id, sample_correlation_id, sample_handler_id
+    ) -> None:
+        """Test for_orchestrator defaults dispatch_id to None."""
+        output = ModelHandlerOutput.for_orchestrator(
+            input_envelope_id=sample_envelope_id,
+            correlation_id=sample_correlation_id,
+            handler_id=sample_handler_id,
+        )
+        assert output.dispatch_id is None
+
+    def test_for_reducer_propagates_dispatch_id(
+        self, sample_envelope_id, sample_correlation_id, sample_handler_id
+    ) -> None:
+        """Test for_reducer propagates dispatch_id."""
+        dispatch_id = uuid4()
+        output = ModelHandlerOutput.for_reducer(
+            input_envelope_id=sample_envelope_id,
+            correlation_id=sample_correlation_id,
+            dispatch_id=dispatch_id,
+            handler_id=sample_handler_id,
+        )
+        assert output.dispatch_id == dispatch_id
+
+    def test_for_reducer_defaults_dispatch_id_to_none(
+        self, sample_envelope_id, sample_correlation_id, sample_handler_id
+    ) -> None:
+        """Test for_reducer defaults dispatch_id to None."""
+        output = ModelHandlerOutput.for_reducer(
+            input_envelope_id=sample_envelope_id,
+            correlation_id=sample_correlation_id,
+            handler_id=sample_handler_id,
+        )
+        assert output.dispatch_id is None
+
+    def test_for_effect_propagates_dispatch_id(
+        self, sample_envelope_id, sample_correlation_id, sample_handler_id
+    ) -> None:
+        """Test for_effect propagates dispatch_id."""
+        dispatch_id = uuid4()
+        output = ModelHandlerOutput.for_effect(
+            input_envelope_id=sample_envelope_id,
+            correlation_id=sample_correlation_id,
+            dispatch_id=dispatch_id,
+            handler_id=sample_handler_id,
+        )
+        assert output.dispatch_id == dispatch_id
+
+    def test_for_effect_defaults_dispatch_id_to_none(
+        self, sample_envelope_id, sample_correlation_id, sample_handler_id
+    ) -> None:
+        """Test for_effect defaults dispatch_id to None."""
+        output = ModelHandlerOutput.for_effect(
+            input_envelope_id=sample_envelope_id,
+            correlation_id=sample_correlation_id,
+            handler_id=sample_handler_id,
+        )
+        assert output.dispatch_id is None
+
+    def test_for_compute_propagates_dispatch_id(
+        self, sample_envelope_id, sample_correlation_id, sample_handler_id
+    ) -> None:
+        """Test for_compute propagates dispatch_id."""
+        dispatch_id = uuid4()
+        output = ModelHandlerOutput.for_compute(
+            input_envelope_id=sample_envelope_id,
+            correlation_id=sample_correlation_id,
+            dispatch_id=dispatch_id,
+            handler_id=sample_handler_id,
+            result="test_result",
+        )
+        assert output.dispatch_id == dispatch_id
+
+    def test_for_compute_defaults_dispatch_id_to_none(
+        self, sample_envelope_id, sample_correlation_id, sample_handler_id
+    ) -> None:
+        """Test for_compute defaults dispatch_id to None."""
+        output = ModelHandlerOutput.for_compute(
+            input_envelope_id=sample_envelope_id,
+            correlation_id=sample_correlation_id,
+            handler_id=sample_handler_id,
+            result="test_result",
+        )
+        assert output.dispatch_id is None
+
+    def test_for_void_compute_propagates_dispatch_id(
+        self, sample_envelope_id, sample_correlation_id, sample_handler_id
+    ) -> None:
+        """Test for_void_compute propagates dispatch_id."""
+        dispatch_id = uuid4()
+        output = ModelHandlerOutput.for_void_compute(
+            input_envelope_id=sample_envelope_id,
+            correlation_id=sample_correlation_id,
+            dispatch_id=dispatch_id,
+            handler_id=sample_handler_id,
+        )
+        assert output.dispatch_id == dispatch_id
+
+    def test_for_void_compute_defaults_dispatch_id_to_none(
+        self, sample_envelope_id, sample_correlation_id, sample_handler_id
+    ) -> None:
+        """Test for_void_compute defaults dispatch_id to None."""
+        output = ModelHandlerOutput.for_void_compute(
+            input_envelope_id=sample_envelope_id,
+            correlation_id=sample_correlation_id,
+            handler_id=sample_handler_id,
+        )
+        assert output.dispatch_id is None
+
+    def test_empty_propagates_dispatch_id(
+        self, sample_envelope_id, sample_correlation_id, sample_handler_id
+    ) -> None:
+        """Test empty propagates dispatch_id."""
+        dispatch_id = uuid4()
+        output = ModelHandlerOutput.empty(
+            input_envelope_id=sample_envelope_id,
+            correlation_id=sample_correlation_id,
+            dispatch_id=dispatch_id,
+            handler_id=sample_handler_id,
+            node_kind=EnumNodeKind.EFFECT,
+        )
+        assert output.dispatch_id == dispatch_id
+
+    def test_empty_defaults_dispatch_id_to_none(
+        self, sample_envelope_id, sample_correlation_id, sample_handler_id
+    ) -> None:
+        """Test empty defaults dispatch_id to None."""
+        output = ModelHandlerOutput.empty(
+            input_envelope_id=sample_envelope_id,
+            correlation_id=sample_correlation_id,
+            handler_id=sample_handler_id,
+            node_kind=EnumNodeKind.EFFECT,
+        )
+        assert output.dispatch_id is None
+
+
+# ============================================================================
 # Correlation ID Preservation Tests
 # ============================================================================
 
