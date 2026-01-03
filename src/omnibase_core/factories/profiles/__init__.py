@@ -27,21 +27,21 @@ Thread Safety:
     safe to use from multiple threads without synchronization.
 """
 
-from omnibase_core.factories.profiles.compute_profiles import (
+from omnibase_core.factories.profiles.factory_profile_compute import (
     COMPUTE_PROFILES,
     get_compute_pure_profile,
 )
-from omnibase_core.factories.profiles.effect_profiles import (
+from omnibase_core.factories.profiles.factory_profile_effect import (
     EFFECT_PROFILES,
     get_effect_idempotent_profile,
 )
-from omnibase_core.factories.profiles.orchestrator_profiles import (
+from omnibase_core.factories.profiles.factory_profile_orchestrator import (
     ORCHESTRATOR_PROFILES,
     get_orchestrator_parallel_profile,
     get_orchestrator_resilient_profile,
     get_orchestrator_safe_profile,
 )
-from omnibase_core.factories.profiles.reducer_profiles import (
+from omnibase_core.factories.profiles.factory_profile_reducer import (
     REDUCER_PROFILES,
     get_reducer_fsm_basic_profile,
 )

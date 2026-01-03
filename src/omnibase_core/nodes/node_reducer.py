@@ -29,6 +29,7 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.fsm import ModelFSMStateSnapshot
 from omnibase_core.models.reducer.model_reducer_input import ModelReducerInput
 from omnibase_core.models.reducer.model_reducer_output import ModelReducerOutput
+from omnibase_core.types.json_types import JsonType
 
 # Clock skew tolerance for snapshot timestamp validation
 SNAPSHOT_FUTURE_TOLERANCE_SECONDS: int = 60
@@ -302,8 +303,11 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
         # Build context from input data - context contains serializable values
         # Convert metadata to dict for context (excluding None values)
         metadata_dict = input_data.metadata.model_dump(exclude_none=True)
+        # Cast input_data.data to JsonType since T_Input should be JSON-serializable
+        # but the generic type doesn't encode this constraint
+        input_data_value: JsonType = cast(JsonType, input_data.data)
         context: SerializedDict = {
-            "input_data": input_data.data,
+            "input_data": input_data_value,
             "reduction_type": input_data.reduction_type.value,
             "operation_id": str(input_data.operation_id),
             **metadata_dict,

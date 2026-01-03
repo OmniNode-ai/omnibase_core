@@ -10,7 +10,9 @@ from uuid import UUID
 
 from pydantic import Field, field_validator
 
-from omnibase_core.constants.event_types import REAL_TIME_INTROSPECTION_RESPONSE
+from omnibase_core.constants.constants_event_types import (
+    REAL_TIME_INTROSPECTION_RESPONSE,
+)
 from omnibase_core.enums.enum_node_current_status import EnumNodeCurrentStatus
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 from omnibase_core.models.discovery.model_node_introspection_event import (

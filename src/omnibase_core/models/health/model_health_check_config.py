@@ -227,3 +227,21 @@ class ModelHealthCheckConfig(BaseModel):
     def create_disabled(cls) -> "ModelHealthCheckConfig":
         """Create configuration with health checks disabled"""
         return cls(enabled=False)
+
+
+# Rebuild ModelHealthCheckConfig to pick up the resolved forward references
+# from ModelHealthCheckMetadata (which has a forward reference to ModelCustomFields).
+# This ensures the model is fully usable regardless of import path.
+def _resolve_forward_references() -> None:
+    """Resolve forward references for ModelHealthCheckConfig."""
+    try:
+        # The import of model_health_check_metadata already triggers its own
+        # model_rebuild(), so we just need to rebuild this class to pick up
+        # the resolved types from ModelHealthCheckMetadata
+        ModelHealthCheckConfig.model_rebuild()
+    except Exception:
+        # error-ok: model_rebuild may fail during circular import resolution
+        pass
+
+
+_resolve_forward_references()

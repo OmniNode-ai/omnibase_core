@@ -10,16 +10,14 @@ import inspect
 from collections.abc import Callable, Coroutine
 from types import MappingProxyType
 
-from omnibase_core.models.pipeline.model_hook_error import ModelHookError
-from omnibase_core.models.pipeline.model_pipeline_context import ModelPipelineContext
-from omnibase_core.models.pipeline.model_pipeline_execution_plan import (
-    ModelExecutionPlan,
-)
-from omnibase_core.models.pipeline.model_pipeline_hook import (
+from omnibase_core.models.pipeline import (
+    ModelHookError,
+    ModelPipelineContext,
+    ModelPipelineExecutionPlan,
     ModelPipelineHook,
+    ModelPipelineResult,
     PipelinePhase,
 )
-from omnibase_core.models.pipeline.model_pipeline_result import ModelPipelineResult
 from omnibase_core.pipeline.exceptions import CallableNotFoundError, HookTimeoutError
 
 # Type alias for hook callables - they take ModelPipelineContext and return None
@@ -62,7 +60,7 @@ class RunnerPipeline:
     Component                        Thread-Safe?    Notes
     ===============================  ==============  =====================================
     RunnerPipeline instance          No              Mutable state during run()
-    ModelExecutionPlan               Yes             Frozen Pydantic model (frozen=True)
+    ModelPipelineExecutionPlan        Yes             Frozen Pydantic model (frozen=True)
     ModelPhaseExecutionPlan          Yes             Frozen Pydantic model (frozen=True)
     ModelPipelineHook                Yes             Frozen Pydantic model (frozen=True)
     ModelPipelineContext             No              Mutable dict for hook communication
@@ -109,7 +107,7 @@ class RunnerPipeline:
 
     **Safe Sharing:**
 
-    - ``ModelExecutionPlan`` is frozen and can be safely shared across threads
+    - ``ModelPipelineExecutionPlan`` is frozen and can be safely shared across threads
     - ``callable_registry`` dict can be shared IF not modified after runner creation
     - Use ``plan.model_copy()`` if you need isolated plan modifications
 
@@ -121,7 +119,7 @@ class RunnerPipeline:
 
     def __init__(
         self,
-        plan: ModelExecutionPlan,
+        plan: ModelPipelineExecutionPlan,
         callable_registry: dict[str, HookCallable],
     ) -> None:
         """
@@ -203,7 +201,7 @@ class RunnerPipeline:
 
         return ModelPipelineResult(
             success=len(errors) == 0,
-            errors=errors,
+            errors=tuple(errors),
             context=context,
         )
 
@@ -219,7 +217,7 @@ class RunnerPipeline:
         hooks execute even if some fail.
 
         This method wraps finalize execution to ensure:
-        1. Hook-level errors are captured with proper hook_id context
+        1. Hook-level errors are captured with proper hook_name context
         2. Framework-level errors (outside hook execution) are captured gracefully
         3. No exception escapes - all errors become ModelHookError entries
 
@@ -230,43 +228,43 @@ class RunnerPipeline:
             List of errors captured during finalize (never raises)
         """
         errors: list[ModelHookError] = []
-        current_hook_identifier: str | None = None
+        current_hook_name: str | None = None
 
         try:
             # Get hooks to track which hook we're executing for error context
             hooks = self._plan.get_phase_hooks("finalize")
 
             for hook in hooks:
-                current_hook_identifier = hook.hook_id
+                current_hook_name = hook.hook_name
                 try:
                     await self._execute_hook(hook, context)
-                    # Only clear identifier after successful execution
-                    current_hook_identifier = None
+                    # Only clear hook_name after successful execution
+                    current_hook_name = None
                 except Exception as e:
-                    # Capture error with proper hook_id context
+                    # Capture error with proper hook_name context
                     errors.append(
                         ModelHookError(
                             phase="finalize",
-                            hook_id=hook.hook_id,
+                            hook_name=hook.hook_name,
                             error_type=type(e).__name__,
                             error_message=str(e),
                         )
                     )
                     # Clear after capturing - hook processing complete
-                    current_hook_identifier = None
+                    current_hook_name = None
 
         except Exception as framework_exc:
             # Framework-level error (e.g., plan access failure, hook retrieval error)
-            # Include last known hook identifier if available for debugging context
-            hook_id_context = (
-                f"[framework:after:{current_hook_identifier}]"
-                if current_hook_identifier
+            # Include last known hook_name if available for debugging context
+            hook_name_context = (
+                f"[framework:after:{current_hook_name}]"
+                if current_hook_name
                 else "[framework]"
             )
             errors.append(
                 ModelHookError(
                     phase="finalize",
-                    hook_id=hook_id_context,
+                    hook_name=hook_name_context,
                     error_type=type(framework_exc).__name__,
                     error_message=f"Framework error during finalize phase: {framework_exc}",
                 )
@@ -323,7 +321,7 @@ class RunnerPipeline:
                 errors.append(
                     ModelHookError(
                         phase=phase,
-                        hook_id=hook.hook_id,
+                        hook_name=hook.hook_name,
                         error_type=type(e).__name__,
                         error_message=str(e),
                     )
@@ -381,7 +379,7 @@ class RunnerPipeline:
                         timeout=hook.timeout_seconds,
                     )
             except TimeoutError:
-                raise HookTimeoutError(hook.hook_id, hook.timeout_seconds)
+                raise HookTimeoutError(hook.hook_name, hook.timeout_seconds)
         # Original non-timeout path
         elif inspect.iscoroutinefunction(callable_fn):
             await callable_fn(context)

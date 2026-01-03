@@ -84,7 +84,7 @@ class ModelGenericMetadata(BaseModel):
         """Create from dictionary for easy migration."""
         if data is None:
             return None
-        return cls(**data)
+        return cls.model_validate(data)
 
     @field_serializer("created_at", "updated_at")
     def serialize_datetime(self, value: datetime | None) -> str | None:

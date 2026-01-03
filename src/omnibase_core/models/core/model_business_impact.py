@@ -142,7 +142,7 @@ class ModelBusinessImpact(BaseModel):
     @classmethod
     def from_dict(cls, data: "SerializedDict") -> "ModelBusinessImpact":
         """Create from dictionary for easy migration."""
-        return cls(**data)
+        return cls.model_validate(data)
 
     @field_serializer("assessment_timestamp")
     def serialize_datetime(self, value: datetime | None) -> str | None:

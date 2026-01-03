@@ -108,6 +108,7 @@ class ModelNodeQualitySummary(BaseModel):
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
         result: TypedDictMetadataDict = {}
         # Pack quality summary fields into metadata dict
+        # Convert list[str] to list for JsonType compatibility
         result["metadata"] = {
             "has_documentation": self.has_documentation,
             "has_examples": self.has_examples,
@@ -116,7 +117,7 @@ class ModelNodeQualitySummary(BaseModel):
             "quality_score": self.quality_score,
             "is_well_documented": self.is_well_documented,
             "needs_documentation": self.needs_documentation,
-            "improvement_suggestions": self.improvement_suggestions,
+            "improvement_suggestions": list(self.improvement_suggestions),
             "overall_quality_status": self.get_overall_quality_status(),
         }
         return result

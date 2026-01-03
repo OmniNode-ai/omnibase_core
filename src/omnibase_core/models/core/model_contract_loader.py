@@ -83,6 +83,13 @@ class ModelContractLoader(BaseModel):
 
         Args:
             **_data: Keyword arguments passed to Pydantic (handled by __init__).
+                Uses ``Any`` type because this is a pass-through pattern where we
+                capture but do not process arbitrary Pydantic field values. The
+                values can be any type that matches the model's field definitions
+                (bool, dict, list, Path, etc.) and are validated by Pydantic.
+
+        Returns:
+            A new ModelContractLoader instance with forward references resolved.
         """
         _ensure_models_rebuilt(cls)
         return super().__new__(cls)

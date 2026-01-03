@@ -3,7 +3,7 @@ from uuid import UUID
 
 from pydantic import Field
 
-from omnibase_core.constants.event_types import TOOL_DISCOVERY_RESPONSE
+from omnibase_core.constants.constants_event_types import TOOL_DISCOVERY_RESPONSE
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 from omnibase_core.models.discovery.model_tool_discovery_response import (
     ModelDiscoveredTool,

@@ -32,10 +32,11 @@ import types
 from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
+from typing import cast
 from uuid import UUID, uuid4
 
 from omnibase_core.constants import TIMEOUT_DEFAULT_MS
-from omnibase_core.constants.event_types import TOOL_INVOCATION
+from omnibase_core.constants.constants_event_types import TOOL_INVOCATION
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.logging.structured import emit_log_event_sync
@@ -51,6 +52,7 @@ from omnibase_core.models.discovery.model_tool_response_event import (
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types import TypedDictServiceHealth
+from omnibase_core.types.json_types import JsonType
 
 # Component identifier for logging
 _COMPONENT_NAME = Path(__file__).stem
@@ -586,7 +588,7 @@ class MixinNodeService:
             input_state,
         )
 
-    def _serialize_result(self, result: object) -> dict[str, object]:
+    def _serialize_result(self, result: object) -> dict[str, JsonType]:
         """Serialize the execution result to a dictionary."""
         # None results are not allowed - raise validation error
         if result is None:
@@ -597,16 +599,17 @@ class MixinNodeService:
 
         if hasattr(result, "model_dump"):
             # Pydantic v2 model - use mode='json' for JSON-serializable output
-            serialized: dict[str, object] = result.model_dump(mode="json")
+            serialized: dict[str, JsonType] = result.model_dump(mode="json")
             return serialized
         if hasattr(result, "__dict__"):
-            # Regular object
-            obj_dict: dict[str, object] = result.__dict__
+            # Regular object - cast to JsonType since __dict__ values should be JSON-serializable
+            obj_dict: dict[str, JsonType] = cast(dict[str, JsonType], result.__dict__)
             return obj_dict
         if isinstance(result, dict):
-            return result
+            # Cast to JsonType since we expect JSON-serializable values
+            return cast(dict[str, JsonType], result)
         # Primitive or other types
-        return {"result": result}
+        return {"result": cast(JsonType, result)}
 
     async def _emit_tool_response(self, response_event: ModelToolResponseEvent) -> None:
         """Emit a tool response event."""

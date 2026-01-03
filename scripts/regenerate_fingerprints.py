@@ -45,7 +45,7 @@ When to Run:
 Related:
     - Linear Ticket: OMN-263
     - Architecture: docs/architecture/CONTRACT_STABILITY_SPEC.md
-    - Hash Registry: src/omnibase_core/contracts/hash_registry.py
+    - Hash Registry: src/omnibase_core/contracts/contract_hash_registry.py
     - Fingerprint CLI: scripts/compute_contract_fingerprint.py
     - Contract Linter: scripts/lint_contract.py
 """
@@ -63,7 +63,7 @@ from typing import TYPE_CHECKING
 import yaml
 from pydantic import BaseModel
 
-from omnibase_core.contracts.hash_registry import compute_contract_fingerprint
+from omnibase_core.contracts.contract_hash_registry import compute_contract_fingerprint
 from omnibase_core.models.contracts.model_contract_compute import ModelContractCompute
 from omnibase_core.models.contracts.model_contract_effect import ModelContractEffect
 from omnibase_core.models.contracts.model_contract_orchestrator import (

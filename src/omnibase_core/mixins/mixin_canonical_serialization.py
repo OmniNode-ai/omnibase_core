@@ -23,7 +23,7 @@ from __future__ import annotations
 # version: 1.0.0
 # === /OmniNode:Metadata ===
 import types
-from typing import Union
+from typing import Union, cast
 
 from omnibase_core.enums import EnumNodeMetadataField
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -246,9 +246,8 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
             ):
                 normalized_dict[k] = protocol_placeholders[k]
                 continue
-            # Convert EnumNodeMetadataField to .value
-            if isinstance(v, EnumNodeMetadataField):
-                v = v.value
+            # NOTE: EnumNodeMetadataField check removed - model_dump(mode="json")
+            # already converts enums to their values, so v is never an enum instance
             # Normalize string fields
             if k in string_fields and (v is None or v == "null"):
                 v = field.default if field.default is not None else ""
@@ -267,13 +266,22 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
                 v = format(v, ".15g")
             # Sort lists of dicts
             if isinstance(v, list) and v and all(isinstance(x, dict) for x in v):
-                v = sorted(v, key=lambda d: d["name"])
+                # Cast for mypy since we've verified all items are dicts with isinstance
+                dict_list = cast(list[dict[str, object]], v)
+                # Extract name field as string for sorting, with empty string default
+                sorted_list: list[dict[str, object]] = sorted(
+                    dict_list, key=lambda d: str(d.get("name", ""))
+                )
+                normalized_dict[k] = sorted_list
+                continue
             # Sort dicts
             if isinstance(v, dict):
-                v = dict(sorted(v.items()))
+                normalized_dict[k] = dict(sorted(v.items()))
+                continue
             # If still None, use default if available
             if v is None and field.default is not None:
-                v = field.default
+                normalized_dict[k] = field.default
+                continue
             normalized_dict[k] = v
 
         # --- PATCH START: Protocol-compliant entrypoint and null omission ---
@@ -296,49 +304,56 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
                 protocol_version=ModelSemVer(major=0, minor=1, patch=0),
                 schema_version=ModelSemVer(major=0, minor=1, patch=0),
             )
-        for k, v in normalized_dict.items():
+        for key, val in normalized_dict.items():
             # Always emit canonical version fields
-            if k == "metadata_version":
-                filtered_dict[k] = str(canonical_versions.metadata_version)
+            if key == "metadata_version":
+                filtered_dict[key] = str(canonical_versions.metadata_version)
                 continue
-            if k == "protocol_version":
-                filtered_dict[k] = str(canonical_versions.protocol_version)
+            if key == "protocol_version":
+                filtered_dict[key] = str(canonical_versions.protocol_version)
                 continue
-            if k == "schema_version":
-                filtered_dict[k] = str(canonical_versions.schema_version)
+            if key == "schema_version":
+                filtered_dict[key] = str(canonical_versions.schema_version)
                 continue
             # PATCH: Flatten entrypoint to URI string
-            if k == "entrypoint":
-                if isinstance(v, EntrypointBlock):
-                    filtered_dict[k] = v.to_uri()
-                elif isinstance(v, dict) and "type" in v and "target" in v:
-                    filtered_dict[k] = EntrypointBlock(**v).to_uri()
-                elif isinstance(v, str):
-                    filtered_dict[k] = (
-                        EntrypointBlock.from_uri(v).to_uri()
-                        if "://" in v or "@" in v
-                        else v
+            if key == "entrypoint":
+                # NOTE: EntrypointBlock isinstance check removed - model_dump(mode="json")
+                # converts Pydantic models to dicts, so val is never an EntrypointBlock instance
+                if isinstance(val, dict) and "type" in val and "target" in val:
+                    # Access dict keys directly to avoid Any and maintain type safety
+                    filtered_dict[key] = EntrypointBlock(
+                        type=str(val["type"]),
+                        target=str(val["target"]),
+                    ).to_uri()
+                elif isinstance(val, str):
+                    filtered_dict[key] = (
+                        EntrypointBlock.from_uri(val).to_uri()
+                        if "://" in val or "@" in val
+                        else val
                     )
                 else:
-                    filtered_dict[k] = str(v)
+                    filtered_dict[key] = str(val)
                 continue
             # PATCH: Flatten namespace to URI string
-            if k == "namespace":
+            if key == "namespace":
                 from omnibase_core.models.core.model_node_metadata import Namespace
 
-                if isinstance(v, Namespace):
-                    filtered_dict[k] = str(v)
-                elif isinstance(v, dict) and "value" in v:
-                    filtered_dict[k] = str(Namespace(**v))
-                elif isinstance(v, str):
-                    filtered_dict[k] = str(Namespace(value=v))
+                # NOTE: Namespace isinstance check removed - model_dump(mode="json")
+                # converts Pydantic models to dicts, so val is never a Namespace instance
+                if isinstance(val, dict) and "value" in val:
+                    # Access dict key directly to avoid Any and maintain type safety
+                    filtered_dict[key] = str(Namespace(value=str(val["value"])))
+                elif isinstance(val, str):
+                    filtered_dict[key] = str(Namespace(value=val))
                 else:
-                    filtered_dict[k] = str(v)
+                    filtered_dict[key] = str(val)
                 continue
             # PATCH: Omit all None/null/empty fields (except protocol-required)
-            if (v == "" or v is None or v in ({}, [])) and k not in protocol_required:
+            if (
+                val == "" or val is None or val in ({}, [])
+            ) and key not in protocol_required:
                 continue
-            filtered_dict[k] = v
+            filtered_dict[key] = val
         # PATCH: Remove all None values before YAML dump
         filtered_dict = {k: v for k, v in filtered_dict.items() if v is not None}
 

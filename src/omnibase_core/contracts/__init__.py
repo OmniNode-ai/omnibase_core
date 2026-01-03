@@ -71,7 +71,7 @@ Stability Guarantee:
     - Breaking changes require major version bump
 """
 
-from omnibase_core.contracts.hash_registry import (
+from omnibase_core.contracts.contract_hash_registry import (
     ContractHashRegistry,
     compute_contract_fingerprint,
     normalize_contract,

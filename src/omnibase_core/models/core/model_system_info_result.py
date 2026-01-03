@@ -36,6 +36,4 @@ class ModelSystemInfoResult(ModelBaseResult):
         default=None,
         description="System info retrieval time in milliseconds",
     )
-    format: str = Field(
-        default="dict[str, Any]", description="Format of the system info output"
-    )
+    format: str = Field(default="dict", description="Format of the system info output")

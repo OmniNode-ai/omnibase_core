@@ -13,7 +13,7 @@ from uuid import UUID, uuid4
 
 import pytest
 
-from omnibase_core.constants.event_types import (
+from omnibase_core.constants.constants_event_types import (
     NODE_INTROSPECTION_EVENT,
     REAL_TIME_INTROSPECTION_RESPONSE,
 )
