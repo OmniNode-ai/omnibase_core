@@ -141,7 +141,7 @@ state_transitions:
 | FSM Subcontract Models | Complete | Full state machine support |
 | Pydantic Validation | Complete | Comprehensive validation |
 | Subcontract Composition | Complete | ModelContractReducer |
-| FSM Runtime Executor | Complete | fsm_executor.py with MixinFSMExecution |
+| FSM Runtime Executor | Complete | util_fsm_executor.py with MixinFSMExecution |
 | NodeReducer | **PRIMARY** | FSM-driven implementation (v0.4.0+) |
 | Legacy Classes | Available | `NodeReducerLegacy` in `nodes/legacy/` for backwards compatibility |
 | Documentation | Complete | Full tutorial and migration guides available |

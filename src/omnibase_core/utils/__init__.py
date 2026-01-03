@@ -16,6 +16,8 @@ dependencies and are lazy-loaded to avoid circular imports during initial
 module loading.
 """
 
+from typing import Any
+
 from .util_conflict_resolver import UtilConflictResolver
 from .util_decorators import allow_any_type, allow_dict_str_any
 from .util_enum_normalizer import create_enum_normalizer
@@ -63,7 +65,7 @@ __all__ = [
 # =============================================================================
 # Deprecated aliases: Lazy-load with warnings per OMN-1071 renaming.
 # =============================================================================
-def __getattr__(name: str) -> type:
+def __getattr__(name: str) -> Any:
     """
     Lazy loading for utilities with heavy model dependencies.
 

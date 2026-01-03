@@ -529,7 +529,7 @@ class ModelPermission(BaseModel):
 
 ## Related Documentation
 
-- [json_types.py](../../src/omnibase_core/types/json_types.py) - Type alias definitions
+- [type_json.py](../../src/omnibase_core/types/type_json.py) - Type alias definitions
 - [validate-union-usage.py](../../scripts/validation/validate-union-usage.py) - Validation script
 - [ONEX Four-Node Architecture](../architecture/ONEX_FOUR_NODE_ARCHITECTURE.md) - Node patterns
 

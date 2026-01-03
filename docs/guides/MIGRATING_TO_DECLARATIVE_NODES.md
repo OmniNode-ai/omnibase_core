@@ -41,8 +41,8 @@ The declarative approach enables:
 |-----------|--------|---------|
 | **FSM Models** | Complete | ModelFSMSubcontract with full state machine support |
 | **Workflow Models** | Complete | ModelWorkflowDefinition with dependency resolution |
-| **FSM Runtime** | Complete | fsm_executor.py + MixinFSMExecution |
-| **Workflow Runtime** | Complete | workflow_executor.py + MixinWorkflowExecution |
+| **FSM Runtime** | Complete | util_fsm_executor.py + MixinFSMExecution |
+| **Workflow Runtime** | Complete | util_workflow_executor.py + MixinWorkflowExecution |
 | **Node Base Classes** | Complete | `NodeReducer` (FSM-driven), `NodeOrchestrator` (workflow-driven) |
 | **Legacy Code** | Removed | No legacy implementations available |
 

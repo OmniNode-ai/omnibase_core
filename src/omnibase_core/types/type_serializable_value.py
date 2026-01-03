@@ -7,7 +7,7 @@ and configuration data.
 
 Type Aliases:
     SerializableValue: A JSON-compatible value type (recursive). Equivalent to
-        ``JsonType`` from ``json_types.py`` - supports primitives (str, int, float,
+        ``JsonType`` from ``type_json.py`` - supports primitives (str, int, float,
         bool, None) and nested lists/dicts.
 
     SerializedDict: A dictionary with string keys and JSON-serializable values.

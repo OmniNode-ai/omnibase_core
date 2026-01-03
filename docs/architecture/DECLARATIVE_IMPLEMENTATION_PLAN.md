@@ -12,8 +12,8 @@
 
 | Phase | Status | Completion | Commit | Files |
 |-------|--------|-----------|--------|-------|
-| **Phase 1: FSM Execution** | ✅ **COMPLETE** | 100% | `7bbb4a8` | fsm_executor.py, mixin_fsm_execution.py, tests |
-| **Phase 2: Workflow Execution** | ✅ **COMPLETE** | 100% | `58a3972` | workflow_executor.py, mixin_workflow_execution.py, tests |
+| **Phase 1: FSM Execution** | ✅ **COMPLETE** | 100% | `7bbb4a8` | util_fsm_executor.py, mixin_fsm_execution.py, tests |
+| **Phase 2: Workflow Execution** | ✅ **COMPLETE** | 100% | `58a3972` | util_workflow_executor.py, mixin_workflow_execution.py, tests |
 | **Phase 3: Declarative Nodes** | ✅ **COMPLETE** | 100% | `588529f` | `node_reducer.py`, `node_orchestrator.py` (now primary) |
 | **Phase 4: Migration and Examples** | ✅ **COMPLETE** | 100% | `5cac29c` | Example YAMLs, migration guide |
 | **Phase 5: Naming Cleanup** | ✅ **COMPLETE** | 100% | v0.4.0 | Removed "Declarative" suffix, hard deleted legacy nodes |
@@ -2203,8 +2203,8 @@ Primary Node Classes (v0.4.0):
 Implementation Components:
 ├── src/omnibase_core/
 │   ├── utils/
-│   │   ├── fsm_executor.py           # FSM execution logic (✅ Complete)
-│   │   └── workflow_executor.py      # Workflow execution logic (✅ Complete)
+│   │   ├── util_fsm_executor.py      # FSM execution logic (✅ Complete)
+│   │   └── util_workflow_executor.py # Workflow execution logic (✅ Complete)
 │   └── mixins/
 │       ├── mixin_fsm_execution.py    # FSM execution mixin (✅ Complete)
 │       └── mixin_workflow_execution.py # Workflow execution mixin (✅ Complete)
@@ -2218,8 +2218,8 @@ Example Contracts:
 Tests:
 ├── tests/
 │   ├── unit/utils/
-│   │   ├── test_fsm_executor.py       # FSM utility tests (✅ Complete)
-│   │   └── test_workflow_executor.py  # Workflow utility tests (✅ Complete)
+│   │   ├── test_util_fsm_executor.py       # FSM utility tests (✅ Complete)
+│   │   └── test_util_workflow_executor.py  # Workflow utility tests (✅ Complete)
 │   └── integration/
 │       ├── test_fsm_mixin_integration.py
 │       └── test_workflow_mixin_integration.py
