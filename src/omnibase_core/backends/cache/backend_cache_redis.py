@@ -203,7 +203,11 @@ def sanitize_redis_url(url: str) -> str:
                 safe_netloc += f":{parsed.port}"
             return urlunparse(parsed._replace(netloc=safe_netloc))
         return url
-    except Exception:  # fallback-ok: return safe string if URL parsing fails
+    except (
+        AttributeError,
+        TypeError,
+        ValueError,
+    ):  # fallback-ok: use original URL if parsing fails
         return "redis://***"
 
 

@@ -22,18 +22,18 @@ from omnibase_core.models.infrastructure.model_effect_transaction import (
 )
 
 __all__ = [
+    # Cache backends (OMN-1188) - from backends.cache
+    "REDIS_AVAILABLE",
+    "BackendCacheRedis",
+    # Execution sequencing - from execution.phase_sequencer
+    "create_execution_plan",
     # Node bases
     "NodeBase",
     "NodeCoreBase",
     # Infrastructure classes
     "ModelCircuitBreaker",
+    "ModelExecutionPlan",
+    "ModelPhaseStep",
     "ModelComputeCache",
     "ModelEffectTransaction",
-    # Cache backends (OMN-1188)
-    "BackendCacheRedis",
-    "REDIS_AVAILABLE",
-    # Execution sequencing
-    "ModelPhaseStep",
-    "ModelExecutionPlan",
-    "create_execution_plan",
 ]

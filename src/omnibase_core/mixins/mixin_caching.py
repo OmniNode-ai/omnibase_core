@@ -64,6 +64,7 @@ import logging
 import time
 from typing import TYPE_CHECKING, Any
 
+from omnibase_core.decorators.allow_dict_any import allow_dict_any
 from omnibase_core.enums import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.typed_dict_mixin_types import TypedDictCacheStats
@@ -347,10 +348,11 @@ class MixinCaching:
         # Attempt graceful cleanup if backend supports it
         if hasattr(self._cache_backend, "close"):
             try:
-                await self._cache_backend.close()  # type: ignore[union-attr]
+                await self._cache_backend.close()
                 logger.info("L2 cache backend cleanup completed successfully")
-            except Exception as e:
-                # Log but suppress cleanup errors - we're already in error recovery
+            except (
+                Exception
+            ) as e:  # cleanup-resilience-ok: cleanup must complete even on error
                 error = self._wrap_cache_error(e, "cleanup")
                 logger.warning(
                     "L2 cache backend cleanup failed: %s (exception type: %s)",
@@ -401,6 +403,7 @@ class MixinCaching:
         if self._increment_failure_count():
             await self._attempt_backend_cleanup()
 
+    @allow_dict_any(reason="Context dict for ModelOnexError.from_exception **kwargs")
     def _wrap_cache_error(
         self,
         exception: Exception,
@@ -509,9 +512,9 @@ class MixinCaching:
                 # Graceful degradation with cleanup triggering
                 # Catches: network errors, serialization issues, backend interface problems
                 await self._handle_l2_error(e, "get", cache_key)
-            except Exception as e:
-                # Safety net for truly unexpected exceptions from backend implementations
-                # All expected exceptions should be caught above
+            except (
+                Exception
+            ) as e:  # catch-all-ok: safety net for unexpected backend exceptions
                 await self._handle_l2_error(e, "get", cache_key)
 
         return None
@@ -575,9 +578,9 @@ class MixinCaching:
                 # Graceful degradation with cleanup triggering
                 # Catches: network errors, serialization issues, backend interface problems
                 await self._handle_l2_error(e, "set", cache_key)
-            except Exception as e:
-                # Safety net for truly unexpected exceptions from backend implementations
-                # All expected exceptions should be caught above
+            except (
+                Exception
+            ) as e:  # catch-all-ok: safety net for unexpected backend exceptions
                 await self._handle_l2_error(e, "set", cache_key)
 
     async def invalidate_cache(self, cache_key: str) -> None:
@@ -614,9 +617,9 @@ class MixinCaching:
                 # Graceful degradation with cleanup triggering
                 # Catches: network errors, serialization issues, backend interface problems
                 await self._handle_l2_error(e, "delete", cache_key)
-            except Exception as e:
-                # Safety net for truly unexpected exceptions from backend implementations
-                # All expected exceptions should be caught above
+            except (
+                Exception
+            ) as e:  # catch-all-ok: safety net for unexpected backend exceptions
                 await self._handle_l2_error(e, "delete", cache_key)
 
     async def clear_cache(self) -> None:
@@ -645,9 +648,9 @@ class MixinCaching:
                 # Graceful degradation with cleanup triggering
                 # Catches: network errors, serialization issues, backend interface problems
                 await self._handle_l2_error(e, "clear")
-            except Exception as e:
-                # Safety net for truly unexpected exceptions from backend implementations
-                # All expected exceptions should be caught above
+            except (
+                Exception
+            ) as e:  # catch-all-ok: safety net for unexpected backend exceptions
                 await self._handle_l2_error(e, "clear")
 
     def get_cache_stats(self) -> TypedDictCacheStats:

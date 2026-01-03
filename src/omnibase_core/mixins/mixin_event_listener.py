@@ -960,7 +960,7 @@ class MixinEventListener[InputStateT, OutputStateT]:
         node_name = self.get_node_name()
         try:
             node_uuid = UUID(node_name)
-        except (ValueError, AttributeError):
+        except (AttributeError, ValueError):
             # Generate deterministic UUID from node name
             node_uuid = uuid.uuid5(uuid.NAMESPACE_DNS, node_name)
 
@@ -1044,7 +1044,7 @@ class MixinEventListener[InputStateT, OutputStateT]:
         node_name = self.get_node_name()
         try:
             node_uuid = UUID(node_name)
-        except (ValueError, AttributeError):
+        except (AttributeError, ValueError):
             # Generate deterministic UUID from node name
             node_uuid = uuid.uuid5(uuid.NAMESPACE_DNS, node_name)
 

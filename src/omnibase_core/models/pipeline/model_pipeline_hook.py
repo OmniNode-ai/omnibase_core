@@ -41,7 +41,7 @@ the object and constructs a new instance. This works regardless of class identit
 
     # With from_attributes=True:
     hook = ModelPipelineHook(...)  # Created with any class identity
-    # Pydantic reads hook.hook_id, hook.phase, etc. and creates new instance
+    # Pydantic reads hook.hook_name, hook.phase, etc. and creates new instance
     # Works even when class identity differs
 
 **When this pattern is needed:**
