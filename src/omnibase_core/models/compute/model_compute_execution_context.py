@@ -93,4 +93,4 @@ class ModelComputeExecutionContext(BaseModel):
     # error-ok: string_id - Intentionally str for flexibility (can be UUID, hostname, or custom identifier)
     node_id: str | None = None
 
-    model_config = ConfigDict(extra="forbid", frozen=True)
+    model_config = ConfigDict(extra="forbid", frozen=True, from_attributes=True)

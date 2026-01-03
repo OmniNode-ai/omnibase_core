@@ -28,4 +28,4 @@ class ModelTransformRegexConfig(BaseModel):
     replacement: str = ""
     flags: list[EnumRegexFlag] = Field(default_factory=list)
 
-    model_config = ConfigDict(extra="forbid", frozen=True)
+    model_config = ConfigDict(extra="forbid", frozen=True, from_attributes=True)

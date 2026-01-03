@@ -28,7 +28,7 @@ from pydantic import BaseModel, Field, field_validator
 from omnibase_core.enums import EnumMetaType, EnumProtocolVersion, EnumRuntimeLanguage
 from omnibase_core.enums.enum_metadata import EnumLifecycle
 from omnibase_core.models.configuration.model_metadata_config import ModelMetadataConfig
-from omnibase_core.models.configuration.validators_metadata import (
+from omnibase_core.models.configuration.model_validators_metadata import (
     coerce_protocols_to_list,
     coerce_to_namespace,
     coerce_to_semver,

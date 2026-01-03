@@ -111,6 +111,7 @@ class ModelFSMAnalysisResult(BaseModel):
     model_config = ConfigDict(
         frozen=True,  # Immutable after creation
         extra="forbid",  # No extra fields allowed
+        from_attributes=True,  # pytest-xdist compatibility
     )
 
 

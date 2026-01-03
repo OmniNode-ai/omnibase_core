@@ -1,7 +1,7 @@
 # Contract Patching Guide
 
-**Version**: 1.0.1
-**Last Updated**: 2025-12-31
+**Version**: 1.0.2
+**Last Updated**: 2026-01-03
 **Status**: Comprehensive Reference
 
 > **New in v0.4.0**: Contract patches provide a declarative way to extend base contracts produced by profile factories. This guide explains the patching system architecture, model reference, and end-to-end usage examples.
@@ -205,7 +205,7 @@ Partial behavior overrides for handler settings. This model is used in the `desc
 ```python
 from omnibase_core.models.contracts.model_descriptor_patch import ModelDescriptorPatch
 
-behavior = ModelDescriptorPatch(
+descriptor = ModelDescriptorPatch(
     purity="pure",                        # "pure" | "side_effecting"
     idempotent=True,                      # Safe to retry?
     timeout_ms=30000,                     # Max execution time
@@ -1030,6 +1030,6 @@ patch = ModelContractPatch(
 
 ---
 
-**Last Updated**: 2025-12-31
-**Version**: 1.0.1
+**Last Updated**: 2026-01-03
+**Version**: 1.0.2
 **Maintainer**: ONEX Framework Team

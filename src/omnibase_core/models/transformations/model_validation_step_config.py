@@ -27,4 +27,4 @@ class ModelValidationStepConfig(BaseModel):
     schema_ref: str
     fail_on_error: bool = True
 
-    model_config = ConfigDict(extra="forbid", frozen=True)
+    model_config = ConfigDict(extra="forbid", frozen=True, from_attributes=True)

@@ -13,9 +13,13 @@ Tests cover:
 - Audit trail verification
 - Determinism guarantees
 
-Note: This test file uses lazy imports to avoid circular import issues.
-See OMN-1126 for tracking. The ModelProviderDescriptor has a forward reference
-to ModelHealthStatus that required lazy import pattern to resolve.
+Note: This test file uses the module-level model rebuild pattern to resolve
+the forward reference in ModelProviderDescriptor to ModelHealthStatus.
+A stub ModelHealthStatus class is defined at module level and the model
+is rebuilt once at import time. This ensures deterministic behavior
+regardless of test execution order (no global cache flags needed).
+See OMN-1126 for tracking and test_model_provider_descriptor.py for the
+reference pattern.
 """
 
 from __future__ import annotations
@@ -110,40 +114,36 @@ class MockProfile:
 
 
 # =============================================================================
-# Test Fixtures and Helpers
+# Stub Classes for Forward Reference Resolution
 # =============================================================================
 
+# Import BaseModel here for the stub class
+from pydantic import BaseModel
 
-# Cache for the rebuilt ModelProviderDescriptor to avoid repeated rebuilds
-_MODEL_PROVIDER_DESCRIPTOR_REBUILT = False
 
+class ModelHealthStatus(BaseModel):
+    """Stub class for ModelHealthStatus to avoid circular import.
 
-def _get_model_provider_descriptor() -> type:
-    """Get ModelProviderDescriptor with resolved forward references.
-
-    Uses a stub ModelHealthStatus class to avoid circular import chain.
+    This stub allows ModelProviderDescriptor to resolve its forward reference
+    without triggering the circular import chain. The stub is created at module
+    level to ensure deterministic behavior regardless of test execution order.
     """
-    global _MODEL_PROVIDER_DESCRIPTOR_REBUILT
 
-    # Lazy import to avoid circular dependency
-    from pydantic import BaseModel
+    status: str = "healthy"
+    health_score: float = 1.0
 
-    if not _MODEL_PROVIDER_DESCRIPTOR_REBUILT:
-        # Create a stub class for ModelHealthStatus to satisfy Pydantic's type resolution
-        # without triggering the circular import chain.
-        class ModelHealthStatus(BaseModel):
-            """Stub class for ModelHealthStatus to avoid circular import."""
 
-            status: str = "healthy"
-            health_score: float = 1.0
+# Rebuild the model at module level - this happens once at import time,
+# ensuring deterministic behavior regardless of test execution order.
+# This is the recommended pattern per test_model_provider_descriptor.py.
+ModelProviderDescriptor.model_rebuild(
+    _types_namespace={"ModelHealthStatus": ModelHealthStatus}
+)
 
-        # Rebuild the model with the stub class in namespace
-        ModelProviderDescriptor.model_rebuild(
-            _types_namespace={"ModelHealthStatus": ModelHealthStatus}
-        )
-        _MODEL_PROVIDER_DESCRIPTOR_REBUILT = True
 
-    return ModelProviderDescriptor
+# =============================================================================
+# Test Fixtures and Helpers
+# =============================================================================
 
 
 def create_provider(
@@ -171,8 +171,7 @@ def create_provider(
     Returns:
         Configured ModelProviderDescriptor.
     """
-    ModelProviderDescriptor = _get_model_provider_descriptor()
-
+    # ModelProviderDescriptor is rebuilt at module level, so use directly
     return ModelProviderDescriptor(
         provider_id=provider_id or uuid4(),
         capabilities=capabilities or ["database.relational"],
