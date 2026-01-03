@@ -11,7 +11,10 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from omnibase_core.models.primitives.model_semver import ModelSemVer
-from omnibase_core.types.type_serializable_value import SerializedDict
+from omnibase_core.types.type_serializable_value import (
+    SerializableValue,
+    SerializedDict,
+)
 
 
 class ModelParseMetadata(BaseModel):
@@ -119,13 +122,13 @@ class ModelParseMetadata(BaseModel):
             duration = self.parse_end_time - self.parse_start_time
             self.parse_duration_ms = int(duration.total_seconds() * 1000)
 
-    def add_debug_info(self, key: str, value: object) -> None:
+    def add_debug_info(self, key: str, value: SerializableValue) -> None:
         """Add debug information."""
-        self.debug_info[key] = value  # type: ignore[assignment]
+        self.debug_info[key] = value
 
-    def add_context(self, key: str, value: object) -> None:
+    def add_context(self, key: str, value: SerializableValue) -> None:
         """Add parsing context information."""
-        self.parsing_context[key] = value  # type: ignore[assignment]
+        self.parsing_context[key] = value
 
     def get_performance_summary(self) -> SerializedDict:
         """Get performance summary for monitoring."""

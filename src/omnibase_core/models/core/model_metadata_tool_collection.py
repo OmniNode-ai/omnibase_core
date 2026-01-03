@@ -108,7 +108,7 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
                             v
                         )  # Pydantic model_validate for loosely-typed dict input
                         new_data[k] = function_tool
-                    except (AttributeError, ValueError, TypeError, KeyError):
+                    except (AttributeError, KeyError, TypeError, ValueError):
                         # fallback-ok: Fallback to raw dictionary if ModelFunctionTool creation fails
                         new_data[k] = v
                 else:
@@ -252,7 +252,7 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
                     self.root[name] = ModelFunctionTool.model_validate(
                         tool_data
                     )  # Pydantic model_validate for loosely-typed dict input
-                except (AttributeError, ValueError, TypeError, KeyError):
+                except (AttributeError, KeyError, TypeError, ValueError):
                     # fallback-ok: Fallback to raw dict if ModelFunctionTool creation fails
                     self.root[name] = tool_data
             else:

@@ -423,23 +423,23 @@ class ModelDockerComposeManifest(BaseModel):
                 if service.build:
                     service_dict["build"] = service.build.model_dump(exclude_none=True)
                 if service.command:
-                    # command can be str | list[str], both are valid JsonType
+                    # Conversion needed for mypy: list[str] -> list[JsonType]
                     service_dict["command"] = (
                         list(service.command)
                         if isinstance(service.command, list)
                         else service.command
                     )
                 if service.environment:
-                    # Convert dict[str, str] to SerializedDict
+                    # Conversion needed for mypy: dict[str, str] -> dict[str, JsonType]
                     service_dict["environment"] = dict(service.environment)
                 if service.ports:
-                    # Convert list[str] to list for JsonType compatibility
+                    # Conversion needed for mypy: list[str] -> list[JsonType]
                     service_dict["ports"] = list(service.ports)
                 if service.volumes:
-                    # Convert list[str] to list for JsonType compatibility
+                    # Conversion needed for mypy: list[str] -> list[JsonType]
                     service_dict["volumes"] = list(service.volumes)
                 if service.depends_on:
-                    # dict() creates copy for JsonType compatibility
+                    # Conversion needed for mypy: dict[str, dict[str, str]] -> dict[str, JsonType]
                     service_dict["depends_on"] = {
                         k: dict(v) for k, v in service.depends_on.items()
                     }
@@ -450,10 +450,10 @@ class ModelDockerComposeManifest(BaseModel):
                 if service.restart:
                     service_dict["restart"] = service.restart
                 if service.networks:
-                    # Convert list[str] to list for JsonType compatibility
+                    # Conversion needed for mypy: list[str] -> list[JsonType]
                     service_dict["networks"] = list(service.networks)
                 if service.labels:
-                    # Convert dict[str, str] to SerializedDict
+                    # Conversion needed for mypy: dict[str, str] -> dict[str, JsonType]
                     service_dict["labels"] = dict(service.labels)
                 if service.deploy:
                     service_dict["deploy"] = service.deploy.model_dump(

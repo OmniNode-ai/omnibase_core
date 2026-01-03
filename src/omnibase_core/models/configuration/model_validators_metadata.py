@@ -6,7 +6,7 @@ shared between ModelOnexMetadata and ModelMetadataBlock.
 These validators are designed to be used with Pydantic's @field_validator
 decorator pattern:
 
-    from omnibase_core.models.configuration.validators_metadata import (
+    from omnibase_core.models.configuration.model_validators_metadata import (
         coerce_to_semver,
         coerce_to_namespace,
         validate_entrypoint_uri,

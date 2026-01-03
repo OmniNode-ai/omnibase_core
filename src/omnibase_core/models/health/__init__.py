@@ -31,9 +31,8 @@ __all__: list[str] = [
 try:
     ModelHealthStatus.model_rebuild()
     ModelToolHealth.model_rebuild()
-except (
-    Exception
-):  # error-ok: model_rebuild may fail during circular import resolution, safe to ignore
+except Exception:
+    # init-errors-ok: model_rebuild may fail during circular import resolution, safe to ignore
     pass
 
 # Resolve forward reference for ModelHealthCheckMetadata.custom_fields
@@ -52,7 +51,6 @@ try:
         _types_namespace={"ModelCustomFields": _ModelCustomFields}
     )
     ModelHealthCheckConfig.model_rebuild()
-except (
-    Exception
-):  # error-ok: model_rebuild may fail during circular import resolution, safe to ignore
+except Exception:
+    # init-errors-ok: model_rebuild may fail during circular import resolution, safe to ignore
     pass

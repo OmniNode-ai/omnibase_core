@@ -216,10 +216,11 @@ class ModelNodeCategorization(BaseModel):
         result: TypedDictMetadataDict = {}
         # Map tags directly (this model has tags field)
         if self.tags:
-            result["tags"] = self.tags.copy()
+            # Conversion needed for mypy: list[str] -> list[JsonType]
+            result["tags"] = list(self.tags)
         # Pack other categorization fields into metadata dict
-        # list() creates copy for JsonType compatibility
         result["metadata"] = {
+            # Conversion needed for mypy: list[str] -> list[JsonType]
             "categories": list(self.categories),
             "dependencies": [str(dep) for dep in self.dependencies],
             "related_nodes": [str(node) for node in self.related_nodes],

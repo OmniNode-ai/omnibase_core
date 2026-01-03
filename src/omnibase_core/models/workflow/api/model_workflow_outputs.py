@@ -203,7 +203,9 @@ class ModelWorkflowOutputs(BaseModel):
 
         # Add data if present (convert ModelSchemaValue to raw values)
         if self.data:
-            # Cast the comprehension result to SerializedDict
+            # Cast to SerializedDict since to_value() returns object.
+            # Safe because ModelSchemaValue.to_value() only returns JSON-compatible types
+            # (None, bool, str, int, float, list, dict).
             result["data"] = cast(
                 SerializedDict,
                 {key: value.to_value() for key, value in self.data.items()},

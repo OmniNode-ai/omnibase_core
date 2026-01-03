@@ -768,8 +768,8 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
             else:
                 raw_value = value
 
-            # Cast to PrimitiveValueType to satisfy type checker
-            # Since PrimitiveValueType is object, this is safe at runtime
+            # Store in custom_fields - raw_value is already validated as PrimitiveValueType
+            # compatible (str, int, float, bool, list, or None)
             self.custom_fields[key] = raw_value
             return True
         except Exception:  # fallback-ok: set_custom_field method signature returns bool for success/failure rather than raising

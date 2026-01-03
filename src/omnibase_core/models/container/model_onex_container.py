@@ -36,7 +36,10 @@ from typing import TYPE_CHECKING, TypeVar, cast
 
 from omnibase_core.decorators.allow_dict_any import allow_dict_any
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.types.type_serializable_value import SerializedDict
+from omnibase_core.types.type_serializable_value import (
+    SerializableValue,
+    SerializedDict,
+)
 from omnibase_core.types.typed_dict_performance_checkpoint_result import (
     TypedDictPerformanceCheckpointResult,
 )
@@ -700,11 +703,9 @@ class ModelONEXContainer:
         }
 
         # Add base container metrics
-        from typing import cast
-        from omnibase_core.types.type_serializable_value import SerializableValue
-
         base_metrics = self.get_performance_metrics()
-        # Cast the comprehension result to SerializedDict since to_value() returns object
+        # Cast to dict[str, SerializableValue] since to_value() returns object.
+        # Safe because ModelSchemaValue.to_value() only returns JSON-compatible types.
         stats["base_metrics"] = cast(
             dict[str, SerializableValue],
             {key: value.to_value() for key, value in base_metrics.items()},
