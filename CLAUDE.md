@@ -465,6 +465,41 @@ class NodeMyServiceCompute(NodeCompute, MixinDiscoveryResponder):
 
 **Available Mixins**: `MixinDiscoveryResponder`, `MixinEventHandler`, `MixinEventListener`, `MixinNodeExecutor`, `MixinNodeLifecycle`, `MixinRequestResponseIntrospection`, `MixinWorkflowExecution`
 
+### File Naming Conventions
+
+All Python files in `src/omnibase_core/` must follow directory-specific naming prefixes. This is enforced by pre-commit hooks via `checker_naming_convention.py`.
+
+| Directory | Required Prefix(es) | Example |
+|-----------|---------------------|---------|
+| `cli/` | `cli_*` | `cli_commands.py` |
+| `constants/` | `constants_*` | `constants_event_types.py` |
+| `container/` | `container_*` | `container_service_registry.py` |
+| `context/` | `context_*` | `context_application.py` |
+| `contracts/` | `contract_*` | `contract_hash_registry.py` |
+| `decorators/` | `decorator_*` | `decorator_error_handling.py` |
+| `enums/` | `enum_*` | `enum_node_kind.py` |
+| `errors/` | `error_*` or `exception_*` | `error_runtime.py` |
+| `factories/` | `factory_*` | `factory_contract_profile.py` |
+| `infrastructure/` | `node_*` or `infra_*` | `node_base.py` |
+| `logging/` | `logging_*` | `logging_structured.py` |
+| `mixins/` | `mixin_*` | `mixin_discovery_responder.py` |
+| `models/` | `model_*` | `model_event_envelope.py` |
+| `nodes/` | `node_*` | `node_compute.py` |
+| `pipeline/` | `builder_*`, `runner_*`, `manifest_*`, `composer_*`, `registry_*`, `pipeline_*`, `handler_*` | `builder_execution_plan.py` |
+| `protocols/` | `protocol_*` | `protocol_event_bus.py` |
+| `resolution/` | `resolver_*` | `resolver_execution.py` |
+| `runtime/` | `runtime_*`, `handler_*` | `runtime_file_registry.py` |
+| `schemas/` | `schema_*` | `schema_node.py` |
+| `services/` | `service_*` | `service_compute_cache.py` |
+| `tools/` | `tool_*` | `tool_dict_any_checker.py` |
+| `types/` | `typed_dict_*`, `type_*`, or `converter_*` | `type_compute_pipeline.py` |
+| `utils/` | `util_*` | `util_datetime_parser.py` |
+| `validation/` | `validator_*` or `checker_*` | `validator_contracts.py` |
+
+**Exceptions**: `__init__.py`, `conftest.py`, and `py.typed` files are always allowed.
+
+**Validation**: Run `poetry run python -m omnibase_core.validation.checker_naming_convention` to check compliance.
+
 ### Pydantic `from_attributes=True` for Value Objects
 
 Add `from_attributes=True` to `ConfigDict` for immutable value objects nested in other Pydantic models used with pytest-xdist parallel execution.
