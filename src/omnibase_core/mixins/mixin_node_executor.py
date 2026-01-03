@@ -1,6 +1,6 @@
 import types
 from collections.abc import Callable
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
     from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
@@ -382,7 +382,11 @@ class MixinNodeExecutor(MixinEventDrivenNode):
             return dict_result
         if isinstance(result, dict):
             return result
-        return {"result": result}
+        # Cast result to JsonType - _serialize_result handles conversion of execution
+        # results which should be JSON-serializable by node contract
+        from omnibase_core.types.json_types import JsonType
+
+        return {"result": cast(JsonType, result)}
 
     async def _emit_tool_response(self, response_event: ModelToolResponseEvent) -> None:
         """Emit a tool response event."""

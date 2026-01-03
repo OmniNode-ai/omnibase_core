@@ -11,7 +11,7 @@ Usage:
     omninode-runtime-host-dev CONTRACT.yaml  # Dev/test only
 """
 
-from omnibase_core.cli.commands import cli
-from omnibase_core.cli.runtime_host_cli import main as runtime_host_dev_main
+from omnibase_core.cli.cli_commands import cli
+from omnibase_core.cli.cli_runtime_host import main as runtime_host_dev_main
 
 __all__ = ["cli", "runtime_host_dev_main"]

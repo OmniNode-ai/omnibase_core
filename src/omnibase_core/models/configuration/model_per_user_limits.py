@@ -178,7 +178,8 @@ class ModelPerUserLimits(BaseModel):
         ):
             return headers.get(self.user_identification_header)
         if self.user_identification_method == "jwt_subject":
-            return jwt_payload.get("sub")
+            sub = jwt_payload.get("sub")
+            return str(sub) if isinstance(sub, str) else None
         return None
 
     def add_user_override(self, user_id: UUID, limit: int) -> None:

@@ -18,6 +18,7 @@ Module Organization:
 - container/: DI container and service registry protocols
 - event_bus/: Event-driven messaging protocols
 - intents/: Intent-related protocols (ProtocolRegistrationRecord)
+- merge/: Contract merge engine protocols (OMN-1127)
 - notifications/: State transition notification protocols (OMN-1122)
 - resolution/: Capability-based dependency resolution protocols (OMN-1123)
 - runtime/: Runtime handler protocols (ProtocolHandler)
@@ -163,6 +164,11 @@ from omnibase_core.protocols.infrastructure import (
 # Intents Module Exports
 # =============================================================================
 from omnibase_core.protocols.intents import ProtocolRegistrationRecord
+
+# =============================================================================
+# Merge Module Exports (OMN-1127)
+# =============================================================================
+from omnibase_core.protocols.merge import ProtocolMergeEngine
 
 # =============================================================================
 # Metrics Module Exports (OMN-1188)
@@ -415,6 +421,10 @@ __all__ = [
     # Intents Module
     # ==========================================================================
     "ProtocolRegistrationRecord",
+    # ==========================================================================
+    # Merge Module (OMN-1127)
+    # ==========================================================================
+    "ProtocolMergeEngine",
     # ==========================================================================
     # Notifications Module (OMN-1122)
     # ==========================================================================

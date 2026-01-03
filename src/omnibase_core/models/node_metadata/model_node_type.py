@@ -737,7 +737,8 @@ class ModelNodeType(BaseModel):
         result["metadata"] = {
             # category is required (no default), always access directly
             "category": self.category.value,
-            "dependencies": self.dependencies,
+            # Convert list[str] to list for JsonType compatibility
+            "dependencies": list(self.dependencies),
             "execution_priority": self.execution_priority,
             "is_generator": self.is_generator,
             "is_validator": self.is_validator,

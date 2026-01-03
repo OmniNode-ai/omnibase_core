@@ -92,7 +92,7 @@ class ModelOnexEvent(BaseModel):
 
     @field_validator("event_type")
     @classmethod
-    def validate_event_type_format(cls, v: Any) -> str | ModelEventType:
+    def validate_event_type_format(cls, v: object) -> str | ModelEventType:
         """
         Validate event type format and handle both string and ModelEventType inputs.
 

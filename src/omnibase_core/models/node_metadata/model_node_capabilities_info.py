@@ -7,6 +7,7 @@ Part of the ModelNodeInformation restructuring.
 
 from __future__ import annotations
 
+from typing import cast
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -14,6 +15,7 @@ from pydantic import BaseModel, Field
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
+from omnibase_core.types.json_types import JsonType
 from omnibase_core.types.typed_dict_node_capabilities_summary import (
     TypedDictNodeCapabilitiesSummary,
 )
@@ -177,9 +179,10 @@ class ModelNodeCapabilitiesInfo(BaseModel):
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
         result: TypedDictMetadataDict = {}
         # Pack capabilities info into metadata dict
+        # Cast to list[JsonType] for type compatibility (no copy - cast is zero-cost at runtime)
         result["metadata"] = {
-            "capabilities": self.capabilities,
-            "supported_operations": self.supported_operations,
+            "capabilities": cast(list[JsonType], self.capabilities),
+            "supported_operations": cast(list[JsonType], self.supported_operations),
             "dependencies": [str(dep) for dep in self.dependencies],
             "has_capabilities": self.has_capabilities(),
             "has_operations": self.has_operations(),

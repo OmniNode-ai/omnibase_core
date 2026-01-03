@@ -82,11 +82,14 @@ class ModelCustomSettings(BaseModel):
 
         Data must be in the structured format with general_settings,
         advanced_settings, and experimental_settings keys.
+
+        Uses Pydantic's model_validate() for proper type coercion and validation
+        of JSON-serializable input data.
         """
         if data is None:
             return None
 
-        return cls(**data)
+        return cls.model_validate(data)
 
     def get_setting(
         self, key: str, default: SerializableValue = None

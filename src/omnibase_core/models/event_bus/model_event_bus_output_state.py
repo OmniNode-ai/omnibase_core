@@ -20,7 +20,7 @@ from omnibase_core.models.primitives.model_semver import (
     default_model_version,
     parse_semver_from_string,
 )
-from omnibase_core.models.services.model_custom_fields import ModelErrorDetails
+from omnibase_core.models.services.model_error_details import ModelErrorDetails
 
 from .model_event_bus_output_field import ModelEventBusOutputField
 

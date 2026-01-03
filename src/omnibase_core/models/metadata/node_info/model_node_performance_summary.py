@@ -7,11 +7,14 @@ Follows ONEX one-model-per-file architecture.
 
 from __future__ import annotations
 
+from typing import cast
+
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
+from omnibase_core.types.json_types import JsonType
 
 
 class ModelNodePerformanceSummary(BaseModel):
@@ -143,7 +146,10 @@ class ModelNodePerformanceSummary(BaseModel):
             "performance_score": self.performance_score,
             "has_performance_issues": self.has_performance_issues,
             "is_reliable": self.is_reliable,
-            "improvement_suggestions": self.improvement_suggestions,
+            # Cast list[str] to list[JsonType] for type compatibility (zero-cost at runtime)
+            "improvement_suggestions": cast(
+                list[JsonType], self.improvement_suggestions
+            ),
             "overall_health_status": self.get_overall_health_status(),
         }
         return result
