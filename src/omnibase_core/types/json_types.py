@@ -83,8 +83,11 @@ __all__ = [
 JsonPrimitive = str | int | float | bool | None | UUID | datetime
 
 
-# Type alias for non-nullable primitive values.
-# Same as JsonPrimitive but excludes None for contexts where null is not valid.
+# Type alias for core non-nullable primitive values.
+# Contains the fundamental JSON primitives (str, int, float, bool) without None.
+#
+# Note: This is a subset of JsonPrimitive. JsonPrimitive extends this with
+# None, UUID, and datetime for Pydantic compatibility.
 #
 # Used when a value must be present (non-nullable contexts):
 # - Required configuration fields

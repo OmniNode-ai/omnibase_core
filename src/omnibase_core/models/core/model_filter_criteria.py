@@ -4,9 +4,12 @@ Filter criteria model to replace Dict[str, Any] usage for filter fields.
 
 from __future__ import annotations
 
+import logging
 from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
+
+logger = logging.getLogger(__name__)
 
 from omnibase_core.types.type_serializable_value import SerializedDict
 
@@ -123,7 +126,12 @@ class ModelFilterCriteria(BaseModel):
                             v for v in value if isinstance(v, (str, int, float, bool))
                         ]
                     else:
-                        # Skip unsupported types
+                        # fallback-ok: skip unsupported types during legacy migration
+                        logger.debug(
+                            "Skipping filter field '%s' with unsupported type %s",
+                            key,
+                            type(value).__name__,
+                        )
                         continue
                     conditions.append(
                         ModelFilterCondition(

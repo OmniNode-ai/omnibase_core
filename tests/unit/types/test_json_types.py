@@ -195,11 +195,18 @@ class TestPrimitiveValue:
         assert value == "hello"
 
     def test_is_subset_of_json_primitive(self) -> None:
-        """Test that PrimitiveValue is JsonPrimitive minus None."""
+        """Test that PrimitiveValue is a subset of JsonPrimitive minus None.
+
+        Note: PrimitiveValue contains core primitives (str, int, float, bool).
+        JsonPrimitive extends this with None, UUID, and datetime for Pydantic
+        compatibility. PrimitiveValue is a proper subset, not equal.
+        """
         primitive_args = set(get_args(PrimitiveValue))
         json_primitive_args = set(get_args(JsonPrimitive))
-        # PrimitiveValue should be JsonPrimitive without None
-        assert primitive_args == json_primitive_args - {type(None)}
+        # PrimitiveValue should be a subset of JsonPrimitive without None
+        assert primitive_args <= json_primitive_args - {type(None)}
+        # Verify PrimitiveValue contains the core 4 primitives
+        assert primitive_args == {str, int, float, bool}
 
 
 @pytest.mark.unit
@@ -547,13 +554,20 @@ class TestTypeRelationships:
     """
 
     def test_primitive_value_subset_of_json_primitive(self) -> None:
-        """Test that PrimitiveValue is JsonPrimitive without None."""
+        """Test that PrimitiveValue is a subset of JsonPrimitive without None.
+
+        Note: PrimitiveValue contains core primitives (str, int, float, bool).
+        JsonPrimitive extends this with None, UUID, and datetime for Pydantic
+        compatibility. PrimitiveValue is a proper subset, not equal.
+        """
         prim_value_args = set(get_args(PrimitiveValue))
         json_prim_args = set(get_args(JsonPrimitive))
 
-        # PrimitiveValue should be JsonPrimitive minus None
-        expected = json_prim_args - {type(None)}
-        assert prim_value_args == expected
+        # PrimitiveValue should be a subset of JsonPrimitive minus None
+        non_null_json_prims = json_prim_args - {type(None)}
+        assert prim_value_args <= non_null_json_prims
+        # Verify PrimitiveValue contains exactly the core 4 primitives
+        assert prim_value_args == {str, int, float, bool}
 
     def test_tool_parameter_does_not_include_none(self) -> None:
         """Test that ToolParameterValue does not include None."""
