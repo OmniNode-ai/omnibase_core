@@ -490,8 +490,11 @@ repos:
           - --tb=short
           - -q
           - --timeout=30
+          - -s
           - -p
           - no:rerunfailures
+          - -p
+          - no:testmon
         stages: [pre-push]
 
       # Node Purity Validation (OMN-203)
