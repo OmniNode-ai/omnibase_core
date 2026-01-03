@@ -19,18 +19,19 @@ Logging Conventions:
     - ERROR: Failures that will fail validation
 
 Error Code Conventions:
-    Error codes in this module follow these patterns:
-    - DUPLICATE_LIST_ENTRIES: Duplicate items within an add list
-    - EMPTY_DESCRIPTOR_PATCH: Behavior patch (descriptor field) with no overrides
-    - PURITY_IDEMPOTENT_MISMATCH: Conflicting purity/idempotent settings
-    - NEW_CONTRACT_IDENTITY: Informational - new contract identity declared
-    - NON_STANDARD_PROFILE_NAME: Profile name doesn't follow conventions
-    - NON_STANDARD_VERSION_FORMAT: Version string format is non-standard
-    - FILE_NOT_FOUND: File does not exist
-    - FILE_READ_ERROR: File could not be read
-    - UNEXPECTED_EXTENSION: File has unexpected extension
-    - YAML_VALIDATION_ERROR: YAML parsing or validation error
-    - PYDANTIC_VALIDATION_ERROR: Pydantic model validation error
+    Error codes in this module use the CONTRACT_PATCH_* prefix for consistent
+    categorization per PR #289. All codes are defined in EnumPatchValidationErrorCode:
+    - CONTRACT_PATCH_DUPLICATE_LIST_ENTRIES: Duplicate items within an add list
+    - CONTRACT_PATCH_EMPTY_DESCRIPTOR: Behavior patch with no overrides
+    - CONTRACT_PATCH_PURITY_IDEMPOTENT_MISMATCH: Conflicting purity/idempotent settings
+    - CONTRACT_PATCH_NEW_IDENTITY: Informational - new contract identity declared
+    - CONTRACT_PATCH_NON_STANDARD_PROFILE_NAME: Profile name doesn't follow conventions
+    - CONTRACT_PATCH_NON_STANDARD_VERSION_FORMAT: Version format is non-standard
+    - CONTRACT_PATCH_FILE_NOT_FOUND: File does not exist
+    - CONTRACT_PATCH_FILE_READ_ERROR: File could not be read
+    - CONTRACT_PATCH_UNEXPECTED_EXTENSION: File has unexpected extension
+    - CONTRACT_PATCH_YAML_VALIDATION_ERROR: YAML parsing or validation error
+    - CONTRACT_PATCH_PYDANTIC_VALIDATION_ERROR: Pydantic model validation error
 
 Related:
     - OMN-1126: ModelContractPatch & Patch Validation
@@ -39,10 +40,14 @@ Related:
 """
 
 import logging
+import re
 from pathlib import Path
 
 from pydantic import ValidationError
 
+from omnibase_core.enums.enum_patch_validation_error_code import (
+    EnumPatchValidationErrorCode,
+)
 from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
 from omnibase_core.models.common.model_validation_result import ModelValidationResult
 from omnibase_core.models.contracts.model_contract_patch import ModelContractPatch
@@ -55,6 +60,13 @@ __all__ = [
 
 # Configure logger for this module
 logger = logging.getLogger(__name__)
+
+# Semver pattern for version validation
+# Matches: 1.0.0, ^1.0.0, ~1.0, >=1.0.0, <2.0.0, etc.
+# Optional prefix: ^, ~, >=, >, <=, <, =
+# Core version: major.minor with optional .patch
+# Optional suffix: -alpha, -beta.1, +build.123, etc.
+SEMVER_PATTERN = re.compile(r"^[~^>=<]*\d+\.\d+(\.\d+)?([-.+][\w.]+)?$")
 
 
 class ContractPatchValidator:
@@ -144,7 +156,7 @@ class ContractPatchValidator:
 
         # Check behavior patch (descriptor field) if present
         if patch.descriptor is not None:
-            self._validate_descriptor_patch(patch, result)
+            self._validate_behavior_patch(patch, result)
 
         # Check identity field consistency (already done by Pydantic, but add context)
         self._validate_identity_fields(patch, result)
@@ -229,7 +241,7 @@ class ContractPatchValidator:
                 field_path = ".".join(str(loc) for loc in error["loc"])
                 result.add_error(
                     f"Validation error at '{field_path}': {error['msg']}",
-                    code="PYDANTIC_VALIDATION_ERROR",
+                    code=EnumPatchValidationErrorCode.CONTRACT_PATCH_PYDANTIC_VALIDATION_ERROR.value,
                 )
             result.summary = (
                 f"Dictionary validation failed with {len(e.errors())} errors"
@@ -282,7 +294,7 @@ class ContractPatchValidator:
             result.is_valid = False
             result.add_error(
                 f"File not found: {path}",
-                code="FILE_NOT_FOUND",
+                code=EnumPatchValidationErrorCode.CONTRACT_PATCH_FILE_NOT_FOUND.value,
                 file_path=path,
             )
             result.summary = "File validation failed: file not found"
@@ -293,7 +305,7 @@ class ContractPatchValidator:
             logger.warning(f"Unexpected file extension for {path}: {path.suffix}")
             result.add_warning(
                 f"Expected .yaml or .yml extension, got: {path.suffix}",
-                code="UNEXPECTED_EXTENSION",
+                code=EnumPatchValidationErrorCode.CONTRACT_PATCH_UNEXPECTED_EXTENSION.value,
                 file_path=path,
             )
 
@@ -305,7 +317,7 @@ class ContractPatchValidator:
             result.is_valid = False
             result.add_error(
                 f"File read error: {e}",
-                code="FILE_READ_ERROR",
+                code=EnumPatchValidationErrorCode.CONTRACT_PATCH_FILE_READ_ERROR.value,
                 file_path=path,
             )
             result.summary = "File validation failed: file read error"
@@ -332,23 +344,14 @@ class ContractPatchValidator:
             result.is_valid = False
             result.add_error(
                 f"YAML parsing or validation error: {e.message}",
-                code="YAML_VALIDATION_ERROR",
+                code=EnumPatchValidationErrorCode.CONTRACT_PATCH_YAML_VALIDATION_ERROR.value,
                 file_path=path,
             )
             result.summary = "File validation failed: YAML validation error"
 
-        except ValidationError as e:
-            logger.warning(
-                f"Pydantic validation failed for {path}: {len(e.errors())} errors"
-            )
-            result.is_valid = False
-            for error in e.errors():
-                field_path = ".".join(str(loc) for loc in error["loc"])
-                result.add_error(
-                    f"Validation error at '{field_path}': {error['msg']}",
-                    code="PYDANTIC_VALIDATION_ERROR",
-                )
-            result.summary = f"File validation failed with {len(e.errors())} errors"
+        # Note: ValidationError is not caught here because load_yaml_content_as_model
+        # wraps ValidationError in ModelOnexError (see util_safe_yaml_loader.py).
+        # The ModelOnexError handler above handles all validation-related errors.
 
         return result
 
@@ -367,6 +370,10 @@ class ContractPatchValidator:
 
         Returns:
             Set of names that appear more than once. Empty set if no duplicates.
+
+        Complexity:
+            Time: O(n) - single pass through the list with O(1) set operations.
+            Space: O(n) - stores up to n items in the `seen` set.
         """
         seen: set[str] = set()
         duplicates: set[str] = set()
@@ -387,6 +394,10 @@ class ContractPatchValidator:
         Uses _find_duplicates_in_list to detect duplicates and adds an error
         to the validation result with the DUPLICATE_LIST_ENTRIES code.
 
+        Note:
+            Duplicates are sorted alphabetically in error messages to ensure
+            deterministic output regardless of insertion order.
+
         Args:
             names: List of string names to check for duplicates.
             field_name: Human-readable field name for error messages
@@ -395,10 +406,14 @@ class ContractPatchValidator:
         """
         duplicates = self._find_duplicates_in_list(names)
         if duplicates:
-            logger.debug(f"Found duplicate {field_name}s in add list: {duplicates}")
+            # Sort duplicates for deterministic error messages
+            sorted_duplicates = sorted(duplicates)
+            logger.debug(
+                f"Found duplicate {field_name}s in add list: {sorted_duplicates}"
+            )
             result.add_error(
-                f"Duplicate {field_name}(s) in add list: {duplicates}",
-                code="DUPLICATE_LIST_ENTRIES",
+                f"Duplicate {field_name}(s) in add list: {sorted_duplicates}",
+                code=EnumPatchValidationErrorCode.CONTRACT_PATCH_DUPLICATE_LIST_ENTRIES.value,
             )
 
     def _validate_list_operation_duplicates(
@@ -454,7 +469,7 @@ class ContractPatchValidator:
                 list(patch.consumed_events__add), "consumed event", result
             )
 
-    def _validate_descriptor_patch(
+    def _validate_behavior_patch(
         self,
         patch: ModelContractPatch,
         result: ModelValidationResult[None],
@@ -462,7 +477,7 @@ class ContractPatchValidator:
         """Validate the nested behavior patch in the descriptor field.
 
         Checks the behavior patch (stored in the `descriptor` field) for
-        semantic consistency. The descriptor field contains handler behavior
+        semantic consistency. The behavior patch contains handler behavior
         overrides such as timeout, retry, and concurrency settings.
 
         Validates:
@@ -474,32 +489,33 @@ class ContractPatchValidator:
             result: The validation result to append issues to.
 
         Note:
-            The field is named 'descriptor' but conceptually represents
-            handler behavior configuration (timeout, retry, concurrency).
+            The field is named 'descriptor' for historical reasons but
+            conceptually represents handler behavior configuration
+            (timeout, retry, concurrency).
 
-            Empty descriptor patches generate an INFO (not WARNING/ERROR) because:
-            1. An empty descriptor is semantically valid (just a no-op)
+            Empty behavior patches generate an INFO (not WARNING/ERROR) because:
+            1. An empty behavior patch is semantically valid (just a no-op)
             2. It's likely a user mistake but doesn't break merge operations
             3. The patch system should be permissive for forward compatibility
-            Users are encouraged to remove empty descriptors for clarity.
+            Users are encouraged to remove empty behavior patches for clarity.
         """
         if patch.descriptor is None:
             return
 
         # Check for empty behavior patch (info, not warning/error - see docstring rationale)
         if not patch.descriptor.has_overrides():
-            logger.debug("Descriptor patch has no overrides - issuing info")
+            logger.debug("Behavior patch has no overrides - issuing info")
             result.add_issue(
                 severity=EnumValidationSeverity.INFO,
                 message="Behavior patch is present but has no overrides",
-                code="EMPTY_DESCRIPTOR_PATCH",
+                code=EnumPatchValidationErrorCode.CONTRACT_PATCH_EMPTY_DESCRIPTOR.value,
                 suggestion="Remove the empty descriptor field or add behavior overrides",
             )
 
         # Check purity/idempotent consistency
         if patch.descriptor.purity == "pure" and patch.descriptor.idempotent is False:
             logger.debug(
-                "Descriptor patch has purity/idempotent mismatch - issuing warning"
+                "Behavior patch has purity/idempotent mismatch - issuing warning"
             )
             result.add_issue(
                 severity=EnumValidationSeverity.WARNING,
@@ -507,7 +523,7 @@ class ContractPatchValidator:
                     "Behavior declares purity='pure' but idempotent=False. "
                     "Pure functions are typically idempotent."
                 ),
-                code="PURITY_IDEMPOTENT_MISMATCH",
+                code=EnumPatchValidationErrorCode.CONTRACT_PATCH_PURITY_IDEMPOTENT_MISMATCH.value,
                 suggestion="Consider setting idempotent=True for pure handlers",
             )
 
@@ -539,7 +555,7 @@ class ContractPatchValidator:
             result.add_issue(
                 severity=EnumValidationSeverity.INFO,
                 message=f"Patch declares new contract identity: {patch.name}",
-                code="NEW_CONTRACT_IDENTITY",
+                code=EnumPatchValidationErrorCode.CONTRACT_PATCH_NEW_IDENTITY.value,
             )
 
     def _validate_profile_reference(
@@ -582,19 +598,28 @@ class ContractPatchValidator:
             result.add_warning(
                 f"Profile name '{profile}' contains non-standard characters. "
                 "Recommended format: lowercase_with_underscores",
-                code="NON_STANDARD_PROFILE_NAME",
+                code=EnumPatchValidationErrorCode.CONTRACT_PATCH_NON_STANDARD_PROFILE_NAME.value,
             )
         elif any(c.isupper() for c in profile):
             result.add_warning(
                 f"Profile name '{profile}' contains uppercase characters. "
                 "Recommended format: lowercase_with_underscores",
-                code="NON_STANDARD_PROFILE_NAME",
+                code=EnumPatchValidationErrorCode.CONTRACT_PATCH_NON_STANDARD_PROFILE_NAME.value,
             )
 
-        # Check version format (basic semver check)
-        if version and not any(c.isdigit() for c in version):
-            result.add_warning(
-                f"Version '{version}' does not contain digits. "
-                "Expected semantic version format (e.g., '1.0.0').",
-                code="NON_STANDARD_VERSION_FORMAT",
-            )
+        # Check version format (semver validation)
+        if version:
+            if not any(c.isdigit() for c in version):
+                # No digits at all - definitely not a version
+                result.add_warning(
+                    f"Version '{version}' does not contain digits. "
+                    "Expected semantic version format (e.g., '1.0.0').",
+                    code=EnumPatchValidationErrorCode.CONTRACT_PATCH_NON_STANDARD_VERSION_FORMAT.value,
+                )
+            elif not SEMVER_PATTERN.match(version):
+                # Has digits but not in standard semver format
+                result.add_warning(
+                    f"Version '{version}' is not in standard semantic version format. "
+                    "Expected formats: '1.0.0', '^1.0.0', '~1.0', '>=1.0.0'.",
+                    code=EnumPatchValidationErrorCode.CONTRACT_PATCH_NON_STANDARD_VERSION_FORMAT.value,
+                )

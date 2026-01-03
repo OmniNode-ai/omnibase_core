@@ -109,4 +109,4 @@ class ModelComputeOutput[T_Output](BaseModel):
     parallel_execution_used: bool = False
     metadata: SerializedDict = Field(default_factory=dict)
 
-    model_config = ConfigDict(extra="forbid", frozen=True)
+    model_config = ConfigDict(extra="forbid", frozen=True, from_attributes=True)

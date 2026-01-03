@@ -24,4 +24,4 @@ class ModelTransformCaseConfig(BaseModel):
     config_type: Literal["case_conversion"] = "case_conversion"
     mode: EnumCaseMode
 
-    model_config = ConfigDict(extra="forbid", frozen=True)
+    model_config = ConfigDict(extra="forbid", frozen=True, from_attributes=True)

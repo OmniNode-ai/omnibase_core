@@ -249,7 +249,7 @@ class PythonASTValidator(ast.NodeVisitor):
             # These are human-readable identifiers for pipeline observability, not UUIDs
             "contract_id",  # Contract identifier (human-readable, e.g., "my-contract")
             "hook_id",  # Hook identifier (human-readable, e.g., "pre-validation-hook")
-            "capability_id",  # Capability identifier (human-readable, e.g., "database.relational")
+            "capability_id",  # Capability identifier (human-readable, e.g., "cache-support")
             "from_handler_id",  # Dependency edge source handler (human-readable)
             "to_handler_id",  # Dependency edge target handler (human-readable)
             "handler_descriptor_id",  # Handler descriptor ID (human-readable)
@@ -615,7 +615,7 @@ class StringVersionValidator:
         try:
             tree = ast.parse(content, filename=str(python_path))
             # Pass source lines to enable inline comment bypass checking
-            source_lines = content.split("\n")
+            source_lines = content.splitlines()
             ast_validator = PythonASTValidator(str(python_path), source_lines)
             ast_validator.visit(tree)
 
@@ -642,7 +642,7 @@ class StringVersionValidator:
         errors: list[str],
     ) -> None:
         """Check Python content for hardcoded __version__ declarations."""
-        lines = content.split("\n")
+        lines = content.splitlines()
 
         # Track bypass comments
         bypass_patterns = [
@@ -805,7 +805,7 @@ class StringVersionValidator:
         errors: list[str],
     ) -> None:
         """Use AST-like parsing to detect string versions in YAML content."""
-        lines = content.split("\n")
+        lines = content.splitlines()
 
         version_field_patterns = [
             "version:",

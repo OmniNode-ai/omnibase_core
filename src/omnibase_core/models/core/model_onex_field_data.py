@@ -1,10 +1,17 @@
 """ONEX field data model."""
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelOnexFieldData(BaseModel):
     """Structured data for ONEX fields."""
+
+    model_config = ConfigDict(
+        strict=True,
+        extra="forbid",
+        frozen=True,
+        from_attributes=True,
+    )
 
     string_values: dict[str, str] = Field(
         default_factory=dict, description="String key-value pairs"

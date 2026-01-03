@@ -16,7 +16,7 @@ Import Example:
 
         from omnibase_core.models.events.contract_validation import (
             ModelContractValidationStartedEvent,
-            ModelValidationContext,
+            ModelContractValidationContext,
         )
 
 Event Type:
@@ -38,7 +38,7 @@ from omnibase_core.models.events.contract_validation.model_contract_ref import (
     ModelContractRef,
 )
 from omnibase_core.models.events.contract_validation.model_contract_validation_context import (
-    ModelValidationContext,
+    ModelContractValidationContext,
 )
 from omnibase_core.models.events.contract_validation.model_contract_validation_event_base import (
     ModelContractValidationEventBase,
@@ -69,13 +69,13 @@ class ModelContractValidationStartedEvent(ModelContractValidationEventBase):
         >>> from uuid import uuid4
         >>> from omnibase_core.models.events.contract_validation import (
         ...     ModelContractValidationStartedEvent,
-        ...     ModelValidationContext,
+        ...     ModelContractValidationContext,
         ... )
         >>>
         >>> event = ModelContractValidationStartedEvent(
         ...     contract_id="runtime-host-contract",
         ...     run_id=uuid4(),
-        ...     context=ModelValidationContext(),
+        ...     context=ModelContractValidationContext(),
         ...     validator_set_id="standard-v1",
         ... )
         >>> event.event_type
@@ -98,7 +98,7 @@ class ModelContractValidationStartedEvent(ModelContractValidationEventBase):
         description="Optional identifier of the validator set being used for validation.",
     )
 
-    context: ModelValidationContext = Field(
+    context: ModelContractValidationContext = Field(
         ...,
         description="Validation context with field-level details about what is "
         "being validated.",
@@ -119,7 +119,7 @@ class ModelContractValidationStartedEvent(ModelContractValidationEventBase):
         cls,
         contract_id: str,
         run_id: UUID,
-        context: ModelValidationContext,
+        context: ModelContractValidationContext,
         *,
         validator_set_id: str | None = None,  # string-id-ok: validator set identifier
         actor: UUID | None = None,

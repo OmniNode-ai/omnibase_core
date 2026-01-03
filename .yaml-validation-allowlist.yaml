@@ -47,6 +47,12 @@ allowed_files:
     added: "2025-12-12"
     review: "2026-03-12"
 
+  - file: "src/omnibase_core/utils/util_invariant_yaml_parser.py"
+    reason: "Parses invariant set YAML files before Pydantic validation - utility for loading user-defined
+      validation rules (invariants) from YAML configuration files for the Beta Demo"
+    added: "2026-01-02"
+    review: "2026-07-02"
+
 # Specific filenames that are allowed (matched by basename)
 # Allows the same utility to be used across different module paths (e.g., copied utilities)
 allowed_filenames:
@@ -89,3 +95,9 @@ allowed_functions:
       that extracts configurations from YAML schema definitions"
     added: "2024-10-15"
     review: "2026-06-13"
+
+  - function: "parse_invariant_set_from_yaml"
+    reason: "Parses invariant YAML content before Pydantic ModelInvariantSet validation - invariant definition
+      parser that loads user-defined validation rules from YAML strings"
+    added: "2026-01-02"
+    review: "2026-07-02"

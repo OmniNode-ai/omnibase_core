@@ -137,7 +137,6 @@ class ModelExecutionConstraints(BaseModel):
         frozen=True,
         extra="forbid",
         from_attributes=True,
-        validate_assignment=True,
         str_strip_whitespace=True,
     )
 

@@ -24,4 +24,4 @@ class ModelTransformTrimConfig(BaseModel):
     config_type: Literal["trim"] = "trim"
     mode: EnumTrimMode = EnumTrimMode.BOTH
 
-    model_config = ConfigDict(extra="forbid", frozen=True)
+    model_config = ConfigDict(extra="forbid", frozen=True, from_attributes=True)

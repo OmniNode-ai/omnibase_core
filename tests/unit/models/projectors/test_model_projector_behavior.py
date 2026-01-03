@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
+#
+# SPDX-License-Identifier: Apache-2.0
 """Tests for ModelProjectorBehavior.
 
 Tests cover:
@@ -9,9 +12,12 @@ Tests cover:
 6. Frozen/immutable behavior
 7. Extra fields rejected
 8. Serialization roundtrip
+9. Upsert mode without key emits warning
 """
 
 from __future__ import annotations
+
+import logging
 
 import pytest
 from pydantic import ValidationError
@@ -166,3 +172,70 @@ class TestModelProjectorBehaviorSerialization:
         restored = ModelProjectorBehavior.model_validate_json(json_str)
 
         assert restored == original
+
+
+@pytest.mark.unit
+class TestModelProjectorBehaviorUpsertKeyWarning:
+    """Tests for upsert_key validation warnings."""
+
+    def test_upsert_mode_without_key_emits_warning(
+        self, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """When mode='upsert' and upsert_key is None, a warning should be logged."""
+        from omnibase_core.models.projectors import ModelProjectorBehavior
+
+        with caplog.at_level(logging.WARNING):
+            behavior = ModelProjectorBehavior(mode="upsert")
+
+        # Verify model is created successfully
+        assert behavior.mode == "upsert"
+        assert behavior.upsert_key is None
+
+        # Verify warning was logged
+        assert len(caplog.records) >= 1
+        warning_messages = [
+            r.message for r in caplog.records if r.levelno == logging.WARNING
+        ]
+        assert any(
+            "upsert_key not specified" in msg and "Primary key will be used" in msg
+            for msg in warning_messages
+        ), f"Expected warning about upsert_key, got: {warning_messages}"
+
+    def test_upsert_mode_with_key_no_warning(
+        self, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """When mode='upsert' and upsert_key is provided, no warning should be logged."""
+        from omnibase_core.models.projectors import ModelProjectorBehavior
+
+        with caplog.at_level(logging.WARNING):
+            behavior = ModelProjectorBehavior(mode="upsert", upsert_key="node_id")
+
+        # Verify model is created successfully
+        assert behavior.mode == "upsert"
+        assert behavior.upsert_key == "node_id"
+
+        # Verify no warning about upsert_key was logged
+        warning_messages = [
+            r.message for r in caplog.records if r.levelno == logging.WARNING
+        ]
+        assert not any("upsert_key not specified" in msg for msg in warning_messages), (
+            f"Unexpected warning about upsert_key: {warning_messages}"
+        )
+
+    def test_non_upsert_modes_no_warning(
+        self, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """Non-upsert modes should not emit upsert_key warnings."""
+        from omnibase_core.models.projectors import ModelProjectorBehavior
+
+        with caplog.at_level(logging.WARNING):
+            ModelProjectorBehavior(mode="insert_only")
+            ModelProjectorBehavior(mode="append")
+
+        # Verify no warning about upsert_key was logged
+        warning_messages = [
+            r.message for r in caplog.records if r.levelno == logging.WARNING
+        ]
+        assert not any("upsert_key not specified" in msg for msg in warning_messages), (
+            f"Unexpected warning about upsert_key: {warning_messages}"
+        )

@@ -100,5 +100,6 @@ class ModelResolvedHttpContext(BaseModel):
     model_config = ConfigDict(
         frozen=True,
         extra="forbid",
+        from_attributes=True,
         use_enum_values=False,
     )

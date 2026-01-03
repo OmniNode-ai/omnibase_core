@@ -155,7 +155,7 @@ class ModelComputeSubcontract(BaseModel):
     # Upper bound of 3600000ms (1 hour) prevents unreasonable timeout values
     pipeline_timeout_ms: int | None = Field(default=None, gt=0, le=3600000)
 
-    model_config = ConfigDict(extra="forbid", frozen=True)
+    model_config = ConfigDict(extra="forbid", frozen=True, from_attributes=True)
 
     @field_validator("pipeline")
     @classmethod

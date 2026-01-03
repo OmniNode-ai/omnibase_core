@@ -11,6 +11,32 @@ class MixinIntrospectFromContract:
     """
     Mixin to provide a canonical introspect() method that loads contract/metadata YAML.
     Looks for node.onex.yaml or contract.yaml in the node's directory.
+
+    Security:
+        This mixin uses importlib.import_module() to resolve the module file path
+        for contract discovery. Security is enforced via namespace validation:
+
+        **Namespace Allowlist** (_get_node_dir):
+            Only classes in these module namespaces can use this mixin:
+            - omnibase_core.*
+            - omnibase_spi.*
+            - omnibase.*
+
+            This prevents third-party code from using this mixin to load
+            contracts from arbitrary locations on the filesystem.
+
+        **Contract Loading**:
+            Contract files are loaded via util_safe_yaml_loader which uses
+            yaml.safe_load() to prevent arbitrary code execution.
+
+        Trust Model:
+            - Module namespace: Validated against allowlist (TRUSTED namespaces only)
+            - Contract file content: UNTRUSTED (validated via safe_load + Pydantic)
+            - Contract file paths: Derived from trusted module location
+
+        See Also:
+            - util_safe_yaml_loader.py: YAML parsing security
+            - ModelGenericYaml: Pydantic validation for contract structure
     """
 
     def _get_node_dir(self) -> Path:

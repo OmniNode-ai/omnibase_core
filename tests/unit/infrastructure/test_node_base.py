@@ -1328,3 +1328,251 @@ class TestNodeBaseEdgeCases:
             node = NodeBase(contract_path=contract_path, container=mock_container)
 
             assert node is not None
+
+
+# ===== SECURITY TESTS FOR DYNAMIC IMPORT ALLOWLIST =====
+
+
+@pytest.mark.unit
+class TestNodeBaseSecurityAllowlist:
+    """Security tests for NodeBase dynamic import allowlist validation.
+
+    These tests verify that the ENFORCE_TOOL_IMPORT_ALLOWLIST feature correctly
+    prevents arbitrary code execution via malicious contract YAML files.
+
+    Security Model:
+        - When ENFORCE_TOOL_IMPORT_ALLOWLIST is True, only modules matching
+          ALLOWED_TOOL_MODULE_PREFIXES can be imported via main_tool_class
+        - Untrusted modules raise SECURITY_VIOLATION error
+        - Default is False (opt-in) for backwards compatibility
+
+    See Also:
+        - NodeBase module docstring for security documentation
+        - ModelReference.ALLOWED_MODULE_PREFIXES for similar pattern
+        - tests/unit/models/contracts/test_model_reference.py for reference tests
+    """
+
+    def test_should_block_untrusted_module_when_allowlist_enforced(
+        self, tmp_path, mock_container
+    ):
+        """Test that untrusted modules are blocked when allowlist is enforced.
+
+        SECURITY: This test verifies that enabling ENFORCE_TOOL_IMPORT_ALLOWLIST
+        prevents importing modules outside the trusted prefixes, raising
+        SECURITY_VIOLATION error instead of executing potentially malicious code.
+        """
+        contract_path = tmp_path / "test_contract.yaml"
+
+        # Create a subclass with enforced allowlist
+        class SecureNodeBase(NodeBase):
+            ENFORCE_TOOL_IMPORT_ALLOWLIST = True
+            ALLOWED_TOOL_MODULE_PREFIXES = (
+                "omnibase_core.",
+                "omnibase_spi.",
+            )
+
+        with patch(
+            "omnibase_core.utils.util_contract_loader.UtilContractLoader"
+        ) as mock_loader_class:
+            mock_loader = Mock()
+            mock_contract = Mock()
+            mock_contract.node_name = "test_node"
+            mock_contract.contract_version = ModelSemVer(major=1, minor=0, patch=0)
+            mock_contract.dependencies = []
+
+            tool_spec = Mock()
+            # Attempt to import untrusted module (not in allowlist)
+            tool_spec.main_tool_class = "os.path.join"
+            tool_spec.business_logic_pattern = "test_pattern"
+            mock_contract.tool_specification = tool_spec
+
+            mock_loader.load_contract.return_value = mock_contract
+            mock_loader_class.return_value = mock_loader
+
+            with pytest.raises(ModelOnexError) as exc_info:
+                SecureNodeBase(contract_path=contract_path, container=mock_container)
+
+            # Verify SECURITY_VIOLATION error is raised
+            assert exc_info.value.error_code == EnumCoreErrorCode.SECURITY_VIOLATION
+            assert "not in allowed prefixes" in exc_info.value.message
+            assert "os.path" in exc_info.value.message
+
+    def test_should_allow_trusted_module_when_allowlist_enforced(
+        self, tmp_path, mock_container
+    ):
+        """Test that trusted modules are allowed when allowlist is enforced.
+
+        SECURITY: This test verifies that modules matching ALLOWED_TOOL_MODULE_PREFIXES
+        can still be imported when allowlist enforcement is enabled.
+        """
+        contract_path = tmp_path / "test_contract.yaml"
+
+        # Create a subclass with enforced allowlist that includes tests.
+        class SecureNodeBase(NodeBase):
+            ENFORCE_TOOL_IMPORT_ALLOWLIST = True
+            ALLOWED_TOOL_MODULE_PREFIXES = (
+                "omnibase_core.",
+                "omnibase_spi.",
+                "tests.",  # Allow test modules
+            )
+
+        with patch(
+            "omnibase_core.utils.util_contract_loader.UtilContractLoader"
+        ) as mock_loader_class:
+            mock_loader = Mock()
+            mock_contract = Mock()
+            mock_contract.node_name = "test_node"
+            mock_contract.contract_version = ModelSemVer(major=1, minor=0, patch=0)
+            mock_contract.dependencies = []
+
+            tool_spec = Mock()
+            # Use a trusted module (in tests. prefix)
+            tool_spec.main_tool_class = (
+                "tests.unit.infrastructure.test_node_base.MockTool"
+            )
+            tool_spec.business_logic_pattern = "test_pattern"
+            mock_contract.tool_specification = tool_spec
+
+            mock_loader.load_contract.return_value = mock_contract
+            mock_loader_class.return_value = mock_loader
+
+            # Should succeed - module is in allowlist
+            node = SecureNodeBase(contract_path=contract_path, container=mock_container)
+
+            assert node is not None
+            assert node.main_tool is not None
+            assert isinstance(node.main_tool, MockTool)
+
+    def test_should_allow_any_module_when_allowlist_not_enforced(
+        self, tmp_path, mock_container
+    ):
+        """Test that any module is allowed when allowlist is not enforced (default).
+
+        SECURITY NOTE: This is the default behavior for backwards compatibility.
+        The trust model assumes contract files come from trusted sources.
+        For production deployments, consider enabling ENFORCE_TOOL_IMPORT_ALLOWLIST.
+        """
+        contract_path = tmp_path / "test_contract.yaml"
+
+        with patch(
+            "omnibase_core.utils.util_contract_loader.UtilContractLoader"
+        ) as mock_loader_class:
+            mock_loader = Mock()
+            mock_contract = Mock()
+            mock_contract.node_name = "test_node"
+            mock_contract.contract_version = ModelSemVer(major=1, minor=0, patch=0)
+            mock_contract.dependencies = []
+
+            tool_spec = Mock()
+            # Use tests module (would be outside some allowlists but allowed by default)
+            tool_spec.main_tool_class = (
+                "tests.unit.infrastructure.test_node_base.MockTool"
+            )
+            tool_spec.business_logic_pattern = "test_pattern"
+            mock_contract.tool_specification = tool_spec
+
+            mock_loader.load_contract.return_value = mock_contract
+            mock_loader_class.return_value = mock_loader
+
+            # Default NodeBase does not enforce allowlist
+            node = NodeBase(contract_path=contract_path, container=mock_container)
+
+            assert node is not None
+            assert NodeBase.ENFORCE_TOOL_IMPORT_ALLOWLIST is False  # Verify default
+
+    def test_subclass_can_customize_allowed_prefixes(self, tmp_path, mock_container):
+        """Test that subclasses can customize ALLOWED_TOOL_MODULE_PREFIXES.
+
+        SECURITY: This allows different security policies for different deployment
+        contexts. For example, a production deployment might only allow omnibase_*
+        prefixes, while a development environment might also allow tests.
+        """
+        contract_path = tmp_path / "test_contract.yaml"
+
+        # Create a subclass with custom allowed prefixes
+        class CustomSecureNode(NodeBase):
+            ENFORCE_TOOL_IMPORT_ALLOWLIST = True
+            ALLOWED_TOOL_MODULE_PREFIXES = (
+                "my_custom_package.",
+                "another_trusted.",
+            )
+
+        with patch(
+            "omnibase_core.utils.util_contract_loader.UtilContractLoader"
+        ) as mock_loader_class:
+            mock_loader = Mock()
+            mock_contract = Mock()
+            mock_contract.node_name = "test_node"
+            mock_contract.contract_version = ModelSemVer(major=1, minor=0, patch=0)
+            mock_contract.dependencies = []
+
+            tool_spec = Mock()
+            # Attempt to import a module not in custom allowlist
+            tool_spec.main_tool_class = (
+                "omnibase_core.some.Module"  # Not in custom list
+            )
+            tool_spec.business_logic_pattern = "test_pattern"
+            mock_contract.tool_specification = tool_spec
+
+            mock_loader.load_contract.return_value = mock_contract
+            mock_loader_class.return_value = mock_loader
+
+            with pytest.raises(ModelOnexError) as exc_info:
+                CustomSecureNode(contract_path=contract_path, container=mock_container)
+
+            # omnibase_core is not in custom allowlist, so should be blocked
+            assert exc_info.value.error_code == EnumCoreErrorCode.SECURITY_VIOLATION
+            assert "not in allowed prefixes" in exc_info.value.message
+
+    def test_default_allowed_prefixes_include_expected_values(self):
+        """Test that default ALLOWED_TOOL_MODULE_PREFIXES include expected values.
+
+        SECURITY: Verify the default allowlist contains the expected OmniNode
+        package prefixes and tests.
+        """
+        expected_prefixes = (
+            "omnibase_core.",
+            "omnibase_spi.",
+            "omnibase_infra.",
+            "omnibase_runtime.",
+            "tests.",
+        )
+
+        assert expected_prefixes == NodeBase.ALLOWED_TOOL_MODULE_PREFIXES
+
+    def test_security_error_includes_context(self, tmp_path, mock_container):
+        """Test that SECURITY_VIOLATION error includes helpful context.
+
+        SECURITY: Error messages should help developers understand what went wrong
+        without leaking sensitive information.
+        """
+        contract_path = tmp_path / "test_contract.yaml"
+
+        class SecureNodeBase(NodeBase):
+            ENFORCE_TOOL_IMPORT_ALLOWLIST = True
+            ALLOWED_TOOL_MODULE_PREFIXES = ("omnibase_core.",)
+
+        with patch(
+            "omnibase_core.utils.util_contract_loader.UtilContractLoader"
+        ) as mock_loader_class:
+            mock_loader = Mock()
+            mock_contract = Mock()
+            mock_contract.node_name = "test_node"
+            mock_contract.contract_version = ModelSemVer(major=1, minor=0, patch=0)
+            mock_contract.dependencies = []
+
+            tool_spec = Mock()
+            tool_spec.main_tool_class = "malicious.module.BadClass"
+            tool_spec.business_logic_pattern = "test_pattern"
+            mock_contract.tool_specification = tool_spec
+
+            mock_loader.load_contract.return_value = mock_contract
+            mock_loader_class.return_value = mock_loader
+
+            with pytest.raises(ModelOnexError) as exc_info:
+                SecureNodeBase(contract_path=contract_path, container=mock_container)
+
+            # Verify SECURITY_VIOLATION error is raised with helpful context
+            assert exc_info.value.error_code == EnumCoreErrorCode.SECURITY_VIOLATION
+            assert "malicious.module" in exc_info.value.message
+            assert "not in allowed prefixes" in exc_info.value.message

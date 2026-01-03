@@ -22,7 +22,7 @@ class ModelTransformJsonPathConfig(BaseModel):
     config_type: Literal["json_path"] = "json_path"
     path: str
 
-    model_config = ConfigDict(extra="forbid", frozen=True)
+    model_config = ConfigDict(extra="forbid", frozen=True, from_attributes=True)
 
     @field_validator("path")
     @classmethod

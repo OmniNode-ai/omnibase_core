@@ -4,11 +4,13 @@ Feature Flag Summary Model.
 Summary of feature flag state including counts and flag names.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelFeatureFlagSummary(BaseModel):
     """Summary of feature flag state."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     total_flags: int = Field(default=0, description="Total number of flags")
     enabled_flags: int = Field(default=0, description="Number of enabled flags")

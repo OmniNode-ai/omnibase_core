@@ -23,6 +23,10 @@ from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
+__all__ = [
+    "ModelDependency",
+]
+
 
 class ModelDependency(BaseModel):
     """

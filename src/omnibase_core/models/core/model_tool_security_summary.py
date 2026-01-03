@@ -4,7 +4,7 @@ Tool security summary model.
 Provides typed model for tool security configuration summary data.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.core.model_tool_security_assessment import (
     ModelToolSecurityAssessment,
@@ -17,6 +17,13 @@ class ModelToolSecuritySummary(BaseModel):
 
     Replaces dict[str, Any] return from get_summary() in ModelToolSecurity.
     """
+
+    model_config = ConfigDict(
+        strict=True,
+        extra="forbid",
+        frozen=True,
+        from_attributes=True,
+    )
 
     processes_sensitive_data: bool = Field(
         default=False,

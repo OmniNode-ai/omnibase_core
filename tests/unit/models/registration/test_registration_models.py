@@ -609,9 +609,18 @@ class TestONEXPatterns:
         """Test ModelRegistrationPayload has from_attributes enabled."""
         assert ModelRegistrationPayload.model_config.get("from_attributes") is True
 
-    def test_payload_config_validate_assignment(self) -> None:
-        """Test ModelRegistrationPayload has validate_assignment enabled."""
-        assert ModelRegistrationPayload.model_config.get("validate_assignment") is True
+    def test_payload_config_validate_assignment_not_needed(self) -> None:
+        """Test ModelRegistrationPayload does NOT need validate_assignment when frozen.
+
+        Per Pydantic docs: validate_assignment=True is redundant when frozen=True.
+        Frozen models cannot be mutated at all (any assignment raises ValidationError),
+        so there's no assignment to validate. Immutability is already tested in
+        test_immutability() which verifies assignment raises ValidationError.
+        """
+        # Verify frozen=True is set (makes validate_assignment redundant)
+        assert ModelRegistrationPayload.model_config.get("frozen") is True
+        # validate_assignment should NOT be set - it's redundant with frozen=True
+        assert ModelRegistrationPayload.model_config.get("validate_assignment") is None
 
     def test_outcome_config_frozen(self) -> None:
         """Test ModelDualRegistrationOutcome is configured as frozen."""
@@ -625,10 +634,19 @@ class TestONEXPatterns:
         """Test ModelDualRegistrationOutcome has from_attributes enabled."""
         assert ModelDualRegistrationOutcome.model_config.get("from_attributes") is True
 
-    def test_outcome_config_validate_assignment(self) -> None:
-        """Test ModelDualRegistrationOutcome has validate_assignment enabled."""
+    def test_outcome_config_validate_assignment_not_needed(self) -> None:
+        """Test ModelDualRegistrationOutcome does NOT need validate_assignment when frozen.
+
+        Per Pydantic docs: validate_assignment=True is redundant when frozen=True.
+        Frozen models cannot be mutated at all (any assignment raises ValidationError),
+        so there's no assignment to validate. Immutability is already tested in
+        test_immutability() which verifies assignment raises ValidationError.
+        """
+        # Verify frozen=True is set (makes validate_assignment redundant)
+        assert ModelDualRegistrationOutcome.model_config.get("frozen") is True
+        # validate_assignment should NOT be set - it's redundant with frozen=True
         assert (
-            ModelDualRegistrationOutcome.model_config.get("validate_assignment") is True
+            ModelDualRegistrationOutcome.model_config.get("validate_assignment") is None
         )
 
     def test_payload_from_attributes_construction(

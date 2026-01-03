@@ -9,7 +9,6 @@ state transition capability directly to nodes.
 """
 
 from pathlib import Path
-from typing import Any
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
@@ -39,7 +38,7 @@ class MixinContractStateReducer:
                 return self.process_action_with_transitions(input_state)
     """
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, *args: object, **kwargs: object) -> None:
         """Initialize contract state reducer mixin."""
         super().__init__(*args, **kwargs)
 
@@ -166,7 +165,7 @@ class MixinContractStateReducer:
             self._transitions_loaded = True
             return []
 
-    def process_action_with_transitions(self, input_state: Any) -> Any:
+    def process_action_with_transitions(self, input_state: object) -> object:
         """
         Process action using contract-driven state transitions.
 
@@ -180,7 +179,22 @@ class MixinContractStateReducer:
         """
         try:
             tool_name = getattr(self, "node_name", "unknown_tool")
-            action_name = getattr(input_state.action, "action_name", "unknown_action")
+
+            # Safely access action attribute - handle None input_state
+            action: object | None = (
+                getattr(input_state, "action", None)
+                if input_state is not None
+                else None
+            )
+
+            # Safely access action_name - handle None, missing attribute, or empty string
+            # Note: Empty strings are intentionally treated as "unknown_action" since
+            # action_name must be a non-empty string per FSM model validation rules
+            action_name: str = "unknown_action"
+            if action is not None:
+                raw_action_name: object = getattr(action, "action_name", None)
+                if isinstance(raw_action_name, str) and raw_action_name:
+                    action_name = raw_action_name
 
             emit_log_event(
                 LogLevel.INFO,
@@ -195,12 +209,18 @@ class MixinContractStateReducer:
             transitions = self._load_state_transitions()
 
             # Find transitions triggered by this action
+            # Safely handle potentially None triggers (defensive check)
             applicable_transitions = [
-                t for t in transitions if action_name in t.triggers
+                t
+                for t in transitions
+                if getattr(t, "triggers", None) and action_name in t.triggers
             ]
 
             # Apply transitions in priority order
-            applicable_transitions.sort(key=lambda t: t.priority, reverse=True)
+            # Use getattr for safe priority access with default of 0
+            applicable_transitions.sort(
+                key=lambda t: getattr(t, "priority", 0), reverse=True
+            )
 
             for transition in applicable_transitions:
                 self._apply_transition(transition, input_state)
@@ -212,7 +232,7 @@ class MixinContractStateReducer:
             # Fallback: create basic success response
             return self._create_default_output_state(input_state)
 
-        except (RuntimeError, ValueError) as e:
+        except (AttributeError, RuntimeError, ValueError) as e:
             tool_name = getattr(self, "node_name", "unknown_tool")
             emit_log_event(
                 LogLevel.ERROR,
@@ -226,7 +246,7 @@ class MixinContractStateReducer:
             ) from e
 
     def _apply_transition(
-        self, transition: ModelStateTransition, input_state: Any
+        self, transition: ModelStateTransition, input_state: object
     ) -> None:
         """
         Apply a single state transition.
@@ -236,30 +256,33 @@ class MixinContractStateReducer:
             input_state: Current input state
         """
         tool_name = getattr(self, "node_name", "unknown_tool")
+        # Defensive access to transition attributes to prevent AttributeError
+        transition_name = getattr(transition, "name", "unknown_transition")
+        transition_type = getattr(transition, "transition_type", None)
 
         try:
-            if transition.transition_type == EnumTransitionType.SIMPLE:
+            if transition_type == EnumTransitionType.SIMPLE:
                 self._apply_simple_transition(transition, input_state)
-            elif transition.transition_type == EnumTransitionType.TOOL_BASED:
+            elif transition_type == EnumTransitionType.TOOL_BASED:
                 self._apply_tool_based_transition(transition, input_state)
-            elif transition.transition_type == EnumTransitionType.CONDITIONAL:
+            elif transition_type == EnumTransitionType.CONDITIONAL:
                 self._apply_conditional_transition(transition, input_state)
             else:
                 emit_log_event(
                     LogLevel.WARNING,
-                    f"Unsupported transition type: {transition.transition_type}",
+                    f"Unsupported transition type: {transition_type}",
                     {
                         "tool_name": tool_name,
-                        "transition_name": transition.name,
+                        "transition_name": transition_name,
                     },
                 )
-        except (RuntimeError, ValueError) as e:
+        except (AttributeError, RuntimeError, ValueError) as e:
             emit_log_event(
                 LogLevel.ERROR,
-                f"Failed to apply transition {transition.name}: {e!s}",
+                f"Failed to apply transition {transition_name}: {e!s}",
                 {
                     "tool_name": tool_name,
-                    "transition_name": transition.name,
+                    "transition_name": transition_name,
                     "error": str(e),
                 },
             )
@@ -267,19 +290,20 @@ class MixinContractStateReducer:
     def _apply_simple_transition(
         self,
         transition: ModelStateTransition,
-        input_state: Any,
+        input_state: object,
     ) -> None:
         """Apply simple field update transition."""
         # Simple transitions update state fields using template expressions
         # For now, just log the transition (actual field updates would require state management)
         tool_name = getattr(self, "node_name", "unknown_tool")
+        transition_name = getattr(transition, "name", "unknown_transition")
 
         emit_log_event(
             LogLevel.DEBUG,
-            f"Applied simple transition: {transition.name}",
+            f"Applied simple transition: {transition_name}",
             {
                 "tool_name": tool_name,
-                "transition_name": transition.name,
+                "transition_name": transition_name,
                 "transition_type": "simple",
             },
         )
@@ -287,24 +311,28 @@ class MixinContractStateReducer:
     def _apply_tool_based_transition(
         self,
         transition: ModelStateTransition,
-        input_state: Any,
+        input_state: object,
     ) -> None:
         """Apply tool-based transition by delegating to specified tool."""
         tool_name = getattr(self, "node_name", "unknown_tool")
+        transition_name = getattr(transition, "name", "unknown_transition")
 
-        if not transition.tool_config:
+        # Defensive access to tool_config to prevent AttributeError
+        tool_config = getattr(transition, "tool_config", None)
+        if not tool_config:
             return
 
-        target_tool_name = transition.tool_config.tool_display_name or str(
-            transition.tool_config.tool_id
-        )
+        # Safely extract tool identifiers with fallback defaults
+        tool_display_name = getattr(tool_config, "tool_display_name", None)
+        tool_id = getattr(tool_config, "tool_id", None)
+        target_tool_name = tool_display_name or str(tool_id) if tool_id else "unknown"
 
         emit_log_event(
             LogLevel.DEBUG,
-            f"Applied tool-based transition: {transition.name} -> {target_tool_name}",
+            f"Applied tool-based transition: {transition_name} -> {target_tool_name}",
             {
                 "tool_name": tool_name,
-                "transition_name": transition.name,
+                "transition_name": transition_name,
                 "transition_type": "tool_based",
                 "target_tool": target_tool_name,
             },
@@ -313,23 +341,24 @@ class MixinContractStateReducer:
     def _apply_conditional_transition(
         self,
         transition: ModelStateTransition,
-        input_state: Any,
+        input_state: object,
     ) -> None:
         """Apply conditional transition based on state conditions."""
         tool_name = getattr(self, "node_name", "unknown_tool")
+        transition_name = getattr(transition, "name", "unknown_transition")
 
         emit_log_event(
             LogLevel.DEBUG,
-            f"Applied conditional transition: {transition.name}",
+            f"Applied conditional transition: {transition_name}",
             {
                 "tool_name": tool_name,
-                "transition_name": transition.name,
+                "transition_name": transition_name,
                 "transition_type": "conditional",
             },
         )
 
     def _create_default_output_state(
-        self, input_state: Any
+        self, input_state: object
     ) -> TypedDictDefaultOutputState:
         """Create a default output state when no main tool is available."""
         # This is a fallback - each tool should implement proper processing

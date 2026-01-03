@@ -37,7 +37,7 @@ class ModelTopicManifest(BaseModel):
         - docs/guides/THREADING.md for thread safety guidelines
     """
 
-    model_config = ConfigDict(extra="forbid", frozen=True)
+    model_config = ConfigDict(extra="forbid", frozen=True, from_attributes=True)
 
     domain: str = Field(
         ...,

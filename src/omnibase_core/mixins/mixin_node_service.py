@@ -28,10 +28,10 @@ tool-as-a-service functionality for MCP, GraphQL, and other integrations.
 import asyncio
 import signal
 import time
+import types
 from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
-from typing import Any
 from uuid import UUID, uuid4
 
 from omnibase_core.constants import TIMEOUT_DEFAULT_MS
@@ -87,7 +87,7 @@ class MixinNodeService:
     _shutdown_callbacks: list[Callable[[], None]]
     _shutdown_event: asyncio.Event | None
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, *args: object, **kwargs: object) -> None:
         """Initialize the service mixin."""
         # Pass all arguments through to super() for proper MRO
         super().__init__(*args, **kwargs)
@@ -511,7 +511,7 @@ class MixinNodeService:
     async def _convert_event_to_input_state(
         self,
         event: ModelToolInvocationEvent,
-    ) -> Any:
+    ) -> object:
         """
         Convert tool invocation event to node input state.
 
@@ -529,20 +529,22 @@ class MixinNodeService:
 
         if input_state_class:
             # Create input state with action and parameters
+            # Parameters may be dict or have get_parameter_dict method; runtime duck-typing
             params_dict: dict[str, object] = (
                 event.parameters.get_parameter_dict()
                 if hasattr(event.parameters, "get_parameter_dict")
-                else event.parameters  # type: ignore[assignment]
+                else event.parameters  # type: ignore[assignment]  # Duck-typed: parameters may be dict or model
             )
             state_data: dict[str, object] = {"action": event.action, **params_dict}
             return input_state_class(**state_data)
         # Fallback to generic state object
         from types import SimpleNamespace
 
+        # Parameters may be dict or have get_parameter_dict method; runtime duck-typing
         params_dict = (
             event.parameters.get_parameter_dict()
             if hasattr(event.parameters, "get_parameter_dict")
-            else event.parameters  # type: ignore[assignment]
+            else event.parameters  # type: ignore[assignment]  # Duck-typed: parameters may be dict or model
         )
         return SimpleNamespace(action=event.action, **params_dict)
 
@@ -558,9 +560,9 @@ class MixinNodeService:
 
     async def _execute_tool(
         self,
-        input_state: Any,
+        input_state: object,
         event: ModelToolInvocationEvent,
-    ) -> Any:
+    ) -> object:
         """Execute the tool via the node's run method."""
         # STRICT: Node must have run() method for service to work
         if not hasattr(self, "run"):
@@ -743,7 +745,7 @@ class MixinNodeService:
         """Register signal handlers for graceful shutdown."""
         try:
 
-            def signal_handler(signum: int, _frame: Any) -> None:
+            def signal_handler(signum: int, _frame: types.FrameType | None) -> None:
                 self._log_info(
                     f"Received signal {signum}, initiating graceful shutdown",
                 )
