@@ -453,6 +453,42 @@ class NamingConventionChecker(ast.NodeVisitor):
 
         self.generic_visit(node)
 
+    def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
+        """Check async function naming conventions for an async function definition node.
+
+        Validates that async function names use snake_case style (e.g., my_async_func,
+        not myAsyncFunc or MyAsyncFunc). The snake_case pattern allows:
+
+        - Lowercase letters (a-z)
+        - Digits (0-9), but not as the first character
+        - Underscores for word separation
+
+        Special methods (dunder methods like __aenter__, __aexit__) are skipped
+        as they follow Python's own naming conventions.
+
+        Args:
+            node: The AST AsyncFunctionDef node representing an async function
+                definition. Contains the function name, arguments, body, and decorators.
+
+        Note:
+            This method mirrors visit_FunctionDef but handles async functions.
+            After checking, it calls generic_visit() to continue traversing nested
+            function definitions (inner functions, closures).
+        """
+        func_name = node.name
+
+        # Skip special methods
+        if func_name.startswith("__") and func_name.endswith("__"):
+            return
+
+        # Check naming style
+        if not re.match(r"^[a-z_][a-z0-9_]*$", func_name):
+            self.issues.append(
+                f"Line {node.lineno}: Async function name '{func_name}' should use snake_case",
+            )
+
+        self.generic_visit(node)
+
 
 def validate_directory(directory: Path, verbose: bool = False) -> list[str]:
     """Validate all Python files in a directory against naming conventions.
@@ -565,7 +601,7 @@ Examples:
 
     # Configure logging for CLI usage
     log_level = logging.DEBUG if args.verbose else logging.INFO
-    logging.basicConfig(level=log_level, format="%(message)s")
+    logging.basicConfig(level=log_level, format="%(message)s", force=True)
 
     # Determine target directory
     if args.directory:

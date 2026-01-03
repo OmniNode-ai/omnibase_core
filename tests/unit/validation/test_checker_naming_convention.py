@@ -972,7 +972,8 @@ class TestValidateDirectory:
         parent_dir = temp_models_dir.parent
         with caplog.at_level(logging.DEBUG):
             validate_directory(parent_dir, verbose=True)
-            # Note: The logging is at DEBUG level
+            # Verify that verbose mode logs the checked file
+            assert "model_test.py" in caplog.text or "Checked:" in caplog.text
 
     def test_recursive_validation(self, temp_models_dir: Path) -> None:
         """Test validation is recursive into subdirectories."""
@@ -1064,7 +1065,7 @@ class TestMainFunction:
             assert result in [0, 1]
 
     def test_main_logs_violations(
-        self, temp_omnibase_dir: Path, caplog: pytest.LogCaptureFixture
+        self, temp_omnibase_dir: Path, capsys: pytest.CaptureFixture[str]
     ) -> None:
         """Test main logs violation messages."""
         models_dir = temp_omnibase_dir / "models"
@@ -1072,12 +1073,13 @@ class TestMainFunction:
         (models_dir / "bad_file.py").write_text("# Invalid\n")
 
         with patch.object(sys, "argv", ["checker", str(temp_omnibase_dir)]):
-            with caplog.at_level(logging.WARNING):
-                main()
-                assert "violation" in caplog.text.lower()
+            main()
+            # main() uses logging with force=True which writes to stderr
+            captured = capsys.readouterr()
+            assert "violation" in captured.err.lower()
 
     def test_main_logs_success(
-        self, temp_omnibase_dir: Path, caplog: pytest.LogCaptureFixture
+        self, temp_omnibase_dir: Path, capsys: pytest.CaptureFixture[str]
     ) -> None:
         """Test main logs success message."""
         models_dir = temp_omnibase_dir / "models"
@@ -1085,9 +1087,10 @@ class TestMainFunction:
         (models_dir / "model_valid.py").write_text("# Valid\n")
 
         with patch.object(sys, "argv", ["checker", str(temp_omnibase_dir)]):
-            with caplog.at_level(logging.INFO):
-                main()
-                assert "conform" in caplog.text.lower() or "All files" in caplog.text
+            main()
+            # main() uses logging with force=True which writes to stderr
+            captured = capsys.readouterr()
+            assert "conform" in captured.err.lower() or "All files" in captured.err
 
 
 # =============================================================================
@@ -1219,12 +1222,11 @@ class badClass:
         assert len(checker.issues) == 2
 
     def test_async_function_naming(self) -> None:
-        """Test async function naming is NOT currently checked.
+        """Test async function naming is checked for snake_case.
 
-        Note: The NamingConventionChecker only handles regular FunctionDef nodes,
-        not AsyncFunctionDef nodes. This is a known limitation. If async function
-        naming enforcement is needed in the future, add visit_AsyncFunctionDef
-        to the NamingConventionChecker class.
+        The NamingConventionChecker validates both regular FunctionDef and
+        AsyncFunctionDef nodes. Async functions must use snake_case naming
+        just like regular functions.
         """
         source = """
 async def ValidAsyncFunc():
@@ -1232,13 +1234,18 @@ async def ValidAsyncFunc():
 
 async def valid_async_func():
     pass
+
+async def __aenter__():
+    pass
 """
         tree = ast.parse(source)
         checker = NamingConventionChecker("test.py")
         checker.visit(tree)
-        # Async functions are NOT currently checked by the naming convention checker
-        # This documents the current behavior - async functions bypass validation
-        assert len(checker.issues) == 0
+        # ValidAsyncFunc violates snake_case, valid_async_func is correct
+        # __aenter__ is a dunder method and should be skipped
+        assert len(checker.issues) == 1
+        assert "ValidAsyncFunc" in checker.issues[0]
+        assert "snake_case" in checker.issues[0]
 
 
 # =============================================================================
