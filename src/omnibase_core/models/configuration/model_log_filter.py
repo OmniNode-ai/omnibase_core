@@ -1,5 +1,4 @@
 import re
-from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -31,7 +30,9 @@ class ModelLogFilter(BaseModel):
         default=None,
         description="Field name for field-based filters",
     )
-    field_value: Any | None = Field(default=None, description="Field value to match")
+    field_value: str | int | float | bool | None = Field(
+        default=None, description="Field value to match"
+    )
     min_level: int | None = Field(
         default=None,
         description="Minimum log level (numeric value)",

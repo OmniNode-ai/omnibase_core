@@ -416,6 +416,7 @@ class TestModelDiscriminatedValueComparison:
     def test_equality_with_raw_bool(self) -> None:
         """Test equality with raw boolean."""
         value = ModelDiscriminatedValue.from_bool(True)
+        # Testing __eq__ with raw boolean - cannot use `assert value` since value is not a bool
         assert value == True
 
     def test_equality_collections(self) -> None:

@@ -26,10 +26,10 @@ __all__: list[str] = [
     "ModelToolHealth",
 ]
 
-# Fix forward references for Pydantic models
+# Fix forward references for Pydantic models.
+# These rebuilds are needed to resolve self-referential type annotations.
 try:
-    from omnibase_core.models.health.model_tool_health import ModelToolHealth
-
+    ModelHealthStatus.model_rebuild()
     ModelToolHealth.model_rebuild()
 except (
     Exception

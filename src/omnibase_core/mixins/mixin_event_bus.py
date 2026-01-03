@@ -1507,7 +1507,7 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
                         cleanup_errors.append(
                             "Event listener did not stop within timeout"
                         )
-                except (RuntimeError, ValueError, ModelOnexError) as e:
+                except (ModelOnexError, RuntimeError, ValueError) as e:
                     # stop_event_listener() may raise ModelOnexError if event bus
                     # doesn't support unsubscribe, but it still stops the listener
                     cleanup_errors.append(f"Failed to stop event listener: {e!r}")
@@ -1534,7 +1534,7 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
                                 "MIXIN_DISPOSE: Listener thread did not terminate within timeout",
                                 ModelLogData(node_name=self.get_node_name()),
                             )
-                    except (RuntimeError, OSError) as e:
+                    except (OSError, RuntimeError) as e:
                         cleanup_errors.append(f"Failed to join listener thread: {e!r}")
                         emit_log_event(
                             LogLevel.ERROR,
@@ -1754,7 +1754,7 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
                         tags=["error", "failed"],
                     )
                     self.publish_completion_event(completion_event_type, error_data)
-                except (RuntimeError, ValueError, ModelOnexError) as publish_error:
+                except (ModelOnexError, RuntimeError, ValueError) as publish_error:
                     self._log_error(
                         f"Failed to publish error event: {publish_error!r}",
                         "publish_error",

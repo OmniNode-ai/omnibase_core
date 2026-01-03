@@ -1,4 +1,38 @@
-from typing import TYPE_CHECKING, Any, TypeVar, cast
+"""Model ONEX Dependency Injection Container.
+
+This module provides the ModelONEXContainer, the primary dependency injection
+container for the ONEX framework. It integrates with the contract-driven
+architecture and provides:
+
+- Protocol-based service resolution with caching
+- Observable dependency injection with event emission
+- Workflow orchestration support via ModelWorkflowCoordinator
+- Optional performance monitoring and memory-mapped caching
+- Context-based container management for async/thread isolation
+
+The container wraps _BaseModelONEXContainer (dependency-injector based) and
+adds enhanced features for production deployments.
+
+Example:
+    Basic usage::
+
+        container = await create_model_onex_container()
+        service = await container.get_service_async(ProtocolLogger)
+
+    With context management::
+
+        from omnibase_core.context import run_with_container
+
+        async with run_with_container(container):
+            current = await get_model_onex_container()
+
+See Also:
+    - _BaseModelONEXContainer: Low-level DI container
+    - ServiceRegistry: New DI system for protocol-based resolution
+    - ModelWorkflowCoordinator: Workflow orchestration
+"""
+
+from typing import TYPE_CHECKING, TypeVar, cast
 
 from omnibase_core.decorators.allow_dict_any import allow_dict_any
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -8,18 +42,27 @@ from omnibase_core.types.typed_dict_performance_checkpoint_result import (
 )
 
 if TYPE_CHECKING:
+    from dependency_injector.providers import Configuration, Factory, Singleton
+
+    from omnibase_core.container.service_registry import ServiceRegistry
+    from omnibase_core.models.container.model_enhanced_logger import ModelEnhancedLogger
+    from omnibase_core.models.container.model_workflow_coordinator import (
+        ModelWorkflowCoordinator,
+    )
+    from omnibase_core.models.container.model_workflow_factory import (
+        ModelWorkflowFactory,
+    )
+    from omnibase_core.models.core.model_action_registry import ModelActionRegistry
+    from omnibase_core.models.core.model_cli_command_registry import (
+        ModelCliCommandRegistry,
+    )
+    from omnibase_core.models.core.model_event_type_registry import (
+        ModelEventTypeRegistry,
+    )
+    from omnibase_core.models.security.model_secret_manager import ModelSecretManager
     from omnibase_core.protocols.compute.protocol_performance_monitor import (
         ProtocolPerformanceMonitor,
     )
-
-"""
-Model ONEX Dependency Injection Container.
-
-This module provides the ModelONEXContainer that integrates with
-the contract-driven architecture, supporting workflow orchestration
-and observable dependency injection.
-
-"""
 
 import asyncio
 import os
@@ -58,10 +101,14 @@ except ImportError:
     # container can function without monitoring capabilities
     PerformanceMonitor = None
 
-# Type aliases for protocols not yet implemented in omnibase_core
-# Future: import from omnibase_core.protocols once implemented
-ProtocolDatabaseConnection = Any
-ProtocolServiceDiscovery = Any
+# Infrastructure protocol imports for database and service discovery
+from omnibase_core.protocols.infrastructure import (
+    ProtocolDatabaseConnection,
+    ProtocolServiceDiscovery,
+)
+
+# Compute protocol imports for tool caching
+from omnibase_core.protocols.compute import ProtocolToolCache
 
 T = TypeVar("T")
 
@@ -73,16 +120,43 @@ from omnibase_core.models.container.model_base_model_onex_container import (
 
 
 class ModelONEXContainer:
-    """
-    Model ONEX dependency injection container.
+    """Model ONEX dependency injection container.
 
-    This container wraps the base DI container and adds:
-    - Service resolution with caching and logging
-    - Observable dependency injection with event emission
-    - Contract-driven automatic service registration
-    - Workflow orchestration support
-    - Enhanced error handling and recovery patterns
-    - Performance monitoring and caching
+    The primary DI container for ONEX applications. Wraps _BaseModelONEXContainer
+    and adds production-ready features including service caching, performance
+    monitoring, and workflow orchestration.
+
+    This container uses protocol-based resolution - services are resolved by
+    their protocol interface, not concrete implementation. This enables loose
+    coupling and easy testing via mock implementations.
+
+    Attributes:
+        compute_cache_config: Configuration for NodeCompute instance caching.
+        enable_performance_cache: Whether memory-mapped caching is enabled.
+        tool_cache: Optional MemoryMappedToolCache for tool metadata caching.
+        performance_monitor: Optional ProtocolPerformanceMonitor for metrics.
+
+    Example:
+        Basic service resolution::
+
+            container = ModelONEXContainer(enable_service_registry=True)
+            logger = await container.get_service_async(ProtocolLogger)
+
+        With performance caching::
+
+            container = ModelONEXContainer(
+                enable_performance_cache=True,
+                cache_dir=Path("/tmp/cache")
+            )
+            stats = container.get_performance_stats()
+
+    Note:
+        This class is NOT thread-safe. Use separate instances per thread or
+        use context-based container management via get_model_onex_container().
+
+    See Also:
+        - create_model_onex_container: Factory function for creating containers
+        - get_model_onex_container: Get container from current context
     """
 
     @allow_dict_any(
@@ -119,15 +193,19 @@ class ModelONEXContainer:
         }
 
         # Initialize service cache
-        self._service_cache: dict[str, Any] = {}
+        self._service_cache: dict[str, object] = {}
 
         # Optional performance enhancements
         self.enable_performance_cache = enable_performance_cache
-        self.tool_cache: Any = None
+        # tool_cache uses ProtocolToolCache for duck typing support.
+        # MemoryMappedToolCache may not be available (optional import).
+        # When not None, tool_cache is guaranteed to implement ProtocolToolCache.
+        self.tool_cache: ProtocolToolCache | None = None
         self.performance_monitor: ProtocolPerformanceMonitor | None = None
 
         # Initialize ServiceRegistry (new DI system)
-        self._service_registry: Any = None
+        # Note: ServiceRegistry is imported in TYPE_CHECKING block; using string annotation
+        self._service_registry: "ServiceRegistry | None" = None  # noqa: UP037
         self._enable_service_registry = enable_service_registry
 
         if enable_service_registry:
@@ -178,47 +256,47 @@ class ModelONEXContainer:
         return self._base_container
 
     @property
-    def config(self) -> Any:
+    def config(self) -> "Configuration":
         """Access to configuration."""
         return self._base_container.config
 
     @property
-    def enhanced_logger(self) -> Any:
+    def enhanced_logger(self) -> "Factory[ModelEnhancedLogger]":
         """Access to enhanced logger."""
         return self._base_container.enhanced_logger
 
     @property
-    def workflow_factory(self) -> Any:
+    def workflow_factory(self) -> "Factory[ModelWorkflowFactory]":
         """Access to workflow factory."""
         return self._base_container.workflow_factory
 
     @property
-    def workflow_coordinator(self) -> Any:
+    def workflow_coordinator(self) -> "Singleton[ModelWorkflowCoordinator]":
         """Access to workflow coordinator."""
         return self._base_container.workflow_coordinator
 
     @property
-    def action_registry(self) -> Any:
+    def action_registry(self) -> "Singleton[ModelActionRegistry]":
         """Access to action registry."""
         return self._base_container.action_registry
 
     @property
-    def event_type_registry(self) -> Any:
+    def event_type_registry(self) -> "Singleton[ModelEventTypeRegistry]":
         """Access to event type registry."""
         return self._base_container.event_type_registry
 
     @property
-    def command_registry(self) -> Any:
+    def command_registry(self) -> "Singleton[ModelCliCommandRegistry]":
         """Access to command registry."""
         return self._base_container.command_registry
 
     @property
-    def secret_manager(self) -> Any:
+    def secret_manager(self) -> "Singleton[ModelSecretManager]":
         """Access to secret manager."""
         return self._base_container.secret_manager
 
     @property
-    def service_registry(self) -> Any:
+    def service_registry(self) -> "ServiceRegistry | None":
         """
         Access to service registry (new DI system).
 
@@ -265,7 +343,7 @@ class ModelONEXContainer:
                     "correlation_id": str(final_correlation_id),
                 },
             )
-            cached_service: T = self._service_cache[cache_key]
+            cached_service = cast(T, self._service_cache[cache_key])
             return cached_service
 
         # Use ServiceRegistry (new DI system) - fail fast if enabled
@@ -290,16 +368,15 @@ class ModelONEXContainer:
                     },
                 )
 
-                # Use object cast since T is a TypeVar resolved at runtime
-                typed_service = cast(T, service_instance)
-                return typed_service
+                # service_instance is already typed as T from resolve_service[T]
+                return service_instance
 
             except (
-                ModelOnexError,
                 AttributeError,
                 KeyError,
-                ValueError,
+                ModelOnexError,
                 RuntimeError,
+                ValueError,
             ) as registry_error:
                 # Fail fast - ServiceRegistry is the only resolution mechanism when enabled
                 emit_log_event(
@@ -311,8 +388,8 @@ class ModelONEXContainer:
                     },
                 )
                 raise ModelOnexError(
-                    error_code=EnumCoreErrorCode.DEPENDENCY_UNAVAILABLE,
                     message=f"Service resolution failed for {protocol_name}: {registry_error!s}",
+                    error_code=EnumCoreErrorCode.DEPENDENCY_UNAVAILABLE,
                     context={
                         "protocol_type": protocol_name,
                         "service_name": service_name or "",
@@ -323,8 +400,8 @@ class ModelONEXContainer:
 
         # ServiceRegistry not enabled - raise error (no legacy fallback)
         raise ModelOnexError(
-            error_code=EnumCoreErrorCode.DEPENDENCY_UNAVAILABLE,
             message=f"Cannot resolve service {protocol_name}: ServiceRegistry is disabled",
+            error_code=EnumCoreErrorCode.DEPENDENCY_UNAVAILABLE,
             context={
                 "protocol_type": protocol_name,
                 "service_name": service_name or "",
@@ -360,6 +437,7 @@ class ModelONEXContainer:
             # Check tool cache for metadata (optimization)
             cache_hit = False
             if service_name and self.tool_cache:
+                # tool_cache implements ProtocolToolCache when not None
                 tool_metadata = self.tool_cache.lookup_tool(
                     service_name.replace("_registry", ""),
                 )
@@ -395,7 +473,7 @@ class ModelONEXContainer:
 
             return service_instance
 
-        except (ModelOnexError, AttributeError, KeyError, RuntimeError) as e:
+        except (AttributeError, KeyError, ModelOnexError, RuntimeError) as e:
             end_time = time.perf_counter()
             resolution_time_ms = (end_time - start_time) * 1000
 
@@ -421,7 +499,22 @@ class ModelONEXContainer:
         protocol_type: type[T],
         service_name: str | None = None,
     ) -> T:
-        """Modern standards method."""
+        """Resolve a service by protocol type (synchronous).
+
+        Compatibility alias for get_service_sync(). Prefer get_service_async()
+        in async contexts to avoid blocking event loop.
+
+        Args:
+            protocol_type: Protocol interface to resolve.
+            service_name: Optional service name for named registrations.
+
+        Returns:
+            Resolved service instance of type T.
+
+        Raises:
+            ModelOnexError: If service resolution fails or ServiceRegistry
+                is disabled.
+        """
         return self.get_service_sync(protocol_type, service_name)
 
     def get_service_optional(
@@ -448,8 +541,16 @@ class ModelONEXContainer:
         except Exception:  # fallback-ok: Optional service getter intentionally returns None when service unavailable
             return None
 
-    def get_workflow_orchestrator(self) -> Any:
-        """Get workflow orchestration coordinator."""
+    def get_workflow_orchestrator(self) -> "ModelWorkflowCoordinator":
+        """Get the workflow orchestration coordinator singleton.
+
+        Returns the ModelWorkflowCoordinator for executing LlamaIndex-style
+        workflows. The coordinator manages workflow lifecycle, step execution,
+        and error handling.
+
+        Returns:
+            ModelWorkflowCoordinator singleton instance.
+        """
         return self.workflow_coordinator()
 
     def get_performance_metrics(self) -> dict[str, ModelSchemaValue]:
@@ -466,15 +567,41 @@ class ModelONEXContainer:
         }
 
     async def get_service_discovery(self) -> ProtocolServiceDiscovery:
-        """Get service discovery implementation with automatic fallback."""
-        return await self.get_service_async(ProtocolServiceDiscovery)
+        """Get the service discovery implementation.
+
+        Resolves ProtocolServiceDiscovery from the ServiceRegistry. Used for
+        dynamic service lookup in distributed deployments.
+
+        Returns:
+            Service discovery implementation.
+
+        Raises:
+            ModelOnexError: If service discovery is not registered.
+        """
+        # type-abstract: Protocol used for DI resolution, concrete impl registered at runtime
+        return await self.get_service_async(ProtocolServiceDiscovery)  # type: ignore[type-abstract]
 
     async def get_database(self) -> ProtocolDatabaseConnection:
-        """Get database connection implementation with automatic fallback."""
-        return await self.get_service_async(ProtocolDatabaseConnection)
+        """Get the database connection implementation.
+
+        Resolves ProtocolDatabaseConnection from the ServiceRegistry.
+
+        Returns:
+            Database connection implementation.
+
+        Raises:
+            ModelOnexError: If database connection is not registered.
+        """
+        # type-abstract: Protocol used for DI resolution, concrete impl registered at runtime
+        return await self.get_service_async(ProtocolDatabaseConnection)  # type: ignore[type-abstract]
 
     async def get_external_services_health(self) -> dict[str, object]:
-        """Get health status for all external services."""
+        """Get health status for all external services.
+
+        Returns:
+            Dictionary with service health information. Currently returns
+            unavailable status as this requires omnibase-spi integration.
+        """
         # TODO: Ready to implement using ProtocolServiceResolver from omnibase_spi.protocols.container
         # Note: ProtocolServiceResolver available in omnibase_spi v0.2.0
         # service_resolver = get_service_resolver()
@@ -485,7 +612,11 @@ class ModelONEXContainer:
         }
 
     async def refresh_external_services(self) -> None:
-        """Force refresh all external service connections."""
+        """Force refresh all external service connections.
+
+        Clears cached service instances and re-establishes connections.
+        Currently logs a warning as this requires omnibase-spi integration.
+        """
         # TODO: Ready to implement using ProtocolServiceResolver from omnibase_spi.protocols.container
         # Note: ProtocolServiceResolver available in omnibase_spi v0.2.0
         # service_resolver = get_service_resolver()
@@ -509,7 +640,12 @@ class ModelONEXContainer:
         )
 
     async def warm_cache(self) -> None:
-        """Warm up the tool cache for better performance."""
+        """Warm up the tool cache for better performance.
+
+        Pre-resolves common services to populate the service cache. This
+        reduces latency for first-time service resolution in production.
+        Called automatically when enable_cache=True in factory function.
+        """
         if not self.tool_cache:
             return
 
@@ -546,7 +682,17 @@ class ModelONEXContainer:
         )
 
     def get_performance_stats(self) -> SerializedDict:
-        """Get comprehensive performance statistics."""
+        """Get comprehensive performance statistics.
+
+        Returns:
+            Dictionary containing:
+            - container_type: Container class name
+            - cache_enabled: Whether performance cache is active
+            - timestamp: Current time
+            - base_metrics: Resolution counts, cache hits, error rates
+            - tool_cache: Tool cache stats (if enabled)
+            - performance_monitoring: Dashboard data (if enabled)
+        """
         stats: SerializedDict = {
             "container_type": "ModelONEXContainer",
             "cache_enabled": self.enable_performance_cache,
@@ -610,7 +756,11 @@ class ModelONEXContainer:
         return result
 
     def close(self) -> None:
-        """Clean up resources."""
+        """Clean up container resources.
+
+        Closes the tool cache if enabled and emits a log event. Call this
+        when shutting down the application to release memory-mapped files.
+        """
         if self.tool_cache:
             self.tool_cache.close()
 
@@ -687,7 +837,9 @@ async def create_model_onex_container(
     if enable_cache:
         await container.warm_cache()
 
-    return container
+    # Explicit type annotation to satisfy mypy (from_dict returns Any from dependency_injector)
+    result: ModelONEXContainer = container
+    return result
 
 
 # === GLOBAL ENHANCED CONTAINER ===

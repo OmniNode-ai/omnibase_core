@@ -59,7 +59,7 @@ class ModelWorkflowPermissions(BaseModel):
 
     @property
     def write_permissions(self) -> list[str]:
-        """Get list[Any]of permissions set to 'write'."""
+        """Get list of permissions set to 'write'."""
         write_perms = []
         summary = self.permission_summary
         for perm_name, perm_value in summary.items():
@@ -69,7 +69,7 @@ class ModelWorkflowPermissions(BaseModel):
 
     @property
     def read_only_permissions(self) -> list[str]:
-        """Get list[Any]of permissions set to 'read'."""
+        """Get list of permissions set to 'read'."""
         read_perms = []
         summary = self.permission_summary
         for perm_name, perm_value in summary.items():
@@ -79,7 +79,7 @@ class ModelWorkflowPermissions(BaseModel):
 
     @property
     def denied_permissions(self) -> list[str]:
-        """Get list[Any]of permissions set to 'none'."""
+        """Get list of permissions set to 'none'."""
         denied_perms = []
         summary = self.permission_summary
         for perm_name, perm_value in summary.items():

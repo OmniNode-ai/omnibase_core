@@ -67,6 +67,8 @@ EXCLUDED_FILES = [
     "src/omnibase_core/mixins/mixin_metrics.py",  # Lines 49, 54, 61, 77, 82, 89, 102, 107, 113, 118
     "src/omnibase_core/models/contracts/model_contract_compute.py",  # Lines 222, 223
     "src/omnibase_core/models/contracts/model_contract_effect.py",  # Lines 122, 123
+    # Legitimate perf optimization: bypasses validate_assignment (not frozen) for timestamp updates
+    "src/omnibase_core/models/core/model_examples_collection.py",  # Lines 273, 291, 311
 ]
 
 

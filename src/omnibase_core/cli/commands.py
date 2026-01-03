@@ -520,7 +520,7 @@ def _check_error_handling() -> tuple[bool, str]:
             pass
 
         return True, "Error handling system operational"
-    except (ImportError, AttributeError, TypeError) as e:
+    except (AttributeError, ImportError, TypeError) as e:
         # ImportError: module not available
         # AttributeError: missing expected enum value or class attribute
         # TypeError: error class instantiation failure
