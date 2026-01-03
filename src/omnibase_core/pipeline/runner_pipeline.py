@@ -217,7 +217,7 @@ class RunnerPipeline:
         hooks execute even if some fail.
 
         This method wraps finalize execution to ensure:
-        1. Hook-level errors are captured with proper hook_id context
+        1. Hook-level errors are captured with proper hook_name context
         2. Framework-level errors (outside hook execution) are captured gracefully
         3. No exception escapes - all errors become ModelHookError entries
 

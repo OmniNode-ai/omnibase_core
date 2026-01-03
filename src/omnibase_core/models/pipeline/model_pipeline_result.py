@@ -119,7 +119,8 @@ class ModelPipelineResult(BaseModel):
         default=(),
         description=(
             "Errors captured from continue-on-error phases. "
-            "Immutable tuple for thread-safe access across concurrent consumers."
+            "Immutable tuple for thread-safe access across concurrent consumers. "
+            "Thread-Safe: Tuple is immutable; safe to share across threads without copying."
         ),
     )
     context: ModelPipelineContext | None = Field(
@@ -128,7 +129,10 @@ class ModelPipelineResult(BaseModel):
             "Final context state after pipeline execution. "
             "A defensive deep copy is created on initialization to prevent "
             "external mutation. Treat as read-only when sharing across threads. "
-            "See class docstring."
+            "WARNING: Shallow immutability only - nested dicts/lists in context.data "
+            "CAN still be mutated in place (e.g., context.data['key']['nested'] = 'new'). "
+            "Use frozen_context_data or frozen_copy() for truly thread-safe sharing. "
+            "See class docstring and docs/guides/THREADING.md."
         ),
     )
 
@@ -266,6 +270,12 @@ class ModelPipelineResult(BaseModel):
         >>> frozen = result.frozen_copy()
         >>> # Pass to worker threads safely
         >>> executor.submit(process_result, frozen)
+
+        Thread Safety
+        -------------
+        - **errors**: Shared by reference (safe - tuples are immutable)
+        - **context**: Deep-copied (new isolated instance per copy)
+        - **success**: Shared by reference (safe - bool is immutable)
 
         Note
         ----

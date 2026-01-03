@@ -116,7 +116,7 @@ class ModelPipelineHook(BaseModel):
     )
     dependencies: list[str] = Field(
         default_factory=list,
-        description="List of hook IDs that must execute before this hook",
+        description="List of hook names that must execute before this hook",
     )
     callable_ref: str = Field(
         ...,

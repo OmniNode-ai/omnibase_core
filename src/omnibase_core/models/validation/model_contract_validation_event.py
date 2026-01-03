@@ -51,10 +51,32 @@ ContractValidationEventType = Literal[
 
 class ModelContractValidationEvent(BaseModel):
     """
-    Represents a contract validation lifecycle event.
+    Represents a contract validation lifecycle event for invariant checking.
 
     This model captures the key information about a validation or merge
     event, including its type and the run it belongs to.
+
+    Design Decision:
+        This model is intentionally separate from ``ModelContractValidationEventBase``
+        (in ``models/events/contract_validation/``). The separation serves different
+        architectural purposes:
+
+        - **This model** (``ModelContractValidationEvent``): Lightweight, stateless
+          event for invariant validation logic. Uses simple string references and
+          minimal fields. Appropriate for internal validation state machines.
+
+        - **Domain event model** (``ModelContractValidationEventBase``): Rich event
+          with full lifecycle support including UUIDs, timestamps, correlation IDs,
+          and contract references. Designed for event sourcing and domain event bus
+          patterns.
+
+        See the module docstring for detailed rationale on this separation.
+
+    See Also:
+        ``ModelContractValidationEventBase`` (models.events.contract_validation):
+            Rich domain event model for event sourcing patterns.
+        ``ModelContractValidationStartedEvent`` (models.events.contract_validation):
+            Concrete started event for domain event patterns.
 
     Attributes:
         event_type: The type of validation event

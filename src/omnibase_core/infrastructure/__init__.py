@@ -1,9 +1,23 @@
 """Infrastructure module.
 
 This module contains node bases and infrastructure services.
+
+Re-exports:
+    For convenience, this module re-exports cache backends from their canonical
+    location in omnibase_core.backends.cache. While these work, prefer importing
+    directly from omnibase_core.backends.cache for clarity:
+
+    .. code-block:: python
+
+        # Preferred - import from canonical location
+        from omnibase_core.backends.cache import BackendCacheRedis, REDIS_AVAILABLE
+
+        # Also works - re-exported here for convenience
+        from omnibase_core.infrastructure import BackendCacheRedis, REDIS_AVAILABLE
 """
 
-# Re-export from canonical location (backends.cache)
+# Re-export from canonical location (backends.cache) for convenience
+# NOTE: Prefer importing directly from omnibase_core.backends.cache
 from omnibase_core.backends.cache import (
     REDIS_AVAILABLE,
     BackendCacheRedis,

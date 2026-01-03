@@ -8,6 +8,9 @@ Available Backends:
     - BackendMetricsInMemory: In-memory backend for testing and development
     - BackendMetricsPrometheus: Prometheus backend (requires prometheus-client)
 
+Utility Functions:
+    - sanitize_url: Remove credentials from URLs for safe logging (requires prometheus-client)
+
 Usage:
     .. code-block:: python
 
@@ -26,7 +29,10 @@ Prometheus Usage (when prometheus-client is installed):
 
     .. code-block:: python
 
-        from omnibase_core.backends.metrics import BackendMetricsPrometheus
+        from omnibase_core.backends.metrics import (
+            BackendMetricsPrometheus,
+            sanitize_url,
+        )
 
         # Create a Prometheus backend
         backend = BackendMetricsPrometheus(
@@ -35,6 +41,10 @@ Prometheus Usage (when prometheus-client is installed):
         )
         backend.record_gauge("memory_usage", 1024.0)
         backend.push()  # Push to gateway if configured
+
+        # Sanitize URLs for safe logging
+        safe_url = sanitize_url("redis://user:pass@host:6379")
+        # Returns: "redis://***:***@host:6379"
 
 .. versionadded:: 0.5.7
 """
