@@ -50,11 +50,11 @@ class TestModelContractValidationEventBase:
         """Test that base event can be created with required fields."""
         run_id = uuid4()
         event = ModelContractValidationEventBase(
-            contract_id="test-contract",
+            contract_name="test-contract",
             run_id=run_id,
         )
 
-        assert event.contract_id == "test-contract"
+        assert event.contract_name == "test-contract"
         assert event.run_id == run_id
         assert isinstance(event.event_id, UUID)
         assert isinstance(event.timestamp, datetime)
@@ -69,11 +69,11 @@ class TestModelContractValidationEventBase:
         correlation_id = uuid4()
         event_id = uuid4()
         timestamp = datetime.now(UTC)
-        contract_ref = ModelContractRef(contract_id="test-contract")
+        contract_ref = ModelContractRef(contract_name="test-contract")
 
         event = ModelContractValidationEventBase(
             event_id=event_id,
-            contract_id="test-contract",
+            contract_name="test-contract",
             run_id=run_id,
             actor=actor,
             contract_ref=contract_ref,
@@ -82,39 +82,39 @@ class TestModelContractValidationEventBase:
         )
 
         assert event.event_id == event_id
-        assert event.contract_id == "test-contract"
+        assert event.contract_name == "test-contract"
         assert event.run_id == run_id
         assert event.actor == actor
         assert event.contract_ref == contract_ref
         assert event.timestamp == timestamp
         assert event.correlation_id == correlation_id
 
-    def test_base_event_contract_id_required(self) -> None:
-        """Test that contract_id is required."""
+    def test_base_event_contract_name_required(self) -> None:
+        """Test that contract_name is required."""
         with pytest.raises(ValidationError) as exc_info:
             ModelContractValidationEventBase(run_id=uuid4())  # type: ignore[call-arg]
 
         error_str = str(exc_info.value)
-        assert "contract_id" in error_str
+        assert "contract_name" in error_str
 
     def test_base_event_run_id_required(self) -> None:
         """Test that run_id is required."""
         with pytest.raises(ValidationError) as exc_info:
-            ModelContractValidationEventBase(contract_id="test")  # type: ignore[call-arg]
+            ModelContractValidationEventBase(contract_name="test")  # type: ignore[call-arg]
 
         error_str = str(exc_info.value)
         assert "run_id" in error_str
 
-    def test_base_event_contract_id_min_length(self) -> None:
-        """Test that contract_id enforces min_length=1."""
+    def test_base_event_contract_name_min_length(self) -> None:
+        """Test that contract_name enforces min_length=1."""
         with pytest.raises(ValidationError) as exc_info:
             ModelContractValidationEventBase(
-                contract_id="",  # Empty string
+                contract_name="",  # Empty string
                 run_id=uuid4(),
             )
 
         error_str = str(exc_info.value)
-        assert "contract_id" in error_str or "min_length" in error_str.lower()
+        assert "contract_name" in error_str or "min_length" in error_str.lower()
 
 
 # =============================================================================
@@ -132,22 +132,22 @@ class TestModelContractValidationStartedEvent:
         context = ModelContractValidationContext()
 
         event = ModelContractValidationStartedEvent(
-            contract_id="test-contract",
+            contract_name="test-contract",
             run_id=run_id,
             context=context,
         )
 
-        assert event.contract_id == "test-contract"
+        assert event.contract_name == "test-contract"
         assert event.run_id == run_id
         assert event.context == context
         assert event.event_type == CONTRACT_VALIDATION_STARTED_EVENT
-        assert event.validator_set_id is None
+        assert event.validator_set_name is None
 
     def test_started_event_event_type_constant(self) -> None:
         """Test that event_type has correct constant value."""
         run_id = uuid4()
         event = ModelContractValidationStartedEvent(
-            contract_id="test-contract",
+            contract_name="test-contract",
             run_id=run_id,
             context=ModelContractValidationContext(),
         )
@@ -159,7 +159,7 @@ class TestModelContractValidationStartedEvent:
         """Test that context is required."""
         with pytest.raises(ValidationError) as exc_info:
             ModelContractValidationStartedEvent(
-                contract_id="test-contract",
+                contract_name="test-contract",
                 run_id=uuid4(),
             )  # type: ignore[call-arg]
 
@@ -170,13 +170,13 @@ class TestModelContractValidationStartedEvent:
         """Test started event with validator_set_id."""
         run_id = uuid4()
         event = ModelContractValidationStartedEvent(
-            contract_id="test-contract",
+            contract_name="test-contract",
             run_id=run_id,
             context=ModelContractValidationContext(),
             validator_set_id="standard-v1",
         )
 
-        assert event.validator_set_id == "standard-v1"
+        assert event.validator_set_name == "standard-v1"
 
     def test_started_event_create_factory_method(self) -> None:
         """Test the create() factory method."""
@@ -186,31 +186,31 @@ class TestModelContractValidationStartedEvent:
         context = ModelContractValidationContext(mode=EnumValidationMode.STRICT)
 
         event = ModelContractValidationStartedEvent.create(
-            contract_id="factory-contract",
+            contract_name="factory-contract",
             run_id=run_id,
             context=context,
-            validator_set_id="strict-v2",
+            validator_set_name="strict-v2",
             actor=actor,
             correlation_id=correlation_id,
         )
 
-        assert event.contract_id == "factory-contract"
+        assert event.contract_name == "factory-contract"
         assert event.run_id == run_id
         assert event.context == context
-        assert event.validator_set_id == "strict-v2"
+        assert event.validator_set_name == "strict-v2"
         assert event.actor == actor
         assert event.correlation_id == correlation_id
 
     def test_started_event_is_frozen(self) -> None:
         """Test that started event is frozen."""
         event = ModelContractValidationStartedEvent(
-            contract_id="test-contract",
+            contract_name="test-contract",
             run_id=uuid4(),
             context=ModelContractValidationContext(),
         )
 
         with pytest.raises(ValidationError):
-            event.contract_id = "new-id"  # type: ignore[misc]
+            event.contract_name = "new-id"  # type: ignore[misc]
 
 
 @pytest.mark.unit
@@ -221,7 +221,7 @@ class TestModelContractValidationStartedEventSerialization:
         """Test serialization round-trip."""
         run_id = uuid4()
         original = ModelContractValidationStartedEvent(
-            contract_id="test-contract",
+            contract_name="test-contract",
             run_id=run_id,
             context=ModelContractValidationContext(mode=EnumValidationMode.PERMISSIVE),
             validator_set_id="test-set",
@@ -230,10 +230,10 @@ class TestModelContractValidationStartedEventSerialization:
         json_str = original.model_dump_json()
         restored = ModelContractValidationStartedEvent.model_validate_json(json_str)
 
-        assert restored.contract_id == original.contract_id
+        assert restored.contract_name == original.contract_name
         assert restored.run_id == original.run_id
         assert restored.event_type == original.event_type
-        assert restored.validator_set_id == original.validator_set_id
+        assert restored.validator_set_name == original.validator_set_name
 
 
 # =============================================================================
@@ -250,24 +250,24 @@ class TestModelContractValidationPassedEvent:
         run_id = uuid4()
 
         event = ModelContractValidationPassedEvent(
-            contract_id="test-contract",
+            contract_name="test-contract",
             run_id=run_id,
             duration_ms=250,
         )
 
-        assert event.contract_id == "test-contract"
+        assert event.contract_name == "test-contract"
         assert event.run_id == run_id
         assert event.duration_ms == 250
         assert event.event_type == CONTRACT_VALIDATION_PASSED_EVENT
         assert event.warnings_count == 0
         assert event.checks_run == 0
         assert event.warnings_refs == []
-        assert event.validator_set_id is None
+        assert event.validator_set_name is None
 
     def test_passed_event_event_type_constant(self) -> None:
         """Test that event_type has correct constant value."""
         event = ModelContractValidationPassedEvent(
-            contract_id="test-contract",
+            contract_name="test-contract",
             run_id=uuid4(),
             duration_ms=100,
         )
@@ -279,7 +279,7 @@ class TestModelContractValidationPassedEvent:
         """Test that duration_ms is required."""
         with pytest.raises(ValidationError) as exc_info:
             ModelContractValidationPassedEvent(
-                contract_id="test-contract",
+                contract_name="test-contract",
                 run_id=uuid4(),
             )  # type: ignore[call-arg]
 
@@ -290,7 +290,7 @@ class TestModelContractValidationPassedEvent:
         """Test that duration_ms must be >= 0."""
         with pytest.raises(ValidationError) as exc_info:
             ModelContractValidationPassedEvent(
-                contract_id="test-contract",
+                contract_name="test-contract",
                 run_id=uuid4(),
                 duration_ms=-1,
             )
@@ -302,7 +302,7 @@ class TestModelContractValidationPassedEvent:
         """Test that warnings_count must be >= 0."""
         with pytest.raises(ValidationError) as exc_info:
             ModelContractValidationPassedEvent(
-                contract_id="test-contract",
+                contract_name="test-contract",
                 run_id=uuid4(),
                 duration_ms=100,
                 warnings_count=-1,
@@ -315,7 +315,7 @@ class TestModelContractValidationPassedEvent:
         """Test that checks_run must be >= 0."""
         with pytest.raises(ValidationError) as exc_info:
             ModelContractValidationPassedEvent(
-                contract_id="test-contract",
+                contract_name="test-contract",
                 run_id=uuid4(),
                 duration_ms=100,
                 checks_run=-1,
@@ -331,7 +331,7 @@ class TestModelContractValidationPassedEvent:
 
         with pytest.raises(ValidationError) as exc_info:
             ModelContractValidationPassedEvent(
-                contract_id="test-contract",
+                contract_name="test-contract",
                 run_id=uuid4(),
                 duration_ms=100,
                 warnings_refs=warnings_refs,
@@ -348,7 +348,7 @@ class TestModelContractValidationPassedEvent:
         """Test passed event with warnings."""
         run_id = uuid4()
         event = ModelContractValidationPassedEvent(
-            contract_id="test-contract",
+            contract_name="test-contract",
             run_id=run_id,
             duration_ms=300,
             warnings_count=3,
@@ -370,17 +370,17 @@ class TestModelContractValidationPassedEvent:
         actor = uuid4()
 
         event = ModelContractValidationPassedEvent.create(
-            contract_id="factory-contract",
+            contract_name="factory-contract",
             run_id=run_id,
             duration_ms=500,
-            validator_set_id="validator-v1",
+            validator_set_name="validator-v1",
             warnings_count=2,
             checks_run=20,
             warnings_refs=["warn://test1", "warn://test2"],
             actor=actor,
         )
 
-        assert event.contract_id == "factory-contract"
+        assert event.contract_name == "factory-contract"
         assert event.run_id == run_id
         assert event.duration_ms == 500
         assert event.warnings_count == 2
@@ -397,7 +397,7 @@ class TestModelContractValidationPassedEventSerialization:
         """Test serialization round-trip."""
         run_id = uuid4()
         original = ModelContractValidationPassedEvent(
-            contract_id="test-contract",
+            contract_name="test-contract",
             run_id=run_id,
             duration_ms=250,
             warnings_count=1,
@@ -408,7 +408,7 @@ class TestModelContractValidationPassedEventSerialization:
         json_str = original.model_dump_json()
         restored = ModelContractValidationPassedEvent.model_validate_json(json_str)
 
-        assert restored.contract_id == original.contract_id
+        assert restored.contract_name == original.contract_name
         assert restored.run_id == original.run_id
         assert restored.duration_ms == original.duration_ms
         assert restored.warnings_count == original.warnings_count
@@ -430,14 +430,14 @@ class TestModelContractValidationFailedEvent:
         run_id = uuid4()
 
         event = ModelContractValidationFailedEvent(
-            contract_id="test-contract",
+            contract_name="test-contract",
             run_id=run_id,
             error_count=1,
             first_error_code="CONTRACT_SCHEMA_INVALID",
             duration_ms=150,
         )
 
-        assert event.contract_id == "test-contract"
+        assert event.contract_name == "test-contract"
         assert event.run_id == run_id
         assert event.error_count == 1
         assert event.first_error_code == "CONTRACT_SCHEMA_INVALID"
@@ -445,12 +445,12 @@ class TestModelContractValidationFailedEvent:
         assert event.event_type == CONTRACT_VALIDATION_FAILED_EVENT
         assert event.violations == []
         assert event.result_ref is None
-        assert event.validator_set_id is None
+        assert event.validator_set_name is None
 
     def test_failed_event_event_type_constant(self) -> None:
         """Test that event_type has correct constant value."""
         event = ModelContractValidationFailedEvent(
-            contract_id="test-contract",
+            contract_name="test-contract",
             run_id=uuid4(),
             error_count=1,
             first_error_code="ERROR",
@@ -464,7 +464,7 @@ class TestModelContractValidationFailedEvent:
         """Test that error_count is required."""
         with pytest.raises(ValidationError) as exc_info:
             ModelContractValidationFailedEvent(
-                contract_id="test-contract",
+                contract_name="test-contract",
                 run_id=uuid4(),
                 first_error_code="ERROR",
                 duration_ms=100,
@@ -477,7 +477,7 @@ class TestModelContractValidationFailedEvent:
         """Test that error_count must be >= 1."""
         with pytest.raises(ValidationError) as exc_info:
             ModelContractValidationFailedEvent(
-                contract_id="test-contract",
+                contract_name="test-contract",
                 run_id=uuid4(),
                 error_count=0,  # Must be at least 1
                 first_error_code="ERROR",
@@ -491,7 +491,7 @@ class TestModelContractValidationFailedEvent:
         """Test that first_error_code is required."""
         with pytest.raises(ValidationError) as exc_info:
             ModelContractValidationFailedEvent(
-                contract_id="test-contract",
+                contract_name="test-contract",
                 run_id=uuid4(),
                 error_count=1,
                 duration_ms=100,
@@ -504,7 +504,7 @@ class TestModelContractValidationFailedEvent:
         """Test that first_error_code has min_length=1."""
         with pytest.raises(ValidationError) as exc_info:
             ModelContractValidationFailedEvent(
-                contract_id="test-contract",
+                contract_name="test-contract",
                 run_id=uuid4(),
                 error_count=1,
                 first_error_code="",  # Empty string
@@ -518,7 +518,7 @@ class TestModelContractValidationFailedEvent:
         """Test that duration_ms is required."""
         with pytest.raises(ValidationError) as exc_info:
             ModelContractValidationFailedEvent(
-                contract_id="test-contract",
+                contract_name="test-contract",
                 run_id=uuid4(),
                 error_count=1,
                 first_error_code="ERROR",
@@ -531,7 +531,7 @@ class TestModelContractValidationFailedEvent:
         """Test that duration_ms must be >= 0."""
         with pytest.raises(ValidationError) as exc_info:
             ModelContractValidationFailedEvent(
-                contract_id="test-contract",
+                contract_name="test-contract",
                 run_id=uuid4(),
                 error_count=1,
                 first_error_code="ERROR",
@@ -547,7 +547,7 @@ class TestModelContractValidationFailedEvent:
 
         with pytest.raises(ValidationError) as exc_info:
             ModelContractValidationFailedEvent(
-                contract_id="test-contract",
+                contract_name="test-contract",
                 run_id=uuid4(),
                 error_count=101,
                 first_error_code="ERROR",
@@ -566,7 +566,7 @@ class TestModelContractValidationFailedEvent:
         """Test failed event with violations."""
         run_id = uuid4()
         event = ModelContractValidationFailedEvent(
-            contract_id="test-contract",
+            contract_name="test-contract",
             run_id=run_id,
             error_count=3,
             first_error_code="MISSING_FIELD",
@@ -589,18 +589,18 @@ class TestModelContractValidationFailedEvent:
         actor = uuid4()
 
         event = ModelContractValidationFailedEvent.create(
-            contract_id="factory-contract",
+            contract_name="factory-contract",
             run_id=run_id,
             error_count=2,
             first_error_code="VALIDATION_ERROR",
             duration_ms=300,
-            validator_set_id="strict-v1",
+            validator_set_name="strict-v1",
             violations=["Error 1", "Error 2"],
             result_ref="result://ref/456",
             actor=actor,
         )
 
-        assert event.contract_id == "factory-contract"
+        assert event.contract_name == "factory-contract"
         assert event.run_id == run_id
         assert event.error_count == 2
         assert event.first_error_code == "VALIDATION_ERROR"
@@ -618,7 +618,7 @@ class TestModelContractValidationFailedEventSerialization:
         """Test serialization round-trip."""
         run_id = uuid4()
         original = ModelContractValidationFailedEvent(
-            contract_id="test-contract",
+            contract_name="test-contract",
             run_id=run_id,
             error_count=2,
             first_error_code="ERROR_CODE",
@@ -629,7 +629,7 @@ class TestModelContractValidationFailedEventSerialization:
         json_str = original.model_dump_json()
         restored = ModelContractValidationFailedEvent.model_validate_json(json_str)
 
-        assert restored.contract_id == original.contract_id
+        assert restored.contract_name == original.contract_name
         assert restored.run_id == original.run_id
         assert restored.error_count == original.error_count
         assert restored.first_error_code == original.first_error_code
@@ -650,22 +650,22 @@ class TestModelContractMergeStartedEvent:
         run_id = uuid4()
 
         event = ModelContractMergeStartedEvent(
-            contract_id="test-contract",
+            contract_name="test-contract",
             run_id=run_id,
         )
 
-        assert event.contract_id == "test-contract"
+        assert event.contract_name == "test-contract"
         assert event.run_id == run_id
         assert event.event_type == CONTRACT_MERGE_STARTED_EVENT
-        assert event.merge_plan_id is None
-        assert event.profile_ids == []
+        assert event.merge_plan_name is None
+        assert event.profile_names == []
         assert event.overlay_refs == []
         assert event.resolver_config_hash is None
 
     def test_merge_started_event_event_type_constant(self) -> None:
         """Test that event_type has correct constant value."""
         event = ModelContractMergeStartedEvent(
-            contract_id="test-contract",
+            contract_name="test-contract",
             run_id=uuid4(),
         )
 
@@ -676,16 +676,16 @@ class TestModelContractMergeStartedEvent:
         """Test merge started event with all fields."""
         run_id = uuid4()
         event = ModelContractMergeStartedEvent(
-            contract_id="test-contract",
+            contract_name="test-contract",
             run_id=run_id,
-            merge_plan_id="plan-001",
-            profile_ids=["production", "high-availability"],
+            merge_plan_name="plan-001",
+            profile_names=["production", "high-availability"],
             overlay_refs=["overlay://custom/timeout", "overlay://custom/retry"],
             resolver_config_hash="sha256:config123",
         )
 
-        assert event.merge_plan_id == "plan-001"
-        assert event.profile_ids == ["production", "high-availability"]
+        assert event.merge_plan_name == "plan-001"
+        assert event.profile_names == ["production", "high-availability"]
         assert len(event.overlay_refs) == 2
         assert event.resolver_config_hash == "sha256:config123"
 
@@ -695,18 +695,18 @@ class TestModelContractMergeStartedEvent:
         actor = uuid4()
 
         event = ModelContractMergeStartedEvent.create(
-            contract_id="factory-contract",
+            contract_name="factory-contract",
             run_id=run_id,
-            merge_plan_id="plan-002",
-            profile_ids=["dev", "debug"],
+            merge_plan_name="plan-002",
+            profile_names=["dev", "debug"],
             overlay_refs=["overlay://test"],
             resolver_config_hash="sha256:abc",
             actor=actor,
         )
 
-        assert event.contract_id == "factory-contract"
-        assert event.merge_plan_id == "plan-002"
-        assert event.profile_ids == ["dev", "debug"]
+        assert event.contract_name == "factory-contract"
+        assert event.merge_plan_name == "plan-002"
+        assert event.profile_names == ["dev", "debug"]
         assert event.overlay_refs == ["overlay://test"]
         assert event.actor == actor
 
@@ -719,18 +719,18 @@ class TestModelContractMergeStartedEventSerialization:
         """Test serialization round-trip."""
         run_id = uuid4()
         original = ModelContractMergeStartedEvent(
-            contract_id="test-contract",
+            contract_name="test-contract",
             run_id=run_id,
-            merge_plan_id="plan-test",
-            profile_ids=["profile1"],
+            merge_plan_name="plan-test",
+            profile_names=["profile1"],
         )
 
         json_str = original.model_dump_json()
         restored = ModelContractMergeStartedEvent.model_validate_json(json_str)
 
-        assert restored.contract_id == original.contract_id
-        assert restored.merge_plan_id == original.merge_plan_id
-        assert restored.profile_ids == original.profile_ids
+        assert restored.contract_name == original.contract_name
+        assert restored.merge_plan_name == original.merge_plan_name
+        assert restored.profile_names == original.profile_names
 
 
 # =============================================================================
@@ -747,15 +747,15 @@ class TestModelContractMergeCompletedEvent:
         run_id = uuid4()
 
         event = ModelContractMergeCompletedEvent(
-            contract_id="test-contract",
+            contract_name="test-contract",
             run_id=run_id,
-            effective_contract_id="test-contract-effective-001",
+            effective_contract_name="test-contract-effective-001",
             duration_ms=50,
         )
 
-        assert event.contract_id == "test-contract"
+        assert event.contract_name == "test-contract"
         assert event.run_id == run_id
-        assert event.effective_contract_id == "test-contract-effective-001"
+        assert event.effective_contract_name == "test-contract-effective-001"
         assert event.duration_ms == 50
         assert event.event_type == CONTRACT_MERGE_COMPLETED_EVENT
         assert event.effective_contract_hash is None
@@ -767,47 +767,49 @@ class TestModelContractMergeCompletedEvent:
     def test_merge_completed_event_event_type_constant(self) -> None:
         """Test that event_type has correct constant value."""
         event = ModelContractMergeCompletedEvent(
-            contract_id="test-contract",
+            contract_name="test-contract",
             run_id=uuid4(),
-            effective_contract_id="effective-001",
+            effective_contract_name="effective-001",
             duration_ms=100,
         )
 
         assert event.event_type == "onex.contract.merge.completed"
         assert event.event_type == CONTRACT_MERGE_COMPLETED_EVENT
 
-    def test_merge_completed_event_effective_contract_id_required(self) -> None:
-        """Test that effective_contract_id is required."""
+    def test_merge_completed_event_effective_contract_name_required(self) -> None:
+        """Test that effective_contract_name is required."""
         with pytest.raises(ValidationError) as exc_info:
             ModelContractMergeCompletedEvent(
-                contract_id="test-contract",
+                contract_name="test-contract",
                 run_id=uuid4(),
                 duration_ms=100,
             )  # type: ignore[call-arg]
 
         error_str = str(exc_info.value)
-        assert "effective_contract_id" in error_str
+        assert "effective_contract_name" in error_str
 
-    def test_merge_completed_event_effective_contract_id_min_length(self) -> None:
-        """Test that effective_contract_id has min_length=1."""
+    def test_merge_completed_event_effective_contract_name_min_length(self) -> None:
+        """Test that effective_contract_name has min_length=1."""
         with pytest.raises(ValidationError) as exc_info:
             ModelContractMergeCompletedEvent(
-                contract_id="test-contract",
+                contract_name="test-contract",
                 run_id=uuid4(),
-                effective_contract_id="",  # Empty string
+                effective_contract_name="",  # Empty string
                 duration_ms=100,
             )
 
         error_str = str(exc_info.value)
-        assert "effective_contract_id" in error_str or "min_length" in error_str.lower()
+        assert (
+            "effective_contract_name" in error_str or "min_length" in error_str.lower()
+        )
 
     def test_merge_completed_event_duration_ms_required(self) -> None:
         """Test that duration_ms is required."""
         with pytest.raises(ValidationError) as exc_info:
             ModelContractMergeCompletedEvent(
-                contract_id="test-contract",
+                contract_name="test-contract",
                 run_id=uuid4(),
-                effective_contract_id="effective-001",
+                effective_contract_name="effective-001",
             )  # type: ignore[call-arg]
 
         error_str = str(exc_info.value)
@@ -817,9 +819,9 @@ class TestModelContractMergeCompletedEvent:
         """Test that duration_ms must be >= 0."""
         with pytest.raises(ValidationError) as exc_info:
             ModelContractMergeCompletedEvent(
-                contract_id="test-contract",
+                contract_name="test-contract",
                 run_id=uuid4(),
-                effective_contract_id="effective-001",
+                effective_contract_name="effective-001",
                 duration_ms=-1,
             )
 
@@ -830,9 +832,9 @@ class TestModelContractMergeCompletedEvent:
         """Test that overlays_applied_count must be >= 0."""
         with pytest.raises(ValidationError) as exc_info:
             ModelContractMergeCompletedEvent(
-                contract_id="test-contract",
+                contract_name="test-contract",
                 run_id=uuid4(),
-                effective_contract_id="effective-001",
+                effective_contract_name="effective-001",
                 duration_ms=100,
                 overlays_applied_count=-1,
             )
@@ -844,9 +846,9 @@ class TestModelContractMergeCompletedEvent:
         """Test that warnings_count must be >= 0."""
         with pytest.raises(ValidationError) as exc_info:
             ModelContractMergeCompletedEvent(
-                contract_id="test-contract",
+                contract_name="test-contract",
                 run_id=uuid4(),
-                effective_contract_id="effective-001",
+                effective_contract_name="effective-001",
                 duration_ms=100,
                 warnings_count=-1,
             )
@@ -858,9 +860,9 @@ class TestModelContractMergeCompletedEvent:
         """Test merge completed event with all fields."""
         run_id = uuid4()
         event = ModelContractMergeCompletedEvent(
-            contract_id="test-contract",
+            contract_name="test-contract",
             run_id=run_id,
-            effective_contract_id="effective-full-001",
+            effective_contract_name="effective-full-001",
             effective_contract_hash="sha256:effective123",
             overlays_applied_count=3,
             defaults_applied=True,
@@ -869,7 +871,7 @@ class TestModelContractMergeCompletedEvent:
             diff_ref="diff://merge/001",
         )
 
-        assert event.effective_contract_id == "effective-full-001"
+        assert event.effective_contract_name == "effective-full-001"
         assert event.effective_contract_hash == "sha256:effective123"
         assert event.overlays_applied_count == 3
         assert event.defaults_applied is True
@@ -883,9 +885,9 @@ class TestModelContractMergeCompletedEvent:
         actor = uuid4()
 
         event = ModelContractMergeCompletedEvent.create(
-            contract_id="factory-contract",
+            contract_name="factory-contract",
             run_id=run_id,
-            effective_contract_id="effective-factory-001",
+            effective_contract_name="effective-factory-001",
             duration_ms=60,
             effective_contract_hash="sha256:factory",
             overlays_applied_count=2,
@@ -895,8 +897,8 @@ class TestModelContractMergeCompletedEvent:
             actor=actor,
         )
 
-        assert event.contract_id == "factory-contract"
-        assert event.effective_contract_id == "effective-factory-001"
+        assert event.contract_name == "factory-contract"
+        assert event.effective_contract_name == "effective-factory-001"
         assert event.duration_ms == 60
         assert event.effective_contract_hash == "sha256:factory"
         assert event.overlays_applied_count == 2
@@ -914,9 +916,9 @@ class TestModelContractMergeCompletedEventSerialization:
         """Test serialization round-trip."""
         run_id = uuid4()
         original = ModelContractMergeCompletedEvent(
-            contract_id="test-contract",
+            contract_name="test-contract",
             run_id=run_id,
-            effective_contract_id="effective-001",
+            effective_contract_name="effective-001",
             duration_ms=100,
             defaults_applied=True,
             overlays_applied_count=2,
@@ -925,8 +927,8 @@ class TestModelContractMergeCompletedEventSerialization:
         json_str = original.model_dump_json()
         restored = ModelContractMergeCompletedEvent.model_validate_json(json_str)
 
-        assert restored.contract_id == original.contract_id
-        assert restored.effective_contract_id == original.effective_contract_id
+        assert restored.contract_name == original.contract_name
+        assert restored.effective_contract_name == original.effective_contract_name
         assert restored.duration_ms == original.duration_ms
         assert restored.defaults_applied == original.defaults_applied
         assert restored.overlays_applied_count == original.overlays_applied_count
@@ -968,44 +970,44 @@ class TestEventLifecycleCorrelation:
     def test_validation_lifecycle_correlation(self) -> None:
         """Test that validation events can be correlated via run_id."""
         run_id = uuid4()
-        contract_id = "lifecycle-contract"
+        contract_name = "lifecycle-contract"
 
         started = ModelContractValidationStartedEvent(
-            contract_id=contract_id,
+            contract_name=contract_name,
             run_id=run_id,
             context=ModelContractValidationContext(),
         )
 
         passed = ModelContractValidationPassedEvent(
-            contract_id=contract_id,
+            contract_name=contract_name,
             run_id=run_id,
             duration_ms=200,
         )
 
         # Same run_id enables correlation
         assert started.run_id == passed.run_id
-        assert started.contract_id == passed.contract_id
+        assert started.contract_name == passed.contract_name
 
     def test_merge_lifecycle_correlation(self) -> None:
         """Test that merge events can be correlated via run_id."""
         run_id = uuid4()
-        contract_id = "merge-contract"
+        contract_name = "merge-contract"
 
         started = ModelContractMergeStartedEvent(
-            contract_id=contract_id,
+            contract_name=contract_name,
             run_id=run_id,
         )
 
         completed = ModelContractMergeCompletedEvent(
-            contract_id=contract_id,
+            contract_name=contract_name,
             run_id=run_id,
-            effective_contract_id="effective-001",
+            effective_contract_name="effective-001",
             duration_ms=50,
         )
 
         # Same run_id enables correlation
         assert started.run_id == completed.run_id
-        assert started.contract_id == completed.contract_id
+        assert started.contract_name == completed.contract_name
 
 
 @pytest.mark.unit
@@ -1017,27 +1019,27 @@ class TestEventImmutability:
         run_id = uuid4()
 
         events = [
-            ModelContractValidationEventBase(contract_id="test", run_id=run_id),
+            ModelContractValidationEventBase(contract_name="test", run_id=run_id),
             ModelContractValidationStartedEvent(
-                contract_id="test",
+                contract_name="test",
                 run_id=run_id,
                 context=ModelContractValidationContext(),
             ),
             ModelContractValidationPassedEvent(
-                contract_id="test", run_id=run_id, duration_ms=100
+                contract_name="test", run_id=run_id, duration_ms=100
             ),
             ModelContractValidationFailedEvent(
-                contract_id="test",
+                contract_name="test",
                 run_id=run_id,
                 error_count=1,
                 first_error_code="ERR",
                 duration_ms=100,
             ),
-            ModelContractMergeStartedEvent(contract_id="test", run_id=run_id),
+            ModelContractMergeStartedEvent(contract_name="test", run_id=run_id),
             ModelContractMergeCompletedEvent(
-                contract_id="test",
+                contract_name="test",
                 run_id=run_id,
-                effective_contract_id="eff",
+                effective_contract_name="eff",
                 duration_ms=50,
             ),
         ]
@@ -1050,27 +1052,27 @@ class TestEventImmutability:
         run_id = uuid4()
 
         events = [
-            ModelContractValidationEventBase(contract_id="test", run_id=run_id),
+            ModelContractValidationEventBase(contract_name="test", run_id=run_id),
             ModelContractValidationStartedEvent(
-                contract_id="test",
+                contract_name="test",
                 run_id=run_id,
                 context=ModelContractValidationContext(),
             ),
             ModelContractValidationPassedEvent(
-                contract_id="test", run_id=run_id, duration_ms=100
+                contract_name="test", run_id=run_id, duration_ms=100
             ),
             ModelContractValidationFailedEvent(
-                contract_id="test",
+                contract_name="test",
                 run_id=run_id,
                 error_count=1,
                 first_error_code="ERR",
                 duration_ms=100,
             ),
-            ModelContractMergeStartedEvent(contract_id="test", run_id=run_id),
+            ModelContractMergeStartedEvent(contract_name="test", run_id=run_id),
             ModelContractMergeCompletedEvent(
-                contract_id="test",
+                contract_name="test",
                 run_id=run_id,
-                effective_contract_id="eff",
+                effective_contract_name="eff",
                 duration_ms=50,
             ),
         ]

@@ -70,7 +70,7 @@ def reset_application_context() -> contextvars.Token[Any] | None:
         copy of context variables, so this only affects the current context.
     """
     try:
-        from omnibase_core.context.application_context import _current_container
+        from omnibase_core.context.context_application import _current_container
 
         return _current_container.set(None)
     except ImportError:
@@ -87,7 +87,7 @@ def restore_application_context(token: contextvars.Token[Any] | None) -> None:
         return
 
     try:
-        from omnibase_core.context.application_context import _current_container
+        from omnibase_core.context.context_application import _current_container
 
         _current_container.reset(token)
     except ImportError:
@@ -197,7 +197,7 @@ class SingletonResetContext:
     def _save_and_reset_context(self) -> None:
         """Save current context and reset to None."""
         try:
-            from omnibase_core.context.application_context import (
+            from omnibase_core.context.context_application import (
                 _current_container,
                 get_current_container,
             )
@@ -227,7 +227,7 @@ class SingletonResetContext:
             return
 
         try:
-            from omnibase_core.context.application_context import _current_container
+            from omnibase_core.context.context_application import _current_container
 
             _current_container.reset(self._saved_state.token)
         except ImportError:
@@ -539,7 +539,7 @@ def get_current_container_for_test() -> Any:
         The current container or None if not set.
     """
     try:
-        from omnibase_core.context.application_context import get_current_container
+        from omnibase_core.context.context_application import get_current_container
 
         return get_current_container()
     except ImportError:

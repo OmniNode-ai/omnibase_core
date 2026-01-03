@@ -143,11 +143,12 @@ class ModelNodeFeatureFlags(BaseModel):
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
         result: TypedDictMetadataDict = {}
         # Pack feature flags into metadata dict
+        # Convert list[str] to list for JsonType compatibility
         result["metadata"] = {
             "enable_caching": self.enable_caching,
             "enable_monitoring": self.enable_monitoring,
             "enable_tracing": self.enable_tracing,
-            "enabled_features": self.get_enabled_features(),
+            "enabled_features": list(self.get_enabled_features()),
             "is_production_ready": self.is_production_ready(),
             "is_debug_mode": self.is_debug_mode(),
         }

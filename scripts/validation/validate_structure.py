@@ -228,6 +228,11 @@ class OmniStructureValidator:
                     )
                 )
 
+    # Non-model files allowed in models/ directory (validators, helpers, etc.)
+    EXEMPTED_MODEL_FILES = {
+        "validators_metadata.py",  # Shared validator functions for metadata models
+    }
+
     def validate_model_organization(self):
         """Validate model file organization and naming."""
         models_path = self.src_path / "models"
@@ -271,6 +276,9 @@ class OmniStructureValidator:
 
             for file in files:
                 if file.endswith(".py") and file != "__init__.py":
+                    # Skip exempted files (validators, helpers, etc.)
+                    if file in self.EXEMPTED_MODEL_FILES:
+                        continue
                     if not file.startswith("model_"):
                         path = Path(root) / file
                         self.violations.append(

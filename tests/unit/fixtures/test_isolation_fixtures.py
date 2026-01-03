@@ -2,7 +2,7 @@
 
 import pytest
 
-from omnibase_core.context.application_context import (
+from omnibase_core.context.context_application import (
     _current_container,
     get_current_container,
     set_current_container,

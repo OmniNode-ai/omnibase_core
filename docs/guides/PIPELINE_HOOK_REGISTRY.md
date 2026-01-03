@@ -48,25 +48,25 @@ def cleanup_hook(ctx: ModelPipelineContext) -> None:
 registry = RegistryHook()
 
 registry.register(ModelPipelineHook(
-    hook_id="logging",
+    hook_name="logging",
     phase="preflight",
     callable_ref="app.hooks.logging",
 ))
 
 registry.register(ModelPipelineHook(
-    hook_id="validation",
+    hook_name="validation",
     phase="before",
     callable_ref="app.hooks.validation",
 ))
 
 registry.register(ModelPipelineHook(
-    hook_id="processing",
+    hook_name="processing",
     phase="execute",
     callable_ref="app.hooks.processing",
 ))
 
 registry.register(ModelPipelineHook(
-    hook_id="cleanup",
+    hook_name="cleanup",
     phase="finalize",
     callable_ref="app.hooks.cleanup",
 ))
@@ -97,7 +97,7 @@ async def run_pipeline():
     else:
         print(f"Pipeline failed with {len(result.errors)} errors")
         for error in result.errors:
-            print(f"  - {error.phase}/{error.hook_id}: {error.error_message}")
+            print(f"  - {error.phase}/{error.hook_name}: {error.error_message}")
 
 # Run it
 import asyncio
@@ -228,13 +228,13 @@ from omnibase_core.enums import EnumHandlerTypeCategory
 
 hook = ModelPipelineHook(
     # Required fields
-    hook_id="my-hook",           # Unique identifier (alphanumeric, -, _)
+    hook_name="my-hook",         # Unique identifier (alphanumeric, -, _)
     phase="execute",             # Pipeline phase
     callable_ref="module.func",  # Reference to callable in registry
 
     # Optional fields
     priority=100,                        # Execution priority (lower = earlier, default: 100)
-    dependencies=["other-hook"],         # Hook IDs that must run first (same phase)
+    dependencies=["other-hook"],         # Hook names that must run first (same phase)
     handler_type_category=EnumHandlerTypeCategory.COMPUTE,  # Optional type category
     timeout_seconds=30.0,                # Optional execution timeout
 )
@@ -369,7 +369,7 @@ else:
     print(f"Failed with {len(result.errors)} errors")
     for error in result.errors:
         print(f"  Phase: {error.phase}")
-        print(f"  Hook: {error.hook_id}")
+        print(f"  Hook: {error.hook_name}")
         print(f"  Error: {error.error_type}: {error.error_message}")
 ```
 
@@ -465,13 +465,13 @@ Define execution order within a phase using dependencies:
 ```python
 # Hook B depends on Hook A
 hook_a = ModelPipelineHook(
-    hook_id="setup-database",
+    hook_name="setup-database",
     phase="before",
     callable_ref="app.setup_db",
 )
 
 hook_b = ModelPipelineHook(
-    hook_id="load-config",
+    hook_name="load-config",
     phase="before",
     dependencies=["setup-database"],  # Runs after setup-database
     callable_ref="app.load_config",
@@ -487,7 +487,7 @@ When hooks have no dependencies, priority determines order (lower = earlier):
 ```python
 # High priority (runs first)
 critical_hook = ModelPipelineHook(
-    hook_id="critical-check",
+    hook_name="critical-check",
     phase="preflight",
     priority=10,
     callable_ref="app.critical",
@@ -495,7 +495,7 @@ critical_hook = ModelPipelineHook(
 
 # Default priority
 normal_hook = ModelPipelineHook(
-    hook_id="normal-check",
+    hook_name="normal-check",
     phase="preflight",
     priority=100,  # Default
     callable_ref="app.normal",
@@ -503,7 +503,7 @@ normal_hook = ModelPipelineHook(
 
 # Low priority (runs last)
 optional_hook = ModelPipelineHook(
-    hook_id="optional-check",
+    hook_name="optional-check",
     phase="preflight",
     priority=500,
     callable_ref="app.optional",
@@ -522,16 +522,16 @@ Complex dependency graphs are supported:
 #     D
 
 hook_a = ModelPipelineHook(
-    hook_id="A", phase="execute", callable_ref="a", priority=1
+    hook_name="A", phase="execute", callable_ref="a", priority=1
 )
 hook_b = ModelPipelineHook(
-    hook_id="B", phase="execute", dependencies=["A"], callable_ref="b", priority=1
+    hook_name="B", phase="execute", dependencies=["A"], callable_ref="b", priority=1
 )
 hook_c = ModelPipelineHook(
-    hook_id="C", phase="execute", dependencies=["A"], callable_ref="c", priority=2
+    hook_name="C", phase="execute", dependencies=["A"], callable_ref="c", priority=2
 )
 hook_d = ModelPipelineHook(
-    hook_id="D", phase="execute", dependencies=["B", "C"], callable_ref="d", priority=1
+    hook_name="D", phase="execute", dependencies=["B", "C"], callable_ref="d", priority=1
 )
 
 # Execution order: A -> B -> C -> D
@@ -547,7 +547,7 @@ from omnibase_core.enums import EnumHandlerTypeCategory
 
 # Define typed hook
 compute_hook = ModelPipelineHook(
-    hook_id="compute-transform",
+    hook_name="compute-transform",
     phase="execute",
     handler_type_category=EnumHandlerTypeCategory.COMPUTE,
     callable_ref="app.compute",
@@ -583,7 +583,7 @@ Set per-hook timeouts:
 ```python
 # Hook with 5-second timeout
 slow_hook = ModelPipelineHook(
-    hook_id="slow-operation",
+    hook_name="slow-operation",
     phase="execute",
     callable_ref="app.slow_op",
     timeout_seconds=5.0,
@@ -829,12 +829,12 @@ def test_registry():
     """Create a test registry with mock hooks."""
     registry = RegistryHook()
     registry.register(ModelPipelineHook(
-        hook_id="test-setup",
+        hook_name="test-setup",
         phase="before",
         callable_ref="test.setup",
     ))
     registry.register(ModelPipelineHook(
-        hook_id="test-execute",
+        hook_name="test-execute",
         phase="execute",
         callable_ref="test.execute",
     ))
@@ -877,7 +877,7 @@ async def test_pipeline_captures_errors_in_after_phase():
     """Test that errors in 'after' phase are captured, not raised."""
     registry = RegistryHook()
     registry.register(ModelPipelineHook(
-        hook_id="after-hook",
+        hook_name="after-hook",
         phase="after",
         callable_ref="after.hook",
     ))
@@ -898,7 +898,7 @@ async def test_pipeline_captures_errors_in_after_phase():
     # Error captured, not raised (because 'after' is continue-on-error)
     assert not result.success
     assert len(result.errors) == 1
-    assert result.errors[0].hook_id == "after-hook"
+    assert result.errors[0].hook_name == "after-hook"
     assert "After hook failed" in result.errors[0].error_message
 
 
@@ -907,7 +907,7 @@ async def test_pipeline_raises_errors_in_execute_phase():
     """Test that errors in 'execute' phase are raised (fail-fast)."""
     registry = RegistryHook()
     registry.register(ModelPipelineHook(
-        hook_id="execute-hook",
+        hook_name="execute-hook",
         phase="execute",
         callable_ref="execute.hook",
     ))
@@ -964,7 +964,7 @@ async def test_hook_timeout():
 
     registry = RegistryHook()
     registry.register(ModelPipelineHook(
-        hook_id="slow-hook",
+        hook_name="slow-hook",
         phase="execute",
         callable_ref="slow.hook",
         timeout_seconds=0.1,  # 100ms timeout
@@ -1003,7 +1003,7 @@ def test_unknown_dependency_raises():
     """Test that unknown dependencies raise an error."""
     registry = RegistryHook()
     registry.register(ModelPipelineHook(
-        hook_id="child",
+        hook_name="child",
         phase="execute",
         dependencies=["nonexistent"],  # This doesn't exist
         callable_ref="child.hook",
@@ -1022,13 +1022,13 @@ def test_dependency_cycle_raises():
     """Test that circular dependencies raise an error."""
     registry = RegistryHook()
     registry.register(ModelPipelineHook(
-        hook_id="A",
+        hook_name="A",
         phase="execute",
         dependencies=["B"],
         callable_ref="a.hook",
     ))
     registry.register(ModelPipelineHook(
-        hook_id="B",
+        hook_name="B",
         phase="execute",
         dependencies=["A"],  # Circular!
         callable_ref="b.hook",
@@ -1045,13 +1045,13 @@ def test_priority_ordering():
     """Test that hooks are ordered by priority when no dependencies."""
     registry = RegistryHook()
     registry.register(ModelPipelineHook(
-        hook_id="low-priority",
+        hook_name="low-priority",
         phase="execute",
         priority=500,
         callable_ref="low.hook",
     ))
     registry.register(ModelPipelineHook(
-        hook_id="high-priority",
+        hook_name="high-priority",
         phase="execute",
         priority=10,
         callable_ref="high.hook",
@@ -1062,8 +1062,8 @@ def test_priority_ordering():
     plan, _ = builder.build()
 
     hooks = plan.get_phase_hooks("execute")
-    assert hooks[0].hook_id == "high-priority"  # Lower priority value = earlier
-    assert hooks[1].hook_id == "low-priority"
+    assert hooks[0].hook_name == "high-priority"  # Lower priority value = earlier
+    assert hooks[1].hook_name == "low-priority"
 ```
 
 ### Mocking External Dependencies
@@ -1110,16 +1110,16 @@ registry.freeze()
 registry.register(hook2)  # Error! Already frozen
 ```
 
-### "Hook with ID 'xxx' already registered"
+### "Hook with name 'xxx' already registered"
 
-**Cause**: Duplicate hook IDs.
+**Cause**: Duplicate hook names.
 
-**Solution**: Use unique hook IDs:
+**Solution**: Use unique hook names:
 
 ```python
-# Each hook needs a unique ID
-registry.register(ModelPipelineHook(hook_id="unique-id-1", ...))
-registry.register(ModelPipelineHook(hook_id="unique-id-2", ...))
+# Each hook needs a unique name
+registry.register(ModelPipelineHook(hook_name="unique-name-1", ...))
+registry.register(ModelPipelineHook(hook_name="unique-name-2", ...))
 ```
 
 ### "Hook 'xxx' references unknown dependency 'yyy'"
@@ -1132,9 +1132,9 @@ registry.register(ModelPipelineHook(hook_id="unique-id-2", ...))
 
 ```python
 # Dependencies must be in same phase
-hook_a = ModelPipelineHook(hook_id="setup", phase="before", ...)
+hook_a = ModelPipelineHook(hook_name="setup", phase="before", ...)
 hook_b = ModelPipelineHook(
-    hook_id="main",
+    hook_name="main",
     phase="before",  # Same phase as dependency
     dependencies=["setup"],
     ...
@@ -1149,12 +1149,12 @@ hook_b = ModelPipelineHook(
 
 ```python
 # WRONG: A -> B -> A (cycle)
-hook_a = ModelPipelineHook(hook_id="A", dependencies=["B"], ...)
-hook_b = ModelPipelineHook(hook_id="B", dependencies=["A"], ...)
+hook_a = ModelPipelineHook(hook_name="A", dependencies=["B"], ...)
+hook_b = ModelPipelineHook(hook_name="B", dependencies=["A"], ...)
 
 # CORRECT: A -> B (no cycle)
-hook_a = ModelPipelineHook(hook_id="A", dependencies=[], ...)
-hook_b = ModelPipelineHook(hook_id="B", dependencies=["A"], ...)
+hook_a = ModelPipelineHook(hook_name="A", dependencies=[], ...)
+hook_b = ModelPipelineHook(hook_name="B", dependencies=["A"], ...)
 ```
 
 ### "Callable not found in registry: xxx"
@@ -1180,7 +1180,7 @@ callables = {
 ```python
 # Finalize hooks must have phase="finalize"
 cleanup = ModelPipelineHook(
-    hook_id="cleanup",
+    hook_name="cleanup",
     phase="finalize",  # Not "after" or "emit"
     callable_ref="app.cleanup",
 )
@@ -1231,7 +1231,7 @@ from omnibase_core.enums import EnumHandlerTypeCategory
 
 # Hook type MUST match contract_category
 hook = ModelPipelineHook(
-    hook_id="my-hook",
+    hook_name="my-hook",
     phase="execute",
     callable_ref="my.hook",
     handler_type_category=EnumHandlerTypeCategory.COMPUTE,  # Must match builder
@@ -1255,7 +1255,7 @@ Generic hooks (no `handler_type_category`) pass validation for any contract:
 ```python
 # Generic hook - passes for any contract_category
 hook = ModelPipelineHook(
-    hook_id="generic-hook",
+    hook_name="generic-hook",
     phase="execute",
     callable_ref="my.hook",
     # handler_type_category not set - this is a generic hook

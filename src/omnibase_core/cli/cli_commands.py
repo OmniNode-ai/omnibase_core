@@ -528,7 +528,7 @@ def _check_error_handling() -> tuple[bool, str]:
 
 
 # Register composition-report command from separate module
-from omnibase_core.cli.composition_report import composition_report
+from omnibase_core.cli.cli_composition_report import composition_report
 
 cli.add_command(composition_report)
 

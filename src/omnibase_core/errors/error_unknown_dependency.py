@@ -10,12 +10,12 @@ from omnibase_core.errors.error_pipeline import PipelineError
 class UnknownDependencyError(PipelineError):
     """Raised when a hook references an unknown dependency."""
 
-    def __init__(self, hook_id: str, unknown_dep: str) -> None:
+    def __init__(self, hook_name: str, unknown_dep: str) -> None:
         super().__init__(
             error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-            message=f"Hook '{hook_id}' references unknown dependency '{unknown_dep}'",
+            message=f"Hook '{hook_name}' references unknown dependency '{unknown_dep}'",
             context={
-                "hook_id": hook_id,
+                "hook_name": hook_name,
                 "unknown_dependency": unknown_dep,
                 "validation_kind": "unknown_dependency",
             },

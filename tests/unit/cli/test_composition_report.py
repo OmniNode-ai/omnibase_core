@@ -18,7 +18,7 @@ from pathlib import Path
 import pytest
 from click.testing import CliRunner
 
-from omnibase_core.cli.commands import cli
+from omnibase_core.cli.cli_commands import cli
 from omnibase_core.enums.enum_execution_status import EnumExecutionStatus
 from omnibase_core.enums.enum_handler_execution_phase import EnumHandlerExecutionPhase
 from omnibase_core.enums.enum_node_kind import EnumNodeKind

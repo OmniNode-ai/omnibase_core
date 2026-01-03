@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Any
-
 from pydantic import field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -54,15 +52,15 @@ class ModelOnexOutputState(BaseModel):
 
     @field_validator("version", mode="before")
     @classmethod
-    def parse_output_version(cls, v: Any) -> Any:
-        """Parse version from string, dict[str, Any], or ModelSemVer"""
+    def parse_output_version(cls, v: object) -> ModelSemVer:
+        """Parse version from string, dict, or ModelSemVer"""
         if isinstance(v, ModelSemVer):
             return v
         if isinstance(v, str):
             return parse_semver_from_string(v)
         if isinstance(v, dict):
             return ModelSemVer(**v)
-        msg = "version must be a string, dict[str, Any], or ModelSemVer"
+        msg = "version must be a string, dict, or ModelSemVer"
         raise ModelOnexError(
             error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=msg,
@@ -70,8 +68,8 @@ class ModelOnexOutputState(BaseModel):
 
     @field_validator("node_version", mode="before")
     @classmethod
-    def parse_output_node_version(cls, v: Any) -> Any:
-        """Parse node_version from string, dict[str, Any], or ModelSemVer"""
+    def parse_output_node_version(cls, v: object) -> ModelSemVer | None:
+        """Parse node_version from string, dict, or ModelSemVer"""
         if v is None:
             return v
         if isinstance(v, ModelSemVer):
@@ -80,7 +78,7 @@ class ModelOnexOutputState(BaseModel):
             return parse_semver_from_string(v)
         if isinstance(v, dict):
             return ModelSemVer(**v)
-        msg = "node_version must be a string, dict[str, Any], or ModelSemVer"
+        msg = "node_version must be a string, dict, or ModelSemVer"
         raise ModelOnexError(
             error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=msg,
@@ -88,13 +86,13 @@ class ModelOnexOutputState(BaseModel):
 
     @field_validator("event_id", "correlation_id")
     @classmethod
-    def validate_output_uuid_fields(cls, v: Any) -> Any:
+    def validate_output_uuid_fields(cls, v: object) -> object:
         """Validate UUID fields - Pydantic handles UUID conversion automatically"""
         return v
 
     @field_validator("timestamp")
     @classmethod
-    def validate_output_timestamp(cls, v: Any) -> Any:
+    def validate_output_timestamp(cls, v: object) -> object:
         """Validate timestamp - Pydantic handles datetime conversion automatically"""
         return v
 

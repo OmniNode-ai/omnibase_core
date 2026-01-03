@@ -13,7 +13,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from omnibase_core.context.application_context import (
+from omnibase_core.context.context_application import (
     ApplicationContext,
     get_current_container,
     reset_container,

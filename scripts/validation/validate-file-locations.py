@@ -83,6 +83,9 @@ class FileLocationValidator:
         "model_mixin_info.py": ["discovery"],
         "model_ref_info.py": ["utils"],
         "model_service_registry_entry.py": ["mixins"],
+        # Pipeline handlers (Pydantic models that are capability handlers)
+        "model_capability_caching.py": ["handlers"],
+        "model_capability_metrics.py": ["handlers"],
         # Validation models
         "model_audit_result.py": ["validation"],
         "model_contract_validation_result.py": ["validation"],
@@ -107,7 +110,7 @@ class FileLocationValidator:
         # Service implementations
         "service_logging.py": ["utils"],
         "service_minimal_logging.py": ["utils"],
-        "service_registry.py": ["container"],
+        "container_service_registry.py": ["container"],
         # Error handling
         "error_handling.py": ["decorators"],
         # Mixin discovery
@@ -130,6 +133,7 @@ class FileLocationValidator:
         "Test",  # Test classes
         "Error",  # Exception classes (can be anywhere)
         "Exception",  # Exception classes
+        "Registry",  # Registry classes (ServiceRegistry is a registry FOR services, not a service)
     ]
 
     def __init__(self, repo_path: Path):

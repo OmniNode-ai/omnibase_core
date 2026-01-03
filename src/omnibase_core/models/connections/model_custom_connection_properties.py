@@ -72,7 +72,7 @@ def _coerce_to_model[ModelT: BaseModel](
         return result
     except ValidationError as e:
         # Lenient mode: return default on validation failure
-        # Returns a default instance when coercion fails to support flexible input handling
+        # fallback-ok: graceful degradation when coercion fails
         _logger.debug(
             "Coercion: field=%s target_type=%s original_type=%s original_value=%r "
             "-> validation failed, returning default instance. Error: %s",
@@ -730,7 +730,7 @@ class ModelCustomConnectionProperties(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except (ValidationError, ValueError, TypeError, AttributeError) as e:
+        except (AttributeError, TypeError, ValidationError, ValueError) as e:
             # ValidationError: Pydantic validation failure (validate_assignment=True)
             # ValueError: Custom validator rejection or invalid value
             # TypeError: Type coercion failure

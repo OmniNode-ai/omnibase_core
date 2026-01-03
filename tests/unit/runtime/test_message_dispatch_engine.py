@@ -2797,3 +2797,545 @@ class TestContextInjection:
 
         assert exc_info.value.error_code == EnumCoreErrorCode.INVALID_PARAMETER
         assert "RUNTIME_HOST" in exc_info.value.message
+
+
+# ============================================================================
+# Dispatch ID Propagation Tests (OMN-972)
+# ============================================================================
+
+
+@pytest.mark.unit
+class TestDispatchIdPropagation:
+    """
+    Tests for dispatch_id propagation throughout the dispatch engine.
+
+    Per OMN-972: dispatch_id uniquely identifies a single dispatch() call.
+    It is generated at the start of dispatch and propagated to:
+    - ModelDispatchResult.dispatch_id
+    - Handler context.dispatch_id (via ProtocolHandlerContext)
+    - All handlers in a single dispatch share the same dispatch_id
+    """
+
+    @pytest.mark.asyncio
+    async def test_dispatch_result_contains_dispatch_id(
+        self,
+        dispatch_engine: MessageDispatchEngine,
+        event_envelope: ModelEventEnvelope[UserCreatedEvent],
+    ) -> None:
+        """dispatch() returns result with non-None dispatch_id.
+
+        The dispatch_id is generated at the start of dispatch() and is
+        included in the ModelDispatchResult. It must be a valid UUID.
+        """
+
+        async def handler(
+            envelope: ModelEventEnvelope[Any], context: ProtocolHandlerContext
+        ) -> str:
+            return "handled"
+
+        dispatch_engine.register_handler(
+            handler_id="test-handler",
+            handler=handler,
+            category=EnumMessageCategory.EVENT,
+            node_kind=EnumNodeKind.REDUCER,
+        )
+        dispatch_engine.register_route(
+            ModelDispatchRoute(
+                route_id="test-route",
+                topic_pattern="*.user.events.*",
+                message_category=EnumMessageCategory.EVENT,
+                handler_id="test-handler",
+            )
+        )
+        dispatch_engine.freeze()
+
+        result = await dispatch_engine.dispatch("dev.user.events.v1", event_envelope)
+
+        # dispatch_id must be present and a valid UUID
+        assert result.dispatch_id is not None
+        assert isinstance(result.dispatch_id, UUID)
+
+    @pytest.mark.asyncio
+    async def test_dispatch_id_passed_to_handler_context(
+        self,
+        dispatch_engine: MessageDispatchEngine,
+        event_envelope: ModelEventEnvelope[UserCreatedEvent],
+    ) -> None:
+        """Handler context receives dispatch_id from dispatch engine.
+
+        When a handler is invoked during dispatch(), its context should
+        have the dispatch_id set to match the dispatch operation's ID.
+        """
+        captured_context: ProtocolHandlerContext | None = None
+
+        async def capturing_handler(
+            envelope: ModelEventEnvelope[Any], context: ProtocolHandlerContext
+        ) -> str:
+            nonlocal captured_context
+            captured_context = context
+            return "handled"
+
+        dispatch_engine.register_handler(
+            handler_id="capturing-handler",
+            handler=capturing_handler,
+            category=EnumMessageCategory.EVENT,
+            node_kind=EnumNodeKind.REDUCER,
+        )
+        dispatch_engine.register_route(
+            ModelDispatchRoute(
+                route_id="capturing-route",
+                topic_pattern="*.user.events.*",
+                message_category=EnumMessageCategory.EVENT,
+                handler_id="capturing-handler",
+            )
+        )
+        dispatch_engine.freeze()
+
+        result = await dispatch_engine.dispatch("dev.user.events.v1", event_envelope)
+
+        # Handler must have been called
+        assert captured_context is not None
+
+        # Context dispatch_id must match result dispatch_id
+        assert captured_context.dispatch_id is not None
+        assert isinstance(captured_context.dispatch_id, UUID)
+        assert captured_context.dispatch_id == result.dispatch_id
+
+    @pytest.mark.asyncio
+    async def test_same_dispatch_id_across_handlers(
+        self,
+        dispatch_engine: MessageDispatchEngine,
+        event_envelope: ModelEventEnvelope[UserCreatedEvent],
+    ) -> None:
+        """All handlers in single dispatch receive the same dispatch_id.
+
+        When fan-out routing invokes multiple handlers for the same message,
+        all handlers must receive the same dispatch_id in their context.
+        """
+        captured_contexts: list[ProtocolHandlerContext] = []
+
+        async def handler1(
+            envelope: ModelEventEnvelope[Any], context: ProtocolHandlerContext
+        ) -> str:
+            captured_contexts.append(context)
+            return "handler1-output"
+
+        async def handler2(
+            envelope: ModelEventEnvelope[Any], context: ProtocolHandlerContext
+        ) -> str:
+            captured_contexts.append(context)
+            return "handler2-output"
+
+        async def handler3(
+            envelope: ModelEventEnvelope[Any], context: ProtocolHandlerContext
+        ) -> str:
+            captured_contexts.append(context)
+            return "handler3-output"
+
+        dispatch_engine.register_handler(
+            handler_id="handler-1",
+            handler=handler1,
+            category=EnumMessageCategory.EVENT,
+            node_kind=EnumNodeKind.REDUCER,
+        )
+        dispatch_engine.register_handler(
+            handler_id="handler-2",
+            handler=handler2,
+            category=EnumMessageCategory.EVENT,
+            node_kind=EnumNodeKind.REDUCER,
+        )
+        dispatch_engine.register_handler(
+            handler_id="handler-3",
+            handler=handler3,
+            category=EnumMessageCategory.EVENT,
+            node_kind=EnumNodeKind.REDUCER,
+        )
+
+        # Three routes pointing to different handlers, all match the topic
+        dispatch_engine.register_route(
+            ModelDispatchRoute(
+                route_id="route-1",
+                topic_pattern="*.user.events.*",
+                message_category=EnumMessageCategory.EVENT,
+                handler_id="handler-1",
+            )
+        )
+        dispatch_engine.register_route(
+            ModelDispatchRoute(
+                route_id="route-2",
+                topic_pattern="dev.**",
+                message_category=EnumMessageCategory.EVENT,
+                handler_id="handler-2",
+            )
+        )
+        dispatch_engine.register_route(
+            ModelDispatchRoute(
+                route_id="route-3",
+                topic_pattern="**.events.**",
+                message_category=EnumMessageCategory.EVENT,
+                handler_id="handler-3",
+            )
+        )
+        dispatch_engine.freeze()
+
+        result = await dispatch_engine.dispatch("dev.user.events.v1", event_envelope)
+
+        # All three handlers should have been called
+        assert len(captured_contexts) == 3
+
+        # Extract all dispatch_ids from captured contexts
+        dispatch_ids = [ctx.dispatch_id for ctx in captured_contexts]
+
+        # All dispatch_ids must be the same
+        assert all(did == result.dispatch_id for did in dispatch_ids), (
+            f"Expected all dispatch_ids to be {result.dispatch_id}, got {dispatch_ids}"
+        )
+
+        # And that dispatch_id must be valid
+        assert result.dispatch_id is not None
+        assert isinstance(result.dispatch_id, UUID)
+
+    @pytest.mark.asyncio
+    async def test_different_dispatches_get_different_ids(
+        self,
+        dispatch_engine: MessageDispatchEngine,
+        event_envelope: ModelEventEnvelope[UserCreatedEvent],
+    ) -> None:
+        """Each dispatch() call generates a unique dispatch_id.
+
+        Multiple dispatch calls must each have a unique dispatch_id to
+        enable request tracing and correlation of handler outputs.
+        """
+        captured_dispatch_ids: list[UUID] = []
+
+        async def handler(
+            envelope: ModelEventEnvelope[Any], context: ProtocolHandlerContext
+        ) -> str:
+            if context.dispatch_id is not None:
+                captured_dispatch_ids.append(context.dispatch_id)
+            return "handled"
+
+        dispatch_engine.register_handler(
+            handler_id="test-handler",
+            handler=handler,
+            category=EnumMessageCategory.EVENT,
+            node_kind=EnumNodeKind.REDUCER,
+        )
+        dispatch_engine.register_route(
+            ModelDispatchRoute(
+                route_id="test-route",
+                topic_pattern="*.user.events.*",
+                message_category=EnumMessageCategory.EVENT,
+                handler_id="test-handler",
+            )
+        )
+        dispatch_engine.freeze()
+
+        # Dispatch multiple times
+        results: list[ModelDispatchResult] = []
+        for _ in range(5):
+            result = await dispatch_engine.dispatch(
+                "dev.user.events.v1", event_envelope
+            )
+            results.append(result)
+
+        # All dispatches should have succeeded
+        assert all(r.status == EnumDispatchStatus.SUCCESS for r in results)
+
+        # Extract result dispatch_ids
+        result_dispatch_ids = [r.dispatch_id for r in results]
+
+        # All dispatch_ids from results must be unique
+        assert len(set(result_dispatch_ids)) == 5, (
+            f"Expected 5 unique dispatch_ids from results, "
+            f"got {len(set(result_dispatch_ids))}"
+        )
+
+        # All dispatch_ids from contexts must also be unique
+        assert len(captured_dispatch_ids) == 5
+        assert len(set(captured_dispatch_ids)) == 5, (
+            f"Expected 5 unique dispatch_ids from contexts, "
+            f"got {len(set(captured_dispatch_ids))}"
+        )
+
+        # Context dispatch_ids should match result dispatch_ids
+        for result, ctx_id in zip(results, captured_dispatch_ids, strict=True):
+            assert result.dispatch_id == ctx_id
+
+    @pytest.mark.asyncio
+    async def test_dispatch_id_propagated_for_all_node_kinds(
+        self,
+        dispatch_engine: MessageDispatchEngine,
+    ) -> None:
+        """dispatch_id is propagated to handlers regardless of node_kind.
+
+        All node kinds (EFFECT, COMPUTE, REDUCER, ORCHESTRATOR) should
+        receive the dispatch_id in their context.
+        """
+        captured_contexts: dict[str, ProtocolHandlerContext] = {}
+
+        async def effect_handler(
+            envelope: ModelEventEnvelope[Any], context: ProtocolHandlerContext
+        ) -> str:
+            captured_contexts["effect"] = context
+            return "effect-output"
+
+        async def compute_handler(
+            envelope: ModelEventEnvelope[Any], context: ProtocolHandlerContext
+        ) -> str:
+            captured_contexts["compute"] = context
+            return "compute-output"
+
+        async def reducer_handler(
+            envelope: ModelEventEnvelope[Any], context: ProtocolHandlerContext
+        ) -> str:
+            captured_contexts["reducer"] = context
+            return "reducer-output"
+
+        async def orchestrator_handler(
+            envelope: ModelEventEnvelope[Any], context: ProtocolHandlerContext
+        ) -> str:
+            captured_contexts["orchestrator"] = context
+            return "orchestrator-output"
+
+        # Register handlers with different node_kinds
+        dispatch_engine.register_handler(
+            handler_id="effect-handler",
+            handler=effect_handler,
+            category=EnumMessageCategory.EVENT,
+            node_kind=EnumNodeKind.EFFECT,
+        )
+        dispatch_engine.register_handler(
+            handler_id="compute-handler",
+            handler=compute_handler,
+            category=EnumMessageCategory.EVENT,
+            node_kind=EnumNodeKind.COMPUTE,
+        )
+        dispatch_engine.register_handler(
+            handler_id="reducer-handler",
+            handler=reducer_handler,
+            category=EnumMessageCategory.EVENT,
+            node_kind=EnumNodeKind.REDUCER,
+        )
+        dispatch_engine.register_handler(
+            handler_id="orchestrator-handler",
+            handler=orchestrator_handler,
+            category=EnumMessageCategory.EVENT,
+            node_kind=EnumNodeKind.ORCHESTRATOR,
+        )
+
+        # Register routes for all handlers
+        dispatch_engine.register_route(
+            ModelDispatchRoute(
+                route_id="effect-route",
+                topic_pattern="*.user.events.*",
+                message_category=EnumMessageCategory.EVENT,
+                handler_id="effect-handler",
+            )
+        )
+        dispatch_engine.register_route(
+            ModelDispatchRoute(
+                route_id="compute-route",
+                topic_pattern="dev.**",
+                message_category=EnumMessageCategory.EVENT,
+                handler_id="compute-handler",
+            )
+        )
+        dispatch_engine.register_route(
+            ModelDispatchRoute(
+                route_id="reducer-route",
+                topic_pattern="**.events.**",
+                message_category=EnumMessageCategory.EVENT,
+                handler_id="reducer-handler",
+            )
+        )
+        dispatch_engine.register_route(
+            ModelDispatchRoute(
+                route_id="orchestrator-route",
+                topic_pattern="dev.user.**",
+                message_category=EnumMessageCategory.EVENT,
+                handler_id="orchestrator-handler",
+            )
+        )
+        dispatch_engine.freeze()
+
+        envelope = ModelEventEnvelope(
+            payload=UserCreatedEvent(
+                user_id=UUID("00000000-0000-0000-0000-000000000123"), name="Test User"
+            ),
+            correlation_id=uuid4(),
+        )
+
+        result = await dispatch_engine.dispatch("dev.user.events.v1", envelope)
+
+        # All four handlers should have been called
+        assert len(captured_contexts) == 4
+        assert set(captured_contexts.keys()) == {
+            "effect",
+            "compute",
+            "reducer",
+            "orchestrator",
+        }
+
+        # All contexts should have the same dispatch_id
+        for node_kind, context in captured_contexts.items():
+            assert context.dispatch_id is not None, (
+                f"{node_kind} handler context has None dispatch_id"
+            )
+            assert context.dispatch_id == result.dispatch_id, (
+                f"{node_kind} handler dispatch_id {context.dispatch_id} "
+                f"does not match result dispatch_id {result.dispatch_id}"
+            )
+
+    @pytest.mark.asyncio
+    async def test_dispatch_id_present_even_on_handler_error(
+        self,
+        dispatch_engine: MessageDispatchEngine,
+        event_envelope: ModelEventEnvelope[UserCreatedEvent],
+    ) -> None:
+        """dispatch_id is present in result even when handler fails.
+
+        The dispatch_id is generated at the start of dispatch() and
+        should be present in the result regardless of handler outcome.
+        """
+
+        async def failing_handler(
+            envelope: ModelEventEnvelope[Any], context: ProtocolHandlerContext
+        ) -> str:
+            raise ValueError("Handler failed intentionally")
+
+        dispatch_engine.register_handler(
+            handler_id="failing-handler",
+            handler=failing_handler,
+            category=EnumMessageCategory.EVENT,
+            node_kind=EnumNodeKind.REDUCER,
+        )
+        dispatch_engine.register_route(
+            ModelDispatchRoute(
+                route_id="failing-route",
+                topic_pattern="*.user.events.*",
+                message_category=EnumMessageCategory.EVENT,
+                handler_id="failing-handler",
+            )
+        )
+        dispatch_engine.freeze()
+
+        result = await dispatch_engine.dispatch("dev.user.events.v1", event_envelope)
+
+        # Dispatch should report handler error
+        assert result.status == EnumDispatchStatus.HANDLER_ERROR
+
+        # But dispatch_id must still be present
+        assert result.dispatch_id is not None
+        assert isinstance(result.dispatch_id, UUID)
+
+    @pytest.mark.asyncio
+    async def test_dispatch_id_present_on_no_handler(
+        self,
+        dispatch_engine: MessageDispatchEngine,
+        event_envelope: ModelEventEnvelope[UserCreatedEvent],
+    ) -> None:
+        """dispatch_id is present in result even when no handler matches.
+
+        The dispatch_id is generated at the start of dispatch() and
+        should be present in the result even if no handlers are found.
+        """
+        # Register no handlers - just freeze
+        dispatch_engine.freeze()
+
+        result = await dispatch_engine.dispatch("dev.user.events.v1", event_envelope)
+
+        # Dispatch should report no handler
+        assert result.status == EnumDispatchStatus.NO_HANDLER
+
+        # But dispatch_id must still be present
+        assert result.dispatch_id is not None
+        assert isinstance(result.dispatch_id, UUID)
+
+    @pytest.mark.asyncio
+    async def test_dispatch_id_distinct_from_correlation_and_envelope_ids(
+        self,
+        dispatch_engine: MessageDispatchEngine,
+    ) -> None:
+        """dispatch_id is unique and not reused from correlation_id or envelope_id (OMN-972).
+
+        The dispatch_id serves a different purpose than correlation_id and envelope_id:
+        - dispatch_id: Identifies a single dispatch() call (generated per-call)
+        - correlation_id: Request tracing across services (passed through from envelope)
+        - envelope_id: Unique identifier for the event envelope itself
+
+        All three IDs must be distinct to enable proper request tracing and debugging.
+        """
+        captured_context: ProtocolHandlerContext | None = None
+
+        async def capturing_handler(
+            envelope: ModelEventEnvelope[Any], context: ProtocolHandlerContext
+        ) -> str:
+            nonlocal captured_context
+            captured_context = context
+            return "handled"
+
+        dispatch_engine.register_handler(
+            handler_id="distinctness-handler",
+            handler=capturing_handler,
+            category=EnumMessageCategory.EVENT,
+            node_kind=EnumNodeKind.REDUCER,
+        )
+        dispatch_engine.register_route(
+            ModelDispatchRoute(
+                route_id="distinctness-route",
+                topic_pattern="*.user.events.*",
+                message_category=EnumMessageCategory.EVENT,
+                handler_id="distinctness-handler",
+            )
+        )
+        dispatch_engine.freeze()
+
+        # Create envelope with explicit correlation_id (different from envelope_id)
+        correlation_id = uuid4()
+        envelope = ModelEventEnvelope(
+            payload=UserCreatedEvent(
+                user_id=UUID("00000000-0000-0000-0000-000000000456"),
+                name="Distinctness Test User",
+            ),
+            correlation_id=correlation_id,
+        )
+
+        result = await dispatch_engine.dispatch("dev.user.events.v1", envelope)
+
+        # Handler must have been called
+        assert captured_context is not None
+
+        # All three IDs must be present and non-None
+        assert captured_context.dispatch_id is not None, "dispatch_id should be set"
+        assert captured_context.correlation_id is not None, (
+            "correlation_id should be set"
+        )
+        assert captured_context.envelope_id is not None, "envelope_id should be set"
+
+        # Key assertion: all three IDs are DISTINCT
+        assert captured_context.dispatch_id != captured_context.correlation_id, (
+            f"dispatch_id ({captured_context.dispatch_id}) must be distinct from "
+            f"correlation_id ({captured_context.correlation_id})"
+        )
+        assert captured_context.dispatch_id != captured_context.envelope_id, (
+            f"dispatch_id ({captured_context.dispatch_id}) must be distinct from "
+            f"envelope_id ({captured_context.envelope_id})"
+        )
+
+        # Verify correlation_id and envelope_id are also distinct (sanity check)
+        assert captured_context.correlation_id != captured_context.envelope_id, (
+            f"correlation_id ({captured_context.correlation_id}) should be distinct from "
+            f"envelope_id ({captured_context.envelope_id})"
+        )
+
+        # Verify the result also has distinct dispatch_id from correlation_id
+        assert result.dispatch_id is not None
+        assert result.correlation_id is not None
+        assert result.dispatch_id != result.correlation_id, (
+            f"Result dispatch_id ({result.dispatch_id}) must be distinct from "
+            f"correlation_id ({result.correlation_id})"
+        )
+
+        # Verify context dispatch_id matches result dispatch_id (consistency)
+        assert captured_context.dispatch_id == result.dispatch_id

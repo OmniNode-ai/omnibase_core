@@ -1,13 +1,13 @@
-"""Model for managing list[Any]s of strings."""
+"""Model for managing lists of strings."""
 
-from typing import Any
+from collections.abc import Iterator
 
 from pydantic import BaseModel, Field
 
 
 class ModelStringList(BaseModel):
     """
-    Strongly-typed collection for managing string list[Any]s.
+    Strongly-typed collection for managing string lists.
 
     Replaces List[str] to comply with ONEX
     standards requiring specific typed models.
@@ -16,18 +16,18 @@ class ModelStringList(BaseModel):
     items: list[str] = Field(default_factory=list, description="List of string items")
 
     def add(self, item: str) -> None:
-        """Add an item to the list[Any]."""
+        """Add an item to the list."""
         self.items.append(item)
 
     def remove(self, item: str) -> bool:
-        """Remove an item from the list[Any]."""
+        """Remove an item from the list."""
         if item in self.items:
             self.items.remove(item)
             return True
         return False
 
     def contains(self, item: str) -> bool:
-        """Check if item is in the list[Any]."""
+        """Check if item is in the list."""
         return item in self.items
 
     def get_all(self) -> list[str]:
@@ -51,15 +51,15 @@ class ModelStringList(BaseModel):
         self.items.extend(other_items)
 
     def to_list(self) -> list[str]:
-        """Convert to list[Any]representation."""
+        """Convert to list representation."""
         return self.items.copy()
 
     def __len__(self) -> int:
         """Support len() function."""
         return len(self.items)
 
-    def __iter__(self) -> Any:
-        """Support iteration."""
+    def __iter__(self) -> Iterator[str]:  # type: ignore[override]
+        """Support iteration over items (intentionally overrides BaseModel's field iteration)."""
         return iter(self.items)
 
     def __getitem__(self, index: int) -> str:

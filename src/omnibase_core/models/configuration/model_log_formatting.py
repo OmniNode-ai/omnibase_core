@@ -183,7 +183,8 @@ class ModelLogFormatting(BaseModel):
                 "process_id": self.include_process_id,
             },
             "formatting_options": {
-                "field_order": self.field_order,
+                # Convert list[str] to list for JsonType compatibility
+                "field_order": list(self.field_order),
                 "field_separator": self.field_separator,
                 "message_template": self.message_template,
                 "json_indent": max(0, self.json_indent),

@@ -53,4 +53,4 @@ class ModelFunctionTool(BaseModel):
         cls: builtins.type["ModelFunctionTool"],
         data: SerializedDict,
     ) -> "ModelFunctionTool":
-        return cls(**data)
+        return cls.model_validate(data)

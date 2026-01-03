@@ -85,16 +85,14 @@ class ModelCliToolExecutionInput(BaseModel):
         description="Request identifier for tracking",
     )
 
-    def to_legacy_dict(self) -> "SerializedDict":
+    def to_legacy_dict(self) -> dict[str, object]:
         """
         Convert to legacy dictionary format for current standards.
 
         Returns:
-            SerializedDict representation compatible with existing code
+            Dictionary representation compatible with existing code
         """
-        from omnibase_core.types.type_serializable_value import SerializedDict
-
-        base_dict: SerializedDict = {
+        base_dict: dict[str, object] = {
             "action": self.action,
             "include_metadata": self.include_metadata,
             "health_filter": self.health_filter,
@@ -154,4 +152,7 @@ class ModelCliToolExecutionInput(BaseModel):
         # Create ModelAdvancedParams from the remaining parameters
         advanced_params = ModelAdvancedParams.from_dict(advanced_dict)
 
-        return cls(advanced_params=advanced_params, **base_params)
+        # Combine base params with advanced_params and validate
+        full_params: dict[str, object] = dict(base_params)
+        full_params["advanced_params"] = advanced_params
+        return cls.model_validate(full_params)

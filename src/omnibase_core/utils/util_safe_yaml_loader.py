@@ -37,7 +37,7 @@ Security:
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Unpack, cast
+from typing import Unpack
 
 import yaml
 from pydantic import BaseModel, ValidationError
@@ -282,7 +282,7 @@ def _dump_yaml_content(
                 cause=e,
             )
 
-        return cast("str", yaml_str)
+        return yaml_str
     except yaml.YAMLError as e:
         raise ModelOnexError(
             error_code=EnumCoreErrorCode.CONVERSION_ERROR,

@@ -39,7 +39,7 @@ import threading
 
 import pytest
 
-from omnibase_core.container.service_registry import ServiceRegistry
+from omnibase_core.container.container_service_registry import ServiceRegistry
 from omnibase_core.models.container.model_registry_config import (
     create_default_registry_config,
 )

@@ -1,6 +1,6 @@
 import types
 from collections.abc import Callable
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
     from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
@@ -16,7 +16,7 @@ from pathlib import Path
 from uuid import UUID
 
 from omnibase_core.constants import TIMEOUT_DEFAULT_MS
-from omnibase_core.constants.event_types import TOOL_INVOCATION
+from omnibase_core.constants.constants_event_types import TOOL_INVOCATION
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.logging.structured import emit_log_event_sync
@@ -196,7 +196,7 @@ class MixinNodeExecutor(MixinEventDrivenNode):
             self._log_info(
                 f"Tool invocation completed successfully in {execution_time_ms}ms"
             )
-        except (RuntimeError, TypeError, ValueError, ModelOnexError) as e:
+        except (ModelOnexError, RuntimeError, TypeError, ValueError) as e:
             execution_time_ms = int((time.time() - start_time) * 1000)
             response_event = ModelToolResponseEvent.create_error_response(
                 correlation_id=correlation_id,
@@ -382,7 +382,11 @@ class MixinNodeExecutor(MixinEventDrivenNode):
             return dict_result
         if isinstance(result, dict):
             return result
-        return {"result": result}
+        # Cast result to JsonType - _serialize_result handles conversion of execution
+        # results which should be JSON-serializable by node contract
+        from omnibase_core.types.json_types import JsonType
+
+        return {"result": cast(JsonType, result)}
 
     async def _emit_tool_response(self, response_event: ModelToolResponseEvent) -> None:
         """Emit a tool response event."""

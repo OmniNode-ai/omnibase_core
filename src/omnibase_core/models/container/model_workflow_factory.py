@@ -13,6 +13,8 @@ Safe Runtime Imports (OK to import at module level):
 
 from __future__ import annotations
 
+from omnibase_core.types.type_serializable_value import SerializedDict
+
 
 class ModelWorkflowFactory:
     """Workflow factory for LlamaIndex integration."""
@@ -20,7 +22,7 @@ class ModelWorkflowFactory:
     def create_workflow(
         self,
         workflow_type: str,
-        config: dict[str, object] | None = None,
+        config: SerializedDict | None = None,
     ) -> object:
         """Create workflow instance by type."""
         config = config or {}

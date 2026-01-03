@@ -95,62 +95,63 @@ class ModelJsonSchema(BaseModel):
         Returns:
             ModelJsonSchema instance
         """
+        # Work with a mutable copy to avoid modifying the input
+        data: dict[str, object] = dict(schema_dict)
+
         # Convert enum values to ModelSchemaValue
-        if "enum" in schema_dict:
-            schema_dict["enum"] = [
-                ModelSchemaValue.from_value(v) for v in schema_dict["enum"]
-            ]
+        if "enum" in data and isinstance(data["enum"], list):
+            data["enum"] = [ModelSchemaValue.from_value(v) for v in data["enum"]]
 
         # Convert default value
-        if "default" in schema_dict:
-            schema_dict["default"] = ModelSchemaValue.from_value(schema_dict["default"])
+        if "default" in data:
+            data["default"] = ModelSchemaValue.from_value(data["default"])
 
         # Convert const value
-        if "const" in schema_dict:
-            schema_dict["const"] = ModelSchemaValue.from_value(schema_dict["const"])
+        if "const" in data:
+            data["const"] = ModelSchemaValue.from_value(data["const"])
 
         # Convert examples
-        if "examples" in schema_dict:
-            schema_dict["examples"] = [
-                ModelSchemaValue.from_value(v) for v in schema_dict["examples"]
+        if "examples" in data and isinstance(data["examples"], list):
+            data["examples"] = [
+                ModelSchemaValue.from_value(v) for v in data["examples"]
             ]
 
         # Recursively convert nested schemas
-        if "items" in schema_dict and isinstance(schema_dict["items"], dict):
-            schema_dict["items"] = cls.from_dict(schema_dict["items"])
+        if "items" in data and isinstance(data["items"], dict):
+            data["items"] = cls.from_dict(data["items"])
 
-        if "properties" in schema_dict and isinstance(schema_dict, dict):
-            schema_dict["properties"] = {
+        if "properties" in data and isinstance(data["properties"], dict):
+            data["properties"] = {
                 k: cls.from_dict(v) if isinstance(v, dict) else v
-                for k, v in schema_dict["properties"].items()
+                for k, v in data["properties"].items()
             }
 
-        if "additionalProperties" in schema_dict and isinstance(schema_dict, dict):
-            schema_dict["additionalProperties"] = cls.from_dict(
-                schema_dict["additionalProperties"]
-            )
+        if "additionalProperties" in data and isinstance(
+            data["additionalProperties"], dict
+        ):
+            data["additionalProperties"] = cls.from_dict(data["additionalProperties"])
 
         # Handle composition schemas
         for field in ["allOf", "anyOf", "oneOf"]:
-            if field in schema_dict and isinstance(schema_dict[field], list):
-                schema_dict[field] = [
-                    cls.from_dict(s) if isinstance(s, dict) else s
-                    for s in schema_dict[field]
+            field_value = data.get(field)
+            if isinstance(field_value, list):
+                data[field] = [
+                    cls.from_dict(s) if isinstance(s, dict) else s for s in field_value
                 ]
 
-        if "not" in schema_dict and isinstance(schema_dict["not"], dict):
-            schema_dict["not_schema"] = cls.from_dict(schema_dict["not"])
-            del schema_dict["not"]
+        if "not" in data and isinstance(data["not"], dict):
+            data["not_schema"] = cls.from_dict(data["not"])
+            del data["not"]
 
-        if "definitions" in schema_dict and isinstance(schema_dict, dict):
-            schema_dict["definitions"] = {
+        if "definitions" in data and isinstance(data["definitions"], dict):
+            data["definitions"] = {
                 k: cls.from_dict(v) if isinstance(v, dict) else v
-                for k, v in schema_dict["definitions"].items()
+                for k, v in data["definitions"].items()
             }
 
-        return cls(**schema_dict)
+        return cls.model_validate(data)
 
-    def to_dict(self) -> SerializedDict:
+    def to_dict(self) -> dict[str, object]:
         """
         Convert back to dictionary representation.
 
@@ -158,7 +159,7 @@ class ModelJsonSchema(BaseModel):
             Dictionary representation of the schema
         """
         # Custom reconstruction logic for JSON schema format
-        result: SerializedDict = {}
+        result: dict[str, object] = {}
 
         # Add basic properties
         if self.type:

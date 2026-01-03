@@ -324,7 +324,7 @@ class ModelRetryConfig(BaseModel):
         return True
 
     def get_retry_error_categories(self) -> dict[str, list[str]]:
-        """Get categorized list[Any]of retryable and non-retryable errors."""
+        """Get categorized list of retryable and non-retryable errors."""
         return {
             "always_retry": [
                 "Network timeout",

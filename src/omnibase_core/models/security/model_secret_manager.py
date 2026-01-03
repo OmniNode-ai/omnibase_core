@@ -201,32 +201,41 @@ class ModelSecretManager(BaseModel):
             # standard
             return "***MASKED***"
 
-        # union-ok: mask_recursive - domain-specific union includes ModelMaskData, not pure JsonType
-        def mask_recursive(
-            obj: str | int | bool | list[object] | SerializedDict | ModelMaskData,
-        ) -> str | int | bool | list[object] | SerializedDict | ModelMaskData:
-            if isinstance(obj, dict):
-                return {
-                    key: (
-                        mask_recursive(value)
-                        if not any(
-                            sensitive in key.lower() for sensitive in sensitive_keys
-                        )
-                        else mask_value(str(value), mask_level)
-                    )
-                    for key, value in obj.items()
-                }
-            if isinstance(obj, list):
-                return [mask_recursive(item) for item in obj]  # type: ignore[arg-type]
-            return obj
+        from omnibase_core.types.json_types import JsonType
 
-        # Parameter is typed as ModelMaskData, no need to check
-        masked_dict = mask_recursive(data.to_dict())
-        return (
-            ModelMaskData.from_dict(masked_dict)
-            if isinstance(masked_dict, dict)
-            else data
-        )
+        # Type-safe recursive masking helper
+        def mask_dict(d: SerializedDict) -> SerializedDict:
+            """Recursively mask sensitive keys in a dictionary."""
+            result: SerializedDict = {}
+            for key, value in d.items():
+                is_sensitive = any(
+                    sensitive in key.lower() for sensitive in sensitive_keys
+                )
+                if is_sensitive:
+                    result[key] = mask_value(str(value), mask_level)
+                elif isinstance(value, dict):
+                    result[key] = mask_dict(value)
+                elif isinstance(value, list):
+                    result[key] = mask_list(value)
+                else:
+                    result[key] = value
+            return result
+
+        def mask_list(lst: list[JsonType]) -> list[JsonType]:
+            """Recursively mask items in a list."""
+            result: list[JsonType] = []
+            for item in lst:
+                if isinstance(item, dict):
+                    result.append(mask_dict(item))
+                elif isinstance(item, list):
+                    result.append(mask_list(item))
+                else:
+                    result.append(item)
+            return result
+
+        # Parameter is typed as ModelMaskData, convert to dict and mask
+        masked_dict = mask_dict(data.to_dict())
+        return ModelMaskData.from_dict(masked_dict)
 
     def analyze_credentials_strength(
         self,

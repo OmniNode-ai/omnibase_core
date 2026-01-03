@@ -60,7 +60,7 @@ Usage Example:
         # Start validation
         run_id = uuid4()
         started_event = ModelContractValidationStartedEvent.create(
-            contract_id="my-contract",
+            contract_name="my-contract",
             run_id=run_id,
             context=ModelContractValidationContext(),
         )
@@ -69,7 +69,7 @@ Usage Example:
 
         # Emit passed event
         passed_event = ModelContractValidationPassedEvent.create(
-            contract_id="my-contract",
+            contract_name="my-contract",
             run_id=run_id,  # Same run_id for lifecycle correlation
             duration_ms=250,
             checks_run=15,

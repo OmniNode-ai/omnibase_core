@@ -6,10 +6,16 @@ Extracted from model_service_configuration.py for modular architecture complianc
 
 """
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from pydantic import BaseModel, Field
 
 from omnibase_core.models.endpoints.model_service_endpoint import ModelServiceEndpoint
-from omnibase_core.models.health.model_health_check import ModelHealthCheck
+
+if TYPE_CHECKING:
+    from omnibase_core.models.health.model_health_check import ModelHealthCheck
 
 
 class ModelServiceDetectionConfig(BaseModel):

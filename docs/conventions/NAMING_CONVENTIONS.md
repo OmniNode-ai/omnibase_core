@@ -406,7 +406,7 @@ config = ModelContractNormalizationConfig(
 ### Fingerprint Computation
 
 ```python
-from omnibase_core.contracts.hash_registry import compute_contract_fingerprint
+from omnibase_core.contracts.contract_hash_registry import compute_contract_fingerprint
 
 # Compute fingerprint for a contract model
 fingerprint = compute_contract_fingerprint(contract_model)

@@ -4,8 +4,6 @@ Dynamic Event Type Model.
 enables plugin extensibility and contract-driven event type registration.
 """
 
-from typing import Any
-
 from pydantic import BaseModel, Field
 
 from omnibase_core.models.core.model_json_schema import ModelJsonSchema
@@ -56,7 +54,7 @@ class ModelEventType(BaseModel):
         event_name: str,
         namespace: str = "onex",
         description: str | None = None,
-        **kwargs: Any,
+        **kwargs: object,
     ) -> "ModelEventType":
         """
         ONEX-compatible factory method using Pydantic model_validate.

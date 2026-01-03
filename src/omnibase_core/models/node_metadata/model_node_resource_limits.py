@@ -129,8 +129,15 @@ class ModelNodeResourceLimits(BaseModel):
 
     def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
+        from typing import cast
+
+        from omnibase_core.types.type_serializable_value import SerializableValue
+
         result: TypedDictMetadataDict = {}
-        result["metadata"] = dict(self.get_resource_summary())
+        # Cast TypedDict to SerializableValue dict for TypedDictMetadataDict compatibility
+        result["metadata"] = cast(
+            dict[str, SerializableValue], dict(self.get_resource_summary())
+        )
         return result
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
