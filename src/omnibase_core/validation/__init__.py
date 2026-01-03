@@ -231,7 +231,7 @@ from .patterns import validate_patterns_directory, validate_patterns_file
 # - For string input (e.g., YAML config), use validate_execution_mode_string instead
 from .reserved_enum_validator import RESERVED_EXECUTION_MODES, validate_execution_mode
 from .types import validate_union_usage_directory, validate_union_usage_file
-from .validation_utils import ModelProtocolInfo
+from .validation_utils import ModelProtocolInfo, validate_protocol_compliance
 
 # Import common validators (OMN-1054)
 from .validators import (
@@ -342,6 +342,8 @@ __all__ = [
     "ModelProtocolInfo",
     "ExceptionValidationFrameworkError",
     "validate_all",
+    # Protocol compliance validation
+    "validate_protocol_compliance",
     # Workflow linter (OMN-655)
     "ModelLintStatistics",
     "ModelLintWarning",

@@ -3,10 +3,8 @@ Mixin for FSM execution from YAML contracts.
 
 Enables nodes to execute state machines declaratively from ModelFSMSubcontract.
 
-Typing: Strongly typed with strategic Any usage for mixin kwargs and runtime context.
+Typing: Strongly typed with strategic object usage for mixin kwargs and runtime context.
 """
-
-from typing import Any
 
 from omnibase_core.models.contracts.subcontracts.model_fsm_subcontract import (
     ModelFSMSubcontract,
@@ -39,7 +37,7 @@ class MixinFSMExecution:
         Intents are emitted for all side effects (pure FSM pattern).
     """
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(self, **kwargs: object) -> None:
         """
         Initialize FSM execution mixin.
 

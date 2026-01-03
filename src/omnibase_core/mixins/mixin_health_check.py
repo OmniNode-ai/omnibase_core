@@ -31,7 +31,7 @@ from types.core_types (not from models or types.constraints).
 import asyncio
 from collections.abc import Callable
 from datetime import UTC, datetime
-from typing import Any
+from typing import Protocol, runtime_checkable
 from urllib.parse import urlparse
 from uuid import uuid4
 
@@ -41,6 +41,88 @@ from omnibase_core.logging.structured import emit_log_event_sync as emit_log_eve
 from omnibase_core.models.health.model_health_status import ModelHealthStatus
 from omnibase_core.protocols.http import ProtocolHttpClient
 from omnibase_core.types.typed_dict_mixin_types import TypedDictHealthCheckStatus
+
+
+# Protocols for external service clients used in health checks
+@runtime_checkable
+class ProtocolConnectionPool(Protocol):
+    """Protocol for database connection pools (asyncpg, SQLAlchemy).
+
+    Note: The execute method returns a sequence of row mappings. While specific
+    implementations may return library-specific types (e.g., asyncpg.Record),
+    the protocol uses a generic type that covers the common case of row-based
+    query results.
+    """
+
+    async def execute(self, query: str) -> list[dict[str, object]]:
+        """Execute a query on the connection pool.
+
+        Args:
+            query: SQL query string to execute.
+
+        Returns:
+            List of row dictionaries, where keys are column names and values
+            are the column values. For non-SELECT queries, returns an empty list.
+        """
+        ...
+
+
+@runtime_checkable
+class ProtocolConnectionPoolWithConnection(Protocol):
+    """Protocol for connection pools that provide connection context managers."""
+
+    def connection(self) -> object:
+        """Get a connection from the pool."""
+        ...
+
+
+@runtime_checkable
+class ProtocolKafkaProducerAio(Protocol):
+    """Protocol for aiokafka-style Kafka producers."""
+
+    async def bootstrap_connected(self) -> bool:
+        """Check if connected to bootstrap servers."""
+        ...
+
+
+@runtime_checkable
+class ProtocolKafkaProducerConfluent(Protocol):
+    """Protocol for confluent-kafka-style Kafka producers.
+
+    Note: The list_topics method returns cluster metadata. While the actual
+    confluent-kafka library returns a ClusterMetadata object, the protocol
+    uses a generic dict type representing topic names to their metadata.
+    """
+
+    def list_topics(self, timeout: float) -> dict[str, object]:
+        """List available Kafka topics.
+
+        Args:
+            timeout: Timeout in seconds for the operation.
+
+        Returns:
+            Dictionary mapping topic names to their metadata. The exact
+            structure depends on the implementation, but typically includes
+            partition information and broker details.
+        """
+        ...
+
+
+@runtime_checkable
+class ProtocolRedisClient(Protocol):
+    """Protocol for async Redis clients (aioredis, redis-py)."""
+
+    async def ping(self) -> bool:
+        """Ping the Redis server."""
+        ...
+
+
+# Union types for flexible health check parameters
+ConnectionPoolType = (
+    ProtocolConnectionPool | ProtocolConnectionPoolWithConnection | object
+)
+KafkaProducerType = ProtocolKafkaProducerAio | ProtocolKafkaProducerConfluent | object
+RedisClientType = ProtocolRedisClient | object
 
 
 class MixinHealthCheck:
@@ -55,7 +137,9 @@ class MixinHealthCheck:
 
     Usage:
         class MyTool(MixinHealthCheck, ProtocolReducer):
-            def get_health_checks(self) -> List[Callable[..., Any]]:
+            def get_health_checks(
+                self,
+            ) -> list[Callable[[], ModelHealthStatus | asyncio.Future[ModelHealthStatus]]]:
                 return [
                     self._check_database,
                     self._check_external_api
@@ -69,7 +153,7 @@ class MixinHealthCheck:
                 )
     """
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(self, **kwargs: object) -> None:
         """Initialize the health check mixin."""
         super().__init__(**kwargs)
 
@@ -83,7 +167,7 @@ class MixinHealthCheck:
         self,
     ) -> list[Callable[[], ModelHealthStatus | asyncio.Future[ModelHealthStatus]]]:
         """
-        Get list[Any]of health check functions.
+        Get list of health check functions.
 
         Override this method to provide custom health checks.
         Each function should return ModelHealthStatus.
@@ -336,7 +420,7 @@ class MixinHealthCheck:
 
                 # Validate result type (handle invalid return types)
                 if not isinstance(result, ModelHealthStatus):
-                    emit_log_event(  # type: ignore[unreachable]
+                    emit_log_event(  # type: ignore[unreachable]  # Defensive logging in catch-all branch; unreachable per static analysis but guards against runtime type violations
                         LogLevel.ERROR,
                         f"Async health check returned invalid type: {check_name}",
                         {"check_name": check_name, "type": str(type(result))},
@@ -501,7 +585,7 @@ class MixinHealthCheck:
 
 
 async def check_postgresql_health(
-    connection_pool: Any,
+    connection_pool: ConnectionPoolType,
     timeout_seconds: float = 3.0,
 ) -> ModelHealthStatus:
     """
@@ -582,7 +666,7 @@ async def check_postgresql_health(
 
 
 async def check_kafka_health(
-    kafka_producer: Any,
+    kafka_producer: KafkaProducerType,
     timeout_seconds: float = 3.0,
 ) -> ModelHealthStatus:
     """
@@ -687,7 +771,7 @@ async def check_kafka_health(
 
 
 async def check_redis_health(
-    redis_client: Any,
+    redis_client: RedisClientType,
     timeout_seconds: float = 3.0,
 ) -> ModelHealthStatus:
     """

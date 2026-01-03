@@ -56,13 +56,44 @@ import uuid
 from collections.abc import Callable
 from typing import (
     TYPE_CHECKING,
-    Any,
     ClassVar,
     Generic,
+    Protocol,
     TypeVar,
     cast,
+    runtime_checkable,
 )
 from uuid import UUID
+
+
+@runtime_checkable
+class ProtocolEventBusDuckTyped(Protocol):
+    """Protocol for duck-typed event bus method access.
+
+    This protocol defines the interface for event bus operations that may not be
+    present on all event bus implementations. It is used with cast() to provide
+    type-safe access to optional methods while maintaining compatibility with
+    legacy event bus implementations.
+
+    The protocol is runtime_checkable to support hasattr() checks before method calls.
+    """
+
+    def publish(self, event: object) -> None:
+        """Synchronous publish method."""
+        ...
+
+    async def publish_async(self, envelope: object) -> None:
+        """Asynchronous publish method."""
+        ...
+
+    def subscribe(self, handler: Callable[..., object], event_type: str) -> object:
+        """Subscribe to events with a handler."""
+        ...
+
+    def unsubscribe(self, subscription: object) -> None:
+        """Unsubscribe from events."""
+        ...
+
 
 # Generic type parameters for typed event processing
 InputStateT = TypeVar("InputStateT")
@@ -871,7 +902,7 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
     def _validate_topic_alignment(
         self,
         topic: str,
-        envelope: Any,
+        envelope: ProtocolEventEnvelope[object],
     ) -> None:
         """
         Validate that envelope's message category matches the topic.
@@ -959,9 +990,11 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
                 # TODO(v1.0): Add topic validation when topic-based publishing is implemented.
                 # When the event bus supports explicit topic routing, validate alignment
                 # between message category and topic name using _validate_topic_alignment().
-                await cast(Any, bus).publish_async(envelope)
+                await cast(ProtocolEventBusDuckTyped, bus).publish_async(envelope)
             elif hasattr(bus, "publish"):
-                cast(Any, bus).publish(event)  # Synchronous method - no await
+                cast(ProtocolEventBusDuckTyped, bus).publish(
+                    event
+                )  # Synchronous method - no await
             else:
                 raise ModelOnexError(
                     message="Event bus does not support publishing (missing 'publish_async' and 'publish' methods)",
@@ -1020,7 +1053,7 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
             # Currently hasattr check supports legacy event bus with non-standard interface.
             # Once all implementations conform to ProtocolEventBus, this check can be removed.
             if hasattr(bus, "publish"):
-                cast(Any, bus).publish(event)
+                cast(ProtocolEventBusDuckTyped, bus).publish(event)
             else:
                 raise ModelOnexError(
                     message="Event bus has no synchronous 'publish' method",
@@ -1079,10 +1112,12 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
                 # TODO(v1.0): Add topic validation when topic-based publishing is implemented.
                 # When the event bus supports explicit topic routing, validate alignment
                 # between message category and topic name using _validate_topic_alignment().
-                await cast(Any, bus).publish_async(envelope)
+                await cast(ProtocolEventBusDuckTyped, bus).publish_async(envelope)
             # Fallback to sync method
             elif hasattr(bus, "publish"):
-                cast(Any, bus).publish(event)  # Synchronous method - no await
+                cast(ProtocolEventBusDuckTyped, bus).publish(
+                    event
+                )  # Synchronous method - no await
             else:
                 raise ModelOnexError(
                     message="Event bus has no publish method (missing 'publish_async' and 'publish')",
@@ -1416,7 +1451,7 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
                 for subscription in subscriptions_copy:
                     try:
                         # Cast to Any for legacy event bus interface
-                        cast(Any, bus).unsubscribe(subscription)
+                        cast(ProtocolEventBusDuckTyped, bus).unsubscribe(subscription)
                     except Exception as e:
                         self._log_error(
                             f"Failed to unsubscribe: {e!r}",
@@ -1642,7 +1677,7 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
             for pattern in patterns:
                 try:
                     event_handler = self._create_event_handler(pattern)
-                    subscription = cast(Any, bus).subscribe(
+                    subscription = cast(ProtocolEventBusDuckTyped, bus).subscribe(
                         event_handler, event_type=pattern
                     )
                     handle.subscriptions.append(subscription)
@@ -1665,7 +1700,9 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
                 error=e,
             )
 
-    def _create_event_handler(self, pattern: str) -> Callable[..., Any]:
+    def _create_event_handler(
+        self, pattern: str
+    ) -> Callable[[ProtocolEventEnvelope[ModelOnexEvent]], None]:
         """Create an event handler closure for a specific event pattern.
 
         Generates a handler function that extracts events from envelopes,

@@ -79,6 +79,93 @@ _DANGEROUS_IMPORT_CHARS: frozenset[str] = frozenset(
 
 
 # =============================================================================
+# Protocol Compliance Validation Functions
+# =============================================================================
+
+
+def validate_protocol_compliance(
+    obj: object,
+    protocol: type,
+    protocol_name: str,
+    context: dict[str, object] | None = None,
+) -> None:
+    """Validate that an object implements required protocol methods.
+
+    This function provides runtime validation for protocol compliance with
+    detailed error messages when objects don't implement required protocols.
+    It is designed for use after casting `object` types to protocols, providing
+    better error messages than a bare `isinstance()` check.
+
+    Args:
+        obj: The object to validate.
+        protocol: The Protocol class to check against. Must be decorated with
+            `@runtime_checkable` to support isinstance() checks.
+        protocol_name: Human-readable name for error messages (e.g., "ProtocolEventBus").
+        context: Additional context for error reporting (e.g., {"service_name": "logger"}).
+
+    Raises:
+        ModelOnexError: If object doesn't implement the protocol, with error code
+            TYPE_MISMATCH and detailed context including:
+            - protocol: The protocol name
+            - required_methods: List of methods the protocol requires
+            - actual_type: The actual type name of the object
+
+    Example:
+        >>> from typing import Protocol, runtime_checkable
+        >>> @runtime_checkable
+        ... class ProtocolLogger(Protocol):
+        ...     def log(self, message: str) -> None: ...
+        ...
+        >>> class GoodLogger:
+        ...     def log(self, message: str) -> None:
+        ...         print(message)
+        ...
+        >>> class BadLogger:
+        ...     pass
+        ...
+        >>> validate_protocol_compliance(GoodLogger(), ProtocolLogger, "ProtocolLogger")
+        >>> # No error raised
+        >>> validate_protocol_compliance(BadLogger(), ProtocolLogger, "ProtocolLogger")
+        ModelOnexError: Object does not implement ProtocolLogger
+
+    Note:
+        The protocol must be decorated with `@runtime_checkable` from the `typing`
+        module. Without this decorator, `isinstance()` checks will raise a TypeError.
+        All ONEX protocols should use `@runtime_checkable` when runtime checking
+        is required.
+    """
+    if not isinstance(obj, protocol):
+        # Get expected methods from protocol (exclude dunder methods and non-callables)
+        required_methods = [
+            m
+            for m in dir(protocol)
+            if not m.startswith("_") and callable(getattr(protocol, m, None))
+        ]
+        logger.debug(
+            f"Protocol compliance validation failed: {type(obj).__name__} "
+            f"does not implement {protocol_name}"
+        )
+        # NOTE: Cast to Any is safe here - context keys are user-defined and
+        # intentionally separate from ModelOnexError's positional parameters
+        from typing import Any, cast
+
+        extra_context: dict[str, Any] = cast(dict[str, Any], context or {})
+        raise ModelOnexError(
+            message=f"Object does not implement {protocol_name}",
+            error_code=EnumCoreErrorCode.TYPE_MISMATCH,
+            # Context passed as **kwargs to ModelOnexError
+            protocol=protocol_name,
+            required_methods=required_methods,
+            actual_type=type(obj).__name__,
+            **extra_context,
+        )
+    logger.debug(
+        f"Protocol compliance validation passed: {type(obj).__name__} "
+        f"implements {protocol_name}"
+    )
+
+
+# =============================================================================
 # Name and Identifier Validation Functions
 # =============================================================================
 
@@ -793,6 +880,8 @@ __all__ = [
     "ModelDuplicationInfo",
     "ModelProtocolInfo",
     "ModelValidationResult",
+    # Protocol compliance validation
+    "validate_protocol_compliance",
     # Name and identifier validation
     "is_valid_python_identifier",
     "is_valid_onex_name",
