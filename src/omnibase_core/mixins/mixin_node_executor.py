@@ -196,7 +196,7 @@ class MixinNodeExecutor(MixinEventDrivenNode):
             self._log_info(
                 f"Tool invocation completed successfully in {execution_time_ms}ms"
             )
-        except (RuntimeError, TypeError, ValueError, ModelOnexError) as e:
+        except (ModelOnexError, RuntimeError, TypeError, ValueError) as e:
             execution_time_ms = int((time.time() - start_time) * 1000)
             response_event = ModelToolResponseEvent.create_error_response(
                 correlation_id=correlation_id,

@@ -14,7 +14,7 @@ class ModelHookError(BaseModel):
     (frozen=True) and can be safely shared across threads.
 
     Note:
-        The special ``hook_id`` value ``"[framework]"`` indicates a framework-level
+        The special ``hook_name`` value ``"[framework]"`` indicates a framework-level
         error during phase execution, not from a specific hook. This can occur in
         the finalize phase if the execution plan itself cannot be accessed or if
         an unexpected error occurs outside of hook invocation.
@@ -36,9 +36,9 @@ class ModelHookError(BaseModel):
         ...,
         description="The phase where the error occurred",
     )
-    hook_id: str = Field(
+    hook_name: str = Field(
         ...,
-        description="The hook ID that raised the error",
+        description="The hook name that raised the error",
     )
     error_type: str = Field(
         ...,

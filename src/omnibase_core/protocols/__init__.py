@@ -73,6 +73,11 @@ from omnibase_core.protocols.base import (  # Literal Types; Protocols; Type Var
 )
 
 # =============================================================================
+# Cache Module Exports
+# =============================================================================
+from omnibase_core.protocols.cache import ProtocolCacheBackend
+
+# =============================================================================
 # Capabilities Module Exports
 # =============================================================================
 from omnibase_core.protocols.capabilities import ProtocolCapabilityProvider
@@ -158,6 +163,11 @@ from omnibase_core.protocols.infrastructure import (
 # Intents Module Exports
 # =============================================================================
 from omnibase_core.protocols.intents import ProtocolRegistrationRecord
+
+# =============================================================================
+# Metrics Module Exports (OMN-1188)
+# =============================================================================
+from omnibase_core.protocols.metrics import ProtocolMetricsBackend
 
 # =============================================================================
 # Notifications Module Exports
@@ -296,9 +306,17 @@ __all__ = [
     "ProtocolModelJsonSerializable",
     "ProtocolModelValidatable",
     # ==========================================================================
+    # Cache Module (OMN-1188)
+    # ==========================================================================
+    "ProtocolCacheBackend",
+    # ==========================================================================
     # Capabilities Module (OMN-1124)
     # ==========================================================================
     "ProtocolCapabilityProvider",
+    # ==========================================================================
+    # Metrics Module (OMN-1188)
+    # ==========================================================================
+    "ProtocolMetricsBackend",
     # ==========================================================================
     # Container Module
     # ==========================================================================

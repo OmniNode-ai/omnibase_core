@@ -86,7 +86,7 @@ class ModelEnvironmentProperties(BaseModel):
                 expected_type,
             ):
                 return prop_value.value
-        except (ValueError, AttributeError):
+        except (AttributeError, ValueError):
             pass
 
         return default
@@ -107,7 +107,7 @@ class ModelEnvironmentProperties(BaseModel):
             # Try parsing from string
             str_val = prop_value.as_string()
             return datetime.fromisoformat(str_val)
-        except (ValueError, AttributeError):
+        except (AttributeError, ValueError):
             return default
 
     def set_property(

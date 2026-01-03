@@ -155,7 +155,7 @@ class ModelEventTypeRegistry:
                     self.register_event_type(event_type)
                     events_discovered += 1
 
-        except (OSError, ValueError, KeyError, AttributeError) as e:
+        except (AttributeError, KeyError, OSError, ValueError) as e:
             msg = f"Failed to parse contract {contract_file}: {e}"
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.INTERNAL_ERROR,

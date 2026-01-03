@@ -73,7 +73,7 @@ class ModelContractValidationFailedEvent(ModelContractValidationEventBase):
 
     Attributes:
         event_type: Event type identifier (onex.contract.validation.failed).
-        validator_set_id: Optional identifier of the validator set that was used.
+        validator_set_name: Optional identifier of the validator set that was used.
         error_count: Number of validation errors encountered (minimum 1).
         first_error_code: Error code of the first/primary validation error.
         duration_ms: Time taken for validation in milliseconds.
@@ -87,7 +87,7 @@ class ModelContractValidationFailedEvent(ModelContractValidationEventBase):
         ... )
         >>>
         >>> event = ModelContractValidationFailedEvent(
-        ...     contract_id="runtime-host-contract",
+        ...     contract_name="runtime-host-contract",
         ...     run_id=uuid4(),
         ...     error_count=3,
         ...     first_error_code="CONTRACT_SCHEMA_INVALID",
@@ -114,7 +114,7 @@ class ModelContractValidationFailedEvent(ModelContractValidationEventBase):
         description="Event type identifier.",
     )
 
-    validator_set_id: str | None = Field(
+    validator_set_name: str | None = Field(
         default=None,
         description="Optional identifier of the validator set that was used.",
     )
@@ -165,13 +165,13 @@ class ModelContractValidationFailedEvent(ModelContractValidationEventBase):
     @classmethod
     def create(
         cls,
-        contract_id: str,
+        contract_name: str,
         run_id: UUID,
         error_count: int,
         first_error_code: str,
         duration_ms: int,
         *,
-        validator_set_id: str | None = None,
+        validator_set_name: str | None = None,
         violations: list[str] | None = None,
         result_ref: str | None = None,
         actor: UUID | None = None,
@@ -182,12 +182,12 @@ class ModelContractValidationFailedEvent(ModelContractValidationEventBase):
         Factory method for creating a contract validation failed event.
 
         Args:
-            contract_id: Identifier of the contract that was validated.
+            contract_name: Identifier of the contract that was validated.
             run_id: Unique identifier for this validation run (matches started event).
             error_count: Number of validation errors encountered (minimum 1).
             first_error_code: Error code of the first/primary validation error.
             duration_ms: Time taken for validation in milliseconds.
-            validator_set_id: Optional identifier of the validator set.
+            validator_set_name: Optional identifier of the validator set.
             violations: Optional list of violation descriptions.
             result_ref: Optional pointer to stored detailed result.
             actor: Optional UUID of the triggering node/service.
@@ -198,12 +198,12 @@ class ModelContractValidationFailedEvent(ModelContractValidationEventBase):
             A new ModelContractValidationFailedEvent instance.
         """
         return cls(
-            contract_id=contract_id,
+            contract_name=contract_name,
             run_id=run_id,
             error_count=error_count,
             first_error_code=first_error_code,
             duration_ms=duration_ms,
-            validator_set_id=validator_set_id,
+            validator_set_name=validator_set_name,
             violations=violations if violations is not None else [],
             result_ref=result_ref,
             actor=actor,

@@ -74,6 +74,13 @@ When spawning polymorphic agents or AI assistants:
 - **NEVER** run `git commit` or `git push` in background mode - always foreground
 - **NEVER** run agents in background mode (`run_in_background: true`) - run parallel polymorphic agents in the foreground instead by dispatching multiple agents in a single message
 
+### Git Commit Rules
+
+⚠️ **CRITICAL - ABSOLUTELY FORBIDDEN**:
+- **NEVER use `--no-verify`** when committing. Pre-commit hooks exist for a reason.
+- **NEVER use `--no-gpg-sign`** unless explicitly requested by the user.
+- **NEVER skip hooks** - if hooks fail, fix the issues instead of bypassing them.
+
 ---
 
 ## Architecture Fundamentals

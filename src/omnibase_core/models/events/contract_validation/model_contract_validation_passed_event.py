@@ -56,7 +56,7 @@ class ModelContractValidationPassedEvent(ModelContractValidationEventBase):
 
     Attributes:
         event_type: Event type identifier (onex.contract.validation.passed).
-        validator_set_id: Optional identifier of the validator set that was used.
+        validator_set_name: Optional identifier of the validator set that was used.
         warnings_count: Number of warnings generated during validation (default 0).
         checks_run: Number of validation checks that were executed.
         duration_ms: Time taken for validation in milliseconds.
@@ -69,7 +69,7 @@ class ModelContractValidationPassedEvent(ModelContractValidationEventBase):
         ... )
         >>>
         >>> event = ModelContractValidationPassedEvent(
-        ...     contract_id="runtime-host-contract",
+        ...     contract_name="runtime-host-contract",
         ...     run_id=uuid4(),
         ...     checks_run=15,
         ...     duration_ms=250,
@@ -91,7 +91,7 @@ class ModelContractValidationPassedEvent(ModelContractValidationEventBase):
         description="Event type identifier.",
     )
 
-    validator_set_id: str | None = Field(
+    validator_set_name: str | None = Field(
         default=None,
         description="Optional identifier of the validator set that was used.",
     )
@@ -134,11 +134,11 @@ class ModelContractValidationPassedEvent(ModelContractValidationEventBase):
     @classmethod
     def create(
         cls,
-        contract_id: str,
+        contract_name: str,
         run_id: UUID,
         duration_ms: int,
         *,
-        validator_set_id: str | None = None,
+        validator_set_name: str | None = None,
         warnings_count: int = 0,
         checks_run: int = 0,
         warnings_refs: list[str] | None = None,
@@ -150,10 +150,10 @@ class ModelContractValidationPassedEvent(ModelContractValidationEventBase):
         Factory method for creating a contract validation passed event.
 
         Args:
-            contract_id: Identifier of the contract that was validated.
+            contract_name: Identifier of the contract that was validated.
             run_id: Unique identifier for this validation run (matches started event).
             duration_ms: Time taken for validation in milliseconds.
-            validator_set_id: Optional identifier of the validator set.
+            validator_set_name: Optional identifier of the validator set.
             warnings_count: Number of warnings generated (default 0).
             checks_run: Number of validation checks executed (default 0).
             warnings_refs: Optional list of warning references.
@@ -165,10 +165,10 @@ class ModelContractValidationPassedEvent(ModelContractValidationEventBase):
             A new ModelContractValidationPassedEvent instance.
         """
         return cls(
-            contract_id=contract_id,
+            contract_name=contract_name,
             run_id=run_id,
             duration_ms=duration_ms,
-            validator_set_id=validator_set_id,
+            validator_set_name=validator_set_name,
             warnings_count=warnings_count,
             checks_run=checks_run,
             warnings_refs=warnings_refs if warnings_refs is not None else [],

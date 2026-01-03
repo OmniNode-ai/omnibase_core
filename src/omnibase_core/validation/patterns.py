@@ -58,7 +58,7 @@ def validate_patterns_file(file_path: Path) -> list[str]:
             checker.visit(tree)
             all_issues.extend(checker.issues)
 
-    except (SyntaxError, ValueError, UnicodeDecodeError) as e:
+    except (SyntaxError, UnicodeDecodeError, ValueError) as e:
         all_issues.append(f"Error parsing {file_path}: {e}")
 
     return all_issues

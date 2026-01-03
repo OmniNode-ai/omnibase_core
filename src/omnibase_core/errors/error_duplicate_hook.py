@@ -8,13 +8,13 @@ from omnibase_core.errors.error_pipeline import PipelineError
 
 
 class DuplicateHookError(PipelineError):
-    """Raised when registering a hook with duplicate ID."""
+    """Raised when registering a hook with duplicate name."""
 
-    def __init__(self, hook_id: str) -> None:
+    def __init__(self, hook_name: str) -> None:
         super().__init__(
             error_code=EnumCoreErrorCode.DUPLICATE_REGISTRATION,
-            message=f"Hook with ID '{hook_id}' already registered",
-            context={"hook_id": hook_id},
+            message=f"Hook with name '{hook_name}' already registered",
+            context={"hook_name": hook_name},
         )
 
 

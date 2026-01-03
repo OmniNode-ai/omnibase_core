@@ -14,7 +14,7 @@ from omnibase_core.models.pipeline.model_pipeline_hook import (
 )
 
 
-class ModelExecutionPlan(BaseModel):
+class ModelPipelineExecutionPlan(BaseModel):
     """
     Complete execution plan for a pipeline run.
 
@@ -73,11 +73,11 @@ class ModelExecutionPlan(BaseModel):
         return sum(len(plan.hooks) for plan in self.phases.values())
 
     @classmethod
-    def empty(cls) -> "ModelExecutionPlan":
+    def empty(cls) -> "ModelPipelineExecutionPlan":
         """Create an empty execution plan."""
         return cls()
 
 
 __all__ = [
-    "ModelExecutionPlan",
+    "ModelPipelineExecutionPlan",
 ]

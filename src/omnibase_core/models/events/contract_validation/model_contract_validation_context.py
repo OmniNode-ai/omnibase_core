@@ -3,11 +3,16 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """
-Validation context model for contract validation.
+Contract validation context model.
 
 This model provides context information for contract validation operations,
 including the validation mode and extensible flags for customizing
 validation behavior.
+
+Note:
+    This module was renamed from ``model_validation_context.py`` to
+    ``model_contract_validation_context.py`` to avoid filename collision
+    with ``omnibase_core.models.context.model_validation_context``.
 
 Pattern: Model<Name> - Pydantic model for validation context
 Node Type: N/A (Data Model)

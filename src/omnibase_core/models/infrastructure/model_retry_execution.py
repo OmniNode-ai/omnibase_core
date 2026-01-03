@@ -153,7 +153,7 @@ class ModelRetryExecution(BaseModel):
             last_time = datetime.fromisoformat(time_value.replace("Z", "+00:00"))
             delta = datetime.now(UTC) - last_time
             return delta.total_seconds() <= seconds
-        except (ValueError, AttributeError):
+        except (AttributeError, ValueError):
             return False
 
     @classmethod

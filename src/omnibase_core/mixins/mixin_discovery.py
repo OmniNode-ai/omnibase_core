@@ -163,7 +163,7 @@ class MixinDiscovery:
                 mixin_info = ModelMixinInfo(**mixin_data)
                 cache[mixin_info.name] = mixin_info
 
-            except (ValueError, ValidationError, TypeError) as e:
+            except (TypeError, ValidationError, ValueError) as e:
                 raise ModelOnexError(
                     error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"Failed to parse metadata for mixin '{mixin_key}': {e}",

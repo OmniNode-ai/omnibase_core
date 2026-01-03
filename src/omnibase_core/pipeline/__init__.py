@@ -55,10 +55,10 @@ See Also:
 """
 
 from omnibase_core.models.pipeline import (
-    ModelExecutionPlan,
     ModelHookError,
     ModelPhaseExecutionPlan,
     ModelPipelineContext,
+    ModelPipelineExecutionPlan,
     ModelPipelineHook,
     ModelPipelineResult,
     ModelValidationWarning,
@@ -118,8 +118,8 @@ __all__ = [
     "ModelPipelineContext",
     "ModelPipelineResult",
     # Models
-    "ModelExecutionPlan",
     "ModelPhaseExecutionPlan",
+    "ModelPipelineExecutionPlan",
     "ModelPipelineHook",
     "ModelValidationWarning",
     "PipelinePhase",

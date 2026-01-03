@@ -6,9 +6,7 @@
 import pytest
 
 from omnibase_core.enums.enum_handler_type_category import EnumHandlerTypeCategory
-from omnibase_core.models.pipeline import (
-    ModelPipelineHook,
-)
+from omnibase_core.models.pipeline import ModelPipelineHook
 from omnibase_core.pipeline.builder_execution_plan import BuilderExecutionPlan
 from omnibase_core.pipeline.exceptions import (
     DependencyCycleError,
@@ -35,7 +33,7 @@ class TestBuilderExecutionPlanHookTypingValidation:
     def test_generic_hook_validates_for_compute(self) -> None:
         """Generic hook (None category) passes for COMPUTE contract."""
         hook = ModelPipelineHook(
-            hook_id="generic",
+            hook_name="generic",
             phase="execute",
             handler_type_category=None,
             callable_ref="module.func",
@@ -54,7 +52,7 @@ class TestBuilderExecutionPlanHookTypingValidation:
     def test_generic_hook_validates_for_effect(self) -> None:
         """Generic hook (None category) passes for EFFECT contract."""
         hook = ModelPipelineHook(
-            hook_id="generic",
+            hook_name="generic",
             phase="execute",
             handler_type_category=None,
             callable_ref="module.func",
@@ -72,7 +70,7 @@ class TestBuilderExecutionPlanHookTypingValidation:
     def test_typed_compute_hook_passes_on_compute_contract(self) -> None:
         """COMPUTE hook passes on COMPUTE contract."""
         hook = ModelPipelineHook(
-            hook_id="compute-hook",
+            hook_name="compute-hook",
             phase="execute",
             handler_type_category=EnumHandlerTypeCategory.COMPUTE,
             callable_ref="module.func",
@@ -90,7 +88,7 @@ class TestBuilderExecutionPlanHookTypingValidation:
     def test_typed_compute_hook_fails_on_effect_contract_when_enforced(self) -> None:
         """COMPUTE hook on EFFECT contract raises error when enforced."""
         hook = ModelPipelineHook(
-            hook_id="compute-hook",
+            hook_name="compute-hook",
             phase="execute",
             handler_type_category=EnumHandlerTypeCategory.COMPUTE,
             callable_ref="module.func",
@@ -111,7 +109,7 @@ class TestBuilderExecutionPlanHookTypingValidation:
     ) -> None:
         """COMPUTE hook on EFFECT contract produces warning when not enforced."""
         hook = ModelPipelineHook(
-            hook_id="compute-hook",
+            hook_name="compute-hook",
             phase="execute",
             handler_type_category=EnumHandlerTypeCategory.COMPUTE,
             callable_ref="module.func",
@@ -125,13 +123,13 @@ class TestBuilderExecutionPlanHookTypingValidation:
         _plan, warnings = builder.build()
         assert len(warnings) == 1
         assert warnings[0].code == "HOOK_TYPE_MISMATCH"
-        assert "compute-hook" in warnings[0].context.get("hook_id", "")
+        assert "compute-hook" in warnings[0].context.get("hook_name", "")
 
     @pytest.mark.unit
     def test_typed_effect_hook_fails_on_compute_contract_when_enforced(self) -> None:
         """EFFECT hook on COMPUTE contract raises error when enforced."""
         hook = ModelPipelineHook(
-            hook_id="effect-hook",
+            hook_name="effect-hook",
             phase="execute",
             handler_type_category=EnumHandlerTypeCategory.EFFECT,
             callable_ref="module.func",
@@ -149,7 +147,7 @@ class TestBuilderExecutionPlanHookTypingValidation:
     def test_nondeterministic_compute_exact_match_only(self) -> None:
         """NONDETERMINISTIC_COMPUTE requires exact match."""
         hook = ModelPipelineHook(
-            hook_id="nondeterministic",
+            hook_name="nondeterministic",
             phase="execute",
             handler_type_category=EnumHandlerTypeCategory.NONDETERMINISTIC_COMPUTE,
             callable_ref="module.func",
@@ -183,7 +181,7 @@ class TestBuilderExecutionPlanDependencyValidation:
     def test_unknown_dependency_id_raises_error(self) -> None:
         """Unknown dependency raises UnknownDependencyError."""
         hook = ModelPipelineHook(
-            hook_id="dependent",
+            hook_name="dependent",
             phase="execute",
             dependencies=["nonexistent"],
             callable_ref="module.func",
@@ -202,13 +200,13 @@ class TestBuilderExecutionPlanDependencyValidation:
     def test_dependency_cycle_raises_error(self) -> None:
         """Dependency cycle raises DependencyCycleError."""
         hook_a = ModelPipelineHook(
-            hook_id="hook-a",
+            hook_name="hook-a",
             phase="execute",
             dependencies=["hook-b"],
             callable_ref="module.a",
         )
         hook_b = ModelPipelineHook(
-            hook_id="hook-b",
+            hook_name="hook-b",
             phase="execute",
             dependencies=["hook-a"],
             callable_ref="module.b",
@@ -226,20 +224,20 @@ class TestBuilderExecutionPlanDependencyValidation:
     def test_valid_dependency_chain_resolves(self) -> None:
         """Valid dependency chain resolves in correct order."""
         hook_a = ModelPipelineHook(
-            hook_id="hook-a",
+            hook_name="hook-a",
             phase="execute",
             callable_ref="module.a",
             priority=100,
         )
         hook_b = ModelPipelineHook(
-            hook_id="hook-b",
+            hook_name="hook-b",
             phase="execute",
             dependencies=["hook-a"],
             callable_ref="module.b",
             priority=100,
         )
         hook_c = ModelPipelineHook(
-            hook_id="hook-c",
+            hook_name="hook-c",
             phase="execute",
             dependencies=["hook-b"],
             callable_ref="module.c",
@@ -250,10 +248,10 @@ class TestBuilderExecutionPlanDependencyValidation:
         plan, _warnings = builder.build()
 
         hooks = plan.get_phase_hooks("execute")
-        hook_ids = [h.hook_id for h in hooks]
+        hook_names = [h.hook_name for h in hooks]
         # a before b before c
-        assert hook_ids.index("hook-a") < hook_ids.index("hook-b")
-        assert hook_ids.index("hook-b") < hook_ids.index("hook-c")
+        assert hook_names.index("hook-a") < hook_names.index("hook-b")
+        assert hook_names.index("hook-b") < hook_names.index("hook-c")
 
 
 @pytest.mark.unit
@@ -264,13 +262,13 @@ class TestBuilderExecutionPlanTopologicalSorting:
     def test_priority_determines_order_no_dependencies(self) -> None:
         """Lower priority executes first when no dependencies."""
         hook_high = ModelPipelineHook(
-            hook_id="high-priority",
+            hook_name="high-priority",
             phase="before",
             priority=10,
             callable_ref="module.high",
         )
         hook_low = ModelPipelineHook(
-            hook_id="low-priority",
+            hook_name="low-priority",
             phase="before",
             priority=200,
             callable_ref="module.low",
@@ -282,20 +280,20 @@ class TestBuilderExecutionPlanTopologicalSorting:
         plan, _ = builder.build()
 
         hooks = plan.get_phase_hooks("before")
-        assert hooks[0].hook_id == "high-priority"  # Lower priority value = first
-        assert hooks[1].hook_id == "low-priority"
+        assert hooks[0].hook_name == "high-priority"  # Lower priority value = first
+        assert hooks[1].hook_name == "low-priority"
 
     @pytest.mark.unit
     def test_dependencies_override_priority(self) -> None:
         """Dependencies take precedence over priority."""
         hook_dep = ModelPipelineHook(
-            hook_id="dependency",
+            hook_name="dependency",
             phase="execute",
             priority=999,  # Low priority but no dependencies
             callable_ref="module.dep",
         )
         hook_main = ModelPipelineHook(
-            hook_id="main",
+            hook_name="main",
             phase="execute",
             priority=1,  # High priority but depends on dep
             dependencies=["dependency"],
@@ -306,19 +304,19 @@ class TestBuilderExecutionPlanTopologicalSorting:
         plan, _ = builder.build()
 
         hooks = plan.get_phase_hooks("execute")
-        hook_ids = [h.hook_id for h in hooks]
-        assert hook_ids.index("dependency") < hook_ids.index("main")
+        hook_names = [h.hook_name for h in hooks]
+        assert hook_names.index("dependency") < hook_names.index("main")
 
     @pytest.mark.unit
     def test_multiple_phases_sorted_independently(self) -> None:
         """Each phase is sorted independently."""
         before_hook = ModelPipelineHook(
-            hook_id="before",
+            hook_name="before",
             phase="before",
             callable_ref="module.before",
         )
         execute_hook = ModelPipelineHook(
-            hook_id="execute",
+            hook_name="execute",
             phase="execute",
             callable_ref="module.execute",
         )
@@ -356,13 +354,13 @@ class TestBuilderExecutionPlanCrossPhaseDependencies:
         # Hook in 'before' phase depends on hook in 'execute' phase
         # This is invalid - dependencies are resolved per-phase
         before_hook = ModelPipelineHook(
-            hook_id="before-hook",
+            hook_name="before-hook",
             phase="before",
             dependencies=["execute-hook"],  # This is in a different phase
             callable_ref="module.before",
         )
         execute_hook = ModelPipelineHook(
-            hook_id="execute-hook",
+            hook_name="execute-hook",
             phase="execute",
             callable_ref="module.execute",
         )
@@ -387,27 +385,27 @@ class TestBuilderExecutionPlanComplexDependencyGraphs:
         #    \ /
         #     D
         hook_a = ModelPipelineHook(
-            hook_id="A",
+            hook_name="A",
             phase="execute",
             callable_ref="module.a",
             priority=1,
         )
         hook_b = ModelPipelineHook(
-            hook_id="B",
+            hook_name="B",
             phase="execute",
             dependencies=["A"],
             callable_ref="module.b",
             priority=1,
         )
         hook_c = ModelPipelineHook(
-            hook_id="C",
+            hook_name="C",
             phase="execute",
             dependencies=["A"],
             callable_ref="module.c",
             priority=2,
         )
         hook_d = ModelPipelineHook(
-            hook_id="D",
+            hook_name="D",
             phase="execute",
             dependencies=["B", "C"],
             callable_ref="module.d",
@@ -418,36 +416,36 @@ class TestBuilderExecutionPlanComplexDependencyGraphs:
         plan, _ = builder.build()
 
         hooks = plan.get_phase_hooks("execute")
-        hook_ids = [h.hook_id for h in hooks]
+        hook_names = [h.hook_name for h in hooks]
 
         # A must be first
-        assert hook_ids[0] == "A"
+        assert hook_names[0] == "A"
         # D must be last
-        assert hook_ids[-1] == "D"
+        assert hook_names[-1] == "D"
         # B and C must be after A and before D
-        assert hook_ids.index("B") > hook_ids.index("A")
-        assert hook_ids.index("C") > hook_ids.index("A")
-        assert hook_ids.index("B") < hook_ids.index("D")
-        assert hook_ids.index("C") < hook_ids.index("D")
+        assert hook_names.index("B") > hook_names.index("A")
+        assert hook_names.index("C") > hook_names.index("A")
+        assert hook_names.index("B") < hook_names.index("D")
+        assert hook_names.index("C") < hook_names.index("D")
 
     @pytest.mark.unit
     def test_longer_cycle_detected(self) -> None:
         """Longer dependency cycles are detected."""
         # A -> B -> C -> A
         hook_a = ModelPipelineHook(
-            hook_id="A",
+            hook_name="A",
             phase="execute",
             dependencies=["C"],
             callable_ref="module.a",
         )
         hook_b = ModelPipelineHook(
-            hook_id="B",
+            hook_name="B",
             phase="execute",
             dependencies=["A"],
             callable_ref="module.b",
         )
         hook_c = ModelPipelineHook(
-            hook_id="C",
+            hook_name="C",
             phase="execute",
             dependencies=["B"],
             callable_ref="module.c",
@@ -467,7 +465,7 @@ class TestBuilderExecutionPlanContractCategoryNone:
     def test_no_contract_category_skips_type_validation(self) -> None:
         """When contract_category is None, type validation is skipped."""
         hook = ModelPipelineHook(
-            hook_id="typed-hook",
+            hook_name="typed-hook",
             phase="execute",
             handler_type_category=EnumHandlerTypeCategory.COMPUTE,
             callable_ref="module.func",
@@ -499,13 +497,13 @@ class TestBuilderExecutionPlanCycleLogging:
         so we use capsys instead of caplog to capture the output.
         """
         hook_a = ModelPipelineHook(
-            hook_id="hook-a",
+            hook_name="hook-a",
             phase="execute",
             dependencies=["hook-b"],
             callable_ref="module.a",
         )
         hook_b = ModelPipelineHook(
-            hook_id="hook-b",
+            hook_name="hook-b",
             phase="execute",
             dependencies=["hook-a"],
             callable_ref="module.b",
@@ -545,19 +543,19 @@ class TestBuilderExecutionPlanCycleLogging:
         """
         # A -> B -> C -> A
         hook_a = ModelPipelineHook(
-            hook_id="A",
+            hook_name="A",
             phase="execute",
             dependencies=["C"],
             callable_ref="module.a",
         )
         hook_b = ModelPipelineHook(
-            hook_id="B",
+            hook_name="B",
             phase="execute",
             dependencies=["A"],
             callable_ref="module.b",
         )
         hook_c = ModelPipelineHook(
-            hook_id="C",
+            hook_name="C",
             phase="execute",
             dependencies=["B"],
             callable_ref="module.c",

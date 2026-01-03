@@ -41,7 +41,7 @@ class ModelPipelineContext(BaseModel):
 
     Pydantic Configuration Note
     ---------------------------
-    Unlike other pipeline models (e.g., ``ModelPipelineHook``, ``ModelExecutionPlan``),
+    Unlike other pipeline models (e.g., ``ModelPipelineHook``, ``ModelPipelineExecutionPlan``),
     this class does NOT use ``from_attributes=True`` because:
 
     1. This model is **mutable** (``frozen=False``), not frozen

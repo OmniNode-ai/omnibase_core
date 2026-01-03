@@ -42,7 +42,7 @@ class ModelContractRef(BaseModel):
         from_attributes=True,
     )
 
-    contract_id: str = Field(
+    contract_name: str = Field(
         ...,
         min_length=1,
         description="Stable identifier for the contract",

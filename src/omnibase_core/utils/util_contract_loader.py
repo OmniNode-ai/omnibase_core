@@ -334,7 +334,7 @@ class UtilContractLoader:
                             )
 
             # Parse node type (default to COMPUTE_GENERIC if not specified)
-            # No backwards compatibility - invalid enum values must fail fast
+            # No legacy fallback - invalid enum values must fail fast
             node_type_str = raw_content.get("node_type", "COMPUTE_GENERIC")
             if isinstance(node_type_str, str):
                 node_type_upper = node_type_str.upper()

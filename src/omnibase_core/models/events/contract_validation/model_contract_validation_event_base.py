@@ -61,7 +61,7 @@ class ModelContractValidationEventBase(BaseModel):
 
     Attributes:
         event_id: Unique identifier for this event instance.
-        contract_id: Identifier of the contract being validated (required).
+        contract_name: Identifier of the contract being validated (required).
         run_id: Unique identifier for this validation run, enabling lifecycle
             sequencing (started -> passed/failed).
         actor: Optional UUID of the node or service that triggered the validation.
@@ -77,10 +77,10 @@ class ModelContractValidationEventBase(BaseModel):
         ... )
         >>>
         >>> event = ModelContractValidationEventBase(
-        ...     contract_id="runtime-host-contract",
+        ...     contract_name="runtime-host-contract",
         ...     run_id=uuid4(),
         ...     actor=uuid4(),
-        ...     contract_ref=ModelContractRef(contract_id="runtime-host-contract"),
+        ...     contract_ref=ModelContractRef(contract_name="runtime-host-contract"),
         ... )
 
     Note:
@@ -101,7 +101,7 @@ class ModelContractValidationEventBase(BaseModel):
         description="Unique identifier for this event instance.",
     )
 
-    contract_id: str = Field(
+    contract_name: str = Field(
         ...,
         description="Identifier of the contract being validated.",
         min_length=1,

@@ -57,8 +57,8 @@ class ModelContractMergeStartedEvent(ModelContractValidationEventBase):
 
     Attributes:
         event_type: Event type identifier (onex.contract.merge.started).
-        merge_plan_id: Optional identifier of the merge plan being executed.
-        profile_ids: List of profile identifiers being applied during merge.
+        merge_plan_name: Optional identifier of the merge plan being executed.
+        profile_names: List of profile identifiers being applied during merge.
         overlay_refs: List of overlay references to be applied.
         resolver_config_hash: Optional hash of the resolver configuration
             for cache invalidation tracking.
@@ -70,10 +70,10 @@ class ModelContractMergeStartedEvent(ModelContractValidationEventBase):
         ... )
         >>>
         >>> event = ModelContractMergeStartedEvent(
-        ...     contract_id="runtime-host-contract",
+        ...     contract_name="runtime-host-contract",
         ...     run_id=uuid4(),
-        ...     merge_plan_id="plan-001",
-        ...     profile_ids=["production", "high-availability"],
+        ...     merge_plan_name="plan-001",
+        ...     profile_names=["production", "high-availability"],
         ...     overlay_refs=["overlay://custom/timeout", "overlay://custom/retry"],
         ...     resolver_config_hash="sha256:abc123...",
         ... )
@@ -92,12 +92,12 @@ class ModelContractMergeStartedEvent(ModelContractValidationEventBase):
         description="Event type identifier.",
     )
 
-    merge_plan_id: str | None = Field(
+    merge_plan_name: str | None = Field(
         default=None,
         description="Optional identifier of the merge plan being executed.",
     )
 
-    profile_ids: list[str] = Field(
+    profile_names: list[str] = Field(
         default_factory=list,
         description="List of profile identifiers being applied during merge. "
         "Profiles provide default values and constraints for contracts.",
@@ -128,11 +128,11 @@ class ModelContractMergeStartedEvent(ModelContractValidationEventBase):
     @classmethod
     def create(
         cls,
-        contract_id: str,
+        contract_name: str,
         run_id: UUID,
         *,
-        merge_plan_id: str | None = None,
-        profile_ids: list[str] | None = None,
+        merge_plan_name: str | None = None,
+        profile_names: list[str] | None = None,
         overlay_refs: list[str] | None = None,
         resolver_config_hash: str | None = None,
         actor: UUID | None = None,
@@ -143,10 +143,10 @@ class ModelContractMergeStartedEvent(ModelContractValidationEventBase):
         Factory method for creating a contract merge started event.
 
         Args:
-            contract_id: Identifier of the base contract being merged.
+            contract_name: Identifier of the base contract being merged.
             run_id: Unique identifier for this merge run.
-            merge_plan_id: Optional identifier of the merge plan.
-            profile_ids: Optional list of profile identifiers.
+            merge_plan_name: Optional identifier of the merge plan.
+            profile_names: Optional list of profile identifiers.
             overlay_refs: Optional list of overlay references.
             resolver_config_hash: Optional hash of resolver configuration.
             actor: Optional UUID of the triggering node/service.
@@ -157,10 +157,10 @@ class ModelContractMergeStartedEvent(ModelContractValidationEventBase):
             A new ModelContractMergeStartedEvent instance.
         """
         return cls(
-            contract_id=contract_id,
+            contract_name=contract_name,
             run_id=run_id,
-            merge_plan_id=merge_plan_id,
-            profile_ids=profile_ids if profile_ids is not None else [],
+            merge_plan_name=merge_plan_name,
+            profile_names=profile_names if profile_names is not None else [],
             overlay_refs=overlay_refs if overlay_refs is not None else [],
             resolver_config_hash=resolver_config_hash,
             actor=actor,

@@ -12,10 +12,10 @@ Design Principles:
 - Complete type hints: Full mypy strict mode compliance
 
 Invariants Enforced:
-- validation_started must precede validation_passed or validation_failed (same run_id)
-- validation_passed and validation_failed are mutually exclusive per run_id
-- merge_started must precede merge_completed (same run_id)
-- merge_completed cannot occur if validation_failed occurred (same run_id)
+- validation_started must precede validation_passed or validation_failed (same run_ref)
+- validation_passed and validation_failed are mutually exclusive per run_ref
+- merge_started must precede merge_completed (same run_ref)
+- merge_completed cannot occur if validation_failed occurred (same run_ref)
 
 Related:
     - OMN-1146: Contract Validation Invariant Checker
@@ -28,7 +28,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Protocol, runtime_checkable
 
 if TYPE_CHECKING:
-    from omnibase_core.validation.contract_validation_invariant_checker import (
+    from omnibase_core.models.validation.model_contract_validation_event import (
         ModelContractValidationEvent,
     )
 
@@ -111,11 +111,11 @@ class ProtocolContractValidationInvariantChecker(Protocol):
                 events = [
                     ModelContractValidationEvent(
                         event_type="validation_started",
-                        run_id="run-123",
+                        run_ref="run-123",
                     ),
                     ModelContractValidationEvent(
                         event_type="validation_passed",
-                        run_id="run-123",
+                        run_ref="run-123",
                     ),
                 ]
                 is_valid, violations = checker.validate_sequence(events)
@@ -138,7 +138,7 @@ class ProtocolContractValidationInvariantChecker(Protocol):
 
         Args:
             event: The new event to validate.
-            history: List of previously received events for this run_id.
+            history: List of previously received events for this run_ref.
                 Should be ordered chronologically.
 
         Returns:
@@ -153,12 +153,12 @@ class ProtocolContractValidationInvariantChecker(Protocol):
                 history = [
                     ModelContractValidationEvent(
                         event_type="validation_failed",
-                        run_id="run-123",
+                        run_ref="run-123",
                     ),
                 ]
                 new_event = ModelContractValidationEvent(
                     event_type="merge_completed",
-                    run_id="run-123",
+                    run_ref="run-123",
                 )
                 is_valid, violation = checker.check_invariant(new_event, history)
                 assert is_valid is False

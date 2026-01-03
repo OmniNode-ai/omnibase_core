@@ -222,6 +222,13 @@ class EnumCoreErrorCode(EnumOnexErrorCode):
         "ONEX_CORE_317_ORCHESTRATOR_EXEC_ITERATION_LIMIT_EXCEEDED"
     )
 
+    # Cache errors (321-330)
+    CACHE_BACKEND_ERROR = "ONEX_CORE_321_CACHE_BACKEND_ERROR"
+    CACHE_CONNECTION_ERROR = "ONEX_CORE_322_CACHE_CONNECTION_ERROR"
+    CACHE_TIMEOUT_ERROR = "ONEX_CORE_323_CACHE_TIMEOUT_ERROR"
+    CACHE_OPERATION_FAILED = "ONEX_CORE_324_CACHE_OPERATION_FAILED"
+    CACHE_BACKEND_NOT_CONNECTED = "ONEX_CORE_325_CACHE_BACKEND_NOT_CONNECTED"
+
     def get_component(self) -> str:
         """Get the component identifier for this error code."""
         return "CORE"
@@ -361,6 +368,12 @@ CORE_ERROR_CODE_TO_EXIT_CODE: dict[EnumCoreErrorCode, EnumCLIExitCode] = {
     EnumCoreErrorCode.ORCHESTRATOR_EXEC_LEASE_EXPIRED: EnumCLIExitCode.ERROR,
     EnumCoreErrorCode.ORCHESTRATOR_EXEC_WORKFLOW_FAILED: EnumCLIExitCode.ERROR,
     EnumCoreErrorCode.ORCHESTRATOR_EXEC_ITERATION_LIMIT_EXCEEDED: EnumCLIExitCode.ERROR,
+    # Cache errors -> ERROR
+    EnumCoreErrorCode.CACHE_BACKEND_ERROR: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.CACHE_CONNECTION_ERROR: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.CACHE_TIMEOUT_ERROR: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.CACHE_OPERATION_FAILED: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.CACHE_BACKEND_NOT_CONNECTED: EnumCLIExitCode.ERROR,
 }
 
 
@@ -502,5 +515,11 @@ def get_core_error_description(error_code: EnumCoreErrorCode) -> str:
         EnumCoreErrorCode.ORCHESTRATOR_EXEC_LEASE_EXPIRED: "Orchestrator: action lease expired during execution",
         EnumCoreErrorCode.ORCHESTRATOR_EXEC_WORKFLOW_FAILED: "Orchestrator: workflow execution failed",
         EnumCoreErrorCode.ORCHESTRATOR_EXEC_ITERATION_LIMIT_EXCEEDED: "Orchestrator: workflow iteration limit exceeded (DoS protection)",
+        # Cache errors
+        EnumCoreErrorCode.CACHE_BACKEND_ERROR: "Cache backend operation failed",
+        EnumCoreErrorCode.CACHE_CONNECTION_ERROR: "Cache backend connection failed",
+        EnumCoreErrorCode.CACHE_TIMEOUT_ERROR: "Cache operation timed out",
+        EnumCoreErrorCode.CACHE_OPERATION_FAILED: "Cache operation failed",
+        EnumCoreErrorCode.CACHE_BACKEND_NOT_CONNECTED: "Cache backend is not connected",
     }
     return descriptions.get(error_code, "Unknown error")

@@ -9,7 +9,7 @@ from omnibase_core.models.pipeline.model_phase_execution_plan import (
 )
 from omnibase_core.models.pipeline.model_pipeline_context import ModelPipelineContext
 from omnibase_core.models.pipeline.model_pipeline_execution_plan import (
-    ModelExecutionPlan,
+    ModelPipelineExecutionPlan,
 )
 from omnibase_core.models.pipeline.model_pipeline_hook import (
     ModelPipelineHook,
@@ -21,10 +21,10 @@ from omnibase_core.models.pipeline.model_validation_warning import (
 )
 
 __all__ = [
-    "ModelExecutionPlan",
     "ModelHookError",
     "ModelPhaseExecutionPlan",
     "ModelPipelineContext",
+    "ModelPipelineExecutionPlan",
     "ModelPipelineHook",
     "ModelPipelineResult",
     "ModelValidationWarning",

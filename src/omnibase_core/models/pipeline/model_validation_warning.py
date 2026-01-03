@@ -1,7 +1,12 @@
 # SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
 #
 # SPDX-License-Identifier: Apache-2.0
-"""Validation warning model for pipeline hooks."""
+"""Validation warning model for pipeline hooks.
+
+Note: This module was moved from omnibase_core.pipeline.models to
+omnibase_core.models.pipeline to comply with ONEX repository structure
+validation that requires all models in src/omnibase_core/models/.
+"""
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -42,17 +47,22 @@ class ModelValidationWarning(BaseModel):
     @classmethod
     def hook_type_mismatch(
         cls,
-        hook_id: str,
+        hook_name: str,
         hook_category: str | None,
         contract_category: str,
     ) -> "ModelValidationWarning":
         """Factory for hook type mismatch warnings."""
         return cls(
             code="HOOK_TYPE_MISMATCH",
-            message=f"Hook '{hook_id}' category '{hook_category}' doesn't match contract category '{contract_category}'",
+            message=f"Hook '{hook_name}' category '{hook_category}' doesn't match contract category '{contract_category}'",
             context={
-                "hook_id": hook_id,
+                "hook_name": hook_name,
                 "hook_category": hook_category,
                 "contract_category": contract_category,
             },
         )
+
+
+__all__ = [
+    "ModelValidationWarning",
+]
