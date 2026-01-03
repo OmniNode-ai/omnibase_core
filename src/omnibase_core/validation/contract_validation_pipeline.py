@@ -55,7 +55,7 @@ from omnibase_core.models.common.model_validation_result import ModelValidationR
 from omnibase_core.models.contracts.model_contract_patch import ModelContractPatch
 from omnibase_core.models.contracts.model_handler_contract import ModelHandlerContract
 from omnibase_core.models.validation.model_expanded_contract_result import (
-    ExpandedContractResult,
+    ModelExpandedContractResult,
 )
 from omnibase_core.protocols.validation.protocol_contract_validation_pipeline import (
     ProtocolContractValidationPipeline,
@@ -71,7 +71,7 @@ if TYPE_CHECKING:
 
 __all__ = [
     "ContractValidationPipeline",
-    "ExpandedContractResult",
+    "ModelExpandedContractResult",
     "ProtocolContractValidationPipeline",
 ]
 
@@ -84,7 +84,7 @@ logger = logging.getLogger(__name__)
 # =============================================================================
 
 
-class ContractValidationPipeline:
+class ContractValidationPipeline:  # naming-ok: validator class, not protocol
     """Orchestrates multi-phase contract validation.
 
     The pipeline coordinates three validation phases:
@@ -379,7 +379,7 @@ class ContractValidationPipeline:
         self,
         patch: ModelContractPatch,
         profile_factory: ProtocolContractProfileFactory,
-    ) -> ExpandedContractResult:
+    ) -> ModelExpandedContractResult:
         """Run all validation phases and return expanded contract.
 
         Executes all three validation phases sequentially:
@@ -396,7 +396,7 @@ class ContractValidationPipeline:
                 Must implement ProtocolContractProfileFactory protocol.
 
         Returns:
-            ExpandedContractResult with:
+            ModelExpandedContractResult with:
                 - success: True if all phases passed
                 - contract: The expanded contract (if success=True)
                 - validation_results: Results for each executed phase
@@ -415,7 +415,7 @@ class ContractValidationPipeline:
             f"Pipeline: Starting validation for profile={patch.extends.profile}"
         )
 
-        result = ExpandedContractResult()
+        result = ModelExpandedContractResult()
         all_errors: list[str] = []
 
         # =====================================================================

@@ -41,7 +41,7 @@ __all__ = [
 logger = logging.getLogger(__name__)
 
 
-class ExpandedContractGraphValidator:
+class ExpandedContractGraphValidator:  # naming-ok: validator class, not protocol
     """Validates relationships across multiple expanded contracts.
 
     This validator performs cross-contract analysis that cannot be done

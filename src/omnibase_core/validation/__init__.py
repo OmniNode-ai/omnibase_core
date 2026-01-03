@@ -84,7 +84,7 @@ from .contract_validation_invariant_checker import (
 # Import contract validation pipeline (OMN-1128)
 from .contract_validation_pipeline import (
     ContractValidationPipeline,
-    ExpandedContractResult,
+    ModelExpandedContractResult,
 )
 
 # =============================================================================
@@ -399,7 +399,7 @@ __all__ = [
     "ContractValidationEventType",
     # Contract validation pipeline (OMN-1128)
     "ContractValidationPipeline",
-    "ExpandedContractResult",
+    "ModelExpandedContractResult",
     # Reserved enum validation (OMN-669, OMN-675)
     # NOTE: validate_execution_mode takes EnumExecutionMode (type-safe)
     # while validate_execution_mode_string takes str (for YAML/config parsing)

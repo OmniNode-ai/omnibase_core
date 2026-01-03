@@ -10,7 +10,7 @@ Tests all aspects of the contract validation pipeline including:
 - validate_all runs all phases
 - Pipeline stops on first critical error
 - constraint_validator seam (duck-typed injection)
-- ExpandedContractResult model
+- ModelExpandedContractResult model
 - Successful pipeline returns contract
 
 Related:
@@ -31,7 +31,7 @@ from omnibase_core.models.runtime.model_handler_behavior import ModelHandlerBeha
 from omnibase_core.validation.contract_patch_validator import ContractPatchValidator
 from omnibase_core.validation.contract_validation_pipeline import (
     ContractValidationPipeline,
-    ExpandedContractResult,
+    ModelExpandedContractResult,
     ProtocolContractValidationPipeline,
 )
 from omnibase_core.validation.phases.expanded_validator import ExpandedContractValidator
@@ -328,12 +328,12 @@ class TestContractValidationPipelineConstraintValidator(
 
 
 @pytest.mark.unit
-class TestExpandedContractResultModel:
-    """Tests for ExpandedContractResult model."""
+class TestModelExpandedContractResult:
+    """Tests for ModelExpandedContractResult model."""
 
     def test_default_values(self) -> None:
-        """Test default values for ExpandedContractResult."""
-        result = ExpandedContractResult()
+        """Test default values for ModelExpandedContractResult."""
+        result = ModelExpandedContractResult()
         assert result.success is False
         assert result.contract is None
         assert result.validation_results == {}
@@ -355,7 +355,7 @@ class TestExpandedContractResultModel:
             output_model="omnibase_core.models.test.Output",
         )
 
-        result = ExpandedContractResult(
+        result = ModelExpandedContractResult(
             success=True,
             contract=contract,
         )
@@ -366,7 +366,7 @@ class TestExpandedContractResultModel:
 
     def test_failed_result_with_phase(self) -> None:
         """Test failed result with phase information."""
-        result = ExpandedContractResult(
+        result = ModelExpandedContractResult(
             success=False,
             phase_failed=EnumValidationPhase.PATCH,
             errors=["Validation error 1", "Validation error 2"],
@@ -387,7 +387,7 @@ class TestExpandedContractResultModel:
             summary="Merge validation passed",
         )
 
-        result = ExpandedContractResult(
+        result = ModelExpandedContractResult(
             success=True,
             validation_results={
                 EnumValidationPhase.PATCH.value: patch_result,
@@ -433,7 +433,7 @@ class TestContractValidationPipelineValidateAll(TestContractValidationPipelineFi
             mock_factory.get_profile.return_value = merged
 
             result = pipeline.validate_all(valid_patch, mock_factory)
-            assert isinstance(result, ExpandedContractResult)
+            assert isinstance(result, ModelExpandedContractResult)
 
     def test_validate_all_stops_on_patch_failure(
         self, profile_ref: ModelProfileReference
@@ -626,8 +626,8 @@ class TestContractValidationPipelineEdgeCases(TestContractValidationPipelineFixt
         assert isinstance(result, ModelValidationResult)
 
     def test_expanded_contract_result_serialization(self) -> None:
-        """Test that ExpandedContractResult can be serialized."""
-        result = ExpandedContractResult(
+        """Test that ModelExpandedContractResult can be serialized."""
+        result = ModelExpandedContractResult(
             success=False,
             phase_failed=EnumValidationPhase.MERGE,
             errors=["Error 1", "Error 2"],

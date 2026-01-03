@@ -11,7 +11,7 @@ and provides clear documentation of the expected interface.
 Related:
     - OMN-1128: Contract Validation Pipeline
     - ContractValidationPipeline: Default implementation
-    - ExpandedContractResult: Result model
+    - ModelExpandedContractResult: Result model
 
 .. versionadded:: 0.4.1
 """
@@ -29,7 +29,7 @@ if TYPE_CHECKING:
         ModelHandlerContract,
     )
     from omnibase_core.models.validation.model_expanded_contract_result import (
-        ExpandedContractResult,
+        ModelExpandedContractResult,
     )
 
 __all__ = [
@@ -99,7 +99,7 @@ class ProtocolContractValidationPipeline(Protocol):
         self,
         patch: ModelContractPatch,
         profile_factory: object,
-    ) -> ExpandedContractResult:
+    ) -> ModelExpandedContractResult:
         """Run all validation phases and return expanded contract.
 
         Args:
@@ -107,6 +107,6 @@ class ProtocolContractValidationPipeline(Protocol):
             profile_factory: Factory for resolving base contracts from profiles.
 
         Returns:
-            ExpandedContractResult with the validated contract or errors.
+            ModelExpandedContractResult with the validated contract or errors.
         """
         ...

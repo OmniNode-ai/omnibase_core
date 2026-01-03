@@ -79,7 +79,7 @@ CAPABILITY_PATTERN = re.compile(r"^[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z][a-zA-Z0-9_]*
 EVENT_TYPE_PATTERN = re.compile(r"^[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z][a-zA-Z0-9_]*)*$")
 
 
-class ExpandedContractValidator:
+class ExpandedContractValidator:  # naming-ok: validator class, not protocol
     """Validates expanded contracts for runtime correctness (Phase 3).
 
     This validator performs comprehensive validation of fully-expanded contracts

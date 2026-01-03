@@ -26,11 +26,11 @@ from omnibase_core.models.common.model_validation_result import ModelValidationR
 from omnibase_core.models.contracts.model_handler_contract import ModelHandlerContract
 
 __all__ = [
-    "ExpandedContractResult",
+    "ModelExpandedContractResult",
 ]
 
 
-class ExpandedContractResult(BaseModel):
+class ModelExpandedContractResult(BaseModel):
     """Result of the full contract validation pipeline.
 
     This model captures the outcome of running all three validation phases
