@@ -46,7 +46,7 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 # The health models must be fully loaded before other modules that
 # trigger the validation/contracts chain (which eventually imports health).
 from omnibase_core.models.health.model_health_status import (
-    ModelHealthStatus,
+    ModelHealthStatus,  # noqa: F401 - imported for forward reference resolution
 )
 from omnibase_core.models.providers.model_provider_descriptor import (
     ModelProviderDescriptor,
@@ -124,17 +124,9 @@ class MockProfile:
 # Forward Reference Resolution
 # =============================================================================
 
-# Note: ModelHealthStatus is imported at module level (line 48-50) to avoid
-# circular import issues. ModelProviderDescriptor.model_rebuild() is called
-# above to resolve forward references.
-
-
-# Rebuild the model at module level - this happens once at import time,
-# ensuring deterministic behavior regardless of test execution order.
-# This is the recommended pattern per test_model_provider_descriptor.py.
-ModelProviderDescriptor.model_rebuild(
-    _types_namespace={"ModelHealthStatus": ModelHealthStatus}
-)
+# Note: ModelHealthStatus is imported at module level (lines 48-50) to avoid
+# circular import issues. This import order ensures the forward reference in
+# ModelProviderDescriptor to ModelHealthStatus is properly resolved.
 
 
 # =============================================================================

@@ -67,7 +67,7 @@ class ModelErrorSummary(BaseModel):
         default=False, description="Whether error was reported"
     )
 
-    model_config = ConfigDict()
+    model_config = ConfigDict(from_attributes=True)
 
     @classmethod
     def from_dict(cls, data: Mapping[str, object] | None) -> "ModelErrorSummary | None":

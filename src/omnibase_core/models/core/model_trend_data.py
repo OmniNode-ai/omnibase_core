@@ -71,7 +71,7 @@ class ModelTrendData(BaseModel):
         description="Anomaly detection threshold",
     )
 
-    model_config = ConfigDict()
+    model_config = ConfigDict(from_attributes=True)
 
     @classmethod
     def from_dict(cls, data: Mapping[str, object] | None) -> "ModelTrendData | None":

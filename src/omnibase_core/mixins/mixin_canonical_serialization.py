@@ -23,7 +23,7 @@ from __future__ import annotations
 # version: 1.0.0
 # === /OmniNode:Metadata ===
 import types
-from typing import Any, Union, cast
+from typing import Union, cast
 
 from omnibase_core.enums import EnumNodeMetadataField
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -320,9 +320,11 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
                 # NOTE: EntrypointBlock isinstance check removed - model_dump(mode="json")
                 # converts Pydantic models to dicts, so val is never an EntrypointBlock instance
                 if isinstance(val, dict) and "type" in val and "target" in val:
-                    # Cast dict for EntrypointBlock constructor
-                    entry_dict = cast("dict[str, Any]", val)
-                    filtered_dict[key] = EntrypointBlock(**entry_dict).to_uri()
+                    # Access dict keys directly to avoid Any and maintain type safety
+                    filtered_dict[key] = EntrypointBlock(
+                        type=str(val["type"]),
+                        target=str(val["target"]),
+                    ).to_uri()
                 elif isinstance(val, str):
                     filtered_dict[key] = (
                         EntrypointBlock.from_uri(val).to_uri()
@@ -339,9 +341,8 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
                 # NOTE: Namespace isinstance check removed - model_dump(mode="json")
                 # converts Pydantic models to dicts, so val is never a Namespace instance
                 if isinstance(val, dict) and "value" in val:
-                    # Cast dict for Namespace constructor
-                    ns_dict = cast("dict[str, Any]", val)
-                    filtered_dict[key] = str(Namespace(**ns_dict))
+                    # Access dict key directly to avoid Any and maintain type safety
+                    filtered_dict[key] = str(Namespace(value=str(val["value"])))
                 elif isinstance(val, str):
                     filtered_dict[key] = str(Namespace(value=val))
                 else:
