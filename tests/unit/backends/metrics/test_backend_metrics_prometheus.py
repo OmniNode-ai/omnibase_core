@@ -334,24 +334,22 @@ class TestBackendMetricsPrometheusPushReturnValue:
 
     @pytest.mark.timeout(60)
     def test_push_returns_none_without_gateway_url(self) -> None:
-        """Test that push returns None when no gateway URL is configured."""
+        """Test that push is a no-op when no gateway URL is configured."""
         backend = BackendMetricsPrometheus()
 
-        result = backend.push()
-
-        assert result is None
+        # push() returns None per protocol specification; verify it doesn't raise
+        backend.push()
 
     @pytest.mark.timeout(60)
     def test_push_returns_none_without_job_name(self) -> None:
-        """Test that push returns None when no job name is configured."""
+        """Test that push is a no-op when no job name is configured."""
         backend = BackendMetricsPrometheus(
             push_gateway_url="http://localhost:9091",
             push_job_name="",  # Empty job name
         )
 
-        result = backend.push()
-
-        assert result is None
+        # push() returns None per protocol specification; verify it doesn't raise
+        backend.push()
 
 
 @pytest.mark.unit

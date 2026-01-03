@@ -89,7 +89,3 @@ class ModelContractValidationContext(BaseModel):
         default_factory=dict,
         description="Extensible flags for fine-grained validation control",
     )
-
-
-# Legacy alias for migration
-ModelValidationContext = ModelContractValidationContext

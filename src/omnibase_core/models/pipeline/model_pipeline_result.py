@@ -3,12 +3,12 @@
 # SPDX-License-Identifier: Apache-2.0
 """Pipeline result model for execution outcomes."""
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from copy import deepcopy
 from types import MappingProxyType
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.models.pipeline.model_hook_error import ModelHookError
 from omnibase_core.models.pipeline.model_pipeline_context import ModelPipelineContext
@@ -23,49 +23,51 @@ class ModelPipelineResult(BaseModel):
 
     Thread Safety
     -------------
-    **Partially thread-safe with caveats.**
+    **Thread-safe with defensive copying.**
 
     This model uses ``frozen=True``, making the result itself immutable.
-    The ``errors`` field is a tuple (immutable), ensuring captured errors
-    cannot be modified after creation. However, the nested ``context`` field
-    (ModelPipelineContext) is intentionally mutable to allow inter-hook
-    communication during pipeline execution.
+    All mutable input data is defensively copied on construction:
 
-    Immutable Fields
-    ----------------
+    - **errors**: Automatically converted to immutable tuple if passed as list
+    - **context**: Deep copy of context data created on initialization
+
+    This ensures that external code cannot modify the result's state after
+    creation, even if it holds references to the original mutable objects.
+
+    Immutable Fields (Thread-Safe)
+    ------------------------------
     - ``success``: bool (immutable by nature)
-    - ``errors``: tuple of ModelHookError (immutable - safe to share)
+    - ``errors``: tuple of ModelHookError (immutable tuple, frozen models)
+    - ``context``: ModelPipelineContext (defensive copy on init - data isolated)
 
-    Mutable Fields
-    --------------
-    - ``context``: ModelPipelineContext (intentionally mutable for hook communication)
+    Defensive Copying
+    -----------------
+    The ``_create_defensive_context_copy`` validator ensures that:
 
-    .. warning:: **Mutable Context in Frozen Result**
+    1. A new ModelPipelineContext is created with deep-copied data
+    2. No external references to the original data dict are retained
+    3. Modifications to the original context after result creation have no effect
 
-        While ``ModelPipelineResult`` is frozen, the ``context`` field contains
-        a mutable ``ModelPipelineContext`` object. This creates a thread safety
-        boundary:
+    Similarly, ``_ensure_errors_immutable`` converts any list of errors to a tuple.
 
-        - **Safe**: Reading result fields (``success``, ``errors``) across threads
-        - **Safe**: Reading ``context.data`` after pipeline completion
-        - **Unsafe**: Modifying ``context.data`` after sharing across threads
+    .. note:: **Context is Still Technically Mutable**
 
-        If you need to share a pipeline result across threads after execution,
-        create a deep copy of the context data::
+        While the context data is deep-copied on construction (breaking external
+        references), the ``ModelPipelineContext`` object itself remains mutable.
+        This is safe for typical usage patterns where results are read after
+        creation. For additional safety when sharing across threads:
 
-            import copy
-
-            # Safe way to share result across threads
-            result = pipeline.execute()
-            frozen_data = copy.deepcopy(result.context.data) if result.context else {}
+        - **Safe**: Reading ``context.data`` from multiple threads
+        - **Safe**: Passing result to read-only consumers
+        - **Caution**: Modifying ``context.data`` (possible but discouraged)
 
     Best Practices
     --------------
     1. Treat ``context`` as read-only after pipeline execution completes
     2. Use ``frozen_context_data`` property for truly immutable access
     3. Use ``frozen_copy()`` method when sharing results across threads
-    4. Do not pass the same result instance to multiple concurrent consumers
-       that may modify ``context.data``
+    4. The defensive copy on construction protects against accidental mutation
+       of the original context
 
     Thread-Safe API
     ---------------
@@ -83,6 +85,18 @@ class ModelPipelineResult(BaseModel):
         # Option 2: Get fully independent copy
         safe_result = result.frozen_copy()
         executor.submit(worker_fn, safe_result)
+
+    Example - Defensive Copy Behavior::
+
+        # Original context
+        ctx = ModelPipelineContext(data={"key": {"nested": "value"}})
+
+        # Create result - defensive copy is made
+        result = ModelPipelineResult(success=True, context=ctx)
+
+        # Modifying original context does NOT affect result
+        ctx.data["key"]["nested"] = "modified"
+        assert result.context.data["key"]["nested"] == "value"  # Unchanged!
     """
 
     # TODO(pydantic-v3): Re-evaluate from_attributes=True when Pydantic v3 is released.
@@ -112,10 +126,88 @@ class ModelPipelineResult(BaseModel):
         default=None,
         description=(
             "Final context state after pipeline execution. "
-            "WARNING: This field is mutable even though the result is frozen. "
-            "Treat as read-only when sharing across threads. See class docstring."
+            "A defensive deep copy is created on initialization to prevent "
+            "external mutation. Treat as read-only when sharing across threads. "
+            "See class docstring."
         ),
     )
+
+    @field_validator("errors", mode="before")
+    @classmethod
+    def _ensure_errors_immutable(
+        cls, v: Sequence[ModelHookError] | tuple[ModelHookError, ...] | None
+    ) -> tuple[ModelHookError, ...]:
+        """
+        Convert errors to immutable tuple for thread safety.
+
+        This validator ensures that even if a list is passed, it is converted
+        to a tuple to prevent external mutation of the errors collection.
+        Additionally, each error is validated to ensure it's a proper
+        ModelHookError instance.
+
+        Parameters
+        ----------
+        v : Sequence[ModelHookError] | tuple[ModelHookError, ...] | None
+            The errors to validate. Can be a list, tuple, or None.
+
+        Returns
+        -------
+        tuple[ModelHookError, ...]
+            An immutable tuple of errors.
+        """
+        if v is None:
+            return ()
+        if isinstance(v, tuple):
+            return v
+        # Convert sequence (list, etc.) to tuple for immutability
+        return tuple(v)
+
+    @field_validator("context", mode="before")
+    @classmethod
+    def _create_defensive_context_copy(
+        cls, v: ModelPipelineContext | Mapping[str, object] | None
+    ) -> ModelPipelineContext | None:
+        """
+        Create a defensive deep copy of context data for thread safety.
+
+        This validator ensures that the context's data dictionary is deep-copied
+        on initialization, breaking any reference sharing with external mutable
+        data structures. This prevents external code from modifying the result's
+        context after creation.
+
+        Parameters
+        ----------
+        v : ModelPipelineContext | Mapping[str, object] | None
+            The context to validate. Can be a ModelPipelineContext instance,
+            a mapping (for from_attributes compatibility), or None.
+
+        Returns
+        -------
+        ModelPipelineContext | None
+            A new ModelPipelineContext with deep-copied data, or None.
+
+        Note
+        ----
+        The deep copy is performed on the context's ``data`` dictionary.
+        The returned ModelPipelineContext is still technically mutable,
+        but it no longer shares references with external data structures.
+        For truly immutable access after construction, use ``frozen_context_data``
+        or ``frozen_copy()``.
+        """
+        if v is None:
+            return None
+
+        # Handle ModelPipelineContext instance - create defensive copy
+        # This is the expected case during normal pipeline execution
+        if isinstance(v, ModelPipelineContext):
+            return ModelPipelineContext(data=deepcopy(v.data))
+
+        # Handle mapping input (e.g., from from_attributes or model_validate)
+        # This path is used when Pydantic passes raw dict data
+        raw_data = v.get("data", {})
+        # Pydantic guarantees data field is a dict when present
+        data: dict[str, object] = raw_data if isinstance(raw_data, dict) else {}
+        return ModelPipelineContext(data=deepcopy(data))
 
     @property
     def frozen_context_data(self) -> Mapping[str, Any]:

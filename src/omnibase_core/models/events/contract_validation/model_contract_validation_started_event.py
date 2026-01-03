@@ -32,7 +32,7 @@ See Also:
 
 from uuid import UUID
 
-from pydantic import Field, field_validator
+from pydantic import AliasChoices, Field, field_validator
 
 from omnibase_core.models.events.contract_validation.model_contract_ref import (
     ModelContractRef,
@@ -95,6 +95,7 @@ class ModelContractValidationStartedEvent(ModelContractValidationEventBase):
 
     validator_set_name: str | None = Field(
         default=None,
+        validation_alias=AliasChoices("validator_set_name", "validator_set_id"),
         description="Optional identifier of the validator set being used for validation.",
     )
 

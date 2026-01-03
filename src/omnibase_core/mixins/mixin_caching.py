@@ -509,7 +509,7 @@ class MixinCaching:
                 TypeError,
                 ValueError,
             ) as e:
-                # Graceful degradation with cleanup triggering
+                # fallback-ok: graceful degradation to L1 when L2 fails
                 # Catches: network errors, serialization issues, backend interface problems
                 await self._handle_l2_error(e, "get", cache_key)
             except (
@@ -575,7 +575,7 @@ class MixinCaching:
                 TypeError,
                 ValueError,
             ) as e:
-                # Graceful degradation with cleanup triggering
+                # fallback-ok: graceful degradation to L1 when L2 fails
                 # Catches: network errors, serialization issues, backend interface problems
                 await self._handle_l2_error(e, "set", cache_key)
             except (
@@ -614,7 +614,7 @@ class MixinCaching:
                 TypeError,
                 ValueError,
             ) as e:
-                # Graceful degradation with cleanup triggering
+                # fallback-ok: graceful degradation to L1 when L2 fails
                 # Catches: network errors, serialization issues, backend interface problems
                 await self._handle_l2_error(e, "delete", cache_key)
             except (
@@ -645,7 +645,7 @@ class MixinCaching:
                 TypeError,
                 ValueError,
             ) as e:
-                # Graceful degradation with cleanup triggering
+                # fallback-ok: graceful degradation to L1 when L2 fails
                 # Catches: network errors, serialization issues, backend interface problems
                 await self._handle_l2_error(e, "clear")
             except (

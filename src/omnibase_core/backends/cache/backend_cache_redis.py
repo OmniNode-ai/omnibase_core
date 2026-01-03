@@ -486,10 +486,15 @@ class BackendCacheRedis:
             if self._pool is not None:
                 await self._pool.disconnect()
         except (ConnectionError, OSError, RedisError, TimeoutError) as e:
-            # Sanitize to prevent credential leakage
-            # Note: cleanup intentionally does not raise - must be robust
+            # cleanup-resilience-ok: cleanup must complete even on expected errors
             logger.warning(
                 "Error during connection cleanup: %s", sanitize_error_message(str(e))
+            )
+        except Exception as e:
+            # cleanup-resilience-ok: catch-all ensures cleanup never fails unexpectedly
+            logger.warning(
+                "Unexpected error during connection cleanup: %s",
+                sanitize_error_message(str(e)),
             )
         finally:
             self._pool = None
@@ -510,10 +515,15 @@ class BackendCacheRedis:
             if self._client:
                 await self._client.close()
         except (ConnectionError, OSError, RedisError, TimeoutError) as e:
-            # Sanitize to prevent credential leakage
-            # Note: cleanup intentionally does not raise - must be robust
+            # cleanup-resilience-ok: client cleanup must not prevent pool cleanup
             logger.warning(
                 "Error closing Redis client: %s", sanitize_error_message(str(e))
+            )
+        except Exception as e:
+            # cleanup-resilience-ok: catch-all ensures pool cleanup always runs
+            logger.warning(
+                "Unexpected error closing Redis client: %s",
+                sanitize_error_message(str(e)),
             )
         finally:
             self._client = None
@@ -522,10 +532,15 @@ class BackendCacheRedis:
             if self._pool:
                 await self._pool.disconnect()
         except (ConnectionError, OSError, RedisError, TimeoutError) as e:
-            # Sanitize to prevent credential leakage
-            # Note: cleanup intentionally does not raise - must be robust
+            # cleanup-resilience-ok: pool cleanup errors should not propagate
             logger.warning(
                 "Error disconnecting Redis pool: %s", sanitize_error_message(str(e))
+            )
+        except Exception as e:
+            # cleanup-resilience-ok: catch-all ensures state is always reset
+            logger.warning(
+                "Unexpected error disconnecting Redis pool: %s",
+                sanitize_error_message(str(e)),
             )
         finally:
             self._pool = None
@@ -559,7 +574,12 @@ class BackendCacheRedis:
             result: object = json.loads(data)
             return result
         except json.JSONDecodeError as e:
-            logger.warning("Failed to deserialize cache value for key '%s': %s", key, e)
+            # Sanitize for consistency - exception might include cached data context
+            logger.warning(
+                "Failed to deserialize cache value for key '%s': %s",
+                key,
+                sanitize_error_message(str(e)),
+            )
             return None
         except (ConnectionError, OSError, RedisError, TimeoutError) as e:
             logger.warning(
@@ -607,7 +627,12 @@ class BackendCacheRedis:
             else:
                 await self._client.set(prefixed_key, data)
         except (TypeError, ValueError) as e:
-            logger.warning("Failed to serialize cache value for key '%s': %s", key, e)
+            # Sanitize for consistency - exception might include value representations
+            logger.warning(
+                "Failed to serialize cache value for key '%s': %s",
+                key,
+                sanitize_error_message(str(e)),
+            )
         except (ConnectionError, OSError, RedisError, TimeoutError) as e:
             logger.warning(
                 "Redis set failed for key '%s': %s", key, sanitize_error_message(str(e))
