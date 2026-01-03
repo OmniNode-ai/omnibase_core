@@ -9,7 +9,7 @@ Strict typing is enforced: No string conditions or Any types allowed.
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.types.constraints import PrimitiveValueType
+from omnibase_core.types.type_constraints import PrimitiveValueType
 
 
 class ModelConditionValueList(BaseModel):

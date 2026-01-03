@@ -42,7 +42,7 @@ Example:
 See Also:
     - omnibase_core.models.compute.model_compute_pipeline_result: Aggregated pipeline results
     - omnibase_core.models.compute.model_compute_step_metadata: Step execution metadata
-    - omnibase_core.utils.compute_executor: Creates step results during execution
+    - omnibase_core.utils.util_compute_executor: Creates step results during execution
 """
 
 from __future__ import annotations

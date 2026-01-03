@@ -649,7 +649,7 @@ This section documents how `execute_compute_pipeline` enforces timeouts using ba
 When `pipeline_timeout_ms` is configured in a `ModelComputeSubcontract`, the `execute_compute_pipeline` function wraps execution in a `ThreadPoolExecutor`:
 
 ```python
-# From src/omnibase_core/utils/compute_executor.py
+# From src/omnibase_core/utils/util_compute_executor.py
 executor = ThreadPoolExecutor(max_workers=1)
 try:
     future = executor.submit(_execute_pipeline_steps, contract, input_data, context, start_time)
@@ -862,7 +862,7 @@ if environment.memory_constrained:
 
 For related timeout documentation:
 - [EFFECT_TIMEOUT_BEHAVIOR.md](../architecture/EFFECT_TIMEOUT_BEHAVIOR.md) - Effect-level timeout checkpoints
-- [compute_executor.py](../../src/omnibase_core/utils/compute_executor.py) - Compute timeout implementation
+- [util_compute_executor.py](../../src/omnibase_core/utils/util_compute_executor.py) - Compute timeout implementation
 - [constants_effect.py](../../src/omnibase_core/constants/constants_effect.py) - Timeout constants
 
 ---

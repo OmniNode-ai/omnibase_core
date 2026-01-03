@@ -10,7 +10,7 @@ pytestmark = pytest.mark.unit
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.utils.fsm_expression_parser import (
+from omnibase_core.utils.util_fsm_expression_parser import (
     SUPPORTED_OPERATORS,
     get_supported_operators,
     parse_expression,

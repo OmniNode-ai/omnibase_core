@@ -29,6 +29,9 @@ from .util_hash import (
 )
 from .util_validators import convert_dict_to_frozen_pairs, convert_list_to_tuple
 
+# Note: parse_datetime is lazy-loaded via __getattr__ to avoid circular imports
+# when types/ imports from utils/ during initialization
+
 # Note: The following utilities have heavy model dependencies and are NOT imported
 # here to avoid circular dependencies during initial module loading. Import directly:
 # - util_cli_result_formatter.UtilCliResultFormatter
@@ -52,6 +55,7 @@ __all__ = [
     "deterministic_hash",
     "deterministic_hash_int",
     "deterministic_jitter",
+    "parse_datetime",
     "string_to_uuid",
 ]
 
@@ -72,6 +76,14 @@ def __getattr__(name: str) -> type:
     - ProtocolContractLoader -> UtilContractLoader
     """
     import warnings
+
+    # -------------------------------------------------------------------------
+    # parse_datetime: lazy-loaded to avoid circular imports with types/
+    # -------------------------------------------------------------------------
+    if name == "parse_datetime":
+        from .util_datetime_parser import parse_datetime
+
+        return parse_datetime
 
     # -------------------------------------------------------------------------
     # Consolidated imports: UtilContractLoader and its deprecated alias

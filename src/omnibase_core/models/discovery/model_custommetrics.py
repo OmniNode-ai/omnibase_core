@@ -6,7 +6,7 @@ from omnibase_core.models.discovery.model_metric_value import (
     AnyMetricValue,
     ModelMetricValue,
 )
-from omnibase_core.types.json_types import PrimitiveValue
+from omnibase_core.types.type_json import PrimitiveValue
 
 logger = logging.getLogger(__name__)
 

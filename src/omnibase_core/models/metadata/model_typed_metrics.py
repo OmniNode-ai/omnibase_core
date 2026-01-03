@@ -13,7 +13,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
-from omnibase_core.types.constraints import SimpleValueType
+from omnibase_core.types.type_constraints import SimpleValueType
 
 # Use consolidated SimpleValueType instead of redundant TypeVar
 

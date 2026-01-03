@@ -39,7 +39,7 @@ The omnibase_core codebase includes complete FSM execution capabilities:
 - **`ModelFSMOperation`** - Operation definitions with rollback support
 
 **Runtime Execution**:
-- **`utils/fsm_executor.py`** - Pure function FSM execution
+- **`utils/util_fsm_executor.py`** - Pure function FSM execution
 - **`MixinFSMExecution`** - Mixin for node integration
 - **Comprehensive Tests** - Full test coverage
 - **100% Type Safety** - Zero `Any` types, full mypy strict compliance

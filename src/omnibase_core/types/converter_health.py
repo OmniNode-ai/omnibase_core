@@ -5,9 +5,10 @@ Convert legacy health dict[str, Any] to TypedDict.
 """
 
 
+from omnibase_core.utils.util_datetime_parser import parse_datetime
+
 from .typed_dict_converted_health import TypedDictConvertedHealth
 from .typed_dict_legacy_health import TypedDictLegacyHealth
-from .util_datetime_parser import parse_datetime
 
 
 def convert_health_to_typed_dict(

@@ -4,7 +4,7 @@
 
 This guide documents the centralized JSON type aliases introduced in PR #163 to reduce union type tech debt throughout the omnibase_core codebase.
 
-**Key Takeaway**: Use centralized type aliases from `omnibase_core.types.json_types` instead of inline union types to improve code maintainability, consistency, and type safety.
+**Key Takeaway**: Use centralized type aliases from `omnibase_core.types.type_json` instead of inline union types to improve code maintainability, consistency, and type safety.
 
 ## The Problem: "Primitive Soup" Anti-Pattern
 
@@ -42,7 +42,7 @@ Each file reinvents the same concept with subtle variations, making the codebase
 
 ## The Solution: Centralized Type Aliases
 
-PR #163 introduces centralized type aliases in `omnibase_core.types.json_types` that provide:
+PR #163 introduces centralized type aliases in `omnibase_core.types.type_json` that provide:
 
 - **Semantic naming**: `JsonPrimitive` is clearer than `str | int | float | bool | None`
 - **Single source of truth**: One location to update when requirements change
@@ -54,7 +54,7 @@ PR #163 introduces centralized type aliases in `omnibase_core.types.json_types` 
 ### Import Statement
 
 ```python
-from omnibase_core.types.json_types import (
+from omnibase_core.types.type_json import (
     JsonPrimitive,
     PrimitiveValue,
     JsonValue,
@@ -333,7 +333,7 @@ def get_config(key: str) -> str | int | float | bool | None:
     ...
 
 # After
-from omnibase_core.types.json_types import JsonPrimitive
+from omnibase_core.types.type_json import JsonPrimitive
 
 def get_config(key: str) -> JsonPrimitive:
     ...
@@ -473,7 +473,7 @@ class ModelConfig(BaseModel):
     value: str | int | float | bool | None
 
 # After
-from omnibase_core.types.json_types import JsonPrimitive
+from omnibase_core.types.type_json import JsonPrimitive
 
 class ModelConfig(BaseModel):
     timeout: int | float  # Keep specific - we want numeric only
@@ -492,7 +492,7 @@ def process_data(
     ...
 
 # After
-from omnibase_core.types.json_types import JsonValue
+from omnibase_core.types.type_json import JsonValue
 
 def process_data(data: JsonValue) -> dict[str, JsonValue]:
     ...
@@ -508,7 +508,7 @@ def execute_tool(
     ...
 
 # After
-from omnibase_core.types.json_types import ToolParameterValue
+from omnibase_core.types.type_json import ToolParameterValue
 
 def execute_tool(params: dict[str, ToolParameterValue]) -> None:
     ...

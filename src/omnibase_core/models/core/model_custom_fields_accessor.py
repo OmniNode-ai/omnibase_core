@@ -12,7 +12,7 @@ import copy
 from pydantic import Field, model_validator
 
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-from omnibase_core.types.constraints import PrimitiveValueType
+from omnibase_core.types.type_constraints import PrimitiveValueType
 
 from .model_field_accessor import ModelFieldAccessor
 

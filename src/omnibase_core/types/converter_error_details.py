@@ -5,9 +5,10 @@ Convert legacy error dict[str, Any] to TypedDict.
 """
 
 
+from omnibase_core.utils.util_datetime_parser import parse_datetime
+
 from .typed_dict_error_details import TypedDictErrorDetails
 from .typed_dict_legacy_error import TypedDictLegacyError
-from .util_datetime_parser import parse_datetime
 
 
 def convert_error_details_to_typed_dict(

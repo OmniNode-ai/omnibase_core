@@ -46,12 +46,12 @@ Example:
     >>> serialized: SerializedDict = model.model_dump()
 
 See Also:
-    - ``omnibase_core.types.json_types``: Core JSON type definitions
-    - ``omnibase_core.types.json_types.JsonType``: The underlying recursive type
-    - ``omnibase_core.types.json_types.JsonPrimitive``: Scalar JSON values only
+    - ``omnibase_core.types.type_json``: Core JSON type definitions
+    - ``omnibase_core.types.type_json.JsonType``: The underlying recursive type
+    - ``omnibase_core.types.type_json.JsonPrimitive``: Scalar JSON values only
 """
 
-from omnibase_core.types.json_types import JsonType
+from omnibase_core.types.type_json import JsonType
 
 # SerializableValue represents JSON-compatible values (str, int, float, bool, None,
 # list, dict) that can be serialized by Pydantic's model_dump().

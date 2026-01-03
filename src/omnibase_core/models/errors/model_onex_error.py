@@ -10,7 +10,7 @@ This module is part of a carefully managed import chain to avoid circular depend
 
 Safe Runtime Imports (OK to import at module level):
 - omnibase_core.enums.* (no dependencies on this module)
-- omnibase_core.types.core_types (minimal types, no dependencies on this module)
+- omnibase_core.types.type_core (minimal types, no dependencies on this module)
 - Standard library modules
 
 Type-Only Imports (MUST use TYPE_CHECKING guard):
@@ -39,7 +39,7 @@ from omnibase_core.enums.enum_onex_status import EnumOnexStatus
 from omnibase_core.errors.error_codes import get_exit_code_for_status
 
 # Import basic types (no circular dependency risk)
-from omnibase_core.types.core_types import TypedDictBasicErrorContext
+from omnibase_core.types.type_core import TypedDictBasicErrorContext
 from omnibase_core.types.type_serializable_value import SerializedDict
 
 # Type-only imports - protected by TYPE_CHECKING to prevent circular imports

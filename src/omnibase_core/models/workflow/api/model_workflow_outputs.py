@@ -11,7 +11,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.services.model_custom_fields import ModelCustomFields
-from omnibase_core.types.json_types import JsonType
+from omnibase_core.types.type_json import JsonType
 from omnibase_core.types.type_serializable_value import SerializedDict
 from omnibase_core.types.typed_dict_workflow_outputs import TypedDictWorkflowOutputsDict
 

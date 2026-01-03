@@ -41,8 +41,8 @@ This document provides a complete implementation plan for closing the gap betwee
 | **Phase 3: Examples & Patterns** | ⏳ Planned | 0% | TBD | Example contracts and usage patterns |
 | **Phase 4: Migration and Examples** | ⏳ Planned | 0% | TBD | Examples, docs, migration guides |
 
-**✅ What's Available Now** (Phase 1):
-- `src/omnibase_core/utils/fsm_executor.py` - FSM execution utilities (548 lines)
+**What's Available Now** (Phase 1):
+- `src/omnibase_core/utils/util_fsm_executor.py` - FSM execution utilities (548 lines)
 - `src/omnibase_core/mixins/mixin_fsm_execution.py` - FSM execution mixin (237 lines)
 - Comprehensive test coverage (18 test cases, 610+ test lines)
 - Mixin metadata documentation (589 lines)
@@ -102,11 +102,11 @@ class MixinFSMExecution:
     ) -> FSMTransitionResult:
         """Execute FSM transition declaratively."""
         # Delegate to utility module for pure logic
-        from omnibase_core.utils.fsm_executor import execute_transition
+        from omnibase_core.utils.util_fsm_executor import execute_transition
         return await execute_transition(fsm_contract, current_state, trigger, context)
 
 # ✅ CORRECT - Utility module with pure functions
-# src/omnibase_core/utils/fsm_executor.py
+# src/omnibase_core/utils/util_fsm_executor.py
 async def execute_transition(
     fsm: ModelFSMSubcontract,
     current_state: str,
@@ -139,7 +139,7 @@ async def execute_transition(
                      ▼
 ┌─────────────────────────────────────────────────────────────┐
 │         Utility Modules (Phase 1 ✅, Phase 2 🚧)            │
-│   utils/fsm_executor.py, utils/workflow_executor.py         │
+│   utils/util_fsm_executor.py, utils/util_workflow_executor.py │
 └────────────────────┬────────────────────────────────────────┘
                      │
                      ▼
@@ -158,7 +158,7 @@ async def execute_transition(
 
 ### 1.1 FSM Utility Module
 
-**File**: `src/omnibase_core/utils/fsm_executor.py`
+**File**: `src/omnibase_core/utils/util_fsm_executor.py`
 
 ```python
 """
@@ -574,7 +574,7 @@ from typing import Any
 from omnibase_core.models.contracts.subcontracts.model_fsm_subcontract import (
     ModelFSMSubcontract,
 )
-from omnibase_core.utils.fsm_executor import (
+from omnibase_core.utils.util_fsm_executor import (
     FSMState,
     FSMTransitionResult,
     execute_transition,
@@ -776,7 +776,7 @@ mixins:
 
 ### 2.1 Workflow Utility Module
 
-**File**: `src/omnibase_core/utils/workflow_executor.py`
+**File**: `src/omnibase_core/utils/util_workflow_executor.py`
 
 ```python
 """
@@ -1348,7 +1348,7 @@ from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
 from omnibase_core.models.contracts.subcontracts.model_workflow_definition import (
     ModelWorkflowDefinition,
 )
-from omnibase_core.utils.workflow_executor import (
+from omnibase_core.utils.util_workflow_executor import (
     WorkflowExecutionResult,
     execute_workflow,
     get_execution_order,
@@ -2035,7 +2035,7 @@ node = NodeMyReducer(container, contract)
 """Tests for FSM execution utilities."""
 
 import pytest
-from omnibase_core.utils.fsm_executor import execute_transition, validate_fsm_contract
+from omnibase_core.utils.util_fsm_executor import execute_transition, validate_fsm_contract
 from omnibase_core.models.contracts.subcontracts.model_fsm_subcontract import (
     ModelFSMSubcontract,
 )

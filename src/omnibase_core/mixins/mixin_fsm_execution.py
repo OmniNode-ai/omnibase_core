@@ -10,7 +10,7 @@ from omnibase_core.models.contracts.subcontracts.model_fsm_subcontract import (
     ModelFSMSubcontract,
 )
 from omnibase_core.types.type_fsm_context import FSMContextType
-from omnibase_core.utils.fsm_executor import (
+from omnibase_core.utils.util_fsm_executor import (
     FSMState,
     FSMTransitionResult,
     execute_transition,
@@ -33,7 +33,7 @@ class MixinFSMExecution:
 
     Pattern:
         This mixin maintains minimal state (current FSM state only).
-        All transition logic is delegated to pure functions in utils/fsm_executor.py.
+        All transition logic is delegated to pure functions in utils/util_fsm_executor.py.
         Intents are emitted for all side effects (pure FSM pattern).
     """
 
@@ -59,7 +59,7 @@ class MixinFSMExecution:
         """
         Execute FSM transition from YAML contract.
 
-        Pure function delegation: delegates to utils/fsm_executor.execute_transition()
+        Pure function delegation: delegates to utils/util_fsm_executor.execute_transition()
         which returns (new_state, intents) without side effects.
 
         Args:
@@ -119,7 +119,7 @@ class MixinFSMExecution:
         """
         Validate FSM contract for correctness.
 
-        Pure function delegation: delegates to utils/fsm_executor.validate_fsm_contract()
+        Pure function delegation: delegates to utils/util_fsm_executor.validate_fsm_contract()
 
         Args:
             fsm_contract: FSM subcontract to validate

@@ -41,7 +41,7 @@ from omnibase_core.utils.util_safe_yaml_loader import (
     load_and_validate_yaml_model,
     load_yaml_content_as_model,
 )
-from omnibase_core.utils.workflow_executor import get_execution_order
+from omnibase_core.utils.util_workflow_executor import get_execution_order
 
 
 @pytest.mark.unit

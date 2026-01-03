@@ -15,7 +15,7 @@ and runtime imports in methods that need to raise errors.
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.common.model_numeric_value import ModelNumericValue
-from omnibase_core.types.json_types import JsonType
+from omnibase_core.types.type_json import JsonType
 
 
 class ModelSchemaValue(BaseModel):

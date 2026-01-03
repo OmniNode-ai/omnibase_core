@@ -10,7 +10,7 @@ from typing import cast
 from pydantic import BaseModel, Field
 
 from omnibase_core.models.common.model_typed_value import ModelTypedMapping
-from omnibase_core.types.json_types import JsonType
+from omnibase_core.types.type_json import JsonType
 
 
 class ModelSecurityPolicyData(BaseModel):

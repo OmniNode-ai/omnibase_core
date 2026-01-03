@@ -59,7 +59,7 @@ Example Python Usage:
 
 See Also:
     - omnibase_core.models.contracts.subcontracts.model_compute_pipeline_step: Step definitions
-    - omnibase_core.utils.compute_executor: Executes these contracts
+    - omnibase_core.utils.util_compute_executor: Executes these contracts
     - omnibase_core.mixins.mixin_compute_execution: Contract validation utilities
     - docs/architecture/CONTRACT_DRIVEN_NODECOMPUTE_V1_0.md: Full specification
 """
