@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 from pydantic import Field, field_validator
 
@@ -26,15 +26,14 @@ class ModelListFilter(ModelCustomFilterBase):
 
     @field_validator("values", mode="before")
     @classmethod
-    def convert_values_to_schema(
-        cls, v: list[Any] | list[ModelSchemaValue]
-    ) -> list[ModelSchemaValue]:
+    def convert_values_to_schema(cls, v: Any) -> list[ModelSchemaValue]:
         """Convert values to ModelSchemaValue for type safety."""
         if not v:
             return []
         # If already ModelSchemaValue instances, return as-is
         # Note: len(v) > 0 check removed - guaranteed non-empty after early return
         if isinstance(v[0], ModelSchemaValue):
-            return v
+            # First element is ModelSchemaValue, so list is homogeneous ModelSchemaValue list
+            return cast(list[ModelSchemaValue], v)
         # Convert raw values to ModelSchemaValue
         return [ModelSchemaValue.from_value(item) for item in v]

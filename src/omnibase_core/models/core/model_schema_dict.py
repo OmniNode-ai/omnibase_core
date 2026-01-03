@@ -329,4 +329,4 @@ class ModelSchemaDict(BaseModel):
 
         kwargs["additional_fields"] = additional_fields
         # Pydantic validates the data at runtime - type safety is enforced by Pydantic
-        return cls(**kwargs)  # type: ignore[arg-type]
+        return cls.model_validate(kwargs)

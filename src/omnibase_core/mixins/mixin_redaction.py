@@ -21,10 +21,12 @@
 # version: 1.0.0
 # === /OmniNode:Metadata ===
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
     from omnibase_core.types.type_serializable_value import SerializedDict
+
+from omnibase_core.types.json_types import JsonType
 
 
 class MixinSensitiveFieldRedaction:
@@ -167,14 +169,14 @@ class MixinSensitiveFieldRedaction:
 
             # Redact items in lists that are dictionaries
             elif isinstance(field_value, list):
-                redacted_list: list[object] = []
+                redacted_list: list[JsonType] = []
                 for item in field_value:
                     if isinstance(item, dict):
                         redacted_list.append(
                             self.redact_sensitive_fields(item),
                         )
                     else:
-                        redacted_list.append(item)
+                        redacted_list.append(cast(JsonType, item))
                 redacted_data[field_name] = redacted_list
 
         return redacted_data

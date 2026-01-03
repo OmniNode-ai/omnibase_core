@@ -4,8 +4,6 @@ This module provides the ModelMixinMethodParameter class for defining
 method parameters in mixin code patterns.
 """
 
-from typing import Any
-
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -23,7 +21,7 @@ class ModelMixinMethodParameter(BaseModel):
 
     name: str = Field(..., description="Parameter name")
     type: str = Field(..., description="Parameter type annotation")
-    default: Any = Field(
+    default: object = Field(
         None,
         description=(
             "Default value for the parameter. "

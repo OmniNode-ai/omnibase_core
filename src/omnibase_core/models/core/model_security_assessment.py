@@ -163,7 +163,7 @@ class ModelSecurityAssessment(BaseModel):
     @classmethod
     def from_dict(cls, data: "SerializedDict") -> "ModelSecurityAssessment":
         """Create from dictionary for easy migration."""
-        return cls(**data)
+        return cls.model_validate(data)
 
     @field_serializer(
         "last_assessment_date",

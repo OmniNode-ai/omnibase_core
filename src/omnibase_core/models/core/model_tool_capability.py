@@ -6,8 +6,6 @@ Tool capability definition with supported input/output types and operations.
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.types.type_serializable_value import SerializedDict
-
 
 class ModelToolCapability(BaseModel):
     """Tool capability definition."""
@@ -57,7 +55,7 @@ class ModelToolCapability(BaseModel):
         """Get number of output types produced."""
         return len(self.output_types)
 
-    def get_summary(self) -> SerializedDict:
+    def get_summary(self) -> dict[str, object]:
         """Get capability summary."""
         return {
             "name": self.name,

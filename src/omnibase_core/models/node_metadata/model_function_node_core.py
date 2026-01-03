@@ -219,11 +219,12 @@ class ModelFunctionNodeCore(BaseModel):
             result["description"] = self.description
         result["version"] = self.version
         # Pack additional fields into metadata
+        # Convert list[str] to list for JsonType compatibility
         result["metadata"] = {
             "function_id": str(self.function_id),
             "function_type": self.function_type.value,
             "status": self.status.value,
-            "parameters": self.parameters,
+            "parameters": list(self.parameters),
             # return_type is optional, use explicit None check
             "return_type": self.return_type.value
             if self.return_type is not None

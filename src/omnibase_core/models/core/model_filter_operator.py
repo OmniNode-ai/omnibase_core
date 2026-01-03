@@ -2,8 +2,6 @@
 FilterOperator model.
 """
 
-from typing import Any
-
 from pydantic import BaseModel, Field
 
 
@@ -14,7 +12,7 @@ class ModelFilterOperator(BaseModel):
         default=...,
         description="Operator type (eq/ne/gt/lt/gte/lte/in/nin/like/regex)",
     )
-    value: str | int | float | bool | list[Any] = Field(
+    value: str | int | float | bool | list[str | int | float | bool] = Field(
         default=...,
         description="Filter value",
     )

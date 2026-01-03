@@ -110,10 +110,15 @@ class ModelNodeExecutionSettings(BaseModel):
 
     def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
+        from typing import cast
+
+        from omnibase_core.types.type_serializable_value import SerializableValue
+
         result: TypedDictMetadataDict = {}
         summary = dict(self.get_execution_summary())
         summary["is_configured_for_performance"] = self.is_configured_for_performance()
-        result["metadata"] = summary
+        # Cast TypedDict to SerializableValue dict for TypedDictMetadataDict compatibility
+        result["metadata"] = cast(dict[str, SerializableValue], summary)
         return result
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:

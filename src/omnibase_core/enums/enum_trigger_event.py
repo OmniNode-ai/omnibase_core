@@ -33,7 +33,8 @@ class EnumTriggerEvent(str, Enum):
 
     def __str__(self) -> str:
         """Return the string value of the trigger event."""
-        return self.value
+        # Cast to satisfy mypy - Enum.value is typed as object but str Enums have str values
+        return str(self.value)
 
     @classmethod
     @cache

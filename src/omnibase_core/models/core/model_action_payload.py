@@ -306,7 +306,13 @@ class ModelActionPayload(ModelOnexInputState):
             ['process_batch']
         """
         # Pop trust_level from kwargs to avoid duplicate keyword argument error
-        child_trust_level = kwargs.pop("trust_level", 1.0)
+        # Cast to float since kwargs values are typed as object
+        child_trust_level_raw = kwargs.pop("trust_level", 1.0)
+        child_trust_level = (
+            float(child_trust_level_raw)
+            if isinstance(child_trust_level_raw, (int, float))
+            else 1.0
+        )
         return ModelActionPayload(
             action=child_action,
             parent_correlation_id=self.correlation_id,

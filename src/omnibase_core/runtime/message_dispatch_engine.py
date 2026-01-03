@@ -593,7 +593,7 @@ class MessageDispatchEngine:
         .. versionadded:: 0.4.0
         """
         with self._metrics_lock:
-            self._metrics[key] += value  # type: ignore[literal-required]
+            self._metrics[key] += value
 
     def _update_structured_metrics(
         self,
@@ -1456,14 +1456,18 @@ class MessageDispatchEngine:
 
         # Check if handler is async
         if inspect.iscoroutinefunction(handler):
-            return await handler(envelope, context)
+            result: HandlerReturnType = await handler(envelope, context)
+            return result
         else:
             # Sync handler - run in executor to avoid blocking
             # Cast to SyncHandlerFunc for type narrowing (runtime check above
             # guarantees this is not an async function)
             sync_handler = cast(SyncHandlerFunc, handler)
             loop = asyncio.get_running_loop()
-            return await loop.run_in_executor(None, sync_handler, envelope, context)
+            sync_result: HandlerReturnType = await loop.run_in_executor(
+                None, sync_handler, envelope, context
+            )
+            return sync_result
 
     async def _publish_outputs_in_order(
         self,

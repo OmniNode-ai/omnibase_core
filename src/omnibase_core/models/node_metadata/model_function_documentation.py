@@ -141,10 +141,11 @@ class ModelFunctionDocumentation(BaseModel):
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
         result: TypedDictMetadataDict = {}
         # Pack documentation data into metadata dict
+        # Convert list[str] to list for JsonType compatibility
         result["metadata"] = {
             "docstring": self.docstring,
-            "examples": self.examples,
-            "notes": self.notes,
+            "examples": list(self.examples),
+            "notes": list(self.notes),
             "has_documentation": self.has_documentation(),
             "has_examples": self.has_examples(),
             "has_notes": self.has_notes(),

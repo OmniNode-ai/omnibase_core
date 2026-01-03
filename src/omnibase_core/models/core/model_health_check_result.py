@@ -68,7 +68,7 @@ class ModelHealthCheckResult(BaseModel):
     @classmethod
     def from_dict(cls, data: SerializedDict) -> "ModelHealthCheckResult":
         """Create from dictionary for easy migration."""
-        return cls(**data)
+        return cls.model_validate(data)
 
     @property
     def is_healthy(self) -> bool:

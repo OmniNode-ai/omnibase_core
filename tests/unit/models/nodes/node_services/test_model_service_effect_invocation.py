@@ -13,6 +13,7 @@ from uuid import uuid4
 import pytest
 from pydantic import BaseModel
 
+from omnibase_core.mixins.mixin_node_service import MixinNodeService
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.discovery.model_tool_invocation_event import (
     ModelToolInvocationEvent,
@@ -72,15 +73,13 @@ class TestModelServiceEffectToolInvocation:
 
         node.run = AsyncMock(side_effect=run)
         node._extract_node_name = Mock(return_value="TestEffectNode")
-        node._serialize_result = ModelServiceEffect._serialize_result.__get__(
-            node, ModelServiceEffect
+        node._serialize_result = MixinNodeService._serialize_result.__get__(
+            node, MixinNodeService
         )
         # Mock _infer_input_state_class to return None (forces SimpleNamespace fallback)
         node._infer_input_state_class = Mock(return_value=None)
 
         # Add handle_tool_invocation from MixinNodeService
-        from omnibase_core.mixins.mixin_node_service import MixinNodeService
-
         node.handle_tool_invocation = MixinNodeService.handle_tool_invocation.__get__(
             node, type(node)
         )
@@ -358,8 +357,6 @@ class TestModelServiceEffectToolInvocation:
         node._infer_input_state_class = Mock(return_value=None)
 
         # Add _execute_tool method
-        from omnibase_core.mixins.mixin_node_service import MixinNodeService
-
         node._execute_tool = MixinNodeService._execute_tool.__get__(node, type(node))
         input_state = SimpleNamespace(action="test_action")
         event = ModelToolInvocationEvent.create_tool_invocation(
@@ -399,8 +396,6 @@ class TestModelServiceEffectToolInvocation:
         node._infer_input_state_class = Mock(return_value=None)
 
         # Add _execute_tool method
-        from omnibase_core.mixins.mixin_node_service import MixinNodeService
-
         node._execute_tool = MixinNodeService._execute_tool.__get__(node, type(node))
         input_state = SimpleNamespace(action="test_action")
         event = ModelToolInvocationEvent.create_tool_invocation(
@@ -653,15 +648,16 @@ class TestModelServiceEffectEdgeCases:
 
         node.run = AsyncMock(side_effect=run)
         node._extract_node_name = Mock(return_value="TestNode")
-        node._serialize_result = ModelServiceEffect._serialize_result.__get__(
-            node, ModelServiceEffect
+        node._serialize_result = MixinNodeService._serialize_result.__get__(
+            node, MixinNodeService
         )
+        # Set _input_state_class to None explicitly (Mock auto-creates attributes)
+        # so that getattr(self, "_input_state_class", None) returns None
+        node._input_state_class = None
         # Mock _infer_input_state_class to return None (forces SimpleNamespace fallback)
         node._infer_input_state_class = Mock(return_value=None)
 
         # Add handle_tool_invocation from MixinNodeService
-        from omnibase_core.mixins.mixin_node_service import MixinNodeService
-
         node.handle_tool_invocation = MixinNodeService.handle_tool_invocation.__get__(
             node, type(node)
         )
@@ -721,15 +717,16 @@ class TestModelServiceEffectEdgeCases:
 
         node.run = AsyncMock(side_effect=run)
         node._extract_node_name = Mock(return_value="TestNode")
-        node._serialize_result = ModelServiceEffect._serialize_result.__get__(
-            node, ModelServiceEffect
+        node._serialize_result = MixinNodeService._serialize_result.__get__(
+            node, MixinNodeService
         )
+        # Set _input_state_class to None explicitly (Mock auto-creates attributes)
+        # so that getattr(self, "_input_state_class", None) returns None
+        node._input_state_class = None
         # Mock _infer_input_state_class to return None (forces SimpleNamespace fallback)
         node._infer_input_state_class = Mock(return_value=None)
 
         # Add handle_tool_invocation from MixinNodeService
-        from omnibase_core.mixins.mixin_node_service import MixinNodeService
-
         node.handle_tool_invocation = MixinNodeService.handle_tool_invocation.__get__(
             node, type(node)
         )

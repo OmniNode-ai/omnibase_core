@@ -1,4 +1,3 @@
-from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -92,7 +91,7 @@ class ModelExecutionContext(BaseModel):
         """Add an environment variable."""
         self.environment_variables[key] = value
 
-    def add_metadata(self, key: str, value: Any) -> None:
+    def add_metadata(self, key: str, value: object) -> None:
         """Add execution metadata."""
         if hasattr(self.execution_metadata, key):
             setattr(self.execution_metadata, key, value)
@@ -105,13 +104,13 @@ class ModelExecutionContext(BaseModel):
         """Get environment variable value."""
         return self.environment_variables.get(key, default)
 
-    def get_metadata(self, key: str, default: Any = None) -> Any:
+    def get_metadata(self, key: str, default: object = None) -> object:
         """Get execution metadata value."""
         if hasattr(self.execution_metadata, key):
             return getattr(self.execution_metadata, key, default)
         return self.execution_metadata.custom_tags.get(key, default)
 
-    def create_child_context(self, **overrides: Any) -> "ModelExecutionContext":
+    def create_child_context(self, **overrides: object) -> "ModelExecutionContext":
         """Create a child context with optional overrides."""
         data = self.model_dump()
         data.update(overrides)

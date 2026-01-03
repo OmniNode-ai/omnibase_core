@@ -7,7 +7,7 @@ relying on yaml.safe_load() directly.
 
 """
 
-from typing import Any, TypeVar
+from typing import TypeVar
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field
@@ -34,7 +34,7 @@ class ModelGenericYaml(BaseModel):
     model_config = ConfigDict(extra="allow")
 
     # Allow any additional fields for maximum flexibility
-    root_list: list[Any] | None = Field(
+    root_list: list[object] | None = Field(
         default=None, description="Root level list for YAML arrays"
     )
 

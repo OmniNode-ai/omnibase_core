@@ -203,7 +203,7 @@ class ModelActionMetadata(BaseModel):
 
     def to_service_discovery_metadata(
         self,
-    ) -> SerializedDict:
+    ) -> dict[str, object]:
         """Generate metadata for service discovery as JSON-serializable data."""
         return {
             "action_id": str(self.action_id),

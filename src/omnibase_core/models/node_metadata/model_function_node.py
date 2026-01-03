@@ -370,11 +370,12 @@ class ModelFunctionNode(BaseModel):
         if self.tags:
             result["tags"] = self.tags
         # Pack additional fields into metadata
+        # Convert list[str] to list for JsonType compatibility
         result["metadata"] = {
             "function_id": str(self.core.function_id),
             "status": self.status.value,
             "complexity": self.complexity.value,
-            "parameters": self.parameters,
+            "parameters": list(self.parameters),
             "is_active": self.is_active(),
             "has_documentation": self.has_documentation(),
             "has_examples": self.has_examples(),

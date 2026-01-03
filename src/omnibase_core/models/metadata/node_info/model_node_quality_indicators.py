@@ -222,6 +222,7 @@ class ModelNodeQualityIndicators(BaseModel):
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
         result: TypedDictMetadataDict = {}
         # Pack quality indicator fields into metadata dict
+        # Convert list[str] to list for JsonType compatibility
         result["metadata"] = {
             "has_documentation": self.has_documentation,
             "has_examples": self.has_examples,
@@ -230,7 +231,7 @@ class ModelNodeQualityIndicators(BaseModel):
             "needs_documentation": self.needs_documentation,
             "quality_score": self.get_quality_score(),
             "quality_level": self.get_quality_level(),
-            "improvement_suggestions": self.get_improvement_suggestions(),
+            "improvement_suggestions": list(self.get_improvement_suggestions()),
         }
         return result
 

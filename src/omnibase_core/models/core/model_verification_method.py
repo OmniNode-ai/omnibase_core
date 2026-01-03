@@ -4,11 +4,13 @@ VerificationMethod model.
 
 from datetime import UTC, datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelVerificationMethod(BaseModel):
-    """Method used to establish trust."""
+    """Immutable verification method used to establish trust."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     method_name: str = Field(
         default=...,

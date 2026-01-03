@@ -5,8 +5,6 @@ Type-safe model for output state in event metadata,
 replacing Dict[str, Any] usage with proper model.
 """
 
-from typing import Any
-
 from pydantic import BaseModel, Field
 
 
@@ -40,6 +38,8 @@ class ModelEventOutputState(BaseModel):
         le=255,
     )
 
-    def get_data(self, key: str, default: Any = None) -> Any:
+    def get_data(
+        self, key: str, default: str | int | bool | float | list[str] | None = None
+    ) -> str | int | bool | float | list[str] | None:
         """Get data value with default."""
         return self.data.get(key, default)

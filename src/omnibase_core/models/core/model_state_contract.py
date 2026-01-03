@@ -251,20 +251,24 @@ class ModelStateContract(BaseModel):
             ModelOnexError: If the data cannot be parsed or validated
         """
         try:
-            # Handle legacy field names
-            if CONTRACT_SCHEMA_VERSION_KEY in data:
-                data[CONTRACT_VERSION_KEY] = data.pop(CONTRACT_SCHEMA_VERSION_KEY)
+            # Handle legacy field names - use mutable dict for type-safe modifications
+            mutable_data: dict[str, object] = dict(data)
+
+            if CONTRACT_SCHEMA_VERSION_KEY in mutable_data:
+                mutable_data[CONTRACT_VERSION_KEY] = mutable_data.pop(
+                    CONTRACT_SCHEMA_VERSION_KEY
+                )
 
             # Ensure required fields have defaults if missing
-            if CONTRACT_VERSION_KEY not in data:
-                data[CONTRACT_VERSION_KEY] = STATE_CONTRACT_SCHEMA_VERSION
+            if CONTRACT_VERSION_KEY not in mutable_data:
+                mutable_data[CONTRACT_VERSION_KEY] = STATE_CONTRACT_SCHEMA_VERSION
 
-            if NODE_VERSION_KEY not in data:
-                data[NODE_VERSION_KEY] = "1.0.0"
+            if NODE_VERSION_KEY not in mutable_data:
+                mutable_data[NODE_VERSION_KEY] = "1.0.0"
 
-            return cls(**data)
+            return cls.model_validate(mutable_data)
 
-        except (AttributeError, ValueError, TypeError, KeyError) as e:
+        except (AttributeError, KeyError, TypeError, ValueError) as e:
             raise ModelOnexError(
                 EnumCoreErrorCode.VALIDATION_ERROR,
                 f"Failed to parse state contract: {e}",
@@ -294,7 +298,7 @@ def load_state_contract_from_file(file_path: str) -> ModelStateContract:
 
         # Use centralized YAML loading with full Pydantic validation
         return load_and_validate_yaml_model(path, ModelStateContract)
-    except (AttributeError, ValueError, TypeError, KeyError) as e:
+    except (AttributeError, KeyError, TypeError, ValueError) as e:
         raise ModelOnexError(
             EnumCoreErrorCode.FILE_READ_ERROR,
             f"Failed to load contract from {file_path}: {e}",

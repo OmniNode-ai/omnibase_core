@@ -182,8 +182,9 @@ class ModelNodeOrganizationMetadata(BaseModel):
         if self.tags:
             result["tags"] = self.tags
         # Pack additional fields into metadata
+        # Convert list[str] to list for JsonType compatibility
         result["metadata"] = {
-            "capabilities": self.capabilities,
+            "capabilities": list(self.capabilities),
             "categories": [cat.value for cat in self.categories],
             "dependencies": [str(dep) for dep in self.dependencies],
             "dependents": [str(dep) for dep in self.dependents],

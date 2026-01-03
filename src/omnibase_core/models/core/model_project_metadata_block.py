@@ -1,5 +1,3 @@
-from typing import Any
-
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -25,6 +23,10 @@ from omnibase_core.models.metadata.model_metadata_constants import (
     PROTOCOL_VERSION_KEY,
     SCHEMA_VERSION_KEY,
     TOOLS_KEY,
+)
+from omnibase_core.models.primitives.model_semver import (
+    ModelSemVer,
+    parse_semver_from_string,
 )
 
 
@@ -63,7 +65,7 @@ class ModelProjectMetadataBlock(BaseModel):
     model_config = {"extra": "allow"}
 
     @classmethod
-    def _parse_entrypoint(cls, value: Any) -> str:
+    def _parse_entrypoint(cls, value: object) -> str:
         # Accept EntrypointBlock or URI string, always return URI string
         if isinstance(value, str) and "://" in value:
             return value
@@ -95,14 +97,15 @@ class ModelProjectMetadataBlock(BaseModel):
         Raises:
             ModelOnexError: If required fields are missing or invalid.
         """
-        # Make a defensive copy to avoid mutating the caller's input
-        data = dict(data)
+        # Make a defensive copy with proper type for mutations
+        # Use dict[str, object] to allow assigning Pydantic model instances
+        mutable_data: dict[str, object] = dict(data)
 
         # Convert entrypoint to EntrypointBlock if needed
-        if ENTRYPOINT_KEY in data:
-            entrypoint_val = data[ENTRYPOINT_KEY]
+        if ENTRYPOINT_KEY in mutable_data:
+            entrypoint_val = mutable_data[ENTRYPOINT_KEY]
             if isinstance(entrypoint_val, str):
-                data[ENTRYPOINT_KEY] = EntrypointBlock.from_uri(entrypoint_val)
+                mutable_data[ENTRYPOINT_KEY] = EntrypointBlock.from_uri(entrypoint_val)
             elif not isinstance(entrypoint_val, EntrypointBlock):
                 msg = f"entrypoint must be a URI string or EntrypointBlock, got: {entrypoint_val}"
                 raise ModelOnexError(
@@ -110,34 +113,49 @@ class ModelProjectMetadataBlock(BaseModel):
                     message=msg,
                 )
         # Convert tools to ModelToolCollection if needed
-        if TOOLS_KEY in data and isinstance(data[TOOLS_KEY], dict):
-            data[TOOLS_KEY] = ModelToolCollection(tools=data[TOOLS_KEY])
+        if TOOLS_KEY in mutable_data and isinstance(mutable_data[TOOLS_KEY], dict):
+            mutable_data[TOOLS_KEY] = ModelToolCollection(tools=mutable_data[TOOLS_KEY])
         # Convert version fields to ModelOnexVersionInfo
         version_fields = [
             METADATA_VERSION_KEY,
             PROTOCOL_VERSION_KEY,
             SCHEMA_VERSION_KEY,
         ]
-        if all(f in data for f in version_fields):
-            data["versions"] = ModelOnexVersionInfo(
-                metadata_version=data.pop(METADATA_VERSION_KEY),
-                protocol_version=data.pop(PROTOCOL_VERSION_KEY),
-                schema_version=data.pop(SCHEMA_VERSION_KEY),
+        if all(f in mutable_data for f in version_fields):
+            # Convert version strings to ModelSemVer objects
+            def _to_semver(val: object) -> ModelSemVer:
+                """Convert version value to ModelSemVer."""
+                if isinstance(val, ModelSemVer):
+                    return val
+                if isinstance(val, str):
+                    return parse_semver_from_string(val)
+                if isinstance(val, dict):
+                    return ModelSemVer.model_validate(val)
+                msg = f"Invalid version format: {val}"
+                raise ModelOnexError(
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message=msg,
+                )
+
+            mutable_data["versions"] = ModelOnexVersionInfo(
+                metadata_version=_to_semver(mutable_data.pop(METADATA_VERSION_KEY)),
+                protocol_version=_to_semver(mutable_data.pop(PROTOCOL_VERSION_KEY)),
+                schema_version=_to_semver(mutable_data.pop(SCHEMA_VERSION_KEY)),
             )
-        if COPYRIGHT_KEY not in data:
+        if COPYRIGHT_KEY not in mutable_data:
             msg = f"Missing required field: {COPYRIGHT_KEY}"
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
-        return cls(**data)
+        return cls.model_validate(mutable_data)
 
     def to_serializable_dict(self) -> SerializedDict:
         # Always emit entrypoint as URI string
         d = self.model_dump(exclude_none=True)
         d[ENTRYPOINT_KEY] = self._parse_entrypoint(self.entrypoint)
         # Omit empty/null/empty-string fields except protocol-required
-        for k in list[Any](d.keys()):
+        for k in list(d.keys()):
             if d[k] in (None, "", [], {}) and k not in {TOOLS_KEY}:
                 d.pop(k)
         return d

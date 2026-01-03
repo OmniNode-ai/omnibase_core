@@ -21,7 +21,9 @@
 # version: 1.0.0
 # === /OmniNode:Metadata ===
 
+from __future__ import annotations
 
+from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field
@@ -40,27 +42,27 @@ class ModelBaseResult(BaseModel):
     errors: list[ModelBaseError] = Field(default_factory=list)
     metadata: ModelGenericMetadata | None = None  # Typed metadata with compatibility
 
-    def model_dump(self, **kwargs: Any) -> "SerializedDict":
+    def model_dump(self, **kwargs: Any) -> SerializedDict:
         """Override model_dump to maintain current standards for metadata field."""
         result = super().model_dump(**kwargs)
         if self.metadata and isinstance(self.metadata, ModelGenericMetadata):
             result["metadata"] = self.metadata.model_dump(exclude_none=True)
         return result
 
-    def dict(self, **kwargs: Any) -> "SerializedDict":
+    def dict(self, **kwargs: Any) -> SerializedDict:
         """Modern standards method that calls model_dump."""
         return self.model_dump(**kwargs)
 
     @classmethod
     def model_validate(
         cls,
-        obj: Any,
+        obj: object,
         *,
         strict: bool | None = None,
         from_attributes: bool | None = None,
-        context: Any | None = None,
+        context: Mapping[str, Any] | None = None,
         **kwargs: Any,
-    ) -> "ModelBaseResult":
+    ) -> ModelBaseResult:
         """Override model_validate to handle metadata conversion.
 
         This replaces the deprecated parse_obj method for Pydantic v2 compatibility.

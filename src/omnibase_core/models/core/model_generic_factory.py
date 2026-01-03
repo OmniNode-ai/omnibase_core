@@ -10,7 +10,7 @@ Restructured to reduce string field violations through logical grouping.
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, Unpack
+from typing import TYPE_CHECKING, Unpack
 
 from pydantic import BaseModel
 
@@ -204,7 +204,7 @@ class ModelGenericFactory[T: BaseModel]:
 
     # Protocol method implementations
 
-    def configure(self, **kwargs: Any) -> bool:
+    def configure(self, **kwargs: object) -> bool:
         """Configure instance with provided parameters (Configurable protocol)."""
         try:
             for key, value in kwargs.items():

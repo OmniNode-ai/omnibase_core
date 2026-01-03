@@ -4,10 +4,17 @@ Health Check Metadata Model
 Type-safe health check metadata that replaces Dict[str, Any] usage.
 """
 
+from typing import TYPE_CHECKING
+
 from pydantic import BaseModel, Field
 
 from omnibase_core.models.primitives.model_semver import ModelSemVer
-from omnibase_core.models.services.model_custom_fields import ModelCustomFields
+
+# Use TYPE_CHECKING guard to break circular import:
+# services → ... → health.model_health_check_metadata → services.model_custom_fields
+# → services.model_error_details [cycle back to services during __init__.py loading]
+if TYPE_CHECKING:
+    from omnibase_core.models.services.model_custom_fields import ModelCustomFields
 
 
 class ModelHealthCheckMetadata(BaseModel):
@@ -84,7 +91,44 @@ class ModelHealthCheckMetadata(BaseModel):
     )
 
     # Custom fields for extensibility
-    custom_fields: ModelCustomFields | None = Field(
+    # Use string annotation for forward reference (TYPE_CHECKING import)
+    custom_fields: "ModelCustomFields | None" = Field(
         default=None,
         description="Additional custom metadata",
     )
+
+
+# Resolve forward reference for custom_fields field.
+# This is done at module level to ensure the forward reference is resolved
+# regardless of how the module is imported (directly or via __init__.py).
+# The import is deferred until after the class is fully defined to avoid
+# the circular import that would occur at the top of the file.
+def _resolve_forward_references() -> None:
+    """Resolve forward references for ModelHealthCheckMetadata."""
+    try:
+        # Import ModelCustomFields at runtime (after class definition)
+        # This import is safe here because the class is fully defined
+        from omnibase_core.models.services.model_custom_fields import (
+            ModelCustomFields,
+        )
+
+        # Explicitly rebuild with the imported type in the namespace
+        # This ensures the forward reference 'ModelCustomFields' is resolved
+        ModelHealthCheckMetadata.model_rebuild(
+            _types_namespace={"ModelCustomFields": ModelCustomFields}
+        )
+    except ImportError:
+        # error-ok: Import may fail during early module loading
+        # The forward reference will be resolved when health/__init__.py completes
+        pass
+    except Exception:
+        # error-ok: model_rebuild may fail during circular import resolution
+        # This is safe to ignore as the forward reference will be resolved
+        # when the full module graph is loaded
+        pass
+
+
+# Attempt to resolve forward references at module load time.
+# This may fail during circular import resolution, which is fine -
+# the health/__init__.py will resolve it after all modules are loaded.
+_resolve_forward_references()

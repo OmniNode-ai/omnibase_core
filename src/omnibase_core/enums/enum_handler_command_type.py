@@ -181,8 +181,12 @@ class EnumHandlerCommandType(str, Enum):
 
     @staticmethod
     def assert_exhaustive(value: Never) -> NoReturn:
-        """Ensures exhaustive handling in match statements."""
-        # error-ok: enum module cannot import errors (circular dependency)
+        """Ensures exhaustive handling in match statements.
+
+        Uses AssertionError instead of ModelOnexError to avoid
+        circular imports in the enum module.
+        """
+        # error-ok: exhaustiveness check - enums cannot import models
         raise AssertionError(f"Unhandled enum value: {value}")
 
 

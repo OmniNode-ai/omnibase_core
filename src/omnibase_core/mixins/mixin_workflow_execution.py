@@ -331,7 +331,11 @@ class MixinWorkflowExecution:
         """
         # Lazy import to avoid circular import with workflow_executor
         _, _, _, validate_workflow_definition = _get_workflow_executor()
-        return await validate_workflow_definition(workflow_definition, workflow_steps)
+        # Cast to satisfy mypy since validate_workflow_definition returns Any from lazy import
+        validation_result: list[str] = await validate_workflow_definition(
+            workflow_definition, workflow_steps
+        )
+        return validation_result
 
     def get_workflow_execution_order(
         self,
@@ -356,7 +360,9 @@ class MixinWorkflowExecution:
         """
         # Lazy import to avoid circular import with workflow_executor
         _, _, get_execution_order, _ = _get_workflow_executor()
-        return get_execution_order(workflow_steps)
+        # Cast to satisfy mypy since get_execution_order returns Any from lazy import
+        execution_order: list[UUID] = get_execution_order(workflow_steps)
+        return execution_order
 
     def create_workflow_steps_from_config(
         self,

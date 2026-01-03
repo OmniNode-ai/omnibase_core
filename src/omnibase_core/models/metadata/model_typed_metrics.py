@@ -178,9 +178,14 @@ class ModelTypedMetrics[SimpleValueType](BaseModel):
             result["name"] = self.metric_display_name
         if self.description:
             result["description"] = self.description
-        metadata_inner: dict[str, object] = {
+        from typing import cast
+
+        from omnibase_core.types.type_serializable_value import SerializableValue
+
+        # Cast SimpleValueType to SerializableValue for type compatibility
+        metadata_inner: dict[str, SerializableValue] = {
             "metric_id": str(self.metric_id),
-            "value": self.value,
+            "value": cast(SerializableValue, self.value),
         }
         if (
             self.unit

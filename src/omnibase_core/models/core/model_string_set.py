@@ -55,7 +55,7 @@ class ModelStringSet(BaseModel):
         return len(self.elements) == 0
 
     def to_list(self) -> list[str]:
-        """Get list[Any]representation."""
+        """Get list representation."""
         return self.elements.copy()
 
     def union(self, other: "ModelStringSet") -> "ModelStringSet":

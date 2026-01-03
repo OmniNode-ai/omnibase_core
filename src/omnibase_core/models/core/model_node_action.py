@@ -14,7 +14,6 @@ from omnibase_core.models.core.model_action_category import ModelActionCategory
 from omnibase_core.models.core.model_node_action_type import ModelNodeActionType
 from omnibase_core.models.core.model_predefined_categories import LIFECYCLE, VALIDATION
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.types.type_serializable_value import SerializedDict
 
 from .model_action_base import ModelActionBase
 
@@ -201,7 +200,7 @@ class ModelNodeAction(ModelActionBase):
     # union-ok: service_metadata - Complex return type for service discovery metadata
     def to_service_metadata(
         self,
-    ) -> dict[str, str | bool | list[str] | int | None | SerializedDict]:
+    ) -> dict[str, object]:
         """Generate service metadata for tool discovery with strong typing."""
         return {
             "action_name": self.action_name,

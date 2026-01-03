@@ -7,7 +7,6 @@ enabling third-party nodes to register their own actions dynamically.
 
 import logging
 from pathlib import Path
-from typing import cast
 
 from omnibase_core.models.cli.model_cli_action import ModelCliAction
 from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
@@ -257,7 +256,17 @@ def get_action_registry() -> ModelActionRegistry:
 
     try:
         container = get_model_onex_container_sync()
-        registry = cast("ModelActionRegistry", container.action_registry())
+        registry_obj = container.action_registry()
+
+        # Runtime validation before cast - ensures type safety
+        if not isinstance(registry_obj, ModelActionRegistry):
+            raise ModelOnexError(
+                message=f"action_registry() returned {type(registry_obj).__name__}, "
+                "expected ModelActionRegistry",
+                error_code=EnumCoreErrorCode.TYPE_MISMATCH,
+            )
+
+        registry = registry_obj
 
         # Auto-bootstrap if empty
         if len(registry.get_all_actions()) == 0:
@@ -284,8 +293,12 @@ def reset_action_registry() -> None:
 
     try:
         container = get_model_onex_container_sync()
-        registry = cast("ModelActionRegistry", container.action_registry())
-        registry.clear()
+        registry_obj = container.action_registry()
+
+        # Runtime validation before operation - ensures type safety
+        if isinstance(registry_obj, ModelActionRegistry):
+            registry_obj.clear()
+        # If not ModelActionRegistry, silently skip (container may be misconfigured)
     except (AttributeError, ValueError, TypeError, KeyError):
         # If container is not initialized, nothing to reset
         pass

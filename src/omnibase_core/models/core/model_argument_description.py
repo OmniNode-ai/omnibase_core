@@ -5,8 +5,6 @@ Defines the structure for CLI arguments discovered from node contracts.
 This enables dynamic CLI argument parsing based on contract specifications.
 """
 
-from typing import Any
-
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_argument_type import EnumArgumentType
@@ -36,7 +34,7 @@ class ModelArgumentDescription(BaseModel):
 
     required: bool = Field(default=False, description="Whether argument is required")
 
-    default_value: Any = Field(
+    default_value: str | int | float | bool | None = Field(
         default=None,
         description="Default value if not provided (any JSON-serializable primitive)",
     )
@@ -86,7 +84,7 @@ class ModelArgumentDescription(BaseModel):
 
         return f"{flags}{type_hint}: {self.description}{required_hint}{default_hint}"
 
-    def validate_value(self, value: str) -> Any:
+    def validate_value(self, value: str) -> str | int | float | bool | list[str]:
         """Validate and convert a string value to the appropriate type."""
         if self.type == EnumArgumentType.STRING:
             if self.choices and value not in self.choices:

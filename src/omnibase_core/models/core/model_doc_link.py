@@ -22,10 +22,14 @@
 # === /OmniNode:Metadata ===
 
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class ModelDocLink(BaseModel):
+    """Immutable documentation link reference."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
     url: str
     title: str | None = None
     description: str | None = None

@@ -33,7 +33,6 @@ from omnibase_core.utils.util_decorators import allow_any_type, allow_dict_str_a
 
 # Import separated models
 from .model_custom_field_definition import ModelCustomFieldDefinition
-from .model_error_details import ModelErrorDetails
 
 
 @allow_any_type(
@@ -286,8 +285,9 @@ class ModelCustomFields(BaseModel):
 
 
 # Re-export for current standards
+# Note: ModelErrorDetails is NOT re-exported here to avoid circular imports.
+# Import it directly from: omnibase_core.models.services.model_error_details
 __all__ = [
     "ModelCustomFieldDefinition",
     "ModelCustomFields",
-    "ModelErrorDetails",
 ]

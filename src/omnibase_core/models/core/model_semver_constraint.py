@@ -1,7 +1,5 @@
 """ModelSemVerConstraint - Strongly typed semantic version constraints."""
 
-from typing import Any
-
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.models.primitives.model_semver import (
@@ -41,7 +39,7 @@ class ModelSemVerConstraint(BaseModel):
 
     @model_validator(mode="before")
     @classmethod
-    def parse_constraint_string(cls, v: Any) -> Any:
+    def parse_constraint_string(cls, v: object) -> object:
         """Parse constraint strings like '>=1.0.0,<2.0.0' into ModelSemVerConstraint fields."""
         if isinstance(v, str):
             # Parse common constraint patterns

@@ -125,13 +125,13 @@ def get_security_recommendations(
                 ModelDatabaseSecureConfig,
             )
 
-            config = ModelDatabaseSecureConfig(**config_dict)
+            config = ModelDatabaseSecureConfig.model_validate(config_dict)
             assessment = config.get_security_assessment()
             recommendations: list[str] = assessment.get("recommendations", [])  # type: ignore[attr-defined]
             return recommendations
 
         if config_type == "backend":
-            backend = ModelSecretBackend(**config_dict)
+            backend = ModelSecretBackend.model_validate(config_dict)
             return backend.get_security_recommendations()
 
         return [f"Unknown config type: {config_type}"]

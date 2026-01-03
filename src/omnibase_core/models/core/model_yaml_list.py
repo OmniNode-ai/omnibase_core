@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import cast
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -23,7 +23,7 @@ class ModelYamlList(BaseModel):
     @field_validator("root_list", mode="before")
     @classmethod
     def convert_root_list_to_schema(
-        cls, v: list[Any] | list[ModelSchemaValue] | None
+        cls, v: list[object] | list[ModelSchemaValue] | None
     ) -> list[ModelSchemaValue]:
         """Convert values to ModelSchemaValue for type safety."""
         if not v:
@@ -31,12 +31,15 @@ class ModelYamlList(BaseModel):
         # If already ModelSchemaValue instances, return as-is
         # Note: len(v) > 0 check removed - guaranteed non-empty after early return
         if isinstance(v[0], ModelSchemaValue):
-            return v
+            # All items are ModelSchemaValue when first item is
+            return cast(list[ModelSchemaValue], v)
         # Convert raw values to ModelSchemaValue
         return [ModelSchemaValue.from_value(item) for item in v]
 
     def __init__(
-        self, data: list[Any] | list[ModelSchemaValue] | None = None, **kwargs: Any
+        self,
+        data: list[object] | list[ModelSchemaValue] | None = None,
+        **kwargs: object,
     ) -> None:
         """Handle case where YAML root is a list."""
         if data is not None and isinstance(data, list):

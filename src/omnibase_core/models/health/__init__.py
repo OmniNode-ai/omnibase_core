@@ -31,7 +31,26 @@ __all__: list[str] = [
 try:
     ModelHealthStatus.model_rebuild()
     ModelToolHealth.model_rebuild()
-except (
-    Exception
-):  # error-ok: model_rebuild may fail during circular import resolution, safe to ignore
+except Exception:
+    # init-errors-ok: model_rebuild may fail during circular import resolution, safe to ignore
+    pass
+
+# Resolve forward reference for ModelHealthCheckMetadata.custom_fields
+# This is needed because ModelCustomFields is imported with TYPE_CHECKING guard
+# to break the circular import chain: services → ... → health → services
+# We also need to rebuild ModelHealthCheckConfig since it contains ModelHealthCheckMetadata
+try:
+    from omnibase_core.models.services.model_custom_fields import (
+        ModelCustomFields as _ModelCustomFields,
+    )
+
+    # Rebuild in dependency order: ModelHealthCheckMetadata first (has forward ref),
+    # then ModelHealthCheckConfig (contains ModelHealthCheckMetadata)
+    # Use explicit namespace to ensure the forward reference is resolved
+    ModelHealthCheckMetadata.model_rebuild(
+        _types_namespace={"ModelCustomFields": _ModelCustomFields}
+    )
+    ModelHealthCheckConfig.model_rebuild()
+except Exception:
+    # init-errors-ok: model_rebuild may fail during circular import resolution, safe to ignore
     pass

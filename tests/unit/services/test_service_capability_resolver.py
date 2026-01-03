@@ -41,6 +41,13 @@ from omnibase_core.models.capabilities.model_capability_requirement_set import (
     ModelRequirementSet,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+
+# Import ModelHealthStatus FIRST to avoid circular import issues.
+# The health models must be fully loaded before other modules that
+# trigger the validation/contracts chain (which eventually imports health).
+from omnibase_core.models.health.model_health_status import (
+    ModelHealthStatus,
+)
 from omnibase_core.models.providers.model_provider_descriptor import (
     ModelProviderDescriptor,
 )
@@ -114,23 +121,12 @@ class MockProfile:
 
 
 # =============================================================================
-# Stub Classes for Forward Reference Resolution
+# Forward Reference Resolution
 # =============================================================================
 
-# Import BaseModel here for the stub class
-from pydantic import BaseModel
-
-
-class ModelHealthStatus(BaseModel):
-    """Stub class for ModelHealthStatus to avoid circular import.
-
-    This stub allows ModelProviderDescriptor to resolve its forward reference
-    without triggering the circular import chain. The stub is created at module
-    level to ensure deterministic behavior regardless of test execution order.
-    """
-
-    status: str = "healthy"
-    health_score: float = 1.0
+# Note: ModelHealthStatus is imported at module level (line 48-50) to avoid
+# circular import issues. ModelProviderDescriptor.model_rebuild() is called
+# above to resolve forward references.
 
 
 # Rebuild the model at module level - this happens once at import time,

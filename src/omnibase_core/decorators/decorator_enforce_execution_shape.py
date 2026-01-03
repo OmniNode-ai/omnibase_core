@@ -134,7 +134,8 @@ def enforce_execution_shape(
             async def async_wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
                 # Shape already validated at decoration time
                 # Just execute the function
-                return await func(*args, **kwargs)
+                result: T = await func(*args, **kwargs)
+                return result
 
             return async_wrapper  # type: ignore[return-value]
 
@@ -142,8 +143,9 @@ def enforce_execution_shape(
         def sync_wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
             # Shape already validated at decoration time
             # Just execute the function
-            return func(*args, **kwargs)
+            result: T = func(*args, **kwargs)
+            return result
 
-        return sync_wrapper  # type: ignore[return-value]
+        return sync_wrapper
 
     return decorator

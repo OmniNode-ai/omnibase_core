@@ -243,10 +243,18 @@ class ModelGenericMetadata(BaseModel):
 
         # Include custom fields in the metadata dict
         if self.custom_fields:
-            custom_fields_dict: dict[str, object] = {
-                key: cli_value.to_python_value()
-                for key, cli_value in self.custom_fields.items()
-            }
+            from typing import cast
+
+            from omnibase_core.types.type_serializable_value import SerializableValue
+
+            # Cast to SerializableValue for type compatibility
+            custom_fields_dict = cast(
+                dict[str, SerializableValue],
+                {
+                    key: cli_value.to_python_value()
+                    for key, cli_value in self.custom_fields.items()
+                },
+            )
             metadata["metadata"]["custom_fields"] = custom_fields_dict
 
         # Add metadata_id to metadata dict if present

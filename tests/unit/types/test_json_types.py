@@ -8,7 +8,9 @@ Tests the type aliases defined in omnibase_core.types.json_types to verify:
 4. Documentation examples work correctly
 """
 
+from datetime import datetime
 from typing import get_args, get_origin
+from uuid import UUID
 
 import pytest
 
@@ -61,6 +63,24 @@ class TestJsonPrimitive:
         args = get_args(JsonPrimitive)
         assert type(None) in args
 
+    def test_type_includes_uuid(self) -> None:
+        """Test that JsonPrimitive includes UUID.
+
+        UUID is included for Pydantic compatibility - model_dump() preserves
+        UUID types by default.
+        """
+        args = get_args(JsonPrimitive)
+        assert UUID in args
+
+    def test_type_includes_datetime(self) -> None:
+        """Test that JsonPrimitive includes datetime.
+
+        datetime is included for Pydantic compatibility - model_dump() preserves
+        datetime types by default.
+        """
+        args = get_args(JsonPrimitive)
+        assert datetime in args
+
     def test_type_annotation_with_str(self) -> None:
         """Test using JsonPrimitive with str value."""
         value: JsonPrimitive = "hello"
@@ -89,6 +109,28 @@ class TestJsonPrimitive:
         """Test using JsonPrimitive with None value."""
         value: JsonPrimitive = None
         assert value is None
+
+    def test_type_annotation_with_uuid(self) -> None:
+        """Test using JsonPrimitive with UUID value.
+
+        UUID is a valid JsonPrimitive for Pydantic compatibility.
+        """
+        import uuid
+
+        test_uuid = uuid.uuid4()
+        value: JsonPrimitive = test_uuid
+        assert value == test_uuid
+        assert isinstance(value, UUID)
+
+    def test_type_annotation_with_datetime(self) -> None:
+        """Test using JsonPrimitive with datetime value.
+
+        datetime is a valid JsonPrimitive for Pydantic compatibility.
+        """
+        test_datetime = datetime.now()
+        value: JsonPrimitive = test_datetime
+        assert value == test_datetime
+        assert isinstance(value, datetime)
 
     def test_docstring_example_str(self) -> None:
         """Test docstring example: value: JsonPrimitive = 'hello'."""
@@ -195,11 +237,18 @@ class TestPrimitiveValue:
         assert value == "hello"
 
     def test_is_subset_of_json_primitive(self) -> None:
-        """Test that PrimitiveValue is JsonPrimitive minus None."""
+        """Test that PrimitiveValue is a subset of JsonPrimitive minus None.
+
+        Note: PrimitiveValue contains core primitives (str, int, float, bool).
+        JsonPrimitive extends this with None, UUID, and datetime for Pydantic
+        compatibility. PrimitiveValue is a proper subset, not equal.
+        """
         primitive_args = set(get_args(PrimitiveValue))
         json_primitive_args = set(get_args(JsonPrimitive))
-        # PrimitiveValue should be JsonPrimitive without None
-        assert primitive_args == json_primitive_args - {type(None)}
+        # PrimitiveValue should be a subset of JsonPrimitive without None
+        assert primitive_args <= json_primitive_args - {type(None)}
+        # Verify PrimitiveValue contains the core 4 primitives
+        assert primitive_args == {str, int, float, bool}
 
 
 @pytest.mark.unit
@@ -547,13 +596,20 @@ class TestTypeRelationships:
     """
 
     def test_primitive_value_subset_of_json_primitive(self) -> None:
-        """Test that PrimitiveValue is JsonPrimitive without None."""
+        """Test that PrimitiveValue is a subset of JsonPrimitive without None.
+
+        Note: PrimitiveValue contains core primitives (str, int, float, bool).
+        JsonPrimitive extends this with None, UUID, and datetime for Pydantic
+        compatibility. PrimitiveValue is a proper subset, not equal.
+        """
         prim_value_args = set(get_args(PrimitiveValue))
         json_prim_args = set(get_args(JsonPrimitive))
 
-        # PrimitiveValue should be JsonPrimitive minus None
-        expected = json_prim_args - {type(None)}
-        assert prim_value_args == expected
+        # PrimitiveValue should be a subset of JsonPrimitive minus None
+        non_null_json_prims = json_prim_args - {type(None)}
+        assert prim_value_args <= non_null_json_prims
+        # Verify PrimitiveValue contains exactly the core 4 primitives
+        assert prim_value_args == {str, int, float, bool}
 
     def test_tool_parameter_does_not_include_none(self) -> None:
         """Test that ToolParameterValue does not include None."""
@@ -566,12 +622,19 @@ class TestTypeRelationships:
         """Test that JsonPrimitive contains expected primitive types."""
         primitive_args = set(get_args(JsonPrimitive))
 
-        # Verify expected components
+        # Verify expected components - core JSON primitives
         assert str in primitive_args
         assert int in primitive_args
         assert float in primitive_args
         assert bool in primitive_args
         assert type(None) in primitive_args
+
+        # Verify Pydantic-compatible extended types (v0.4.0+)
+        # UUID and datetime are included because Pydantic's model_dump()
+        # preserves these types by default, enabling proper typing of
+        # nested structures containing Pydantic model data.
+        assert UUID in primitive_args
+        assert datetime in primitive_args
 
 
 @pytest.mark.unit

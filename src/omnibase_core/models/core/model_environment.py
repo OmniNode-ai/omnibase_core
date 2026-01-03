@@ -27,7 +27,7 @@ from types.core_types (not from models or types.constraints).
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl
 
@@ -194,7 +194,9 @@ class ModelEnvironment(BaseModel):
 
         self.environment_variables[key] = value
 
-    def add_custom_property(self, key: str, value: Any) -> None:
+    def add_custom_property(
+        self, key: str, value: str | int | float | bool | datetime | list[str]
+    ) -> None:
         """Add a custom property."""
         if not key or not isinstance(key, str):
             msg = "Custom property key must be a non-empty string"
@@ -207,6 +209,7 @@ class ModelEnvironment(BaseModel):
 
         # Use the type-safe method from ModelEnvironmentProperties
         # Convert value to ModelPropertyValue using factory methods
+        prop_value: ModelPropertyValue
         if isinstance(value, str):
             prop_value = ModelPropertyValue.from_string(value)
         elif isinstance(
@@ -219,12 +222,9 @@ class ModelEnvironment(BaseModel):
             prop_value = ModelPropertyValue.from_float(value)
         elif isinstance(value, datetime):
             prop_value = ModelPropertyValue.from_datetime(value)
-        elif isinstance(value, list):
-            # Assume string list for now
-            prop_value = ModelPropertyValue.from_string_list([str(v) for v in value])
         else:
-            # Convert to string for unsupported types
-            prop_value = ModelPropertyValue.from_string(str(value))
+            # list[str] - convert all items to strings
+            prop_value = ModelPropertyValue.from_string_list([str(v) for v in value])
 
         self.custom_properties.set_property(key, prop_value)
 
@@ -236,7 +236,7 @@ class ModelEnvironment(BaseModel):
         """Get environment variable value."""
         return self.environment_variables.get(key, default)
 
-    def get_custom_property(self, key: str, default: Any = None) -> Any:
+    def get_custom_property(self, key: str, default: object = None) -> object:
         """Get custom property value."""
         if self.custom_properties.has_property(key):
             # Try to return the most appropriate type

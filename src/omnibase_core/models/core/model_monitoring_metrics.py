@@ -106,7 +106,7 @@ class ModelMonitoringMetrics(BaseModel):
     @classmethod
     def from_dict(cls, data: SerializedDict) -> "ModelMonitoringMetrics":
         """Create from dictionary for easy migration."""
-        return cls(**data)
+        return cls.model_validate(data)
 
     @field_serializer(
         "last_error_timestamp",

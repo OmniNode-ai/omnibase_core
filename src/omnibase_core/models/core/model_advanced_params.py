@@ -198,8 +198,11 @@ class ModelAdvancedParams(BaseModel):
                 list_params[key] = value
             # Skip complex types that don't fit our categories
 
-        kwargs["string_params"] = string_params
-        kwargs["numeric_params"] = numeric_params
-        kwargs["list_params"] = list_params
+        # Cast to appropriate types for model validation
+        # These are validated by Pydantic at runtime
+        final_kwargs: dict[str, object] = dict(kwargs)
+        final_kwargs["string_params"] = string_params
+        final_kwargs["numeric_params"] = numeric_params
+        final_kwargs["list_params"] = list_params
 
-        return cls(**kwargs)
+        return cls.model_validate(final_kwargs)

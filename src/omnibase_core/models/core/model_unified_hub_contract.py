@@ -205,21 +205,39 @@ class ModelUnifiedHubContract(BaseModel):
 
         # Convert to Pydantic models where possible
         hub_config = None
-        if hub_config_data:
-            hub_config = ModelHubConfiguration(**hub_config_data)
+        if hub_config_data and isinstance(hub_config_data, dict):
+            hub_config = ModelHubConfiguration.model_validate(hub_config_data)
 
         service_config = None
-        if service_config_data:
-            service_config = ModelHubServiceConfiguration(**service_config_data)
+        if service_config_data and isinstance(service_config_data, dict):
+            service_config = ModelHubServiceConfiguration.model_validate(
+                service_config_data
+            )
 
-        return cls(
-            hub_configuration=hub_config,
-            service_configuration=service_config,
-            tool_specification=tool_spec_data,
-            orchestration_workflows=contract_data.get("orchestration_workflows", {}),
-            tool_coordination=contract_data.get("tool_coordination"),
-            tool_execution=contract_data.get("tool_execution"),
-            contract_metadata=contract_data.get("contract_metadata"),
+        # Extract optional structured data with proper type handling
+        # Cast to expected types - Pydantic will validate at runtime
+        orchestration = contract_data.get("orchestration_workflows", {})
+        tool_coord = contract_data.get("tool_coordination")
+        tool_exec = contract_data.get("tool_execution")
+        metadata = contract_data.get("contract_metadata")
+
+        # Use model_validate for full Pydantic validation instead of direct construction
+        return cls.model_validate(
+            {
+                "hub_configuration": hub_config,
+                "service_configuration": service_config,
+                "tool_specification": tool_spec_data
+                if isinstance(tool_spec_data, dict)
+                else None,
+                "orchestration_workflows": orchestration
+                if isinstance(orchestration, dict)
+                else {},
+                "tool_coordination": tool_coord
+                if isinstance(tool_coord, dict)
+                else None,
+                "tool_execution": tool_exec if isinstance(tool_exec, dict) else None,
+                "contract_metadata": metadata if isinstance(metadata, dict) else None,
+            }
         )
 
     @classmethod

@@ -195,8 +195,16 @@ class ModelNodeConnectionSettings(BaseModel):
             'https://api.example.com:443'
         """
         # Delegate to get_connection_summary() to avoid field mapping duplication.
-        # The dict() cast converts TypedDict to dict[str, SerializableValue].
-        return {"metadata": dict(self.get_connection_summary())}
+        # Cast TypedDict to SerializableValue dict for TypedDictMetadataDict compatibility
+        from typing import cast
+
+        from omnibase_core.types.type_serializable_value import SerializableValue
+
+        return {
+            "metadata": cast(
+                dict[str, SerializableValue], dict(self.get_connection_summary())
+            )
+        }
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""

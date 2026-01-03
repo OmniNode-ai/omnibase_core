@@ -274,7 +274,9 @@ class ModelDuration(BaseModel):
 
     def serialize(self) -> SerializedDict:
         """Serialize to dictionary (Serializable protocol)."""
-        return self.model_dump(exclude_none=False, by_alias=True)
+        # model_dump returns dict[str, int] which is compatible with SerializedDict
+        result = self.model_dump(exclude_none=False, by_alias=True)
+        return dict(result)  # Explicit conversion to SerializedDict
 
 
 # Export for use

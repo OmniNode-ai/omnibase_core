@@ -273,7 +273,7 @@ class ModelNodeMetadataBlock(BaseModel):
 
     @field_validator("entrypoint", mode="before")
     @classmethod
-    def validate_entrypoint(cls, value: Any) -> Any:
+    def validate_entrypoint(cls, value: Any) -> EntrypointBlock:
         if isinstance(value, EntrypointBlock):
             return value
         if isinstance(value, str):
@@ -287,7 +287,7 @@ class ModelNodeMetadataBlock(BaseModel):
 
     @field_validator("namespace", mode="before")
     @classmethod
-    def validate_namespace_field(cls, value: object) -> Any:
+    def validate_namespace_field(cls, value: Any) -> ModelNamespace:
         # Recursively flatten any dict or Namespace to a plain string
         def flatten_namespace(val: object) -> str:
             if isinstance(val, ModelNamespace):
@@ -307,7 +307,7 @@ class ModelNodeMetadataBlock(BaseModel):
 
     @field_validator("x_extensions", mode="before")
     @classmethod
-    def coerce_x_extensions(cls, v: object) -> Any:
+    def coerce_x_extensions(cls, v: Any) -> dict[str, ModelExtensionValue] | Any:
         if not isinstance(v, dict):
             return v
         out = {}

@@ -5,7 +5,6 @@ Type-safe model for input state in event metadata,
 replacing Dict[str, Any] usage with proper model.
 """
 
-from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -55,6 +54,8 @@ class ModelEventInputState(BaseModel):
         le=MAX_TIMEOUT_MS,  # Max 24 hours - prevents DoS via excessively long timeouts
     )
 
-    def get_parameter(self, key: str, default: Any = None) -> Any:
+    def get_parameter(
+        self, key: str, default: str | int | bool | float | list[str] | None = None
+    ) -> str | int | bool | float | list[str] | None:
         """Get parameter value with default."""
         return self.parameters.get(key, default)
