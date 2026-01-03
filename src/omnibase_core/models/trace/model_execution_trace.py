@@ -21,7 +21,7 @@ This is a pure data model with no side effects.
 from datetime import datetime
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums.enum_execution_status import EnumExecutionStatus
 from omnibase_core.models.trace.model_execution_trace_step import (
@@ -132,6 +132,17 @@ class ModelExecutionTrace(BaseModel):
         default_factory=list,
         description="Ordered list of trace steps",
     )
+
+    # === Validators ===
+
+    @model_validator(mode="after")
+    def validate_time_ordering(self) -> "ModelExecutionTrace":
+        """Validate that ended_at is not before started_at."""
+        if self.ended_at < self.started_at:
+            raise ValueError(
+                f"ended_at ({self.ended_at}) cannot be before started_at ({self.started_at})"
+            )
+        return self
 
     # === Utility Methods ===
 

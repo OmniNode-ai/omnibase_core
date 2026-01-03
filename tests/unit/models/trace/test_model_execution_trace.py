@@ -575,6 +575,7 @@ class TestModelExecutionTraceStatusEnumValues:
         assert hasattr(EnumExecutionStatus, "SKIPPED")
         assert hasattr(EnumExecutionStatus, "CANCELLED")
         assert hasattr(EnumExecutionStatus, "TIMEOUT")
+        assert hasattr(EnumExecutionStatus, "PARTIAL")
 
     def test_status_pending(self, minimal_trace_data: dict) -> None:
         """Test trace with PENDING status."""
@@ -619,6 +620,55 @@ class TestModelExecutionTraceStatusEnumValues:
         minimal_trace_data["status"] = EnumExecutionStatus.TIMEOUT
         trace = ModelExecutionTrace(**minimal_trace_data)
         assert trace.status == EnumExecutionStatus.TIMEOUT
+
+    def test_status_partial(self, minimal_trace_data: dict) -> None:
+        """Test trace with PARTIAL status."""
+        minimal_trace_data["status"] = EnumExecutionStatus.PARTIAL
+        trace = ModelExecutionTrace(**minimal_trace_data)
+        assert trace.status == EnumExecutionStatus.PARTIAL
+        assert trace.is_partial() is True
+
+
+# ============================================================================
+# Test: Time Ordering Validation (ended_at >= started_at)
+# ============================================================================
+
+
+@pytest.mark.unit
+class TestModelExecutionTraceTimeOrdering:
+    """Test time ordering validation (ended_at must be >= started_at)."""
+
+    def test_valid_time_ordering_same_time(self, minimal_trace_data: dict) -> None:
+        """Test that same start and end time is valid (instant execution)."""
+        now = datetime(2025, 1, 1, 12, 0, 0, tzinfo=UTC)
+        minimal_trace_data["started_at"] = now
+        minimal_trace_data["ended_at"] = now
+        trace = ModelExecutionTrace(**minimal_trace_data)
+        assert trace.started_at == trace.ended_at
+
+    def test_valid_time_ordering_different_times(
+        self, minimal_trace_data: dict
+    ) -> None:
+        """Test that ended_at > started_at is valid (normal case)."""
+        start = datetime(2025, 1, 1, 12, 0, 0, tzinfo=UTC)
+        end = datetime(2025, 1, 1, 12, 0, 10, tzinfo=UTC)
+        minimal_trace_data["started_at"] = start
+        minimal_trace_data["ended_at"] = end
+        trace = ModelExecutionTrace(**minimal_trace_data)
+        assert trace.ended_at > trace.started_at
+
+    def test_invalid_time_ordering_raises(self, minimal_trace_data: dict) -> None:
+        """Test that ended_at < started_at raises ValidationError."""
+        start = datetime(2025, 1, 1, 12, 0, 10, tzinfo=UTC)
+        end = datetime(2025, 1, 1, 12, 0, 0, tzinfo=UTC)  # Before start
+        minimal_trace_data["started_at"] = start
+        minimal_trace_data["ended_at"] = end
+        with pytest.raises(ValidationError) as exc_info:
+            ModelExecutionTrace(**minimal_trace_data)
+        error_str = str(exc_info.value)
+        assert "ended_at" in error_str
+        assert "started_at" in error_str
+        assert "cannot be before" in error_str
 
 
 # ============================================================================
