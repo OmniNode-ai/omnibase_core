@@ -4,15 +4,16 @@ from __future__ import annotations
 Convert legacy stats dict[str, Any] to TypedDict.
 """
 
-
-from omnibase_core.utils.util_datetime_parser import parse_datetime
-
 from .typed_dict_execution_stats import TypedDictExecutionStats
 from .typed_dict_legacy_stats import TypedDictLegacyStats
 
 
 def convert_stats_to_typed_dict(stats: TypedDictLegacyStats) -> TypedDictExecutionStats:
     """Convert legacy stats dict[str, Any] to TypedDict."""
+    # Lazy import to avoid circular import:
+    # types -> utils -> models.errors -> types
+    from omnibase_core.utils.util_datetime_parser import parse_datetime
+
     return TypedDictExecutionStats(
         execution_count=int(stats.get("execution_count", 0) or 0),
         success_count=int(stats.get("success_count", 0) or 0),

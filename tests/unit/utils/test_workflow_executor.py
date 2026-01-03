@@ -720,9 +720,9 @@ class TestExecuteStepErrorHandling:
         ]
 
         # We need to capture the original function before patching
-        from omnibase_core.utils import workflow_executor
+        from omnibase_core.utils import util_workflow_executor
 
-        original_fn = workflow_executor._create_action_for_step
+        original_fn = util_workflow_executor._create_action_for_step
 
         def mock_fn(step, workflow_id):
             if step.step_id == fail_step_id:
@@ -730,7 +730,7 @@ class TestExecuteStepErrorHandling:
             return original_fn(step, workflow_id)
 
         with patch.object(
-            workflow_executor, "_create_action_for_step", side_effect=mock_fn
+            util_workflow_executor, "_create_action_for_step", side_effect=mock_fn
         ):
             result = await execute_workflow(
                 simple_workflow_definition,
