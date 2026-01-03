@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
+#
+# SPDX-License-Identifier: Apache-2.0
 """
 ModelCapabilityMetrics - Performance Metrics Collection Handler
 
@@ -9,9 +12,14 @@ Usage:
     metrics.record_metric("latency_ms", 250.5, tags={"endpoint": "/api"})
     metrics.increment_counter("requests_total")
     current_metrics = metrics.get_metrics()
+
+.. versionadded:: 0.4.0
+    Added as part of Mixin-to-Handler conversion (OMN-1112)
 """
 
-from pydantic import BaseModel, PrivateAttr
+import copy
+
+from pydantic import BaseModel, ConfigDict, PrivateAttr
 
 from omnibase_core.types.typed_dict_mixin_types import TypedDictMetricEntry
 
@@ -26,7 +34,16 @@ class ModelCapabilityMetrics(BaseModel):
     Attributes:
         namespace: Metrics namespace for organization
         enabled: Whether metrics collection is enabled
+
+    Thread Safety:
+        Each instance maintains its own isolated metrics. Instances should not
+        be shared across threads without external synchronization.
+
+    .. versionadded:: 0.4.0
+        Added as part of Mixin-to-Handler conversion (OMN-1112)
     """
+
+    model_config = ConfigDict(frozen=False, extra="forbid")
 
     namespace: str = "onex"
     enabled: bool = True
@@ -74,9 +91,10 @@ class ModelCapabilityMetrics(BaseModel):
         Get current metrics data.
 
         Returns:
-            Dictionary of current metrics with typed metric entries (returns a copy)
+            Dictionary of current metrics with typed metric entries.
+            Returns a deep copy to prevent external mutation of internal state.
         """
-        return dict(self._metrics_data)
+        return copy.deepcopy(self._metrics_data)
 
     def reset_metrics(self) -> None:
         """Reset all metrics data."""

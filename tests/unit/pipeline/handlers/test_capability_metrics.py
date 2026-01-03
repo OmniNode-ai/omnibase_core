@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
+#
+# SPDX-License-Identifier: Apache-2.0
+
 """
 Tests for ModelCapabilityMetrics handler.
 
@@ -12,7 +16,9 @@ Coverage target: 60%+ (stub implementation with defensive attribute handling)
 
 import pytest
 
-from omnibase_core.pipeline.handlers.model_capability_metrics import ModelCapabilityMetrics
+from omnibase_core.pipeline.handlers.model_capability_metrics import (
+    ModelCapabilityMetrics,
+)
 
 
 @pytest.mark.unit

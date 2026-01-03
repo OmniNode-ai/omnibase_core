@@ -11,15 +11,11 @@ No inheritance required - the handler is a standalone Pydantic model that
 can be used via composition with any component needing caching.
 
 Ticket: OMN-1112
+
+Coverage target: 60%+ (stub implementation with defensive attribute handling)
 """
 
 import pytest
-
-# This import will fail until implementation exists
-# from omnibase_core.pipeline.handlers.model_capability_caching import (
-#     ModelCapabilityCaching,
-# )
-
 
 # =============================================================================
 # Test Fixtures
@@ -27,13 +23,12 @@ import pytest
 
 
 @pytest.fixture
-def caching_handler() -> object:
+def caching_handler() -> "ModelCapabilityCaching":
     """Create a default ModelCapabilityCaching handler.
 
     Returns:
         ModelCapabilityCaching instance with default settings.
     """
-    # Import here to allow tests to be collected before implementation exists
     from omnibase_core.pipeline.handlers.model_capability_caching import (
         ModelCapabilityCaching,
     )
@@ -42,7 +37,7 @@ def caching_handler() -> object:
 
 
 @pytest.fixture
-def disabled_caching_handler() -> object:
+def disabled_caching_handler() -> "ModelCapabilityCaching":
     """Create a disabled ModelCapabilityCaching handler.
 
     Returns:
@@ -56,7 +51,7 @@ def disabled_caching_handler() -> object:
 
 
 @pytest.fixture
-def custom_ttl_handler() -> object:
+def custom_ttl_handler() -> "ModelCapabilityCaching":
     """Create a ModelCapabilityCaching handler with custom TTL.
 
     Returns:
@@ -124,10 +119,11 @@ class TestModelCapabilityCachingInit:
 
     def test_is_pydantic_model(self) -> None:
         """Handler is a Pydantic BaseModel (not a mixin)."""
+        from pydantic import BaseModel
+
         from omnibase_core.pipeline.handlers.model_capability_caching import (
             ModelCapabilityCaching,
         )
-        from pydantic import BaseModel
 
         handler = ModelCapabilityCaching()
 
@@ -240,7 +236,7 @@ class TestGetCached:
     """Test get_cached async method."""
 
     @pytest.mark.asyncio
-    @pytest.mark.timeout(90)
+    @pytest.mark.timeout(60)
     async def test_get_cached_returns_none_when_not_found(
         self, caching_handler: object
     ) -> None:
@@ -250,7 +246,7 @@ class TestGetCached:
         assert result is None
 
     @pytest.mark.asyncio
-    @pytest.mark.timeout(90)
+    @pytest.mark.timeout(60)
     async def test_get_cached_returns_stored_value(
         self, caching_handler: object
     ) -> None:
@@ -264,7 +260,7 @@ class TestGetCached:
         assert result == test_value
 
     @pytest.mark.asyncio
-    @pytest.mark.timeout(90)
+    @pytest.mark.timeout(60)
     async def test_get_cached_returns_none_when_disabled(
         self, disabled_caching_handler: object
     ) -> None:
@@ -279,7 +275,7 @@ class TestGetCached:
         assert result is None
 
     @pytest.mark.asyncio
-    @pytest.mark.timeout(90)
+    @pytest.mark.timeout(60)
     async def test_get_cached_various_value_types(
         self, caching_handler: object
     ) -> None:
@@ -310,7 +306,7 @@ class TestSetCached:
     """Test set_cached async method."""
 
     @pytest.mark.asyncio
-    @pytest.mark.timeout(90)
+    @pytest.mark.timeout(60)
     async def test_set_cached_stores_value(self, caching_handler: object) -> None:
         """set_cached stores value successfully."""
         cache_key = "store_key"
@@ -322,7 +318,7 @@ class TestSetCached:
         assert result == test_value
 
     @pytest.mark.asyncio
-    @pytest.mark.timeout(90)
+    @pytest.mark.timeout(60)
     async def test_set_cached_respects_enabled_flag(
         self, disabled_caching_handler: object
     ) -> None:
@@ -337,7 +333,7 @@ class TestSetCached:
         assert stats["entries"] == 0
 
     @pytest.mark.asyncio
-    @pytest.mark.timeout(90)
+    @pytest.mark.timeout(60)
     async def test_set_cached_overwrites_existing(
         self, caching_handler: object
     ) -> None:
@@ -353,7 +349,7 @@ class TestSetCached:
         assert result == value2
 
     @pytest.mark.asyncio
-    @pytest.mark.timeout(90)
+    @pytest.mark.timeout(60)
     async def test_set_cached_with_custom_ttl(self, caching_handler: object) -> None:
         """set_cached accepts custom TTL (stored for future backend use)."""
         cache_key = "ttl_key"
@@ -366,7 +362,7 @@ class TestSetCached:
         assert result == test_value
 
     @pytest.mark.asyncio
-    @pytest.mark.timeout(90)
+    @pytest.mark.timeout(60)
     async def test_set_cached_multiple_keys(self, caching_handler: object) -> None:
         """set_cached can store multiple different keys."""
         entries = [
@@ -393,7 +389,7 @@ class TestInvalidateCache:
     """Test invalidate_cache async method."""
 
     @pytest.mark.asyncio
-    @pytest.mark.timeout(90)
+    @pytest.mark.timeout(60)
     async def test_invalidate_cache_removes_key(self, caching_handler: object) -> None:
         """invalidate_cache removes the specified key."""
         cache_key = "to_remove"
@@ -405,7 +401,7 @@ class TestInvalidateCache:
         assert result is None
 
     @pytest.mark.asyncio
-    @pytest.mark.timeout(90)
+    @pytest.mark.timeout(60)
     async def test_invalidate_cache_handles_nonexistent_key(
         self, caching_handler: object
     ) -> None:
@@ -418,7 +414,7 @@ class TestInvalidateCache:
         assert stats["enabled"] is True
 
     @pytest.mark.asyncio
-    @pytest.mark.timeout(90)
+    @pytest.mark.timeout(60)
     async def test_invalidate_cache_only_affects_specified_key(
         self, caching_handler: object
     ) -> None:
@@ -442,7 +438,7 @@ class TestClearCache:
     """Test clear_cache async method."""
 
     @pytest.mark.asyncio
-    @pytest.mark.timeout(90)
+    @pytest.mark.timeout(60)
     async def test_clear_cache_removes_all_entries(
         self, caching_handler: object
     ) -> None:
@@ -459,7 +455,7 @@ class TestClearCache:
         assert await caching_handler.get_cached("key3") is None
 
     @pytest.mark.asyncio
-    @pytest.mark.timeout(90)
+    @pytest.mark.timeout(60)
     async def test_clear_cache_on_empty_cache(self, caching_handler: object) -> None:
         """clear_cache works on empty cache without error."""
         # Should not raise
@@ -469,7 +465,7 @@ class TestClearCache:
         assert stats["entries"] == 0
 
     @pytest.mark.asyncio
-    @pytest.mark.timeout(90)
+    @pytest.mark.timeout(60)
     async def test_clear_cache_stats_reflect_cleared(
         self, caching_handler: object
     ) -> None:
@@ -522,7 +518,7 @@ class TestGetCacheStats:
         assert stats["entries"] == 0
 
     @pytest.mark.asyncio
-    @pytest.mark.timeout(90)
+    @pytest.mark.timeout(60)
     async def test_get_cache_stats_reflects_entries(
         self, caching_handler: object
     ) -> None:
@@ -536,7 +532,7 @@ class TestGetCacheStats:
         assert set(stats["keys"]) == {"key1", "key2"}
 
     @pytest.mark.asyncio
-    @pytest.mark.timeout(90)
+    @pytest.mark.timeout(60)
     async def test_get_cache_stats_after_invalidation(
         self, caching_handler: object
     ) -> None:
@@ -561,7 +557,7 @@ class TestInstanceIsolation:
     """Test cache isolation between handler instances."""
 
     @pytest.mark.asyncio
-    @pytest.mark.timeout(90)
+    @pytest.mark.timeout(60)
     async def test_cache_isolation_per_instance(self) -> None:
         """Each handler instance has its own isolated cache."""
         from omnibase_core.pipeline.handlers.model_capability_caching import (
@@ -581,7 +577,7 @@ class TestInstanceIsolation:
         assert result2 == "handler2_value"
 
     @pytest.mark.asyncio
-    @pytest.mark.timeout(90)
+    @pytest.mark.timeout(60)
     async def test_clear_cache_does_not_affect_other_instances(self) -> None:
         """Clearing one instance does not affect others."""
         from omnibase_core.pipeline.handlers.model_capability_caching import (
@@ -628,10 +624,11 @@ class TestHandlerIndependence:
 
     def test_handler_not_a_mixin(self) -> None:
         """Handler is not designed as a mixin (Pydantic model instead)."""
+        from pydantic import BaseModel
+
         from omnibase_core.pipeline.handlers.model_capability_caching import (
             ModelCapabilityCaching,
         )
-        from pydantic import BaseModel
 
         handler = ModelCapabilityCaching()
 
@@ -642,13 +639,14 @@ class TestHandlerIndependence:
         # (no need for super().__init__() chains like mixins)
 
     @pytest.mark.asyncio
-    @pytest.mark.timeout(90)
+    @pytest.mark.timeout(60)
     async def test_handler_composition_pattern(self) -> None:
         """Handler supports composition pattern (embedding in other classes)."""
+        from pydantic import BaseModel
+
         from omnibase_core.pipeline.handlers.model_capability_caching import (
             ModelCapabilityCaching,
         )
-        from pydantic import BaseModel
 
         class MyService(BaseModel):
             """Example service using caching via composition."""
@@ -712,7 +710,7 @@ class TestEdgeCases:
         assert len(key) == 64
 
     @pytest.mark.asyncio
-    @pytest.mark.timeout(90)
+    @pytest.mark.timeout(60)
     async def test_set_cached_empty_string_key(self, caching_handler: object) -> None:
         """Empty string key is valid."""
         await caching_handler.set_cached("", "empty_key_value")
@@ -721,7 +719,7 @@ class TestEdgeCases:
         assert result == "empty_key_value"
 
     @pytest.mark.asyncio
-    @pytest.mark.timeout(90)
+    @pytest.mark.timeout(60)
     async def test_set_cached_unicode_key(self, caching_handler: object) -> None:
         """Unicode characters in key are handled."""
         unicode_key = "key_with_unicode_"
@@ -731,7 +729,7 @@ class TestEdgeCases:
         assert result == "unicode_value"
 
     @pytest.mark.asyncio
-    @pytest.mark.timeout(90)
+    @pytest.mark.timeout(60)
     async def test_set_cached_large_value(self, caching_handler: object) -> None:
         """Large values can be cached."""
         large_value = {"data": "x" * 10000}  # 10KB of data

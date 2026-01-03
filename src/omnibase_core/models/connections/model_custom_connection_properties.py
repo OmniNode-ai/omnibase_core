@@ -72,7 +72,7 @@ def _coerce_to_model[ModelT: BaseModel](
         return result
     except ValidationError as e:
         # Lenient mode: return default on validation failure
-        # This maintains backward compatibility with the original behavior
+        # fallback-ok: graceful degradation when coercion fails
         _logger.debug(
             "Coercion: field=%s target_type=%s original_type=%s original_value=%r "
             "-> validation failed, returning default instance. Error: %s",

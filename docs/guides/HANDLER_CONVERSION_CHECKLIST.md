@@ -205,8 +205,8 @@ These mixins are tightly coupled to node introspection protocols and will remain
 poetry run pytest tests/unit/pipeline/handlers/ -v
 
 # Run specific handler tests
-poetry run pytest tests/unit/pipeline/handlers/test_model_capability_metrics.py -v
-poetry run pytest tests/unit/pipeline/handlers/test_model_capability_caching.py -v
+poetry run pytest tests/unit/pipeline/handlers/test_capability_metrics.py -v
+poetry run pytest tests/unit/pipeline/handlers/test_capability_caching.py -v
 ```
 
 ### Verify No Mixin Dependencies in Handlers
@@ -276,7 +276,9 @@ poetry run mypy src/omnibase_core/pipeline/handlers/
 ### Handler Structure
 
 ```python
-from pydantic import BaseModel, ConfigDict
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict, PrivateAttr
 
 
 class ModelCapabilityExample(BaseModel):
@@ -295,8 +297,8 @@ class ModelCapabilityExample(BaseModel):
     # Configuration fields
     enabled: bool = True
 
-    # Internal state (if needed)
-    _internal_state: dict = {}
+    # Internal state (if needed) - use PrivateAttr for non-serialized state
+    _internal_state: dict[str, Any] = PrivateAttr(default_factory=dict)
 
     def capability_method(self, input_data: Any) -> Any:
         """Implement capability logic."""

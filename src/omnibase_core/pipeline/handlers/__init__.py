@@ -11,7 +11,11 @@ with composition-based handlers for the ONEX pipeline.
 from omnibase_core.pipeline.handlers.model_capability_caching import (
     ModelCapabilityCaching,
 )
+from omnibase_core.pipeline.handlers.model_capability_metrics import (
+    ModelCapabilityMetrics,
+)
 
 __all__ = [
     "ModelCapabilityCaching",
+    "ModelCapabilityMetrics",
 ]

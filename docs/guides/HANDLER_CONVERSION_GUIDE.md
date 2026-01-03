@@ -21,6 +21,73 @@
 
 ---
 
+## Quick Start
+
+For developers who want to get started quickly:
+
+### 1. Create Your Handler
+
+```python
+# src/omnibase_core/pipeline/handlers/model_capability_example.py
+from pydantic import BaseModel, ConfigDict, PrivateAttr
+
+
+class ModelCapabilityExample(BaseModel):
+    """Example capability handler."""
+
+    model_config = ConfigDict(frozen=False, extra="forbid")
+
+    enabled: bool = True
+    _internal_data: dict[str, object] = PrivateAttr(default_factory=dict)
+
+    def do_something(self, value: str) -> str:
+        """Perform the capability action."""
+        if self.enabled:
+            self._internal_data[value] = True
+        return value
+```
+
+### 2. Export in __init__.py
+
+```python
+# src/omnibase_core/pipeline/handlers/__init__.py
+from omnibase_core.pipeline.handlers.model_capability_example import (
+    ModelCapabilityExample,
+)
+
+__all__ = [
+    "ModelCapabilityExample",
+    # ... other handlers
+]
+```
+
+### 3. Write Tests First (TDD)
+
+```python
+# tests/unit/pipeline/handlers/test_capability_example.py
+import pytest
+from omnibase_core.pipeline.handlers.model_capability_example import (
+    ModelCapabilityExample,
+)
+
+
+@pytest.mark.unit
+class TestModelCapabilityExample:
+    def test_handler_works_standalone(self) -> None:
+        handler = ModelCapabilityExample()
+        result = handler.do_something("test")
+        assert result == "test"
+```
+
+### 4. Run Validation
+
+```bash
+poetry run pytest tests/unit/pipeline/handlers/test_capability_example.py -v
+poetry run mypy src/omnibase_core/pipeline/handlers/model_capability_example.py
+```
+
+---
+
 ## Overview
 
 This guide provides step-by-step instructions for converting existing mixin-based capabilities to the new handler-based architecture. The handler pattern replaces inheritance-based mixins with composition-based, standalone Pydantic models that can be orchestrated by the Pipeline Runner.
@@ -119,10 +186,10 @@ from omnibase_core.pipeline import (
     ModelPipelineHook,
     ModelPipelineContext,
 )
-from omnibase_core.models.capabilities.model_capability_metrics import (
+from omnibase_core.pipeline.handlers.model_capability_metrics import (
     ModelCapabilityMetrics,
 )
-from omnibase_core.models.capabilities.model_capability_caching import (
+from omnibase_core.pipeline.handlers.model_capability_caching import (
     ModelCapabilityCaching,
 )
 
@@ -295,11 +362,12 @@ class CachingCapability(BaseModel): ... # Missing "Model" prefix
 Handler files follow the pattern `model_capability_<name>.py`:
 
 ```text
-src/omnibase_core/models/capabilities/
+src/omnibase_core/pipeline/handlers/
     model_capability_metrics.py      # ModelCapabilityMetrics
     model_capability_caching.py      # ModelCapabilityCaching
-    model_capability_retry.py        # ModelCapabilityRetry
-    model_capability_circuit_breaker.py  # ModelCapabilityCircuitBreaker
+    # Future:
+    # model_capability_retry.py        # ModelCapabilityRetry
+    # model_capability_circuit_breaker.py  # ModelCapabilityCircuitBreaker
 ```
 
 ---
@@ -392,9 +460,9 @@ class ModelCapabilityMetrics(BaseModel):
 Before implementing, write tests based on existing mixin tests:
 
 ```python
-# tests/unit/models/capabilities/test_capability_metrics.py
+# tests/unit/pipeline/handlers/test_capability_metrics.py
 import pytest
-from omnibase_core.models.capabilities.model_capability_metrics import (
+from omnibase_core.pipeline.handlers.model_capability_metrics import (
     ModelCapabilityMetrics,
 )
 
@@ -481,7 +549,7 @@ Ensure the handler provides the same functionality as the original mixin:
 
 ```bash
 # Run handler tests
-poetry run pytest tests/unit/models/capabilities/test_capability_metrics.py -v
+poetry run pytest tests/unit/pipeline/handlers/test_capability_metrics.py -v
 
 # Run original mixin tests (should still pass)
 poetry run pytest tests/unit/mixins/test_mixin_metrics.py -v
@@ -671,17 +739,14 @@ Files follow the pattern `model_<type>_<name>.py`:
 ### Directory Structure
 
 ```text
-src/omnibase_core/models/
-    capabilities/
-        __init__.py
-        model_capability_metrics.py
-        model_capability_caching.py
-        model_capability_retry.py
-        model_capability_circuit_breaker.py
+src/omnibase_core/pipeline/
     handlers/
         __init__.py
-        model_handler_descriptor.py
-        model_handler_type_metadata.py
+        model_capability_caching.py
+        model_capability_metrics.py
+        # Future handlers:
+        # model_capability_retry.py
+        # model_capability_circuit_breaker.py
 ```
 
 ### Test File Names
@@ -689,11 +754,12 @@ src/omnibase_core/models/
 Test files follow the pattern `test_<capability_name>.py`:
 
 ```text
-tests/unit/models/capabilities/
+tests/unit/pipeline/handlers/
     __init__.py
-    test_capability_metrics.py
     test_capability_caching.py
-    test_capability_retry.py
+    test_capability_metrics.py
+    # Future tests:
+    # test_capability_retry.py
 ```
 
 ---
@@ -825,16 +891,16 @@ async def test_handler_in_pipeline():
 
 ```bash
 # Run all capability handler tests
-poetry run pytest tests/unit/models/capabilities/ -v
+poetry run pytest tests/unit/pipeline/handlers/ -v
 
 # Run specific handler tests
-poetry run pytest tests/unit/models/capabilities/test_capability_metrics.py -v
+poetry run pytest tests/unit/pipeline/handlers/test_capability_metrics.py -v
 
 # Run with coverage
-poetry run pytest tests/unit/models/capabilities/ --cov=src/omnibase_core/models/capabilities
+poetry run pytest tests/unit/pipeline/handlers/ --cov=src/omnibase_core/pipeline/handlers
 
 # Run both mixin and handler tests (verify compatibility)
-poetry run pytest tests/unit/mixins/ tests/unit/models/capabilities/ -v
+poetry run pytest tests/unit/mixins/ tests/unit/pipeline/handlers/ -v
 ```
 
 ---
