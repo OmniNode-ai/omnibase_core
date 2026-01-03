@@ -150,6 +150,7 @@ class ProtocolExecutionResolver(Protocol):
         self,
         profile: ModelExecutionProfile,
         contracts: list[ModelHandlerContract],
+        strict_mode: bool | None = None,
     ) -> ModelExecutionPlan:
         """
         Resolve execution order for handlers.
@@ -178,6 +179,11 @@ class ProtocolExecutionResolver(Protocol):
                 - execution_constraints.requires_after: Dependents
                 - execution_constraints.must_run: Force execution
                 - execution_constraints.can_run_parallel: Parallelization hint
+
+            strict_mode: When True, missing dependency references (handler:X,
+                capability:Y, tag:Z) are treated as errors instead of warnings,
+                making the plan invalid. When None (default), uses the profile's
+                ordering_policy.strict_mode setting.
 
         Returns:
             Execution plan with ordered handlers per phase.
@@ -245,5 +251,12 @@ class ProtocolExecutionResolver(Protocol):
                 auth_idx = handlers.index("handler.auth")
                 logging_idx = handlers.index("handler.logging")
                 assert auth_idx < logging_idx
+
+                # Strict mode example - missing dependencies become errors
+                strict_plan = resolver.resolve(
+                    profile, [logging_contract], strict_mode=True
+                )
+                # Plan is invalid because handler.auth is missing
+                assert not strict_plan.is_valid
         """
         ...

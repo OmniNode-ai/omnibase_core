@@ -70,8 +70,25 @@ class ModelExecutionConflict(BaseModel):
         >>> warning.is_blocking()
         False
 
+    Note:
+        **Cycle Detection Behavior (Fail-Fast)**: The ExecutionResolver uses
+        fail-fast cycle detection, meaning it returns immediately after detecting
+        the first cycle. This is intentional for performance and simplicity:
+
+        - Only the **first** cycle encountered is detected and reported
+        - Additional cycles in the graph (if any) are NOT reported
+        - This is sufficient because a single cycle invalidates the entire
+          execution plan, making further detection unnecessary
+        - For comprehensive detection of all strongly connected components,
+          consider Tarjan's SCC algorithm (potential future enhancement)
+
+        When a cycle is detected, the resolution stops immediately and returns
+        an invalid plan. Users should fix the reported cycle and re-run
+        resolution to discover any additional cycles.
+
     See Also:
         - ModelExecutionPlan: Contains conflicts detected during resolution
+        - ExecutionResolver._detect_cycles: The cycle detection implementation
 
     Thread Safety:
         This model is immutable (frozen=True) and safe for concurrent access.

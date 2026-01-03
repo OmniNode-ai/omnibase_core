@@ -141,6 +141,14 @@ class ModelResolutionMetadata(BaseModel):
         description="Number of phases that have at least one handler",
     )
 
+    tie_breaker_statistics: dict[str, int] = Field(
+        default_factory=dict,
+        description=(
+            "Count of how often each tie-breaker was applied "
+            "(e.g., {'priority': 5, 'alphabetical': 12})"
+        ),
+    )
+
     # Source information
     source_profile: str | None = Field(
         default=None,

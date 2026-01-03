@@ -33,6 +33,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 from datetime import UTC, datetime
+from typing import Literal
 
 from omnibase_core.enums.enum_handler_execution_phase import EnumHandlerExecutionPhase
 from omnibase_core.models.contracts.model_execution_ordering_policy import (
@@ -98,6 +99,7 @@ class ExecutionResolver:
         self,
         profile: ModelExecutionProfile,
         contracts: list[ModelHandlerContract],
+        strict_mode: bool | None = None,
     ) -> ModelExecutionPlan:
         """
         Resolve execution order for handlers.
@@ -109,6 +111,9 @@ class ExecutionResolver:
         Args:
             profile: Execution profile defining phases and ordering policy.
             contracts: Handler contracts with execution constraints.
+            strict_mode: When True, missing dependency references are treated as
+                errors instead of warnings, making the plan invalid. When None
+                (default), uses the profile's ordering_policy.strict_mode setting.
 
         Returns:
             Execution plan with ordered handlers per phase. If conflicts are
@@ -119,6 +124,13 @@ class ExecutionResolver:
         conflicts: list[ModelExecutionConflict] = []
         tie_breaker_decisions: list[ModelTieBreakerDecision] = []
         total_constraints_evaluated = 0
+
+        # Determine effective strict mode: explicit parameter takes precedence
+        effective_strict_mode = (
+            strict_mode
+            if strict_mode is not None
+            else profile.ordering_policy.strict_mode
+        )
 
         # Handle empty contracts case
         if not contracts:
@@ -140,6 +152,7 @@ class ExecutionResolver:
             handler_info_map=handler_info_map,
             handler_by_capability=handler_by_capability,
             handler_by_tag=handler_by_tag,
+            strict_mode=effective_strict_mode,
         )
         conflicts.extend(constraint_conflicts)
         total_constraints_evaluated += self._count_constraints(handler_info_map)
@@ -303,6 +316,7 @@ class ExecutionResolver:
         handler_info_map: dict[str, _HandlerInfo],
         handler_by_capability: dict[str, list[str]],
         handler_by_tag: dict[str, list[str]],
+        strict_mode: bool = False,
     ) -> tuple[_DependencyGraph, list[ModelExecutionConflict]]:
         """
         Build dependency graph from handler constraints.
@@ -315,11 +329,14 @@ class ExecutionResolver:
             handler_info_map: Handler info lookup built from contracts.
             handler_by_capability: Capability to handler_ids index.
             handler_by_tag: Tag to handler_ids index.
+            strict_mode: When True, missing dependencies are errors instead of
+                warnings.
 
         Returns:
             Tuple of (dependency_graph, conflicts). The graph contains nodes
             for all handlers and directed edges representing ordering
-            constraints. Conflicts are warnings for unresolved references.
+            constraints. Conflicts are warnings (or errors in strict mode)
+            for unresolved references.
         """
         graph = _DependencyGraph()
         conflicts: list[ModelExecutionConflict] = []
@@ -342,6 +359,7 @@ class ExecutionResolver:
                     handler_by_capability=handler_by_capability,
                     handler_by_tag=handler_by_tag,
                     is_before=True,
+                    strict_mode=strict_mode,
                 )
                 if ref_conflict:
                     conflicts.append(ref_conflict)
@@ -361,6 +379,7 @@ class ExecutionResolver:
                     handler_by_capability=handler_by_capability,
                     handler_by_tag=handler_by_tag,
                     is_before=False,
+                    strict_mode=strict_mode,
                 )
                 if ref_conflict:
                     conflicts.append(ref_conflict)
@@ -382,6 +401,7 @@ class ExecutionResolver:
         handler_by_capability: dict[str, list[str]],
         handler_by_tag: dict[str, list[str]],
         is_before: bool,
+        strict_mode: bool = False,
     ) -> tuple[list[str], ModelExecutionConflict | None]:
         """
         Resolve a constraint reference to handler IDs.
@@ -393,6 +413,8 @@ class ExecutionResolver:
             handler_by_capability: Capability index
             handler_by_tag: Tag index
             is_before: True if this is a requires_before constraint
+            strict_mode: When True, missing dependencies are errors instead of
+                warnings.
 
         Returns:
             Tuple of (resolved_handler_ids, conflict_if_any).
@@ -403,14 +425,17 @@ class ExecutionResolver:
 
         prefix, value = parts
 
+        # Determine severity based on strict mode
+        severity: Literal["error", "warning"] = "error" if strict_mode else "warning"
+
         if prefix == "handler":
             # Direct handler reference
             if value in handler_info_map:
                 return [value], None
-            # Handler not found - create warning
+            # Handler not found - create conflict
             return [], ModelExecutionConflict(
                 conflict_type="missing_dependency",
-                severity="warning",
+                severity=severity,
                 message=f"Handler '{value}' referenced in constraint not found",
                 handler_ids=[source_handler],
                 constraint_refs=[ref],
@@ -421,10 +446,10 @@ class ExecutionResolver:
             handlers = handler_by_capability.get(value, [])
             if handlers:
                 return handlers, None
-            # Capability not found - create warning
+            # Capability not found - create conflict
             return [], ModelExecutionConflict(
                 conflict_type="missing_dependency",
-                severity="warning",
+                severity=severity,
                 message=f"No handlers provide capability '{value}'",
                 handler_ids=[source_handler],
                 constraint_refs=[ref],
@@ -435,10 +460,10 @@ class ExecutionResolver:
             handlers = handler_by_tag.get(value, [])
             if handlers:
                 return handlers, None
-            # Tag not found - create warning
+            # Tag not found - create conflict
             return [], ModelExecutionConflict(
                 conflict_type="missing_dependency",
-                severity="warning",
+                severity=severity,
                 message=f"No handlers have tag '{value}'",
                 handler_ids=[source_handler],
                 constraint_refs=[ref],
@@ -463,12 +488,29 @@ class ExecutionResolver:
         dependencies. Each detected cycle produces an error-severity conflict
         with the cycle path for debugging.
 
+        Note:
+            **Fail-Fast Behavior**: This method returns immediately after
+            detecting the FIRST cycle. If multiple independent cycles exist
+            in the graph, only one is reported. This is intentional:
+
+            - A single cycle is sufficient to invalidate the execution plan
+            - Early return avoids complex state management after cycle detection
+            - Performance is improved by not traversing the entire graph
+            - Users should fix the reported cycle and re-run to find others
+
+            For comprehensive cycle/SCC detection, consider Tarjan's algorithm
+            as a future enhancement.
+
         Args:
             graph: Dependency graph with nodes and edges.
 
         Returns:
-            List of cycle conflicts found. Each conflict includes the cycle
-            path (e.g., ["A", "B", "C", "A"]) and suggested resolution.
+            List containing at most ONE cycle conflict. The list format is
+            maintained for API consistency, but will contain either zero
+            (no cycles) or exactly one conflict (first cycle found).
+
+        See Also:
+            ModelExecutionConflict: Documents this fail-fast behavior
         """
         conflicts: list[ModelExecutionConflict] = []
         visited: set[str] = set()
@@ -714,6 +756,34 @@ class ExecutionResolver:
         return phases
 
     # =========================================================================
+    # Internal Methods - Statistics
+    # =========================================================================
+
+    def _compute_tie_breaker_statistics(
+        self,
+        tie_breaker_decisions: list[ModelTieBreakerDecision],
+    ) -> dict[str, int]:
+        """
+        Compute statistics on tie-breaker usage.
+
+        Counts how often each tie-breaker type was applied during resolution.
+        This provides insight into which tie-breakers are most frequently used.
+
+        Args:
+            tie_breaker_decisions: List of tie-breaker decisions made during
+                resolution.
+
+        Returns:
+            Dictionary mapping tie-breaker type to count of applications.
+            For example: {"priority": 5, "alphabetical": 12}
+        """
+        stats: dict[str, int] = {}
+        for decision in tie_breaker_decisions:
+            tie_breaker = decision.tie_breaker_used
+            stats[tie_breaker] = stats.get(tie_breaker, 0) + 1
+        return stats
+
+    # =========================================================================
     # Internal Methods - Plan Creation
     # =========================================================================
 
@@ -758,6 +828,9 @@ class ExecutionResolver:
                 total_handlers_resolved=0,
                 total_constraints_evaluated=0,
                 phases_with_handlers=0,
+                tie_breaker_statistics=self._compute_tie_breaker_statistics(
+                    tie_breaker_decisions
+                ),
                 resolver_ver=_RESOLVER_VERSION,
             ),
             conflicts=[],
@@ -811,6 +884,9 @@ class ExecutionResolver:
                 total_handlers_resolved=0,
                 total_constraints_evaluated=total_constraints_evaluated,
                 phases_with_handlers=0,
+                tie_breaker_statistics=self._compute_tie_breaker_statistics(
+                    tie_breaker_decisions
+                ),
                 resolver_ver=_RESOLVER_VERSION,
             ),
             conflicts=conflicts,
@@ -868,6 +944,9 @@ class ExecutionResolver:
                 total_handlers_resolved=total_handlers,
                 total_constraints_evaluated=total_constraints_evaluated,
                 phases_with_handlers=phases_with_handlers,
+                tie_breaker_statistics=self._compute_tie_breaker_statistics(
+                    tie_breaker_decisions
+                ),
                 resolver_ver=_RESOLVER_VERSION,
             ),
             conflicts=conflicts,

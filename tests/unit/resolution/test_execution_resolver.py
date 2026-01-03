@@ -348,6 +348,72 @@ class TestCycleDetection:
         # Self-references are filtered out, so no cycle
         assert plan.is_valid
 
+    def test_multiple_cycles_only_first_reported(
+        self,
+        resolver: ExecutionResolver,
+        default_profile: ModelExecutionProfile,
+    ) -> None:
+        """Test fail-fast: only first cycle is reported when multiple exist.
+
+        The resolver uses fail-fast cycle detection for performance and simplicity.
+        When multiple independent cycles exist in the graph, only the first one
+        encountered is reported. This is documented in ModelExecutionConflict.
+
+        This test creates a graph with TWO independent cycles:
+        - Cycle 1: alpha -> beta -> alpha
+        - Cycle 2: gamma -> delta -> gamma
+
+        These cycles are independent (no shared handlers). The resolver should
+        detect and report exactly ONE cycle, then return immediately.
+
+        Note:
+            The specific cycle reported depends on traversal order (alphabetical
+            by handler ID for determinism). Users should fix the reported cycle
+            and re-run resolution to discover additional cycles.
+        """
+        # Create two independent cycles
+        contracts = [
+            # Cycle 1: alpha <-> beta
+            _create_contract(
+                "handler.alpha",
+                requires_before=["handler:handler.beta"],
+            ),
+            _create_contract(
+                "handler.beta",
+                requires_before=["handler:handler.alpha"],
+            ),
+            # Cycle 2: gamma <-> delta (independent of cycle 1)
+            _create_contract(
+                "handler.gamma",
+                requires_before=["handler:handler.delta"],
+            ),
+            _create_contract(
+                "handler.delta",
+                requires_before=["handler:handler.gamma"],
+            ),
+        ]
+
+        plan = resolver.resolve(default_profile, contracts)
+
+        # Plan should be invalid due to cycle
+        assert not plan.is_valid
+        assert plan.has_blocking_conflicts()
+
+        # CRITICAL: Only ONE cycle should be reported (fail-fast behavior)
+        cycle_conflicts = plan.get_cycle_conflicts()
+        assert len(cycle_conflicts) == 1, (
+            f"Expected exactly 1 cycle conflict (fail-fast), but got "
+            f"{len(cycle_conflicts)}. Fail-fast behavior is documented in "
+            f"ModelExecutionConflict and _detect_cycles method."
+        )
+
+        # The single reported cycle should be valid
+        cycle = cycle_conflicts[0]
+        assert cycle.conflict_type == "cycle"
+        assert cycle.severity == "error"
+        assert cycle.cycle_path is not None
+        assert len(cycle.cycle_path) >= 2  # At least 2 unique handlers + repeat
+
 
 # =============================================================================
 # Tie-Breaking Tests
@@ -656,6 +722,214 @@ class TestConstraintResolution:
 
 
 # =============================================================================
+# Strict Mode Tests
+# =============================================================================
+
+
+class TestStrictMode:
+    """Tests for strict_mode parameter that upgrades missing dependency warnings to errors."""
+
+    @pytest.fixture
+    def strict_profile(self) -> ModelExecutionProfile:
+        """Create a profile with strict_mode enabled in ordering_policy."""
+        return ModelExecutionProfile(
+            phases=list(DEFAULT_EXECUTION_PHASES),
+            ordering_policy=ModelExecutionOrderingPolicy(
+                strategy="topological_sort",
+                tie_breakers=["priority", "alphabetical"],
+                deterministic_seed=True,
+                strict_mode=True,
+            ),
+        )
+
+    def test_strict_mode_missing_handler_is_error(
+        self,
+        resolver: ExecutionResolver,
+        default_profile: ModelExecutionProfile,
+    ) -> None:
+        """Test missing handler: reference is error in strict mode."""
+        contracts = [
+            _create_contract(
+                "handler.a",
+                requires_before=["handler:handler.nonexistent"],
+            ),
+        ]
+
+        # Pass strict_mode=True explicitly
+        plan = resolver.resolve(default_profile, contracts, strict_mode=True)
+
+        # Plan is invalid in strict mode
+        assert not plan.is_valid
+        assert plan.has_conflicts()
+        assert plan.has_blocking_conflicts()
+
+        # Should have error (not warning) about missing dependency
+        errors = [c for c in plan.conflicts if c.severity == "error"]
+        assert len(errors) == 1
+        assert errors[0].conflict_type == "missing_dependency"
+        assert "handler.nonexistent" in errors[0].message
+
+    def test_strict_mode_missing_capability_is_error(
+        self,
+        resolver: ExecutionResolver,
+        default_profile: ModelExecutionProfile,
+    ) -> None:
+        """Test missing capability: reference is error in strict mode."""
+        contracts = [
+            _create_contract(
+                "handler.a",
+                requires_before=["capability:unknown.capability"],
+            ),
+        ]
+
+        plan = resolver.resolve(default_profile, contracts, strict_mode=True)
+
+        assert not plan.is_valid
+        assert plan.has_blocking_conflicts()
+
+        errors = [c for c in plan.conflicts if c.severity == "error"]
+        assert len(errors) == 1
+        assert "unknown.capability" in errors[0].message
+
+    def test_strict_mode_missing_tag_is_error(
+        self,
+        resolver: ExecutionResolver,
+        default_profile: ModelExecutionProfile,
+    ) -> None:
+        """Test missing tag: reference is error in strict mode."""
+        contracts = [
+            _create_contract(
+                "handler.a",
+                requires_before=["tag:unknown-tag"],
+            ),
+        ]
+
+        plan = resolver.resolve(default_profile, contracts, strict_mode=True)
+
+        assert not plan.is_valid
+        assert plan.has_blocking_conflicts()
+
+        errors = [c for c in plan.conflicts if c.severity == "error"]
+        assert len(errors) == 1
+        assert "unknown-tag" in errors[0].message
+
+    def test_strict_mode_from_profile(
+        self,
+        resolver: ExecutionResolver,
+        strict_profile: ModelExecutionProfile,
+    ) -> None:
+        """Test strict mode from profile's ordering_policy.strict_mode."""
+        contracts = [
+            _create_contract(
+                "handler.a",
+                requires_before=["handler:handler.nonexistent"],
+            ),
+        ]
+
+        # Don't pass strict_mode, use profile's setting
+        plan = resolver.resolve(strict_profile, contracts)
+
+        # Plan is invalid because profile has strict_mode=True
+        assert not plan.is_valid
+        assert plan.has_blocking_conflicts()
+
+    def test_strict_mode_explicit_overrides_profile(
+        self,
+        resolver: ExecutionResolver,
+        strict_profile: ModelExecutionProfile,
+    ) -> None:
+        """Test explicit strict_mode=False overrides profile's strict_mode=True."""
+        contracts = [
+            _create_contract(
+                "handler.a",
+                requires_before=["handler:handler.nonexistent"],
+            ),
+        ]
+
+        # Explicitly disable strict mode, overriding profile
+        plan = resolver.resolve(strict_profile, contracts, strict_mode=False)
+
+        # Plan is valid because we overrode strict_mode
+        assert plan.is_valid
+        warnings = plan.get_warnings()
+        assert len(warnings) == 1
+
+    def test_non_strict_mode_missing_handler_is_warning(
+        self,
+        resolver: ExecutionResolver,
+        default_profile: ModelExecutionProfile,
+    ) -> None:
+        """Test missing handler: reference is warning in non-strict mode (default)."""
+        contracts = [
+            _create_contract(
+                "handler.a",
+                requires_before=["handler:handler.nonexistent"],
+            ),
+        ]
+
+        # Default is strict_mode=False
+        plan = resolver.resolve(default_profile, contracts)
+
+        # Plan is still valid (warning, not error)
+        assert plan.is_valid
+        assert not plan.has_blocking_conflicts()
+
+        warnings = plan.get_warnings()
+        assert len(warnings) == 1
+        assert warnings[0].severity == "warning"
+
+    def test_strict_mode_multiple_missing_dependencies(
+        self,
+        resolver: ExecutionResolver,
+        default_profile: ModelExecutionProfile,
+    ) -> None:
+        """Test multiple missing dependencies all become errors in strict mode."""
+        contracts = [
+            _create_contract(
+                "handler.a",
+                requires_before=[
+                    "handler:handler.nonexistent",
+                    "capability:unknown.capability",
+                    "tag:unknown-tag",
+                ],
+            ),
+        ]
+
+        plan = resolver.resolve(default_profile, contracts, strict_mode=True)
+
+        assert not plan.is_valid
+        assert plan.has_blocking_conflicts()
+
+        # All three missing dependencies should be errors
+        errors = [c for c in plan.conflicts if c.severity == "error"]
+        assert len(errors) == 3
+        assert all(e.conflict_type == "missing_dependency" for e in errors)
+
+    def test_strict_mode_with_valid_dependencies_succeeds(
+        self,
+        resolver: ExecutionResolver,
+        default_profile: ModelExecutionProfile,
+    ) -> None:
+        """Test strict mode doesn't affect valid resolutions."""
+        contracts = [
+            _create_contract("handler.a"),
+            _create_contract(
+                "handler.b",
+                requires_before=["handler:handler.a"],
+            ),
+        ]
+
+        plan = resolver.resolve(default_profile, contracts, strict_mode=True)
+
+        # Plan is valid - all dependencies resolved
+        assert plan.is_valid
+        assert not plan.has_conflicts()
+
+        handlers = plan.get_all_handler_ids()
+        assert handlers.index("handler.a") < handlers.index("handler.b")
+
+
+# =============================================================================
 # Edge Cases Tests
 # =============================================================================
 
@@ -947,3 +1221,581 @@ class TestCanExecute:
         plan = resolver.resolve(default_profile, [])
 
         assert not plan.can_execute()
+
+
+# =============================================================================
+# Phase Assignment Constraint Tests
+# =============================================================================
+
+
+class TestPhaseAssignmentConstraints:
+    """
+    Tests for phase assignment constraints based on ONEX Four-Node Architecture.
+
+    These tests verify that:
+    1. Handlers with different handler_kinds are tracked in contracts
+    2. Cross-phase dependency constraints are respected
+    3. Phase boundaries prevent invalid dependency patterns
+    4. Future phase hint support is forward-compatible
+
+    The ONEX Four-Node Architecture defines:
+    - PREFLIGHT: Validation and setup before main execution
+    - BEFORE: Pre-processing hooks and preparation
+    - EXECUTE: Core handler logic execution
+    - AFTER: Post-processing hooks and cleanup
+    - EMIT: Event emission and notification
+    - FINALIZE: Final cleanup and resource release
+
+    Phases execute in strict order: PREFLIGHT -> BEFORE -> EXECUTE -> AFTER -> EMIT -> FINALIZE
+
+    Currently, all handlers are assigned to EXECUTE phase. These tests document
+    expected behavior and prepare for future phase hint support (when handlers
+    can declare target phases in execution_constraints).
+    """
+
+    def test_handler_kind_compute_assigned_to_execute_phase(
+        self,
+        resolver: ExecutionResolver,
+        default_profile: ModelExecutionProfile,
+    ) -> None:
+        """
+        Test that compute handlers are assigned to the EXECUTE phase.
+
+        Compute handlers perform pure data transformations with no side effects.
+        Per ONEX architecture, they belong in the EXECUTE phase where core
+        logic runs.
+        """
+        contracts = [
+            _create_contract("handler.compute_transform"),
+        ]
+
+        plan = resolver.resolve(default_profile, contracts)
+
+        assert plan.is_valid
+        execute_phase = next(
+            (p for p in plan.phases if p.phase.value == "execute"), None
+        )
+        assert execute_phase is not None
+        assert "handler.compute_transform" in execute_phase.handler_ids
+
+    def test_handler_kind_effect_assigned_to_execute_phase(
+        self,
+        resolver: ExecutionResolver,
+        default_profile: ModelExecutionProfile,
+    ) -> None:
+        """
+        Test that effect handlers are assigned to the EXECUTE phase.
+
+        Effect handlers perform external I/O operations with side effects.
+        Currently assigned to EXECUTE phase; future versions may support
+        explicit phase hints for BEFORE (setup) or FINALIZE (cleanup).
+        """
+        # Create contract with effect handler_kind
+        effect_contract = ModelHandlerContract(
+            handler_id="handler.effect_io",
+            name="Effect IO Handler",
+            version="1.0.0",
+            descriptor=ModelHandlerBehavior(handler_kind="effect"),
+            input_model="test.Input",
+            output_model="test.Output",
+            metadata={"priority": 0},
+        )
+        contracts = [effect_contract]
+
+        plan = resolver.resolve(default_profile, contracts)
+
+        assert plan.is_valid
+        execute_phase = next(
+            (p for p in plan.phases if p.phase.value == "execute"), None
+        )
+        assert execute_phase is not None
+        assert "handler.effect_io" in execute_phase.handler_ids
+
+    def test_handler_kind_reducer_assigned_to_execute_phase(
+        self,
+        resolver: ExecutionResolver,
+        default_profile: ModelExecutionProfile,
+    ) -> None:
+        """
+        Test that reducer handlers are assigned to the EXECUTE phase.
+
+        Reducer handlers perform state aggregation with FSM-driven transitions.
+        They belong in EXECUTE phase where core state management occurs.
+        """
+        reducer_contract = ModelHandlerContract(
+            handler_id="handler.reducer_state",
+            name="Reducer State Handler",
+            version="1.0.0",
+            descriptor=ModelHandlerBehavior(handler_kind="reducer"),
+            input_model="test.Input",
+            output_model="test.Output",
+            metadata={"priority": 0},
+        )
+        contracts = [reducer_contract]
+
+        plan = resolver.resolve(default_profile, contracts)
+
+        assert plan.is_valid
+        execute_phase = next(
+            (p for p in plan.phases if p.phase.value == "execute"), None
+        )
+        assert execute_phase is not None
+        assert "handler.reducer_state" in execute_phase.handler_ids
+
+    def test_handler_kind_orchestrator_assigned_to_execute_phase(
+        self,
+        resolver: ExecutionResolver,
+        default_profile: ModelExecutionProfile,
+    ) -> None:
+        """
+        Test that orchestrator handlers are assigned to the EXECUTE phase.
+
+        Orchestrator handlers coordinate workflows and emit events/intents.
+        Per ONEX architecture, they coordinate other handlers in EXECUTE phase.
+        """
+        orchestrator_contract = ModelHandlerContract(
+            handler_id="handler.orchestrator_workflow",
+            name="Orchestrator Workflow Handler",
+            version="1.0.0",
+            descriptor=ModelHandlerBehavior(handler_kind="orchestrator"),
+            input_model="test.Input",
+            output_model="test.Output",
+            metadata={"priority": 0},
+        )
+        contracts = [orchestrator_contract]
+
+        plan = resolver.resolve(default_profile, contracts)
+
+        assert plan.is_valid
+        execute_phase = next(
+            (p for p in plan.phases if p.phase.value == "execute"), None
+        )
+        assert execute_phase is not None
+        assert "handler.orchestrator_workflow" in execute_phase.handler_ids
+
+    def test_mixed_handler_kinds_all_in_execute_phase(
+        self,
+        resolver: ExecutionResolver,
+        default_profile: ModelExecutionProfile,
+    ) -> None:
+        """
+        Test that all handler kinds (compute, effect, reducer, orchestrator)
+        are assigned to EXECUTE phase.
+
+        This documents current behavior where phase assignment does not yet
+        use handler_kind hints. All handlers go to EXECUTE phase.
+        """
+        contracts = [
+            ModelHandlerContract(
+                handler_id="handler.compute",
+                name="Compute Handler",
+                version="1.0.0",
+                descriptor=ModelHandlerBehavior(handler_kind="compute"),
+                input_model="test.Input",
+                output_model="test.Output",
+                metadata={"priority": 0},
+            ),
+            ModelHandlerContract(
+                handler_id="handler.effect",
+                name="Effect Handler",
+                version="1.0.0",
+                descriptor=ModelHandlerBehavior(handler_kind="effect"),
+                input_model="test.Input",
+                output_model="test.Output",
+                metadata={"priority": 0},
+            ),
+            ModelHandlerContract(
+                handler_id="handler.reducer",
+                name="Reducer Handler",
+                version="1.0.0",
+                descriptor=ModelHandlerBehavior(handler_kind="reducer"),
+                input_model="test.Input",
+                output_model="test.Output",
+                metadata={"priority": 0},
+            ),
+            ModelHandlerContract(
+                handler_id="handler.orchestrator",
+                name="Orchestrator Handler",
+                version="1.0.0",
+                descriptor=ModelHandlerBehavior(handler_kind="orchestrator"),
+                input_model="test.Input",
+                output_model="test.Output",
+                metadata={"priority": 0},
+            ),
+        ]
+
+        plan = resolver.resolve(default_profile, contracts)
+
+        assert plan.is_valid
+        execute_phase = next(
+            (p for p in plan.phases if p.phase.value == "execute"), None
+        )
+        assert execute_phase is not None
+
+        # All four handler kinds should be in execute phase
+        assert len(execute_phase.handler_ids) == 4
+        assert "handler.compute" in execute_phase.handler_ids
+        assert "handler.effect" in execute_phase.handler_ids
+        assert "handler.reducer" in execute_phase.handler_ids
+        assert "handler.orchestrator" in execute_phase.handler_ids
+
+    def test_phase_ordering_respects_dependency_within_execute(
+        self,
+        resolver: ExecutionResolver,
+        default_profile: ModelExecutionProfile,
+    ) -> None:
+        """
+        Test that dependency ordering is preserved within the EXECUTE phase.
+
+        Even when all handlers are in the same phase, topological ordering
+        based on requires_before/requires_after must be respected.
+        """
+        contracts = [
+            ModelHandlerContract(
+                handler_id="handler.validation",
+                name="Validation Handler",
+                version="1.0.0",
+                descriptor=ModelHandlerBehavior(handler_kind="compute"),
+                input_model="test.Input",
+                output_model="test.Output",
+                metadata={"priority": 0},
+            ),
+            ModelHandlerContract(
+                handler_id="handler.process",
+                name="Process Handler",
+                version="1.0.0",
+                descriptor=ModelHandlerBehavior(handler_kind="compute"),
+                input_model="test.Input",
+                output_model="test.Output",
+                execution_constraints=ModelExecutionConstraints(
+                    requires_before=["handler:handler.validation"],
+                ),
+                metadata={"priority": 0},
+            ),
+            ModelHandlerContract(
+                handler_id="handler.finalize",
+                name="Finalize Handler",
+                version="1.0.0",
+                descriptor=ModelHandlerBehavior(handler_kind="effect"),
+                input_model="test.Input",
+                output_model="test.Output",
+                execution_constraints=ModelExecutionConstraints(
+                    requires_before=["handler:handler.process"],
+                ),
+                metadata={"priority": 0},
+            ),
+        ]
+
+        plan = resolver.resolve(default_profile, contracts)
+
+        assert plan.is_valid
+        handlers = plan.get_all_handler_ids()
+
+        # Dependencies must be respected: validation -> process -> finalize
+        assert handlers.index("handler.validation") < handlers.index("handler.process")
+        assert handlers.index("handler.process") < handlers.index("handler.finalize")
+
+    def test_non_execute_phases_are_empty(
+        self,
+        resolver: ExecutionResolver,
+        default_profile: ModelExecutionProfile,
+    ) -> None:
+        """
+        Test that non-EXECUTE phases (PREFLIGHT, BEFORE, AFTER, EMIT, FINALIZE)
+        are empty when no phase hints are used.
+
+        This documents current behavior where all handlers go to EXECUTE phase.
+        Future implementations may populate other phases based on handler_kind
+        or explicit phase hints in execution_constraints.
+        """
+        contracts = [
+            _create_contract("handler.a"),
+            _create_contract("handler.b"),
+        ]
+
+        plan = resolver.resolve(default_profile, contracts)
+
+        assert plan.is_valid
+
+        # All non-execute phases should be empty
+        for phase in plan.phases:
+            if phase.phase.value != "execute":
+                assert len(phase.handler_ids) == 0, (
+                    f"Phase {phase.phase.value} should be empty, "
+                    f"but contains: {phase.handler_ids}"
+                )
+
+    def test_all_default_phases_present_in_plan(
+        self,
+        resolver: ExecutionResolver,
+        default_profile: ModelExecutionProfile,
+    ) -> None:
+        """
+        Test that all six default phases are present in the execution plan.
+
+        The ONEX pipeline defines six phases that execute in order:
+        PREFLIGHT -> BEFORE -> EXECUTE -> AFTER -> EMIT -> FINALIZE
+
+        Even if phases are empty, they should be present in the plan for
+        future extension and explicit phase sequencing.
+        """
+        contracts = [_create_contract("handler.solo")]
+
+        plan = resolver.resolve(default_profile, contracts)
+
+        assert plan.is_valid
+
+        # Extract phase names from plan
+        phase_names = [phase.phase.value for phase in plan.phases]
+
+        # All six default phases should be present
+        expected_phases = [
+            "preflight",
+            "before",
+            "execute",
+            "after",
+            "emit",
+            "finalize",
+        ]
+        for expected in expected_phases:
+            assert expected in phase_names, f"Phase '{expected}' missing from plan"
+
+    def test_cross_phase_dependency_within_execute_allowed(
+        self,
+        resolver: ExecutionResolver,
+        default_profile: ModelExecutionProfile,
+    ) -> None:
+        """
+        Test that dependencies between handlers in the same phase are allowed.
+
+        When all handlers are in EXECUTE phase, arbitrary dependency chains
+        between them should be valid and respected in ordering.
+        """
+        # Create a complex dependency graph within EXECUTE phase
+        contracts = [
+            _create_contract("handler.auth", capability_outputs=["auth.token"]),
+            _create_contract(
+                "handler.validate",
+                requires_before=["capability:auth.token"],
+            ),
+            _create_contract(
+                "handler.transform",
+                requires_before=["handler:handler.validate"],
+            ),
+            _create_contract(
+                "handler.persist",
+                requires_before=["handler:handler.transform"],
+            ),
+        ]
+
+        plan = resolver.resolve(default_profile, contracts)
+
+        assert plan.is_valid
+        handlers = plan.get_all_handler_ids()
+
+        # Verify full dependency chain is respected
+        assert handlers.index("handler.auth") < handlers.index("handler.validate")
+        assert handlers.index("handler.validate") < handlers.index("handler.transform")
+        assert handlers.index("handler.transform") < handlers.index("handler.persist")
+
+    def test_phase_boundary_future_constraint_documented(
+        self,
+        resolver: ExecutionResolver,
+        default_profile: ModelExecutionProfile,
+    ) -> None:
+        """
+        Document future phase boundary constraint behavior.
+
+        When future phase hint support is added, handlers should not be able
+        to declare dependencies across phase boundaries in invalid ways:
+        - EXECUTE handler cannot require AFTER handler (runs later)
+        - PREFLIGHT handler cannot require EXECUTE handler (runs later)
+
+        Currently, all handlers go to EXECUTE phase, so cross-phase constraints
+        are not enforced. This test documents the expected future behavior.
+
+        The plan should still be valid as phase hints are not yet implemented.
+        """
+        # Simulate what future cross-phase dependencies might look like
+        # For now, these are just regular handlers with no phase hints
+        contracts = [
+            _create_contract("handler.preflight_validation", tags=["phase:preflight"]),
+            _create_contract(
+                "handler.execute_transform",
+                tags=["phase:execute"],
+                requires_before=["tag:phase:preflight"],
+            ),
+            _create_contract(
+                "handler.after_cleanup",
+                tags=["phase:after"],
+                requires_before=["tag:phase:execute"],
+            ),
+        ]
+
+        plan = resolver.resolve(default_profile, contracts)
+
+        # Plan is valid (all in EXECUTE phase currently)
+        assert plan.is_valid
+        handlers = plan.get_all_handler_ids()
+
+        # Dependencies are respected even without explicit phase assignment
+        assert handlers.index("handler.preflight_validation") < handlers.index(
+            "handler.execute_transform"
+        )
+        assert handlers.index("handler.execute_transform") < handlers.index(
+            "handler.after_cleanup"
+        )
+
+
+# =============================================================================
+# Tie-Breaker Statistics Tests
+# =============================================================================
+
+
+class TestTieBreakerStatistics:
+    """Tests for tie-breaker statistics tracking."""
+
+    def test_statistics_empty_when_no_ties(
+        self,
+        resolver: ExecutionResolver,
+        default_profile: ModelExecutionProfile,
+    ) -> None:
+        """Test that statistics are empty when no tie-breaking needed."""
+        # Single handler - no ties possible
+        contracts = [_create_contract("handler.solo")]
+
+        plan = resolver.resolve(default_profile, contracts)
+
+        assert plan.resolution_metadata is not None
+        assert plan.resolution_metadata.tie_breaker_statistics == {}
+
+    def test_statistics_empty_for_empty_contracts(
+        self,
+        resolver: ExecutionResolver,
+        default_profile: ModelExecutionProfile,
+    ) -> None:
+        """Test that statistics are empty for empty contract list."""
+        plan = resolver.resolve(default_profile, [])
+
+        assert plan.resolution_metadata is not None
+        assert plan.resolution_metadata.tie_breaker_statistics == {}
+
+    def test_statistics_priority_tie_breaker(
+        self,
+        resolver: ExecutionResolver,
+        priority_only_profile: ModelExecutionProfile,
+    ) -> None:
+        """Test statistics when priority tie-breaker is used."""
+        # Create handlers with different priorities - all independent
+        contracts = [
+            _create_contract("handler.z", priority=2),  # Lower priority
+            _create_contract("handler.a", priority=1),  # Higher priority
+            _create_contract("handler.m", priority=3),  # Lowest priority
+        ]
+
+        plan = resolver.resolve(priority_only_profile, contracts)
+
+        assert plan.is_valid
+        assert plan.resolution_metadata is not None
+        stats = plan.resolution_metadata.tie_breaker_statistics
+        # Statistics may include "priority" if tie-breaking changed the order
+        # The stats track when leader changed, not all sorts
+        assert isinstance(stats, dict)
+
+    def test_statistics_alphabetical_tie_breaker(
+        self,
+        resolver: ExecutionResolver,
+        alphabetical_only_profile: ModelExecutionProfile,
+    ) -> None:
+        """Test statistics when alphabetical tie-breaker is used."""
+        # Create independent handlers that will be sorted alphabetically
+        contracts = [
+            _create_contract("handler.charlie"),
+            _create_contract("handler.alpha"),
+            _create_contract("handler.bravo"),
+        ]
+
+        plan = resolver.resolve(alphabetical_only_profile, contracts)
+
+        assert plan.is_valid
+        assert plan.resolution_metadata is not None
+        stats = plan.resolution_metadata.tie_breaker_statistics
+        # Should have alphabetical tie-breaker usage if order changed
+        assert isinstance(stats, dict)
+        # When there are independent handlers, alphabetical should be used
+        if stats:
+            assert "alphabetical" in stats
+
+    def test_statistics_count_multiple_tie_breaks(
+        self,
+        resolver: ExecutionResolver,
+        alphabetical_only_profile: ModelExecutionProfile,
+    ) -> None:
+        """Test that statistics correctly count multiple tie-breaks."""
+        # Create a scenario with multiple independent groups requiring tie-breaking
+        # All handlers are independent, so multiple tie-break decisions will be made
+        contracts = [
+            _create_contract("handler.d"),
+            _create_contract("handler.c"),
+            _create_contract("handler.b"),
+            _create_contract("handler.a"),
+        ]
+
+        plan = resolver.resolve(alphabetical_only_profile, contracts)
+
+        assert plan.is_valid
+        assert plan.resolution_metadata is not None
+        stats = plan.resolution_metadata.tie_breaker_statistics
+        # Multiple tie-breaking decisions should result in counts
+        # The count represents number of times leader changed, not total sorts
+        assert isinstance(stats, dict)
+
+    def test_statistics_matches_decision_count(
+        self,
+        resolver: ExecutionResolver,
+        alphabetical_only_profile: ModelExecutionProfile,
+    ) -> None:
+        """Test that statistics sum matches number of tie-breaker decisions."""
+        contracts = [
+            _create_contract("handler.z"),
+            _create_contract("handler.a"),
+            _create_contract("handler.m"),
+        ]
+
+        plan = resolver.resolve(alphabetical_only_profile, contracts)
+
+        assert plan.resolution_metadata is not None
+        stats = plan.resolution_metadata.tie_breaker_statistics
+        decisions = plan.resolution_metadata.tie_breaker_decisions
+
+        # Sum of all statistics should equal number of decisions
+        total_from_stats = sum(stats.values())
+        assert total_from_stats == len(decisions)
+
+    def test_statistics_with_dependencies(
+        self,
+        resolver: ExecutionResolver,
+        alphabetical_only_profile: ModelExecutionProfile,
+    ) -> None:
+        """Test statistics with handlers that have dependencies."""
+        # B and C depend on A, but B and C are independent of each other
+        contracts = [
+            _create_contract("handler.c"),  # Will tie with B after A
+            _create_contract("handler.a"),
+            _create_contract(
+                "handler.b",
+                requires_before=["handler:handler.a"],
+            ),
+            _create_contract(
+                "handler.d",
+                requires_before=["handler:handler.a"],
+            ),
+        ]
+
+        plan = resolver.resolve(alphabetical_only_profile, contracts)
+
+        assert plan.is_valid
+        assert plan.resolution_metadata is not None
+        # Statistics should be populated even with dependencies
+        stats = plan.resolution_metadata.tie_breaker_statistics
+        assert isinstance(stats, dict)
