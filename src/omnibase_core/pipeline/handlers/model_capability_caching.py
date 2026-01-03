@@ -24,7 +24,7 @@ Ticket: OMN-1112
 
 import hashlib
 import json
-from typing import Any
+from typing import Any, ClassVar
 
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 
@@ -66,8 +66,14 @@ class ModelCapabilityCaching(BaseModel):
 
     enabled: bool = True
     default_ttl_seconds: int = Field(
-        default=3600, ge=0, description="Default TTL in seconds"
+        default=3600,
+        ge=0,
+        le=31536000,
+        description="Default TTL in seconds (max 1 year)",
     )
+
+    # Class-level constant for stub implementation
+    MAX_STUB_ENTRIES: ClassVar[int] = 10000
 
     # Private attribute for internal cache storage (not serialized)
     _cache_data: dict[str, object] = PrivateAttr(default_factory=dict)
@@ -127,8 +133,7 @@ class ModelCapabilityCaching(BaseModel):
         if self.enabled:
             # stub-impl-ok: Basic max_entries enforcement for memory safety
             # Production implementation will use proper LRU eviction
-            MAX_STUB_ENTRIES = 10000  # Basic limit for stub implementation
-            if len(self._cache_data) >= MAX_STUB_ENTRIES:
+            if len(self._cache_data) >= self.MAX_STUB_ENTRIES:
                 # Simple eviction: remove oldest entry (first key)
                 oldest_key = next(iter(self._cache_data))
                 del self._cache_data[oldest_key]

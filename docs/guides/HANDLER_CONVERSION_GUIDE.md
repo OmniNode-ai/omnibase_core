@@ -197,13 +197,12 @@ from omnibase_core.pipeline.handlers.model_capability_caching import (
 # Handlers are standalone, configured independently
 metrics_handler = ModelCapabilityMetrics(
     namespace="my_node",
-    enable_timing=True,
+    enabled=True,
 )
 
 caching_handler = ModelCapabilityCaching(
     enabled=True,
-    ttl_seconds=600,
-    max_entries=1000,
+    default_ttl_seconds=600,
 )
 
 # Register hooks with explicit ordering
@@ -278,15 +277,16 @@ class ModelCapabilityMetrics(BaseModel):
     model_config = ConfigDict(frozen=False, extra="forbid", from_attributes=True)
 
     # Configuration fields (public)
-    namespace: str = Field(default="default", description="Metrics namespace")
-    enable_timing: bool = Field(default=True, description="Enable timing metrics")
+    namespace: str = "onex"
+    enabled: bool = True
 
-    # Internal state (private)
-    _metrics_data: dict[str, float] = PrivateAttr(default_factory=dict)
+    # Internal state (private) - not serialized
+    _metrics_data: dict[str, object] = PrivateAttr(default_factory=dict)
 
     def record_metric(self, name: str, value: float) -> None:
         """Record a metric value."""
-        self._metrics_data[name] = value
+        if self.enabled:
+            self._metrics_data[name] = {"value": value, "tags": {}}
 
 
 # WRONG: Inherits from node or mixin
@@ -312,9 +312,10 @@ class ModelCapabilityCaching(BaseModel):
     )
 
     # Configuration (validated by Pydantic)
-    enabled: bool = Field(default=True, description="Enable caching")
-    ttl_seconds: int = Field(default=3600, ge=0, description="Cache TTL in seconds")
-    max_entries: int = Field(default=10000, ge=1, description="Maximum cache entries")
+    enabled: bool = True
+    default_ttl_seconds: int = Field(
+        default=3600, ge=0, description="Default TTL in seconds"
+    )
 ```
 
 ### 3. PrivateAttr for Internal State
@@ -330,17 +331,10 @@ class ModelCapabilityCaching(BaseModel):
 
     # Public configuration
     enabled: bool = True
-    ttl_seconds: int = 3600
+    default_ttl_seconds: int = 3600
 
     # Private internal state (not serialized)
     _cache_data: dict[str, object] = PrivateAttr(default_factory=dict)
-    _hit_count: int = PrivateAttr(default=0)
-    _miss_count: int = PrivateAttr(default=0)
-
-    def model_post_init(self, __context: object) -> None:
-        """Initialize private attributes after model creation."""
-        # PrivateAttr with default_factory handles initialization automatically
-        pass
 ```
 
 ### 4. "Model" Prefix for All Classes
@@ -423,11 +417,11 @@ class ModelCapabilityMetrics(BaseModel):
     model_config = ConfigDict(frozen=False, extra="forbid", from_attributes=True)
 
     # Configuration (was implicit in mixin)
-    enabled: bool = Field(default=True, description="Enable metrics collection")
-    namespace: str = Field(default="default", description="Metrics namespace")
+    namespace: str = "onex"
+    enabled: bool = True
 
     # Internal state (converted from object.__setattr__ pattern)
-    _metrics_data: dict[str, dict[str, Any]] = PrivateAttr(default_factory=dict)
+    _metrics_data: dict[str, object] = PrivateAttr(default_factory=dict)
 
     def record_metric(
         self, metric_name: str, value: float, tags: dict[str, str] | None = None
@@ -599,10 +593,10 @@ class ModelCapabilityMetrics(BaseModel):
 
     model_config = ConfigDict(frozen=False, extra="forbid", from_attributes=True)
 
-    enabled: bool = Field(default=True, description="Enable metrics collection")
-    namespace: str = Field(default="default", description="Metrics namespace")
+    namespace: str = "onex"
+    enabled: bool = True
 
-    _metrics_data: dict[str, dict] = PrivateAttr(default_factory=dict)
+    _metrics_data: dict[str, object] = PrivateAttr(default_factory=dict)
 
     def record_metric(
         self, metric_name: str, value: float, tags: dict[str, str] | None = None
@@ -610,7 +604,7 @@ class ModelCapabilityMetrics(BaseModel):
         if self.enabled:
             self._metrics_data[metric_name] = {"value": value, "tags": tags or {}}
 
-    def get_metrics(self) -> dict[str, dict]:
+    def get_metrics(self) -> dict[str, object]:
         return self._metrics_data.copy()
 ```
 
@@ -655,16 +649,16 @@ class ModelCapabilityCaching(BaseModel):
 
     model_config = ConfigDict(frozen=False, extra="forbid", from_attributes=True)
 
-    enabled: bool = Field(default=True, description="Enable caching")
-    ttl_seconds: int = Field(default=3600, ge=0, description="Default TTL in seconds")
-    max_entries: int = Field(default=10000, ge=1, description="Maximum cache entries")
+    enabled: bool = True
+    default_ttl_seconds: int = Field(
+        default=3600, ge=0, description="Default TTL in seconds"
+    )
 
+    # Private attribute for internal cache storage (not serialized)
     _cache_data: dict[str, object] = PrivateAttr(default_factory=dict)
-    _hit_count: int = PrivateAttr(default=0)
-    _miss_count: int = PrivateAttr(default=0)
 
     def generate_cache_key(self, data: Any) -> str:
-        """Generate a cache key from data."""
+        """Generate a cache key from data using SHA256 hash."""
         try:
             json_str = json.dumps(data, sort_keys=True, default=str)
             return hashlib.sha256(json_str.encode()).hexdigest()
@@ -675,43 +669,29 @@ class ModelCapabilityCaching(BaseModel):
         """Retrieve cached value."""
         if not self.enabled:
             return None
-        value = self._cache_data.get(cache_key)
-        if value is not None:
-            self._hit_count += 1
-        else:
-            self._miss_count += 1
-        return value
+        return self._cache_data.get(cache_key)
 
     async def set_cached(
         self, cache_key: str, value: Any, ttl_seconds: int | None = None
     ) -> None:
         """Store value in cache."""
-        if not self.enabled:
-            return
-        # Enforce max entries (simple LRU eviction)
-        if len(self._cache_data) >= self.max_entries:
-            # Remove oldest entry (first key)
-            oldest_key = next(iter(self._cache_data))
-            del self._cache_data[oldest_key]
-        self._cache_data[cache_key] = value
+        if self.enabled:
+            self._cache_data[cache_key] = value
 
-    async def invalidate(self, cache_key: str) -> None:
+    async def invalidate_cache(self, cache_key: str) -> None:
         """Invalidate a cache entry."""
         self._cache_data.pop(cache_key, None)
 
-    async def clear(self) -> None:
+    async def clear_cache(self) -> None:
         """Clear all cache entries."""
         self._cache_data.clear()
-        self._hit_count = 0
-        self._miss_count = 0
 
-    def get_stats(self) -> dict[str, int]:
+    def get_cache_stats(self) -> dict[str, object]:
         """Get cache statistics."""
         return {
+            "enabled": self.enabled,
             "entries": len(self._cache_data),
-            "hits": self._hit_count,
-            "misses": self._miss_count,
-            "max_entries": self.max_entries,
+            "keys": list(self._cache_data.keys()),
         }
 ```
 
