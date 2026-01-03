@@ -33,6 +33,7 @@ class TestEnumExecutionStatus:
             "SKIPPED": "skipped",
             "CANCELLED": "cancelled",
             "TIMEOUT": "timeout",
+            "PARTIAL": "partial",
         }
 
         for name, value in expected_values.items():
@@ -57,6 +58,7 @@ class TestEnumExecutionStatus:
             EnumExecutionStatus.SKIPPED,
             EnumExecutionStatus.CANCELLED,
             EnumExecutionStatus.TIMEOUT,
+            EnumExecutionStatus.PARTIAL,
         ]
 
         for status in terminal_statuses:
@@ -90,6 +92,7 @@ class TestEnumExecutionStatus:
             EnumExecutionStatus.SKIPPED,
             EnumExecutionStatus.CANCELLED,
             EnumExecutionStatus.TIMEOUT,
+            EnumExecutionStatus.PARTIAL,
         ]
 
         for status in non_active_statuses:
@@ -114,6 +117,7 @@ class TestEnumExecutionStatus:
             EnumExecutionStatus.SKIPPED,
             EnumExecutionStatus.CANCELLED,
             EnumExecutionStatus.TIMEOUT,
+            EnumExecutionStatus.PARTIAL,
         ]
 
         for status in non_successful_statuses:
@@ -133,6 +137,7 @@ class TestEnumExecutionStatus:
             EnumExecutionStatus.FAILED,
             EnumExecutionStatus.CANCELLED,
             EnumExecutionStatus.TIMEOUT,
+            EnumExecutionStatus.PARTIAL,
         ]
 
         for status in non_skipped_statuses:
@@ -152,6 +157,7 @@ class TestEnumExecutionStatus:
             EnumExecutionStatus.SKIPPED,
             EnumExecutionStatus.CANCELLED,
             EnumExecutionStatus.TIMEOUT,
+            EnumExecutionStatus.PARTIAL,
         ]
 
         for status in non_running_statuses:
@@ -175,6 +181,7 @@ class TestEnumExecutionStatus:
             EnumExecutionStatus.FAILED,
             EnumExecutionStatus.SKIPPED,
             EnumExecutionStatus.TIMEOUT,
+            EnumExecutionStatus.PARTIAL,
         ]
 
         for status in non_cancelled_statuses:
@@ -201,6 +208,7 @@ class TestEnumExecutionStatus:
             EnumExecutionStatus.SKIPPED,
             EnumExecutionStatus.CANCELLED,
             EnumExecutionStatus.TIMEOUT,
+            EnumExecutionStatus.PARTIAL,
         ]
 
         for status in all_statuses:
@@ -209,7 +217,7 @@ class TestEnumExecutionStatus:
     def test_enum_iteration(self):
         """Test iterating over enum values."""
         statuses = list(EnumExecutionStatus)
-        assert len(statuses) == 8
+        assert len(statuses) == 9
 
         status_values = [status.value for status in statuses]
         expected_values = [
@@ -221,6 +229,7 @@ class TestEnumExecutionStatus:
             "skipped",
             "cancelled",
             "timeout",
+            "partial",
         ]
 
         assert set(status_values) == set(expected_values)
