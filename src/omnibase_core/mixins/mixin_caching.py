@@ -22,7 +22,6 @@ Usage:
 
 import hashlib
 import json
-from typing import Any
 
 from omnibase_core.types.typed_dict_mixin_types import TypedDictCacheStats
 
@@ -40,14 +39,14 @@ class MixinCaching:
         _cache_data: In-memory cache storage (stub) - stores serializable values
     """
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, *args: object, **kwargs: object) -> None:
         """Initialize caching mixin."""
         super().__init__(*args, **kwargs)
         self._cache_enabled = True
         # Cache stores arbitrary serializable values - use object for type flexibility
         self._cache_data: dict[str, object] = {}
 
-    def generate_cache_key(self, data: Any) -> str:
+    def generate_cache_key(self, data: object) -> str:
         """
         Generate a cache key from data.
 
@@ -65,7 +64,7 @@ class MixinCaching:
             # Fallback for non-serializable data
             return hashlib.sha256(str(data).encode()).hexdigest()
 
-    async def get_cached(self, cache_key: str) -> Any | None:
+    async def get_cached(self, cache_key: str) -> object | None:
         """
         Retrieve cached value.
 
@@ -83,7 +82,7 @@ class MixinCaching:
 
     # stub-ok: Intentional stub - full caching backend (Redis/Memcached) in future phase
     async def set_cached(
-        self, cache_key: str, value: Any, ttl_seconds: int = 3600
+        self, cache_key: str, value: object, ttl_seconds: int = 3600
     ) -> None:
         """
         Store value in cache.

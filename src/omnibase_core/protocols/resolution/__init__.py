@@ -11,6 +11,8 @@ Protocols:
         capability, intent, or protocol rather than hardcoded module paths.
     ProtocolCapabilityResolver: Interface for resolving capability dependencies
         to concrete provider bindings.
+    ProtocolExecutionResolver: Interface for resolving handler execution order
+        from profiles and contracts.
     ProtocolProviderRegistry: Minimal interface for provider registry
         (stub for OMN-1156).
 
@@ -66,10 +68,14 @@ from omnibase_core.protocols.resolution.protocol_capability_resolver import (
 from omnibase_core.protocols.resolution.protocol_dependency_resolver import (
     ProtocolDependencyResolver,
 )
+from omnibase_core.protocols.resolution.protocol_execution_resolver import (
+    ProtocolExecutionResolver,
+)
 
 __all__ = [
     "ProtocolCapabilityResolver",
     "ProtocolDependencyResolver",
+    "ProtocolExecutionResolver",
     "ProtocolProfile",
     "ProtocolProviderRegistry",
 ]

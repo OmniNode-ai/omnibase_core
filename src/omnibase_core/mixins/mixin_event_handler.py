@@ -5,6 +5,7 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 if TYPE_CHECKING:
+    from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
     from omnibase_core.models.mixins.model_node_introspection_data import (
         ModelNodeIntrospectionData,
     )
@@ -43,10 +44,6 @@ import fnmatch
 import inspect
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
-
-if TYPE_CHECKING:
-    from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 
 # Import protocol to avoid circular dependencies
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
@@ -62,7 +59,7 @@ from omnibase_core.models.core.model_onex_event import OnexEvent
 _COMPONENT_NAME = Path(__file__).stem
 
 # Background tasks set to prevent garbage collection of fire-and-forget tasks
-_background_tasks: set[asyncio.Task[Any]] = set()
+_background_tasks: set[asyncio.Task[None]] = set()
 
 
 class MixinEventHandler:
@@ -145,7 +142,7 @@ class MixinEventHandler:
             self._setup_event_handlers()
 
     def _handle_introspection_request(
-        self, envelope: "ModelEventEnvelope[Any] | OnexEvent"
+        self, envelope: "ModelEventEnvelope[OnexEvent] | OnexEvent"
     ) -> None:
         """
         Handle NODE_INTROSPECTION_REQUEST events.
@@ -250,7 +247,7 @@ class MixinEventHandler:
             )
 
     def _handle_node_discovery_request(
-        self, envelope: "ModelEventEnvelope[Any] | OnexEvent"
+        self, envelope: "ModelEventEnvelope[OnexEvent] | OnexEvent"
     ) -> None:
         """
         Handle NODE_DISCOVERY_REQUEST events.

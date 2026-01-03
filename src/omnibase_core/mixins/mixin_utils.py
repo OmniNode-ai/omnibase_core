@@ -22,9 +22,10 @@ from __future__ import annotations
 # uuid: 1c1a1699-5733-4aff-b383-eb4b5fc2aea1
 # version: 1.0.0
 # === /OmniNode:Metadata ===
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from omnibase_core.enums import EnumNodeMetadataField
+from omnibase_core.protocols.base.protocol_context_value import ContextValue
 
 from .mixin_canonical_serialization import MixinCanonicalYAMLSerializer
 
@@ -45,12 +46,12 @@ def canonicalize_metadata_block(
     default_flow_style: bool = False,
     allow_unicode: bool = True,
     comment_prefix: str = "",
-    **kwargs: Any,
+    **kwargs: ContextValue,
 ) -> str:
     """
     Utility function to canonicalize a metadata block using MixinCanonicalYAMLSerializer.
     Args:
-        block: A dict[str, Any]or model instance (must implement model_dump(mode="json")).
+        block: A dict[str, object] or model instance (must implement model_dump(mode="json")).
         volatile_fields: Fields to replace with protocol placeholder values.
         placeholder: Placeholder value for volatile fields.
         sort_keys: Whether to sort keys in YAML output.

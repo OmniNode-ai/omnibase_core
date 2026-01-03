@@ -44,8 +44,31 @@ import time
 import uuid
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any, cast
+from typing import Protocol, cast, runtime_checkable
 from uuid import UUID
+
+
+@runtime_checkable
+class ProtocolEventBusListener(Protocol):
+    """Protocol for event bus used by MixinEventListener.
+
+    This protocol defines the duck-typed interface for event bus operations
+    used by the event listener mixin. It is runtime_checkable to support
+    hasattr() checks before method calls.
+    """
+
+    def subscribe(self, handler: Callable[..., object], event_type: str) -> object:
+        """Subscribe to events with a handler."""
+        ...
+
+    def unsubscribe(self, subscription: object) -> None:
+        """Unsubscribe from events."""
+        ...
+
+    async def publish_async(self, envelope: object) -> object:
+        """Asynchronous publish method."""
+        ...
+
 
 from pydantic import ValidationError
 
@@ -80,12 +103,12 @@ class MixinEventListener[InputStateT, OutputStateT]:
                     self.start_event_listener()
     """
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(self, **kwargs: object) -> None:
         """Initialize the event listener mixin."""
         super().__init__(**kwargs)
         self._event_listener_thread: threading.Thread | None = None
         self._stop_event = threading.Event()
-        self._event_subscriptions: list[tuple[str, Any]] = []
+        self._event_subscriptions: list[tuple[str, object]] = []
 
         emit_log_event(
             LogLevel.DEBUG,
@@ -135,12 +158,12 @@ class MixinEventListener[InputStateT, OutputStateT]:
         return re.sub(r"(?<!^)(?=[A-Z])", "_", class_name).lower()
 
     @property
-    def event_bus(self) -> Any:
+    def event_bus(self) -> ProtocolEventBusListener | None:
         """Get event bus instance from implementing class."""
         return getattr(self, "_event_bus", None)
 
     @event_bus.setter
-    def event_bus(self, value: Any) -> None:
+    def event_bus(self, value: ProtocolEventBusListener | None) -> None:
         """Set event bus instance."""
         self._event_bus = value
 
@@ -471,7 +494,7 @@ class MixinEventListener[InputStateT, OutputStateT]:
                 },
             )
 
-    def _create_event_handler(self, pattern: str) -> Callable[..., Any]:
+    def _create_event_handler(self, pattern: str) -> Callable[[object], None]:
         """Create an event handler for a specific pattern."""
         emit_log_event(
             LogLevel.DEBUG,
@@ -479,7 +502,7 @@ class MixinEventListener[InputStateT, OutputStateT]:
             {"node_name": self.get_node_name(), "pattern": pattern},
         )
 
-        def handler(envelope: Any) -> None:
+        def handler(envelope: object) -> None:
             """Handle incoming event envelope."""
             # Handle both envelope and direct event for current standards
             if hasattr(envelope, "payload"):
@@ -862,7 +885,7 @@ class MixinEventListener[InputStateT, OutputStateT]:
 
         return None
 
-    def _publish_event(self, envelope: Any) -> None:
+    def _publish_event(self, envelope: object) -> None:
         """
         Publish event, handling both sync and async event buses.
 
@@ -874,6 +897,9 @@ class MixinEventListener[InputStateT, OutputStateT]:
         """
         import asyncio
         import inspect
+
+        if self.event_bus is None:
+            return
 
         # Call the async method
         result = self.event_bus.publish_async(envelope)
@@ -997,7 +1023,7 @@ class MixinEventListener[InputStateT, OutputStateT]:
             event_type=completion_event_type,
             node_id=node_uuid,
             correlation_id=input_event.correlation_id,
-            data=completion_data,  # type: ignore[arg-type]
+            data=completion_data,  # type: ignore[arg-type]  # Event data field accepts dict for completion protocol; validated at runtime
         )
 
         emit_log_event(
@@ -1082,7 +1108,7 @@ class MixinEventListener[InputStateT, OutputStateT]:
             event_type=completion_event_type,
             node_id=node_uuid,
             correlation_id=input_event.correlation_id,
-            data=error_data,  # type: ignore[arg-type]
+            data=error_data,  # type: ignore[arg-type]  # Event data field accepts dict for error protocol; validated at runtime
         )
 
         # Import envelope model

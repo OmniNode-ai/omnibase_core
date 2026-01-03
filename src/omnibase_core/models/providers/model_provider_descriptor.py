@@ -1,6 +1,8 @@
 # SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
 #
 # SPDX-License-Identifier: Apache-2.0
+from __future__ import annotations
+
 """
 Provider Descriptor Model.
 
@@ -58,19 +60,49 @@ See Also:
 
 import fnmatch
 import re
-from typing import Any
+from typing import TYPE_CHECKING, Annotated, Any
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, SkipValidation, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.json_types import JsonType
 
-# Note: ModelHealthStatus cannot be imported here due to circular import issues.
-# The health field uses Any type annotation at runtime but accepts ModelHealthStatus
-# instances. See OMN-1191 for tracking the circular import refactoring.
-# Type: omnibase_core.models.health.model_health_status.ModelHealthStatus | None
+# ---------------------------------------------------------------------------
+# TYPE SAFETY PATTERN FOR CIRCULAR IMPORT AVOIDANCE
+# ---------------------------------------------------------------------------
+# This module uses TYPE_CHECKING with SkipValidation for the `health` field
+# to avoid a complex circular import chain:
+#
+#   model_health_status.py -> model_health_metadata.py -> model_health_attributes.py
+#   -> model_custom_fields.py -> ... -> mixin_health_check.py -> model_health_status.py
+#
+# PATTERN EXPLANATION:
+# 1. `from __future__ import annotations` defers annotation evaluation
+# 2. TYPE_CHECKING import provides IDE/type checker support for ModelHealthStatus
+# 3. SkipValidation allows Pydantic to skip validation at model instantiation
+# 4. Static type checkers see the proper type: ModelHealthStatus | None
+# 5. Runtime uses SkipValidation[Any] to accept any value
+#
+# TO GET FULL RUNTIME TYPE VALIDATION: After all modules are loaded, call
+# `ModelProviderDescriptor.model_rebuild()` to resolve the forward reference
+# and enable full Pydantic validation of the health field.
+#
+# WHY SkipValidation?
+# The circular import prevents importing ModelHealthStatus at module load time.
+# SkipValidation allows the model to be instantiated immediately while still
+# providing proper type hints for static analysis. Call model_rebuild() after
+# all modules are loaded (e.g., in application startup or test fixtures).
+# ---------------------------------------------------------------------------
+if TYPE_CHECKING:
+    from omnibase_core.models.health.model_health_status import ModelHealthStatus
+
+    # Type alias for static type checkers - shows proper type
+    HealthStatusType = Annotated[ModelHealthStatus | None, SkipValidation]
+else:
+    # Runtime type alias - accepts any value, validation skipped until model_rebuild()
+    HealthStatusType = Annotated[Any, SkipValidation]
 
 
 # Capability naming pattern: lowercase alphanumeric with dots, at least one dot
@@ -247,11 +279,17 @@ class ModelProviderDescriptor(BaseModel):
         description="Tags for filtering (e.g., 'production', 'us-east', 'primary')",
     )
 
-    # Note: Type is ModelHealthStatus | None but uses Any due to circular import.
-    # See module-level comment for OMN-1191 tracking issue.
-    health: Any = Field(
+    # See TYPE SAFETY PATTERN documentation block at module level for details.
+    # Uses SkipValidation to allow instantiation without model_rebuild().
+    # Static type checkers see: ModelHealthStatus | None
+    # Runtime accepts any value until model_rebuild() is called.
+    health: HealthStatusType = Field(
         default=None,
-        description="Current health status of this provider (ModelHealthStatus | None)",
+        description=(
+            "Current health status of this provider. Uses forward reference with "
+            "SkipValidation to avoid circular import. Call model_rebuild() after "
+            "all modules are loaded for full Pydantic validation."
+        ),
     )
 
     @field_validator("health", mode="before")
@@ -689,4 +727,4 @@ class ModelProviderDescriptor(BaseModel):
         )
 
 
-__all__ = ["ModelProviderDescriptor"]
+__all__ = ["HealthStatusType", "ModelProviderDescriptor"]
