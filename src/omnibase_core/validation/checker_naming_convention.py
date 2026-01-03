@@ -5,6 +5,10 @@ This module enforces file, class, and function naming conventions for the
 omnibase_core codebase. It is designed to be run as a pre-commit hook or
 standalone validation tool.
 
+**NEW VALIDATION (PR #314, OMN-1224, OMN-1225)**: This validation is being
+rolled out incrementally. The pre-push hook currently runs in warning mode
+(non-blocking) to allow time for migration of existing files.
+
 Key Features:
     - File naming validation based on directory-specific prefix rules
     - Class naming convention checks (PascalCase, anti-pattern detection)
@@ -81,6 +85,38 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
+# =============================================================================
+# MIGRATION PLAN FOR EXISTING VIOLATIONS
+# =============================================================================
+#
+# As of PR #314 (OMN-1224, OMN-1225), there are approximately 71 existing file
+# naming violations in the codebase.
+#
+# Migration Strategy:
+# -------------------
+# 1. Phase 1 (Current): Pre-push hook runs in WARNING mode (non-blocking)
+#    - Developers see violations but can still push
+#    - New files must follow conventions (enforced in code review)
+#
+# 2. Phase 2: Create tracking tickets for each directory with violations
+#    - cli/ (3 violations) -> rename to cli_*.py
+#    - constants/ (2 violations) -> rename to constants_*.py
+#    - decorators/ (4 violations) -> rename to decorator_*.py
+#    - errors/ (3 violations) -> rename to error_*.py or exception_*.py
+#    - etc.
+#
+# 3. Phase 3: Rename files incrementally, updating all imports
+#    - Use IDE refactoring tools to update imports across codebase
+#    - One directory at a time to minimize merge conflicts
+#    - Each rename is a separate PR for easy review
+#
+# 4. Phase 4: Enable BLOCKING mode after all violations fixed
+#    - Update pre-push hook to fail on violations
+#    - Add to CI pipeline as required check
+#
+# Tracking: See Linear tickets OMN-1224, OMN-1225 for progress
+# =============================================================================
+
 # DIRECTORY_PREFIX_RULES: Maps top-level directory names under omnibase_core/
 # to their required file name prefixes.
 #
@@ -125,6 +161,10 @@ DIRECTORY_PREFIX_RULES: dict[str, tuple[str, ...]] = {
     ),
     "protocols": ("protocol_",),
     "resolution": ("resolver_",),
+    # runtime/ accepts handler_ prefix because:
+    # - runtime/handler_registry.py manages handler registration
+    # - runtime/handlers/handler_local.py implements local handler logic
+    # The runtime module is responsible for handler dispatch and management.
     "runtime": ("runtime_", "handler_"),
     "schemas": ("schema_",),
     "services": ("service_",),
@@ -209,13 +249,28 @@ def check_file_name(file_path: Path) -> str | None:
         return None
 
     # Find the relevant directory - the first directory after omnibase_core
-    # that has a rule defined
+    # that has a rule defined.
+    #
+    # Path structure explanation:
+    #   parts = ("src", "omnibase_core", "models", "cli", "model_cli.py")
+    #            ^0      ^1               ^2        ^3     ^4 (filename)
+    #   len(parts) = 5, so len(parts) - 1 = 4 (index of filename)
+    #
+    # For path "src/omnibase_core/models/cli/model_cli.py":
+    #   - omnibase_idx = 1 (position of "omnibase_core")
+    #   - omnibase_idx + 1 = 2 (position of "models", the rule-relevant dir)
+    #   - We need at least one directory between omnibase_core and the filename
+    #   - Condition: omnibase_idx + 1 < len(parts) - 1
+    #     Ensures there's a directory (not just filename) after omnibase_core
     parts = file_path.parts
     try:
         # Find omnibase_core in the path
         omnibase_idx = parts.index("omnibase_core")
-        # The rule-relevant directory is the one immediately after omnibase_core
-        if omnibase_idx + 1 < len(parts) - 1:  # -1 to exclude the filename
+        # The rule-relevant directory is the one immediately after omnibase_core.
+        # We use len(parts) - 1 to exclude the filename from consideration:
+        # if omnibase_idx + 1 equals len(parts) - 1, we'd be pointing at the
+        # filename itself, not a directory, so we need strict less-than.
+        if omnibase_idx + 1 < len(parts) - 1:
             relevant_dir = parts[omnibase_idx + 1]
             if relevant_dir in DIRECTORY_PREFIX_RULES:
                 required_prefixes = DIRECTORY_PREFIX_RULES[relevant_dir]
@@ -289,6 +344,9 @@ class NamingConventionChecker(ast.NodeVisitor):
                 whether the file is in an exempt directory (errors/, handlers/).
         """
         self.file_path = file_path
+        # Cache Path object for efficient reuse in visit methods
+        # Avoids creating new Path objects on each class/function visit
+        self._file_path = Path(file_path)
         self.issues: list[str] = []
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
@@ -323,12 +381,11 @@ class NamingConventionChecker(ast.NodeVisitor):
         # or "Service" in names like "InfraServiceUnavailableError"
         # Handler classes in handlers/ directories are exempt (e.g., HandlerHttp)
         is_error_class = class_name.endswith(("Error", "Exception"))
-        # Use pathlib for cross-platform path handling
-        file_path = Path(self.file_path)
+        # Use cached Path object for efficient cross-platform path handling
         is_in_exempt_dir = (
-            "errors" in file_path.parts
-            or "handlers" in file_path.parts
-            or file_path.name == "errors.py"
+            "errors" in self._file_path.parts
+            or "handlers" in self._file_path.parts
+            or self._file_path.name == "errors.py"
         )
 
         # Check for anti-pattern names (skip for error taxonomy classes)
@@ -403,6 +460,9 @@ def validate_directory(directory: Path, verbose: bool = False) -> list[str]:
     Recursively traverses the given directory and checks each Python file
     for naming convention compliance using the check_file_name() function.
 
+    Symbolic links are skipped to avoid infinite loops from circular symlinks
+    and to prevent duplicate validation of the same file through different paths.
+
     Args:
         directory: Path to the directory to validate. The function will
             recursively check all .py files in this directory and its
@@ -426,6 +486,13 @@ def validate_directory(directory: Path, verbose: bool = False) -> list[str]:
     errors: list[str] = []
 
     for file_path in directory.rglob("*.py"):
+        # Skip symbolic links to avoid infinite loops from circular symlinks
+        # and prevent duplicate validation of files accessible via multiple paths
+        if file_path.is_symlink():
+            if verbose:
+                logger.debug("Skipping symlink: %s", file_path)
+            continue
+
         error = check_file_name(file_path)
         if error:
             errors.append(f"{file_path}: {error}")

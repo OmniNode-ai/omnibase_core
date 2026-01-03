@@ -1,8 +1,22 @@
 #!/usr/bin/env python3
-import pytest
-
 """
-Comprehensive tests for naming convention validation.
+Tests for scripts/validation/validate_naming.py module (NamingConventionValidator).
+
+NOTE: This file tests CLASS naming conventions (e.g., ModelUser, EnumStatus,
+ProtocolEventBus). The NamingConventionValidator enforces that:
+- Classes in models/ directories should be named Model*
+- Classes in enums/ directories should be named Enum*
+- Classes in protocols/ directories should be named Protocol*
+- etc.
+
+For FILE naming convention tests, see test_checker_naming_convention.py which
+tests src/omnibase_core/validation/checker_naming_convention.py. That module
+enforces file naming patterns (e.g., model_*.py, enum_*.py) rather than class
+naming patterns.
+
+SUMMARY OF NAMING CONVENTION MODULES:
+- validate_naming.py (scripts/): CLASS naming (ModelUser, EnumStatus)
+- checker_naming_convention.py (src/): FILE naming (model_user.py, enum_status.py)
 
 Tests all aspects of the NamingConventionValidator including:
 - Valid naming patterns for all entity types
@@ -19,6 +33,8 @@ import sys
 import tempfile
 from pathlib import Path
 from unittest.mock import patch
+
+import pytest
 
 sys.path.insert(
     0,
