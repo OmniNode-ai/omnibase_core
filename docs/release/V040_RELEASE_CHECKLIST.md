@@ -1198,7 +1198,7 @@ sys.exit(0)  # Explicit success exit
     ```bash
     # Generate error object snapshot with all observability fields
     poetry run python -c "
-    from omnibase_core.errors.declarative_errors import NodeExecutionError
+    from omnibase_core.errors.error_declarative import NodeExecutionError
     import json
 
     # Create error with all observability fields

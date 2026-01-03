@@ -18,7 +18,7 @@ Error Invariants (MVP Requirements):
 - Structured fields for logging and observability
 
 Usage:
-    from omnibase_core.errors.declarative_errors import (
+    from omnibase_core.errors.error_declarative import (
         AdapterBindingError,
         PurityViolationError,
         NodeExecutionError,

@@ -9,7 +9,7 @@ RuntimeHostError for declarative node validation:
 - NodeExecutionError: Errors during declarative node execution phases
 - UnsupportedCapabilityError: Errors when nodes lack required capabilities
 
-Implementation: omnibase_core/errors/declarative_errors.py
+Implementation: omnibase_core/errors/error_declarative.py
 
 Error Code Mapping (from EnumCoreErrorCode):
 - ADAPTER_BINDING_ERROR = "ONEX_CORE_271_ADAPTER_BINDING_ERROR"
@@ -44,7 +44,7 @@ class TestAdapterBindingError:
 
     def test_creation_with_basic_message(self) -> None:
         """Test creating AdapterBindingError with minimal args."""
-        from omnibase_core.errors.declarative_errors import AdapterBindingError
+        from omnibase_core.errors.error_declarative import AdapterBindingError
 
         error = AdapterBindingError("Failed to bind HTTP adapter")
 
@@ -56,7 +56,7 @@ class TestAdapterBindingError:
     def test_creation_with_all_parameters(self) -> None:
         """Test AdapterBindingError with all optional parameters."""
         from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-        from omnibase_core.errors.declarative_errors import AdapterBindingError
+        from omnibase_core.errors.error_declarative import AdapterBindingError
 
         corr_id = uuid4()
         error = AdapterBindingError(
@@ -75,7 +75,7 @@ class TestAdapterBindingError:
 
     def test_model_dump_serialization(self) -> None:
         """Test AdapterBindingError.model_dump() returns correct dict structure."""
-        from omnibase_core.errors.declarative_errors import AdapterBindingError
+        from omnibase_core.errors.error_declarative import AdapterBindingError
 
         error = AdapterBindingError(
             "Binding failed",
@@ -95,7 +95,7 @@ class TestAdapterBindingError:
 
     def test_model_dump_json_serialization(self) -> None:
         """Test AdapterBindingError.model_dump_json() returns valid JSON."""
-        from omnibase_core.errors.declarative_errors import AdapterBindingError
+        from omnibase_core.errors.error_declarative import AdapterBindingError
 
         error = AdapterBindingError(
             "JSON serialization test",
@@ -113,7 +113,7 @@ class TestAdapterBindingError:
     def test_default_error_code(self) -> None:
         """Test AdapterBindingError defaults to ADAPTER_BINDING_ERROR code."""
         from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-        from omnibase_core.errors.declarative_errors import AdapterBindingError
+        from omnibase_core.errors.error_declarative import AdapterBindingError
 
         error = AdapterBindingError("Test error without explicit code")
 
@@ -121,7 +121,7 @@ class TestAdapterBindingError:
 
     def test_str_includes_error_code(self) -> None:
         """Test AdapterBindingError __str__ includes error code."""
-        from omnibase_core.errors.declarative_errors import AdapterBindingError
+        from omnibase_core.errors.error_declarative import AdapterBindingError
 
         error = AdapterBindingError("Adapter binding failed")
 
@@ -131,8 +131,8 @@ class TestAdapterBindingError:
 
     def test_inheritance_from_runtime_host_error(self) -> None:
         """Test AdapterBindingError inherits from RuntimeHostError and ModelOnexError."""
-        from omnibase_core.errors.declarative_errors import AdapterBindingError
-        from omnibase_core.errors.runtime_errors import RuntimeHostError
+        from omnibase_core.errors.error_declarative import AdapterBindingError
+        from omnibase_core.errors.error_runtime import RuntimeHostError
         from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
         error = AdapterBindingError("Test inheritance")
@@ -144,7 +144,7 @@ class TestAdapterBindingError:
     def test_custom_error_code_override(self) -> None:
         """Test AdapterBindingError accepts custom error code."""
         from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-        from omnibase_core.errors.declarative_errors import AdapterBindingError
+        from omnibase_core.errors.error_declarative import AdapterBindingError
 
         error = AdapterBindingError(
             "Custom code test",
@@ -161,7 +161,7 @@ class TestPurityViolationError:
 
     def test_creation_with_basic_message(self) -> None:
         """Test creating PurityViolationError with minimal args."""
-        from omnibase_core.errors.declarative_errors import PurityViolationError
+        from omnibase_core.errors.error_declarative import PurityViolationError
 
         error = PurityViolationError("COMPUTE node accessed external state")
 
@@ -173,7 +173,7 @@ class TestPurityViolationError:
     def test_creation_with_all_parameters(self) -> None:
         """Test PurityViolationError with all optional parameters."""
         from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-        from omnibase_core.errors.declarative_errors import PurityViolationError
+        from omnibase_core.errors.error_declarative import PurityViolationError
 
         corr_id = uuid4()
         error = PurityViolationError(
@@ -192,7 +192,7 @@ class TestPurityViolationError:
 
     def test_model_dump_serialization(self) -> None:
         """Test PurityViolationError.model_dump() returns correct dict structure."""
-        from omnibase_core.errors.declarative_errors import PurityViolationError
+        from omnibase_core.errors.error_declarative import PurityViolationError
 
         error = PurityViolationError(
             "Side effect detected",
@@ -212,7 +212,7 @@ class TestPurityViolationError:
 
     def test_model_dump_json_serialization(self) -> None:
         """Test PurityViolationError.model_dump_json() returns valid JSON."""
-        from omnibase_core.errors.declarative_errors import PurityViolationError
+        from omnibase_core.errors.error_declarative import PurityViolationError
 
         error = PurityViolationError(
             "JSON purity test",
@@ -232,7 +232,7 @@ class TestPurityViolationError:
     def test_default_error_code(self) -> None:
         """Test PurityViolationError defaults to PURITY_VIOLATION_ERROR code."""
         from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-        from omnibase_core.errors.declarative_errors import PurityViolationError
+        from omnibase_core.errors.error_declarative import PurityViolationError
 
         error = PurityViolationError("Test error without explicit code")
 
@@ -240,7 +240,7 @@ class TestPurityViolationError:
 
     def test_str_includes_error_code(self) -> None:
         """Test PurityViolationError __str__ includes error code."""
-        from omnibase_core.errors.declarative_errors import PurityViolationError
+        from omnibase_core.errors.error_declarative import PurityViolationError
 
         error = PurityViolationError("Purity constraint violated")
 
@@ -250,8 +250,8 @@ class TestPurityViolationError:
 
     def test_inheritance_from_runtime_host_error(self) -> None:
         """Test PurityViolationError inherits from RuntimeHostError and ModelOnexError."""
-        from omnibase_core.errors.declarative_errors import PurityViolationError
-        from omnibase_core.errors.runtime_errors import RuntimeHostError
+        from omnibase_core.errors.error_declarative import PurityViolationError
+        from omnibase_core.errors.error_runtime import RuntimeHostError
         from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
         error = PurityViolationError("Test inheritance")
@@ -262,7 +262,7 @@ class TestPurityViolationError:
 
     def test_common_violation_types(self) -> None:
         """Test PurityViolationError with common violation type scenarios."""
-        from omnibase_core.errors.declarative_errors import PurityViolationError
+        from omnibase_core.errors.error_declarative import PurityViolationError
 
         violation_types = [
             "external_state_access",
@@ -283,7 +283,7 @@ class TestPurityViolationError:
     def test_custom_error_code_override(self) -> None:
         """Test PurityViolationError accepts custom error code."""
         from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-        from omnibase_core.errors.declarative_errors import PurityViolationError
+        from omnibase_core.errors.error_declarative import PurityViolationError
 
         error = PurityViolationError(
             "Custom code test",
@@ -300,7 +300,7 @@ class TestNodeExecutionError:
 
     def test_creation_with_basic_message(self) -> None:
         """Test creating NodeExecutionError with minimal args."""
-        from omnibase_core.errors.declarative_errors import NodeExecutionError
+        from omnibase_core.errors.error_declarative import NodeExecutionError
 
         error = NodeExecutionError("Node execution failed during processing")
 
@@ -312,7 +312,7 @@ class TestNodeExecutionError:
     def test_creation_with_all_parameters(self) -> None:
         """Test NodeExecutionError with all optional parameters."""
         from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-        from omnibase_core.errors.declarative_errors import NodeExecutionError
+        from omnibase_core.errors.error_declarative import NodeExecutionError
 
         corr_id = uuid4()
         error = NodeExecutionError(
@@ -331,7 +331,7 @@ class TestNodeExecutionError:
 
     def test_model_dump_serialization(self) -> None:
         """Test NodeExecutionError.model_dump() returns correct dict structure."""
-        from omnibase_core.errors.declarative_errors import NodeExecutionError
+        from omnibase_core.errors.error_declarative import NodeExecutionError
 
         error = NodeExecutionError(
             "Reduce phase failed",
@@ -351,7 +351,7 @@ class TestNodeExecutionError:
 
     def test_model_dump_json_serialization(self) -> None:
         """Test NodeExecutionError.model_dump_json() returns valid JSON."""
-        from omnibase_core.errors.declarative_errors import NodeExecutionError
+        from omnibase_core.errors.error_declarative import NodeExecutionError
 
         error = NodeExecutionError(
             "JSON execution test",
@@ -371,7 +371,7 @@ class TestNodeExecutionError:
     def test_default_error_code(self) -> None:
         """Test NodeExecutionError defaults to NODE_EXECUTION_ERROR code."""
         from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-        from omnibase_core.errors.declarative_errors import NodeExecutionError
+        from omnibase_core.errors.error_declarative import NodeExecutionError
 
         error = NodeExecutionError("Test error without explicit code")
 
@@ -379,7 +379,7 @@ class TestNodeExecutionError:
 
     def test_str_includes_error_code(self) -> None:
         """Test NodeExecutionError __str__ includes error code."""
-        from omnibase_core.errors.declarative_errors import NodeExecutionError
+        from omnibase_core.errors.error_declarative import NodeExecutionError
 
         error = NodeExecutionError("Node execution failed")
 
@@ -389,8 +389,8 @@ class TestNodeExecutionError:
 
     def test_inheritance_from_runtime_host_error(self) -> None:
         """Test NodeExecutionError inherits from RuntimeHostError and ModelOnexError."""
-        from omnibase_core.errors.declarative_errors import NodeExecutionError
-        from omnibase_core.errors.runtime_errors import RuntimeHostError
+        from omnibase_core.errors.error_declarative import NodeExecutionError
+        from omnibase_core.errors.error_runtime import RuntimeHostError
         from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
         error = NodeExecutionError("Test inheritance")
@@ -401,7 +401,7 @@ class TestNodeExecutionError:
 
     def test_execution_phases(self) -> None:
         """Test NodeExecutionError with different execution phases."""
-        from omnibase_core.errors.declarative_errors import NodeExecutionError
+        from omnibase_core.errors.error_declarative import NodeExecutionError
 
         phases = [
             "effect",
@@ -423,7 +423,7 @@ class TestNodeExecutionError:
     def test_custom_error_code_override(self) -> None:
         """Test NodeExecutionError accepts custom error code."""
         from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-        from omnibase_core.errors.declarative_errors import NodeExecutionError
+        from omnibase_core.errors.error_declarative import NodeExecutionError
 
         error = NodeExecutionError(
             "Custom code test",
@@ -440,7 +440,7 @@ class TestUnsupportedCapabilityError:
 
     def test_creation_with_basic_message(self) -> None:
         """Test creating UnsupportedCapabilityError with minimal args."""
-        from omnibase_core.errors.declarative_errors import UnsupportedCapabilityError
+        from omnibase_core.errors.error_declarative import UnsupportedCapabilityError
 
         error = UnsupportedCapabilityError("Node does not support async execution")
 
@@ -452,7 +452,7 @@ class TestUnsupportedCapabilityError:
     def test_creation_with_all_parameters(self) -> None:
         """Test UnsupportedCapabilityError with all optional parameters."""
         from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-        from omnibase_core.errors.declarative_errors import UnsupportedCapabilityError
+        from omnibase_core.errors.error_declarative import UnsupportedCapabilityError
 
         corr_id = uuid4()
         error = UnsupportedCapabilityError(
@@ -471,7 +471,7 @@ class TestUnsupportedCapabilityError:
 
     def test_model_dump_serialization(self) -> None:
         """Test UnsupportedCapabilityError.model_dump() returns correct dict structure."""
-        from omnibase_core.errors.declarative_errors import UnsupportedCapabilityError
+        from omnibase_core.errors.error_declarative import UnsupportedCapabilityError
 
         error = UnsupportedCapabilityError(
             "Capability missing",
@@ -491,7 +491,7 @@ class TestUnsupportedCapabilityError:
 
     def test_model_dump_json_serialization(self) -> None:
         """Test UnsupportedCapabilityError.model_dump_json() returns valid JSON."""
-        from omnibase_core.errors.declarative_errors import UnsupportedCapabilityError
+        from omnibase_core.errors.error_declarative import UnsupportedCapabilityError
 
         error = UnsupportedCapabilityError(
             "JSON capability test",
@@ -511,7 +511,7 @@ class TestUnsupportedCapabilityError:
     def test_default_error_code(self) -> None:
         """Test UnsupportedCapabilityError defaults to UNSUPPORTED_CAPABILITY_ERROR code."""
         from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-        from omnibase_core.errors.declarative_errors import UnsupportedCapabilityError
+        from omnibase_core.errors.error_declarative import UnsupportedCapabilityError
 
         error = UnsupportedCapabilityError("Test error without explicit code")
 
@@ -519,7 +519,7 @@ class TestUnsupportedCapabilityError:
 
     def test_str_includes_error_code(self) -> None:
         """Test UnsupportedCapabilityError __str__ includes error code."""
-        from omnibase_core.errors.declarative_errors import UnsupportedCapabilityError
+        from omnibase_core.errors.error_declarative import UnsupportedCapabilityError
 
         error = UnsupportedCapabilityError("Capability not available")
 
@@ -529,8 +529,8 @@ class TestUnsupportedCapabilityError:
 
     def test_inheritance_from_runtime_host_error(self) -> None:
         """Test UnsupportedCapabilityError inherits from RuntimeHostError and ModelOnexError."""
-        from omnibase_core.errors.declarative_errors import UnsupportedCapabilityError
-        from omnibase_core.errors.runtime_errors import RuntimeHostError
+        from omnibase_core.errors.error_declarative import UnsupportedCapabilityError
+        from omnibase_core.errors.error_runtime import RuntimeHostError
         from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
         error = UnsupportedCapabilityError("Test inheritance")
@@ -541,7 +541,7 @@ class TestUnsupportedCapabilityError:
 
     def test_common_capabilities(self) -> None:
         """Test UnsupportedCapabilityError with common capability scenarios."""
-        from omnibase_core.errors.declarative_errors import UnsupportedCapabilityError
+        from omnibase_core.errors.error_declarative import UnsupportedCapabilityError
 
         capabilities = [
             "async_execution",
@@ -563,7 +563,7 @@ class TestUnsupportedCapabilityError:
     def test_custom_error_code_override(self) -> None:
         """Test UnsupportedCapabilityError accepts custom error code."""
         from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-        from omnibase_core.errors.declarative_errors import UnsupportedCapabilityError
+        from omnibase_core.errors.error_declarative import UnsupportedCapabilityError
 
         error = UnsupportedCapabilityError(
             "Custom code test",
@@ -580,7 +580,7 @@ class TestDeclarativeErrorInvariants:
 
     def test_all_errors_include_correlation_id(self) -> None:
         """Test all declarative errors include auto-generated correlation_id."""
-        from omnibase_core.errors.declarative_errors import (
+        from omnibase_core.errors.error_declarative import (
             AdapterBindingError,
             NodeExecutionError,
             PurityViolationError,
@@ -601,13 +601,13 @@ class TestDeclarativeErrorInvariants:
 
     def test_all_errors_inherit_from_runtime_host_error(self) -> None:
         """Test all declarative errors inherit from RuntimeHostError."""
-        from omnibase_core.errors.declarative_errors import (
+        from omnibase_core.errors.error_declarative import (
             AdapterBindingError,
             NodeExecutionError,
             PurityViolationError,
             UnsupportedCapabilityError,
         )
-        from omnibase_core.errors.runtime_errors import RuntimeHostError
+        from omnibase_core.errors.error_runtime import RuntimeHostError
 
         errors = [
             AdapterBindingError("test"),
@@ -621,7 +621,7 @@ class TestDeclarativeErrorInvariants:
 
     def test_all_errors_serializable(self) -> None:
         """Test all declarative errors can be serialized to dict and JSON."""
-        from omnibase_core.errors.declarative_errors import (
+        from omnibase_core.errors.error_declarative import (
             AdapterBindingError,
             NodeExecutionError,
             PurityViolationError,
@@ -649,7 +649,7 @@ class TestDeclarativeErrorInvariants:
 
     def test_no_raw_stack_traces_in_serialization(self) -> None:
         """Test error serialization doesn't include raw stack traces."""
-        from omnibase_core.errors.declarative_errors import (
+        from omnibase_core.errors.error_declarative import (
             AdapterBindingError,
             NodeExecutionError,
             PurityViolationError,
@@ -672,7 +672,7 @@ class TestDeclarativeErrorInvariants:
 
     def test_errors_can_be_raised_and_caught(self) -> None:
         """Test all declarative errors can be raised and caught."""
-        from omnibase_core.errors.declarative_errors import (
+        from omnibase_core.errors.error_declarative import (
             AdapterBindingError,
             NodeExecutionError,
             PurityViolationError,
@@ -694,7 +694,7 @@ class TestDeclarativeErrorInvariants:
 
     def test_errors_preserve_custom_correlation_id(self) -> None:
         """Test all errors preserve custom correlation_id when provided."""
-        from omnibase_core.errors.declarative_errors import (
+        from omnibase_core.errors.error_declarative import (
             AdapterBindingError,
             NodeExecutionError,
             PurityViolationError,
@@ -721,7 +721,7 @@ class TestDeclarativeErrorChaining:
 
     def test_adapter_binding_error_with_cause(self) -> None:
         """Test AdapterBindingError can chain with original cause."""
-        from omnibase_core.errors.declarative_errors import AdapterBindingError
+        from omnibase_core.errors.error_declarative import AdapterBindingError
 
         original = ValueError("Invalid adapter configuration")
 
@@ -736,7 +736,7 @@ class TestDeclarativeErrorChaining:
 
     def test_purity_violation_error_with_cause(self) -> None:
         """Test PurityViolationError can chain with original cause."""
-        from omnibase_core.errors.declarative_errors import PurityViolationError
+        from omnibase_core.errors.error_declarative import PurityViolationError
 
         original = RuntimeError("Unexpected state mutation")
 
@@ -750,7 +750,7 @@ class TestDeclarativeErrorChaining:
 
     def test_node_execution_error_with_cause(self) -> None:
         """Test NodeExecutionError can chain with original cause."""
-        from omnibase_core.errors.declarative_errors import NodeExecutionError
+        from omnibase_core.errors.error_declarative import NodeExecutionError
 
         original = TimeoutError("Execution timeout")
 
@@ -764,7 +764,7 @@ class TestDeclarativeErrorChaining:
 
     def test_unsupported_capability_error_with_cause(self) -> None:
         """Test UnsupportedCapabilityError can chain with original cause."""
-        from omnibase_core.errors.declarative_errors import UnsupportedCapabilityError
+        from omnibase_core.errors.error_declarative import UnsupportedCapabilityError
 
         original = NotImplementedError("Streaming not implemented")
 
@@ -784,7 +784,7 @@ class TestDeclarativeErrorContextKwargs:
 
     def test_adapter_binding_error_extra_context(self) -> None:
         """Test AdapterBindingError accepts arbitrary context kwargs."""
-        from omnibase_core.errors.declarative_errors import AdapterBindingError
+        from omnibase_core.errors.error_declarative import AdapterBindingError
 
         error = AdapterBindingError(
             "Binding failed",
@@ -803,7 +803,7 @@ class TestDeclarativeErrorContextKwargs:
 
     def test_purity_violation_error_extra_context(self) -> None:
         """Test PurityViolationError accepts arbitrary context kwargs."""
-        from omnibase_core.errors.declarative_errors import PurityViolationError
+        from omnibase_core.errors.error_declarative import PurityViolationError
 
         error = PurityViolationError(
             "Purity violated",
@@ -823,7 +823,7 @@ class TestDeclarativeErrorContextKwargs:
 
     def test_node_execution_error_extra_context(self) -> None:
         """Test NodeExecutionError accepts arbitrary context kwargs."""
-        from omnibase_core.errors.declarative_errors import NodeExecutionError
+        from omnibase_core.errors.error_declarative import NodeExecutionError
 
         error = NodeExecutionError(
             "Execution failed",
@@ -843,7 +843,7 @@ class TestDeclarativeErrorContextKwargs:
 
     def test_unsupported_capability_error_extra_context(self) -> None:
         """Test UnsupportedCapabilityError accepts arbitrary context kwargs."""
-        from omnibase_core.errors.declarative_errors import UnsupportedCapabilityError
+        from omnibase_core.errors.error_declarative import UnsupportedCapabilityError
 
         error = UnsupportedCapabilityError(
             "Capability not supported",
@@ -869,7 +869,7 @@ class TestDeclarativeErrorModuleExports:
 
     def test_all_errors_importable_from_declarative_errors(self) -> None:
         """Test all error classes can be imported from declarative_errors module."""
-        from omnibase_core.errors.declarative_errors import (
+        from omnibase_core.errors.error_declarative import (
             AdapterBindingError,
             NodeExecutionError,
             PurityViolationError,
@@ -902,7 +902,7 @@ class TestDeclarativeErrorModuleExports:
 
         PR #150 feedback: Ensures declarative errors are accessible via the
         canonical import path `from omnibase_core.errors import ...` in addition
-        to the module-specific `from omnibase_core.errors.declarative_errors import ...`.
+        to the module-specific `from omnibase_core.errors.error_declarative import ...`.
         """
         # Import from top-level errors module
         from omnibase_core.errors import (
@@ -913,16 +913,16 @@ class TestDeclarativeErrorModuleExports:
         )
 
         # Import from declarative_errors module for comparison
-        from omnibase_core.errors.declarative_errors import (
+        from omnibase_core.errors.error_declarative import (
             AdapterBindingError as AdapterBindingErrorDirect,
         )
-        from omnibase_core.errors.declarative_errors import (
+        from omnibase_core.errors.error_declarative import (
             NodeExecutionError as NodeExecutionErrorDirect,
         )
-        from omnibase_core.errors.declarative_errors import (
+        from omnibase_core.errors.error_declarative import (
             PurityViolationError as PurityViolationErrorDirect,
         )
-        from omnibase_core.errors.declarative_errors import (
+        from omnibase_core.errors.error_declarative import (
             UnsupportedCapabilityError as UnsupportedCapabilityErrorDirect,
         )
 

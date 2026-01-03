@@ -16,7 +16,7 @@ from pathlib import Path
 
 import pytest
 
-from omnibase_core.decorators.pattern_exclusions import (
+from omnibase_core.decorators.decorator_pattern_exclusions import (
     ONEXPatternExclusion,
     allow_any_type,
     allow_legacy_pattern,

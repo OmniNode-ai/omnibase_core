@@ -23,7 +23,7 @@ Module Organization:
 - resolution/: Capability-based dependency resolution protocols (OMN-1123)
 - runtime/: Runtime handler protocols (ProtocolHandler)
 - types/: Type constraint protocols (Configurable, Executable, etc.)
-- core.py: Core operation protocols (CanonicalSerializer)
+- protocol_core.py: Core operation protocols (CanonicalSerializer)
 - schema/: Schema loading protocols
 - services/: Service protocols (SecretService, etc.)
 - validation/: Validation and compliance protocols
@@ -108,14 +108,6 @@ from omnibase_core.protocols.container import (
 )
 
 # =============================================================================
-# Compute Module Exports
-# =============================================================================
-# =============================================================================
-# Core Module Exports
-# =============================================================================
-from omnibase_core.protocols.core import ProtocolCanonicalSerializer
-
-# =============================================================================
 # Event Bus Module Exports
 # =============================================================================
 from omnibase_core.protocols.event_bus import (
@@ -179,6 +171,14 @@ from omnibase_core.protocols.notifications import (
 from omnibase_core.protocols.protocol_context_aware_output_handler import (
     ProtocolContextAwareOutputHandler,
 )
+
+# =============================================================================
+# Compute Module Exports
+# =============================================================================
+# =============================================================================
+# Core Module Exports
+# =============================================================================
+from omnibase_core.protocols.protocol_core import ProtocolCanonicalSerializer
 
 # =============================================================================
 # Generation Protocol Exports

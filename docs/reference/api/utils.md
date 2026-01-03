@@ -20,7 +20,7 @@ This document provides comprehensive API reference for utility functions and hel
 This decorator eliminates 6+ lines of boilerplate error handling code and ensures consistent error patterns across all nodes.
 
 ```
-from omnibase_core.decorators.error_handling import standard_error_handling
+from omnibase_core.decorators.decorator_error_handling import standard_error_handling
 
 @standard_error_handling(operation_name="data processing")
 async def process_data(self, input_data):
@@ -54,7 +54,7 @@ except Exception as e:
 Similar to `standard_error_handling` but specifically designed for validation operations.
 
 ```
-from omnibase_core.decorators.error_handling import validation_error_handling
+from omnibase_core.decorators.decorator_error_handling import validation_error_handling
 
 @validation_error_handling(operation_name="input validation")
 def validate_user_input(self, user_data):
@@ -290,7 +290,7 @@ Provides additional decorators for common patterns in ONEX development.
 ### Error Handling Pattern
 
 ```
-from omnibase_core.decorators.error_handling import standard_error_handling
+from omnibase_core.decorators.decorator_error_handling import standard_error_handling
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
@@ -358,7 +358,7 @@ class MyNode(NodeCoreBase):
 3. **YAML Loading**: Use `load_and_validate_yaml_model` for type-safe YAML loading with validation
 4. **Import Paths**: The correct import path for `standard_error_handling` is:
    ```python
-   from omnibase_core.decorators.error_handling import standard_error_handling
+   from omnibase_core.decorators.decorator_error_handling import standard_error_handling
    ```
    NOT `from omnibase_core.utils.standard_error_handling`
 

@@ -62,7 +62,7 @@ from mypy.plugin import (
 )
 from mypy.types import AnyType, CallableType, Instance, Type, get_proper_type
 
-from omnibase_core.decorators.allow_dict_any import allow_dict_any
+from omnibase_core.decorators.decorator_allow_dict_any import allow_dict_any
 
 
 class DictAnyCheckerPlugin(Plugin):

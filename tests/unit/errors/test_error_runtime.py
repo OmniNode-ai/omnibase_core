@@ -21,7 +21,7 @@ class TestRuntimeHostError:
 
     def test_runtime_host_error_creation(self) -> None:
         """Test creating RuntimeHostError with minimal args."""
-        from omnibase_core.errors.runtime_errors import RuntimeHostError
+        from omnibase_core.errors.error_runtime import RuntimeHostError
 
         error = RuntimeHostError("Runtime error occurred")
 
@@ -35,7 +35,7 @@ class TestRuntimeHostError:
 
     def test_runtime_host_error_with_correlation_id(self) -> None:
         """Test RuntimeHostError preserves correlation_id."""
-        from omnibase_core.errors.runtime_errors import RuntimeHostError
+        from omnibase_core.errors.error_runtime import RuntimeHostError
 
         corr_id = uuid4()
         error = RuntimeHostError(
@@ -47,7 +47,7 @@ class TestRuntimeHostError:
 
     def test_runtime_host_error_with_operation(self) -> None:
         """Test RuntimeHostError with operation context."""
-        from omnibase_core.errors.runtime_errors import RuntimeHostError
+        from omnibase_core.errors.error_runtime import RuntimeHostError
 
         error = RuntimeHostError(
             "Operation failed",
@@ -58,7 +58,7 @@ class TestRuntimeHostError:
 
     def test_runtime_host_error_serialization(self) -> None:
         """Test RuntimeHostError can be serialized."""
-        from omnibase_core.errors.runtime_errors import RuntimeHostError
+        from omnibase_core.errors.error_runtime import RuntimeHostError
 
         error = RuntimeHostError(
             "Runtime error",
@@ -81,7 +81,7 @@ class TestHandlerExecutionError:
 
     def test_handler_execution_error_creation(self) -> None:
         """Test creating HandlerExecutionError."""
-        from omnibase_core.errors.runtime_errors import HandlerExecutionError
+        from omnibase_core.errors.error_runtime import HandlerExecutionError
 
         error = HandlerExecutionError(
             "Handler failed",
@@ -94,7 +94,7 @@ class TestHandlerExecutionError:
 
     def test_handler_execution_error_with_operation(self) -> None:
         """Test HandlerExecutionError with handler operation."""
-        from omnibase_core.errors.runtime_errors import HandlerExecutionError
+        from omnibase_core.errors.error_runtime import HandlerExecutionError
 
         error = HandlerExecutionError(
             "Request failed",
@@ -107,7 +107,7 @@ class TestHandlerExecutionError:
 
     def test_handler_execution_error_correlation_tracking(self) -> None:
         """Test HandlerExecutionError preserves correlation_id for tracking."""
-        from omnibase_core.errors.runtime_errors import HandlerExecutionError
+        from omnibase_core.errors.error_runtime import HandlerExecutionError
 
         corr_id = uuid4()
         error = HandlerExecutionError(
@@ -120,7 +120,7 @@ class TestHandlerExecutionError:
 
     def test_handler_execution_error_structured_fields(self) -> None:
         """Test HandlerExecutionError has required structured fields."""
-        from omnibase_core.errors.runtime_errors import HandlerExecutionError
+        from omnibase_core.errors.error_runtime import HandlerExecutionError
 
         error = HandlerExecutionError(
             "Handler error",
@@ -144,7 +144,7 @@ class TestEventBusError:
 
     def test_event_bus_error_creation(self) -> None:
         """Test creating EventBusError."""
-        from omnibase_core.errors.runtime_errors import EventBusError
+        from omnibase_core.errors.error_runtime import EventBusError
 
         error = EventBusError("Event bus connection lost")
 
@@ -154,7 +154,7 @@ class TestEventBusError:
 
     def test_event_bus_error_with_operation(self) -> None:
         """Test EventBusError with operation context."""
-        from omnibase_core.errors.runtime_errors import EventBusError
+        from omnibase_core.errors.error_runtime import EventBusError
 
         error = EventBusError(
             "Failed to publish event",
@@ -165,7 +165,7 @@ class TestEventBusError:
 
     def test_event_bus_error_correlation_tracking(self) -> None:
         """Test EventBusError supports correlation tracking."""
-        from omnibase_core.errors.runtime_errors import EventBusError
+        from omnibase_core.errors.error_runtime import EventBusError
 
         corr_id = uuid4()
         error = EventBusError(
@@ -184,7 +184,7 @@ class TestInvalidOperationError:
 
     def test_invalid_operation_error_creation(self) -> None:
         """Test creating InvalidOperationError."""
-        from omnibase_core.errors.runtime_errors import InvalidOperationError
+        from omnibase_core.errors.error_runtime import InvalidOperationError
 
         error = InvalidOperationError("Invalid state transition")
 
@@ -194,7 +194,7 @@ class TestInvalidOperationError:
 
     def test_invalid_operation_error_with_operation(self) -> None:
         """Test InvalidOperationError with operation context."""
-        from omnibase_core.errors.runtime_errors import InvalidOperationError
+        from omnibase_core.errors.error_runtime import InvalidOperationError
 
         error = InvalidOperationError(
             "Operation not allowed",
@@ -205,7 +205,7 @@ class TestInvalidOperationError:
 
     def test_invalid_operation_error_inheritance(self) -> None:
         """Test InvalidOperationError inherits from RuntimeHostError."""
-        from omnibase_core.errors.runtime_errors import (
+        from omnibase_core.errors.error_runtime import (
             InvalidOperationError,
             RuntimeHostError,
         )
@@ -223,7 +223,7 @@ class TestContractValidationError:
 
     def test_contract_validation_error_creation(self) -> None:
         """Test creating ContractValidationError."""
-        from omnibase_core.errors.runtime_errors import ContractValidationError
+        from omnibase_core.errors.error_runtime import ContractValidationError
 
         error = ContractValidationError("Contract validation failed")
 
@@ -233,7 +233,7 @@ class TestContractValidationError:
 
     def test_contract_validation_error_with_operation(self) -> None:
         """Test ContractValidationError with operation context."""
-        from omnibase_core.errors.runtime_errors import ContractValidationError
+        from omnibase_core.errors.error_runtime import ContractValidationError
 
         error = ContractValidationError(
             "Invalid contract schema",
@@ -244,7 +244,7 @@ class TestContractValidationError:
 
     def test_contract_validation_error_structured_context(self) -> None:
         """Test ContractValidationError supports structured context."""
-        from omnibase_core.errors.runtime_errors import ContractValidationError
+        from omnibase_core.errors.error_runtime import ContractValidationError
 
         error = ContractValidationError(
             "Missing required field",
@@ -268,7 +268,7 @@ class TestErrorInvariants:
 
     def test_all_errors_include_correlation_id(self) -> None:
         """Test all MVP errors include correlation_id."""
-        from omnibase_core.errors.runtime_errors import (
+        from omnibase_core.errors.error_runtime import (
             ContractValidationError,
             EventBusError,
             HandlerExecutionError,
@@ -291,7 +291,7 @@ class TestErrorInvariants:
 
     def test_handler_errors_include_handler_type(self) -> None:
         """Test handler errors include handler_type when applicable."""
-        from omnibase_core.errors.runtime_errors import HandlerExecutionError
+        from omnibase_core.errors.error_runtime import HandlerExecutionError
 
         error = HandlerExecutionError("test", handler_type="Kafka")
 
@@ -300,7 +300,7 @@ class TestErrorInvariants:
 
     def test_errors_include_operation_when_applicable(self) -> None:
         """Test errors include operation when applicable."""
-        from omnibase_core.errors.runtime_errors import (
+        from omnibase_core.errors.error_runtime import (
             EventBusError,
             HandlerExecutionError,
             InvalidOperationError,
@@ -316,7 +316,7 @@ class TestErrorInvariants:
 
     def test_no_raw_stack_traces_in_serialization(self) -> None:
         """Test error serialization doesn't include raw stack traces."""
-        from omnibase_core.errors.runtime_errors import RuntimeHostError
+        from omnibase_core.errors.error_runtime import RuntimeHostError
 
         error = RuntimeHostError("test error")
         error_dict = error.model_dump()

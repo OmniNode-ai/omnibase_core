@@ -87,7 +87,7 @@ from omnibase_core.models.contracts.subcontracts.model_workflow_definition impor
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.decorators.error_handling import standard_error_handling
+from omnibase_core.decorators.decorator_error_handling import standard_error_handling
 from omnibase_core.utils.error_sanitizer import ErrorSanitizer
 
 from .config import {DomainCamelCase}{MicroserviceCamelCase}OrchestratorConfig
@@ -1606,7 +1606,7 @@ from omnibase_core.nodes import (
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
 # Error handling
-from omnibase_core.decorators.error_handling import standard_error_handling
+from omnibase_core.decorators.decorator_error_handling import standard_error_handling
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 ```

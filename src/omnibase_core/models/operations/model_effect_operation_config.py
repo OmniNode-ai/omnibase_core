@@ -35,7 +35,7 @@ from omnibase_core.constants.constants_effect_limits import (
     EFFECT_OPERATION_DESCRIPTION_MAX_LENGTH,
     EFFECT_OPERATION_NAME_MAX_LENGTH,
 )
-from omnibase_core.decorators.allow_dict_any import allow_dict_any
+from omnibase_core.decorators.decorator_allow_dict_any import allow_dict_any
 from omnibase_core.models.contracts.subcontracts.model_effect_circuit_breaker import (
     ModelEffectCircuitBreaker,
 )
