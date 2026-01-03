@@ -55,7 +55,7 @@ class ModelContractMergeCompletedEvent(ModelContractValidationEventBase):
 
     Attributes:
         event_type: Event type identifier (onex.contract.merge.completed).
-        effective_contract_id: Identifier of the resulting effective contract.
+        effective_contract_name: Identifier of the resulting effective contract.
         effective_contract_hash: Optional content hash of the effective contract
             for integrity verification and caching.
         overlays_applied_count: Number of overlays that were successfully applied.
@@ -71,9 +71,9 @@ class ModelContractMergeCompletedEvent(ModelContractValidationEventBase):
         ... )
         >>>
         >>> event = ModelContractMergeCompletedEvent(
-        ...     contract_id="runtime-host-contract",
+        ...     contract_name="runtime-host-contract",
         ...     run_id=uuid4(),
-        ...     effective_contract_id="runtime-host-contract-effective-001",
+        ...     effective_contract_name="runtime-host-contract-effective-001",
         ...     effective_contract_hash="sha256:def456...",
         ...     overlays_applied_count=2,
         ...     defaults_applied=True,
@@ -96,7 +96,7 @@ class ModelContractMergeCompletedEvent(ModelContractValidationEventBase):
         description="Event type identifier.",
     )
 
-    effective_contract_id: str = Field(
+    effective_contract_name: str = Field(
         ...,
         min_length=1,
         description="Identifier of the resulting effective contract.",
@@ -150,9 +150,9 @@ class ModelContractMergeCompletedEvent(ModelContractValidationEventBase):
     @classmethod
     def create(
         cls,
-        contract_id: str,
+        contract_name: str,
         run_id: UUID,
-        effective_contract_id: str,
+        effective_contract_name: str,
         duration_ms: int,
         *,
         effective_contract_hash: str | None = None,
@@ -168,9 +168,9 @@ class ModelContractMergeCompletedEvent(ModelContractValidationEventBase):
         Factory method for creating a contract merge completed event.
 
         Args:
-            contract_id: Identifier of the base contract that was merged.
+            contract_name: Identifier of the base contract that was merged.
             run_id: Unique identifier for this merge run (matches started event).
-            effective_contract_id: Identifier of the resulting effective contract.
+            effective_contract_name: Identifier of the resulting effective contract.
             duration_ms: Time taken for the merge in milliseconds.
             effective_contract_hash: Optional hash of the effective contract.
             overlays_applied_count: Number of overlays applied (default 0).
@@ -185,9 +185,9 @@ class ModelContractMergeCompletedEvent(ModelContractValidationEventBase):
             A new ModelContractMergeCompletedEvent instance.
         """
         return cls(
-            contract_id=contract_id,
+            contract_name=contract_name,
             run_id=run_id,
-            effective_contract_id=effective_contract_id,
+            effective_contract_name=effective_contract_name,
             duration_ms=duration_ms,
             effective_contract_hash=effective_contract_hash,
             overlays_applied_count=overlays_applied_count,

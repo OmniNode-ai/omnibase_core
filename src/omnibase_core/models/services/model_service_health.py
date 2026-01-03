@@ -260,7 +260,7 @@ class ModelServiceHealth(BaseModel):
         try:
             datetime.fromisoformat(v.replace("Z", "+00:00"))
             return v
-        except (ValueError, AttributeError):
+        except (AttributeError, ValueError):
             msg = "last_check_time must be a valid ISO timestamp"
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,

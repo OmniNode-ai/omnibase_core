@@ -3,11 +3,16 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """
-Validation context model for contract validation.
+Contract validation context model.
 
 This model provides context information for contract validation operations,
 including the validation mode and extensible flags for customizing
 validation behavior.
+
+Note:
+    This module was renamed from ``model_validation_context.py`` to
+    ``model_contract_validation_context.py`` to avoid filename collision
+    with ``omnibase_core.models.context.model_validation_context``.
 
 Pattern: Model<Name> - Pydantic model for validation context
 Node Type: N/A (Data Model)
@@ -17,6 +22,17 @@ Note:
     ModelContractValidationContext to avoid naming collision with
     ModelValidationContext in models/context/model_validation_context.py,
     which is used for field-level validation context (field_name, expected, actual).
+
+    A legacy alias (``ModelValidationContext = ModelContractValidationContext``)
+    was intentionally removed to prevent import ambiguity. Code that previously
+    used the alias should be updated to use ``ModelContractValidationContext``
+    explicitly.
+
+See Also:
+    :class:`omnibase_core.models.context.ModelValidationContext`:
+        Field-level validation context (different model, different purpose).
+    :class:`omnibase_core.models.validation.ModelContractValidationEvent`:
+        Lightweight validation lifecycle events for internal state machines.
 """
 
 from pydantic import BaseModel, ConfigDict, Field

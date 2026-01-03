@@ -68,6 +68,7 @@ from omnibase_core.mixins.mixin_service_registry import MixinServiceRegistry
 from omnibase_core.mixins.mixin_tool_execution import MixinToolExecution
 from omnibase_core.mixins.mixin_workflow_execution import MixinWorkflowExecution
 from omnibase_core.mixins.mixin_yaml_serialization import MixinYAMLSerialization
+from omnibase_core.mixins.mixin_caching import MixinCaching
 
 __all__ = [
     "MixinCanonicalYAMLSerializer",
@@ -114,4 +115,6 @@ __all__ = [
     "check_kafka_health",
     "check_redis_health",
     "check_http_service_health",
+    # Caching mixin
+    "MixinCaching",
 ]
