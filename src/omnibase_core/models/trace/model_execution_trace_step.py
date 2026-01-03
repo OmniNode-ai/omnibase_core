@@ -18,7 +18,7 @@ from datetime import datetime
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class ModelExecutionTraceStep(BaseModel):
@@ -143,6 +143,15 @@ class ModelExecutionTraceStep(BaseModel):
         if v is not None and len(v) > 500:
             return v[:497] + "..."
         return v
+
+    @model_validator(mode="after")
+    def validate_time_ordering(self) -> "ModelExecutionTraceStep":
+        """Validate that end_ts is not before start_ts."""
+        if self.end_ts < self.start_ts:
+            raise ValueError(
+                f"end_ts ({self.end_ts}) cannot be before start_ts ({self.start_ts})"
+            )
+        return self
 
     # === Utility Methods ===
 

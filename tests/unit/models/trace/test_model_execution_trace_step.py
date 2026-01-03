@@ -326,6 +326,64 @@ class TestModelExecutionTraceStepDurationValidation:
 
 
 # ============================================================================
+# Test: Time Ordering Validation (end_ts >= start_ts)
+# ============================================================================
+
+
+@pytest.mark.unit
+class TestModelExecutionTraceStepTimeOrdering:
+    """Test time ordering validation (end_ts must be >= start_ts)."""
+
+    def test_end_ts_equal_to_start_ts_valid(self, minimal_step_data: dict) -> None:
+        """Test that end_ts == start_ts is valid (instant execution)."""
+        same_time = datetime(2025, 1, 1, 12, 0, 0, tzinfo=UTC)
+        minimal_step_data["start_ts"] = same_time
+        minimal_step_data["end_ts"] = same_time
+        minimal_step_data["duration_ms"] = 0.0
+        step = ModelExecutionTraceStep(**minimal_step_data)
+        assert step.start_ts == step.end_ts
+
+    def test_end_ts_after_start_ts_valid(self, minimal_step_data: dict) -> None:
+        """Test that end_ts > start_ts is valid (normal case)."""
+        start = datetime(2025, 1, 1, 12, 0, 0, tzinfo=UTC)
+        end = datetime(2025, 1, 1, 12, 0, 5, tzinfo=UTC)
+        minimal_step_data["start_ts"] = start
+        minimal_step_data["end_ts"] = end
+        minimal_step_data["duration_ms"] = 5000.0
+        step = ModelExecutionTraceStep(**minimal_step_data)
+        assert step.end_ts > step.start_ts
+
+    def test_end_ts_before_start_ts_raises_validation_error(
+        self, minimal_step_data: dict
+    ) -> None:
+        """Test that end_ts < start_ts raises ValidationError."""
+        start = datetime(2025, 1, 1, 12, 0, 5, tzinfo=UTC)
+        end = datetime(2025, 1, 1, 12, 0, 0, tzinfo=UTC)  # Before start
+        minimal_step_data["start_ts"] = start
+        minimal_step_data["end_ts"] = end
+        minimal_step_data["duration_ms"] = 0.0
+        with pytest.raises(ValidationError) as exc_info:
+            ModelExecutionTraceStep(**minimal_step_data)
+        error_str = str(exc_info.value)
+        assert "end_ts" in error_str
+        assert "start_ts" in error_str
+
+    def test_end_ts_before_start_ts_error_message_contains_timestamps(
+        self, minimal_step_data: dict
+    ) -> None:
+        """Test that the error message includes the actual timestamps."""
+        start = datetime(2025, 1, 1, 12, 0, 10, tzinfo=UTC)
+        end = datetime(2025, 1, 1, 12, 0, 0, tzinfo=UTC)  # 10 seconds before
+        minimal_step_data["start_ts"] = start
+        minimal_step_data["end_ts"] = end
+        minimal_step_data["duration_ms"] = 0.0
+        with pytest.raises(ValidationError) as exc_info:
+            ModelExecutionTraceStep(**minimal_step_data)
+        error_str = str(exc_info.value)
+        assert "cannot be before" in error_str
+
+
+# ============================================================================
 # Test: Optional Reference Fields Default to None
 # ============================================================================
 
