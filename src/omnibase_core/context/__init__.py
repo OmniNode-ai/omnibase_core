@@ -38,7 +38,7 @@ Usage:
         pass
 """
 
-from omnibase_core.context.application_context import (
+from omnibase_core.context.context_application import (
     ApplicationContext,
     get_current_container,
     reset_container,

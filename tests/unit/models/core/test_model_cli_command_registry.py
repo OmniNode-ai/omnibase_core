@@ -660,7 +660,7 @@ class TestGlobalRegistry:
         The new pattern uses ApplicationContext (contextvars), so we reset
         the context variable to ensure a fresh container is created for each test.
         """
-        from omnibase_core.context.application_context import _current_container
+        from omnibase_core.context.context_application import _current_container
 
         # Reset context variable to None (clear any existing container)
         # This ensures a fresh container will be created
@@ -673,7 +673,7 @@ class TestGlobalRegistry:
 
     def test_get_global_command_registry_creates_instance(self):
         """Test global registry is created on first access via container."""
-        from omnibase_core.context.application_context import get_current_container
+        from omnibase_core.context.context_application import get_current_container
 
         # Container should be None after fixture reset
         assert get_current_container() is None

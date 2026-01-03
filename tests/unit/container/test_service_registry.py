@@ -4,7 +4,7 @@ from uuid import UUID
 
 import pytest
 
-from omnibase_core.container.service_registry import ServiceRegistry
+from omnibase_core.container.container_service_registry import ServiceRegistry
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 # Import service registry availability flag for conditional test execution

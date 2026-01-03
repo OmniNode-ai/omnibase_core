@@ -110,7 +110,7 @@ class FileLocationValidator:
         # Service implementations
         "service_logging.py": ["utils"],
         "service_minimal_logging.py": ["utils"],
-        "service_registry.py": ["container"],
+        "container_service_registry.py": ["container"],
         # Error handling
         "error_handling.py": ["decorators"],
         # Mixin discovery
@@ -133,6 +133,7 @@ class FileLocationValidator:
         "Test",  # Test classes
         "Error",  # Exception classes (can be anywhere)
         "Exception",  # Exception classes
+        "Registry",  # Registry classes (ServiceRegistry is a registry FOR services, not a service)
     ]
 
     def __init__(self, repo_path: Path):

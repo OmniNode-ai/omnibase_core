@@ -85,7 +85,9 @@ class MixinDebugDiscoveryLogging:
             envelope_or_event: Event envelope or direct event
             node_name: Name of the node for logging context
         """
-        from omnibase_core.constants.event_types import REQUEST_REAL_TIME_INTROSPECTION
+        from omnibase_core.constants.constants_event_types import (
+            REQUEST_REAL_TIME_INTROSPECTION,
+        )
 
         # Extract event from envelope if needed
         if hasattr(envelope_or_event, "payload"):

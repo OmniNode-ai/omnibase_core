@@ -17,7 +17,9 @@ if TYPE_CHECKING:
     from omnibase_core.models.core.model_onex_event import ModelOnexEvent as OnexEvent
     from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 
-from omnibase_core.constants.event_types import REQUEST_REAL_TIME_INTROSPECTION
+from omnibase_core.constants.constants_event_types import (
+    REQUEST_REAL_TIME_INTROSPECTION,
+)
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_node_current_status import EnumNodeCurrentStatus
 from omnibase_core.logging.structured import emit_log_event_sync
@@ -209,7 +211,7 @@ class MixinRequestResponseIntrospection:
                     },
                 )
                 return
-        except Exception as e:  # catch-all-ok: event handler returns early with logging, malformed events shouldn't crash node
+        except Exception as e:  # fallback-ok: event handler returns early with logging, malformed events shouldn't crash node
             emit_log_event_sync(
                 LogLevel.WARNING,
                 "🔍 INTROSPECTION: Failed to reconstruct ModelRequestIntrospectionEvent",
@@ -552,7 +554,7 @@ class MixinRequestResponseIntrospection:
                 and hasattr(self._event_bus, "is_connected")
             ) and not self._event_bus.is_connected():
                 return EnumNodeCurrentStatus.DEGRADED
-        except Exception:  # catch-all-ok: catches non-fatal exceptions, returns DEGRADED for health reporting
+        except Exception:  # fallback-ok: catches non-fatal exceptions, returns DEGRADED for health reporting
             return EnumNodeCurrentStatus.DEGRADED
 
         return EnumNodeCurrentStatus.READY

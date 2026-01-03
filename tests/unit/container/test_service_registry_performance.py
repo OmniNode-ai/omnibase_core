@@ -10,7 +10,7 @@ from uuid import UUID
 
 import pytest
 
-from omnibase_core.container.service_registry import ServiceRegistry
+from omnibase_core.container.container_service_registry import ServiceRegistry
 
 # ===== Dynamic Interface and Implementation Factories =====
 

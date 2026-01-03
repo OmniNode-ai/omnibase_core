@@ -3,7 +3,7 @@ from uuid import UUID
 
 from pydantic import Field, field_validator
 
-from omnibase_core.constants.event_types import NODE_INTROSPECTION_EVENT
+from omnibase_core.constants.constants_event_types import NODE_INTROSPECTION_EVENT
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 from omnibase_core.models.node_metadata.model_node_capability import ModelNodeCapability
 from omnibase_core.models.primitives.model_semver import ModelSemVer
