@@ -119,8 +119,10 @@ class ModelPipelineResult(BaseModel):
         default=(),
         description=(
             "Errors captured from continue-on-error phases. "
-            "Immutable tuple for thread-safe access across concurrent consumers. "
-            "Thread-Safe: Tuple is immutable; safe to share across threads without copying."
+            "THREAD SAFETY: Stored as immutable tuple of frozen ModelHookError instances. "
+            "Both the tuple and its contents are immutable, making this field fully "
+            "thread-safe for concurrent read access. Lists passed to the constructor "
+            "are automatically converted to tuples via the _ensure_errors_immutable validator."
         ),
     )
     context: ModelPipelineContext | None = Field(
@@ -128,11 +130,13 @@ class ModelPipelineResult(BaseModel):
         description=(
             "Final context state after pipeline execution. "
             "A defensive deep copy is created on initialization to prevent "
-            "external mutation. Treat as read-only when sharing across threads. "
-            "WARNING: Shallow immutability only - nested dicts/lists in context.data "
-            "CAN still be mutated in place (e.g., context.data['key']['nested'] = 'new'). "
-            "Use frozen_context_data or frozen_copy() for truly thread-safe sharing. "
-            "See class docstring and docs/guides/THREADING.md."
+            "external mutation of the original context passed to the constructor. "
+            "THREAD SAFETY: While the result is frozen and the defensive copy breaks "
+            "external references, the context object itself remains mutable. "
+            "For truly thread-safe sharing: "
+            "(1) Use frozen_context_data property for immutable MappingProxyType view, or "
+            "(2) Use frozen_copy() method for a completely independent copy. "
+            "See class docstring Thread Safety section and docs/guides/THREADING.md."
         ),
     )
 
@@ -261,7 +265,7 @@ class ModelPipelineResult(BaseModel):
         Returns
         -------
         ModelPipelineResult
-            A new instance with deep-copied context data.
+            A new instance with deep-copied context data and copied errors tuple.
 
         Examples
         --------
@@ -273,7 +277,7 @@ class ModelPipelineResult(BaseModel):
 
         Thread Safety
         -------------
-        - **errors**: Shared by reference (safe - tuples are immutable)
+        - **errors**: Copied to new tuple (complete object isolation)
         - **context**: Deep-copied (new isolated instance per copy)
         - **success**: Shared by reference (safe - bool is immutable)
 
@@ -282,13 +286,39 @@ class ModelPipelineResult(BaseModel):
         The returned result's context is still technically mutable (it's a
         ModelPipelineContext), but modifying it won't affect the original
         result. For truly immutable access, use ``frozen_context_data``.
+
+        Object Isolation
+        ----------------
+        Both errors and context are copied to new objects to ensure complete
+        isolation between the original and the copy. While errors tuple and
+        its frozen ModelHookError contents are inherently immutable (making
+        sharing by reference technically safe), copying provides:
+
+        1. **Cleaner semantics**: ``original.errors is not copy.errors``
+        2. **Predictable identity**: Each copy has its own distinct objects
+        3. **Defensive consistency**: All mutable-looking fields are copied
         """
+        # Copy errors tuple for complete object isolation.
+        # Note: While tuple and frozen ModelHookError contents are immutable
+        # (making reference sharing technically safe), copying provides cleaner
+        # semantics where each frozen copy has completely independent objects.
+        # This ensures `original.errors is not copy.errors` for predictable
+        # identity checks and consistent defensive copying behavior.
+        #
+        # IMPORTANT: We use generator expression to force a new tuple object.
+        # `tuple(self.errors)` returns the same object when input is already
+        # a tuple (Python optimization), but `tuple(e for e in self.errors)`
+        # always creates a new tuple.
+        copied_errors = tuple(e for e in self.errors)
+
         if self.context is None:
-            return self.model_copy()
+            return self.model_copy(update={"errors": copied_errors})
 
         # Deep copy context data to break reference sharing
         frozen_context = ModelPipelineContext(data=deepcopy(self.context.data))
-        return self.model_copy(update={"context": frozen_context})
+        return self.model_copy(
+            update={"context": frozen_context, "errors": copied_errors}
+        )
 
 
 __all__ = [

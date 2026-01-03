@@ -22,6 +22,17 @@ Note:
     ModelContractValidationContext to avoid naming collision with
     ModelValidationContext in models/context/model_validation_context.py,
     which is used for field-level validation context (field_name, expected, actual).
+
+    A legacy alias (``ModelValidationContext = ModelContractValidationContext``)
+    was intentionally removed to prevent import ambiguity. Code that previously
+    used the alias should be updated to use ``ModelContractValidationContext``
+    explicitly.
+
+See Also:
+    :class:`omnibase_core.models.context.ModelValidationContext`:
+        Field-level validation context (different model, different purpose).
+    :class:`omnibase_core.models.validation.ModelContractValidationEvent`:
+        Lightweight validation lifecycle events for internal state machines.
 """
 
 from pydantic import BaseModel, ConfigDict, Field

@@ -24,7 +24,6 @@ from typing import Any
 import pytest
 
 from omnibase_core.mixins import MixinCaching
-from omnibase_core.protocols.cache import ProtocolCacheBackend
 
 
 class MockNode(MixinCaching):
@@ -875,23 +874,34 @@ class TestBackwardCompatibility:
 
 @pytest.mark.unit
 class TestProtocolCompliance:
-    """Test suite for ProtocolCacheBackend compliance."""
+    """Test suite for ProtocolCacheBackend compliance.
+
+    Uses duck typing (hasattr checks) instead of isinstance per ONEX guidelines.
+    """
 
     @pytest.mark.timeout(60)
     def test_mock_backend_is_protocol_compliant(self):
-        """Test that MockCacheBackend implements ProtocolCacheBackend."""
+        """Test that MockCacheBackend implements ProtocolCacheBackend methods."""
         backend = MockCacheBackend()
 
-        # Check protocol compliance via isinstance
-        assert isinstance(backend, ProtocolCacheBackend)
+        # Check protocol compliance via duck typing (required methods exist)
+        assert callable(getattr(backend, "get", None))
+        assert callable(getattr(backend, "set", None))
+        assert callable(getattr(backend, "delete", None))
+        assert callable(getattr(backend, "clear", None))
+        assert callable(getattr(backend, "exists", None))
 
     @pytest.mark.timeout(60)
     def test_failing_backend_is_protocol_compliant(self):
-        """Test that FailingCacheBackend implements ProtocolCacheBackend."""
+        """Test that FailingCacheBackend implements ProtocolCacheBackend methods."""
         backend = FailingCacheBackend()
 
-        # Check protocol compliance via isinstance
-        assert isinstance(backend, ProtocolCacheBackend)
+        # Check protocol compliance via duck typing (required methods exist)
+        assert callable(getattr(backend, "get", None))
+        assert callable(getattr(backend, "set", None))
+        assert callable(getattr(backend, "delete", None))
+        assert callable(getattr(backend, "clear", None))
+        assert callable(getattr(backend, "exists", None))
 
 
 @pytest.mark.unit

@@ -574,7 +574,7 @@ class BackendCacheRedis:
             result: object = json.loads(data)
             return result
         except json.JSONDecodeError as e:
-            # Sanitize for consistency - exception might include cached data context
+            # fallback-ok: return None for deserialization failures, allowing L1 cache fallback
             logger.warning(
                 "Failed to deserialize cache value for key '%s': %s",
                 key,
@@ -582,6 +582,7 @@ class BackendCacheRedis:
             )
             return None
         except (ConnectionError, OSError, RedisError, TimeoutError) as e:
+            # fallback-ok: return None on Redis errors, allowing L1 cache fallback
             logger.warning(
                 "Redis get failed for key '%s': %s", key, sanitize_error_message(str(e))
             )
@@ -627,13 +628,14 @@ class BackendCacheRedis:
             else:
                 await self._client.set(prefixed_key, data)
         except (TypeError, ValueError) as e:
-            # Sanitize for consistency - exception might include value representations
+            # fallback-ok: silently skip caching on serialization failure
             logger.warning(
                 "Failed to serialize cache value for key '%s': %s",
                 key,
                 sanitize_error_message(str(e)),
             )
         except (ConnectionError, OSError, RedisError, TimeoutError) as e:
+            # fallback-ok: silently skip caching on Redis errors
             logger.warning(
                 "Redis set failed for key '%s': %s", key, sanitize_error_message(str(e))
             )
@@ -656,6 +658,7 @@ class BackendCacheRedis:
             prefixed_key = self._make_key(key)
             await self._client.delete(prefixed_key)
         except (ConnectionError, OSError, RedisError, TimeoutError) as e:
+            # fallback-ok: silently ignore delete failures, cache entry may already be gone
             logger.warning(
                 "Redis delete failed for key '%s': %s",
                 key,
@@ -752,6 +755,7 @@ class BackendCacheRedis:
                 logger.debug("Flushing entire Redis database (no prefix configured)")
                 await self._client.flushdb()
         except (ConnectionError, OSError, RedisError, TimeoutError) as e:
+            # fallback-ok: silently ignore clear failures, stale entries will expire via TTL
             logger.warning("Redis clear failed: %s", sanitize_error_message(str(e)))
 
     async def exists(self, key: str) -> bool:
@@ -777,6 +781,7 @@ class BackendCacheRedis:
             result = await self._client.exists(prefixed_key)
             return bool(result > 0)
         except (ConnectionError, OSError, RedisError, TimeoutError) as e:
+            # fallback-ok: return False on Redis errors, treating key as non-existent
             logger.warning(
                 "Redis exists check failed for key '%s': %s",
                 key,
@@ -806,5 +811,5 @@ class BackendCacheRedis:
             await self._client.ping()
             return True
         except (ConnectionError, OSError, RedisError, TimeoutError):
-            # Health check returns False on failure - does not raise
+            # fallback-ok: health check returns False on failure, does not raise
             return False
