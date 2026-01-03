@@ -36,7 +36,7 @@ from typing import cast
 from uuid import UUID, uuid4
 
 from omnibase_core.constants import TIMEOUT_DEFAULT_MS
-from omnibase_core.constants.event_types import TOOL_INVOCATION
+from omnibase_core.constants.constants_event_types import TOOL_INVOCATION
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.logging.structured import emit_log_event_sync

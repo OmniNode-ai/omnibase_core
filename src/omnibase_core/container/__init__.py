@@ -3,11 +3,11 @@
 This module contains dependency injection container logic and service resolution.
 """
 
+from omnibase_core.container.container_service_registry import ServiceRegistry
 from omnibase_core.container.container_service_resolver import (
     bind_get_service_method,
     create_get_service_method,
 )
-from omnibase_core.container.service_registry import ServiceRegistry
 from omnibase_core.models.container import (
     ModelONEXContainer,
     ModelServiceInstance,

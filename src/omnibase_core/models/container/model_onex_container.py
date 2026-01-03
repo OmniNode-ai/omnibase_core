@@ -47,7 +47,7 @@ from omnibase_core.types.typed_dict_performance_checkpoint_result import (
 if TYPE_CHECKING:
     from dependency_injector.providers import Configuration, Factory, Singleton
 
-    from omnibase_core.container.service_registry import ServiceRegistry
+    from omnibase_core.container.container_service_registry import ServiceRegistry
     from omnibase_core.models.container.model_enhanced_logger import ModelEnhancedLogger
     from omnibase_core.models.container.model_workflow_coordinator import (
         ModelWorkflowCoordinator,
@@ -77,7 +77,7 @@ from pathlib import Path
 from uuid import UUID, uuid4
 
 # Import context-based container management
-from omnibase_core.context.application_context import (
+from omnibase_core.context.context_application import (
     get_current_container,
     set_current_container,
 )
@@ -116,7 +116,7 @@ from omnibase_core.protocols.compute import ProtocolToolCache
 # Optional ServiceRegistry import for runtime use
 # (TYPE_CHECKING import provides type hints; this provides runtime instantiation)
 try:
-    from omnibase_core.container.service_registry import (
+    from omnibase_core.container.container_service_registry import (
         ServiceRegistry as _ServiceRegistryClass,
     )
 
