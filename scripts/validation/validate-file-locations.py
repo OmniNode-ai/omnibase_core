@@ -83,6 +83,9 @@ class FileLocationValidator:
         "model_mixin_info.py": ["discovery"],
         "model_ref_info.py": ["utils"],
         "model_service_registry_entry.py": ["mixins"],
+        # Pipeline handlers (Pydantic models that are capability handlers)
+        "model_capability_caching.py": ["handlers"],
+        "model_capability_metrics.py": ["handlers"],
         # Validation models
         "model_audit_result.py": ["validation"],
         "model_contract_validation_result.py": ["validation"],
