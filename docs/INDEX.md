@@ -73,6 +73,8 @@ omnibase_core/docs/
 | Document | Description | Status |
 |----------|-------------|--------|
 | [**Pipeline Hook Registry**](guides/PIPELINE_HOOK_REGISTRY.md) | Pipeline runner and hook registry with usage examples ⭐ **NEW** | ✅ Complete |
+| [**Handler Conversion Guide**](guides/HANDLER_CONVERSION_GUIDE.md) | Mixin-to-handler conversion with examples ⭐ **NEW** | ✅ Complete |
+| [**Handler Conversion Checklist**](guides/HANDLER_CONVERSION_CHECKLIST.md) | Mixin-to-handler conversion tracking | ✅ Complete |
 | [**Migrating to Declarative Nodes**](guides/MIGRATING_TO_DECLARATIVE_NODES.md) | Migration guide for v0.4.0 FSM/workflow-driven nodes ⭐ **v0.4.0** | ✅ Complete |
 | [**Migrating to MixinEventBus v0.4**](guides/MIGRATING_TO_MIXIN_EVENT_BUS_V0_4.md) | v1.0 deprecations and migration paths for MixinEventBus ⭐ **v0.4.0** | ✅ Complete |
 | [**ISP Protocol Migration**](guides/ISP_PROTOCOL_MIGRATION.md) | Guide for migrating to ISP-compliant protocols | ✅ Complete |
@@ -329,6 +331,7 @@ def serialize_error(error: ModelOnexError) -> TypedDictValidationErrorSerialized
 | **Validate mixin metadata** | [ModelMixinMetadata](../src/omnibase_core/models/core/model_mixin_metadata.py) - Mixin discovery & validation |
 | **Validate docker-compose.yaml** | [ModelDockerComposeManifest](../src/omnibase_core/models/docker/model_docker_compose_manifest.py) - Docker validation |
 | **Use pipeline hooks** | [Pipeline Hook Registry](guides/PIPELINE_HOOK_REGISTRY.md) - Phase-based hook execution |
+| **Convert mixins to handlers** | [Handler Conversion Guide](guides/HANDLER_CONVERSION_GUIDE.md) - Step-by-step conversion |
 
 ---
 
@@ -367,10 +370,10 @@ def serialize_error(error: ModelOnexError) -> TypedDictValidationErrorSerialized
 | **Architecture** | 18 | 0 | 0 | 18 |
 | **Reference** | 14 | 0 | 0 | 14 |
 | **Standards** | 1 | 0 | 0 | 1 |
-| **Specialized** | 13 | 0 | 0 | 13 |
-| **TOTAL** | **59** | **0** | **0** | **59** |
+| **Specialized** | 15 | 0 | 0 | 15 |
+| **TOTAL** | **61** | **0** | **0** | **61** |
 
-**Overall Progress**: 100% complete (59/59 documents)
+**Overall Progress**: 100% complete (61/61 documents)
 
 ### Priority Items
 
