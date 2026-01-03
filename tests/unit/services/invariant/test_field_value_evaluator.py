@@ -2,6 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 """Tests for field value invariant evaluation."""
 
+import pytest
+
 from omnibase_core.enums import EnumInvariantSeverity, EnumInvariantType
 from omnibase_core.models.invariant import ModelInvariant
 from omnibase_core.services.invariant.service_invariant_evaluator import (
@@ -9,6 +11,7 @@ from omnibase_core.services.invariant.service_invariant_evaluator import (
 )
 
 
+@pytest.mark.unit
 class TestFieldValueEvaluator:
     """Test suite for field value invariant type."""
 

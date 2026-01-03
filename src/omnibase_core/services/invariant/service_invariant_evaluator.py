@@ -81,6 +81,16 @@ class ServiceInvariantEvaluator:
         re.compile(r"\([^)]*\{[^}]+\}\)[+*]"),  # Nested {n,m} with + or *
     )
 
+    # Pattern for validating Python module paths (security: prevents injection attacks)
+    # Matches: module.path, module.path:function, module.path.function
+    # Each segment must be a valid Python identifier (starts with letter/underscore,
+    # followed by letters/digits/underscores)
+    _VALID_MODULE_PATH_PATTERN: re.Pattern[str] = re.compile(
+        r"^[a-zA-Z_][a-zA-Z0-9_]*"  # First segment (required)
+        r"(\.[a-zA-Z_][a-zA-Z0-9_]*)*"  # Additional dot-separated segments (optional)
+        r"(:[a-zA-Z_][a-zA-Z0-9_]*)?$"  # Colon-separated function name (optional)
+    )
+
     def __init__(self, allowed_import_paths: list[str] | None = None) -> None:
         """Initialize the invariant evaluator.
 
@@ -94,6 +104,12 @@ class ServiceInvariantEvaluator:
 
     def _is_import_path_allowed(self, callable_path: str) -> bool:
         """Check if callable_path is allowed by the configured allow-list.
+
+        Security Measures:
+            1. Validates callable_path format (only valid Python module paths)
+            2. Rejects empty or malformed prefixes in allow-list
+            3. Uses strict boundary matching (dot or colon separator)
+            4. Logs warnings for security-relevant rejections
 
         Uses strict boundary matching to prevent bypass attacks.
         For example, if "builtins" is allowed, "builtins_evil" will NOT match.
@@ -111,7 +127,35 @@ class ServiceInvariantEvaluator:
         if self.allowed_import_paths is None:
             return True
 
+        # Security: Validate callable_path format before checking allow-list
+        # This prevents injection attacks via malformed paths
+        if not self._VALID_MODULE_PATH_PATTERN.match(callable_path):
+            logger.warning(
+                "Invalid callable path format rejected (security): %r",
+                callable_path[:100] if len(callable_path) > 100 else callable_path,
+            )
+            return False
+
         for prefix in self.allowed_import_paths:
+            # Security: Skip empty prefixes - they could match unintended paths
+            if not prefix:
+                logger.warning(
+                    "Empty prefix in allowed_import_paths ignored (security risk)"
+                )
+                continue
+
+            # Security: Validate prefix format - must be valid module path prefix
+            # Use a simpler pattern for prefixes (no colon, since prefix shouldn't
+            # include function name)
+            if not re.match(
+                r"^[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*$", prefix
+            ):
+                logger.warning(
+                    "Invalid prefix format in allowed_import_paths ignored: %r",
+                    prefix[:100] if len(prefix) > 100 else prefix,
+                )
+                continue
+
             # Exact match
             if callable_path == prefix:
                 return True
@@ -883,9 +927,7 @@ class ServiceInvariantEvaluator:
         # Call the custom function
         try:
             result = func(output, **kwargs)
-        except (
-            Exception
-        ) as e:  # fallback-ok: custom callable errors must be captured as failed result
+        except Exception as e:  # fallback-ok: custom callable errors must be captured
             return (
                 False,
                 f"Custom callable raised exception: {type(e).__name__}: {e}",
@@ -965,7 +1007,7 @@ class ServiceInvariantEvaluator:
                         return (False, None)
                 except (
                     ValueError
-                ):  # fallback-ok: non-integer path segment means field not found
+                ):  # fallback-ok: non-integer path segment, field not found
                     return (False, None)
             elif isinstance(current, dict):
                 if part in current:

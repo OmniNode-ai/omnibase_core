@@ -70,6 +70,10 @@ class TestInvariantPropertyBased:
             assert result.passed is True, (
                 f"Expected pass when actual ({actual_value}) <= max ({max_value})"
             )
+        else:
+            assert result.passed is False, (
+                f"Expected fail when actual ({actual_value}) > max ({max_value})"
+            )
 
     @given(
         min_value=st.floats(
@@ -102,6 +106,10 @@ class TestInvariantPropertyBased:
             assert result.passed is True, (
                 f"Expected pass when actual ({actual_value}) >= min ({min_value})"
             )
+        else:
+            assert result.passed is False, (
+                f"Expected fail when actual ({actual_value}) < min ({min_value})"
+            )
 
     @given(
         max_ms=st.floats(
@@ -132,6 +140,10 @@ class TestInvariantPropertyBased:
             assert result.passed is True, (
                 f"Expected pass when actual ({actual_ms}ms) <= max ({max_ms}ms)"
             )
+        else:
+            assert result.passed is False, (
+                f"Expected fail when actual ({actual_ms}ms) > max ({max_ms}ms)"
+            )
 
     @given(
         max_cost=st.floats(
@@ -161,6 +173,10 @@ class TestInvariantPropertyBased:
         if actual_cost <= max_cost:
             assert result.passed is True, (
                 f"Expected pass when actual cost ({actual_cost}) <= max ({max_cost})"
+            )
+        else:
+            assert result.passed is False, (
+                f"Expected fail when actual cost ({actual_cost}) > max ({max_cost})"
             )
 
     @given(
