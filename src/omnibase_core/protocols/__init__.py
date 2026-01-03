@@ -193,9 +193,12 @@ from omnibase_core.protocols.protocol_smart_log_formatter import (
 )
 
 # =============================================================================
-# Resolution Module Exports (OMN-1123)
+# Resolution Module Exports (OMN-1123, OMN-1106)
 # =============================================================================
-from omnibase_core.protocols.resolution import ProtocolDependencyResolver
+from omnibase_core.protocols.resolution import (
+    ProtocolDependencyResolver,
+    ProtocolExecutionResolver,
+)
 
 # =============================================================================
 # Runtime Module Exports
@@ -394,9 +397,10 @@ __all__ = [
     "ProtocolTransitionNotificationPublisher",
     "ProtocolTransitionNotificationConsumer",
     # ==========================================================================
-    # Resolution Module (OMN-1123)
+    # Resolution Module (OMN-1123, OMN-1106)
     # ==========================================================================
     "ProtocolDependencyResolver",
+    "ProtocolExecutionResolver",
     # ==========================================================================
     # Handler Module
     # ==========================================================================
