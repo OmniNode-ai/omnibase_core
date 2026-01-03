@@ -35,11 +35,14 @@ class ModelInvariantSet(BaseModel):
         version: Semantic version of this invariant set definition.
 
     Note:
-        The __eq__ method excludes created_at from comparison to ensure
-        consistent equality for logically identical sets created at different
-        times. The __hash__ method additionally excludes invariants and
-        description (using only id, name, target, version) to maintain
-        hashability while keeping the hash computation efficient.
+        Both __eq__ and __hash__ use only id, name, target, and version for
+        comparison and hashing. This ensures Python's hash/equality contract
+        is satisfied (if a == b then hash(a) == hash(b)). Fields excluded:
+        - created_at: Uses datetime.now(UTC), varies between identical instances
+        - invariants: Unhashable list type
+        - description: Optional metadata field
+        Two sets are considered equal if they have the same identity (id, name,
+        target, version), regardless of their invariants or description.
 
     Thread Safety:
         This model is immutable (frozen=True) after creation, making it
@@ -168,19 +171,26 @@ class ModelInvariantSet(BaseModel):
 
     def __eq__(self, other: object) -> bool:
         """
-        Compare invariant sets, excluding timestamps.
+        Compare invariant sets by identity fields only.
 
-        The created_at field uses datetime.now(UTC) in default_factory,
-        which means two logically identical ModelInvariantSet instances
-        created at different times would have different timestamps.
-        This breaks equality checks and can cause issues with pytest-xdist
-        parallel testing. We exclude created_at from equality comparisons.
+        Compares only id, name, target, and version - the same fields used
+        by __hash__. This ensures Python's hash/equality contract is satisfied:
+        if a == b then hash(a) == hash(b).
+
+        Fields excluded from comparison:
+        - created_at: Timestamp varies between identical instances
+        - invariants: Would break hash/equality contract (not in __hash__)
+        - description: Would break hash/equality contract (not in __hash__)
+
+        Two sets are considered equal if they represent the same invariant set
+        definition (same id, name, target, version), regardless of whether they
+        contain different invariants or descriptions.
 
         Args:
             other: Object to compare against.
 
         Returns:
-            True if invariant sets are logically equal, False otherwise.
+            True if invariant sets have identical identity fields, False otherwise.
             Returns NotImplemented if other is not a ModelInvariantSet.
         """
         if not isinstance(other, ModelInvariantSet):
@@ -189,27 +199,23 @@ class ModelInvariantSet(BaseModel):
             self.id == other.id
             and self.name == other.name
             and self.target == other.target
-            and self.invariants == other.invariants
-            and self.description == other.description
             and self.version == other.version
         )
 
     def __hash__(self) -> int:
         """
-        Hash invariant set using identity and structural fields.
+        Hash invariant set using identity fields.
 
-        Uses only id, name, target, and version for hash computation.
+        Uses only id, name, target, and version for hash computation -
+        the same fields used by __eq__. This ensures Python's hash/equality
+        contract is satisfied: if a == b then hash(a) == hash(b).
+
         Excludes created_at (timestamp), invariants (unhashable list),
         and description (optional field) to ensure:
         1. Hashability (lists cannot be hashed)
         2. Efficient hash computation
         3. Stable hashes for set/dict operations
-
-        Note:
-            This is intentionally NOT consistent with __eq__, which also
-            compares invariants and description. Two sets may be equal
-            via __eq__ but have the same hash only if their id, name,
-            target, and version match.
+        4. Consistency with __eq__ (hash/equality contract)
 
         Returns:
             Hash value based on id, name, target, and version.

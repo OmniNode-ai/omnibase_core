@@ -29,6 +29,16 @@ class ModelFieldValueConfig(BaseModel):
         - the model allows field_path alone, which can be used for field presence
         checks or when validation logic is handled externally.
 
+    Example:
+        # Value matching: check that status.code equals 200
+        ModelFieldValueConfig(field_path="status.code", expected_value=200)
+
+        # Pattern matching: check that id matches UUID format
+        ModelFieldValueConfig(field_path="id", pattern=r"^[0-9a-f-]{36}$")
+
+        # Presence check only: verify the field exists (validation handled externally)
+        ModelFieldValueConfig(field_path="response.data")
+
     Thread Safety:
         This model is immutable (frozen=True) after creation, making it
         thread-safe for concurrent read access. No synchronization is needed

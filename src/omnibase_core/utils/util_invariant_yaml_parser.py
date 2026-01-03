@@ -66,7 +66,8 @@ def parse_invariant_set_from_yaml(yaml_content: str) -> ModelInvariantSet:
     Raises:
         ModelOnexError: If YAML is invalid or doesn't match the expected schema.
             Error codes:
-            - CONFIGURATION_PARSE_ERROR: Invalid YAML syntax or empty content
+            - CONFIGURATION_PARSE_ERROR: Invalid YAML syntax, empty content, or
+              non-dict root (e.g., list, string, number)
             - CONTRACT_VALIDATION_ERROR: Valid YAML but invalid schema
     """
     try:
@@ -83,9 +84,20 @@ def parse_invariant_set_from_yaml(yaml_content: str) -> ModelInvariantSet:
             error_code=EnumCoreErrorCode.CONFIGURATION_PARSE_ERROR,
         )
 
+    if not isinstance(data, dict):
+        raise ModelOnexError(
+            message=f"Expected dict at YAML root, got {type(data).__name__}",
+            error_code=EnumCoreErrorCode.CONFIGURATION_PARSE_ERROR,
+        )
+
     # Handle nested 'invariant_set' key for flexibility
-    if isinstance(data, dict) and "invariant_set" in data:
+    if "invariant_set" in data:
         data = data["invariant_set"]
+        if not isinstance(data, dict):
+            raise ModelOnexError(
+                message=f"Expected dict for 'invariant_set' value, got {type(data).__name__}",
+                error_code=EnumCoreErrorCode.CONFIGURATION_PARSE_ERROR,
+            )
 
     try:
         return ModelInvariantSet.model_validate(data)
