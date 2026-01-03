@@ -10,6 +10,8 @@ Thread Safety:
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.types.json_types import JsonType
+
 
 class ModelFieldValueConfig(BaseModel):
     """Configuration for field value invariant.
@@ -51,7 +53,7 @@ class ModelFieldValueConfig(BaseModel):
         ...,
         description="Field path to check (dot notation, e.g., 'status.code')",
     )
-    expected_value: object | None = Field(
+    expected_value: JsonType = Field(
         default=None,
         description="Expected exact value for the field",
     )
