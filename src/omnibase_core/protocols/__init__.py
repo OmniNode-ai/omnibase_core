@@ -24,6 +24,7 @@ Module Organization:
 - types/: Type constraint protocols (Configurable, Executable, etc.)
 - core.py: Core operation protocols (CanonicalSerializer)
 - schema/: Schema loading protocols
+- services/: Service protocols (SecretService, etc.)
 - validation/: Validation and compliance protocols
 
 Usage:
@@ -206,6 +207,11 @@ from omnibase_core.protocols.runtime import ProtocolHandler, ProtocolMessageHand
 # Schema Module Exports
 # =============================================================================
 from omnibase_core.protocols.schema import ProtocolSchemaLoader, ProtocolSchemaModel
+
+# =============================================================================
+# Services Module Exports
+# =============================================================================
+from omnibase_core.protocols.services import ProtocolSecretService
 
 # =============================================================================
 # Types Module Exports
@@ -415,6 +421,10 @@ __all__ = [
     # ==========================================================================
     "ProtocolSchemaModel",
     "ProtocolSchemaLoader",
+    # ==========================================================================
+    # Services Module
+    # ==========================================================================
+    "ProtocolSecretService",
     # ==========================================================================
     # Validation Module
     # ==========================================================================

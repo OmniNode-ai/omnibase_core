@@ -738,11 +738,11 @@ class MixinEffectExecution:
                 except ModelOnexError:
                     raise
                 except (
-                    ValueError,
-                    KeyError,
-                    RuntimeError,
                     AttributeError,
+                    KeyError,
                     OSError,
+                    RuntimeError,
+                    ValueError,
                 ) as e:
                     raise ModelOnexError(
                         message=f"Failed to resolve secret: {secret_key}",
@@ -1011,7 +1011,7 @@ class MixinEffectExecution:
 
         # Validate extracted value matches expected types for type safety
         # Return None for unexpected types (e.g., custom objects, callables)
-        if isinstance(current, (str, int, float, bool, dict, list, type(None))):
+        if isinstance(current, (str, int, float, bool, dict, list)) or current is None:
             return current  # isinstance narrows to valid union member
         return None
 
