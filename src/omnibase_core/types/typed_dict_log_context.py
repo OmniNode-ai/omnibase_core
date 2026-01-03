@@ -33,5 +33,5 @@ class TypedDictLogContext(TypedDict, total=False):
     duration_ms: float
     correlation_id: str
     trace_id: str
-    dispatch_id: str
+    dispatch_id: str  # string-id-ok: UUID serialized as string for JSON logging
     error_code: str
