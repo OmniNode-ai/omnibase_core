@@ -137,6 +137,9 @@ from .enum_log_level import EnumLogLevel
 
 # Communication enums
 from .enum_mapping_type import EnumMappingType
+
+# Merge-related enums (OMN-1127)
+from .enum_merge_conflict_type import EnumMergeConflictType
 from .enum_message_type import EnumMessageType
 
 # Metadata-related enums
@@ -361,6 +364,8 @@ __all__ = [
     "EnumMetadataToolComplexity",
     "EnumMetadataToolStatus",
     "EnumMetadataToolType",
+    # Merge domain (OMN-1127)
+    "EnumMergeConflictType",
     # Namespace domain
     "EnumNamespaceStrategy",
     # Resource domain

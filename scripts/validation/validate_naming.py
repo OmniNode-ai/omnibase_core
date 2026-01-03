@@ -198,6 +198,15 @@ class NamingConventionValidator:
             "ContractPatchValidator",  # Validator for contract patches (OMN-1126)
             "ContractValidationInvariantChecker",  # Invariant checker implementation (OMN-1146)
         ],
+        # MERGE INFRASTRUCTURE: Contract merge engine for typed contract merging
+        # Location: merge/ - Contract merge framework implementations
+        # Rationale: ContractMergeEngine merges contract patches with base profiles (OMN-1127).
+        #            The heuristic flags "contract" as a Protocol indicator, but this is a
+        #            merge engine implementation, not a Protocol interface.
+        #            The Protocol interface is ProtocolMergeEngine in protocols/merge/.
+        "merge/": [
+            "ContractMergeEngine",  # Merge engine for typed contract merging (OMN-1127)
+        ],
     }
 
     @staticmethod
