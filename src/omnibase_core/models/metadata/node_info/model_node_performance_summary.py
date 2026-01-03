@@ -133,7 +133,6 @@ class ModelNodePerformanceSummary(BaseModel):
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
         result: TypedDictMetadataDict = {}
         # Pack performance summary fields into metadata dict
-        # Cast to list[JsonType] for type compatibility (no copy - cast is zero-cost at runtime)
         result["metadata"] = {
             "usage_count": self.usage_count,
             "success_rate_percentage": self.success_rate_percentage,
@@ -147,6 +146,7 @@ class ModelNodePerformanceSummary(BaseModel):
             "performance_score": self.performance_score,
             "has_performance_issues": self.has_performance_issues,
             "is_reliable": self.is_reliable,
+            # Cast list[str] to list[JsonType] for type compatibility (zero-cost at runtime)
             "improvement_suggestions": cast(
                 list[JsonType], self.improvement_suggestions
             ),

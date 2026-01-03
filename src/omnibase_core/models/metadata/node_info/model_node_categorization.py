@@ -216,12 +216,12 @@ class ModelNodeCategorization(BaseModel):
     def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
         result: TypedDictMetadataDict = {}
-        # Map tags directly (this model has tags field which expects list[str])
+        # Assign tags by reference (caller should not mutate)
         if self.tags:
             result["tags"] = self.tags
         # Pack other categorization fields into metadata dict
-        # Cast to list[JsonType] for type compatibility (no copy - cast is zero-cost at runtime)
         result["metadata"] = {
+            # Cast list[str] to list[JsonType] for type compatibility (zero-cost at runtime)
             "categories": cast(list[JsonType], self.categories),
             "dependencies": [str(dep) for dep in self.dependencies],
             "related_nodes": [str(node) for node in self.related_nodes],

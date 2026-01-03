@@ -53,9 +53,6 @@ from omnibase_core.models.providers.model_provider_descriptor import (
 )
 from omnibase_core.services.service_capability_resolver import ServiceCapabilityResolver
 
-# Resolve forward references for ModelProviderDescriptor.health field
-ModelProviderDescriptor.model_rebuild()
-
 # =============================================================================
 # Mock Implementations
 # =============================================================================
