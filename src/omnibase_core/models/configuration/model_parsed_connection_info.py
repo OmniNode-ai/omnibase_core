@@ -52,4 +52,4 @@ class ModelParsedConnectionInfo(BaseModel):
     @classmethod
     def from_dict(cls, data: SerializedDict) -> "ModelParsedConnectionInfo":
         """Create from dictionary for easy migration."""
-        return cls(**data)
+        return cls.model_validate(data)

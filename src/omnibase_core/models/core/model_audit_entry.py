@@ -127,7 +127,7 @@ class ModelAuditEntry(BaseModel):
     @classmethod
     def from_dict(cls, data: SerializedDict) -> "ModelAuditEntry":
         """Create from dictionary for easy migration."""
-        return cls(**data)
+        return cls.model_validate(data)
 
     @field_serializer("timestamp", "review_timestamp")
     def serialize_datetime(self, value: datetime | None) -> str | None:

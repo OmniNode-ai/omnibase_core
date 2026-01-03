@@ -34,7 +34,11 @@ class ModelServiceRegistryEntry:
         """Update with introspection data."""
         self.introspection_data = introspection_data
         capabilities = introspection_data.get("capabilities")
-        self.capabilities = capabilities if isinstance(capabilities, list) else []
+        if isinstance(capabilities, list):
+            # Type narrow: ensure all items are strings
+            self.capabilities = [str(c) for c in capabilities]
+        else:
+            self.capabilities = []
         metadata_update = introspection_data.get("metadata")
         if isinstance(metadata_update, dict):
             self.metadata.update(metadata_update)

@@ -5,12 +5,14 @@ Type-safe container for parsed CLI arguments that provides both positional
 and named argument access with type conversion capabilities.
 """
 
-from typing import Any, TypeVar
+from typing import TypeVar, cast
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.models.core.model_argument_value import ModelArgumentValue
-from omnibase_core.types.type_serializable_value import SerializedDict
+from omnibase_core.models.core.model_argument_value import (
+    ArgumentValueType,
+    ModelArgumentValue,
+)
 
 T = TypeVar("T")
 
@@ -126,8 +128,7 @@ class ModelArgumentMap(BaseModel):
         if default is None:
             default = []
         # Use bare 'list' for isinstance check at runtime (generic list[str] not valid).
-        # arg-type ignore: list != type[T] bound to list[str]
-        result = self.get_typed(name, list, default)  # type: ignore[arg-type]
+        result = self.get_typed(name, list, default)
         # Ensure we return list[str] by converting items
         if result is not None and isinstance(result, list):
             return [str(item) for item in result]
@@ -203,30 +204,32 @@ class ModelArgumentMap(BaseModel):
     def add_named_argument(
         self,
         name: str,
-        value: Any,
+        value: object,
         arg_type: str = "string",
     ) -> None:
         """Add a named argument to the map."""
+        # Caller is responsible for passing ArgumentValueType-compatible values
         arg_value = ModelArgumentValue(
-            value=value,
+            value=cast(ArgumentValueType, value),
             original_string=str(value),
             type_name=arg_type,
         )
         self.named_args[name] = arg_value
 
-    def add_positional_argument(self, value: Any, arg_type: str = "string") -> None:
+    def add_positional_argument(self, value: object, arg_type: str = "string") -> None:
         """Add a positional argument to the map."""
+        # Caller is responsible for passing ArgumentValueType-compatible values
         arg_value = ModelArgumentValue(
-            value=value,
+            value=cast(ArgumentValueType, value),
             original_string=str(value),
             type_name=arg_type,
         )
         self.positional_args.append(arg_value)
 
-    def to_dict(self) -> SerializedDict:
+    def to_dict(self) -> dict[str, object]:
         """Convert to dictionary for easy serialization."""
         # Custom serialization logic for argument map format
-        result: SerializedDict = {}
+        result: dict[str, object] = {}
 
         # Add positional args
         for i, arg in enumerate(self.positional_args):

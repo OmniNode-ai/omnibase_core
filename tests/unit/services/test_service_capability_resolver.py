@@ -41,6 +41,13 @@ from omnibase_core.models.capabilities.model_capability_requirement_set import (
     ModelRequirementSet,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+
+# Import ModelHealthStatus FIRST to avoid circular import issues.
+# The health models must be fully loaded before other modules that
+# trigger the validation/contracts chain (which eventually imports health).
+from omnibase_core.models.health.model_health_status import (
+    ModelHealthStatus,  # noqa: F401 - imported for forward reference resolution
+)
 from omnibase_core.models.providers.model_provider_descriptor import (
     ModelProviderDescriptor,
 )
@@ -114,31 +121,12 @@ class MockProfile:
 
 
 # =============================================================================
-# Stub Classes for Forward Reference Resolution
+# Forward Reference Resolution
 # =============================================================================
 
-# Import BaseModel here for the stub class
-from pydantic import BaseModel
-
-
-class ModelHealthStatus(BaseModel):
-    """Stub class for ModelHealthStatus to avoid circular import.
-
-    This stub allows ModelProviderDescriptor to resolve its forward reference
-    without triggering the circular import chain. The stub is created at module
-    level to ensure deterministic behavior regardless of test execution order.
-    """
-
-    status: str = "healthy"
-    health_score: float = 1.0
-
-
-# Rebuild the model at module level - this happens once at import time,
-# ensuring deterministic behavior regardless of test execution order.
-# This is the recommended pattern per test_model_provider_descriptor.py.
-ModelProviderDescriptor.model_rebuild(
-    _types_namespace={"ModelHealthStatus": ModelHealthStatus}
-)
+# Note: ModelHealthStatus is imported at module level (lines 48-50) to avoid
+# circular import issues. This import order ensures the forward reference in
+# ModelProviderDescriptor to ModelHealthStatus is properly resolved.
 
 
 # =============================================================================

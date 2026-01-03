@@ -5,17 +5,11 @@ Type-safe parsed CLI arguments with validation results, command definition,
 and parsing metadata for complete argument handling.
 """
 
-from typing import TYPE_CHECKING, Any
-
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
-if TYPE_CHECKING:
-    from omnibase_core.types.type_serializable_value import SerializedDict
-
 from omnibase_core.models.core.model_argument_map import ModelArgumentMap
+from omnibase_core.models.core.model_argument_value import ArgumentValueType
 from omnibase_core.models.core.model_cli_command_definition import (
     ModelCliCommandDefinition,
 )
@@ -24,6 +18,7 @@ from omnibase_core.models.core.model_parse_metadata import ModelParseMetadata
 from omnibase_core.models.core.model_validation_summary import (
     ModelValidationErrorSummary,
 )
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.validation.model_validation_error import ModelValidationError
 
 
@@ -139,10 +134,18 @@ class ModelParsedArguments(BaseModel):
             if error.is_critical():
                 self.parsed_successfully = False
 
-    def to_execution_dict(self) -> "SerializedDict":
-        """Convert to dictionary suitable for node execution."""
-        from omnibase_core.types.type_serializable_value import SerializedDict
+    def to_execution_dict(self) -> dict[str, object]:
+        """Convert to dictionary suitable for node execution.
 
+        Returns:
+            A dictionary containing argument values and command metadata
+            including _command_name, _target_node, _action, and optionally
+            _parse_duration_ms and _parsing_strategy.
+
+        Raises:
+            ModelOnexError: If arguments are not valid (validation errors exist
+                or parsing was not successful).
+        """
         if not self.is_valid():
             msg = "Cannot convert invalid arguments to execution dict"
             raise ModelOnexError(
@@ -151,7 +154,7 @@ class ModelParsedArguments(BaseModel):
             )
 
         # Start with the argument map dictionary
-        result: SerializedDict = self.arguments.to_dict()
+        result: dict[str, object] = self.arguments.to_dict()
 
         # Add command metadata
         result["_command_name"] = self.command_definition.command_name
@@ -165,14 +168,27 @@ class ModelParsedArguments(BaseModel):
 
         return result
 
-    def get_argument_value(self, name: str, default: Any = None) -> Any:
-        """Get argument value by name with optional default."""
+    def get_argument_value(
+        self, name: str, default: ArgumentValueType | None = None
+    ) -> ArgumentValueType | None:
+        """Get argument value by name with optional default.
+
+        Args:
+            name: The argument name to look up.
+            default: Default value to return if argument not found. Defaults to None.
+                Must be a valid ArgumentValueType (str, int, bool, float, or list thereof).
+
+        Returns:
+            The argument value if found, otherwise the default value.
+            Returns None if the argument is not found and no default is provided.
+            The return type is ArgumentValueType | None for type safety.
+        """
         if self.arguments.has_argument(name):
             return self.arguments.named_args[name].value
         return default
 
     def get_required_arguments(self) -> list[str]:
-        """Get list[Any]of required argument names from command definition."""
+        """Get list of required argument names from command definition."""
         return [arg.name for arg in self.command_definition.required_args]
 
     def validate_required_arguments(self) -> list[ModelValidationError]:

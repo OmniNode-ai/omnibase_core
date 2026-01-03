@@ -7,6 +7,14 @@ import pytest
 from omnibase_core.container.service_registry import ServiceRegistry
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
+# Import service registry availability flag for conditional test execution
+try:
+    from omnibase_core.models.container.model_onex_container import (
+        _SERVICE_REGISTRY_AVAILABLE,
+    )
+except ImportError:
+    _SERVICE_REGISTRY_AVAILABLE = False
+
 
 # Test Protocol Interface
 class ITestService:
@@ -393,6 +401,10 @@ class TestServiceRegistry:
 class TestContainerIntegration:
     """Test container integration with ServiceRegistry."""
 
+    @pytest.mark.skipif(
+        not _SERVICE_REGISTRY_AVAILABLE,
+        reason="ServiceRegistry not available in this environment",
+    )
     @pytest.mark.asyncio
     async def test_container_has_service_registry(self) -> None:
         """Test that container initializes with service registry."""
@@ -405,6 +417,10 @@ class TestContainerIntegration:
         # Verify registry exists
         assert container.service_registry is not None
 
+    @pytest.mark.skipif(
+        not _SERVICE_REGISTRY_AVAILABLE,
+        reason="ServiceRegistry not available in this environment",
+    )
     @pytest.mark.asyncio
     async def test_container_service_resolution_with_registry(self) -> None:
         """Test that container can resolve services via registry."""

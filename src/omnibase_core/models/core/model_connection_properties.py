@@ -6,7 +6,7 @@ Connection properties model to replace Dict[str, Any] usage in connection proper
 """
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_serializer
 
@@ -77,10 +77,10 @@ class ModelConnectionProperties(BaseModel):
     @classmethod
     def from_dict(cls, data: "SerializedDict") -> "ModelConnectionProperties":
         """Create from dictionary for easy migration."""
-        return cls(**data)
+        return cls.model_validate(data)
 
     @field_serializer("password")
-    def serialize_secret(self, value: Any) -> str:
+    def serialize_secret(self, value: SecretStr | str | None) -> str:
         from typing import cast
 
         if value and hasattr(value, "get_secret_value"):

@@ -104,11 +104,11 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
                 if isinstance(v, dict):
                     # Enhanced ModelFunctionTool creation with validation
                     try:
-                        function_tool = ModelFunctionTool(
-                            **v
-                        )  # Direct Pydantic instantiation (ONEX compliance)
+                        function_tool = ModelFunctionTool.model_validate(
+                            v
+                        )  # Pydantic model_validate for loosely-typed dict input
                         new_data[k] = function_tool
-                    except (AttributeError, ValueError, TypeError, KeyError):
+                    except (AttributeError, KeyError, TypeError, ValueError):
                         # fallback-ok: Fallback to raw dictionary if ModelFunctionTool creation fails
                         new_data[k] = v
                 else:
@@ -227,7 +227,7 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
     def add_tool(
         self,
         name: str,
-        tool_data: Any,
+        tool_data: ModelFunctionTool | dict[str, object],
         tool_info: ModelMetadataToolInfo | None = None,
     ) -> bool:
         """
@@ -249,10 +249,10 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
             # Add the tool data
             if isinstance(tool_data, dict):
                 try:
-                    self.root[name] = ModelFunctionTool(
-                        **tool_data
-                    )  # Direct Pydantic instantiation (ONEX compliance)
-                except (AttributeError, ValueError, TypeError, KeyError):
+                    self.root[name] = ModelFunctionTool.model_validate(
+                        tool_data
+                    )  # Pydantic model_validate for loosely-typed dict input
+                except (AttributeError, KeyError, TypeError, ValueError):
                     # fallback-ok: Fallback to raw dict if ModelFunctionTool creation fails
                     self.root[name] = tool_data
             else:
@@ -307,7 +307,7 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
 
         return False
 
-    def get_tool(self, name: str) -> Any:
+    def get_tool(self, name: str) -> ModelFunctionTool | dict[str, object] | None:
         """Get a tool by name."""
         return self.root.get(name)
 

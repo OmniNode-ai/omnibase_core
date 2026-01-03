@@ -1,5 +1,3 @@
-from omnibase_core.errors import ModelOnexError
-
 """
 EnumBackendType: Enumeration of secret backend types.
 
@@ -26,5 +24,8 @@ class EnumBackendType(Enum):
         try:
             return cls(value.lower())
         except ValueError:
+            # Lazy import to avoid circular dependency with error_codes
+            from omnibase_core.errors import ModelOnexError
+
             msg = f"Invalid backend type: {value}. Must be one of: {[e.value for e in cls]}"
             raise ModelOnexError(msg, error_code=EnumCoreErrorCode.VALIDATION_ERROR)

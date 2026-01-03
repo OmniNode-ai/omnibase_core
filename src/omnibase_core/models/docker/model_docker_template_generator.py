@@ -111,23 +111,26 @@ ENTRYPOINT ["python", "-m", "omnibase.nodes.{self.config.node_name}.v1_0_0"]
         Returns:
             Docker Compose service configuration dictionary
         """
+        from typing import cast
+
         service_name = self.config.node_name.replace("_", "-")
 
-        service_def = {
+        # Explicitly type service_def as SerializedDict
+        service_def: SerializedDict = {
             "image": f"{self.config.docker_registry or 'onex'}/{self.config.docker_image or self.config.node_name}:{self.config.docker_tag or 'latest'}",
             "container_name": f"{service_name}-{self.config.get_effective_node_id()}",
             "restart": "unless-stopped",
-            "environment": self.config.get_environment_dict(),
-            "labels": self.config.get_docker_labels(),
+            "environment": dict(self.config.get_environment_dict()),
+            "labels": dict(self.config.get_docker_labels()),
         }
 
         # Add port mappings
-        ports = [f"{self.config.network.port}:{self.config.network.port}"]
+        ports: list[str] = [f"{self.config.network.port}:{self.config.network.port}"]
         if self.config.monitoring.prometheus_enabled:
             ports.append(
                 f"{self.config.monitoring.prometheus_port}:{self.config.monitoring.prometheus_port}"
             )
-        service_def["ports"] = ports
+        service_def["ports"] = list(ports)
 
         # Add health check
         if self.config.health_check.enabled:
@@ -140,9 +143,9 @@ ENTRYPOINT ["python", "-m", "omnibase.nodes.{self.config.node_name}.v1_0_0"]
 
         # Add resource limits
         if self.config.resources:
-            deploy = {}
+            deploy: SerializedDict = {}
             if self.config.resources.memory_mb or self.config.resources.cpu_cores:
-                resources = {}
+                resources: SerializedDict = {}
                 if self.config.resources.memory_mb:
                     resources["memory"] = f"{self.config.resources.memory_mb}M"
                 if self.config.resources.cpu_cores:
@@ -152,13 +155,14 @@ ENTRYPOINT ["python", "-m", "omnibase.nodes.{self.config.node_name}.v1_0_0"]
 
         # Add dependencies
         if self.config.depends_on:
-            service_def["depends_on"] = self.config.depends_on
+            service_def["depends_on"] = list(self.config.depends_on)
 
         # Add network configuration
         if self.config.network.network_name:
             service_def["networks"] = [self.config.network.network_name]
 
-        return {service_name: service_def}
+        # Cast the result to ensure type compatibility
+        return cast(SerializedDict, {service_name: service_def})
 
     def generate_docker_compose_full(
         self,
@@ -175,18 +179,22 @@ ENTRYPOINT ["python", "-m", "omnibase.nodes.{self.config.node_name}.v1_0_0"]
         Returns:
             Complete Docker Compose YAML content
         """
-        compose_config: SerializedDict = {"version": "3.8", "services": {}}
+        services_dict: SerializedDict = {}
+        compose_config: SerializedDict = {"version": "3.8", "services": services_dict}
 
         # Add the main service
-        compose_config["services"].update(self.generate_docker_compose_service())
+        for k, v in self.generate_docker_compose_service().items():
+            services_dict[k] = v
 
         # Add common ONEX dependencies
         if include_dependencies:
-            compose_config["services"].update(self._get_dependency_services())
+            for k, v in self._get_dependency_services().items():
+                services_dict[k] = v
 
         # Add additional services
         if additional_services:
-            compose_config["services"].update(additional_services)
+            for k, v in additional_services.items():
+                services_dict[k] = v
 
         # Add networks if needed
         if self.config.network.network_name:

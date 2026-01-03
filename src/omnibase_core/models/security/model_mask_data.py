@@ -43,7 +43,9 @@ class ModelMaskData(BaseModel):
         result.update(self.string_data)
         result.update(self.integer_data)
         result.update(self.boolean_data)
-        result.update(self.list_data)
+        # Convert list[str] to list for JsonType compatibility
+        for k, v in self.list_data.items():
+            result[k] = list(v)
         for key, nested in self.nested_data.items():
             result[key] = nested.to_dict()
         return result
@@ -71,7 +73,8 @@ class ModelMaskData(BaseModel):
             elif isinstance(value, list) and all(
                 isinstance(item, str) for item in value
             ):
-                list_data[key] = value
+                # Type narrow: we've verified all items are strings
+                list_data[key] = [str(item) for item in value]
             elif isinstance(value, dict):
                 nested_data[key] = cls.from_dict(value)
 

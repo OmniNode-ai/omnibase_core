@@ -13,13 +13,14 @@ import asyncio
 import logging
 import time
 import traceback
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 from uuid import uuid4
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.errors import ModelOnexError
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
+from omnibase_core.types.type_serializable_value import SerializedDict
 from omnibase_core.types.typed_dict_mixin_types import TypedDictRegistryStats
 
 logger = logging.getLogger(__name__)
@@ -433,8 +434,10 @@ class MixinServiceRegistry:
                         if isinstance(introspection_data_raw, dict)
                         else {}
                     )
+                    # Cast to SerializedDict - introspection data comes from event payloads
+                    # which are JSON-serializable by protocol contract
                     self.service_registry[node_id_str].update_introspection(
-                        introspection_data
+                        cast(SerializedDict, introspection_data)
                     )
 
                     capabilities_raw = introspection_data.get("capabilities", [])
