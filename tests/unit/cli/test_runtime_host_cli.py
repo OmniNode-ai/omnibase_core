@@ -20,7 +20,7 @@ from unittest.mock import patch
 import pytest
 from click.testing import CliRunner
 
-from omnibase_core.cli.runtime_host_cli import main
+from omnibase_core.cli.cli_runtime_host import main
 from omnibase_core.enums.enum_cli_exit_code import EnumCLIExitCode
 
 # Mark all tests in this module as unit tests
@@ -276,7 +276,7 @@ handlers:
             Path("test_contract.yaml").write_text("test: true")
 
             with patch(
-                "omnibase_core.cli.runtime_host_cli.emit_log_event_sync"
+                "omnibase_core.cli.cli_runtime_host.emit_log_event_sync"
             ) as mock_log:
                 with patch.dict(os.environ, {"ENVIRONMENT": "dev"}):
                     result = runner.invoke(main, ["test_contract.yaml"])
@@ -353,7 +353,7 @@ class TestModuleDocumentation:
 
     def test_module_has_warning_docstring(self) -> None:
         """Test that the module docstring contains a warning."""
-        import omnibase_core.cli.runtime_host_cli as cli_module
+        import omnibase_core.cli.cli_runtime_host as cli_module
 
         assert cli_module.__doc__ is not None
         assert "WARNING" in cli_module.__doc__
