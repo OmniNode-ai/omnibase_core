@@ -721,7 +721,9 @@ class MixinEffectExecution:
                             },
                         )
                     # Duck-typed method call; actual service implements get_secret at runtime
-                    secret_value = secret_service.get_secret(secret_key)  # Duck-typed protocol method
+                    secret_value = secret_service.get_secret(
+                        secret_key
+                    )  # Duck-typed protocol method
                     if secret_value is None:
                         raise ModelOnexError(
                             message=f"Secret not found: {secret_key}",
@@ -1413,10 +1415,14 @@ class MixinEffectExecution:
                     },
                 )
             # Duck-typed handler execution; handler implements execute() per protocol contract
-            result = await handler.execute(resolved_context)  # Duck-typed protocol method
+            result = await handler.execute(
+                resolved_context
+            )  # Duck-typed protocol method
         except ModelOnexError:
             raise
-        except Exception as exec_error:  # fallback-ok: handler errors wrapped in ModelOnexError
+        except (
+            Exception
+        ) as exec_error:  # fallback-ok: handler errors wrapped in ModelOnexError
             # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit/CancelledError to propagate
             raise ModelOnexError(
                 message=f"Handler execution failed for {handler_protocol}: {exec_error!s}",
