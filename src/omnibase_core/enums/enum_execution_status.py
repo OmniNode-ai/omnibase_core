@@ -18,6 +18,7 @@ class EnumExecutionStatus(str, Enum):
     SKIPPED = "skipped"
     CANCELLED = "cancelled"
     TIMEOUT = "timeout"
+    PARTIAL = "partial"
 
     def __str__(self) -> str:
         """Return the string value of the execution status."""
@@ -41,6 +42,7 @@ class EnumExecutionStatus(str, Enum):
             cls.SKIPPED,
             cls.CANCELLED,
             cls.TIMEOUT,
+            cls.PARTIAL,
         }
         return status in terminal_statuses
 
@@ -135,3 +137,22 @@ class EnumExecutionStatus(str, Enum):
             True if cancelled, False otherwise
         """
         return status == cls.CANCELLED
+
+    @classmethod
+    def is_partial(cls, status: "EnumExecutionStatus") -> bool:
+        """
+        Check if the status indicates partial completion.
+
+        PARTIAL means some steps completed successfully while others failed.
+        This is neither a full success nor a complete failure.
+
+        Args:
+            status: The status to check
+
+        Returns:
+            True if partial, False otherwise
+
+        .. versionadded:: 0.4.0
+            Added as part of Execution Trace infrastructure (OMN-1208)
+        """
+        return status == cls.PARTIAL
