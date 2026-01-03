@@ -123,6 +123,10 @@ from .enum_ignore_pattern_source import EnumIgnorePatternSource, EnumTraversalMo
 # Import status enum
 from .enum_import_status import EnumImportStatus
 
+# Invariant-related enums (OMN-1192)
+from .enum_invariant_severity import EnumInvariantSeverity
+from .enum_invariant_type import EnumInvariantType
+
 # Language and localization enums
 from .enum_language_code import EnumLanguageCode
 from .enum_likelihood import EnumLikelihood
@@ -459,6 +463,9 @@ __all__ = [
     "EnumTokenType",
     "EnumTriggerEvent",
     "EnumLikelihood",
+    # Invariant domain (OMN-1192)
+    "EnumInvariantSeverity",
+    "EnumInvariantType",
     # NOTE: Removed from __all__ due to missing module files or circular imports:
     # - "EnumRegistryType" (module doesn't exist)
     # - "ModelServiceModeEnum" (replaced with correct "EnumServiceMode")
