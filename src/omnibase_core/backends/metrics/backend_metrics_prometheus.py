@@ -90,8 +90,8 @@ def sanitize_url(url: str | None) -> str:
 
     Returns:
         Sanitized URL with credentials replaced by '***'.
-        Returns original URL if parsing fails or no credentials present.
-        Returns "<no-url>" if url is None.
+        Returns '<url-parse-error>' if parsing fails, or original URL if no credentials present.
+        Returns '<no-url>' if url is None.
 
     Example:
         >>> sanitize_url("http://user:secretpass@gateway:9091/metrics")
@@ -119,7 +119,7 @@ def sanitize_url(url: str | None) -> str:
                 safe_netloc += f":{parsed.port}"
             return urlunparse(parsed._replace(netloc=safe_netloc))
         return url
-    except Exception:
+    except Exception:  # fmt: skip  # fallback-ok: URL sanitization must never fail
         # If URL parsing fails, return a generic safe string
         return "<url-parse-error>"
 
@@ -206,7 +206,7 @@ class BackendMetricsPrometheus:
                 "Install with: poetry add prometheus-client "
                 "or: poetry install --extras metrics"
             )
-            raise ImportError(msg)
+            raise ImportError(msg)  # error-ok: standard pattern for optional imports
 
         self._prefix = prefix
         self._registry: CollectorRegistryType = registry or CollectorRegistry()
@@ -505,7 +505,7 @@ class BackendMetricsPrometheus:
         if name in metric_cache:
             expected_labels = label_cache.get(name)
             if expected_labels != label_names:
-                raise ValueError(
+                raise ValueError(  # error-ok: Prometheus label validation error
                     self._format_label_mismatch_error(
                         metric_type=metric_type,
                         name=name,

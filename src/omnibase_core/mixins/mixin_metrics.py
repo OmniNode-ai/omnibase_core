@@ -25,6 +25,8 @@ Usage:
     Added optional backend support for Prometheus and other external systems.
 """
 
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 from omnibase_core.types.typed_dict_mixin_types import TypedDictMetricEntry

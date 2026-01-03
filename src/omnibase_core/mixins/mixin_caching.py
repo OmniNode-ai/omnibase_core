@@ -438,7 +438,7 @@ class MixinCaching:
         elif isinstance(exception, OSError):
             # OSError can indicate network or connection issues
             error_code = EnumCoreErrorCode.CACHE_BACKEND_ERROR
-        elif isinstance(exception, (ValueError, TypeError)):
+        elif isinstance(exception, (TypeError, ValueError)):
             # Serialization/deserialization issues with cache data
             error_code = EnumCoreErrorCode.CACHE_OPERATION_FAILED
         elif isinstance(exception, AttributeError):

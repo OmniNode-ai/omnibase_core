@@ -179,7 +179,7 @@ def sanitize_redis_url(url: str) -> str:
 
     Returns:
         Sanitized URL with password replaced by '***'.
-        Returns original URL if parsing fails or no password present.
+        Returns 'redis://***' if parsing fails, or original URL if no password present.
 
     Example:
         >>> sanitize_redis_url("redis://:secretpass@localhost:6379/0")

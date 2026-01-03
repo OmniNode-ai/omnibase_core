@@ -201,7 +201,7 @@ class RunnerPipeline:
 
         return ModelPipelineResult(
             success=len(errors) == 0,
-            errors=errors,
+            errors=tuple(errors),
             context=context,
         )
 
