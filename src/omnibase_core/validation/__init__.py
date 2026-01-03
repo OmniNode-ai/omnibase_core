@@ -47,12 +47,15 @@ from omnibase_core.models.validation.model_fsm_analysis_result import (
     ModelFSMAnalysisResult,
 )
 
-# Import BOTH validation result classes (different purposes!)
-# - ModelValidationResult (from models/) is for circular import validation
-# - ModelValidationResult (from models/validation/) is for general validation
+# Import the import-specific validation result class (renamed for clarity)
+# - ModelImportValidationResult is for circular import validation
+# - ModelValidationResult[T] (from models/common/) is for general validation
 from omnibase_core.models.validation.model_import_validation_result import (
-    ModelValidationResult as CircularImportValidationResult,
+    ModelImportValidationResult,
 )
+
+# Backwards compat alias
+CircularImportValidationResult = ModelImportValidationResult
 from omnibase_core.models.validation.model_lint_statistics import ModelLintStatistics
 from omnibase_core.models.validation.model_lint_warning import ModelLintWarning
 from omnibase_core.models.validation.model_module_import_result import (
@@ -68,6 +71,9 @@ from omnibase_core.services.service_validation_suite import ServiceValidationSui
 # Import validation functions for easy access
 from .architecture import validate_architecture_directory, validate_one_model_per_file
 from .circular_import_validator import CircularImportValidator
+
+# Import contract patch validator (OMN-1126)
+from .contract_patch_validator import ContractPatchValidator
 
 # Import contract validation invariant checker (OMN-1146)
 from .contract_validation_invariant_checker import (
@@ -232,7 +238,7 @@ from .patterns import validate_patterns_directory, validate_patterns_file
 # - For string input (e.g., YAML config), use validate_execution_mode_string instead
 from .reserved_enum_validator import RESERVED_EXECUTION_MODES, validate_execution_mode
 from .types import validate_union_usage_directory, validate_union_usage_file
-from .validation_utils import ModelProtocolInfo
+from .validation_utils import ModelProtocolInfo, validate_protocol_compliance
 
 # Import common validators (OMN-1054)
 from .validators import (
@@ -322,7 +328,8 @@ def validate_all(
 __all__ = [
     # Core classes and types
     "CircularImportValidator",
-    "CircularImportValidationResult",
+    "CircularImportValidationResult",  # Backwards compat alias
+    "ModelImportValidationResult",  # Canonical name (OMN-1126)
     "ExceptionConfigurationError",
     "EnumImportStatus",
     "ModelContractValidationResult",
@@ -343,6 +350,8 @@ __all__ = [
     "ModelProtocolInfo",
     "ExceptionValidationFrameworkError",
     "validate_all",
+    # Protocol compliance validation
+    "validate_protocol_compliance",
     # Workflow linter (OMN-655)
     "ModelLintStatistics",
     "ModelLintWarning",
@@ -377,6 +386,8 @@ __all__ = [
     "validate_execution_mode_string",
     "validate_unique_step_ids",
     "validate_workflow_definition",
+    # Contract patch validator (OMN-1126)
+    "ContractPatchValidator",
     # Contract validation invariant checker (OMN-1146)
     "ContractValidationInvariantChecker",
     "ModelContractValidationEvent",

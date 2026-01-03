@@ -2,7 +2,7 @@
 Connection pool recommendations model to replace Dict[str, Any] usage.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 # Re-export from split module
 from omnibase_core.models.configuration.model_pool_performance_profile import (
@@ -15,6 +15,8 @@ class ModelPoolRecommendations(BaseModel):
     Connection pool recommendations with typed fields.
     Replaces Dict[str, Any] for get_pool_recommendations() returns.
     """
+
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
 
     # Recommended settings
     recommended_pool_size: int = Field(default=..., description="Recommended pool size")

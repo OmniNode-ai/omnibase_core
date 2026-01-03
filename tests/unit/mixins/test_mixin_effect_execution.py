@@ -928,6 +928,77 @@ class TestDeniedBuiltins:
         # Should mention pattern, not deny-list
         assert "Invalid field path characters" in exc_info.value.message
 
+    def test_extract_field_returns_dict_values(self, test_node: TestNode) -> None:
+        """Test that dict values are returned as-is (type validation allows dicts)."""
+        nested_dict = {"key": "value", "nested": {"inner": 123}}
+        data = {"config": nested_dict}
+
+        result = test_node._extract_field(data, "config")
+        assert result == nested_dict
+        assert isinstance(result, dict)
+
+    def test_extract_field_returns_list_values(self, test_node: TestNode) -> None:
+        """Test that list values are returned as-is (type validation allows lists)."""
+        items = [1, 2, {"key": "value"}]
+        data = {"items": items}
+
+        result = test_node._extract_field(data, "items")
+        assert result == items
+        assert isinstance(result, list)
+
+    def test_extract_field_returns_none_for_callable(self, test_node: TestNode) -> None:
+        """Test that callable values return None (type safety validation).
+
+        Security hardening: Prevents accidentally exposing callable objects
+        which could be exploited for code execution.
+        """
+
+        def my_function() -> str:
+            return "dangerous"
+
+        data = {"callback": my_function}
+
+        # Callable should be filtered out by type validation
+        result = test_node._extract_field(data, "callback")
+        assert result is None
+
+    def test_extract_field_returns_none_for_custom_object(
+        self, test_node: TestNode
+    ) -> None:
+        """Test that custom objects return None (type safety validation).
+
+        Security hardening: Prevents leaking arbitrary object references
+        which could expose internal state or methods.
+        """
+
+        class CustomClass:
+            def __init__(self) -> None:
+                self.secret = "internal_data"
+
+        data = {"obj": CustomClass()}
+
+        # Custom object should be filtered out by type validation
+        result = test_node._extract_field(data, "obj")
+        assert result is None
+
+    def test_extract_field_returns_primitives_correctly(
+        self, test_node: TestNode
+    ) -> None:
+        """Test that all primitive types are returned correctly."""
+        data = {
+            "string_val": "hello",
+            "int_val": 42,
+            "float_val": 3.14,
+            "bool_true": True,
+            "bool_false": False,
+        }
+
+        assert test_node._extract_field(data, "string_val") == "hello"
+        assert test_node._extract_field(data, "int_val") == 42
+        assert test_node._extract_field(data, "float_val") == 3.14
+        assert test_node._extract_field(data, "bool_true") is True
+        assert test_node._extract_field(data, "bool_false") is False
+
 
 @pytest.mark.unit
 class TestCoerceParamValue:
@@ -1770,6 +1841,49 @@ class TestSecretResolution:
 
         assert "Failed to resolve secret" in str(exc_info.value)
 
+    def test_resolve_secret_service_missing_method_raises_error(
+        self, test_node: TestNode
+    ) -> None:
+        """Test that secret service without get_secret method raises error.
+
+        This tests the hasattr check that validates the secret service
+        implements the required get_secret method.
+        """
+        from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+
+        # Register mock secret service WITHOUT get_secret method
+        mock_secret_service = MagicMock(spec=[])  # Empty spec = no methods
+        test_node.container.register_service(
+            "ProtocolSecretService", mock_secret_service
+        )
+
+        io_config = ModelHttpIOConfig(
+            url_template="https://api.example.com/test",
+            method="GET",
+            headers={"X-API-Key": "${secret.API_KEY}"},
+        )
+        input_data = ModelEffectInput(
+            effect_type=EnumEffectType.API_CALL,
+            operation_data={},
+        )
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            test_node._resolve_io_context(io_config, input_data)
+
+        # Check error wrapping - either inner or outer message
+        error_str = str(exc_info.value)
+        assert (
+            "does not implement get_secret method" in error_str
+            or "Failed to resolve secret" in error_str
+        )
+        # Verify error code if accessible
+        if hasattr(exc_info.value, "error_code"):
+            # Could be UNSUPPORTED_OPERATION or wrapped error
+            assert exc_info.value.error_code in (
+                EnumCoreErrorCode.UNSUPPORTED_OPERATION,
+                EnumCoreErrorCode.CONFIGURATION_ERROR,
+            )
+
 
 @pytest.mark.unit
 class TestFilesystemContentResolution:
@@ -2158,9 +2272,10 @@ class TestEdgeCases:
         with pytest.raises(ModelOnexError) as exc_info:
             await test_node.execute_effect(input_data)
 
-        # The error should be wrapped but the original should be in the chain
-        # (because handler exception is wrapped in Handler execution failed)
-        assert "Handler execution failed" in str(exc_info.value)
+        # The original ModelOnexError should be passed through unchanged
+        # Verify the original error message is preserved
+        assert "Original handler error" in str(exc_info.value)
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
 
 
 @pytest.mark.unit

@@ -37,7 +37,7 @@ Handler Contract:
     - Handlers receive fully-resolved context (ModelResolvedIOContext)
     - Handlers NEVER perform template resolution
     - Handlers are protocol-based and registered via container
-    - Handler protocol: async def execute(context: ResolvedIOContext) -> Any
+    - Handler protocol: async def execute(context: ResolvedIOContext) -> object
 
 Performance Characteristics:
     - Template resolution: O(n) where n = number of template variables
@@ -80,8 +80,11 @@ import re
 import threading
 import time
 from collections.abc import Callable
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from uuid import UUID
+
+if TYPE_CHECKING:
+    from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
 
 # =============================================================================
@@ -230,10 +233,10 @@ class MixinEffectExecution:
 
     # Type hints for attributes that should exist on the mixing class
     node_id: UUID
-    container: Any  # ModelONEXContainer - avoiding circular import
+    container: "ModelONEXContainer"  # Forward reference to avoid circular import
     _circuit_breakers: dict[UUID, ModelCircuitBreaker]  # Initialized by concrete class
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(self, **kwargs: object) -> None:
         """
         Initialize effect execution mixin.
 
@@ -700,8 +703,27 @@ class MixinEffectExecution:
                 # Extract from secret service (if available)
                 secret_key = placeholder[7:]  # Remove "secret."
                 try:
-                    secret_service = self.container.get_service("ProtocolSecretService")
-                    secret_value = secret_service.get_secret(secret_key)
+                    # String-based DI lookup for extensibility; protocol not defined in core
+                    secret_service: object = self.container.get_service(
+                        "ProtocolSecretService"  # type: ignore[arg-type]
+                    )  # String-based DI lookup for extensibility
+                    # Runtime guard for duck-typed method call
+                    if not hasattr(secret_service, "get_secret"):
+                        raise ModelOnexError(
+                            message="Secret service does not implement get_secret method. "
+                            "Ensure ProtocolSecretService implementation provides get_secret(key: str) -> str | None.",
+                            error_code=EnumCoreErrorCode.UNSUPPORTED_OPERATION,
+                            context={
+                                "secret_key": secret_key,
+                                "placeholder": placeholder,
+                                "operation_id": str(input_data.operation_id),
+                                "service_type": type(secret_service).__name__,
+                            },
+                        )
+                    # Duck-typed method call; actual service implements get_secret at runtime
+                    secret_value = secret_service.get_secret(
+                        secret_key
+                    )  # Duck-typed protocol method
                     if secret_value is None:
                         raise ModelOnexError(
                             message=f"Secret not found: {secret_key}",
@@ -716,11 +738,11 @@ class MixinEffectExecution:
                 except ModelOnexError:
                     raise
                 except (
-                    ValueError,
-                    KeyError,
-                    RuntimeError,
                     AttributeError,
+                    KeyError,
                     OSError,
+                    RuntimeError,
+                    ValueError,
                 ) as e:
                     raise ModelOnexError(
                         message=f"Failed to resolve secret: {secret_key}",
@@ -903,7 +925,7 @@ class MixinEffectExecution:
         field_path: str,
         max_depth: int | None = None,
         operation_id: UUID | None = None,
-    ) -> Any:
+    ) -> str | int | float | bool | dict[str, object] | list[object] | None:
         """
         Extract nested field from data using dotpath notation.
 
@@ -977,7 +999,7 @@ class MixinEffectExecution:
         if len(parts) > max_depth:
             return None
 
-        current: Any = data
+        current: object = data
 
         for part in parts:
             if isinstance(current, dict):
@@ -987,7 +1009,11 @@ class MixinEffectExecution:
             else:
                 return None
 
-        return current
+        # Validate extracted value matches expected types for type safety
+        # Return None for unexpected types (e.g., custom objects, callables)
+        if isinstance(current, (str, int, float, bool, dict, list)) or current is None:
+            return current  # isinstance narrows to valid union member
+        return None
 
     def _coerce_param_value(self, value: str) -> DbParamType:
         """
@@ -1284,7 +1310,7 @@ class MixinEffectExecution:
                 )
 
             Handler Protocol Contract:
-                async def execute(context: ResolvedIOContext) -> Any
+                async def execute(context: ResolvedIOContext) -> object
 
             If no handler is registered for a handler type, a ModelOnexError will
             be raised with HANDLER_EXECUTION_ERROR code.
@@ -1349,13 +1375,14 @@ class MixinEffectExecution:
 
         # Attempt to resolve handler with explicit error for missing registration
         try:
-            handler = self.container.get_service(handler_protocol)
+            # String-based DI lookup for extensibility; handler protocols not defined in core
+            handler: object = self.container.get_service(handler_protocol)  # type: ignore[arg-type]  # String-based DI lookup for extensibility
         except (
-            ValueError,
+            AttributeError,
             KeyError,
             LookupError,
             RuntimeError,
-            AttributeError,
+            ValueError,
         ) as resolve_error:
             # Provide explicit guidance for handler registration
             raise ModelOnexError(
@@ -1374,7 +1401,25 @@ class MixinEffectExecution:
 
         # Execute handler with resolved context
         try:
-            result = await handler.execute(resolved_context)
+            # Runtime guard for duck-typed handler execution
+            if not hasattr(handler, "execute"):
+                raise ModelOnexError(
+                    message=f"Effect handler {handler_protocol} does not implement execute method. "
+                    f"Handler implementations must provide async execute(context: ResolvedIOContext) -> object.",
+                    error_code=EnumCoreErrorCode.UNSUPPORTED_OPERATION,
+                    context={
+                        "operation_id": str(input_data.operation_id),
+                        "handler_type": handler_type.value,
+                        "handler_protocol": handler_protocol,
+                        "handler_class": type(handler).__name__,
+                    },
+                )
+            # Duck-typed handler execution; handler implements execute() per protocol contract
+            result = await handler.execute(
+                resolved_context
+            )  # Duck-typed protocol method
+        except ModelOnexError:
+            raise
         except (
             Exception
         ) as exec_error:  # fallback-ok: handler errors wrapped in ModelOnexError
@@ -1390,7 +1435,7 @@ class MixinEffectExecution:
 
         # Handler returns Any, validate it matches expected return type
         if isinstance(result, (str, int, float, bool, dict, list, type(None))):
-            return result  # type: ignore[return-value]
+            return result  # type: ignore[return-value]  # Handler returns Any; validated via isinstance but type system cannot narrow union
         # Convert other types to string representation
         return str(result)
 
@@ -1614,7 +1659,8 @@ class MixinEffectExecution:
 
         for protocol_name in handler_protocols:
             try:
-                self.container.get_service(protocol_name)
+                # String-based DI lookup for extensibility check
+                self.container.get_service(protocol_name)  # type: ignore[arg-type]  # String-based DI lookup for extensibility
                 registration_status[protocol_name] = True
             except (
                 Exception

@@ -22,7 +22,23 @@ SchemaValueType = PrimitiveValueType | None
 
 
 class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
-    """Generic custom fields accessor with comprehensive field management."""
+    """Generic custom fields accessor with comprehensive field management.
+
+    List Homogeneity Assumption:
+        The `list_fields` storage uses `list[ModelSchemaValue]` type. Homogeneity
+        of list elements is maintained through **method discipline**, not runtime
+        validation enforcement. All list-modifying methods (set_field, merge_fields,
+        validate_and_distribute_fields) ensure that lists are converted to
+        ModelSchemaValue format. This assumption holds because:
+
+        1. All list mutations go through class methods that enforce conversion
+        2. Lists originate from serialization sources with uniform types
+        3. First-element type checking is used as an optimization (if first element
+           is ModelSchemaValue, all elements are assumed to be as well)
+
+        Callers should not directly mutate `list_fields` contents without using
+        the provided accessor methods.
+    """
 
     # Typed field storage
     string_fields: dict[str, str] = Field(default_factory=dict)
@@ -826,8 +842,15 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
             return False
 
     def serialize(self) -> dict[str, object]:
-        """Serialize to dictionary (Serializable protocol)."""
-        return self.model_dump(exclude_none=False, by_alias=True)
+        """Serialize to dictionary (Serializable protocol).
+
+        Note:
+            This method uses the overridden model_dump() which performs custom
+            field iteration. Standard Pydantic serialization options like
+            by_alias, mode, include, exclude are not applicable here since
+            this class uses its own field storage mechanism.
+        """
+        return self.model_dump(exclude_none=False)
 
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol)."""

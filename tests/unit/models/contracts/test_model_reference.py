@@ -181,11 +181,12 @@ class TestModelReferenceResolveImport:
         assert result is ModelReference
 
     def test_resolve_builtin_types(self) -> None:
-        """Test resolving references to built-in types."""
-        result = ModelReference.resolve_import("pydantic.BaseModel")
-        from pydantic import BaseModel
-
-        assert result is BaseModel
+        """Test resolving references to trusted omnibase types."""
+        # Use an omnibase_core type (pydantic.BaseModel is blocked by allowlist)
+        result = ModelReference.resolve_import(
+            "omnibase_core.models.errors.model_onex_error.ModelOnexError"
+        )
+        assert result is ModelOnexError
 
     def test_resolve_nested_module(self) -> None:
         """Test resolving a class from a nested module."""
@@ -215,11 +216,12 @@ class TestModelReferenceResolveImport:
         assert ModelReference.resolve_import("nodot") is None
 
     def test_resolve_single_module(self) -> None:
-        """Test resolving from a top-level module."""
-        result = ModelReference.resolve_import("os.path")
-        import os
-
-        assert result is os.path
+        """Test resolving from a nested module with allowed prefix."""
+        # Use an omnibase_core enum (os.path is blocked by allowlist)
+        result = ModelReference.resolve_import(
+            "omnibase_core.enums.enum_core_error_code.EnumCoreErrorCode"
+        )
+        assert result is EnumCoreErrorCode
 
     def test_resolve_with_invalid_module_path(self) -> None:
         """Test that malformed module path returns None gracefully."""
@@ -254,9 +256,12 @@ class TestModelReferenceResolveImportOrRaise:
         assert "module.class" in exc_info.value.message.lower()
 
     def test_resolve_nonexistent_module_raises(self) -> None:
-        """Test that nonexistent module raises with MODULE_NOT_FOUND."""
+        """Test that nonexistent module in allowlist raises with MODULE_NOT_FOUND."""
+        # Use a module with allowed prefix that doesn't exist
         with pytest.raises(ModelOnexError) as exc_info:
-            ModelReference.resolve_import_or_raise("nonexistent.module.SomeClass")
+            ModelReference.resolve_import_or_raise(
+                "omnibase_core.nonexistent_module.SomeClass"
+            )
         assert exc_info.value.error_code == EnumCoreErrorCode.MODULE_NOT_FOUND
         assert "module not found" in exc_info.value.message.lower()
 
@@ -271,12 +276,20 @@ class TestModelReferenceResolveImportOrRaise:
 
     def test_error_context_includes_reference(self) -> None:
         """Test that error context includes the original reference."""
+        # Use a module with allowed prefix that doesn't exist
         with pytest.raises(ModelOnexError) as exc_info:
-            ModelReference.resolve_import_or_raise("nonexistent.module.SomeClass")
+            ModelReference.resolve_import_or_raise(
+                "omnibase_core.nonexistent_module.SomeClass"
+            )
         # Context is stored in the error's model, check in the serialized form
         error_data = exc_info.value.model_dump()
-        assert error_data["context"]["reference"] == "nonexistent.module.SomeClass"
-        assert error_data["context"]["module_path"] == "nonexistent.module"
+        assert (
+            error_data["context"]["reference"]
+            == "omnibase_core.nonexistent_module.SomeClass"
+        )
+        assert (
+            error_data["context"]["module_path"] == "omnibase_core.nonexistent_module"
+        )
 
 
 @pytest.mark.unit
@@ -311,9 +324,10 @@ class TestModelReferenceInstanceResolve:
         assert result is ModelReference
 
     def test_resolve_or_raise_invalid_module(self) -> None:
-        """Test resolve_or_raise raises for invalid module."""
+        """Test resolve_or_raise raises for nonexistent module in allowlist."""
+        # Use a module with allowed prefix that doesn't exist
         ref = ModelReference(
-            module="nonexistent.module",
+            module="omnibase_core.nonexistent_module",
             class_name="SomeClass",
         )
         with pytest.raises(ModelOnexError) as exc_info:
@@ -332,16 +346,18 @@ class TestModelReferenceInstanceResolve:
 
     def test_resolve_uses_fully_qualified_name(self) -> None:
         """Test that resolve uses the fully_qualified_name property."""
+        # Use an omnibase_core type (pydantic is blocked by allowlist)
         ref = ModelReference(
-            module="pydantic",
-            class_name="BaseModel",
+            module="omnibase_core.models.errors.model_onex_error",
+            class_name="ModelOnexError",
         )
         result = ref.resolve()
-        from pydantic import BaseModel
-
-        assert result is BaseModel
+        assert result is ModelOnexError
         # Verify fully_qualified_name is correct
-        assert ref.fully_qualified_name == "pydantic.BaseModel"
+        assert (
+            ref.fully_qualified_name
+            == "omnibase_core.models.errors.model_onex_error.ModelOnexError"
+        )
 
     def test_resolve_real_world_model(self) -> None:
         """Test resolving a real-world model from the codebase."""
@@ -361,3 +377,76 @@ class TestModelReferenceInstanceResolve:
         )
         result = ref.resolve()
         assert result is ModelReference
+
+
+@pytest.mark.unit
+class TestModelReferenceAllowlistSecurity:
+    """Tests for ModelReference allowlist security feature."""
+
+    @pytest.mark.unit
+    def test_untrusted_module_returns_none(self) -> None:
+        """Test that untrusted modules return None from resolve_import()."""
+        # These modules are not in ALLOWED_MODULE_PREFIXES
+        untrusted_modules = [
+            "os.path",
+            "pydantic.BaseModel",
+            "sys.exit",
+            "subprocess.run",
+            "importlib.import_module",
+        ]
+        for reference in untrusted_modules:
+            result = ModelReference.resolve_import(reference)
+            assert result is None, f"Expected None for untrusted module: {reference}"
+
+    @pytest.mark.unit
+    def test_untrusted_module_raises_import_error(self) -> None:
+        """Test that untrusted modules raise IMPORT_ERROR from resolve_import_or_raise()."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelReference.resolve_import_or_raise("os.path.join")
+        assert exc_info.value.error_code == EnumCoreErrorCode.IMPORT_ERROR
+        assert "not in the allowlist" in exc_info.value.message
+
+    @pytest.mark.unit
+    def test_untrusted_instance_resolve_returns_none(self) -> None:
+        """Test that ModelReference instance with untrusted module returns None."""
+        ref = ModelReference(
+            module="pydantic",
+            class_name="BaseModel",
+        )
+        result = ref.resolve()
+        assert result is None
+
+    @pytest.mark.unit
+    def test_untrusted_instance_resolve_or_raise_raises(self) -> None:
+        """Test that ModelReference instance with untrusted module raises IMPORT_ERROR."""
+        ref = ModelReference(
+            module="pydantic",
+            class_name="BaseModel",
+        )
+        with pytest.raises(ModelOnexError) as exc_info:
+            ref.resolve_or_raise()
+        assert exc_info.value.error_code == EnumCoreErrorCode.IMPORT_ERROR
+        assert "not in the allowlist" in exc_info.value.message
+
+    @pytest.mark.unit
+    def test_allowed_prefixes_work(self) -> None:
+        """Test that all allowed module prefixes can be resolved."""
+        # All ALLOWED_MODULE_PREFIXES should work for valid modules
+        from omnibase_core.models.contracts.model_reference import (
+            ALLOWED_MODULE_PREFIXES,
+        )
+
+        # Test that omnibase_core prefix works (we know this module exists)
+        assert "omnibase_core." in ALLOWED_MODULE_PREFIXES
+        result = ModelReference.resolve_import(
+            "omnibase_core.models.contracts.model_reference.ModelReference"
+        )
+        assert result is ModelReference
+
+    @pytest.mark.unit
+    def test_error_message_includes_allowed_prefixes(self) -> None:
+        """Test that error message includes allowed prefixes for debugging."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelReference.resolve_import_or_raise("os.path.join")
+        # Error message should help developers understand which prefixes are allowed
+        assert "omnibase_core" in exc_info.value.message

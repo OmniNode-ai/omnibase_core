@@ -174,6 +174,18 @@ class ModelHealthMetrics(BaseModel):
 
         Returns:
             The metric value as a float, or default if not found/convertible.
+
+        Type Conversion Rules:
+            - float: returned directly
+            - bool: True -> 1.0, False -> 0.0 (checked before int due to subclass)
+            - int: converted to float
+            - str: parsed as float, returns default if parsing fails
+            - other types: returns default
+
+        Note:
+            This method uses graceful degradation (returns default on failure)
+            rather than raising exceptions, making it safe for use in health
+            checks and monitoring code paths.
         """
         value = self.custom_metrics.get(name, default)
         # Type narrowing: ensure we return a float
@@ -188,8 +200,10 @@ class ModelHealthMetrics(BaseModel):
         if isinstance(value, str):
             try:
                 return float(value)
-            except ValueError:
-                # fallback-ok: return default if string is not a valid float
+            except (ValueError, TypeError):
+                # fallback-ok: return default if string conversion fails
+                # ValueError: invalid float literal (e.g., "abc", "")
+                # TypeError: defensive - should not occur but included for robustness
                 return default
         return default
 

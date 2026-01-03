@@ -5,24 +5,30 @@
 """
 Validation context model for contract validation.
 
-This model provides context information for validation operations,
+This model provides context information for contract validation operations,
 including the validation mode and extensible flags for customizing
 validation behavior.
 
 Pattern: Model<Name> - Pydantic model for validation context
 Node Type: N/A (Data Model)
+
+Note:
+    This class was renamed from ModelValidationContext to
+    ModelContractValidationContext to avoid naming collision with
+    ModelValidationContext in models/context/model_validation_context.py,
+    which is used for field-level validation context (field_name, expected, actual).
 """
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_validation_mode import EnumValidationMode
 
-__all__ = ["ModelValidationContext"]
+__all__ = ["ModelContractValidationContext"]
 
 
-class ModelValidationContext(BaseModel):
+class ModelContractValidationContext(BaseModel):
     """
-    Context for validation operations.
+    Context for contract validation operations.
 
     Provides configuration for validation behavior including the validation
     mode and extensible flags for customizing specific validation rules.
@@ -45,11 +51,11 @@ class ModelValidationContext(BaseModel):
             context creation.
 
     Example:
-        >>> context = ModelValidationContext()
+        >>> context = ModelContractValidationContext()
         >>> context.mode
         <EnumValidationMode.STRICT: 'strict'>
 
-        >>> context = ModelValidationContext(
+        >>> context = ModelContractValidationContext(
         ...     mode=EnumValidationMode.PERMISSIVE,
         ...     flags={"skip_schema_validation": True}
         ... )
@@ -62,7 +68,7 @@ class ModelValidationContext(BaseModel):
 
             # CORRECT - create new context with updated flags
             new_flags = {**context.flags, "new_flag": True}
-            new_context = ModelValidationContext(
+            new_context = ModelContractValidationContext(
                 mode=context.mode,
                 flags=new_flags,
             )

@@ -7,11 +7,14 @@ Follows ONEX one-model-per-file architecture.
 
 from __future__ import annotations
 
+from typing import cast
+
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
+from omnibase_core.types.json_types import JsonType
 
 
 class ModelNodePerformanceSummary(BaseModel):
@@ -130,7 +133,7 @@ class ModelNodePerformanceSummary(BaseModel):
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
         result: TypedDictMetadataDict = {}
         # Pack performance summary fields into metadata dict
-        # Note: list() needed for mypy - lists are invariant, so list[str] != list[JsonType]
+        # Cast to list[JsonType] for type compatibility (no copy - cast is zero-cost at runtime)
         result["metadata"] = {
             "usage_count": self.usage_count,
             "success_rate_percentage": self.success_rate_percentage,
@@ -144,7 +147,9 @@ class ModelNodePerformanceSummary(BaseModel):
             "performance_score": self.performance_score,
             "has_performance_issues": self.has_performance_issues,
             "is_reliable": self.is_reliable,
-            "improvement_suggestions": list(self.improvement_suggestions),
+            "improvement_suggestions": cast(
+                list[JsonType], self.improvement_suggestions
+            ),
             "overall_health_status": self.get_overall_health_status(),
         }
         return result

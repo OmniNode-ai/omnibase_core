@@ -38,6 +38,14 @@ class ModelExecutionOrderingPolicy(BaseModel):
         description="Use fixed seed for deterministic ordering across runs",
     )
 
+    strict_mode: bool = Field(
+        default=False,
+        description=(
+            "When True, missing dependency references (handler:X, capability:Y, tag:Z) "
+            "are treated as errors instead of warnings, making the execution plan invalid"
+        ),
+    )
+
     model_config = ConfigDict(
         frozen=True,
         extra="forbid",

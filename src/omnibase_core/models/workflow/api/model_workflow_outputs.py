@@ -196,8 +196,11 @@ class ModelWorkflowOutputs(BaseModel):
             "failure_count": self.failure_count,
         }
 
-        # Remove None values - use cast for type safety
-
+        # Filter out None values from the result dict.
+        # Cast is necessary because dict comprehensions lose type information:
+        # mypy sees the comprehension as dict[str, JsonType] (generic) rather than
+        # preserving the SerializedDict type alias from the source variable.
+        # The filtered dict still conforms to SerializedDict (dict[str, JsonType]).
         result = cast(
             SerializedDict, {k: v for k, v in result.items() if v is not None}
         )

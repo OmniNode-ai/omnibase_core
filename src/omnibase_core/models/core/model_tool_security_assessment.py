@@ -5,7 +5,7 @@ Provides typed models for tool security assessment data,
 replacing dict[str, Any] return types in ModelToolSecurity methods.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelToolSecurityAssessment(BaseModel):
@@ -14,6 +14,13 @@ class ModelToolSecurityAssessment(BaseModel):
 
     Replaces dict[str, Any] return from get_security_assessment() in ModelToolSecurity.
     """
+
+    model_config = ConfigDict(
+        strict=True,
+        extra="forbid",
+        frozen=True,
+        from_attributes=True,
+    )
 
     processes_sensitive_data: bool = Field(
         default=False,
@@ -54,9 +61,4 @@ class ModelToolSecurityAssessment(BaseModel):
     )
 
 
-# Re-export from split module
-from omnibase_core.models.core.model_tool_security_summary import (
-    ModelToolSecuritySummary,
-)
-
-__all__ = ["ModelToolSecurityAssessment", "ModelToolSecuritySummary"]
+__all__ = ["ModelToolSecurityAssessment"]

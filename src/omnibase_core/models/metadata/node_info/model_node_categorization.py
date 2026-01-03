@@ -7,6 +7,7 @@ Follows ONEX one-model-per-file architecture.
 
 from __future__ import annotations
 
+from typing import cast
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -14,6 +15,7 @@ from pydantic import BaseModel, Field
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
+from omnibase_core.types.json_types import JsonType
 
 
 class ModelNodeCategorization(BaseModel):
@@ -216,11 +218,11 @@ class ModelNodeCategorization(BaseModel):
         result: TypedDictMetadataDict = {}
         # Map tags directly (this model has tags field which expects list[str])
         if self.tags:
-            result["tags"] = self.tags.copy()
+            result["tags"] = self.tags
         # Pack other categorization fields into metadata dict
-        # Note: list() needed for mypy - lists are invariant, so list[str] != list[JsonType]
+        # Cast to list[JsonType] for type compatibility (no copy - cast is zero-cost at runtime)
         result["metadata"] = {
-            "categories": list(self.categories),
+            "categories": cast(list[JsonType], self.categories),
             "dependencies": [str(dep) for dep in self.dependencies],
             "related_nodes": [str(node) for node in self.related_nodes],
             "tags_count": self.get_tags_count(),

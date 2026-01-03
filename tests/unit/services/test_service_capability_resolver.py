@@ -12,6 +12,14 @@ Tests cover:
 - Batch resolution via resolve_all
 - Audit trail verification
 - Determinism guarantees
+
+Note: This test file uses the module-level model rebuild pattern to resolve
+the forward reference in ModelProviderDescriptor to ModelHealthStatus.
+A stub ModelHealthStatus class is defined at module level and the model
+is rebuilt once at import time. This ensures deterministic behavior
+regardless of test execution order (no global cache flags needed).
+See OMN-1126 for tracking and test_model_provider_descriptor.py for the
+reference pattern.
 """
 
 from __future__ import annotations
@@ -38,7 +46,7 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 # The health models must be fully loaded before other modules that
 # trigger the validation/contracts chain (which eventually imports health).
 from omnibase_core.models.health.model_health_status import (
-    ModelHealthStatus,  # noqa: F401
+    ModelHealthStatus,
 )
 from omnibase_core.models.providers.model_provider_descriptor import (
     ModelProviderDescriptor,
@@ -60,17 +68,15 @@ class MockProviderRegistry:
     by capability. Supports exact capability matching.
     """
 
-    def __init__(self, providers: list[ModelProviderDescriptor] | None = None) -> None:
+    def __init__(self, providers: list[Any] | None = None) -> None:
         """Initialize with optional list of providers.
 
         Args:
             providers: List of provider descriptors to register.
         """
-        self.providers: list[ModelProviderDescriptor] = providers or []
+        self.providers: list[Any] = providers or []
 
-    def get_providers_for_capability(
-        self, capability: str
-    ) -> list[ModelProviderDescriptor]:
+    def get_providers_for_capability(self, capability: str) -> list[Any]:
         """Get all providers offering the specified capability.
 
         Args:
@@ -81,7 +87,7 @@ class MockProviderRegistry:
         """
         return [p for p in self.providers if capability in p.capabilities]
 
-    def add_provider(self, provider: ModelProviderDescriptor) -> None:
+    def add_provider(self, provider: Any) -> None:
         """Add a provider to the registry.
 
         Args:
@@ -118,6 +124,23 @@ class MockProfile:
 
 
 # =============================================================================
+# Forward Reference Resolution
+# =============================================================================
+
+# Note: ModelHealthStatus is imported at module level (line 48-50) to avoid
+# circular import issues. ModelProviderDescriptor.model_rebuild() is called
+# above to resolve forward references.
+
+
+# Rebuild the model at module level - this happens once at import time,
+# ensuring deterministic behavior regardless of test execution order.
+# This is the recommended pattern per test_model_provider_descriptor.py.
+ModelProviderDescriptor.model_rebuild(
+    _types_namespace={"ModelHealthStatus": ModelHealthStatus}
+)
+
+
+# =============================================================================
 # Test Fixtures and Helpers
 # =============================================================================
 
@@ -131,7 +154,7 @@ def create_provider(
     adapter: str = "test.adapters.TestAdapter",
     connection_ref: str = "env://TEST_CONNECTION",
     tags: list[str] | None = None,
-) -> ModelProviderDescriptor:
+) -> Any:
     """Create a test provider descriptor with defaults.
 
     Args:
@@ -147,6 +170,7 @@ def create_provider(
     Returns:
         Configured ModelProviderDescriptor.
     """
+    # ModelProviderDescriptor is rebuilt at module level, so use directly
     return ModelProviderDescriptor(
         provider_id=provider_id or uuid4(),
         capabilities=capabilities or ["database.relational"],
@@ -168,7 +192,7 @@ def create_dependency(
     hints: dict[str, Any] | None = None,
     selection_policy: str = "auto_if_unique",
     strict: bool = True,
-) -> ModelCapabilityDependency:
+) -> Any:
     """Create a test capability dependency with defaults.
 
     Args:

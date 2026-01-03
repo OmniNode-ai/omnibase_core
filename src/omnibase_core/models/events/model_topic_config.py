@@ -29,7 +29,7 @@ class ModelTopicConfig(BaseModel):
         - docs/guides/THREADING.md for thread safety guidelines
     """
 
-    model_config = ConfigDict(extra="forbid", frozen=True)
+    model_config = ConfigDict(extra="forbid", frozen=True, from_attributes=True)
 
     topic_type: EnumTopicType = Field(
         ...,

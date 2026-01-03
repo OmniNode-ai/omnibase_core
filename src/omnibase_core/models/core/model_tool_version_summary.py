@@ -4,11 +4,13 @@ Tool Version Summary Model.
 Summary of tool version information.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelToolVersionSummary(BaseModel):
     """Summary of tool version information."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     version: str = Field(description="Semantic version string")
     status: str = Field(description="Version status value")

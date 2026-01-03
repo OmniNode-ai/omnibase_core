@@ -41,7 +41,7 @@ def _strip_comment_prefix(
     Remove leading comment prefixes from each line of a block.
     Args:
         block: Multiline string block to process.
-        comment_prefixes: Tuple/list[Any]of prefix strings to remove from line starts.
+        comment_prefixes: Tuple/list of prefix strings to remove from line starts.
     Returns:
         Block with comment prefixes removed from each line.
     """
@@ -65,9 +65,9 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
     All field normalization and placeholder logic is schema-driven, using NodeMetadataBlock.model_fields.
     No hardcoded field names or types.
 
-    NOTE: Field order is always as declared in NodeMetadataBlock.model_fields, never by dict[str, Any]or YAML loader order. This is required for perfect idempotency.
+    NOTE: Field order is always as declared in NodeMetadataBlock.model_fields, never by dict or YAML loader order. This is required for perfect idempotency.
 
-    - All nested collections (list[Any]s of dict[str, Any]s, dict[str, Any]s of dict[str, Any]s) are sorted by a stable key (e.g., 'name' or dict[str, Any]key).
+    - All nested collections (lists of dicts, dicts of dicts) are sorted by a stable key (e.g., 'name' or dict key).
     - All booleans are normalized to lowercase YAML ('true'/'false').
     - All numbers are formatted with consistent precision.
     """
@@ -91,7 +91,7 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
         """
         Canonicalize a metadata block for deterministic YAML serialization and hash computation.
         Args:
-            metadata_block: A dict[str, Any]or NodeMetadataBlock instance (must implement model_dump(mode="json")).
+            metadata_block: A dict[str, object] or NodeMetadataBlock instance (must implement model_dump(mode="json")).
             volatile_fields: Fields to replace with protocol placeholder values.
             placeholder: Placeholder value for volatile fields.
             sort_keys: Whether to sort keys in YAML output.
@@ -112,7 +112,7 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
             # Preserve original dict for exception handler
             original_dict = metadata_block.copy()
 
-            # Convert dict[str, Any]to NodeMetadataBlock, handling type conversions
+            # Convert dict to NodeMetadataBlock, handling type conversions
             if "entrypoint" in metadata_block and isinstance(
                 metadata_block["entrypoint"], str
             ):
@@ -218,12 +218,9 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
             # Check for Union types (both typing.Union and PEP 604 | syntax)
             # Note: PEP 604 unions (str | None) don't have __origin__ via getattr,
             # so we use isinstance(annotation, types.UnionType) to detect them
-            is_union = (
-                origin is Union  # Handles typing.Union
-                or isinstance(
-                    annotation, types.UnionType
-                )  # Handles PEP 604 (str | None)
-            )
+            is_union = origin is Union or isinstance(  # Handles typing.Union
+                annotation, types.UnionType
+            )  # Handles PEP 604 (str | None)
             if is_union and hasattr(annotation, "__args__"):
                 args = annotation.__args__
                 if str in args:
@@ -256,7 +253,7 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
                 v = field.default if field.default is not None else ""
                 normalized_dict[k] = v
                 continue
-            # Normalize list[Any]fields
+            # Normalize list fields
             if k in list_fields and (v is None or v == "null"):
                 v = field.default if field.default is not None else []
                 normalized_dict[k] = v
@@ -267,7 +264,7 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
             # Normalize numbers
             if isinstance(v, float):
                 v = format(v, ".15g")
-            # Sort list[Any]s of dict[str, Any]s
+            # Sort lists of dicts
             if isinstance(v, list) and v and all(isinstance(x, dict) for x in v):
                 # Cast for mypy since we've verified all items are dicts with isinstance
                 dict_list = cast(list[dict[str, object]], v)
@@ -277,7 +274,7 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
                 )
                 normalized_dict[k] = sorted_list
                 continue
-            # Sort dict[str, Any]s
+            # Sort dicts
             if isinstance(v, dict):
                 normalized_dict[k] = dict(sorted(v.items()))
                 continue

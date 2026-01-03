@@ -27,7 +27,17 @@ from types.core_types (not from models or types.constraints).
 from datetime import UTC, datetime
 from typing import Self
 
-from pydantic import BaseModel, ConfigDict, Field, computed_field, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    computed_field,
+    model_validator,
+)
+
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 # Safe runtime import - error_codes only imports from types.core_types
 from omnibase_core.models.examples.model_example import ModelExample
@@ -192,7 +202,15 @@ class ModelExamplesCollection(BaseModel):
                 input_raw = data.get("input_data")
                 if input_raw is not None:
                     if isinstance(input_raw, dict):
-                        input_data = ModelExampleInputData.model_validate(input_raw)
+                        try:
+                            input_data = ModelExampleInputData.model_validate(input_raw)
+                        except PYDANTIC_MODEL_ERRORS as e:
+                            # boundary-ok: convert pydantic validation errors to ModelOnexError
+                            raise ModelOnexError(
+                                message=f"Failed to validate input_data: {e}",
+                                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                                context={"input_data": input_raw},
+                            ) from e
                     elif isinstance(input_raw, ModelExampleInputData):
                         input_data = input_raw
                     # Other types are skipped (leave as None)
@@ -201,7 +219,17 @@ class ModelExamplesCollection(BaseModel):
                 output_raw = data.get("output_data")
                 if output_raw is not None:
                     if isinstance(output_raw, dict):
-                        output_data = ModelExampleOutputData.model_validate(output_raw)
+                        try:
+                            output_data = ModelExampleOutputData.model_validate(
+                                output_raw
+                            )
+                        except PYDANTIC_MODEL_ERRORS as e:
+                            # boundary-ok: convert pydantic validation errors to ModelOnexError
+                            raise ModelOnexError(
+                                message=f"Failed to validate output_data: {e}",
+                                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                                context={"output_data": output_raw},
+                            ) from e
                     elif isinstance(output_raw, ModelExampleOutputData):
                         output_data = output_raw
                     # Other types are skipped (leave as None)
@@ -210,7 +238,17 @@ class ModelExamplesCollection(BaseModel):
                 context_raw = data.get("context")
                 if context_raw is not None:
                     if isinstance(context_raw, dict):
-                        context = ModelExampleContextData.model_validate(context_raw)
+                        try:
+                            context = ModelExampleContextData.model_validate(
+                                context_raw
+                            )
+                        except PYDANTIC_MODEL_ERRORS as e:
+                            # boundary-ok: convert pydantic validation errors to ModelOnexError
+                            raise ModelOnexError(
+                                message=f"Failed to validate context: {e}",
+                                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                                context={"context_data": context_raw},
+                            ) from e
                     elif isinstance(context_raw, ModelExampleContextData):
                         context = context_raw
                     # Other types are skipped (leave as None)
@@ -248,7 +286,15 @@ class ModelExamplesCollection(BaseModel):
                 )
             else:
                 # Treat as input_data - use model_validate for type-safe coercion
-                input_data = ModelExampleInputData.model_validate(data)
+                try:
+                    input_data = ModelExampleInputData.model_validate(data)
+                except PYDANTIC_MODEL_ERRORS as e:
+                    # boundary-ok: convert pydantic validation errors to ModelOnexError
+                    raise ModelOnexError(
+                        message=f"Failed to validate example data as input_data: {e}",
+                        error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                        context={"data": data},
+                    ) from e
                 name_val = data.get("name")
                 name = str(name_val) if name_val is not None else "Example"
                 desc_val = data.get("description")

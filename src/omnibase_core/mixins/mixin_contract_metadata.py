@@ -1,5 +1,4 @@
 from collections.abc import Mapping
-from typing import Any
 
 """
 Contract Metadata Mixin for ONEX Tool Nodes.
@@ -39,7 +38,7 @@ class MixinContractMetadata:
                 print(f"Tool: {self.node_name} v{self.node_version}")
     """
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(self, **kwargs: object) -> None:
         """Initialize the contract metadata mixin."""
         super().__init__(**kwargs)
 

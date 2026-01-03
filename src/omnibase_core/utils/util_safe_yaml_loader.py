@@ -3,6 +3,35 @@ Safe YAML loading utilities using yaml.safe_load plus Pydantic validation.
 
 This module provides type-safe YAML loading that uses yaml.safe_load for parsing
 combined with Pydantic model validation to ensure proper structure and security.
+
+Security:
+    This module uses yaml.safe_load() exclusively for all YAML parsing operations.
+    This is a critical security measure that prevents arbitrary code execution
+    through malicious YAML files.
+
+    - yaml.safe_load() only parses standard YAML types (strings, numbers, lists, dicts)
+    - yaml.load() with Loader=yaml.Loader would allow arbitrary Python object
+      instantiation via YAML tags like !!python/object, which could execute
+      malicious code during deserialization
+    - Pydantic validation provides an additional layer of type safety after parsing
+
+    Trust Model:
+        - YAML file content is treated as UNTRUSTED input
+        - yaml.safe_load() ensures no code execution during parsing
+        - Pydantic validates structure against expected schemas
+        - File paths should still be validated to prevent path traversal attacks
+
+    Defense in Depth:
+        1. yaml.safe_load() - prevents arbitrary Python object construction
+        2. Pydantic validation - ensures expected structure and types
+        3. ModelOnexError wrapping - provides structured error handling
+
+    See Also:
+        - UtilContractLoader._validate_yaml_content_security() for additional
+          YAML content security checks (size limits, suspicious patterns)
+        - https://pyyaml.org/wiki/PyYAMLDocumentation#loading-yaml
+
+.. versionadded:: 0.3.0
 """
 
 from __future__ import annotations

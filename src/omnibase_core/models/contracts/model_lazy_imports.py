@@ -9,9 +9,41 @@ Performance Impact:
 - Target cold import time: <50ms
 - Reduces import cascade from 74 modules to on-demand loading
 
+Security:
+    This module uses importlib.import_module() for dynamic imports, but with
+    important security constraints:
+
+    - **Hardcoded Import Paths**: All import paths are hardcoded within
+      _import_paths dict and point exclusively to internal omnibase_core
+      contract modules. No user-controlled input can influence import paths.
+
+    - **Internal-Only Resolution**: Only the following internal modules are
+      importable through this loader:
+        - omnibase_core.models.contracts.model_contract_base
+        - omnibase_core.models.contracts.model_contract_compute
+        - omnibase_core.models.contracts.model_contract_effect
+        - omnibase_core.models.contracts.model_contract_reducer
+        - omnibase_core.models.contracts.model_contract_orchestrator
+
+    - **No External Input**: The contract_type parameter in _import_contract()
+      is validated against the _import_paths dict, preventing any attempt to
+      import arbitrary modules.
+
+    Trust Model:
+        - Import paths are TRUSTED (hardcoded, internal-only)
+        - No user input can influence which modules are loaded
+        - Module initialization code is trusted (internal ONEX modules)
+
+    Comparison with ModelReference:
+        Unlike ModelReference.resolve() which uses an allowlist (ALLOWED_MODULE_PREFIXES)
+        to validate user-provided module paths, this module uses hardcoded paths
+        and does not accept any external input for module resolution.
+
 Usage:
     from omnibase_core.models.contracts.model_lazy_imports import get_contract_base
     ContractBase = get_contract_base()
+
+.. versionadded:: 0.4.0
 """
 
 import functools

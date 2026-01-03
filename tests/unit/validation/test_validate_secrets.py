@@ -23,7 +23,6 @@ patterns to test its detection capabilities.
 import importlib.util
 
 # Import the validator classes
-import tempfile
 from pathlib import Path
 
 import pytest
@@ -576,108 +575,92 @@ aws_session_token = "AQoDYXdzEJr1234567890abcdefghijklmnop"
 class TestSecretValidator:
     """Test suite for SecretValidator."""
 
-    def test_validates_clean_file(self) -> None:
+    def test_validates_clean_file(self, tmp_path: Path) -> None:
         """Test validation passes for file with no secrets."""
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as tmp:
-            tmp.write(
-                """
+        test_file = tmp_path / "test_clean.py"
+        test_file.write_text(
+            """
 import os
 
 api_key = os.getenv("API_KEY")
 password = os.getenv("PASSWORD")
-"""
-            )
-            tmp_path = Path(tmp.name)
+""",
+            encoding="utf-8",
+        )
 
-        try:
-            validator = SecretValidator()
-            with open(tmp_path, encoding="utf-8") as f:
-                lines = f.readlines()
-            result = validator.validate_python_file(tmp_path, lines)
+        validator = SecretValidator()
+        with open(test_file, encoding="utf-8") as f:
+            lines = f.readlines()
+        result = validator.validate_python_file(test_file, lines)
 
-            assert result is True
-            assert len(validator.violations) == 0
-        finally:
-            tmp_path.unlink()
+        assert result is True
+        assert len(validator.violations) == 0
 
-    def test_detects_hardcoded_secret_in_file(self) -> None:
+    def test_detects_hardcoded_secret_in_file(self, tmp_path: Path) -> None:
         """Test validation fails for file with hardcoded secret."""
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as tmp:
-            tmp.write(
-                """
+        test_file = tmp_path / "test_secret.py"
+        test_file.write_text(
+            """
 api_key = "sk-1234567890abcdef"
-"""
-            )
-            tmp_path = Path(tmp.name)
+""",
+            encoding="utf-8",
+        )
 
-        try:
-            validator = SecretValidator()
-            with open(tmp_path, encoding="utf-8") as f:
-                lines = f.readlines()
-            result = validator.validate_python_file(tmp_path, lines)
+        validator = SecretValidator()
+        with open(test_file, encoding="utf-8") as f:
+            lines = f.readlines()
+        result = validator.validate_python_file(test_file, lines)
 
-            assert result is False
-            assert len(validator.violations) == 1
-        finally:
-            tmp_path.unlink()
+        assert result is False
+        assert len(validator.violations) == 1
 
-    def test_bypass_comment_works(self) -> None:
+    def test_bypass_comment_works(self, tmp_path: Path) -> None:
         """Test that bypass comment allows hardcoded secrets."""
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as tmp:
-            tmp.write(
-                """# secret-ok: test fixture
+        test_file = tmp_path / "test_bypass.py"
+        test_file.write_text(
+            """# secret-ok: test fixture
 api_key = "sk-1234567890abcdef"
-"""
-            )
-            tmp_path = Path(tmp.name)
+""",
+            encoding="utf-8",
+        )
 
-        try:
-            validator = SecretValidator()
-            with open(tmp_path, encoding="utf-8") as f:
-                lines = f.readlines()
-            result = validator.validate_python_file(tmp_path, lines)
+        validator = SecretValidator()
+        with open(test_file, encoding="utf-8") as f:
+            lines = f.readlines()
+        result = validator.validate_python_file(test_file, lines)
 
-            assert result is True
-            assert len(validator.violations) == 0
-        finally:
-            tmp_path.unlink()
+        assert result is True
+        assert len(validator.violations) == 0
 
-    def test_handles_empty_file_gracefully(self) -> None:
+    def test_handles_empty_file_gracefully(self, tmp_path: Path) -> None:
         """Test that empty Python files are handled gracefully."""
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as tmp:
-            tmp.write("")
-            tmp_path = Path(tmp.name)
+        test_file = tmp_path / "test_empty.py"
+        test_file.write_text("", encoding="utf-8")
 
-        try:
-            validator = SecretValidator()
-            with open(tmp_path, encoding="utf-8") as f:
-                lines = f.readlines()
-            result = validator.validate_python_file(tmp_path, lines)
+        validator = SecretValidator()
+        with open(test_file, encoding="utf-8") as f:
+            lines = f.readlines()
+        result = validator.validate_python_file(test_file, lines)
 
-            # Should return True (empty files are valid)
-            assert result is True
-            assert len(validator.violations) == 0
-        finally:
-            tmp_path.unlink()
+        # Should return True (empty files are valid)
+        assert result is True
+        assert len(validator.violations) == 0
 
-    def test_handles_syntax_errors_gracefully(self) -> None:
+    def test_handles_syntax_errors_gracefully(self, tmp_path: Path) -> None:
         """Test that files with syntax errors are skipped."""
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as tmp:
-            tmp.write(
-                """
+        test_file = tmp_path / "test_syntax_error.py"
+        test_file.write_text(
+            """
 def broken_syntax(
     # Missing closing parenthesis
-"""
-            )
-            tmp_path = Path(tmp.name)
+""",
+            encoding="utf-8",
+        )
 
-        try:
-            validator = SecretValidator()
-            with open(tmp_path, encoding="utf-8") as f:
-                lines = f.readlines()
-            result = validator.validate_python_file(tmp_path, lines)
+        validator = SecretValidator()
+        with open(test_file, encoding="utf-8") as f:
+            lines = f.readlines()
+        result = validator.validate_python_file(test_file, lines)
 
-            # Should return True (skip files with syntax errors)
-            assert result is True
-        finally:
-            tmp_path.unlink()
+        # Should return True (skip files with syntax errors)
+        assert result is True

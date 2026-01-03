@@ -6,7 +6,6 @@ Verifies that the hook correctly detects and prevents fallback patterns.
 
 import ast
 import sys
-import tempfile
 from pathlib import Path
 
 import pytest
@@ -163,44 +162,34 @@ def safe_operation():
 class TestCheckFileForFallbacks:
     """Tests for check_file_for_fallbacks function."""
 
-    def test_checks_python_file_with_fallbacks(self):
+    def test_checks_python_file_with_fallbacks(self, tmp_path: Path):
         """Test checking a Python file containing fallback patterns."""
         code = """
 class MyModel:
     def get_id(self) -> str:
         return f"{self.__class__.__name__}_{id(self)}"
 """
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
-            f.write(code)
-            f.flush()
-            filepath = Path(f.name)
+        filepath = tmp_path / "test_fallback.py"
+        filepath.write_text(code, encoding="utf-8")
 
-        try:
-            violations = check_file_for_fallbacks(filepath)
-            assert len(violations) == 1
-            assert violations[0]["type"] == "id_self_fallback"
-        finally:
-            filepath.unlink()
+        violations = check_file_for_fallbacks(filepath)
+        assert len(violations) == 1
+        assert violations[0]["type"] == "id_self_fallback"
 
-    def test_handles_syntax_errors_gracefully(self):
+    def test_handles_syntax_errors_gracefully(self, tmp_path: Path):
         """Test that syntax errors are handled gracefully."""
         code = """
 def invalid_syntax(
     # Missing closing paren
 """
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
-            f.write(code)
-            f.flush()
-            filepath = Path(f.name)
+        filepath = tmp_path / "test_syntax_error.py"
+        filepath.write_text(code, encoding="utf-8")
 
-        try:
-            violations = check_file_for_fallbacks(filepath)
-            # Should return empty list, not crash
-            assert violations == []
-        finally:
-            filepath.unlink()
+        violations = check_file_for_fallbacks(filepath)
+        # Should return empty list, not crash
+        assert violations == []
 
-    def test_returns_empty_for_clean_file(self):
+    def test_returns_empty_for_clean_file(self, tmp_path: Path):
         """Test that clean files return no violations."""
         code = """
 class MyModel:
@@ -209,16 +198,11 @@ class MyModel:
             return str(self.uuid)
         raise ValueError("Model must have UUID field")
 """
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
-            f.write(code)
-            f.flush()
-            filepath = Path(f.name)
+        filepath = tmp_path / "test_clean.py"
+        filepath.write_text(code, encoding="utf-8")
 
-        try:
-            violations = check_file_for_fallbacks(filepath)
-            assert violations == []
-        finally:
-            filepath.unlink()
+        violations = check_file_for_fallbacks(filepath)
+        assert violations == []
 
 
 if __name__ == "__main__":

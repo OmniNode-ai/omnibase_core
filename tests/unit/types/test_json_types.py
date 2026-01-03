@@ -8,7 +8,9 @@ Tests the type aliases defined in omnibase_core.types.json_types to verify:
 4. Documentation examples work correctly
 """
 
+from datetime import datetime
 from typing import get_args, get_origin
+from uuid import UUID
 
 import pytest
 
@@ -61,6 +63,24 @@ class TestJsonPrimitive:
         args = get_args(JsonPrimitive)
         assert type(None) in args
 
+    def test_type_includes_uuid(self) -> None:
+        """Test that JsonPrimitive includes UUID.
+
+        UUID is included for Pydantic compatibility - model_dump() preserves
+        UUID types by default.
+        """
+        args = get_args(JsonPrimitive)
+        assert UUID in args
+
+    def test_type_includes_datetime(self) -> None:
+        """Test that JsonPrimitive includes datetime.
+
+        datetime is included for Pydantic compatibility - model_dump() preserves
+        datetime types by default.
+        """
+        args = get_args(JsonPrimitive)
+        assert datetime in args
+
     def test_type_annotation_with_str(self) -> None:
         """Test using JsonPrimitive with str value."""
         value: JsonPrimitive = "hello"
@@ -89,6 +109,28 @@ class TestJsonPrimitive:
         """Test using JsonPrimitive with None value."""
         value: JsonPrimitive = None
         assert value is None
+
+    def test_type_annotation_with_uuid(self) -> None:
+        """Test using JsonPrimitive with UUID value.
+
+        UUID is a valid JsonPrimitive for Pydantic compatibility.
+        """
+        import uuid
+
+        test_uuid = uuid.uuid4()
+        value: JsonPrimitive = test_uuid
+        assert value == test_uuid
+        assert isinstance(value, UUID)
+
+    def test_type_annotation_with_datetime(self) -> None:
+        """Test using JsonPrimitive with datetime value.
+
+        datetime is a valid JsonPrimitive for Pydantic compatibility.
+        """
+        test_datetime = datetime.now()
+        value: JsonPrimitive = test_datetime
+        assert value == test_datetime
+        assert isinstance(value, datetime)
 
     def test_docstring_example_str(self) -> None:
         """Test docstring example: value: JsonPrimitive = 'hello'."""
@@ -578,9 +620,6 @@ class TestTypeRelationships:
 
     def test_json_primitive_components(self) -> None:
         """Test that JsonPrimitive contains expected primitive types."""
-        from datetime import datetime
-        from uuid import UUID
-
         primitive_args = set(get_args(JsonPrimitive))
 
         # Verify expected components - core JSON primitives

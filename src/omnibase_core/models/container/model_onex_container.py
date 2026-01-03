@@ -230,7 +230,9 @@ class ModelONEXContainer:
                 )
 
                 registry_config = create_default_registry_config()
-                self._service_registry = _ServiceRegistryClass(registry_config)
+                # Type narrowing: _SERVICE_REGISTRY_AVAILABLE guarantees _ServiceRegistryClass is not None
+                if _ServiceRegistryClass is not None:
+                    self._service_registry = _ServiceRegistryClass(registry_config)
 
                 emit_log_event(
                     LogLevel.INFO,
@@ -735,7 +737,7 @@ class ModelONEXContainer:
             )
 
         if self.performance_monitor:
-            # Cast TypedDict to SerializableValue for SerializedDict assignment
+            # Cast TypedDictMonitoringDashboard to SerializableValue for SerializedDict assignment
             stats["performance_monitoring"] = cast(
                 SerializableValue, self.performance_monitor.get_monitoring_dashboard()
             )

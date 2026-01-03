@@ -4,11 +4,13 @@ Pool Performance Profile Model.
 Driver-specific performance profile for connection pools.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelPoolPerformanceProfile(BaseModel):
     """Driver-specific performance profile for connection pools."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     recommended_pool_size: int = Field(
         default=10, description="Recommended pool size for this driver"

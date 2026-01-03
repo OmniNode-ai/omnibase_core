@@ -11,8 +11,6 @@ Usage:
             # Metrics tracking automatically available
 """
 
-from typing import Any
-
 from omnibase_core.types.typed_dict_mixin_types import TypedDictMetricEntry
 
 
@@ -29,7 +27,7 @@ class MixinMetrics:
         _metrics_data: In-memory metrics storage (stub)
     """
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, *args: object, **kwargs: object) -> None:
         """Initialize metrics mixin."""
         super().__init__(*args, **kwargs)
         # Use object.__setattr__() to bypass Pydantic validation for internal state

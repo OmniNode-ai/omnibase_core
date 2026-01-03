@@ -168,7 +168,7 @@ class ModelComputePipelineStep(BaseModel):
     enabled: bool = True
     # v1.0: No per-step timeout - only pipeline-level timeout_ms on contract
 
-    model_config = ConfigDict(extra="forbid", frozen=True)
+    model_config = ConfigDict(extra="forbid", frozen=True, from_attributes=True)
 
     @model_validator(mode="after")
     def validate_step_config(self) -> "ModelComputePipelineStep":

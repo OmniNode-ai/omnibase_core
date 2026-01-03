@@ -421,6 +421,8 @@ class TestEnumLikelihoodEdgeCases:
         """Test that NaN raises ModelOnexError.
 
         NaN comparisons always return False, so 0.0 <= NaN <= 1.0 is False.
+        The enum module uses a lazy import to avoid circular dependencies
+        and raises ModelOnexError with appropriate error code and context.
         """
         with pytest.raises(
             ModelOnexError, match=r"probability must be between 0\.0 and 1\.0"

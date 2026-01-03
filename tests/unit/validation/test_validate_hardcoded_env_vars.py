@@ -9,9 +9,6 @@ Tests hardcoded environment variable detection for:
 """
 
 import importlib.util
-
-# Import the validator classes
-import tempfile
 from pathlib import Path
 
 import pytest
@@ -332,115 +329,99 @@ class ConfigEnum(Enum):
 class TestHardcodedEnvVarValidator:
     """Test suite for HardcodedEnvVarValidator."""
 
-    def test_validates_clean_file(self) -> None:
+    def test_validates_clean_file(self, tmp_path: Path) -> None:
         """Test validation passes for file with proper env var usage."""
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as tmp:
-            tmp.write(
-                """
+        test_file = tmp_path / "test_clean.py"
+        test_file.write_text(
+            """
 import os
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 PORT = int(os.getenv("PORT", "8000"))
-"""
-            )
-            tmp_path = Path(tmp.name)
+""",
+            encoding="utf-8",
+        )
 
-        try:
-            validator = HardcodedEnvVarValidator()
-            result = validator.validate_python_file(tmp_path)
+        validator = HardcodedEnvVarValidator()
+        result = validator.validate_python_file(test_file)
 
-            assert result is True
-            assert len(validator.violations) == 0
-        finally:
-            tmp_path.unlink()
+        assert result is True
+        assert len(validator.violations) == 0
 
-    def test_detects_hardcoded_env_var_in_file(self) -> None:
+    def test_detects_hardcoded_env_var_in_file(self, tmp_path: Path) -> None:
         """Test validation fails for file with hardcoded env var."""
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as tmp:
-            tmp.write(
-                """
+        test_file = tmp_path / "test_hardcoded.py"
+        test_file.write_text(
+            """
 DATABASE_URL = "postgresql://localhost/mydb"
-"""
-            )
-            tmp_path = Path(tmp.name)
+""",
+            encoding="utf-8",
+        )
 
-        try:
-            validator = HardcodedEnvVarValidator()
-            result = validator.validate_python_file(tmp_path)
+        validator = HardcodedEnvVarValidator()
+        result = validator.validate_python_file(test_file)
 
-            assert result is False
-            assert len(validator.violations) == 1
-        finally:
-            tmp_path.unlink()
+        assert result is False
+        assert len(validator.violations) == 1
 
-    def test_bypass_comment_works(self) -> None:
+    def test_bypass_comment_works(self, tmp_path: Path) -> None:
         """Test that bypass comment allows hardcoded env vars."""
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as tmp:
-            tmp.write(
-                """# env-var-ok: constant definition
+        test_file = tmp_path / "test_bypass.py"
+        test_file.write_text(
+            """# env-var-ok: constant definition
 DATABASE_URL = "postgresql://localhost/mydb"
-"""
-            )
-            tmp_path = Path(tmp.name)
+""",
+            encoding="utf-8",
+        )
 
-        try:
-            validator = HardcodedEnvVarValidator()
-            result = validator.validate_python_file(tmp_path)
+        validator = HardcodedEnvVarValidator()
+        result = validator.validate_python_file(test_file)
 
-            assert result is True
-            assert len(validator.violations) == 0
-        finally:
-            tmp_path.unlink()
+        assert result is True
+        assert len(validator.violations) == 0
 
-    def test_validates_multiple_files(self) -> None:
+    def test_validates_multiple_files(self, tmp_path: Path) -> None:
         """Test validation of multiple files."""
         # Create two temp files
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as tmp1:
-            tmp1.write(
-                """
+        tmp1_path = tmp_path / "test_file1.py"
+        tmp1_path.write_text(
+            """
 import os
 
 DATABASE_URL = os.getenv("DATABASE_URL")
-"""
-            )
-            tmp1_path = Path(tmp1.name)
+""",
+            encoding="utf-8",
+        )
 
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as tmp2:
-            tmp2.write(
-                """
+        tmp2_path = tmp_path / "test_file2.py"
+        tmp2_path.write_text(
+            """
 API_KEY = "hardcoded_key"
-"""
-            )
-            tmp2_path = Path(tmp2.name)
+""",
+            encoding="utf-8",
+        )
 
-        try:
-            validator = HardcodedEnvVarValidator()
-            result1 = validator.validate_python_file(tmp1_path)
-            result2 = validator.validate_python_file(tmp2_path)
+        validator = HardcodedEnvVarValidator()
+        result1 = validator.validate_python_file(tmp1_path)
+        result2 = validator.validate_python_file(tmp2_path)
 
-            assert result1 is True
-            assert result2 is False
-            assert len(validator.violations) == 1
-        finally:
-            tmp1_path.unlink()
-            tmp2_path.unlink()
+        assert result1 is True
+        assert result2 is False
+        assert len(validator.violations) == 1
 
-    def test_handles_syntax_errors_gracefully(self) -> None:
+    def test_handles_syntax_errors_gracefully(self, tmp_path: Path) -> None:
         """Test that files with syntax errors are skipped."""
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as tmp:
-            tmp.write(
-                """
+        test_file = tmp_path / "test_syntax_error.py"
+        test_file.write_text(
+            """
 def broken_syntax(
     # Missing closing parenthesis
-"""
-            )
-            tmp_path = Path(tmp.name)
+""",
+            encoding="utf-8",
+        )
 
-        try:
-            validator = HardcodedEnvVarValidator()
-            result = validator.validate_python_file(tmp_path)
+        validator = HardcodedEnvVarValidator()
+        result = validator.validate_python_file(test_file)
 
-            # Should return True (skip files with syntax errors)
-            assert result is True
-        finally:
-            tmp_path.unlink()
+        # Should return True (skip files with syntax errors)
+        assert result is True

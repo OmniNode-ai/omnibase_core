@@ -21,7 +21,7 @@
 # version: 1.0.0
 # === /OmniNode:Metadata ===
 
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
     from omnibase_core.types.type_serializable_value import SerializedDict
@@ -71,7 +71,7 @@ class MixinSensitiveFieldRedaction:
     @classmethod
     def get_sensitive_field_patterns(cls) -> list[str]:
         """
-        Get the list[Any]of sensitive field patterns for this model.
+        Get the list of sensitive field patterns for this model.
 
         Override this method in subclasses to customize sensitive field detection.
 
@@ -109,7 +109,7 @@ class MixinSensitiveFieldRedaction:
         return any(pattern in field_lower for pattern in patterns)
 
     @classmethod
-    def get_redaction_value(cls, field_name: str, field_value: Any) -> str:
+    def get_redaction_value(cls, field_name: str, field_value: object) -> str:
         """
         Get the appropriate redaction value for a field.
 
@@ -184,7 +184,7 @@ class MixinSensitiveFieldRedaction:
     def redact(
         self,
         additional_sensitive_fields: set[str] | None = None,
-        **kwargs: Any,
+        **kwargs: object,
     ) -> "SerializedDict":
         """
         Get a redacted version of the model data.
@@ -212,7 +212,7 @@ class MixinSensitiveFieldRedaction:
     def model_dump_redacted(
         self,
         additional_sensitive_fields: set[str] | None = None,
-        **kwargs: Any,
+        **kwargs: object,
     ) -> "SerializedDict":
         """
         Convenience method that combines model_dump with redaction.

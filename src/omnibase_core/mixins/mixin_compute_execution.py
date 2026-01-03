@@ -36,7 +36,6 @@ See Also:
 """
 
 from collections import Counter
-from typing import Any
 from uuid import UUID, uuid4
 
 from omnibase_core.models.compute.model_compute_execution_context import (
@@ -92,7 +91,7 @@ class MixinComputeExecution:
     async def execute_contract_pipeline(
         self,
         contract: ModelComputeSubcontract,
-        input_data: Any,  # Any: pipeline accepts dict, Pydantic model, or JSON-compatible data
+        input_data: object,  # object: pipeline accepts dict, Pydantic model, or JSON-compatible data
         correlation_id: UUID | None = None,
     ) -> ModelComputePipelineResult:
         """

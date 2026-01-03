@@ -52,6 +52,7 @@ from typing import Any, TypeGuard
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from omnibase_core.decorators.allow_dict_any import allow_dict_any
 from omnibase_core.types.json_types import JsonType
 
 # =============================================================================
@@ -536,61 +537,95 @@ class ModelRequirementSet(BaseModel):
             hints={**self.hints, **other.hints},
         )
 
+    @allow_dict_any(
+        reason="Provider capabilities are dynamic key-value pairs from external systems"
+    )
     def matches(
         self,
-        # ONEX_EXCLUDE: dict_str_any - provider attributes for matching
-        provider: dict[str, JsonType],
+        provider: dict[str, Any],
     ) -> tuple[bool, float, list[str]]:
         """
         Check if a provider satisfies this requirement set.
 
-        Evaluates the provider against all constraint tiers:
-        1. must - All must match or provider is excluded
-        2. forbid - Any match excludes the provider
-        3. prefer - Matching preferences increase score
-        4. hints - Not evaluated (tie-breaking only)
+        Evaluates the provider against all constraint tiers and returns
+        a match result with score and warnings.
+
+        Matching Logic:
+            1. **must constraints**: All must be satisfied. If any ``must``
+               constraint is not met, the provider is rejected (matches=False).
+            2. **forbid constraints**: None should match. If any ``forbid``
+               constraint matches, the provider is rejected (matches=False).
+            3. **prefer constraints**: Affect the score. Each satisfied preference
+               adds to the score. Unmet preferences generate warnings.
+            4. **hints**: Currently advisory only, do not affect scoring.
+
+        Scoring:
+            - Base score is 1.0 for a matching provider
+            - Each satisfied ``prefer`` constraint adds 0.1 to the score
+            - Each unsatisfied ``prefer`` constraint generates a warning
+
+        Note on Scoring Design:
+            This scoring scheme (1.0 base + 0.1 per preference) differs
+            intentionally from ``ServiceCapabilityResolver._score_providers()``
+            which uses (0.0 base + 1.0 per preference). The difference exists
+            because they serve different purposes:
+
+            - ``matches()`` is a **boolean check with quality score** where
+              1.0 base represents "valid match" and 0.1 increments provide
+              fine-grained quality differentiation within the valid range.
+            - ``_score_providers()`` is a **relative ranking function** for
+              already-filtered providers where only relative scores matter
+              for sorting, not absolute values.
 
         Args:
-            provider: Provider attributes to check against requirements.
+            provider: Provider capability mapping to check. Keys are attribute
+                names, values are the provider's capability values.
 
         Returns:
-            Tuple of (matches: bool, score: float, warnings: list[str]).
-            - matches: True if provider passes must/forbid constraints
-            - score: Number of prefer constraints satisfied (0.0 if not matching)
-            - warnings: List of unmet prefer constraints
+            Tuple of (matches, score, warnings):
+                - matches: True if provider satisfies all must/forbid constraints
+                - score: Float score (1.0 base + 0.1 per satisfied preference)
+                - warnings: List of warning messages for unmet preferences
+
+        Examples:
+            >>> reqs = ModelRequirementSet(
+            ...     must={"engine": "postgres"},
+            ...     prefer={"version": 14},
+            ...     forbid={"deprecated": True},
+            ... )
+            >>> # Provider matches all constraints
+            >>> reqs.matches({"engine": "postgres", "version": 14})
+            (True, 1.1, [])
+            >>> # Provider missing must constraint
+            >>> reqs.matches({"engine": "mysql"})
+            (False, 0.0, [])
+            >>> # Provider has forbidden attribute
+            >>> reqs.matches({"engine": "postgres", "deprecated": True})
+            (False, 0.0, [])
         """
         warnings: list[str] = []
 
         # Check must constraints - all must be satisfied
         for key, required_value in self.must.items():
             if key not in provider:
-                return (False, 0.0, [f"Missing required attribute '{key}'"])
+                return (False, 0.0, [])
             if provider[key] != required_value:
-                return (
-                    False,
-                    0.0,
-                    [
-                        f"Attribute '{key}' value '{provider[key]}' != required '{required_value}'"
-                    ],
-                )
+                return (False, 0.0, [])
 
-        # Check forbid constraints - none must match
+        # Check forbid constraints - none should match
         for key, forbidden_value in self.forbid.items():
             if key in provider and provider[key] == forbidden_value:
-                return (
-                    False,
-                    0.0,
-                    [f"Has forbidden attribute '{key}'='{forbidden_value}'"],
-                )
+                return (False, 0.0, [])
 
-        # Score by prefer constraints
-        score = 0.0
+        # Calculate score based on prefer matches
+        score = 1.0  # Base score for matching provider
         for key, preferred_value in self.prefer.items():
             if key in provider and provider[key] == preferred_value:
-                score += 1.0
+                score += 0.1  # Bonus for matching preference
             else:
                 warnings.append(
-                    f"Prefer constraint '{key}'='{preferred_value}' not met"
+                    f"Preference not met: {key}={preferred_value!r} "
+                    f"(provider has {provider.get(key, '<missing>')!r})"
                 )
 
         return (True, score, warnings)
