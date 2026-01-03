@@ -119,7 +119,7 @@ class ModelComputePipelineResult(BaseModel):
     error_message: str | None = None
     error_step: str | None = None
 
-    model_config = ConfigDict(extra="forbid", frozen=True)
+    model_config = ConfigDict(extra="forbid", frozen=True, from_attributes=True)
 
 
 # Import at runtime for forward ref resolution

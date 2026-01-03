@@ -104,6 +104,7 @@ class ModelComputeInput[T_Input](BaseModel):
     model_config = ConfigDict(
         extra="forbid",
         frozen=True,
+        from_attributes=True,  # pytest-xdist compatibility
     )
 
     data: T_Input

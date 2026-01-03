@@ -16,13 +16,19 @@ Note:
 
 Pattern: Model<Name> - Pydantic model for validation context
 Node Type: N/A (Data Model)
+
+Note:
+    This class was renamed from ModelValidationContext to
+    ModelContractValidationContext to avoid naming collision with
+    ModelValidationContext in models/context/model_validation_context.py,
+    which is used for field-level validation context (field_name, expected, actual).
 """
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_validation_mode import EnumValidationMode
 
-__all__ = ["ModelContractValidationContext", "ModelValidationContext"]
+__all__ = ["ModelContractValidationContext"]
 
 
 class ModelContractValidationContext(BaseModel):

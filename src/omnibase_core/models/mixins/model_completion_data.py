@@ -20,6 +20,7 @@ class ModelCompletionData(BaseModel):
     model_config = ConfigDict(
         extra="forbid",  # Catch typos early
         frozen=True,  # Immutable instances for safer passing
+        from_attributes=True,  # pytest-xdist compatibility
     )
 
     message: StrictStr | None = Field(

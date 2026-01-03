@@ -7,7 +7,6 @@ exception raises and enforces OnexError usage.
 
 import ast
 import sys
-import tempfile
 from pathlib import Path
 
 import pytest
@@ -400,52 +399,42 @@ class MyModel:
 class TestCheckFile:
     """Test suite for check_file function."""
 
-    def test_check_file_with_violations(self):
+    def test_check_file_with_violations(self, tmp_path: Path):
         """Test checking a file with violations."""
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
-            f.write(
-                """
+        temp_file = tmp_path / "test_violations.py"
+        temp_file.write_text(
+            """
 def process():
     raise ValueError("Test error")
-"""
-            )
-            f.flush()
-            temp_path = Path(f.name)
+""",
+            encoding="utf-8",
+        )
 
-        try:
-            violations = check_file(temp_path)
-            assert len(violations) == 1
-            assert violations[0]["exception"] == "ValueError"
-        finally:
-            temp_path.unlink()
+        violations = check_file(temp_file)
+        assert len(violations) == 1
+        assert violations[0]["exception"] == "ValueError"
 
-    def test_check_file_without_violations(self):
+    def test_check_file_without_violations(self, tmp_path: Path):
         """Test checking a file without violations."""
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
-            f.write(
-                """
+        temp_file = tmp_path / "test_no_violations.py"
+        temp_file.write_text(
+            """
 from omnibase_core.errors.error_codes import OnexError
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
 def process():
     raise OnexError(error_code=EnumCoreErrorCode.VALIDATION_ERROR, message="Test")
-"""
-            )
-            f.flush()
-            temp_path = Path(f.name)
+""",
+            encoding="utf-8",
+        )
 
-        try:
-            violations = check_file(temp_path)
-            assert len(violations) == 0
-        finally:
-            temp_path.unlink()
+        violations = check_file(temp_file)
+        assert len(violations) == 0
 
-    def test_skips_test_files(self):
+    def test_skips_test_files(self, tmp_path: Path):
         """Test that test files in tests/ directory are skipped."""
-        # Create a temp directory that includes "tests/" in the path
-
-        temp_dir = tempfile.mkdtemp()
-        tests_dir = Path(temp_dir) / "tests"
+        # Create a directory structure that includes "tests/" in the path
+        tests_dir = tmp_path / "tests"
         tests_dir.mkdir()
 
         test_file = tests_dir / "test_sample.py"
@@ -453,37 +442,29 @@ def process():
             """
 def test_something():
     raise ValueError("Test error")  # OK in test files
-"""
+""",
+            encoding="utf-8",
         )
 
-        try:
-            violations = check_file(test_file)
-            # Test files in tests/ directory should be skipped, so no violations
-            assert len(violations) == 0
-        finally:
-            test_file.unlink()
-            tests_dir.rmdir()
-            Path(temp_dir).rmdir()
+        violations = check_file(test_file)
+        # Test files in tests/ directory should be skipped, so no violations
+        assert len(violations) == 0
 
-    def test_handles_syntax_error(self):
+    def test_handles_syntax_error(self, tmp_path: Path):
         """Test handling of syntax errors in files."""
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
-            f.write(
-                """
+        temp_file = tmp_path / "test_syntax_error.py"
+        temp_file.write_text(
+            """
 def process():
     raise ValueError("Test"
 # Missing closing parenthesis
-"""
-            )
-            f.flush()
-            temp_path = Path(f.name)
+""",
+            encoding="utf-8",
+        )
 
-        try:
-            violations = check_file(temp_path)
-            assert len(violations) == 1
-            assert violations[0]["type"] == "syntax_error"
-        finally:
-            temp_path.unlink()
+        violations = check_file(temp_file)
+        assert len(violations) == 1
+        assert violations[0]["type"] == "syntax_error"
 
 
 if __name__ == "__main__":

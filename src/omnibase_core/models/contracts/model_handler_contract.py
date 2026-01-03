@@ -9,9 +9,9 @@ It enables contract-driven handler discovery and registration.
 
 Core Design Decisions:
     1. Single execute pattern: Handlers have one entry point `execute(input, ctx) -> output`
-    2. Descriptor embedded: Runtime semantics live in `descriptor` field
+    2. Behavior embedded: Runtime semantics live in `descriptor` field
     3. Capability-based deps: No vendor names in contracts (use capability + requirements)
-    4. Profile integration: Contracts can extend profiles for default descriptor values
+    4. Profile integration: Contracts can extend profiles for default behavior values
 
 Three-Layer Architecture:
     1. Profile (ModelExecutionProfile): Resource allocation, execution environment
@@ -63,7 +63,7 @@ class ModelHandlerContract(BaseModel):
     Complete handler contract - the authoring surface for ONEX handlers.
 
     The handler contract is the declarative specification that defines:
-    - What the handler does (descriptor)
+    - What the handler does (behavior)
     - What capabilities it needs (capability_inputs)
     - What it provides (capability_outputs)
     - How it fits in execution order (execution_constraints)
@@ -97,7 +97,7 @@ class ModelHandlerContract(BaseModel):
         name: Human-readable name (e.g., "User Registration Reducer").
         version: Semantic version string (e.g., "1.0.0").
         description: Optional detailed description.
-        descriptor: Embedded behavior descriptor (purity, idempotency, etc.).
+        descriptor: Embedded behavior configuration (purity, idempotency, etc.).
         capability_inputs: List of required input capabilities.
         capability_outputs: List of provided output capability names.
         input_model: Fully qualified input model reference.
@@ -190,12 +190,12 @@ class ModelHandlerContract(BaseModel):
     )
 
     # ==========================================================================
-    # Embedded Descriptor (runtime semantics)
+    # Embedded Behavior (runtime semantics)
     # ==========================================================================
 
     descriptor: ModelHandlerBehavior = Field(
         ...,
-        description="Embedded behavior descriptor defining runtime semantics",
+        description="Embedded behavior configuration defining runtime semantics",
     )
 
     # ==========================================================================

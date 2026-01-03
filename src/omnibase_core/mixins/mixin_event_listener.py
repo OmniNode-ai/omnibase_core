@@ -7,6 +7,35 @@ Provides event-driven execution capabilities to tool nodes by:
 - Executing tool's process method
 - Publishing completion events
 - Managing event lifecycle and error handling
+
+Security:
+    This mixin uses importlib.import_module() to dynamically load input state
+    model classes from node modules. Security is enforced via namespace validation:
+
+    **Namespace Allowlist** (_get_input_state_from_node_module):
+        Dynamic imports are restricted to modules matching these prefixes:
+        - omnibase_core.*
+        - omnibase_spi.*
+        - omnibase.*
+
+        Attempts to import modules outside these namespaces are blocked with
+        a warning log and return None instead of raising an exception.
+
+    **Event Content**:
+        Event payloads are treated as UNTRUSTED data. They are:
+        - Validated against Pydantic models before processing
+        - Converted to strongly-typed input state classes
+        - Errors during validation are caught and logged
+
+    Trust Model:
+        - Module namespace: Validated against allowlist (TRUSTED namespaces only)
+        - Event bus: Assumed to be from trusted infrastructure
+        - Event payload: UNTRUSTED (validated via Pydantic)
+        - Contract file content: Validated via load_and_validate_yaml_model
+
+    See Also:
+        - MixinIntrospectFromContract: Similar namespace validation pattern
+        - util_safe_yaml_loader.py: YAML parsing security for contracts
 """
 
 from __future__ import annotations

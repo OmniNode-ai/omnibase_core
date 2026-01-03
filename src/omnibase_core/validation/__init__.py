@@ -54,12 +54,15 @@ from omnibase_core.models.validation.model_fsm_analysis_result import (
     ModelFSMAnalysisResult,
 )
 
-# Import BOTH validation result classes (different purposes!)
-# - ModelValidationResult (from models/) is for circular import validation
-# - ModelValidationResult (from models/validation/) is for general validation
+# Import the import-specific validation result class (renamed for clarity)
+# - ModelImportValidationResult is for circular import validation
+# - ModelValidationResult[T] (from models/common/) is for general validation
 from omnibase_core.models.validation.model_import_validation_result import (
-    ModelValidationResult as CircularImportValidationResult,
+    ModelImportValidationResult,
 )
+
+# Backwards compat alias
+CircularImportValidationResult = ModelImportValidationResult
 from omnibase_core.models.validation.model_lint_statistics import ModelLintStatistics
 from omnibase_core.models.validation.model_lint_warning import ModelLintWarning
 from omnibase_core.models.validation.model_module_import_result import (
@@ -78,6 +81,10 @@ from .circular_import_validator import CircularImportValidator
 # ModelValidationSuite is available via __getattr__ (emits deprecation warning)
 from .cli import ServiceValidationSuite
 
+# Import contract patch validator (OMN-1126)
+from .contract_patch_validator import ContractPatchValidator
+
+# Re-export from services (OMN-1146)
 ContractValidationInvariantChecker = ServiceContractValidationInvariantChecker
 
 # =============================================================================
@@ -326,7 +333,8 @@ def validate_all(
 __all__ = [
     # Core classes and types
     "CircularImportValidator",
-    "CircularImportValidationResult",
+    "CircularImportValidationResult",  # Backwards compat alias
+    "ModelImportValidationResult",  # Canonical name (OMN-1126)
     "ExceptionConfigurationError",
     "EnumImportStatus",
     "ModelContractValidationResult",
@@ -383,6 +391,8 @@ __all__ = [
     "validate_execution_mode_string",
     "validate_unique_step_ids",
     "validate_workflow_definition",
+    # Contract patch validator (OMN-1126)
+    "ContractPatchValidator",
     # Contract validation invariant checker (OMN-1146)
     "ServiceContractValidationInvariantChecker",
     "ModelContractValidationEvent",

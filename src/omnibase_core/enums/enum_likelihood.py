@@ -169,8 +169,9 @@ class EnumLikelihood(str, Enum):
             from omnibase_core.errors import ModelOnexError
 
             raise ModelOnexError(
-                f"probability must be between 0.0 and 1.0, got {probability}",
+                message=f"probability must be between 0.0 and 1.0, got {probability}",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                probability=probability,
             )
         if probability <= 0.0:
             return cls.IMPOSSIBLE

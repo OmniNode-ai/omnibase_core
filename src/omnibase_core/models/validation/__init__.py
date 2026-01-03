@@ -68,8 +68,10 @@ __all__ = [
     # "ModelUnionPattern",  # from .model_union_pattern
     #
     # Circular Import Detection (dataclass, not Pydantic):
-    # "ModelValidationResult",  # from .model_import_validation_result
+    # "ModelImportValidationResult",  # from .model_import_validation_result
     #     ^-- Aggregates results from circular import validation runs.
     #         Tracks successful imports, circular imports, and errors.
     #         Used by import validation tooling, not general validation.
+    #     Note: Renamed from ModelValidationResult to avoid collision with
+    #           the generic ModelValidationResult[T] in models/common/.
 ]
