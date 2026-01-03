@@ -11,6 +11,7 @@ from omnibase_core.services.invariant.service_invariant_evaluator import (
 )
 
 
+@pytest.mark.unit
 class TestSchemaEvaluator:
     """Test suite for schema validation invariant type."""
 

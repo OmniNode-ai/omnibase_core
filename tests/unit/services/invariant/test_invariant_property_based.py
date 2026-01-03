@@ -74,6 +74,11 @@ class TestInvariantPropertyBased:
             assert result.passed is False, (
                 f"Expected fail when actual ({actual_value}) > max ({max_value})"
             )
+            # Verify violation details are populated
+            assert result.actual_value is not None, (
+                "Expected actual_value to be set for failing invariant"
+            )
+            assert result.message, "Expected non-empty message for failing invariant"
 
     @given(
         min_value=st.floats(
@@ -110,6 +115,11 @@ class TestInvariantPropertyBased:
             assert result.passed is False, (
                 f"Expected fail when actual ({actual_value}) < min ({min_value})"
             )
+            # Verify violation details are populated
+            assert result.actual_value is not None, (
+                "Expected actual_value to be set for failing invariant"
+            )
+            assert result.message, "Expected non-empty message for failing invariant"
 
     @given(
         max_ms=st.floats(
@@ -144,6 +154,13 @@ class TestInvariantPropertyBased:
             assert result.passed is False, (
                 f"Expected fail when actual ({actual_ms}ms) > max ({max_ms}ms)"
             )
+            # Verify violation details are populated
+            assert result.actual_value is not None, (
+                "Expected actual_value to be set for failing latency invariant"
+            )
+            assert result.message, (
+                "Expected non-empty message for failing latency invariant"
+            )
 
     @given(
         max_cost=st.floats(
@@ -177,6 +194,13 @@ class TestInvariantPropertyBased:
         else:
             assert result.passed is False, (
                 f"Expected fail when actual cost ({actual_cost}) > max ({max_cost})"
+            )
+            # Verify violation details are populated
+            assert result.actual_value is not None, (
+                "Expected actual_value to be set for failing cost invariant"
+            )
+            assert result.message, (
+                "Expected non-empty message for failing cost invariant"
             )
 
     @given(
@@ -248,6 +272,10 @@ class TestInvariantPropertyBased:
         if field_name != "other_field":
             assert result.passed is False, (
                 f"Expected fail when field '{field_name}' is missing"
+            )
+            # Verify violation details are populated
+            assert result.message, (
+                f"Expected non-empty message for missing field '{field_name}'"
             )
 
     @given(
@@ -422,6 +450,13 @@ class TestInvariantPropertyBased:
         else:
             assert result.passed is False, (
                 f"Expected fail when {actual_value} not in [{min_value}, {max_value}]"
+            )
+            # Verify violation details are populated
+            assert result.actual_value is not None, (
+                "Expected actual_value to be set for failing bounds invariant"
+            )
+            assert result.message, (
+                "Expected non-empty message for failing bounds invariant"
             )
 
     @given(

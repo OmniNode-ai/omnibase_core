@@ -4,6 +4,8 @@
 
 from typing import Any
 
+import pytest
+
 from omnibase_core.enums import EnumInvariantSeverity, EnumInvariantType
 from omnibase_core.models.invariant import ModelInvariant
 from omnibase_core.services.invariant.service_invariant_evaluator import (
@@ -11,6 +13,7 @@ from omnibase_core.services.invariant.service_invariant_evaluator import (
 )
 
 
+@pytest.mark.unit
 class TestFieldPresenceEvaluator:
     """Test suite for field presence invariant type."""
 

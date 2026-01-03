@@ -5,7 +5,8 @@ that outputs conform to defined invariants (validation rules).
 
 Thread Safety:
     ServiceInvariantEvaluator is NOT thread-safe. Create separate instances
-    per thread or use thread-local storage.
+    per thread or use thread-local storage. The schema validator cache is
+    instance-level and should not be shared across threads.
 
 Example:
     >>> from omnibase_core.services.invariant.service_invariant_evaluator import (
@@ -25,16 +26,23 @@ Example:
     >>> print(result.passed)  # True
 """
 
+import hashlib
 import importlib
+import json
 import logging
 import re
+import signal
+import sys
 import time
+from collections import OrderedDict
 from datetime import UTC, datetime
 from typing import Any
 
 import jsonschema
+from jsonschema.protocols import Validator
 
 from omnibase_core.enums import EnumInvariantSeverity, EnumInvariantType
+from omnibase_core.errors.error_regex_timeout import RegexTimeoutError
 from omnibase_core.models.invariant import (
     ModelEvaluationSummary,
     ModelInvariant,
@@ -56,10 +64,13 @@ class ServiceInvariantEvaluator:
             If None, all paths are allowed (trusted code model).
         SLOW_EVALUATION_THRESHOLD_MS: Threshold in milliseconds above which
             evaluation time triggers a warning log.
+        SCHEMA_VALIDATOR_CACHE_SIZE: Maximum number of compiled schema validators
+            to cache. Uses LRU eviction when limit is reached.
 
     Thread Safety:
         This class is NOT thread-safe. Create separate instances per thread
-        or use thread-local storage.
+        or use thread-local storage. The schema validator cache is instance-level
+        and should not be shared across threads.
 
     Example:
         >>> evaluator = ServiceInvariantEvaluator()
@@ -71,7 +82,9 @@ class ServiceInvariantEvaluator:
     SLOW_EVALUATION_THRESHOLD_MS: float = 25.0
     MAX_FIELD_PATH_DEPTH: int = 20
     MAX_REGEX_PATTERN_LENGTH: int = 1000
+    MAX_REGEX_INPUT_LENGTH: int = 100000  # 100KB max input for regex operations
     REGEX_TIMEOUT_SECONDS: float = 1.0
+    SCHEMA_VALIDATOR_CACHE_SIZE: int = 128
 
     # Patterns that indicate potential ReDoS vulnerability (nested quantifiers)
     # These detect nested quantifiers and overlapping alternations that can cause
@@ -79,6 +92,12 @@ class ServiceInvariantEvaluator:
     _REDOS_DANGEROUS_PATTERNS: tuple[re.Pattern[str], ...] = (
         re.compile(r"\([^)]*[+*]\)[+*]"),  # Nested quantifiers like (a+)+ or (a*)*
         re.compile(r"\([^)]*\{[^}]+\}\)[+*]"),  # Nested {n,m} with + or *
+        re.compile(r"\([^)]*\|[^)]*\)[+*]"),  # Alternation with quantifier: (a|b)+
+        re.compile(r"[+*]\??\.[+*]"),  # Adjacent quantifiers with wildcards: .*.*
+        re.compile(r"(\.\*){2,}"),  # Multiple .* sequences
+        re.compile(
+            r"\[[^\]]*\][+*]\[[^\]]*\][+*]"
+        ),  # Adjacent char classes: [a-z]+[0-9]+
     )
 
     # Pattern for validating Python module paths (security: prevents injection attacks)
@@ -91,6 +110,13 @@ class ServiceInvariantEvaluator:
         r"(:[a-zA-Z_][a-zA-Z0-9_]*)?$"  # Colon-separated function name (optional)
     )
 
+    # Pattern for validating module paths only (without function name)
+    # Used for defense-in-depth validation of the parsed module_path
+    _VALID_MODULE_ONLY_PATTERN: re.Pattern[str] = re.compile(
+        r"^[a-zA-Z_][a-zA-Z0-9_]*"  # First segment (required)
+        r"(\.[a-zA-Z_][a-zA-Z0-9_]*)*$"  # Additional dot-separated segments (optional)
+    )
+
     def __init__(self, allowed_import_paths: list[str] | None = None) -> None:
         """Initialize the invariant evaluator.
 
@@ -101,28 +127,105 @@ class ServiceInvariantEvaluator:
                 these prefixes are permitted for CUSTOM invariants.
         """
         self.allowed_import_paths = allowed_import_paths
+        # LRU cache for compiled schema validators (OrderedDict maintains insertion order)
+        # Key: SHA-256 hash of JSON-serialized schema
+        # Value: Compiled validator instance
+        self._schema_validator_cache: OrderedDict[str, Validator] = OrderedDict()
 
     def _is_import_path_allowed(self, callable_path: str) -> bool:
         """Check if callable_path is allowed by the configured allow-list.
 
+        This method validates custom callable paths against a configurable
+        allow-list to prevent unauthorized code execution. It implements
+        multiple security layers to ensure only trusted callables are invoked.
+
+        Security Model:
+            The allow-list security model operates as follows:
+
+            1. **Trusted Code Model** (allow-list=None):
+               When no allow-list is configured, all valid Python paths are
+               permitted. Use this only in fully trusted environments where
+               all invariant configurations come from trusted sources.
+
+            2. **Restricted Model** (allow-list configured):
+               Only callables from explicitly allowed module prefixes are
+               permitted. This is the recommended mode for production use
+               where invariant configurations may come from external sources.
+
         Security Measures:
-            1. Validates callable_path format (only valid Python module paths)
-            2. Rejects empty or malformed prefixes in allow-list
-            3. Uses strict boundary matching (dot or colon separator)
-            4. Logs warnings for security-relevant rejections
+            1. **Path Format Validation**: Only valid Python module paths are
+               accepted. Malformed paths (containing invalid characters or
+               injection attempts) are rejected before checking the allow-list.
+               Pattern: ``^[a-zA-Z_][a-zA-Z0-9_]*(\\.[a-zA-Z_][a-zA-Z0-9_]*)*``
 
-        Uses strict boundary matching to prevent bypass attacks.
-        For example, if "builtins" is allowed, "builtins_evil" will NOT match.
+            2. **Empty Prefix Rejection**: Empty strings in the allow-list are
+               ignored with a warning log, as they could match unintended paths.
 
-        The check handles both separator formats:
-        - Dot notation: "module.path.function"
-        - Colon notation: "module.path:function"
+            3. **Prefix Format Validation**: Each allow-list prefix is validated
+               to ensure it's a valid Python module path format before use.
+
+            4. **Strict Boundary Matching**: Uses exact segment boundaries (dot
+               or colon) to prevent prefix bypass attacks. For example, if
+               ``"builtins"`` is in the allow-list, ``"builtins_evil"`` will
+               NOT match because there's no valid boundary separator.
+
+        Path Notation Formats:
+            The check handles both common Python callable path formats:
+
+            - **Dot notation**: ``"module.submodule.function"``
+            - **Colon notation**: ``"module.submodule:function"``
+
+            Both formats are equivalent; colon notation is commonly used in
+            entry point specifications (e.g., setuptools console_scripts).
+
+        Examples:
+            Configure evaluator with allow-list::
+
+                # Only allow validators from your application modules
+                evaluator = ServiceInvariantEvaluator(
+                    allowed_import_paths=[
+                        "myapp.validators",       # All functions in this module
+                        "myapp.checks",           # All functions in this module
+                        "myapp.validators.core",  # Submodule
+                    ]
+                )
+
+            Matching behavior examples::
+
+                # With allow-list = ["myapp.validators"]:
+                "myapp.validators.check_output"      # ALLOWED (prefix + dot)
+                "myapp.validators:check_output"      # ALLOWED (prefix + colon)
+                "myapp.validators"                   # ALLOWED (exact match)
+                "myapp.validators_evil.check"        # BLOCKED (no boundary)
+                "myapp.validators_extended.check"    # BLOCKED (no boundary)
+                "os.system"                          # BLOCKED (not in list)
+                "builtins.eval"                      # BLOCKED (not in list)
+
+            Production configuration recommendation::
+
+                # Be specific about allowed modules
+                evaluator = ServiceInvariantEvaluator(
+                    allowed_import_paths=[
+                        "mycompany.app.validators",
+                        "mycompany.app.business_rules",
+                    ]
+                )
+                # Avoid overly broad prefixes like "mycompany" which would
+                # allow any module in your entire codebase
 
         Args:
-            callable_path: The full callable path to check.
+            callable_path: The full callable path to check. Must be in valid
+                Python module path format (e.g., ``"module.submodule.function"``
+                or ``"module.submodule:function"``).
 
         Returns:
-            True if the path is allowed, False otherwise.
+            True if path is allowed by the configured security policy:
+                - No allow-list configured (trusted code model), OR
+                - Path matches an allowed prefix with proper boundaries
+            False if the path is blocked due to:
+                - Path not in allow-list
+                - Path has invalid format (fails regex validation)
+                - Allow-list contains invalid prefixes (logged as warning)
         """
         if self.allowed_import_paths is None:
             return True
@@ -167,6 +270,50 @@ class ServiceInvariantEvaluator:
 
         return False
 
+    def _is_module_path_allowed(self, module_path: str) -> bool:
+        """Check if a module path is allowed by the configured allow-list.
+
+        This is a stricter check that validates the actual module to be imported,
+        providing defense-in-depth after parsing the callable_path.
+
+        Security Measures:
+            1. Validates module_path format (only valid Python module paths)
+            2. Uses strict boundary matching (dot separator only)
+            3. Ensures the module being imported is within allowed namespaces
+
+        Args:
+            module_path: The module path to check (without function name).
+
+        Returns:
+            True if the path is allowed, False otherwise.
+        """
+        if self.allowed_import_paths is None:
+            return True
+
+        # Security: Validate module_path format
+        if not self._VALID_MODULE_ONLY_PATTERN.match(module_path):
+            logger.warning(
+                "Invalid module path format rejected (security): %r",
+                module_path[:100] if len(module_path) > 100 else module_path,
+            )
+            return False
+
+        for prefix in self.allowed_import_paths:
+            # Skip empty or invalid prefixes (already validated in _is_import_path_allowed)
+            if not prefix or not re.match(
+                r"^[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*$", prefix
+            ):
+                continue
+
+            # Exact match
+            if module_path == prefix:
+                return True
+            # Prefix match with proper boundary (dot separator only for modules)
+            if module_path.startswith(prefix + "."):
+                return True
+
+        return False
+
     def _is_regex_safe(self, pattern: str) -> tuple[bool, str]:
         """Check if a regex pattern is safe from ReDoS attacks.
 
@@ -202,10 +349,26 @@ class ServiceInvariantEvaluator:
 
         return (True, "")
 
+    def _regex_timeout_handler(self, signum: int, frame: Any) -> None:
+        """Signal handler for regex timeout.
+
+        Args:
+            signum: Signal number.
+            frame: Current stack frame.
+
+        Raises:
+            RegexTimeoutError: Always raised to interrupt the regex operation.
+        """
+        raise RegexTimeoutError("Regex operation timed out")
+
     def _safe_regex_search(
         self, pattern: str, text: str
     ) -> tuple[bool, re.Match[str] | None, str]:
         """Perform a regex search with safety checks and timeout protection.
+
+        On Unix systems, uses signal.alarm for true timeout enforcement.
+        On Windows or when signal is unavailable, falls back to time tracking
+        with comprehensive pattern validation.
 
         Args:
             pattern: The regex pattern to search for.
@@ -221,23 +384,129 @@ class ServiceInvariantEvaluator:
         if not is_safe:
             return (False, None, error_msg)
 
-        # Perform the search with time tracking
+        # Security: Limit input text length to prevent DoS
+        if len(text) > self.MAX_REGEX_INPUT_LENGTH:
+            return (
+                False,
+                None,
+                f"Input text too long (max {self.MAX_REGEX_INPUT_LENGTH} chars)",
+            )
+
+        # Determine if we can use signal-based timeout (Unix only, main thread only)
+        can_use_signal = (
+            sys.platform != "win32"
+            and hasattr(signal, "SIGALRM")
+            and hasattr(signal, "alarm")
+        )
+
         start_time = time.perf_counter()
-        try:
-            match = re.search(pattern, text)
-            elapsed = time.perf_counter() - start_time
 
-            # Log warning if regex took too long (potential slow pattern)
-            if elapsed > self.REGEX_TIMEOUT_SECONDS:
-                logger.warning(
-                    "Slow regex pattern detected: took %.2f seconds (pattern: %s)",
-                    elapsed,
-                    pattern[:50] + "..." if len(pattern) > 50 else pattern,
+        if can_use_signal:
+            # Use signal-based timeout on Unix
+            old_handler = signal.signal(signal.SIGALRM, self._regex_timeout_handler)
+            try:
+                # Set alarm for timeout (rounded up to next second)
+                signal.alarm(int(self.REGEX_TIMEOUT_SECONDS) + 1)
+                match = re.search(pattern, text)
+                signal.alarm(0)  # Cancel the alarm
+                return (True, match, "")
+            except RegexTimeoutError:
+                return (
+                    False,
+                    None,
+                    f"Regex timed out after {self.REGEX_TIMEOUT_SECONDS}s",
                 )
+            except re.error as e:
+                signal.alarm(0)
+                return (False, None, f"Regex error: {e}")
+            finally:
+                signal.alarm(0)  # Ensure alarm is cancelled
+                signal.signal(signal.SIGALRM, old_handler)
+        else:
+            # Fallback: time tracking with post-hoc warning (Windows or non-main thread)
+            try:
+                match = re.search(pattern, text)
+                elapsed = time.perf_counter() - start_time
 
-            return (True, match, "")
-        except re.error as e:
-            return (False, None, f"Regex error: {e}")
+                # Log warning if regex took too long (potential slow pattern)
+                if elapsed > self.REGEX_TIMEOUT_SECONDS:
+                    logger.warning(
+                        "Slow regex pattern detected: took %.2f seconds (pattern: %s)",
+                        elapsed,
+                        pattern[:50] + "..." if len(pattern) > 50 else pattern,
+                    )
+
+                return (True, match, "")
+            except re.error as e:
+                return (False, None, f"Regex error: {e}")
+
+    def _compute_schema_hash(self, schema: dict[str, object]) -> str:
+        """Compute a stable hash for a JSON schema.
+
+        Uses SHA-256 of the JSON-serialized schema with sorted keys to ensure
+        consistent hashing regardless of dict ordering.
+
+        Args:
+            schema: The JSON schema dictionary.
+
+        Returns:
+            Hex-encoded SHA-256 hash of the serialized schema.
+        """
+        # Use sort_keys=True for deterministic ordering
+        # Use separators to minimize whitespace for consistent hashing
+        serialized = json.dumps(schema, sort_keys=True, separators=(",", ":"))
+        return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
+
+    def _get_cached_validator(self, schema: dict[str, object]) -> Validator:
+        """Get or create a cached validator for the given schema.
+
+        Uses LRU eviction when cache size exceeds SCHEMA_VALIDATOR_CACHE_SIZE.
+        The validator class is auto-detected based on the schema's $schema field.
+
+        Args:
+            schema: The JSON schema dictionary.
+
+        Returns:
+            A compiled validator instance for the schema.
+        """
+        schema_hash = self._compute_schema_hash(schema)
+
+        # Check if validator is cached (and move to end for LRU ordering)
+        if schema_hash in self._schema_validator_cache:
+            # Move to end to mark as recently used
+            self._schema_validator_cache.move_to_end(schema_hash)
+            return self._schema_validator_cache[schema_hash]
+
+        # Create new validator using the appropriate validator class
+        # validator_for auto-detects based on $schema field, defaults to Draft7
+        validator_cls = jsonschema.validators.validator_for(schema)
+        # check_schema validates the schema itself before we use it
+        validator_cls.check_schema(schema)
+        validator = validator_cls(schema)
+
+        # Evict oldest entries if cache is full
+        while len(self._schema_validator_cache) >= self.SCHEMA_VALIDATOR_CACHE_SIZE:
+            self._schema_validator_cache.popitem(last=False)
+
+        # Cache the new validator
+        self._schema_validator_cache[schema_hash] = validator
+
+        return validator
+
+    def clear_validator_cache(self) -> None:
+        """Clear the schema validator cache.
+
+        Useful for testing or when memory needs to be freed.
+        """
+        self._schema_validator_cache.clear()
+
+    def get_validator_cache_size(self) -> int:
+        """Get the current number of cached validators.
+
+        Returns:
+            Number of validators currently in the cache.
+        """
+        return len(self._schema_validator_cache)
 
     def evaluate(
         self,
@@ -421,6 +690,9 @@ class ServiceInvariantEvaluator:
     ) -> tuple[bool, str, Any, Any]:
         """Evaluate JSON schema validation.
 
+        Uses cached validators for improved performance when validating
+        multiple outputs against the same schema.
+
         Args:
             config: Must contain 'json_schema' key with a JSON Schema dict.
             output: The output to validate against the schema.
@@ -438,7 +710,10 @@ class ServiceInvariantEvaluator:
             )
 
         try:
-            jsonschema.validate(output, json_schema)
+            # Get or create cached validator for this schema
+            validator = self._get_cached_validator(json_schema)
+            # Validate the output against the cached validator
+            validator.validate(output)
             return (True, "Schema validation passed", None, json_schema)
         except jsonschema.ValidationError as e:
             path = (
@@ -820,65 +1095,154 @@ class ServiceInvariantEvaluator:
         """Evaluate custom callable validation.
 
         Dynamically imports and executes a user-defined validation function.
+        This allows users to define arbitrary validation logic that cannot be
+        expressed with the built-in invariant types (SCHEMA, FIELD_PRESENCE,
+        FIELD_VALUE, THRESHOLD, LATENCY, COST).
 
-        Custom Callable Patterns:
-            Callables must accept (output: dict, **kwargs) and return either:
+        Custom Callable Signatures:
+            Custom callables must follow one of these two signature patterns:
 
-            1. Boolean only:
-                def my_validator(output: dict, **kwargs) -> bool:
+            **Pattern 1: Boolean-only return** (simple validators)::
+
+                def my_validator(output: dict[str, Any], **kwargs) -> bool:
+                    '''Returns True if validation passes, False otherwise.'''
                     return "required_field" in output
 
-            2. Tuple with message:
-                def my_validator(output: dict, **kwargs) -> tuple[bool, str]:
+            **Pattern 2: Tuple return with message** (descriptive validators)::
+
+                def my_validator(output: dict[str, Any], **kwargs) -> tuple[bool, str]:
+                    '''Returns (passed, message) for detailed feedback.'''
                     if "required_field" not in output:
                         return (False, "Missing required_field")
                     return (True, "Validation passed")
 
-        Configuration:
-            - callable_path: Module path in "module.path:function" or
-              "module.path.function" format
-            - Additional config keys are passed as kwargs to the callable
+            The ``**kwargs`` parameter receives any additional configuration keys
+            from the invariant config (excluding ``callable_path`` itself).
 
-        Security:
-            When allowed_import_paths is configured, only callables from
-            authorized module prefixes are permitted. The check uses strict
-            boundary matching (checking for '.' or ':' after prefix) to prevent
-            bypass attacks like "builtins_evil" matching "builtins".
+        Configuration Schema:
+            The config dictionary must contain:
 
-            Example:
-                evaluator = ServiceInvariantEvaluator(
-                    allowed_import_paths=["myapp.validators", "myapp.checks"]
-                )
-                # Only callables starting with these prefixes are allowed
+            - ``callable_path`` (str, required): Fully qualified Python path to
+              the validation function. Supports two formats:
+
+              - Dot notation: ``"module.submodule.function_name"``
+              - Colon notation: ``"module.submodule:function_name"``
+
+            - Additional keys (optional): Any other key-value pairs in the config
+              are passed as keyword arguments to the callable.
+
+        Security Model:
+            Custom callables involve dynamic code execution, which requires
+            careful security consideration:
+
+            **Trusted Code Model** (default):
+                When ``allowed_import_paths=None``, any valid Python path is
+                permitted. Use only when all invariant configurations come from
+                trusted sources (e.g., version-controlled config files).
+
+            **Restricted Model** (recommended for production):
+                When ``allowed_import_paths`` is set, only callables from the
+                specified module prefixes are allowed. Uses strict boundary
+                matching to prevent bypass attacks.
+
+            See ``_is_import_path_allowed()`` for detailed security documentation.
 
         Examples:
-            Config for tuple-returning validator::
+            **Basic boolean validator**::
 
-                {"callable_path": "myapp.validators:check_response", "strict": True}
+                # Validator function
+                def has_valid_status(output: dict, **kwargs) -> bool:
+                    return output.get("status") in ["success", "completed"]
 
-            Config for bool-returning validator::
+                # Invariant config
+                invariant = ModelInvariant(
+                    name="status_check",
+                    type=EnumInvariantType.CUSTOM,
+                    severity=EnumInvariantSeverity.CRITICAL,
+                    config={"callable_path": "myapp.validators.has_valid_status"},
+                )
 
-                {"callable_path": "myapp.validators.is_valid"}
+            **Validator with kwargs**::
 
-            Custom validator with kwargs::
+                # Validator function
+                def check_min_items(
+                    output: dict,
+                    min_count: int = 1,
+                    field: str = "items",
+                    **kwargs
+                ) -> tuple[bool, str]:
+                    items = output.get(field, [])
+                    count = len(items) if isinstance(items, list) else 0
+                    if count >= min_count:
+                        return (True, f"Found {count} items (min: {min_count})")
+                    return (False, f"Only {count} items, need at least {min_count}")
 
-                def check_min_length(output: dict, min_length: int = 10, **kwargs) -> tuple[bool, str]:
-                    text = output.get("text", "")
-                    if len(text) >= min_length:
-                        return (True, f"Text length {len(text)} meets minimum {min_length}")
-                    return (False, f"Text length {len(text)} below minimum {min_length}")
+                # Invariant config - kwargs are passed to the function
+                config = {
+                    "callable_path": "myapp.validators:check_min_items",
+                    "min_count": 5,
+                    "field": "results"
+                }
 
-                # Config: {"callable_path": "myapp.validators:check_min_length", "min_length": 50}
+            **Validator with complex business logic**::
+
+                def validate_api_response(
+                    output: dict,
+                    require_pagination: bool = False,
+                    **kwargs
+                ) -> tuple[bool, str]:
+                    '''Validate API response structure and content.'''
+                    errors = []
+
+                    # Check required fields
+                    if "data" not in output:
+                        errors.append("Missing 'data' field")
+
+                    # Check pagination if required
+                    if require_pagination:
+                        if "pagination" not in output:
+                            errors.append("Missing 'pagination' field")
+                        elif not output["pagination"].get("total"):
+                            errors.append("Pagination missing 'total'")
+
+                    if errors:
+                        return (False, "; ".join(errors))
+                    return (True, "API response is valid")
+
+            **Using colon notation (entry point style)**::
+
+                config = {"callable_path": "myapp.validators:check_response"}
+                # Equivalent to: "myapp.validators.check_response"
+
+        Thread Safety:
+            Custom callables should be stateless and thread-safe. Avoid using
+            module-level mutable state in validator functions. If state is
+            required, use thread-local storage or pass configuration via kwargs.
+
+        Error Handling:
+            - **Import errors**: Returns failure with import error message
+            - **Missing function**: Returns failure with AttributeError message
+            - **Exception in callable**: Captured and returned as failure
+            - **Invalid return type**: Returns failure with type error message
 
         Args:
-            config: Must contain 'callable_path' with module.path:function format.
-                Additional keys are passed as kwargs to the callable.
-            output: The output dictionary to pass to the custom callable.
+            config: Configuration dictionary. Must contain ``callable_path`` with
+                the fully qualified Python path to the validation function.
+                Additional keys are passed as keyword arguments to the callable.
+            output: The output dictionary to validate. Passed as the first
+                positional argument to the custom callable.
 
         Returns:
-            Tuple of (passed, message, actual_value, expected_value).
-            On import/attribute error: (False, error_message, None, callable_path)
-            On callable exception: (False, exception_message, None, callable_path)
+            Tuple of (passed, message, actual_value, expected_value):
+
+            - ``passed``: True if validation succeeded, False otherwise
+            - ``message``: Description of the result (from callable or generated)
+            - ``actual_value``: Always None for custom callables
+            - ``expected_value``: The callable_path that was invoked
+
+        Raises:
+            This method does not raise exceptions. All errors are captured and
+            returned as failed validation results with descriptive messages.
         """
         callable_path = config.get("callable_path")
         if not isinstance(callable_path, str):
@@ -906,6 +1270,21 @@ class ServiceInvariantEvaluator:
                 callable_path,
             )
 
+        # Security: Defense-in-depth - also validate the parsed module_path
+        # This catches edge cases where callable_path validation might pass
+        # but the actual module being imported is different
+        if not self._is_module_path_allowed(module_path):
+            logger.warning(
+                "Module path not in allowed list (security): %r",
+                module_path[:100] if len(module_path) > 100 else module_path,
+            )
+            return (
+                False,
+                f"Module path not in allowed list: {module_path}",
+                None,
+                callable_path,
+            )
+
         # Dynamic import
         try:
             module = importlib.import_module(module_path)
@@ -917,6 +1296,20 @@ class ServiceInvariantEvaluator:
             return (
                 False,
                 f"Failed to import callable: {e}",
+                None,
+                callable_path,
+            )
+
+        # Security: Verify the resolved attribute is actually callable
+        if not callable(func):
+            logger.warning(
+                "Resolved attribute is not callable (security): %r -> %s",
+                callable_path,
+                type(func).__name__,
+            )
+            return (
+                False,
+                f"Resolved path is not callable: {callable_path} (got {type(func).__name__})",
                 None,
                 callable_path,
             )
@@ -1021,4 +1414,4 @@ class ServiceInvariantEvaluator:
         return (True, current)
 
 
-__all__ = ["ServiceInvariantEvaluator"]
+__all__ = ["ServiceInvariantEvaluator", "RegexTimeoutError"]
