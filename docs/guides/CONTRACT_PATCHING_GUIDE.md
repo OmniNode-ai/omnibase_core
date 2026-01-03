@@ -574,7 +574,7 @@ patch = ModelContractPatch(
     ),
 )
 
-# Verify descriptor overrides
+# Verify behavior overrides
 assert patch.descriptor.timeout_ms == 60000
 assert patch.descriptor.retry_policy.max_retries == 5
 ```

@@ -770,7 +770,7 @@ class TestIsProtocolFile:
         """Test handling of OSError during file reading."""
         nonexistent_path = Path("/nonexistent/file.py")
 
-        with caplog.at_level(logging.WARNING):
+        with caplog.at_level(logging.DEBUG):
             result = is_protocol_file(nonexistent_path)
 
             assert result is False

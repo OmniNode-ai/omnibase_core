@@ -277,7 +277,8 @@ class ModelProviderDescriptor(BaseModel):
         # Lazy import to avoid circular dependency
         from omnibase_core.models.health.model_health_status import ModelHealthStatus
 
-        if isinstance(v, ModelHealthStatus):
+        # Duck-type check for ModelHealthStatus (handles pytest-xdist class identity issues)
+        if type(v).__name__ == "ModelHealthStatus":
             return v
 
         if isinstance(v, dict):
