@@ -446,7 +446,7 @@ class BackendCacheRedis:
             self._connected = True
             # Don't log URL - may contain credentials
             logger.debug("Connected to Redis")
-        except (RedisError, ConnectionError, TimeoutError, OSError) as e:
+        except (ConnectionError, OSError, RedisError, TimeoutError) as e:
             # Sanitize error message to prevent credential leakage
             safe_error = sanitize_error_message(str(e))
             # Use error not exception - traceback will be at caller level after re-raise
@@ -485,7 +485,7 @@ class BackendCacheRedis:
         try:
             if self._pool is not None:
                 await self._pool.disconnect()
-        except (RedisError, ConnectionError, TimeoutError, OSError) as e:
+        except (ConnectionError, OSError, RedisError, TimeoutError) as e:
             # Sanitize to prevent credential leakage
             # Note: cleanup intentionally does not raise - must be robust
             logger.warning(
@@ -509,7 +509,7 @@ class BackendCacheRedis:
         try:
             if self._client:
                 await self._client.close()
-        except (RedisError, ConnectionError, TimeoutError, OSError) as e:
+        except (ConnectionError, OSError, RedisError, TimeoutError) as e:
             # Sanitize to prevent credential leakage
             # Note: cleanup intentionally does not raise - must be robust
             logger.warning(
@@ -521,7 +521,7 @@ class BackendCacheRedis:
         try:
             if self._pool:
                 await self._pool.disconnect()
-        except (RedisError, ConnectionError, TimeoutError, OSError) as e:
+        except (ConnectionError, OSError, RedisError, TimeoutError) as e:
             # Sanitize to prevent credential leakage
             # Note: cleanup intentionally does not raise - must be robust
             logger.warning(
@@ -561,7 +561,7 @@ class BackendCacheRedis:
         except json.JSONDecodeError as e:
             logger.warning("Failed to deserialize cache value for key '%s': %s", key, e)
             return None
-        except (RedisError, ConnectionError, TimeoutError, OSError) as e:
+        except (ConnectionError, OSError, RedisError, TimeoutError) as e:
             logger.warning(
                 "Redis get failed for key '%s': %s", key, sanitize_error_message(str(e))
             )
@@ -608,7 +608,7 @@ class BackendCacheRedis:
                 await self._client.set(prefixed_key, data)
         except (TypeError, ValueError) as e:
             logger.warning("Failed to serialize cache value for key '%s': %s", key, e)
-        except (RedisError, ConnectionError, TimeoutError, OSError) as e:
+        except (ConnectionError, OSError, RedisError, TimeoutError) as e:
             logger.warning(
                 "Redis set failed for key '%s': %s", key, sanitize_error_message(str(e))
             )
@@ -630,7 +630,7 @@ class BackendCacheRedis:
         try:
             prefixed_key = self._make_key(key)
             await self._client.delete(prefixed_key)
-        except (RedisError, ConnectionError, TimeoutError, OSError) as e:
+        except (ConnectionError, OSError, RedisError, TimeoutError) as e:
             logger.warning(
                 "Redis delete failed for key '%s': %s",
                 key,
@@ -726,7 +726,7 @@ class BackendCacheRedis:
                 # No prefix - flush entire database
                 logger.debug("Flushing entire Redis database (no prefix configured)")
                 await self._client.flushdb()
-        except (RedisError, ConnectionError, TimeoutError, OSError) as e:
+        except (ConnectionError, OSError, RedisError, TimeoutError) as e:
             logger.warning("Redis clear failed: %s", sanitize_error_message(str(e)))
 
     async def exists(self, key: str) -> bool:
@@ -751,7 +751,7 @@ class BackendCacheRedis:
             prefixed_key = self._make_key(key)
             result = await self._client.exists(prefixed_key)
             return bool(result > 0)
-        except (RedisError, ConnectionError, TimeoutError, OSError) as e:
+        except (ConnectionError, OSError, RedisError, TimeoutError) as e:
             logger.warning(
                 "Redis exists check failed for key '%s': %s",
                 key,
@@ -780,6 +780,6 @@ class BackendCacheRedis:
         try:
             await self._client.ping()
             return True
-        except (RedisError, ConnectionError, TimeoutError, OSError):
+        except (ConnectionError, OSError, RedisError, TimeoutError):
             # Health check returns False on failure - does not raise
             return False

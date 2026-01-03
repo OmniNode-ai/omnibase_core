@@ -502,12 +502,12 @@ class MixinCaching:
                 # L2 miss is not a failure - reset count on successful communication
                 self._reset_failure_count()
             except (
-                ConnectionError,
-                TimeoutError,
-                OSError,
-                ValueError,
-                TypeError,
                 AttributeError,
+                ConnectionError,
+                OSError,
+                TimeoutError,
+                TypeError,
+                ValueError,
             ) as e:
                 # Graceful degradation with cleanup triggering
                 # Catches: network errors, serialization issues, backend interface problems
@@ -568,12 +568,12 @@ class MixinCaching:
                 # Reset failure count on successful L2 operation
                 self._reset_failure_count()
             except (
-                ConnectionError,
-                TimeoutError,
-                OSError,
-                ValueError,
-                TypeError,
                 AttributeError,
+                ConnectionError,
+                OSError,
+                TimeoutError,
+                TypeError,
+                ValueError,
             ) as e:
                 # Graceful degradation with cleanup triggering
                 # Catches: network errors, serialization issues, backend interface problems
@@ -607,12 +607,12 @@ class MixinCaching:
                 # Reset failure count on successful L2 operation
                 self._reset_failure_count()
             except (
-                ConnectionError,
-                TimeoutError,
-                OSError,
-                ValueError,
-                TypeError,
                 AttributeError,
+                ConnectionError,
+                OSError,
+                TimeoutError,
+                TypeError,
+                ValueError,
             ) as e:
                 # Graceful degradation with cleanup triggering
                 # Catches: network errors, serialization issues, backend interface problems
@@ -638,12 +638,12 @@ class MixinCaching:
                 # Reset failure count on successful L2 operation
                 self._reset_failure_count()
             except (
-                ConnectionError,
-                TimeoutError,
-                OSError,
-                ValueError,
-                TypeError,
                 AttributeError,
+                ConnectionError,
+                OSError,
+                TimeoutError,
+                TypeError,
+                ValueError,
             ) as e:
                 # Graceful degradation with cleanup triggering
                 # Catches: network errors, serialization issues, backend interface problems

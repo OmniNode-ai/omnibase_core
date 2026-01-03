@@ -286,7 +286,7 @@ class BuilderExecutionPlan:
 
         Args:
             hooks: List of hooks to sort.
-            hook_map: Mapping of hook_id to hook.
+            hook_map: Mapping of hook_name to hook.
             phase: The pipeline phase being processed.
 
         Returns:

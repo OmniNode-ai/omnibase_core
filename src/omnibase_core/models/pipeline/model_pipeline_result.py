@@ -26,9 +26,19 @@ class ModelPipelineResult(BaseModel):
     **Partially thread-safe with caveats.**
 
     This model uses ``frozen=True``, making the result itself immutable.
-    However, the nested ``context`` field (ModelPipelineContext) is
-    intentionally mutable to allow inter-hook communication during pipeline
-    execution.
+    The ``errors`` field is a tuple (immutable), ensuring captured errors
+    cannot be modified after creation. However, the nested ``context`` field
+    (ModelPipelineContext) is intentionally mutable to allow inter-hook
+    communication during pipeline execution.
+
+    Immutable Fields
+    ----------------
+    - ``success``: bool (immutable by nature)
+    - ``errors``: tuple of ModelHookError (immutable - safe to share)
+
+    Mutable Fields
+    --------------
+    - ``context``: ModelPipelineContext (intentionally mutable for hook communication)
 
     .. warning:: **Mutable Context in Frozen Result**
 
@@ -91,9 +101,12 @@ class ModelPipelineResult(BaseModel):
         ...,
         description="Whether the pipeline completed without errors",
     )
-    errors: list[ModelHookError] = Field(
-        default_factory=list,
-        description="Errors captured from continue-on-error phases",
+    errors: tuple[ModelHookError, ...] = Field(
+        default=(),
+        description=(
+            "Errors captured from continue-on-error phases. "
+            "Immutable tuple for thread-safe access across concurrent consumers."
+        ),
     )
     context: ModelPipelineContext | None = Field(
         default=None,
