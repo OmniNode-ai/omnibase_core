@@ -52,8 +52,8 @@ from omnibase_core.models.execution.model_resolution_metadata import (
 from omnibase_core.models.execution.model_tie_breaker_decision import (
     ModelTieBreakerDecision,
 )
-from omnibase_core.resolution._dependency_graph import _DependencyGraph
-from omnibase_core.resolution._handler_info import _HandlerInfo
+from omnibase_core.resolution._resolver_dependency_graph import _DependencyGraph
+from omnibase_core.resolution._resolver_handler_info import _HandlerInfo
 
 # Version of the resolver for tracking
 _RESOLVER_VERSION = "0.4.1"
