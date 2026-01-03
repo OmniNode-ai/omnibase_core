@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Invariant type enumeration for user-defined validation rules.
 
@@ -7,6 +5,7 @@ Invariants are validation rules that ensure AI model changes are safe
 before production deployment.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 

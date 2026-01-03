@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Invariant severity enumeration for user-defined validation rules.
 
@@ -7,6 +5,7 @@ Defines the severity levels for invariant validation failures,
 determining how the system responds to failed checks.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 
