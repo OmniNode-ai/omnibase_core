@@ -256,6 +256,7 @@ def validate_string_list(
     min_length: int = 1,
     strip_whitespace: bool = True,
     reject_empty_list: bool = False,
+    warn_empty_list: bool = False,
 ) -> list[str] | None:
     """Validate a list of strings, ensuring no empty values.
 
@@ -269,6 +270,8 @@ def validate_string_list(
         strip_whitespace: If True, strip whitespace from each value.
         reject_empty_list: If True, raise ValueError for empty lists.
             Use for add/remove operations where an empty list is likely a user error.
+        warn_empty_list: If True, log a warning for empty lists but don't reject.
+            Useful for detecting potential user errors without failing validation.
 
     Returns:
         Validated list of strings, or None if input was None.
@@ -293,10 +296,17 @@ def validate_string_list(
     if values is None:
         return None
 
-    if reject_empty_list and len(values) == 0:
-        logger.debug(f"Validation failed for {field_name}: empty list rejected")
-        # error-ok: Pydantic validators require ValueError
-        raise ValueError(f"{field_name}: List cannot be empty")
+    if len(values) == 0:
+        if reject_empty_list:
+            logger.debug(f"Validation failed for {field_name}: empty list rejected")
+            # error-ok: Pydantic validators require ValueError
+            raise ValueError(f"{field_name}: List cannot be empty")
+        if warn_empty_list:
+            logger.warning(
+                f"Empty list provided for {field_name}. "
+                "Consider omitting the field or providing values."
+            )
+        return values
 
     validated: list[str] = []
     for i, value in enumerate(values):
@@ -331,6 +341,7 @@ def validate_onex_name_list(
     *,
     normalize_lowercase: bool = True,
     reject_empty_list: bool = False,
+    warn_empty_list: bool = False,
 ) -> list[str] | None:
     """Validate a list of ONEX-compliant names.
 
@@ -343,6 +354,8 @@ def validate_onex_name_list(
         normalize_lowercase: If True, normalize all names to lowercase.
         reject_empty_list: If True, raise ValueError for empty lists.
             Use for add/remove operations where an empty list is likely a user error.
+        warn_empty_list: If True, log a warning for empty lists but don't reject.
+            Useful for detecting potential user errors without failing validation.
 
     Returns:
         Validated and optionally normalized list of names, or None if input was None.
@@ -368,10 +381,17 @@ def validate_onex_name_list(
     if values is None:
         return None
 
-    if reject_empty_list and len(values) == 0:
-        logger.debug(f"Validation failed for {field_name}: empty list rejected")
-        # error-ok: Pydantic validators require ValueError
-        raise ValueError(f"{field_name}: List cannot be empty")
+    if len(values) == 0:
+        if reject_empty_list:
+            logger.debug(f"Validation failed for {field_name}: empty list rejected")
+            # error-ok: Pydantic validators require ValueError
+            raise ValueError(f"{field_name}: List cannot be empty")
+        if warn_empty_list:
+            logger.warning(
+                f"Empty list provided for {field_name}. "
+                "Consider omitting the field or providing values."
+            )
+        return values
 
     validated: list[str] = []
     for i, name in enumerate(values):
@@ -407,17 +427,22 @@ def detect_add_remove_conflicts(
     field_name: str,
     *,
     case_sensitive: bool = False,
+    warn_empty_lists: bool = False,
 ) -> list[str]:
     """Detect conflicts between add and remove operations.
 
     A conflict occurs when the same value appears in both the add and
     remove lists, which would result in undefined or contradictory behavior.
 
+    Uses O(n) set-based duplicate detection for efficient conflict checking.
+
     Args:
         add_values: Values being added (may be pre-normalized).
         remove_values: Values being removed (may be pre-normalized).
         field_name: Name of the field (for logging).
         case_sensitive: If True, compare values case-sensitively.
+        warn_empty_lists: If True, log a warning when both lists are empty.
+            Useful for detecting potential user errors in patch operations.
 
     Returns:
         List of conflicting values (empty if no conflicts).
@@ -431,10 +456,26 @@ def detect_add_remove_conflicts(
         ...     ["foo"], ["bar"], "handlers"
         ... )
         []
+        >>> detect_add_remove_conflicts(
+        ...     [], [], "handlers", warn_empty_lists=True
+        ... )
+        []  # Logs warning about empty lists
     """
     if add_values is None or remove_values is None:
+        logger.debug(
+            f"Skipping conflict detection for {field_name}: "
+            f"add_values={add_values is not None}, remove_values={remove_values is not None}"
+        )
         return []
 
+    # Check for empty lists when both are provided
+    if warn_empty_lists and len(add_values) == 0 and len(remove_values) == 0:
+        logger.warning(
+            f"Both add and remove lists are empty for {field_name}. "
+            "This may indicate a user error in the patch definition."
+        )
+
+    # O(n) set-based conflict detection
     if case_sensitive:
         add_set = set(add_values)
         remove_set = set(remove_values)
@@ -448,6 +489,11 @@ def detect_add_remove_conflicts(
         logger.warning(
             f"Detected {len(conflicts)} add/remove conflicts for {field_name}: "
             f"{conflicts}"
+        )
+    else:
+        logger.debug(
+            f"No conflicts detected for {field_name} "
+            f"(add={len(add_values)}, remove={len(remove_values)})"
         )
 
     return conflicts
@@ -704,17 +750,37 @@ def suggest_spi_location(protocol: ModelProtocolInfo) -> str:
 
 
 def is_protocol_file(file_path: Path) -> bool:
-    """Check if file likely contains protocols."""
+    """Check if file likely contains protocols.
+
+    Args:
+        file_path: Path to the Python file to check.
+
+    Returns:
+        True if file likely contains protocols, False otherwise.
+
+    Note:
+        This function returns False rather than raising exceptions for
+        file access errors, as it's designed for file discovery where
+        individual file failures should not stop the entire operation.
+
+        Logging levels used:
+        - DEBUG: Normal operations (filename check passed)
+        - WARNING: Expected/recoverable errors (file access, encoding)
+    """
     try:
         # Check filename
         if "protocol" in file_path.name.lower() or file_path.name.startswith(
             "protocol_",
         ):
+            logger.debug(f"File {file_path} matches protocol filename pattern")
             return True
 
         # Check file content (first 1000 chars for performance)
         content_sample = file_path.read_text(encoding="utf-8", errors="ignore")[:1000]
-        return "class Protocol" in content_sample
+        is_protocol = "class Protocol" in content_sample
+        if is_protocol:
+            logger.debug(f"File {file_path} contains protocol class definition")
+        return is_protocol
 
     except (OSError, ValueError) as e:
         # Expected errors: file access issues (OSError), invalid path operations (ValueError)

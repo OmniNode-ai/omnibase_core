@@ -1781,3 +1781,408 @@ class TestTypeGuardTypeNarrowing:
         assert "a" in valid_values
         assert 1 in valid_values
         assert {"key": "value"} in valid_values
+
+
+# =============================================================================
+# ModelRequirementSet.matches() Method Tests
+# =============================================================================
+
+
+@pytest.mark.unit
+class TestModelRequirementSetMatches:
+    """Tests for ModelRequirementSet.matches() method.
+
+    The matches() method implements a **boolean match check with quality score**.
+    This is INTENTIONALLY different from ServiceCapabilityResolver._score_providers()
+    which uses a different scoring scheme for relative ranking.
+
+    Scoring Design Rationale:
+        - Base score of 1.0 represents "valid match" (semantically meaningful)
+        - +0.1 per satisfied preference provides quality differentiation
+        - This differs from _score_providers() which uses 0.0 base + 1.0 per preference
+          because matches() answers "is this valid AND how good?" while
+          _score_providers() ranks already-validated providers
+
+    See Also:
+        - ServiceCapabilityResolver._score_providers() for ranking logic
+        - docs/architecture/CAPABILITY_MATCHING.md for design decisions
+    """
+
+    def test_matches_empty_requirements_always_matches(self) -> None:
+        """Test that empty requirements match any provider with base score 1.0."""
+        reqs = ModelRequirementSet()
+        matches, score, warnings = reqs.matches({"any": "value", "key": 42})
+
+        assert matches is True
+        assert score == 1.0  # Base score, no preferences
+        assert warnings == []
+
+    def test_matches_empty_provider_with_empty_requirements(self) -> None:
+        """Test that empty requirements match empty provider."""
+        reqs = ModelRequirementSet()
+        matches, score, warnings = reqs.matches({})
+
+        assert matches is True
+        assert score == 1.0
+        assert warnings == []
+
+    def test_matches_must_constraint_satisfied(self) -> None:
+        """Test that satisfied must constraint returns match with base score."""
+        reqs = ModelRequirementSet(must={"engine": "postgres"})
+        matches, score, warnings = reqs.matches({"engine": "postgres"})
+
+        assert matches is True
+        assert score == 1.0  # Base score, no preferences
+        assert warnings == []
+
+    def test_matches_must_constraint_unsatisfied_value_mismatch(self) -> None:
+        """Test that unsatisfied must constraint (wrong value) returns no match."""
+        reqs = ModelRequirementSet(must={"engine": "postgres"})
+        matches, score, warnings = reqs.matches({"engine": "mysql"})
+
+        assert matches is False
+        assert score == 0.0  # No match = zero score
+        assert warnings == []  # No warnings on hard constraint failure
+
+    def test_matches_must_constraint_unsatisfied_key_missing(self) -> None:
+        """Test that missing must key returns no match."""
+        reqs = ModelRequirementSet(must={"engine": "postgres"})
+        matches, score, warnings = reqs.matches({"other_key": "value"})
+
+        assert matches is False
+        assert score == 0.0
+        assert warnings == []
+
+    def test_matches_forbid_constraint_satisfied(self) -> None:
+        """Test that non-matching forbid constraint allows match."""
+        reqs = ModelRequirementSet(forbid={"deprecated": True})
+        # Provider doesn't have the forbidden value
+        matches, score, warnings = reqs.matches({"deprecated": False})
+
+        assert matches is True
+        assert score == 1.0
+        assert warnings == []
+
+    def test_matches_forbid_constraint_missing_key_allows_match(self) -> None:
+        """Test that missing forbid key allows match."""
+        reqs = ModelRequirementSet(forbid={"deprecated": True})
+        # Provider doesn't have the key at all
+        matches, score, warnings = reqs.matches({"other": "value"})
+
+        assert matches is True
+        assert score == 1.0
+        assert warnings == []
+
+    def test_matches_forbid_constraint_violated(self) -> None:
+        """Test that matching forbid constraint returns no match."""
+        reqs = ModelRequirementSet(forbid={"deprecated": True})
+        matches, score, warnings = reqs.matches({"deprecated": True})
+
+        assert matches is False
+        assert score == 0.0
+        assert warnings == []
+
+    def test_matches_single_preference_satisfied_adds_0_1(self) -> None:
+        """Test that single satisfied preference adds 0.1 to base score.
+
+        This is a KEY TEST for the scoring design: base 1.0 + 0.1 per preference.
+        """
+        reqs = ModelRequirementSet(prefer={"region": "us-east-1"})
+        matches, score, warnings = reqs.matches({"region": "us-east-1"})
+
+        assert matches is True
+        assert score == 1.1  # 1.0 base + 0.1 for preference
+        assert warnings == []
+
+    def test_matches_multiple_preferences_add_0_1_each(self) -> None:
+        """Test that multiple satisfied preferences each add 0.1.
+
+        With 3 preferences satisfied: 1.0 + 3*0.1 = 1.3
+        """
+        reqs = ModelRequirementSet(
+            prefer={"region": "us-east-1", "fast": True, "version": 14}
+        )
+        matches, score, warnings = reqs.matches(
+            {"region": "us-east-1", "fast": True, "version": 14}
+        )
+
+        assert matches is True
+        assert score == pytest.approx(1.3)  # 1.0 base + 3*0.1
+        assert warnings == []
+
+    def test_matches_unsatisfied_preference_generates_warning(self) -> None:
+        """Test that unsatisfied preference generates warning but still matches."""
+        reqs = ModelRequirementSet(prefer={"region": "us-east-1"})
+        matches, score, warnings = reqs.matches({"region": "us-west-2"})
+
+        assert matches is True  # Still matches (prefer is soft constraint)
+        assert score == 1.0  # Base score only (no preference bonus)
+        assert len(warnings) == 1
+        assert "region" in warnings[0]
+        assert "us-east-1" in warnings[0]
+        assert "us-west-2" in warnings[0]
+
+    def test_matches_missing_preference_key_generates_warning(self) -> None:
+        """Test that missing preference key generates warning with <missing>."""
+        reqs = ModelRequirementSet(prefer={"latency_ms": 10})
+        matches, score, warnings = reqs.matches({"other": "value"})
+
+        assert matches is True
+        assert score == 1.0
+        assert len(warnings) == 1
+        assert "latency_ms" in warnings[0]
+        assert "<missing>" in warnings[0]
+
+    def test_matches_partial_preferences_partial_score(self) -> None:
+        """Test mixed satisfied/unsatisfied preferences.
+
+        With 2 of 3 preferences satisfied: 1.0 + 2*0.1 = 1.2, with 1 warning
+        """
+        reqs = ModelRequirementSet(
+            prefer={"region": "us-east-1", "fast": True, "version": 14}
+        )
+        matches, score, warnings = reqs.matches(
+            {"region": "us-east-1", "fast": True, "version": 13}  # version differs
+        )
+
+        assert matches is True
+        assert score == pytest.approx(1.2)  # 1.0 base + 2*0.1
+        assert len(warnings) == 1
+        assert "version" in warnings[0]
+
+    def test_matches_combined_must_and_prefer(self) -> None:
+        """Test combination of must and prefer constraints."""
+        reqs = ModelRequirementSet(
+            must={"engine": "postgres"},
+            prefer={"version": 14, "ssl": True},
+        )
+        matches, score, warnings = reqs.matches(
+            {"engine": "postgres", "version": 14, "ssl": True}
+        )
+
+        assert matches is True
+        assert score == pytest.approx(1.2)  # 1.0 base + 2*0.1 for preferences
+        assert warnings == []
+
+    def test_matches_must_fails_even_with_perfect_preferences(self) -> None:
+        """Test that must failure overrides any preference matching."""
+        reqs = ModelRequirementSet(
+            must={"engine": "postgres"},
+            prefer={"version": 14, "ssl": True},
+        )
+        matches, score, warnings = reqs.matches(
+            {"engine": "mysql", "version": 14, "ssl": True}  # wrong engine
+        )
+
+        assert matches is False
+        assert score == 0.0  # Hard constraint failure = zero
+        assert warnings == []
+
+    def test_matches_forbid_fails_even_with_perfect_preferences(self) -> None:
+        """Test that forbid failure overrides any preference matching."""
+        reqs = ModelRequirementSet(
+            forbid={"deprecated": True},
+            prefer={"version": 14, "ssl": True},
+        )
+        matches, score, warnings = reqs.matches(
+            {"deprecated": True, "version": 14, "ssl": True}
+        )
+
+        assert matches is False
+        assert score == 0.0
+        assert warnings == []
+
+    def test_matches_hints_do_not_affect_scoring(self) -> None:
+        """Test that hints do not affect match result or score.
+
+        Hints are advisory only and should have no impact on matches().
+        """
+        reqs = ModelRequirementSet(hints={"vendor_preference": ["redis", "memcached"]})
+        # Provider doesn't match any hint
+        matches, score, warnings = reqs.matches({"vendor": "hazelcast"})
+
+        assert matches is True
+        assert score == 1.0  # Base score only, hints don't affect score
+        assert warnings == []  # No warnings for unmet hints
+
+    def test_matches_all_constraint_types_combined(self) -> None:
+        """Test comprehensive example with all constraint types."""
+        reqs = ModelRequirementSet(
+            must={"engine": "postgres", "available": True},
+            prefer={"region": "us-east-1", "version": 14, "ssl": True},
+            forbid={"deprecated": True, "public": True},
+            hints={"vendor": ["aws", "gcp"]},
+        )
+
+        # Full match with all preferences satisfied
+        matches, score, warnings = reqs.matches(
+            {
+                "engine": "postgres",
+                "available": True,
+                "region": "us-east-1",
+                "version": 14,
+                "ssl": True,
+                "deprecated": False,
+                "public": False,
+            }
+        )
+
+        assert matches is True
+        assert score == pytest.approx(1.3)  # 1.0 base + 3*0.1 (3 preferences)
+        assert warnings == []
+
+    def test_matches_docstring_example_full_match(self) -> None:
+        """Test the docstring example: full match returns (True, 1.1, [])."""
+        reqs = ModelRequirementSet(
+            must={"engine": "postgres"},
+            prefer={"version": 14},
+            forbid={"deprecated": True},
+        )
+        result = reqs.matches({"engine": "postgres", "version": 14})
+
+        assert result == (True, 1.1, [])
+
+    def test_matches_docstring_example_must_fail(self) -> None:
+        """Test the docstring example: must failure returns (False, 0.0, [])."""
+        reqs = ModelRequirementSet(
+            must={"engine": "postgres"},
+            prefer={"version": 14},
+            forbid={"deprecated": True},
+        )
+        result = reqs.matches({"engine": "mysql"})
+
+        assert result == (False, 0.0, [])
+
+    def test_matches_docstring_example_forbid_fail(self) -> None:
+        """Test the docstring example: forbid failure returns (False, 0.0, [])."""
+        reqs = ModelRequirementSet(
+            must={"engine": "postgres"},
+            prefer={"version": 14},
+            forbid={"deprecated": True},
+        )
+        result = reqs.matches({"engine": "postgres", "deprecated": True})
+
+        assert result == (False, 0.0, [])
+
+
+@pytest.mark.unit
+class TestModelRequirementSetMatchesScoringDesign:
+    """Tests documenting the INTENTIONAL scoring design difference.
+
+    The matches() method uses base 1.0 + 0.1 per preference, while
+    ServiceCapabilityResolver._score_providers() uses 0.0 + 1.0 per preference.
+
+    This is BY DESIGN because they serve different purposes:
+
+    matches():
+        - Boolean check with quality score
+        - 1.0 base = "valid match" (semantically meaningful)
+        - 0.1 increments for fine-grained quality differentiation
+        - Use case: "does this provider work AND how good is it?"
+
+    _score_providers():
+        - Relative ranking for already-validated providers
+        - 0.0 base (all inputs already passed validation)
+        - 1.0 increments for equal-weight preference ranking
+        - Use case: "which of these valid providers is best?"
+    """
+
+    def test_base_score_is_1_0_for_valid_match(self) -> None:
+        """Verify base score is 1.0, not 0.0.
+
+        This is intentional: 1.0 means "valid provider" in the quality scale.
+        """
+        reqs = ModelRequirementSet(must={"key": "value"})
+        _, score, _ = reqs.matches({"key": "value"})
+
+        assert score == 1.0, (
+            "Base score must be 1.0 for valid match. "
+            "This differs from _score_providers() which uses 0.0 base. "
+            "The 1.0 represents 'valid provider' in the quality scale."
+        )
+
+    def test_preference_increment_is_0_1_not_1_0(self) -> None:
+        """Verify preference increment is 0.1, not 1.0.
+
+        This is intentional: fine-grained quality differentiation.
+        """
+        reqs = ModelRequirementSet(prefer={"a": 1, "b": 2, "c": 3})
+        _, score, _ = reqs.matches({"a": 1, "b": 2, "c": 3})
+
+        assert score == pytest.approx(1.3), (
+            "Score must be 1.0 + 3*0.1 = 1.3 for 3 preferences. "
+            "This differs from _score_providers() which uses 1.0 per preference. "
+            "The 0.1 increments provide fine-grained quality differentiation."
+        )
+
+    def test_score_range_is_1_0_to_1_n(self) -> None:
+        """Verify score range for N preferences is [1.0, 1.0 + N*0.1].
+
+        With 5 preferences, max score is 1.0 + 5*0.1 = 1.5
+        """
+        reqs = ModelRequirementSet(prefer={"a": 1, "b": 2, "c": 3, "d": 4, "e": 5})
+
+        # Minimum valid score (no preferences met)
+        _, min_score, _ = reqs.matches({})
+        assert min_score == pytest.approx(1.0)
+
+        # Maximum score (all preferences met)
+        _, max_score, _ = reqs.matches({"a": 1, "b": 2, "c": 3, "d": 4, "e": 5})
+        assert max_score == pytest.approx(1.5)
+
+    def test_zero_score_only_for_hard_constraint_failure(self) -> None:
+        """Verify 0.0 score only occurs on must/forbid failure.
+
+        A valid provider always has at least 1.0 score.
+        """
+        reqs = ModelRequirementSet(
+            must={"required": True},
+            prefer={"a": 1, "b": 2, "c": 3, "d": 4, "e": 5},
+        )
+
+        # Valid match with NO preferences = 1.0 (not 0.0)
+        _, score_valid, _ = reqs.matches({"required": True})
+        assert score_valid == 1.0, "Valid match must have 1.0 base score"
+
+        # Invalid match = 0.0
+        _, score_invalid, _ = reqs.matches({"required": False})
+        assert score_invalid == 0.0, "Hard constraint failure must have 0.0 score"
+
+    def test_scoring_enables_quality_differentiation(self) -> None:
+        """Demonstrate that scoring enables ranking among valid matches.
+
+        All these providers are "valid" but have different quality scores:
+        - Provider A: 1.0 (minimum valid)
+        - Provider B: 1.2 (2 preferences met)
+        - Provider C: 1.5 (5 preferences met)
+        """
+        reqs = ModelRequirementSet(
+            must={"type": "cache"},
+            prefer={
+                "fast": True,
+                "ssl": True,
+                "region": "us-east-1",
+                "version": 2,
+                "replicas": 3,
+            },
+        )
+
+        _, score_a, _ = reqs.matches({"type": "cache"})
+        _, score_b, _ = reqs.matches({"type": "cache", "fast": True, "ssl": True})
+        _, score_c, _ = reqs.matches(
+            {
+                "type": "cache",
+                "fast": True,
+                "ssl": True,
+                "region": "us-east-1",
+                "version": 2,
+                "replicas": 3,
+            }
+        )
+
+        assert score_a == pytest.approx(1.0)
+        assert score_b == pytest.approx(1.2)
+        assert score_c == pytest.approx(1.5)
+
+        # Ranking is preserved
+        assert score_a < score_b < score_c

@@ -8,6 +8,8 @@ from pydantic import BaseModel, Field
 
 from omnibase_core.models.core.model_tool_security_assessment import (
     ModelToolSecurityAssessment,
+)
+from omnibase_core.models.core.model_tool_security_summary import (
     ModelToolSecuritySummary,
 )
 

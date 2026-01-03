@@ -26,7 +26,7 @@ class ModelMappingConfig(BaseModel):
     config_type: Literal["mapping"] = "mapping"
     field_mappings: dict[str, str]
 
-    model_config = ConfigDict(extra="forbid", frozen=True)
+    model_config = ConfigDict(extra="forbid", frozen=True, from_attributes=True)
 
     @field_validator("field_mappings")
     @classmethod

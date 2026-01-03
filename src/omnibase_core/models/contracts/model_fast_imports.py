@@ -9,6 +9,39 @@ CRITICAL: This module provides zero-import-time loading for contract models.
 NO imports are executed at module level to eliminate cascade effects.
 
 Performance Target: Module import <5ms, contract loading <50ms total
+
+Security:
+    This module uses importlib.import_module() for dynamic imports, but with
+    important security constraints:
+
+    - **Hardcoded Import Paths**: All import paths are defined in the
+      _import_paths dictionary within ModelFastContractFactory and point
+      exclusively to internal omnibase_core contract modules.
+
+    - **Validated Contract Types**: The _import_contract() method only accepts
+      contract_type values that exist as keys in _import_paths. Unknown types
+      raise ModelOnexError with VALIDATION_ERROR code.
+
+    - **Internal-Only Resolution**: Only these modules can be imported:
+        - omnibase_core.models.contracts.model_contract_base
+        - omnibase_core.models.contracts.model_contract_compute
+        - omnibase_core.models.contracts.model_contract_effect
+        - omnibase_core.models.contracts.model_contract_reducer
+        - omnibase_core.models.contracts.model_contract_orchestrator
+
+    Trust Model:
+        - Import paths are TRUSTED (hardcoded constants)
+        - contract_type parameter is validated against known keys only
+        - No user-controlled strings are used in import_module() calls
+        - Module initialization code is trusted (internal ONEX modules)
+
+    Comparison with ModelReference:
+        This module differs from ModelReference.resolve() in that it does not
+        accept arbitrary module paths. ModelReference uses ALLOWED_MODULE_PREFIXES
+        to validate external input, while this module uses a closed set of
+        hardcoded paths with no external input possible.
+
+.. versionadded:: 0.4.0
 """
 
 from typing import cast

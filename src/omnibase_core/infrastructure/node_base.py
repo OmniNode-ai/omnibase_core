@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, TYPE_CHECKING
+from typing import Any, ClassVar, TYPE_CHECKING
 
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
@@ -12,6 +12,46 @@ This module provides the NodeBase class that implements
 LlamaIndex workflow integration, observable state transitions,
 and contract-driven orchestration.
 
+Security:
+    NodeBase performs dynamic imports of tool classes specified in contract
+    files via the main_tool_class field. This is a potential code execution
+    vector if contracts come from untrusted sources.
+
+    **Dynamic Import Security** (_resolve_main_tool):
+        - The main_tool_class is loaded from contract YAML files
+        - Contract files should come from TRUSTED sources only
+        - Optional allowlist validation via ENFORCE_TOOL_IMPORT_ALLOWLIST (default: OFF)
+        - When enabled, only modules matching ALLOWED_TOOL_MODULE_PREFIXES can be imported
+
+    Trust Model:
+        - Contract file source: MUST BE TRUSTED (controls code execution)
+        - main_tool_class path: TRUSTED (comes from trusted contract)
+        - Contract file content: Validated via UtilContractLoader security checks
+
+    Security Assumptions:
+        1. Contract files are provided by trusted sources (system administrators,
+           verified node packages, or trusted configuration management)
+        2. The file system permissions on contract directories prevent
+           unauthorized modification
+        3. Third-party node packages are reviewed before installation
+
+    WARNING:
+        Do NOT load contract files from untrusted sources (user uploads,
+        network requests, untrusted file paths). The main_tool_class field
+        can execute arbitrary Python code via module initialization.
+
+    Defense-in-Depth (Optional Allowlist):
+        NodeBase provides optional allowlist validation for tool imports:
+        - ENFORCE_TOOL_IMPORT_ALLOWLIST: Set to True to enable validation
+        - ALLOWED_TOOL_MODULE_PREFIXES: Tuple of trusted module prefixes
+        - Default prefixes: omnibase_core., omnibase_spi., omnibase_infra.,
+          omnibase_runtime., tests.
+        - Subclasses can override these class variables for custom policies
+        - Similar pattern to ModelReference.ALLOWED_MODULE_PREFIXES
+
+    See Also:
+        - UtilContractLoader: YAML parsing security and content validation
+        - ModelReference: Uses ALLOWED_MODULE_PREFIXES for import validation
 """
 
 import asyncio
@@ -93,6 +133,22 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
     - For concurrent execution, create separate NodeBase instances per thread
     - See docs/guides/THREADING.md for complete thread safety guidelines
     """
+
+    # Security: Allowlist of trusted module prefixes for dynamic tool import.
+    # Only modules matching these prefixes can be imported when ENFORCE_TOOL_IMPORT_ALLOWLIST is True.
+    # Subclasses can override to add additional trusted prefixes.
+    ALLOWED_TOOL_MODULE_PREFIXES: ClassVar[tuple[str, ...]] = (
+        "omnibase_core.",
+        "omnibase_spi.",
+        "omnibase_infra.",
+        "omnibase_runtime.",
+        "tests.",  # Allow test fixtures
+    )
+
+    # Security: Flag to enable/disable tool import allowlist validation.
+    # Default is False (opt-in security feature). Set to True in subclasses
+    # or production deployments to enforce strict import validation.
+    ENFORCE_TOOL_IMPORT_ALLOWLIST: ClassVar[bool] = False
 
     def __init__(
         self,
@@ -301,6 +357,33 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
 
         ONEX 2.0 Pattern: Direct importlib-based tool instantiation.
         No auto-discovery service needed.
+
+        Security Warning:
+            This method uses importlib.import_module() to load the main_tool_class
+            specified in the contract file. This executes module initialization code.
+
+            Contract files MUST come from trusted sources only.
+
+        Security Features:
+            - Optional allowlist validation via ENFORCE_TOOL_IMPORT_ALLOWLIST class variable
+            - When enabled, only modules matching ALLOWED_TOOL_MODULE_PREFIXES can be imported
+            - Default is OFF (opt-in feature); enable in production deployments for defense-in-depth
+            - Subclasses can override ALLOWED_TOOL_MODULE_PREFIXES to add trusted prefixes
+
+        Allowlist Configuration:
+            To enable strict import validation:
+                class MySecureNode(NodeBase):
+                    ENFORCE_TOOL_IMPORT_ALLOWLIST = True
+                    ALLOWED_TOOL_MODULE_PREFIXES = (
+                        "omnibase_core.",
+                        "omnibase_spi.",
+                        "my_trusted_package.",
+                    )
+
+        See Also:
+            - ModelReference.ALLOWED_MODULE_PREFIXES: Similar pattern for reference resolution
+            - ALLOWED_TOOL_MODULE_PREFIXES: Class variable defining trusted module prefixes
+            - ENFORCE_TOOL_IMPORT_ALLOWLIST: Class variable to enable/disable validation
         """
         import importlib
 
@@ -322,7 +405,48 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
 
             module_path, class_name = main_tool_class.rsplit(".", 1)
 
-            # Dynamic import using importlib (ONEX 2.0 pattern)
+            # SECURITY: Dynamic Import Allowlist Validation
+            # =============================================
+            # This validation prevents arbitrary code execution via malicious contract YAML files.
+            # The main_tool_class field in contracts specifies a Python class to import and
+            # instantiate. Without validation, an attacker who can modify contract files could
+            # specify system modules (e.g., os, subprocess) to execute arbitrary code.
+            #
+            # Defense Strategy:
+            #   - ENFORCE_TOOL_IMPORT_ALLOWLIST (default: False) - Opt-in strict validation
+            #   - When enabled, only modules matching ALLOWED_TOOL_MODULE_PREFIXES can be imported
+            #   - Default trusted prefixes: omnibase_core., omnibase_spi., omnibase_infra.,
+            #     omnibase_runtime., tests.
+            #   - Raises SECURITY_VIOLATION error for untrusted modules
+            #
+            # Trust Assumptions (when allowlist is NOT enforced):
+            #   1. Contract files come from trusted sources (admin, verified packages)
+            #   2. File system permissions prevent unauthorized contract modification
+            #   3. Third-party node packages are reviewed before installation
+            #
+            # See Also:
+            #   - ModelReference.ALLOWED_MODULE_PREFIXES: Similar pattern for reference resolution
+            #   - docs/architecture/SECURITY.md: ONEX security architecture documentation
+            if self.ENFORCE_TOOL_IMPORT_ALLOWLIST:
+                if not any(
+                    module_path.startswith(prefix)
+                    for prefix in self.ALLOWED_TOOL_MODULE_PREFIXES
+                ):
+                    raise ModelOnexError(
+                        error_code=EnumCoreErrorCode.SECURITY_VIOLATION,
+                        message=f"Module '{module_path}' not in allowed prefixes for tool import",
+                        context={
+                            "module": module_path,
+                            "allowed": self.ALLOWED_TOOL_MODULE_PREFIXES,
+                            "node_id": str(self.state.node_id),
+                        },
+                        correlation_id=self.correlation_id,
+                    )
+
+            # SECURITY: Dynamic import executes module initialization code.
+            # This is safe ONLY when:
+            #   - Contract files come from trusted sources, OR
+            #   - ENFORCE_TOOL_IMPORT_ALLOWLIST is True (validated above)
             module = importlib.import_module(module_path)
             tool_class = getattr(module, class_name)
 

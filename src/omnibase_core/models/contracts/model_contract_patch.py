@@ -18,7 +18,13 @@ Related:
 
 from typing import ClassVar
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    field_validator,
+    model_validator,
+)
 
 from omnibase_core.models.contracts.model_capability_provided import (
     ModelCapabilityProvided,
@@ -38,6 +44,12 @@ from omnibase_core.validation.validation_utils import (
 __all__ = [
     "ModelContractPatch",
 ]
+
+# Module-level constants for list length limits.
+# These are defined at module scope so they can be used in Field() declarations
+# which evaluate at class definition time (before ClassVar is available).
+_MAX_LIST_ITEMS: int = 100
+_MAX_CAPABILITY_LIST_ITEMS: int = 50
 
 
 class ModelContractPatch(BaseModel):
@@ -65,6 +77,35 @@ class ModelContractPatch(BaseModel):
     New vs Override Contracts:
         - **New contracts**: Must specify name and node_version
         - **Override patches**: Cannot redefine identity fields
+
+    List Field Normalization:
+        Empty lists (``[]``) are automatically normalized to ``None`` for all
+        ``__add`` and ``__remove`` list operation fields. This normalization
+        is intentional for patch semantics:
+
+        - **Rationale**: An empty list means "add/remove nothing" which is
+          semantically equivalent to "no operation" and thus equivalent to
+          omitting the field entirely (``None``).
+        - **Consistency**: Normalizing ensures that ``has_list_operations()``
+          and ``get_add_operations()`` behave consistently regardless of
+          whether the user passed ``[]`` or omitted the field.
+
+        Example equivalence::
+
+            # These three forms are all equivalent after normalization:
+            patch1 = ModelContractPatch(extends=ref, handlers__add=[])
+            patch2 = ModelContractPatch(extends=ref, handlers__add=None)
+            patch3 = ModelContractPatch(extends=ref)  # handlers__add omitted
+
+            assert patch1.handlers__add is None
+            assert patch2.handlers__add is None
+            assert patch3.handlers__add is None
+
+        This applies to all list operation fields: ``handlers__add``,
+        ``handlers__remove``, ``dependencies__add``, ``dependencies__remove``,
+        ``consumed_events__add``, ``consumed_events__remove``,
+        ``capability_inputs__add``, ``capability_inputs__remove``,
+        ``capability_outputs__add``, and ``capability_outputs__remove``.
 
     Attributes:
         extends: Reference to the profile this patch extends.
@@ -180,24 +221,23 @@ class ModelContractPatch(BaseModel):
     # =========================================================================
 
     # Maximum number of items in list operations to prevent excessive patches.
-    # Note: max_length= in Field() must use literal values because Pydantic Field()
-    # evaluates at class definition time before ClassVar is available. Keep in sync.
-    MAX_LIST_ITEMS: ClassVar[int] = 100
+    # Uses module-level constant _MAX_LIST_ITEMS for single source of truth.
+    MAX_LIST_ITEMS: ClassVar[int] = _MAX_LIST_ITEMS
 
     # Maximum number of items for capability list operations (more constrained).
     # Capabilities are typically fewer and more significant than handlers/events.
-    # Note: max_length= in Field() must use literal value (50). Keep in sync.
-    MAX_CAPABILITY_LIST_ITEMS: ClassVar[int] = 50
+    # Uses module-level constant _MAX_CAPABILITY_LIST_ITEMS for single source of truth.
+    MAX_CAPABILITY_LIST_ITEMS: ClassVar[int] = _MAX_CAPABILITY_LIST_ITEMS
 
     handlers__add: list[ModelHandlerSpec] | None = Field(
         default=None,
-        max_length=100,
+        max_length=_MAX_LIST_ITEMS,
         description="Handlers to add to the contract (max 100 items).",
     )
 
     handlers__remove: list[str] | None = Field(
         default=None,
-        max_length=100,
+        max_length=_MAX_LIST_ITEMS,
         description="Handler names to remove from the contract (max 100 items).",
     )
 
@@ -207,13 +247,13 @@ class ModelContractPatch(BaseModel):
 
     dependencies__add: list[ModelDependency] | None = Field(
         default=None,
-        max_length=100,
+        max_length=_MAX_LIST_ITEMS,
         description="Dependencies to add to the contract (max 100 items).",
     )
 
     dependencies__remove: list[str] | None = Field(
         default=None,
-        max_length=100,
+        max_length=_MAX_LIST_ITEMS,
         description="Dependency names to remove from the contract (max 100 items).",
     )
 
@@ -223,13 +263,13 @@ class ModelContractPatch(BaseModel):
 
     consumed_events__add: list[str] | None = Field(
         default=None,
-        max_length=100,
+        max_length=_MAX_LIST_ITEMS,
         description="Event types to add to consumed events (max 100 items).",
     )
 
     consumed_events__remove: list[str] | None = Field(
         default=None,
-        max_length=100,
+        max_length=_MAX_LIST_ITEMS,
         description="Event types to remove from consumed events (max 100 items).",
     )
 
@@ -242,25 +282,25 @@ class ModelContractPatch(BaseModel):
     # to use that model for richer capability requirements.
     capability_inputs__add: list[str] | None = Field(
         default=None,
-        max_length=50,
+        max_length=_MAX_CAPABILITY_LIST_ITEMS,
         description="Required capability names to add (max 50 items).",
     )
 
     capability_inputs__remove: list[str] | None = Field(
         default=None,
-        max_length=50,
+        max_length=_MAX_CAPABILITY_LIST_ITEMS,
         description="Required capability names to remove (max 50 items).",
     )
 
     capability_outputs__add: list[ModelCapabilityProvided] | None = Field(
         default=None,
-        max_length=50,
+        max_length=_MAX_CAPABILITY_LIST_ITEMS,
         description="Provided capabilities to add (max 50 items).",
     )
 
     capability_outputs__remove: list[str] | None = Field(
         default=None,
-        max_length=50,
+        max_length=_MAX_CAPABILITY_LIST_ITEMS,
         description="Provided capability names to remove (max 50 items).",
     )
 
@@ -291,21 +331,32 @@ class ModelContractPatch(BaseModel):
         to "no operation" and should be normalized to None to prevent confusion
         and ensure consistent behavior during patch application.
 
+        This normalization ensures the following three forms are equivalent::
+
+            patch1 = ModelContractPatch(extends=ref, handlers__add=[])
+            patch2 = ModelContractPatch(extends=ref, handlers__add=None)
+            patch3 = ModelContractPatch(extends=ref)  # handlers__add omitted
+
+            # All three result in:
+            assert patch1.handlers__add is None
+            assert patch2.handlers__add is None
+            assert patch3.handlers__add is None
+
         This validation runs first (mode="before") so subsequent validators
-        receive either None or a non-empty list.
+        receive either None or a non-empty list, simplifying type narrowing
+        in downstream code.
 
         Args:
-            v: List value or None.
+            v: List value or None. Type is ``list[object]`` to handle all
+                list types (ModelHandlerSpec, ModelDependency, str, etc.).
 
         Returns:
-            None if the list is empty, otherwise the original list.
+            None if the list is empty, otherwise the original list unchanged.
 
-        Example:
-            >>> # These are equivalent after normalization:
-            >>> patch1 = ModelContractPatch(extends=ref, handlers__add=[])
-            >>> patch2 = ModelContractPatch(extends=ref, handlers__add=None)
-            >>> assert patch1.handlers__add is None
-            >>> assert patch2.handlers__add is None
+        Note:
+            This validator only normalizes empty lists. Non-empty lists pass
+            through unchanged and are validated by type-specific validators
+            (e.g., validate_handlers_remove, validate_consumed_events).
         """
         if v is not None and len(v) == 0:
             return None
@@ -441,14 +492,42 @@ class ModelContractPatch(BaseModel):
         in validate_no_add_remove_conflicts. Detects if the same item
         appears in both add and remove lists.
 
+        Type Narrowing:
+            Both ``add_names`` and ``remove_names`` are typed as ``list[str] | None``
+            because they may be None when the corresponding __add/__remove field
+            is not set. The ``detect_add_remove_conflicts`` function handles None
+            values gracefully, returning an empty list if either input is None.
+
         Args:
             add_names: List of names being added (already extracted from models).
+                May be None if the __add field is not set.
             remove_names: List of names being removed.
+                May be None if the __remove field is not set.
             field_name: Name of the field for error messages.
             all_conflicts: Mutable list to append conflict messages to.
+                **This parameter is mutated in-place.** Conflict messages are
+                appended directly to this list rather than returned.
+
+        Returns:
+            None. Results are accumulated via mutation of ``all_conflicts``.
+
+        Note:
+            **Mutation Pattern**: This method intentionally mutates ``all_conflicts``
+            in-place rather than returning a new list. This design choice:
+
+            1. **Reduces allocations**: Avoids creating intermediate lists when
+               checking 5+ field pairs for conflicts in validate_no_add_remove_conflicts.
+            2. **Simplifies aggregation**: The caller can check multiple field pairs
+               in sequence, accumulating all conflicts into a single list.
+            3. **Follows collector pattern**: Common in validation scenarios where
+               multiple checks contribute to a unified error report.
+
+            The tradeoff is reduced functional purity for improved performance
+            and reduced boilerplate in the calling code.
         """
         conflicts = detect_add_remove_conflicts(add_names, remove_names, field_name)
         if conflicts:
+            # Conflicts are already sorted by detect_add_remove_conflicts
             all_conflicts.append(f"{field_name}: {conflicts}")
 
     # =========================================================================

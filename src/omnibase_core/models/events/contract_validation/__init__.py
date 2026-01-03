@@ -19,13 +19,18 @@ Event Types:
     - ``onex.contract.merge.started``: Merge operation begins
     - ``onex.contract.merge.completed``: Merge operation completes
 
+Note:
+    ModelContractValidationContext is used for contract validation operations.
+    For field-level validation context (field_name, expected, actual), use
+    :class:`omnibase_core.models.context.ModelValidationContext` instead.
+
 Import Example:
     .. code-block:: python
 
         from omnibase_core.models.events.contract_validation import (
             # Base and reference models
             ModelContractRef,
-            ModelValidationContext,
+            ModelContractValidationContext,
             ModelContractValidationEventBase,
             # Validation events
             ModelContractValidationStartedEvent,
@@ -49,7 +54,7 @@ Usage Example:
         from omnibase_core.models.events.contract_validation import (
             ModelContractValidationStartedEvent,
             ModelContractValidationPassedEvent,
-            ModelValidationContext,
+            ModelContractValidationContext,
         )
 
         # Start validation
@@ -57,7 +62,7 @@ Usage Example:
         started_event = ModelContractValidationStartedEvent.create(
             contract_id="my-contract",
             run_id=run_id,
-            context=ModelValidationContext(),
+            context=ModelContractValidationContext(),
         )
 
         # ... perform validation ...
@@ -89,7 +94,7 @@ from omnibase_core.models.events.contract_validation.model_contract_ref import (
     ModelContractRef,
 )
 from omnibase_core.models.events.contract_validation.model_contract_validation_context import (
-    ModelValidationContext,
+    ModelContractValidationContext,
 )
 from omnibase_core.models.events.contract_validation.model_contract_validation_event_base import (
     ModelContractValidationEventBase,
@@ -110,7 +115,7 @@ from omnibase_core.models.events.contract_validation.model_contract_validation_s
 __all__ = [
     # Base and reference models
     "ModelContractRef",
-    "ModelValidationContext",
+    "ModelContractValidationContext",
     "ModelContractValidationEventBase",
     # Validation event models
     "ModelContractValidationStartedEvent",

@@ -14,7 +14,7 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_import_status import EnumImportStatus
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.validation.model_import_validation_result import (
-    ModelValidationResult,
+    ModelImportValidationResult,
 )
 from omnibase_core.models.validation.model_module_import_result import (
     ModelModuleImportResult,
@@ -181,12 +181,12 @@ class CircularImportValidator:
         if self.progress_callback:
             self.progress_callback(message)
 
-    def validate(self) -> ModelValidationResult:
+    def validate(self) -> ModelImportValidationResult:
         """
         Validate all Python modules for circular imports.
 
         Returns:
-            ModelValidationResult containing detailed results of the validation
+            ModelImportValidationResult containing detailed results of the validation
 
         Example:
             >>> validator = CircularImportValidator("/path/to/src")
@@ -199,7 +199,7 @@ class CircularImportValidator:
         self._log("=" * 80)
 
         # Initialize result
-        result = ModelValidationResult(total_files=len(python_files))
+        result = ModelImportValidationResult(total_files=len(python_files))
 
         # Test each file
         for file_path in python_files:

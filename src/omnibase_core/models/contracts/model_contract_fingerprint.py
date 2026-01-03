@@ -95,6 +95,7 @@ class ModelContractFingerprint(BaseModel):
     model_config = ConfigDict(
         frozen=True,
         extra="forbid",
+        from_attributes=True,  # pytest-xdist compatibility
     )
 
     def __str__(self) -> str:

@@ -224,7 +224,7 @@ class TestEnumHandlerCapabilityHelperMethods:
 
         assert set(values_method) == set(values_iteration)
 
-    def test_assert_exhaustive_raises_assertion_error(self):
+    def test_assert_exhaustive_raises_assertion_error(self) -> None:
         """Test that assert_exhaustive raises AssertionError.
 
         Note: Uses AssertionError instead of ModelOnexError to avoid
@@ -239,7 +239,7 @@ class TestEnumHandlerCapabilityHelperMethods:
         assert "Unhandled enum value" in str(exc_info.value)
         assert "unexpected_value" in str(exc_info.value)
 
-    def test_assert_exhaustive_error_message_format(self):
+    def test_assert_exhaustive_error_message_format(self) -> None:
         """Test the error message format of assert_exhaustive."""
         with pytest.raises(AssertionError) as exc_info:
             EnumHandlerCapability.assert_exhaustive(42)  # type: ignore[arg-type]

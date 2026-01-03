@@ -7,6 +7,11 @@ Model Reference.
 Reference to a Pydantic model type for input/output specifications in contracts.
 Part of the contract patching system for OMN-1126.
 
+Security:
+    Dynamic imports are protected by an allowlist (ALLOWED_MODULE_PREFIXES).
+    Only modules from trusted OmniNode packages can be resolved at runtime.
+    This prevents patches from importing arbitrary system modules or third-party packages.
+
 Related:
     - OMN-1126: ModelContractPatch & Patch Validation
 
@@ -14,13 +19,29 @@ Related:
 """
 
 import importlib
+import logging
 from typing import Any, cast
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 __all__ = [
+    "ALLOWED_MODULE_PREFIXES",
     "ModelReference",
 ]
+
+# Security: Allowlist of trusted module prefixes for dynamic import resolution.
+# Only modules matching these prefixes can be resolved at runtime.
+# This prevents patches from importing arbitrary system modules or third-party packages.
+ALLOWED_MODULE_PREFIXES: frozenset[str] = frozenset(
+    [
+        "omnibase_core.",
+        "omnibase_spi.",
+        "omnibase_infra.",
+        "omnibase_runtime.",
+    ]
+)
+
+logger = logging.getLogger(__name__)
 
 
 class ModelReference(BaseModel):
@@ -148,6 +169,18 @@ class ModelReference(BaseModel):
         return f"ModelReference({self.fully_qualified_name!r}{version_str})"
 
     @classmethod
+    def _is_module_allowed(cls, module_path: str) -> bool:
+        """Check if a module path is in the allowlist.
+
+        Args:
+            module_path: The module path to check (e.g., 'omnibase_core.models.events')
+
+        Returns:
+            True if the module path starts with an allowed prefix, False otherwise.
+        """
+        return any(module_path.startswith(prefix) for prefix in ALLOWED_MODULE_PREFIXES)
+
+    @classmethod
     def resolve_import(cls, reference: str) -> type | None:
         """Safely resolve a module/class reference from a fully qualified path.
 
@@ -156,9 +189,11 @@ class ModelReference(BaseModel):
         None rather than raising exceptions.
 
         Security:
-            This method uses ``importlib.import_module()`` which executes module
-            initialization code. Only call with trusted reference strings from
-            validated contract files. Never use with untrusted user input.
+            This method validates the module path against ALLOWED_MODULE_PREFIXES
+            before importing. Only modules from trusted OmniNode packages
+            (omnibase_core, omnibase_spi, omnibase_infra, omnibase_runtime) can
+            be resolved. Attempts to import untrusted modules are logged and
+            return None.
 
         Args:
             reference: Fully qualified module.class path
@@ -167,6 +202,7 @@ class ModelReference(BaseModel):
         Returns:
             The resolved class/type, or None if resolution fails due to:
             - Invalid reference format (no module separator)
+            - Module not in allowlist (security violation)
             - Module not found (ImportError)
             - Class not found in module (AttributeError)
 
@@ -175,12 +211,25 @@ class ModelReference(BaseModel):
             <class 'omnibase_core.models.events.ModelEventEnvelope'>
             >>> ModelReference.resolve_import('nonexistent.module.Class')
             None
+            >>> ModelReference.resolve_import('os.path.join')  # Blocked by allowlist
+            None
         """
         if not reference or "." not in reference:
             return None
 
         try:
             module_path, class_name = reference.rsplit(".", 1)
+
+            # Security: Validate module path against allowlist before importing
+            if not cls._is_module_allowed(module_path):
+                logger.warning(
+                    "Blocked import of untrusted module: '%s' (reference: '%s'). "
+                    "Only modules matching ALLOWED_MODULE_PREFIXES can be imported.",
+                    module_path,
+                    reference,
+                )
+                return None
+
             module = importlib.import_module(module_path)
             return getattr(module, class_name, None)
         except (ImportError, ValueError, AttributeError):
@@ -194,9 +243,11 @@ class ModelReference(BaseModel):
         ModelOnexError instead of returning None when resolution fails.
 
         Security:
-            This method uses ``importlib.import_module()`` which executes module
-            initialization code. Only call with trusted reference strings from
-            validated contract files. Never use with untrusted user input.
+            This method validates the module path against ALLOWED_MODULE_PREFIXES
+            before importing. Only modules from trusted OmniNode packages
+            (omnibase_core, omnibase_spi, omnibase_infra, omnibase_runtime) can
+            be resolved. Attempts to import untrusted modules raise ModelOnexError
+            with IMPORT_ERROR code.
 
         Args:
             reference: Fully qualified module.class path
@@ -207,7 +258,7 @@ class ModelReference(BaseModel):
 
         Raises:
             ModelOnexError: With IMPORT_ERROR or MODULE_NOT_FOUND error code
-                if resolution fails
+                if resolution fails, including when module is not in allowlist
 
         Example:
             >>> ModelReference.resolve_import_or_raise('omnibase_core.models.events.ModelEventEnvelope')
@@ -216,6 +267,10 @@ class ModelReference(BaseModel):
             Traceback (most recent call last):
                 ...
             ModelOnexError: [ONEX_CORE_124_IMPORT_ERROR] Invalid reference format: 'invalid'
+            >>> ModelReference.resolve_import_or_raise('os.path.join')  # doctest: +IGNORE_EXCEPTION_DETAIL
+            Traceback (most recent call last):
+                ...
+            ModelOnexError: [ONEX_CORE_124_IMPORT_ERROR] Module 'os.path' is not in the allowlist
         """
         # Import here to avoid circular dependency
         from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -236,6 +291,25 @@ class ModelReference(BaseModel):
             )
 
         module_path, class_name = reference.rsplit(".", 1)
+
+        # Security: Validate module path against allowlist before importing
+        if not cls._is_module_allowed(module_path):
+            logger.warning(
+                "Blocked import of untrusted module: '%s' (reference: '%s'). "
+                "Only modules matching ALLOWED_MODULE_PREFIXES can be imported.",
+                module_path,
+                reference,
+            )
+            raise ModelOnexError(
+                message=(
+                    f"Module '{module_path}' is not in the allowlist. "
+                    f"Only modules matching {sorted(ALLOWED_MODULE_PREFIXES)} can be imported."
+                ),
+                error_code=EnumCoreErrorCode.IMPORT_ERROR,
+                reference=reference,
+                module_path=module_path,
+                allowed_prefixes=sorted(ALLOWED_MODULE_PREFIXES),
+            )
 
         try:
             module = importlib.import_module(module_path)
@@ -263,15 +337,14 @@ class ModelReference(BaseModel):
     def resolve(self) -> type | None:
         """Resolve this reference to its actual class/type.
 
-        Uses the instance's module and class_name to resolve the reference.
+        **Security Warning**: This method uses importlib.import_module() which executes
+        module initialization code. Only call resolve() on ModelReference instances
+        created from trusted contract files. Never use with untrusted user input.
 
-        Security:
-            This method uses ``importlib.import_module()`` which executes module
-            initialization code. Only call on ModelReference instances created
-            from trusted contract files. Never use with untrusted user input.
+        Module imports are restricted to ALLOWED_MODULE_PREFIXES for defense-in-depth.
 
         Returns:
-            The resolved class/type, or None if resolution fails
+            The resolved type, or None if resolution fails.
 
         Example:
             >>> ref = ModelReference(
@@ -290,15 +363,18 @@ class ModelReference(BaseModel):
         Raises ModelOnexError if resolution fails.
 
         Security:
-            This method uses ``importlib.import_module()`` which executes module
-            initialization code. Only call on ModelReference instances created
-            from trusted contract files. Never use with untrusted user input.
+            This method validates the module path against ALLOWED_MODULE_PREFIXES
+            before importing. Only modules from trusted OmniNode packages
+            (omnibase_core, omnibase_spi, omnibase_infra, omnibase_runtime) can
+            be resolved. Attempts to import untrusted modules raise ModelOnexError
+            with IMPORT_ERROR code.
 
         Returns:
             The resolved class/type
 
         Raises:
-            ModelOnexError: With appropriate error code if resolution fails
+            ModelOnexError: With appropriate error code if resolution fails,
+                including when module is not in allowlist
 
         Example:
             >>> ref = ModelReference(
