@@ -81,6 +81,12 @@ from .contract_validation_invariant_checker import (
     ModelContractValidationEvent,
 )
 
+# Import contract validation pipeline (OMN-1128)
+from .contract_validation_pipeline import (
+    ContractValidationPipeline,
+    ExpandedContractResult,
+)
+
 # =============================================================================
 # ALIAS LOADING STRATEGY: __getattr__ vs Direct Alias
 # =============================================================================
@@ -391,6 +397,9 @@ __all__ = [
     "ContractValidationInvariantChecker",
     "ModelContractValidationEvent",
     "ContractValidationEventType",
+    # Contract validation pipeline (OMN-1128)
+    "ContractValidationPipeline",
+    "ExpandedContractResult",
     # Reserved enum validation (OMN-669, OMN-675)
     # NOTE: validate_execution_mode takes EnumExecutionMode (type-safe)
     # while validate_execution_mode_string takes str (for YAML/config parsing)
