@@ -281,7 +281,7 @@ class MixinNodeExecutor(MixinEventDrivenNode):
                 await asyncio.sleep(0.1)
         except asyncio.CancelledError:
             self._log_info("Executor event loop cancelled")
-        except (RuntimeError, ValueError, OSError) as e:
+        except (OSError, RuntimeError, ValueError) as e:
             self._log_error(f"Executor event loop error: {e}")
             raise
 
@@ -297,7 +297,7 @@ class MixinNodeExecutor(MixinEventDrivenNode):
                 await asyncio.sleep(30)
         except asyncio.CancelledError:
             self._log_info("Health monitor cancelled")
-        except (RuntimeError, ValueError, OSError) as e:
+        except (OSError, RuntimeError, ValueError) as e:
             self._log_error(f"Health monitor error: {e}")
 
     def _is_target_node(self, event: ModelToolInvocationEvent) -> bool:
@@ -449,7 +449,7 @@ class MixinNodeExecutor(MixinEventDrivenNode):
 
             signal.signal(signal.SIGTERM, signal_handler)
             signal.signal(signal.SIGINT, signal_handler)
-        except (RuntimeError, ValueError, OSError) as e:
+        except (OSError, RuntimeError, ValueError) as e:
             self._log_warning(f"Could not register signal handlers: {e}")
 
     def _log_info(self, message: str) -> None:

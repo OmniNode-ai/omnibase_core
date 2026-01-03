@@ -2,8 +2,6 @@
 Request authentication configuration model.
 """
 
-from typing import Any
-
 from pydantic import BaseModel, Field, SecretStr, field_serializer
 
 
@@ -26,7 +24,7 @@ class ModelRequestAuth(BaseModel):
     )
 
     @field_serializer("password", "token", "api_key")
-    def serialize_secret(self, value: Any) -> str | None:
+    def serialize_secret(self, value: SecretStr | None) -> str | None:
         if value and hasattr(value, "get_secret_value"):
             return "***MASKED***"
         # Explicitly return None or str

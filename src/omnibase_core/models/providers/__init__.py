@@ -113,6 +113,38 @@ from omnibase_core.models.providers.model_provider_descriptor import (
     ModelProviderDescriptor,
 )
 
+
+def _rebuild_model_provider_descriptor() -> None:
+    """Rebuild ModelProviderDescriptor to resolve the ModelHealthStatus forward reference.
+
+    This function is called after all imports are complete to ensure the forward
+    reference to ModelHealthStatus (which is imported under TYPE_CHECKING to avoid
+    circular imports) can be resolved at runtime.
+
+    The deferred import approach avoids circular import issues by only importing
+    ModelHealthStatus when needed for model_rebuild(), not at module load time.
+    """
+    try:
+        # Deferred import to avoid circular import at module load time.
+        # Import directly from the module file to minimize import chain.
+        from omnibase_core.models.health.model_health_status import (
+            ModelHealthStatus,
+        )
+
+        # Rebuild with the namespace containing ModelHealthStatus
+        ModelProviderDescriptor.model_rebuild(
+            _types_namespace={"ModelHealthStatus": ModelHealthStatus}
+        )
+    except (ImportError, AttributeError):
+        # During circular import resolution, this may fail - safe to ignore.
+        # The rebuild will succeed when the module is imported through a different path.
+        pass
+
+
+# Attempt to rebuild now. If it fails due to circular imports, it will succeed
+# when the model is accessed through a properly ordered import path.
+_rebuild_model_provider_descriptor()
+
 __all__ = [
     "ModelProviderDescriptor",
 ]

@@ -86,9 +86,9 @@ Thread Safety:
 """
 
 import re
-from typing import ClassVar, Literal
+from typing import ClassVar, Literal, Self
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from omnibase_core.models.projectors.model_projector_behavior import (
     ModelProjectorBehavior,
@@ -217,7 +217,17 @@ class ModelProjectorContract(BaseModel):
 
     consumed_events: list[str] = Field(
         ...,
-        description="List of event names to consume. Must match pattern: lowercase.segments.vN",
+        description=(
+            "List of event names to consume. Must contain at least one event. "
+            "Each event name must match pattern: lowercase.segments.vN"
+        ),
+        min_length=1,
+        json_schema_extra={
+            "items": {
+                "type": "string",
+                "pattern": r"^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)*\.v[0-9]+$",
+            }
+        },
     )
 
     projection_schema: ModelProjectorSchema = Field(
@@ -271,6 +281,30 @@ class ModelProjectorContract(BaseModel):
                 )
         return v
 
+    @model_validator(mode="after")
+    def validate_upsert_key_exists_in_columns(self) -> Self:
+        """Validate that upsert_key references an existing column when specified.
+
+        When the behavior mode is 'upsert' and an explicit upsert_key is provided,
+        this validator ensures the upsert_key corresponds to a column defined in
+        the projection schema.
+
+        Returns:
+            The validated model instance.
+
+        Raises:
+            ValueError: If upsert_key does not match any column name in the schema.
+        """
+        if self.behavior.mode == "upsert" and self.behavior.upsert_key is not None:
+            column_names = {col.name for col in self.projection_schema.columns}
+            if self.behavior.upsert_key not in column_names:
+                # error-ok: Pydantic validator requires ValueError
+                raise ValueError(
+                    f"upsert_key '{self.behavior.upsert_key}' must reference an existing column. "
+                    f"Available columns: {sorted(column_names)}"
+                )
+        return self
+
     def __hash__(self) -> int:
         """Return hash value for the contract.
 
@@ -294,16 +328,18 @@ class ModelProjectorContract(BaseModel):
         """Return a concise representation for debugging.
 
         Returns:
-            String representation showing projector_id and event count.
+            String representation showing projector_id, version, event count,
+            and index count for better debugging visibility.
 
         Examples:
             >>> contract = ModelProjectorContract(...)
             >>> repr(contract)
-            "ModelProjectorContract(id='node-projector', events=2)"
+            "ModelProjectorContract(id='node-projector', version='1.0.0', events=2, indexes=1)"
         """
         return (
             f"ModelProjectorContract(id={self.projector_id!r}, "
-            f"events={len(self.consumed_events)})"
+            f"version={self.version!r}, events={len(self.consumed_events)}, "
+            f"indexes={len(self.projection_schema.indexes)})"
         )
 
 

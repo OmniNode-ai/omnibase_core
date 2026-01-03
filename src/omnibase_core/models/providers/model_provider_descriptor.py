@@ -104,6 +104,7 @@ else:
     # Runtime type alias - accepts any value, validation skipped until model_rebuild()
     HealthStatusType = Annotated[Any, SkipValidation]
 
+
 # Capability naming pattern: lowercase alphanumeric with dots, at least one dot
 # Examples: "database.relational", "cache.redis", "storage.s3"
 _CAPABILITY_PATTERN = re.compile(r"^[a-z0-9]+(\.[a-z0-9]+)+$")
@@ -290,6 +291,52 @@ class ModelProviderDescriptor(BaseModel):
             "all modules are loaded for full Pydantic validation."
         ),
     )
+
+    @field_validator("health", mode="before")
+    @classmethod
+    def validate_health(cls, v: Any) -> Any:
+        """Validate health field accepts ModelHealthStatus or None.
+
+        Uses lazy import to avoid circular import issues with the health module.
+
+        Args:
+            v: Value to validate (should be ModelHealthStatus, None, or dict).
+
+        Returns:
+            The validated value.
+
+        Raises:
+            ModelOnexError: If value is not None, ModelHealthStatus, or a dict
+                that can be converted to ModelHealthStatus.
+        """
+        if v is None:
+            return None
+
+        # Lazy import to avoid circular dependency
+        from omnibase_core.models.health.model_health_status import ModelHealthStatus
+
+        if isinstance(v, ModelHealthStatus):
+            return v
+
+        if isinstance(v, dict):
+            # Allow dict-based construction for Pydantic compatibility
+            try:
+                return ModelHealthStatus(**v)
+            except Exception as e:
+                raise ModelOnexError(
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message=f"Failed to construct health status from dict: {e}",
+                    context={"health_dict": v, "error": str(e)},
+                ) from e
+
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message=(
+                f"health must be ModelHealthStatus, dict, or None, "
+                f"got {type(v).__name__}"
+            ),
+            context={"health_type": type(v).__name__},
+        )
 
     @field_validator("capabilities", mode="before")
     @classmethod

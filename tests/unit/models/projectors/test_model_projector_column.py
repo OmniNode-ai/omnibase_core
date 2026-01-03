@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
+#
+# SPDX-License-Identifier: Apache-2.0
 """Tests for ModelProjectorColumn.
 
 Tests cover:
@@ -232,3 +235,77 @@ class TestModelProjectorColumnSerialization:
         restored = ModelProjectorColumn.model_validate_json(json_str)
 
         assert restored == original
+
+
+@pytest.mark.unit
+class TestModelProjectorColumnRepr:
+    """Tests for __repr__ method of ModelProjectorColumn."""
+
+    def test_repr_basic(self) -> None:
+        """Test basic repr output contains class name and key fields."""
+        from omnibase_core.models.projectors import ModelProjectorColumn
+
+        column = ModelProjectorColumn(
+            name="status",
+            type="TEXT",
+            source="event.payload.status",
+        )
+        result = repr(column)
+
+        assert "ModelProjectorColumn" in result
+        assert "status" in result
+        assert "TEXT" in result
+
+    def test_repr_with_uuid_type(self) -> None:
+        """Test repr with UUID column type."""
+        from omnibase_core.models.projectors import ModelProjectorColumn
+
+        column = ModelProjectorColumn(
+            name="node_id",
+            type="UUID",
+            source="event.payload.node_id",
+        )
+        result = repr(column)
+
+        assert "ModelProjectorColumn" in result
+        assert "node_id" in result
+        assert "UUID" in result
+
+    def test_repr_with_various_types(self) -> None:
+        """Test repr correctly shows different column types."""
+        from omnibase_core.models.projectors import ModelProjectorColumn
+
+        for col_type in ["JSONB", "TIMESTAMPTZ", "INTEGER", "BOOLEAN"]:
+            column = ModelProjectorColumn(
+                name="test_col",
+                type=col_type,
+                source="event.payload.value",
+            )
+            result = repr(column)
+
+            assert "ModelProjectorColumn" in result
+            assert "test_col" in result
+            assert col_type in result
+
+    def test_repr_concise_format(self) -> None:
+        """Test repr is concise and doesn't include optional fields."""
+        from omnibase_core.models.projectors import ModelProjectorColumn
+
+        column = ModelProjectorColumn(
+            name="status",
+            type="TEXT",
+            source="event.payload.status",
+            on_event="node.status.changed.v1",
+            default="UNKNOWN",
+        )
+        result = repr(column)
+
+        # Repr should be concise - showing name and type only
+        assert "ModelProjectorColumn" in result
+        assert "status" in result
+        assert "TEXT" in result
+        # These optional fields should NOT be in the concise repr
+        assert "source" not in result.lower()
+        assert "on_event" not in result.lower()
+        assert "default" not in result.lower()
+        assert "UNKNOWN" not in result

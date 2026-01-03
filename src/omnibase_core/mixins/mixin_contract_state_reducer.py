@@ -232,7 +232,7 @@ class MixinContractStateReducer:
             # Fallback: create basic success response
             return self._create_default_output_state(input_state)
 
-        except (AttributeError, ValueError, RuntimeError) as e:
+        except (AttributeError, RuntimeError, ValueError) as e:
             tool_name = getattr(self, "node_name", "unknown_tool")
             emit_log_event(
                 LogLevel.ERROR,
@@ -276,7 +276,7 @@ class MixinContractStateReducer:
                         "transition_name": transition_name,
                     },
                 )
-        except (AttributeError, ValueError, RuntimeError) as e:
+        except (AttributeError, RuntimeError, ValueError) as e:
             emit_log_event(
                 LogLevel.ERROR,
                 f"Failed to apply transition {transition_name}: {e!s}",

@@ -236,7 +236,7 @@ class MixinServiceRegistry:
                 {"correlation_id": correlation_id},
             )
 
-        except (RuntimeError, ValueError, ModelOnexError) as e:
+        except (ModelOnexError, RuntimeError, ValueError) as e:
             logger.exception(f"❌ Failed to send discovery request: {e}")
 
             traceback.print_exc()
@@ -409,7 +409,7 @@ class MixinServiceRegistry:
                 {"target_node_id": node_id, "correlation_id": correlation_id},
             )
 
-        except (RuntimeError, ValueError, ModelOnexError) as e:
+        except (ModelOnexError, RuntimeError, ValueError) as e:
             logger.exception(
                 f"❌ Failed to send introspection request to {node_id}: {e}",
             )
@@ -535,7 +535,7 @@ class MixinServiceRegistry:
                         "⚠️ Cannot send discovery response - no event bus available",
                     )
 
-        except (RuntimeError, ValueError, ModelOnexError) as e:
+        except (ModelOnexError, RuntimeError, ValueError) as e:
             logger.exception(f"❌ Error handling discovery request: {e}")
 
     def get_registered_tools(

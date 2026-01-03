@@ -62,7 +62,9 @@ class ModelRestApiConnectionConfig(BaseModel):
         """Validate and normalize base URL."""
         if not v or not v.strip():
             msg = "Base URL cannot be empty"
-            raise ModelOnexError(msg, EnumCoreErrorCode.VALIDATION_ERROR)
+            raise ModelOnexError(
+                message=msg, error_code=EnumCoreErrorCode.VALIDATION_ERROR
+            )
 
         v = v.strip()
 
@@ -71,17 +73,23 @@ class ModelRestApiConnectionConfig(BaseModel):
             parsed = urlparse(v)
         except ValueError as e:
             msg = f"Invalid URL format: {e}"
-            raise ModelOnexError(msg, EnumCoreErrorCode.VALIDATION_ERROR)
+            raise ModelOnexError(
+                message=msg, error_code=EnumCoreErrorCode.VALIDATION_ERROR
+            )
 
         # Validate scheme
         if parsed.scheme not in ("http", "https"):
             msg = f"URL must use http or https scheme, got: {parsed.scheme}"
-            raise ModelOnexError(msg, EnumCoreErrorCode.VALIDATION_ERROR)
+            raise ModelOnexError(
+                message=msg, error_code=EnumCoreErrorCode.VALIDATION_ERROR
+            )
 
         # Validate host
         if not parsed.netloc:
             msg = "URL must include a host"
-            raise ModelOnexError(msg, EnumCoreErrorCode.VALIDATION_ERROR)
+            raise ModelOnexError(
+                message=msg, error_code=EnumCoreErrorCode.VALIDATION_ERROR
+            )
 
         # Recommend HTTPS for production
         if parsed.scheme == "http" and not any(
@@ -105,14 +113,18 @@ class ModelRestApiConnectionConfig(BaseModel):
             # Limit number of headers and their sizes
             if len(v) > 20:
                 msg = "Too many headers (max 20)"
-                raise ModelOnexError(msg, EnumCoreErrorCode.VALIDATION_ERROR)
+                raise ModelOnexError(
+                    message=msg, error_code=EnumCoreErrorCode.VALIDATION_ERROR
+                )
 
             validated_headers = {}
             # Field type dict[str, str] ensures keys and values are strings
             for key, value in v.items():
                 if len(key) > 100 or len(value) > 500:
                     msg = "Header key or value too long"
-                    raise ModelOnexError(msg, EnumCoreErrorCode.VALIDATION_ERROR)
+                    raise ModelOnexError(
+                        message=msg, error_code=EnumCoreErrorCode.VALIDATION_ERROR
+                    )
 
                 # Sanitize header names (convert to proper case)
                 normalized_key = "-".join(

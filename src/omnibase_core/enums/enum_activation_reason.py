@@ -109,13 +109,7 @@ class EnumActivationReason(str, Enum):
         Returns:
             True if this reason results in the capability being activated
         """
-        activation_reasons = {
-            self.PREDICATE_TRUE,
-            self.ALWAYS_ACTIVE,
-            self.EXPLICITLY_ENABLED,
-            self.DEPENDENCY_SATISFIED,
-        }
-        return self in activation_reasons
+        return self in self.get_activation_reasons()
 
     def is_skip_reason(self) -> bool:
         """

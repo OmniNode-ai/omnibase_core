@@ -22,13 +22,13 @@ import pytest
 from omnibase_core.models.pipeline import (
     ModelExecutionPlan,
     ModelPhaseExecutionPlan,
+    ModelPipelineContext,
     ModelPipelineHook,
     PipelinePhase,
 )
 from omnibase_core.pipeline.registry_hook import RegistryHook
 from omnibase_core.pipeline.runner_pipeline import (
     HookCallable,
-    ModelPipelineContext,
     RunnerPipeline,
 )
 

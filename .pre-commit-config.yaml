@@ -55,20 +55,22 @@ repos:
   # Note: ruff replaces both black and isort (10-100x faster)
   - repo: local
     hooks:
+      # FULL CODEBASE FORMATTING: These hooks run on src/ and tests/ (not just staged files)
+      # to match CI behavior and prevent "works locally, fails in CI" issues.
       - id: ruff-format
-        name: ruff format (auto-format)
-        entry: poetry run ruff format
+        name: ruff format (auto-format entire codebase)
+        entry: poetry run ruff format src/ tests/
         language: system
-        types: [python]
-        exclude: ^(tests/fixtures/validation/(edge_cases|exports)/syntax_error\.py|\.github/workflows/|archived/).*$
+        pass_filenames: false
+        always_run: true
         stages: [pre-commit]
 
       - id: ruff-fix
-        name: ruff check (auto-fix linting + import sorting)
-        entry: poetry run ruff check --fix --exit-non-zero-on-fix
+        name: ruff check (auto-fix entire codebase)
+        entry: poetry run ruff check --fix --exit-non-zero-on-fix src/ tests/
         language: system
-        types: [python]
-        exclude: ^(tests/fixtures/validation/(edge_cases|exports)/syntax_error\.py|\.github/workflows/|archived/).*$
+        pass_filenames: false
+        always_run: true
         stages: [pre-commit]
         # Note: --exit-non-zero-on-fix ensures pre-commit fails if files were modified,
         # forcing you to re-stage the changes. This keeps pre-commit and CI in sync.

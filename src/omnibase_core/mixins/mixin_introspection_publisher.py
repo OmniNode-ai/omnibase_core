@@ -103,7 +103,7 @@ class MixinIntrospectionPublisher:
                 context=context,
             )
             raise
-        except (RuntimeError, ModelOnexError) as e:
+        except (ModelOnexError, RuntimeError) as e:
             context = ModelLogContext(
                 calling_module=_COMPONENT_NAME,
                 calling_function="_publish_introspection_event",
@@ -385,7 +385,7 @@ class MixinIntrospectionPublisher:
             try:
                 event_bus.publish(envelope)
                 return
-            except (RuntimeError, ValueError, ModelOnexError) as e:
+            except (ModelOnexError, RuntimeError, ValueError) as e:
                 if attempt == max_retries - 1:
                     context = ModelLogContext(
                         calling_module=_COMPONENT_NAME,

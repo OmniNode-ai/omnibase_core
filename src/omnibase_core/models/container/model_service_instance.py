@@ -1,7 +1,6 @@
 """Service instance model - implements ProtocolManagedServiceInstance."""
 
 from datetime import datetime
-from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -20,7 +19,7 @@ class ModelServiceInstance(BaseModel):
     Attributes:
         instance_id: Unique identifier for this instance
         service_registration_id: ID of the service registration
-        instance: The actual service instance (stored as Any)
+        instance: The actual service instance (stored as object)
         lifecycle: Lifecycle pattern (singleton, transient, scoped, etc.)
         scope: Injection scope (global, request, session, etc.)
         created_at: When this instance was created
@@ -46,7 +45,7 @@ class ModelServiceInstance(BaseModel):
 
     instance_id: UUID = Field(description="Unique instance identifier")
     service_registration_id: UUID = Field(description="Registration ID")
-    instance: Any = Field(description="Actual service instance")
+    instance: object | None = Field(default=None, description="Actual service instance")
     lifecycle: LiteralServiceLifecycle = Field(description="Lifecycle pattern")
     scope: LiteralInjectionScope = Field(description="Injection scope")
     created_at: datetime = Field(

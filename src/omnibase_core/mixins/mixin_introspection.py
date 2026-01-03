@@ -519,7 +519,7 @@ class MixinNodeIntrospection(ABC):
                 },
             )
             sys.exit(0)
-        except (RuntimeError, ValueError, ModelOnexError) as e:
+        except (ModelOnexError, RuntimeError, ValueError) as e:
             error_response = {
                 "error": "Introspection failed",
                 "message": str(e),
