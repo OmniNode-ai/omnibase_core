@@ -578,14 +578,24 @@ class TestTypeRelationships:
 
     def test_json_primitive_components(self) -> None:
         """Test that JsonPrimitive contains expected primitive types."""
+        from datetime import datetime
+        from uuid import UUID
+
         primitive_args = set(get_args(JsonPrimitive))
 
-        # Verify expected components
+        # Verify expected components - core JSON primitives
         assert str in primitive_args
         assert int in primitive_args
         assert float in primitive_args
         assert bool in primitive_args
         assert type(None) in primitive_args
+
+        # Verify Pydantic-compatible extended types (v0.4.0+)
+        # UUID and datetime are included because Pydantic's model_dump()
+        # preserves these types by default, enabling proper typing of
+        # nested structures containing Pydantic model data.
+        assert UUID in primitive_args
+        assert datetime in primitive_args
 
 
 @pytest.mark.unit

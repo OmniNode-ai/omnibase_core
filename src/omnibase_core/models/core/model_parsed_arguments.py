@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.core.model_argument_map import ModelArgumentMap
+from omnibase_core.models.core.model_argument_value import ArgumentValueType
 from omnibase_core.models.core.model_cli_command_definition import (
     ModelCliCommandDefinition,
 )
@@ -168,17 +169,19 @@ class ModelParsedArguments(BaseModel):
         return result
 
     def get_argument_value(
-        self, name: str, default: object | None = None
-    ) -> object | None:
+        self, name: str, default: ArgumentValueType | None = None
+    ) -> ArgumentValueType | None:
         """Get argument value by name with optional default.
 
         Args:
             name: The argument name to look up.
             default: Default value to return if argument not found. Defaults to None.
+                Must be a valid ArgumentValueType (str, int, bool, float, or list thereof).
 
         Returns:
             The argument value if found, otherwise the default value.
             Returns None if the argument is not found and no default is provided.
+            The return type is ArgumentValueType | None for type safety.
         """
         if self.arguments.has_argument(name):
             return self.arguments.named_args[name].value

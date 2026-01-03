@@ -177,7 +177,7 @@ class ModelNodeCapabilitiesInfo(BaseModel):
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
         result: TypedDictMetadataDict = {}
         # Pack capabilities info into metadata dict
-        # Note: list() enables mypy type widening from list[str] to list[JsonType]
+        # Note: list() needed for mypy - lists are invariant, so list[str] != list[JsonType]
         result["metadata"] = {
             "capabilities": list(self.capabilities),
             "supported_operations": list(self.supported_operations),

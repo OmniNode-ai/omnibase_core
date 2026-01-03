@@ -113,6 +113,18 @@ from omnibase_core.protocols.infrastructure import (
 # Compute protocol imports for tool caching
 from omnibase_core.protocols.compute import ProtocolToolCache
 
+# Optional ServiceRegistry import for runtime use
+# (TYPE_CHECKING import provides type hints; this provides runtime instantiation)
+try:
+    from omnibase_core.container.service_registry import (
+        ServiceRegistry as _ServiceRegistryClass,
+    )
+
+    _SERVICE_REGISTRY_AVAILABLE = True
+except ImportError:
+    _ServiceRegistryClass = None  # type: ignore[misc, assignment]
+    _SERVICE_REGISTRY_AVAILABLE = False
+
 T = TypeVar("T")
 
 # === CORE CONTAINER DEFINITION ===
@@ -211,15 +223,14 @@ class ModelONEXContainer:
         self._service_registry: "ServiceRegistry | None" = None  # noqa: UP037
         self._enable_service_registry = enable_service_registry
 
-        if enable_service_registry:
+        if enable_service_registry and _SERVICE_REGISTRY_AVAILABLE:
             try:
-                from omnibase_core.container.service_registry import ServiceRegistry
                 from omnibase_core.models.container.model_registry_config import (
                     create_default_registry_config,
                 )
 
                 registry_config = create_default_registry_config()
-                self._service_registry = ServiceRegistry(registry_config)
+                self._service_registry = _ServiceRegistryClass(registry_config)
 
                 emit_log_event(
                     LogLevel.INFO,
@@ -229,9 +240,15 @@ class ModelONEXContainer:
             except ImportError as e:
                 emit_log_event(
                     LogLevel.WARNING,
-                    f"ServiceRegistry not available: {e}",
+                    f"ServiceRegistry config not available: {e}",
                 )
                 self._enable_service_registry = False
+        elif enable_service_registry and not _SERVICE_REGISTRY_AVAILABLE:
+            emit_log_event(
+                LogLevel.WARNING,
+                "ServiceRegistry not available: module not installed",
+            )
+            self._enable_service_registry = False
 
         if enable_performance_cache and MemoryMappedToolCache is not None:
             # Initialize memory-mapped cache
@@ -718,7 +735,7 @@ class ModelONEXContainer:
             )
 
         if self.performance_monitor:
-            # Cast TypedDict to JsonType for SerializedDict assignment
+            # Cast TypedDict to SerializableValue for SerializedDict assignment
             stats["performance_monitoring"] = cast(
                 SerializableValue, self.performance_monitor.get_monitoring_dashboard()
             )

@@ -5,7 +5,7 @@ Integrates all existing Docker models into unified composition structure.
 """
 
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import yaml
 from pydantic import BaseModel, Field, field_validator, model_validator
@@ -22,6 +22,7 @@ from omnibase_core.models.docker.model_docker_volume_config import (
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.types.json_types import JsonType
 from omnibase_core.types.type_serializable_value import (
     SerializedDict,
 )
@@ -423,26 +424,20 @@ class ModelDockerComposeManifest(BaseModel):
                 if service.build:
                     service_dict["build"] = service.build.model_dump(exclude_none=True)
                 if service.command:
-                    # Conversion needed for mypy: list[str] -> list[JsonType]
-                    service_dict["command"] = (
-                        list(service.command)
-                        if isinstance(service.command, list)
-                        else service.command
-                    )
+                    # Cast to JsonType (no copy needed - types are compatible at runtime)
+                    service_dict["command"] = cast(JsonType, service.command)
                 if service.environment:
-                    # Conversion needed for mypy: dict[str, str] -> dict[str, JsonType]
-                    service_dict["environment"] = dict(service.environment)
+                    # Cast to JsonType (no copy needed - types are compatible at runtime)
+                    service_dict["environment"] = cast(JsonType, service.environment)
                 if service.ports:
-                    # Conversion needed for mypy: list[str] -> list[JsonType]
-                    service_dict["ports"] = list(service.ports)
+                    # Cast to JsonType (no copy needed - types are compatible at runtime)
+                    service_dict["ports"] = cast(JsonType, service.ports)
                 if service.volumes:
-                    # Conversion needed for mypy: list[str] -> list[JsonType]
-                    service_dict["volumes"] = list(service.volumes)
+                    # Cast to JsonType (no copy needed - types are compatible at runtime)
+                    service_dict["volumes"] = cast(JsonType, service.volumes)
                 if service.depends_on:
-                    # Conversion needed for mypy: dict[str, dict[str, str]] -> dict[str, JsonType]
-                    service_dict["depends_on"] = {
-                        k: dict(v) for k, v in service.depends_on.items()
-                    }
+                    # Cast to JsonType (no copy needed - types are compatible at runtime)
+                    service_dict["depends_on"] = cast(JsonType, service.depends_on)
                 if service.healthcheck:
                     service_dict["healthcheck"] = service.healthcheck.model_dump(
                         exclude_none=True
@@ -450,11 +445,11 @@ class ModelDockerComposeManifest(BaseModel):
                 if service.restart:
                     service_dict["restart"] = service.restart
                 if service.networks:
-                    # Conversion needed for mypy: list[str] -> list[JsonType]
-                    service_dict["networks"] = list(service.networks)
+                    # Cast to JsonType (no copy needed - types are compatible at runtime)
+                    service_dict["networks"] = cast(JsonType, service.networks)
                 if service.labels:
-                    # Conversion needed for mypy: dict[str, str] -> dict[str, JsonType]
-                    service_dict["labels"] = dict(service.labels)
+                    # Cast to JsonType (no copy needed - types are compatible at runtime)
+                    service_dict["labels"] = cast(JsonType, service.labels)
                 if service.deploy:
                     service_dict["deploy"] = service.deploy.model_dump(
                         exclude_none=True

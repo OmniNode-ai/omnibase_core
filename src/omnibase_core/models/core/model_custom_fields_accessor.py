@@ -60,10 +60,11 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
                     # Empty lists are explicitly handled here - no conversion needed
                     if not value_list:
                         converted_list_fields[key] = []
-                    # SAFETY: Homogeneous list from serialization - if first element is
-                    # ModelSchemaValue, all elements are (lists come from single
-                    # serialization source with uniform type). This is validated at
-                    # deserialization boundaries, not during model validation.
+                    # SAFETY: Homogeneous list assumption - if first element is
+                    # ModelSchemaValue, all elements are assumed to be as well.
+                    # This is maintained through method discipline (all list-modifying
+                    # methods enforce homogeneity), not runtime validation enforcement.
+                    # Lists come from single serialization source with uniform type.
                     elif isinstance(value_list[0], ModelSchemaValue):
                         converted_list_fields[key] = value_list
                     else:
@@ -150,9 +151,9 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
                 int_fields[key] = value
             elif isinstance(value, list):
                 # Convert list to list[ModelSchemaValue] for type safety
-                # SAFETY: Homogeneous list from serialization - if first element is
-                # ModelSchemaValue, all elements are (lists come from single
-                # serialization source with uniform type).
+                # SAFETY: Homogeneous list assumption - if first element is
+                # ModelSchemaValue, all elements are assumed to be as well.
+                # Maintained through method discipline, not validation enforcement.
                 if value and isinstance(value[0], ModelSchemaValue):
                     list_fields_typed[key] = value
                 else:
@@ -234,9 +235,9 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
                 self.float_fields[path] = value
             elif isinstance(value, list):
                 # Require ModelSchemaValue lists - convert if needed
-                # SAFETY: Homogeneous list from serialization - if first element is
-                # ModelSchemaValue, all elements are (lists come from single
-                # serialization source with uniform type).
+                # SAFETY: Homogeneous list assumption - if first element is
+                # ModelSchemaValue, all elements are assumed to be as well.
+                # Maintained through method discipline, not validation enforcement.
                 if value and isinstance(value[0], ModelSchemaValue):
                     self.list_fields[path] = value
                 else:
@@ -760,11 +761,14 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
                 self.custom_fields: dict[str, PrimitiveValueType] = {}
 
             # Store raw values directly in custom_fields
+            raw_value: PrimitiveValueType
             if isinstance(value, ModelSchemaValue):
-                raw_value = value.to_value()
-                # Ensure raw_value is compatible with PrimitiveValueType
-                if not isinstance(raw_value, (str, int, float, bool, list, type(None))):
-                    raw_value = str(raw_value)  # Convert unsupported types to string
+                to_val = value.to_value()
+                # Ensure to_val is compatible with PrimitiveValueType
+                if not isinstance(to_val, (str, int, float, bool, list, type(None))):
+                    raw_value = str(to_val)  # Convert unsupported types to string
+                else:
+                    raw_value = to_val
             else:
                 raw_value = value
 

@@ -11,6 +11,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.services.model_custom_fields import ModelCustomFields
+from omnibase_core.types.json_types import JsonType
 from omnibase_core.types.type_serializable_value import SerializedDict
 from omnibase_core.types.typed_dict_workflow_outputs import TypedDictWorkflowOutputsDict
 
@@ -78,7 +79,7 @@ class ModelWorkflowOutputs(BaseModel):
     @field_serializer("data", when_used="always")
     def serialize_data(
         self, values: dict[str, ModelSchemaValue] | None
-    ) -> dict[str, object] | None:
+    ) -> dict[str, JsonType] | None:
         """
         Serialize data field by converting ModelSchemaValue to primitives.
 
@@ -203,13 +204,8 @@ class ModelWorkflowOutputs(BaseModel):
 
         # Add data if present (convert ModelSchemaValue to raw values)
         if self.data:
-            # Cast to SerializedDict since to_value() returns object.
-            # Safe because ModelSchemaValue.to_value() only returns JSON-compatible types
-            # (None, bool, str, int, float, list, dict).
-            result["data"] = cast(
-                SerializedDict,
-                {key: value.to_value() for key, value in self.data.items()},
-            )
+            # to_value() returns JsonType which is compatible with SerializedDict values
+            result["data"] = {key: value.to_value() for key, value in self.data.items()}
 
         # Add custom outputs if present (convert ModelSchemaValue to primitives)
         if self.custom_outputs:
