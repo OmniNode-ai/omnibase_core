@@ -55,10 +55,10 @@ class MixinHashComputation:
             for field in volatile_fields
         )
         canonical = MixinCanonicalYAMLSerializer().canonicalize_for_hash(
-            self,  # type: ignore[arg-type]
+            self,  # type: ignore[arg-type]  # Self is NodeMetadataBlock at runtime; mixin provides interface
             body,
             volatile_fields=str_volatile_fields,
             placeholder=placeholder,
-            comment_prefix=comment_prefix,  # type: ignore[arg-type]
+            comment_prefix=comment_prefix,  # type: ignore[arg-type]  # Parameter type compatible at runtime; method signature variance
         )
         return hashlib.sha256(canonical.encode("utf-8")).hexdigest()

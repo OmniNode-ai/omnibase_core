@@ -199,7 +199,7 @@ class MixinCaching:
         self._consecutive_failures = 0
         self._max_consecutive_failures = max_consecutive_failures
 
-    def generate_cache_key(self, data: Any) -> str:
+    def generate_cache_key(self, data: object) -> str:
         """
         Generate a cache key from data.
 

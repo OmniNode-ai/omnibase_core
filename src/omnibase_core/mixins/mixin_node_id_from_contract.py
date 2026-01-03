@@ -1,7 +1,6 @@
 import importlib
 import os
 from pathlib import Path
-from typing import Any
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
@@ -27,7 +26,7 @@ class MixinNodeIdFromContract:
     ]
 
     def __init__(
-        self, contract_path: Path | None = None, *args: Any, **kwargs: Any
+        self, contract_path: Path | None = None, *args: object, **kwargs: object
     ) -> None:
         self._explicit_contract_path = contract_path
         super().__init__(*args, **kwargs)

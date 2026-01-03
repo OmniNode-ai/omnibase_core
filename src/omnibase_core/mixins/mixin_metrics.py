@@ -25,9 +25,7 @@ Usage:
     Added optional backend support for Prometheus and other external systems.
 """
 
-from __future__ import annotations
-
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from omnibase_core.types.typed_dict_mixin_types import TypedDictMetricEntry
 
@@ -85,7 +83,7 @@ class MixinMetrics:
         Added optional backend support.
     """
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, *args: object, **kwargs: object) -> None:
         """Initialize metrics mixin."""
         super().__init__(*args, **kwargs)
         # Use object.__setattr__() to bypass Pydantic validation for internal state

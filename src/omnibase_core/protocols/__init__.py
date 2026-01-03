@@ -24,6 +24,7 @@ Module Organization:
 - types/: Type constraint protocols (Configurable, Executable, etc.)
 - core.py: Core operation protocols (CanonicalSerializer)
 - schema/: Schema loading protocols
+- services/: Service protocols (SecretService, etc.)
 - validation/: Validation and compliance protocols
 
 Usage:
@@ -203,9 +204,12 @@ from omnibase_core.protocols.protocol_smart_log_formatter import (
 )
 
 # =============================================================================
-# Resolution Module Exports (OMN-1123)
+# Resolution Module Exports (OMN-1123, OMN-1106)
 # =============================================================================
-from omnibase_core.protocols.resolution import ProtocolDependencyResolver
+from omnibase_core.protocols.resolution import (
+    ProtocolDependencyResolver,
+    ProtocolExecutionResolver,
+)
 
 # =============================================================================
 # Runtime Module Exports
@@ -216,6 +220,11 @@ from omnibase_core.protocols.runtime import ProtocolHandler, ProtocolMessageHand
 # Schema Module Exports
 # =============================================================================
 from omnibase_core.protocols.schema import ProtocolSchemaLoader, ProtocolSchemaModel
+
+# =============================================================================
+# Services Module Exports
+# =============================================================================
+from omnibase_core.protocols.services import ProtocolSecretService
 
 # =============================================================================
 # Types Module Exports
@@ -412,9 +421,10 @@ __all__ = [
     "ProtocolTransitionNotificationPublisher",
     "ProtocolTransitionNotificationConsumer",
     # ==========================================================================
-    # Resolution Module (OMN-1123)
+    # Resolution Module (OMN-1123, OMN-1106)
     # ==========================================================================
     "ProtocolDependencyResolver",
+    "ProtocolExecutionResolver",
     # ==========================================================================
     # Handler Module
     # ==========================================================================
@@ -433,6 +443,10 @@ __all__ = [
     # ==========================================================================
     "ProtocolSchemaModel",
     "ProtocolSchemaLoader",
+    # ==========================================================================
+    # Services Module
+    # ==========================================================================
+    "ProtocolSecretService",
     # ==========================================================================
     # Validation Module
     # ==========================================================================

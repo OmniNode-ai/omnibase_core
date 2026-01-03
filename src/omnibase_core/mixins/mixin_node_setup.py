@@ -1,7 +1,10 @@
 from pathlib import Path
-from typing import Any
 
-from omnibase_core.models.core.model_state_contract import load_state_contract_from_file
+from omnibase_core.models.core.model_state_contract import (
+    ModelStateContract,
+    load_state_contract_from_file,
+)
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class MixinNodeSetup:
@@ -58,19 +61,19 @@ class MixinNodeSetup:
         return self.node_directory / "node.onex.yaml"
 
     @property
-    def contract(self) -> Any:
+    def contract(self) -> ModelStateContract:
         if not hasattr(self, "_contract"):
             self._contract = load_state_contract_from_file(str(self.contract_path))
         return self._contract
 
     @property
-    def node_id(self) -> Any:
+    def node_id(self) -> str:
         return self.contract.node_name
 
     @property
-    def node_version(self) -> Any:
+    def node_version(self) -> ModelSemVer:
         return self.contract.node_version
 
     @property
-    def contract_version(self) -> Any:
+    def contract_version(self) -> ModelSemVer:
         return self.contract.contract_version
