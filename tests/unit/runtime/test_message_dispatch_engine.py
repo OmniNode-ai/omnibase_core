@@ -3251,3 +3251,91 @@ class TestDispatchIdPropagation:
         # But dispatch_id must still be present
         assert result.dispatch_id is not None
         assert isinstance(result.dispatch_id, UUID)
+
+    @pytest.mark.asyncio
+    async def test_dispatch_id_distinct_from_correlation_and_envelope_ids(
+        self,
+        dispatch_engine: MessageDispatchEngine,
+    ) -> None:
+        """dispatch_id is unique and not reused from correlation_id or envelope_id (OMN-972).
+
+        The dispatch_id serves a different purpose than correlation_id and envelope_id:
+        - dispatch_id: Identifies a single dispatch() call (generated per-call)
+        - correlation_id: Request tracing across services (passed through from envelope)
+        - envelope_id: Unique identifier for the event envelope itself
+
+        All three IDs must be distinct to enable proper request tracing and debugging.
+        """
+        captured_context: ProtocolHandlerContext | None = None
+
+        async def capturing_handler(
+            envelope: ModelEventEnvelope[Any], context: ProtocolHandlerContext
+        ) -> str:
+            nonlocal captured_context
+            captured_context = context
+            return "handled"
+
+        dispatch_engine.register_handler(
+            handler_id="distinctness-handler",
+            handler=capturing_handler,
+            category=EnumMessageCategory.EVENT,
+            node_kind=EnumNodeKind.REDUCER,
+        )
+        dispatch_engine.register_route(
+            ModelDispatchRoute(
+                route_id="distinctness-route",
+                topic_pattern="*.user.events.*",
+                message_category=EnumMessageCategory.EVENT,
+                handler_id="distinctness-handler",
+            )
+        )
+        dispatch_engine.freeze()
+
+        # Create envelope with explicit correlation_id (different from envelope_id)
+        correlation_id = uuid4()
+        envelope = ModelEventEnvelope(
+            payload=UserCreatedEvent(
+                user_id=UUID("00000000-0000-0000-0000-000000000456"),
+                name="Distinctness Test User",
+            ),
+            correlation_id=correlation_id,
+        )
+
+        result = await dispatch_engine.dispatch("dev.user.events.v1", envelope)
+
+        # Handler must have been called
+        assert captured_context is not None
+
+        # All three IDs must be present and non-None
+        assert captured_context.dispatch_id is not None, "dispatch_id should be set"
+        assert captured_context.correlation_id is not None, (
+            "correlation_id should be set"
+        )
+        assert captured_context.envelope_id is not None, "envelope_id should be set"
+
+        # Key assertion: all three IDs are DISTINCT
+        assert captured_context.dispatch_id != captured_context.correlation_id, (
+            f"dispatch_id ({captured_context.dispatch_id}) must be distinct from "
+            f"correlation_id ({captured_context.correlation_id})"
+        )
+        assert captured_context.dispatch_id != captured_context.envelope_id, (
+            f"dispatch_id ({captured_context.dispatch_id}) must be distinct from "
+            f"envelope_id ({captured_context.envelope_id})"
+        )
+
+        # Verify correlation_id and envelope_id are also distinct (sanity check)
+        assert captured_context.correlation_id != captured_context.envelope_id, (
+            f"correlation_id ({captured_context.correlation_id}) should be distinct from "
+            f"envelope_id ({captured_context.envelope_id})"
+        )
+
+        # Verify the result also has distinct dispatch_id from correlation_id
+        assert result.dispatch_id is not None
+        assert result.correlation_id is not None
+        assert result.dispatch_id != result.correlation_id, (
+            f"Result dispatch_id ({result.dispatch_id}) must be distinct from "
+            f"correlation_id ({result.correlation_id})"
+        )
+
+        # Verify context dispatch_id matches result dispatch_id (consistency)
+        assert captured_context.dispatch_id == result.dispatch_id
