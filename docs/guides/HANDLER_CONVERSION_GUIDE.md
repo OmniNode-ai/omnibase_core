@@ -209,14 +209,14 @@ caching_handler = ModelCapabilityCaching(
 registry = RegistryHook()
 
 registry.register(ModelPipelineHook(
-    hook_id="metrics-before",
+    hook_name="metrics-before",
     phase="before",
     priority=10,
     callable_ref="hooks.metrics.before",
 ))
 
 registry.register(ModelPipelineHook(
-    hook_id="cache-check",
+    hook_name="cache-check",
     phase="before",
     priority=20,
     dependencies=["metrics-before"],
@@ -224,19 +224,19 @@ registry.register(ModelPipelineHook(
 ))
 
 registry.register(ModelPipelineHook(
-    hook_id="compute",
+    hook_name="compute",
     phase="execute",
     callable_ref="hooks.compute.execute",
 ))
 
 registry.register(ModelPipelineHook(
-    hook_id="cache-store",
+    hook_name="cache-store",
     phase="after",
     callable_ref="hooks.caching.store",
 ))
 
 registry.register(ModelPipelineHook(
-    hook_id="metrics-after",
+    hook_name="metrics-after",
     phase="after",
     dependencies=["cache-store"],
     callable_ref="hooks.metrics.after",
@@ -847,7 +847,7 @@ async def test_handler_in_pipeline():
     # Setup pipeline
     registry = RegistryHook()
     registry.register(ModelPipelineHook(
-        hook_id="metrics",
+        hook_name="metrics",
         phase="after",
         callable_ref="test.metrics",
     ))

@@ -32,7 +32,7 @@ See Also:
 
 from uuid import UUID
 
-from pydantic import Field, field_validator
+from pydantic import AliasChoices, Field, field_validator
 
 from omnibase_core.models.events.contract_validation.model_contract_ref import (
     ModelContractRef,
@@ -61,7 +61,7 @@ class ModelContractValidationStartedEvent(ModelContractValidationEventBase):
 
     Attributes:
         event_type: Event type identifier (onex.contract.validation.started).
-        validator_set_id: Optional identifier of the validator set being used.
+        validator_set_name: Optional identifier of the validator set being used.
         context: Validation context with field-level details about what is
             being validated.
 
@@ -73,7 +73,7 @@ class ModelContractValidationStartedEvent(ModelContractValidationEventBase):
         ... )
         >>>
         >>> event = ModelContractValidationStartedEvent(
-        ...     contract_id="runtime-host-contract",
+        ...     contract_name="runtime-host-contract",
         ...     run_id=uuid4(),
         ...     context=ModelContractValidationContext(),
         ...     validator_set_id="standard-v1",
@@ -93,8 +93,9 @@ class ModelContractValidationStartedEvent(ModelContractValidationEventBase):
         description="Event type identifier.",
     )
 
-    validator_set_id: str | None = Field(  # string-id-ok: validator set identifier
+    validator_set_name: str | None = Field(
         default=None,
+        validation_alias=AliasChoices("validator_set_name", "validator_set_id"),
         description="Optional identifier of the validator set being used for validation.",
     )
 
@@ -117,11 +118,11 @@ class ModelContractValidationStartedEvent(ModelContractValidationEventBase):
     @classmethod
     def create(
         cls,
-        contract_id: str,
+        contract_name: str,
         run_id: UUID,
         context: ModelContractValidationContext,
         *,
-        validator_set_id: str | None = None,  # string-id-ok: validator set identifier
+        validator_set_name: str | None = None,
         actor: UUID | None = None,
         contract_ref: ModelContractRef | None = None,
         correlation_id: UUID | None = None,
@@ -130,10 +131,10 @@ class ModelContractValidationStartedEvent(ModelContractValidationEventBase):
         Factory method for creating a contract validation started event.
 
         Args:
-            contract_id: Identifier of the contract being validated.
+            contract_name: Identifier of the contract being validated.
             run_id: Unique identifier for this validation run.
             context: Validation context with field-level details.
-            validator_set_id: Optional identifier of the validator set.
+            validator_set_name: Optional identifier of the validator set.
             actor: Optional UUID of the triggering node/service.
             contract_ref: Optional full contract reference.
             correlation_id: Optional correlation ID for tracing.
@@ -142,10 +143,10 @@ class ModelContractValidationStartedEvent(ModelContractValidationEventBase):
             A new ModelContractValidationStartedEvent instance.
         """
         return cls(
-            contract_id=contract_id,
+            contract_name=contract_name,
             run_id=run_id,
             context=context,
-            validator_set_id=validator_set_id,
+            validator_set_name=validator_set_name,
             actor=actor,
             contract_ref=contract_ref,
             correlation_id=correlation_id,

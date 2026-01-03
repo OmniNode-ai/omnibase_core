@@ -10,8 +10,8 @@ from omnibase_core.enums.enum_handler_type_category import EnumHandlerTypeCatego
 from omnibase_core.enums.enum_log_level import EnumLogLevel
 from omnibase_core.logging.logging_core import emit_log_event
 from omnibase_core.models.pipeline import (
-    ModelExecutionPlan,
     ModelPhaseExecutionPlan,
+    ModelPipelineExecutionPlan,
     ModelPipelineHook,
     ModelValidationWarning,
     PipelinePhase,
@@ -90,7 +90,7 @@ class BuilderExecutionPlan:
             return builder.build()  # Race condition on internal state!
 
     **Note**: The input ``RegistryHook`` can be safely shared IF it is frozen.
-    The output ``ModelExecutionPlan`` is frozen (immutable) and safe to share.
+    The output ``ModelPipelineExecutionPlan`` is frozen (immutable) and safe to share.
 
     See Also
     --------
@@ -118,7 +118,7 @@ class BuilderExecutionPlan:
         self._contract_category = contract_category
         self._enforce_hook_typing = enforce_hook_typing
 
-    def build(self) -> tuple[ModelExecutionPlan, list[ModelValidationWarning]]:
+    def build(self) -> tuple[ModelPipelineExecutionPlan, list[ModelValidationWarning]]:
         """
         Build an execution plan from the registry.
 
@@ -127,11 +127,11 @@ class BuilderExecutionPlan:
 
         Raises:
             UnknownDependencyError: If a hook references an unknown dependency.
-                Ensure all dependency hook_ids exist within the same phase.
+                Ensure all dependency hook_names exist within the same phase.
                 Dependencies cannot span across phases (e.g., a "before" hook
                 cannot depend on an "execute" hook).
             DependencyCycleError: If dependencies form a cycle.
-                The error context includes the list of hook_ids involved in the
+                The error context includes the list of hook_names involved in the
                 cycle. Review the dependency chain and remove circular references.
                 Enable DEBUG logging for dependency graph visualization on errors.
             HookTypeMismatchError: If enforce_hook_typing=True and type mismatch.
@@ -154,7 +154,7 @@ class BuilderExecutionPlan:
 
         Note:
             When debugging dependency issues, the error context dict contains
-            structured information (hook_id, unknown_dependency, cycle list, etc.)
+            structured information (hook_name, unknown_dependency, cycle list, etc.)
             that can be logged or inspected programmatically.
         """
         warnings: list[ModelValidationWarning] = []
@@ -173,8 +173,8 @@ class BuilderExecutionPlan:
             phase_warnings = self._validate_hook_typing(phase_hooks)
             warnings.extend(phase_warnings)
 
-            # Build hook_id -> hook mapping for this phase
-            hook_map = {h.hook_id: h for h in phase_hooks}
+            # Build hook_name -> hook mapping for this phase
+            hook_map = {h.hook_name: h for h in phase_hooks}
 
             # Validate dependencies exist within phase
             self._validate_dependencies(phase_hooks, hook_map)
@@ -193,7 +193,7 @@ class BuilderExecutionPlan:
         contract_cat_str = (
             str(self._contract_category) if self._contract_category else None
         )
-        plan = ModelExecutionPlan(
+        plan = ModelPipelineExecutionPlan(
             phases=phases,
             contract_category=contract_cat_str,
         )
@@ -236,12 +236,12 @@ class BuilderExecutionPlan:
 
             if self._enforce_hook_typing:
                 raise HookTypeMismatchError(
-                    hook_id=hook.hook_id,
+                    hook_name=hook.hook_name,
                     hook_category=hook_cat_str,
                     contract_category=contract_cat_str,
                 )
             warning = ModelValidationWarning.hook_type_mismatch(
-                hook_id=hook.hook_id,
+                hook_name=hook.hook_name,
                 hook_category=hook_cat_str,
                 contract_category=contract_cat_str,
             )
@@ -259,17 +259,17 @@ class BuilderExecutionPlan:
 
         Args:
             hooks: List of hooks in the phase.
-            hook_map: Mapping of hook_id to hook for this phase.
+            hook_map: Mapping of hook_name to hook for this phase.
 
         Raises:
-            UnknownDependencyError: If a dependency references unknown hook_id.
+            UnknownDependencyError: If a dependency references unknown hook_name.
         """
         for hook in hooks:
-            for dep_id in hook.dependencies:
-                if dep_id not in hook_map:
+            for dep_name in hook.dependencies:
+                if dep_name not in hook_map:
                     raise UnknownDependencyError(
-                        hook_id=hook.hook_id,
-                        unknown_dep=dep_id,
+                        hook_name=hook.hook_name,
+                        unknown_dep=dep_name,
                     )
 
     def _topological_sort(
@@ -286,7 +286,7 @@ class BuilderExecutionPlan:
 
         Args:
             hooks: List of hooks to sort.
-            hook_map: Mapping of hook_id to hook.
+            hook_map: Mapping of hook_name to hook.
             phase: The pipeline phase being processed.
 
         Returns:
@@ -299,40 +299,40 @@ class BuilderExecutionPlan:
             return []
 
         # Build in-degree map and adjacency list
-        in_degree: dict[str, int] = {h.hook_id: 0 for h in hooks}
+        in_degree: dict[str, int] = {h.hook_name: 0 for h in hooks}
         dependents: dict[str, list[str]] = defaultdict(list)
 
         for hook in hooks:
-            for dep_id in hook.dependencies:
-                # dep_id must execute before hook
-                dependents[dep_id].append(hook.hook_id)
-                in_degree[hook.hook_id] += 1
+            for dep_name in hook.dependencies:
+                # dep_name must execute before hook
+                dependents[dep_name].append(hook.hook_name)
+                in_degree[hook.hook_name] += 1
 
         # Initialize heap with zero in-degree hooks
-        # Heap entries: (priority, hook_id) - lower priority value = earlier execution
+        # Heap entries: (priority, hook_name) - lower priority value = earlier execution
         heap: list[tuple[int, str]] = []
         for hook in hooks:
-            if in_degree[hook.hook_id] == 0:
-                heapq.heappush(heap, (hook.priority, hook.hook_id))
+            if in_degree[hook.hook_name] == 0:
+                heapq.heappush(heap, (hook.priority, hook.hook_name))
 
         sorted_hooks: list[ModelPipelineHook] = []
 
         while heap:
-            _, hook_id = heapq.heappop(heap)
-            hook = hook_map[hook_id]
+            _, hook_name = heapq.heappop(heap)
+            hook = hook_map[hook_name]
             sorted_hooks.append(hook)
 
             # Reduce in-degree for dependents
-            for dependent_id in dependents[hook_id]:
-                in_degree[dependent_id] -= 1
-                if in_degree[dependent_id] == 0:
-                    dependent_hook = hook_map[dependent_id]
-                    heapq.heappush(heap, (dependent_hook.priority, dependent_id))
+            for dependent_name in dependents[hook_name]:
+                in_degree[dependent_name] -= 1
+                if in_degree[dependent_name] == 0:
+                    dependent_hook = hook_map[dependent_name]
+                    heapq.heappush(heap, (dependent_hook.priority, dependent_name))
 
         # If we didn't process all hooks, there's a cycle
         if len(sorted_hooks) != len(hooks):
             # Find hooks still in cycle
-            cycle_hooks = [h.hook_id for h in hooks if in_degree[h.hook_id] > 0]
+            cycle_hooks = [h.hook_name for h in hooks if in_degree[h.hook_name] > 0]
 
             # Log dependency graph for debugging
             self._log_cycle_debug_info(phase, hooks, in_degree, cycle_hooks)
@@ -358,15 +358,15 @@ class BuilderExecutionPlan:
             phase: The pipeline phase where the cycle was detected.
             hooks: All hooks in the phase.
             in_degree: In-degree counts for each hook.
-            cycle_hooks: List of hook IDs that are part of the cycle.
+            cycle_hooks: List of hook names that are part of the cycle.
         """
         # Build dependency graph lines
         graph_lines: list[str] = []
         for hook in hooks:
             deps_str = ", ".join(hook.dependencies) if hook.dependencies else "(none)"
             graph_lines.append(
-                f"    {hook.hook_id}: depends_on=[{deps_str}], "
-                f"in_degree={in_degree[hook.hook_id]}"
+                f"    {hook.hook_name}: depends_on=[{deps_str}], "
+                f"in_degree={in_degree[hook.hook_name]}"
             )
 
         cycle_str = ", ".join(cycle_hooks)

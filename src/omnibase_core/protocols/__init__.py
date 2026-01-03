@@ -74,6 +74,11 @@ from omnibase_core.protocols.base import (  # Literal Types; Protocols; Type Var
 )
 
 # =============================================================================
+# Cache Module Exports
+# =============================================================================
+from omnibase_core.protocols.cache import ProtocolCacheBackend
+
+# =============================================================================
 # Capabilities Module Exports
 # =============================================================================
 from omnibase_core.protocols.capabilities import ProtocolCapabilityProvider
@@ -164,6 +169,11 @@ from omnibase_core.protocols.intents import ProtocolRegistrationRecord
 # Merge Module Exports (OMN-1127)
 # =============================================================================
 from omnibase_core.protocols.merge import ProtocolMergeEngine
+
+# =============================================================================
+# Metrics Module Exports (OMN-1188)
+# =============================================================================
+from omnibase_core.protocols.metrics import ProtocolMetricsBackend
 
 # =============================================================================
 # Notifications Module Exports
@@ -302,6 +312,10 @@ __all__ = [
     "ProtocolModelJsonSerializable",
     "ProtocolModelValidatable",
     # ==========================================================================
+    # Cache Module (OMN-1188)
+    # ==========================================================================
+    "ProtocolCacheBackend",
+    # ==========================================================================
     # Capabilities Module (OMN-1124)
     # ==========================================================================
     "ProtocolCapabilityProvider",
@@ -407,6 +421,10 @@ __all__ = [
     # Merge Module (OMN-1127)
     # ==========================================================================
     "ProtocolMergeEngine",
+    # ==========================================================================
+    # Metrics Module (OMN-1188)
+    # ==========================================================================
+    "ProtocolMetricsBackend",
     # ==========================================================================
     # Notifications Module (OMN-1122)
     # ==========================================================================

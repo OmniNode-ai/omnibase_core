@@ -39,6 +39,13 @@ from omnibase_core.models.validation.model_ambiguous_transition import (
     ModelAmbiguousTransition,
 )
 
+# Contract validation invariant checker (OMN-1146)
+# Re-exports from canonical locations
+from omnibase_core.models.validation.model_contract_validation_event import (
+    ContractValidationEventType,
+    ModelContractValidationEvent,
+)
+
 # Import model from models/validation/
 from omnibase_core.models.validation.model_contract_validation_result import (
     ModelContractValidationResult,
@@ -61,6 +68,9 @@ from omnibase_core.models.validation.model_lint_warning import ModelLintWarning
 from omnibase_core.models.validation.model_module_import_result import (
     ModelModuleImportResult,
 )
+from omnibase_core.services.service_contract_validation_invariant_checker import (
+    ServiceContractValidationInvariantChecker,
+)
 
 # Import CLI for module execution (OMN-1071)
 # ServiceValidationSuite is the canonical class (lives in services/)
@@ -73,12 +83,8 @@ from .circular_import_validator import CircularImportValidator
 # Import contract patch validator (OMN-1126)
 from .contract_patch_validator import ContractPatchValidator
 
-# Import contract validation invariant checker (OMN-1146)
-from .contract_validation_invariant_checker import (
-    ContractValidationEventType,
-    ContractValidationInvariantChecker,
-    ModelContractValidationEvent,
-)
+# Re-export from services (OMN-1146)
+ContractValidationInvariantChecker = ServiceContractValidationInvariantChecker
 
 # Import validation functions for easy access
 from .validator_architecture import (
@@ -392,9 +398,10 @@ __all__ = [
     # Contract patch validator (OMN-1126)
     "ContractPatchValidator",
     # Contract validation invariant checker (OMN-1146)
-    "ContractValidationInvariantChecker",
+    "ServiceContractValidationInvariantChecker",
     "ModelContractValidationEvent",
     "ContractValidationEventType",
+    "ContractValidationInvariantChecker",
     # Reserved enum validation (OMN-669, OMN-675)
     # NOTE: validate_execution_mode takes EnumExecutionMode (type-safe)
     # while validate_execution_mode_string takes str (for YAML/config parsing)

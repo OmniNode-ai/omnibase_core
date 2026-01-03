@@ -38,41 +38,23 @@ Security:
         - util_safe_yaml_loader.py: YAML parsing security for contracts
 """
 
+from __future__ import annotations
+
 import re
 import threading
 import time
 import uuid
 from collections.abc import Callable
 from pathlib import Path
-from typing import Protocol, cast, runtime_checkable
+from typing import TYPE_CHECKING, cast
 from uuid import UUID
-
-
-@runtime_checkable
-class ProtocolEventBusListener(Protocol):
-    """Protocol for event bus used by MixinEventListener.
-
-    This protocol defines the duck-typed interface for event bus operations
-    used by the event listener mixin. It is runtime_checkable to support
-    hasattr() checks before method calls.
-    """
-
-    def subscribe(self, handler: Callable[..., object], event_type: str) -> object:
-        """Subscribe to events with a handler."""
-        ...
-
-    def unsubscribe(self, subscription: object) -> None:
-        """Unsubscribe from events."""
-        ...
-
-    async def publish_async(self, envelope: object) -> object:
-        """Asynchronous publish method."""
-        ...
-
 
 from pydantic import ValidationError
 
 from omnibase_core.constants import THREAD_JOIN_TIMEOUT_SECONDS
+
+if TYPE_CHECKING:
+    from omnibase_core.protocols.event_bus import ProtocolEventBusListener
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.logging.logging_structured import (
@@ -1017,7 +999,7 @@ class MixinEventListener[InputStateT, OutputStateT]:
         node_name = self.get_node_name()
         try:
             node_uuid = UUID(node_name)
-        except (ValueError, AttributeError):
+        except (AttributeError, ValueError):
             # Generate deterministic UUID from node name
             node_uuid = uuid.uuid5(uuid.NAMESPACE_DNS, node_name)
 
@@ -1101,7 +1083,7 @@ class MixinEventListener[InputStateT, OutputStateT]:
         node_name = self.get_node_name()
         try:
             node_uuid = UUID(node_name)
-        except (ValueError, AttributeError):
+        except (AttributeError, ValueError):
             # Generate deterministic UUID from node name
             node_uuid = uuid.uuid5(uuid.NAMESPACE_DNS, node_name)
 

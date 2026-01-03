@@ -26,9 +26,9 @@ class TestModelContractRefCreation:
 
     def test_contract_ref_creation_with_required_fields(self) -> None:
         """Test that ModelContractRef can be created with only required fields."""
-        contract_ref = ModelContractRef(contract_id="test-contract")
+        contract_ref = ModelContractRef(contract_name="test-contract")
 
-        assert contract_ref.contract_id == "test-contract"
+        assert contract_ref.contract_name == "test-contract"
         assert contract_ref.path is None
         assert contract_ref.content_hash is None
         assert contract_ref.schema_version is None
@@ -38,29 +38,29 @@ class TestModelContractRefCreation:
         schema_version = ModelSemVer(major=1, minor=2, patch=3)
 
         contract_ref = ModelContractRef(
-            contract_id="full-contract",
+            contract_name="full-contract",
             path=Path("/contracts/full-contract.yaml"),
             content_hash="sha256:abc123def456",
             schema_version=schema_version,
         )
 
-        assert contract_ref.contract_id == "full-contract"
+        assert contract_ref.contract_name == "full-contract"
         assert contract_ref.path == Path("/contracts/full-contract.yaml")
         assert contract_ref.content_hash == "sha256:abc123def456"
         assert contract_ref.schema_version == schema_version
 
-    def test_contract_ref_missing_contract_id_raises_error(self) -> None:
-        """Test that missing contract_id raises ValidationError."""
+    def test_contract_ref_missing_contract_name_raises_error(self) -> None:
+        """Test that missing contract_name raises ValidationError."""
         with pytest.raises(ValidationError) as exc_info:
             ModelContractRef()  # type: ignore[call-arg]
 
         error_str = str(exc_info.value)
-        assert "contract_id" in error_str
+        assert "contract_name" in error_str
 
     def test_contract_ref_accepts_path_as_string(self) -> None:
         """Test that path can be provided as string and is converted to Path."""
         contract_ref = ModelContractRef(
-            contract_id="test-contract",
+            contract_name="test-contract",
             path="/contracts/test.yaml",  # type: ignore[arg-type]
         )
 
@@ -74,52 +74,52 @@ class TestModelContractRefOptionalFields:
 
     def test_contract_ref_path_is_optional(self) -> None:
         """Test that path is optional and defaults to None."""
-        contract_ref = ModelContractRef(contract_id="test-contract")
+        contract_ref = ModelContractRef(contract_name="test-contract")
         assert contract_ref.path is None
 
     def test_contract_ref_content_hash_is_optional(self) -> None:
         """Test that content_hash is optional and defaults to None."""
-        contract_ref = ModelContractRef(contract_id="test-contract")
+        contract_ref = ModelContractRef(contract_name="test-contract")
         assert contract_ref.content_hash is None
 
     def test_contract_ref_schema_version_is_optional(self) -> None:
         """Test that schema_version is optional and defaults to None."""
-        contract_ref = ModelContractRef(contract_id="test-contract")
+        contract_ref = ModelContractRef(contract_name="test-contract")
         assert contract_ref.schema_version is None
 
     def test_contract_ref_with_only_path(self) -> None:
-        """Test ModelContractRef with only contract_id and path."""
+        """Test ModelContractRef with only contract_name and path."""
         contract_ref = ModelContractRef(
-            contract_id="test-contract",
+            contract_name="test-contract",
             path=Path("/contracts/test.yaml"),
         )
 
-        assert contract_ref.contract_id == "test-contract"
+        assert contract_ref.contract_name == "test-contract"
         assert contract_ref.path == Path("/contracts/test.yaml")
         assert contract_ref.content_hash is None
         assert contract_ref.schema_version is None
 
     def test_contract_ref_with_only_content_hash(self) -> None:
-        """Test ModelContractRef with only contract_id and content_hash."""
+        """Test ModelContractRef with only contract_name and content_hash."""
         contract_ref = ModelContractRef(
-            contract_id="test-contract",
+            contract_name="test-contract",
             content_hash="sha256:abc123",
         )
 
-        assert contract_ref.contract_id == "test-contract"
+        assert contract_ref.contract_name == "test-contract"
         assert contract_ref.path is None
         assert contract_ref.content_hash == "sha256:abc123"
         assert contract_ref.schema_version is None
 
     def test_contract_ref_with_only_schema_version(self) -> None:
-        """Test ModelContractRef with only contract_id and schema_version."""
+        """Test ModelContractRef with only contract_name and schema_version."""
         schema_version = ModelSemVer(major=0, minor=4, patch=0)
         contract_ref = ModelContractRef(
-            contract_id="test-contract",
+            contract_name="test-contract",
             schema_version=schema_version,
         )
 
-        assert contract_ref.contract_id == "test-contract"
+        assert contract_ref.contract_name == "test-contract"
         assert contract_ref.path is None
         assert contract_ref.content_hash is None
         assert contract_ref.schema_version == schema_version
@@ -131,22 +131,22 @@ class TestModelContractRefImmutability:
 
     def test_contract_ref_is_frozen(self) -> None:
         """Test that ModelContractRef config has frozen=True."""
-        contract_ref = ModelContractRef(contract_id="test-contract")
+        contract_ref = ModelContractRef(contract_name="test-contract")
 
         config = contract_ref.model_config
         assert config.get("frozen") is True
 
-    def test_contract_ref_cannot_modify_contract_id(self) -> None:
-        """Test that contract_id cannot be modified after creation."""
-        contract_ref = ModelContractRef(contract_id="test-contract")
+    def test_contract_ref_cannot_modify_contract_name(self) -> None:
+        """Test that contract_name cannot be modified after creation."""
+        contract_ref = ModelContractRef(contract_name="test-contract")
 
         with pytest.raises(ValidationError):
-            contract_ref.contract_id = "new-id"  # type: ignore[misc]
+            contract_ref.contract_name = "new-id"  # type: ignore[misc]
 
     def test_contract_ref_cannot_modify_path(self) -> None:
         """Test that path cannot be modified after creation."""
         contract_ref = ModelContractRef(
-            contract_id="test-contract",
+            contract_name="test-contract",
             path=Path("/original/path.yaml"),
         )
 
@@ -156,7 +156,7 @@ class TestModelContractRefImmutability:
     def test_contract_ref_cannot_modify_content_hash(self) -> None:
         """Test that content_hash cannot be modified after creation."""
         contract_ref = ModelContractRef(
-            contract_id="test-contract",
+            contract_name="test-contract",
             content_hash="sha256:original",
         )
 
@@ -166,7 +166,7 @@ class TestModelContractRefImmutability:
     def test_contract_ref_cannot_modify_schema_version(self) -> None:
         """Test that schema_version cannot be modified after creation."""
         contract_ref = ModelContractRef(
-            contract_id="test-contract",
+            contract_name="test-contract",
             schema_version=ModelSemVer(major=1, minor=0, patch=0),
         )
 
@@ -184,7 +184,7 @@ class TestModelContractRefExtraFieldRejection:
         """Test that extra fields are rejected."""
         with pytest.raises(ValidationError) as exc_info:
             ModelContractRef(
-                contract_id="test-contract",
+                contract_name="test-contract",
                 unknown_field="should_fail",  # type: ignore[call-arg]
             )
 
@@ -195,7 +195,7 @@ class TestModelContractRefExtraFieldRejection:
         """Test that multiple extra fields are all rejected."""
         with pytest.raises(ValidationError) as exc_info:
             ModelContractRef(
-                contract_id="test-contract",
+                contract_name="test-contract",
                 extra_field_1="value1",  # type: ignore[call-arg]
                 extra_field_2="value2",  # type: ignore[call-arg]
             )
@@ -205,7 +205,7 @@ class TestModelContractRefExtraFieldRejection:
 
     def test_contract_ref_config_has_extra_forbid(self) -> None:
         """Test that model is configured with extra='forbid'."""
-        contract_ref = ModelContractRef(contract_id="test-contract")
+        contract_ref = ModelContractRef(contract_name="test-contract")
 
         config = contract_ref.model_config
         assert config.get("extra") == "forbid"
@@ -219,7 +219,7 @@ class TestModelContractRefSerialization:
         """Test that ModelContractRef can be dumped to dict."""
         schema_version = ModelSemVer(major=1, minor=2, patch=3)
         contract_ref = ModelContractRef(
-            contract_id="test-contract",
+            contract_name="test-contract",
             path=Path("/contracts/test.yaml"),
             content_hash="sha256:abc123",
             schema_version=schema_version,
@@ -227,7 +227,7 @@ class TestModelContractRefSerialization:
 
         data = contract_ref.model_dump()
 
-        assert data["contract_id"] == "test-contract"
+        assert data["contract_name"] == "test-contract"
         assert data["path"] == Path("/contracts/test.yaml")
         assert data["content_hash"] == "sha256:abc123"
         assert "schema_version" in data
@@ -235,7 +235,7 @@ class TestModelContractRefSerialization:
     def test_contract_ref_model_dump_json(self) -> None:
         """Test that ModelContractRef can be serialized to JSON."""
         contract_ref = ModelContractRef(
-            contract_id="test-contract",
+            contract_name="test-contract",
             path=Path("/contracts/test.yaml"),
         )
 
@@ -248,7 +248,7 @@ class TestModelContractRefSerialization:
     def test_contract_ref_round_trip_serialization(self) -> None:
         """Test that ModelContractRef can be serialized and deserialized."""
         original = ModelContractRef(
-            contract_id="test-contract",
+            contract_name="test-contract",
             content_hash="sha256:abc123",
         )
 
@@ -256,7 +256,7 @@ class TestModelContractRefSerialization:
         json_str = original.model_dump_json()
         restored = ModelContractRef.model_validate_json(json_str)
 
-        assert restored.contract_id == original.contract_id
+        assert restored.contract_name == original.contract_name
         assert restored.content_hash == original.content_hash
         assert restored.path == original.path
         assert restored.schema_version == original.schema_version
@@ -265,7 +265,7 @@ class TestModelContractRefSerialization:
         """Test round-trip serialization with schema_version."""
         schema_version = ModelSemVer(major=0, minor=4, patch=0)
         original = ModelContractRef(
-            contract_id="versioned-contract",
+            contract_name="versioned-contract",
             schema_version=schema_version,
         )
 
@@ -273,7 +273,7 @@ class TestModelContractRefSerialization:
         data = original.model_dump()
         restored = ModelContractRef.model_validate(data)
 
-        assert restored.contract_id == original.contract_id
+        assert restored.contract_name == original.contract_name
         assert restored.schema_version is not None
         assert restored.schema_version.major == 0
         assert restored.schema_version.minor == 4
@@ -282,7 +282,7 @@ class TestModelContractRefSerialization:
     def test_contract_ref_model_validate_from_dict(self) -> None:
         """Test that ModelContractRef can be created from dict via model_validate."""
         data = {
-            "contract_id": "dict-contract",
+            "contract_name": "dict-contract",
             "path": "/contracts/dict.yaml",
             "content_hash": "sha256:dict123",
             "schema_version": {"major": 1, "minor": 0, "patch": 0},
@@ -290,7 +290,7 @@ class TestModelContractRefSerialization:
 
         contract_ref = ModelContractRef.model_validate(data)
 
-        assert contract_ref.contract_id == "dict-contract"
+        assert contract_ref.contract_name == "dict-contract"
         assert contract_ref.path == Path("/contracts/dict.yaml")
         assert contract_ref.content_hash == "sha256:dict123"
         assert contract_ref.schema_version is not None
@@ -303,7 +303,7 @@ class TestModelContractRefFromAttributes:
 
     def test_contract_ref_has_from_attributes_config(self) -> None:
         """Test that ModelContractRef is configured with from_attributes=True."""
-        contract_ref = ModelContractRef(contract_id="test-contract")
+        contract_ref = ModelContractRef(contract_name="test-contract")
 
         config = contract_ref.model_config
         assert config.get("from_attributes") is True
@@ -312,10 +312,10 @@ class TestModelContractRefFromAttributes:
         """Test that ModelContractRef can be created from an object with attributes."""
 
         class ContractRefLike:
-            """A class with contract_id attribute."""
+            """A class with contract_name attribute."""
 
             def __init__(self) -> None:
-                self.contract_id = "obj-contract"
+                self.contract_name = "obj-contract"
                 self.path = Path("/obj/path.yaml")
                 self.content_hash = "sha256:obj123"
                 self.schema_version = None
@@ -323,7 +323,7 @@ class TestModelContractRefFromAttributes:
         obj = ContractRefLike()
         contract_ref = ModelContractRef.model_validate(obj)
 
-        assert contract_ref.contract_id == "obj-contract"
+        assert contract_ref.contract_name == "obj-contract"
         assert contract_ref.path == Path("/obj/path.yaml")
         assert contract_ref.content_hash == "sha256:obj123"
 
@@ -334,7 +334,7 @@ class TestModelContractRefHashability:
 
     def test_contract_ref_is_hashable(self) -> None:
         """Test that ModelContractRef is hashable (frozen=True)."""
-        contract_ref = ModelContractRef(contract_id="test-contract")
+        contract_ref = ModelContractRef(contract_name="test-contract")
 
         # Should not raise TypeError
         hash_value = hash(contract_ref)
@@ -342,9 +342,9 @@ class TestModelContractRefHashability:
 
     def test_contract_ref_can_be_used_in_set(self) -> None:
         """Test that ModelContractRef can be used in sets."""
-        ref1 = ModelContractRef(contract_id="contract-1")
-        ref2 = ModelContractRef(contract_id="contract-2")
-        ref3 = ModelContractRef(contract_id="contract-1")  # Same as ref1
+        ref1 = ModelContractRef(contract_name="contract-1")
+        ref2 = ModelContractRef(contract_name="contract-2")
+        ref3 = ModelContractRef(contract_name="contract-1")  # Same as ref1
 
         contract_set = {ref1, ref2, ref3}
 
@@ -353,8 +353,8 @@ class TestModelContractRefHashability:
 
     def test_contract_ref_can_be_used_as_dict_key(self) -> None:
         """Test that ModelContractRef can be used as dict key."""
-        ref1 = ModelContractRef(contract_id="contract-1")
-        ref2 = ModelContractRef(contract_id="contract-2")
+        ref1 = ModelContractRef(contract_name="contract-1")
+        ref2 = ModelContractRef(contract_name="contract-2")
 
         contract_dict = {ref1: "data-1", ref2: "data-2"}
 
@@ -369,31 +369,31 @@ class TestModelContractRefEquality:
     def test_contract_ref_equality_same_values(self) -> None:
         """Test that ModelContractRef instances with same values are equal."""
         ref1 = ModelContractRef(
-            contract_id="test-contract",
+            contract_name="test-contract",
             content_hash="sha256:abc123",
         )
         ref2 = ModelContractRef(
-            contract_id="test-contract",
+            contract_name="test-contract",
             content_hash="sha256:abc123",
         )
 
         assert ref1 == ref2
 
-    def test_contract_ref_inequality_different_contract_id(self) -> None:
-        """Test that ModelContractRef instances with different contract_id are not equal."""
-        ref1 = ModelContractRef(contract_id="contract-1")
-        ref2 = ModelContractRef(contract_id="contract-2")
+    def test_contract_ref_inequality_different_contract_name(self) -> None:
+        """Test that ModelContractRef instances with different contract_name are not equal."""
+        ref1 = ModelContractRef(contract_name="contract-1")
+        ref2 = ModelContractRef(contract_name="contract-2")
 
         assert ref1 != ref2
 
     def test_contract_ref_inequality_different_path(self) -> None:
         """Test that ModelContractRef instances with different path are not equal."""
         ref1 = ModelContractRef(
-            contract_id="test-contract",
+            contract_name="test-contract",
             path=Path("/path/1.yaml"),
         )
         ref2 = ModelContractRef(
-            contract_id="test-contract",
+            contract_name="test-contract",
             path=Path("/path/2.yaml"),
         )
 
@@ -402,11 +402,11 @@ class TestModelContractRefEquality:
     def test_contract_ref_inequality_different_content_hash(self) -> None:
         """Test that ModelContractRef instances with different content_hash are not equal."""
         ref1 = ModelContractRef(
-            contract_id="test-contract",
+            contract_name="test-contract",
             content_hash="sha256:hash1",
         )
         ref2 = ModelContractRef(
-            contract_id="test-contract",
+            contract_name="test-contract",
             content_hash="sha256:hash2",
         )
 
@@ -417,36 +417,36 @@ class TestModelContractRefEquality:
 class TestModelContractRefEdgeCases:
     """Tests for edge cases and boundary conditions."""
 
-    def test_contract_ref_empty_contract_id_raises_validation_error(self) -> None:
-        """Test that empty string contract_id is rejected.
+    def test_contract_ref_empty_contract_name_raises_validation_error(self) -> None:
+        """Test that empty string contract_name is rejected.
 
-        The model enforces min_length=1 on contract_id, so empty strings
+        The model enforces min_length=1 on contract_name, so empty strings
         are rejected by Pydantic validation.
         """
         with pytest.raises(ValidationError):
-            ModelContractRef(contract_id="")
+            ModelContractRef(contract_name="")
 
-    def test_contract_ref_with_unicode_contract_id(self) -> None:
-        """Test that unicode characters in contract_id are handled."""
+    def test_contract_ref_with_unicode_contract_name(self) -> None:
+        """Test that unicode characters in contract_name are handled."""
         contract_ref = ModelContractRef(
-            contract_id="contract-\u4e2d\u6587-test",  # Contains Chinese characters
+            contract_name="contract-\u4e2d\u6587-test",  # Contains Chinese characters
         )
 
-        assert contract_ref.contract_id == "contract-\u4e2d\u6587-test"
+        assert contract_ref.contract_name == "contract-\u4e2d\u6587-test"
 
-    def test_contract_ref_with_special_characters_in_contract_id(self) -> None:
-        """Test that special characters in contract_id are handled."""
+    def test_contract_ref_with_special_characters_in_contract_name(self) -> None:
+        """Test that special characters in contract_name are handled."""
         contract_ref = ModelContractRef(
-            contract_id="contract/with:special@chars#123",
+            contract_name="contract/with:special@chars#123",
         )
 
-        assert contract_ref.contract_id == "contract/with:special@chars#123"
+        assert contract_ref.contract_name == "contract/with:special@chars#123"
 
     def test_contract_ref_with_long_content_hash(self) -> None:
         """Test that long content hashes are handled."""
         long_hash = "sha512:" + "a" * 128
         contract_ref = ModelContractRef(
-            contract_id="test-contract",
+            contract_name="test-contract",
             content_hash=long_hash,
         )
 
@@ -455,7 +455,7 @@ class TestModelContractRefEdgeCases:
     def test_contract_ref_with_relative_path(self) -> None:
         """Test that relative paths are accepted."""
         contract_ref = ModelContractRef(
-            contract_id="test-contract",
+            contract_name="test-contract",
             path=Path("relative/path/contract.yaml"),
         )
 
@@ -467,9 +467,9 @@ class TestModelContractRefEdgeCases:
 class TestModelContractRefRepr:
     """Tests for __repr__ output."""
 
-    def test_contract_ref_repr_includes_contract_id(self) -> None:
-        """Test that __repr__ includes the contract_id."""
-        contract_ref = ModelContractRef(contract_id="repr-test-contract")
+    def test_contract_ref_repr_includes_contract_name(self) -> None:
+        """Test that __repr__ includes the contract_name."""
+        contract_ref = ModelContractRef(contract_name="repr-test-contract")
 
         repr_str = repr(contract_ref)
 
