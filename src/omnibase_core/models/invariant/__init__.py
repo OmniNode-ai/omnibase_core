@@ -9,6 +9,7 @@ Models:
     ModelInvariantResult: Result of evaluating an invariant.
     ModelInvariantDefinition: Detailed definition with type-specific config.
     ModelInvariantSet: Collection of invariants for a node or workflow.
+    ModelEvaluationSummary: Summary of batch invariant evaluation results.
 
 Config Models (type-specific configurations):
     ModelSchemaInvariantConfig: JSON Schema validation config.
@@ -58,6 +59,7 @@ from omnibase_core.utils.util_invariant_yaml_parser import (
 
 from .model_cost_config import ModelCostConfig
 from .model_custom_invariant_config import ModelCustomInvariantConfig
+from .model_evaluation_summary import ModelEvaluationSummary
 from .model_field_presence_config import ModelFieldPresenceConfig
 from .model_field_value_config import ModelFieldValueConfig
 from .model_invariant import ModelInvariant
@@ -74,6 +76,7 @@ __all__ = [
     "ModelInvariantResult",
     "ModelInvariantDefinition",
     "ModelInvariantSet",
+    "ModelEvaluationSummary",
     # Config models
     "ModelSchemaInvariantConfig",
     "ModelFieldPresenceConfig",
