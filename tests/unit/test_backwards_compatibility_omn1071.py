@@ -74,37 +74,9 @@ class TestBackwardsCompatibilityOMN1071:
             "ProtocolContractLoader should be an alias for UtilContractLoader"
         )
 
-    def test_model_protocol_auditor_alias(self) -> None:
-        """
-        Test ModelProtocolAuditor -> ServiceProtocolAuditor alias.
-
-        Old path: omnibase_core.validation.ModelProtocolAuditor
-        New path: omnibase_core.services.service_protocol_auditor.ServiceProtocolAuditor
-        """
-        from omnibase_core.services.service_protocol_auditor import (
-            ServiceProtocolAuditor,
-        )
-        from omnibase_core.validation import ModelProtocolAuditor
-
-        assert ModelProtocolAuditor is ServiceProtocolAuditor, (
-            "ModelProtocolAuditor should be an alias for ServiceProtocolAuditor"
-        )
-
-    def test_protocol_contract_validator_alias(self) -> None:
-        """
-        Test ProtocolContractValidator -> ServiceContractValidator alias.
-
-        Old path: omnibase_core.validation.ProtocolContractValidator
-        New path: omnibase_core.services.service_contract_validator.ServiceContractValidator
-        """
-        from omnibase_core.services.service_contract_validator import (
-            ServiceContractValidator,
-        )
-        from omnibase_core.validation import ProtocolContractValidator
-
-        assert ProtocolContractValidator is ServiceContractValidator, (
-            "ProtocolContractValidator should be an alias for ServiceContractValidator"
-        )
+    # NOTE: test_model_protocol_auditor_alias and test_protocol_contract_validator_alias
+    # were removed per v0.4.0 rules - no backward compatibility aliases in validation module.
+    # Use canonical names: ServiceProtocolAuditor, ServiceContractValidator
 
     def test_model_conflict_resolver_alias(self) -> None:
         """
@@ -134,37 +106,9 @@ class TestBackwardsCompatibilityOMN1071:
             "ModelStreamingWindow should be an alias for UtilStreamingWindow"
         )
 
-    def test_model_validation_suite_alias(self) -> None:
-        """
-        Test ModelValidationSuite -> ServiceValidationSuite alias.
-
-        Old path: omnibase_core.validation.ModelValidationSuite
-        New path: omnibase_core.services.service_validation_suite.ServiceValidationSuite
-        """
-        from omnibase_core.services.service_validation_suite import (
-            ServiceValidationSuite,
-        )
-        from omnibase_core.validation import ModelValidationSuite
-
-        assert ModelValidationSuite is ServiceValidationSuite, (
-            "ModelValidationSuite should be an alias for ServiceValidationSuite"
-        )
-
-    def test_protocol_migrator_alias(self) -> None:
-        """
-        Test ProtocolMigrator -> ServiceProtocolMigrator alias.
-
-        Old path: omnibase_core.validation.ProtocolMigrator
-        New path: omnibase_core.services.service_protocol_migrator.ServiceProtocolMigrator
-        """
-        from omnibase_core.services.service_protocol_migrator import (
-            ServiceProtocolMigrator,
-        )
-        from omnibase_core.validation import ProtocolMigrator
-
-        assert ProtocolMigrator is ServiceProtocolMigrator, (
-            "ProtocolMigrator should be an alias for ServiceProtocolMigrator"
-        )
+    # NOTE: test_model_validation_suite_alias and test_protocol_migrator_alias
+    # were removed per v0.4.0 rules - no backward compatibility aliases in validation module.
+    # Use canonical names: ServiceValidationSuite, ServiceProtocolMigrator
 
 
 @pytest.mark.unit
@@ -194,15 +138,15 @@ class TestBackwardsCompatibilityAliasesInAll:
 
         assert "ProtocolContractLoader" in utils.__all__
 
-    def test_validation_aliases_in_all(self) -> None:
-        """Test backwards compatibility aliases are in validation.__all__."""
+    def test_validation_canonical_names_in_all(self) -> None:
+        """Test canonical service names are in validation.__all__.
+
+        Note: Per v0.4.0 rules, backward compatibility aliases were removed.
+        Only canonical Service* names are exported.
+        """
         from omnibase_core import validation
 
-        assert "ModelProtocolAuditor" in validation.__all__
-        assert "ProtocolContractValidator" in validation.__all__
-        assert "ModelValidationSuite" in validation.__all__
-        assert "ProtocolMigrator" in validation.__all__
-        # Also verify the canonical names are exported
+        # Verify the canonical names are exported (no backward compat aliases)
         assert "ServiceProtocolAuditor" in validation.__all__
         assert "ServiceContractValidator" in validation.__all__
         assert "ServiceValidationSuite" in validation.__all__
