@@ -4,6 +4,7 @@ Operations models for strongly-typed data structures.
 This module provides typed models to replace dict[str, Any] usage patterns.
 """
 
+from .model_change_proposal import ModelChangeProposal
 from .model_computation_data import (
     ModelComputationInputData,
     ModelComputationOutputData,
@@ -41,6 +42,7 @@ from .model_payload_structures import (
 from .model_reducer_operation_data import ModelReducerOperationData
 
 __all__ = [
+    "ModelChangeProposal",
     "ModelComputationInputData",
     "ModelComputationOutputData",
     "ModelComputeOperationData",
