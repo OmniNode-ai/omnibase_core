@@ -44,7 +44,7 @@ from pathlib import Path
 import yaml
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.errors.exception_groups import FILE_IO_ERRORS
+from omnibase_core.errors.exception_groups import FILE_IO_ERRORS, YAML_PARSING_ERRORS
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 # Default configuration constants
@@ -174,7 +174,7 @@ def _include_constructor(loader: IncludeLoader, node: yaml.Node) -> object:
         )
 
     # Validate path security
-    _validate_include_path(include_path_str, loader.base_path)
+    _validate_include_path(include_path_str)
 
     # Resolve the include path relative to the base path
     include_path = (loader.base_path / include_path_str).resolve()
@@ -236,7 +236,7 @@ def _include_constructor(loader: IncludeLoader, node: yaml.Node) -> object:
     try:
         content = include_path.read_text(encoding="utf-8")
     except FILE_IO_ERRORS as e:
-        # file-io-ok: handle OS-level file read errors
+        # boundary-ok: convert OS-level file read errors to structured ModelOnexError
         raise ModelOnexError(
             message=f"Cannot read include file: {e}",
             error_code=EnumCoreErrorCode.FILE_READ_ERROR,
@@ -266,8 +266,8 @@ def _include_constructor(loader: IncludeLoader, node: yaml.Node) -> object:
         result = nested_loader.get_single_data()
         nested_loader.dispose()  # type: ignore[no-untyped-call]
         return result
-    except yaml.YAMLError as e:
-        # yaml-error-ok: convert YAML syntax errors to structured ModelOnexError
+    except YAML_PARSING_ERRORS as e:
+        # boundary-ok: convert YAML syntax errors to structured ModelOnexError
         raise ModelOnexError(
             message=f"Invalid YAML in include file: {e}",
             error_code=EnumCoreErrorCode.CONFIGURATION_PARSE_ERROR,
@@ -278,13 +278,12 @@ def _include_constructor(loader: IncludeLoader, node: yaml.Node) -> object:
         ) from e
 
 
-def _validate_include_path(path_str: str, base_path: Path) -> None:
+def _validate_include_path(path_str: str) -> None:
     """
     Validate that an include path is safe and secure.
 
     Args:
         path_str: The include path string to validate.
-        base_path: The base path for resolution.
 
     Raises:
         ModelOnexError: If the path is not safe (absolute, traversal, etc.).
@@ -331,6 +330,17 @@ def load_contract(
     This function loads a YAML contract file and processes any !include
     directives, recursively loading and merging referenced files.
 
+    Thread Safety:
+        This function is thread-safe. Each call creates a new IncludeLoader
+        instance with its own state, so there is no shared mutable state
+        between concurrent calls.
+
+    Symlink Handling:
+        Symlinks in contract paths and include paths are resolved (followed).
+        The resolved target path must be within the allowed base directory;
+        symlinks that escape the base directory are rejected with a
+        SECURITY_VIOLATION error.
+
     Args:
         contract_path: Path to the contract YAML file.
         max_depth: Maximum nesting depth for includes (default: 10).
@@ -361,7 +371,7 @@ def load_contract(
     try:
         content = contract_path.read_text(encoding="utf-8")
     except FILE_IO_ERRORS as e:
-        # file-io-ok: handle OS-level file read errors
+        # boundary-ok: convert OS-level file read errors to structured ModelOnexError
         raise ModelOnexError(
             message=f"Cannot read contract file: {e}",
             error_code=EnumCoreErrorCode.FILE_READ_ERROR,
@@ -405,8 +415,8 @@ def load_contract(
 
         return result
 
-    except yaml.YAMLError as e:
-        # yaml-error-ok: convert YAML syntax errors to structured ModelOnexError
+    except YAML_PARSING_ERRORS as e:
+        # boundary-ok: convert YAML syntax errors to structured ModelOnexError
         raise ModelOnexError(
             message=f"Invalid YAML in contract file: {e}",
             error_code=EnumCoreErrorCode.CONFIGURATION_PARSE_ERROR,
