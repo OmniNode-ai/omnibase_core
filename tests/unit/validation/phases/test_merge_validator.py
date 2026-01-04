@@ -129,9 +129,15 @@ class TestMergeValidatorBasic(TestMergeValidatorFixtures):
         valid_patch: ModelContractPatch,
         valid_merged: ModelHandlerContract,
     ) -> None:
-        """Test that validator returns ModelValidationResult."""
+        """Test that validator returns ModelValidationResult with expected structure."""
         result = validator.validate(valid_base, valid_patch, valid_merged)
         assert isinstance(result, ModelValidationResult)
+        # Verify result has expected structure and valid content
+        assert hasattr(result, "is_valid")
+        assert hasattr(result, "issues")
+        assert result.is_valid is True
+        assert isinstance(result.issues, list)
+        assert result.error_count == 0
 
     def test_validator_is_stateless(
         self,

@@ -121,6 +121,7 @@ class ModelLintWarning(BaseModel):
         use_enum_values=False,
         validate_assignment=True,
         frozen=True,
+        from_attributes=True,  # pytest-xdist compatibility
     )
 
     code: str = Field(

@@ -297,8 +297,6 @@ def validate_architecture(
     max_violations: int = 0,
 ) -> ModelValidationResult[None]:
     """Validate ONEX one-model-per-file architecture."""
-    from pathlib import Path
-
     return validate_architecture_directory(Path(directory_path), max_violations)
 
 
