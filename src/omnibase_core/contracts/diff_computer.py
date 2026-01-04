@@ -66,6 +66,9 @@ _MAX_RECURSION_DEPTH = 100
 
 if TYPE_CHECKING:
     from pydantic import BaseModel
+
+    from omnibase_core.models.contracts.model_contract_patch import ModelContractPatch
+
 from omnibase_core.enums.enum_contract_diff_change_type import (
     EnumContractDiffChangeType,
 )
@@ -81,10 +84,6 @@ from omnibase_core.models.contracts.diff.model_diff_configuration import (
     ModelDiffConfiguration,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
-if TYPE_CHECKING:
-    from omnibase_core.models.contracts.model_contract_patch import ModelContractPatch
-
 
 # Extended identity keys for contract diffing
 # Maps field paths (or final path components) to the identity key field

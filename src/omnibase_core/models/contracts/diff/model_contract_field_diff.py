@@ -6,8 +6,6 @@ including the change type, old/new values, and position information for
 list element moves.
 """
 
-from __future__ import annotations
-
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums.enum_contract_diff_change_type import (
@@ -99,7 +97,7 @@ class ModelContractFieldDiff(BaseModel):
     )
 
     @model_validator(mode="after")
-    def validate_change_type_consistency(self) -> ModelContractFieldDiff:
+    def validate_change_type_consistency(self) -> "ModelContractFieldDiff":
         """
         Validate that old_value, new_value, and indices are consistent with change_type.
 
@@ -147,7 +145,7 @@ class ModelContractFieldDiff(BaseModel):
 
         return self
 
-    def to_reverse(self) -> ModelContractFieldDiff:
+    def to_reverse(self) -> "ModelContractFieldDiff":
         """
         Create a reversed version of this field diff.
 

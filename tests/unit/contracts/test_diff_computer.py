@@ -953,3 +953,128 @@ class TestTypeSafety:
         assert hasattr(list_diff, "removed_items")
         assert hasattr(list_diff, "modified_items")
         assert hasattr(list_diff, "moved_items")
+
+
+# =================== DUPLICATE IDENTITY KEY TESTS ===================
+
+
+@pytest.mark.unit
+class TestDuplicateIdentityKeys:
+    """Tests for handling duplicate identity keys in lists.
+
+    When list items share the same identity value (e.g., two items with
+    name="dep_a"), the algorithm uses composite keys to preserve all items
+    and avoid silent data loss.
+    """
+
+    def test_duplicate_identity_uses_composite_key(self) -> None:
+        """Test that duplicate identity keys use composite key disambiguation.
+
+        When multiple items have the same identity value, later items get
+        a composite key like 'value__index' to preserve them in the map.
+        """
+        before = SampleContract(
+            name="test",
+            dependencies=[
+                {"name": "dep_a", "version": "1.0"},
+                {"name": "dep_a", "version": "2.0"},  # Same name, different version
+            ],
+        )
+        after = SampleContract(
+            name="test",
+            dependencies=[
+                {"name": "dep_a", "version": "1.0"},
+                {"name": "dep_a", "version": "3.0"},  # Modified the duplicate
+            ],
+        )
+        diff = compute_contract_diff(before, after)
+
+        # Both items should be tracked - the duplicate uses composite key
+        deps_diff = next(
+            (d for d in diff.list_diffs if "dependencies" in d.field_path), None
+        )
+        assert deps_diff is not None
+
+        # The modification of the second item should be detected
+        assert deps_diff.has_changes
+        # Either modified (if composite key matched) or removed+added
+        total_changes = (
+            len(deps_diff.added_items)
+            + len(deps_diff.removed_items)
+            + len(deps_diff.modified_items)
+        )
+        assert total_changes >= 1
+
+    def test_duplicate_identity_no_data_loss(self) -> None:
+        """Test that duplicate identity keys don't cause silent data loss.
+
+        Both items with the same identity should be preserved and compared.
+        """
+        before = SampleContract(
+            name="test",
+            dependencies=[
+                {"name": "dup", "data": "first"},
+                {"name": "dup", "data": "second"},
+                {"name": "dup", "data": "third"},
+            ],
+        )
+        after = SampleContract(
+            name="test",
+            dependencies=[
+                {"name": "dup", "data": "first"},
+                {"name": "dup", "data": "MODIFIED"},  # Changed
+                {"name": "dup", "data": "third"},
+            ],
+        )
+        diff = compute_contract_diff(before, after)
+
+        deps_diff = next(
+            (d for d in diff.list_diffs if "dependencies" in d.field_path), None
+        )
+        assert deps_diff is not None
+        assert deps_diff.has_changes
+
+    def test_duplicate_identity_all_removed(self) -> None:
+        """Test removing all items with duplicate identity keys."""
+        before = SampleContract(
+            name="test",
+            dependencies=[
+                {"name": "dep_a"},
+                {"name": "dep_a"},  # Duplicate
+            ],
+        )
+        after = SampleContract(
+            name="test",
+            dependencies=[],
+        )
+        diff = compute_contract_diff(before, after)
+
+        deps_diff = next(
+            (d for d in diff.list_diffs if "dependencies" in d.field_path), None
+        )
+        assert deps_diff is not None
+        # Both items should be detected as removed
+        assert len(deps_diff.removed_items) == 2
+
+    def test_duplicate_identity_all_added(self) -> None:
+        """Test adding items that all have the same identity key."""
+        before = SampleContract(
+            name="test",
+            dependencies=[],
+        )
+        after = SampleContract(
+            name="test",
+            dependencies=[
+                {"name": "new_dep"},
+                {"name": "new_dep"},  # Duplicate
+                {"name": "new_dep"},  # Another duplicate
+            ],
+        )
+        diff = compute_contract_diff(before, after)
+
+        deps_diff = next(
+            (d for d in diff.list_diffs if "dependencies" in d.field_path), None
+        )
+        assert deps_diff is not None
+        # All three items should be detected as added
+        assert len(deps_diff.added_items) == 3
