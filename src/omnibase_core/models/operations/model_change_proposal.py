@@ -331,14 +331,24 @@ class ModelChangeProposal(BaseModel):
 
         # Validate URL format for any url/endpoint values found
         for key, value in before_urls.items():
-            if isinstance(value, str) and not _is_valid_url(value):
+            if not isinstance(value, str):
+                raise ModelOnexError(
+                    message=f"'{key}' in before_config must be a string, got {type(value).__name__}",
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                )
+            if not _is_valid_url(value):
                 raise ModelOnexError(
                     message=f"Invalid URL format in before_config['{key}']: {value}",
                     error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 )
 
         for key, value in after_urls.items():
-            if isinstance(value, str) and not _is_valid_url(value):
+            if not isinstance(value, str):
+                raise ModelOnexError(
+                    message=f"'{key}' in after_config must be a string, got {type(value).__name__}",
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                )
+            if not _is_valid_url(value):
                 raise ModelOnexError(
                     message=f"Invalid URL format in after_config['{key}']: {value}",
                     error_code=EnumCoreErrorCode.VALIDATION_ERROR,

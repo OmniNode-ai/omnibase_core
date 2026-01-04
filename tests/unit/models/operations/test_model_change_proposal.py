@@ -211,17 +211,15 @@ class TestChangeProposalValidation:
 
         assert proposal.change_type == EnumChangeType.CONFIG_CHANGE
 
-    def test_endpoint_change_type_accepted(
-        self, nested_before_config: dict, nested_after_config: dict
-    ) -> None:
+    def test_endpoint_change_type_accepted(self) -> None:
         """endpoint_change is a valid change_type."""
-        # Use nested configs that contain 'endpoint' key for endpoint_change validation
+        # Use configs with valid URL strings for endpoint_change validation
         proposal = ModelChangeProposal(
             change_type=EnumChangeType.ENDPOINT_CHANGE,
             description="Change endpoint",
             rationale="Testing endpoint change type",
-            before_config=nested_before_config,
-            after_config=nested_after_config,
+            before_config={"url": "https://api.old.example.com/v1", "timeout": 30},
+            after_config={"url": "https://api.new.example.com/v2", "timeout": 60},
         )
 
         assert proposal.change_type == EnumChangeType.ENDPOINT_CHANGE
@@ -437,9 +435,10 @@ class TestChangeProposalSerialization:
         self, nested_before_config: dict, nested_after_config: dict
     ) -> None:
         """Nested dicts in config serialize correctly."""
+        # Use CONFIG_CHANGE to test serialization without endpoint URL validation
         proposal = ModelChangeProposal(
-            change_type=EnumChangeType.ENDPOINT_CHANGE,
-            description="Update endpoint",
+            change_type=EnumChangeType.CONFIG_CHANGE,
+            description="Update config",
             rationale="Testing nested serialization",
             before_config=nested_before_config,
             after_config=nested_after_config,
@@ -1043,9 +1042,10 @@ class TestDeepNestedConfigComparison:
         self, nested_before_config: dict, nested_after_config: dict
     ) -> None:
         """Deep mode handles three levels of nesting."""
+        # Use CONFIG_CHANGE to test deep key comparison without endpoint URL validation
         proposal = ModelChangeProposal(
-            change_type=EnumChangeType.ENDPOINT_CHANGE,
-            description="Deep nested endpoint change",
+            change_type=EnumChangeType.CONFIG_CHANGE,
+            description="Deep nested config change",
             rationale="Testing three-level nesting",
             before_config=nested_before_config,
             after_config=nested_after_config,
@@ -1547,32 +1547,112 @@ class TestTypeSpecificValidation:
         assert "url" not in proposal.before_config
         assert "url" in proposal.after_config
 
-    def test_endpoint_change_with_nested_endpoint_structure(
+    def test_endpoint_change_with_nested_endpoint_structure_raises_error(
         self, nested_before_config: dict, nested_after_config: dict
     ) -> None:
-        """ENDPOINT_CHANGE works with nested 'endpoint' structure."""
-        # The nested configs have 'endpoint' as a nested dict with 'url' inside
-        proposal = ModelChangeProposal.create(
-            change_type=EnumChangeType.ENDPOINT_CHANGE,
-            description="Change nested endpoint",
-            rationale="Testing nested endpoint structure",
-            before_config=nested_before_config,
-            after_config=nested_after_config,
-        )
+        """ENDPOINT_CHANGE fails with nested 'endpoint' structure (dict, not string URL)."""
+        # The nested configs have 'endpoint' as a nested dict with 'url' inside,
+        # which should now raise an error since 'endpoint' must be a string URL
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelChangeProposal.create(
+                change_type=EnumChangeType.ENDPOINT_CHANGE,
+                description="Change nested endpoint",
+                rationale="Testing nested endpoint structure",
+                before_config=nested_before_config,
+                after_config=nested_after_config,
+            )
 
-        assert proposal.change_type == EnumChangeType.ENDPOINT_CHANGE
-        assert "endpoint" in proposal.before_config
-        assert "endpoint" in proposal.after_config
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert "must be a string" in str(exc_info.value)
+        assert "dict" in str(exc_info.value)
 
-    def test_endpoint_change_non_string_url_skips_validation(self) -> None:
-        """ENDPOINT_CHANGE skips URL format validation for non-string values."""
-        # When url/endpoint value is not a string (e.g., a dict), validation is skipped
-        proposal = ModelChangeProposal.create(
-            change_type=EnumChangeType.ENDPOINT_CHANGE,
-            description="Change endpoint with dict value",
-            rationale="Testing non-string URL value",
-            before_config={"endpoint": {"host": "old.example.com", "port": 8080}},
-            after_config={"endpoint": {"host": "new.example.com", "port": 9090}},
-        )
+    def test_endpoint_change_non_string_url_raises_error(self) -> None:
+        """ENDPOINT_CHANGE fails with non-string URL values (dict)."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelChangeProposal.create(
+                change_type=EnumChangeType.ENDPOINT_CHANGE,
+                description="Change endpoint with dict value",
+                rationale="Testing non-string URL value",
+                before_config={"endpoint": {"host": "old.example.com", "port": 8080}},
+                after_config={"endpoint": {"host": "new.example.com", "port": 9090}},
+            )
 
-        assert proposal.change_type == EnumChangeType.ENDPOINT_CHANGE
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert "must be a string" in str(exc_info.value)
+        assert "dict" in str(exc_info.value)
+
+    def test_endpoint_change_non_string_url_in_before_config_only(self) -> None:
+        """ENDPOINT_CHANGE fails with non-string URL in before_config only."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelChangeProposal.create(
+                change_type=EnumChangeType.ENDPOINT_CHANGE,
+                description="Change endpoint",
+                rationale="Testing non-string URL in before_config",
+                before_config={"url": 12345},  # Integer instead of string
+                after_config={"url": "https://api.example.com/v1"},
+            )
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert "before_config" in str(exc_info.value)
+        assert "must be a string" in str(exc_info.value)
+        assert "int" in str(exc_info.value)
+
+    def test_endpoint_change_non_string_url_in_after_config_only(self) -> None:
+        """ENDPOINT_CHANGE fails with non-string URL in after_config only."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelChangeProposal.create(
+                change_type=EnumChangeType.ENDPOINT_CHANGE,
+                description="Change endpoint",
+                rationale="Testing non-string URL in after_config",
+                before_config={"url": "https://api.example.com/v1"},
+                after_config={
+                    "url": ["https://api.example.com/v2"]
+                },  # List instead of string
+            )
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert "after_config" in str(exc_info.value)
+        assert "must be a string" in str(exc_info.value)
+        assert "list" in str(exc_info.value)
+
+    def test_endpoint_change_non_string_endpoint_key(self) -> None:
+        """ENDPOINT_CHANGE fails with non-string 'endpoint' key value."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelChangeProposal.create(
+                change_type=EnumChangeType.ENDPOINT_CHANGE,
+                description="Change endpoint",
+                rationale="Testing non-string endpoint value",
+                before_config={"endpoint": None},  # None instead of string
+                after_config={"endpoint": "https://api.example.com/v1"},
+            )
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert "must be a string" in str(exc_info.value)
+        assert "NoneType" in str(exc_info.value)
+
+    def test_endpoint_change_non_string_url_error_includes_key_name(self) -> None:
+        """ENDPOINT_CHANGE error message includes the offending key name."""
+        # Test with 'url' key
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelChangeProposal.create(
+                change_type=EnumChangeType.ENDPOINT_CHANGE,
+                description="Change endpoint",
+                rationale="Testing error message content",
+                before_config={"url": {"nested": "value"}},
+                after_config={"url": "https://api.example.com/v1"},
+            )
+
+        assert "'url'" in str(exc_info.value)
+
+        # Test with 'endpoint' key
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelChangeProposal.create(
+                change_type=EnumChangeType.ENDPOINT_CHANGE,
+                description="Change endpoint",
+                rationale="Testing error message content",
+                before_config={"endpoint": 999.99},  # Float instead of string
+                after_config={"endpoint": "https://api.example.com/v1"},
+            )
+
+        assert "'endpoint'" in str(exc_info.value)
+        assert "float" in str(exc_info.value)
