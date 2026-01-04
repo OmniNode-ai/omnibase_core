@@ -103,6 +103,11 @@ class ModelWorkflowCoordinator:
         config: SerializedDict | None,
     ) -> object:
         """Execute a specific workflow type with input data."""
+        # Import at function level to avoid circular imports
+        from omnibase_core.logging.logging_structured import (
+            emit_log_event_sync as emit_log_event,
+        )
+
         try:
             # Create and run workflow based on type
             workflow = self.factory.create_workflow(workflow_type, config)
@@ -119,10 +124,6 @@ class ModelWorkflowCoordinator:
             return result
 
         except (AttributeError, KeyError, RuntimeError, TypeError, ValueError) as e:
-            from omnibase_core.logging.logging_structured import (
-                emit_log_event_sync as emit_log_event,
-            )
-
             emit_log_event(
                 LogLevel.ERROR,
                 f"Workflow execution failed for type {workflow_type}: {e}",
