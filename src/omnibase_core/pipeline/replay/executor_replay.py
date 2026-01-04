@@ -91,10 +91,10 @@ from omnibase_core.enums.replay.enum_recorder_mode import EnumRecorderMode
 from omnibase_core.enums.replay.enum_replay_mode import EnumReplayMode
 from omnibase_core.models.replay.model_effect_record import ModelEffectRecord
 from omnibase_core.models.replay.model_replay_context import ModelReplayContext
-from omnibase_core.pipeline.replay.injector_rng import InjectorRNG
-from omnibase_core.pipeline.replay.injector_time import InjectorTime
-from omnibase_core.pipeline.replay.recorder_effect import RecorderEffect
 from omnibase_core.pipeline.replay.session_replay import ReplaySession
+from omnibase_core.services.replay.injector_rng import InjectorRNG
+from omnibase_core.services.replay.injector_time import InjectorTime
+from omnibase_core.services.replay.recorder_effect import RecorderEffect
 from omnibase_core.types.type_json import JsonType
 
 T = TypeVar("T")

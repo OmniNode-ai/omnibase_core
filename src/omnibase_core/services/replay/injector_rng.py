@@ -15,7 +15,7 @@ Design:
 Usage:
     .. code-block:: python
 
-        from omnibase_core.pipeline.replay import InjectorRNG
+        from omnibase_core.services.replay.injector_rng import InjectorRNG
 
         # Replay mode: use specific seed
         rng = InjectorRNG(seed=42)

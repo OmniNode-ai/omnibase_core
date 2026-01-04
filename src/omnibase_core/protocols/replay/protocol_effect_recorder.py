@@ -21,7 +21,7 @@ Usage:
     .. code-block:: python
 
         from omnibase_core.protocols.replay import ProtocolEffectRecorder
-        from omnibase_core.pipeline.replay import RecorderEffect
+        from omnibase_core.services.replay.recorder_effect import RecorderEffect
         from omnibase_core.enums.replay import EnumRecorderMode
 
         # Production mode - pass-through (no recording)

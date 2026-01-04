@@ -15,7 +15,7 @@ Design:
 Usage:
     .. code-block:: python
 
-        from omnibase_core.pipeline.replay import InjectorTime
+        from omnibase_core.services.replay.injector_time import InjectorTime
         from datetime import datetime, timezone
 
         # Production mode: returns current time
