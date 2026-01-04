@@ -20,7 +20,6 @@ Related:
 from unittest.mock import MagicMock, patch
 
 import pytest
-from omnibase_core.validation.contract_patch_validator import ContractPatchValidator
 
 from omnibase_core.enums.enum_validation_phase import EnumValidationPhase
 from omnibase_core.models.common.model_validation_result import ModelValidationResult
@@ -36,6 +35,7 @@ from omnibase_core.validation.contract_validation_pipeline import (
 )
 from omnibase_core.validation.phases.expanded_validator import ExpandedContractValidator
 from omnibase_core.validation.phases.merge_validator import MergeValidator
+from omnibase_core.validation.validator_contract_patch import ContractPatchValidator
 
 
 @pytest.mark.unit
