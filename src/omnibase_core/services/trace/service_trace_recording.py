@@ -221,7 +221,7 @@ class ServiceTraceRecording:
             percentiles (p50, p95, p99).
 
         Raises:
-            ValueError: If end_time is before start_time.
+            ModelOnexError: If end_time is before start_time (with VALIDATION_ERROR code).
 
         Example:
             >>> from datetime import datetime, UTC, timedelta

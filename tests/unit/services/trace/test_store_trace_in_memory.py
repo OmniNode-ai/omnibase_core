@@ -422,7 +422,7 @@ class TestStoreEdgeCases:
         assert retrieved.trace_id == trace.trace_id
 
     async def test_store_query_returns_copies(self, store: StoreTraceInMemory) -> None:
-        """Query returns independent copies of traces."""
+        """Query returns traces with consistent data."""
         trace = create_test_trace()
         await store.put(trace)
 
@@ -446,7 +446,7 @@ class TestStoreEdgeCases:
         assert results == []
 
     async def test_store_concurrent_operations(self, store: StoreTraceInMemory) -> None:
-        """Store handles concurrent put and query operations."""
+        """Store handles concurrent put operations."""
         import asyncio
 
         async def put_trace():
@@ -454,11 +454,7 @@ class TestStoreEdgeCases:
             await store.put(trace)
             return trace.trace_id
 
-        async def query_traces():
-            query = ModelTraceQuery()
-            return await store.query(query)
-
-        # Run puts and queries concurrently
+        # Run puts concurrently
         put_tasks = [put_trace() for _ in range(10)]
         trace_ids = await asyncio.gather(*put_tasks)
 
