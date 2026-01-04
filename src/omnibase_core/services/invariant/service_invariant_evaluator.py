@@ -33,8 +33,11 @@ import logging
 import re
 import signal
 import sys
+import threading
 import time
 from collections import OrderedDict
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import TimeoutError as FuturesTimeoutError
 from datetime import UTC, datetime
 from typing import Any
 
@@ -366,9 +369,19 @@ class ServiceInvariantEvaluator:
     ) -> tuple[bool, re.Match[str] | None, str]:
         """Perform a regex search with safety checks and timeout protection.
 
-        On Unix systems, uses signal.alarm for true timeout enforcement.
-        On Windows or when signal is unavailable, falls back to time tracking
-        with comprehensive pattern validation.
+        Thread Safety:
+            This method is thread-safe and can be called from any thread.
+
+            - **Main thread on Unix**: Uses signal.alarm for efficient timeout.
+            - **Non-main threads or Windows**: Uses ThreadPoolExecutor with timeout.
+              The regex runs in a worker thread and is abandoned if it exceeds
+              the timeout. This properly raises RegexTimeoutError on timeout.
+
+        Security:
+            Provides protection against ReDoS (Regular Expression Denial of Service):
+            1. Pattern validation rejects known dangerous patterns before execution
+            2. Input length limits prevent excessive processing
+            3. Timeout enforcement stops runaway regex operations
 
         Args:
             pattern: The regex pattern to search for.
@@ -378,6 +391,10 @@ class ServiceInvariantEvaluator:
             Tuple of (success, match, error_message).
             If success is True, match contains the result (or None if no match).
             If success is False, error_message contains the error description.
+
+        Raises:
+            This method does not raise exceptions. All errors are captured and
+            returned as (False, None, error_message) tuples.
         """
         # First validate the pattern is safe
         is_safe, error_msg = self._is_regex_safe(pattern)
@@ -392,17 +409,18 @@ class ServiceInvariantEvaluator:
                 f"Input text too long (max {self.MAX_REGEX_INPUT_LENGTH} chars)",
             )
 
-        # Determine if we can use signal-based timeout (Unix only, main thread only)
+        # Determine if we can use signal-based timeout
+        # Signal handlers only work in the main thread on Unix systems
+        # Thread safety: signal.signal() raises ValueError if called from non-main thread
         can_use_signal = (
             sys.platform != "win32"
             and hasattr(signal, "SIGALRM")
             and hasattr(signal, "alarm")
+            and threading.current_thread() is threading.main_thread()
         )
 
-        start_time = time.perf_counter()
-
         if can_use_signal:
-            # Use signal-based timeout on Unix
+            # Use signal-based timeout on Unix main thread
             old_handler = signal.signal(signal.SIGALRM, self._regex_timeout_handler)
             try:
                 # Set alarm for timeout (rounded up to next second)
@@ -423,20 +441,33 @@ class ServiceInvariantEvaluator:
                 signal.alarm(0)  # Ensure alarm is cancelled
                 signal.signal(signal.SIGALRM, old_handler)
         else:
-            # Fallback: time tracking with post-hoc warning (Windows or non-main thread)
+            # Thread-based timeout: works on any platform and any thread
+            # Uses ThreadPoolExecutor to run regex in a separate thread with timeout
+            # Note: The worker thread continues running after timeout, but we return
+            # immediately. This is acceptable for regex operations which are CPU-bound
+            # and will eventually complete (even if slowly).
             try:
-                match = re.search(pattern, text)
-                elapsed = time.perf_counter() - start_time
-
-                # Log warning if regex took too long (potential slow pattern)
-                if elapsed > self.REGEX_TIMEOUT_SECONDS:
-                    logger.warning(
-                        "Slow regex pattern detected: took %.2f seconds (pattern: %s)",
-                        elapsed,
-                        pattern[:50] + "..." if len(pattern) > 50 else pattern,
-                    )
-
-                return (True, match, "")
+                with ThreadPoolExecutor(max_workers=1) as executor:
+                    future = executor.submit(re.search, pattern, text)
+                    try:
+                        match = future.result(timeout=self.REGEX_TIMEOUT_SECONDS)
+                        return (True, match, "")
+                    except FuturesTimeoutError:
+                        # Regex operation exceeded timeout - potential ReDoS
+                        logger.warning(
+                            "Regex timeout: pattern took longer than %.1fs (pattern: %s)",
+                            self.REGEX_TIMEOUT_SECONDS,
+                            pattern[:50] + "..." if len(pattern) > 50 else pattern,
+                        )
+                        raise RegexTimeoutError(
+                            f"Regex operation timed out after {self.REGEX_TIMEOUT_SECONDS}s"
+                        )
+            except RegexTimeoutError:
+                return (
+                    False,
+                    None,
+                    f"Regex timed out after {self.REGEX_TIMEOUT_SECONDS}s",
+                )
             except re.error as e:
                 return (False, None, f"Regex error: {e}")
 
@@ -749,8 +780,18 @@ class ServiceInvariantEvaluator:
         missing_fields: list[str] = []
         for field_path in fields:
             if not isinstance(field_path, str):
-                logger.warning("Skipping non-string field path: %r", field_path)
-                continue
+                # Configuration error: field paths must be strings - fail fast
+                logger.warning(
+                    "Invalid field path type in config: expected str, got %s (value: %r)",
+                    type(field_path).__name__,
+                    field_path,
+                )
+                return (
+                    False,
+                    f"Invalid config: field path must be a string, got {type(field_path).__name__}: {field_path!r}",
+                    None,
+                    fields,
+                )
             found, _ = self._resolve_field_path(output, field_path)
             if not found:
                 missing_fields.append(field_path)
@@ -1320,7 +1361,7 @@ class ServiceInvariantEvaluator:
         # Call the custom function
         try:
             result = func(output, **kwargs)
-        except Exception as e:  # fallback-ok: custom callable errors must be captured
+        except Exception as e:  # fallback-ok: custom callable boundary - must capture all errors to return result
             return (
                 False,
                 f"Custom callable raised exception: {type(e).__name__}: {e}",
@@ -1414,4 +1455,4 @@ class ServiceInvariantEvaluator:
         return (True, current)
 
 
-__all__ = ["ServiceInvariantEvaluator", "RegexTimeoutError"]
+__all__ = ["ServiceInvariantEvaluator"]

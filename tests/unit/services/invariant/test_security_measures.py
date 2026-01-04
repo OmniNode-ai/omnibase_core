@@ -342,3 +342,168 @@ class TestSecurityIntegration:
         # Should fail due to dangerous pattern detection
         assert result.passed is False
         assert "nested quantifiers" in result.message.lower()
+
+
+@pytest.mark.unit
+class TestThreadSafetyForRegex:
+    """Tests for thread-safe regex timeout handling.
+
+    These tests verify that the regex timeout mechanism works correctly
+    when called from non-main threads, which is common in web servers
+    and async frameworks.
+    """
+
+    def test_regex_search_works_from_worker_thread(self) -> None:
+        """Verify regex search works correctly when called from a worker thread."""
+        import re
+        import threading
+
+        evaluator = ServiceInvariantEvaluator()
+        results: list[tuple[bool, re.Match[str] | None, str]] = []
+        errors: list[Exception] = []
+
+        def worker() -> None:
+            try:
+                # Should work correctly from non-main thread
+                success, match, error_msg = evaluator._safe_regex_search(
+                    r"\d+", "abc123def"
+                )
+                results.append((success, match, error_msg))
+            except Exception as e:
+                errors.append(e)
+
+        thread = threading.Thread(target=worker)
+        thread.start()
+        thread.join(timeout=5.0)
+
+        assert not errors, f"Worker thread raised: {errors}"
+        assert len(results) == 1
+        success, match, error_msg = results[0]
+        assert success is True
+        assert match is not None
+        assert match.group() == "123"
+        assert error_msg == ""
+
+    def test_dangerous_pattern_rejected_from_worker_thread(self) -> None:
+        """Verify dangerous patterns are rejected when called from worker thread."""
+        import re
+        import threading
+
+        evaluator = ServiceInvariantEvaluator()
+        results: list[tuple[bool, re.Match[str] | None, str]] = []
+        errors: list[Exception] = []
+
+        def worker() -> None:
+            try:
+                # Dangerous pattern should be rejected
+                success, match, error_msg = evaluator._safe_regex_search(
+                    r"(a+)+", "aaaaaa"
+                )
+                results.append((success, match, error_msg))
+            except Exception as e:
+                errors.append(e)
+
+        thread = threading.Thread(target=worker)
+        thread.start()
+        thread.join(timeout=5.0)
+
+        assert not errors, f"Worker thread raised: {errors}"
+        assert len(results) == 1
+        success, match, error_msg = results[0]
+        assert success is False
+        assert match is None
+        assert "nested quantifiers" in error_msg.lower()
+
+    def test_field_value_pattern_works_from_worker_thread(self) -> None:
+        """Verify FIELD_VALUE evaluation works from worker thread."""
+        import threading
+
+        evaluator = ServiceInvariantEvaluator()
+        results: list[bool] = []
+        errors: list[Exception] = []
+
+        invariant = ModelInvariant(
+            name="Thread Test",
+            type=EnumInvariantType.FIELD_VALUE,
+            severity=EnumInvariantSeverity.WARNING,
+            config={
+                "field_path": "email",
+                "pattern": r"^[a-z]+@[a-z]+\.[a-z]+$",
+            },
+        )
+
+        def worker() -> None:
+            try:
+                result = evaluator.evaluate(invariant, {"email": "test@example.com"})
+                results.append(result.passed)
+            except Exception as e:
+                errors.append(e)
+
+        thread = threading.Thread(target=worker)
+        thread.start()
+        thread.join(timeout=5.0)
+
+        assert not errors, f"Worker thread raised: {errors}"
+        assert len(results) == 1
+        assert results[0] is True
+
+    def test_multiple_concurrent_threads(self) -> None:
+        """Verify multiple concurrent regex operations work correctly."""
+        from concurrent.futures import ThreadPoolExecutor
+
+        evaluator = ServiceInvariantEvaluator()
+        num_threads = 10
+
+        def worker(thread_id: int) -> tuple[int, bool, str]:
+            success, match, _error_msg = evaluator._safe_regex_search(
+                r"thread_\d+", f"prefix_thread_{thread_id}_suffix"
+            )
+            return (thread_id, success, match.group() if match else "")
+
+        with ThreadPoolExecutor(max_workers=num_threads) as executor:
+            futures = [executor.submit(worker, i) for i in range(num_threads)]
+            results = [f.result(timeout=10.0) for f in futures]
+
+        # All threads should succeed
+        for thread_id, success, matched in results:
+            assert success is True, f"Thread {thread_id} failed"
+            assert matched == f"thread_{thread_id}", f"Thread {thread_id} wrong match"
+
+    def test_thread_uses_executor_timeout_not_signal(self) -> None:
+        """Verify that non-main threads use ThreadPoolExecutor timeout, not signal.
+
+        This test verifies the fix for the critical thread-safety issue where
+        signal.signal() would raise ValueError in non-main threads.
+        """
+        import re
+        import threading
+
+        evaluator = ServiceInvariantEvaluator()
+        signal_errors: list[Exception] = []
+        results: list[tuple[bool, re.Match[str] | None, str]] = []
+
+        def worker() -> None:
+            try:
+                # This should NOT raise ValueError about signal
+                # because the implementation should detect non-main thread
+                # and use ThreadPoolExecutor instead
+                success, match, error_msg = evaluator._safe_regex_search(
+                    r"test", "test string"
+                )
+                results.append((success, match, error_msg))
+            except ValueError as e:
+                if "signal only works in main thread" in str(e):
+                    signal_errors.append(e)
+                raise
+
+        thread = threading.Thread(target=worker)
+        thread.start()
+        thread.join(timeout=5.0)
+
+        # No signal-related errors should occur
+        assert not signal_errors, (
+            f"Signal was incorrectly used in non-main thread: {signal_errors}"
+        )
+        assert len(results) == 1
+        success, _match, _error_msg = results[0]
+        assert success is True

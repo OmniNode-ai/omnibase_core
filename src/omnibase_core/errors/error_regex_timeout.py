@@ -13,7 +13,7 @@ class RegexTimeoutError(Exception):
     unexpectedly complex pattern.
 
     Example:
-        >>> from omnibase_core.services.invariant.error_regex_timeout import (
+        >>> from omnibase_core.errors.error_regex_timeout import (
         ...     RegexTimeoutError,
         ... )
         >>> raise RegexTimeoutError("Regex timed out after 5 seconds")
