@@ -1102,6 +1102,389 @@ class TestModelExecutionComparisonCostDelta:
 
 
 @pytest.mark.unit
+class TestModelExecutionComparisonCostDeltaEdgeCases:
+    """Test edge cases for cost delta calculations.
+
+    These tests verify the model handles various cost scenarios correctly,
+    including division by zero protection and partial cost data.
+    """
+
+    def test_edge_cost_delta_percent_with_zero_baseline_cost(
+        self,
+        sample_input_hash: str,
+        sample_matching_output_hashes: tuple[str, str],
+        sample_no_regression_summary: ModelInvariantComparisonSummary,
+        sample_invariant_result_passed: ModelInvariantResult,
+    ) -> None:
+        """Model accepts zero baseline_cost with pre-computed delta percent.
+
+        When baseline_cost is 0, calculating percent change would cause
+        division by zero. Since ModelExecutionComparison stores pre-computed
+        delta_percent values (not computed at runtime), the producer of this
+        data is responsible for handling the edge case.
+
+        Convention: When baseline_cost is 0, cost_delta_percent should be set
+        to 0.0 (alternatively could be infinity or undefined, but 0.0 is a
+        safe default that avoids representing undefined percentage).
+        """
+        baseline_hash, replay_hash = sample_matching_output_hashes
+
+        comparison = ModelExecutionComparison(
+            baseline_execution_id=TEST_BASELINE_ID,
+            replay_execution_id=TEST_REPLAY_ID,
+            input_hash=sample_input_hash,
+            input_hash_match=True,
+            baseline_output_hash=baseline_hash,
+            replay_output_hash=replay_hash,
+            output_match=True,
+            baseline_latency_ms=100.0,
+            replay_latency_ms=100.0,
+            latency_delta_ms=0.0,
+            latency_delta_percent=0.0,
+            baseline_cost=0.0,  # Zero baseline (division by zero edge case)
+            replay_cost=0.05,  # Non-zero replay
+            cost_delta=0.05,  # replay - baseline = 0.05 - 0
+            cost_delta_percent=0.0,  # Convention: 0% when baseline is 0
+            baseline_invariant_results=[sample_invariant_result_passed],
+            replay_invariant_results=[sample_invariant_result_passed],
+            invariant_comparison=sample_no_regression_summary,
+        )
+
+        # Verify the model accepts zero baseline_cost
+        assert comparison.baseline_cost == 0.0
+        assert comparison.replay_cost == 0.05
+        assert comparison.cost_delta == 0.05
+        # Delta percent is 0.0 by convention when baseline is 0
+        # (avoids division by zero in percent calculation)
+        assert comparison.cost_delta_percent == 0.0
+
+    def test_edge_cost_delta_when_both_costs_none(
+        self,
+        sample_input_hash: str,
+        sample_matching_output_hashes: tuple[str, str],
+        sample_no_regression_summary: ModelInvariantComparisonSummary,
+        sample_invariant_result_passed: ModelInvariantResult,
+    ) -> None:
+        """Model accepts None for all cost fields when costs unavailable.
+
+        When cost data is not available for either execution, all cost
+        fields should be None, indicating no cost comparison is possible.
+        """
+        baseline_hash, replay_hash = sample_matching_output_hashes
+
+        comparison = ModelExecutionComparison(
+            baseline_execution_id=TEST_BASELINE_ID,
+            replay_execution_id=TEST_REPLAY_ID,
+            input_hash=sample_input_hash,
+            input_hash_match=True,
+            baseline_output_hash=baseline_hash,
+            replay_output_hash=replay_hash,
+            output_match=True,
+            baseline_latency_ms=100.0,
+            replay_latency_ms=100.0,
+            latency_delta_ms=0.0,
+            latency_delta_percent=0.0,
+            baseline_cost=None,  # No cost data
+            replay_cost=None,  # No cost data
+            cost_delta=None,  # Cannot compute delta
+            cost_delta_percent=None,  # Cannot compute percent
+            baseline_invariant_results=[sample_invariant_result_passed],
+            replay_invariant_results=[sample_invariant_result_passed],
+            invariant_comparison=sample_no_regression_summary,
+        )
+
+        assert comparison.baseline_cost is None
+        assert comparison.replay_cost is None
+        assert comparison.cost_delta is None
+        assert comparison.cost_delta_percent is None
+
+    def test_edge_cost_delta_when_both_costs_zero(
+        self,
+        sample_input_hash: str,
+        sample_matching_output_hashes: tuple[str, str],
+        sample_no_regression_summary: ModelInvariantComparisonSummary,
+        sample_invariant_result_passed: ModelInvariantResult,
+    ) -> None:
+        """Model accepts zero for both costs (e.g., free tier executions).
+
+        When both executions have zero cost (e.g., free tier, cached responses),
+        delta should be 0.0 and delta_percent should be 0.0 (no change).
+        """
+        baseline_hash, replay_hash = sample_matching_output_hashes
+
+        comparison = ModelExecutionComparison(
+            baseline_execution_id=TEST_BASELINE_ID,
+            replay_execution_id=TEST_REPLAY_ID,
+            input_hash=sample_input_hash,
+            input_hash_match=True,
+            baseline_output_hash=baseline_hash,
+            replay_output_hash=replay_hash,
+            output_match=True,
+            baseline_latency_ms=100.0,
+            replay_latency_ms=100.0,
+            latency_delta_ms=0.0,
+            latency_delta_percent=0.0,
+            baseline_cost=0.0,  # Free execution
+            replay_cost=0.0,  # Free execution
+            cost_delta=0.0,  # No difference
+            cost_delta_percent=0.0,  # 0% change (0/0 convention)
+            baseline_invariant_results=[sample_invariant_result_passed],
+            replay_invariant_results=[sample_invariant_result_passed],
+            invariant_comparison=sample_no_regression_summary,
+        )
+
+        assert comparison.baseline_cost == 0.0
+        assert comparison.replay_cost == 0.0
+        assert comparison.cost_delta == 0.0
+        assert comparison.cost_delta_percent == 0.0
+
+    def test_edge_cost_delta_when_only_baseline_cost_provided(
+        self,
+        sample_input_hash: str,
+        sample_matching_output_hashes: tuple[str, str],
+        sample_no_regression_summary: ModelInvariantComparisonSummary,
+        sample_invariant_result_passed: ModelInvariantResult,
+    ) -> None:
+        """Model accepts partial cost data (only baseline_cost available).
+
+        When only baseline_cost is available (replay cost unknown),
+        delta and delta_percent should typically be None since comparison
+        is not meaningful.
+        """
+        baseline_hash, replay_hash = sample_matching_output_hashes
+
+        comparison = ModelExecutionComparison(
+            baseline_execution_id=TEST_BASELINE_ID,
+            replay_execution_id=TEST_REPLAY_ID,
+            input_hash=sample_input_hash,
+            input_hash_match=True,
+            baseline_output_hash=baseline_hash,
+            replay_output_hash=replay_hash,
+            output_match=True,
+            baseline_latency_ms=100.0,
+            replay_latency_ms=100.0,
+            latency_delta_ms=0.0,
+            latency_delta_percent=0.0,
+            baseline_cost=0.10,  # Baseline cost known
+            replay_cost=None,  # Replay cost unknown
+            cost_delta=None,  # Cannot compute without replay_cost
+            cost_delta_percent=None,  # Cannot compute percent
+            baseline_invariant_results=[sample_invariant_result_passed],
+            replay_invariant_results=[sample_invariant_result_passed],
+            invariant_comparison=sample_no_regression_summary,
+        )
+
+        assert comparison.baseline_cost == 0.10
+        assert comparison.replay_cost is None
+        assert comparison.cost_delta is None
+        assert comparison.cost_delta_percent is None
+
+    def test_edge_cost_delta_when_only_replay_cost_provided(
+        self,
+        sample_input_hash: str,
+        sample_matching_output_hashes: tuple[str, str],
+        sample_no_regression_summary: ModelInvariantComparisonSummary,
+        sample_invariant_result_passed: ModelInvariantResult,
+    ) -> None:
+        """Model accepts partial cost data (only replay_cost available).
+
+        When only replay_cost is available (baseline cost unknown),
+        delta and delta_percent should typically be None since comparison
+        is not meaningful.
+        """
+        baseline_hash, replay_hash = sample_matching_output_hashes
+
+        comparison = ModelExecutionComparison(
+            baseline_execution_id=TEST_BASELINE_ID,
+            replay_execution_id=TEST_REPLAY_ID,
+            input_hash=sample_input_hash,
+            input_hash_match=True,
+            baseline_output_hash=baseline_hash,
+            replay_output_hash=replay_hash,
+            output_match=True,
+            baseline_latency_ms=100.0,
+            replay_latency_ms=100.0,
+            latency_delta_ms=0.0,
+            latency_delta_percent=0.0,
+            baseline_cost=None,  # Baseline cost unknown
+            replay_cost=0.08,  # Replay cost known
+            cost_delta=None,  # Cannot compute without baseline_cost
+            cost_delta_percent=None,  # Cannot compute percent
+            baseline_invariant_results=[sample_invariant_result_passed],
+            replay_invariant_results=[sample_invariant_result_passed],
+            invariant_comparison=sample_no_regression_summary,
+        )
+
+        assert comparison.baseline_cost is None
+        assert comparison.replay_cost == 0.08
+        assert comparison.cost_delta is None
+        assert comparison.cost_delta_percent is None
+
+    def test_edge_cost_delta_negative_when_replay_cheaper(
+        self,
+        sample_input_hash: str,
+        sample_matching_output_hashes: tuple[str, str],
+        sample_no_regression_summary: ModelInvariantComparisonSummary,
+        sample_invariant_result_passed: ModelInvariantResult,
+    ) -> None:
+        """Model accepts negative cost_delta when replay is cheaper.
+
+        A negative cost_delta indicates a cost reduction (improvement).
+        """
+        baseline_hash, replay_hash = sample_matching_output_hashes
+
+        comparison = ModelExecutionComparison(
+            baseline_execution_id=TEST_BASELINE_ID,
+            replay_execution_id=TEST_REPLAY_ID,
+            input_hash=sample_input_hash,
+            input_hash_match=True,
+            baseline_output_hash=baseline_hash,
+            replay_output_hash=replay_hash,
+            output_match=True,
+            baseline_latency_ms=100.0,
+            replay_latency_ms=100.0,
+            latency_delta_ms=0.0,
+            latency_delta_percent=0.0,
+            baseline_cost=0.10,  # Baseline cost
+            replay_cost=0.06,  # Replay cheaper (40% reduction)
+            cost_delta=-0.04,  # Negative = cost reduction
+            cost_delta_percent=-40.0,  # Negative = improvement
+            baseline_invariant_results=[sample_invariant_result_passed],
+            replay_invariant_results=[sample_invariant_result_passed],
+            invariant_comparison=sample_no_regression_summary,
+        )
+
+        assert comparison.baseline_cost == 0.10
+        assert comparison.replay_cost == 0.06
+        assert comparison.cost_delta == pytest.approx(-0.04)
+        assert comparison.cost_delta_percent == pytest.approx(-40.0)
+        # Negative delta = cost reduction (improvement)
+        assert comparison.cost_delta < 0
+
+
+@pytest.mark.unit
+class TestModelExecutionComparisonInputHashMismatchEdgeCases:
+    """Test edge cases for input hash mismatch handling.
+
+    These tests verify that input_hash_match=False is properly handled
+    and documents expected behavior for invalid comparison scenarios.
+    """
+
+    def test_edge_input_hash_mismatch_with_matching_outputs(
+        self,
+        sample_no_regression_summary: ModelInvariantComparisonSummary,
+        sample_invariant_result_passed: ModelInvariantResult,
+    ) -> None:
+        """Input hash mismatch is flagged even when outputs match.
+
+        This is an important edge case: outputs might coincidentally match
+        even with different inputs, but the comparison is still invalid
+        because we're comparing apples to oranges.
+        """
+        comparison = ModelExecutionComparison(
+            baseline_execution_id=TEST_BASELINE_ID,
+            replay_execution_id=TEST_REPLAY_ID,
+            input_hash="sha256:input_hash_value_for_invalid_comparison_test_123",
+            input_hash_match=False,  # CRITICAL: Inputs were different!
+            baseline_output_hash="sha256:same_output_hash_coincidentally_matches_12345678",
+            replay_output_hash="sha256:same_output_hash_coincidentally_matches_12345678",
+            output_match=True,  # Outputs match, but comparison is invalid
+            baseline_latency_ms=100.0,
+            replay_latency_ms=100.0,
+            latency_delta_ms=0.0,
+            latency_delta_percent=0.0,
+            baseline_invariant_results=[sample_invariant_result_passed],
+            replay_invariant_results=[sample_invariant_result_passed],
+            invariant_comparison=sample_no_regression_summary,
+        )
+
+        # Key assertion: input_hash_match is False, flagging invalid comparison
+        assert comparison.input_hash_match is False
+        # Even though outputs match, comparison is invalid due to input mismatch
+        assert comparison.output_match is True
+
+    def test_edge_input_hash_mismatch_with_different_outputs(
+        self,
+        sample_different_output_hashes: tuple[str, str],
+        sample_output_diff: ModelOutputDiff,
+        sample_regression_summary: ModelInvariantComparisonSummary,
+        sample_invariant_result_passed: ModelInvariantResult,
+        sample_invariant_result_failed: ModelInvariantResult,
+    ) -> None:
+        """Input hash mismatch with different outputs is clearly invalid.
+
+        When inputs differ and outputs differ, the comparison is meaningless.
+        The input_hash_match flag allows consumers to filter out such cases.
+        """
+        baseline_hash, replay_hash = sample_different_output_hashes
+
+        comparison = ModelExecutionComparison(
+            baseline_execution_id=TEST_BASELINE_ID,
+            replay_execution_id=TEST_REPLAY_ID,
+            input_hash="sha256:mismatched_input_hash_for_test_case_123456789",
+            input_hash_match=False,  # Invalid comparison
+            baseline_output_hash=baseline_hash,
+            replay_output_hash=replay_hash,
+            output_match=False,
+            output_diff=sample_output_diff,
+            baseline_latency_ms=100.0,
+            replay_latency_ms=150.0,
+            latency_delta_ms=50.0,
+            latency_delta_percent=50.0,
+            baseline_invariant_results=[sample_invariant_result_passed],
+            replay_invariant_results=[sample_invariant_result_failed],
+            invariant_comparison=sample_regression_summary,
+        )
+
+        # Both flags indicate problems, but input_hash_match is primary
+        assert comparison.input_hash_match is False
+        assert comparison.output_match is False
+        # Output diff and regression are recorded but should be ignored
+        # when input_hash_match is False
+        assert comparison.output_diff is not None
+        assert comparison.invariant_comparison.regression_detected is True
+
+    def test_edge_input_hash_mismatch_documentation_pattern(
+        self,
+        sample_no_regression_summary: ModelInvariantComparisonSummary,
+        sample_invariant_result_passed: ModelInvariantResult,
+    ) -> None:
+        """Document the expected consumer pattern for input hash mismatch.
+
+        Consumers should ALWAYS check input_hash_match first before
+        interpreting other comparison results. This test documents the
+        recommended validation pattern.
+        """
+        comparison = ModelExecutionComparison(
+            baseline_execution_id=TEST_BASELINE_ID,
+            replay_execution_id=TEST_REPLAY_ID,
+            input_hash="sha256:some_input_hash_value_that_differs_from_replay_1234",
+            input_hash_match=False,
+            baseline_output_hash="sha256:baseline_output_hash_123456789012345678901234",
+            replay_output_hash="sha256:replay_output_hash_9876543210987654321098765",
+            output_match=False,
+            baseline_latency_ms=100.0,
+            replay_latency_ms=200.0,
+            latency_delta_ms=100.0,
+            latency_delta_percent=100.0,
+            baseline_invariant_results=[sample_invariant_result_passed],
+            replay_invariant_results=[sample_invariant_result_passed],
+            invariant_comparison=sample_no_regression_summary,
+        )
+
+        # Recommended consumer validation pattern:
+        def is_valid_comparison(c: ModelExecutionComparison) -> bool:
+            """Check if comparison is valid (same inputs were used)."""
+            return c.input_hash_match is True
+
+        # This comparison should be rejected
+        assert is_valid_comparison(comparison) is False
+
+        # If input_hash_match is False, other comparisons are meaningless
+        # (output_match, latency_delta, invariant_comparison, etc.)
+
+
+@pytest.mark.unit
 class TestModelExecutionComparisonIdField:
     """Test comparison_id field generation and validation."""
 

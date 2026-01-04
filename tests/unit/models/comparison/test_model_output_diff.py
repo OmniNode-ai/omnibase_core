@@ -156,8 +156,8 @@ class TestModelOutputDiffComputedField:
 class TestModelOutputDiffImmutability:
     """Test immutability of ModelOutputDiff model."""
 
-    def test_model_is_frozen_after_creation(self) -> None:
-        """Model is immutable (frozen) after creation."""
+    def test_mutation_on_frozen_model_raises_validation_error(self) -> None:
+        """Mutation attempt on frozen model raises ValidationError."""
         diff = ModelOutputDiff(
             items_added=["root['item']"],
         )
@@ -168,8 +168,8 @@ class TestModelOutputDiffImmutability:
         with pytest.raises(ValidationError):
             diff.type_changes = {}  # type: ignore[misc]
 
-    def test_model_cannot_be_hashed_due_to_mutable_fields(self) -> None:
-        """Frozen model with mutable fields (dict, list) cannot be hashed.
+    def test_hashing_model_with_mutable_fields_raises_type_error(self) -> None:
+        """Hashing model with mutable fields raises TypeError.
 
         While the model is frozen (immutable at model level), the underlying
         dict and list fields are mutable types which prevent hashing.
@@ -186,8 +186,8 @@ class TestModelOutputDiffImmutability:
 class TestModelOutputDiffSerialization:
     """Test serialization of ModelOutputDiff model."""
 
-    def test_serialization_to_dict(self) -> None:
-        """Model can be serialized to dictionary."""
+    def test_serialization_to_dict_succeeds(self) -> None:
+        """Serialization to dictionary returns complete dict with computed field."""
         value_change = ModelValueChange(
             old_value="original",
             new_value="updated",
@@ -207,8 +207,8 @@ class TestModelOutputDiffSerialization:
         assert "has_differences" in data  # Computed field included
         assert data["has_differences"] is True
 
-    def test_serialization_empty_diff_to_dict(self) -> None:
-        """Empty diff serializes with empty collections."""
+    def test_serialization_empty_diff_to_dict_succeeds(self) -> None:
+        """Serialization of empty diff returns dict with empty collections."""
         diff = ModelOutputDiff()
         data = diff.model_dump()
         assert data["values_changed"] == {}
@@ -217,8 +217,8 @@ class TestModelOutputDiffSerialization:
         assert data["type_changes"] == {}
         assert data["has_differences"] is False
 
-    def test_serialization_to_json(self) -> None:
-        """Model can be serialized to JSON string."""
+    def test_serialization_to_json_succeeds(self) -> None:
+        """Serialization to JSON returns valid string representation."""
         diff = ModelOutputDiff(
             items_added=["root['new_item']"],
         )
@@ -227,8 +227,8 @@ class TestModelOutputDiffSerialization:
         assert '"items_added":["root[\'new_item\']"]' in json_str
         assert '"has_differences":true' in json_str
 
-    def test_deserialization_from_dict(self) -> None:
-        """Model can be created from dictionary data."""
+    def test_deserialization_from_dict_succeeds(self) -> None:
+        """Deserialization from dictionary creates valid model."""
         data: dict[str, Any] = {
             "values_changed": {
                 "root['key']": {
@@ -246,8 +246,8 @@ class TestModelOutputDiffSerialization:
         assert diff.items_added == ["root['added']"]
         assert diff.has_differences is True
 
-    def test_model_validate_from_object_attributes(self) -> None:
-        """Model can be created from object attributes via model_validate."""
+    def test_model_validate_from_attributes_succeeds(self) -> None:
+        """Model validation from object attributes creates valid model."""
 
         class DiffData:
             """Mock object with diff attributes."""
@@ -267,8 +267,8 @@ class TestModelOutputDiffSerialization:
 class TestModelOutputDiffDeepDiffCompatibility:
     """Test compatibility with deepdiff library output format."""
 
-    def test_handles_deepdiff_json_path_format(self) -> None:
-        """Model handles deepdiff JSON path format for keys."""
+    def test_creation_with_deepdiff_json_path_format_succeeds(self) -> None:
+        """Creation with deepdiff JSON path format for keys succeeds."""
         diff = ModelOutputDiff(
             values_changed={
                 "root['response']['data'][0]['value']": ModelValueChange(
@@ -285,8 +285,8 @@ class TestModelOutputDiffDeepDiffCompatibility:
         assert "root['response']['deprecated_field']" in diff.items_removed
         assert "root['count']" in diff.type_changes
 
-    def test_handles_nested_value_changes(self) -> None:
-        """Model handles multiple nested value changes."""
+    def test_creation_with_nested_value_changes_succeeds(self) -> None:
+        """Creation with multiple nested value changes succeeds."""
         diff = ModelOutputDiff(
             values_changed={
                 "root['a']": ModelValueChange(old_value="1", new_value="2"),
@@ -302,15 +302,15 @@ class TestModelOutputDiffDeepDiffCompatibility:
 class TestModelOutputDiffEdgeCases:
     """Test edge cases and boundary conditions."""
 
-    def test_handles_empty_string_paths(self) -> None:
-        """Model handles empty string as path key."""
+    def test_creation_with_empty_string_paths_succeeds(self) -> None:
+        """Creation with empty string as path key succeeds."""
         diff = ModelOutputDiff(
             items_added=[""],
         )
         assert "" in diff.items_added
 
-    def test_handles_many_changes(self) -> None:
-        """Model handles large number of changes."""
+    def test_creation_with_many_changes_succeeds(self) -> None:
+        """Creation with large number of changes succeeds."""
         many_changes = {
             f"root['key_{i}']": ModelValueChange(
                 old_value=f"old_{i}",
@@ -322,8 +322,8 @@ class TestModelOutputDiffEdgeCases:
         assert len(diff.values_changed) == 100
         assert diff.has_differences is True
 
-    def test_handles_complex_type_change_descriptions(self) -> None:
-        """Model handles complex type change descriptions."""
+    def test_creation_with_complex_type_changes_succeeds(self) -> None:
+        """Creation with complex type change descriptions succeeds."""
         diff = ModelOutputDiff(
             type_changes={
                 "root['key']": "NoneType -> dict[str, Any]",
@@ -332,8 +332,8 @@ class TestModelOutputDiffEdgeCases:
         )
         assert len(diff.type_changes) == 2
 
-    def test_extra_fields_are_ignored(self) -> None:
-        """Extra fields in input are ignored (ConfigDict extra='ignore')."""
+    def test_creation_with_extra_fields_ignores_them(self) -> None:
+        """Creation with extra fields ignores them (ConfigDict extra='ignore')."""
         data: dict[str, Any] = {
             "values_changed": {},
             "items_added": [],
@@ -344,8 +344,8 @@ class TestModelOutputDiffEdgeCases:
         diff = ModelOutputDiff(**data)
         assert not hasattr(diff, "extra_field")
 
-    def test_handles_special_characters_in_paths(self) -> None:
-        """Model handles special characters in path strings."""
+    def test_creation_with_special_characters_in_paths_succeeds(self) -> None:
+        """Creation with special characters in path strings succeeds."""
         diff = ModelOutputDiff(
             items_added=[
                 "root['key with spaces']",

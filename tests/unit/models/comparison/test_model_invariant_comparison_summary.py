@@ -1,4 +1,16 @@
-"""Tests for ModelInvariantComparisonSummary."""
+"""Tests for ModelInvariantComparisonSummary model.
+
+Tests the invariant comparison summary model used for aggregating
+statistics about how invariant evaluations changed between baseline
+and replay executions.
+
+Test Categories:
+    - Creation: Model instantiation and field validation
+    - Validation: Constraint validation (non-negative values, count consistency)
+    - Edge Cases: Boundary conditions (zero invariants, all passed/failed)
+    - Equality: Model equality comparisons
+    - Data Consistency: Validator that enforces counts sum to total
+"""
 
 from typing import Any
 
@@ -136,8 +148,8 @@ class TestModelInvariantComparisonSummaryCreation:
         # Computed field always reflects actual new_violations count
         assert summary_override_attempt.regression_detected is True
 
-    def test_model_is_immutable_after_creation(self) -> None:
-        """Model is immutable (frozen) after creation."""
+    def test_mutation_on_frozen_model_raises_validation_error(self) -> None:
+        """Mutation attempt on frozen model raises ValidationError."""
         summary = ModelInvariantComparisonSummary(
             total_invariants=5,
             both_passed=3,
@@ -220,8 +232,8 @@ class TestModelInvariantComparisonSummaryValidation:
         )
         assert computed == summary_no_changes.total_invariants
 
-    def test_serialization_to_dict_and_json(self) -> None:
-        """Model can be serialized to dict and JSON."""
+    def test_serialization_to_dict_and_json_succeeds(self) -> None:
+        """Serialization to dict and JSON returns valid representations."""
         summary = ModelInvariantComparisonSummary(
             total_invariants=10,
             both_passed=5,
@@ -245,8 +257,8 @@ class TestModelInvariantComparisonSummaryValidation:
         assert '"total_invariants":10' in json_str
         assert '"regression_detected":true' in json_str
 
-    def test_model_validate_from_object_attributes(self) -> None:
-        """Model can be created from object attributes via model_validate."""
+    def test_model_validate_from_attributes_succeeds(self) -> None:
+        """Model validation from object attributes creates valid model."""
 
         class SummaryData:
             """Mock object with summary attributes."""
@@ -271,8 +283,8 @@ class TestModelInvariantComparisonSummaryValidation:
 class TestModelInvariantComparisonSummaryEdgeCases:
     """Test edge cases and boundary conditions."""
 
-    def test_handles_zero_total_invariants(self) -> None:
-        """Model accepts zero total_invariants for empty comparisons."""
+    def test_creation_with_zero_total_invariants_succeeds(self) -> None:
+        """Creation with zero total_invariants for empty comparisons succeeds."""
         summary = ModelInvariantComparisonSummary(
             total_invariants=0,
             both_passed=0,
@@ -283,8 +295,8 @@ class TestModelInvariantComparisonSummaryEdgeCases:
         assert summary.total_invariants == 0
         assert summary.regression_detected is False
 
-    def test_handles_all_invariants_passed_in_both(self) -> None:
-        """Model accepts all invariants passing in both baseline and replay."""
+    def test_creation_with_all_invariants_passed_succeeds(self) -> None:
+        """Creation with all invariants passing in both baseline and replay succeeds."""
         summary = ModelInvariantComparisonSummary(
             total_invariants=10,
             both_passed=10,
@@ -295,8 +307,8 @@ class TestModelInvariantComparisonSummaryEdgeCases:
         assert summary.both_passed == summary.total_invariants
         assert summary.regression_detected is False
 
-    def test_handles_all_invariants_failed_in_both(self) -> None:
-        """Model accepts all invariants failing in both baseline and replay."""
+    def test_creation_with_all_invariants_failed_succeeds(self) -> None:
+        """Creation with all invariants failing in both baseline and replay succeeds."""
         summary = ModelInvariantComparisonSummary(
             total_invariants=10,
             both_passed=0,
@@ -307,8 +319,8 @@ class TestModelInvariantComparisonSummaryEdgeCases:
         assert summary.both_failed == summary.total_invariants
         assert summary.regression_detected is False
 
-    def test_handles_all_invariants_as_new_violations(self) -> None:
-        """Model accepts all invariants as new violations (regressions)."""
+    def test_creation_with_all_new_violations_succeeds(self) -> None:
+        """Creation with all invariants as new violations (regressions) succeeds."""
         summary = ModelInvariantComparisonSummary(
             total_invariants=5,
             both_passed=0,
@@ -319,8 +331,8 @@ class TestModelInvariantComparisonSummaryEdgeCases:
         assert summary.new_violations == summary.total_invariants
         assert summary.regression_detected is True
 
-    def test_handles_all_invariants_as_fixed(self) -> None:
-        """Model accepts all invariants as fixed violations."""
+    def test_creation_with_all_fixed_violations_succeeds(self) -> None:
+        """Creation with all invariants as fixed violations succeeds."""
         summary = ModelInvariantComparisonSummary(
             total_invariants=5,
             both_passed=0,
@@ -454,3 +466,229 @@ class TestModelInvariantComparisonSummaryDataConsistency:
             + summary.fixed_violations
         )
         assert computed_sum == summary.total_invariants
+
+
+@pytest.mark.unit
+class TestModelInvariantComparisonSummaryCountValidationEdgeCases:
+    """Test edge cases for invariant count validation.
+
+    These tests verify boundary conditions and specific error scenarios
+    for the count consistency validator.
+    """
+
+    def test_edge_count_validation_off_by_one_high(self) -> None:
+        """Validation rejects when counts sum is exactly one more than total.
+
+        This tests the boundary condition where the sum exceeds total by just 1.
+        """
+        # Sum: 4 + 2 + 2 + 2 = 10, but total_invariants = 9 (off by +1)
+        with pytest.raises(ValidationError) as exc_info:
+            ModelInvariantComparisonSummary(
+                total_invariants=9,
+                both_passed=4,
+                both_failed=2,
+                new_violations=2,
+                fixed_violations=2,
+            )
+        errors = exc_info.value.errors()
+        error_messages = [str(e.get("msg", "")) for e in errors]
+        # Verify specific error message mentions the mismatch
+        assert any(
+            "10" in msg
+            and "9" in msg  # Should mention both computed (10) and expected (9)
+            for msg in error_messages
+        ), f"Expected error mentioning counts 10 vs 9, got: {errors}"
+
+    def test_edge_count_validation_off_by_one_low(self) -> None:
+        """Validation rejects when counts sum is exactly one less than total.
+
+        This tests the boundary condition where the sum is under total by just 1.
+        """
+        # Sum: 4 + 2 + 2 + 1 = 9, but total_invariants = 10 (off by -1)
+        with pytest.raises(ValidationError) as exc_info:
+            ModelInvariantComparisonSummary(
+                total_invariants=10,
+                both_passed=4,
+                both_failed=2,
+                new_violations=2,
+                fixed_violations=1,
+            )
+        errors = exc_info.value.errors()
+        error_messages = [str(e.get("msg", "")) for e in errors]
+        # Verify specific error message mentions the mismatch
+        assert any(
+            "9" in msg
+            and "10" in msg  # Should mention both computed (9) and expected (10)
+            for msg in error_messages
+        ), f"Expected error mentioning counts 9 vs 10, got: {errors}"
+
+    def test_edge_count_validation_with_large_numbers(self) -> None:
+        """Validation works correctly with large invariant counts.
+
+        This tests that the validator handles large numbers without overflow
+        or precision issues.
+        """
+        # Large but valid counts
+        large_total = 1_000_000
+        summary = ModelInvariantComparisonSummary(
+            total_invariants=large_total,
+            both_passed=500_000,
+            both_failed=250_000,
+            new_violations=150_000,
+            fixed_violations=100_000,
+        )
+        assert summary.total_invariants == large_total
+        computed_sum = (
+            summary.both_passed
+            + summary.both_failed
+            + summary.new_violations
+            + summary.fixed_violations
+        )
+        assert computed_sum == large_total
+
+    def test_edge_count_validation_large_numbers_invalid(self) -> None:
+        """Validation correctly rejects large invalid counts.
+
+        This tests that the validator catches mismatches with large numbers.
+        """
+        with pytest.raises(ValidationError):
+            ModelInvariantComparisonSummary(
+                total_invariants=1_000_000,
+                both_passed=500_001,  # One extra
+                both_failed=250_000,
+                new_violations=150_000,
+                fixed_violations=100_000,
+            )
+
+    def test_edge_count_validation_error_message_details(self) -> None:
+        """Validation error message includes detailed breakdown.
+
+        The error message should include all count values to help debugging.
+        """
+        with pytest.raises(ValidationError) as exc_info:
+            ModelInvariantComparisonSummary(
+                total_invariants=10,
+                both_passed=3,
+                both_failed=2,
+                new_violations=1,
+                fixed_violations=1,  # Sum = 7, expected 10
+            )
+        error_str = str(exc_info.value)
+        # Error should mention the computed sum
+        assert "7" in error_str, "Error should mention computed sum (7)"
+        # Error should mention the expected total
+        assert "10" in error_str, "Error should mention expected total (10)"
+
+    def test_edge_count_validation_zero_total_with_zero_counts(self) -> None:
+        """Validation accepts zero total with all zero counts.
+
+        Edge case: Empty comparison with no invariants.
+        """
+        summary = ModelInvariantComparisonSummary(
+            total_invariants=0,
+            both_passed=0,
+            both_failed=0,
+            new_violations=0,
+            fixed_violations=0,
+        )
+        assert summary.total_invariants == 0
+        computed_sum = (
+            summary.both_passed
+            + summary.both_failed
+            + summary.new_violations
+            + summary.fixed_violations
+        )
+        assert computed_sum == 0
+
+    def test_edge_count_validation_zero_total_with_nonzero_count_fails(self) -> None:
+        """Validation rejects zero total with any non-zero count.
+
+        If total_invariants is 0, all individual counts must also be 0.
+        """
+        with pytest.raises(ValidationError) as exc_info:
+            ModelInvariantComparisonSummary(
+                total_invariants=0,
+                both_passed=1,  # Invalid: can't have passed invariants with 0 total
+                both_failed=0,
+                new_violations=0,
+                fixed_violations=0,
+            )
+        errors = exc_info.value.errors()
+        error_messages = [str(e.get("msg", "")) for e in errors]
+        assert any("1" in msg and "0" in msg for msg in error_messages), (
+            f"Expected error for non-zero count with zero total, got: {errors}"
+        )
+
+    def test_edge_count_validation_all_in_single_category(self) -> None:
+        """Validation accepts all counts in a single category.
+
+        Tests extreme cases where all invariants fall into one category.
+        """
+        # All passed
+        summary_all_passed = ModelInvariantComparisonSummary(
+            total_invariants=100,
+            both_passed=100,
+            both_failed=0,
+            new_violations=0,
+            fixed_violations=0,
+        )
+        assert summary_all_passed.both_passed == 100
+        assert summary_all_passed.regression_detected is False
+
+        # All new violations
+        summary_all_new = ModelInvariantComparisonSummary(
+            total_invariants=100,
+            both_passed=0,
+            both_failed=0,
+            new_violations=100,
+            fixed_violations=0,
+        )
+        assert summary_all_new.new_violations == 100
+        assert summary_all_new.regression_detected is True
+
+        # All fixed violations
+        summary_all_fixed = ModelInvariantComparisonSummary(
+            total_invariants=100,
+            both_passed=0,
+            both_failed=0,
+            new_violations=0,
+            fixed_violations=100,
+        )
+        assert summary_all_fixed.fixed_violations == 100
+        assert summary_all_fixed.regression_detected is False
+
+    def test_edge_count_validation_mixed_categories(self) -> None:
+        """Validation accepts various valid combinations of categories.
+
+        Tests that the validator correctly handles different distributions
+        of counts across categories.
+        """
+        # Mix 1: Mostly passed with some new violations
+        summary1 = ModelInvariantComparisonSummary(
+            total_invariants=100,
+            both_passed=90,
+            both_failed=5,
+            new_violations=3,
+            fixed_violations=2,
+        )
+        assert summary1.regression_detected is True  # 3 new violations
+
+        # Mix 2: High both_failed with fixes
+        summary2 = ModelInvariantComparisonSummary(
+            total_invariants=50,
+            both_passed=10,
+            both_failed=30,
+            new_violations=0,
+            fixed_violations=10,
+        )
+        assert summary2.regression_detected is False  # No new violations
+
+        # Mix 3: Single invariant in each category
+        summary3 = ModelInvariantComparisonSummary(
+            total_invariants=4,
+            both_passed=1,
+            both_failed=1,
+            new_violations=1,
+            fixed_violations=1,
+        )
+        assert summary3.regression_detected is True  # 1 new violation

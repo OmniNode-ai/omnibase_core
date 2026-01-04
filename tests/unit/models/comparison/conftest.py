@@ -83,7 +83,20 @@ def sample_cost_metrics() -> dict[str, float | None]:
 
 
 @pytest.fixture
-def sample_output_diff() -> ModelOutputDiff:
+def sample_value_change() -> ModelValueChange:
+    """Provide sample value change for testing.
+
+    Returns:
+        ModelValueChange with sample old and new values.
+    """
+    return ModelValueChange(
+        old_value="Original response",
+        new_value="Updated response",
+    )
+
+
+@pytest.fixture
+def sample_output_diff(sample_value_change: ModelValueChange) -> ModelOutputDiff:
     """Provide sample structured diff for testing.
 
     Returns:
@@ -91,10 +104,7 @@ def sample_output_diff() -> ModelOutputDiff:
     """
     return ModelOutputDiff(
         values_changed={
-            "root['response']['text']": ModelValueChange(
-                old_value="Original response",
-                new_value="Updated response",
-            )
+            "root['response']['text']": sample_value_change,
         },
     )
 

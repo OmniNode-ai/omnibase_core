@@ -62,8 +62,8 @@ class TestModelValueChangeCreation:
 class TestModelValueChangeImmutability:
     """Test immutability of ModelValueChange model."""
 
-    def test_model_is_frozen_after_creation(self) -> None:
-        """Model is immutable (frozen) after creation."""
+    def test_mutation_on_frozen_model_raises_validation_error(self) -> None:
+        """Mutation attempt on frozen model raises ValidationError."""
         change = ModelValueChange(
             old_value="original",
             new_value="updated",
@@ -73,8 +73,8 @@ class TestModelValueChangeImmutability:
         with pytest.raises(ValidationError):
             change.new_value = "modified"  # type: ignore[misc]
 
-    def test_model_can_be_hashed(self) -> None:
-        """Frozen model can be used in sets and as dict keys."""
+    def test_hashing_frozen_model_succeeds(self) -> None:
+        """Hashing frozen model succeeds for use in sets and dict keys."""
         change1 = ModelValueChange(
             old_value="original",
             new_value="updated",
@@ -92,8 +92,8 @@ class TestModelValueChangeImmutability:
 class TestModelValueChangeSerialization:
     """Test serialization of ModelValueChange model."""
 
-    def test_serialization_to_dict(self) -> None:
-        """Model can be serialized to dictionary."""
+    def test_serialization_to_dict_succeeds(self) -> None:
+        """Serialization to dictionary returns complete dict."""
         change = ModelValueChange(
             old_value="original",
             new_value="updated",
@@ -104,8 +104,8 @@ class TestModelValueChangeSerialization:
         assert data["new_value"] == "updated"
         assert len(data) == 2
 
-    def test_serialization_to_json(self) -> None:
-        """Model can be serialized to JSON string."""
+    def test_serialization_to_json_succeeds(self) -> None:
+        """Serialization to JSON returns valid string representation."""
         change = ModelValueChange(
             old_value="original",
             new_value="updated",
@@ -115,8 +115,8 @@ class TestModelValueChangeSerialization:
         assert '"old_value":"original"' in json_str
         assert '"new_value":"updated"' in json_str
 
-    def test_deserialization_from_dict(self) -> None:
-        """Model can be created from dictionary data."""
+    def test_deserialization_from_dict_succeeds(self) -> None:
+        """Deserialization from dictionary creates valid model."""
         data: dict[str, str] = {
             "old_value": "from dict original",
             "new_value": "from dict updated",
@@ -125,8 +125,8 @@ class TestModelValueChangeSerialization:
         assert change.old_value == "from dict original"
         assert change.new_value == "from dict updated"
 
-    def test_model_validate_from_object_attributes(self) -> None:
-        """Model can be created from object attributes via model_validate."""
+    def test_model_validate_from_attributes_succeeds(self) -> None:
+        """Model validation from object attributes creates valid model."""
 
         class ChangeData:
             """Mock object with change attributes."""
@@ -144,8 +144,8 @@ class TestModelValueChangeSerialization:
 class TestModelValueChangeValueTypes:
     """Test various value types that can be serialized to strings."""
 
-    def test_handles_json_serialized_dict_values(self) -> None:
-        """Model handles JSON-serialized dictionary values."""
+    def test_creation_with_json_dict_values_succeeds(self) -> None:
+        """Creation with JSON-serialized dictionary values succeeds."""
         change = ModelValueChange(
             old_value='{"key": "old_value"}',
             new_value='{"key": "new_value"}',
@@ -153,8 +153,8 @@ class TestModelValueChangeValueTypes:
         assert change.old_value == '{"key": "old_value"}'
         assert change.new_value == '{"key": "new_value"}'
 
-    def test_handles_json_serialized_list_values(self) -> None:
-        """Model handles JSON-serialized list values."""
+    def test_creation_with_json_list_values_succeeds(self) -> None:
+        """Creation with JSON-serialized list values succeeds."""
         change = ModelValueChange(
             old_value='["a", "b", "c"]',
             new_value='["x", "y", "z"]',
@@ -162,8 +162,8 @@ class TestModelValueChangeValueTypes:
         assert change.old_value == '["a", "b", "c"]'
         assert change.new_value == '["x", "y", "z"]'
 
-    def test_handles_null_string_values(self) -> None:
-        """Model handles 'null' as a string (serialized None)."""
+    def test_creation_with_null_string_values_succeeds(self) -> None:
+        """Creation with 'null' string (serialized None) succeeds."""
         change = ModelValueChange(
             old_value="null",
             new_value="some value",
@@ -171,8 +171,8 @@ class TestModelValueChangeValueTypes:
         assert change.old_value == "null"
         assert change.new_value == "some value"
 
-    def test_handles_boolean_string_values(self) -> None:
-        """Model handles serialized boolean values."""
+    def test_creation_with_boolean_string_values_succeeds(self) -> None:
+        """Creation with serialized boolean values succeeds."""
         change = ModelValueChange(
             old_value="true",
             new_value="false",
@@ -180,8 +180,8 @@ class TestModelValueChangeValueTypes:
         assert change.old_value == "true"
         assert change.new_value == "false"
 
-    def test_handles_float_string_values(self) -> None:
-        """Model handles serialized float values."""
+    def test_creation_with_float_string_values_succeeds(self) -> None:
+        """Creation with serialized float values succeeds."""
         change = ModelValueChange(
             old_value="3.14159",
             new_value="2.71828",
@@ -189,8 +189,8 @@ class TestModelValueChangeValueTypes:
         assert change.old_value == "3.14159"
         assert change.new_value == "2.71828"
 
-    def test_handles_multiline_string_values(self) -> None:
-        """Model handles multiline string values."""
+    def test_creation_with_multiline_string_values_succeeds(self) -> None:
+        """Creation with multiline string values succeeds."""
         change = ModelValueChange(
             old_value="line1\nline2\nline3",
             new_value="updated line1\nupdated line2",
@@ -203,16 +203,16 @@ class TestModelValueChangeValueTypes:
 class TestModelValueChangeEdgeCases:
     """Test edge cases and boundary conditions."""
 
-    def test_same_old_and_new_value_is_valid(self) -> None:
-        """Model accepts identical old and new values."""
+    def test_creation_with_identical_values_succeeds(self) -> None:
+        """Creation with identical old and new values succeeds."""
         change = ModelValueChange(
             old_value="same value",
             new_value="same value",
         )
         assert change.old_value == change.new_value
 
-    def test_handles_unicode_characters(self) -> None:
-        """Model handles unicode characters in values."""
+    def test_creation_with_unicode_characters_succeeds(self) -> None:
+        """Creation with unicode characters in values succeeds."""
         change = ModelValueChange(
             old_value="Hello, world!",
             new_value="Hello, world!",
@@ -220,8 +220,8 @@ class TestModelValueChangeEdgeCases:
         assert change.old_value == "Hello, world!"
         assert change.new_value == "Hello, world!"
 
-    def test_handles_special_characters(self) -> None:
-        """Model handles special characters and escape sequences."""
+    def test_creation_with_special_characters_succeeds(self) -> None:
+        """Creation with special characters and escape sequences succeeds."""
         change = ModelValueChange(
             old_value='Tab:\t Newline:\n Quote:"',
             new_value="Backslash:\\ Null:\\0",
@@ -229,8 +229,8 @@ class TestModelValueChangeEdgeCases:
         assert "\t" in change.old_value
         assert "\n" in change.old_value
 
-    def test_handles_very_long_strings(self) -> None:
-        """Model handles very long string values."""
+    def test_creation_with_very_long_strings_succeeds(self) -> None:
+        """Creation with very long string values succeeds."""
         long_value = "x" * 10000
         change = ModelValueChange(
             old_value=long_value,
@@ -239,8 +239,8 @@ class TestModelValueChangeEdgeCases:
         assert len(change.old_value) == 10000
         assert len(change.new_value) == 10009
 
-    def test_extra_fields_are_ignored(self) -> None:
-        """Extra fields in input are ignored (ConfigDict extra='ignore')."""
+    def test_creation_with_extra_fields_ignores_them(self) -> None:
+        """Creation with extra fields ignores them (ConfigDict extra='ignore')."""
         data: dict[str, Any] = {
             "old_value": "original",
             "new_value": "updated",
@@ -290,3 +290,33 @@ class TestModelValueChangeEquality:
             new_value="different updated",
         )
         assert change1 != change2
+
+
+@pytest.mark.unit
+class TestModelValueChangeWithFixture:
+    """Test using fixtures from conftest.py."""
+
+    def test_creation_from_fixture_succeeds(
+        self, sample_value_change: ModelValueChange
+    ) -> None:
+        """Model can be created and accessed via fixture."""
+        assert isinstance(sample_value_change, ModelValueChange)
+        assert sample_value_change.old_value == "Original response"
+        assert sample_value_change.new_value == "Updated response"
+
+    def test_fixture_is_immutable(self, sample_value_change: ModelValueChange) -> None:
+        """Fixture instance is immutable (frozen)."""
+        with pytest.raises(ValidationError):
+            sample_value_change.old_value = "modified"  # type: ignore[misc]
+
+    def test_fixture_can_be_used_in_output_diff(
+        self, sample_value_change: ModelValueChange
+    ) -> None:
+        """Fixture can be used as a component in ModelOutputDiff."""
+        from omnibase_core.models.comparison import ModelOutputDiff
+
+        diff = ModelOutputDiff(
+            values_changed={"root['key']": sample_value_change},
+        )
+        assert diff.values_changed["root['key']"] == sample_value_change
+        assert diff.has_differences is True
