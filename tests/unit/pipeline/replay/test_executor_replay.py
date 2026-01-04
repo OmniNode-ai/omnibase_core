@@ -584,6 +584,82 @@ class TestExecutorReplaySessionModes:
 
 
 @pytest.mark.unit
+class TestExecutorReplaySessionOverwriteWarning:
+    """Test warning when user provides replay_session in kwargs."""
+
+    def test_execute_sync_warns_on_session_overwrite(
+        self, executor: ExecutorReplay, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """Test sync execution warns when user provides replay_session in kwargs."""
+        import logging
+
+        session = executor.create_production_session()
+        user_session = executor.create_production_session()  # User's session
+
+        def get_session_id(replay_session: ReplaySession) -> UUID:
+            return replay_session.session_id
+
+        with caplog.at_level(logging.WARNING):
+            result = executor.execute_sync(
+                session, get_session_id, replay_session=user_session
+            )
+
+        # Should use executor's session, not user's
+        assert result == session.session_id
+        assert result != user_session.session_id
+
+        # Should have warned
+        assert "replay_session" in caplog.text
+        assert "overwritten" in caplog.text
+
+    @pytest.mark.asyncio
+    async def test_execute_async_warns_on_session_overwrite(
+        self, executor: ExecutorReplay, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """Test async execution warns when user provides replay_session in kwargs."""
+        import logging
+
+        session = executor.create_production_session()
+        user_session = executor.create_production_session()  # User's session
+
+        async def get_session_id(replay_session: ReplaySession) -> UUID:
+            return replay_session.session_id
+
+        with caplog.at_level(logging.WARNING):
+            result = await executor.execute_async(
+                session, get_session_id, replay_session=user_session
+            )
+
+        # Should use executor's session, not user's
+        assert result == session.session_id
+        assert result != user_session.session_id
+
+        # Should have warned
+        assert "replay_session" in caplog.text
+        assert "overwritten" in caplog.text
+
+    def test_execute_sync_no_warning_without_user_session(
+        self, executor: ExecutorReplay, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """Test no warning when user doesn't provide replay_session."""
+        import logging
+
+        session = executor.create_production_session()
+
+        def get_session_id(replay_session: ReplaySession) -> UUID:
+            return replay_session.session_id
+
+        with caplog.at_level(logging.WARNING):
+            result = executor.execute_sync(session, get_session_id)
+
+        # Should work normally
+        assert result == session.session_id
+
+        # Should NOT have warned
+        assert "overwritten" not in caplog.text
+
+
+@pytest.mark.unit
 class TestReplaySession:
     """Test ReplaySession dataclass."""
 

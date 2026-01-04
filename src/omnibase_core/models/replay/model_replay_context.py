@@ -1,10 +1,77 @@
 # SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
 #
 # SPDX-License-Identifier: Apache-2.0
-"""Replay context model for deterministic replay infrastructure.
+"""
+ModelReplayContext - Replay context model for deterministic replay infrastructure.
 
 This module provides the ModelReplayContext which bundles all determinism data
 (time, RNG seed, effect recordings) needed to replay an execution.
+
+Design:
+    ModelReplayContext serves as an immutable value object that captures all
+    non-deterministic sources in pipeline execution:
+
+    - **Time**: Fixed timestamp for deterministic time queries
+    - **RNG**: Seed value for reproducible random number generation
+    - **Effects**: Record IDs for external call stubbing
+
+    The frozen (immutable) design ensures thread-safety and enables functional
+    updates via `with_time_capture` and `with_effect_record` methods.
+
+Architecture:
+    ReplaySession holds a ModelReplayContext to track the replay state. During
+    recording, the context accumulates time captures and effect record IDs.
+    During replay, the context provides the frozen time and RNG seed for
+    deterministic execution.
+
+    ::
+
+        ExecutorReplay
+            |
+            +-- create_recording_session()
+            |       -> ReplaySession(context=ModelReplayContext(mode=RECORDING))
+            |
+            +-- create_replay_session()
+                    -> ReplaySession(context=ModelReplayContext(mode=REPLAYING))
+
+Thread Safety:
+    ModelReplayContext is frozen (immutable) after creation, making it safe
+    to share across threads. All update methods return new instances rather
+    than mutating in place.
+
+Usage:
+    .. code-block:: python
+
+        from omnibase_core.models.replay import ModelReplayContext
+        from omnibase_core.enums.replay import EnumReplayMode
+        from datetime import datetime, timezone
+        from uuid import uuid4
+
+        # Recording mode - capture execution data
+        ctx = ModelReplayContext(
+            mode=EnumReplayMode.RECORDING,
+            rng_seed=42,
+        )
+
+        # Immutable update - capture time call
+        ctx = ctx.with_time_capture(datetime.now(timezone.utc))
+
+        # Immutable update - capture effect record
+        ctx = ctx.with_effect_record(uuid4())
+
+        # Replaying mode - use captured data for determinism
+        replay_ctx = ModelReplayContext(
+            mode=EnumReplayMode.REPLAYING,
+            time_frozen_at=datetime(2024, 6, 15, 12, 0, 0, tzinfo=timezone.utc),
+            rng_seed=42,
+            effect_record_ids=tuple(recorded_ids),
+            original_execution_id=original_context_id,
+        )
+
+Related:
+    - OMN-1116: Implement Replay Infrastructure
+    - ReplaySession: Uses ModelReplayContext for state tracking
+    - ExecutorReplay: Creates contexts via session factory methods
 
 .. versionadded:: 0.4.0
 """

@@ -79,10 +79,13 @@ from __future__ import annotations
 __all__ = ["ExecutorReplay"]
 
 import inspect
+import logging
 from collections.abc import Awaitable, Callable
 from datetime import datetime
 from typing import TypeVar
 from uuid import UUID
+
+_logger = logging.getLogger(__name__)
 
 from omnibase_core.enums.replay.enum_recorder_mode import EnumRecorderMode
 from omnibase_core.enums.replay.enum_replay_mode import EnumReplayMode
@@ -315,11 +318,16 @@ class ExecutorReplay:
             >>> result = await executor.execute_async(session, my_func)
         """
         # Check if function expects replay_session parameter
-        # TODO(OMN-1116): Consider warning if user already provided replay_session
-        # in kwargs, as this will overwrite their value. Current behavior is
-        # intentional (executor manages session lifecycle) but could be confusing.
         sig = inspect.signature(func)
         if "replay_session" in sig.parameters:
+            # Warn if user provided replay_session in kwargs, as we will overwrite it.
+            # This is intentional (executor manages session lifecycle) but could be confusing.
+            if "replay_session" in kwargs:
+                _logger.warning(
+                    "User-provided 'replay_session' in kwargs will be overwritten by "
+                    "ExecutorReplay. The executor manages session lifecycle; pass the "
+                    "session to execute_async() instead of including it in kwargs."
+                )
             kwargs["replay_session"] = session
         return await func(*args, **kwargs)
 
@@ -350,10 +358,15 @@ class ExecutorReplay:
             >>> result = executor.execute_sync(session, my_func)
         """
         # Check if function expects replay_session parameter
-        # TODO(OMN-1116): Consider warning if user already provided replay_session
-        # in kwargs, as this will overwrite their value. Current behavior is
-        # intentional (executor manages session lifecycle) but could be confusing.
         sig = inspect.signature(func)
         if "replay_session" in sig.parameters:
+            # Warn if user provided replay_session in kwargs, as we will overwrite it.
+            # This is intentional (executor manages session lifecycle) but could be confusing.
+            if "replay_session" in kwargs:
+                _logger.warning(
+                    "User-provided 'replay_session' in kwargs will be overwritten by "
+                    "ExecutorReplay. The executor manages session lifecycle; pass the "
+                    "session to execute_sync() instead of including it in kwargs."
+                )
             kwargs["replay_session"] = session
         return func(*args, **kwargs)
