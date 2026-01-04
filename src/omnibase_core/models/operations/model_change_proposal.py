@@ -41,7 +41,7 @@ _URL_PATTERN = re.compile(
     r"(?:"
     r"(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}\.?|"  # domain with TLD
     r"localhost|"  # localhost
-    r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|"  # IP address
+    r"((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)|"  # IP address (0-255 per octet)
     r"[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?"  # simple hostname (no TLD)
     r")"
     r"(?::\d+)?"  # optional port

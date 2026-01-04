@@ -1656,3 +1656,57 @@ class TestTypeSpecificValidation:
 
         assert "'endpoint'" in str(exc_info.value)
         assert "float" in str(exc_info.value)
+
+    def test_endpoint_change_invalid_ip_rejected(self) -> None:
+        """Invalid IP addresses should be rejected for endpoint changes.
+
+        Tests that IP addresses with octets outside the valid 0-255 range
+        are correctly rejected by the URL validation pattern.
+        """
+        invalid_ips = ["999.999.999.999", "256.1.1.1", "300.200.100.50", "1.2.3.256"]
+        for ip in invalid_ips:
+            with pytest.raises(ModelOnexError) as exc_info:
+                ModelChangeProposal.create(
+                    change_type=EnumChangeType.ENDPOINT_CHANGE,
+                    description="Test endpoint change",
+                    before_config={"url": f"http://{ip}:8000"},
+                    after_config={"url": "http://localhost:8000"},
+                    rationale="Testing invalid IP validation",
+                )
+            assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+            assert "Invalid URL format" in str(exc_info.value.message)
+
+    def test_endpoint_change_valid_ip_edge_cases(self) -> None:
+        """Valid edge case IP addresses should be accepted for endpoint changes.
+
+        Tests boundary values for IP address octets (0 and 255) as well as
+        typical IP addresses to ensure they pass validation.
+        """
+        valid_ip_pairs = [
+            # Boundary values
+            ("http://0.0.0.0:8000", "http://0.0.0.1:8000"),
+            ("http://255.255.255.255:8000", "http://255.255.255.254:8000"),
+            # Typical IP addresses
+            ("http://1.2.3.4:8000", "http://5.6.7.8:8000"),
+            ("http://10.0.0.1:8000", "http://10.0.0.2:8000"),
+            ("http://172.16.0.1:8000", "http://172.16.0.2:8000"),
+            ("http://192.168.1.1:8000", "http://192.168.1.2:8000"),
+            # Single octet edge cases
+            ("http://0.1.1.1:8000", "http://1.1.1.1:8000"),
+            ("http://255.1.1.1:8000", "http://254.1.1.1:8000"),
+            ("http://1.0.1.1:8000", "http://1.1.1.1:8000"),
+            ("http://1.255.1.1:8000", "http://1.254.1.1:8000"),
+        ]
+
+        for before_url, after_url in valid_ip_pairs:
+            proposal = ModelChangeProposal.create(
+                change_type=EnumChangeType.ENDPOINT_CHANGE,
+                description=f"Change from {before_url}",
+                rationale="Testing valid IP edge cases",
+                before_config={"url": before_url},
+                after_config={"url": after_url},
+            )
+
+            assert proposal.change_type == EnumChangeType.ENDPOINT_CHANGE
+            assert proposal.before_config["url"] == before_url
+            assert proposal.after_config["url"] == after_url
