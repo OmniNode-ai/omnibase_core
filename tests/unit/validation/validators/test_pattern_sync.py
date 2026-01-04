@@ -22,7 +22,7 @@ class TestErrorCodePatternSync:
 
     And re-exported from:
     1. omnibase_core.constants (via __init__.py)
-    2. omnibase_core.validation.validators.common_validators
+    2. omnibase_core.validation.validators.validator_common
     3. omnibase_core.models.context.model_error_metadata
 
     All locations MUST use the same pattern: ^[A-Z][A-Z0-9_]*_\\d{1,4}$
@@ -37,7 +37,7 @@ class TestErrorCodePatternSync:
         from omnibase_core.models.context.model_error_metadata import (
             ERROR_CODE_PATTERN as MODEL_PATTERN,
         )
-        from omnibase_core.validation.validators.common_validators import (
+        from omnibase_core.validation.validators.validator_common import (
             ERROR_CODE_PATTERN as VALIDATOR_PATTERN,
         )
 
@@ -49,7 +49,7 @@ class TestErrorCodePatternSync:
             "model_error_metadata should import from constants_error"
         )
         assert SOURCE_PATTERN is VALIDATOR_PATTERN, (
-            "common_validators should import from constants_error"
+            "validator_common should import from constants_error"
         )
 
     def test_retry_error_context_uses_centralized_pattern(self) -> None:
@@ -127,7 +127,7 @@ class TestSemVerPatternSync:
     """Verify _SEMVER_PATTERN stays synchronized across files.
 
     The _SEMVER_PATTERN is defined in three locations:
-    1. omnibase_core.validation.validators.common_validators._SEMVER_PATTERN
+    1. omnibase_core.validation.validators.validator_common._SEMVER_PATTERN
     2. omnibase_core.models.context.model_metrics_context._SEMVER_PATTERN
     3. omnibase_core.models.primitives.model_semver._SEMVER_PATTERN
 
@@ -140,7 +140,7 @@ class TestSemVerPatternSync:
         # Note: We import the module and access the private variable
         import omnibase_core.models.context.model_metrics_context as metrics_module
         import omnibase_core.models.primitives.model_semver as semver_module
-        import omnibase_core.validation.validators.common_validators as validators_module
+        import omnibase_core.validation.validators.validator_common as validators_module
 
         validator_pattern = validators_module._SEMVER_PATTERN.pattern
         metrics_pattern = metrics_module._SEMVER_PATTERN.pattern
@@ -149,21 +149,21 @@ class TestSemVerPatternSync:
         # Check all pairs
         assert validator_pattern == metrics_pattern, (
             f"_SEMVER_PATTERN mismatch detected!\n"
-            f"  common_validators.py:    {validator_pattern!r}\n"
+            f"  validator_common.py:      {validator_pattern!r}\n"
             f"  model_metrics_context.py: {metrics_pattern!r}\n"
             f"These patterns MUST be identical. Update all files together."
         )
 
         assert validator_pattern == semver_pattern, (
             f"_SEMVER_PATTERN mismatch detected!\n"
-            f"  common_validators.py: {validator_pattern!r}\n"
-            f"  model_semver.py:      {semver_pattern!r}\n"
+            f"  validator_common.py: {validator_pattern!r}\n"
+            f"  model_semver.py:     {semver_pattern!r}\n"
             f"These patterns MUST be identical. Update all files together."
         )
 
     def test_semver_pattern_validates_correctly(self) -> None:
         """Verify _SEMVER_PATTERN validates expected cases correctly."""
-        import omnibase_core.validation.validators.common_validators as validators_module
+        import omnibase_core.validation.validators.validator_common as validators_module
 
         pattern = validators_module._SEMVER_PATTERN
 
@@ -286,7 +286,7 @@ class TestPatternCompilationConsistency:
         """Verify _SEMVER_PATTERN is compiled without special flags."""
         import omnibase_core.models.context.model_metrics_context as metrics_module
         import omnibase_core.models.primitives.model_semver as semver_module
-        import omnibase_core.validation.validators.common_validators as validators_module
+        import omnibase_core.validation.validators.validator_common as validators_module
 
         # All should have default flags
         assert validators_module._SEMVER_PATTERN.flags == re.UNICODE

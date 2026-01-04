@@ -78,10 +78,10 @@ from omnibase_core.services.service_contract_validation_invariant_checker import
 # Import directly from source module to satisfy mypy explicit-export requirement
 from omnibase_core.services.service_validation_suite import ServiceValidationSuite
 
-from .circular_import_validator import CircularImportValidator
+from .validator_circular_import import CircularImportValidator
 
 # Import contract patch validator (OMN-1126)
-from .contract_patch_validator import ContractPatchValidator
+from .validator_contract_patch import ContractPatchValidator
 
 # Re-export from services (OMN-1146)
 ContractValidationInvariantChecker = ServiceContractValidationInvariantChecker
@@ -233,21 +233,43 @@ def __getattr__(name: str) -> type:
 
 
 # Import FSM analysis
-from .fsm_analysis import analyze_fsm
-
-# Import reserved enum validator (OMN-669, OMN-675)
-# - validate_execution_mode takes EnumExecutionMode (type-safe, for validated enum values)
-# - Rejects CONDITIONAL/STREAMING modes reserved for future versions
-# - For string input (e.g., YAML config), use validate_execution_mode_string instead
-from .reserved_enum_validator import RESERVED_EXECUTION_MODES, validate_execution_mode
-from .validation_utils import ModelProtocolInfo, validate_protocol_compliance
+# Import workflow linter
+from .checker_workflow_linter import WorkflowLinter
 from .validator_contracts import (
     validate_contracts_directory,
     validate_no_manual_yaml,
     validate_yaml_file,
 )
+from .validator_fsm_analysis import analyze_fsm
 from .validator_patterns import validate_patterns_directory, validate_patterns_file
+
+# Import reserved enum validator (OMN-669, OMN-675)
+# - validate_execution_mode takes EnumExecutionMode (type-safe, for validated enum values)
+# - Rejects CONDITIONAL/STREAMING modes reserved for future versions
+# - For string input (e.g., YAML config), use validate_execution_mode_string instead
+from .validator_reserved_enum import RESERVED_EXECUTION_MODES, validate_execution_mode
 from .validator_types import validate_union_usage_directory, validate_union_usage_file
+from .validator_utils import ModelProtocolInfo, validate_protocol_compliance
+from .validator_workflow import (
+    ModelCycleDetectionResult,
+    ModelDependencyValidationResult,
+    ModelIsolatedStepResult,
+    ModelUniqueNameResult,
+    ModelWorkflowValidationResult,
+    WorkflowValidator,
+    validate_dag_with_disabled_steps,
+    validate_execution_mode_string,
+    validate_unique_step_ids,
+    validate_workflow_definition,
+)
+
+# Import workflow constants (OMN-PR255)
+from .validator_workflow_constants import (
+    MAX_TIMEOUT_MS,
+    MIN_TIMEOUT_MS,
+    RESERVED_STEP_TYPES,
+    VALID_STEP_TYPES,
+)
 
 # Import common validators (OMN-1054)
 from .validators import (
@@ -262,29 +284,6 @@ from .validators import (
     validate_error_code,
     validate_semantic_version,
     validate_uuid,
-)
-
-# Import workflow constants (OMN-PR255)
-from .workflow_constants import (
-    MAX_TIMEOUT_MS,
-    MIN_TIMEOUT_MS,
-    RESERVED_STEP_TYPES,
-    VALID_STEP_TYPES,
-)
-
-# Import workflow linter
-from .workflow_linter import WorkflowLinter
-from .workflow_validator import (
-    ModelCycleDetectionResult,
-    ModelDependencyValidationResult,
-    ModelIsolatedStepResult,
-    ModelUniqueNameResult,
-    ModelWorkflowValidationResult,
-    WorkflowValidator,
-    validate_dag_with_disabled_steps,
-    validate_execution_mode_string,
-    validate_unique_step_ids,
-    validate_workflow_definition,
 )
 
 

@@ -16,7 +16,7 @@ Related:
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from omnibase_core.validation.validation_utils import (
+from omnibase_core.validation.validator_utils import (
     is_valid_onex_name,
     validate_import_path_format,
 )

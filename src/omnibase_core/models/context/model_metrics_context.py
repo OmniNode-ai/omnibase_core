@@ -32,8 +32,8 @@ __all__ = ["ModelMetricsContext"]
 _TRACE_ID_PATTERN = re.compile(r"^[0-9a-f]{32}$")
 _SPAN_ID_PATTERN = re.compile(r"^[0-9a-f]{16}$")
 
-# SemVer 2.0.0 pattern - duplicated from common_validators to avoid circular imports.
-# The canonical definition is in omnibase_core.validation.validators.common_validators
+# SemVer 2.0.0 pattern - duplicated from validator_common to avoid circular imports.
+# The canonical definition is in omnibase_core.validation.validators.validator_common
 # Pattern breakdown:
 # - MAJOR.MINOR.PATCH: each a non-negative integer (no leading zeros except 0 itself)
 # - PRERELEASE: optional, dot-separated identifiers (alphanumeric + hyphen)

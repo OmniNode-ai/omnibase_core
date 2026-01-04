@@ -24,7 +24,7 @@ from omnibase_core.logging.logging_structured import emit_log_event_sync
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 if TYPE_CHECKING:
-    from omnibase_core.validation.validation_utils import ModelValidationResult
+    from omnibase_core.validation.validator_utils import ModelValidationResult
 
 # Display configuration constants
 MAX_ERRORS_DISPLAYED = 5  # Maximum errors shown before truncation in validation output

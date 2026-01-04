@@ -40,7 +40,7 @@ Usage:
 Ticket: OMN-1054
 """
 
-from omnibase_core.validation.validators.common_validators import (
+from omnibase_core.validation.validators.validator_common import (
     # Compiled regex patterns (cached at module level)
     ERROR_CODE_PATTERN,
     # Pydantic Annotated types

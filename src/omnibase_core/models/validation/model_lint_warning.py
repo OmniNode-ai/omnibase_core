@@ -50,7 +50,7 @@ Warning Codes:
     - W005: Isolated steps (no incoming or outgoing edges)
 
 See Also:
-    - :class:`omnibase_core.validation.workflow_linter.WorkflowLinter`
+    - :class:`omnibase_core.validation.checker_workflow_linter.WorkflowLinter`
     - :class:`omnibase_core.models.validation.model_validation_error.ModelValidationError`
 """
 

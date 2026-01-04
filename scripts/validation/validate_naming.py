@@ -191,7 +191,7 @@ class NamingConventionValidator:
         # Rationale: ContractPatchValidator validates contract patches, not a Protocol interface.
         #            The heuristic flags "contract" as a Protocol indicator, but this is a
         #            validator that VALIDATES patches, not a Protocol interface.
-        #            The Protocol interface for this is ProtocolPatchValidator in protocol_patch_validator.py
+        #            The Protocol interface for this is ProtocolPatchValidator in validator_protocol_patch.py
         #            ContractValidationInvariantChecker is a concrete implementation (OMN-1146),
         #            not a Protocol. The Protocol interface is ProtocolContractValidationInvariantChecker.
         "validation/": [

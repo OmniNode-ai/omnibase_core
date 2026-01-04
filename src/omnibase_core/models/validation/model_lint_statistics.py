@@ -27,7 +27,7 @@ Example:
         print(f"Most common: {stats.get_most_common_warning_code()}")
 
 See Also:
-    - :class:`omnibase_core.validation.workflow_linter.WorkflowLinter`
+    - :class:`omnibase_core.validation.checker_workflow_linter.WorkflowLinter`
     - :class:`omnibase_core.models.validation.model_lint_warning.ModelLintWarning`
 """
 

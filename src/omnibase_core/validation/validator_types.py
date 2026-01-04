@@ -20,8 +20,8 @@ from omnibase_core.models.common.model_validation_metadata import (
 )
 from omnibase_core.models.validation.model_union_pattern import ModelUnionPattern
 
-from .union_usage_checker import UnionUsageChecker
-from .validation_utils import ModelValidationResult
+from .checker_union_usage import UnionUsageChecker
+from .validator_utils import ModelValidationResult
 
 
 def validate_union_usage_file(

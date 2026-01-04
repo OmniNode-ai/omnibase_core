@@ -33,7 +33,7 @@ from omnibase_core.cli.cli_commands import (
 from omnibase_core.enums.enum_cli_exit_code import EnumCLIExitCode
 
 if TYPE_CHECKING:
-    from omnibase_core.validation.validation_utils import ModelValidationResult
+    from omnibase_core.validation.validator_utils import ModelValidationResult
 
 # Mark all tests in this module as unit tests
 pytestmark = pytest.mark.unit
@@ -500,7 +500,7 @@ class TestDisplayValidationResult:
         from omnibase_core.models.common.model_validation_metadata import (
             ModelValidationMetadata,
         )
-        from omnibase_core.validation.validation_utils import ModelValidationResult
+        from omnibase_core.validation.validator_utils import ModelValidationResult
 
         result: ModelValidationResult[None] = ModelValidationResult(
             is_valid=True,
@@ -524,7 +524,7 @@ class TestDisplayValidationResult:
         from omnibase_core.models.common.model_validation_metadata import (
             ModelValidationMetadata,
         )
-        from omnibase_core.validation.validation_utils import ModelValidationResult
+        from omnibase_core.validation.validator_utils import ModelValidationResult
 
         result: ModelValidationResult[None] = ModelValidationResult(
             is_valid=False,
@@ -551,7 +551,7 @@ class TestDisplayValidationResult:
         from omnibase_core.models.common.model_validation_metadata import (
             ModelValidationMetadata,
         )
-        from omnibase_core.validation.validation_utils import ModelValidationResult
+        from omnibase_core.validation.validator_utils import ModelValidationResult
 
         result: ModelValidationResult[None] = ModelValidationResult(
             is_valid=True,
@@ -574,7 +574,7 @@ class TestDisplayValidationResult:
         from omnibase_core.models.common.model_validation_metadata import (
             ModelValidationMetadata,
         )
-        from omnibase_core.validation.validation_utils import ModelValidationResult
+        from omnibase_core.validation.validator_utils import ModelValidationResult
 
         result: ModelValidationResult[None] = ModelValidationResult(
             is_valid=False,
@@ -597,7 +597,7 @@ class TestDisplayValidationResult:
         from omnibase_core.models.common.model_validation_metadata import (
             ModelValidationMetadata,
         )
-        from omnibase_core.validation.validation_utils import ModelValidationResult
+        from omnibase_core.validation.validator_utils import ModelValidationResult
 
         result: ModelValidationResult[None] = ModelValidationResult(
             is_valid=True,
@@ -620,7 +620,7 @@ class TestDisplayValidationResult:
         from omnibase_core.models.common.model_validation_metadata import (
             ModelValidationMetadata,
         )
-        from omnibase_core.validation.validation_utils import ModelValidationResult
+        from omnibase_core.validation.validator_utils import ModelValidationResult
 
         errors = [f"Error {i}" for i in range(15)]
         result: ModelValidationResult[None] = ModelValidationResult(

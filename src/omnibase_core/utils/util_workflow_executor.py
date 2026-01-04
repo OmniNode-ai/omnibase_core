@@ -123,8 +123,8 @@ from omnibase_core.models.workflow.execution.model_workflow_result_metadata impo
     ModelWorkflowResultMetadata,
 )
 from omnibase_core.types.typed_dict_workflow_context import TypedDictWorkflowContext
-from omnibase_core.validation.reserved_enum_validator import validate_execution_mode
-from omnibase_core.validation.workflow_constants import (
+from omnibase_core.validation.validator_reserved_enum import validate_execution_mode
+from omnibase_core.validation.validator_workflow_constants import (
     MAX_DFS_ITERATIONS,
     MAX_STEP_PAYLOAD_SIZE_BYTES,
     MAX_TOTAL_PAYLOAD_SIZE_BYTES,
@@ -134,8 +134,8 @@ from omnibase_core.validation.workflow_constants import (
 )
 
 # Note: MAX_WORKFLOW_STEPS, MAX_STEP_PAYLOAD_SIZE_BYTES, MAX_TOTAL_PAYLOAD_SIZE_BYTES
-# are imported from workflow_constants.py (canonical source with memoized env var parsing).
-# See workflow_constants.py module docstring for configuration details.
+# are imported from validator_workflow_constants.py (canonical source with memoized env var parsing).
+# See validator_workflow_constants.py module docstring for configuration details.
 
 # Module logger for workflow executor operations
 logger = logging.getLogger(__name__)
@@ -1707,7 +1707,7 @@ def _get_topological_order(
 
 
 # MAX_DFS_ITERATIONS: Resource exhaustion protection constant for DFS cycle detection.
-# Imported from workflow_constants.py (canonical source).
+# Imported from validator_workflow_constants.py (canonical source).
 # Value of 10,000 iterations supports workflows with up to ~5,000 steps
 # (worst case: each step visited twice during DFS traversal).
 # See workflow_validator.py module docstring "Security Considerations" for full documentation.
@@ -1867,8 +1867,8 @@ def verify_workflow_integrity(
 
 
 # Public API
-# NOTE: MAX_DFS_ITERATIONS is imported from workflow_constants.py (canonical source).
-# Import directly from omnibase_core.validation.workflow_constants for this constant.
+# NOTE: MAX_DFS_ITERATIONS is imported from validator_workflow_constants.py (canonical source).
+# Import directly from omnibase_core.validation.validator_workflow_constants for this constant.
 __all__ = [
     "MAX_STEP_PAYLOAD_SIZE_BYTES",
     "MAX_TOTAL_PAYLOAD_SIZE_BYTES",

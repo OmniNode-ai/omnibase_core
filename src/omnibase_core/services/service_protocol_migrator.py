@@ -16,12 +16,12 @@ from omnibase_core.models.validation.model_migration_conflict_union import (
 )
 from omnibase_core.models.validation.model_migration_plan import ModelMigrationPlan
 from omnibase_core.models.validation.model_migration_result import ModelMigrationResult
-from omnibase_core.validation.migration_types import (
+from omnibase_core.validation.validator_migration_types import (
     TypedDictMigrationDuplicateConflictDict,
     TypedDictMigrationNameConflictDict,
     TypedDictMigrationStepDict,
 )
-from omnibase_core.validation.validation_utils import (
+from omnibase_core.validation.validator_utils import (
     ModelProtocolInfo,
     ModelValidationResult,
     determine_repository_name,

@@ -94,7 +94,7 @@ class CircularImportValidator:
             file_path: Path to the Python file
 
         Returns:
-            Module name (e.g., "omnibase_core.validators.circular_import_validator")
+            Module name (e.g., "omnibase_core.validation.validator_circular_import")
             or None if the path cannot be converted
         """
         try:

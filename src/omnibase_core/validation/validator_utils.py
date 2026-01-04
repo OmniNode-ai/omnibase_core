@@ -145,19 +145,15 @@ def validate_protocol_compliance(
             f"Protocol compliance validation failed: {type(obj).__name__} "
             f"does not implement {protocol_name}"
         )
-        # NOTE: Cast to Any is safe here - context keys are user-defined and
-        # intentionally separate from ModelOnexError's positional parameters
-        from typing import Any, cast
-
-        extra_context: dict[str, Any] = cast(dict[str, Any], context or {})
         raise ModelOnexError(
             message=f"Object does not implement {protocol_name}",
             error_code=EnumCoreErrorCode.TYPE_MISMATCH,
-            # Context passed as **kwargs to ModelOnexError
-            protocol=protocol_name,
-            required_methods=required_methods,
-            actual_type=type(obj).__name__,
-            **extra_context,
+            context={
+                "protocol": protocol_name,
+                "required_methods": required_methods,
+                "actual_type": type(obj).__name__,
+                **(context or {}),
+            },
         )
     logger.debug(
         f"Protocol compliance validation passed: {type(obj).__name__} "

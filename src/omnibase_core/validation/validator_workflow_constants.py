@@ -27,7 +27,7 @@ maintainability and avoiding duplication.
 
     Example: ``from omnibase_core.constants import MAX_DFS_ITERATIONS``
 
-**omnibase_core/validation/workflow_constants.py** (This Module):
+**omnibase_core/validation/validator_workflow_constants.py** (This Module):
     Workflow-specific limits and configuration. Re-exports MAX_DFS_ITERATIONS
     from constants_field_limits.py for workflow module convenience.
 
@@ -42,7 +42,7 @@ maintainability and avoiding duplication.
     When to use: Import from here when working with workflow validation,
     execution, or orchestration code.
 
-    Example: ``from omnibase_core.validation.workflow_constants import MAX_WORKFLOW_STEPS``
+    Example: ``from omnibase_core.validation.validator_workflow_constants import MAX_WORKFLOW_STEPS``
 
 **omnibase_core/constants/constants_timeouts.py**:
     General timeout values for I/O operations across the framework:
@@ -60,7 +60,7 @@ maintainability and avoiding duplication.
 **Why Multiple Timeout Constants?**:
     - constants_field_limits.MAX_TIMEOUT_MS (24h): Absolute maximum for any timeout
     - constants_timeouts.TIMEOUT_MAX_MS (10min): Practical maximum for I/O operations
-    - workflow_constants.MAX_TIMEOUT_MS (24h): Workflow-specific re-export for validation
+    - validator_workflow_constants.MAX_TIMEOUT_MS (24h): Workflow-specific re-export for validation
 
     The 24-hour limit protects against DoS via extremely long timeouts.
     The 10-minute limit is a practical bound for most I/O operations.

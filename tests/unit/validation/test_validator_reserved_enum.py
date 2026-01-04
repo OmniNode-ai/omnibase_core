@@ -13,11 +13,11 @@ import pytest
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_workflow_execution import EnumExecutionMode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.validation.reserved_enum_validator import (
+from omnibase_core.validation.validator_reserved_enum import (
     RESERVED_EXECUTION_MODES,
     validate_execution_mode,
 )
-from omnibase_core.validation.workflow_validator import validate_execution_mode_string
+from omnibase_core.validation.validator_workflow import validate_execution_mode_string
 
 
 @pytest.mark.unit
@@ -490,7 +490,7 @@ class TestValidatorConsolidation:
 
     def test_reserved_modes_constant_consistency(self) -> None:
         """Test that reserved modes constants are consistent."""
-        from omnibase_core.validation.workflow_validator import (
+        from omnibase_core.validation.validator_workflow import (
             RESERVED_EXECUTION_MODES as STRING_RESERVED_MODES,
         )
 
@@ -504,7 +504,7 @@ class TestValidatorConsolidation:
 
     def test_accepted_modes_constant_exists_in_workflow_validator(self) -> None:
         """Test that ACCEPTED_EXECUTION_MODES constant exists and is correct."""
-        from omnibase_core.validation.workflow_validator import ACCEPTED_EXECUTION_MODES
+        from omnibase_core.validation.validator_workflow import ACCEPTED_EXECUTION_MODES
 
         assert "sequential" in ACCEPTED_EXECUTION_MODES
         assert "parallel" in ACCEPTED_EXECUTION_MODES
@@ -563,7 +563,7 @@ class TestPublicAPIExports:
     def test_validate_execution_mode_same_function(self) -> None:
         """Test that validate_execution_mode from validation and reserved_enum_validator are the same."""
         from omnibase_core.validation import validate_execution_mode as v1
-        from omnibase_core.validation.reserved_enum_validator import (
+        from omnibase_core.validation.validator_reserved_enum import (
             validate_execution_mode as v2,
         )
 
@@ -689,7 +689,7 @@ class TestCanonicalImportPaths:
 
     def test_direct_import_from_reserved_enum_validator(self) -> None:
         """Test that direct import from reserved_enum_validator works."""
-        from omnibase_core.validation.reserved_enum_validator import (
+        from omnibase_core.validation.validator_reserved_enum import (
             RESERVED_EXECUTION_MODES,
             validate_execution_mode,
         )
@@ -699,8 +699,8 @@ class TestCanonicalImportPaths:
         assert EnumExecutionMode.CONDITIONAL in RESERVED_EXECUTION_MODES
 
     def test_direct_import_from_workflow_validator(self) -> None:
-        """Test that direct import from workflow_validator works."""
-        from omnibase_core.validation.workflow_validator import (
+        """Test that direct import from validator_workflow works."""
+        from omnibase_core.validation.validator_workflow import (
             ACCEPTED_EXECUTION_MODES,
             RESERVED_EXECUTION_MODES,
             validate_execution_mode_string,
