@@ -442,6 +442,8 @@ class ModelChangeProposal(BaseModel):
         before: dict[str, Any],
         after: dict[str, Any],
         prefix: str = "",
+        max_depth: int = 10,
+        _current_depth: int = 0,
     ) -> set[str]:
         """
         Recursively compute diff keys for nested dict structures.
@@ -454,6 +456,14 @@ class ModelChangeProposal(BaseModel):
             before: The before configuration dict (or nested dict)
             after: The after configuration dict (or nested dict)
             prefix: The current path prefix for nested keys (e.g., "parent.")
+            max_depth: Maximum recursion depth for nested dict comparison.
+                When this depth is reached, nested dicts are compared as
+                whole values rather than recursing further. Defaults to 10.
+                This provides a defensive limit against stack overflow or
+                poor performance with very deeply nested configurations.
+            _current_depth: Internal parameter tracking current recursion depth.
+                Do not set this directly; it is managed automatically during
+                recursive calls.
 
         Returns:
             Set of dot-separated key paths that differ between before and after.
@@ -461,10 +471,15 @@ class ModelChangeProposal(BaseModel):
         Note:
             - Non-dict values are compared directly
             - When a key exists in only one dict, the entire key path is added
-            - When both values are dicts, recursion continues
+            - When both values are dicts, recursion continues (up to max_depth)
             - When one value is a dict and the other is not, the key is added
+            - When max_depth is reached, nested dicts are compared as whole
+              values and the key is reported as changed if they differ
 
         .. versionadded:: 0.4.0
+        .. versionchanged:: 0.4.0
+            Added ``max_depth`` and ``_current_depth`` parameters for
+            defensive recursion limits.
         """
         result: set[str] = set()
 
@@ -487,22 +502,30 @@ class ModelChangeProposal(BaseModel):
             if before_val == after_val:
                 continue
 
-            # Both are dicts - recurse
+            # Both are dicts - recurse if we haven't hit max_depth
             if isinstance(before_val, dict) and isinstance(after_val, dict):
-                result.update(
-                    self._deep_diff_keys(
-                        before_val,
-                        after_val,
-                        prefix=f"{full_key}.",
+                if _current_depth >= max_depth:
+                    # Max depth reached - treat as changed at this level
+                    result.add(full_key)
+                else:
+                    result.update(
+                        self._deep_diff_keys(
+                            before_val,
+                            after_val,
+                            prefix=f"{full_key}.",
+                            max_depth=max_depth,
+                            _current_depth=_current_depth + 1,
+                        )
                     )
-                )
             else:
                 # Values differ (or type changed from/to dict)
                 result.add(full_key)
 
         return result
 
-    def get_changed_keys(self, *, deep: bool = False) -> set[str]:
+    def get_changed_keys(
+        self, *, deep: bool = False, max_depth: int | None = None
+    ) -> set[str]:
         """
         Get the set of keys that differ between before_config and after_config.
 
@@ -515,6 +538,10 @@ class ModelChangeProposal(BaseModel):
             deep: If True, recursively compare nested dicts and return
                 dot-separated paths (e.g., "config.timeout"). If False (default),
                 only compare top-level keys using shallow comparison.
+            max_depth: Maximum recursion depth when ``deep=True``. Only applies
+                when deep comparison is enabled. When the depth limit is reached,
+                nested dicts are compared as whole values rather than recursing
+                further. Defaults to 10 if not specified. Ignored when deep=False.
 
         Returns:
             Set of keys (or dot-separated paths if deep=True) where values differ
@@ -546,9 +573,13 @@ class ModelChangeProposal(BaseModel):
 
         .. versionchanged:: 0.4.0
             Added ``deep`` parameter for recursive nested dict comparison.
+            Added ``max_depth`` parameter for defensive recursion limits.
         """
         if deep:
-            return self._deep_diff_keys(self.before_config, self.after_config)
+            depth = max_depth if max_depth is not None else 10
+            return self._deep_diff_keys(
+                self.before_config, self.after_config, max_depth=depth
+            )
 
         before_keys = set(self.before_config.keys())
         after_keys = set(self.after_config.keys())
@@ -589,7 +620,9 @@ class ModelChangeProposal(BaseModel):
             current = current[part]
         return (True, current)
 
-    def get_diff_summary(self, *, deep: bool = False) -> str:
+    def get_diff_summary(
+        self, *, deep: bool = False, max_depth: int | None = None
+    ) -> str:
         """
         Get a human-readable summary of the configuration differences.
 
@@ -601,6 +634,10 @@ class ModelChangeProposal(BaseModel):
         Args:
             deep: If True, show nested paths (e.g., "config.timeout") for nested
                 dict changes. If False (default), only show top-level keys.
+            max_depth: Maximum recursion depth when ``deep=True``. Only applies
+                when deep comparison is enabled. When the depth limit is reached,
+                nested dicts are compared as whole values rather than recursing
+                further. Defaults to 10 if not specified. Ignored when deep=False.
 
         Returns:
             Formatted string showing before/after values for changed keys.
@@ -633,9 +670,11 @@ class ModelChangeProposal(BaseModel):
 
         .. versionchanged:: 0.4.0
             Added ``deep`` parameter for nested path display.
+            Added ``max_depth`` parameter for defensive recursion limits.
         """
         if deep:
-            return self._get_deep_diff_summary()
+            depth = max_depth if max_depth is not None else 10
+            return self._get_deep_diff_summary(max_depth=depth)
 
         before_keys = set(self.before_config.keys())
         after_keys = set(self.after_config.keys())
@@ -667,7 +706,7 @@ class ModelChangeProposal(BaseModel):
 
         return "\n".join(lines)
 
-    def _get_deep_diff_summary(self) -> str:
+    def _get_deep_diff_summary(self, max_depth: int = 10) -> str:
         """
         Get deep diff summary with nested paths.
 
@@ -675,13 +714,22 @@ class ModelChangeProposal(BaseModel):
         It uses the _deep_diff_keys method to find all nested changes and
         then formats them appropriately.
 
+        Args:
+            max_depth: Maximum recursion depth for nested dict comparison.
+                When this depth is reached, nested dicts are compared as
+                whole values rather than recursing further. Defaults to 10.
+
         Returns:
             Formatted string showing nested path changes.
 
         .. versionadded:: 0.4.0
+        .. versionchanged:: 0.4.0
+            Added ``max_depth`` parameter for defensive recursion limits.
         """
         changed_paths = sorted(
-            self._deep_diff_keys(self.before_config, self.after_config)
+            self._deep_diff_keys(
+                self.before_config, self.after_config, max_depth=max_depth
+            )
         )
 
         lines: list[str] = ["Configuration Changes:"]
@@ -712,9 +760,18 @@ class ModelChangeProposal(BaseModel):
         "model" key for consistency with _validate_model_swap() which accepts
         either key.
 
+        Note:
+            Model name values are explicitly coerced to strings using ``str()``.
+            This is intentional to handle cases where model names might be stored
+            as non-string types in configuration dictionaries (e.g., numeric
+            identifiers, enums, or other objects with ``__str__`` implementations).
+            The coercion ensures consistent string output regardless of the
+            underlying storage type.
+
         Returns:
             Dictionary with "old_model" and "new_model" keys if change_type
-            is MODEL_SWAP, None otherwise.
+            is MODEL_SWAP, None otherwise. Values are coerced to strings,
+            or None if the model name key is not present in the config.
 
         Example:
             >>> proposal = ModelChangeProposal.create(

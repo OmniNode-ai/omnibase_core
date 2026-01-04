@@ -1726,3 +1726,283 @@ class TestTypeSpecificValidation:
             assert proposal.change_type == EnumChangeType.ENDPOINT_CHANGE
             assert proposal.before_config["url"] == before_url
             assert proposal.after_config["url"] == after_url
+
+
+# =============================================================================
+# Phase 10: Max Depth Recursion Limit Tests
+# =============================================================================
+
+
+@pytest.mark.unit
+class TestMaxDepthRecursionLimit:
+    """Phase 10: Tests for max_depth parameter in deep diff operations (v0.4.0+).
+
+    Tests the defensive recursion limit feature that prevents stack overflow
+    or poor performance with very deeply nested configurations.
+    """
+
+    def test_max_depth_zero_no_recursion(self) -> None:
+        """max_depth=0 should not recurse into nested dicts at all."""
+        before = {"config": {"a": 1}}
+        after = {"config": {"a": 2}}
+
+        proposal = ModelChangeProposal(
+            change_type=EnumChangeType.CONFIG_CHANGE,
+            description="Test max_depth=0",
+            rationale="Testing zero depth",
+            before_config=before,
+            after_config=after,
+        )
+
+        # With max_depth=0, should report 'config' as changed, not 'config.a'
+        deep_keys = proposal.get_changed_keys(deep=True, max_depth=0)
+        assert deep_keys == {"config"}
+
+    def test_max_depth_one_single_level_recursion(self) -> None:
+        """max_depth=1 should recurse one level only."""
+        before = {"level1": {"level2": {"level3": "old"}}}
+        after = {"level1": {"level2": {"level3": "new"}}}
+
+        proposal = ModelChangeProposal(
+            change_type=EnumChangeType.CONFIG_CHANGE,
+            description="Test max_depth=1",
+            rationale="Testing single level depth",
+            before_config=before,
+            after_config=after,
+        )
+
+        # With max_depth=1, should recurse into level1, but stop at level2
+        deep_keys = proposal.get_changed_keys(deep=True, max_depth=1)
+        assert deep_keys == {"level1.level2"}
+
+    def test_max_depth_two_two_level_recursion(self) -> None:
+        """max_depth=2 should recurse two levels."""
+        before = {"l1": {"l2": {"l3": {"l4": "old"}}}}
+        after = {"l1": {"l2": {"l3": {"l4": "new"}}}}
+
+        proposal = ModelChangeProposal(
+            change_type=EnumChangeType.CONFIG_CHANGE,
+            description="Test max_depth=2",
+            rationale="Testing two level depth",
+            before_config=before,
+            after_config=after,
+        )
+
+        # With max_depth=2, should recurse into l1.l2, but stop at l3
+        deep_keys = proposal.get_changed_keys(deep=True, max_depth=2)
+        assert deep_keys == {"l1.l2.l3"}
+
+    def test_max_depth_default_is_ten(self) -> None:
+        """Default max_depth should be 10 (allowing 10 levels of recursion)."""
+        # Create a structure 12 levels deep
+        before: dict = {"value": "old"}
+        after: dict = {"value": "new"}
+        for i in range(11):  # 11 wrapping levels
+            before = {f"l{11 - i}": before}
+            after = {f"l{11 - i}": after}
+
+        proposal = ModelChangeProposal(
+            change_type=EnumChangeType.CONFIG_CHANGE,
+            description="Test default max_depth",
+            rationale="Testing default depth of 10",
+            before_config=before,
+            after_config=after,
+        )
+
+        # With default max_depth=10, should stop at l11 (10 levels of recursion)
+        # l1 -> l2 -> ... -> l10 -> l11 (stops here, doesn't recurse into value)
+        deep_keys = proposal.get_changed_keys(deep=True)
+        # After 10 levels of recursion (l1 through l10), we hit l11 which contains
+        # the nested dict, but we're at depth 10 so we report l1.l2...l11 as changed
+        expected_path = ".".join([f"l{i}" for i in range(1, 12)])
+        assert deep_keys == {expected_path}
+
+    def test_max_depth_within_limit_recurses_fully(self) -> None:
+        """When nesting is within max_depth, should recurse to the leaf."""
+        before = {"a": {"b": {"c": "old"}}}
+        after = {"a": {"b": {"c": "new"}}}
+
+        proposal = ModelChangeProposal(
+            change_type=EnumChangeType.CONFIG_CHANGE,
+            description="Test within limit",
+            rationale="Testing full recursion within limit",
+            before_config=before,
+            after_config=after,
+        )
+
+        # With max_depth=10 (default), 3 levels should fully recurse
+        deep_keys = proposal.get_changed_keys(deep=True)
+        assert deep_keys == {"a.b.c"}
+
+    def test_max_depth_with_mixed_depths(self) -> None:
+        """max_depth should correctly handle configs with varying nesting depths."""
+        before = {
+            "shallow": "old1",
+            "medium": {"nested": "old2"},
+            "deep": {"l1": {"l2": {"l3": "old3"}}},
+        }
+        after = {
+            "shallow": "new1",
+            "medium": {"nested": "new2"},
+            "deep": {"l1": {"l2": {"l3": "new3"}}},
+        }
+
+        proposal = ModelChangeProposal(
+            change_type=EnumChangeType.CONFIG_CHANGE,
+            description="Test mixed depths",
+            rationale="Testing mixed depth nesting",
+            before_config=before,
+            after_config=after,
+        )
+
+        # With max_depth=1, should stop at first nested level
+        deep_keys = proposal.get_changed_keys(deep=True, max_depth=1)
+        assert "shallow" in deep_keys
+        assert "medium.nested" in deep_keys
+        assert "deep.l1" in deep_keys  # Stops here, doesn't go to l2
+
+        # With max_depth=2
+        deep_keys = proposal.get_changed_keys(deep=True, max_depth=2)
+        assert "shallow" in deep_keys
+        assert "medium.nested" in deep_keys
+        assert "deep.l1.l2" in deep_keys  # Stops here, doesn't go to l3
+
+    def test_max_depth_get_diff_summary(self) -> None:
+        """get_diff_summary should also respect max_depth."""
+        before = {"config": {"nested": {"value": 1}}}
+        after = {"config": {"nested": {"value": 2}}}
+
+        proposal = ModelChangeProposal(
+            change_type=EnumChangeType.CONFIG_CHANGE,
+            description="Test diff summary max_depth",
+            rationale="Testing diff summary with depth limit",
+            before_config=before,
+            after_config=after,
+        )
+
+        # With max_depth=1, should report config.nested as changed
+        summary = proposal.get_diff_summary(deep=True, max_depth=1)
+        assert "config.nested" in summary
+        assert "config.nested.value" not in summary
+
+        # With default depth, should report config.nested.value
+        summary = proposal.get_diff_summary(deep=True)
+        assert "config.nested.value" in summary
+
+    def test_max_depth_none_uses_default(self) -> None:
+        """max_depth=None should use the default value of 10."""
+        before = {"a": {"b": "old"}}
+        after = {"a": {"b": "new"}}
+
+        proposal = ModelChangeProposal(
+            change_type=EnumChangeType.CONFIG_CHANGE,
+            description="Test max_depth=None",
+            rationale="Testing None uses default",
+            before_config=before,
+            after_config=after,
+        )
+
+        # Explicitly passing None should behave same as not passing
+        keys_with_none = proposal.get_changed_keys(deep=True, max_depth=None)
+        keys_without = proposal.get_changed_keys(deep=True)
+        assert keys_with_none == keys_without == {"a.b"}
+
+    def test_max_depth_ignored_when_deep_false(self) -> None:
+        """max_depth should be ignored when deep=False."""
+        before = {"config": {"nested": "old"}}
+        after = {"config": {"nested": "new"}}
+
+        proposal = ModelChangeProposal(
+            change_type=EnumChangeType.CONFIG_CHANGE,
+            description="Test max_depth ignored",
+            rationale="Testing max_depth ignored for shallow compare",
+            before_config=before,
+            after_config=after,
+        )
+
+        # max_depth should have no effect when deep=False
+        shallow_keys_no_depth = proposal.get_changed_keys(deep=False)
+        shallow_keys_with_depth = proposal.get_changed_keys(deep=False, max_depth=0)
+        assert shallow_keys_no_depth == shallow_keys_with_depth == {"config"}
+
+    def test_max_depth_at_exact_limit(self) -> None:
+        """Test behavior exactly at the max_depth boundary."""
+        # Create exactly 3 levels of nesting
+        before = {"l1": {"l2": {"l3": "old"}}}
+        after = {"l1": {"l2": {"l3": "new"}}}
+
+        proposal = ModelChangeProposal(
+            change_type=EnumChangeType.CONFIG_CHANGE,
+            description="Test exact limit",
+            rationale="Testing behavior at exact depth limit",
+            before_config=before,
+            after_config=after,
+        )
+
+        # max_depth=2 means we can recurse twice (l1 -> l2), then l3 is the limit
+        # At l2, we see l3 is a nested dict, but we're at depth 2, so we report l2.l3
+        deep_keys = proposal.get_changed_keys(deep=True, max_depth=2)
+        assert deep_keys == {"l1.l2.l3"}
+
+        # max_depth=3 allows full recursion
+        deep_keys = proposal.get_changed_keys(deep=True, max_depth=3)
+        assert deep_keys == {"l1.l2.l3"}
+
+    def test_max_depth_with_added_nested_key(self) -> None:
+        """max_depth should work correctly with added nested keys."""
+        before: dict[str, object] = {"config": {}}
+        after: dict[str, object] = {"config": {"nested": {"deep": "value"}}}
+
+        proposal = ModelChangeProposal(
+            change_type=EnumChangeType.CONFIG_CHANGE,
+            description="Test added nested key",
+            rationale="Testing max_depth with added nested structure",
+            before_config=before,
+            after_config=after,
+        )
+
+        # With max_depth=0, should report 'config' as changed
+        deep_keys = proposal.get_changed_keys(deep=True, max_depth=0)
+        assert deep_keys == {"config"}
+
+        # With max_depth=1, should report 'config.nested'
+        deep_keys = proposal.get_changed_keys(deep=True, max_depth=1)
+        assert deep_keys == {"config.nested"}
+
+    def test_max_depth_with_removed_nested_key(self) -> None:
+        """max_depth should work correctly with removed nested keys."""
+        before: dict[str, object] = {"config": {"nested": {"deep": "value"}}}
+        after: dict[str, object] = {"config": {}}
+
+        proposal = ModelChangeProposal(
+            change_type=EnumChangeType.CONFIG_CHANGE,
+            description="Test removed nested key",
+            rationale="Testing max_depth with removed nested structure",
+            before_config=before,
+            after_config=after,
+        )
+
+        # With max_depth=0, should report 'config' as changed
+        deep_keys = proposal.get_changed_keys(deep=True, max_depth=0)
+        assert deep_keys == {"config"}
+
+        # With max_depth=1, should report 'config.nested'
+        deep_keys = proposal.get_changed_keys(deep=True, max_depth=1)
+        assert deep_keys == {"config.nested"}
+
+    def test_max_depth_large_value_no_impact(self) -> None:
+        """Large max_depth should have no impact on shallow structures."""
+        before = {"a": 1, "b": 2}
+        after = {"a": 10, "b": 20}
+
+        proposal = ModelChangeProposal(
+            change_type=EnumChangeType.CONFIG_CHANGE,
+            description="Test large max_depth",
+            rationale="Testing large max_depth on shallow structure",
+            before_config=before,
+            after_config=after,
+        )
+
+        # Large max_depth should work fine with shallow structures
+        deep_keys = proposal.get_changed_keys(deep=True, max_depth=1000)
+        assert deep_keys == {"a", "b"}
