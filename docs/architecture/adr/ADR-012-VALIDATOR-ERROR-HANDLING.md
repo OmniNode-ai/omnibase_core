@@ -218,7 +218,7 @@ With `ValueError`, this logic requires fragile string parsing.
 **Pattern**: Validators using `ModelOnexError` integrate seamlessly with ONEX error handling decorators:
 
 ```python
-from omnibase_core.decorators.error_handling import standard_error_handling
+from omnibase_core.decorators.decorator_error_handling import standard_error_handling
 
 class NodeMyReducer(NodeReducer):
     @standard_error_handling  # Catches ModelOnexError, logs with context

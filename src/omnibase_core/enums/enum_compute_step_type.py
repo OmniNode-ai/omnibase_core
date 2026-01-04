@@ -41,7 +41,7 @@ Example:
 See Also:
     - omnibase_core.models.contracts.subcontracts.model_compute_pipeline_step: Step model
     - omnibase_core.enums.enum_transformation_type: Transformation types
-    - omnibase_core.utils.compute_executor: Uses this enum for step dispatch
+    - omnibase_core.utils.util_compute_executor: Uses this enum for step dispatch
 """
 
 from enum import Enum

@@ -42,7 +42,7 @@ Example:
 See Also:
     - omnibase_core.models.workflow.execution.model_declarative_workflow_result:
         Parent model that uses this metadata
-    - omnibase_core.utils.workflow_executor: Source of field requirements
+    - omnibase_core.utils.util_workflow_executor: Source of field requirements
     - docs/guides/node-building/06_ORCHESTRATOR_NODE_TUTORIAL.md: Tutorial
 """
 

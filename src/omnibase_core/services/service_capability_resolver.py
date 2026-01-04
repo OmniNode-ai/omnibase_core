@@ -62,7 +62,7 @@ from omnibase_core.protocols.resolution.protocol_capability_resolver import (
     ProtocolProfile,
     ProtocolProviderRegistry,
 )
-from omnibase_core.types.json_types import JsonType
+from omnibase_core.types.type_json import JsonType
 from omnibase_core.types.typed_dict_resolution_audit_data import (
     TypedDictResolutionAuditData,
 )

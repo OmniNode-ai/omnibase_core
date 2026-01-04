@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 
     # These imports are for type hints only - actual imports are done lazily in methods
     # to avoid circular import with workflow_executor
-    from omnibase_core.utils.workflow_executor import (
+    from omnibase_core.utils.util_workflow_executor import (
         WorkflowExecutionResult,
     )
 
@@ -83,7 +83,7 @@ def _get_workflow_executor() -> tuple[
     if _workflow_executor_cache is not None:
         return _workflow_executor_cache
 
-    from omnibase_core.utils.workflow_executor import (
+    from omnibase_core.utils.util_workflow_executor import (
         WorkflowExecutionResult,
         execute_workflow,
         get_execution_order,
@@ -227,7 +227,7 @@ class MixinWorkflowExecution:
         """
         Execute workflow from YAML contract.
 
-        Pure function delegation: delegates to utils/workflow_executor.execute_workflow()
+        Pure function delegation: delegates to utils/util_workflow_executor.execute_workflow()
         which returns (result, actions) without side effects.
 
         After execution completes, automatically updates the internal workflow state
@@ -309,7 +309,7 @@ class MixinWorkflowExecution:
         """
         Validate workflow contract for correctness.
 
-        Pure function delegation: delegates to utils/workflow_executor.validate_workflow_definition()
+        Pure function delegation: delegates to utils/util_workflow_executor.validate_workflow_definition()
 
         Args:
             workflow_definition: Workflow definition to validate

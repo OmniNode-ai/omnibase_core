@@ -346,7 +346,7 @@ class TestWorkflowHashIntegrationWithExecutor:
         This is different from the contract's compute_workflow_hash() which
         excludes workflow_hash to support persistence use cases.
         """
-        from omnibase_core.utils.workflow_executor import (
+        from omnibase_core.utils.util_workflow_executor import (
             _compute_workflow_hash as executor_compute_hash,
         )
 

@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 if TYPE_CHECKING:
-    from omnibase_core.types.core_types import TypedDictBasicErrorContext
+    from omnibase_core.types.type_core import TypedDictBasicErrorContext
 
 
 class ModelErrorContext(BaseModel):

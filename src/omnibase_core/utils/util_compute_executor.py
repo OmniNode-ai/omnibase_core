@@ -28,7 +28,7 @@ Step Types Supported:
     - VALIDATION: Validate data against schema (v1.0: pass-through)
 
 Example:
-    >>> from omnibase_core.utils.compute_executor import execute_compute_pipeline
+    >>> from omnibase_core.utils.util_compute_executor import execute_compute_pipeline
     >>> from omnibase_core.models.compute import ModelComputeExecutionContext
     >>> from uuid import uuid4
     >>>
@@ -38,7 +38,7 @@ Example:
     ...     print(f"Pipeline completed in {result.processing_time_ms:.2f}ms")
 
 See Also:
-    - omnibase_core.utils.compute_transformations: Transformation functions
+    - omnibase_core.utils.util_compute_transformations: Transformation functions
     - omnibase_core.models.contracts.subcontracts: Contract models
     - omnibase_core.mixins.mixin_compute_execution: Async wrapper mixin
     - docs/guides/node-building/03_COMPUTE_NODE_TUTORIAL.md: Compute node tutorial
@@ -85,7 +85,7 @@ from omnibase_core.models.contracts.subcontracts.model_compute_subcontract impor
     ModelComputeSubcontract,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.utils.compute_transformations import execute_transformation
+from omnibase_core.utils.util_compute_transformations import execute_transformation
 
 
 def _get_error_type(error: ModelOnexError) -> str:
@@ -122,7 +122,7 @@ def _get_error_type(error: ModelOnexError) -> str:
 
 # Use shared utility for path resolution - consolidates logic from both
 # resolve_mapping_path (here) and transform_json_path (compute_transformations.py)
-from omnibase_core.utils.compute_path_resolver import resolve_pipeline_path
+from omnibase_core.utils.util_compute_path_resolver import resolve_pipeline_path
 
 
 def resolve_mapping_path(

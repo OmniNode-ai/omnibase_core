@@ -16,7 +16,7 @@ Tests cover:
 import pytest
 from pydantic import BaseModel, Field
 
-from omnibase_core.decorators.convert_to_schema import (
+from omnibase_core.decorators.decorator_convert_to_schema import (
     convert_dict_to_schema,
     convert_list_to_schema,
     convert_to_schema,
@@ -721,7 +721,9 @@ class TestVersionParsing:
 
     def test_parse_standard_version(self):
         """Test parsing standard version strings like '2.11.0'."""
-        from omnibase_core.decorators.convert_to_schema import _parse_version_component
+        from omnibase_core.decorators.decorator_convert_to_schema import (
+            _parse_version_component,
+        )
 
         assert _parse_version_component("2.11.0", 0) == 2
         assert _parse_version_component("2.11.0", 1) == 11
@@ -729,7 +731,9 @@ class TestVersionParsing:
 
     def test_parse_prerelease_version(self):
         """Test parsing pre-release versions like '2.11.0a1', '2.11.0rc1'."""
-        from omnibase_core.decorators.convert_to_schema import _parse_version_component
+        from omnibase_core.decorators.decorator_convert_to_schema import (
+            _parse_version_component,
+        )
 
         # Alpha versions
         assert _parse_version_component("2.11.0a1", 0) == 2
@@ -741,7 +745,9 @@ class TestVersionParsing:
 
     def test_parse_dev_version(self):
         """Test parsing dev versions like '2.11-dev' or '3.0.0-dev'."""
-        from omnibase_core.decorators.convert_to_schema import _parse_version_component
+        from omnibase_core.decorators.decorator_convert_to_schema import (
+            _parse_version_component,
+        )
 
         # Dev version with hyphen
         assert _parse_version_component("2.11-dev", 0) == 2
@@ -751,14 +757,18 @@ class TestVersionParsing:
 
     def test_parse_component_beyond_end(self):
         """Test parsing component index beyond available parts."""
-        from omnibase_core.decorators.convert_to_schema import _parse_version_component
+        from omnibase_core.decorators.decorator_convert_to_schema import (
+            _parse_version_component,
+        )
 
         assert _parse_version_component("2.11", 2) == 0
         assert _parse_version_component("2", 1) == 0
 
     def test_parse_non_numeric_start(self):
         """Test parsing version with non-numeric start returns 0."""
-        from omnibase_core.decorators.convert_to_schema import _parse_version_component
+        from omnibase_core.decorators.decorator_convert_to_schema import (
+            _parse_version_component,
+        )
 
         # Edge case: component starts with non-digit
         assert _parse_version_component("v2.11.0", 0) == 0
@@ -767,7 +777,9 @@ class TestVersionParsing:
 
     def test_parse_empty_string(self):
         """Test parsing empty version string."""
-        from omnibase_core.decorators.convert_to_schema import _parse_version_component
+        from omnibase_core.decorators.decorator_convert_to_schema import (
+            _parse_version_component,
+        )
 
         assert _parse_version_component("", 0) == 0
         assert _parse_version_component("", 1) == 0
@@ -778,7 +790,9 @@ class TestVersionParsing:
         Covers edge case: "3.0.0-alpha.1" where the pre-release suffix
         includes a dot separator that could interfere with version splitting.
         """
-        from omnibase_core.decorators.convert_to_schema import _parse_version_component
+        from omnibase_core.decorators.decorator_convert_to_schema import (
+            _parse_version_component,
+        )
 
         # "3.0.0-alpha.1" splits to ["3", "0", "0-alpha", "1"]
         # Major: 3
@@ -796,7 +810,9 @@ class TestVersionParsing:
         Covers edge case: "2.11-dev+commit.sha" where build metadata
         (after +) contains additional dots and characters.
         """
-        from omnibase_core.decorators.convert_to_schema import _parse_version_component
+        from omnibase_core.decorators.decorator_convert_to_schema import (
+            _parse_version_component,
+        )
 
         # "2.11-dev+commit.sha" splits to ["2", "11-dev+commit", "sha"]
         # Major: 2
@@ -812,7 +828,9 @@ class TestVersionParsing:
         Covers edge case: "1.0.0.dev1" which is a common pattern
         in Python packaging for development versions.
         """
-        from omnibase_core.decorators.convert_to_schema import _parse_version_component
+        from omnibase_core.decorators.decorator_convert_to_schema import (
+            _parse_version_component,
+        )
 
         # "1.0.0.dev1" splits to ["1", "0", "0", "dev1"]
         # Major: 1
@@ -829,7 +847,9 @@ class TestVersionParsing:
 
         Covers edge case where a version component has no leading digits at all.
         """
-        from omnibase_core.decorators.convert_to_schema import _parse_version_component
+        from omnibase_core.decorators.decorator_convert_to_schema import (
+            _parse_version_component,
+        )
 
         # "alpha" -> no leading digits -> 0
         assert _parse_version_component("1.0.alpha", 2) == 0
@@ -843,7 +863,7 @@ class TestEscapeFieldNameForValidator:
 
     def test_escape_single_underscore_unchanged(self):
         """Test that single underscores are not escaped."""
-        from omnibase_core.decorators.convert_to_schema import (
+        from omnibase_core.decorators.decorator_convert_to_schema import (
             _escape_field_name_for_validator,
         )
 
@@ -852,7 +872,7 @@ class TestEscapeFieldNameForValidator:
 
     def test_escape_double_underscore(self):
         """Test that double underscores are escaped to triple."""
-        from omnibase_core.decorators.convert_to_schema import (
+        from omnibase_core.decorators.decorator_convert_to_schema import (
             _escape_field_name_for_validator,
         )
 
@@ -861,7 +881,7 @@ class TestEscapeFieldNameForValidator:
 
     def test_escape_multiple_double_underscores(self):
         """Test that multiple double underscores are all escaped."""
-        from omnibase_core.decorators.convert_to_schema import (
+        from omnibase_core.decorators.decorator_convert_to_schema import (
             _escape_field_name_for_validator,
         )
 
@@ -869,7 +889,7 @@ class TestEscapeFieldNameForValidator:
 
     def test_escape_triple_underscore(self):
         """Test that triple underscores have their __ portion escaped."""
-        from omnibase_core.decorators.convert_to_schema import (
+        from omnibase_core.decorators.decorator_convert_to_schema import (
             _escape_field_name_for_validator,
         )
 
@@ -879,7 +899,7 @@ class TestEscapeFieldNameForValidator:
 
     def test_escape_no_underscores(self):
         """Test that names without underscores are unchanged."""
-        from omnibase_core.decorators.convert_to_schema import (
+        from omnibase_core.decorators.decorator_convert_to_schema import (
             _escape_field_name_for_validator,
         )
 

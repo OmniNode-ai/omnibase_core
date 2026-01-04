@@ -13,7 +13,7 @@ from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_workflow_coordination import EnumWorkflowStatus
 from omnibase_core.models.core.model_workflow_metrics import ModelWorkflowMetrics
-from omnibase_core.types.constraints import PrimitiveValueType
+from omnibase_core.types.type_constraints import PrimitiveValueType
 
 # Type aliases for structured data
 StructuredData = dict[str, PrimitiveValueType]

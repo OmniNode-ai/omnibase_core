@@ -23,7 +23,7 @@ import pytest
 def test_import_core_types():
     """Test that core types can be imported without issues."""
     # Should import cleanly
-    from omnibase_core.types.core_types import (
+    from omnibase_core.types.type_core import (
         ProtocolSchemaValue,
         TypedDictBasicErrorContext,
     )
@@ -81,7 +81,7 @@ def test_no_circular_dependency_chain():
         "omnibase_core.models.common.model_schema_value",
         "omnibase_core.models.common.model_error_context",
         "omnibase_core.models.common.model_numeric_value",
-        "omnibase_core.types.core_types",
+        "omnibase_core.types.type_core",
     ]
 
     # Remove from sys.modules if present (for clean test)
@@ -123,7 +123,7 @@ def test_no_circular_dependency_chain():
 
 def test_simple_error_context_functionality():
     """Test that TypedDictBasicErrorContext works as expected."""
-    from omnibase_core.types.core_types import TypedDictBasicErrorContext
+    from omnibase_core.types.type_core import TypedDictBasicErrorContext
 
     # TypedDict creates plain dict instances, so we create it as a dict
     context: TypedDictBasicErrorContext = {
@@ -210,13 +210,13 @@ def test_import_chain_sequential() -> None:
 
     # Import in the correct order - each step should succeed
     steps = [
-        ("types.core_types", "omnibase_core.types.core_types"),
+        ("types.type_core", "omnibase_core.types.type_core"),
         ("errors.error_codes", "omnibase_core.errors.error_codes"),
         (
             "models.common.model_schema_value",
             "omnibase_core.models.common.model_schema_value",
         ),
-        ("types.constraints", "omnibase_core.types.constraints"),
+        ("types.type_constraints", "omnibase_core.types.type_constraints"),
         ("models", "omnibase_core.models"),
     ]
 
@@ -236,7 +236,7 @@ def test_type_checking_imports_not_runtime() -> None:
     available at runtime in the module's direct namespace.
     """
     # Import types.constraints (has TYPE_CHECKING import of ModelOnexError)
-    import omnibase_core.types.constraints as constraints_module
+    import omnibase_core.types.type_constraints as constraints_module
 
     # Check that ModelOnexError is not directly accessible at runtime
     # (it's imported under TYPE_CHECKING for type hints only)
@@ -265,7 +265,7 @@ def test_lazy_imports_work() -> None:
     The __getattr__ pattern should load models.base only when accessed.
     """
     # Import types.constraints
-    import omnibase_core.types.constraints as constraints_module
+    import omnibase_core.types.type_constraints as constraints_module
 
     # Check that we can access the lazy imports
     lazy_imports = [
@@ -301,7 +301,7 @@ def test_validation_functions_lazy_import() -> None:
         del sys.modules[module]
 
     # Import types.constraints
-    from omnibase_core.types.constraints import (
+    from omnibase_core.types.type_constraints import (
         validate_context_value,
         validate_primitive_value,
     )
@@ -334,7 +334,7 @@ def test_import_order_documentation() -> None:
     """
     import omnibase_core.errors.error_codes as error_codes_module
     import omnibase_core.models.common.model_schema_value as schema_value_module
-    import omnibase_core.types.constraints as constraints_module
+    import omnibase_core.types.type_constraints as constraints_module
 
     # Check that each module has import order documentation
     modules_to_check = [
@@ -374,7 +374,7 @@ def test_error_codes_safe_imports() -> None:
     forbidden_imports = [
         "omnibase_core.models.common.model_schema_value",
         "omnibase_core.models.common.model_error_context",
-        "omnibase_core.types.constraints",
+        "omnibase_core.types.type_constraints",
         "omnibase_core.models.base",
     ]
 

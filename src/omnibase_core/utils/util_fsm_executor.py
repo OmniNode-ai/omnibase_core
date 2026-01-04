@@ -42,8 +42,8 @@ from omnibase_core.models.reducer.payloads import (
     ModelPayloadPersistState,
 )
 from omnibase_core.types.type_fsm_context import FSMContextType
-from omnibase_core.utils.fsm_expression_parser import parse_expression
-from omnibase_core.utils.fsm_operators import evaluate_equals, evaluate_not_equals
+from omnibase_core.utils.util_fsm_expression_parser import parse_expression
+from omnibase_core.utils.util_fsm_operators import evaluate_equals, evaluate_not_equals
 
 
 async def execute_transition(

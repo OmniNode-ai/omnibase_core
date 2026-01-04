@@ -41,7 +41,7 @@ Example:
 from collections.abc import Callable
 from typing import TypeVar, cast
 
-from omnibase_core.types.json_types import JsonType
+from omnibase_core.types.type_json import JsonType
 
 T = TypeVar("T")
 

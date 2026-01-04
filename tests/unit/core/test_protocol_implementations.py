@@ -8,7 +8,7 @@ that protocols work correctly with real model implementations.
 import pytest
 from pydantic import BaseModel, Field
 
-from omnibase_core.types.constraints import (
+from omnibase_core.types.type_constraints import (
     is_configurable,
     is_executable,
     is_identifiable,

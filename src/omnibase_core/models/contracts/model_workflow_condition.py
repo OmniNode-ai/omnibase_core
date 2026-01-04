@@ -20,7 +20,7 @@ from omnibase_core.models.contracts.model_condition_value_list import (
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.security.model_condition_value import ModelConditionValue
-from omnibase_core.types.constraints import (
+from omnibase_core.types.type_constraints import (
     ComplexContextValueType,
     ContextValueType,
     PrimitiveValueType,

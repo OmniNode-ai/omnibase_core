@@ -846,7 +846,7 @@ Treat the pure workflow executor and NodeOrchestrator as **two different tools**
 **Pattern A: Pure Functions (Testing / Deterministic Pipelines)**
 
 ```python
-from omnibase_core.utils.workflow_executor import execute_workflow
+from omnibase_core.utils.util_workflow_executor import execute_workflow
 
 # Explicitly pass all state - fully pure
 result = await execute_workflow(

@@ -347,7 +347,7 @@ class BackendCacheRedis:
         self._default_ttl = default_ttl
         self._max_connections = max_connections
         self._pool: ConnectionPoolType | None = None
-        self._client: Redis | None = None  # type: ignore[type-arg]
+        self._client: Redis | None = None
         self._connected = False
 
     @property

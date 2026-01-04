@@ -33,7 +33,7 @@ Example:
     ...     ModelComputeExecutionContext,
     ...     ModelComputePipelineResult,
     ... )
-    >>> from omnibase_core.utils.compute_executor import execute_compute_pipeline
+    >>> from omnibase_core.utils.util_compute_executor import execute_compute_pipeline
     >>>
     >>> # Create execution context
     >>> context = ModelComputeExecutionContext(
@@ -51,8 +51,8 @@ Example:
     ...     print(f"Error at '{result.error_step}': {result.error_message}")
 
 See Also:
-    - omnibase_core.utils.compute_executor: Pipeline execution logic
-    - omnibase_core.utils.compute_transformations: Transformation functions
+    - omnibase_core.utils.util_compute_executor: Pipeline execution logic
+    - omnibase_core.utils.util_compute_transformations: Transformation functions
     - omnibase_core.models.contracts.subcontracts: Contract definitions
     - docs/guides/node-building/03_COMPUTE_NODE_TUTORIAL.md: Compute node tutorial
 """

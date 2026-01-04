@@ -648,7 +648,7 @@ Treat the pure FSM executor and NodeReducer as **two different tools**.
 **Pattern A: Pure Functions (Testing / Deterministic Pipelines)**
 
 ```python
-from omnibase_core.utils.fsm_executor import execute_transition
+from omnibase_core.utils.util_fsm_executor import execute_transition
 
 # Explicitly pass state - fully pure
 snapshot = ModelFSMStateSnapshot(current_state="pending", context={})
@@ -3141,7 +3141,7 @@ state_transitions:
 
 | Task | File | Priority |
 |------|------|----------|
-| fsm_executor.py | `utils/fsm_executor.py` | P0 |
+| util_fsm_executor.py | `utils/util_fsm_executor.py` | P0 |
 | MixinFSMExecution | `mixins/mixin_fsm_execution.py` | P0 |
 | NodeReducer | `nodes/node_reducer.py` | P0 |
 
@@ -3380,7 +3380,7 @@ A v1.0.4 implementation is considered **conformant** if and only if ALL of the f
 - **Example Contract**: order_processor_fsm.yaml (to be created in examples/contracts/reducer/)
 - **Linear Issue**: [OMN-495](https://linear.app/omninode/issue/OMN-495)
 - **NodeReducer Source**: [node_reducer.py](../../src/omnibase_core/nodes/node_reducer.py)
-- **FSM Executor Source**: [fsm_executor.py](../../src/omnibase_core/utils/fsm_executor.py)
+- **FSM Executor Source**: [util_fsm_executor.py](../../src/omnibase_core/utils/util_fsm_executor.py)
 - **NodeCompute Pattern**: [CONTRACT_DRIVEN_NODECOMPUTE_V1_0.md](./CONTRACT_DRIVEN_NODECOMPUTE_V1_0.md)
 
 ---

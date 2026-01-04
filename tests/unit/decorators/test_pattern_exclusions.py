@@ -9,14 +9,14 @@ Tests cover:
 - File-based exclusion detection
 - Edge cases and complex scenarios
 
-Target: 85%+ coverage for decorators/pattern_exclusions.py
+Target: 85%+ coverage for decorators/decorator_pattern_exclusions.py
 """
 
 from pathlib import Path
 
 import pytest
 
-from omnibase_core.decorators.pattern_exclusions import (
+from omnibase_core.decorators.decorator_pattern_exclusions import (
     ONEXPatternExclusion,
     allow_any_type,
     allow_legacy_pattern,

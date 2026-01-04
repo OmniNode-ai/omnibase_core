@@ -29,7 +29,7 @@ Example:
     ...         return result
 
 See Also:
-    - omnibase_core.utils.compute_executor: Core pipeline execution logic
+    - omnibase_core.utils.util_compute_executor: Core pipeline execution logic
     - omnibase_core.models.contracts.subcontracts: Contract models
     - omnibase_core.nodes.node_compute: Base NodeCompute class
     - docs/guides/node-building/03_COMPUTE_NODE_TUTORIAL.md: Compute node tutorial
@@ -47,7 +47,7 @@ from omnibase_core.models.compute.model_compute_pipeline_result import (
 from omnibase_core.models.contracts.subcontracts.model_compute_subcontract import (
     ModelComputeSubcontract,
 )
-from omnibase_core.utils.compute_executor import execute_compute_pipeline
+from omnibase_core.utils.util_compute_executor import execute_compute_pipeline
 
 
 class MixinComputeExecution:

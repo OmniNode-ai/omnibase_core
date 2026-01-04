@@ -2,7 +2,7 @@
 Unit tests for action creation in workflow execution.
 
 Tests the _create_action_for_step function and related action creation logic
-in utils/workflow_executor.py for OMN-657.
+in utils/util_workflow_executor.py for OMN-657.
 
 Test Coverage:
 - Priority clamping: step priority (1-1000) -> action priority (1-10)
@@ -20,7 +20,7 @@ import pytest
 from omnibase_core.enums.enum_workflow_execution import EnumActionType
 from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
 from omnibase_core.models.orchestrator.model_action import ModelAction
-from omnibase_core.utils.workflow_executor import _create_action_for_step
+from omnibase_core.utils.util_workflow_executor import _create_action_for_step
 
 
 @pytest.mark.unit
