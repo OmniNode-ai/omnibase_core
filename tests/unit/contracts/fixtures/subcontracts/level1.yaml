@@ -1,0 +1,3 @@
+---
+name: "level1"
+nested: !include level2.yaml

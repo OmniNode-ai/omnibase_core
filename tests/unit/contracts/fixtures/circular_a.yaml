@@ -1,0 +1,3 @@
+---
+name: "A"
+ref: !include circular_b.yaml

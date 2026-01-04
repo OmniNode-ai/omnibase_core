@@ -1,0 +1,8 @@
+---
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_name: "test_node"
+node_type: "COMPUTE_GENERIC"
+description: "A basic contract without includes"

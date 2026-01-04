@@ -1,0 +1,3 @@
+---
+name: "traversal"
+ref: !include ../../../etc/passwd
