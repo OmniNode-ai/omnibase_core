@@ -442,12 +442,12 @@ repos:
       # ONEX Transport Import Prevention (ADR-005)
       # Enforces core-infra dependency boundary: omnibase_core must be pure
       # Detects forbidden imports: aiohttp, httpx, requests, kafka, redis, asyncpg, etc.
-      # Fast grep-based check (~1s) - safe for pre-commit
+      # AST-based validator correctly handles TYPE_CHECKING guards (allowed per ADR-005)
       # See: docs/architecture/adr/ADR-005-core-infra-dependency-boundary.md
       - id: validate-no-transport-imports
         name: ONEX Transport Import Prevention
-        entry: ./scripts/validate-no-transport-imports.sh
-        language: script
+        entry: poetry run python scripts/validate_no_transport_imports.py
+        language: system
         pass_filenames: false
         always_run: true
         stages: [pre-commit]
