@@ -314,7 +314,7 @@ If using tracing IDs as metric labels:
 ## Related Documentation
 
 - [ProtocolHandlerContext](../../src/omnibase_core/protocols/handler/protocol_handler_context.py) - Handler context protocol
-- [MessageDispatchEngine](../../src/omnibase_core/runtime/message_dispatch_engine.py) - Dispatch implementation
+- [MessageDispatchEngine](../../src/omnibase_core/runtime/runtime_message_dispatch.py) - Dispatch implementation
 - [ModelEventEnvelope](../../src/omnibase_core/models/events/model_event_envelope.py) - Envelope model
 - [ModelHandlerOutput](../../src/omnibase_core/models/dispatch/model_handler_output.py) - Handler output model
 - [ModelDispatchResult](../../src/omnibase_core/models/dispatch/model_dispatch_result.py) - Dispatch result model

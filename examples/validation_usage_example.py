@@ -152,9 +152,9 @@ def example_file_level_validation():
     print("=" * 50)
 
     # Import file-level validation functions
-    from omnibase_core.validation.architecture import validate_one_model_per_file
-    from omnibase_core.validation.patterns import validate_patterns_file
-    from omnibase_core.validation.types import validate_union_usage_file
+    from omnibase_core.validation.validator_architecture import validate_one_model_per_file
+    from omnibase_core.validation.validator_patterns import validate_patterns_file
+    from omnibase_core.validation.validator_types import validate_union_usage_file
 
     # Find Python files to validate
     src_files = list(Path("src/").rglob("*.py"))[:3]  # Just first 3 for demo

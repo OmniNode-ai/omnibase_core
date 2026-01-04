@@ -130,7 +130,7 @@ from omnibase_core.models.core.model_onex_envelope import ModelOnexEnvelope
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 if TYPE_CHECKING:
-    from omnibase_core.runtime.protocol_node_runtime import ProtocolNodeRuntime
+    from omnibase_core.runtime.runtime_protocol_node import ProtocolNodeRuntime
 
 
 class ModelRuntimeNodeInstance(BaseModel):

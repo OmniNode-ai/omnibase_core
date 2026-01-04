@@ -57,10 +57,13 @@ if TYPE_CHECKING:
     from omnibase_core.protocols.event_bus import ProtocolEventBusListener
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
+from omnibase_core.logging.logging_structured import (
+    emit_log_event_sync as emit_log_event,
+)
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.validation.contracts import load_and_validate_yaml_model
+from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
+from omnibase_core.validation.validator_contracts import load_and_validate_yaml_model
 
 # Note: Event bus uses duck-typing interface, not a formal protocol
 # The omnibase_spi ProtocolEventBus is Kafka-based and incompatible with this interface
@@ -227,7 +230,7 @@ class MixinEventListener[InputStateT, OutputStateT]:
 
                             event_type = event_mappings.get(node_type, node_type)
                             return [f"{domain}.{event_type}"]
-            except (ValueError, ValidationError) as e:
+            except (ValidationError, ValueError) as e:
                 # FAIL-FAST: Re-raise validation errors immediately to crash the service
                 emit_log_event(
                     LogLevel.ERROR,
@@ -1030,9 +1033,6 @@ class MixinEventListener[InputStateT, OutputStateT]:
             },
         )
 
-        # Import envelope model
-        from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
-
         # Create envelope
         envelope = ModelEventEnvelope.create_broadcast(
             payload=completion_event,
@@ -1092,9 +1092,6 @@ class MixinEventListener[InputStateT, OutputStateT]:
             correlation_id=input_event.correlation_id,
             data=error_data,  # type: ignore[arg-type]  # Event data field accepts dict for error protocol; validated at runtime
         )
-
-        # Import envelope model
-        from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 
         # Wrap in envelope and publish
         envelope = ModelEventEnvelope.create_broadcast(

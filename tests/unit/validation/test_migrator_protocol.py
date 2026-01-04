@@ -26,7 +26,7 @@ from omnibase_core.models.validation.model_migration_conflict_union import (
 from omnibase_core.models.validation.model_migration_plan import ModelMigrationPlan
 from omnibase_core.models.validation.model_migration_result import ModelMigrationResult
 from omnibase_core.services.service_protocol_migrator import ServiceProtocolMigrator
-from omnibase_core.validation.validation_utils import ModelProtocolInfo
+from omnibase_core.validation.validator_utils import ModelProtocolInfo
 
 
 @pytest.mark.unit

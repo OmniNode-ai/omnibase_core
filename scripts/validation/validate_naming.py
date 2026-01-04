@@ -191,7 +191,7 @@ class NamingConventionValidator:
         # Rationale: ContractPatchValidator validates contract patches, not a Protocol interface.
         #            The heuristic flags "contract" as a Protocol indicator, but this is a
         #            validator that VALIDATES patches, not a Protocol interface.
-        #            The Protocol interface for this is ProtocolPatchValidator in protocol_patch_validator.py
+        #            The Protocol interface for this is ProtocolPatchValidator in validator_protocol_patch.py
         #            ContractValidationInvariantChecker is a concrete implementation (OMN-1146),
         #            not a Protocol. The Protocol interface is ProtocolContractValidationInvariantChecker.
         "validation/": [
@@ -210,6 +210,20 @@ class NamingConventionValidator:
         #            The Protocol interface is ProtocolMergeEngine in protocols/merge/.
         "merge/": [
             "ContractMergeEngine",  # Merge engine for typed contract merging (OMN-1127)
+        ],
+        # REPLAY INFRASTRUCTURE: Effect recording and replay for deterministic testing
+        # Location: pipeline/replay/ - Replay/recording infrastructure for effects
+        # Rationale: RecorderEffect records effects for replay, not a Node class.
+        #            The heuristic flags "effect" as a Node indicator, but RecorderEffect
+        #            is a recorder that captures effects, not a node that processes them.
+        #            Similarly, other replay infrastructure classes use descriptive names
+        #            appropriate to their function (ExecutorReplay, InjectorRng, etc.)
+        "pipeline/replay/": [
+            "RecorderEffect",  # Effect recorder for deterministic replay (OMN-1116)
+            "ExecutorReplay",  # Replay executor for effect playback
+            "InjectorRng",  # RNG injector for deterministic randomness
+            "InjectorTime",  # Time injector for deterministic timestamps
+            "SessionReplay",  # Replay session manager
         ],
     }
 

@@ -42,7 +42,7 @@ if TYPE_CHECKING:
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_node_capability import EnumNodeCapability
 from omnibase_core.errors import ModelOnexError
-from omnibase_core.logging.structured import emit_log_event_sync
+from omnibase_core.logging.logging_structured import emit_log_event_sync
 from omnibase_core.models.core.model_cli_argument import ModelCLIArgument
 from omnibase_core.models.core.model_cli_interface import ModelCLIInterface
 from omnibase_core.models.core.model_contract import ModelContract

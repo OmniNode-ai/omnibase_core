@@ -6,7 +6,7 @@ import pytest
 import yaml
 from pydantic import ValidationError
 
-from omnibase_core.validation.contracts import (
+from omnibase_core.validation.validator_contracts import (
     load_and_validate_yaml_model,
     validate_contracts_directory,
     validate_no_manual_yaml,

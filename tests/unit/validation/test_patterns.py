@@ -4,7 +4,7 @@ import ast
 
 import pytest
 
-from omnibase_core.validation.patterns import (
+from omnibase_core.validation.validator_patterns import (
     GenericPatternChecker,
     NamingConventionChecker,
     PydanticPatternChecker,

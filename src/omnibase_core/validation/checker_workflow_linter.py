@@ -38,7 +38,7 @@ Result Model:
 Example:
     Basic usage for workflow linting::
 
-        from omnibase_core.validation.workflow_linter import WorkflowLinter
+        from omnibase_core.validation.checker_workflow_linter import WorkflowLinter
 
         linter = WorkflowLinter()
         warnings = linter.lint(workflow_definition)
@@ -66,7 +66,7 @@ from omnibase_core.models.validation.model_lint_warning import ModelLintWarning
 # Type alias for valid step types (placed after imports per PEP 8)
 # v1.0.4 Fix 41: "conditional" is NOT a valid step type in v1.0. Removed.
 #
-# Canonical source: workflow_constants.VALID_STEP_TYPES
+# Canonical source: validator_workflow_constants.VALID_STEP_TYPES
 # Valid values: compute, effect, reducer, orchestrator, parallel, custom
 #
 # v1.1+ Roadmap: "conditional" step type will be added in v1.1 to support

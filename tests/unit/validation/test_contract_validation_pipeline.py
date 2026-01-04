@@ -28,7 +28,6 @@ from omnibase_core.models.contracts.model_handler_contract import ModelHandlerCo
 from omnibase_core.models.contracts.model_profile_reference import ModelProfileReference
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.models.runtime.model_handler_behavior import ModelHandlerBehavior
-from omnibase_core.validation.contract_patch_validator import ContractPatchValidator
 from omnibase_core.validation.contract_validation_pipeline import (
     ContractValidationPipeline,
     ModelExpandedContractResult,
@@ -36,6 +35,7 @@ from omnibase_core.validation.contract_validation_pipeline import (
 )
 from omnibase_core.validation.phases.expanded_validator import ExpandedContractValidator
 from omnibase_core.validation.phases.merge_validator import MergeValidator
+from omnibase_core.validation.validator_contract_patch import ContractPatchValidator
 
 
 @pytest.mark.unit

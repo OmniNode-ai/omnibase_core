@@ -8,7 +8,7 @@ Usage:
     python -m omnibase_core.validation all
 """
 
-from .cli import run_validation_cli
+from .validator_cli import run_validation_cli
 
 if __name__ == "__main__":
     exit(run_validation_cli())

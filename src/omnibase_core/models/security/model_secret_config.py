@@ -30,10 +30,6 @@ Import Chain Position:
 
 This module can safely import error_codes because error_codes only imports
 from types.core_types (not from models or types.constraints).
-
-from omnibase_core.enums.enum_security_level import EnumSecurityLevel
-
-
 """
 
 from pathlib import Path

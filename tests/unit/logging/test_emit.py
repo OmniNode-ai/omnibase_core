@@ -18,7 +18,7 @@ from uuid import UUID, uuid4
 import pytest
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.logging.emit import (
+from omnibase_core.logging.logging_emit import (
     LogCodeBlock,
     _create_log_context_from_frame,
     _detect_node_id_from_context,

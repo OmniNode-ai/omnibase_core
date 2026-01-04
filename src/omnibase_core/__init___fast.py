@@ -46,7 +46,7 @@ import-time penalties. This reduces package import time from 453ms to <5ms.
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .validation.validation_utils import ModelValidationResult
+    from .validation.validator_utils import ModelValidationResult
 
 
 def get_validation_tools() -> tuple[

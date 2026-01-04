@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode Team
 # SPDX-License-Identifier: Apache-2.0
 """
-RegistryCapability - Thread-safe registry for capability metadata.
+ServiceRegistryCapability - Thread-safe registry for capability metadata.
 
 This module provides an in-memory thread-safe registry for ModelCapabilityMetadata
 instances. The registry stores capability metadata for documentation and discovery
@@ -33,14 +33,14 @@ Scale and Performance:
     Typical use cases (capability discovery, provider matching) rarely exceed
     100-200 capabilities, making this implementation well-suited for most deployments.
 
-OMN-1156: RegistryCapability implementation.
+OMN-1156: ServiceRegistryCapability implementation.
 
 .. versionadded:: 0.4.0
 """
 
 from __future__ import annotations
 
-__all__ = ["RegistryCapability"]
+__all__ = ["ServiceRegistryCapability"]
 
 import threading
 
@@ -51,7 +51,7 @@ from omnibase_core.models.capabilities.model_capability_metadata import (
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
-class RegistryCapability:
+class ServiceRegistryCapability:
     """
     In-memory thread-safe registry for capability metadata.
 
@@ -76,15 +76,15 @@ class RegistryCapability:
     Example:
         .. code-block:: python
 
-            from omnibase_core.services.registry.registry_capability import (
-                RegistryCapability,
+            from omnibase_core.services.registry.service_registry_capability import (
+                ServiceRegistryCapability,
             )
             from omnibase_core.models.capabilities.model_capability_metadata import (
                 ModelCapabilityMetadata,
             )
             from omnibase_core.models.primitives.model_semver import ModelSemVer
 
-            registry = RegistryCapability()
+            registry = ServiceRegistryCapability()
 
             # Register a capability
             cap = ModelCapabilityMetadata(
@@ -111,14 +111,14 @@ class RegistryCapability:
 
     def __init__(self) -> None:
         """
-        Initialize an empty RegistryCapability.
+        Initialize an empty ServiceRegistryCapability.
 
         Creates an empty registry with a fresh RLock for thread synchronization.
 
         Example:
             .. code-block:: python
 
-                registry = RegistryCapability()
+                registry = ServiceRegistryCapability()
                 assert len(registry.list_all()) == 0
         """
         self._capabilities: dict[str, ModelCapabilityMetadata] = {}
@@ -149,7 +149,7 @@ class RegistryCapability:
         Example:
             .. code-block:: python
 
-                registry = RegistryCapability()
+                registry = ServiceRegistryCapability()
 
                 # Register a new capability
                 registry.register(cap)
@@ -195,7 +195,7 @@ class RegistryCapability:
         Example:
             .. code-block:: python
 
-                registry = RegistryCapability()
+                registry = ServiceRegistryCapability()
                 registry.register(cap)
 
                 # Remove the capability
@@ -233,7 +233,7 @@ class RegistryCapability:
         Example:
             .. code-block:: python
 
-                registry = RegistryCapability()
+                registry = ServiceRegistryCapability()
                 registry.register(cap)
 
                 # Found
@@ -266,7 +266,7 @@ class RegistryCapability:
         Example:
             .. code-block:: python
 
-                registry = RegistryCapability()
+                registry = ServiceRegistryCapability()
                 registry.register(cap1)
                 registry.register(cap2)
 
@@ -311,7 +311,7 @@ class RegistryCapability:
         Example:
             .. code-block:: python
 
-                registry = RegistryCapability()
+                registry = ServiceRegistryCapability()
                 # Register capabilities with different tags
                 registry.register(cap_with_tags_sql_storage)
                 registry.register(cap_with_tags_nosql_storage)
@@ -362,7 +362,7 @@ class RegistryCapability:
         Example:
             .. code-block:: python
 
-                registry = RegistryCapability()
+                registry = ServiceRegistryCapability()
                 assert registry.count == 0
 
                 registry.register(cap)
@@ -385,7 +385,7 @@ class RegistryCapability:
         Example:
             .. code-block:: python
 
-                registry = RegistryCapability()
+                registry = ServiceRegistryCapability()
                 registry.register(cap1)
                 registry.register(cap2)
                 assert registry.count == 2
@@ -406,9 +406,9 @@ class RegistryCapability:
         Human-readable string representation.
 
         Returns:
-            str: Format "RegistryCapability[count=N]"
+            str: Format "ServiceRegistryCapability[count=N]"
         """
-        return f"RegistryCapability[count={self.count}]"
+        return f"ServiceRegistryCapability[count={self.count}]"
 
     def __repr__(self) -> str:
         """
@@ -423,4 +423,4 @@ class RegistryCapability:
                 ids_repr = f"<{len(ids)} capabilities>"
             else:
                 ids_repr = repr(ids)
-            return f"RegistryCapability(capabilities={ids_repr})"
+            return f"ServiceRegistryCapability(capabilities={ids_repr})"

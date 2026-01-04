@@ -24,7 +24,7 @@ from typing import Any
 # (OMN-1071: Service-prefixed classes should be in services/)
 from omnibase_core.services.service_validation_suite import ServiceValidationSuite
 
-from .validation_utils import ModelValidationResult
+from .validator_utils import ModelValidationResult
 
 
 def __getattr__(name: str) -> Any:

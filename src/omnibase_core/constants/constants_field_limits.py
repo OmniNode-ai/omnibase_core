@@ -14,7 +14,7 @@ This module is the CANONICAL SOURCE for:
 - MAX_TIMEOUT_MS: Maximum timeout value (24 hours)
 - Field length limits (MAX_IDENTIFIER_LENGTH, MAX_NAME_LENGTH, etc.)
 
-Other modules (workflow_constants.py, constants/__init__.py) re-export these
+Other modules (validator_workflow_constants.py, constants/__init__.py) re-export these
 constants for convenience but DO NOT define them. All definitions are here.
 
 Security Architecture
@@ -44,7 +44,7 @@ These constants are used by:
 - Cycle detection in workflow_validator.py, workflow_executor.py, model_dependency_graph.py
 
 See Also:
-    - workflow_constants.py: Constants Map documentation explaining the relationship
+    - validator_workflow_constants.py: Constants Map documentation explaining the relationship
       between constants files
     - workflow_executor.py: Compression bomb mitigation documentation
 """
@@ -128,10 +128,10 @@ MAX_LABEL_LENGTH: int = 100
 # - workflow_executor.py: _has_dependency_cycles()
 # - model_dependency_graph.py: ModelDependencyGraph.has_cycles()
 #
-# NOTE: workflow_constants.py re-imports this constant for workflow-specific
+# NOTE: validator_workflow_constants.py re-imports this constant for workflow-specific
 # exports. Both import paths are valid:
 # - from omnibase_core.constants import MAX_DFS_ITERATIONS (recommended)
-# - from omnibase_core.validation.workflow_constants import MAX_DFS_ITERATIONS
+# - from omnibase_core.validation.validator_workflow_constants import MAX_DFS_ITERATIONS
 MAX_DFS_ITERATIONS: int = 10_000
 
 # Maximum iterations for BFS traversal in workflow linting.

@@ -38,7 +38,6 @@ import keyword
 import logging
 import re
 from pathlib import Path
-from typing import Any, cast
 
 from omnibase_core.decorators.decorator_allow_dict_any import allow_dict_any
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -148,17 +147,15 @@ def validate_protocol_compliance(
             f"Protocol compliance validation failed: {type(obj).__name__} "
             f"does not implement {protocol_name}"
         )
-        # NOTE: Cast to Any is safe here - context keys are user-defined and
-        # intentionally separate from ModelOnexError's positional parameters
-        extra_context: dict[str, Any] = cast(dict[str, Any], context or {})
         raise ModelOnexError(
             message=f"Object does not implement {protocol_name}",
             error_code=EnumCoreErrorCode.TYPE_MISMATCH,
-            # Context passed as **kwargs to ModelOnexError
-            protocol=protocol_name,
-            required_methods=required_methods,
-            actual_type=type(obj).__name__,
-            **extra_context,
+            context={
+                "protocol": protocol_name,
+                "required_methods": required_methods,
+                "actual_type": type(obj).__name__,
+                **(context or {}),
+            },
         )
     logger.debug(
         f"Protocol compliance validation passed: {type(obj).__name__} "

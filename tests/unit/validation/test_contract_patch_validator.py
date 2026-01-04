@@ -17,8 +17,8 @@ from omnibase_core.models.contracts.model_descriptor_patch import ModelDescripto
 from omnibase_core.models.contracts.model_handler_spec import ModelHandlerSpec
 from omnibase_core.models.contracts.model_profile_reference import ModelProfileReference
 from omnibase_core.models.primitives.model_semver import ModelSemVer
-from omnibase_core.validation.contract_patch_validator import ContractPatchValidator
-from omnibase_core.validation.protocol_patch_validator import ProtocolPatchValidator
+from omnibase_core.validation.validator_contract_patch import ContractPatchValidator
+from omnibase_core.validation.validator_protocol_patch import ProtocolPatchValidator
 
 
 @pytest.mark.unit
