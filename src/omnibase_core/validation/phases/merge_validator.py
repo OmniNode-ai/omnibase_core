@@ -407,7 +407,8 @@ class MergeValidator:
         # Build set of known handler names from base and patch
         known_handlers: set[str] = set()
 
-        # Add handler names from base's capability inputs (those are handler dependencies)
+        # Add handler names from base's capability inputs.
+        # These capability input aliases are handler dependencies.
         for cap_dep in base.capability_inputs:
             known_handlers.add(cap_dep.alias)
 
@@ -421,25 +422,40 @@ class MergeValidator:
             # Dependency names can reference handlers or external capabilities
             # For now, we just warn if the name looks like it should reference a handler
             # but doesn't exist in known handlers
-            if dep.name.startswith("handler.") or dep.name.startswith("node."):
-                handler_ref = dep.name.split(".")[-1]
-                if handler_ref not in known_handlers:
-                    logger.debug(
-                        f"Potential unresolved dependency reference: {dep.name}"
-                    )
-                    result.add_issue(
-                        severity=EnumValidationSeverity.WARNING,
-                        message=(
-                            f"Dependency '{dep.name}' references a handler that "
-                            "may not exist in this contract. Verify the handler "
-                            "exists in the base contract or is being added by the patch."
-                        ),
-                        code=EnumContractValidationErrorCode.CONTRACT_VALIDATION_MERGE_DEPENDENCY_REFERENCE_UNRESOLVED.value,
-                        suggestion=(
-                            f"Add handler '{handler_ref}' to handlers__add or "
-                            "verify it exists in the base contract"
-                        ),
-                    )
+            #
+            # Handler reference extraction:
+            #   - "handler.<ref>" → extract everything after "handler." prefix
+            #   - "node.<ref>" → extract everything after "node." prefix
+            #
+            # This avoids false positives from extracting only the last segment.
+            # For example, "node.user.compute" extracts "user.compute" rather than
+            # just "compute", which could incorrectly match an unrelated handler.
+            handler_ref: str | None = None
+            if dep.name.startswith("handler."):
+                # Extract portion after "handler." prefix
+                # e.g., "handler.my_handler" → "my_handler"
+                # e.g., "handler.module.handler_name" → "module.handler_name"
+                handler_ref = dep.name[len("handler.") :]
+            elif dep.name.startswith("node."):
+                # Extract portion after "node." prefix
+                # e.g., "node.user.compute" → "user.compute"
+                handler_ref = dep.name[len("node.") :]
+
+            if handler_ref is not None and handler_ref not in known_handlers:
+                logger.debug(f"Potential unresolved dependency reference: {dep.name}")
+                result.add_issue(
+                    severity=EnumValidationSeverity.WARNING,
+                    message=(
+                        f"Dependency '{dep.name}' references a handler that "
+                        "may not exist in this contract. Verify the handler "
+                        "exists in the base contract or is being added by the patch."
+                    ),
+                    code=EnumContractValidationErrorCode.CONTRACT_VALIDATION_MERGE_DEPENDENCY_REFERENCE_UNRESOLVED.value,
+                    suggestion=(
+                        f"Add handler '{handler_ref}' to handlers__add or "
+                        "verify it exists in the base contract"
+                    ),
+                )
 
     def _validate_handler_name_uniqueness(
         self,

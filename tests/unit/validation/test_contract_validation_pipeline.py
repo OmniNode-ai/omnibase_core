@@ -150,15 +150,22 @@ class TestContractValidationPipelineValidatePatch(
         """Test that validate_patch delegates to patch validator."""
         result = pipeline.validate_patch(valid_patch)
         assert isinstance(result, ModelValidationResult)
+        # Verify actual validation behavior, not just type
+        assert result.is_valid is True
+        assert result.error_count == 0
 
     def test_validate_patch_returns_validation_result(
         self, pipeline: ContractValidationPipeline, valid_patch: ModelContractPatch
     ) -> None:
-        """Test that validate_patch returns ModelValidationResult."""
+        """Test that validate_patch returns ModelValidationResult with expected structure."""
         result = pipeline.validate_patch(valid_patch)
         assert isinstance(result, ModelValidationResult)
+        # Verify result has expected structure and valid content
         assert hasattr(result, "is_valid")
         assert hasattr(result, "issues")
+        assert result.is_valid is True
+        assert isinstance(result.issues, list)
+        assert result.error_count == 0
 
     def test_validate_patch_valid_patch_passes(
         self, pipeline: ContractValidationPipeline, valid_patch: ModelContractPatch
@@ -184,6 +191,9 @@ class TestContractValidationPipelineValidateMerge(
         """Test that validate_merge delegates to merge validator."""
         result = pipeline.validate_merge(valid_base, valid_patch, valid_merged)
         assert isinstance(result, ModelValidationResult)
+        # Verify actual validation behavior for valid inputs
+        assert result.is_valid is True
+        assert result.error_count == 0
 
     def test_validate_merge_returns_validation_result(
         self,
@@ -192,9 +202,13 @@ class TestContractValidationPipelineValidateMerge(
         valid_patch: ModelContractPatch,
         valid_merged: ModelHandlerContract,
     ) -> None:
-        """Test that validate_merge returns ModelValidationResult."""
+        """Test that validate_merge returns ModelValidationResult with expected structure."""
         result = pipeline.validate_merge(valid_base, valid_patch, valid_merged)
         assert isinstance(result, ModelValidationResult)
+        # Verify result has expected structure and valid content
+        assert result.is_valid is True
+        assert isinstance(result.issues, list)
+        assert result.error_count == 0
 
     def test_validate_merge_valid_merge_passes(
         self,
@@ -222,15 +236,22 @@ class TestContractValidationPipelineValidateExpanded(
         """Test that validate_expanded delegates to expanded validator."""
         result = pipeline.validate_expanded(valid_merged)
         assert isinstance(result, ModelValidationResult)
+        # Verify actual validation behavior for valid inputs
+        assert result.is_valid is True
+        assert result.error_count == 0
 
     def test_validate_expanded_returns_validation_result(
         self,
         pipeline: ContractValidationPipeline,
         valid_merged: ModelHandlerContract,
     ) -> None:
-        """Test that validate_expanded returns ModelValidationResult."""
+        """Test that validate_expanded returns ModelValidationResult with expected structure."""
         result = pipeline.validate_expanded(valid_merged)
         assert isinstance(result, ModelValidationResult)
+        # Verify result has expected structure and valid content
+        assert result.is_valid is True
+        assert isinstance(result.issues, list)
+        assert result.error_count == 0
 
     def test_validate_expanded_valid_contract_passes(
         self,
@@ -322,9 +343,12 @@ class TestContractValidationPipelineConstraintValidator(
         pipeline = ContractValidationPipeline(
             constraint_validator=mock_constraint_validator
         )
-        # Should not crash
+        # Should not crash and should still validate successfully
         result = pipeline.validate_merge(valid_base, valid_patch, valid_merged)
         assert isinstance(result, ModelValidationResult)
+        # Verify validation still works correctly despite invalid constraint_validator
+        assert result.is_valid is True
+        assert result.error_count == 0
 
 
 @pytest.mark.unit
@@ -434,6 +458,10 @@ class TestContractValidationPipelineValidateAll(TestContractValidationPipelineFi
 
             result = pipeline.validate_all(valid_patch, mock_factory)
             assert isinstance(result, ModelExpandedContractResult)
+            # Verify successful pipeline execution
+            assert result.success is True
+            assert result.contract is not None
+            assert result.phase_failed is None
 
     def test_validate_all_stops_on_patch_failure(
         self, profile_ref: ModelProfileReference
@@ -625,6 +653,9 @@ class TestContractValidationPipelineEdgeCases(TestContractValidationPipelineFixt
         minimal_patch = ModelContractPatch(extends=profile_ref)
         result = pipeline.validate_patch(minimal_patch)
         assert isinstance(result, ModelValidationResult)
+        # Minimal patch should still be valid
+        assert result.is_valid is True
+        assert result.error_count == 0
 
     def test_expanded_contract_result_serialization(self) -> None:
         """Test that ModelExpandedContractResult can be serialized."""
@@ -757,6 +788,9 @@ class TestValidationPerformance:
         elapsed = time.perf_counter() - start_time
 
         assert isinstance(result, ModelValidationResult)
+        # Verify validation succeeds, not just type check
+        assert result.is_valid is True
+        assert result.error_count == 0
         assert elapsed < 1.0, f"Validation took {elapsed:.2f}s, expected < 1.0s"
 
     def test_validate_large_contract_500_outputs(
@@ -786,6 +820,9 @@ class TestValidationPerformance:
         elapsed = time.perf_counter() - start_time
 
         assert isinstance(result, ModelValidationResult)
+        # Verify validation succeeds, not just type check
+        assert result.is_valid is True
+        assert result.error_count == 0
         # Should still be fast - linear scaling expected
         assert elapsed < 1.0, f"Validation took {elapsed:.2f}s, expected < 1.0s"
 
@@ -816,6 +853,9 @@ class TestValidationPerformance:
         elapsed = time.perf_counter() - start_time
 
         assert isinstance(result, ModelValidationResult)
+        # Verify validation succeeds, not just type check
+        assert result.is_valid is True
+        assert result.error_count == 0
         # At O(n), 1000 outputs should still complete quickly
         assert elapsed < 1.0, f"Validation took {elapsed:.2f}s, expected < 1.0s"
 
@@ -849,6 +889,11 @@ class TestValidationPerformance:
 
         assert isinstance(result_small, ModelValidationResult)
         assert isinstance(result_large, ModelValidationResult)
+        # Verify both validations succeed, not just type check
+        assert result_small.is_valid is True
+        assert result_large.is_valid is True
+        assert result_small.error_count == 0
+        assert result_large.error_count == 0
 
         # Both should complete quickly
         assert small_elapsed < 1.0, f"Small patch took {small_elapsed:.2f}s"

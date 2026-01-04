@@ -5,7 +5,7 @@ Provides validation result with scoring and actionable feedback for autonomous
 code generation systems.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
@@ -23,6 +23,10 @@ class ModelContractValidationResult(BaseModel):
         contract_type: Type of contract validated (effect, compute, etc.)
         interface_version: INTERFACE_VERSION used for validation
     """
+
+    # from_attributes=True: Required for pytest-xdist parallel execution where
+    # model classes may be imported in separate workers with different class identity.
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
 
     is_valid: bool = Field(
         ...,

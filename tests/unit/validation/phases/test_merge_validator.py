@@ -529,7 +529,12 @@ class TestMergeValidatorCapabilityConsistency(TestMergeValidatorFixtures):
 
         result = validator.validate(valid_base, valid_patch, merged)
         # Should produce warning but still be valid
+        assert result.is_valid is True
         assert result.warning_count > 0
+        # Verify warning message mentions the conflicting name
+        assert any("shared_name" in msg.lower() for msg in result.warnings), (
+            f"Expected warning about 'shared_name' conflict, got: {result.warnings}"
+        )
 
 
 @pytest.mark.unit
@@ -557,10 +562,120 @@ class TestMergeValidatorDependencyReferences(TestMergeValidatorFixtures):
         # Should have warning about potential unresolved dependency
         # Note: This is a warning, not an error (full resolution in Phase 3)
         assert isinstance(result, ModelValidationResult)
+        # Validation should pass (warnings don't fail validation)
+        assert result.is_valid is True
+        assert result.error_count == 0
         # Verify the warning was produced for the unresolved dependency
-        assert result.warning_count > 0 or any(
+        has_dependency_warning = result.warning_count > 0 or any(
             "handler.nonexistent" in str(issue.message) for issue in result.issues
-        ), "Expected warning about unresolved handler dependency"
+        )
+        assert has_dependency_warning, (
+            f"Expected warning about unresolved handler dependency 'handler.nonexistent', "
+            f"got warnings: {result.warnings}, issues: {[str(i.message) for i in result.issues]}"
+        )
+
+    def test_multi_segment_handler_reference_no_false_positive(
+        self,
+        validator: MergeValidator,
+        valid_merged: ModelHandlerContract,
+        profile_ref: ModelProfileReference,
+        valid_descriptor: ModelHandlerBehavior,
+    ) -> None:
+        """Test that multi-segment handler references don't produce false positives.
+
+        When a dependency name like "node.user.compute" is checked against known
+        handlers, it should extract "user.compute" (not just "compute") to avoid
+        incorrectly matching unrelated handlers.
+
+        This test verifies the fix for PR #321 feedback about false positives
+        in handler reference extraction.
+        """
+        # Base with a handler named "compute" (not "user.compute")
+        base = ModelHandlerContract(
+            handler_id="node.test.compute",
+            name="Test Handler",
+            version="1.0.0",
+            descriptor=valid_descriptor,
+            input_model="omnibase_core.models.test.Input",
+            output_model="omnibase_core.models.test.Output",
+            capability_inputs=[
+                ModelCapabilityDependency(
+                    alias="compute",  # Handler named just "compute"
+                    capability="compute.generic",
+                ),
+            ],
+        )
+
+        # Dependency referencing "node.user.compute" (different from "compute")
+        patch = ModelContractPatch(
+            extends=profile_ref,
+            name="test_handler",
+            node_version=ModelSemVer(major=1, minor=0, patch=0),
+            dependencies__add=[
+                ModelDependency(
+                    name="node.user.compute"
+                ),  # Should extract "user.compute"
+            ],
+        )
+
+        result = validator.validate(base, patch, valid_merged)
+
+        # Should produce warning because "user.compute" != "compute"
+        # (Previously, extracting only "compute" would incorrectly match)
+        assert result.is_valid is True
+        assert result.warning_count > 0, (
+            "Expected warning about unresolved 'node.user.compute' reference. "
+            "The handler 'compute' exists but 'user.compute' does not. "
+            "If this test fails, handler reference extraction may be using only "
+            "the last segment instead of the full reference after the prefix."
+        )
+
+    def test_handler_prefix_multi_segment_extraction(
+        self,
+        validator: MergeValidator,
+        valid_merged: ModelHandlerContract,
+        profile_ref: ModelProfileReference,
+        valid_descriptor: ModelHandlerBehavior,
+    ) -> None:
+        """Test that 'handler.' prefix extracts full reference after prefix.
+
+        A dependency like "handler.module.submodule.my_handler" should extract
+        "module.submodule.my_handler" (not just "my_handler").
+        """
+        # Base with handler named "my_handler" (not "module.submodule.my_handler")
+        base = ModelHandlerContract(
+            handler_id="node.test.compute",
+            name="Test Handler",
+            version="1.0.0",
+            descriptor=valid_descriptor,
+            input_model="omnibase_core.models.test.Input",
+            output_model="omnibase_core.models.test.Output",
+            capability_inputs=[
+                ModelCapabilityDependency(
+                    alias="my_handler",  # Simple name
+                    capability="handler.generic",
+                ),
+            ],
+        )
+
+        # Dependency with multi-segment reference
+        patch = ModelContractPatch(
+            extends=profile_ref,
+            name="test_handler",
+            node_version=ModelSemVer(major=1, minor=0, patch=0),
+            dependencies__add=[
+                ModelDependency(name="handler.module.submodule.my_handler"),
+            ],
+        )
+
+        result = validator.validate(base, patch, valid_merged)
+
+        # Should produce warning: "module.submodule.my_handler" != "my_handler"
+        assert result.is_valid is True
+        assert result.warning_count > 0, (
+            "Expected warning about unresolved 'handler.module.submodule.my_handler'. "
+            "The reference extracts 'module.submodule.my_handler', not just 'my_handler'."
+        )
 
 
 @pytest.mark.unit

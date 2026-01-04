@@ -34,6 +34,12 @@ from omnibase_core.protocols.validation.protocol_compliance_validator import (
 from omnibase_core.protocols.validation.protocol_compliance_violation import (
     ProtocolComplianceViolation,
 )
+from omnibase_core.protocols.validation.protocol_constraint_validation_result import (
+    ProtocolConstraintValidationResult,
+)
+from omnibase_core.protocols.validation.protocol_constraint_validator import (
+    ProtocolConstraintValidator,
+)
 from omnibase_core.protocols.validation.protocol_contract_validation_pipeline import (
     ProtocolContractValidationPipeline,
 )
@@ -73,4 +79,7 @@ __all__ = [
     "ProtocolQualityValidator",
     # Contract Validation Pipeline (OMN-1128)
     "ProtocolContractValidationPipeline",
+    # Constraint Validator (OMN-1128 SPI Seam)
+    "ProtocolConstraintValidator",
+    "ProtocolConstraintValidationResult",
 ]

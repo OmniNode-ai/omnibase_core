@@ -17,8 +17,6 @@ Related:
 .. versionadded:: 0.4.1
 """
 
-from __future__ import annotations
-
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_validation_phase import EnumValidationPhase

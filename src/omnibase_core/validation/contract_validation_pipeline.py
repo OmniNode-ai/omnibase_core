@@ -28,6 +28,10 @@ Duck-Typed Seam:
     integration. Any object with a `validate(base, patch, merged)` method that
     returns a ModelValidationResult-compatible object can be injected.
 
+    For type safety, implementations can follow ProtocolConstraintValidator,
+    which documents the expected interface. However, duck typing is fully
+    supported - implementations do not need to inherit from the protocol.
+
 Logging Conventions:
     - DEBUG: Detailed trace information (phase transitions, validation steps)
     - INFO: High-level operation summaries (pipeline started/completed/failed)
@@ -41,6 +45,8 @@ Related:
     - ExpandedContractValidator: Phase 3 validation
     - ContractMergeEngine: Merge operations
     - EnumValidationPhase: Pipeline phase enumeration
+    - ProtocolConstraintValidator: Interface for custom constraint validators
+    - ProtocolConstraintValidationResult: Result interface for constraint validators
 
 .. versionadded:: 0.4.1
 """
@@ -101,6 +107,10 @@ class ContractValidationPipeline:  # naming-ok: validator class, not protocol
         Any object with a `validate(base, patch, merged)` method that returns
         a ModelValidationResult-compatible object will be called. This provides
         a seam for future SPI constraint validator integration.
+
+        For type safety and documentation, implementations can follow the
+        ProtocolConstraintValidator protocol, but this is optional. Duck typing
+        is fully supported.
 
         The constraint validator is called during validate_merge() if provided.
         Its results are merged with the MergeValidator results.
@@ -187,6 +197,8 @@ class ContractValidationPipeline:  # naming-ok: validator class, not protocol
         - MergeValidator: Phase 2 validation
         - ExpandedContractValidator: Phase 3 validation
         - ContractMergeEngine: Merge operations
+        - ProtocolConstraintValidator: Interface for constraint validators
+        - ProtocolConstraintValidationResult: Result interface
 
     Design Decisions:
         Sequential vs Lazy Validation: The current implementation validates
@@ -351,8 +363,13 @@ class ContractValidationPipeline:  # naming-ok: validator class, not protocol
         method and calls it if present.
 
         The constraint validator result is merged if it returns an object
-        compatible with ModelValidationResult (has is_valid, issues, errors,
-        warnings attributes).
+        compatible with ProtocolConstraintValidationResult (has is_valid,
+        issues, errors, warnings attributes).
+
+        Duck Typing:
+            The hasattr checks enable duck typing without requiring explicit
+            protocol inheritance. For type-safe implementations, use
+            ProtocolConstraintValidator.
 
         Args:
             base: The base contract from profile factory.
@@ -362,6 +379,10 @@ class ContractValidationPipeline:  # naming-ok: validator class, not protocol
 
         Returns:
             Updated validation result with constraint validation merged.
+
+        See Also:
+            ProtocolConstraintValidator: Interface definition for validators.
+            ProtocolConstraintValidationResult: Expected result interface.
         """
         if not hasattr(self._constraint_validator, "validate"):
             logger.debug(
@@ -383,17 +404,20 @@ class ContractValidationPipeline:  # naming-ok: validator class, not protocol
                 if not constraint_result.is_valid:
                     result.is_valid = False
 
-                # Merge issues if available
+                # Merge issues if available and not None
                 if hasattr(constraint_result, "issues"):
-                    result.issues.extend(constraint_result.issues)
+                    if constraint_result.issues is not None:
+                        result.issues.extend(constraint_result.issues)
 
-                # Merge errors if available
+                # Merge errors if available and not None
                 if hasattr(constraint_result, "errors"):
-                    result.errors.extend(constraint_result.errors)
+                    if constraint_result.errors is not None:
+                        result.errors.extend(constraint_result.errors)
 
-                # Merge warnings if available
+                # Merge warnings if available and not None
                 if hasattr(constraint_result, "warnings"):
-                    result.warnings.extend(constraint_result.warnings)
+                    if constraint_result.warnings is not None:
+                        result.warnings.extend(constraint_result.warnings)
 
                 logger.debug(
                     f"Constraint validator result merged: "
