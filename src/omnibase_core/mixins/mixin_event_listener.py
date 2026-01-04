@@ -230,7 +230,7 @@ class MixinEventListener[InputStateT, OutputStateT]:
 
                             event_type = event_mappings.get(node_type, node_type)
                             return [f"{domain}.{event_type}"]
-            except (ValueError, ValidationError) as e:
+            except (ValidationError, ValueError) as e:
                 # FAIL-FAST: Re-raise validation errors immediately to crash the service
                 emit_log_event(
                     LogLevel.ERROR,
