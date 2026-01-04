@@ -205,7 +205,7 @@ def _include_constructor(loader: IncludeLoader, node: yaml.Node) -> object:
     if file_size > loader.max_file_size:
         raise ModelOnexError(
             message=f"Include file too large: {file_size} bytes (max: {loader.max_file_size})",
-            error_code=EnumCoreErrorCode.VALIDATION_FAILED,
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             context={
                 "include_path": include_path_str,
                 "file_size": file_size,
@@ -339,7 +339,7 @@ def load_contract(
     if file_size > max_file_size:
         raise ModelOnexError(
             message=f"Contract file too large: {file_size} bytes (max: {max_file_size})",
-            error_code=EnumCoreErrorCode.VALIDATION_FAILED,
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             context={
                 "contract_path": str(contract_path),
                 "file_size": file_size,

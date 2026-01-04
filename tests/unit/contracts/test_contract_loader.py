@@ -21,13 +21,15 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
+@pytest.fixture
+def fixtures_path() -> Path:
+    """Return the path to test fixtures."""
+    return Path(__file__).parent / "fixtures"
+
+
+@pytest.mark.unit
 class TestContractLoaderBasic:
     """Tests for basic contract loading without includes."""
-
-    @pytest.fixture
-    def fixtures_path(self) -> Path:
-        """Return the path to test fixtures."""
-        return Path(__file__).parent / "fixtures"
 
     def test_load_simple_contract(self, fixtures_path: Path) -> None:
         """Test loading a simple contract without includes."""
@@ -62,13 +64,9 @@ class TestContractLoaderBasic:
         assert "mapping" in str(exc_info.value.message).lower()
 
 
+@pytest.mark.unit
 class TestContractLoaderWithIncludes:
     """Tests for contract loading with !include directives."""
-
-    @pytest.fixture
-    def fixtures_path(self) -> Path:
-        """Return the path to test fixtures."""
-        return Path(__file__).parent / "fixtures"
 
     def test_single_include(self, fixtures_path: Path) -> None:
         """Test loading a contract with a single !include directive."""
@@ -106,13 +104,9 @@ class TestContractLoaderWithIncludes:
         assert contract["ref"] is None
 
 
+@pytest.mark.unit
 class TestContractLoaderCircularDetection:
     """Tests for circular include detection."""
-
-    @pytest.fixture
-    def fixtures_path(self) -> Path:
-        """Return the path to test fixtures."""
-        return Path(__file__).parent / "fixtures"
 
     def test_circular_include_detection(self, fixtures_path: Path) -> None:
         """Test that circular includes (A -> B -> A) are detected."""
@@ -132,13 +126,9 @@ class TestContractLoaderCircularDetection:
         assert "circular" in str(exc_info.value.message).lower()
 
 
+@pytest.mark.unit
 class TestContractLoaderSecurity:
     """Tests for security features."""
-
-    @pytest.fixture
-    def fixtures_path(self) -> Path:
-        """Return the path to test fixtures."""
-        return Path(__file__).parent / "fixtures"
 
     def test_path_traversal_blocked(self, fixtures_path: Path) -> None:
         """Test that path traversal attempts (../) are blocked."""
@@ -162,6 +152,7 @@ class TestContractLoaderSecurity:
         assert exc_info.value.error_code == EnumCoreErrorCode.NOT_FOUND
 
 
+@pytest.mark.unit
 class TestContractLoaderDepthLimit:
     """Tests for include depth limiting."""
 
@@ -195,6 +186,7 @@ class TestContractLoaderDepthLimit:
         assert "depth" in str(exc_info.value.message).lower()
 
 
+@pytest.mark.unit
 class TestContractLoaderFileSizeLimit:
     """Tests for file size limiting."""
 
@@ -208,7 +200,7 @@ class TestContractLoaderFileSizeLimit:
         with pytest.raises(ModelOnexError) as exc_info:
             load_contract(large_file)
 
-        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_FAILED
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
         assert "large" in str(exc_info.value.message).lower()
 
     def test_custom_max_file_size(self, tmp_path: Path) -> None:
@@ -220,16 +212,12 @@ class TestContractLoaderFileSizeLimit:
         with pytest.raises(ModelOnexError) as exc_info:
             load_contract(small_file, max_file_size=500)
 
-        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_FAILED
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
 
 
+@pytest.mark.unit
 class TestContractLoaderCustomOptions:
     """Tests for custom loader options."""
-
-    @pytest.fixture
-    def fixtures_path(self) -> Path:
-        """Return the path to test fixtures."""
-        return Path(__file__).parent / "fixtures"
 
     def test_custom_max_depth(self, tmp_path: Path) -> None:
         """Test that custom max_depth is respected."""
@@ -260,6 +248,7 @@ class TestContractLoaderCustomOptions:
         assert contract["config"]["nested"]["nested"]["value"] == "final"
 
 
+@pytest.mark.unit
 class TestIncludeLoaderClass:
     """Tests for IncludeLoader class directly."""
 
@@ -276,6 +265,7 @@ class TestIncludeLoaderClass:
         assert "!include" in IncludeLoader.yaml_constructors
 
 
+@pytest.mark.unit
 class TestContractLoaderEdgeCases:
     """Tests for edge cases and special scenarios."""
 
@@ -337,6 +327,7 @@ class TestContractLoaderEdgeCases:
         assert contract["items"] == ["item1", "item2", "item3"]
 
 
+@pytest.mark.unit
 class TestContractLoaderDefaults:
     """Tests for default configuration values."""
 
