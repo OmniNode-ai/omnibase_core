@@ -274,6 +274,9 @@ from .enum_vector_filter_operator import EnumVectorFilterOperator
 # Version and contract enums
 from .enum_version_status import EnumVersionStatus
 
+# Violation severity enum (OMN-1195)
+from .enum_violation_severity import EnumViolationSeverity
+
 # Workflow-related enums
 from .enum_workflow_coordination import EnumFailureRecoveryStrategy
 from .enum_workflow_dependency_type import EnumWorkflowDependencyType
@@ -480,6 +483,8 @@ __all__ = [
     # Invariant domain (OMN-1192)
     "EnumInvariantSeverity",
     "EnumInvariantType",
+    # Violation severity domain (OMN-1195)
+    "EnumViolationSeverity",
     # NOTE: Removed from __all__ due to missing module files or circular imports:
     # - "EnumRegistryType" (module doesn't exist)
     # - "ModelServiceModeEnum" (replaced with correct "EnumServiceMode")
