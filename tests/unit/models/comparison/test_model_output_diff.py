@@ -7,6 +7,7 @@ between baseline and replay execution outputs.
 from typing import Any
 
 import pytest
+from deepdiff import DeepDiff
 from pydantic import ValidationError
 
 from omnibase_core.models.comparison import ModelOutputDiff, ModelValueChange
@@ -421,3 +422,241 @@ class TestModelOutputDiffWithFixture:
         change = sample_output_diff.values_changed["root['response']['text']"]
         assert change.old_value == "Original response"
         assert change.new_value == "Updated response"
+
+
+@pytest.mark.unit
+class TestModelOutputDiffFromDeepDiff:
+    """Test from_deepdiff factory method for converting deepdiff output."""
+
+    def test_from_deepdiff_basic_values_changed_succeeds(self) -> None:
+        """Factory converts basic values_changed from deepdiff."""
+        baseline = {"key": "old_value"}
+        replay = {"key": "new_value"}
+        diff = DeepDiff(baseline, replay)
+
+        output_diff = ModelOutputDiff.from_deepdiff(diff)
+
+        assert output_diff.has_differences is True
+        assert len(output_diff.values_changed) == 1
+        assert "root['key']" in output_diff.values_changed
+        change = output_diff.values_changed["root['key']"]
+        assert change.old_value == "old_value"
+        assert change.new_value == "new_value"
+
+    def test_from_deepdiff_empty_diff_returns_no_differences(self) -> None:
+        """Factory handles empty diff (identical objects)."""
+        baseline = {"key": "value"}
+        replay = {"key": "value"}
+        diff = DeepDiff(baseline, replay)
+
+        output_diff = ModelOutputDiff.from_deepdiff(diff)
+
+        assert output_diff.has_differences is False
+        assert output_diff.values_changed == {}
+        assert output_diff.items_added == []
+        assert output_diff.items_removed == []
+        assert output_diff.type_changes == {}
+
+    def test_from_deepdiff_dictionary_items_added_succeeds(self) -> None:
+        """Factory handles dictionary items added."""
+        baseline = {"existing": 1}
+        replay = {"existing": 1, "new_key": 2}
+        diff = DeepDiff(baseline, replay)
+
+        output_diff = ModelOutputDiff.from_deepdiff(diff)
+
+        assert output_diff.has_differences is True
+        assert "root['new_key']" in output_diff.items_added
+
+    def test_from_deepdiff_dictionary_items_removed_succeeds(self) -> None:
+        """Factory handles dictionary items removed."""
+        baseline = {"existing": 1, "removed_key": 2}
+        replay = {"existing": 1}
+        diff = DeepDiff(baseline, replay)
+
+        output_diff = ModelOutputDiff.from_deepdiff(diff)
+
+        assert output_diff.has_differences is True
+        assert "root['removed_key']" in output_diff.items_removed
+
+    def test_from_deepdiff_iterable_items_added_succeeds(self) -> None:
+        """Factory handles iterable items added."""
+        baseline = [1, 2]
+        replay = [1, 2, 3]
+        diff = DeepDiff(baseline, replay)
+
+        output_diff = ModelOutputDiff.from_deepdiff(diff)
+
+        assert output_diff.has_differences is True
+        assert "root[2]" in output_diff.items_added
+
+    def test_from_deepdiff_iterable_items_removed_succeeds(self) -> None:
+        """Factory handles iterable items removed."""
+        baseline = [1, 2, 3]
+        replay = [1, 2]
+        diff = DeepDiff(baseline, replay)
+
+        output_diff = ModelOutputDiff.from_deepdiff(diff)
+
+        assert output_diff.has_differences is True
+        assert "root[2]" in output_diff.items_removed
+
+    def test_from_deepdiff_type_changes_succeeds(self) -> None:
+        """Factory handles type changes."""
+        baseline = {"key": 42}
+        replay = {"key": "42"}
+        diff = DeepDiff(baseline, replay)
+
+        output_diff = ModelOutputDiff.from_deepdiff(diff)
+
+        assert output_diff.has_differences is True
+        assert "root['key']" in output_diff.type_changes
+        type_change = output_diff.type_changes["root['key']"]
+        assert "int" in type_change
+        assert "str" in type_change
+        assert "->" in type_change
+
+    def test_from_deepdiff_multiple_categories_succeeds(self) -> None:
+        """Factory handles diff with multiple change categories."""
+        baseline = {"changed": "old", "removed": 1, "typed": 100}
+        replay = {"changed": "new", "added": 2, "typed": "100"}
+        diff = DeepDiff(baseline, replay)
+
+        output_diff = ModelOutputDiff.from_deepdiff(diff)
+
+        assert output_diff.has_differences is True
+        # Check values_changed
+        assert "root['changed']" in output_diff.values_changed
+        # Check items_added
+        assert "root['added']" in output_diff.items_added
+        # Check items_removed
+        assert "root['removed']" in output_diff.items_removed
+        # Check type_changes
+        assert "root['typed']" in output_diff.type_changes
+
+    def test_from_deepdiff_nested_structure_succeeds(self) -> None:
+        """Factory handles nested data structures."""
+        baseline = {"outer": {"inner": {"deep": "old_value"}}}
+        replay = {"outer": {"inner": {"deep": "new_value"}}}
+        diff = DeepDiff(baseline, replay)
+
+        output_diff = ModelOutputDiff.from_deepdiff(diff)
+
+        assert output_diff.has_differences is True
+        assert len(output_diff.values_changed) == 1
+        # Check path contains nested structure
+        path = next(iter(output_diff.values_changed.keys()))
+        assert "outer" in path
+        assert "inner" in path
+        assert "deep" in path
+
+    def test_from_deepdiff_various_value_types_succeeds(self) -> None:
+        """Factory handles various Python value types."""
+        baseline = {
+            "int_val": 42,
+            "float_val": 3.14,
+            "bool_val": True,
+            "list_val": [1, 2],
+            "none_val": None,
+        }
+        replay = {
+            "int_val": 100,
+            "float_val": 2.71,
+            "bool_val": False,
+            "list_val": [3, 4],
+            "none_val": "not_none",
+        }
+        diff = DeepDiff(baseline, replay)
+
+        output_diff = ModelOutputDiff.from_deepdiff(diff)
+
+        assert output_diff.has_differences is True
+        # Verify numeric values are serialized
+        if "root['int_val']" in output_diff.values_changed:
+            change = output_diff.values_changed["root['int_val']"]
+            assert change.old_value == "42"
+            assert change.new_value == "100"
+        # Verify float values
+        if "root['float_val']" in output_diff.values_changed:
+            change = output_diff.values_changed["root['float_val']"]
+            assert "3.14" in change.old_value
+            assert "2.71" in change.new_value
+
+    def test_from_deepdiff_with_dict_input_succeeds(self) -> None:
+        """Factory handles raw dictionary input (not DeepDiff object)."""
+        raw_diff: dict[str, Any] = {
+            "values_changed": {"root['key']": {"old_value": "old", "new_value": "new"}},
+            "dictionary_item_added": {"root['added']": "value"},
+        }
+
+        output_diff = ModelOutputDiff.from_deepdiff(raw_diff)
+
+        assert output_diff.has_differences is True
+        assert "root['key']" in output_diff.values_changed
+        assert "root['added']" in output_diff.items_added
+
+    def test_from_deepdiff_with_only_values_changed_succeeds(self) -> None:
+        """Factory handles diff with only values_changed populated."""
+        baseline = {"a": 1, "b": 2}
+        replay = {"a": 10, "b": 20}
+        diff = DeepDiff(baseline, replay)
+
+        output_diff = ModelOutputDiff.from_deepdiff(diff)
+
+        assert output_diff.has_differences is True
+        assert len(output_diff.values_changed) == 2
+        assert output_diff.items_added == []
+        assert output_diff.items_removed == []
+        assert output_diff.type_changes == {}
+
+    def test_from_deepdiff_with_only_type_changes_succeeds(self) -> None:
+        """Factory handles diff with only type_changes populated."""
+        baseline = {"key": 42}
+        replay = {"key": "42"}
+        diff = DeepDiff(baseline, replay)
+
+        output_diff = ModelOutputDiff.from_deepdiff(diff)
+
+        assert output_diff.has_differences is True
+        assert len(output_diff.type_changes) == 1
+        # values_changed may or may not be populated depending on deepdiff version
+        assert output_diff.items_added == []
+        assert output_diff.items_removed == []
+
+    def test_from_deepdiff_with_empty_dict_input_succeeds(self) -> None:
+        """Factory handles empty dictionary input."""
+        output_diff = ModelOutputDiff.from_deepdiff({})
+
+        assert output_diff.has_differences is False
+        assert output_diff.values_changed == {}
+        assert output_diff.items_added == []
+        assert output_diff.items_removed == []
+        assert output_diff.type_changes == {}
+
+    def test_from_deepdiff_serializes_complex_values(self) -> None:
+        """Factory serializes complex values to string representation."""
+        baseline = {"key": {"nested": [1, 2, 3]}}
+        replay = {"key": {"nested": [4, 5, 6]}}
+        diff = DeepDiff(baseline, replay)
+
+        output_diff = ModelOutputDiff.from_deepdiff(diff)
+
+        # Depending on deepdiff behavior, this may show in values_changed
+        # or iterable changes. The key test is that it converts without error.
+        assert isinstance(output_diff, ModelOutputDiff)
+
+    def test_from_deepdiff_type_change_format_is_readable(self) -> None:
+        """Type change descriptions follow 'old_type -> new_type' format."""
+        baseline = {"val": 123}
+        replay = {"val": [1, 2, 3]}
+        diff = DeepDiff(baseline, replay)
+
+        output_diff = ModelOutputDiff.from_deepdiff(diff)
+
+        if output_diff.type_changes:
+            type_change = next(iter(output_diff.type_changes.values()))
+            assert "->" in type_change
+            parts = type_change.split("->")
+            assert len(parts) == 2
+            assert parts[0].strip()  # Non-empty old type
+            assert parts[1].strip()  # Non-empty new type

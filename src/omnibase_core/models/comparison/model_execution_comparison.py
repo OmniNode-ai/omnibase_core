@@ -12,7 +12,7 @@ Thread Safety:
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.models.comparison.model_invariant_comparison_summary import (
     ModelInvariantComparisonSummary,
@@ -159,6 +159,158 @@ class ModelExecutionComparison(BaseModel):
         default_factory=lambda: datetime.now(UTC),
         description="Timestamp when the comparison was performed",
     )
+
+    @model_validator(mode="after")
+    def _validate_latency_deltas(self) -> "ModelExecutionComparison":
+        """Validate that latency delta fields are consistent with source values.
+
+        Validates:
+            - latency_delta_ms matches (replay_latency_ms - baseline_latency_ms)
+            - latency_delta_percent matches (delta_ms / baseline_ms) * 100
+              when baseline > 0
+            - When baseline is 0, latency_delta_percent must be 0.0 (convention)
+
+        Raises:
+            ValueError: If latency delta values are inconsistent with source values.
+        """
+        # Tolerance for floating point comparison
+        tolerance = 0.01
+
+        # Validate latency_delta_ms
+        expected_delta_ms = self.replay_latency_ms - self.baseline_latency_ms
+        if abs(self.latency_delta_ms - expected_delta_ms) > tolerance:
+            raise ValueError(
+                f"latency_delta_ms is inconsistent: "
+                f"got {self.latency_delta_ms}, "
+                f"expected {expected_delta_ms} "
+                f"(replay_latency_ms={self.replay_latency_ms} - "
+                f"baseline_latency_ms={self.baseline_latency_ms})"
+            )
+
+        # Validate latency_delta_percent
+        if self.baseline_latency_ms == 0.0:
+            # Convention: when baseline is 0, delta_percent must be 0.0
+            # (avoids division by zero, undefined percentage)
+            if self.latency_delta_percent != 0.0:
+                raise ValueError(
+                    f"latency_delta_percent must be 0.0 when baseline_latency_ms is 0 "
+                    f"(got {self.latency_delta_percent}). "
+                    f"Convention: percentage change is undefined/0% for zero baseline."
+                )
+        else:
+            expected_delta_percent = (
+                self.latency_delta_ms / self.baseline_latency_ms
+            ) * 100
+            if abs(self.latency_delta_percent - expected_delta_percent) > tolerance:
+                raise ValueError(
+                    f"latency_delta_percent is inconsistent: "
+                    f"got {self.latency_delta_percent}, "
+                    f"expected {expected_delta_percent:.2f} "
+                    f"((latency_delta_ms={self.latency_delta_ms} / "
+                    f"baseline_latency_ms={self.baseline_latency_ms}) * 100)"
+                )
+
+        return self
+
+    @model_validator(mode="after")
+    def _validate_cost_deltas(self) -> "ModelExecutionComparison":
+        """Validate that cost delta fields are consistent with source values.
+
+        Validates consistency rules for cost metrics:
+            - When both baseline_cost and replay_cost are provided:
+                - cost_delta must match (replay_cost - baseline_cost) within tolerance
+                - cost_delta_percent must match (cost_delta / baseline_cost) * 100
+                  when baseline_cost > 0
+            - When baseline_cost is 0 and replay_cost is provided:
+                - cost_delta_percent must be 0.0 (documented convention to avoid
+                  undefined percentage)
+            - When either cost is None:
+                - Both cost_delta and cost_delta_percent must be None
+            - Partial cost data is allowed:
+                - One cost provided with deltas as None is valid
+
+        Raises:
+            ValueError: If cost delta values are inconsistent with source values.
+        """
+        # Tolerance for floating point comparison
+        tolerance = 0.001
+
+        # Case 1: Both costs are None - deltas must also be None
+        if self.baseline_cost is None and self.replay_cost is None:
+            if self.cost_delta is not None:
+                raise ValueError(
+                    "cost_delta must be None when both baseline_cost and "
+                    f"replay_cost are None (got cost_delta={self.cost_delta})"
+                )
+            if self.cost_delta_percent is not None:
+                raise ValueError(
+                    "cost_delta_percent must be None when both baseline_cost and "
+                    f"replay_cost are None (got cost_delta_percent={self.cost_delta_percent})"
+                )
+            return self
+
+        # Case 2: Only one cost is provided (partial data)
+        if self.baseline_cost is None or self.replay_cost is None:
+            # With partial cost data, deltas should be None
+            # (cannot compute meaningful delta without both values)
+            if self.cost_delta is not None:
+                raise ValueError(
+                    f"cost_delta must be None when cost data is partial: "
+                    f"baseline_cost={self.baseline_cost}, replay_cost={self.replay_cost}, "
+                    f"but cost_delta={self.cost_delta}"
+                )
+            if self.cost_delta_percent is not None:
+                raise ValueError(
+                    f"cost_delta_percent must be None when cost data is partial: "
+                    f"baseline_cost={self.baseline_cost}, replay_cost={self.replay_cost}, "
+                    f"but cost_delta_percent={self.cost_delta_percent}"
+                )
+            return self
+
+        # Case 3: Both costs are provided - validate deltas if present
+        # Deltas can be None (not computed) or must be consistent
+        if self.cost_delta is None and self.cost_delta_percent is None:
+            # Valid: costs provided but deltas not computed
+            return self
+
+        # If cost_delta is provided, validate it matches expected value
+        if self.cost_delta is not None:
+            expected_delta = self.replay_cost - self.baseline_cost
+            if abs(self.cost_delta - expected_delta) > tolerance:
+                raise ValueError(
+                    f"cost_delta is inconsistent: "
+                    f"got {self.cost_delta}, expected {expected_delta:.6f} "
+                    f"(replay_cost={self.replay_cost} - baseline_cost={self.baseline_cost})"
+                )
+
+        # If cost_delta_percent is provided, validate it
+        if self.cost_delta_percent is not None:
+            if self.baseline_cost == 0.0:
+                # Convention: when baseline is 0, delta_percent must be 0.0
+                if self.cost_delta_percent != 0.0:
+                    raise ValueError(
+                        f"cost_delta_percent must be 0.0 when baseline_cost is 0 "
+                        f"(got {self.cost_delta_percent}). "
+                        f"Convention: percentage change is undefined/0% for zero baseline."
+                    )
+            else:
+                # Calculate expected percent using the actual delta
+                # (either provided or computed)
+                actual_delta = (
+                    self.cost_delta
+                    if self.cost_delta is not None
+                    else (self.replay_cost - self.baseline_cost)
+                )
+                expected_percent = (actual_delta / self.baseline_cost) * 100
+                if abs(self.cost_delta_percent - expected_percent) > tolerance:
+                    raise ValueError(
+                        f"cost_delta_percent is inconsistent: "
+                        f"got {self.cost_delta_percent}, expected {expected_percent:.2f} "
+                        f"((cost_delta={actual_delta} / "
+                        f"baseline_cost={self.baseline_cost}) * 100)"
+                    )
+
+        return self
 
 
 __all__ = ["ModelExecutionComparison"]

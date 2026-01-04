@@ -1511,3 +1511,887 @@ class TestModelExecutionComparisonIdField:
         comparison = ModelExecutionComparison(**data)
 
         assert comparison.comparison_id == custom_id
+
+
+@pytest.mark.unit
+class TestModelExecutionComparisonLatencyDeltaValidation:
+    """Test latency delta validation in ModelExecutionComparison.
+
+    These tests verify the model_validator that ensures latency delta
+    fields are consistent with their source values (baseline and replay latencies).
+    """
+
+    def test_validation_accepts_consistent_latency_delta_ms(
+        self,
+        sample_input_hash: str,
+        sample_matching_output_hashes: tuple[str, str],
+        sample_no_regression_summary: ModelInvariantComparisonSummary,
+        sample_invariant_result_passed: ModelInvariantResult,
+    ) -> None:
+        """Validator accepts correct latency_delta_ms calculation."""
+        baseline_hash, replay_hash = sample_matching_output_hashes
+
+        # Correct: delta = 180 - 150 = 30
+        comparison = ModelExecutionComparison(
+            baseline_execution_id=TEST_BASELINE_ID,
+            replay_execution_id=TEST_REPLAY_ID,
+            input_hash=sample_input_hash,
+            input_hash_match=True,
+            baseline_output_hash=baseline_hash,
+            replay_output_hash=replay_hash,
+            output_match=True,
+            baseline_latency_ms=150.0,
+            replay_latency_ms=180.0,
+            latency_delta_ms=30.0,  # Correct: 180 - 150
+            latency_delta_percent=20.0,  # Correct: (30 / 150) * 100
+            baseline_invariant_results=[sample_invariant_result_passed],
+            replay_invariant_results=[sample_invariant_result_passed],
+            invariant_comparison=sample_no_regression_summary,
+        )
+
+        assert comparison.latency_delta_ms == 30.0
+        assert comparison.latency_delta_percent == 20.0
+
+    def test_validation_rejects_inconsistent_latency_delta_ms(
+        self,
+        sample_input_hash: str,
+        sample_matching_output_hashes: tuple[str, str],
+        sample_no_regression_summary: ModelInvariantComparisonSummary,
+        sample_invariant_result_passed: ModelInvariantResult,
+    ) -> None:
+        """Validator rejects incorrect latency_delta_ms."""
+        baseline_hash, replay_hash = sample_matching_output_hashes
+
+        # Incorrect: delta should be 30 (180 - 150), not 50
+        with pytest.raises(ValidationError) as exc_info:
+            ModelExecutionComparison(
+                baseline_execution_id=TEST_BASELINE_ID,
+                replay_execution_id=TEST_REPLAY_ID,
+                input_hash=sample_input_hash,
+                input_hash_match=True,
+                baseline_output_hash=baseline_hash,
+                replay_output_hash=replay_hash,
+                output_match=True,
+                baseline_latency_ms=150.0,
+                replay_latency_ms=180.0,
+                latency_delta_ms=50.0,  # Wrong! Should be 30
+                latency_delta_percent=20.0,
+                baseline_invariant_results=[sample_invariant_result_passed],
+                replay_invariant_results=[sample_invariant_result_passed],
+                invariant_comparison=sample_no_regression_summary,
+            )
+
+        assert "latency_delta_ms is inconsistent" in str(exc_info.value)
+        assert "got 50.0" in str(exc_info.value)
+        assert "expected 30.0" in str(exc_info.value)
+
+    def test_validation_rejects_inconsistent_latency_delta_percent(
+        self,
+        sample_input_hash: str,
+        sample_matching_output_hashes: tuple[str, str],
+        sample_no_regression_summary: ModelInvariantComparisonSummary,
+        sample_invariant_result_passed: ModelInvariantResult,
+    ) -> None:
+        """Validator rejects incorrect latency_delta_percent."""
+        baseline_hash, replay_hash = sample_matching_output_hashes
+
+        # delta_ms is correct (30), but percent is wrong
+        # Should be (30 / 150) * 100 = 20%, not 50%
+        with pytest.raises(ValidationError) as exc_info:
+            ModelExecutionComparison(
+                baseline_execution_id=TEST_BASELINE_ID,
+                replay_execution_id=TEST_REPLAY_ID,
+                input_hash=sample_input_hash,
+                input_hash_match=True,
+                baseline_output_hash=baseline_hash,
+                replay_output_hash=replay_hash,
+                output_match=True,
+                baseline_latency_ms=150.0,
+                replay_latency_ms=180.0,
+                latency_delta_ms=30.0,  # Correct
+                latency_delta_percent=50.0,  # Wrong! Should be 20%
+                baseline_invariant_results=[sample_invariant_result_passed],
+                replay_invariant_results=[sample_invariant_result_passed],
+                invariant_comparison=sample_no_regression_summary,
+            )
+
+        assert "latency_delta_percent is inconsistent" in str(exc_info.value)
+        assert "got 50.0" in str(exc_info.value)
+        assert "expected 20.00" in str(exc_info.value)
+
+    def test_validation_accepts_zero_baseline_with_zero_percent(
+        self,
+        sample_input_hash: str,
+        sample_matching_output_hashes: tuple[str, str],
+        sample_no_regression_summary: ModelInvariantComparisonSummary,
+        sample_invariant_result_passed: ModelInvariantResult,
+    ) -> None:
+        """Validator accepts 0.0 percent when baseline is 0 (convention)."""
+        baseline_hash, replay_hash = sample_matching_output_hashes
+
+        # When baseline is 0, delta_percent must be 0.0 (convention)
+        comparison = ModelExecutionComparison(
+            baseline_execution_id=TEST_BASELINE_ID,
+            replay_execution_id=TEST_REPLAY_ID,
+            input_hash=sample_input_hash,
+            input_hash_match=True,
+            baseline_output_hash=baseline_hash,
+            replay_output_hash=replay_hash,
+            output_match=True,
+            baseline_latency_ms=0.0,
+            replay_latency_ms=100.0,
+            latency_delta_ms=100.0,  # Correct: 100 - 0
+            latency_delta_percent=0.0,  # Convention: 0% when baseline is 0
+            baseline_invariant_results=[sample_invariant_result_passed],
+            replay_invariant_results=[sample_invariant_result_passed],
+            invariant_comparison=sample_no_regression_summary,
+        )
+
+        assert comparison.baseline_latency_ms == 0.0
+        assert comparison.latency_delta_percent == 0.0
+
+    def test_validation_rejects_zero_baseline_with_nonzero_percent(
+        self,
+        sample_input_hash: str,
+        sample_matching_output_hashes: tuple[str, str],
+        sample_no_regression_summary: ModelInvariantComparisonSummary,
+        sample_invariant_result_passed: ModelInvariantResult,
+    ) -> None:
+        """Validator rejects non-zero percent when baseline is 0."""
+        baseline_hash, replay_hash = sample_matching_output_hashes
+
+        # When baseline is 0, delta_percent must be 0.0 (not inf or any other value)
+        with pytest.raises(ValidationError) as exc_info:
+            ModelExecutionComparison(
+                baseline_execution_id=TEST_BASELINE_ID,
+                replay_execution_id=TEST_REPLAY_ID,
+                input_hash=sample_input_hash,
+                input_hash_match=True,
+                baseline_output_hash=baseline_hash,
+                replay_output_hash=replay_hash,
+                output_match=True,
+                baseline_latency_ms=0.0,
+                replay_latency_ms=100.0,
+                latency_delta_ms=100.0,  # Correct
+                latency_delta_percent=100.0,  # Wrong! Must be 0.0 when baseline is 0
+                baseline_invariant_results=[sample_invariant_result_passed],
+                replay_invariant_results=[sample_invariant_result_passed],
+                invariant_comparison=sample_no_regression_summary,
+            )
+
+        assert "latency_delta_percent must be 0.0 when baseline_latency_ms is 0" in str(
+            exc_info.value
+        )
+
+    def test_validation_accepts_negative_delta_ms(
+        self,
+        sample_input_hash: str,
+        sample_matching_output_hashes: tuple[str, str],
+        sample_no_regression_summary: ModelInvariantComparisonSummary,
+        sample_invariant_result_passed: ModelInvariantResult,
+    ) -> None:
+        """Validator accepts negative latency_delta_ms (replay faster)."""
+        baseline_hash, replay_hash = sample_matching_output_hashes
+
+        # Replay is faster: 80 - 100 = -20 (-20%)
+        comparison = ModelExecutionComparison(
+            baseline_execution_id=TEST_BASELINE_ID,
+            replay_execution_id=TEST_REPLAY_ID,
+            input_hash=sample_input_hash,
+            input_hash_match=True,
+            baseline_output_hash=baseline_hash,
+            replay_output_hash=replay_hash,
+            output_match=True,
+            baseline_latency_ms=100.0,
+            replay_latency_ms=80.0,
+            latency_delta_ms=-20.0,  # Correct: 80 - 100
+            latency_delta_percent=-20.0,  # Correct: (-20 / 100) * 100
+            baseline_invariant_results=[sample_invariant_result_passed],
+            replay_invariant_results=[sample_invariant_result_passed],
+            invariant_comparison=sample_no_regression_summary,
+        )
+
+        assert comparison.latency_delta_ms == -20.0
+        assert comparison.latency_delta_percent == -20.0
+
+    def test_validation_tolerance_for_floating_point(
+        self,
+        sample_input_hash: str,
+        sample_matching_output_hashes: tuple[str, str],
+        sample_no_regression_summary: ModelInvariantComparisonSummary,
+        sample_invariant_result_passed: ModelInvariantResult,
+    ) -> None:
+        """Validator allows small floating point tolerance (0.01)."""
+        baseline_hash, replay_hash = sample_matching_output_hashes
+
+        # Values within 0.01 tolerance should be accepted
+        # Expected delta_ms = 30.0, expected percent = 20.0
+        # Using 30.005 and 19.995 (within tolerance)
+        comparison = ModelExecutionComparison(
+            baseline_execution_id=TEST_BASELINE_ID,
+            replay_execution_id=TEST_REPLAY_ID,
+            input_hash=sample_input_hash,
+            input_hash_match=True,
+            baseline_output_hash=baseline_hash,
+            replay_output_hash=replay_hash,
+            output_match=True,
+            baseline_latency_ms=150.0,
+            replay_latency_ms=180.0,
+            latency_delta_ms=30.005,  # Within 0.01 of 30.0
+            latency_delta_percent=19.995,  # Within 0.01 of 20.0
+            baseline_invariant_results=[sample_invariant_result_passed],
+            replay_invariant_results=[sample_invariant_result_passed],
+            invariant_comparison=sample_no_regression_summary,
+        )
+
+        assert comparison.latency_delta_ms == 30.005
+
+    def test_validation_both_zero_latencies(
+        self,
+        sample_input_hash: str,
+        sample_matching_output_hashes: tuple[str, str],
+        sample_no_regression_summary: ModelInvariantComparisonSummary,
+        sample_invariant_result_passed: ModelInvariantResult,
+    ) -> None:
+        """Validator accepts zero for all latency fields."""
+        baseline_hash, replay_hash = sample_matching_output_hashes
+
+        comparison = ModelExecutionComparison(
+            baseline_execution_id=TEST_BASELINE_ID,
+            replay_execution_id=TEST_REPLAY_ID,
+            input_hash=sample_input_hash,
+            input_hash_match=True,
+            baseline_output_hash=baseline_hash,
+            replay_output_hash=replay_hash,
+            output_match=True,
+            baseline_latency_ms=0.0,
+            replay_latency_ms=0.0,
+            latency_delta_ms=0.0,  # Correct: 0 - 0
+            latency_delta_percent=0.0,  # Convention: 0% when baseline is 0
+            baseline_invariant_results=[sample_invariant_result_passed],
+            replay_invariant_results=[sample_invariant_result_passed],
+            invariant_comparison=sample_no_regression_summary,
+        )
+
+        assert comparison.baseline_latency_ms == 0.0
+        assert comparison.replay_latency_ms == 0.0
+        assert comparison.latency_delta_ms == 0.0
+        assert comparison.latency_delta_percent == 0.0
+
+
+@pytest.mark.unit
+class TestModelExecutionComparisonCostDeltaValidation:
+    """Test cost delta validation in ModelExecutionComparison.
+
+    These tests verify the model_validator that ensures cost delta
+    fields are consistent with their source values (baseline and replay costs).
+
+    Validation rules:
+        - When both baseline_cost and replay_cost are provided:
+            - cost_delta must match (replay_cost - baseline_cost) within tolerance
+            - cost_delta_percent must match (cost_delta / baseline_cost) * 100
+              when baseline_cost > 0
+        - When baseline_cost is 0 and replay_cost is provided:
+            - cost_delta_percent must be 0.0 (documented convention)
+        - When either cost is None:
+            - Both cost_delta and cost_delta_percent must be None
+        - Partial cost data is allowed:
+            - One cost provided with deltas as None is valid
+    """
+
+    def test_validation_accepts_consistent_cost_delta(
+        self,
+        sample_input_hash: str,
+        sample_matching_output_hashes: tuple[str, str],
+        sample_no_regression_summary: ModelInvariantComparisonSummary,
+        sample_invariant_result_passed: ModelInvariantResult,
+    ) -> None:
+        """Validator accepts correct cost_delta calculation."""
+        baseline_hash, replay_hash = sample_matching_output_hashes
+
+        # Correct: delta = 0.08 - 0.05 = 0.03, percent = (0.03 / 0.05) * 100 = 60%
+        comparison = ModelExecutionComparison(
+            baseline_execution_id=TEST_BASELINE_ID,
+            replay_execution_id=TEST_REPLAY_ID,
+            input_hash=sample_input_hash,
+            input_hash_match=True,
+            baseline_output_hash=baseline_hash,
+            replay_output_hash=replay_hash,
+            output_match=True,
+            baseline_latency_ms=100.0,
+            replay_latency_ms=100.0,
+            latency_delta_ms=0.0,
+            latency_delta_percent=0.0,
+            baseline_cost=0.05,
+            replay_cost=0.08,
+            cost_delta=0.03,  # Correct: 0.08 - 0.05
+            cost_delta_percent=60.0,  # Correct: (0.03 / 0.05) * 100
+            baseline_invariant_results=[sample_invariant_result_passed],
+            replay_invariant_results=[sample_invariant_result_passed],
+            invariant_comparison=sample_no_regression_summary,
+        )
+
+        assert comparison.cost_delta == pytest.approx(0.03)
+        assert comparison.cost_delta_percent == pytest.approx(60.0)
+
+    def test_validation_rejects_inconsistent_cost_delta(
+        self,
+        sample_input_hash: str,
+        sample_matching_output_hashes: tuple[str, str],
+        sample_no_regression_summary: ModelInvariantComparisonSummary,
+        sample_invariant_result_passed: ModelInvariantResult,
+    ) -> None:
+        """Validator rejects incorrect cost_delta value."""
+        baseline_hash, replay_hash = sample_matching_output_hashes
+
+        # Incorrect: delta should be 0.03 (0.08 - 0.05), not 999.0
+        with pytest.raises(ValidationError) as exc_info:
+            ModelExecutionComparison(
+                baseline_execution_id=TEST_BASELINE_ID,
+                replay_execution_id=TEST_REPLAY_ID,
+                input_hash=sample_input_hash,
+                input_hash_match=True,
+                baseline_output_hash=baseline_hash,
+                replay_output_hash=replay_hash,
+                output_match=True,
+                baseline_latency_ms=100.0,
+                replay_latency_ms=100.0,
+                latency_delta_ms=0.0,
+                latency_delta_percent=0.0,
+                baseline_cost=0.05,
+                replay_cost=0.08,
+                cost_delta=999.0,  # Wrong! Should be 0.03
+                cost_delta_percent=60.0,
+                baseline_invariant_results=[sample_invariant_result_passed],
+                replay_invariant_results=[sample_invariant_result_passed],
+                invariant_comparison=sample_no_regression_summary,
+            )
+
+        assert "cost_delta is inconsistent" in str(exc_info.value)
+        assert "got 999.0" in str(exc_info.value)
+
+    def test_validation_rejects_inconsistent_cost_delta_percent(
+        self,
+        sample_input_hash: str,
+        sample_matching_output_hashes: tuple[str, str],
+        sample_no_regression_summary: ModelInvariantComparisonSummary,
+        sample_invariant_result_passed: ModelInvariantResult,
+    ) -> None:
+        """Validator rejects incorrect cost_delta_percent value."""
+        baseline_hash, replay_hash = sample_matching_output_hashes
+
+        # cost_delta is correct (0.03), but percent is wrong
+        # Should be (0.03 / 0.05) * 100 = 60%, not 50%
+        with pytest.raises(ValidationError) as exc_info:
+            ModelExecutionComparison(
+                baseline_execution_id=TEST_BASELINE_ID,
+                replay_execution_id=TEST_REPLAY_ID,
+                input_hash=sample_input_hash,
+                input_hash_match=True,
+                baseline_output_hash=baseline_hash,
+                replay_output_hash=replay_hash,
+                output_match=True,
+                baseline_latency_ms=100.0,
+                replay_latency_ms=100.0,
+                latency_delta_ms=0.0,
+                latency_delta_percent=0.0,
+                baseline_cost=0.05,
+                replay_cost=0.08,
+                cost_delta=0.03,  # Correct
+                cost_delta_percent=50.0,  # Wrong! Should be 60%
+                baseline_invariant_results=[sample_invariant_result_passed],
+                replay_invariant_results=[sample_invariant_result_passed],
+                invariant_comparison=sample_no_regression_summary,
+            )
+
+        assert "cost_delta_percent is inconsistent" in str(exc_info.value)
+        assert "got 50.0" in str(exc_info.value)
+        assert "expected 60.00" in str(exc_info.value)
+
+    def test_validation_accepts_zero_baseline_cost_with_zero_percent(
+        self,
+        sample_input_hash: str,
+        sample_matching_output_hashes: tuple[str, str],
+        sample_no_regression_summary: ModelInvariantComparisonSummary,
+        sample_invariant_result_passed: ModelInvariantResult,
+    ) -> None:
+        """Validator accepts 0.0 percent when baseline_cost is 0 (convention)."""
+        baseline_hash, replay_hash = sample_matching_output_hashes
+
+        # When baseline_cost is 0, cost_delta_percent must be 0.0 (convention)
+        comparison = ModelExecutionComparison(
+            baseline_execution_id=TEST_BASELINE_ID,
+            replay_execution_id=TEST_REPLAY_ID,
+            input_hash=sample_input_hash,
+            input_hash_match=True,
+            baseline_output_hash=baseline_hash,
+            replay_output_hash=replay_hash,
+            output_match=True,
+            baseline_latency_ms=100.0,
+            replay_latency_ms=100.0,
+            latency_delta_ms=0.0,
+            latency_delta_percent=0.0,
+            baseline_cost=0.0,  # Zero baseline (division by zero edge case)
+            replay_cost=0.05,
+            cost_delta=0.05,  # Correct: 0.05 - 0
+            cost_delta_percent=0.0,  # Convention: 0% when baseline is 0
+            baseline_invariant_results=[sample_invariant_result_passed],
+            replay_invariant_results=[sample_invariant_result_passed],
+            invariant_comparison=sample_no_regression_summary,
+        )
+
+        assert comparison.baseline_cost == 0.0
+        assert comparison.cost_delta_percent == 0.0
+
+    def test_validation_rejects_zero_baseline_cost_with_nonzero_percent(
+        self,
+        sample_input_hash: str,
+        sample_matching_output_hashes: tuple[str, str],
+        sample_no_regression_summary: ModelInvariantComparisonSummary,
+        sample_invariant_result_passed: ModelInvariantResult,
+    ) -> None:
+        """Validator rejects non-zero percent when baseline_cost is 0."""
+        baseline_hash, replay_hash = sample_matching_output_hashes
+
+        # When baseline_cost is 0, cost_delta_percent must be 0.0
+        with pytest.raises(ValidationError) as exc_info:
+            ModelExecutionComparison(
+                baseline_execution_id=TEST_BASELINE_ID,
+                replay_execution_id=TEST_REPLAY_ID,
+                input_hash=sample_input_hash,
+                input_hash_match=True,
+                baseline_output_hash=baseline_hash,
+                replay_output_hash=replay_hash,
+                output_match=True,
+                baseline_latency_ms=100.0,
+                replay_latency_ms=100.0,
+                latency_delta_ms=0.0,
+                latency_delta_percent=0.0,
+                baseline_cost=0.0,
+                replay_cost=0.05,
+                cost_delta=0.05,  # Correct
+                cost_delta_percent=100.0,  # Wrong! Must be 0.0 when baseline is 0
+                baseline_invariant_results=[sample_invariant_result_passed],
+                replay_invariant_results=[sample_invariant_result_passed],
+                invariant_comparison=sample_no_regression_summary,
+            )
+
+        assert "cost_delta_percent must be 0.0 when baseline_cost is 0" in str(
+            exc_info.value
+        )
+
+    def test_validation_rejects_cost_delta_when_both_costs_none(
+        self,
+        sample_input_hash: str,
+        sample_matching_output_hashes: tuple[str, str],
+        sample_no_regression_summary: ModelInvariantComparisonSummary,
+        sample_invariant_result_passed: ModelInvariantResult,
+    ) -> None:
+        """Validator rejects cost_delta when both costs are None."""
+        baseline_hash, replay_hash = sample_matching_output_hashes
+
+        # cost_delta should be None when both costs are None
+        with pytest.raises(ValidationError) as exc_info:
+            ModelExecutionComparison(
+                baseline_execution_id=TEST_BASELINE_ID,
+                replay_execution_id=TEST_REPLAY_ID,
+                input_hash=sample_input_hash,
+                input_hash_match=True,
+                baseline_output_hash=baseline_hash,
+                replay_output_hash=replay_hash,
+                output_match=True,
+                baseline_latency_ms=100.0,
+                replay_latency_ms=100.0,
+                latency_delta_ms=0.0,
+                latency_delta_percent=0.0,
+                baseline_cost=None,
+                replay_cost=None,
+                cost_delta=0.05,  # Wrong! Should be None when both costs are None
+                cost_delta_percent=None,
+                baseline_invariant_results=[sample_invariant_result_passed],
+                replay_invariant_results=[sample_invariant_result_passed],
+                invariant_comparison=sample_no_regression_summary,
+            )
+
+        assert (
+            "cost_delta must be None when both baseline_cost and replay_cost are None"
+            in str(exc_info.value)
+        )
+
+    def test_validation_rejects_cost_delta_percent_when_both_costs_none(
+        self,
+        sample_input_hash: str,
+        sample_matching_output_hashes: tuple[str, str],
+        sample_no_regression_summary: ModelInvariantComparisonSummary,
+        sample_invariant_result_passed: ModelInvariantResult,
+    ) -> None:
+        """Validator rejects cost_delta_percent when both costs are None."""
+        baseline_hash, replay_hash = sample_matching_output_hashes
+
+        with pytest.raises(ValidationError) as exc_info:
+            ModelExecutionComparison(
+                baseline_execution_id=TEST_BASELINE_ID,
+                replay_execution_id=TEST_REPLAY_ID,
+                input_hash=sample_input_hash,
+                input_hash_match=True,
+                baseline_output_hash=baseline_hash,
+                replay_output_hash=replay_hash,
+                output_match=True,
+                baseline_latency_ms=100.0,
+                replay_latency_ms=100.0,
+                latency_delta_ms=0.0,
+                latency_delta_percent=0.0,
+                baseline_cost=None,
+                replay_cost=None,
+                cost_delta=None,
+                cost_delta_percent=50.0,  # Wrong! Should be None when both costs are None
+                baseline_invariant_results=[sample_invariant_result_passed],
+                replay_invariant_results=[sample_invariant_result_passed],
+                invariant_comparison=sample_no_regression_summary,
+            )
+
+        assert (
+            "cost_delta_percent must be None when both baseline_cost and replay_cost are None"
+            in str(exc_info.value)
+        )
+
+    def test_validation_rejects_cost_delta_when_partial_data_baseline_only(
+        self,
+        sample_input_hash: str,
+        sample_matching_output_hashes: tuple[str, str],
+        sample_no_regression_summary: ModelInvariantComparisonSummary,
+        sample_invariant_result_passed: ModelInvariantResult,
+    ) -> None:
+        """Validator rejects cost_delta when only baseline_cost is provided."""
+        baseline_hash, replay_hash = sample_matching_output_hashes
+
+        with pytest.raises(ValidationError) as exc_info:
+            ModelExecutionComparison(
+                baseline_execution_id=TEST_BASELINE_ID,
+                replay_execution_id=TEST_REPLAY_ID,
+                input_hash=sample_input_hash,
+                input_hash_match=True,
+                baseline_output_hash=baseline_hash,
+                replay_output_hash=replay_hash,
+                output_match=True,
+                baseline_latency_ms=100.0,
+                replay_latency_ms=100.0,
+                latency_delta_ms=0.0,
+                latency_delta_percent=0.0,
+                baseline_cost=0.10,  # Baseline provided
+                replay_cost=None,  # Replay missing
+                cost_delta=0.05,  # Wrong! Should be None with partial data
+                cost_delta_percent=None,
+                baseline_invariant_results=[sample_invariant_result_passed],
+                replay_invariant_results=[sample_invariant_result_passed],
+                invariant_comparison=sample_no_regression_summary,
+            )
+
+        assert "cost_delta must be None when cost data is partial" in str(
+            exc_info.value
+        )
+
+    def test_validation_rejects_cost_delta_when_partial_data_replay_only(
+        self,
+        sample_input_hash: str,
+        sample_matching_output_hashes: tuple[str, str],
+        sample_no_regression_summary: ModelInvariantComparisonSummary,
+        sample_invariant_result_passed: ModelInvariantResult,
+    ) -> None:
+        """Validator rejects cost_delta when only replay_cost is provided."""
+        baseline_hash, replay_hash = sample_matching_output_hashes
+
+        with pytest.raises(ValidationError) as exc_info:
+            ModelExecutionComparison(
+                baseline_execution_id=TEST_BASELINE_ID,
+                replay_execution_id=TEST_REPLAY_ID,
+                input_hash=sample_input_hash,
+                input_hash_match=True,
+                baseline_output_hash=baseline_hash,
+                replay_output_hash=replay_hash,
+                output_match=True,
+                baseline_latency_ms=100.0,
+                replay_latency_ms=100.0,
+                latency_delta_ms=0.0,
+                latency_delta_percent=0.0,
+                baseline_cost=None,  # Baseline missing
+                replay_cost=0.08,  # Replay provided
+                cost_delta=0.08,  # Wrong! Should be None with partial data
+                cost_delta_percent=None,
+                baseline_invariant_results=[sample_invariant_result_passed],
+                replay_invariant_results=[sample_invariant_result_passed],
+                invariant_comparison=sample_no_regression_summary,
+            )
+
+        assert "cost_delta must be None when cost data is partial" in str(
+            exc_info.value
+        )
+
+    def test_validation_accepts_partial_data_with_none_deltas(
+        self,
+        sample_input_hash: str,
+        sample_matching_output_hashes: tuple[str, str],
+        sample_no_regression_summary: ModelInvariantComparisonSummary,
+        sample_invariant_result_passed: ModelInvariantResult,
+    ) -> None:
+        """Validator accepts partial cost data when deltas are None."""
+        baseline_hash, replay_hash = sample_matching_output_hashes
+
+        # Partial data is valid when deltas are None
+        comparison = ModelExecutionComparison(
+            baseline_execution_id=TEST_BASELINE_ID,
+            replay_execution_id=TEST_REPLAY_ID,
+            input_hash=sample_input_hash,
+            input_hash_match=True,
+            baseline_output_hash=baseline_hash,
+            replay_output_hash=replay_hash,
+            output_match=True,
+            baseline_latency_ms=100.0,
+            replay_latency_ms=100.0,
+            latency_delta_ms=0.0,
+            latency_delta_percent=0.0,
+            baseline_cost=0.10,  # Baseline known
+            replay_cost=None,  # Replay unknown
+            cost_delta=None,  # Correctly None for partial data
+            cost_delta_percent=None,  # Correctly None for partial data
+            baseline_invariant_results=[sample_invariant_result_passed],
+            replay_invariant_results=[sample_invariant_result_passed],
+            invariant_comparison=sample_no_regression_summary,
+        )
+
+        assert comparison.baseline_cost == 0.10
+        assert comparison.replay_cost is None
+        assert comparison.cost_delta is None
+        assert comparison.cost_delta_percent is None
+
+    def test_validation_accepts_both_costs_with_none_deltas(
+        self,
+        sample_input_hash: str,
+        sample_matching_output_hashes: tuple[str, str],
+        sample_no_regression_summary: ModelInvariantComparisonSummary,
+        sample_invariant_result_passed: ModelInvariantResult,
+    ) -> None:
+        """Validator accepts both costs with None deltas (not computed)."""
+        baseline_hash, replay_hash = sample_matching_output_hashes
+
+        # Both costs provided but deltas not computed is valid
+        comparison = ModelExecutionComparison(
+            baseline_execution_id=TEST_BASELINE_ID,
+            replay_execution_id=TEST_REPLAY_ID,
+            input_hash=sample_input_hash,
+            input_hash_match=True,
+            baseline_output_hash=baseline_hash,
+            replay_output_hash=replay_hash,
+            output_match=True,
+            baseline_latency_ms=100.0,
+            replay_latency_ms=100.0,
+            latency_delta_ms=0.0,
+            latency_delta_percent=0.0,
+            baseline_cost=0.05,
+            replay_cost=0.08,
+            cost_delta=None,  # Not computed
+            cost_delta_percent=None,  # Not computed
+            baseline_invariant_results=[sample_invariant_result_passed],
+            replay_invariant_results=[sample_invariant_result_passed],
+            invariant_comparison=sample_no_regression_summary,
+        )
+
+        assert comparison.baseline_cost == 0.05
+        assert comparison.replay_cost == 0.08
+        assert comparison.cost_delta is None
+        assert comparison.cost_delta_percent is None
+
+    def test_validation_accepts_negative_cost_delta_when_replay_cheaper(
+        self,
+        sample_input_hash: str,
+        sample_matching_output_hashes: tuple[str, str],
+        sample_no_regression_summary: ModelInvariantComparisonSummary,
+        sample_invariant_result_passed: ModelInvariantResult,
+    ) -> None:
+        """Validator accepts negative cost_delta when replay is cheaper."""
+        baseline_hash, replay_hash = sample_matching_output_hashes
+
+        # Replay is cheaper: 0.06 - 0.10 = -0.04 (-40%)
+        comparison = ModelExecutionComparison(
+            baseline_execution_id=TEST_BASELINE_ID,
+            replay_execution_id=TEST_REPLAY_ID,
+            input_hash=sample_input_hash,
+            input_hash_match=True,
+            baseline_output_hash=baseline_hash,
+            replay_output_hash=replay_hash,
+            output_match=True,
+            baseline_latency_ms=100.0,
+            replay_latency_ms=100.0,
+            latency_delta_ms=0.0,
+            latency_delta_percent=0.0,
+            baseline_cost=0.10,
+            replay_cost=0.06,  # Cheaper
+            cost_delta=-0.04,  # Correct: 0.06 - 0.10
+            cost_delta_percent=-40.0,  # Correct: (-0.04 / 0.10) * 100
+            baseline_invariant_results=[sample_invariant_result_passed],
+            replay_invariant_results=[sample_invariant_result_passed],
+            invariant_comparison=sample_no_regression_summary,
+        )
+
+        assert comparison.cost_delta == pytest.approx(-0.04)
+        assert comparison.cost_delta_percent == pytest.approx(-40.0)
+
+    def test_validation_tolerance_for_cost_floating_point(
+        self,
+        sample_input_hash: str,
+        sample_matching_output_hashes: tuple[str, str],
+        sample_no_regression_summary: ModelInvariantComparisonSummary,
+        sample_invariant_result_passed: ModelInvariantResult,
+    ) -> None:
+        """Validator allows small floating point tolerance (0.001) for cost fields."""
+        baseline_hash, replay_hash = sample_matching_output_hashes
+
+        # Values within 0.001 tolerance should be accepted
+        # Expected delta = 0.03, expected percent = 60.0
+        # Using 0.0305 (within 0.001 of 0.03) and 60.999 (within 0.001 of 61.0)
+        # Note: 0.0305/0.05*100 = 61.0, so we use 60.999 which is within tolerance
+        comparison = ModelExecutionComparison(
+            baseline_execution_id=TEST_BASELINE_ID,
+            replay_execution_id=TEST_REPLAY_ID,
+            input_hash=sample_input_hash,
+            input_hash_match=True,
+            baseline_output_hash=baseline_hash,
+            replay_output_hash=replay_hash,
+            output_match=True,
+            baseline_latency_ms=100.0,
+            replay_latency_ms=100.0,
+            latency_delta_ms=0.0,
+            latency_delta_percent=0.0,
+            baseline_cost=0.05,
+            replay_cost=0.08,
+            cost_delta=0.0305,  # Within 0.001 of expected 0.03
+            cost_delta_percent=60.999,  # Within 0.001 of expected 61.0 for 0.0305/0.05*100
+            baseline_invariant_results=[sample_invariant_result_passed],
+            replay_invariant_results=[sample_invariant_result_passed],
+            invariant_comparison=sample_no_regression_summary,
+        )
+
+        assert comparison.cost_delta == pytest.approx(0.0305)
+
+    def test_validation_accepts_both_costs_zero(
+        self,
+        sample_input_hash: str,
+        sample_matching_output_hashes: tuple[str, str],
+        sample_no_regression_summary: ModelInvariantComparisonSummary,
+        sample_invariant_result_passed: ModelInvariantResult,
+    ) -> None:
+        """Validator accepts zero for both costs with zero deltas."""
+        baseline_hash, replay_hash = sample_matching_output_hashes
+
+        # Both zero (e.g., free tier executions)
+        comparison = ModelExecutionComparison(
+            baseline_execution_id=TEST_BASELINE_ID,
+            replay_execution_id=TEST_REPLAY_ID,
+            input_hash=sample_input_hash,
+            input_hash_match=True,
+            baseline_output_hash=baseline_hash,
+            replay_output_hash=replay_hash,
+            output_match=True,
+            baseline_latency_ms=100.0,
+            replay_latency_ms=100.0,
+            latency_delta_ms=0.0,
+            latency_delta_percent=0.0,
+            baseline_cost=0.0,
+            replay_cost=0.0,
+            cost_delta=0.0,  # Correct: 0 - 0
+            cost_delta_percent=0.0,  # Convention: 0% when baseline is 0
+            baseline_invariant_results=[sample_invariant_result_passed],
+            replay_invariant_results=[sample_invariant_result_passed],
+            invariant_comparison=sample_no_regression_summary,
+        )
+
+        assert comparison.baseline_cost == 0.0
+        assert comparison.replay_cost == 0.0
+        assert comparison.cost_delta == 0.0
+        assert comparison.cost_delta_percent == 0.0
+
+    def test_validation_accepts_cost_delta_percent_only_with_consistent_value(
+        self,
+        sample_input_hash: str,
+        sample_matching_output_hashes: tuple[str, str],
+        sample_no_regression_summary: ModelInvariantComparisonSummary,
+        sample_invariant_result_passed: ModelInvariantResult,
+    ) -> None:
+        """Validator accepts cost_delta_percent when cost_delta is None.
+
+        When cost_delta is None but cost_delta_percent is provided,
+        the validator computes the expected delta from source costs
+        and uses that to validate the percent.
+        """
+        baseline_hash, replay_hash = sample_matching_output_hashes
+
+        # cost_delta is None but percent is computed from source costs
+        comparison = ModelExecutionComparison(
+            baseline_execution_id=TEST_BASELINE_ID,
+            replay_execution_id=TEST_REPLAY_ID,
+            input_hash=sample_input_hash,
+            input_hash_match=True,
+            baseline_output_hash=baseline_hash,
+            replay_output_hash=replay_hash,
+            output_match=True,
+            baseline_latency_ms=100.0,
+            replay_latency_ms=100.0,
+            latency_delta_ms=0.0,
+            latency_delta_percent=0.0,
+            baseline_cost=0.05,
+            replay_cost=0.08,
+            cost_delta=None,  # Not provided
+            cost_delta_percent=60.0,  # Correct: ((0.08 - 0.05) / 0.05) * 100
+            baseline_invariant_results=[sample_invariant_result_passed],
+            replay_invariant_results=[sample_invariant_result_passed],
+            invariant_comparison=sample_no_regression_summary,
+        )
+
+        assert comparison.cost_delta is None
+        assert comparison.cost_delta_percent == pytest.approx(60.0)
+
+    def test_validation_rejects_example_from_task(
+        self,
+        sample_input_hash: str,
+        sample_matching_output_hashes: tuple[str, str],
+        sample_no_regression_summary: ModelInvariantComparisonSummary,
+        sample_invariant_result_passed: ModelInvariantResult,
+    ) -> None:
+        """Validator rejects the exact inconsistent example from the task description.
+
+        This test documents that the example from the task description is now
+        correctly rejected by the validator:
+            ModelExecutionComparison(
+                baseline_cost=0.05,
+                replay_cost=0.08,
+                cost_delta=999.0,  # Wrong! Should be 0.03
+                cost_delta_percent=50.0,  # Wrong! Should be 60.0
+            )
+        """
+        baseline_hash, replay_hash = sample_matching_output_hashes
+
+        # This was the exact problematic example from the task
+        with pytest.raises(ValidationError) as exc_info:
+            ModelExecutionComparison(
+                baseline_execution_id=TEST_BASELINE_ID,
+                replay_execution_id=TEST_REPLAY_ID,
+                input_hash=sample_input_hash,
+                input_hash_match=True,
+                baseline_output_hash=baseline_hash,
+                replay_output_hash=replay_hash,
+                output_match=True,
+                baseline_latency_ms=100.0,
+                replay_latency_ms=100.0,
+                latency_delta_ms=0.0,
+                latency_delta_percent=0.0,
+                baseline_cost=0.05,
+                replay_cost=0.08,
+                cost_delta=999.0,  # Wrong! Should be 0.03
+                cost_delta_percent=50.0,  # Wrong! Should be 60.0
+                baseline_invariant_results=[sample_invariant_result_passed],
+                replay_invariant_results=[sample_invariant_result_passed],
+                invariant_comparison=sample_no_regression_summary,
+            )
+
+        # The cost_delta validation should trigger first
+        assert "cost_delta is inconsistent" in str(exc_info.value)
