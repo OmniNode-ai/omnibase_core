@@ -13,6 +13,9 @@ This module provides model definitions for deterministic replay infrastructure:
 - **ModelCorpusTimeRange**: Time range for corpus executions
 - **ModelCorpusCaptureWindow**: Capture window for corpus collection
 
+Related models re-exported for convenience:
+- **ModelExecutionManifest**: Individual execution manifest (from models.manifest)
+
 Usage:
     >>> from omnibase_core.models.replay import ModelEffectRecord, ModelReplayContext
     >>> from omnibase_core.enums.replay import EnumReplayMode
@@ -49,6 +52,9 @@ Usage:
     Added Execution Corpus Model (OMN-1202)
 """
 
+from omnibase_core.models.manifest.model_execution_manifest import (
+    ModelExecutionManifest,
+)
 from omnibase_core.models.replay.model_corpus_capture_window import (
     ModelCorpusCaptureWindow,
 )
@@ -59,10 +65,13 @@ from omnibase_core.models.replay.model_execution_corpus import ModelExecutionCor
 from omnibase_core.models.replay.model_replay_context import ModelReplayContext
 
 __all__ = [
+    # Replay models
     "ModelCorpusCaptureWindow",
     "ModelCorpusStatistics",
     "ModelCorpusTimeRange",
     "ModelEffectRecord",
     "ModelExecutionCorpus",
     "ModelReplayContext",
+    # Related models re-exported for convenience
+    "ModelExecutionManifest",
 ]

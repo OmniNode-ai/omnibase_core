@@ -32,7 +32,10 @@ Related:
 
 from datetime import datetime, timedelta
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors import ModelOnexError
 
 
 class ModelCorpusTimeRange(BaseModel):
@@ -74,6 +77,24 @@ class ModelCorpusTimeRange(BaseModel):
         ...,
         description="Latest execution timestamp",
     )
+
+    @model_validator(mode="after")
+    def _validate_time_order(self) -> "ModelCorpusTimeRange":
+        """Validate that min_time <= max_time.
+
+        Returns:
+            Self if validation passes.
+
+        Raises:
+            ModelOnexError: If min_time > max_time.
+        """
+        if self.min_time > self.max_time:
+            msg = "min_time must be <= max_time"
+            raise ModelOnexError(
+                message=msg,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            )
+        return self
 
     @property
     def duration(self) -> timedelta:

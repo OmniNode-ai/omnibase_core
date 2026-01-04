@@ -254,10 +254,13 @@ class ModelExecutionCorpus(BaseModel):
         """
         Check if corpus is valid for replay.
 
+        Checks both materialized executions and reference execution_ids,
+        consistent with validate_for_replay() method.
+
         Returns:
-            True if executions is non-empty.
+            True if corpus has at least one execution (materialized or reference).
         """
-        return len(self.executions) > 0
+        return self.execution_count > 0
 
     @property
     def execution_count(self) -> int:
@@ -297,6 +300,7 @@ class ModelExecutionCorpus(BaseModel):
         total = len(self.executions)
 
         if total == 0:
+            # Early return prevents division by zero in success_rate and avg_duration
             return ModelCorpusStatistics()
 
         # Handler distribution - count by handler_descriptor_id
@@ -374,6 +378,36 @@ class ModelExecutionCorpus(BaseModel):
             }
         )
 
+    def with_executions(
+        self,
+        manifests: tuple[ModelExecutionManifest, ...] | list[ModelExecutionManifest],
+    ) -> "ModelExecutionCorpus":
+        """
+        Add multiple execution manifests to the corpus.
+
+        Creates a new corpus instance with the manifests appended to the
+        executions tuple. The original corpus is not modified (frozen model).
+
+        Args:
+            manifests: The execution manifests to add.
+
+        Returns:
+            A new ModelExecutionCorpus with the manifests added.
+
+        Example:
+            >>> corpus = ModelExecutionCorpus(
+            ...     name="test", version="1.0.0", source="test"
+            ... )
+            >>> corpus = corpus.with_executions([manifest1, manifest2])
+            >>> len(corpus.executions)
+            2
+        """
+        return self.model_copy(
+            update={
+                "executions": (*self.executions, *manifests),
+            }
+        )
+
     def with_execution_ref(self, manifest_id: UUID) -> "ModelExecutionCorpus":
         """
         Add an execution reference to the corpus.
@@ -398,6 +432,35 @@ class ModelExecutionCorpus(BaseModel):
         return self.model_copy(
             update={
                 "execution_ids": (*self.execution_ids, manifest_id),
+            }
+        )
+
+    def with_execution_refs(
+        self, manifest_ids: tuple[UUID, ...] | list[UUID]
+    ) -> "ModelExecutionCorpus":
+        """
+        Add multiple execution references to the corpus.
+
+        Creates a new corpus instance with the manifest IDs appended to the
+        execution_ids tuple. The original corpus is not modified (frozen model).
+
+        Args:
+            manifest_ids: The UUIDs of execution manifests to reference.
+
+        Returns:
+            A new ModelExecutionCorpus with the references added.
+
+        Example:
+            >>> corpus = ModelExecutionCorpus(
+            ...     name="test", version="1.0.0", source="test"
+            ... )
+            >>> corpus = corpus.with_execution_refs([uuid4(), uuid4()])
+            >>> len(corpus.execution_ids)
+            2
+        """
+        return self.model_copy(
+            update={
+                "execution_ids": (*self.execution_ids, *manifest_ids),
             }
         )
 
@@ -443,6 +506,16 @@ class ModelExecutionCorpus(BaseModel):
                 )
             if not manifest.contract_identity.contract_id:
                 msg = f"Execution {i} in corpus '{self.name}' has empty contract_id"
+                raise ModelOnexError(
+                    message=msg,
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                )
+
+        # Validate reference mode execution_ids contain valid (non-nil) UUIDs
+        nil_uuid = UUID(int=0)
+        for i, exec_id in enumerate(self.execution_ids):
+            if exec_id == nil_uuid:
+                msg = f"Execution reference {i} in corpus '{self.name}' is nil UUID"
                 raise ModelOnexError(
                     message=msg,
                     error_code=EnumCoreErrorCode.VALIDATION_ERROR,

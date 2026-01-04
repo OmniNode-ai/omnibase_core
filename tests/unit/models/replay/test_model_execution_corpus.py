@@ -40,9 +40,7 @@ from pydantic import ValidationError
 from omnibase_core.errors import ModelOnexError
 
 if TYPE_CHECKING:
-    from omnibase_core.models.replay.model_execution_corpus import (
-        ModelExecutionCorpus,
-    )
+    from omnibase_core.models.replay import ModelExecutionCorpus
 
 
 # =============================================================================
@@ -601,6 +599,249 @@ class TestModelExecutionCorpusAddExecution:
 
 
 # =============================================================================
+# Test Classes - Bulk Operations
+# =============================================================================
+
+
+@pytest.mark.unit
+class TestModelExecutionCorpusBulkOperations:
+    """Test bulk operations for adding multiple executions/refs at once."""
+
+    def test_with_executions_adds_multiple_manifests(
+        self, create_test_manifest
+    ) -> None:
+        """with_executions adds multiple manifests in one call."""
+        from omnibase_core.models.replay.model_execution_corpus import (
+            ModelExecutionCorpus,
+        )
+
+        corpus = ModelExecutionCorpus(
+            name="test-corpus",
+            version="1.0.0",
+            source="tests",
+        )
+
+        manifests = [
+            create_test_manifest(node_id="node-1"),
+            create_test_manifest(node_id="node-2"),
+            create_test_manifest(node_id="node-3"),
+        ]
+
+        new_corpus = corpus.with_executions(manifests)
+
+        assert len(new_corpus.executions) == 3
+        assert len(corpus.executions) == 0  # Original unchanged
+
+    def test_with_executions_returns_new_corpus(self, create_test_manifest) -> None:
+        """with_executions returns a new corpus instance (immutable update)."""
+        from omnibase_core.models.replay.model_execution_corpus import (
+            ModelExecutionCorpus,
+        )
+
+        corpus = ModelExecutionCorpus(
+            name="test-corpus",
+            version="1.0.0",
+            source="tests",
+        )
+
+        manifests = [create_test_manifest(node_id="node-1")]
+        new_corpus = corpus.with_executions(manifests)
+
+        assert new_corpus is not corpus
+
+    def test_with_executions_preserves_metadata(self, create_test_manifest) -> None:
+        """with_executions preserves corpus metadata."""
+        from omnibase_core.models.replay.model_execution_corpus import (
+            ModelExecutionCorpus,
+        )
+
+        corpus = ModelExecutionCorpus(
+            name="test-corpus",
+            version="1.0.0",
+            source="tests",
+        )
+
+        manifests = [create_test_manifest(node_id="node-1")]
+        new_corpus = corpus.with_executions(manifests)
+
+        assert new_corpus.name == corpus.name
+        assert new_corpus.version == corpus.version
+        assert new_corpus.source == corpus.source
+        assert new_corpus.corpus_id == corpus.corpus_id
+
+    def test_with_executions_appends_to_existing(self, create_test_manifest) -> None:
+        """with_executions appends to existing executions."""
+        from omnibase_core.models.replay.model_execution_corpus import (
+            ModelExecutionCorpus,
+        )
+
+        initial_manifest = create_test_manifest(node_id="initial")
+        corpus = ModelExecutionCorpus(
+            name="test-corpus",
+            version="1.0.0",
+            source="tests",
+            executions=(initial_manifest,),
+        )
+
+        new_manifests = [
+            create_test_manifest(node_id="new-1"),
+            create_test_manifest(node_id="new-2"),
+        ]
+
+        new_corpus = corpus.with_executions(new_manifests)
+
+        assert len(new_corpus.executions) == 3
+        assert new_corpus.executions[0].node_identity.node_id == "initial"
+        assert new_corpus.executions[1].node_identity.node_id == "new-1"
+        assert new_corpus.executions[2].node_identity.node_id == "new-2"
+
+    def test_with_executions_with_tuple(self, create_test_manifest) -> None:
+        """with_executions works with tuple input."""
+        from omnibase_core.models.replay.model_execution_corpus import (
+            ModelExecutionCorpus,
+        )
+
+        corpus = ModelExecutionCorpus(
+            name="test-corpus",
+            version="1.0.0",
+            source="tests",
+        )
+
+        manifests = (
+            create_test_manifest(node_id="node-1"),
+            create_test_manifest(node_id="node-2"),
+        )
+
+        new_corpus = corpus.with_executions(manifests)
+
+        assert len(new_corpus.executions) == 2
+
+    def test_with_executions_empty_list(self) -> None:
+        """with_executions with empty list returns equivalent corpus."""
+        from omnibase_core.models.replay.model_execution_corpus import (
+            ModelExecutionCorpus,
+        )
+
+        corpus = ModelExecutionCorpus(
+            name="test-corpus",
+            version="1.0.0",
+            source="tests",
+        )
+
+        new_corpus = corpus.with_executions([])
+
+        assert len(new_corpus.executions) == 0
+        assert new_corpus is not corpus  # Still a new instance
+
+    def test_with_execution_refs_adds_multiple_ids(self) -> None:
+        """with_execution_refs adds multiple UUIDs in one call."""
+        from omnibase_core.models.replay.model_execution_corpus import (
+            ModelExecutionCorpus,
+        )
+
+        corpus = ModelExecutionCorpus(
+            name="test-corpus",
+            version="1.0.0",
+            source="tests",
+        )
+
+        ids = [uuid4(), uuid4(), uuid4()]
+        new_corpus = corpus.with_execution_refs(ids)
+
+        assert len(new_corpus.execution_ids) == 3
+        assert len(corpus.execution_ids) == 0  # Original unchanged
+
+    def test_with_execution_refs_returns_new_corpus(self) -> None:
+        """with_execution_refs returns a new corpus instance (immutable update)."""
+        from omnibase_core.models.replay.model_execution_corpus import (
+            ModelExecutionCorpus,
+        )
+
+        corpus = ModelExecutionCorpus(
+            name="test-corpus",
+            version="1.0.0",
+            source="tests",
+        )
+
+        new_corpus = corpus.with_execution_refs([uuid4()])
+
+        assert new_corpus is not corpus
+
+    def test_with_execution_refs_preserves_metadata(self) -> None:
+        """with_execution_refs preserves corpus metadata."""
+        from omnibase_core.models.replay.model_execution_corpus import (
+            ModelExecutionCorpus,
+        )
+
+        corpus = ModelExecutionCorpus(
+            name="test-corpus",
+            version="1.0.0",
+            source="tests",
+        )
+
+        new_corpus = corpus.with_execution_refs([uuid4()])
+
+        assert new_corpus.name == corpus.name
+        assert new_corpus.version == corpus.version
+        assert new_corpus.source == corpus.source
+        assert new_corpus.corpus_id == corpus.corpus_id
+
+    def test_with_execution_refs_appends_to_existing(self) -> None:
+        """with_execution_refs appends to existing execution_ids."""
+        from omnibase_core.models.replay.model_execution_corpus import (
+            ModelExecutionCorpus,
+        )
+
+        initial_id = uuid4()
+        corpus = ModelExecutionCorpus(
+            name="test-corpus",
+            version="1.0.0",
+            source="tests",
+            execution_ids=(initial_id,),
+        )
+
+        new_ids = [uuid4(), uuid4()]
+        new_corpus = corpus.with_execution_refs(new_ids)
+
+        assert len(new_corpus.execution_ids) == 3
+        assert new_corpus.execution_ids[0] == initial_id
+
+    def test_with_execution_refs_with_tuple(self) -> None:
+        """with_execution_refs works with tuple input."""
+        from omnibase_core.models.replay.model_execution_corpus import (
+            ModelExecutionCorpus,
+        )
+
+        corpus = ModelExecutionCorpus(
+            name="test-corpus",
+            version="1.0.0",
+            source="tests",
+        )
+
+        ids = (uuid4(), uuid4())
+        new_corpus = corpus.with_execution_refs(ids)
+
+        assert len(new_corpus.execution_ids) == 2
+
+    def test_with_execution_refs_empty_list(self) -> None:
+        """with_execution_refs with empty list returns equivalent corpus."""
+        from omnibase_core.models.replay.model_execution_corpus import (
+            ModelExecutionCorpus,
+        )
+
+        corpus = ModelExecutionCorpus(
+            name="test-corpus",
+            version="1.0.0",
+            source="tests",
+        )
+
+        new_corpus = corpus.with_execution_refs([])
+
+        assert len(new_corpus.execution_ids) == 0
+        assert new_corpus is not corpus  # Still a new instance
+
+
+# =============================================================================
 # Test Classes - Validation for Replay
 # =============================================================================
 
@@ -665,6 +906,65 @@ class TestModelExecutionCorpusValidationForReplay:
 
         assert empty_corpus.is_valid_for_replay is False
         assert non_empty_corpus.is_valid_for_replay is True
+
+    def test_is_valid_for_replay_reference_only_corpus(self) -> None:
+        """is_valid_for_replay returns True for reference-only corpus."""
+        from omnibase_core.models.replay.model_execution_corpus import (
+            ModelExecutionCorpus,
+        )
+
+        # Create corpus with only execution_ids (reference mode)
+        reference_corpus = ModelExecutionCorpus(
+            name="reference-corpus",
+            version="1.0.0",
+            source="tests",
+            execution_ids=(uuid4(), uuid4()),
+            is_reference=True,
+        )
+
+        # Should be valid even though executions tuple is empty
+        assert reference_corpus.is_valid_for_replay is True
+        assert len(reference_corpus.executions) == 0
+        assert len(reference_corpus.execution_ids) == 2
+
+    def test_validate_for_replay_catches_nil_uuid_in_execution_ids(self) -> None:
+        """validate_for_replay raises error for nil UUID in execution_ids."""
+        from omnibase_core.models.replay.model_execution_corpus import (
+            ModelExecutionCorpus,
+        )
+
+        nil_uuid = UUID(int=0)
+        valid_uuid = uuid4()
+
+        # Create corpus with a nil UUID in execution_ids
+        corpus = ModelExecutionCorpus(
+            name="corpus-with-nil-uuid",
+            version="1.0.0",
+            source="tests",
+            execution_ids=(valid_uuid, nil_uuid),
+            is_reference=True,
+        )
+
+        with pytest.raises(ModelOnexError, match=r"nil UUID"):
+            corpus.validate_for_replay()
+
+    def test_validate_for_replay_passes_with_valid_execution_ids(self) -> None:
+        """validate_for_replay passes when all execution_ids are valid UUIDs."""
+        from omnibase_core.models.replay.model_execution_corpus import (
+            ModelExecutionCorpus,
+        )
+
+        # Create corpus with valid UUIDs only
+        corpus = ModelExecutionCorpus(
+            name="corpus-with-valid-uuids",
+            version="1.0.0",
+            source="tests",
+            execution_ids=(uuid4(), uuid4(), uuid4()),
+            is_reference=True,
+        )
+
+        # Should not raise
+        corpus.validate_for_replay()
 
 
 # =============================================================================
