@@ -170,7 +170,8 @@ class ModelEvidenceSummary(BaseModel):
                 - baseline_cost: float | None
                 - replay_cost: float | None
                 - violation_deltas: list[dict]
-                - executed_at: datetime
+                - executed_at: datetime (optional; if missing or not datetime,
+                  uses current UTC time for started_at/ended_at)
             corpus_id: The corpus that was replayed.
             baseline_version: Version of the baseline execution.
             replay_version: Version being tested.
@@ -180,6 +181,10 @@ class ModelEvidenceSummary(BaseModel):
 
         Raises:
             ValueError: If comparisons list is empty.
+
+        Note:
+            If no valid executed_at timestamps are found in comparisons,
+            both started_at and ended_at will default to the current UTC time.
         """
         if not comparisons:
             # error-ok: factory method validation, simpler than OnexError for caller
@@ -295,19 +300,22 @@ class ModelEvidenceSummary(BaseModel):
         Formula:
             confidence = 1.0
             confidence *= pass_rate  # Primary factor
-            if new_critical_violations > 0:
-                confidence *= 0.5  # Heavy penalty for critical violations
-            if delta_latency_percent > 50:
-                confidence -= 0.1  # Moderate penalty for 50%+ regression
-            if delta_cost_percent > 50:
-                confidence -= 0.05  # Minor penalty for cost increase
+            if invariant_violations.new_critical_violations > 0:
+                confidence *= 0.5  # Heavy penalty for NEW critical violations (regressions)
+            if latency_stats.delta_avg_percent > 50:
+                confidence -= 0.1  # Moderate penalty for 50%+ latency regression
+            if cost_stats is not None and cost_stats.delta_percent > 50:
+                confidence -= 0.05  # Minor penalty for 50%+ cost increase
             confidence = max(0.0, min(1.0, confidence))  # Clamp to [0, 1]
+
+        NEW critical violations are regressions: invariants that passed in baseline
+        but failed in replay (baseline_passed=True, replay_passed=False, severity=critical).
 
         Args:
             pass_rate: Ratio of passed executions (0.0 - 1.0).
-            invariant_violations: Violation breakdown.
-            latency_stats: Latency statistics.
-            cost_stats: Cost statistics (may be None).
+            invariant_violations: Violation breakdown including new/fixed counts.
+            latency_stats: Latency statistics with delta percentages.
+            cost_stats: Cost statistics (may be None if incomplete data).
 
         Returns:
             Confidence score between 0.0 and 1.0.
@@ -342,13 +350,16 @@ class ModelEvidenceSummary(BaseModel):
         """Determine recommendation based on confidence and violations.
 
         Thresholds:
-            - "approve": confidence >= 0.95, no new critical violations
-            - "reject": confidence < 0.70 OR any new critical violation
+            - "approve": confidence >= 0.95, no NEW critical violations
+            - "reject": confidence < 0.70 OR any NEW critical violation (regression)
             - "review": everything else
+
+        NEW critical violations are regressions: invariants that passed in baseline
+        but failed in replay (baseline_passed=True, replay_passed=False, severity=critical).
 
         Args:
             confidence: Calculated confidence score.
-            invariant_violations: Violation breakdown.
+            invariant_violations: Violation breakdown including new/fixed counts.
 
         Returns:
             Recommendation: "approve", "review", or "reject".

@@ -579,3 +579,71 @@ class TestNewCriticalViolations:
         breakdown = ModelInvariantViolationBreakdown.from_violation_deltas([])
 
         assert breakdown.new_critical_violations == 0
+
+    def test_new_critical_violations_in_current_not_baseline(self) -> None:
+        """Verify new critical violations are correctly identified.
+
+        A "new critical violation" is one that:
+        - Failed in replay (current) - replay_passed=False
+        - Passed in baseline - baseline_passed=True
+        - Has critical severity
+
+        This test verifies the fix for correctly identifying violations
+        that are in current but not in baseline.
+        """
+        deltas = [
+            # New critical #1: was passing, now failing with critical severity
+            {
+                "type": "output_equivalence",
+                "severity": EnumViolationSeverity.CRITICAL.value,
+                "baseline_passed": True,  # Was passing in baseline
+                "replay_passed": False,  # Now failing in current
+            },
+            # New critical #2: another new critical violation
+            {
+                "type": "schema_validation",
+                "severity": EnumViolationSeverity.CRITICAL.value,
+                "baseline_passed": True,  # Was passing in baseline
+                "replay_passed": False,  # Now failing in current
+            },
+            # NOT new critical: existed in baseline (was already failing)
+            {
+                "type": "data_integrity",
+                "severity": EnumViolationSeverity.CRITICAL.value,
+                "baseline_passed": False,  # Was already failing in baseline
+                "replay_passed": False,  # Still failing in current
+            },
+            # NOT new critical: passing in both (not a violation at all)
+            {
+                "type": "performance",
+                "severity": EnumViolationSeverity.CRITICAL.value,
+                "baseline_passed": True,  # Passing in baseline
+                "replay_passed": True,  # Still passing in current
+            },
+            # NOT new critical: fixed (was failing, now passing)
+            {
+                "type": "security",
+                "severity": EnumViolationSeverity.CRITICAL.value,
+                "baseline_passed": False,  # Was failing in baseline
+                "replay_passed": True,  # Now passing in current (fixed!)
+            },
+        ]
+
+        breakdown = ModelInvariantViolationBreakdown.from_violation_deltas(deltas)
+
+        # Verify new_critical_violations: only counts violations that are
+        # (1) in current (replay_passed=False), (2) not in baseline (baseline_passed=True),
+        # and (3) critical severity
+        assert breakdown.new_critical_violations == 2  # Only first two
+
+        # Verify total critical violations (all that failed in replay)
+        assert breakdown.by_severity[EnumViolationSeverity.CRITICAL.value] == 3
+
+        # Verify new violations (any severity that passed in baseline, failed in replay)
+        assert breakdown.new_violations == 2
+
+        # Verify fixed violations (failed in baseline, passed in replay)
+        assert breakdown.fixed_violations == 1
+
+        # Verify total violations (all that failed in replay)
+        assert breakdown.total_violations == 3
