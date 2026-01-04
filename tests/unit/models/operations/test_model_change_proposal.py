@@ -1727,6 +1727,24 @@ class TestTypeSpecificValidation:
             assert proposal.before_config["url"] == before_url
             assert proposal.after_config["url"] == after_url
 
+    def test_endpoint_change_both_urls_invalid(self) -> None:
+        """ENDPOINT_CHANGE fails when both before and after URLs are invalid.
+
+        Tests that validation correctly rejects proposals where invalid URLs
+        are present in both configurations simultaneously.
+        """
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelChangeProposal.create(
+                change_type=EnumChangeType.ENDPOINT_CHANGE,
+                description="Change endpoint",
+                rationale="Testing simultaneous invalid URLs",
+                before_config={"url": "not-a-valid-url"},
+                after_config={"url": "also-not-valid"},
+            )
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert "Invalid URL format" in str(exc_info.value.message)
+
 
 # =============================================================================
 # Phase 10: Max Depth Recursion Limit Tests
