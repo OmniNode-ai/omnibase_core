@@ -15,7 +15,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from typing import TYPE_CHECKING
-from uuid import UUID
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_event_sink_type import EnumEventSinkType
@@ -95,12 +94,9 @@ class SinkFile:
             )
 
         try:
-            # Serialize event to JSON with timestamp
+            # Serialize event to JSON
+            # mode="json" ensures UUIDs and other types are serialized correctly
             event_dict = event.model_dump(mode="json")
-            # Ensure UUIDs are serialized as strings
-            for key, value in event_dict.items():
-                if isinstance(value, UUID):
-                    event_dict[key] = str(value)
             json_line = json.dumps(event_dict, default=str, ensure_ascii=False)
             self._buffer.append(json_line)
             self._event_count += 1
@@ -143,7 +139,7 @@ class SinkFile:
         except OSError as e:
             raise ModelOnexError(
                 message=f"Failed to write to file: {e}",
-                error_code=EnumCoreErrorCode.OPERATION_FAILED,
+                error_code=EnumCoreErrorCode.FILE_WRITE_ERROR,
                 sink_name=self._name,
                 file_path=str(self._file_path),
             ) from e

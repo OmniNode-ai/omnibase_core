@@ -31,6 +31,7 @@ Related:
 .. versionadded:: 0.4.0
 """
 
+import asyncio
 import json
 import tempfile
 from pathlib import Path
@@ -69,6 +70,16 @@ from omnibase_core.services.service_contract_validation_invariant_checker import
 from omnibase_core.validation.contract_validation_pipeline import (
     ContractValidationPipeline,
 )
+
+# Module-level constant for event type mapping (used in _convert_to_invariant_events
+# and test_events_from_file_can_be_replayed)
+_EVENT_TYPE_MAPPING = {
+    CONTRACT_VALIDATION_STARTED_EVENT: "validation_started",
+    CONTRACT_VALIDATION_PASSED_EVENT: "validation_passed",
+    CONTRACT_VALIDATION_FAILED_EVENT: "validation_failed",
+    CONTRACT_MERGE_STARTED_EVENT: "merge_started",
+    CONTRACT_MERGE_COMPLETED_EVENT: "merge_completed",
+}
 
 
 @pytest.fixture
@@ -179,21 +190,13 @@ def _convert_to_invariant_events(
     Returns:
         List of ModelContractValidationEvent for invariant checking.
     """
-    type_mapping = {
-        CONTRACT_VALIDATION_STARTED_EVENT: "validation_started",
-        CONTRACT_VALIDATION_PASSED_EVENT: "validation_passed",
-        CONTRACT_VALIDATION_FAILED_EVENT: "validation_failed",
-        CONTRACT_MERGE_STARTED_EVENT: "merge_started",
-        CONTRACT_MERGE_COMPLETED_EVENT: "merge_completed",
-    }
-
     checker_events: list[ModelContractValidationEvent] = []
     for event in events:
         event_type = getattr(event, "event_type", None)
-        if event_type and event_type in type_mapping:
+        if event_type and event_type in _EVENT_TYPE_MAPPING:
             checker_events.append(
                 ModelContractValidationEvent(
-                    event_type=type_mapping[event_type],
+                    event_type=_EVENT_TYPE_MAPPING[event_type],
                     run_ref=str(event.run_id),
                 )
             )
@@ -702,8 +705,6 @@ class TestFileSinkIntegration:
                 correlation_id=correlation_id,
             )
 
-            import asyncio
-
             with patch(
                 "omnibase_core.merge.contract_merge_engine.ContractMergeEngine"
             ) as mock_merge_engine_class:
@@ -781,8 +782,6 @@ class TestFileSinkIntegration:
                 mock_factory.get_profile.return_value = valid_merged_contract
                 pipeline.validate_all(valid_patch, mock_factory)
 
-            import asyncio
-
             asyncio.run(emitter.close())
 
             # At this point, file should exist
@@ -842,8 +841,6 @@ class TestMultipleDestinations:
                 mock_factory.get_profile.return_value = valid_merged_contract
 
                 pipeline.validate_all(valid_patch, mock_factory)
-
-            import asyncio
 
             asyncio.run(emitter.close())
 
@@ -997,8 +994,6 @@ class TestReplayVerification:
                 correlation_id=correlation_id,
             )
 
-            import asyncio
-
             with patch(
                 "omnibase_core.merge.contract_merge_engine.ContractMergeEngine"
             ) as mock_merge_engine_class:
@@ -1018,14 +1013,8 @@ class TestReplayVerification:
             lines = file_path.read_text().strip().split("\n")
             file_events = [json.loads(line) for line in lines]
 
-            # Map file events to invariant checker format
-            type_mapping = {
-                CONTRACT_VALIDATION_STARTED_EVENT: "validation_started",
-                CONTRACT_VALIDATION_PASSED_EVENT: "validation_passed",
-                CONTRACT_VALIDATION_FAILED_EVENT: "validation_failed",
-                CONTRACT_MERGE_STARTED_EVENT: "merge_started",
-                CONTRACT_MERGE_COMPLETED_EVENT: "merge_completed",
-            }
+            # Map file events to invariant checker format using module-level constant
+            type_mapping = _EVENT_TYPE_MAPPING
 
             checker_events = []
             for event_data in file_events:

@@ -367,11 +367,7 @@ class ContractMergeEngine:
         # Convention: node.<name> for handler identification
         handler_id = f"node.{merged_name.lower().replace(' ', '_')}"
 
-        # 7. Detect any conflicts (for reporting in completion event)
-        conflicts = self.detect_conflicts(patch)
-        conflicts_resolved_count = len(conflicts)
-
-        # 8. Construct final contract
+        # 7. Construct final contract
         result = ModelHandlerContract(
             handler_id=handler_id,
             name=merged_name,
@@ -385,8 +381,12 @@ class ContractMergeEngine:
             tags=list(base.tags) if base.tags else [],
         )
 
-        # 9. Emit merge_completed event if emitter is available
+        # 8. Emit merge_completed event if emitter is available
         if self._event_emitter is not None:
+            # Detect conflicts only when needed for event emission
+            conflicts = self.detect_conflicts(patch)
+            conflicts_resolved_count = len(conflicts)
+
             # Calculate duration in milliseconds
             end_time_ns = time.perf_counter_ns()
             duration_ms = (end_time_ns - start_time_ns) // 1_000_000

@@ -305,12 +305,12 @@ class ContractValidationPipeline:  # naming-ok: validator class, not protocol
         """Emit a contract validation lifecycle event.
 
         This helper handles event emission in a non-blocking way, suitable
-        for synchronous pipeline execution. If no event emitter is configured,
-        this method is a no-op.
+        for both synchronous pipeline execution and async contexts.
+        If no event emitter is configured, this method is a no-op.
 
-        The method runs the async emit coroutine synchronously using
-        asyncio.run() for simplicity. For high-throughput scenarios,
-        consider using an async pipeline variant.
+        The method detects whether an event loop is already running:
+        - If running (e.g., FastAPI endpoint): schedules emit as a task
+        - If not running (sync context): uses asyncio.run()
 
         Args:
             event: The contract validation event to emit.
@@ -323,9 +323,20 @@ class ContractValidationPipeline:  # naming-ok: validator class, not protocol
             return
 
         try:
-            # Run async emit synchronously - suitable for pipeline context
-            # For truly async pipelines, use async validate_all variant
-            asyncio.run(self._event_emitter.emit(event))
+            # Handle both sync and async contexts
+            try:
+                loop = asyncio.get_running_loop()
+            except RuntimeError:
+                loop = None
+
+            if loop is not None:
+                # Already in an async context - schedule as task (non-blocking)
+                # Fire-and-forget: task runs independently, we don't await it
+                _ = loop.create_task(self._event_emitter.emit(event))
+            else:
+                # Sync context - use asyncio.run
+                asyncio.run(self._event_emitter.emit(event))
+
             # event_type is defined on subclasses, use getattr for type safety
             event_type = getattr(event, "event_type", type(event).__name__)
             logger.debug(f"Emitted event: {event_type}")
@@ -848,25 +859,19 @@ class ContractValidationPipeline:  # naming-ok: validator class, not protocol
 
         # Emit validation passed event
         duration_ms = int((time.monotonic() - start_time) * 1000)
-        total_checks = (
-            patch_result.error_count
-            + patch_result.warning_count
-            + merge_result.error_count
-            + merge_result.warning_count
-            + expanded_result.error_count
-            + expanded_result.warning_count
-        )
         total_warnings = (
             patch_result.warning_count
             + merge_result.warning_count
             + expanded_result.warning_count
         )
+        # checks_run represents the number of validation phases executed (PATCH, MERGE, EXPANDED)
+        # Not the number of issues found (which would be misleading for a "passed" event)
         passed_event = ModelContractValidationPassedEvent.create(
             contract_name=contract_name,
             run_id=run_id,
             duration_ms=duration_ms,
             warnings_count=total_warnings,
-            checks_run=total_checks,
+            checks_run=3,
             correlation_id=self._correlation_id,
         )
         self._emit_event(passed_event)

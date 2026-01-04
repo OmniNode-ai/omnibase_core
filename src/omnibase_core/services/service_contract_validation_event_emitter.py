@@ -141,6 +141,7 @@ class ServiceContractValidationEventEmitter:
         self._destinations = destinations or [ModelEventDestination.create_memory()]
         self._emit_count = 0
         self._last_emit_time: datetime | None = None
+        self._closed = False
 
         # Initialize sinks for enabled destinations
         for dest in self._destinations:
@@ -232,6 +233,12 @@ class ServiceContractValidationEventEmitter:
             is raised after attempting all sinks (fail-late behavior may
             be implemented in future versions).
         """
+        if self._closed:
+            raise ModelOnexError(
+                message="Cannot emit events: emitter is closed",
+                error_code=EnumCoreErrorCode.INVALID_OPERATION,
+            )
+
         if not self._sinks:
             raise ModelOnexError(
                 message="No active sinks configured",
@@ -314,6 +321,9 @@ class ServiceContractValidationEventEmitter:
                 await sink.close()
             except Exception as e:  # catch-all-ok: ensure all sinks closed
                 errors.append((sink_name, e))
+
+        # Mark as closed regardless of errors
+        self._closed = True
 
         if errors:
             sink_name, first_error = errors[0]
