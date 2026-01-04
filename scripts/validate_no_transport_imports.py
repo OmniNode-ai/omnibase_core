@@ -129,6 +129,11 @@ class TransportImportChecker(ast.NodeVisitor):
         self.source_lines = source_code.splitlines()
         self.violations: list[Violation] = []
         self._in_type_checking_block = False
+        # Contains both module aliases (e.g., "t" from `import typing as t`)
+        # and constant aliases (e.g., "TC" from `from typing import TYPE_CHECKING as TC`).
+        # The distinction is handled by how they're used in _is_type_checking_guard:
+        # - Module aliases are checked against `test.value.id` (before the dot in `t.TYPE_CHECKING`)
+        # - Constant aliases are checked against `test.id` (direct name in `if TC:`)
         self._type_checking_aliases: set[str] = set()
 
     def _get_source_line(self, lineno: int) -> str:
@@ -148,8 +153,9 @@ class TransportImportChecker(ast.NodeVisitor):
         """Detect if an If node is a TYPE_CHECKING guard.
 
         Handles:
-        - `if TYPE_CHECKING:`
-        - `if typing.TYPE_CHECKING:`
+        - `if TYPE_CHECKING:` (direct import)
+        - `if TC:` (when `from typing import TYPE_CHECKING as TC`)
+        - `if typing.TYPE_CHECKING:` (module-qualified)
         - `if t.TYPE_CHECKING:` (when `import typing as t`)
         """
         test = node.test
@@ -291,11 +297,21 @@ def iter_python_files(root_dir: Path, excludes: set[Path]) -> Iterator[Path]:
                 # path is not relative to exclude_path, use path component matching
                 try:
                     # Check if exclude_path appears as a contiguous subsequence in path
-                    # This avoids false positives like "foo" matching "foobar/file.py"
+                    # using PATH COMPONENT matching (not string matching).
+                    #
+                    # Why path components? This prevents partial string matches:
+                    #   - path.parts gives tuples like ('src', 'tests', 'file.py')
+                    #   - exclude "tests" (parts: ('tests',)) matches ('src', 'tests', 'file.py')
+                    #   - exclude "tests" does NOT match ('src', 'tests_util', 'file.py')
+                    #     because ('tests',) != ('tests_util',) as tuples
+                    #
+                    # Examples:
+                    #   - Exclude "tests" MATCHES "src/tests/file.py"
+                    #   - Exclude "tests" does NOT match "src/tests_util/file.py"
+                    #   - Exclude "foo" does NOT match "foobar/file.py"
                     path_parts = path.parts
                     exclude_parts = exclude_path.parts
                     exclude_len = len(exclude_parts)
-                    # Check if exclude_path appears as a contiguous subsequence in path
                     for i in range(len(path_parts) - exclude_len + 1):
                         if path_parts[i : i + exclude_len] == exclude_parts:
                             should_exclude = True
@@ -362,6 +378,7 @@ def check_file(
     try:
         source_code = file_path.read_text(encoding="utf-8")
     except PermissionError as e:
+        # boundary-ok: file system permission boundary - gracefully handle unreadable files
         errors.append(
             FileProcessingError(
                 file_path=file_path,
@@ -371,7 +388,7 @@ def check_file(
         )
         return violations, errors
     except UnicodeDecodeError as e:
-        # Likely a binary file or non-UTF-8 encoded file
+        # boundary-ok: encoding boundary - skip non-UTF-8 files (likely binary)
         errors.append(
             FileProcessingError(
                 file_path=file_path,
@@ -381,6 +398,7 @@ def check_file(
         )
         return violations, errors
     except OSError as e:
+        # boundary-ok: file system boundary - handle general I/O failures gracefully
         errors.append(
             FileProcessingError(
                 file_path=file_path,
@@ -398,6 +416,7 @@ def check_file(
     try:
         tree = ast.parse(source_code, filename=str(file_path))
     except SyntaxError as e:
+        # boundary-ok: AST parsing boundary - skip files with invalid Python syntax
         errors.append(
             FileProcessingError(
                 file_path=file_path,

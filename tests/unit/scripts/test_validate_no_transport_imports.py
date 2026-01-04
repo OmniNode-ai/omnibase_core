@@ -21,92 +21,205 @@ from __future__ import annotations
 import ast
 import importlib.util
 import sys
+import threading
+from collections.abc import Callable, Iterator
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from types import ModuleType
+from typing import Protocol, runtime_checkable
 from unittest.mock import patch
 
 import pytest
 
-# Import the validation script components via importlib
+# Path to the scripts directory - computed at module load time
 SCRIPTS_DIR = Path(__file__).parent.parent.parent.parent / "scripts"
-scripts_dir = str(SCRIPTS_DIR)
-if scripts_dir not in sys.path:
-    sys.path.insert(0, scripts_dir)
-
-# Module-level variables populated when the script loads
-_module_loaded = False
-Violation: Any = None
-FileProcessingError: Any = None
-TransportImportChecker: Any = None
-check_file: Any = None
-iter_python_files: Any = None
-main: Any = None
-BANNED_MODULES: Any = None
-SKIP_DIRECTORIES: Any = None
 
 
-def _load_module() -> bool:
-    """Load the validate_no_transport_imports module.
+# Protocol definitions for dynamically loaded types
+# These define the expected interface of types loaded from validate_no_transport_imports.py
+
+
+@runtime_checkable
+class ProtocolViolation(Protocol):
+    """Protocol for the Violation dataclass from the validator script."""
+
+    file_path: Path
+    line_number: int
+    module_name: str
+    import_statement: str
+
+
+@runtime_checkable
+class ProtocolFileProcessingError(Protocol):
+    """Protocol for the FileProcessingError dataclass from the validator script."""
+
+    file_path: Path
+    error_type: str
+    error_message: str
+
+
+@runtime_checkable
+class ProtocolTransportImportChecker(Protocol):
+    """Protocol for the TransportImportChecker class from the validator script."""
+
+    violations: list[ProtocolViolation]
+
+    def visit(self, node: ast.AST) -> None:
+        """Visit an AST node."""
+        ...
+
+
+# Type aliases for constructor callables
+# These define the expected signature for creating instances of the dynamically loaded types
+ViolationConstructor = Callable[..., ProtocolViolation]
+FileProcessingErrorConstructor = Callable[..., ProtocolFileProcessingError]
+TransportImportCheckerConstructor = Callable[[str], ProtocolTransportImportChecker]
+
+
+@dataclass(frozen=True)
+class TransportValidatorModule:
+    """Container for dynamically loaded transport validator components.
+
+    This dataclass provides typed access to components loaded from the
+    validate_no_transport_imports.py script. Protocol classes define the
+    expected interfaces for the dynamically loaded types, enabling type-safe
+    access without using Any.
+
+    Type Annotations:
+        - Constructor types use Protocol-based Callable signatures to define
+          the expected interface of instances created by the constructors.
+        - Function signatures use Callable with accurate parameter types.
+        - Constants use their actual types (frozenset[str]).
+
+    Thread Safety:
+        Instances are immutable (frozen=True) and safe to share across threads.
+        The underlying module components may have their own thread safety
+        constraints (see TransportImportChecker documentation).
+    """
+
+    # Constructor types - return Protocol-defined interfaces
+    # These are callable factories that create instances matching the Protocol interfaces
+    Violation: ViolationConstructor
+    FileProcessingError: FileProcessingErrorConstructor
+    TransportImportChecker: TransportImportCheckerConstructor
+
+    # Function signatures with accurate types
+    check_file: Callable[
+        [Path], tuple[list[ProtocolViolation], list[ProtocolFileProcessingError]]
+    ]
+    iter_python_files: Callable[[Path, set[Path]], Iterator[Path]]
+    main: Callable[[], int]
+
+    # Constants with accurate types from the script
+    BANNED_MODULES: frozenset[str]
+    SKIP_DIRECTORIES: frozenset[str]
+
+
+# Thread-safe module loading for parallel test execution (pytest-xdist)
+_module_cache_lock = threading.Lock()
+_cached_module: TransportValidatorModule | None = None
+
+
+def _load_module() -> TransportValidatorModule | None:
+    """Load the validate_no_transport_imports module safely.
+
+    This function uses importlib.util to load the script without modifying
+    sys.path globally, making it safe for parallel test execution with
+    pytest-xdist.
 
     Returns:
-        True if module loaded successfully, False otherwise.
+        TransportValidatorModule with all components if successful, None otherwise.
+
+    Thread Safety:
+        Uses a lock to ensure the module is only loaded once even when called
+        from multiple threads concurrently.
     """
-    global _module_loaded, Violation, FileProcessingError, TransportImportChecker
-    global check_file, iter_python_files, main, BANNED_MODULES, SKIP_DIRECTORIES
+    global _cached_module
 
-    if _module_loaded:
-        return True
+    # Fast path: check if already loaded
+    if _cached_module is not None:
+        return _cached_module
 
-    script_path = SCRIPTS_DIR / "validate_no_transport_imports.py"
-    if not script_path.exists():
-        return False
+    with _module_cache_lock:
+        # Double-check after acquiring lock (thread-safety pattern)
+        # mypy doesn't understand that _cached_module could change between
+        # the first check and acquiring the lock due to another thread
+        if _cached_module is not None:
+            return _cached_module  # type: ignore[unreachable]
 
-    spec = importlib.util.spec_from_file_location(
-        "validate_no_transport_imports", script_path
-    )
-    if spec is None:
-        return False
-    if spec.loader is None:
-        return False
+        script_path = SCRIPTS_DIR / "validate_no_transport_imports.py"
+        if not script_path.exists():
+            return None
 
-    _module = importlib.util.module_from_spec(spec)
-    # Add to sys.modules before exec to avoid dataclass issues
-    sys.modules["validate_no_transport_imports"] = _module
-    spec.loader.exec_module(_module)
+        spec = importlib.util.spec_from_file_location(
+            "validate_no_transport_imports", script_path
+        )
+        if spec is None or spec.loader is None:
+            return None
 
-    # Extract classes and functions from the loaded module
-    Violation = _module.Violation
-    FileProcessingError = _module.FileProcessingError
-    TransportImportChecker = _module.TransportImportChecker
-    check_file = _module.check_file
-    iter_python_files = _module.iter_python_files
-    main = _module.main
-    BANNED_MODULES = _module.BANNED_MODULES
-    SKIP_DIRECTORIES = _module.SKIP_DIRECTORIES
+        module: ModuleType = importlib.util.module_from_spec(spec)
+        # Add to sys.modules before exec to avoid dataclass issues
+        sys.modules["validate_no_transport_imports"] = module
+        spec.loader.exec_module(module)
 
-    _module_loaded = True
-    return True
+        # Extract and wrap components in typed container
+        # The module attributes are cast to our Protocol-based types
+        _cached_module = TransportValidatorModule(
+            Violation=module.Violation,
+            FileProcessingError=module.FileProcessingError,
+            TransportImportChecker=module.TransportImportChecker,
+            check_file=module.check_file,
+            iter_python_files=module.iter_python_files,
+            main=module.main,
+            BANNED_MODULES=module.BANNED_MODULES,
+            SKIP_DIRECTORIES=module.SKIP_DIRECTORIES,
+        )
+        return _cached_module
 
 
-def skip_if_module_not_loaded() -> None:
-    """Skip test if the module is not available."""
-    if not _load_module():
+@pytest.fixture(scope="module")
+def validator() -> TransportValidatorModule:
+    """Pytest fixture providing access to transport validator components.
+
+    This fixture loads the validate_no_transport_imports.py script and provides
+    typed access to all its components. Tests that need access to the validator
+    should use this fixture instead of loading the module directly.
+
+    The fixture is module-scoped for performance - the script is loaded once
+    per test module rather than once per test.
+
+    Returns:
+        TransportValidatorModule containing all loaded components.
+
+    Raises:
+        pytest.skip: If the script cannot be found or loaded.
+
+    Example:
+        def test_something(validator: TransportValidatorModule) -> None:
+            violation = validator.Violation(
+                file_path=Path("/test.py"),
+                line_number=1,
+                module_name="kafka",
+                import_statement="import kafka",
+            )
+            assert violation.module_name == "kafka"
+    """
+    module = _load_module()
+    if module is None:
         pytest.skip("Script not found: scripts/validate_no_transport_imports.py")
+    return module
 
 
 # Mark all tests in this module as unit tests
 pytestmark = [pytest.mark.unit, pytest.mark.timeout(30)]
 
 
-@pytest.mark.unit
 class TestViolationDataclass:
     """Tests for Violation dataclass creation and formatting."""
 
-    def test_violation_creation(self) -> None:
+    def test_violation_creation(self, validator: TransportValidatorModule) -> None:
         """Test that Violation can be created with all fields."""
-        skip_if_module_not_loaded()
-
-        violation = Violation(
+        violation = validator.Violation(
             file_path=Path("/test/file.py"),
             line_number=10,
             module_name="kafka",
@@ -117,11 +230,9 @@ class TestViolationDataclass:
         assert violation.module_name == "kafka"
         assert violation.import_statement == "import kafka"
 
-    def test_violation_str_format(self) -> None:
+    def test_violation_str_format(self, validator: TransportValidatorModule) -> None:
         """Test violation __str__ method."""
-        skip_if_module_not_loaded()
-
-        violation = Violation(
+        violation = validator.Violation(
             file_path=Path("/test/file.py"),
             line_number=10,
             module_name="kafka",
@@ -133,15 +244,12 @@ class TestViolationDataclass:
         assert "kafka" in formatted
 
 
-@pytest.mark.unit
 class TestFileProcessingErrorDataclass:
     """Tests for FileProcessingError dataclass."""
 
-    def test_error_creation(self) -> None:
+    def test_error_creation(self, validator: TransportValidatorModule) -> None:
         """Test that FileProcessingError can be created with all fields."""
-        skip_if_module_not_loaded()
-
-        error = FileProcessingError(
+        error = validator.FileProcessingError(
             file_path=Path("/test/file.py"),
             error_type="SyntaxError",
             error_message="Invalid syntax at line 5",
@@ -150,11 +258,9 @@ class TestFileProcessingErrorDataclass:
         assert error.error_type == "SyntaxError"
         assert error.error_message == "Invalid syntax at line 5"
 
-    def test_error_str_format(self) -> None:
+    def test_error_str_format(self, validator: TransportValidatorModule) -> None:
         """Test FileProcessingError __str__ method."""
-        skip_if_module_not_loaded()
-
-        error = FileProcessingError(
+        error = validator.FileProcessingError(
             file_path=Path("/test/file.py"),
             error_type="SyntaxError",
             error_message="Invalid syntax",
@@ -164,193 +270,186 @@ class TestFileProcessingErrorDataclass:
         assert "SyntaxError" in formatted
 
 
-@pytest.mark.unit
 class TestBannedModulesConfiguration:
     """Tests that banned modules configuration is complete."""
 
-    def test_banned_modules_contains_http_clients(self) -> None:
+    def test_banned_modules_contains_http_clients(
+        self, validator: TransportValidatorModule
+    ) -> None:
         """Test that HTTP client modules are in the banned list."""
-        skip_if_module_not_loaded()
-        assert "aiohttp" in BANNED_MODULES
-        assert "httpx" in BANNED_MODULES
-        assert "requests" in BANNED_MODULES
-        assert "urllib3" in BANNED_MODULES
+        assert "aiohttp" in validator.BANNED_MODULES
+        assert "httpx" in validator.BANNED_MODULES
+        assert "requests" in validator.BANNED_MODULES
+        assert "urllib3" in validator.BANNED_MODULES
 
-    def test_banned_modules_contains_kafka_clients(self) -> None:
+    def test_banned_modules_contains_kafka_clients(
+        self, validator: TransportValidatorModule
+    ) -> None:
         """Test that Kafka client modules are in the banned list."""
-        skip_if_module_not_loaded()
-        assert "kafka" in BANNED_MODULES
-        assert "aiokafka" in BANNED_MODULES
-        assert "confluent_kafka" in BANNED_MODULES
+        assert "kafka" in validator.BANNED_MODULES
+        assert "aiokafka" in validator.BANNED_MODULES
+        assert "confluent_kafka" in validator.BANNED_MODULES
 
-    def test_banned_modules_contains_redis_clients(self) -> None:
+    def test_banned_modules_contains_redis_clients(
+        self, validator: TransportValidatorModule
+    ) -> None:
         """Test that Redis client modules are in the banned list."""
-        skip_if_module_not_loaded()
-        assert "redis" in BANNED_MODULES
-        assert "aioredis" in BANNED_MODULES
+        assert "redis" in validator.BANNED_MODULES
+        assert "aioredis" in validator.BANNED_MODULES
 
-    def test_banned_modules_contains_database_clients(self) -> None:
+    def test_banned_modules_contains_database_clients(
+        self, validator: TransportValidatorModule
+    ) -> None:
         """Test that database client modules are in the banned list."""
-        skip_if_module_not_loaded()
-        assert "asyncpg" in BANNED_MODULES
-        assert "psycopg2" in BANNED_MODULES
-        assert "psycopg" in BANNED_MODULES
-        assert "aiomysql" in BANNED_MODULES
+        assert "asyncpg" in validator.BANNED_MODULES
+        assert "psycopg2" in validator.BANNED_MODULES
+        assert "psycopg" in validator.BANNED_MODULES
+        assert "aiomysql" in validator.BANNED_MODULES
 
-    def test_banned_modules_contains_mq_clients(self) -> None:
+    def test_banned_modules_contains_mq_clients(
+        self, validator: TransportValidatorModule
+    ) -> None:
         """Test that message queue modules are in the banned list."""
-        skip_if_module_not_loaded()
-        assert "pika" in BANNED_MODULES
-        assert "aio_pika" in BANNED_MODULES
-        assert "kombu" in BANNED_MODULES
-        assert "celery" in BANNED_MODULES
+        assert "pika" in validator.BANNED_MODULES
+        assert "aio_pika" in validator.BANNED_MODULES
+        assert "kombu" in validator.BANNED_MODULES
+        assert "celery" in validator.BANNED_MODULES
 
-    def test_banned_modules_contains_grpc(self) -> None:
+    def test_banned_modules_contains_grpc(
+        self, validator: TransportValidatorModule
+    ) -> None:
         """Test that gRPC module is in the banned list."""
-        skip_if_module_not_loaded()
-        assert "grpc" in BANNED_MODULES
+        assert "grpc" in validator.BANNED_MODULES
 
-    def test_banned_modules_contains_websocket(self) -> None:
+    def test_banned_modules_contains_websocket(
+        self, validator: TransportValidatorModule
+    ) -> None:
         """Test that WebSocket modules are in the banned list."""
-        skip_if_module_not_loaded()
-        assert "websockets" in BANNED_MODULES
-        assert "wsproto" in BANNED_MODULES
+        assert "websockets" in validator.BANNED_MODULES
+        assert "wsproto" in validator.BANNED_MODULES
 
 
-@pytest.mark.unit
 class TestBannedImportDetection:
     """Tests detection of banned transport library imports."""
 
-    def test_detects_import_kafka(self) -> None:
+    def test_detects_import_kafka(self, validator: TransportValidatorModule) -> None:
         """Test detection of 'import kafka'."""
-        skip_if_module_not_loaded()
-
         code = """
 import kafka
 """
         tree = ast.parse(code)
-        checker = TransportImportChecker(code)
+        checker = validator.TransportImportChecker(code)
         checker.visit(tree)
 
         assert len(checker.violations) == 1
         assert checker.violations[0].module_name == "kafka"
 
-    def test_detects_from_kafka_import(self) -> None:
+    def test_detects_from_kafka_import(
+        self, validator: TransportValidatorModule
+    ) -> None:
         """Test detection of 'from kafka import ...'."""
-        skip_if_module_not_loaded()
-
         code = """
 from kafka import KafkaProducer
 """
         tree = ast.parse(code)
-        checker = TransportImportChecker(code)
+        checker = validator.TransportImportChecker(code)
         checker.visit(tree)
 
         assert len(checker.violations) == 1
         assert checker.violations[0].module_name == "kafka"
 
-    def test_detects_import_httpx(self) -> None:
+    def test_detects_import_httpx(self, validator: TransportValidatorModule) -> None:
         """Test detection of 'import httpx'."""
-        skip_if_module_not_loaded()
-
         code = """
 import httpx
 """
         tree = ast.parse(code)
-        checker = TransportImportChecker(code)
+        checker = validator.TransportImportChecker(code)
         checker.visit(tree)
 
         assert len(checker.violations) == 1
         assert checker.violations[0].module_name == "httpx"
 
-    def test_detects_from_aiohttp_import(self) -> None:
+    def test_detects_from_aiohttp_import(
+        self, validator: TransportValidatorModule
+    ) -> None:
         """Test detection of 'from aiohttp import ClientSession'."""
-        skip_if_module_not_loaded()
-
         code = """
 from aiohttp import ClientSession
 """
         tree = ast.parse(code)
-        checker = TransportImportChecker(code)
+        checker = validator.TransportImportChecker(code)
         checker.visit(tree)
 
         assert len(checker.violations) == 1
         assert checker.violations[0].module_name == "aiohttp"
 
-    def test_detects_import_redis(self) -> None:
+    def test_detects_import_redis(self, validator: TransportValidatorModule) -> None:
         """Test detection of 'import redis'."""
-        skip_if_module_not_loaded()
-
         code = """
 import redis
 """
         tree = ast.parse(code)
-        checker = TransportImportChecker(code)
+        checker = validator.TransportImportChecker(code)
         checker.visit(tree)
 
         assert len(checker.violations) == 1
         assert checker.violations[0].module_name == "redis"
 
-    def test_detects_import_asyncpg(self) -> None:
+    def test_detects_import_asyncpg(self, validator: TransportValidatorModule) -> None:
         """Test detection of 'import asyncpg'."""
-        skip_if_module_not_loaded()
-
         code = """
 import asyncpg
 """
         tree = ast.parse(code)
-        checker = TransportImportChecker(code)
+        checker = validator.TransportImportChecker(code)
         checker.visit(tree)
 
         assert len(checker.violations) == 1
         assert checker.violations[0].module_name == "asyncpg"
 
-    def test_detects_submodule_import(self) -> None:
+    def test_detects_submodule_import(
+        self, validator: TransportValidatorModule
+    ) -> None:
         """Test detection of 'from kafka.errors import KafkaError'."""
-        skip_if_module_not_loaded()
-
         code = """
 from kafka.errors import KafkaError
 """
         tree = ast.parse(code)
-        checker = TransportImportChecker(code)
+        checker = validator.TransportImportChecker(code)
         checker.visit(tree)
 
         assert len(checker.violations) == 1
         assert checker.violations[0].module_name == "kafka"
 
-    def test_detects_dotted_import(self) -> None:
+    def test_detects_dotted_import(self, validator: TransportValidatorModule) -> None:
         """Test detection of 'import redis.asyncio'."""
-        skip_if_module_not_loaded()
-
         code = """
 import redis.asyncio
 """
         tree = ast.parse(code)
-        checker = TransportImportChecker(code)
+        checker = validator.TransportImportChecker(code)
         checker.visit(tree)
 
         assert len(checker.violations) == 1
         assert checker.violations[0].module_name == "redis"
 
-    def test_detects_aliased_import(self) -> None:
+    def test_detects_aliased_import(self, validator: TransportValidatorModule) -> None:
         """Test detection of 'import kafka as k'."""
-        skip_if_module_not_loaded()
-
         code = """
 import kafka as k
 """
         tree = ast.parse(code)
-        checker = TransportImportChecker(code)
+        checker = validator.TransportImportChecker(code)
         checker.visit(tree)
 
         assert len(checker.violations) == 1
         assert checker.violations[0].module_name == "kafka"
 
-    def test_detects_multiple_violations(self) -> None:
+    def test_detects_multiple_violations(
+        self, validator: TransportValidatorModule
+    ) -> None:
         """Test that multiple violations are detected."""
-        skip_if_module_not_loaded()
-
         code = """
 import kafka
 import redis
@@ -358,20 +457,19 @@ from httpx import Client
 from asyncpg import connect
 """
         tree = ast.parse(code)
-        checker = TransportImportChecker(code)
+        checker = validator.TransportImportChecker(code)
         checker.visit(tree)
 
         assert len(checker.violations) == 4
 
 
-@pytest.mark.unit
 class TestTypeCheckingBlockHandling:
     """Tests that TYPE_CHECKING block imports are allowed."""
 
-    def test_allows_imports_in_type_checking_block(self) -> None:
+    def test_allows_imports_in_type_checking_block(
+        self, validator: TransportValidatorModule
+    ) -> None:
         """Test that imports inside TYPE_CHECKING blocks are allowed."""
-        skip_if_module_not_loaded()
-
         code = """
 from typing import TYPE_CHECKING
 
@@ -380,15 +478,15 @@ if TYPE_CHECKING:
     from redis import Redis
 """
         tree = ast.parse(code)
-        checker = TransportImportChecker(code)
+        checker = validator.TransportImportChecker(code)
         checker.visit(tree)
 
         assert len(checker.violations) == 0
 
-    def test_allows_typing_dot_type_checking_block(self) -> None:
+    def test_allows_typing_dot_type_checking_block(
+        self, validator: TransportValidatorModule
+    ) -> None:
         """Test that typing.TYPE_CHECKING blocks are recognized."""
-        skip_if_module_not_loaded()
-
         code = """
 import typing
 
@@ -397,18 +495,18 @@ if typing.TYPE_CHECKING:
     from aiohttp import ClientSession
 """
         tree = ast.parse(code)
-        checker = TransportImportChecker(code)
+        checker = validator.TransportImportChecker(code)
         checker.visit(tree)
 
         assert len(checker.violations) == 0
 
-    def test_allows_aliased_typing_type_checking_block(self) -> None:
+    def test_allows_aliased_typing_type_checking_block(
+        self, validator: TransportValidatorModule
+    ) -> None:
         """Test that aliased typing.TYPE_CHECKING blocks are recognized.
 
         Pattern: import typing as t; if t.TYPE_CHECKING:
         """
-        skip_if_module_not_loaded()
-
         code = """
 import typing as t
 
@@ -417,15 +515,15 @@ if t.TYPE_CHECKING:
     from redis import Redis
 """
         tree = ast.parse(code)
-        checker = TransportImportChecker(code)
+        checker = validator.TransportImportChecker(code)
         checker.visit(tree)
 
         assert len(checker.violations) == 0
 
-    def test_allows_tp_aliased_type_checking_block(self) -> None:
+    def test_allows_tp_aliased_type_checking_block(
+        self, validator: TransportValidatorModule
+    ) -> None:
         """Test that 'import typing as tp' aliased TYPE_CHECKING blocks work."""
-        skip_if_module_not_loaded()
-
         code = """
 import typing as tp
 
@@ -434,18 +532,18 @@ if tp.TYPE_CHECKING:
     from redis import Redis
 """
         tree = ast.parse(code)
-        checker = TransportImportChecker(code)
+        checker = validator.TransportImportChecker(code)
         checker.visit(tree)
 
         assert len(checker.violations) == 0
 
-    def test_allows_aliased_type_checking_constant(self) -> None:
+    def test_allows_aliased_type_checking_constant(
+        self, validator: TransportValidatorModule
+    ) -> None:
         """Test that aliased TYPE_CHECKING constant is recognized.
 
         Pattern: from typing import TYPE_CHECKING as TC; if TC:
         """
-        skip_if_module_not_loaded()
-
         code = """
 from typing import TYPE_CHECKING as TC
 
@@ -453,16 +551,16 @@ if TC:
     import kafka
 """
         tree = ast.parse(code)
-        checker = TransportImportChecker(code)
+        checker = validator.TransportImportChecker(code)
         checker.visit(tree)
 
         # This SHOULD be allowed - aliased TYPE_CHECKING constant
         assert len(checker.violations) == 0
 
-    def test_allows_nested_conditions_in_type_checking(self) -> None:
+    def test_allows_nested_conditions_in_type_checking(
+        self, validator: TransportValidatorModule
+    ) -> None:
         """Test nested conditions inside TYPE_CHECKING blocks."""
-        skip_if_module_not_loaded()
-
         code = """
 from typing import TYPE_CHECKING
 import sys
@@ -474,15 +572,15 @@ if TYPE_CHECKING:
         from kafka import KafkaProducer
 """
         tree = ast.parse(code)
-        checker = TransportImportChecker(code)
+        checker = validator.TransportImportChecker(code)
         checker.visit(tree)
 
         assert len(checker.violations) == 0
 
-    def test_detects_imports_outside_type_checking(self) -> None:
+    def test_detects_imports_outside_type_checking(
+        self, validator: TransportValidatorModule
+    ) -> None:
         """Test that imports outside TYPE_CHECKING are still detected."""
-        skip_if_module_not_loaded()
-
         code = """
 from typing import TYPE_CHECKING
 
@@ -492,49 +590,44 @@ if TYPE_CHECKING:
     import redis  # This should be allowed
 """
         tree = ast.parse(code)
-        checker = TransportImportChecker(code)
+        checker = validator.TransportImportChecker(code)
         checker.visit(tree)
 
         assert len(checker.violations) == 1
         assert checker.violations[0].module_name == "kafka"
 
 
-@pytest.mark.unit
 class TestAllowedImports:
     """Tests that allowed imports pass validation."""
 
-    def test_allows_typing_import(self) -> None:
+    def test_allows_typing_import(self, validator: TransportValidatorModule) -> None:
         """Test that typing imports are allowed."""
-        skip_if_module_not_loaded()
-
         code = """
 import typing
 from typing import Optional, List
 """
         tree = ast.parse(code)
-        checker = TransportImportChecker(code)
+        checker = validator.TransportImportChecker(code)
         checker.visit(tree)
 
         assert len(checker.violations) == 0
 
-    def test_allows_pydantic_import(self) -> None:
+    def test_allows_pydantic_import(self, validator: TransportValidatorModule) -> None:
         """Test that pydantic imports are allowed."""
-        skip_if_module_not_loaded()
-
         code = """
 from pydantic import BaseModel
 import pydantic
 """
         tree = ast.parse(code)
-        checker = TransportImportChecker(code)
+        checker = validator.TransportImportChecker(code)
         checker.visit(tree)
 
         assert len(checker.violations) == 0
 
-    def test_allows_standard_library_imports(self) -> None:
+    def test_allows_standard_library_imports(
+        self, validator: TransportValidatorModule
+    ) -> None:
         """Test that standard library imports are allowed."""
-        skip_if_module_not_loaded()
-
         code = """
 import os
 import sys
@@ -544,90 +637,89 @@ from collections import defaultdict
 from dataclasses import dataclass
 """
         tree = ast.parse(code)
-        checker = TransportImportChecker(code)
+        checker = validator.TransportImportChecker(code)
         checker.visit(tree)
 
         assert len(checker.violations) == 0
 
 
-@pytest.mark.unit
 class TestCheckFileFunction:
     """Tests for the check_file() function."""
 
-    def test_check_clean_file(self, tmp_path: Path) -> None:
+    def test_check_clean_file(
+        self, validator: TransportValidatorModule, tmp_path: Path
+    ) -> None:
         """Test checking a clean file with no banned imports."""
-        skip_if_module_not_loaded()
-
         test_file = tmp_path / "clean.py"
         test_file.write_text("""
 import os
 from typing import Optional
 """)
 
-        violations, errors = check_file(test_file)
+        violations, errors = validator.check_file(test_file)
 
         assert len(violations) == 0
         assert len(errors) == 0
 
-    def test_check_file_with_violations(self, tmp_path: Path) -> None:
+    def test_check_file_with_violations(
+        self, validator: TransportValidatorModule, tmp_path: Path
+    ) -> None:
         """Test checking a file with banned imports."""
-        skip_if_module_not_loaded()
-
         test_file = tmp_path / "bad.py"
         test_file.write_text("""
 import kafka
 from redis import Redis
 """)
 
-        violations, errors = check_file(test_file)
+        violations, errors = validator.check_file(test_file)
 
         assert len(violations) == 2
         assert len(errors) == 0
 
-    def test_check_empty_file(self, tmp_path: Path) -> None:
+    def test_check_empty_file(
+        self, validator: TransportValidatorModule, tmp_path: Path
+    ) -> None:
         """Test checking an empty file."""
-        skip_if_module_not_loaded()
-
         test_file = tmp_path / "empty.py"
         test_file.write_text("")
 
-        violations, errors = check_file(test_file)
+        violations, errors = validator.check_file(test_file)
 
         assert len(violations) == 0
         assert len(errors) == 0
 
-    def test_check_file_syntax_error(self, tmp_path: Path) -> None:
+    def test_check_file_syntax_error(
+        self, validator: TransportValidatorModule, tmp_path: Path
+    ) -> None:
         """Test that files with syntax errors are handled gracefully."""
-        skip_if_module_not_loaded()
-
         test_file = tmp_path / "syntax_error.py"
         test_file.write_text("""
 def incomplete(
 """)
 
-        violations, errors = check_file(test_file)
+        violations, errors = validator.check_file(test_file)
 
         assert len(violations) == 0
         assert len(errors) == 1
         assert errors[0].error_type == "SyntaxError"
 
-    def test_check_file_unicode_error(self, tmp_path: Path) -> None:
+    def test_check_file_unicode_error(
+        self, validator: TransportValidatorModule, tmp_path: Path
+    ) -> None:
         """Test that files with encoding errors are handled gracefully."""
-        skip_if_module_not_loaded()
-
         test_file = tmp_path / "encoding_error.py"
         test_file.write_bytes(b"\xff\xfe invalid utf-8 \x80\x81")
 
-        violations, errors = check_file(test_file)
+        violations, errors = validator.check_file(test_file)
 
         assert len(violations) == 0
         assert len(errors) == 1
         assert errors[0].error_type == "UnicodeDecodeError"
 
-    def test_check_file_type_checking_guarded(self, tmp_path: Path) -> None:
+    def test_check_file_type_checking_guarded(
+        self, validator: TransportValidatorModule, tmp_path: Path
+    ) -> None:
         """Test that TYPE_CHECKING guarded imports are allowed in files."""
-        skip_if_module_not_loaded()
-
         test_file = tmp_path / "guarded.py"
         test_file.write_text("""
 from typing import TYPE_CHECKING
@@ -637,47 +729,46 @@ if TYPE_CHECKING:
     from httpx import Client
 """)
 
-        violations, errors = check_file(test_file)
+        violations, errors = validator.check_file(test_file)
 
         assert len(violations) == 0
         assert len(errors) == 0
 
 
-@pytest.mark.unit
 class TestIterPythonFilesFunction:
     """Tests for the iter_python_files() function."""
 
-    def test_finds_python_files(self, tmp_path: Path) -> None:
+    def test_finds_python_files(
+        self, validator: TransportValidatorModule, tmp_path: Path
+    ) -> None:
         """Test finding Python files in a directory."""
-        skip_if_module_not_loaded()
-
         (tmp_path / "file1.py").write_text("import os")
         (tmp_path / "file2.py").write_text("import sys")
         (tmp_path / "file.txt").write_text("not python")
 
-        files = list(iter_python_files(tmp_path, set()))
+        files = list(validator.iter_python_files(tmp_path, set()))
 
         assert len(files) == 2
         assert all(f.suffix == ".py" for f in files)
 
-    def test_skips_pycache_directories(self, tmp_path: Path) -> None:
+    def test_skips_pycache_directories(
+        self, validator: TransportValidatorModule, tmp_path: Path
+    ) -> None:
         """Test that __pycache__ directories are skipped."""
-        skip_if_module_not_loaded()
-
         pycache = tmp_path / "__pycache__"
         pycache.mkdir()
         (pycache / "cached.py").write_text("import kafka")
         (tmp_path / "main.py").write_text("import sys")
 
-        files = list(iter_python_files(tmp_path, set()))
+        files = list(validator.iter_python_files(tmp_path, set()))
 
         assert len(files) == 1
         assert files[0].name == "main.py"
 
-    def test_skips_venv_directories(self, tmp_path: Path) -> None:
+    def test_skips_venv_directories(
+        self, validator: TransportValidatorModule, tmp_path: Path
+    ) -> None:
         """Test that .venv and venv directories are skipped."""
-        skip_if_module_not_loaded()
-
         venv = tmp_path / ".venv"
         venv.mkdir()
         (venv / "site.py").write_text("import kafka")
@@ -688,28 +779,28 @@ class TestIterPythonFilesFunction:
 
         (tmp_path / "main.py").write_text("import sys")
 
-        files = list(iter_python_files(tmp_path, set()))
+        files = list(validator.iter_python_files(tmp_path, set()))
 
         assert len(files) == 1
         assert files[0].name == "main.py"
 
-    def test_skips_excluded_paths(self, tmp_path: Path) -> None:
+    def test_skips_excluded_paths(
+        self, validator: TransportValidatorModule, tmp_path: Path
+    ) -> None:
         """Test that user-provided exclusions are respected."""
-        skip_if_module_not_loaded()
-
         (tmp_path / "include.py").write_text("import os")
         (tmp_path / "exclude.py").write_text("import kafka")
 
         exclude_path = tmp_path / "exclude.py"
-        files = list(iter_python_files(tmp_path, {exclude_path}))
+        files = list(validator.iter_python_files(tmp_path, {exclude_path}))
 
         assert len(files) == 1
         assert files[0].name == "include.py"
 
-    def test_skips_common_cache_directories(self, tmp_path: Path) -> None:
+    def test_skips_common_cache_directories(
+        self, validator: TransportValidatorModule, tmp_path: Path
+    ) -> None:
         """Test that common cache directories are skipped."""
-        skip_if_module_not_loaded()
-
         cache_dirs = [".git", ".pytest_cache", ".mypy_cache", ".ruff_cache"]
         for cache_dir in cache_dirs:
             cache = tmp_path / cache_dir
@@ -718,33 +809,32 @@ class TestIterPythonFilesFunction:
 
         (tmp_path / "main.py").write_text("import sys")
 
-        files = list(iter_python_files(tmp_path, set()))
+        files = list(validator.iter_python_files(tmp_path, set()))
 
         assert len(files) == 1
         assert files[0].name == "main.py"
 
-    def test_finds_nested_python_files(self, tmp_path: Path) -> None:
+    def test_finds_nested_python_files(
+        self, validator: TransportValidatorModule, tmp_path: Path
+    ) -> None:
         """Test that Python files in nested directories are found."""
-        skip_if_module_not_loaded()
-
         subdir = tmp_path / "src" / "module"
         subdir.mkdir(parents=True)
         (subdir / "nested.py").write_text("import os")
         (tmp_path / "main.py").write_text("import sys")
 
-        files = list(iter_python_files(tmp_path, set()))
+        files = list(validator.iter_python_files(tmp_path, set()))
 
         assert len(files) == 2
 
 
-@pytest.mark.unit
 class TestMainFunction:
     """Tests for the main() entry point."""
 
-    def test_returns_zero_for_clean_files(self, tmp_path: Path) -> None:
+    def test_returns_zero_for_clean_files(
+        self, validator: TransportValidatorModule, tmp_path: Path
+    ) -> None:
         """Test that main returns 0 when no violations found."""
-        skip_if_module_not_loaded()
-
         test_dir = tmp_path / "src"
         test_dir.mkdir()
         (test_dir / "clean.py").write_text("import os")
@@ -754,13 +844,13 @@ class TestMainFunction:
             "argv",
             ["validate_no_transport_imports.py", "--src-dir", str(test_dir)],
         ):
-            result = main()
+            result = validator.main()
             assert result == 0
 
-    def test_returns_one_for_violations(self, tmp_path: Path) -> None:
+    def test_returns_one_for_violations(
+        self, validator: TransportValidatorModule, tmp_path: Path
+    ) -> None:
         """Test that main returns 1 when violations found."""
-        skip_if_module_not_loaded()
-
         test_dir = tmp_path / "src"
         test_dir.mkdir()
         (test_dir / "bad.py").write_text("import kafka")
@@ -770,25 +860,25 @@ class TestMainFunction:
             "argv",
             ["validate_no_transport_imports.py", "--src-dir", str(test_dir)],
         ):
-            result = main()
+            result = validator.main()
             assert result == 1
 
-    def test_returns_one_for_nonexistent_directory(self) -> None:
+    def test_returns_one_for_nonexistent_directory(
+        self, validator: TransportValidatorModule
+    ) -> None:
         """Test that main returns 1 for nonexistent source directory."""
-        skip_if_module_not_loaded()
-
         with patch.object(
             sys,
             "argv",
             ["validate_no_transport_imports.py", "--src-dir", "/nonexistent/path"],
         ):
-            result = main()
+            result = validator.main()
             assert result == 1
 
-    def test_exclude_flag_works(self, tmp_path: Path) -> None:
+    def test_exclude_flag_works(
+        self, validator: TransportValidatorModule, tmp_path: Path
+    ) -> None:
         """Test that --exclude flag excludes files from validation."""
-        skip_if_module_not_loaded()
-
         test_dir = tmp_path / "src"
         test_dir.mkdir()
         clean_file = test_dir / "clean.py"
@@ -807,15 +897,16 @@ class TestMainFunction:
                 str(bad_file),
             ],
         ):
-            result = main()
+            result = validator.main()
             assert result == 0
 
     def test_verbose_flag_shows_snippets(
-        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+        self,
+        validator: TransportValidatorModule,
+        tmp_path: Path,
+        capsys: pytest.CaptureFixture[str],
     ) -> None:
         """Test that --verbose flag shows import statement snippets."""
-        skip_if_module_not_loaded()
-
         test_dir = tmp_path / "src"
         test_dir.mkdir()
         (test_dir / "bad.py").write_text("import kafka")
@@ -830,35 +921,34 @@ class TestMainFunction:
                 str(test_dir),
             ],
         ):
-            main()
+            validator.main()
 
         captured = capsys.readouterr()
         assert "kafka" in captured.out
 
 
-@pytest.mark.unit
 class TestEdgeCases:
     """Tests for edge cases and error handling."""
 
-    def test_handles_nested_imports_in_functions(self) -> None:
+    def test_handles_nested_imports_in_functions(
+        self, validator: TransportValidatorModule
+    ) -> None:
         """Test that imports nested inside functions are detected."""
-        skip_if_module_not_loaded()
-
         code = """
 def some_function():
     import kafka
     return kafka.KafkaProducer()
 """
         tree = ast.parse(code)
-        checker = TransportImportChecker(code)
+        checker = validator.TransportImportChecker(code)
         checker.visit(tree)
 
         assert len(checker.violations) == 1
 
-    def test_handles_nested_imports_in_classes(self) -> None:
+    def test_handles_nested_imports_in_classes(
+        self, validator: TransportValidatorModule
+    ) -> None:
         """Test that imports nested inside classes are detected."""
-        skip_if_module_not_loaded()
-
         code = """
 class MyClass:
     def __init__(self):
@@ -866,15 +956,15 @@ class MyClass:
         self.client = redis.Redis()
 """
         tree = ast.parse(code)
-        checker = TransportImportChecker(code)
+        checker = validator.TransportImportChecker(code)
         checker.visit(tree)
 
         assert len(checker.violations) == 1
 
-    def test_string_containing_import_passes(self) -> None:
+    def test_string_containing_import_passes(
+        self, validator: TransportValidatorModule
+    ) -> None:
         """Test that strings containing import names don't trigger violations."""
-        skip_if_module_not_loaded()
-
         code = '''
 message = "connect to redis server"
 doc = """
@@ -883,15 +973,15 @@ import redis  # This is just documentation
 """
 '''
         tree = ast.parse(code)
-        checker = TransportImportChecker(code)
+        checker = validator.TransportImportChecker(code)
         checker.visit(tree)
 
         assert len(checker.violations) == 0
 
-    def test_comments_containing_imports_pass(self) -> None:
+    def test_comments_containing_imports_pass(
+        self, validator: TransportValidatorModule
+    ) -> None:
         """Test that comments with import names don't trigger violations."""
-        skip_if_module_not_loaded()
-
         code = """
 # import kafka  - we used to use this
 # from redis import Redis
@@ -899,15 +989,15 @@ import redis  # This is just documentation
 import typing
 """
         tree = ast.parse(code)
-        checker = TransportImportChecker(code)
+        checker = validator.TransportImportChecker(code)
         checker.visit(tree)
 
         assert len(checker.violations) == 0
 
-    def test_try_except_imports_detected(self) -> None:
+    def test_try_except_imports_detected(
+        self, validator: TransportValidatorModule
+    ) -> None:
         """Test that imports in try/except blocks are detected."""
-        skip_if_module_not_loaded()
-
         code = """
 try:
     import redis
@@ -915,15 +1005,15 @@ except ImportError:
     redis = None
 """
         tree = ast.parse(code)
-        checker = TransportImportChecker(code)
+        checker = validator.TransportImportChecker(code)
         checker.visit(tree)
 
         assert len(checker.violations) == 1
 
-    def test_captures_correct_line_numbers(self) -> None:
+    def test_captures_correct_line_numbers(
+        self, validator: TransportValidatorModule
+    ) -> None:
         """Test that line numbers are correctly captured."""
-        skip_if_module_not_loaded()
-
         code = """
 
 import kafka
@@ -931,7 +1021,7 @@ import kafka
 import redis
 """
         tree = ast.parse(code)
-        checker = TransportImportChecker(code)
+        checker = validator.TransportImportChecker(code)
         checker.visit(tree)
 
         assert len(checker.violations) == 2
@@ -939,29 +1029,28 @@ import redis
         assert 3 in line_numbers  # import kafka
         assert 5 in line_numbers  # import redis
 
-    def test_relative_imports_not_flagged(self) -> None:
+    def test_relative_imports_not_flagged(
+        self, validator: TransportValidatorModule
+    ) -> None:
         """Test that relative imports without module are handled."""
-        skip_if_module_not_loaded()
-
         code = """
 from . import models
 from .. import utils
 """
         tree = ast.parse(code)
-        checker = TransportImportChecker(code)
+        checker = validator.TransportImportChecker(code)
         checker.visit(tree)
 
         assert len(checker.violations) == 0
 
 
-@pytest.mark.unit
 class TestSkipDirectoriesConfiguration:
     """Tests for SKIP_DIRECTORIES configuration."""
 
-    def test_skip_directories_contains_common_excludes(self) -> None:
+    def test_skip_directories_contains_common_excludes(
+        self, validator: TransportValidatorModule
+    ) -> None:
         """Test that common excluded directories are configured."""
-        skip_if_module_not_loaded()
-
         expected = [
             "__pycache__",
             ".git",
@@ -971,4 +1060,4 @@ class TestSkipDirectoriesConfiguration:
             ".mypy_cache",
         ]
         for dir_name in expected:
-            assert dir_name in SKIP_DIRECTORIES
+            assert dir_name in validator.SKIP_DIRECTORIES
