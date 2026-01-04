@@ -154,8 +154,10 @@ class TransportImportChecker(ast.NodeVisitor):
         """
         test = node.test
 
-        # Direct: if TYPE_CHECKING:
-        if isinstance(test, ast.Name) and test.id == "TYPE_CHECKING":
+        # Direct: if TYPE_CHECKING: or if TC: (when aliased)
+        if isinstance(test, ast.Name) and (
+            test.id == "TYPE_CHECKING" or test.id in self._type_checking_aliases
+        ):
             return True
 
         # Attribute: if typing.TYPE_CHECKING: or if t.TYPE_CHECKING:
@@ -240,7 +242,39 @@ class TransportImportChecker(ast.NodeVisitor):
 
 
 def iter_python_files(root_dir: Path, excludes: set[Path]) -> Iterator[Path]:
-    """Iterate over all Python files in a directory, skipping excluded paths."""
+    """Iterate over all Python files in a directory, skipping excluded paths.
+
+    This function recursively traverses the given directory and yields paths to
+    Python files (*.py), excluding files that match any of the skip directories
+    or user-provided exclusion patterns.
+
+    Args:
+        root_dir: The root directory to start scanning from. Must be an existing
+            directory path.
+        excludes: A set of Path objects representing files or directories to exclude.
+            Exclusions are matched using proper path component matching to avoid
+            false positives from partial string matches.
+
+    Yields:
+        Path: Absolute paths to Python files that are not excluded.
+
+    Exclusion Behavior:
+        A file is excluded if any of the following conditions are met:
+        1. The file is inside a directory listed in SKIP_DIRECTORIES (e.g., __pycache__)
+        2. The file path is relative to any exclude_path (i.e., file is inside exclude_path)
+        3. The exclude_path appears as a contiguous subsequence of path components
+           (e.g., exclude="tests" matches "src/tests/file.py" but NOT "src/tests_util/file.py")
+        4. The file's basename matches the exclude_path's basename exactly
+
+    Thread Safety:
+        This function is thread-safe as it only performs read-only filesystem operations
+        and does not maintain any shared mutable state.
+
+    Example:
+        >>> excludes = {Path("tests"), Path("conftest.py")}
+        >>> for py_file in iter_python_files(Path("src"), excludes):
+        ...     print(py_file)
+    """
     for path in root_dir.rglob("*.py"):
         # Skip files in excluded directories
         if any(skip_dir in path.parts for skip_dir in SKIP_DIRECTORIES):
@@ -254,10 +288,27 @@ def iter_python_files(root_dir: Path, excludes: set[Path]) -> Iterator[Path]:
                 should_exclude = True
                 break
             except ValueError:
-                # path is not relative to exclude_path
-                if exclude_path.name == path.name or str(exclude_path) in str(path):
-                    should_exclude = True
-                    break
+                # path is not relative to exclude_path, use path component matching
+                try:
+                    # Check if exclude_path appears as a contiguous subsequence in path
+                    # This avoids false positives like "foo" matching "foobar/file.py"
+                    path_parts = path.parts
+                    exclude_parts = exclude_path.parts
+                    exclude_len = len(exclude_parts)
+                    # Check if exclude_path appears as a contiguous subsequence in path
+                    for i in range(len(path_parts) - exclude_len + 1):
+                        if path_parts[i : i + exclude_len] == exclude_parts:
+                            should_exclude = True
+                            break
+                    if should_exclude:
+                        break
+                    # Also check exact filename match (for single-file exclusions)
+                    if exclude_path.name == path.name:
+                        should_exclude = True
+                        break
+                except Exception:
+                    # fallback-ok: skip exclusion check on path parsing errors
+                    pass
 
         if not should_exclude:
             yield path
@@ -268,8 +319,41 @@ def check_file(
 ) -> tuple[list[Violation], list[FileProcessingError]]:
     """Check a single Python file for banned transport imports.
 
-    Returns a tuple of (violations, errors) found in the file.
-    Errors are non-fatal warnings that do not affect the exit code.
+    This function reads a Python file, parses it into an AST, and uses the
+    TransportImportChecker visitor to detect any imports of banned transport/I/O
+    modules that occur outside of TYPE_CHECKING blocks.
+
+    Args:
+        file_path: Absolute or relative path to the Python file to check.
+            The file must be readable and contain valid Python syntax.
+
+    Returns:
+        A tuple of (violations, errors) where:
+        - violations: List of Violation objects, each representing a banned import
+          found at runtime scope (outside TYPE_CHECKING blocks). Empty list if no
+          violations found.
+        - errors: List of FileProcessingError objects representing non-fatal issues
+          encountered during processing (e.g., permission denied, invalid syntax,
+          encoding errors). These are warnings that do NOT cause the validator to
+          fail (exit code 1). Empty list if no errors occurred.
+
+    Error Handling:
+        The function handles these error cases gracefully:
+        - PermissionError: File cannot be read due to permissions
+        - UnicodeDecodeError: File is not valid UTF-8 (possibly binary)
+        - OSError: General file read failures
+        - SyntaxError: File contains invalid Python syntax
+        - Empty files are handled gracefully (no violations, no errors)
+
+    Thread Safety:
+        This function creates a new TransportImportChecker instance per call,
+        making it safe to call from multiple threads concurrently.
+
+    Example:
+        >>> violations, errors = check_file(Path("src/module.py"))
+        >>> if violations:
+        ...     for v in violations:
+        ...         print(f"{v.file_path}:{v.line_number}: {v.module_name}")
     """
     violations: list[Violation] = []
     errors: list[FileProcessingError] = []
@@ -341,7 +425,48 @@ def check_file(
 
 
 def main() -> int:
-    """Main entry point for the validator."""
+    """Main entry point for the transport import validator CLI.
+
+    This function implements the command-line interface for the AST-based transport
+    import validator. It scans Python files in the specified source directory and
+    reports any banned transport/I/O library imports that occur outside of
+    TYPE_CHECKING blocks.
+
+    CLI Arguments:
+        --src-dir PATH: Source directory to scan (default: src/omnibase_core)
+        --exclude PATH: Exclude a file or directory (can be specified multiple times)
+        --verbose, -v: Show import statement snippets for each violation
+
+    Returns:
+        int: Exit code indicating the validation result:
+            - 0: Success - no violations found (file processing errors are warnings only)
+            - 1: Failure - one or more violations found, OR source directory is invalid
+
+    Output:
+        - Violations are printed to stdout with file path, line number, and module name
+        - File processing errors (non-fatal warnings) are printed to stderr
+        - Summary statistics are always printed at the end
+
+    Exit Code Semantics:
+        The exit code is determined ONLY by violations, not by file processing errors.
+        This means:
+        - Files that cannot be read (permissions, encoding) cause warnings but NOT failure
+        - Files with syntax errors cause warnings but NOT failure
+        - Only actual banned imports cause exit code 1
+
+    Example Usage:
+        # Basic validation
+        poetry run python scripts/validate_no_transport_imports.py
+
+        # Verbose output with import snippets
+        poetry run python scripts/validate_no_transport_imports.py --verbose
+
+        # Exclude specific paths
+        poetry run python scripts/validate_no_transport_imports.py --exclude tests/
+
+        # Scan different directory
+        poetry run python scripts/validate_no_transport_imports.py --src-dir src/other
+    """
     parser = argparse.ArgumentParser(
         description="Validate no banned transport/I/O imports in omnibase_core",
         formatter_class=argparse.RawDescriptionHelpFormatter,
