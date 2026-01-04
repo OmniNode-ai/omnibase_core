@@ -73,7 +73,6 @@ def sample_no_regression_summary() -> ModelInvariantComparisonSummary:
         both_failed=0,
         new_violations=0,
         fixed_violations=1,
-        regression_detected=False,
     )
 
 
@@ -86,7 +85,6 @@ def sample_regression_summary() -> ModelInvariantComparisonSummary:
         both_failed=0,
         new_violations=2,
         fixed_violations=0,
-        regression_detected=True,
     )
 
 
@@ -297,7 +295,6 @@ class TestModelExecutionComparisonDiffDetection:
                     new_value="Changed text",
                 )
             },
-            has_differences=True,
         )
 
         comparison = ModelExecutionComparison(
@@ -333,7 +330,6 @@ class TestModelExecutionComparisonDiffDetection:
         output_diff = ModelOutputDiff(
             items_added=["root['new_field']"],
             items_removed=["root['old_field']"],
-            has_differences=True,
         )
 
         comparison = ModelExecutionComparison(
@@ -418,7 +414,7 @@ class TestModelExecutionComparisonDiffDetection:
             baseline_output_hash=baseline_hash,
             replay_output_hash=replay_hash,
             output_match=False,
-            output_diff=ModelOutputDiff(has_differences=True),
+            output_diff=ModelOutputDiff(),
             baseline_latency_ms=100.0,
             replay_latency_ms=100.0,
             latency_delta_ms=0.0,

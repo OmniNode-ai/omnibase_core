@@ -96,7 +96,6 @@ def sample_output_diff() -> ModelOutputDiff:
                 new_value="Updated response",
             )
         },
-        has_differences=True,
     )
 
 
@@ -114,7 +113,6 @@ def sample_invariant_comparison_summary() -> dict[str, Any]:
         "both_failed": 0,
         "new_violations": 1,
         "fixed_violations": 1,
-        "regression_detected": True,
     }
 
 

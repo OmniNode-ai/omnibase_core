@@ -20,7 +20,6 @@ class TestModelInvariantComparisonSummaryCreation:
             both_failed=2,
             new_violations=2,
             fixed_violations=1,
-            regression_detected=True,
         )
         assert summary.total_invariants == 10
         assert summary.both_passed == 5
@@ -37,7 +36,6 @@ class TestModelInvariantComparisonSummaryCreation:
                 both_failed=2,
                 new_violations=2,
                 fixed_violations=1,
-                regression_detected=True,
             )
         errors = exc_info.value.errors()
         assert any(e["loc"] == ("total_invariants",) for e in errors)
@@ -79,7 +77,6 @@ class TestModelInvariantComparisonSummaryCreation:
             both_failed=0,
             new_violations=2,
             fixed_violations=0,
-            regression_detected=True,
         )
         assert summary.new_violations > 0
         assert summary.regression_detected is True
@@ -92,7 +89,6 @@ class TestModelInvariantComparisonSummaryCreation:
             both_failed=1,
             new_violations=0,
             fixed_violations=0,
-            regression_detected=False,
         )
         assert summary.new_violations == 0
         assert summary.regression_detected is False
@@ -105,7 +101,6 @@ class TestModelInvariantComparisonSummaryCreation:
             both_failed=1,
             new_violations=1,
             fixed_violations=0,
-            regression_detected=True,
         )
         with pytest.raises(ValidationError):
             summary.total_invariants = 10
@@ -133,7 +128,6 @@ class TestModelInvariantComparisonSummaryValidation:
                 "both_failed": 2,
                 "new_violations": 2,
                 "fixed_violations": 1,
-                "regression_detected": True,
             }
             data[field] = -1
             with pytest.raises(ValidationError) as exc_info:
@@ -158,7 +152,6 @@ class TestModelInvariantComparisonSummaryValidation:
             both_failed=2,
             new_violations=2,
             fixed_violations=1,
-            regression_detected=True,
         )
         computed_total = (
             summary.both_passed
@@ -175,7 +168,6 @@ class TestModelInvariantComparisonSummaryValidation:
             both_failed=0,
             new_violations=0,
             fixed_violations=0,
-            regression_detected=False,
         )
         computed = (
             summary_no_changes.both_passed
@@ -193,7 +185,6 @@ class TestModelInvariantComparisonSummaryValidation:
             both_failed=2,
             new_violations=2,
             fixed_violations=1,
-            regression_detected=True,
         )
         # Test dict serialization
         data = summary.model_dump()
@@ -223,7 +214,6 @@ class TestModelInvariantComparisonSummaryValidation:
                 self.both_failed = 1
                 self.new_violations = 2
                 self.fixed_violations = 1
-                self.regression_detected = True
 
         summary = ModelInvariantComparisonSummary.model_validate(SummaryData())
         assert summary.total_invariants == 8
@@ -246,7 +236,6 @@ class TestModelInvariantComparisonSummaryEdgeCases:
             both_failed=0,
             new_violations=0,
             fixed_violations=0,
-            regression_detected=False,
         )
         assert summary.total_invariants == 0
         assert summary.regression_detected is False
@@ -259,7 +248,6 @@ class TestModelInvariantComparisonSummaryEdgeCases:
             both_failed=0,
             new_violations=0,
             fixed_violations=0,
-            regression_detected=False,
         )
         assert summary.both_passed == summary.total_invariants
         assert summary.regression_detected is False
@@ -272,7 +260,6 @@ class TestModelInvariantComparisonSummaryEdgeCases:
             both_failed=10,
             new_violations=0,
             fixed_violations=0,
-            regression_detected=False,
         )
         assert summary.both_failed == summary.total_invariants
         assert summary.regression_detected is False
@@ -285,7 +272,6 @@ class TestModelInvariantComparisonSummaryEdgeCases:
             both_failed=0,
             new_violations=5,
             fixed_violations=0,
-            regression_detected=True,
         )
         assert summary.new_violations == summary.total_invariants
         assert summary.regression_detected is True
@@ -298,7 +284,6 @@ class TestModelInvariantComparisonSummaryEdgeCases:
             both_failed=0,
             new_violations=0,
             fixed_violations=5,
-            regression_detected=False,
         )
         assert summary.fixed_violations == summary.total_invariants
         assert summary.regression_detected is False
@@ -316,7 +301,6 @@ class TestModelInvariantComparisonSummaryEquality:
             both_failed=2,
             new_violations=2,
             fixed_violations=1,
-            regression_detected=True,
         )
         summary2 = ModelInvariantComparisonSummary(
             total_invariants=10,
@@ -324,7 +308,6 @@ class TestModelInvariantComparisonSummaryEquality:
             both_failed=2,
             new_violations=2,
             fixed_violations=1,
-            regression_detected=True,
         )
         assert summary1 == summary2
 
@@ -336,7 +319,6 @@ class TestModelInvariantComparisonSummaryEquality:
             both_failed=2,
             new_violations=2,
             fixed_violations=1,
-            regression_detected=True,
         )
         summary2 = ModelInvariantComparisonSummary(
             total_invariants=10,
@@ -344,7 +326,6 @@ class TestModelInvariantComparisonSummaryEquality:
             both_failed=2,
             new_violations=1,  # Different value
             fixed_violations=1,
-            regression_detected=True,
         )
         assert summary1 != summary2
 
