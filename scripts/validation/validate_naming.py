@@ -211,6 +211,20 @@ class NamingConventionValidator:
         "merge/": [
             "ContractMergeEngine",  # Merge engine for typed contract merging (OMN-1127)
         ],
+        # REPLAY INFRASTRUCTURE: Deterministic replay utilities for testing and debugging
+        # Location: services/replay/ - Replay infrastructure services
+        # Rationale: These classes provide deterministic replay capabilities (OMN-1116, OMN-1205).
+        #            RecorderEffect, InjectorTime, InjectorRNG are passive observers and injection
+        #            mechanisms - NOT nodes. The heuristic flags "effect" as a Node indicator, but
+        #            RecorderEffect RECORDS effects, it doesn't PERFORM them as a node would.
+        #            Nodes are addressable graph vertices with contracts and dispatch semantics.
+        #            Recorders and injectors are lifecycle-bound utilities for side-effect capture.
+        "services/replay/": [
+            "RecorderEffect",  # Effect recording for deterministic replay (OMN-1116)
+            "InjectorTime",  # Time injection for deterministic replay (OMN-1116)
+            "InjectorRNG",  # RNG injection for deterministic replay (OMN-1116)
+            "ReplaySession",  # Session dataclass for replay execution (OMN-1116)
+        ],
     }
 
     @staticmethod
