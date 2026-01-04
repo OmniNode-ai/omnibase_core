@@ -185,7 +185,7 @@ class ServiceTraceRecording:
             descending (newest first).
 
         Example:
-            >>> from omnibase_core.services.trace.model_trace_query import ModelTraceQuery
+            >>> from omnibase_core.models.trace_query.model_trace_query import ModelTraceQuery
             >>> from omnibase_core.enums.enum_execution_status import EnumExecutionStatus
             >>> from datetime import datetime, UTC, timedelta
             >>>
@@ -292,14 +292,27 @@ class ServiceTraceRecording:
         """
         Check if there are any failed traces in the time range.
 
-        Efficient check that returns as soon as a failure is found.
+        This method fetches summary statistics for the time range and checks
+        if any failures exist. For scenarios requiring only a boolean check
+        without full statistics, consider implementing a dedicated exists
+        query on the underlying store for better performance with large
+        trace volumes.
 
         Args:
             start_time: Start of the time range (inclusive).
             end_time: End of the time range (exclusive).
 
         Returns:
-            True if at least one failed trace exists in the range.
+            True if at least one failed trace exists in the range,
+            False otherwise.
+
+        Raises:
+            ModelOnexError: If end_time is before start_time (from get_trace_summary).
+
+        Note:
+            This method computes full summary statistics internally. If you
+            need both failure detection and statistics, call get_trace_summary
+            directly to avoid redundant computation.
 
         Example:
             >>> from datetime import datetime, UTC, timedelta

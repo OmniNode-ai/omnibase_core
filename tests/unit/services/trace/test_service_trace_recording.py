@@ -134,18 +134,6 @@ def sample_trace() -> ModelExecutionTrace:
     return create_test_trace(status=EnumExecutionStatus.SUCCESS)
 
 
-@pytest.fixture
-def sample_failed_trace() -> ModelExecutionTrace:
-    """Create a sample failed trace."""
-    return create_test_trace(status=EnumExecutionStatus.FAILED)
-
-
-@pytest.fixture
-def sample_partial_trace() -> ModelExecutionTrace:
-    """Create a sample partial trace."""
-    return create_test_trace(status=EnumExecutionStatus.PARTIAL)
-
-
 # ============================================================================
 # Test: Record/Retrieve Roundtrip
 # ============================================================================
@@ -200,10 +188,14 @@ class TestRecordAndRetrieveRoundtrip:
             assert retrieved is not None
             assert retrieved.trace_id == trace.trace_id
 
-    async def test_record_preserves_trace_immutability(
+    async def test_frozen_model_unchanged_after_record(
         self, trace_service: ServiceTraceRecording, sample_trace: ModelExecutionTrace
     ) -> None:
-        """Recording does not modify the original trace object."""
+        """Frozen Pydantic model fields remain unchanged after recording.
+
+        Note: This test verifies that Pydantic's frozen model behavior works
+        as expected. The model cannot be modified because it has frozen=True.
+        """
         original_trace_id = sample_trace.trace_id
         original_status = sample_trace.status
 
@@ -212,6 +204,56 @@ class TestRecordAndRetrieveRoundtrip:
         # Original should be unchanged (frozen model)
         assert sample_trace.trace_id == original_trace_id
         assert sample_trace.status == original_status
+
+    async def test_retrieved_trace_is_protected_by_frozen_model(
+        self, trace_service: ServiceTraceRecording, sample_trace: ModelExecutionTrace
+    ) -> None:
+        """Retrieved trace is protected from mutations via frozen model.
+
+        Copy semantics verification: even if the service returns a reference
+        to internal state, the frozen Pydantic model prevents mutations,
+        protecting the internal state from corruption.
+        """
+        await trace_service.record_trace(sample_trace)
+        retrieved = await trace_service.get_trace(sample_trace.trace_id)
+
+        assert retrieved is not None
+
+        # Verify the frozen model prevents mutations
+        # This protects internal state from corruption via returned references
+        with pytest.raises(Exception):  # ValidationError from Pydantic
+            # Attempting to modify a frozen model should fail
+            retrieved.status = EnumExecutionStatus.FAILED  # type: ignore[misc]
+
+        # Verify the internal state is still intact after failed mutation attempt
+        retrieved_again = await trace_service.get_trace(sample_trace.trace_id)
+        assert retrieved_again is not None
+        assert retrieved_again.status == sample_trace.status
+
+    async def test_query_results_list_is_independent_copy(
+        self, trace_service: ServiceTraceRecording
+    ) -> None:
+        """Query results list can be modified without affecting internal state.
+
+        Verifies that mutating the returned list does not corrupt
+        the service's internal storage.
+        """
+        traces = [create_test_trace() for _ in range(3)]
+        for trace in traces:
+            await trace_service.record_trace(trace)
+
+        # Get query results
+        query = ModelTraceQuery()
+        results = await trace_service.query_traces(query)
+        original_length = len(results)
+
+        # Mutate the returned list (should not affect internal state)
+        results.clear()
+        assert len(results) == 0
+
+        # Verify internal state is unaffected
+        results_again = await trace_service.query_traces(query)
+        assert len(results_again) == original_length
 
 
 # ============================================================================
@@ -430,7 +472,7 @@ class TestQueryByTimeRange:
 
         assert len(results) == 2
         for result in results:
-            assert result.started_at <= base_time
+            assert result.started_at < base_time  # end_time is exclusive
 
     async def test_query_with_empty_time_range(
         self, trace_service: ServiceTraceRecording
@@ -928,31 +970,138 @@ class TestEdgeCases:
         assert summary.failure_count >= 2
         assert summary.success_rate == 0.0
 
-    async def test_service_handles_concurrent_operations(
+    async def test_concurrent_writes_all_traces_recorded(
         self, trace_service: ServiceTraceRecording
     ) -> None:
-        """Service handles concurrent record and query operations."""
+        """Concurrent write operations record all traces successfully."""
         import asyncio
 
-        # Create traces concurrently
+        num_concurrent_writes = 50
+
         async def record_trace_concurrent() -> UUID:
             trace = create_test_trace()
             await trace_service.record_trace(trace)
             return trace.trace_id
 
-        # Record 10 traces concurrently
+        # Record many traces concurrently
         trace_ids = await asyncio.gather(
-            *[record_trace_concurrent() for _ in range(10)]
+            *[record_trace_concurrent() for _ in range(num_concurrent_writes)]
         )
 
-        # All should be recorded
-        assert len(trace_ids) == 10
-        assert len(set(trace_ids)) == 10  # All unique
+        # All should be recorded with unique IDs
+        assert len(trace_ids) == num_concurrent_writes
+        assert len(set(trace_ids)) == num_concurrent_writes
 
         # Query should return all
         query = ModelTraceQuery()
         results = await trace_service.query_traces(query)
-        assert len(results) == 10
+        assert len(results) == num_concurrent_writes
+
+        # Verify each trace is individually retrievable
+        for trace_id in trace_ids:
+            retrieved = await trace_service.get_trace(trace_id)
+            assert retrieved is not None
+            assert retrieved.trace_id == trace_id
+
+    async def test_concurrent_reads_and_writes(
+        self, trace_service: ServiceTraceRecording
+    ) -> None:
+        """Concurrent read and write operations do not interfere with each other."""
+        import asyncio
+
+        # Pre-populate with some traces
+        initial_traces = [create_test_trace() for _ in range(10)]
+        for trace in initial_traces:
+            await trace_service.record_trace(trace)
+
+        # Track results
+        read_results: list[ModelExecutionTrace | None] = []
+        write_results: list[UUID] = []
+
+        async def read_trace(trace_id: UUID) -> None:
+            result = await trace_service.get_trace(trace_id)
+            read_results.append(result)
+
+        async def write_trace() -> None:
+            trace = create_test_trace()
+            await trace_service.record_trace(trace)
+            write_results.append(trace.trace_id)
+
+        # Mix reads and writes concurrently
+        tasks = []
+        for i in range(30):
+            if i % 3 == 0:
+                # Read an existing trace
+                tasks.append(
+                    read_trace(initial_traces[i % len(initial_traces)].trace_id)
+                )
+            else:
+                # Write a new trace
+                tasks.append(write_trace())
+
+        await asyncio.gather(*tasks)
+
+        # Verify reads succeeded (all should find the trace)
+        successful_reads = [r for r in read_results if r is not None]
+        assert (
+            len(successful_reads) == 10
+        )  # 10 read operations (indices 0, 3, 6, 9, etc.)
+
+        # Verify writes succeeded
+        assert len(write_results) == 20  # 20 write operations
+
+        # Verify all new traces are queryable
+        for trace_id in write_results:
+            retrieved = await trace_service.get_trace(trace_id)
+            assert retrieved is not None
+
+    async def test_concurrent_queries_return_consistent_results(
+        self, trace_service: ServiceTraceRecording
+    ) -> None:
+        """Concurrent query operations return consistent results."""
+        import asyncio
+
+        # Pre-populate with traces of different statuses
+        success_traces = [
+            create_test_trace(status=EnumExecutionStatus.SUCCESS) for _ in range(5)
+        ]
+        failed_traces = [
+            create_test_trace(status=EnumExecutionStatus.FAILED) for _ in range(3)
+        ]
+
+        for trace in success_traces + failed_traces:
+            await trace_service.record_trace(trace)
+
+        query_results: list[list[ModelExecutionTrace]] = []
+
+        async def run_query(status: EnumExecutionStatus | None) -> None:
+            query = ModelTraceQuery(status=status) if status else ModelTraceQuery()
+            results = await trace_service.query_traces(query)
+            query_results.append(results)
+
+        # Run multiple queries concurrently
+        tasks = [
+            run_query(EnumExecutionStatus.SUCCESS),
+            run_query(EnumExecutionStatus.FAILED),
+            run_query(None),  # All traces
+            run_query(EnumExecutionStatus.SUCCESS),
+            run_query(EnumExecutionStatus.FAILED),
+            run_query(None),  # All traces again
+        ]
+        await asyncio.gather(*tasks)
+
+        # Verify consistent results
+        # First and fourth results should both be SUCCESS queries (5 traces)
+        assert len(query_results[0]) == 5
+        assert len(query_results[3]) == 5
+
+        # Second and fifth results should both be FAILED queries (3 traces)
+        assert len(query_results[1]) == 3
+        assert len(query_results[4]) == 3
+
+        # Third and sixth results should both be all traces (8 traces)
+        assert len(query_results[2]) == 8
+        assert len(query_results[5]) == 8
 
 
 if __name__ == "__main__":

@@ -9,7 +9,7 @@ including counts, success rates, and duration percentiles. Returned by
 ProtocolTraceStore.summary() method.
 
 Example:
-    >>> from omnibase_core.services.trace.model_trace_summary import ModelTraceSummary
+    >>> from omnibase_core.models.trace_query.model_trace_summary import ModelTraceSummary
     >>> from datetime import datetime, UTC
     >>>
     >>> summary = ModelTraceSummary(
@@ -31,7 +31,7 @@ Example:
 See Also:
     - :class:`~omnibase_core.services.trace.protocol_trace_store.ProtocolTraceStore`:
       Protocol that returns this summary model
-    - :class:`~omnibase_core.services.trace.model_trace_query.ModelTraceQuery`:
+    - :class:`~omnibase_core.models.trace_query.model_trace_query.ModelTraceQuery`:
       Query filters for scoping the summary
 
 .. versionadded:: 0.4.0

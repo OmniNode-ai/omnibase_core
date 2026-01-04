@@ -141,7 +141,7 @@ class ProtocolTraceStore(Protocol):
             descending (newest first). The list length is bounded by filters.limit.
 
         Example:
-            >>> from omnibase_core.services.trace.model_trace_query import ModelTraceQuery
+            >>> from omnibase_core.models.trace_query.model_trace_query import ModelTraceQuery
             >>> from omnibase_core.enums.enum_execution_status import EnumExecutionStatus
             >>>
             >>> query = ModelTraceQuery(
@@ -169,7 +169,7 @@ class ProtocolTraceStore(Protocol):
 
         Example:
             >>> from datetime import datetime, UTC, timedelta
-            >>> from omnibase_core.services.trace.model_trace_query import ModelTraceQuery
+            >>> from omnibase_core.models.trace_query.model_trace_query import ModelTraceQuery
             >>>
             >>> # Get summary for last 24 hours
             >>> now = datetime.now(UTC)

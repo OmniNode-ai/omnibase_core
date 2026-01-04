@@ -11,7 +11,7 @@ ProtocolTraceStore.summary() methods.
 Example:
     >>> from datetime import datetime, UTC, timedelta
     >>> from uuid import uuid4
-    >>> from omnibase_core.services.trace.model_trace_query import ModelTraceQuery
+    >>> from omnibase_core.models.trace_query.model_trace_query import ModelTraceQuery
     >>> from omnibase_core.enums.enum_execution_status import EnumExecutionStatus
     >>>
     >>> # Query for failed traces in the last hour
@@ -63,7 +63,7 @@ class ModelTraceQuery(BaseModel):
 
     Example:
         >>> from datetime import datetime, UTC, timedelta
-        >>> from omnibase_core.services.trace.model_trace_query import ModelTraceQuery
+        >>> from omnibase_core.models.trace_query.model_trace_query import ModelTraceQuery
         >>> from omnibase_core.enums.enum_execution_status import EnumExecutionStatus
         >>>
         >>> # Basic query - get failed traces
