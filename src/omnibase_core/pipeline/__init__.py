@@ -86,6 +86,7 @@ from omnibase_core.pipeline.manifest_generator import ManifestGenerator
 from omnibase_core.pipeline.manifest_logger import ManifestLogger
 from omnibase_core.pipeline.manifest_observer import ManifestObserver
 from omnibase_core.pipeline.registry_hook import RegistryHook
+from omnibase_core.pipeline.replay import InjectorRNG
 from omnibase_core.pipeline.runner_pipeline import (
     CANONICAL_PHASE_ORDER,
     HookCallable,
@@ -127,4 +128,6 @@ __all__ = [
     "ManifestGenerator",
     "ManifestObserver",
     "ManifestLogger",
+    # Replay Infrastructure (OMN-1116)
+    "InjectorRNG",
 ]
