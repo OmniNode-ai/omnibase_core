@@ -79,6 +79,18 @@ class TestInvariantPropertyBased:
                 "Expected actual_value to be set for failing invariant"
             )
             assert result.message, "Expected non-empty message for failing invariant"
+            # Verify expected_value is set correctly for failure case
+            assert result.expected_value is not None, (
+                "Expected expected_value to be set for failing invariant"
+            )
+            # Verify invariant_name is preserved
+            assert result.invariant_name == "Threshold Property", (
+                f"Expected invariant_name 'Threshold Property', got '{result.invariant_name}'"
+            )
+            # Verify message contains useful context
+            assert (
+                str(max_value) in result.message or "maximum" in result.message.lower()
+            ), f"Expected message to contain threshold info, got: {result.message}"
 
     @given(
         min_value=st.floats(
@@ -120,6 +132,18 @@ class TestInvariantPropertyBased:
                 "Expected actual_value to be set for failing invariant"
             )
             assert result.message, "Expected non-empty message for failing invariant"
+            # Verify expected_value is set correctly for failure case
+            assert result.expected_value is not None, (
+                "Expected expected_value to be set for failing invariant"
+            )
+            # Verify invariant_name is preserved
+            assert result.invariant_name == "Threshold Min Property", (
+                f"Expected invariant_name 'Threshold Min Property', got '{result.invariant_name}'"
+            )
+            # Verify message contains useful context
+            assert (
+                str(min_value) in result.message or "minimum" in result.message.lower()
+            ), f"Expected message to contain threshold info, got: {result.message}"
 
     @given(
         max_ms=st.floats(
@@ -161,6 +185,21 @@ class TestInvariantPropertyBased:
             assert result.message, (
                 "Expected non-empty message for failing latency invariant"
             )
+            # Verify expected_value is set correctly for failure case
+            assert result.expected_value is not None, (
+                "Expected expected_value to be set for failing latency invariant"
+            )
+            assert result.expected_value == max_ms, (
+                f"Expected expected_value to be {max_ms}, got {result.expected_value}"
+            )
+            # Verify invariant_name is preserved
+            assert result.invariant_name == "Latency Property", (
+                f"Expected invariant_name 'Latency Property', got '{result.invariant_name}'"
+            )
+            # Verify message contains latency context
+            assert (
+                "ms" in result.message.lower() or "latency" in result.message.lower()
+            ), f"Expected message to contain latency info, got: {result.message}"
 
     @given(
         max_cost=st.floats(
@@ -202,6 +241,21 @@ class TestInvariantPropertyBased:
             assert result.message, (
                 "Expected non-empty message for failing cost invariant"
             )
+            # Verify expected_value is set correctly for failure case
+            assert result.expected_value is not None, (
+                "Expected expected_value to be set for failing cost invariant"
+            )
+            assert result.expected_value == max_cost, (
+                f"Expected expected_value to be {max_cost}, got {result.expected_value}"
+            )
+            # Verify invariant_name is preserved
+            assert result.invariant_name == "Cost Property", (
+                f"Expected invariant_name 'Cost Property', got '{result.invariant_name}'"
+            )
+            # Verify message contains cost context
+            assert (
+                "cost" in result.message.lower() or "budget" in result.message.lower()
+            ), f"Expected message to contain cost info, got: {result.message}"
 
     @given(
         field_name=st.text(
@@ -481,6 +535,315 @@ class TestInvariantPropertyBased:
 
         assert result.severity == severity, (
             f"Result severity ({result.severity}) should match invariant ({severity})"
+        )
+
+    # ===== Failure-specific property tests =====
+    # These tests specifically validate that invalid inputs cause expected failures
+
+    @given(
+        metric_name=st.text(
+            min_size=1,
+            max_size=30,
+            alphabet=st.characters(
+                whitelist_categories=("L", "N"), whitelist_characters="_"
+            ),
+        ),
+    )
+    @settings(max_examples=50)
+    def test_threshold_fails_with_missing_metric(self, metric_name: str) -> None:
+        """Threshold should fail when the metric is missing from output.
+
+        Property: For any valid metric name that does NOT exist in the output dict,
+        the threshold check must fail with appropriate error details.
+        """
+        assume(metric_name and not metric_name.isdigit())
+        assume(any(c.isalpha() for c in metric_name))
+
+        evaluator = _create_evaluator()
+        invariant = ModelInvariant(
+            name="Missing Metric Test",
+            type=EnumInvariantType.THRESHOLD,
+            severity=EnumInvariantSeverity.CRITICAL,
+            config={"metric_name": metric_name, "max_value": 100.0},
+        )
+
+        # Output has different field - metric is missing
+        result = evaluator.evaluate(invariant, {"other_field": 50.0})
+
+        # Must fail when metric is missing
+        assert result.passed is False, (
+            f"Expected fail when metric '{metric_name}' is missing from output"
+        )
+        # Verify failure details
+        assert result.message, "Expected non-empty message for missing metric"
+        assert metric_name in result.message or "not found" in result.message.lower(), (
+            f"Expected message to reference missing metric, got: {result.message}"
+        )
+        assert result.invariant_name == "Missing Metric Test", (
+            f"Expected invariant_name preserved, got '{result.invariant_name}'"
+        )
+        assert result.severity == EnumInvariantSeverity.CRITICAL, (
+            f"Expected CRITICAL severity preserved, got {result.severity}"
+        )
+
+    @given(
+        non_numeric_value=st.one_of(
+            # Use text that cannot be parsed as a number
+            st.text(
+                min_size=2,
+                max_size=20,
+                alphabet=st.characters(whitelist_categories=("L",)),  # Only letters
+            ),
+            st.lists(st.integers(), min_size=1, max_size=3),
+            st.dictionaries(
+                keys=st.text(min_size=1, max_size=5),
+                values=st.integers(),
+                min_size=1,
+                max_size=2,
+            ),
+        ),
+    )
+    @settings(max_examples=50)
+    def test_threshold_fails_with_non_numeric_value(
+        self, non_numeric_value: object
+    ) -> None:
+        """Threshold should fail when the metric value is non-numeric.
+
+        Property: For any truly non-numeric value (not convertible to float),
+        the threshold check must fail with a descriptive error message.
+        """
+        # Skip values that can be converted to float
+        if isinstance(non_numeric_value, str):
+            try:
+                float(non_numeric_value)
+                assume(False)  # Skip numeric strings
+            except (TypeError, ValueError):
+                pass  # This is a valid non-numeric string
+
+        evaluator = _create_evaluator()
+        invariant = ModelInvariant(
+            name="Non-Numeric Test",
+            type=EnumInvariantType.THRESHOLD,
+            severity=EnumInvariantSeverity.WARNING,
+            config={"metric_name": "value", "max_value": 100.0},
+        )
+
+        result = evaluator.evaluate(invariant, {"value": non_numeric_value})
+
+        # Must fail when value is non-numeric
+        assert result.passed is False, (
+            f"Expected fail when value is non-numeric: {type(non_numeric_value).__name__}"
+        )
+        # Verify failure details
+        assert result.message, "Expected non-empty message for non-numeric value"
+        assert "not numeric" in result.message.lower() or "value" in result.message, (
+            f"Expected message to indicate non-numeric issue, got: {result.message}"
+        )
+
+    @given(
+        output_keys=st.lists(
+            st.text(
+                min_size=1,
+                max_size=15,
+                alphabet=st.characters(
+                    whitelist_categories=("L", "N"), whitelist_characters="_"
+                ),
+            ),
+            min_size=1,
+            max_size=5,
+            unique=True,
+        ),
+    )
+    @settings(max_examples=50)
+    def test_latency_fails_with_missing_latency_field(
+        self, output_keys: list[str]
+    ) -> None:
+        """Latency should fail when neither latency_ms nor duration_ms exists.
+
+        Property: When output lacks both latency_ms and duration_ms fields,
+        the latency check must fail with appropriate error details.
+        """
+        # Ensure neither latency_ms nor duration_ms is in the output
+        assume("latency_ms" not in output_keys)
+        assume("duration_ms" not in output_keys)
+
+        evaluator = _create_evaluator()
+        invariant = ModelInvariant(
+            name="Missing Latency Test",
+            type=EnumInvariantType.LATENCY,
+            severity=EnumInvariantSeverity.WARNING,
+            config={"max_ms": 1000.0},
+        )
+
+        # Create output without latency fields
+        output = dict.fromkeys(output_keys, 42)
+        result = evaluator.evaluate(invariant, output)
+
+        # Must fail when latency field is missing
+        assert result.passed is False, (
+            "Expected fail when latency_ms and duration_ms are missing"
+        )
+        # Verify failure details
+        assert result.message, "Expected non-empty message for missing latency"
+        assert (
+            "latency" in result.message.lower() or "not found" in result.message.lower()
+        ), f"Expected message to reference missing latency, got: {result.message}"
+        # Expected value should still be set to max_ms
+        assert result.expected_value == 1000.0, (
+            f"Expected expected_value to be max_ms (1000.0), got {result.expected_value}"
+        )
+
+    @given(
+        output_keys=st.lists(
+            st.text(
+                min_size=1,
+                max_size=15,
+                alphabet=st.characters(
+                    whitelist_categories=("L", "N"), whitelist_characters="_"
+                ),
+            ),
+            min_size=1,
+            max_size=5,
+            unique=True,
+        ),
+    )
+    @settings(max_examples=50)
+    def test_cost_fails_with_missing_cost_field(self, output_keys: list[str]) -> None:
+        """Cost should fail when cost and usage.total_tokens are missing.
+
+        Property: When output lacks both cost and usage.total_tokens fields,
+        the cost check must fail with appropriate error details.
+        """
+        # Ensure cost and usage.total_tokens are not in the output
+        assume("cost" not in output_keys)
+        assume("usage" not in output_keys)
+
+        evaluator = _create_evaluator()
+        invariant = ModelInvariant(
+            name="Missing Cost Test",
+            type=EnumInvariantType.COST,
+            severity=EnumInvariantSeverity.CRITICAL,
+            config={"max_cost": 10.0},
+        )
+
+        # Create output without cost fields
+        output = dict.fromkeys(output_keys, 42)
+        result = evaluator.evaluate(invariant, output)
+
+        # Must fail when cost field is missing
+        assert result.passed is False, (
+            "Expected fail when cost and usage.total_tokens are missing"
+        )
+        # Verify failure details
+        assert result.message, "Expected non-empty message for missing cost"
+        assert (
+            "cost" in result.message.lower() or "not found" in result.message.lower()
+        ), f"Expected message to reference missing cost, got: {result.message}"
+        # Expected value should still be set to max_cost
+        assert result.expected_value == 10.0, (
+            f"Expected expected_value to be max_cost (10.0), got {result.expected_value}"
+        )
+        # Severity should be preserved
+        assert result.severity == EnumInvariantSeverity.CRITICAL, (
+            f"Expected CRITICAL severity, got {result.severity}"
+        )
+
+    @given(
+        non_numeric_value=st.one_of(
+            # Use text that cannot be parsed as a number
+            st.text(
+                min_size=2,
+                max_size=20,
+                alphabet=st.characters(whitelist_categories=("L",)),  # Only letters
+            ),
+            st.none(),
+            st.lists(st.integers(), min_size=1, max_size=3),
+            st.dictionaries(
+                keys=st.text(min_size=1, max_size=5),
+                values=st.integers(),
+                min_size=1,
+                max_size=2,
+            ),
+        ),
+    )
+    @settings(max_examples=50)
+    def test_latency_fails_with_non_numeric_latency(
+        self, non_numeric_value: object
+    ) -> None:
+        """Latency should fail when latency_ms value is non-numeric.
+
+        Property: For any truly non-numeric latency value (not convertible to float),
+        the latency check must fail.
+        """
+        # Skip values that can be converted to float
+        if isinstance(non_numeric_value, str):
+            try:
+                float(non_numeric_value)
+                assume(False)  # Skip numeric strings
+            except (TypeError, ValueError):
+                pass  # This is a valid non-numeric string
+
+        evaluator = _create_evaluator()
+        invariant = ModelInvariant(
+            name="Non-Numeric Latency Test",
+            type=EnumInvariantType.LATENCY,
+            severity=EnumInvariantSeverity.WARNING,
+            config={"max_ms": 1000.0},
+        )
+
+        result = evaluator.evaluate(invariant, {"latency_ms": non_numeric_value})
+
+        # Must fail when latency value is non-numeric
+        assert result.passed is False, (
+            f"Expected fail when latency_ms is non-numeric: {type(non_numeric_value).__name__}"
+        )
+
+    @given(
+        non_numeric_value=st.one_of(
+            # Use text that cannot be parsed as a number
+            st.text(
+                min_size=2,
+                max_size=20,
+                alphabet=st.characters(whitelist_categories=("L",)),  # Only letters
+            ),
+            st.none(),
+            st.lists(st.integers(), min_size=1, max_size=3),
+            st.dictionaries(
+                keys=st.text(min_size=1, max_size=5),
+                values=st.integers(),
+                min_size=1,
+                max_size=2,
+            ),
+        ),
+    )
+    @settings(max_examples=50)
+    def test_cost_fails_with_non_numeric_cost(self, non_numeric_value: object) -> None:
+        """Cost should fail when cost value is non-numeric.
+
+        Property: For any truly non-numeric cost value (not convertible to float),
+        the cost check must fail.
+        """
+        # Skip values that can be converted to float
+        if isinstance(non_numeric_value, str):
+            try:
+                float(non_numeric_value)
+                assume(False)  # Skip numeric strings
+            except (TypeError, ValueError):
+                pass  # This is a valid non-numeric string
+
+        evaluator = _create_evaluator()
+        invariant = ModelInvariant(
+            name="Non-Numeric Cost Test",
+            type=EnumInvariantType.COST,
+            severity=EnumInvariantSeverity.WARNING,
+            config={"max_cost": 10.0},
+        )
+
+        result = evaluator.evaluate(invariant, {"cost": non_numeric_value})
+
+        # Must fail when cost value is non-numeric
+        assert result.passed is False, (
+            f"Expected fail when cost is non-numeric: {type(non_numeric_value).__name__}"
         )
 
 
