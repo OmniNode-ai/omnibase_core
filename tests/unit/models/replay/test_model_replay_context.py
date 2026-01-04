@@ -21,8 +21,6 @@ from pydantic import ValidationError
 from omnibase_core.enums.replay.enum_replay_mode import EnumReplayMode
 from omnibase_core.models.replay.model_replay_context import ModelReplayContext
 
-pytestmark = pytest.mark.unit
-
 
 @pytest.mark.unit
 class TestModelReplayContextFrozen:

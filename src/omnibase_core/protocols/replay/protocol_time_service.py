@@ -40,8 +40,6 @@ Related:
 .. versionadded:: 0.4.0
 """
 
-from __future__ import annotations
-
 __all__ = ["ProtocolTimeService"]
 
 from datetime import datetime

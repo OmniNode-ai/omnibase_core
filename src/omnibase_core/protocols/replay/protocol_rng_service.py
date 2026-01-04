@@ -64,8 +64,6 @@ Related:
 .. versionadded:: 0.4.0
 """
 
-from __future__ import annotations
-
 __all__ = ["ProtocolRNGService"]
 
 from collections.abc import Sequence

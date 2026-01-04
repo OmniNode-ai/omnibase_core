@@ -56,8 +56,6 @@ Related:
 .. versionadded:: 0.4.0
 """
 
-from __future__ import annotations
-
 __all__ = ["ProtocolEffectRecorder"]
 
 from typing import TYPE_CHECKING, Protocol, runtime_checkable
@@ -172,11 +170,11 @@ class ProtocolEffectRecorder(Protocol):
     def record(
         self,
         effect_type: str,
-        intent: dict[str, JsonType],
-        result: dict[str, JsonType],
+        intent: "dict[str, JsonType]",
+        result: "dict[str, JsonType]",
         success: bool = True,
         error_message: str | None = None,
-    ) -> ModelEffectRecord:
+    ) -> "ModelEffectRecord":
         """
         Record an effect execution.
 
@@ -206,8 +204,8 @@ class ProtocolEffectRecorder(Protocol):
         ...
 
     def get_replay_result(
-        self, effect_type: str, intent: dict[str, JsonType]
-    ) -> dict[str, JsonType] | None:
+        self, effect_type: str, intent: "dict[str, JsonType]"
+    ) -> "dict[str, JsonType] | None":
         """
         Get pre-recorded result for replay.
 
@@ -235,7 +233,7 @@ class ProtocolEffectRecorder(Protocol):
         """
         ...
 
-    def get_all_records(self) -> list[ModelEffectRecord]:
+    def get_all_records(self) -> "list[ModelEffectRecord]":
         """
         Return all recorded effects.
 

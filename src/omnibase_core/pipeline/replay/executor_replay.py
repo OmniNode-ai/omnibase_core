@@ -301,7 +301,7 @@ class ExecutorReplay:
         """Execute async function with replay context.
 
         If the function has a parameter named 'replay_session', the session
-        is automatically injected.
+        is automatically injected as a keyword argument.
 
         Args:
             session: Replay session providing time/RNG/effect services.
@@ -311,6 +311,12 @@ class ExecutorReplay:
 
         Returns:
             T: Result from the function execution.
+
+        Warning:
+            If you include 'replay_session' in kwargs, it will be **overwritten**
+            by the executor's session parameter. This is intentional: the executor
+            manages session lifecycle, so always pass the session to execute_async()
+            rather than including it in kwargs. A warning is logged if this occurs.
 
         Example:
             >>> async def my_func(replay_session):
@@ -341,7 +347,7 @@ class ExecutorReplay:
         """Execute sync function with replay context.
 
         If the function has a parameter named 'replay_session', the session
-        is automatically injected.
+        is automatically injected as a keyword argument.
 
         Args:
             session: Replay session providing time/RNG/effect services.
@@ -351,6 +357,12 @@ class ExecutorReplay:
 
         Returns:
             T: Result from the function execution.
+
+        Warning:
+            If you include 'replay_session' in kwargs, it will be **overwritten**
+            by the executor's session parameter. This is intentional: the executor
+            manages session lifecycle, so always pass the session to execute_sync()
+            rather than including it in kwargs. A warning is logged if this occurs.
 
         Example:
             >>> def my_func(replay_session):
