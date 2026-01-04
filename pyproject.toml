@@ -43,7 +43,8 @@ dependencies = [
     "dependency-injector>=4.48.1,<5.0.0",
     "click>=8.1.0,<9.0.0",
     "rich>=13.7.0,<14.0.0",
-    "cryptography>=46.0.3,<47.0.0"
+    "cryptography>=46.0.3,<47.0.0",
+    "jsonschema>=4.25.1,<5.0.0"
 ]
 
 [project.urls]
