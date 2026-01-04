@@ -11,6 +11,7 @@ from __future__ import annotations
 import pytest
 from pydantic import ValidationError
 
+from omnibase_core.errors import ModelOnexError
 from omnibase_core.models.evidence.model_latency_statistics import (
     ModelLatencyStatistics,
 )
@@ -208,17 +209,25 @@ class TestFromLatencyValues:
         assert stats.baseline_p95_ms == pytest.approx(19.0, rel=0.01)
 
     def test_from_latency_values_empty_list_raises(self) -> None:
-        """Empty latency list raises ValueError."""
-        with pytest.raises(ValueError, match="cannot be empty"):
+        """Empty latency list raises ModelOnexError."""
+        with pytest.raises(ModelOnexError, match="cannot be empty"):
             ModelLatencyStatistics.from_latency_values(
                 baseline_values=[],
                 replay_values=[100.0],
             )
 
-        with pytest.raises(ValueError, match="cannot be empty"):
+        with pytest.raises(ModelOnexError, match="cannot be empty"):
             ModelLatencyStatistics.from_latency_values(
                 baseline_values=[100.0],
                 replay_values=[],
+            )
+
+    def test_from_latency_values_length_mismatch_raises(self) -> None:
+        """Different length lists raise ModelOnexError."""
+        with pytest.raises(ModelOnexError, match="must have the same length"):
+            ModelLatencyStatistics.from_latency_values(
+                baseline_values=[100.0, 200.0],
+                replay_values=[100.0],
             )
 
     def test_from_latency_values_single_value(self) -> None:

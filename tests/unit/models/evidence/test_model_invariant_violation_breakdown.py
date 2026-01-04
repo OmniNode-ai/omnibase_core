@@ -16,6 +16,7 @@ from omnibase_core.models.evidence.model_invariant_violation_breakdown import (
 )
 
 
+@pytest.mark.unit
 class TestBreakdownCreation:
     """Test model instantiation."""
 
@@ -29,6 +30,7 @@ class TestBreakdownCreation:
                 EnumViolationSeverity.WARNING.value: 3,
             },
             new_violations=2,
+            new_critical_violations=1,
             fixed_violations=1,
         )
 
@@ -36,6 +38,7 @@ class TestBreakdownCreation:
         assert breakdown.by_type == {"output_equivalence": 3, "latency": 2}
         assert breakdown.by_severity == {"critical": 2, "warning": 3}
         assert breakdown.new_violations == 2
+        assert breakdown.new_critical_violations == 1
         assert breakdown.fixed_violations == 1
 
     def test_immutable_after_creation(self) -> None:
@@ -45,6 +48,7 @@ class TestBreakdownCreation:
             by_type={"test": 3},
             by_severity={EnumViolationSeverity.WARNING.value: 3},
             new_violations=1,
+            new_critical_violations=0,
             fixed_violations=0,
         )
 
@@ -62,6 +66,7 @@ class TestBreakdownCreation:
                 EnumViolationSeverity.INFO.value: 1,
             },
             new_violations=3,
+            new_critical_violations=1,
             fixed_violations=1,
         )
 
@@ -74,6 +79,7 @@ class TestBreakdownCreation:
         assert breakdown.by_severity["info"] == 1
 
 
+@pytest.mark.unit
 class TestViolationCounting:
     """Test violation counting logic."""
 
@@ -87,6 +93,7 @@ class TestViolationCounting:
             by_type=by_type,
             by_severity={EnumViolationSeverity.WARNING.value: total},
             new_violations=2,
+            new_critical_violations=0,
             fixed_violations=1,
         )
 
@@ -101,10 +108,12 @@ class TestViolationCounting:
             by_type={"type_a": 4},
             by_severity={EnumViolationSeverity.CRITICAL.value: 4},
             new_violations=3,  # 3 new regressions
+            new_critical_violations=2,  # 2 of them are critical
             fixed_violations=1,
         )
 
         assert breakdown.new_violations == 3
+        assert breakdown.new_critical_violations == 2
         # New violations represent things that broke since baseline
 
     def test_fixed_violations_count(self) -> None:
@@ -115,6 +124,7 @@ class TestViolationCounting:
             by_type={"type_b": 2},
             by_severity={EnumViolationSeverity.WARNING.value: 2},
             new_violations=0,
+            new_critical_violations=0,
             fixed_violations=5,  # 5 things got fixed
         )
 
@@ -122,6 +132,7 @@ class TestViolationCounting:
         # Fixed violations represent improvements
 
 
+@pytest.mark.unit
 class TestFromViolationDeltas:
     """Test factory method from violation delta records."""
 
@@ -284,6 +295,7 @@ class TestFromViolationDeltas:
         assert breakdown.fixed_violations == 0
 
 
+@pytest.mark.unit
 class TestTotalViolationsConsistency:
     """Test that total_violations is always consistent."""
 
@@ -297,6 +309,7 @@ class TestTotalViolationsConsistency:
             by_type=by_type,
             by_severity={EnumViolationSeverity.WARNING.value: 10},
             new_violations=4,
+            new_critical_violations=0,
             fixed_violations=2,
         )
 
@@ -317,6 +330,7 @@ class TestTotalViolationsConsistency:
             by_type={"all": 10},
             by_severity=by_severity,
             new_violations=2,
+            new_critical_violations=1,
             fixed_violations=1,
         )
 
@@ -360,6 +374,7 @@ class TestTotalViolationsConsistency:
         assert breakdown.total_violations == 4
 
 
+@pytest.mark.unit
 class TestEdgeCases:
     """Test edge cases and boundary conditions."""
 
@@ -370,12 +385,14 @@ class TestEdgeCases:
             by_type={"single": 1},
             by_severity={EnumViolationSeverity.CRITICAL.value: 1},
             new_violations=1,
+            new_critical_violations=1,
             fixed_violations=0,
         )
 
         assert breakdown.total_violations == 1
         assert breakdown.by_type == {"single": 1}
         assert breakdown.new_violations == 1
+        assert breakdown.new_critical_violations == 1
 
     def test_only_fixed_no_new(self) -> None:
         """Scenario with only fixed violations (improvement)."""
@@ -419,12 +436,14 @@ class TestEdgeCases:
             by_type={},
             by_severity={},
             new_violations=0,
+            new_critical_violations=0,
             fixed_violations=0,
         )
 
         assert breakdown.total_violations == 0
         assert len(breakdown.by_type) == 0
         assert len(breakdown.by_severity) == 0
+        assert breakdown.new_critical_violations == 0
 
     def test_negative_count_rejected(self) -> None:
         """Negative counts should be rejected."""
@@ -434,6 +453,7 @@ class TestEdgeCases:
                 by_type={},
                 by_severity={},
                 new_violations=0,
+                new_critical_violations=0,
                 fixed_violations=0,
             )
 
@@ -445,6 +465,7 @@ class TestEdgeCases:
                 by_type={},
                 by_severity={},
                 new_violations=-1,
+                new_critical_violations=0,
                 fixed_violations=0,
             )
 
@@ -456,10 +477,12 @@ class TestEdgeCases:
                 by_type={},
                 by_severity={},
                 new_violations=0,
+                new_critical_violations=0,
                 fixed_violations=-1,
             )
 
 
+@pytest.mark.unit
 class TestSerialization:
     """Test model serialization/deserialization."""
 
@@ -470,6 +493,7 @@ class TestSerialization:
             by_type={"a": 3, "b": 2},
             by_severity={"critical": 2, "warning": 3},
             new_violations=2,
+            new_critical_violations=1,
             fixed_violations=1,
         )
 
@@ -478,6 +502,7 @@ class TestSerialization:
         assert data["total_violations"] == 5
         assert data["by_type"] == {"a": 3, "b": 2}
         assert data["new_violations"] == 2
+        assert data["new_critical_violations"] == 1
 
     def test_model_from_dict(self) -> None:
         """Model can be created from dict."""
@@ -486,6 +511,7 @@ class TestSerialization:
             "by_type": {"x": 3},
             "by_severity": {"warning": 3},
             "new_violations": 1,
+            "new_critical_violations": 0,
             "fixed_violations": 0,
         }
 
@@ -493,3 +519,63 @@ class TestSerialization:
 
         assert breakdown.total_violations == 3
         assert breakdown.by_type == {"x": 3}
+        assert breakdown.new_critical_violations == 0
+
+
+@pytest.mark.unit
+class TestNewCriticalViolations:
+    """Test new_critical_violations tracking."""
+
+    def test_new_critical_violations_counted_correctly(self) -> None:
+        """Count only new violations with critical severity."""
+        deltas = [
+            # New critical violation (should count)
+            {
+                "type": "output_equivalence",
+                "severity": EnumViolationSeverity.CRITICAL.value,
+                "baseline_passed": True,
+                "replay_passed": False,
+            },
+            # New warning violation (should NOT count)
+            {
+                "type": "latency",
+                "severity": EnumViolationSeverity.WARNING.value,
+                "baseline_passed": True,
+                "replay_passed": False,
+            },
+            # Existing critical (not new, should NOT count)
+            {
+                "type": "cost",
+                "severity": EnumViolationSeverity.CRITICAL.value,
+                "baseline_passed": False,
+                "replay_passed": False,
+            },
+        ]
+
+        breakdown = ModelInvariantViolationBreakdown.from_violation_deltas(deltas)
+
+        assert breakdown.new_critical_violations == 1  # Only the first one
+        assert breakdown.new_violations == 2  # First two are new
+        assert breakdown.by_severity["critical"] == 2  # Both critical violations
+
+    def test_no_new_critical_when_all_existing(self) -> None:
+        """Zero new_critical when all critical violations existed before."""
+        deltas = [
+            {
+                "type": "output",
+                "severity": EnumViolationSeverity.CRITICAL.value,
+                "baseline_passed": False,  # Already existed
+                "replay_passed": False,
+            },
+        ]
+
+        breakdown = ModelInvariantViolationBreakdown.from_violation_deltas(deltas)
+
+        assert breakdown.new_critical_violations == 0
+        assert breakdown.by_severity["critical"] == 1
+
+    def test_empty_deltas_zero_new_critical(self) -> None:
+        """Empty deltas yields zero new_critical_violations."""
+        breakdown = ModelInvariantViolationBreakdown.from_violation_deltas([])
+
+        assert breakdown.new_critical_violations == 0

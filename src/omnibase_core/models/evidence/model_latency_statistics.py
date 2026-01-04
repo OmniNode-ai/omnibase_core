@@ -7,12 +7,13 @@ This model provides comprehensive latency metrics including averages and
 percentiles (P50, P95) for comparing baseline vs replay execution performance.
 """
 
-from __future__ import annotations
-
 import math
 import statistics
 
 from pydantic import BaseModel, ConfigDict, Field
+
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors import ModelOnexError
 
 
 class ModelLatencyStatistics(BaseModel):
@@ -82,7 +83,7 @@ class ModelLatencyStatistics(BaseModel):
         cls,
         baseline_values: list[float],
         replay_values: list[float],
-    ) -> ModelLatencyStatistics:
+    ) -> "ModelLatencyStatistics":
         """Compute statistics from raw latency measurements.
 
         Args:
@@ -95,14 +96,29 @@ class ModelLatencyStatistics(BaseModel):
             ModelLatencyStatistics with computed metrics.
 
         Raises:
-            ValueError: If either list is empty.
+            ModelOnexError: If either list is empty or lists have different lengths.
         """
         if not baseline_values:
-            # error-ok: factory method validation, simpler than OnexError for caller
-            raise ValueError("baseline_values cannot be empty")
+            raise ModelOnexError(
+                message="baseline_values cannot be empty",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                context={"parameter": "baseline_values"},
+            )
         if not replay_values:
-            # error-ok: factory method validation, simpler than OnexError for caller
-            raise ValueError("replay_values cannot be empty")
+            raise ModelOnexError(
+                message="replay_values cannot be empty",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                context={"parameter": "replay_values"},
+            )
+        if len(baseline_values) != len(replay_values):
+            raise ModelOnexError(
+                message="baseline_values and replay_values must have the same length",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                context={
+                    "baseline_count": len(baseline_values),
+                    "replay_count": len(replay_values),
+                },
+            )
 
         # Compute baseline statistics
         baseline_avg = statistics.mean(baseline_values)

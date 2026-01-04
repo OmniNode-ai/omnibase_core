@@ -23,7 +23,7 @@ class ModelCostStatistics(BaseModel):
         replay_avg_per_execution: Average cost per replay execution.
     """
 
-    model_config = ConfigDict(frozen=True, extra="forbid")
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     # Total costs
     baseline_total: float

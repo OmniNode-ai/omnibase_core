@@ -38,6 +38,7 @@ def make_comparison(
     }
 
 
+@pytest.mark.unit
 class TestAggregation:
     """Test aggregation of multiple comparisons."""
 
@@ -136,6 +137,7 @@ class TestAggregation:
         assert summary.total_executions == 5
 
 
+@pytest.mark.unit
 class TestStatisticalCalculations:
     """Test statistical calculations."""
 
@@ -302,6 +304,7 @@ class TestStatisticalCalculations:
         assert summary.cost_stats.delta_percent == pytest.approx(-45.0)
 
 
+@pytest.mark.unit
 class TestInvariantBreakdown:
     """Test invariant violation breakdown."""
 
@@ -469,6 +472,7 @@ class TestInvariantBreakdown:
         assert summary.invariant_violations.total_violations == total_by_type
 
 
+@pytest.mark.unit
 class TestConfidenceScoring:
     """Test confidence score calculation."""
 
@@ -590,6 +594,7 @@ class TestConfidenceScoring:
             assert 0.0 <= summary.confidence_score <= 1.0
 
 
+@pytest.mark.unit
 class TestRecommendation:
     """Test recommendation generation."""
 
@@ -680,6 +685,7 @@ class TestRecommendation:
         assert summary.recommendation == "reject"
 
 
+@pytest.mark.unit
 class TestHeadline:
     """Test headline generation."""
 
@@ -746,6 +752,7 @@ class TestHeadline:
         assert "cost" not in headline.lower()
 
 
+@pytest.mark.unit
 class TestModelProperties:
     """Test model configuration and properties."""
 

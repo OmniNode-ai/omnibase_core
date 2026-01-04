@@ -11,8 +11,6 @@ Thread Safety:
     making it thread-safe for concurrent read access.
 """
 
-from __future__ import annotations
-
 from datetime import UTC, datetime
 from typing import Literal
 from uuid import uuid4
@@ -159,7 +157,7 @@ class ModelEvidenceSummary(BaseModel):
         corpus_id: str,  # string-id-ok: external corpus identifier
         baseline_version: str,  # string-version-ok: external version identifier
         replay_version: str,  # string-version-ok: external version identifier
-    ) -> ModelEvidenceSummary:
+    ) -> "ModelEvidenceSummary":
         """Aggregate comparisons into an evidence summary.
 
         Args:
@@ -247,6 +245,8 @@ class ModelEvidenceSummary(BaseModel):
             started_at = min(executed_times)
             ended_at = max(executed_times)
         else:
+            # Fallback: use current time if no executed_at timestamps provided.
+            # This handles comparisons created without explicit timestamps.
             now = datetime.now(tz=UTC)
             started_at = now
             ended_at = now
@@ -318,11 +318,8 @@ class ModelEvidenceSummary(BaseModel):
         confidence *= pass_rate
 
         # Heavy penalty for new critical violations
-        # Check for new critical violations (baseline_passed=True, replay_passed=False, severity=critical)
-        new_critical_count = invariant_violations.by_severity.get("critical", 0)
-        # Only count as "new critical" if there are actually new violations
-        # and they are in the critical severity bucket
-        if new_critical_count > 0 and invariant_violations.new_violations > 0:
+        # (baseline_passed=True, replay_passed=False, severity=critical)
+        if invariant_violations.new_critical_violations > 0:
             confidence *= 0.5
 
         # Moderate penalty for significant latency regression (>50%)
@@ -356,14 +353,8 @@ class ModelEvidenceSummary(BaseModel):
         Returns:
             Recommendation: "approve", "review", or "reject".
         """
-        # Check for new critical violations
-        has_new_critical = (
-            invariant_violations.by_severity.get("critical", 0) > 0
-            and invariant_violations.new_violations > 0
-        )
-
         # Any new critical violation forces reject
-        if has_new_critical:
+        if invariant_violations.new_critical_violations > 0:
             return "reject"
 
         # Low confidence -> reject

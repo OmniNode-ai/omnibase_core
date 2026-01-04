@@ -55,6 +55,11 @@ class ModelInvariantViolationBreakdown(BaseModel):
         ge=0,
         description="Violations that failed in replay but passed in baseline (regressions)",
     )
+    new_critical_violations: int = Field(
+        ...,
+        ge=0,
+        description="Critical violations that failed in replay but passed in baseline",
+    )
     fixed_violations: int = Field(
         ...,
         ge=0,
@@ -88,6 +93,7 @@ class ModelInvariantViolationBreakdown(BaseModel):
                 by_type={},
                 by_severity={},
                 new_violations=0,
+                new_critical_violations=0,
                 fixed_violations=0,
             )
 
@@ -95,6 +101,7 @@ class ModelInvariantViolationBreakdown(BaseModel):
         type_counter: Counter[str] = Counter()
         severity_counter: Counter[str] = Counter()
         new_count = 0
+        new_critical_count = 0
         fixed_count = 0
 
         for delta in deltas:
@@ -111,6 +118,9 @@ class ModelInvariantViolationBreakdown(BaseModel):
                 # New violation: passed in baseline but failed in replay (regression)
                 if baseline_passed:
                     new_count += 1
+                    # Track new critical violations specifically
+                    if severity == "critical":
+                        new_critical_count += 1
 
             # Fixed violation: failed in baseline but passed in replay (improvement)
             if not baseline_passed and replay_passed:
@@ -123,6 +133,7 @@ class ModelInvariantViolationBreakdown(BaseModel):
             by_type=dict(type_counter),
             by_severity=dict(severity_counter),
             new_violations=new_count,
+            new_critical_violations=new_critical_count,
             fixed_violations=fixed_count,
         )
 
