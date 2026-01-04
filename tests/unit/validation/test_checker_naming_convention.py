@@ -966,14 +966,26 @@ class TestValidateDirectory:
     def test_verbose_mode(
         self, temp_models_dir: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
-        """Test verbose mode logs checked files."""
-        (temp_models_dir / "model_test.py").write_text("# Valid\n")
+        """Test verbose mode logs checked files at DEBUG level."""
+        test_file = temp_models_dir / "model_test.py"
+        test_file.write_text("# Valid\n")
 
         parent_dir = temp_models_dir.parent
         with caplog.at_level(logging.DEBUG):
             validate_directory(parent_dir, verbose=True)
-            # Verify that verbose mode logs the checked file
-            assert "model_test.py" in caplog.text or "Checked:" in caplog.text
+
+        # Verify DEBUG-level log entry exists with the expected format
+        debug_records = [r for r in caplog.records if r.levelno == logging.DEBUG]
+        assert len(debug_records) >= 1, "Expected at least one DEBUG log record"
+
+        # Verify the log message uses the "Checked:" format from validate_directory
+        checked_messages = [r.message for r in debug_records if "Checked:" in r.message]
+        assert len(checked_messages) >= 1, "Expected 'Checked:' format in DEBUG logs"
+
+        # Verify the specific file path appears in the log
+        assert any("model_test.py" in msg for msg in checked_messages), (
+            f"Expected 'model_test.py' in checked messages: {checked_messages}"
+        )
 
     def test_recursive_validation(self, temp_models_dir: Path) -> None:
         """Test validation is recursive into subdirectories."""
@@ -1141,9 +1153,17 @@ class TestEdgeCases:
         assert result is None
 
     def test_path_with_dots(self) -> None:
-        """Test path with . and .. components."""
+        """Test path with . and .. components passes validation.
+
+        Note: Path() does NOT normalize . and .. components - they are preserved
+        as separate parts. This test passes because check_file_name uses .parts
+        to find the first directory after 'omnibase_core', and with this path,
+        that directory is '.' which is not in DIRECTORY_PREFIX_RULES.
+        Since no rule applies, validation passes.
+        """
         file_path = Path("src/omnibase_core/./models/../models/model_test.py")
-        # Path normalization should handle this
+        # The path parts include '.', '..', etc. - no normalization occurs.
+        # The first directory after 'omnibase_core' is '.', which has no rule.
         result = check_file_name(file_path)
         assert result is None
 
