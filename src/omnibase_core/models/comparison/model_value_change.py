@@ -21,7 +21,8 @@ class ModelValueChange(BaseModel):
         new_value: Value in replay output (serialized to string).
 
     Thread Safety:
-        This model is immutable (frozen=True) after creation.
+        This model is immutable (frozen=True) after creation, making it
+        thread-safe for concurrent read access.
     """
 
     model_config = ConfigDict(frozen=True, extra="ignore", from_attributes=True)

@@ -22,13 +22,14 @@ from omnibase_core.models.comparison import (
 )
 from omnibase_core.models.invariant import ModelInvariantResult
 
-# Test IDs for consistent testing (UUIDs as per model)
-TEST_BASELINE_ID = UUID("11111111-1111-1111-1111-111111111111")
-TEST_REPLAY_ID = UUID("22222222-2222-2222-2222-222222222222")
-TEST_COMPARISON_ID = UUID("33333333-3333-3333-3333-333333333333")
-TEST_INVARIANT_ID_1 = UUID("44444444-4444-4444-4444-444444444444")
-TEST_INVARIANT_ID_2 = UUID("55555555-5555-5555-5555-555555555555")
-
+# Import centralized test UUIDs from conftest
+from .conftest import (
+    TEST_BASELINE_ID,
+    TEST_COMPARISON_ID,
+    TEST_INVARIANT_ID_1,
+    TEST_INVARIANT_ID_2,
+    TEST_REPLAY_ID,
+)
 
 # ============================================================================
 # Helper Fixtures for ModelExecutionComparison Tests
@@ -156,8 +157,8 @@ def comparison_with_diff_data(
 
 
 @pytest.mark.unit
-class TestExecutionComparisonCreation:
-    """Test comparison model creation and validation."""
+class TestModelExecutionComparisonCreation:
+    """Test ModelExecutionComparison creation and validation."""
 
     def test_create_comparison_with_matching_outputs(
         self,
@@ -277,8 +278,8 @@ class TestExecutionComparisonCreation:
 
 
 @pytest.mark.unit
-class TestDiffDetection:
-    """Test output difference detection."""
+class TestModelExecutionComparisonDiffDetection:
+    """Test output difference detection in ModelExecutionComparison."""
 
     def test_detect_value_change(
         self,
@@ -432,8 +433,8 @@ class TestDiffDetection:
 
 
 @pytest.mark.unit
-class TestInvariantResultPairing:
-    """Test pairing of invariant results between executions."""
+class TestModelExecutionComparisonInvariantPairing:
+    """Test pairing of invariant results between baseline and replay executions."""
 
     def test_stores_baseline_invariant_results(
         self,
@@ -504,8 +505,8 @@ class TestInvariantResultPairing:
 
 
 @pytest.mark.unit
-class TestMetricCalculation:
-    """Test performance and cost metric calculations."""
+class TestModelExecutionComparisonMetrics:
+    """Test latency and cost metric calculations in ModelExecutionComparison."""
 
     def test_latency_delta_calculation(
         self,
@@ -674,8 +675,8 @@ class TestMetricCalculation:
 
 
 @pytest.mark.unit
-class TestSerializationAndEquality:
-    """Test serialization and equality."""
+class TestModelExecutionComparisonSerialization:
+    """Test serialization to dict and JSON for ModelExecutionComparison."""
 
     def test_serializes_to_dict(
         self,
@@ -726,8 +727,8 @@ class TestSerializationAndEquality:
 
 
 @pytest.mark.unit
-class TestEdgeCases:
-    """Test edge cases and boundary conditions."""
+class TestModelExecutionComparisonEdgeCases:
+    """Test edge cases and boundary conditions for ModelExecutionComparison."""
 
     def test_comparison_with_zero_latency(
         self,
@@ -869,8 +870,8 @@ class TestEdgeCases:
 
 
 @pytest.mark.unit
-class TestComparisonWithMetadata:
-    """Test comparison with additional metadata fields.
+class TestModelExecutionComparisonExtraFields:
+    """Test ModelExecutionComparison behavior with additional metadata fields.
 
     Note: These tests verify the model's behavior with extra fields.
     Since the model has `extra="ignore"`, additional metadata fields
@@ -914,8 +915,8 @@ class TestComparisonWithMetadata:
 
 
 @pytest.mark.unit
-class TestCostDeltaPercent:
-    """Test cost delta percentage calculations."""
+class TestModelExecutionComparisonCostDelta:
+    """Test cost delta and percentage calculations in ModelExecutionComparison."""
 
     def test_cost_delta_percent_with_values(
         self,
@@ -961,8 +962,8 @@ class TestCostDeltaPercent:
 
 
 @pytest.mark.unit
-class TestComparisonIdValidation:
-    """Test comparison_id field behavior."""
+class TestModelExecutionComparisonIdField:
+    """Test comparison_id field generation and validation."""
 
     def test_comparison_id_is_uuid(
         self,

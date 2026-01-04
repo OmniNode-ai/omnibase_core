@@ -8,7 +8,7 @@ Thread Safety:
     making it thread-safe for concurrent read access.
 """
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, computed_field
 
 from omnibase_core.models.comparison.model_value_change import ModelValueChange
 
@@ -25,7 +25,7 @@ class ModelOutputDiff(BaseModel):
         items_added: New fields/items present in replay but not in baseline.
         items_removed: Fields/items present in baseline but not in replay.
         type_changes: Fields where the type changed between executions.
-        has_differences: True if any differences were detected.
+        has_differences: Computed property, True if any diff collections are non-empty.
 
     Thread Safety:
         This model is immutable (frozen=True) after creation, making it
@@ -50,10 +50,17 @@ class ModelOutputDiff(BaseModel):
         default_factory=dict,
         description="Fields where type changed, keyed by path with description",
     )
-    has_differences: bool = Field(
-        default=False,
-        description="True if any differences were detected",
-    )
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def has_differences(self) -> bool:
+        """Return True if any differences were detected."""
+        return bool(
+            self.values_changed
+            or self.items_added
+            or self.items_removed
+            or self.type_changes
+        )
 
 
 __all__ = ["ModelOutputDiff"]

@@ -14,9 +14,12 @@ import pytest
 
 from omnibase_core.models.comparison import ModelOutputDiff, ModelValueChange
 
-# Sample UUIDs for testing
+# Sample UUIDs for testing - centralized constants for all comparison tests
 TEST_BASELINE_ID = UUID("11111111-1111-1111-1111-111111111111")
 TEST_REPLAY_ID = UUID("22222222-2222-2222-2222-222222222222")
+TEST_COMPARISON_ID = UUID("33333333-3333-3333-3333-333333333333")
+TEST_INVARIANT_ID_1 = UUID("44444444-4444-4444-4444-444444444444")
+TEST_INVARIANT_ID_2 = UUID("55555555-5555-5555-5555-555555555555")
 
 
 @pytest.fixture

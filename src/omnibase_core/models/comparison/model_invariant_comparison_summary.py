@@ -5,7 +5,7 @@ Thread Safety:
     making it thread-safe for concurrent read access.
 """
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, computed_field
 
 
 class ModelInvariantComparisonSummary(BaseModel):
@@ -20,7 +20,7 @@ class ModelInvariantComparisonSummary(BaseModel):
         both_failed: Number of invariants that failed in both baseline and replay.
         new_violations: Invariants that passed baseline but failed replay (REGRESSION).
         fixed_violations: Invariants that failed baseline but passed replay (IMPROVEMENT).
-        regression_detected: True if any new violations were detected.
+        regression_detected: Computed property, True if new_violations > 0.
 
     Thread Safety:
         This model is immutable (frozen=True) after creation, making it
@@ -54,10 +54,12 @@ class ModelInvariantComparisonSummary(BaseModel):
         ge=0,
         description="Invariants that failed baseline but passed replay (IMPROVEMENT)",
     )
-    regression_detected: bool = Field(
-        ...,
-        description="True if any new violations were detected (new_violations > 0)",
-    )
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def regression_detected(self) -> bool:
+        """Return True if any new violations were detected."""
+        return self.new_violations > 0
 
 
 __all__ = ["ModelInvariantComparisonSummary"]

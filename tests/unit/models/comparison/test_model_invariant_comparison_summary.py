@@ -12,8 +12,8 @@ from omnibase_core.models.comparison import ModelInvariantComparisonSummary
 class TestModelInvariantComparisonSummaryCreation:
     """Test ModelInvariantComparisonSummary creation and validation."""
 
-    def test_create_summary_with_all_fields(self) -> None:
-        """Summary can be created with all required fields."""
+    def test_creation_with_all_fields_succeeds(self) -> None:
+        """Model can be created with all required fields."""
         summary = ModelInvariantComparisonSummary(
             total_invariants=10,
             both_passed=5,
@@ -29,8 +29,8 @@ class TestModelInvariantComparisonSummaryCreation:
         assert summary.fixed_violations == 1
         assert summary.regression_detected is True
 
-    def test_summary_requires_total_invariants(self) -> None:
-        """total_invariants is a required field."""
+    def test_validation_fails_when_total_invariants_missing(self) -> None:
+        """Validation fails if total_invariants is not provided."""
         with pytest.raises(ValidationError) as exc_info:
             ModelInvariantComparisonSummary(
                 both_passed=5,
@@ -42,15 +42,18 @@ class TestModelInvariantComparisonSummaryCreation:
         errors = exc_info.value.errors()
         assert any(e["loc"] == ("total_invariants",) for e in errors)
 
-    def test_summary_requires_all_fields(self) -> None:
-        """All fields are required - validation fails if any is missing."""
+    def test_validation_fails_when_any_required_field_missing(self) -> None:
+        """Validation fails if any required field is missing.
+
+        Note: regression_detected is a computed field (derived from new_violations > 0),
+        so it's not included in the required fields list.
+        """
         required_fields = [
             "total_invariants",
             "both_passed",
             "both_failed",
             "new_violations",
             "fixed_violations",
-            "regression_detected",
         ]
         for field in required_fields:
             data: dict[str, Any] = {
@@ -59,7 +62,6 @@ class TestModelInvariantComparisonSummaryCreation:
                 "both_failed": 2,
                 "new_violations": 2,
                 "fixed_violations": 1,
-                "regression_detected": True,
             }
             del data[field]
             with pytest.raises(ValidationError) as exc_info:
@@ -69,8 +71,8 @@ class TestModelInvariantComparisonSummaryCreation:
                 f"Field {field} should be required"
             )
 
-    def test_summary_regression_detected_true_when_violations(self) -> None:
-        """regression_detected should be True when new_violations > 0."""
+    def test_regression_detected_true_when_new_violations_present(self) -> None:
+        """regression_detected is True when new_violations > 0."""
         summary = ModelInvariantComparisonSummary(
             total_invariants=5,
             both_passed=3,
@@ -82,8 +84,8 @@ class TestModelInvariantComparisonSummaryCreation:
         assert summary.new_violations > 0
         assert summary.regression_detected is True
 
-    def test_summary_regression_detected_false_when_no_violations(self) -> None:
-        """regression_detected should be False when new_violations == 0."""
+    def test_regression_detected_false_when_no_new_violations(self) -> None:
+        """regression_detected is False when new_violations == 0."""
         summary = ModelInvariantComparisonSummary(
             total_invariants=5,
             both_passed=4,
@@ -95,8 +97,8 @@ class TestModelInvariantComparisonSummaryCreation:
         assert summary.new_violations == 0
         assert summary.regression_detected is False
 
-    def test_summary_is_frozen(self) -> None:
-        """Summary is immutable after creation."""
+    def test_model_is_immutable_after_creation(self) -> None:
+        """Model is immutable (frozen) after creation."""
         summary = ModelInvariantComparisonSummary(
             total_invariants=5,
             both_passed=3,
@@ -115,8 +117,8 @@ class TestModelInvariantComparisonSummaryCreation:
 class TestModelInvariantComparisonSummaryValidation:
     """Test validation logic for comparison summary."""
 
-    def test_counts_must_be_non_negative(self) -> None:
-        """All count fields must be >= 0."""
+    def test_validation_rejects_negative_count_values(self) -> None:
+        """Validation rejects negative values for count fields."""
         count_fields = [
             "total_invariants",
             "both_passed",
@@ -142,8 +144,8 @@ class TestModelInvariantComparisonSummaryValidation:
                 for e in errors
             ), f"Field {field} should reject negative values"
 
-    def test_total_equals_sum_of_parts(self) -> None:
-        """Test that counts are consistent (both_passed + both_failed + new + fixed = total).
+    def test_counts_sum_equals_total_invariants(self) -> None:
+        """Counts are consistent (both_passed + both_failed + new + fixed = total).
 
         Note: This is a semantic consistency test. The model accepts any valid
         non-negative integers, but logically consistent data should satisfy
@@ -183,8 +185,8 @@ class TestModelInvariantComparisonSummaryValidation:
         )
         assert computed == summary_no_changes.total_invariants
 
-    def test_summary_serialization(self) -> None:
-        """Summary can be serialized to dict and JSON."""
+    def test_serialization_to_dict_and_json(self) -> None:
+        """Model can be serialized to dict and JSON."""
         summary = ModelInvariantComparisonSummary(
             total_invariants=10,
             both_passed=5,
@@ -209,8 +211,8 @@ class TestModelInvariantComparisonSummaryValidation:
         assert '"total_invariants":10' in json_str
         assert '"regression_detected":true' in json_str
 
-    def test_summary_from_attributes(self) -> None:
-        """Summary can be created from object attributes."""
+    def test_model_validate_from_object_attributes(self) -> None:
+        """Model can be created from object attributes via model_validate."""
 
         class SummaryData:
             """Mock object with summary attributes."""
@@ -236,8 +238,8 @@ class TestModelInvariantComparisonSummaryValidation:
 class TestModelInvariantComparisonSummaryEdgeCases:
     """Test edge cases and boundary conditions."""
 
-    def test_summary_with_zero_invariants(self) -> None:
-        """Summary can represent empty comparison with zero invariants."""
+    def test_handles_zero_total_invariants(self) -> None:
+        """Model accepts zero total_invariants for empty comparisons."""
         summary = ModelInvariantComparisonSummary(
             total_invariants=0,
             both_passed=0,
@@ -249,8 +251,8 @@ class TestModelInvariantComparisonSummaryEdgeCases:
         assert summary.total_invariants == 0
         assert summary.regression_detected is False
 
-    def test_summary_all_passed(self) -> None:
-        """Summary can represent all invariants passing in both runs."""
+    def test_handles_all_invariants_passed_in_both(self) -> None:
+        """Model accepts all invariants passing in both baseline and replay."""
         summary = ModelInvariantComparisonSummary(
             total_invariants=10,
             both_passed=10,
@@ -262,8 +264,8 @@ class TestModelInvariantComparisonSummaryEdgeCases:
         assert summary.both_passed == summary.total_invariants
         assert summary.regression_detected is False
 
-    def test_summary_all_failed(self) -> None:
-        """Summary can represent all invariants failing in both runs."""
+    def test_handles_all_invariants_failed_in_both(self) -> None:
+        """Model accepts all invariants failing in both baseline and replay."""
         summary = ModelInvariantComparisonSummary(
             total_invariants=10,
             both_passed=0,
@@ -275,8 +277,8 @@ class TestModelInvariantComparisonSummaryEdgeCases:
         assert summary.both_failed == summary.total_invariants
         assert summary.regression_detected is False
 
-    def test_summary_all_new_violations(self) -> None:
-        """Summary can represent all invariants being new regressions."""
+    def test_handles_all_invariants_as_new_violations(self) -> None:
+        """Model accepts all invariants as new violations (regressions)."""
         summary = ModelInvariantComparisonSummary(
             total_invariants=5,
             both_passed=0,
@@ -288,8 +290,8 @@ class TestModelInvariantComparisonSummaryEdgeCases:
         assert summary.new_violations == summary.total_invariants
         assert summary.regression_detected is True
 
-    def test_summary_all_fixed(self) -> None:
-        """Summary can represent all invariants being fixed."""
+    def test_handles_all_invariants_as_fixed(self) -> None:
+        """Model accepts all invariants as fixed violations."""
         summary = ModelInvariantComparisonSummary(
             total_invariants=5,
             both_passed=0,
@@ -306,8 +308,8 @@ class TestModelInvariantComparisonSummaryEdgeCases:
 class TestModelInvariantComparisonSummaryEquality:
     """Test equality and comparison behavior."""
 
-    def test_summaries_with_same_values_are_equal(self) -> None:
-        """Summaries with identical values should be equal."""
+    def test_equality_when_same_values_returns_true(self) -> None:
+        """Two instances with identical values are equal."""
         summary1 = ModelInvariantComparisonSummary(
             total_invariants=10,
             both_passed=5,
@@ -326,8 +328,8 @@ class TestModelInvariantComparisonSummaryEquality:
         )
         assert summary1 == summary2
 
-    def test_summaries_with_different_values_are_not_equal(self) -> None:
-        """Summaries with different values should not be equal."""
+    def test_equality_when_different_values_returns_false(self) -> None:
+        """Two instances with different values are not equal."""
         summary1 = ModelInvariantComparisonSummary(
             total_invariants=10,
             both_passed=5,
@@ -351,10 +353,10 @@ class TestModelInvariantComparisonSummaryEquality:
 class TestModelInvariantComparisonSummaryWithFixture:
     """Test using fixtures from conftest.py."""
 
-    def test_create_from_fixture_data(
+    def test_creation_from_fixture_data_succeeds(
         self, sample_invariant_comparison_summary: dict[str, Any]
     ) -> None:
-        """Summary can be created from fixture data."""
+        """Model can be created from fixture data."""
         summary = ModelInvariantComparisonSummary(**sample_invariant_comparison_summary)
         assert summary.total_invariants == 5
         assert summary.both_passed == 3
