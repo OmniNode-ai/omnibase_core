@@ -28,7 +28,7 @@ Example:
     ... )
 
 See Also:
-    - omnibase_core.utils.compute_executor: Uses this context during execution
+    - omnibase_core.utils.util_compute_executor: Uses this context during execution
     - omnibase_core.mixins.mixin_compute_execution: Creates context in async wrapper
 """
 

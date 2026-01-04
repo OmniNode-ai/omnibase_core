@@ -10,7 +10,7 @@ from omnibase_core.models.common.model_graph_node_parameters import (
     ModelGraphNodeParameters,
 )
 from omnibase_core.models.common.model_output_mapping import ModelOutputMapping
-from omnibase_core.types.json_types import ToolParameterValue
+from omnibase_core.types.type_json import ToolParameterValue
 
 
 class ModelGraphNodeInputs(BaseModel):

@@ -40,7 +40,10 @@ from omnibase_core.models.contracts.subcontracts.model_workflow_definition_metad
 )
 from omnibase_core.models.orchestrator.model_action import ModelAction
 from omnibase_core.models.primitives.model_semver import ModelSemVer
-from omnibase_core.utils.workflow_executor import execute_workflow, get_execution_order
+from omnibase_core.utils.util_workflow_executor import (
+    execute_workflow,
+    get_execution_order,
+)
 
 # Default version for test instances
 DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
@@ -598,7 +601,7 @@ class TestExecutionStatus:
         ]
 
         with patch(
-            "omnibase_core.utils.workflow_executor._create_action_for_step"
+            "omnibase_core.utils.util_workflow_executor._create_action_for_step"
         ) as mock:
             mock.side_effect = RuntimeError("Simulated failure")
 
@@ -631,7 +634,7 @@ class TestExecutionStatus:
         ]
 
         with patch(
-            "omnibase_core.utils.workflow_executor._create_action_for_step"
+            "omnibase_core.utils.util_workflow_executor._create_action_for_step"
         ) as mock:
             mock.side_effect = ValueError("Test error")
 
@@ -675,7 +678,7 @@ class TestExecutionStatus:
         ]
 
         with patch(
-            "omnibase_core.utils.workflow_executor._create_action_for_step"
+            "omnibase_core.utils.util_workflow_executor._create_action_for_step"
         ) as mock:
             mock.side_effect = RuntimeError("Step A fails")
 
@@ -721,7 +724,7 @@ class TestExecutionStatus:
         ]
 
         with patch(
-            "omnibase_core.utils.workflow_executor._create_action_for_step"
+            "omnibase_core.utils.util_workflow_executor._create_action_for_step"
         ) as mock:
             mock.side_effect = RuntimeError("Stop workflow")
 

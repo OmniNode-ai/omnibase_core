@@ -26,7 +26,7 @@ from typing import TYPE_CHECKING, cast
 if TYPE_CHECKING:
     from omnibase_core.types.type_serializable_value import SerializedDict
 
-from omnibase_core.types.json_types import JsonType
+from omnibase_core.types.type_json import JsonType
 
 
 class MixinSensitiveFieldRedaction:

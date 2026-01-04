@@ -10,7 +10,7 @@ Strict typing is enforced: No Any types allowed in implementation.
 from pydantic import BaseModel, Field
 
 from omnibase_core.constants import KAFKA_REQUEST_TIMEOUT_MS
-from omnibase_core.types.constraints import PrimitiveValueType
+from omnibase_core.types.type_constraints import PrimitiveValueType
 
 
 class ModelEventSubscription(BaseModel):

@@ -42,7 +42,7 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 # Safe runtime import - error_codes only imports from types.core_types
 from omnibase_core.models.examples.model_example import ModelExample
 from omnibase_core.models.examples.model_example_metadata import ModelExampleMetadata
-from omnibase_core.types.json_types import JsonType
+from omnibase_core.types.type_json import JsonType
 from omnibase_core.types.type_serializable_value import SerializedDict
 
 

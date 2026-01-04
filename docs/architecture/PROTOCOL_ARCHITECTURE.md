@@ -953,7 +953,7 @@ poetry run mypy src/omnibase_core --warn-redundant-casts --warn-unreachable
 ### Runtime Validation
 ```python
 # Use type guards
-from omnibase_core.types.constraints import is_serializable
+from omnibase_core.types.type_constraints import is_serializable
 
 if is_serializable(obj):
     data = obj.model_dump()  # Type-safe!

@@ -782,7 +782,7 @@ from omnibase_core.factories.profiles import (
 )
 
 # Individual profile functions
-from omnibase_core.factories.profiles.orchestrator_profiles import (
+from omnibase_core.factories.profiles.factory_profile_orchestrator import (
     get_orchestrator_safe_profile,
     get_orchestrator_parallel_profile,
     get_orchestrator_resilient_profile,

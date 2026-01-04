@@ -2487,7 +2487,7 @@ mixin_fsm_execution:
   # Dependencies
   requires:
     - "omnibase_core.models.contracts.subcontracts.model_fsm_subcontract"
-    - "omnibase_core.utils.fsm_executor"
+    - "omnibase_core.utils.util_fsm_executor"
     - "omnibase_core.models.model_intent"
     - "pydantic"
 
@@ -2803,7 +2803,7 @@ mixin_workflow_execution:
   requires:
     - "omnibase_core.models.contracts.subcontracts.model_workflow_definition"
     - "omnibase_core.models.contracts.model_workflow_step"
-    - "omnibase_core.utils.workflow_executor"
+    - "omnibase_core.utils.util_workflow_executor"
     - "omnibase_core.models.orchestrator.model_action"
     - "pydantic"
 

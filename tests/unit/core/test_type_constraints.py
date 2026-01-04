@@ -8,7 +8,7 @@ functions for better generic programming patterns.
 import pytest
 from pydantic import BaseModel
 
-from omnibase_core.types.constraints import (
+from omnibase_core.types.type_constraints import (
     BaseCollection,
     BaseFactory,
     Configurable,

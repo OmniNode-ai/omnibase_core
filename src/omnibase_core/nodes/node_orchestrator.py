@@ -28,7 +28,7 @@ from omnibase_core.models.workflow import (
     WORKFLOW_STATE_SNAPSHOT_SCHEMA_VERSION,
     ModelWorkflowStateSnapshot,
 )
-from omnibase_core.utils.workflow_executor import WorkflowExecutionResult
+from omnibase_core.utils.util_workflow_executor import WorkflowExecutionResult
 
 # Clock skew tolerance for snapshot timestamp validation
 SNAPSHOT_FUTURE_TOLERANCE_SECONDS: int = 60

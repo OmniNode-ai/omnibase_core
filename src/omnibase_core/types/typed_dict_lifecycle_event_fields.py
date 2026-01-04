@@ -13,7 +13,7 @@ from uuid import UUID
 if TYPE_CHECKING:
     from omnibase_core.models.primitives.model_semver import ModelSemVer
 
-from omnibase_core.types.json_types import JsonType
+from omnibase_core.types.type_json import JsonType
 
 
 class TypedDictLifecycleEventFields(TypedDict, total=False):

@@ -48,7 +48,7 @@ from omnibase_core.models.transformations.model_transform_unicode_config import 
 from omnibase_core.models.transformations.model_validation_step_config import (
     ModelValidationStepConfig,
 )
-from omnibase_core.utils.compute_executor import execute_compute_pipeline
+from omnibase_core.utils.util_compute_executor import execute_compute_pipeline
 from tests.integration.conftest import ComputeContextFactory
 
 

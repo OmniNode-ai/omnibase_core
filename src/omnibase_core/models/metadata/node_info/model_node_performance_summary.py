@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
-from omnibase_core.types.json_types import JsonType
+from omnibase_core.types.type_json import JsonType
 
 
 class ModelNodePerformanceSummary(BaseModel):

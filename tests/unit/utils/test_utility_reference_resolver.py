@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, Mock
 
 import pytest
 
-from omnibase_core.utils.generation.utility_reference_resolver import (
+from omnibase_core.utils.generation.util_reference_resolver import (
     ModelRefInfo,
     UtilityReferenceResolver,
 )

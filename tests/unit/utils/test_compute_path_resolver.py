@@ -19,7 +19,7 @@ from typing import Any
 import pytest
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.utils.compute_path_resolver import (
+from omnibase_core.utils.util_compute_path_resolver import (
     PathResolutionError,
     resolve_input_path,
     resolve_path,

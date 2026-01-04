@@ -13,7 +13,7 @@ from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.types.json_types import PrimitiveContainer
+from omnibase_core.types.type_json import PrimitiveContainer
 
 
 class ModelExtensionData(BaseModel):

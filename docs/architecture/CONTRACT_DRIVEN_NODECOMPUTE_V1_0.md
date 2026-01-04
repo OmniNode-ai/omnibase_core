@@ -675,7 +675,7 @@ def resolve_pipeline_path(
     )
 ```
 
-See `src/omnibase_core/utils/compute_path_resolver.py` for the complete implementation including `resolve_input_path()` and `resolve_step_path()` helper functions.
+See `src/omnibase_core/utils/util_compute_path_resolver.py` for the complete implementation including `resolve_input_path()` and `resolve_step_path()` helper functions.
 
 ### IDENTITY Transformation Rules
 
@@ -941,8 +941,8 @@ class NodeTextProcessor(NodeCompute):
 |------|------|----------|
 | ModelComputePipelineStep | `models/contracts/subcontracts/model_compute_pipeline_step.py` | P0 |
 | ModelComputeSubcontract | `models/contracts/subcontracts/model_compute_subcontract.py` | P0 |
-| compute_executor.py | `utils/compute_executor.py` | P0 |
-| compute_transformations.py | `utils/compute_transformations.py` | P0 |
+| util_compute_executor.py | `utils/util_compute_executor.py` | P0 |
+| util_compute_transformations.py | `utils/util_compute_transformations.py` | P0 |
 | MixinComputeExecution | `mixins/mixin_compute_execution.py` | P0 |
 | Refactor NodeCompute | `nodes/node_compute.py` | P0 |
 

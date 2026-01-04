@@ -1,7 +1,7 @@
 """
 Unit tests for json_types module.
 
-Tests the type aliases defined in omnibase_core.types.json_types to verify:
+Tests the type aliases defined in omnibase_core.types.type_json to verify:
 1. All type aliases are importable
 2. Type aliases can be used in type annotations
 3. Runtime behavior verification with valid values
@@ -14,7 +14,7 @@ from uuid import UUID
 
 import pytest
 
-from omnibase_core.types.json_types import (
+from omnibase_core.types.type_json import (
     JsonPrimitive,
     JsonType,
     PrimitiveContainer,
@@ -559,7 +559,7 @@ class TestModuleExports:
 
     def test_all_exports_exist(self) -> None:
         """Test that all items in __all__ are exported."""
-        from omnibase_core.types import json_types
+        from omnibase_core.types import type_json
 
         expected_exports = [
             "JsonPrimitive",
@@ -570,11 +570,11 @@ class TestModuleExports:
         ]
 
         for export in expected_exports:
-            assert hasattr(json_types, export), f"Missing export: {export}"
+            assert hasattr(type_json, export), f"Missing export: {export}"
 
     def test_all_list_contents(self) -> None:
         """Test that __all__ contains expected type aliases."""
-        from omnibase_core.types import json_types
+        from omnibase_core.types import type_json
 
         expected_exports = {
             "JsonPrimitive",
@@ -584,7 +584,7 @@ class TestModuleExports:
             "ToolParameterValue",
         }
 
-        assert set(json_types.__all__) == expected_exports
+        assert set(type_json.__all__) == expected_exports
 
 
 @pytest.mark.unit

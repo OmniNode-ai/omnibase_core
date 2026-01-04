@@ -23,7 +23,7 @@ from omnibase_core.models.contracts.subcontracts.model_compute_pipeline_step imp
 from omnibase_core.models.contracts.subcontracts.model_compute_subcontract import (
     ModelComputeSubcontract,
 )
-from omnibase_core.utils.compute_executor import execute_compute_pipeline
+from omnibase_core.utils.util_compute_executor import execute_compute_pipeline
 
 
 @pytest.mark.timeout(10)
@@ -60,7 +60,7 @@ class TestPipelineExecutorUnexpectedErrors:
 
         # Patch execute_pipeline_step to raise an unexpected exception
         with patch(
-            "omnibase_core.utils.compute_executor.execute_pipeline_step"
+            "omnibase_core.utils.util_compute_executor.execute_pipeline_step"
         ) as mock_execute:
             mock_execute.side_effect = RuntimeError("Unexpected system failure")
 
@@ -89,7 +89,7 @@ class TestPipelineExecutorUnexpectedErrors:
         context = ModelComputeExecutionContext(operation_id=uuid4())
 
         with patch(
-            "omnibase_core.utils.compute_executor.execute_pipeline_step"
+            "omnibase_core.utils.util_compute_executor.execute_pipeline_step"
         ) as mock_execute:
             mock_execute.side_effect = ValueError("Invalid operation")
 
@@ -119,7 +119,7 @@ class TestPipelineExecutorUnexpectedErrors:
         expected_message = "Critical memory allocation failure"
 
         with patch(
-            "omnibase_core.utils.compute_executor.execute_pipeline_step"
+            "omnibase_core.utils.util_compute_executor.execute_pipeline_step"
         ) as mock_execute:
             mock_execute.side_effect = MemoryError(expected_message)
 
@@ -152,9 +152,9 @@ class TestPipelineExecutorUnexpectedErrors:
 
         with (
             patch(
-                "omnibase_core.utils.compute_executor.execute_pipeline_step"
+                "omnibase_core.utils.util_compute_executor.execute_pipeline_step"
             ) as mock_execute,
-            patch("omnibase_core.utils.compute_executor.logger") as mock_logger,
+            patch("omnibase_core.utils.util_compute_executor.logger") as mock_logger,
         ):
             mock_execute.side_effect = OSError("Disk read error")
 
@@ -206,7 +206,7 @@ class TestPipelineExecutorUnexpectedErrors:
             raise KeyError("Missing required key")
 
         with patch(
-            "omnibase_core.utils.compute_executor.execute_pipeline_step"
+            "omnibase_core.utils.util_compute_executor.execute_pipeline_step"
         ) as mock_execute:
             mock_execute.side_effect = side_effect_fn
 
@@ -235,7 +235,7 @@ class TestPipelineExecutorUnexpectedErrors:
         context = ModelComputeExecutionContext(operation_id=uuid4())
 
         with patch(
-            "omnibase_core.utils.compute_executor.execute_pipeline_step"
+            "omnibase_core.utils.util_compute_executor.execute_pipeline_step"
         ) as mock_execute:
             mock_execute.side_effect = TypeError("Invalid type conversion")
 
@@ -288,7 +288,7 @@ class TestPipelineExecutorUnexpectedErrors:
             raise AttributeError("Object has no attribute 'foo'")
 
         with patch(
-            "omnibase_core.utils.compute_executor.execute_pipeline_step"
+            "omnibase_core.utils.util_compute_executor.execute_pipeline_step"
         ) as mock_execute:
             mock_execute.side_effect = side_effect_fn
 
@@ -320,7 +320,7 @@ class TestPipelineExecutorUnexpectedErrors:
         context = ModelComputeExecutionContext(operation_id=uuid4())
 
         with patch(
-            "omnibase_core.utils.compute_executor.execute_pipeline_step"
+            "omnibase_core.utils.util_compute_executor.execute_pipeline_step"
         ) as mock_execute:
             mock_execute.side_effect = Exception("Generic failure")
 
@@ -351,7 +351,7 @@ class TestPipelineExecutorUnexpectedErrors:
         context = ModelComputeExecutionContext(operation_id=uuid4())
 
         with patch(
-            "omnibase_core.utils.compute_executor.execute_pipeline_step"
+            "omnibase_core.utils.util_compute_executor.execute_pipeline_step"
         ) as mock_execute:
             # Raise a variety of exception types to ensure none propagate
             for exc_class in [
@@ -398,9 +398,9 @@ class TestPipelineExecutorUnexpectedErrors:
 
         with (
             patch(
-                "omnibase_core.utils.compute_executor.execute_pipeline_step"
+                "omnibase_core.utils.util_compute_executor.execute_pipeline_step"
             ) as mock_execute,
-            patch("omnibase_core.utils.compute_executor.logger") as mock_logger,
+            patch("omnibase_core.utils.util_compute_executor.logger") as mock_logger,
         ):
             mock_execute.side_effect = RuntimeError("Test failure")
 
@@ -441,9 +441,9 @@ class TestPipelineExecutorLoggingDetails:
 
         with (
             patch(
-                "omnibase_core.utils.compute_executor.execute_pipeline_step"
+                "omnibase_core.utils.util_compute_executor.execute_pipeline_step"
             ) as mock_execute,
-            patch("omnibase_core.utils.compute_executor.logger") as mock_logger,
+            patch("omnibase_core.utils.util_compute_executor.logger") as mock_logger,
         ):
             mock_execute.side_effect = ZeroDivisionError("division by zero")
 
@@ -470,7 +470,7 @@ class TestValidationStepWarning:
         from omnibase_core.models.transformations.model_validation_step_config import (
             ModelValidationStepConfig,
         )
-        from omnibase_core.utils.compute_executor import execute_validation_step
+        from omnibase_core.utils.util_compute_executor import execute_validation_step
 
         step = ModelComputePipelineStep(
             step_name="test_validation",
@@ -571,7 +571,7 @@ class TestPipelineTimeoutEnforcement:
             return "should_not_reach"
 
         with patch(
-            "omnibase_core.utils.compute_executor.execute_pipeline_step"
+            "omnibase_core.utils.util_compute_executor.execute_pipeline_step"
         ) as mock_execute:
             mock_execute.side_effect = slow_step
 
@@ -609,7 +609,7 @@ class TestPipelineTimeoutEnforcement:
             return "unreachable"
 
         with patch(
-            "omnibase_core.utils.compute_executor.execute_pipeline_step"
+            "omnibase_core.utils.util_compute_executor.execute_pipeline_step"
         ) as mock_execute:
             mock_execute.side_effect = slow_step
 
@@ -644,7 +644,7 @@ class TestPipelineTimeoutEnforcement:
             return "unreachable"
 
         with patch(
-            "omnibase_core.utils.compute_executor.execute_pipeline_step"
+            "omnibase_core.utils.util_compute_executor.execute_pipeline_step"
         ) as mock_execute:
             mock_execute.side_effect = slow_step
 
@@ -686,9 +686,9 @@ class TestPipelineTimeoutEnforcement:
 
         with (
             patch(
-                "omnibase_core.utils.compute_executor.execute_pipeline_step"
+                "omnibase_core.utils.util_compute_executor.execute_pipeline_step"
             ) as mock_execute,
-            patch("omnibase_core.utils.compute_executor.logger") as mock_logger,
+            patch("omnibase_core.utils.util_compute_executor.logger") as mock_logger,
         ):
             mock_execute.side_effect = slow_step
 
@@ -729,7 +729,7 @@ class TestPipelineTimeoutEnforcement:
             return "unreachable"
 
         with patch(
-            "omnibase_core.utils.compute_executor.execute_pipeline_step"
+            "omnibase_core.utils.util_compute_executor.execute_pipeline_step"
         ) as mock_execute:
             mock_execute.side_effect = slow_step
 
@@ -773,7 +773,7 @@ class TestPipelineTimeoutEnforcement:
             return "unreachable"
 
         with patch(
-            "omnibase_core.utils.compute_executor.execute_pipeline_step"
+            "omnibase_core.utils.util_compute_executor.execute_pipeline_step"
         ) as mock_execute:
             mock_execute.side_effect = slow_step
 

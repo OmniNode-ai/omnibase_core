@@ -384,7 +384,7 @@ class MixinNodeExecutor(MixinEventDrivenNode):
             return result
         # Cast result to JsonType - _serialize_result handles conversion of execution
         # results which should be JSON-serializable by node contract
-        from omnibase_core.types.json_types import JsonType
+        from omnibase_core.types.type_json import JsonType
 
         return {"result": cast(JsonType, result)}
 

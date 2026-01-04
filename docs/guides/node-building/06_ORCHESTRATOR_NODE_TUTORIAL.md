@@ -128,7 +128,7 @@ The omnibase_core codebase provides **comprehensive YAML contract infrastructure
 |-----------|--------|-------------|
 | YAML Contract Models | Complete | Full Pydantic validation |
 | Subcontract Composition | Complete | ModelContractOrchestrator |
-| Runtime Executor Services | Complete | workflow_executor.py with MixinWorkflowExecution |
+| Runtime Executor Services | Complete | util_workflow_executor.py with MixinWorkflowExecution |
 | NodeOrchestrator | Complete | Primary workflow-driven implementation |
 | Documentation | Complete | Full tutorial and migration guides |
 

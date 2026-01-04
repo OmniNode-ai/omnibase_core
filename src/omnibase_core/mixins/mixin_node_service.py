@@ -52,7 +52,7 @@ from omnibase_core.models.discovery.model_tool_response_event import (
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types import TypedDictServiceHealth
-from omnibase_core.types.json_types import JsonType
+from omnibase_core.types.type_json import JsonType
 
 # Component identifier for logging
 _COMPONENT_NAME = Path(__file__).stem

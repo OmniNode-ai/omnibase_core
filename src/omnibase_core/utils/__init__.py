@@ -16,6 +16,8 @@ dependencies and are lazy-loaded to avoid circular imports during initial
 module loading.
 """
 
+from typing import Any
+
 from .util_conflict_resolver import UtilConflictResolver
 from .util_decorators import allow_any_type, allow_dict_str_any
 from .util_enum_normalizer import create_enum_normalizer
@@ -28,6 +30,9 @@ from .util_hash import (
     string_to_uuid,
 )
 from .util_validators import convert_dict_to_frozen_pairs, convert_list_to_tuple
+
+# Note: parse_datetime is lazy-loaded via __getattr__ to avoid circular imports
+# when types/ imports from utils/ during initialization
 
 # Note: The following utilities have heavy model dependencies and are NOT imported
 # here to avoid circular dependencies during initial module loading. Import directly:
@@ -52,6 +57,7 @@ __all__ = [
     "deterministic_hash",
     "deterministic_hash_int",
     "deterministic_jitter",
+    "parse_datetime",
     "string_to_uuid",
 ]
 
@@ -59,7 +65,7 @@ __all__ = [
 # =============================================================================
 # Deprecated aliases: Lazy-load with warnings per OMN-1071 renaming.
 # =============================================================================
-def __getattr__(name: str) -> type:
+def __getattr__(name: str) -> Any:
     """
     Lazy loading for utilities with heavy model dependencies.
 
@@ -72,6 +78,14 @@ def __getattr__(name: str) -> type:
     - ProtocolContractLoader -> UtilContractLoader
     """
     import warnings
+
+    # -------------------------------------------------------------------------
+    # parse_datetime: lazy-loaded to avoid circular imports with types/
+    # -------------------------------------------------------------------------
+    if name == "parse_datetime":
+        from .util_datetime_parser import parse_datetime
+
+        return parse_datetime
 
     # -------------------------------------------------------------------------
     # Consolidated imports: UtilContractLoader and its deprecated alias

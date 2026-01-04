@@ -29,7 +29,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from omnibase_core.models.common.model_graph_node_parameter import (
     ModelGraphNodeParameter,
 )
-from omnibase_core.types.json_types import ToolParameterValue
+from omnibase_core.types.type_json import ToolParameterValue
 
 
 class ModelGraphNodeParameters(BaseModel):

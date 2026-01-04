@@ -52,7 +52,7 @@ from omnibase_core.models.primitives.model_semver import (
     ModelSemVer,
     parse_semver_from_string,
 )
-from omnibase_core.types.json_types import JsonType
+from omnibase_core.types.type_json import JsonType
 from omnibase_core.types.typed_dict_lifecycle_event_fields import (
     TypedDictLifecycleEventFields,
 )

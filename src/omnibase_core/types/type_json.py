@@ -20,7 +20,7 @@ Design Decisions:
     - Separate PrimitiveValue (without None) for non-nullable contexts
 
 Usage:
-    >>> from omnibase_core.types.json_types import (
+    >>> from omnibase_core.types.type_json import (
     ...     JsonPrimitive,
     ...     JsonType,
     ...     PrimitiveValue,

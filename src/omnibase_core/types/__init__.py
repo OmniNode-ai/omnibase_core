@@ -27,7 +27,19 @@ Solution: Use TYPE_CHECKING and __getattr__ for lazy loading, similar to ModelBa
 # The __getattr__ fallback at the bottom provides lazy-loading as a backup mechanism.
 # Core types for breaking circular dependencies
 # Converter functions
-from .constraints import (
+from .converter_error_details import convert_error_details_to_typed_dict
+from .converter_health import convert_health_to_typed_dict
+from .converter_stats import convert_stats_to_typed_dict
+
+# Compute pipeline type aliases (for pipeline data flows)
+from .type_compute_pipeline import (
+    PathResolvedValue,
+    PipelineData,
+    PipelineDataDict,
+    StepResultMapping,
+    TransformInputT,
+)
+from .type_constraints import (
     BaseCollection,
     BaseFactory,
     BasicValueType,
@@ -69,31 +81,19 @@ from .constraints import (
     validate_context_value,
     validate_primitive_value,
 )
-from .converter_error_details_to_typed_dict import convert_error_details_to_typed_dict
-from .converter_health_to_typed_dict import convert_health_to_typed_dict
-from .converter_stats_to_typed_dict import convert_stats_to_typed_dict
-from .core_types import ProtocolSchemaValue, TypedDictBasicErrorContext
+from .type_core import ProtocolSchemaValue, TypedDictBasicErrorContext
+
+# Effect result type aliases (centralized to avoid primitive soup unions)
+from .type_effect_result import DbParamType, EffectResultType
 
 # JSON type aliases (centralized to avoid primitive soup unions)
-from .json_types import (
+from .type_json import (
     JsonPrimitive,
     JsonType,
     PrimitiveContainer,
     PrimitiveValue,
     ToolParameterValue,
 )
-
-# Compute pipeline type aliases (for pipeline data flows)
-from .type_compute_pipeline import (
-    PathResolvedValue,
-    PipelineData,
-    PipelineDataDict,
-    StepResultMapping,
-    TransformInputT,
-)
-
-# Effect result type aliases (centralized to avoid primitive soup unions)
-from .type_effect_result import DbParamType, EffectResultType
 
 # Schema type aliases (for type-safe schema patterns)
 from .type_schema_aliases import SchemaDict, StepOutputs
@@ -381,9 +381,6 @@ from .typed_dict_workflow_state import TypedDictWorkflowState
 from .typed_dict_yaml_dump_kwargs import TypedDictYamlDumpKwargs
 from .typed_dict_yaml_dump_options import TypedDictYamlDumpOptions
 
-# Utility functions
-from .util_datetime_parser import parse_datetime
-
 __all__ = [
     # Core types (no dependencies)
     "TypedDictBasicErrorContext",
@@ -584,8 +581,6 @@ __all__ = [
     "convert_stats_to_typed_dict",
     "convert_health_to_typed_dict",
     "convert_error_details_to_typed_dict",
-    # Utility functions
-    "parse_datetime",
     # Mixin-specific TypedDict definitions
     "TypedDictCacheStats",
     "TypedDictDiscoveryExtendedStats",
@@ -746,7 +741,7 @@ def __getattr__(name: str) -> object:
     # All other constraint exports come from .constraints
     if name in constraint_exports:
         # Import from constraints module
-        from omnibase_core.types import constraints
+        from omnibase_core.types import type_constraints as constraints
 
         attr = getattr(constraints, name)
         globals()[name] = attr
