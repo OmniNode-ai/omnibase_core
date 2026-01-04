@@ -39,14 +39,15 @@ class ModelWorkflowCoordinator:
         config: SerializedDict | None = None,
     ) -> object:
         """Execute workflow with logging and error handling."""
+        # Import at function level to avoid circular imports and eliminate duplication
+        from omnibase_core.logging.logging_structured import (
+            emit_log_event_sync as emit_log_event,
+        )
+
         try:
             self.factory.create_workflow(workflow_type, config)
 
             # Log workflow start
-            from omnibase_core.logging.logging_structured import (
-                emit_log_event_sync as emit_log_event,
-            )
-
             emit_log_event(
                 LogLevel.INFO,
                 f"Workflow execution started: {workflow_type}",
@@ -77,10 +78,6 @@ class ModelWorkflowCoordinator:
 
         except (AttributeError, KeyError, RuntimeError, TypeError, ValueError) as e:
             # Log workflow failure
-            from omnibase_core.logging.logging_structured import (
-                emit_log_event_sync as emit_log_event,
-            )
-
             emit_log_event(
                 LogLevel.ERROR,
                 f"Workflow execution failed: {workflow_type}",
