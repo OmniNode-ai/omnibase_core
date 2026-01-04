@@ -8,8 +8,6 @@ Thread Safety:
     making them thread-safe for concurrent read access.
 """
 
-from typing import Any
-
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -24,7 +22,7 @@ class ModelEventBusOutputField(BaseModel):
         processed: The processed/transformed output string, if any.
         integration: Flag indicating whether integration mode was used.
         backend: Identifier for the backend that processed this field.
-        custom: Optional custom metadata. Type is intentionally Any for flexibility
+        custom: Optional custom metadata. Type is intentionally object for flexibility
             in storing arbitrary user-defined data structures. Consumers should
             validate the structure before use.
     """
@@ -47,10 +45,10 @@ class ModelEventBusOutputField(BaseModel):
         ...,
         description="Identifier for the backend that processed this field",
     )
-    # Note: custom is intentionally typed as Any for flexibility in storing
+    # Note: custom is intentionally typed as object for flexibility in storing
     # arbitrary user-defined data structures. Consumers should validate the
     # structure before use. This is a common pattern for extensible metadata.
-    custom: Any | None = Field(
+    custom: object | None = Field(
         default=None,
         description="Optional custom metadata (arbitrary structure)",
     )
@@ -72,7 +70,7 @@ class ModelEventBusOutputField(BaseModel):
 
     @classmethod
     def create_with_custom(
-        cls, backend: str, custom: Any, processed: str | None = None
+        cls, backend: str, custom: object, processed: str | None = None
     ) -> "ModelEventBusOutputField":
         """Create an output field with custom metadata."""
         return cls(backend=backend, processed=processed, custom=custom)
