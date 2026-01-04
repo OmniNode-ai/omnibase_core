@@ -70,6 +70,18 @@ logger = logging.getLogger(__name__)
 # =============================================================================
 
 # Exact match placeholders (case-insensitive)
+#
+# NOTE: These patterns match ONLY when the entire normalized value equals the
+# pattern exactly (case-insensitive). Substring matching is NOT performed.
+#
+# For example:
+#   - "test" matches: "test", "TEST", "Test"
+#   - "test" does NOT match: "test_handler", "my_test", "testing"
+#
+# This means a handler named "test_user_handler" will NOT trigger a false
+# positive, but a field with just "test" as its value will be flagged as a
+# placeholder (which is appropriate for critical fields like handler_id, name,
+# version, input_model, and output_model in production contracts).
 _PLACEHOLDER_EXACT_PATTERNS: frozenset[str] = frozenset(
     {
         "todo",
@@ -549,6 +561,11 @@ class MergeValidator:
     ) -> None:
         """
         Check for duplicate items in a sequence and report errors.
+
+        Complexity: O(n) where n = len(items).
+            - Single pass through items: O(n)
+            - Set membership check and insertion: O(1) amortized
+            - Duplicates are collected only on collision (no extra iteration)
 
         Args:
             items: Sequence of string items to check.

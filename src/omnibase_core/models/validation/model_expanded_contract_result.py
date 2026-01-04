@@ -19,7 +19,7 @@ Related:
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_validation_phase import EnumValidationPhase
 from omnibase_core.models.common.model_validation_result import ModelValidationResult
@@ -66,6 +66,8 @@ class ModelExpandedContractResult(BaseModel):
         ...     for error in result.errors:
         ...         print(f"  - {error}")
     """
+
+    model_config = ConfigDict(frozen=False, extra="forbid")
 
     success: bool = Field(
         default=False,

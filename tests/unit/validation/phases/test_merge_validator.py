@@ -17,6 +17,7 @@ Related:
 """
 
 import pytest
+from pydantic import ValidationError
 
 from omnibase_core.enums.enum_contract_validation_error_code import (
     EnumContractValidationErrorCode,
@@ -297,6 +298,22 @@ class TestMergeValidatorPlaceholderDetection(TestMergeValidatorFixtures):
         # Should still be valid (warning, not error)
         assert result.is_valid is True
         assert result.warning_count > 0
+        # Verify the specific warning message contains expected content
+        # result.warnings is a list of strings (legacy field)
+        assert any(
+            "description" in msg.lower() and "placeholder" in msg.lower()
+            for msg in result.warnings
+        ), f"Expected warning about placeholder in description, got: {result.warnings}"
+        # Get detailed warning issues for code verification
+        from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
+
+        warning_issues = result.get_issues_by_severity(EnumValidationSeverity.WARNING)
+        warning_codes = [issue.code for issue in warning_issues if issue.code]
+        assert any(
+            EnumContractValidationErrorCode.CONTRACT_VALIDATION_MERGE_PLACEHOLDER_VALUE_REJECTED.value
+            in code
+            for code in warning_codes
+        ), f"Expected PLACEHOLDER_VALUE_REJECTED code, got: {warning_codes}"
 
 
 @pytest.mark.unit
@@ -424,7 +441,8 @@ class TestMergeValidatorCapabilityConsistency(TestMergeValidatorFixtures):
         """Test that duplicate capability input aliases are rejected at model level."""
         # ModelHandlerContract validates unique aliases at construction time
         # This is the correct behavior - duplicates are caught early
-        with pytest.raises(ValueError) as exc_info:
+        # Pydantic wraps the ValueError from field_validator into ValidationError
+        with pytest.raises(ValidationError) as exc_info:
             ModelHandlerContract(
                 handler_id="node.test.compute",
                 name="Test Handler",
@@ -444,6 +462,7 @@ class TestMergeValidatorCapabilityConsistency(TestMergeValidatorFixtures):
                 ],
             )
 
+        # ValidationError contains the original message from the field validator
         assert "Duplicate capability input aliases" in str(exc_info.value)
 
     def test_duplicate_capability_outputs_detected(

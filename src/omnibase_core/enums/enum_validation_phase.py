@@ -36,6 +36,13 @@ class EnumValidationPhase(str, Enum):
     Each phase performs distinct validation logic and may produce different
     types of errors or warnings.
 
+    Note:
+        This enum uses explicit string values instead of auto() because it
+        inherits from ``str, Enum``. The string values ("patch", "merge",
+        "expanded") are used for serialization and as dictionary keys in
+        ``validation_results``. Using auto() would generate integer values
+        which would break serialization compatibility and dict key lookups.
+
     Attributes:
         PATCH: Phase 1 - Patch validation. Validates individual contract
             patches for structural correctness, duplicate entries, and
@@ -54,6 +61,9 @@ class EnumValidationPhase(str, Enum):
         Currently in patch validation phase
     """
 
+    # Note: Explicit string values are required (not auto()) because this is a
+    # str-based enum. These values are used for JSON serialization and as keys
+    # in validation_results dicts. See docstring above for details.
     PATCH = "patch"
     """Phase 1: Patch validation - validates individual patches before merging."""
 

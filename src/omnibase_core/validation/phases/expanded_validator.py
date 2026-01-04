@@ -56,15 +56,24 @@ logger = logging.getLogger(__name__)
 # Validation Patterns
 # =============================================================================
 
+# Dot-separated identifier pattern: used for handler IDs and model references
+# Format: segments separated by dots, each starting with letter or underscore
+# Examples: node.user.reducer, omnibase_core.models.events.ModelUserEvent
+#
+# This pattern is shared between handler ID and model reference validation
+# because both require the same structural format (dot-separated Python identifiers).
+_DOT_SEPARATED_IDENTIFIER_PATTERN = re.compile(
+    r"^[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)+$"
+)
+
 # Handler ID format: dot-separated segments, each starting with letter or underscore
 # Examples: node.user.reducer, handler.email.sender, _internal.service
-HANDLER_ID_PATTERN = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)+$")
+HANDLER_ID_PATTERN = _DOT_SEPARATED_IDENTIFIER_PATTERN
 
 # Model reference pattern: looks like a valid Python module path
 # Examples: omnibase_core.models.events.ModelUserEvent, myapp.Input
-MODEL_REFERENCE_PATTERN = re.compile(
-    r"^[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)+$"
-)
+# Note: Uses same pattern as handler IDs - both are dot-separated identifiers
+MODEL_REFERENCE_PATTERN = _DOT_SEPARATED_IDENTIFIER_PATTERN
 
 # Semver pattern for version validation
 # Matches: 1.0.0, 1.0.0-beta.1, 1.0.0+build.123

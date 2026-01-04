@@ -48,8 +48,9 @@ Related:
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
+from omnibase_core.enums import EnumNodeType
 from omnibase_core.enums.enum_validation_phase import EnumValidationPhase
 from omnibase_core.models.common.model_validation_result import ModelValidationResult
 from omnibase_core.models.contracts.model_contract_patch import ModelContractPatch
@@ -114,6 +115,11 @@ class ContractValidationPipeline:  # naming-ok: validator class, not protocol
         >>> result = pipeline.validate_all(patch, profile_factory)
         >>> if result.success:
         ...     print(f"Contract validated: {result.contract.name}")
+        ... else:
+        ...     # Handle validation failure
+        ...     print(f"Validation failed at phase: {result.phase_failed}")
+        ...     for error in result.errors:
+        ...         print(f"  - {error}")
         ...
         >>> # With custom constraint validator
         >>> constraint_validator = MyConstraintValidator()
@@ -121,6 +127,26 @@ class ContractValidationPipeline:  # naming-ok: validator class, not protocol
         ...     constraint_validator=constraint_validator
         ... )
         >>> result = pipeline.validate_all(patch, profile_factory)
+
+    Error Handling:
+        When validation fails, the pipeline provides detailed error information:
+
+        >>> result = pipeline.validate_all(patch, profile_factory)
+        >>> if not result.success:
+        ...     # Check which phase failed
+        ...     if result.phase_failed == EnumValidationPhase.PATCH:
+        ...         print("Patch structure is invalid")
+        ...     elif result.phase_failed == EnumValidationPhase.MERGE:
+        ...         print("Merge produced inconsistent result")
+        ...     elif result.phase_failed == EnumValidationPhase.EXPANDED:
+        ...         print("Expanded contract fails runtime validation")
+        ...
+        ...     # Access phase-specific results for detailed diagnostics
+        ...     for phase, phase_result in result.validation_results.items():
+        ...         if not phase_result.is_valid:
+        ...             print(f"Phase {phase}: {phase_result.error_count} errors")
+        ...             for issue in phase_result.issues:
+        ...                 print(f"  [{issue.severity}] {issue.message}")
 
     Attributes:
         _constraint_validator: Optional duck-typed validator for Phase 2.
@@ -134,6 +160,14 @@ class ContractValidationPipeline:  # naming-ok: validator class, not protocol
         - ExpandedContractValidator: Phase 3 validation
         - ContractMergeEngine: Merge operations
     """
+
+    # Mapping from profile name prefixes to node types for base contract resolution
+    _PREFIX_TO_NODE_TYPE_MAP: dict[str, EnumNodeType] = {
+        "compute": EnumNodeType.COMPUTE_GENERIC,
+        "effect": EnumNodeType.EFFECT_GENERIC,
+        "reducer": EnumNodeType.REDUCER_GENERIC,
+        "orchestrator": EnumNodeType.ORCHESTRATOR_GENERIC,
+    }
 
     def __init__(
         self,
@@ -375,6 +409,53 @@ class ContractValidationPipeline:  # naming-ok: validator class, not protocol
         )
         return result
 
+    def _perform_merge_operation(
+        self,
+        patch: ModelContractPatch,
+        profile_factory: ProtocolContractProfileFactory,
+    ) -> tuple[ModelHandlerContract, ModelHandlerContract]:
+        """Perform the merge operation and return merged and base contracts.
+
+        This method encapsulates the merge logic including:
+            - Creating the merge engine
+            - Performing the merge operation
+            - Determining the node type from profile name
+            - Resolving the base contract from the profile factory
+
+        Args:
+            patch: The contract patch to merge.
+            profile_factory: Factory for resolving base contracts from profiles.
+
+        Returns:
+            Tuple of (merged_contract, base_contract).
+
+        Raises:
+            Exception: If merge operation fails for any reason.
+                The caller should catch and handle appropriately.
+        """
+        # Import here to avoid circular import at module level
+        from omnibase_core.merge.contract_merge_engine import ContractMergeEngine
+
+        merge_engine = ContractMergeEngine(profile_factory)
+        merged_contract = merge_engine.merge(patch)
+
+        # Determine node type from profile name prefix
+        profile_name = patch.extends.profile.lower()
+        node_type = EnumNodeType.COMPUTE_GENERIC  # default
+
+        for prefix, ntype in self._PREFIX_TO_NODE_TYPE_MAP.items():
+            if profile_name.startswith(prefix):
+                node_type = ntype
+                break
+
+        base_contract = profile_factory.get_profile(
+            node_type=node_type,
+            profile=patch.extends.profile,
+            version=patch.extends.version,
+        )
+
+        return merged_contract, cast(ModelHandlerContract, base_contract)
+
     def validate_all(
         self,
         patch: ModelContractPatch,
@@ -442,38 +523,11 @@ class ContractValidationPipeline:  # naming-ok: validator class, not protocol
         # =====================================================================
         logger.debug("Pipeline: Performing merge operation")
         try:
-            # Import here to avoid circular import at module level
-            from omnibase_core.merge.contract_merge_engine import ContractMergeEngine
-
-            merge_engine = ContractMergeEngine(profile_factory)
-            merged_contract = merge_engine.merge(patch)
-
-            # Get base contract for merge validation
-            from omnibase_core.enums import EnumNodeType
-
-            # Determine node type from profile name
-            profile_name = patch.extends.profile.lower()
-            node_type = EnumNodeType.COMPUTE_GENERIC  # default
-            prefix_map = {
-                "compute": EnumNodeType.COMPUTE_GENERIC,
-                "effect": EnumNodeType.EFFECT_GENERIC,
-                "reducer": EnumNodeType.REDUCER_GENERIC,
-                "orchestrator": EnumNodeType.ORCHESTRATOR_GENERIC,
-            }
-            for prefix, ntype in prefix_map.items():
-                if profile_name.startswith(prefix):
-                    node_type = ntype
-                    break
-
-            base_contract = profile_factory.get_profile(
-                node_type=node_type,
-                profile=patch.extends.profile,
-                version=patch.extends.version,
+            merged_contract, base_contract = self._perform_merge_operation(
+                patch, profile_factory
             )
-
-        except (
-            Exception
-        ) as e:  # fallback-ok: merge can fail for many reasons, return error result
+        except Exception as e:
+            # fallback-ok: merge can fail for many reasons, return error result
             logger.exception(f"Pipeline: Merge operation failed - {e}")
             all_errors.append(f"Merge operation failed: {e}")
             result.errors = all_errors
@@ -485,27 +539,20 @@ class ContractValidationPipeline:  # naming-ok: validator class, not protocol
         # =====================================================================
         logger.debug("Pipeline: Executing Phase 2 (MERGE)")
 
-        # The factory returns ModelContractBase but merge validator expects
-        # ModelHandlerContract. Use duck-typing via hasattr checks to determine
-        # if we can perform detailed merge validation.
-        #
-        # Duck-typing approach avoids isinstance issues where mypy incorrectly
-        # detects unreachable code due to incompatible method signatures between
-        # ModelContractBase and ModelHandlerContract.
+        # Duck-typing check for runtime safety. The profile factory may return
+        # contracts that don't have all ModelHandlerContract attributes.
+        # This check avoids AttributeError at runtime while keeping type safety.
         merge_result: ModelValidationResult[None]
         if hasattr(base_contract, "handler_id") and hasattr(
             base_contract, "descriptor"
         ):
-            # Base contract has the required attributes for detailed merge validation
-            # Safe to cast for type checker since we verified attributes
-            from typing import cast
-
-            base_as_handler = cast(ModelHandlerContract, base_contract)
-            merge_result = self.validate_merge(base_as_handler, patch, merged_contract)
+            # Base contract has required attributes for detailed merge validation
+            merge_result = self.validate_merge(base_contract, patch, merged_contract)
         else:
             # Base contract is not a ModelHandlerContract - skip detailed validation
             logger.warning(
-                "Base contract lacks handler_id/descriptor, skipping detailed merge validation"
+                "Base contract lacks handler_id/descriptor, "
+                "skipping detailed merge validation"
             )
             merge_result = ModelValidationResult(
                 is_valid=True,
