@@ -212,7 +212,11 @@ from omnibase_core.protocols.protocol_smart_log_formatter import (
 # =============================================================================
 # Replay Module Exports (OMN-1116)
 # =============================================================================
-from omnibase_core.protocols.replay import ProtocolRNGService
+from omnibase_core.protocols.replay import (
+    ProtocolEffectRecorder,
+    ProtocolRNGService,
+    ProtocolTimeService,
+)
 
 # =============================================================================
 # Resolution Module Exports (OMN-1123, OMN-1106)
@@ -481,5 +485,7 @@ __all__ = [
     # ==========================================================================
     # Replay Module (OMN-1116)
     # ==========================================================================
+    "ProtocolEffectRecorder",
     "ProtocolRNGService",
+    "ProtocolTimeService",
 ]

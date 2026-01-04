@@ -62,8 +62,6 @@ Related:
 .. versionadded:: 0.4.0
 """
 
-from __future__ import annotations
-
 __all__ = ["ModelEffectRecord"]
 
 from datetime import datetime
@@ -120,7 +118,11 @@ class ModelEffectRecord(BaseModel):
     .. versionadded:: 0.4.0
     """
 
-    model_config = ConfigDict(frozen=True, extra="forbid")
+    # from_attributes=True allows Pydantic to accept objects with matching
+    # attributes even when class identity differs (e.g., in pytest-xdist
+    # parallel execution where model classes are imported in separate workers).
+    # See CLAUDE.md section "Pydantic from_attributes=True for Value Objects".
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     record_id: UUID = Field(
         default_factory=uuid4,

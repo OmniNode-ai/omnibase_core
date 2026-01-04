@@ -277,13 +277,14 @@ class ExecutorReplay:
             >>> len(manifest["effect_records"])
             1
         """
+        # Use iter_records() to avoid creating a copy of the records list
         return {
             "session_id": str(session.session_id),
             "time_frozen_at": session.time_service.now().isoformat(),
             "rng_seed": session.rng_service.seed,
             "effect_records": [
                 record.model_dump(mode="json")
-                for record in session.effect_recorder.get_all_records()
+                for record in session.effect_recorder.iter_records()
             ],
         }
 
@@ -314,6 +315,9 @@ class ExecutorReplay:
             >>> result = await executor.execute_async(session, my_func)
         """
         # Check if function expects replay_session parameter
+        # TODO(OMN-1116): Consider warning if user already provided replay_session
+        # in kwargs, as this will overwrite their value. Current behavior is
+        # intentional (executor manages session lifecycle) but could be confusing.
         sig = inspect.signature(func)
         if "replay_session" in sig.parameters:
             kwargs["replay_session"] = session
@@ -346,6 +350,9 @@ class ExecutorReplay:
             >>> result = executor.execute_sync(session, my_func)
         """
         # Check if function expects replay_session parameter
+        # TODO(OMN-1116): Consider warning if user already provided replay_session
+        # in kwargs, as this will overwrite their value. Current behavior is
+        # intentional (executor manages session lifecycle) but could be confusing.
         sig = inspect.signature(func)
         if "replay_session" in sig.parameters:
             kwargs["replay_session"] = session

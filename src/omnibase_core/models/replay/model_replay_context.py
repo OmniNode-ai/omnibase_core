@@ -9,8 +9,6 @@ This module provides the ModelReplayContext which bundles all determinism data
 .. versionadded:: 0.4.0
 """
 
-from __future__ import annotations
-
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
@@ -162,7 +160,7 @@ class ModelReplayContext(BaseModel):
         """
         return self.mode == EnumReplayMode.REPLAYING
 
-    def with_time_capture(self, time: datetime) -> ModelReplayContext:
+    def with_time_capture(self, time: datetime) -> "ModelReplayContext":
         """Return new context with additional time capture.
 
         Creates a new immutable context with the given time appended to
@@ -183,7 +181,7 @@ class ModelReplayContext(BaseModel):
         """
         return self.model_copy(update={"time_captures": (*self.time_captures, time)})
 
-    def with_effect_record(self, record_id: UUID) -> ModelReplayContext:
+    def with_effect_record(self, record_id: UUID) -> "ModelReplayContext":
         """Return new context with additional effect record.
 
         Creates a new immutable context with the given record ID appended to

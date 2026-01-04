@@ -540,3 +540,139 @@ class TestRecorderEffectModeEnum:
         recorder = RecorderEffect()
         assert recorder.is_recording is False
         assert recorder.is_replaying is False
+
+
+@pytest.mark.unit
+class TestRecorderEffectErrorHandling:
+    """Test improved error handling in RecorderEffect."""
+
+    def test_get_replay_result_raises_on_empty_effect_type(
+        self, replay_recorder: RecorderEffect
+    ) -> None:
+        """Test that get_replay_result raises ModelOnexError for empty effect_type."""
+        from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+        from omnibase_core.errors import ModelOnexError
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            replay_recorder.get_replay_result(
+                effect_type="",
+                intent={"url": "https://api.example.com"},
+            )
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.REPLAY_INVALID_EFFECT_TYPE
+        assert "effect_type must not be empty" in str(exc_info.value)
+
+    def test_get_replay_result_raises_on_whitespace_effect_type(
+        self, replay_recorder: RecorderEffect
+    ) -> None:
+        """Test that get_replay_result raises for whitespace-only effect_type."""
+        from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+        from omnibase_core.errors import ModelOnexError
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            replay_recorder.get_replay_result(
+                effect_type="   ",
+                intent={"url": "https://api.example.com"},
+            )
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.REPLAY_INVALID_EFFECT_TYPE
+
+
+@pytest.mark.unit
+class TestRecorderEffectRequireReplayResult:
+    """Test require_replay_result() strict error handling."""
+
+    def test_require_replay_result_returns_result(
+        self, replay_recorder: RecorderEffect
+    ) -> None:
+        """Test that require_replay_result returns result when found."""
+        result = replay_recorder.require_replay_result(
+            effect_type="http.get",
+            intent={"url": "https://api.example.com/users", "method": "GET"},
+        )
+
+        assert result is not None
+        assert result["status_code"] == 200
+
+    def test_require_replay_result_raises_on_not_replay_mode(
+        self, pass_through_recorder: RecorderEffect
+    ) -> None:
+        """Test that require_replay_result raises when not in replay mode."""
+        from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+        from omnibase_core.errors import ModelOnexError
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            pass_through_recorder.require_replay_result(
+                effect_type="http.get",
+                intent={"url": "https://api.example.com"},
+            )
+
+        error = exc_info.value
+        assert error.error_code == EnumCoreErrorCode.REPLAY_NOT_IN_REPLAY_MODE
+        assert "not REPLAYING mode" in str(error)
+
+    def test_require_replay_result_raises_on_not_found(
+        self, replay_recorder: RecorderEffect
+    ) -> None:
+        """Test that require_replay_result raises when record not found."""
+        from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+        from omnibase_core.errors import ModelOnexError
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            replay_recorder.require_replay_result(
+                effect_type="unknown.effect",
+                intent={"some": "data"},
+            )
+
+        error = exc_info.value
+        assert error.error_code == EnumCoreErrorCode.REPLAY_RECORD_NOT_FOUND
+        assert "No matching effect record found" in str(error)
+
+    def test_require_replay_result_raises_on_empty_effect_type(
+        self, replay_recorder: RecorderEffect
+    ) -> None:
+        """Test that require_replay_result raises on empty effect_type."""
+        from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+        from omnibase_core.errors import ModelOnexError
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            replay_recorder.require_replay_result(
+                effect_type="",
+                intent={"url": "https://api.example.com"},
+            )
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.REPLAY_INVALID_EFFECT_TYPE
+
+    def test_require_replay_result_error_includes_context(
+        self, replay_recorder: RecorderEffect
+    ) -> None:
+        """Test that require_replay_result error includes helpful context."""
+        from omnibase_core.errors import ModelOnexError
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            replay_recorder.require_replay_result(
+                effect_type="missing.effect",
+                intent={"key1": "value1", "key2": "value2"},
+            )
+
+        # Verify context includes helpful debugging info
+        error_dict = exc_info.value.model_dump()
+        context = error_dict.get("context", {})
+        assert "effect_type" in context or "missing.effect" in str(exc_info.value)
+
+    def test_require_replay_result_on_recording_mode(
+        self, recording_recorder: RecorderEffect
+    ) -> None:
+        """Test that require_replay_result raises when in recording mode."""
+        from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+        from omnibase_core.errors import ModelOnexError
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            recording_recorder.require_replay_result(
+                effect_type="http.get",
+                intent={"url": "https://api.example.com"},
+            )
+
+        error = exc_info.value
+        assert error.error_code == EnumCoreErrorCode.REPLAY_NOT_IN_REPLAY_MODE
+        assert "recording" in str(error).lower()

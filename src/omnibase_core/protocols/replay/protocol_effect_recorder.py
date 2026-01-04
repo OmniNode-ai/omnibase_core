@@ -62,10 +62,9 @@ __all__ = ["ProtocolEffectRecorder"]
 
 from typing import TYPE_CHECKING, Protocol, runtime_checkable
 
-from omnibase_core.types.type_json import JsonType
-
 if TYPE_CHECKING:
     from omnibase_core.models.replay.model_effect_record import ModelEffectRecord
+    from omnibase_core.types.type_json import JsonType
 
 
 @runtime_checkable
