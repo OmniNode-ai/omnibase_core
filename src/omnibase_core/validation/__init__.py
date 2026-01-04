@@ -60,9 +60,6 @@ from omnibase_core.models.validation.model_fsm_analysis_result import (
 from omnibase_core.models.validation.model_import_validation_result import (
     ModelImportValidationResult,
 )
-
-# Backwards compat alias
-CircularImportValidationResult = ModelImportValidationResult
 from omnibase_core.models.validation.model_lint_statistics import ModelLintStatistics
 from omnibase_core.models.validation.model_lint_warning import ModelLintWarning
 from omnibase_core.models.validation.model_module_import_result import (
@@ -78,154 +75,42 @@ from omnibase_core.services.service_contract_validation_invariant_checker import
 # Import directly from source module to satisfy mypy explicit-export requirement
 from omnibase_core.services.service_validation_suite import ServiceValidationSuite
 
-from .validator_circular_import import CircularImportValidator
-
-# Import contract patch validator (OMN-1126)
-from .validator_contract_patch import ContractPatchValidator
-
-# Re-export from services (OMN-1146)
-ContractValidationInvariantChecker = ServiceContractValidationInvariantChecker
-
 # Import validation functions for easy access
 from .validator_architecture import (
     validate_architecture_directory,
     validate_one_model_per_file,
 )
+from .validator_circular_import import CircularImportValidator
 
-# =============================================================================
-# ALIAS LOADING STRATEGY: __getattr__ vs Direct Alias
-# =============================================================================
-#
-# This module uses TWO different strategies for deprecated aliases:
-#
-# 1. DIRECT ALIAS (used above for ModelValidationSuite):
-#    ```python
-#    from .validator_cli import ModelValidationSuite, ServiceValidationSuite
-#    ```
-#    Use this when: The canonical class can be imported at module load time
-#    without causing circular imports. This is simpler and provides better
-#    IDE support (autocomplete, go-to-definition).
-#
-# 2. LAZY __getattr__ (used below for ServiceProtocolAuditor, etc.):
-#    ```python
-#    def __getattr__(name: str) -> type:
-#        if name == "ServiceProtocolAuditor":
-#            from omnibase_core.services.service_protocol_auditor import ...
-#    ```
-#    Use this when: Importing the canonical class at module load time would
-#    cause circular imports. The service classes below live in
-#    omnibase_core.services.* which may import from omnibase_core.validation,
-#    creating an import cycle if we imported them eagerly here.
-#
-# DECISION GUIDE:
-# - If adding a new backwards compat alias, first try direct import
-# - If you get ImportError or circular import errors, use __getattr__
-# - Document WHY __getattr__ is needed (which module causes the cycle)
-#
-# OMN-1071: These service classes require lazy loading because:
-# - ServiceProtocolAuditor imports validation utilities that import from here
-# - ServiceContractValidator has similar circular dependency chains
-# - ServiceProtocolMigrator has similar circular dependency chains
-# =============================================================================
+# Import contract patch validator (OMN-1126)
+from .validator_contract_patch import ContractPatchValidator
 
 
+# Lazy loading for service classes to avoid circular imports.
+# These service classes live in omnibase_core.services.* and have transitive
+# imports that eventually import from this validation module.
 def __getattr__(name: str) -> type:
-    """
-    Lazy import for service classes to avoid circular imports.
-
-    This function is called when an attribute is not found in the module's
-    namespace. We use it to defer imports of service classes that would
-    otherwise cause circular import errors.
-
-    Why not direct imports?
-    -----------------------
-    The service classes (ServiceProtocolAuditor, ServiceContractValidator,
-    ServiceProtocolMigrator) live in omnibase_core.services.* and have
-    transitive imports that eventually import from this validation module.
-    Importing them eagerly at module load time would create:
-
-        validation/__init__.py
-            -> services/service_protocol_auditor.py
-                -> validation/some_validator.py
-                    -> validation/__init__.py  (CIRCULAR!)
-
-    By using __getattr__, we defer the import until the class is actually
-    accessed, breaking the cycle.
-
-    Deprecated Aliases (OMN-1071):
-    ------------------------------
-    All deprecated aliases emit DeprecationWarning when accessed:
-    - ModelProtocolAuditor -> ServiceProtocolAuditor
-    - ProtocolContractValidator -> ServiceContractValidator
-    - ProtocolMigrator -> ServiceProtocolMigrator
-    - ModelValidationSuite -> ServiceValidationSuite
-    """
-    import warnings
-
-    # -------------------------------------------------------------------------
-    # Consolidated imports: Map deprecated aliases to canonical service classes
-    # Each entry: deprecated_alias -> (module_path, canonical_name)
-    # -------------------------------------------------------------------------
-    _deprecated_aliases: dict[str, tuple[str, str]] = {
-        "ModelProtocolAuditor": (
-            "omnibase_core.services.service_protocol_auditor",
-            "ServiceProtocolAuditor",
-        ),
-        "ProtocolContractValidator": (
-            "omnibase_core.services.service_contract_validator",
-            "ServiceContractValidator",
-        ),
-        "ProtocolMigrator": (
-            "omnibase_core.services.service_protocol_migrator",
-            "ServiceProtocolMigrator",
-        ),
-        "ModelValidationSuite": (
-            "omnibase_core.services.service_validation_suite",
-            "ServiceValidationSuite",
-        ),
-    }
-
-    # Emit deprecation warning for deprecated aliases
-    if name in _deprecated_aliases:
-        module_path, new_name = _deprecated_aliases[name]
-        warnings.warn(
-            f"'{name}' is deprecated, use '{new_name}' from '{module_path}' instead",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-
-    # -------------------------------------------------------------------------
-    # Consolidated lazy imports: Canonical names and deprecated aliases
-    # grouped by source module to avoid duplicate import statements
-    # -------------------------------------------------------------------------
-
-    # ServiceProtocolAuditor and its alias ModelProtocolAuditor
-    if name in {"ServiceProtocolAuditor", "ModelProtocolAuditor"}:
+    """Lazy import for service classes to avoid circular imports."""
+    if name == "ServiceProtocolAuditor":
         from omnibase_core.services.service_protocol_auditor import (
             ServiceProtocolAuditor,
         )
 
         return ServiceProtocolAuditor
 
-    # ServiceContractValidator and its alias ProtocolContractValidator
-    if name in {"ServiceContractValidator", "ProtocolContractValidator"}:
+    if name == "ServiceContractValidator":
         from omnibase_core.services.service_contract_validator import (
             ServiceContractValidator,
         )
 
         return ServiceContractValidator
 
-    # ServiceProtocolMigrator and its alias ProtocolMigrator
-    if name in {"ServiceProtocolMigrator", "ProtocolMigrator"}:
+    if name == "ServiceProtocolMigrator":
         from omnibase_core.services.service_protocol_migrator import (
             ServiceProtocolMigrator,
         )
 
         return ServiceProtocolMigrator
-
-    # ModelValidationSuite (alias) - ServiceValidationSuite already imported at top
-    if name == "ModelValidationSuite":
-        return ServiceValidationSuite
 
     raise AttributeError(  # error-ok: required for __getattr__ protocol
         f"module {__name__!r} has no attribute {name!r}"
@@ -336,23 +221,17 @@ def validate_all(
 __all__ = [
     # Core classes and types
     "CircularImportValidator",
-    "CircularImportValidationResult",  # Backwards compat alias
-    "ModelImportValidationResult",  # Canonical name (OMN-1126)
+    "ModelImportValidationResult",
     "ExceptionConfigurationError",
     "EnumImportStatus",
     "ModelContractValidationResult",
     "ModelModuleImportResult",
     "ModelValidationResult",
-    # OMN-1071: Canonical service classes (in services/)
+    # Service classes (lazy-loaded to avoid circular imports)
     "ServiceContractValidator",
     "ServiceProtocolAuditor",
     "ServiceProtocolMigrator",
     "ServiceValidationSuite",
-    # OMN-1071: Deprecated aliases (will be removed in future version)
-    "ProtocolContractValidator",  # DEPRECATED: Use ServiceContractValidator instead
-    "ModelProtocolAuditor",  # DEPRECATED: Use ServiceProtocolAuditor instead
-    "ProtocolMigrator",  # DEPRECATED: Use ServiceProtocolMigrator instead
-    "ModelValidationSuite",  # DEPRECATED: Use ServiceValidationSuite instead
     # Other exports
     "ExceptionInputValidationError",
     "ModelProtocolInfo",
@@ -400,7 +279,6 @@ __all__ = [
     "ServiceContractValidationInvariantChecker",
     "ModelContractValidationEvent",
     "ContractValidationEventType",
-    "ContractValidationInvariantChecker",
     # Reserved enum validation (OMN-669, OMN-675)
     # NOTE: validate_execution_mode takes EnumExecutionMode (type-safe)
     # while validate_execution_mode_string takes str (for YAML/config parsing)
