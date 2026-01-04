@@ -162,6 +162,14 @@ class NamingConventionValidator:
             "ContractHashRegistry",  # Registry service for contract hash management
             "ContractDiffComputer",  # Utility class for computing contract diffs (OMN-1148)
         ],
+        # REPLAY INFRASTRUCTURE: Effect recorder for deterministic replay
+        # Location: pipeline/replay/ - Replay infrastructure utilities
+        # Rationale: RecorderEffect is a utility class that records/replays effects,
+        #            not a Node implementation. The "Effect" suffix indicates the domain
+        #            (effect handling), not that it's a Node type (OMN-1116)
+        "pipeline/replay/": [
+            "RecorderEffect",  # Utility class for effect recording/replay
+        ],
         # HANDLER INFRASTRUCTURE: Handler implementations for ONEX runtime
         # Location: runtime/handlers/ - Handler implementations for EnvelopeRouter
         # Rationale: Handlers implement ProtocolHandler and use Handler* prefix (e.g., HandlerLocal, HandlerHttp)
