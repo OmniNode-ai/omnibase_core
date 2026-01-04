@@ -11,6 +11,7 @@ Security:
     - Circular include detection prevents infinite recursion
     - Maximum nesting depth enforced (default: 10)
     - File size limits prevent DoS attacks (default: 1MB)
+    - Symlinks are resolved (followed) - the resolved target must be within the base directory
 
 Thread Safety:
     IncludeLoader instances are NOT thread-safe. Create separate instances
@@ -43,11 +44,39 @@ from pathlib import Path
 import yaml
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors.exception_groups import FILE_IO_ERRORS
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 # Default configuration constants
 DEFAULT_MAX_INCLUDE_DEPTH = 10
 DEFAULT_MAX_FILE_SIZE = 1024 * 1024  # 1MB
+
+
+def _validate_file_size(
+    file_path: Path, max_file_size: int, path_label: str = "File"
+) -> None:
+    """
+    Validate that a file does not exceed the maximum allowed size.
+
+    Args:
+        file_path: Path to the file to check.
+        max_file_size: Maximum allowed file size in bytes.
+        path_label: Label for error messages (e.g., "Include file", "Contract file").
+
+    Raises:
+        ModelOnexError: If file exceeds size limit with VALIDATION_ERROR code.
+    """
+    file_size = file_path.stat().st_size
+    if file_size > max_file_size:
+        raise ModelOnexError(
+            message=f"{path_label} too large: {file_size} bytes (max: {max_file_size})",
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            context={
+                "file_path": str(file_path),
+                "file_size": file_size,
+                "max_file_size": max_file_size,
+            },
+        )
 
 
 class IncludeLoader(yaml.SafeLoader):
@@ -192,7 +221,7 @@ def _include_constructor(loader: IncludeLoader, node: yaml.Node) -> object:
     if not include_path.exists():
         raise ModelOnexError(
             message=f"Include file not found: {include_path_str}",
-            error_code=EnumCoreErrorCode.NOT_FOUND,
+            error_code=EnumCoreErrorCode.FILE_NOT_FOUND,
             context={
                 "include_path": include_path_str,
                 "resolved_path": str(include_path),
@@ -201,22 +230,13 @@ def _include_constructor(loader: IncludeLoader, node: yaml.Node) -> object:
         )
 
     # Check file size
-    file_size = include_path.stat().st_size
-    if file_size > loader.max_file_size:
-        raise ModelOnexError(
-            message=f"Include file too large: {file_size} bytes (max: {loader.max_file_size})",
-            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-            context={
-                "include_path": include_path_str,
-                "file_size": file_size,
-                "max_file_size": loader.max_file_size,
-            },
-        )
+    _validate_file_size(include_path, loader.max_file_size, "Include file")
 
     # Load the included file
     try:
         content = include_path.read_text(encoding="utf-8")
-    except OSError as e:
+    except FILE_IO_ERRORS as e:
+        # file-io-ok: handle OS-level file read errors
         raise ModelOnexError(
             message=f"Cannot read include file: {e}",
             error_code=EnumCoreErrorCode.FILE_READ_ERROR,
@@ -247,9 +267,10 @@ def _include_constructor(loader: IncludeLoader, node: yaml.Node) -> object:
         nested_loader.dispose()  # type: ignore[no-untyped-call]
         return result
     except yaml.YAMLError as e:
+        # yaml-error-ok: convert YAML syntax errors to structured ModelOnexError
         raise ModelOnexError(
             message=f"Invalid YAML in include file: {e}",
-            error_code=EnumCoreErrorCode.PARSING_ERROR,
+            error_code=EnumCoreErrorCode.CONFIGURATION_PARSE_ERROR,
             context={
                 "include_path": include_path_str,
                 "yaml_error": str(e),
@@ -330,26 +351,17 @@ def load_contract(
     if not contract_path.exists():
         raise ModelOnexError(
             message=f"Contract file not found: {contract_path}",
-            error_code=EnumCoreErrorCode.NOT_FOUND,
+            error_code=EnumCoreErrorCode.FILE_NOT_FOUND,
             context={"contract_path": str(contract_path)},
         )
 
     # Check file size
-    file_size = contract_path.stat().st_size
-    if file_size > max_file_size:
-        raise ModelOnexError(
-            message=f"Contract file too large: {file_size} bytes (max: {max_file_size})",
-            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-            context={
-                "contract_path": str(contract_path),
-                "file_size": file_size,
-                "max_file_size": max_file_size,
-            },
-        )
+    _validate_file_size(contract_path, max_file_size, "Contract file")
 
     try:
         content = contract_path.read_text(encoding="utf-8")
-    except OSError as e:
+    except FILE_IO_ERRORS as e:
+        # file-io-ok: handle OS-level file read errors
         raise ModelOnexError(
             message=f"Cannot read contract file: {e}",
             error_code=EnumCoreErrorCode.FILE_READ_ERROR,
@@ -394,9 +406,10 @@ def load_contract(
         return result
 
     except yaml.YAMLError as e:
+        # yaml-error-ok: convert YAML syntax errors to structured ModelOnexError
         raise ModelOnexError(
             message=f"Invalid YAML in contract file: {e}",
-            error_code=EnumCoreErrorCode.PARSING_ERROR,
+            error_code=EnumCoreErrorCode.CONFIGURATION_PARSE_ERROR,
             context={
                 "contract_path": str(contract_path),
                 "yaml_error": str(e),

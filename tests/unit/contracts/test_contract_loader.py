@@ -45,11 +45,11 @@ class TestContractLoaderBasic:
         assert contract == {}
 
     def test_file_not_found_raises_error(self, fixtures_path: Path) -> None:
-        """Test that missing files raise ModelOnexError with NOT_FOUND."""
+        """Test that missing files raise ModelOnexError with FILE_NOT_FOUND."""
         with pytest.raises(ModelOnexError) as exc_info:
             load_contract(fixtures_path / "nonexistent.yaml")
 
-        assert exc_info.value.error_code == EnumCoreErrorCode.NOT_FOUND
+        assert exc_info.value.error_code == EnumCoreErrorCode.FILE_NOT_FOUND
 
     def test_non_dict_contract_raises_error(self, tmp_path: Path) -> None:
         """Test that non-dict YAML raises ModelOnexError."""
@@ -145,11 +145,11 @@ class TestContractLoaderSecurity:
         assert exc_info.value.error_code == EnumCoreErrorCode.SECURITY_VIOLATION
 
     def test_missing_include_raises_not_found(self, fixtures_path: Path) -> None:
-        """Test that missing include files raise NOT_FOUND error."""
+        """Test that missing include files raise FILE_NOT_FOUND error."""
         with pytest.raises(ModelOnexError) as exc_info:
             load_contract(fixtures_path / "missing_include.yaml")
 
-        assert exc_info.value.error_code == EnumCoreErrorCode.NOT_FOUND
+        assert exc_info.value.error_code == EnumCoreErrorCode.FILE_NOT_FOUND
 
 
 @pytest.mark.unit
