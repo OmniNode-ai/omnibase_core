@@ -557,6 +557,34 @@ if TC:
         # This SHOULD be allowed - aliased TYPE_CHECKING constant
         assert len(checker.violations) == 0
 
+    def test_rejects_module_alias_without_type_checking_attribute(
+        self, validator: TransportValidatorModule
+    ) -> None:
+        """Test that module alias alone is NOT a TYPE_CHECKING guard.
+
+        Pattern: import typing as t; if t: (WRONG - should detect violation)
+        The correct pattern is: if t.TYPE_CHECKING:
+
+        This is an important edge case: just because `t` is an alias for the
+        typing module does NOT mean `if t:` is equivalent to `if t.TYPE_CHECKING:`.
+        The condition `if t:` is always truthy (module objects are truthy) and
+        provides no actual TYPE_CHECKING guard behavior.
+        """
+        code = """
+import typing as t
+
+if t:  # This is NOT a TYPE_CHECKING guard!
+    import kafka
+"""
+        tree = ast.parse(code)
+        checker = validator.TransportImportChecker(code)
+        checker.visit(tree)
+
+        # The kafka import should be detected as a violation
+        # because `if t:` is NOT the same as `if t.TYPE_CHECKING:`
+        assert len(checker.violations) == 1
+        assert checker.violations[0].module_name == "kafka"
+
     def test_allows_nested_conditions_in_type_checking(
         self, validator: TransportValidatorModule
     ) -> None:

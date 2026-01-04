@@ -129,12 +129,13 @@ class TransportImportChecker(ast.NodeVisitor):
         self.source_lines = source_code.splitlines()
         self.violations: list[Violation] = []
         self._in_type_checking_block = False
-        # Contains both module aliases (e.g., "t" from `import typing as t`)
-        # and constant aliases (e.g., "TC" from `from typing import TYPE_CHECKING as TC`).
-        # The distinction is handled by how they're used in _is_type_checking_guard:
-        # - Module aliases are checked against `test.value.id` (before the dot in `t.TYPE_CHECKING`)
-        # - Constant aliases are checked against `test.id` (direct name in `if TC:`)
-        self._type_checking_aliases: set[str] = set()
+        # Module aliases (e.g., "t" from `import typing as t`)
+        # These are ONLY valid in attribute access: `if t.TYPE_CHECKING:`
+        # NOT valid as direct names: `if t:` is NOT a TYPE_CHECKING guard
+        self._type_checking_module_aliases: set[str] = set()
+        # Constant aliases (e.g., "TC" from `from typing import TYPE_CHECKING as TC`)
+        # These ARE valid as direct names: `if TC:` is a TYPE_CHECKING guard
+        self._type_checking_constant_aliases: set[str] = set()
 
     def _get_source_line(self, lineno: int) -> str:
         """Get the source line for a given line number (1-indexed)."""
@@ -160,9 +161,11 @@ class TransportImportChecker(ast.NodeVisitor):
         """
         test = node.test
 
-        # Direct: if TYPE_CHECKING: or if TC: (when aliased)
+        # Direct: if TYPE_CHECKING: or if TC: (when aliased via `from typing import TYPE_CHECKING as TC`)
+        # Note: Only constant aliases are valid here, NOT module aliases.
+        # `if t:` is NOT a TYPE_CHECKING guard even if `import typing as t` was used.
         if isinstance(test, ast.Name) and (
-            test.id == "TYPE_CHECKING" or test.id in self._type_checking_aliases
+            test.id == "TYPE_CHECKING" or test.id in self._type_checking_constant_aliases
         ):
             return True
 
@@ -171,7 +174,11 @@ class TransportImportChecker(ast.NodeVisitor):
             # Check if it's typing.TYPE_CHECKING or an aliased version
             if isinstance(test.value, ast.Name):
                 # typing.TYPE_CHECKING or aliased like t.TYPE_CHECKING
-                if test.value.id == "typing" or test.value.id in self._type_checking_aliases:
+                # Note: Only module aliases are valid here for the prefix.
+                if (
+                    test.value.id == "typing"
+                    or test.value.id in self._type_checking_module_aliases
+                ):
                     return True
             return False  # Only verified typing module references are TYPE_CHECKING guards
 
@@ -180,9 +187,10 @@ class TransportImportChecker(ast.NodeVisitor):
     def visit_Import(self, node: ast.Import) -> None:
         """Handle `import X` and `import X as Y` statements."""
         # Track typing module aliases: import typing as t
+        # These are only valid for attribute access: t.TYPE_CHECKING
         for alias in node.names:
             if alias.name == "typing" and alias.asname:
-                self._type_checking_aliases.add(alias.asname)
+                self._type_checking_module_aliases.add(alias.asname)
 
         # Check for banned imports (only if not in TYPE_CHECKING block)
         if not self._in_type_checking_block:
@@ -208,11 +216,12 @@ class TransportImportChecker(ast.NodeVisitor):
             return
 
         # Track TYPE_CHECKING imports: from typing import TYPE_CHECKING
+        # These are valid as direct names: if TC:
         for alias in node.names:
             if alias.name == "TYPE_CHECKING":
                 # If aliased, track the alias
                 if alias.asname:
-                    self._type_checking_aliases.add(alias.asname)
+                    self._type_checking_constant_aliases.add(alias.asname)
 
         # Check for banned imports (only if not in TYPE_CHECKING block)
         if not self._in_type_checking_block:
