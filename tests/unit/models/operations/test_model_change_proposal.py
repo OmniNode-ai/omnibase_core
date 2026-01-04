@@ -20,6 +20,7 @@ from uuid import UUID, uuid4
 import pytest
 from pydantic import ValidationError
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 # Import will work once model is created
@@ -211,15 +212,16 @@ class TestChangeProposalValidation:
         assert proposal.change_type == EnumChangeType.CONFIG_CHANGE
 
     def test_endpoint_change_type_accepted(
-        self, sample_before_config: dict, sample_after_config: dict
+        self, nested_before_config: dict, nested_after_config: dict
     ) -> None:
         """endpoint_change is a valid change_type."""
+        # Use nested configs that contain 'endpoint' key for endpoint_change validation
         proposal = ModelChangeProposal(
             change_type=EnumChangeType.ENDPOINT_CHANGE,
             description="Change endpoint",
             rationale="Testing endpoint change type",
-            before_config=sample_before_config,
-            after_config=sample_after_config,
+            before_config=nested_before_config,
+            after_config=nested_after_config,
         )
 
         assert proposal.change_type == EnumChangeType.ENDPOINT_CHANGE
@@ -554,8 +556,8 @@ class TestChangeProposalFactory:
         correlation_id = uuid4()
 
         proposal = ModelChangeProposal.create(
-            change_type=EnumChangeType.ENDPOINT_CHANGE,
-            description="Change endpoint",
+            change_type=EnumChangeType.CONFIG_CHANGE,
+            description="Change config",
             rationale="Testing correlation ID",
             before_config=sample_before_config,
             after_config=sample_after_config,
@@ -765,8 +767,8 @@ class TestChangeProposalHelpers:
     ) -> None:
         """is_breaking_change can be explicitly set."""
         proposal = ModelChangeProposal(
-            change_type=EnumChangeType.ENDPOINT_CHANGE,
-            description="Breaking endpoint change",
+            change_type=EnumChangeType.CONFIG_CHANGE,
+            description="Breaking config change",
             rationale="API version bump",
             before_config=sample_before_config,
             after_config=sample_after_config,
@@ -1269,3 +1271,308 @@ class TestDeepNestedConfigComparison:
         deep_keys = proposal.get_changed_keys(deep=True)
         # Lists are not recursed into, so the path stops at the list key
         assert "config.items" in deep_keys
+
+
+# =============================================================================
+# Phase 9: Type-Specific Validation Tests
+# =============================================================================
+
+
+@pytest.mark.unit
+class TestTypeSpecificValidation:
+    """Phase 9: Tests for type-specific validation methods (v0.4.0+).
+
+    Tests the validation methods:
+    - _validate_model_swap(): requires 'model' or 'model_name' key in both configs
+    - _validate_config_change(): requires at least one overlapping key between configs
+    - _validate_endpoint_change(): requires 'url' or 'endpoint' key with valid URL format
+    """
+
+    # =========================================================================
+    # MODEL_SWAP Validation Tests
+    # =========================================================================
+
+    def test_model_swap_requires_model_key(self) -> None:
+        """MODEL_SWAP fails without 'model' or 'model_name' key in configs."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelChangeProposal.create(
+                change_type=EnumChangeType.MODEL_SWAP,
+                description="Swap to new model",
+                rationale="Testing model swap validation",
+                before_config={"temperature": 0.7, "max_tokens": 1000},
+                after_config={"temperature": 0.5, "max_tokens": 2000},
+            )
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.INVALID_INPUT
+        assert "model" in str(exc_info.value).lower()
+
+    def test_model_swap_accepts_model_key(self) -> None:
+        """MODEL_SWAP passes with 'model' key in both configs."""
+        proposal = ModelChangeProposal.create(
+            change_type=EnumChangeType.MODEL_SWAP,
+            description="Swap to new model",
+            rationale="Testing model swap with 'model' key",
+            before_config={"model": "gpt-4", "temperature": 0.7},
+            after_config={"model": "gpt-4-turbo", "temperature": 0.5},
+        )
+
+        assert proposal.change_type == EnumChangeType.MODEL_SWAP
+        assert proposal.before_config["model"] == "gpt-4"
+        assert proposal.after_config["model"] == "gpt-4-turbo"
+
+    def test_model_swap_accepts_model_name_key(self) -> None:
+        """MODEL_SWAP passes with 'model_name' key in both configs."""
+        proposal = ModelChangeProposal.create(
+            change_type=EnumChangeType.MODEL_SWAP,
+            description="Swap to new model",
+            rationale="Testing model swap with 'model_name' key",
+            before_config={"model_name": "claude-3", "temperature": 0.7},
+            after_config={"model_name": "claude-3.5", "temperature": 0.5},
+        )
+
+        assert proposal.change_type == EnumChangeType.MODEL_SWAP
+        assert proposal.before_config["model_name"] == "claude-3"
+        assert proposal.after_config["model_name"] == "claude-3.5"
+
+    def test_model_swap_requires_model_in_both_configs(self) -> None:
+        """MODEL_SWAP fails if 'model' or 'model_name' only in one config."""
+        # Test: model key only in before_config
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelChangeProposal.create(
+                change_type=EnumChangeType.MODEL_SWAP,
+                description="Swap to new model",
+                rationale="Testing partial model key",
+                before_config={"model_name": "gpt-4", "temperature": 0.7},
+                after_config={"temperature": 0.5, "max_tokens": 2000},
+            )
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.INVALID_INPUT
+        assert "after_config" in str(exc_info.value)
+
+        # Test: model key only in after_config
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelChangeProposal.create(
+                change_type=EnumChangeType.MODEL_SWAP,
+                description="Swap to new model",
+                rationale="Testing partial model key",
+                before_config={"temperature": 0.7, "max_tokens": 1000},
+                after_config={"model": "gpt-4-turbo", "temperature": 0.5},
+            )
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.INVALID_INPUT
+        assert "before_config" in str(exc_info.value)
+
+    def test_model_swap_accepts_mixed_model_keys(self) -> None:
+        """MODEL_SWAP passes with 'model' in one config and 'model_name' in other."""
+        proposal = ModelChangeProposal.create(
+            change_type=EnumChangeType.MODEL_SWAP,
+            description="Swap to new model",
+            rationale="Testing mixed model keys",
+            before_config={"model": "gpt-4", "temperature": 0.7},
+            after_config={"model_name": "claude-3.5", "temperature": 0.5},
+        )
+
+        assert proposal.change_type == EnumChangeType.MODEL_SWAP
+
+    # =========================================================================
+    # CONFIG_CHANGE Validation Tests
+    # =========================================================================
+
+    def test_config_change_requires_overlapping_keys(self) -> None:
+        """CONFIG_CHANGE fails with no overlapping keys between configs."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelChangeProposal.create(
+                change_type=EnumChangeType.CONFIG_CHANGE,
+                description="Change configuration",
+                rationale="Testing config change validation",
+                before_config={"old_key": "old_value", "another_old": 123},
+                after_config={"new_key": "new_value", "another_new": 456},
+            )
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.INVALID_INPUT
+        assert "common key" in str(exc_info.value).lower()
+
+    def test_config_change_accepts_overlapping_keys(self) -> None:
+        """CONFIG_CHANGE passes with at least one overlapping key."""
+        proposal = ModelChangeProposal.create(
+            change_type=EnumChangeType.CONFIG_CHANGE,
+            description="Change configuration",
+            rationale="Testing config change with overlapping keys",
+            before_config={"shared_key": "old_value", "only_before": 123},
+            after_config={"shared_key": "new_value", "only_after": 456},
+        )
+
+        assert proposal.change_type == EnumChangeType.CONFIG_CHANGE
+        assert "shared_key" in proposal.before_config
+        assert "shared_key" in proposal.after_config
+
+    def test_config_change_accepts_multiple_overlapping_keys(self) -> None:
+        """CONFIG_CHANGE passes with multiple overlapping keys."""
+        proposal = ModelChangeProposal.create(
+            change_type=EnumChangeType.CONFIG_CHANGE,
+            description="Change multiple configs",
+            rationale="Testing config change with multiple overlapping keys",
+            before_config={"key1": "old1", "key2": "old2", "key3": "old3"},
+            after_config={"key1": "new1", "key2": "new2", "key3": "new3"},
+        )
+
+        assert proposal.change_type == EnumChangeType.CONFIG_CHANGE
+        changed_keys = proposal.get_changed_keys()
+        assert len(changed_keys) == 3
+
+    # =========================================================================
+    # ENDPOINT_CHANGE Validation Tests
+    # =========================================================================
+
+    def test_endpoint_change_requires_url_or_endpoint_key(self) -> None:
+        """ENDPOINT_CHANGE fails without 'url' or 'endpoint' key in configs."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelChangeProposal.create(
+                change_type=EnumChangeType.ENDPOINT_CHANGE,
+                description="Change endpoint",
+                rationale="Testing endpoint change validation",
+                before_config={"host": "old.example.com", "port": 8080},
+                after_config={"host": "new.example.com", "port": 9090},
+            )
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.INVALID_INPUT
+        assert (
+            "url" in str(exc_info.value).lower()
+            or "endpoint" in str(exc_info.value).lower()
+        )
+
+    def test_endpoint_change_accepts_url_key(self) -> None:
+        """ENDPOINT_CHANGE passes with valid 'url' key."""
+        proposal = ModelChangeProposal.create(
+            change_type=EnumChangeType.ENDPOINT_CHANGE,
+            description="Change URL endpoint",
+            rationale="Testing endpoint change with 'url' key",
+            before_config={"url": "https://api.old.example.com/v1", "timeout": 30},
+            after_config={"url": "https://api.new.example.com/v2", "timeout": 60},
+        )
+
+        assert proposal.change_type == EnumChangeType.ENDPOINT_CHANGE
+        assert "url" in proposal.before_config
+        assert "url" in proposal.after_config
+
+    def test_endpoint_change_accepts_endpoint_key(self) -> None:
+        """ENDPOINT_CHANGE passes with valid 'endpoint' key."""
+        proposal = ModelChangeProposal.create(
+            change_type=EnumChangeType.ENDPOINT_CHANGE,
+            description="Change endpoint",
+            rationale="Testing endpoint change with 'endpoint' key",
+            before_config={"endpoint": "https://old.api.com/service", "retries": 3},
+            after_config={"endpoint": "https://new.api.com/service", "retries": 5},
+        )
+
+        assert proposal.change_type == EnumChangeType.ENDPOINT_CHANGE
+        assert "endpoint" in proposal.before_config
+        assert "endpoint" in proposal.after_config
+
+    def test_endpoint_change_validates_url_format(self) -> None:
+        """ENDPOINT_CHANGE fails with invalid URL format."""
+        # Test invalid URL in before_config
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelChangeProposal.create(
+                change_type=EnumChangeType.ENDPOINT_CHANGE,
+                description="Change endpoint",
+                rationale="Testing URL format validation",
+                before_config={"url": "not-a-valid-url", "timeout": 30},
+                after_config={"url": "https://api.example.com/v1", "timeout": 60},
+            )
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert "invalid url" in str(exc_info.value).lower()
+
+        # Test invalid URL in after_config
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelChangeProposal.create(
+                change_type=EnumChangeType.ENDPOINT_CHANGE,
+                description="Change endpoint",
+                rationale="Testing URL format validation",
+                before_config={"url": "https://api.example.com/v1", "timeout": 30},
+                after_config={"url": "ftp://not-http-url.com", "timeout": 60},
+            )
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert "invalid url" in str(exc_info.value).lower()
+
+    def test_endpoint_change_accepts_valid_url_formats(self) -> None:
+        """ENDPOINT_CHANGE accepts various valid URL formats."""
+        valid_url_pairs = [
+            # HTTP and HTTPS
+            ("http://example.com", "https://example.com"),
+            # With ports
+            ("https://api.example.com:8080", "https://api.example.com:9090"),
+            # With paths
+            ("https://api.example.com/v1/users", "https://api.example.com/v2/users"),
+            # With query parameters
+            (
+                "https://api.example.com/search?q=test",
+                "https://api.example.com/search?q=new",
+            ),
+            # IP addresses
+            ("http://192.168.1.1:8080", "http://192.168.1.2:8080"),
+            # Localhost
+            ("http://localhost:3000", "http://localhost:4000"),
+            # With subdomain
+            ("https://api.staging.example.com", "https://api.prod.example.com"),
+        ]
+
+        for before_url, after_url in valid_url_pairs:
+            proposal = ModelChangeProposal.create(
+                change_type=EnumChangeType.ENDPOINT_CHANGE,
+                description=f"Change from {before_url}",
+                rationale="Testing various valid URL formats",
+                before_config={"url": before_url},
+                after_config={"url": after_url},
+            )
+
+            assert proposal.change_type == EnumChangeType.ENDPOINT_CHANGE
+            assert proposal.before_config["url"] == before_url
+            assert proposal.after_config["url"] == after_url
+
+    def test_endpoint_change_accepts_url_in_only_one_config(self) -> None:
+        """ENDPOINT_CHANGE passes with 'url' in only one config."""
+        # URL only in after_config (adding an endpoint)
+        proposal = ModelChangeProposal.create(
+            change_type=EnumChangeType.ENDPOINT_CHANGE,
+            description="Add endpoint URL",
+            rationale="Testing URL in only after_config",
+            before_config={"enabled": False},
+            after_config={"enabled": True, "url": "https://api.example.com/v1"},
+        )
+
+        assert proposal.change_type == EnumChangeType.ENDPOINT_CHANGE
+        assert "url" not in proposal.before_config
+        assert "url" in proposal.after_config
+
+    def test_endpoint_change_with_nested_endpoint_structure(
+        self, nested_before_config: dict, nested_after_config: dict
+    ) -> None:
+        """ENDPOINT_CHANGE works with nested 'endpoint' structure."""
+        # The nested configs have 'endpoint' as a nested dict with 'url' inside
+        proposal = ModelChangeProposal.create(
+            change_type=EnumChangeType.ENDPOINT_CHANGE,
+            description="Change nested endpoint",
+            rationale="Testing nested endpoint structure",
+            before_config=nested_before_config,
+            after_config=nested_after_config,
+        )
+
+        assert proposal.change_type == EnumChangeType.ENDPOINT_CHANGE
+        assert "endpoint" in proposal.before_config
+        assert "endpoint" in proposal.after_config
+
+    def test_endpoint_change_non_string_url_skips_validation(self) -> None:
+        """ENDPOINT_CHANGE skips URL format validation for non-string values."""
+        # When url/endpoint value is not a string (e.g., a dict), validation is skipped
+        proposal = ModelChangeProposal.create(
+            change_type=EnumChangeType.ENDPOINT_CHANGE,
+            description="Change endpoint with dict value",
+            rationale="Testing non-string URL value",
+            before_config={"endpoint": {"host": "old.example.com", "port": 8080}},
+            after_config={"endpoint": {"host": "new.example.com", "port": 9090}},
+        )
+
+        assert proposal.change_type == EnumChangeType.ENDPOINT_CHANGE

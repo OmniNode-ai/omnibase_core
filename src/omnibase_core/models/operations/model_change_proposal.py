@@ -22,6 +22,7 @@ See Also:
     Initial implementation as part of OMN-1196 change proposal feature.
 """
 
+import re
 from datetime import UTC, datetime
 from typing import Any, ClassVar, Self
 from uuid import UUID, uuid4
@@ -33,6 +34,25 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 __all__ = ["EnumChangeType", "ModelChangeProposal"]
+
+# URL validation pattern - supports domains, IPs, localhost, and simple hostnames
+_URL_PATTERN = re.compile(
+    r"^https?://"  # http:// or https://
+    r"(?:"
+    r"(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}\.?|"  # domain with TLD
+    r"localhost|"  # localhost
+    r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|"  # IP address
+    r"[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?"  # simple hostname (no TLD)
+    r")"
+    r"(?::\d+)?"  # optional port
+    r"(?:/?|[/?]\S+)$",
+    re.IGNORECASE,
+)
+
+
+def _is_valid_url(url: str) -> bool:
+    """Check if a string is a valid URL."""
+    return bool(_URL_PATTERN.match(url))
 
 
 class ModelChangeProposal(BaseModel):
@@ -207,6 +227,122 @@ class ModelChangeProposal(BaseModel):
                 change_id=str(self.change_id),
             )
         return self
+
+    @model_validator(mode="after")
+    def _validate_change_type_specific(self) -> Self:
+        """
+        Validate change type-specific requirements.
+
+        Dispatches to the appropriate validation method based on change_type:
+        - MODEL_SWAP: Requires 'model' or 'model_name' key in both configs
+        - CONFIG_CHANGE: Requires at least one overlapping key between configs
+        - ENDPOINT_CHANGE: Requires 'url' or 'endpoint' key with valid URL format
+
+        Returns:
+            Self: The validated model instance
+
+        Raises:
+            ModelOnexError: If change type-specific validation fails
+        """
+        if self.change_type == EnumChangeType.MODEL_SWAP:
+            self._validate_model_swap()
+        elif self.change_type == EnumChangeType.CONFIG_CHANGE:
+            self._validate_config_change()
+        elif self.change_type == EnumChangeType.ENDPOINT_CHANGE:
+            self._validate_endpoint_change()
+        return self
+
+    def _validate_model_swap(self) -> None:
+        """
+        Validate model_swap change type.
+
+        For model_swap, both before_config and after_config must have a 'model'
+        or 'model_name' key to identify which models are being swapped.
+
+        Raises:
+            ModelOnexError: If 'model' or 'model_name' key is missing from either config
+        """
+        before_has_model = (
+            "model" in self.before_config or "model_name" in self.before_config
+        )
+        after_has_model = (
+            "model" in self.after_config or "model_name" in self.after_config
+        )
+
+        if not before_has_model:
+            raise ModelOnexError(
+                message="model_swap requires 'model' or 'model_name' key in before_config",
+                error_code=EnumCoreErrorCode.INVALID_INPUT,
+            )
+
+        if not after_has_model:
+            raise ModelOnexError(
+                message="model_swap requires 'model' or 'model_name' key in after_config",
+                error_code=EnumCoreErrorCode.INVALID_INPUT,
+            )
+
+    def _validate_config_change(self) -> None:
+        """
+        Validate config_change change type.
+
+        For config_change, there must be at least one overlapping key between
+        before_config and after_config to indicate which parameter(s) are being changed.
+
+        Raises:
+            ModelOnexError: If there are no common keys between configs
+        """
+        before_keys = set(self.before_config.keys())
+        after_keys = set(self.after_config.keys())
+        overlapping_keys = before_keys & after_keys
+
+        if not overlapping_keys:
+            raise ModelOnexError(
+                message="config_change requires at least one common key between before_config and after_config",
+                error_code=EnumCoreErrorCode.INVALID_INPUT,
+            )
+
+    def _validate_endpoint_change(self) -> None:
+        """
+        Validate endpoint_change change type.
+
+        For endpoint_change, at least one config must have a 'url' or 'endpoint'
+        key with a valid URL format.
+
+        Raises:
+            ModelOnexError: If no 'url' or 'endpoint' key is found, or if URL format is invalid
+        """
+        url_keys = ("url", "endpoint")
+
+        # Find URL values in both configs
+        # ONEX_EXCLUDE: dict_str_any - filtering arbitrary config dict for URL keys
+        before_urls: dict[str, Any] = {
+            k: v for k, v in self.before_config.items() if k in url_keys
+        }
+        after_urls: dict[str, Any] = {
+            k: v for k, v in self.after_config.items() if k in url_keys
+        }
+
+        # At least one config must have a url or endpoint key
+        if not before_urls and not after_urls:
+            raise ModelOnexError(
+                message="endpoint_change requires 'url' or 'endpoint' key in at least one config",
+                error_code=EnumCoreErrorCode.INVALID_INPUT,
+            )
+
+        # Validate URL format for any url/endpoint values found
+        for key, value in before_urls.items():
+            if isinstance(value, str) and not _is_valid_url(value):
+                raise ModelOnexError(
+                    message=f"Invalid URL format in before_config['{key}']: {value}",
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                )
+
+        for key, value in after_urls.items():
+            if isinstance(value, str) and not _is_valid_url(value):
+                raise ModelOnexError(
+                    message=f"Invalid URL format in after_config['{key}']: {value}",
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                )
 
     @classmethod
     def create(
