@@ -207,6 +207,15 @@ from omnibase_core.protocols.protocol_smart_log_formatter import (
 )
 
 # =============================================================================
+# Replay Module Exports (OMN-1116)
+# =============================================================================
+from omnibase_core.protocols.replay import (
+    ProtocolEffectRecorder,
+    ProtocolRNGService,
+    ProtocolTimeService,
+)
+
+# =============================================================================
 # Resolution Module Exports (OMN-1123, OMN-1106)
 # =============================================================================
 from omnibase_core.protocols.resolution import (
@@ -470,4 +479,10 @@ __all__ = [
     "ProtocolQualityValidator",
     # Contract Validation Invariant Checker (OMN-1146)
     "ProtocolContractValidationInvariantChecker",
+    # ==========================================================================
+    # Replay Module (OMN-1116)
+    # ==========================================================================
+    "ProtocolEffectRecorder",
+    "ProtocolRNGService",
+    "ProtocolTimeService",
 ]
