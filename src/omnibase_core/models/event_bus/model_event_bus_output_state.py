@@ -92,7 +92,11 @@ class ModelEventBusOutputState(BaseModel):
         description="Specific error code for programmatic handling",
         max_length=50,
     )
-    error_details: ModelErrorDetails[Any] | None = Field(
+    # Note: type: ignore[type-arg] is intentional here. ModelErrorDetails is generic
+    # with TContext bound to BaseModel, but we don't constrain to a specific context type
+    # for event bus output. The context_data field within ModelErrorDetails accepts both
+    # typed contexts AND dict[str, ModelSchemaValue], so this is safe at runtime.
+    error_details: ModelErrorDetails | None = Field(  # type: ignore[type-arg]
         default=None, description="Detailed error information for debugging"
     )
     metrics: ModelMonitoringMetrics = Field(

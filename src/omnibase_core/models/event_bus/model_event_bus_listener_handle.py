@@ -124,7 +124,7 @@ class ModelEventBusListenerHandle(BaseModel):
         description="Threading event used to signal the listener to stop.",
     )
 
-    subscriptions: list[Any] = Field(
+    subscriptions: list[object] = Field(
         default_factory=list,
         exclude=True,
         description="List of active event subscriptions managed by this listener.",
