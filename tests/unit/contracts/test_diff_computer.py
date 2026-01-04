@@ -509,6 +509,58 @@ class TestPrimitiveListDiff:
         ]
         assert len(removed_diffs) == 2
 
+    def test_nested_list_diffs_in_positional_mode(self) -> None:
+        """Test that nested list diffs in positional mode are captured.
+
+        This test verifies the fix for the list_diffs accumulator bug where
+        nested lists inside positional list elements were not captured because
+        a new empty list was passed instead of propagating the parent accumulator.
+
+        Uses a list without an identity key (positional mode) containing dicts
+        with nested lists that DO have identity keys (identity mode).
+        """
+        from pydantic import BaseModel, ConfigDict, Field
+
+        class ContractWithNestedLists(BaseModel):
+            """Contract with positional list containing nested identity lists."""
+
+            model_config = ConfigDict(extra="forbid")
+            name: str
+            # items has no identity key configured - uses positional mode
+            items: list[dict] = Field(default_factory=list)
+
+        # Configure identity key for nested "dependencies" lists
+        config = ModelDiffConfiguration(
+            identity_keys={
+                "dependencies": "name",  # Nested lists use identity mode
+            }
+        )
+
+        before = ContractWithNestedLists(
+            name="test",
+            items=[
+                {"id": 1, "dependencies": [{"name": "dep_a"}]},
+            ],
+        )
+        after = ContractWithNestedLists(
+            name="test",
+            items=[
+                {"id": 1, "dependencies": [{"name": "dep_a"}, {"name": "dep_b"}]},
+            ],
+        )
+
+        diff = compute_contract_diff(before, after, config)
+
+        # The nested list diff should be captured in list_diffs
+        # Before the fix, this would be empty because list_diffs=[] was passed
+        nested_list_diffs = [
+            d for d in diff.list_diffs if "dependencies" in d.field_path
+        ]
+        assert len(nested_list_diffs) == 1
+        deps_diff = nested_list_diffs[0]
+        assert len(deps_diff.added_items) == 1
+        assert "dep_b" in str(deps_diff.added_items[0])
+
 
 # =================== CONFIGURATION TESTS ===================
 

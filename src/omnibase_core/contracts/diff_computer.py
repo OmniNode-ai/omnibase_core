@@ -33,14 +33,36 @@ Thread Safety:
     ContractDiffComputer instances are stateless and thread-safe.
     The same instance can be used from multiple threads concurrently.
 
+Performance Considerations:
+    Time Complexity:
+        - Identity-based list diffing: O(n) where n = list length
+        - Positional list diffing: O(n) with early termination
+        - Recursive object diffing: O(k) where k = total fields
+        - Equality checking: O(d) where d = nesting depth
+
+    Space Complexity:
+        - Identity maps: O(n) where n = list length
+        - Recursion stack: O(d) where d = max nesting depth (protected by max depth limit)
+
+    Recommendations for Large Contracts:
+        - Define identity keys for all list fields to enable O(n) diffing
+        - Use field exclusions to skip volatile/large fields
+        - Consider chunking very large contracts (>10000 fields)
+
 .. versionadded:: 0.4.0
 """
 
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING
 
 from omnibase_core.contracts.contract_hash_registry import compute_contract_fingerprint
+
+logger = logging.getLogger(__name__)
+
+# Maximum recursion depth for _items_equal to prevent stack overflow
+_MAX_RECURSION_DEPTH = 100
 
 if TYPE_CHECKING:
     from pydantic import BaseModel
@@ -58,6 +80,7 @@ from omnibase_core.models.contracts.diff.model_contract_list_diff import (
 from omnibase_core.models.contracts.diff.model_diff_configuration import (
     ModelDiffConfiguration,
 )
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 if TYPE_CHECKING:
     from omnibase_core.models.contracts.model_contract_patch import ModelContractPatch
@@ -153,10 +176,13 @@ class ContractDiffComputer:
         try:
             before_fingerprint = compute_contract_fingerprint(before)
             after_fingerprint = compute_contract_fingerprint(after)
-        except Exception:
-            # Fingerprint computation is optional - proceed without fingerprints
-            # for models that don't conform to contract structure
-            pass
+        except (AttributeError, KeyError, ModelOnexError, TypeError, ValueError) as e:
+            # fallback-ok: fingerprint computation is optional for non-contract models
+            logger.debug(
+                "Fingerprint computation skipped for %s: %s",
+                type(before).__name__,
+                str(e),
+            )
 
         # Get contract names for identification
         before_name = self._get_contract_name(before)
@@ -291,6 +317,7 @@ class ContractDiffComputer:
                             after=after_val,
                             field_path=field_path,
                             field_diffs=field_diffs,
+                            list_diffs=list_diffs,
                         )
                 # Scalar comparison
                 elif before_val != after_val:
@@ -455,26 +482,77 @@ class ContractDiffComputer:
                     identity_value = str(raw_value)
 
             if identity_value is not None:
-                identity_map[identity_value] = (idx, item)
+                if identity_value in identity_map:
+                    # Collision detected - use composite key to preserve both items
+                    logger.warning(
+                        "Duplicate identity key '%s' found at index %d. "
+                        "Using composite key '%s__%d' for disambiguation.",
+                        identity_value,
+                        idx,
+                        identity_value,
+                        idx,
+                    )
+                    identity_map[f"{identity_value}__{idx}"] = (idx, item)
+                else:
+                    identity_map[identity_value] = (idx, item)
             else:
                 # Use index as fallback identity
                 identity_map[f"__idx_{idx}__"] = (idx, item)
 
         return identity_map
 
-    def _items_equal(self, item1: object, item2: object) -> bool:
+    def _items_equal(
+        self,
+        item1: object,
+        item2: object,
+        _depth: int = 0,
+        _seen: set[int] | None = None,
+    ) -> bool:
         """Compare two items for equality.
 
         Handles dicts, lists, and scalar values with deep comparison.
+        Protected against circular references and excessive nesting depth.
 
         Args:
             item1: First item.
             item2: Second item.
+            _depth: Current recursion depth (internal use only).
+            _seen: Set of visited object IDs for cycle detection (internal use only).
 
         Returns:
             True if items are equal, False otherwise.
+
+        Note:
+            When max recursion depth is exceeded or a cycle is detected,
+            falls back to simple equality comparison with a warning logged.
         """
-        if type(item1) != type(item2):
+        # Depth check to prevent stack overflow
+        if _depth > _MAX_RECURSION_DEPTH:
+            logger.warning(
+                "Max recursion depth (%d) exceeded in _items_equal, "
+                "falling back to simple equality",
+                _MAX_RECURSION_DEPTH,
+            )
+            return item1 == item2
+
+        # Initialize seen set for cycle detection
+        if _seen is None:
+            _seen = set()
+
+        # Cycle detection for complex objects
+        id1, id2 = id(item1), id(item2)
+        if isinstance(item1, (dict, list)):
+            if id1 in _seen or id2 in _seen:
+                # Already visited - avoid infinite loop
+                logger.warning(
+                    "Circular reference detected in _items_equal, "
+                    "falling back to simple equality"
+                )
+                return item1 == item2
+            # Track this object (copy set to avoid mutation across branches)
+            _seen = _seen | {id1, id2}
+
+        if type(item1) is not type(item2):
             return False
 
         if isinstance(item1, dict) and isinstance(item2, dict):
@@ -486,15 +564,17 @@ class ContractDiffComputer:
             for key in keys1:
                 if self.config.should_exclude(key):
                     continue
-                if not self._items_equal(item1[key], item2[key]):
+                if not self._items_equal(
+                    item1[key], item2[key], _depth=_depth + 1, _seen=_seen
+                ):
                     return False
             return True
 
         if isinstance(item1, list) and isinstance(item2, list):
             if len(item1) != len(item2):
                 return False
-            for i, (v1, v2) in enumerate(zip(item1, item2, strict=True)):
-                if not self._items_equal(v1, v2):
+            for v1, v2 in zip(item1, item2, strict=True):
+                if not self._items_equal(v1, v2, _depth=_depth + 1, _seen=_seen):
                     return False
             return True
 
@@ -582,6 +662,7 @@ class ContractDiffComputer:
         after: list[object],
         field_path: str,
         field_diffs: list[ModelContractFieldDiff],
+        list_diffs: list[ModelContractListDiff],
     ) -> None:
         """Diff list using positional comparison (fallback).
 
@@ -593,6 +674,7 @@ class ContractDiffComputer:
             after: The modified list.
             field_path: Dot-separated path to the list field.
             field_diffs: Accumulator for field differences.
+            list_diffs: Accumulator for list differences (propagated to nested diffs).
         """
         max_len = max(len(before), len(after))
 
@@ -622,13 +704,14 @@ class ContractDiffComputer:
                 before_item = before[i]
                 after_item = after[i]
                 if isinstance(before_item, dict) and isinstance(after_item, dict):
-                    # Recurse into nested dicts
+                    # Recurse into nested dicts - propagate list_diffs accumulator
+                    # to capture nested list changes in the parent result
                     self._diff_objects(
                         before=before_item,
                         after=after_item,
                         path=item_path,
                         field_diffs=field_diffs,
-                        list_diffs=[],  # Nested lists handled separately
+                        list_diffs=list_diffs,
                     )
                 else:
                     self._add_field_diff(

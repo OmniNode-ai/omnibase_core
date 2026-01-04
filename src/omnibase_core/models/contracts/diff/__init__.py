@@ -37,8 +37,8 @@ Example:
     ...     exclude_fields=frozenset({"computed_at"}),
     ...     identity_keys={"transitions": "name"},
     ... )
-    >>> # Diff is computed by ServiceContractDiffer (not shown)
-    >>> diff = compute_diff(before_contract, after_contract, config)
+    >>> # Diff is computed by ContractDiffComputer (not shown)
+    >>> diff = compute_contract_diff(before_contract, after_contract, config)
     >>> diff.has_changes
     True
     >>> print(diff.change_summary)

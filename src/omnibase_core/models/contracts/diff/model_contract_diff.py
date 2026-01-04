@@ -5,8 +5,6 @@ Represents the complete diff between two contract versions, including
 field-level and list-level differences, fingerprints, and summary statistics.
 """
 
-from __future__ import annotations
-
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
