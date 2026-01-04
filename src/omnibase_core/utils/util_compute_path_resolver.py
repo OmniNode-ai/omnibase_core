@@ -76,7 +76,7 @@ v1.0 Limitations:
     These features are planned for v1.2. See: docs/architecture/NODECOMPUTE_VERSIONING_ROADMAP.md
 
 Example:
-    >>> from omnibase_core.utils.compute_path_resolver import resolve_path
+    >>> from omnibase_core.utils.util_compute_path_resolver import resolve_path
     >>> data = {"user": {"name": "Alice", "profile": {"age": 30}}}
     >>> resolve_path("user.profile.age", data)
     30
@@ -84,7 +84,7 @@ Example:
     'Alice'
 
 See Also:
-    - omnibase_core.utils.compute_executor: Pipeline execution (uses resolve_pipeline_path)
+    - omnibase_core.utils.util_compute_executor: Pipeline execution (uses resolve_pipeline_path)
     - omnibase_core.utils.compute_transformations: JSON_PATH transformation (uses resolve_path)
     - docs/guides/node-building/03_COMPUTE_NODE_TUTORIAL.md: Compute node tutorial
 """

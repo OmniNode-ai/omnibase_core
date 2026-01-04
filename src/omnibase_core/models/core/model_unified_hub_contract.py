@@ -19,7 +19,7 @@ from omnibase_core.models.core.model_hub_service_configuration import (
     ModelHubServiceConfiguration,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.types.constraints import PrimitiveValueType
+from omnibase_core.types.type_constraints import PrimitiveValueType
 from omnibase_core.types.type_serializable_value import SerializedDict
 
 # Type alias for structured configuration data

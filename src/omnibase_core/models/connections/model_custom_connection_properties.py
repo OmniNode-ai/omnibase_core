@@ -730,7 +730,7 @@ class ModelCustomConnectionProperties(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except (ValidationError, ValueError, TypeError, AttributeError) as e:
+        except (AttributeError, TypeError, ValidationError, ValueError) as e:
             # ValidationError: Pydantic validation failure (validate_assignment=True)
             # ValueError: Custom validator rejection or invalid value
             # TypeError: Type coercion failure

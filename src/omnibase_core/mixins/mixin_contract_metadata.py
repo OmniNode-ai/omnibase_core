@@ -194,7 +194,7 @@ class MixinContractMetadata:
                 {"node_name": self._node_name, "tool_type": self._tool_type},
             )
 
-        except (ValueError, RuntimeError, OSError) as e:
+        except (OSError, RuntimeError, ValueError) as e:
             emit_log_event(
                 LogLevel.ERROR,
                 f"Failed to load contract: {e}",

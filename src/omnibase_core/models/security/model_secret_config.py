@@ -376,7 +376,7 @@ class ModelSecretConfig(BaseModel):
                     config_updates["kubernetes_namespace"] = (
                         namespace_file.read_text().strip()
                     )
-                except (OSError, ValueError, KeyError, AttributeError) as e:
+                except (AttributeError, KeyError, OSError, ValueError) as e:
                     msg = f"Failed to read Kubernetes namespace file: {e}"
                     raise ModelOnexError(
                         msg,
@@ -499,7 +499,7 @@ class ModelSecretConfig(BaseModel):
                     backend_available = False
                     issues.append("File path not configured")
 
-        except (OSError, ValueError, KeyError, AttributeError) as e:
+        except (AttributeError, KeyError, OSError, ValueError) as e:
             config_valid = False
             backend_available = False
             issues.append(f"Health check failed: {e}")

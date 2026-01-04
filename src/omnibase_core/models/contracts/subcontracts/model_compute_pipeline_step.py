@@ -63,7 +63,7 @@ Example Python:
 
 See Also:
     - omnibase_core.models.contracts.subcontracts.model_compute_subcontract: Parent contract
-    - omnibase_core.utils.compute_executor.execute_pipeline_step: Step execution logic
+    - omnibase_core.utils.util_compute_executor.execute_pipeline_step: Step execution logic
     - omnibase_core.enums.enum_compute_step_type: Step type enumeration
 """
 

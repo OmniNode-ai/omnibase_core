@@ -22,7 +22,7 @@ from omnibase_core.models.docker.model_docker_volume_config import (
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
-from omnibase_core.types.json_types import JsonType
+from omnibase_core.types.type_json import JsonType
 from omnibase_core.types.type_serializable_value import (
     SerializedDict,
 )

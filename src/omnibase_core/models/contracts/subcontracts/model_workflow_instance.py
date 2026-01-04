@@ -13,7 +13,7 @@ from omnibase_core.enums.enum_workflow_coordination import EnumWorkflowStatus
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 # Type aliases for structured data - Strict typing is enforced for Any types
-from omnibase_core.types.constraints import PrimitiveValueType
+from omnibase_core.types.type_constraints import PrimitiveValueType
 
 ParameterValue = PrimitiveValueType
 StructuredData = dict[str, ParameterValue]

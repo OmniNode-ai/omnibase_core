@@ -35,8 +35,8 @@ from omnibase_core.types import (
     TypedDictSystemState,
     TypedDictValidationResult,
     TypedDictWorkflowState,
-    parse_datetime,
 )
+from omnibase_core.utils.util_datetime_parser import parse_datetime
 
 
 @pytest.mark.unit

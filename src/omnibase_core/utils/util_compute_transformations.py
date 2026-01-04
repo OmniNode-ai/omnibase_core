@@ -19,7 +19,7 @@ Supported Transformations:
     - JSON_PATH: Simple dot-notation path extraction
 
 Example:
-    >>> from omnibase_core.utils.compute_transformations import execute_transformation
+    >>> from omnibase_core.utils.util_compute_transformations import execute_transformation
     >>> from omnibase_core.enums import EnumTransformationType
     >>> from omnibase_core.models.transformations import ModelTransformCaseConfig
     >>> from omnibase_core.enums import EnumCaseMode
@@ -29,7 +29,7 @@ Example:
     >>> # result == "HELLO"
 
 See Also:
-    - omnibase_core.utils.compute_executor: Pipeline execution
+    - omnibase_core.utils.util_compute_executor: Pipeline execution
     - omnibase_core.models.transformations: Transformation config models
     - docs/guides/node-building/03_COMPUTE_NODE_TUTORIAL.md: Compute node tutorial
 """
@@ -355,7 +355,7 @@ def transform_unicode(data: str, config: ModelTransformUnicodeConfig) -> str:
 # TODO(): Consider using shared utility omnibase_core.utils.compute_path_resolver
 # The shared utility has resolve_path() which provides equivalent functionality.
 # This function could be replaced with a thin wrapper that extracts config.path:
-#   from omnibase_core.utils.compute_path_resolver import resolve_path
+#   from omnibase_core.utils.util_compute_path_resolver import resolve_path
 #   def transform_json_path(data, config): return resolve_path(config.path, data)
 # See: compute_path_resolver.py for unified path resolution logic with EBNF grammar docs
 def transform_json_path(

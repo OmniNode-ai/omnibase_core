@@ -3,6 +3,10 @@
 # SPDX-License-Identifier: Apache-2.0
 """Pipeline hook model.
 
+Note: This module was moved from omnibase_core.pipeline.models to
+omnibase_core.models.pipeline to comply with ONEX repository structure
+validation that requires all models in src/omnibase_core/models/.
+
 Pydantic Configuration Notes
 ----------------------------
 All pipeline models in this module use ``from_attributes=True`` in their ConfigDict.
@@ -37,7 +41,7 @@ the object and constructs a new instance. This works regardless of class identit
 
     # With from_attributes=True:
     hook = ModelPipelineHook(...)  # Created with any class identity
-    # Pydantic reads hook.hook_id, hook.phase, etc. and creates new instance
+    # Pydantic reads hook.hook_name, hook.phase, etc. and creates new instance
     # Works even when class identity differs
 
 **When this pattern is needed:**
@@ -92,7 +96,7 @@ class ModelPipelineHook(BaseModel):
         from_attributes=True,
     )
 
-    hook_id: str = Field(
+    hook_name: str = Field(
         ...,
         min_length=1,
         description="Unique identifier for this hook",
@@ -112,7 +116,7 @@ class ModelPipelineHook(BaseModel):
     )
     dependencies: list[str] = Field(
         default_factory=list,
-        description="List of hook IDs that must execute before this hook",
+        description="List of hook names that must execute before this hook",
     )
     callable_ref: str = Field(
         ...,
@@ -125,13 +129,13 @@ class ModelPipelineHook(BaseModel):
         description="Optional timeout for hook execution in seconds",
     )
 
-    @field_validator("hook_id")
+    @field_validator("hook_name")
     @classmethod
-    def validate_hook_id(cls, v: str) -> str:
-        """Ensure hook_id is a valid identifier."""
+    def validate_hook_name(cls, v: str) -> str:
+        """Ensure hook_name is a valid identifier."""
         if not v.replace("_", "").replace("-", "").isalnum():
             raise ValueError(
-                f"hook_id must be alphanumeric with underscores/hyphens: {v}"
+                f"hook_name must be alphanumeric with underscores/hyphens: {v}"
             )
         return v
 

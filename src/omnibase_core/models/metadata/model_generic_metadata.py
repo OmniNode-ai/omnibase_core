@@ -13,7 +13,7 @@ from omnibase_core.models.primitives.model_semver import (
     parse_semver_from_string,
 )
 from omnibase_core.protocols import ProtocolSupportedMetadataType
-from omnibase_core.types.constraints import BasicValueType
+from omnibase_core.types.type_constraints import BasicValueType
 from omnibase_core.types.typed_dict_metadata_dict import TypedDictMetadataDict
 
 

@@ -196,7 +196,7 @@ class MixinNodeExecutor(MixinEventDrivenNode):
             self._log_info(
                 f"Tool invocation completed successfully in {execution_time_ms}ms"
             )
-        except (RuntimeError, TypeError, ValueError, ModelOnexError) as e:
+        except (ModelOnexError, RuntimeError, TypeError, ValueError) as e:
             execution_time_ms = int((time.time() - start_time) * 1000)
             response_event = ModelToolResponseEvent.create_error_response(
                 correlation_id=correlation_id,
@@ -384,7 +384,7 @@ class MixinNodeExecutor(MixinEventDrivenNode):
             return result
         # Cast result to JsonType - _serialize_result handles conversion of execution
         # results which should be JSON-serializable by node contract
-        from omnibase_core.types.json_types import JsonType
+        from omnibase_core.types.type_json import JsonType
 
         return {"result": cast(JsonType, result)}
 

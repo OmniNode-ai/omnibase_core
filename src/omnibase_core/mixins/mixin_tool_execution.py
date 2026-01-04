@@ -122,7 +122,7 @@ class MixinToolExecution:
                 error=None,
             )
 
-        except (RuntimeError, TypeError, ValueError, ModelOnexError) as e:
+        except (ModelOnexError, RuntimeError, TypeError, ValueError) as e:
             emit_log_event(
                 LogLevel.ERROR,
                 f"❌ Tool execution failed: {e!s}",

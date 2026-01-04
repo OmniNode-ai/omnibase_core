@@ -43,7 +43,7 @@ class RegistryHook:
 
     Once ``freeze()`` is called, no further mutations are possible.
     All read operations (``get_hooks_by_phase()``, ``get_all_hooks()``,
-    ``get_hook_by_id()``) are safe for concurrent access::
+    ``get_hook_by_name()``) are safe for concurrent access::
 
         registry.freeze()
 
@@ -62,7 +62,7 @@ class RegistryHook:
     ``freeze()``                 Yes           Idempotent, safe to call multiple times
     ``get_hooks_by_phase()``     Yes*          Returns a copy (safe after freeze)
     ``get_all_hooks()``          Yes*          Returns a copy (safe after freeze)
-    ``get_hook_by_id()``         Yes*          Read-only (safe after freeze)
+    ``get_hook_by_name()``       Yes*          Read-only (safe after freeze)
     ``is_frozen``                Yes           Property, read-only
     ===========================  ============  ======================
 
@@ -80,7 +80,7 @@ class RegistryHook:
     def __init__(self) -> None:
         """Initialize an empty, unfrozen registry."""
         self._hooks_by_phase: dict[PipelinePhase, list[ModelPipelineHook]] = {}
-        self._hooks_by_id: dict[str, ModelPipelineHook] = {}
+        self._hooks_by_name: dict[str, ModelPipelineHook] = {}
         self._frozen: bool = False
 
     @property
@@ -97,15 +97,15 @@ class RegistryHook:
 
         Raises:
             HookRegistryFrozenError: If registry is frozen.
-            DuplicateHookError: If hook_id already registered.
+            DuplicateHookError: If hook_name already registered.
         """
         if self._frozen:
             raise HookRegistryFrozenError
 
-        if hook.hook_id in self._hooks_by_id:
-            raise DuplicateHookError(hook.hook_id)
+        if hook.hook_name in self._hooks_by_name:
+            raise DuplicateHookError(hook.hook_name)
 
-        self._hooks_by_id[hook.hook_id] = hook
+        self._hooks_by_name[hook.hook_name] = hook
 
         if hook.phase not in self._hooks_by_phase:
             self._hooks_by_phase[hook.phase] = []
@@ -141,19 +141,19 @@ class RegistryHook:
         Returns:
             List of all hooks (copy, safe to modify).
         """
-        return list(self._hooks_by_id.values())
+        return list(self._hooks_by_name.values())
 
-    def get_hook_by_id(self, hook_id: str) -> ModelPipelineHook | None:
+    def get_hook_by_name(self, hook_name: str) -> ModelPipelineHook | None:
         """
-        Get a hook by its ID.
+        Get a hook by its name.
 
         Args:
-            hook_id: The hook ID to look up.
+            hook_name: The hook name to look up.
 
         Returns:
             The hook if found, None otherwise.
         """
-        return self._hooks_by_id.get(hook_id)
+        return self._hooks_by_name.get(hook_name)
 
 
 __all__ = ["RegistryHook"]

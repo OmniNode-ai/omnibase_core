@@ -57,7 +57,7 @@ Migration:
 See Also:
     - omnibase_core.models.common.model_schema_value: The ModelSchemaValue class
     - omnibase_core.models.core.model_schema_dict: Structured schema representation
-    - omnibase_core.types.json_types: JSON-compatible type aliases
+    - omnibase_core.types.type_json: JSON-compatible type aliases
     - docs/architecture/ONEX_FOUR_NODE_ARCHITECTURE.md: Node architecture patterns
 """
 

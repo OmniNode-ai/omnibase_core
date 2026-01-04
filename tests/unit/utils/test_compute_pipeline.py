@@ -41,11 +41,11 @@ from omnibase_core.models.transformations.model_transform_trim_config import (
 from omnibase_core.models.transformations.model_transform_unicode_config import (
     ModelTransformUnicodeConfig,
 )
-from omnibase_core.utils.compute_executor import (
+from omnibase_core.utils.util_compute_executor import (
     execute_compute_pipeline,
     resolve_mapping_path,
 )
-from omnibase_core.utils.compute_transformations import (
+from omnibase_core.utils.util_compute_transformations import (
     execute_transformation,
     transform_case,
     transform_identity,

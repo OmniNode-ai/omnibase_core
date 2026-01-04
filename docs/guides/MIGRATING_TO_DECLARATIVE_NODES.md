@@ -41,8 +41,8 @@ The declarative approach enables:
 |-----------|--------|---------|
 | **FSM Models** | Complete | ModelFSMSubcontract with full state machine support |
 | **Workflow Models** | Complete | ModelWorkflowDefinition with dependency resolution |
-| **FSM Runtime** | Complete | fsm_executor.py + MixinFSMExecution |
-| **Workflow Runtime** | Complete | workflow_executor.py + MixinWorkflowExecution |
+| **FSM Runtime** | Complete | util_fsm_executor.py + MixinFSMExecution |
+| **Workflow Runtime** | Complete | util_workflow_executor.py + MixinWorkflowExecution |
 | **Node Base Classes** | Complete | `NodeReducer` (FSM-driven), `NodeOrchestrator` (workflow-driven) |
 | **Legacy Code** | Removed | No legacy implementations available |
 
@@ -724,8 +724,8 @@ from omnibase_core.nodes import NodeReducer, NodeOrchestrator
 
 ## Additional Resources
 
-- **FSM Executor Documentation**: [`src/omnibase_core/utils/fsm_executor.py`](../../src/omnibase_core/utils/fsm_executor.py)
-- **Workflow Executor Documentation**: [`src/omnibase_core/utils/workflow_executor.py`](../../src/omnibase_core/utils/workflow_executor.py)
+- **FSM Executor Documentation**: [`src/omnibase_core/utils/util_fsm_executor.py`](../../src/omnibase_core/utils/util_fsm_executor.py)
+- **Workflow Executor Documentation**: [`src/omnibase_core/utils/util_workflow_executor.py`](../../src/omnibase_core/utils/util_workflow_executor.py)
 - **Mixin Documentation**: [`src/omnibase_core/mixins/mixin_metadata.yaml`](../../src/omnibase_core/mixins/mixin_metadata.yaml)
 
 ---

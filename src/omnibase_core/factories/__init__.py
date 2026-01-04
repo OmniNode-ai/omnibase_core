@@ -23,7 +23,7 @@ Usage:
     ... )
 """
 
-from omnibase_core.factories.contract_profile_factory import (
+from omnibase_core.factories.factory_contract_profile import (
     ContractProfileFactory,
     available_profiles,
     get_default_compute_profile,

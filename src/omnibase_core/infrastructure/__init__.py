@@ -1,8 +1,27 @@
 """Infrastructure module.
 
 This module contains node bases and infrastructure services.
+
+Re-exports:
+    For convenience, this module re-exports cache backends from their canonical
+    location in omnibase_core.backends.cache. While these work, prefer importing
+    directly from omnibase_core.backends.cache for clarity:
+
+    .. code-block:: python
+
+        # Preferred - import from canonical location
+        from omnibase_core.backends.cache import BackendCacheRedis, REDIS_AVAILABLE
+
+        # Also works - re-exported here for convenience
+        from omnibase_core.infrastructure import BackendCacheRedis, REDIS_AVAILABLE
 """
 
+# Re-export from canonical location (backends.cache) for convenience
+# NOTE: Prefer importing directly from omnibase_core.backends.cache
+from omnibase_core.backends.cache import (
+    REDIS_AVAILABLE,
+    BackendCacheRedis,
+)
 from omnibase_core.infrastructure.execution.phase_sequencer import (
     create_execution_plan,
 )
@@ -17,15 +36,18 @@ from omnibase_core.models.infrastructure.model_effect_transaction import (
 )
 
 __all__ = [
+    # Cache backends (OMN-1188) - from backends.cache
+    "REDIS_AVAILABLE",
+    "BackendCacheRedis",
+    # Execution sequencing - from execution.phase_sequencer
+    "create_execution_plan",
     # Node bases
     "NodeBase",
     "NodeCoreBase",
     # Infrastructure classes
     "ModelCircuitBreaker",
+    "ModelExecutionPlan",
+    "ModelPhaseStep",
     "ModelComputeCache",
     "ModelEffectTransaction",
-    # Execution sequencing
-    "ModelPhaseStep",
-    "ModelExecutionPlan",
-    "create_execution_plan",
 ]

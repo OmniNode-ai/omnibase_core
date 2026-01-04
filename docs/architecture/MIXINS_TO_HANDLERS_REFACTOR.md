@@ -250,7 +250,7 @@ class ProtocolPipelineHook(Protocol):
     """Hook that wraps pipeline execution."""
 
     @property
-    def hook_id(self) -> str:
+    def hook_name(self) -> str:
         """Unique identifier for this hook instance."""
         ...
 
@@ -316,11 +316,11 @@ execution_profile:
   phases:
     preflight:
       hooks:
-        - hook_id: "auth_check"
+        - hook_name: "auth_check"
           priority: 100
     execute:
       hooks:
-        - hook_id: "retry"
+        - hook_name: "retry"
           config:
             max_attempts: 3
             backoff_ms: 100
@@ -640,7 +640,7 @@ class ModelOrderingSummary(BaseModel):
 
 class ModelPhaseHookOrder(BaseModel):
     """Hook ordering within a phase."""
-    hook_id: str
+    hook_name: str
     priority: int
     depends_on: list[str]
 ```
@@ -762,8 +762,8 @@ Within each phase:
 
 ```python
 # Hook B depends on Hook A
-hook_a = RetryHook(hook_id="retry", priority=100)
-hook_b = MetricsHook(hook_id="metrics", priority=200, depends_on=["retry"])
+hook_a = RetryHook(hook_name="retry", priority=100)
+hook_b = MetricsHook(hook_name="metrics", priority=200, depends_on=["retry"])
 
 # Execution order: retry → metrics (even if priorities were reversed)
 ```
