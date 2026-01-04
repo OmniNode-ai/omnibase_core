@@ -40,7 +40,7 @@ class TestValidationCliEntry:
         assert "run_validation_cli()" in content
         assert "exit(" in content
 
-    @patch("omnibase_core.validation.validator_cli.run_validation_cli")
+    @patch("omnibase_core.validation.validation_cli_entry.run_validation_cli")
     def test_main_block_calls_run_validation_cli(
         self, mock_run_validation: pytest.fixture
     ) -> None:

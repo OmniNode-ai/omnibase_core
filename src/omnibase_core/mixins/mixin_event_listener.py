@@ -62,6 +62,7 @@ from omnibase_core.logging.logging_structured import (
 )
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 from omnibase_core.validation.validator_contracts import load_and_validate_yaml_model
 
 # Note: Event bus uses duck-typing interface, not a formal protocol
@@ -1032,9 +1033,6 @@ class MixinEventListener[InputStateT, OutputStateT]:
             },
         )
 
-        # Import envelope model
-        from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
-
         # Create envelope
         envelope = ModelEventEnvelope.create_broadcast(
             payload=completion_event,
@@ -1094,9 +1092,6 @@ class MixinEventListener[InputStateT, OutputStateT]:
             correlation_id=input_event.correlation_id,
             data=error_data,  # type: ignore[arg-type]  # Event data field accepts dict for error protocol; validated at runtime
         )
-
-        # Import envelope model
-        from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 
         # Wrap in envelope and publish
         envelope = ModelEventEnvelope.create_broadcast(
