@@ -5,7 +5,7 @@ Thread Safety:
     making it thread-safe for concurrent read access.
 """
 
-from pydantic import BaseModel, ConfigDict, Field, computed_field
+from pydantic import BaseModel, ConfigDict, Field, computed_field, model_validator
 
 
 class ModelInvariantComparisonSummary(BaseModel):
@@ -54,6 +54,28 @@ class ModelInvariantComparisonSummary(BaseModel):
         ge=0,
         description="Invariants that failed baseline but passed replay (IMPROVEMENT)",
     )
+
+    @model_validator(mode="after")
+    def validate_counts_sum_to_total(self) -> "ModelInvariantComparisonSummary":
+        """Validate that the sum of all category counts equals total_invariants.
+
+        Ensures data consistency by verifying:
+        both_passed + both_failed + new_violations + fixed_violations == total_invariants
+        """
+        computed_sum = (
+            self.both_passed
+            + self.both_failed
+            + self.new_violations
+            + self.fixed_violations
+        )
+        if computed_sum != self.total_invariants:
+            raise ValueError(
+                f"Sum of counts ({computed_sum}) does not equal total_invariants "
+                f"({self.total_invariants}). Expected: both_passed ({self.both_passed}) + "
+                f"both_failed ({self.both_failed}) + new_violations ({self.new_violations}) + "
+                f"fixed_violations ({self.fixed_violations}) = {self.total_invariants}"
+            )
+        return self
 
     @computed_field  # type: ignore[prop-decorator]
     @property

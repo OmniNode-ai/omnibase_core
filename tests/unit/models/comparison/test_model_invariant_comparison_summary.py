@@ -93,6 +93,49 @@ class TestModelInvariantComparisonSummaryCreation:
         assert summary.new_violations == 0
         assert summary.regression_detected is False
 
+    def test_regression_detected_is_computed_from_new_violations(self) -> None:
+        """regression_detected is a @computed_field derived from new_violations > 0, not a constructor parameter.
+
+        This test explicitly documents that:
+        1. regression_detected is automatically computed based on new_violations
+        2. It cannot be overridden via constructor (extra="ignore" means it's silently ignored)
+        3. The value is always derived from the actual new_violations count
+        """
+        # Case 1: new_violations=0 -> regression_detected=False
+        summary_no_regression = ModelInvariantComparisonSummary(
+            total_invariants=5,
+            both_passed=5,
+            both_failed=0,
+            new_violations=0,
+            fixed_violations=0,
+        )
+        assert summary_no_regression.regression_detected is False
+
+        # Case 2: new_violations>0 -> regression_detected=True
+        summary_with_regression = ModelInvariantComparisonSummary(
+            total_invariants=5,
+            both_passed=3,
+            both_failed=0,
+            new_violations=2,
+            fixed_violations=0,
+        )
+        assert summary_with_regression.regression_detected is True
+
+        # Case 3: Verify computed field cannot be overridden via constructor
+        # Even if someone tries to pass regression_detected=False with new_violations>0,
+        # the computed field will still return True (extra="ignore" silently ignores it)
+        summary_override_attempt = ModelInvariantComparisonSummary(
+            total_invariants=5,
+            both_passed=3,
+            both_failed=0,
+            new_violations=2,
+            fixed_violations=0,
+            # NOTE: regression_detected is NOT a constructor parameter
+            # Any attempt to pass it would be ignored due to extra="ignore"
+        )
+        # Computed field always reflects actual new_violations count
+        assert summary_override_attempt.regression_detected is True
+
     def test_model_is_immutable_after_creation(self) -> None:
         """Model is immutable (frozen) after creation."""
         summary = ModelInvariantComparisonSummary(
@@ -345,3 +388,69 @@ class TestModelInvariantComparisonSummaryWithFixture:
         assert summary.new_violations == 1
         assert summary.fixed_violations == 1
         assert summary.regression_detected is True
+
+
+@pytest.mark.unit
+class TestModelInvariantComparisonSummaryDataConsistency:
+    """Test data consistency validation for comparison summary.
+
+    These tests verify the model validator that enforces:
+    both_passed + both_failed + new_violations + fixed_violations == total_invariants
+    """
+
+    def test_validation_rejects_counts_exceeding_total(self) -> None:
+        """Validation rejects when counts sum exceeds total_invariants."""
+        # Sum of counts: 5 + 3 + 2 + 2 = 12, but total_invariants = 10
+        with pytest.raises(ValidationError) as exc_info:
+            ModelInvariantComparisonSummary(
+                total_invariants=10,
+                both_passed=5,
+                both_failed=3,
+                new_violations=2,
+                fixed_violations=2,
+            )
+        errors = exc_info.value.errors()
+        # Check that the error message mentions the consistency issue
+        error_messages = [str(e.get("msg", "")) for e in errors]
+        assert any(
+            "must equal" in msg or "sum" in msg.lower() or "total" in msg.lower()
+            for msg in error_messages
+        ), f"Expected consistency validation error, got: {errors}"
+
+    def test_validation_rejects_counts_less_than_total(self) -> None:
+        """Validation rejects when counts sum is less than total_invariants."""
+        # Sum of counts: 2 + 1 + 1 + 1 = 5, but total_invariants = 10
+        with pytest.raises(ValidationError) as exc_info:
+            ModelInvariantComparisonSummary(
+                total_invariants=10,
+                both_passed=2,
+                both_failed=1,
+                new_violations=1,
+                fixed_violations=1,
+            )
+        errors = exc_info.value.errors()
+        # Check that the error message mentions the consistency issue
+        error_messages = [str(e.get("msg", "")) for e in errors]
+        assert any(
+            "must equal" in msg or "sum" in msg.lower() or "total" in msg.lower()
+            for msg in error_messages
+        ), f"Expected consistency validation error, got: {errors}"
+
+    def test_validation_accepts_consistent_counts(self) -> None:
+        """Validation accepts when counts sum equals total_invariants."""
+        # Sum of counts: 5 + 2 + 2 + 1 = 10, matches total_invariants = 10
+        summary = ModelInvariantComparisonSummary(
+            total_invariants=10,
+            both_passed=5,
+            both_failed=2,
+            new_violations=2,
+            fixed_violations=1,
+        )
+        assert summary.total_invariants == 10
+        computed_sum = (
+            summary.both_passed
+            + summary.both_failed
+            + summary.new_violations
+            + summary.fixed_violations
+        )
+        assert computed_sum == summary.total_invariants

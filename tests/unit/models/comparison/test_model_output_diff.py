@@ -127,6 +127,30 @@ class TestModelOutputDiffComputedField:
         )
         assert diff_with_data.has_differences is True
 
+    def test_has_differences_constructor_param_ignored(self) -> None:
+        """Passing has_differences to constructor is ignored.
+
+        has_differences is a @computed_field, not a stored field.
+        Any attempt to pass it to the constructor is silently ignored
+        (due to ConfigDict extra='ignore'), and the computed value
+        is always derived from the actual content fields.
+        """
+        # Attempt to force has_differences=False when there ARE actual differences
+        # The computed_field decorator ensures the value is derived from content
+        diff_with_differences = ModelOutputDiff(
+            items_added=["root['new_item']"],
+            has_differences=False,  # type: ignore[call-arg]  # Intentionally passing invalid param
+        )
+        # Computed field should return True based on items_added content
+        assert diff_with_differences.has_differences is True
+
+        # Attempt to force has_differences=True when there are NO actual differences
+        diff_without_differences = ModelOutputDiff(
+            has_differences=True,  # type: ignore[call-arg]  # Intentionally passing invalid param
+        )
+        # Computed field should return False based on empty content
+        assert diff_without_differences.has_differences is False
+
 
 @pytest.mark.unit
 class TestModelOutputDiffImmutability:

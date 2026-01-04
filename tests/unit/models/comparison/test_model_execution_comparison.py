@@ -596,6 +596,51 @@ class TestModelExecutionComparisonMetrics:
         assert comparison.latency_delta_percent == pytest.approx(-20.0)
         assert comparison.latency_delta_percent < 0  # Negative = faster
 
+    def test_latency_delta_percent_with_zero_baseline(
+        self,
+        sample_input_hash: str,
+        sample_matching_output_hashes: tuple[str, str],
+        sample_no_regression_summary: ModelInvariantComparisonSummary,
+        sample_invariant_result_passed: ModelInvariantResult,
+    ) -> None:
+        """Model accepts zero baseline latency with pre-computed delta percent.
+
+        When baseline_latency_ms is 0, calculating percent change would cause
+        division by zero. Since ModelExecutionComparison stores pre-computed
+        delta_percent values (not computed at runtime), the producer of this
+        data is responsible for handling the edge case.
+
+        Convention: When baseline is 0, latency_delta_percent is set to 0.0
+        (alternatively could be infinity or undefined, but 0.0 is a safe default).
+        This test verifies the model accepts valid data for this edge case.
+        """
+        baseline_hash, replay_hash = sample_matching_output_hashes
+
+        comparison = ModelExecutionComparison(
+            baseline_execution_id=TEST_BASELINE_ID,
+            replay_execution_id=TEST_REPLAY_ID,
+            input_hash=sample_input_hash,
+            input_hash_match=True,
+            baseline_output_hash=baseline_hash,
+            replay_output_hash=replay_hash,
+            output_match=True,
+            baseline_latency_ms=0.0,  # Zero baseline (edge case)
+            replay_latency_ms=100.0,  # Non-zero replay
+            latency_delta_ms=100.0,  # replay - baseline = 100 - 0
+            latency_delta_percent=0.0,  # Convention: 0% when baseline is 0
+            baseline_invariant_results=[sample_invariant_result_passed],
+            replay_invariant_results=[sample_invariant_result_passed],
+            invariant_comparison=sample_no_regression_summary,
+        )
+
+        # Verify the model accepts zero baseline latency
+        assert comparison.baseline_latency_ms == 0.0
+        assert comparison.replay_latency_ms == 100.0
+        assert comparison.latency_delta_ms == 100.0
+        # Delta percent is 0.0 by convention when baseline is 0
+        # (avoids division by zero in percent calculation)
+        assert comparison.latency_delta_percent == 0.0
+
     def test_cost_delta_with_missing_values(
         self,
         minimal_comparison_data: dict[str, Any],
@@ -863,6 +908,105 @@ class TestModelExecutionComparisonEdgeCases:
         assert comparison.baseline_cost == pytest.approx(0.00001)
         assert comparison.replay_cost == pytest.approx(0.00002)
         assert comparison.cost_delta == pytest.approx(0.00001)
+
+    def test_output_match_true_consistent_with_equal_hashes(
+        self,
+        sample_input_hash: str,
+        sample_matching_output_hashes: tuple[str, str],
+        sample_no_regression_summary: ModelInvariantComparisonSummary,
+        sample_invariant_result_passed: ModelInvariantResult,
+    ) -> None:
+        """Validate that output_match=True is consistent when hashes are equal.
+
+        This test documents the expected usage pattern: when baseline_output_hash
+        and replay_output_hash are equal, the caller should set output_match=True.
+
+        Note:
+            The model stores user-provided consistency flags (not auto-computed).
+            The caller is responsible for computing hash equality and setting
+            output_match accordingly. This test validates that the expected
+            consistent state is accepted by the model.
+        """
+        baseline_hash, replay_hash = sample_matching_output_hashes
+        # Verify precondition: hashes are equal
+        assert baseline_hash == replay_hash, "Fixture should provide equal hashes"
+
+        comparison = ModelExecutionComparison(
+            baseline_execution_id=TEST_BASELINE_ID,
+            replay_execution_id=TEST_REPLAY_ID,
+            input_hash=sample_input_hash,
+            input_hash_match=True,
+            baseline_output_hash=baseline_hash,
+            replay_output_hash=replay_hash,
+            output_match=True,  # Consistent with equal hashes
+            baseline_latency_ms=100.0,
+            replay_latency_ms=100.0,
+            latency_delta_ms=0.0,
+            latency_delta_percent=0.0,
+            baseline_invariant_results=[sample_invariant_result_passed],
+            replay_invariant_results=[sample_invariant_result_passed],
+            invariant_comparison=sample_no_regression_summary,
+        )
+
+        # Verify the consistent state is stored correctly
+        assert comparison.output_match is True
+        assert comparison.baseline_output_hash == comparison.replay_output_hash
+        # No diff should be provided for matching outputs
+        assert comparison.output_diff is None
+
+    def test_output_match_false_consistent_with_different_hashes(
+        self,
+        sample_input_hash: str,
+        sample_different_output_hashes: tuple[str, str],
+        sample_no_regression_summary: ModelInvariantComparisonSummary,
+        sample_invariant_result_passed: ModelInvariantResult,
+    ) -> None:
+        """Validate that output_match=False is consistent when hashes differ.
+
+        This test documents the expected usage pattern: when baseline_output_hash
+        and replay_output_hash are different, the caller should set output_match=False.
+
+        Note:
+            The model stores user-provided consistency flags (not auto-computed).
+            The caller is responsible for computing hash equality and setting
+            output_match accordingly. This test validates that the expected
+            consistent state is accepted by the model.
+        """
+        baseline_hash, replay_hash = sample_different_output_hashes
+        # Verify precondition: hashes are different
+        assert baseline_hash != replay_hash, "Fixture should provide different hashes"
+
+        comparison = ModelExecutionComparison(
+            baseline_execution_id=TEST_BASELINE_ID,
+            replay_execution_id=TEST_REPLAY_ID,
+            input_hash=sample_input_hash,
+            input_hash_match=True,
+            baseline_output_hash=baseline_hash,
+            replay_output_hash=replay_hash,
+            output_match=False,  # Consistent with different hashes
+            output_diff=ModelOutputDiff(
+                values_changed={
+                    "root['response']": ModelValueChange(
+                        old_value="baseline response",
+                        new_value="replay response",
+                    )
+                }
+            ),
+            baseline_latency_ms=100.0,
+            replay_latency_ms=100.0,
+            latency_delta_ms=0.0,
+            latency_delta_percent=0.0,
+            baseline_invariant_results=[sample_invariant_result_passed],
+            replay_invariant_results=[sample_invariant_result_passed],
+            invariant_comparison=sample_no_regression_summary,
+        )
+
+        # Verify the consistent state is stored correctly
+        assert comparison.output_match is False
+        assert comparison.baseline_output_hash != comparison.replay_output_hash
+        # Diff should be provided for non-matching outputs
+        assert comparison.output_diff is not None
+        assert comparison.output_diff.has_differences is True
 
 
 @pytest.mark.unit
