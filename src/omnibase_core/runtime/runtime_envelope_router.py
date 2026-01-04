@@ -46,7 +46,7 @@ import threading
 import time
 from typing import TYPE_CHECKING
 
-from omnibase_core.decorators.error_handling import standard_error_handling
+from omnibase_core.decorators.decorator_error_handling import standard_error_handling
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_handler_type import EnumHandlerType
 from omnibase_core.models.core.model_onex_envelope import ModelOnexEnvelope

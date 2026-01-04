@@ -10,12 +10,12 @@ Tests cover:
 - Decorator stacking and composition
 - Edge cases and boundary conditions
 
-Target: 90%+ coverage for decorators/error_handling.py
+Target: 90%+ coverage for decorators/decorator_error_handling.py
 """
 
 import pytest
 
-from omnibase_core.decorators.error_handling import (
+from omnibase_core.decorators.decorator_error_handling import (
     io_error_handling,
     standard_error_handling,
     validation_error_handling,

@@ -34,7 +34,7 @@ See Also:
 
 from typing import TYPE_CHECKING, TypeVar, cast
 
-from omnibase_core.decorators.allow_dict_any import allow_dict_any
+from omnibase_core.decorators.decorator_allow_dict_any import allow_dict_any
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.type_serializable_value import (
     SerializableValue,

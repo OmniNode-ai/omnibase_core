@@ -62,7 +62,7 @@ from mypy.plugin import (
 )
 from mypy.types import AnyType, CallableType, Instance, Type, get_proper_type
 
-from omnibase_core.decorators.allow_dict_any import allow_dict_any
+from omnibase_core.decorators.decorator_allow_dict_any import allow_dict_any
 
 
 class DictAnyCheckerPlugin(Plugin):
@@ -91,7 +91,7 @@ class DictAnyCheckerPlugin(Plugin):
     """
 
     # Decorator that allows dict[str, Any] usage
-    ALLOW_DECORATOR = "omnibase_core.decorators.allow_dict_any.allow_dict_any"
+    ALLOW_DECORATOR = "omnibase_core.decorators.decorator_allow_dict_any.allow_dict_any"
     ALLOW_DECORATOR_SHORT = "allow_dict_any"
 
     # Cache for functions we've already checked to avoid duplicate warnings
@@ -601,8 +601,8 @@ class DictAnyCheckerPlugin(Plugin):
             self.ALLOW_DECORATOR_SHORT,
             # Common import patterns
             "allow_dict_any.allow_dict_any",
-            "decorators.allow_dict_any.allow_dict_any",
-            "omnibase_core.decorators.allow_dict_any",
+            "decorators.decorator_allow_dict_any.allow_dict_any",
+            "omnibase_core.decorators.decorator_allow_dict_any",
         ):
             return True
 
