@@ -483,15 +483,17 @@ class ContractDiffComputer:
             if identity_value is not None:
                 if identity_value in identity_map:
                     # Collision detected - use composite key to preserve both items
+                    # Use '::idx:' delimiter which is unlikely to appear in real data
+                    # (avoids collision with values already containing '__' suffixes)
                     logger.warning(
                         "Duplicate identity key '%s' found at index %d. "
-                        "Using composite key '%s__%d' for disambiguation.",
+                        "Using composite key '%s::idx:%d' for disambiguation.",
                         identity_value,
                         idx,
                         identity_value,
                         idx,
                     )
-                    identity_map[f"{identity_value}__{idx}"] = (idx, item)
+                    identity_map[f"{identity_value}::idx:{idx}"] = (idx, item)
                 else:
                     identity_map[identity_value] = (idx, item)
             else:
@@ -532,7 +534,14 @@ class ContractDiffComputer:
                 "falling back to simple equality",
                 _MAX_RECURSION_DEPTH,
             )
-            return item1 == item2
+            try:
+                return item1 == item2
+            except RecursionError:
+                # cleanup-resilience-ok: malformed data with deep circular refs
+                logger.warning(
+                    "RecursionError during fallback equality check, assuming unequal"
+                )
+                return False
 
         # Initialize seen set for cycle detection
         if _seen is None:
@@ -547,7 +556,14 @@ class ContractDiffComputer:
                     "Circular reference detected in _items_equal, "
                     "falling back to simple equality"
                 )
-                return item1 == item2
+                try:
+                    return item1 == item2
+                except RecursionError:
+                    # cleanup-resilience-ok: malformed data with deep circular refs
+                    logger.warning(
+                        "RecursionError during fallback equality check, assuming unequal"
+                    )
+                    return False
             # Track this object (copy set to avoid mutation across branches)
             _seen = _seen | {id1, id2}
 
