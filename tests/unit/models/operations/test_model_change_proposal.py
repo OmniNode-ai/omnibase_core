@@ -7,8 +7,6 @@ Tests the change proposal model for representing proposed system changes
 for evaluation. This model captures before/after configurations, change
 metadata, and provides helper methods for change analysis.
 
-This test file follows TDD principles - tests are written before implementation.
-
 Related:
     - OMN-1196: Create ModelChangeProposal for system change evaluation
 """
@@ -22,10 +20,6 @@ from pydantic import ValidationError
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
-# Import will work once model is created
-# These imports are commented to allow the test file to be created before implementation
-# Uncomment once the model is implemented
 from omnibase_core.models.operations.model_change_proposal import (
     EnumChangeType,
     ModelChangeProposal,
@@ -238,7 +232,10 @@ class TestChangeProposalValidation:
             )
 
         error_str = str(exc_info.value)
-        assert "change_type" in error_str or "invalid" in error_str.lower()
+        # Pydantic enum error includes field name and valid options
+        assert "change_type" in error_str
+        assert "Input should be" in error_str
+        assert "model_swap" in error_str  # One of the valid enum values
 
     def test_empty_description_rejected(
         self, sample_before_config: dict, sample_after_config: dict
@@ -254,7 +251,9 @@ class TestChangeProposalValidation:
             )
 
         error_str = str(exc_info.value)
-        assert "description" in error_str or "min_length" in error_str.lower()
+        # Pydantic min_length error includes field name and constraint message
+        assert "description" in error_str
+        assert "at least 1 character" in error_str
 
     def test_empty_rationale_rejected(
         self, sample_before_config: dict, sample_after_config: dict
@@ -270,7 +269,9 @@ class TestChangeProposalValidation:
             )
 
         error_str = str(exc_info.value)
-        assert "rationale" in error_str or "min_length" in error_str.lower()
+        # Pydantic min_length error includes field name and constraint message
+        assert "rationale" in error_str
+        assert "at least 1 character" in error_str
 
     def test_frozen_model_is_immutable(
         self, minimal_valid_proposal: ModelChangeProposal
@@ -293,7 +294,9 @@ class TestChangeProposalValidation:
             )
 
         error_str = str(exc_info.value)
-        assert "description" in error_str or "whitespace" in error_str.lower()
+        # Custom validator error includes field name and whitespace message
+        assert "description" in error_str
+        assert "whitespace-only" in error_str
 
     def test_whitespace_only_rationale_rejected(
         self, sample_before_config: dict, sample_after_config: dict
@@ -309,7 +312,9 @@ class TestChangeProposalValidation:
             )
 
         error_str = str(exc_info.value)
-        assert "rationale" in error_str or "whitespace" in error_str.lower()
+        # Custom validator error includes field name and whitespace message
+        assert "rationale" in error_str
+        assert "whitespace-only" in error_str
 
     def test_timestamp_auto_generated(
         self, sample_before_config: dict, sample_after_config: dict
@@ -343,7 +348,9 @@ class TestChangeProposalValidation:
             )
 
         error_str = str(exc_info.value)
-        assert "before_config" in error_str or "empty" in error_str.lower()
+        # Custom validator error includes field name and empty constraint
+        assert "before_config" in error_str
+        assert "cannot be empty" in error_str
 
     def test_empty_after_config_rejected(self, sample_before_config: dict) -> None:
         """Empty after_config should be rejected."""
@@ -357,7 +364,9 @@ class TestChangeProposalValidation:
             )
 
         error_str = str(exc_info.value)
-        assert "after_config" in error_str or "empty" in error_str.lower()
+        # Custom validator error includes field name and empty constraint
+        assert "after_config" in error_str
+        assert "cannot be empty" in error_str
 
     def test_extra_fields_forbidden(
         self, sample_before_config: dict, sample_after_config: dict
@@ -374,7 +383,9 @@ class TestChangeProposalValidation:
             )
 
         error_str = str(exc_info.value)
-        assert "Extra inputs" in error_str or "unknown_field" in error_str
+        # Pydantic extra='forbid' error includes field name and standard message
+        assert "unknown_field" in error_str
+        assert "Extra inputs are not permitted" in error_str
 
 
 # =============================================================================
@@ -698,8 +709,12 @@ class TestChangeProposalHelpers:
 
         assert isinstance(diff, str)
         assert len(diff) > 0
-        # Should mention changed keys
-        assert "model_name" in diff or "temperature" in diff or "max_tokens" in diff
+        # All changed keys should appear in the diff (not just any one of them)
+        assert "model_name" in diff
+        assert "temperature" in diff
+        assert "max_tokens" in diff
+        # Unchanged key should NOT appear
+        assert "timeout_ms" not in diff
 
     def test_get_diff_summary_shows_before_after_values(
         self, sample_before_config: dict, sample_after_config: dict
@@ -715,9 +730,13 @@ class TestChangeProposalHelpers:
 
         diff = proposal.get_diff_summary()
 
-        # Should contain some indication of old and new values
-        # Could be format like "gpt-4 -> gpt-4-turbo" or similar
-        assert "gpt-4" in diff or str(sample_before_config["temperature"]) in diff
+        # Should contain old and new values for all changed keys
+        # Check model_name change: gpt-4 -> gpt-4-turbo
+        assert "gpt-4" in diff
+        assert "gpt-4-turbo" in diff
+        # Check temperature change: 0.7 -> 0.5
+        assert "0.7" in diff
+        assert "0.5" in diff
 
     def test_model_swap_get_model_names(
         self, sample_before_config: dict, sample_after_config: dict
@@ -887,23 +906,20 @@ class TestChangeProposalEdgeCases:
     def test_very_long_description_handled(
         self, sample_before_config: dict, sample_after_config: dict
     ) -> None:
-        """Very long descriptions are handled (or rejected if there's a limit)."""
+        """Very long descriptions are accepted (no max length constraint)."""
         long_description = "A" * 10000
 
-        # If there's a max length, this should raise
-        # If not, it should work
-        try:
-            proposal = ModelChangeProposal(
-                change_type=EnumChangeType.CONFIG_CHANGE,
-                description=long_description,
-                rationale="Testing long description",
-                before_config=sample_before_config,
-                after_config=sample_after_config,
-            )
-            assert len(proposal.description) == 10000
-        except ValidationError:
-            # Expected if there's a max length constraint
-            pass
+        # Model has no max_length constraint on description, so this should succeed
+        proposal = ModelChangeProposal(
+            change_type=EnumChangeType.CONFIG_CHANGE,
+            description=long_description,
+            rationale="Testing long description",
+            before_config=sample_before_config,
+            after_config=sample_after_config,
+        )
+
+        assert len(proposal.description) == 10000
+        assert proposal.description == long_description
 
     def test_tags_empty_list_allowed(
         self, sample_before_config: dict, sample_after_config: dict

@@ -707,9 +707,10 @@ class ModelChangeProposal(BaseModel):
         Extract old and new model names for MODEL_SWAP change type.
 
         This method is specifically for MODEL_SWAP proposals to extract
-        the model names from the before/after configurations. The key used
-        to look up model names is defined by MODEL_NAME_KEY class attribute
-        (defaults to "model_name"), which can be overridden in subclasses.
+        the model names from the before/after configurations. It checks for
+        MODEL_NAME_KEY (defaults to "model_name") first, then falls back to
+        "model" key for consistency with _validate_model_swap() which accepts
+        either key.
 
         Returns:
             Dictionary with "old_model" and "new_model" keys if change_type
@@ -729,8 +730,13 @@ class ModelChangeProposal(BaseModel):
         if self.change_type != EnumChangeType.MODEL_SWAP:
             return None
 
-        old_model = self.before_config.get(self.MODEL_NAME_KEY)
-        new_model = self.after_config.get(self.MODEL_NAME_KEY)
+        # Check for model_name first (preferred), then fall back to model
+        old_model = self.before_config.get(
+            self.MODEL_NAME_KEY
+        ) or self.before_config.get("model")
+        new_model = self.after_config.get(self.MODEL_NAME_KEY) or self.after_config.get(
+            "model"
+        )
 
         return {
             "old_model": str(old_model) if old_model is not None else None,
