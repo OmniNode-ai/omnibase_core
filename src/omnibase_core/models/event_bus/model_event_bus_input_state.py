@@ -73,7 +73,7 @@ class ModelEventBusInputState(BaseModel):
 
     @field_validator("version", mode="before")
     @classmethod
-    def parse_version(cls, v: Any) -> Any:
+    def parse_version(cls, v: Any) -> ModelSemVer:
         """Parse and validate semantic version."""
         if isinstance(v, ModelSemVer):
             return v
