@@ -551,6 +551,10 @@ class TestMergeValidatorDependencyReferences(TestMergeValidatorFixtures):
         # Should have warning about potential unresolved dependency
         # Note: This is a warning, not an error (full resolution in Phase 3)
         assert isinstance(result, ModelValidationResult)
+        # Verify the warning was produced for the unresolved dependency
+        assert result.warning_count > 0 or any(
+            "handler.nonexistent" in str(issue.message) for issue in result.issues
+        ), "Expected warning about unresolved handler dependency"
 
 
 @pytest.mark.unit

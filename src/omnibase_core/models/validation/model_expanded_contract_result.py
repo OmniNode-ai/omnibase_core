@@ -67,7 +67,7 @@ class ModelExpandedContractResult(BaseModel):
         ...         print(f"  - {error}")
     """
 
-    model_config = ConfigDict(frozen=False, extra="forbid")
+    model_config = ConfigDict(frozen=False, extra="forbid", from_attributes=True)
 
     success: bool = Field(
         default=False,

@@ -40,7 +40,8 @@ Usage:
 Ticket: OMN-1054
 """
 
-from omnibase_core.validation.validators.common_validators import (  # Compiled regex patterns (cached at module level); Pydantic Annotated types; Enum normalizer factory; Validator functions
+# Compiled regex patterns, Pydantic Annotated types, enum normalizer, and validators
+from omnibase_core.validation.validators.common_validators import (
     ERROR_CODE_PATTERN,
     BCP47Locale,
     Duration,

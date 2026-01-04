@@ -18,6 +18,7 @@ Related:
 """
 
 import pytest
+from pydantic import ValidationError
 
 from omnibase_core.enums.enum_contract_validation_error_code import (
     EnumContractValidationErrorCode,
@@ -30,6 +31,7 @@ from omnibase_core.models.contracts.model_execution_constraints import (
     ModelExecutionConstraints,
 )
 from omnibase_core.models.contracts.model_handler_contract import ModelHandlerContract
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.runtime.model_handler_behavior import ModelHandlerBehavior
 from omnibase_core.validation.phases import (
     ExpandedContractGraphValidator,
@@ -425,9 +427,11 @@ class TestExpandedContractValidatorEventRouting(TestExpandedContractValidatorFix
 
         result = validator.validate(contract)
         assert result.is_valid is True
-        # Should produce warning or suggestions about verifying consumers
-        # (info_count is not an attribute, use suggestions or warnings instead)
-        assert result.warning_count >= 0  # May have warnings about consumers
+        # Should produce suggestions about verifying consumers for event outputs
+        # Note: Event outputs without known consumers produce INFO-level suggestions
+        assert result.suggestions or result.warning_count > 0, (
+            "Expected suggestions or warnings about event consumers"
+        )
 
 
 @pytest.mark.unit
@@ -569,7 +573,7 @@ class TestExpandedContractValidatorHandlerKindConsistency(
             handler_kind="effect",
             purity="side_effecting",
         )
-        with pytest.raises(Exception):  # ModelOnexError or ValueError
+        with pytest.raises((ModelOnexError, ValidationError, ValueError)):
             ModelHandlerContract(
                 handler_id="compute.test.handler",  # compute prefix
                 name="Test Handler",
