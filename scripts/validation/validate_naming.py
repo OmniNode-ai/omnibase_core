@@ -191,7 +191,7 @@ class NamingConventionValidator:
         # Rationale: ContractPatchValidator validates contract patches, not a Protocol interface.
         #            The heuristic flags "contract" as a Protocol indicator, but this is a
         #            validator that VALIDATES patches, not a Protocol interface.
-        #            The Protocol interface for this is ProtocolPatchValidator in protocol_patch_validator.py
+        #            The Protocol interface for this is ProtocolPatchValidator in validator_protocol_patch.py
         #            ContractValidationInvariantChecker is a concrete implementation (OMN-1146),
         #            not a Protocol. The Protocol interface is ProtocolContractValidationInvariantChecker.
         "validation/": [
@@ -212,7 +212,7 @@ class NamingConventionValidator:
             "ContractMergeEngine",  # Merge engine for typed contract merging (OMN-1127)
         ],
         # REPLAY INFRASTRUCTURE: Deterministic replay utilities for testing and debugging
-        # Location: services/replay/ - Replay infrastructure services
+        # Location: services/replay/ - Replay infrastructure services (injectors/recorders)
         # Rationale: These classes provide deterministic replay capabilities (OMN-1116, OMN-1205).
         #            RecorderEffect, InjectorTime, InjectorRNG are passive observers and injection
         #            mechanisms - NOT nodes. The heuristic flags "effect" as a Node indicator, but
@@ -223,7 +223,15 @@ class NamingConventionValidator:
             "RecorderEffect",  # Effect recording for deterministic replay (OMN-1116)
             "InjectorTime",  # Time injection for deterministic replay (OMN-1116)
             "InjectorRNG",  # RNG injection for deterministic replay (OMN-1116)
-            "ReplaySession",  # Session dataclass for replay execution (OMN-1116)
+        ],
+        # REPLAY INFRASTRUCTURE: Effect replay execution for deterministic testing
+        # Location: pipeline/replay/ - Replay execution and session management
+        # Rationale: ExecutorReplay and SessionReplay handle replay execution and session state.
+        #            The heuristic flags "effect" as a Node indicator, but these are replay
+        #            infrastructure classes that EXECUTE replays, not node implementations.
+        "pipeline/replay/": [
+            "ExecutorReplay",  # Replay executor for effect playback (OMN-1116)
+            "SessionReplay",  # Replay session manager (OMN-1116)
         ],
     }
 

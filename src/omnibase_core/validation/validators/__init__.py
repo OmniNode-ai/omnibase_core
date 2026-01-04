@@ -41,7 +41,7 @@ Ticket: OMN-1054
 """
 
 # Compiled regex patterns, Pydantic Annotated types, enum normalizer, and validators
-from omnibase_core.validation.validators.common_validators import (
+from omnibase_core.validation.validators.validator_common import (
     ERROR_CODE_PATTERN,
     BCP47Locale,
     Duration,

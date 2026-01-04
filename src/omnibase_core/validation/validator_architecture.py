@@ -21,7 +21,7 @@ from omnibase_core.models.common.model_validation_metadata import (
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
-from .validation_utils import ModelValidationResult
+from .validator_utils import ModelValidationResult
 
 # Configure logger for this module
 logger = logging.getLogger(__name__)

@@ -8,7 +8,7 @@ Data models for protocol duplication reports.
 import logging
 from dataclasses import dataclass
 
-from omnibase_core.validation.validation_utils import (
+from omnibase_core.validation.validator_utils import (
     ModelDuplicationInfo,
     ModelProtocolInfo,
 )

@@ -110,7 +110,7 @@ def clear_all_caches() -> None:
 
     # Clear logger cache (replaces _LoggerCache holder)
     try:
-        from omnibase_core.logging.core_logging import clear_logger_cache
+        from omnibase_core.logging.logging_core import clear_logger_cache
 
         clear_logger_cache()
     except ImportError:
@@ -118,7 +118,7 @@ def clear_all_caches() -> None:
 
     # Clear protocol cache (replaces _ProtocolCacheHolder)
     try:
-        from omnibase_core.logging.emit import clear_protocol_cache
+        from omnibase_core.logging.logging_emit import clear_protocol_cache
 
         clear_protocol_cache()
     except ImportError:
@@ -352,22 +352,22 @@ def isolated_correlation_context() -> Generator[None, None, None]:
     """
     # Import the logging module to access _context
     try:
-        from omnibase_core.logging import core_logging
+        from omnibase_core.logging import logging_core
 
         # Save current correlation ID if any
-        saved_correlation_id = getattr(core_logging._context, "correlation_id", None)
+        saved_correlation_id = getattr(logging_core._context, "correlation_id", None)
 
         # Clear the correlation ID
-        if hasattr(core_logging._context, "correlation_id"):
-            delattr(core_logging._context, "correlation_id")
+        if hasattr(logging_core._context, "correlation_id"):
+            delattr(logging_core._context, "correlation_id")
 
         yield
 
         # Restore original correlation ID
         if saved_correlation_id is not None:
-            core_logging._context.correlation_id = saved_correlation_id
-        elif hasattr(core_logging._context, "correlation_id"):
-            delattr(core_logging._context, "correlation_id")
+            logging_core._context.correlation_id = saved_correlation_id
+        elif hasattr(logging_core._context, "correlation_id"):
+            delattr(logging_core._context, "correlation_id")
 
     except ImportError:
         # If logging module isn't available, just yield

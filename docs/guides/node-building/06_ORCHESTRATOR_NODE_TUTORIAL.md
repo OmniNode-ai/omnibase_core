@@ -480,7 +480,7 @@ from omnibase_core.models.contracts.subcontracts.model_workflow_definition impor
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
+from omnibase_core.logging.logging_structured import emit_log_event_sync as emit_log_event
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 
 from .model_pipeline_orchestrator_input import ModelPipelineOrchestratorInput
@@ -1533,7 +1533,7 @@ class NodeSagaOrchestrator(NodePipelineOrchestrator):
 3. Enable debug logging to see step execution:
 
 ```python
-from omnibase_core.logging.structured import emit_log_event_sync
+from omnibase_core.logging.logging_structured import emit_log_event_sync
 from omnibase_core.enums.enum_log_level import EnumLogLevel
 
 # Enable debug logging

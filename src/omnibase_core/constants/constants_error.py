@@ -19,7 +19,7 @@ Pattern Usage:
     This pattern is imported by:
     - omnibase_core.models.context.model_error_metadata
     - omnibase_core.models.context.model_retry_error_context
-    - omnibase_core.validation.validators.common_validators
+    - omnibase_core.validation.validators.validator_common
 
     The centralization avoids pattern drift and ensures consistent validation
     across all error handling code.
@@ -69,6 +69,6 @@ Examples:
     Invalid: E001 (lint-style), auth_001 (lowercase), AUTH (no suffix)
 
 Note:
-    For lint-style short codes (W001, E001), use workflow_linter module.
+    For lint-style short codes (W001, E001), use checker_workflow_linter module.
     Those follow a different pattern for workflow linting purposes.
 """

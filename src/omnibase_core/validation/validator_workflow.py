@@ -12,7 +12,7 @@ Validates workflow DAGs using Kahn's algorithm for topological sorting with:
 - DAG invariant validation for disabled steps
 
 This module provides comprehensive workflow validation utilities following
-the patterns established in fsm_analysis.py and dag_validator.py.
+the patterns established in validator_fsm_analysis.py and dag_validator.py.
 
 ONEX Compliance:
     This module follows ONEX v1.0 workflow validation patterns as defined in
@@ -89,8 +89,8 @@ from omnibase_core.models.validation.model_unique_name_result import (
 from omnibase_core.models.validation.model_workflow_validation_result import (
     ModelWorkflowValidationResult,
 )
-from omnibase_core.validation.reserved_enum_validator import validate_execution_mode
-from omnibase_core.validation.workflow_constants import (
+from omnibase_core.validation.validator_reserved_enum import validate_execution_mode
+from omnibase_core.validation.validator_workflow_constants import (
     MIN_TIMEOUT_MS,
     RESERVED_STEP_TYPES,
 )
@@ -106,7 +106,7 @@ type InDegreeMap = dict[UUID, int]
 
 # MAX_DFS_ITERATIONS: Resource exhaustion protection constant for DFS cycle detection.
 # Imported from omnibase_core.constants.constants_field_limits (canonical source).
-# Re-exported from workflow_constants.py for import path flexibility.
+# Re-exported from validator_workflow_constants.py for import path flexibility.
 # Prevents malicious or malformed inputs from causing infinite loops in DFS.
 # Value of 10,000 supports workflows with up to ~5,000 steps.
 # See module docstring "Security Considerations" for full documentation.
@@ -122,7 +122,7 @@ ACCEPTED_EXECUTION_MODES: tuple[str, ...] = ("sequential", "parallel", "batch")
 
 # Accepted step types that are currently supported in v1.0.
 # Using tuple for immutability and ordered iteration.
-# NOTE: RESERVED_STEP_TYPES and MIN_TIMEOUT_MS are imported from workflow_constants.
+# NOTE: RESERVED_STEP_TYPES and MIN_TIMEOUT_MS are imported from validator_workflow_constants.
 ACCEPTED_STEP_TYPES: tuple[str, ...] = (
     "compute",
     "effect",
@@ -151,7 +151,7 @@ __all__ = [
     "RESERVED_EXECUTION_MODES",
     "ACCEPTED_EXECUTION_MODES",
     "ACCEPTED_STEP_TYPES",
-    # Re-exported from workflow_constants (canonical source)
+    # Re-exported from validator_workflow_constants (canonical source)
     "MAX_DFS_ITERATIONS",
     "RESERVED_STEP_TYPES",
     "MIN_TIMEOUT_MS",

@@ -363,7 +363,7 @@ Before marking a gate complete:
     # OPTION C: Run pattern validation programmatically
     # =============================================================================
     poetry run python -c "
-    from omnibase_core.validation.patterns import validate_patterns_directory
+    from omnibase_core.validation.validator_patterns import validate_patterns_directory
     from pathlib import Path
     result = validate_patterns_directory(Path('src/omnibase_core/nodes'))
     print(f'Validation complete: {len(result.errors)} issues found')
@@ -821,7 +821,7 @@ sys.exit(0)  # Explicit success exit
     # Load all runtime contracts via FileRegistry
     poetry run python -c "
     from pathlib import Path
-    from omnibase_core.runtime.file_registry import FileRegistry
+    from omnibase_core.runtime.runtime_file_registry import FileRegistry
 
     registry = FileRegistry()
     contracts_dir = Path('contracts/runtime')
@@ -837,7 +837,7 @@ sys.exit(0)  # Explicit success exit
     # Load example contracts
     poetry run python -c "
     from pathlib import Path
-    from omnibase_core.runtime.file_registry import FileRegistry
+    from omnibase_core.runtime.runtime_file_registry import FileRegistry
 
     registry = FileRegistry()
     for subdir in ['effect', 'compute', 'reducer', 'orchestrator']:
@@ -866,7 +866,7 @@ sys.exit(0)  # Explicit success exit
     # Verify contract-to-node type mapping
     poetry run python -c "
     from pathlib import Path
-    from omnibase_core.runtime.file_registry import FileRegistry
+    from omnibase_core.runtime.runtime_file_registry import FileRegistry
 
     registry = FileRegistry()
     contracts = registry.load_all(Path('contracts/runtime'))
@@ -1757,7 +1757,7 @@ print('Required fields:', ', '.join(required))
     # Step 1: Verify FileRegistry loads correctly
     # =============================================================================
     poetry run python -c "
-from omnibase_core.runtime.file_registry import FileRegistry
+from omnibase_core.runtime.runtime_file_registry import FileRegistry
 r = FileRegistry()
 print('✅ FileRegistry init: PASS')
 print(f'Registry type: {type(r).__name__}')
@@ -1768,7 +1768,7 @@ print(f'Registry type: {type(r).__name__}')
     # =============================================================================
     # If you have example v0.3.x contracts:
     # poetry run python -c "
-    # from omnibase_core.runtime.file_registry import FileRegistry
+    # from omnibase_core.runtime.runtime_file_registry import FileRegistry
     # from pathlib import Path
     # r = FileRegistry()
     # contract = r.load(Path('examples/contracts/legacy_v036_contract.yaml'))
@@ -2008,7 +2008,7 @@ poetry run python scripts/check_node_purity.py --verbose
 
 # Pattern validation (alternative method)
 poetry run python -c "
-from omnibase_core.validation.patterns import validate_patterns_directory
+from omnibase_core.validation.validator_patterns import validate_patterns_directory
 from pathlib import Path
 result = validate_patterns_directory(Path('src/omnibase_core/nodes'))
 print(f'Validation complete: {len(result.errors)} issues found')

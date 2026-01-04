@@ -18,7 +18,7 @@ Import Patterns:
         from omnibase_core.services import ServiceHandlerRegistry
 
         # Also available from this module
-        from omnibase_core.runtime.handler_registry import (
+        from omnibase_core.runtime.runtime_handler_registry import (
             ProtocolMessageHandler,
             ServiceHandlerRegistry,
         )

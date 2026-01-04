@@ -26,7 +26,7 @@ from omnibase_core.models.contracts.subcontracts.model_workflow_definition_metad
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.models.validation.model_lint_statistics import ModelLintStatistics
 from omnibase_core.models.validation.model_lint_warning import ModelLintWarning
-from omnibase_core.validation.workflow_linter import WorkflowLinter
+from omnibase_core.validation.checker_workflow_linter import WorkflowLinter
 
 
 @pytest.fixture

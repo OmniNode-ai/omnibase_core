@@ -24,7 +24,7 @@ from omnibase_core.models.common.model_validation_metadata import (
 from .checker_generic_pattern import GenericPatternChecker
 from .checker_naming_convention import NamingConventionChecker
 from .checker_pydantic_pattern import PydanticPatternChecker
-from .validation_utils import ModelValidationResult
+from .validator_utils import ModelValidationResult
 
 
 class ProtocolPatternChecker(Protocol):

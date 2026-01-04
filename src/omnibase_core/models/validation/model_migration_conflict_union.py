@@ -15,7 +15,7 @@ from pydantic import BaseModel
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_migration_conflict_type import EnumMigrationConflictType
-from omnibase_core.validation.migration_types import (
+from omnibase_core.validation.validator_migration_types import (
     TypedDictMigrationDuplicateConflictDict,
     TypedDictMigrationNameConflictDict,
 )

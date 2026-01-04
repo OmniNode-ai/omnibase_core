@@ -1,5 +1,5 @@
 """
-Comprehensive unit tests for logging/core_logging.py module.
+Comprehensive unit tests for logging/logging_core.py module.
 
 Tests cover:
 - emit_log_event() core functionality
@@ -19,7 +19,7 @@ from uuid import UUID, uuid4
 import pytest
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.logging.core_logging import (
+from omnibase_core.logging.logging_core import (
     _get_correlation_id,
     _get_registry_logger,
     _SimpleFallbackLogger,
@@ -66,10 +66,10 @@ class TestEmitLogEventCore:
     def test_emit_log_event_auto_creates_correlation_id(self):
         """Test that emit_log_event auto-creates correlation ID."""
         # Clear any existing correlation ID
-        from omnibase_core.logging import core_logging
+        from omnibase_core.logging import logging_core
 
-        if hasattr(core_logging._context, "correlation_id"):
-            del core_logging._context.correlation_id
+        if hasattr(logging_core._context, "correlation_id"):
+            del logging_core._context.correlation_id
 
         # Emit should create correlation ID automatically
         emit_log_event(LogLevel.INFO, "Test")
@@ -152,11 +152,11 @@ class TestInternalCorrelationIdGetter:
 
     def test_get_correlation_id_creates_new_if_missing(self):
         """Test that _get_correlation_id creates UUID if missing."""
-        from omnibase_core.logging import core_logging
+        from omnibase_core.logging import logging_core
 
         # Clear correlation ID
-        if hasattr(core_logging._context, "correlation_id"):
-            del core_logging._context.correlation_id
+        if hasattr(logging_core._context, "correlation_id"):
+            del logging_core._context.correlation_id
 
         # Should create new UUID
         correlation_id = _get_correlation_id()
@@ -172,11 +172,11 @@ class TestInternalCorrelationIdGetter:
 
     def test_get_correlation_id_creates_only_once(self):
         """Test that _get_correlation_id creates UUID only once."""
-        from omnibase_core.logging import core_logging
+        from omnibase_core.logging import logging_core
 
         # Clear correlation ID
-        if hasattr(core_logging._context, "correlation_id"):
-            del core_logging._context.correlation_id
+        if hasattr(logging_core._context, "correlation_id"):
+            del logging_core._context.correlation_id
 
         # First call creates UUID
         first_id = _get_correlation_id()
@@ -316,7 +316,7 @@ class TestAsyncEmission:
     @pytest.mark.asyncio
     async def test_async_emit_via_logger(self):
         """Test async emit via logger."""
-        from omnibase_core.logging.core_logging import _async_emit_via_logger
+        from omnibase_core.logging.logging_core import _async_emit_via_logger
 
         logger = _get_registry_logger()
         correlation_id = uuid4()
@@ -329,7 +329,7 @@ class TestAsyncEmission:
     @pytest.mark.asyncio
     async def test_async_emit_via_logger_handles_exception(self):
         """Test async emit handles logger exceptions gracefully."""
-        from omnibase_core.logging.core_logging import _async_emit_via_logger
+        from omnibase_core.logging.logging_core import _async_emit_via_logger
 
         # Create mock logger that raises exception
         mock_logger = Mock()
@@ -345,7 +345,7 @@ class TestAsyncEmission:
     @pytest.mark.asyncio
     async def test_async_emit_multiple_concurrent(self):
         """Test multiple concurrent async emissions."""
-        from omnibase_core.logging.core_logging import _async_emit_via_logger
+        from omnibase_core.logging.logging_core import _async_emit_via_logger
 
         logger = _get_registry_logger()
 

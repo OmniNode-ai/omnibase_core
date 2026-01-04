@@ -22,7 +22,7 @@ Error Messages:
     - Relevant context (field name, expected vs actual values, etc.)
 
 Related:
-    - src/omnibase_core/runtime/file_registry.py: Implementation target
+    - src/omnibase_core/runtime/runtime_file_registry.py: Implementation target
     - src/omnibase_core/models/contracts/model_runtime_host_contract.py: Contract model
     - src/omnibase_core/models/errors/model_onex_error.py: Error class
 """
@@ -42,7 +42,7 @@ from omnibase_core.models.contracts.model_runtime_host_contract import (
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 if TYPE_CHECKING:
-    from omnibase_core.runtime.file_registry import FileRegistry
+    from omnibase_core.runtime.runtime_file_registry import FileRegistry
 
 
 # =============================================================================
@@ -58,7 +58,7 @@ def file_registry() -> FileRegistry:
     Returns:
         FileRegistry: New file registry instance.
     """
-    from omnibase_core.runtime.file_registry import FileRegistry
+    from omnibase_core.runtime.runtime_file_registry import FileRegistry
 
     return FileRegistry()
 

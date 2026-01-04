@@ -8,7 +8,9 @@ from uuid import UUID, uuid4
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel
-from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
+from omnibase_core.logging.logging_structured import (
+    emit_log_event_sync as emit_log_event,
+)
 from omnibase_core.models.container.model_injection_context import ModelInjectionContext
 from omnibase_core.models.container.model_registry_config import (
     ModelServiceRegistryConfig,
