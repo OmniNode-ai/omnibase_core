@@ -84,6 +84,7 @@ class ModelLintStatistics(BaseModel):
         use_enum_values=False,
         validate_assignment=True,
         frozen=True,
+        from_attributes=True,  # pytest-xdist compatibility
     )
 
     workflow_name: str = Field(

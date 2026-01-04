@@ -85,6 +85,51 @@ from .validator_circular_import import CircularImportValidator
 # Import contract patch validator (OMN-1126)
 from .validator_contract_patch import ContractPatchValidator
 
+# Re-export from services (OMN-1146)
+ContractValidationInvariantChecker = ServiceContractValidationInvariantChecker
+
+# Import contract validation pipeline (OMN-1128)
+from .contract_validation_pipeline import (
+    ContractValidationPipeline,
+    ModelExpandedContractResult,
+)
+
+# =============================================================================
+# ALIAS LOADING STRATEGY: __getattr__ vs Direct Alias
+# =============================================================================
+#
+# This module uses TWO different strategies for deprecated aliases:
+#
+# 1. DIRECT ALIAS (used above for ModelValidationSuite):
+#    ```python
+#    from .cli import ModelValidationSuite, ServiceValidationSuite
+#    ```
+#    Use this when: The canonical class can be imported at module load time
+#    without causing circular imports. This is simpler and provides better
+#    IDE support (autocomplete, go-to-definition).
+#
+# 2. LAZY __getattr__ (used below for ServiceProtocolAuditor, etc.):
+#    ```python
+#    def __getattr__(name: str) -> type:
+#        if name == "ServiceProtocolAuditor":
+#            from omnibase_core.services.service_protocol_auditor import ...
+#    ```
+#    Use this when: Importing the canonical class at module load time would
+#    cause circular imports. The service classes below live in
+#    omnibase_core.services.* which may import from omnibase_core.validation,
+#    creating an import cycle if we imported them eagerly here.
+#
+# DECISION GUIDE:
+# - If adding a new backwards compat alias, first try direct import
+# - If you get ImportError or circular import errors, use __getattr__
+# - Document WHY __getattr__ is needed (which module causes the cycle)
+#
+# OMN-1071: These service classes require lazy loading because:
+# - ServiceProtocolAuditor imports validation utilities that import from here
+# - ServiceContractValidator has similar circular dependency chains
+# - ServiceProtocolMigrator has similar circular dependency chains
+# =============================================================================
+
 
 # Lazy loading for service classes to avoid circular imports.
 # These service classes live in omnibase_core.services.* and have transitive
@@ -178,8 +223,6 @@ def validate_architecture(
     max_violations: int = 0,
 ) -> ModelValidationResult[None]:
     """Validate ONEX one-model-per-file architecture."""
-    from pathlib import Path
-
     return validate_architecture_directory(Path(directory_path), max_violations)
 
 
@@ -279,6 +322,10 @@ __all__ = [
     "ServiceContractValidationInvariantChecker",
     "ModelContractValidationEvent",
     "ContractValidationEventType",
+    "ContractValidationInvariantChecker",
+    # Contract validation pipeline (OMN-1128)
+    "ContractValidationPipeline",
+    "ModelExpandedContractResult",
     # Reserved enum validation (OMN-669, OMN-675)
     # NOTE: validate_execution_mode takes EnumExecutionMode (type-safe)
     # while validate_execution_mode_string takes str (for YAML/config parsing)

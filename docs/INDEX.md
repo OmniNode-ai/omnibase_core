@@ -72,7 +72,8 @@ omnibase_core/docs/
 
 | Document | Description | Status |
 |----------|-------------|--------|
-| [**Pipeline Hook Registry**](guides/PIPELINE_HOOK_REGISTRY.md) | Pipeline runner and hook registry with usage examples ⭐ **NEW** | ✅ Complete |
+| [**Custom Callable Patterns**](guides/CUSTOM_CALLABLE_PATTERNS.md) | Custom callable validators for invariant evaluation ⭐ **NEW** | ✅ Complete |
+| [**Pipeline Hook Registry**](guides/PIPELINE_HOOK_REGISTRY.md) | Pipeline runner and hook registry with usage examples | ✅ Complete |
 | [**Handler Conversion Guide**](guides/HANDLER_CONVERSION_GUIDE.md) | Mixin-to-handler conversion with examples ⭐ **NEW** | ✅ Complete |
 | [**Handler Conversion Checklist**](guides/HANDLER_CONVERSION_CHECKLIST.md) | Mixin-to-handler conversion tracking | ✅ Complete |
 | [**Migrating to Declarative Nodes**](guides/MIGRATING_TO_DECLARATIVE_NODES.md) | Migration guide for v0.4.0 FSM/workflow-driven nodes ⭐ **v0.4.0** | ✅ Complete |
@@ -332,6 +333,7 @@ def serialize_error(error: ModelOnexError) -> TypedDictValidationErrorSerialized
 | **Validate docker-compose.yaml** | [ModelDockerComposeManifest](../src/omnibase_core/models/docker/model_docker_compose_manifest.py) - Docker validation |
 | **Use pipeline hooks** | [Pipeline Hook Registry](guides/PIPELINE_HOOK_REGISTRY.md) - Phase-based hook execution |
 | **Convert mixins to handlers** | [Handler Conversion Guide](guides/HANDLER_CONVERSION_GUIDE.md) - Step-by-step conversion |
+| **Create custom validators** | [Custom Callable Patterns](guides/CUSTOM_CALLABLE_PATTERNS.md) - Custom invariant validation |
 
 ---
 
@@ -371,9 +373,9 @@ def serialize_error(error: ModelOnexError) -> TypedDictValidationErrorSerialized
 | **Reference** | 14 | 0 | 0 | 14 |
 | **Standards** | 1 | 0 | 0 | 1 |
 | **Specialized** | 15 | 0 | 0 | 15 |
-| **TOTAL** | **61** | **0** | **0** | **61** |
+| **TOTAL** | **62** | **0** | **0** | **62** |
 
-**Overall Progress**: 100% complete (61/61 documents)
+**Overall Progress**: 100% complete (62/62 documents)
 
 ### Priority Items
 

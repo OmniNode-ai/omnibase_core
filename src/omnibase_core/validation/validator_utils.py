@@ -39,6 +39,7 @@ import logging
 import re
 from pathlib import Path
 
+from omnibase_core.decorators.decorator_allow_dict_any import allow_dict_any
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_validation_result import ModelValidationResult
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -83,6 +84,7 @@ _DANGEROUS_IMPORT_CHARS: frozenset[str] = frozenset(
 # =============================================================================
 
 
+@allow_dict_any(reason="User-defined context kwargs for ModelOnexError")
 def validate_protocol_compliance(
     obj: object,
     protocol: type,

@@ -144,6 +144,15 @@ ALLOWED_EXCEPTIONS: set[tuple[str, str]] = {
     ("util_field_converter.py", "FieldConverter"),
     # ToolLoggerCodeBlock is a context manager for logging
     ("util_tool_logger_code_block.py", "ToolLoggerCodeBlock"),
+    #
+    # --- Contract Validation Pipeline (OMN-1128) ---
+    #
+    # Validator classes in validation/ directory don't have a specific prefix
+    # These are domain-specific validators, not protocol definitions
+    ("contract_validation_pipeline.py", "ContractValidationPipeline"),
+    ("expanded_validator.py", "ExpandedContractValidator"),
+    ("expanded_contract_graph_validator.py", "ExpandedContractGraphValidator"),
+    ("merge_validator.py", "MergeValidator"),
 }
 
 

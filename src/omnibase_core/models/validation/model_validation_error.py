@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import hashlib
 
-from pydantic import Field
+from pydantic import ConfigDict, Field
 
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
@@ -171,11 +171,14 @@ class ModelValidationError(BaseModel):
             error_code=error_code,
         )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    # from_attributes=True: Required for pytest-xdist parallel execution where
+    # model classes may be imported in separate workers with different class identity.
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+        from_attributes=True,
+    )
 
     # Protocol method implementations
 

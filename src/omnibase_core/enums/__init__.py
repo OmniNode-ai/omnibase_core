@@ -46,6 +46,9 @@ from .enum_compute_capability import EnumComputeCapability
 # Compute step type enums (contract-driven NodeCompute v1.0)
 from .enum_compute_step_type import EnumComputeStepType
 from .enum_contract_compliance import EnumContractCompliance
+
+# Contract diff change type enum (semantic contract diffing)
+from .enum_contract_diff_change_type import EnumContractDiffChangeType
 from .enum_coordination_mode import EnumCoordinationMode
 from .enum_core_error_code import (
     CORE_ERROR_CODE_TO_EXIT_CODE,
@@ -401,6 +404,8 @@ __all__ = [
     # Version and contract domain
     "EnumVersionStatus",
     "EnumContractCompliance",
+    # Contract diff domain (semantic contract diffing)
+    "EnumContractDiffChangeType",
     # State management domain
     "EnumTransitionType",
     "EnumStateUpdateOperation",
