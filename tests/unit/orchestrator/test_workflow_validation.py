@@ -5,7 +5,7 @@
 MVP Conformance Tests: NodeOrchestrator Workflow Validation [OMN-657].
 
 This module provides comprehensive validation tests for the workflow validation
-functions in `omnibase_core.utils.workflow_executor`. These tests ensure the
+functions in `omnibase_core.utils.util_workflow_executor`. These tests ensure the
 NodeOrchestrator correctly validates workflow definitions before execution.
 
 Test Categories:
@@ -17,7 +17,7 @@ Test Categories:
     - Edge Cases: Tests boundary conditions and large workflow handling
 
 Reference:
-    - Source module: omnibase_core.utils.workflow_executor
+    - Source module: omnibase_core.utils.util_workflow_executor
     - Architecture: docs/architecture/CONTRACT_DRIVEN_NODEORCHESTRATOR_V1_0.md
     - Ticket: OMN-657 (MVP Conformance Tests)
 """
@@ -46,7 +46,7 @@ from omnibase_core.models.contracts.subcontracts.model_workflow_definition_metad
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
-from omnibase_core.utils.workflow_executor import (
+from omnibase_core.utils.util_workflow_executor import (
     get_execution_order,
     validate_workflow_definition,
 )

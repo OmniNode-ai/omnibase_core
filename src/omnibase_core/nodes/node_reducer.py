@@ -29,7 +29,7 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.fsm import ModelFSMStateSnapshot
 from omnibase_core.models.reducer.model_reducer_input import ModelReducerInput
 from omnibase_core.models.reducer.model_reducer_output import ModelReducerOutput
-from omnibase_core.types.json_types import JsonType
+from omnibase_core.types.type_json import JsonType
 
 # Clock skew tolerance for snapshot timestamp validation
 SNAPSHOT_FUTURE_TOLERANCE_SECONDS: int = 60

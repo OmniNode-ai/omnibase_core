@@ -49,7 +49,7 @@ if TYPE_CHECKING:
     from omnibase_core.models.metadata.model_metadata_analytics_summary import (
         ModelMetadataAnalyticsSummary,
     )
-    from omnibase_core.types.constraints import BasicValueType
+    from omnibase_core.types.type_constraints import BasicValueType
 
 
 def _create_default_metrics_data() -> ModelMetricsData:

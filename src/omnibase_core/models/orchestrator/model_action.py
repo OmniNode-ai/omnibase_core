@@ -177,10 +177,10 @@ class ModelAction(BaseModel):
             "\n\n"
             "Note: Timeout enforcement is pending implementation in the action "
             "execution layer. Currently, the timeout_ms value is propagated from "
-            "workflow steps (via utils/workflow_executor.py) and FSM transitions "
-            "(via utils/fsm_executor.py) but is not yet enforced at action execution "
+            "workflow steps (via utils/util_workflow_executor.py) and FSM transitions "
+            "(via utils/util_fsm_executor.py) but is not yet enforced at action execution "
             "time. For compute pipeline timeouts, see ModelComputeSubcontract.pipeline_timeout_ms "
-            "which IS enforced in utils/compute_executor.py using ThreadPoolExecutor."
+            "which IS enforced in utils/util_compute_executor.py using ThreadPoolExecutor."
         ),
         ge=100,
         le=TIMEOUT_LONG_MS,  # Max 5 minutes

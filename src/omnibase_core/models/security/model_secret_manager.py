@@ -201,7 +201,7 @@ class ModelSecretManager(BaseModel):
             # standard
             return "***MASKED***"
 
-        from omnibase_core.types.json_types import JsonType
+        from omnibase_core.types.type_json import JsonType
 
         # Type-safe recursive masking helper
         def mask_dict(d: SerializedDict) -> SerializedDict:

@@ -1,7 +1,7 @@
 """
 Unit tests for FSM execution utilities.
 
-Tests the pure functions in utils/fsm_executor.py for FSM transition execution.
+Tests the pure functions in utils/util_fsm_executor.py for FSM transition execution.
 """
 
 import pytest
@@ -25,7 +25,7 @@ from omnibase_core.models.fsm.model_fsm_transition_condition import (
     ModelFSMTransitionCondition,
 )
 from omnibase_core.models.primitives.model_semver import ModelSemVer
-from omnibase_core.utils.fsm_executor import (
+from omnibase_core.utils.util_fsm_executor import (
     FSMState,
     execute_transition,
     get_initial_state,

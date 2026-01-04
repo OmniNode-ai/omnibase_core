@@ -1,7 +1,7 @@
 """
 Unit tests for FSM string comparison operators.
 
-Tests the string comparison operators in utils/fsm_operators.py
+Tests the string comparison operators in utils/util_fsm_operators.py
 that are used for FSM condition evaluation.
 
 Coverage targets:
@@ -21,7 +21,7 @@ import pytest
 pytestmark = pytest.mark.unit
 
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.utils.fsm_operators import (
+from omnibase_core.utils.util_fsm_operators import (
     evaluate_equals,
     evaluate_not_equals,
     evaluate_string_operator,

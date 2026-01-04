@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field
 from omnibase_core.models.discovery.model_tool_discovery_response import (
     ModelDiscoveredTool,
 )
-from omnibase_core.types.json_types import PrimitiveValue
+from omnibase_core.types.type_json import PrimitiveValue
 
 
 class ModelDiscoveryResponse(BaseModel):

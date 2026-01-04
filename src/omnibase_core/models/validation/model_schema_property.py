@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 
 from pydantic import BaseModel
 
-from omnibase_core.types.json_types import JsonType, PrimitiveValue
+from omnibase_core.types.type_json import JsonType, PrimitiveValue
 
 if TYPE_CHECKING:
     from omnibase_core.models.validation.model_required_fields_model import (

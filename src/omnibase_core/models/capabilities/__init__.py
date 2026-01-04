@@ -39,7 +39,7 @@ ModelCapabilityMetadata
 
 Type System
 -----------
-Requirement values use ``JsonType`` from ``omnibase_core.types.json_types``.
+Requirement values use ``JsonType`` from ``omnibase_core.types.type_json``.
 Requirement dictionaries are typed as ``dict[str, JsonType]``.
 
 Capability Naming Convention

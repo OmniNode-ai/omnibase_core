@@ -32,7 +32,7 @@ Thread Safety:
 
 Type Safety:
     Requirement values are constrained to JSON-compatible types via
-    ``JsonType`` (imported from ``omnibase_core.types.json_types``).
+    ``JsonType`` (imported from ``omnibase_core.types.type_json``).
     This prevents arbitrary Python objects from being stored as
     requirement values, ensuring serialization safety and consistent
     resolver behavior.
@@ -53,7 +53,7 @@ from typing import Any, TypeGuard
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.decorators.allow_dict_any import allow_dict_any
-from omnibase_core.types.json_types import JsonType
+from omnibase_core.types.type_json import JsonType
 
 # =============================================================================
 # TypeGuard Functions for Runtime Type Narrowing

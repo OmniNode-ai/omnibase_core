@@ -5,7 +5,7 @@ Parses 3-token FSM condition expressions used in FSM transitions.
 Strictly enforces "field operator value" grammar for predictable parsing.
 
 Usage:
-    >>> from omnibase_core.utils.fsm_expression_parser import parse_expression
+    >>> from omnibase_core.utils.util_fsm_expression_parser import parse_expression
     >>> field, operator, value = parse_expression("count equals 5")
     >>> print(field, operator, value)
     count equals 5
