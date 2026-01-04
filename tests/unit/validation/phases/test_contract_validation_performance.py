@@ -263,9 +263,17 @@ class TestDuplicateDetectionComplexity:
             merged = create_contract_with_outputs(valid_descriptor, size)
 
             start_time = time.time()
-            merge_validator.validate(base, patch, merged)
+            result = merge_validator.validate(base, patch, merged)
             elapsed = time.time() - start_time
             times.append(elapsed)
+
+            # Verify each validation actually succeeds (not just timing)
+            assert result.is_valid is True, (
+                f"Contract with {size} handlers should pass validation"
+            )
+            assert result.error_count == 0, (
+                f"Contract with {size} handlers should have no errors"
+            )
 
         # Check that scaling is roughly linear
         # 10x more handlers should not take more than ~15x the time
