@@ -989,3 +989,283 @@ class TestEnumChangeType:
     def test_enum_members_count(self) -> None:
         """Enum has expected number of members (at least 3)."""
         assert len(EnumChangeType) >= 3
+
+
+# =============================================================================
+# Phase 8: Deep Nested Config Comparison Tests
+# =============================================================================
+
+
+@pytest.mark.unit
+class TestDeepNestedConfigComparison:
+    """Phase 8: Tests for deep nested configuration comparison (v0.4.0+)."""
+
+    def test_get_changed_keys_deep_simple_nested(self) -> None:
+        """Deep mode detects simple nested changes with dot-separated paths."""
+        before = {"config": {"timeout": 10, "retries": 3}}
+        after = {"config": {"timeout": 20, "retries": 3}}
+
+        proposal = ModelChangeProposal(
+            change_type=EnumChangeType.CONFIG_CHANGE,
+            description="Update nested config",
+            rationale="Testing deep comparison",
+            before_config=before,
+            after_config=after,
+        )
+
+        # Shallow should return 'config'
+        shallow_keys = proposal.get_changed_keys(deep=False)
+        assert shallow_keys == {"config"}
+
+        # Deep should return 'config.timeout'
+        deep_keys = proposal.get_changed_keys(deep=True)
+        assert deep_keys == {"config.timeout"}
+
+    def test_get_changed_keys_deep_multiple_nested(self) -> None:
+        """Deep mode detects multiple nested changes."""
+        before = {"settings": {"a": 1, "b": 2, "c": 3}}
+        after = {"settings": {"a": 10, "b": 2, "c": 30}}
+
+        proposal = ModelChangeProposal(
+            change_type=EnumChangeType.CONFIG_CHANGE,
+            description="Multiple nested changes",
+            rationale="Testing multi-change deep comparison",
+            before_config=before,
+            after_config=after,
+        )
+
+        deep_keys = proposal.get_changed_keys(deep=True)
+        assert deep_keys == {"settings.a", "settings.c"}
+
+    def test_get_changed_keys_deep_three_levels(
+        self, nested_before_config: dict, nested_after_config: dict
+    ) -> None:
+        """Deep mode handles three levels of nesting."""
+        proposal = ModelChangeProposal(
+            change_type=EnumChangeType.ENDPOINT_CHANGE,
+            description="Deep nested endpoint change",
+            rationale="Testing three-level nesting",
+            before_config=nested_before_config,
+            after_config=nested_after_config,
+        )
+
+        deep_keys = proposal.get_changed_keys(deep=True)
+
+        # Should detect: endpoint.url, settings.retry.max_retries,
+        # settings.retry.backoff_ms, settings.timeout_ms
+        assert "endpoint.url" in deep_keys
+        assert "settings.retry.max_retries" in deep_keys
+        assert "settings.retry.backoff_ms" in deep_keys
+        assert "settings.timeout_ms" in deep_keys
+        # Should NOT include unchanged nested values
+        assert "endpoint.auth.type" not in deep_keys
+        assert "endpoint.auth.token_env" not in deep_keys
+
+    def test_get_changed_keys_deep_added_nested_key(self) -> None:
+        """Deep mode detects added nested keys."""
+        before = {"config": {"existing": "value"}}
+        after = {"config": {"existing": "value", "new_key": "new_value"}}
+
+        proposal = ModelChangeProposal(
+            change_type=EnumChangeType.CONFIG_CHANGE,
+            description="Add nested key",
+            rationale="Testing nested key addition",
+            before_config=before,
+            after_config=after,
+        )
+
+        deep_keys = proposal.get_changed_keys(deep=True)
+        assert deep_keys == {"config.new_key"}
+
+    def test_get_changed_keys_deep_removed_nested_key(self) -> None:
+        """Deep mode detects removed nested keys."""
+        before = {"config": {"keep": "value", "remove": "old"}}
+        after = {"config": {"keep": "value"}}
+
+        proposal = ModelChangeProposal(
+            change_type=EnumChangeType.CONFIG_CHANGE,
+            description="Remove nested key",
+            rationale="Testing nested key removal",
+            before_config=before,
+            after_config=after,
+        )
+
+        deep_keys = proposal.get_changed_keys(deep=True)
+        assert deep_keys == {"config.remove"}
+
+    def test_get_changed_keys_deep_type_change_dict_to_value(self) -> None:
+        """Deep mode handles type change from dict to scalar."""
+        before = {"config": {"nested": {"a": 1}}}
+        after = {"config": {"nested": "now_a_string"}}
+
+        proposal = ModelChangeProposal(
+            change_type=EnumChangeType.CONFIG_CHANGE,
+            description="Type change",
+            rationale="Testing dict to scalar change",
+            before_config=before,
+            after_config=after,
+        )
+
+        deep_keys = proposal.get_changed_keys(deep=True)
+        # The nested key changed type, should report it as changed
+        assert "config.nested" in deep_keys
+
+    def test_get_changed_keys_deep_type_change_value_to_dict(self) -> None:
+        """Deep mode handles type change from scalar to dict."""
+        before = {"config": {"setting": "a_string"}}
+        after = {"config": {"setting": {"nested": "value"}}}
+
+        proposal = ModelChangeProposal(
+            change_type=EnumChangeType.CONFIG_CHANGE,
+            description="Type change",
+            rationale="Testing scalar to dict change",
+            before_config=before,
+            after_config=after,
+        )
+
+        deep_keys = proposal.get_changed_keys(deep=True)
+        assert "config.setting" in deep_keys
+
+    def test_get_changed_keys_deep_top_level_and_nested(self) -> None:
+        """Deep mode handles both top-level and nested changes."""
+        before = {"top": "old", "nested": {"inner": "old_inner"}}
+        after = {"top": "new", "nested": {"inner": "new_inner"}}
+
+        proposal = ModelChangeProposal(
+            change_type=EnumChangeType.CONFIG_CHANGE,
+            description="Mixed changes",
+            rationale="Testing top-level and nested changes",
+            before_config=before,
+            after_config=after,
+        )
+
+        deep_keys = proposal.get_changed_keys(deep=True)
+        assert deep_keys == {"top", "nested.inner"}
+
+    def test_get_changed_keys_backwards_compatible(
+        self, sample_before_config: dict, sample_after_config: dict
+    ) -> None:
+        """Default behavior (deep=False) is backwards compatible."""
+        proposal = ModelChangeProposal(
+            change_type=EnumChangeType.CONFIG_CHANGE,
+            description="Backwards compatibility test",
+            rationale="Ensure default behavior unchanged",
+            before_config=sample_before_config,
+            after_config=sample_after_config,
+        )
+
+        # Calling without argument should work exactly as before
+        changed_keys = proposal.get_changed_keys()
+        assert "model_name" in changed_keys
+        assert "temperature" in changed_keys
+        assert "max_tokens" in changed_keys
+        assert "timeout_ms" not in changed_keys
+
+    def test_get_diff_summary_deep_mode(self) -> None:
+        """get_diff_summary with deep=True shows nested paths."""
+        before = {"settings": {"timeout": 10, "retries": 3}}
+        after = {"settings": {"timeout": 20, "retries": 3}}
+
+        proposal = ModelChangeProposal(
+            change_type=EnumChangeType.CONFIG_CHANGE,
+            description="Update nested settings",
+            rationale="Test deep diff summary",
+            before_config=before,
+            after_config=after,
+        )
+
+        summary = proposal.get_diff_summary(deep=True)
+
+        assert "settings.timeout" in summary
+        assert "10" in summary
+        assert "20" in summary
+        assert "[~]" in summary  # Modified marker
+
+    def test_get_diff_summary_deep_added_nested(self) -> None:
+        """get_diff_summary with deep=True shows added nested keys."""
+        before = {"config": {"a": 1}}
+        after = {"config": {"a": 1, "b": 2}}
+
+        proposal = ModelChangeProposal(
+            change_type=EnumChangeType.CONFIG_CHANGE,
+            description="Add nested key",
+            rationale="Test deep diff summary added",
+            before_config=before,
+            after_config=after,
+        )
+
+        summary = proposal.get_diff_summary(deep=True)
+
+        assert "config.b" in summary
+        assert "(added)" in summary
+        assert "[+]" in summary
+
+    def test_get_diff_summary_deep_removed_nested(self) -> None:
+        """get_diff_summary with deep=True shows removed nested keys."""
+        before = {"config": {"a": 1, "b": 2}}
+        after = {"config": {"a": 1}}
+
+        proposal = ModelChangeProposal(
+            change_type=EnumChangeType.CONFIG_CHANGE,
+            description="Remove nested key",
+            rationale="Test deep diff summary removed",
+            before_config=before,
+            after_config=after,
+        )
+
+        summary = proposal.get_diff_summary(deep=True)
+
+        assert "config.b" in summary
+        assert "(removed)" in summary
+        assert "[-]" in summary
+
+    def test_get_diff_summary_backwards_compatible(
+        self, sample_before_config: dict, sample_after_config: dict
+    ) -> None:
+        """get_diff_summary without deep parameter works as before."""
+        proposal = ModelChangeProposal(
+            change_type=EnumChangeType.CONFIG_CHANGE,
+            description="Backwards compat test",
+            rationale="Ensure default summary unchanged",
+            before_config=sample_before_config,
+            after_config=sample_after_config,
+        )
+
+        summary = proposal.get_diff_summary()
+
+        # Should show top-level keys
+        assert "model_name" in summary
+        assert "temperature" in summary
+
+    def test_deep_diff_empty_nested_dict(self) -> None:
+        """Deep diff handles empty nested dicts."""
+        before = {"config": {}}
+        after = {"config": {"new": "value"}}
+
+        proposal = ModelChangeProposal(
+            change_type=EnumChangeType.CONFIG_CHANGE,
+            description="Empty to populated",
+            rationale="Test empty dict handling",
+            before_config=before,
+            after_config=after,
+        )
+
+        deep_keys = proposal.get_changed_keys(deep=True)
+        assert "config.new" in deep_keys
+
+    def test_deep_diff_with_list_in_nested(self) -> None:
+        """Deep diff handles lists inside nested dicts."""
+        before = {"config": {"items": [1, 2, 3]}}
+        after = {"config": {"items": [1, 2, 3, 4]}}
+
+        proposal = ModelChangeProposal(
+            change_type=EnumChangeType.CONFIG_CHANGE,
+            description="Nested list change",
+            rationale="Test list in nested dict",
+            before_config=before,
+            after_config=after,
+        )
+
+        deep_keys = proposal.get_changed_keys(deep=True)
+        # Lists are not recursed into, so the path stops at the list key
+        assert "config.items" in deep_keys

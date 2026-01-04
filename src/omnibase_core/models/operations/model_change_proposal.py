@@ -23,7 +23,7 @@ See Also:
 """
 
 from datetime import UTC, datetime
-from typing import Self
+from typing import Any, ClassVar, Self
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -46,6 +46,11 @@ class ModelChangeProposal(BaseModel):
     The model is immutable (frozen=True) after creation, making it thread-safe
     for concurrent read access. Unknown fields are rejected (extra='forbid')
     to ensure strict schema compliance.
+
+    Class Attributes:
+        MODEL_NAME_KEY: The configuration key used to identify model names in
+            MODEL_SWAP proposals. Defaults to "model_name". Can be overridden
+            in subclasses to use a different key (e.g., "model", "model_id").
 
     Attributes:
         change_type: Type of change being proposed (discriminator field).
@@ -87,6 +92,9 @@ class ModelChangeProposal(BaseModel):
         use_enum_values=False,
         from_attributes=True,
     )
+
+    # Class constant for the model name key - can be overridden in subclasses
+    MODEL_NAME_KEY: ClassVar[str] = "model_name"  # env-var-ok: constant definition
 
     # Discriminator field FIRST per codebase pattern
     change_type: EnumChangeType = Field(
@@ -187,9 +195,14 @@ class ModelChangeProposal(BaseModel):
             ModelOnexError: If before_config and after_config are identical
         """
         if self.before_config == self.after_config:
+            # Error code rationale: INVALID_INPUT is used because this is a
+            # precondition violation on the input data provided by the caller.
+            # The two config dictionaries (inputs) must differ - this is a
+            # constraint on what constitutes valid input, not a runtime state
+            # issue or generic validation failure.
             raise ModelOnexError(
                 message="before_config and after_config cannot be identical",
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.INVALID_INPUT,
                 change_type=self.change_type,
                 change_id=str(self.change_id),
             )
@@ -255,37 +268,95 @@ class ModelChangeProposal(BaseModel):
         if isinstance(change_type, str):
             change_type = EnumChangeType(change_type)
 
-        # Build with explicit arguments to satisfy mypy strict mode
-        if change_id is not None:
-            return cls(
-                change_type=change_type,
-                change_id=change_id,
-                description=description,
-                before_config=before_config,
-                after_config=after_config,
-                rationale=rationale,
-                proposed_by=proposed_by,
-                estimated_impact=estimated_impact,
-                rollback_plan=rollback_plan,
-                correlation_id=correlation_id,
-                tags=tags if tags is not None else [],
-                is_breaking_change=is_breaking_change,
-            )
-        return cls(
-            change_type=change_type,
-            description=description,
-            before_config=before_config,
-            after_config=after_config,
-            rationale=rationale,
-            proposed_by=proposed_by,
-            estimated_impact=estimated_impact,
-            rollback_plan=rollback_plan,
-            correlation_id=correlation_id,
-            tags=tags if tags is not None else [],
-            is_breaking_change=is_breaking_change,
-        )
+        # Build kwargs dict to avoid code duplication while satisfying mypy strict mode
+        # ONEX_EXCLUDE: dict_str_any - factory method kwargs for dynamic Pydantic model construction
+        kwargs: dict[str, Any] = {
+            "change_type": change_type,
+            "description": description,
+            "before_config": before_config,
+            "after_config": after_config,
+            "rationale": rationale,
+            "proposed_by": proposed_by,
+            "estimated_impact": estimated_impact,
+            "rollback_plan": rollback_plan,
+            "correlation_id": correlation_id,
+            "tags": tags if tags is not None else [],
+            "is_breaking_change": is_breaking_change,
+        }
 
-    def get_changed_keys(self) -> set[str]:
+        # Only include change_id if explicitly provided (otherwise use default_factory)
+        if change_id is not None:
+            kwargs["change_id"] = change_id
+
+        return cls(**kwargs)
+
+    # ONEX_EXCLUDE: dict_str_any - arbitrary user config dicts with dynamic nested structure
+    def _deep_diff_keys(
+        self,
+        before: dict[str, Any],
+        after: dict[str, Any],
+        prefix: str = "",
+    ) -> set[str]:
+        """
+        Recursively compute diff keys for nested dict structures.
+
+        This private helper method traverses nested dictionaries and returns
+        dot-separated paths for all changed values. For example, if
+        ``config.timeout`` changed, the path "config.timeout" is returned.
+
+        Args:
+            before: The before configuration dict (or nested dict)
+            after: The after configuration dict (or nested dict)
+            prefix: The current path prefix for nested keys (e.g., "parent.")
+
+        Returns:
+            Set of dot-separated key paths that differ between before and after.
+
+        Note:
+            - Non-dict values are compared directly
+            - When a key exists in only one dict, the entire key path is added
+            - When both values are dicts, recursion continues
+            - When one value is a dict and the other is not, the key is added
+
+        .. versionadded:: 0.4.0
+        """
+        result: set[str] = set()
+
+        before_keys = set(before.keys())
+        after_keys = set(after.keys())
+
+        # Keys that exist in only one config
+        for key in after_keys - before_keys:
+            result.add(f"{prefix}{key}" if prefix else key)
+
+        for key in before_keys - after_keys:
+            result.add(f"{prefix}{key}" if prefix else key)
+
+        # Keys that exist in both - check for differences
+        for key in before_keys & after_keys:
+            before_val = before[key]
+            after_val = after[key]
+            full_key = f"{prefix}{key}" if prefix else key
+
+            if before_val == after_val:
+                continue
+
+            # Both are dicts - recurse
+            if isinstance(before_val, dict) and isinstance(after_val, dict):
+                result.update(
+                    self._deep_diff_keys(
+                        before_val,
+                        after_val,
+                        prefix=f"{full_key}.",
+                    )
+                )
+            else:
+                # Values differ (or type changed from/to dict)
+                result.add(full_key)
+
+        return result
+
+    def get_changed_keys(self, *, deep: bool = False) -> set[str]:
         """
         Get the set of keys that differ between before_config and after_config.
 
@@ -294,8 +365,14 @@ class ModelChangeProposal(BaseModel):
         - Keys that exist only in before_config (removed)
         - Keys that exist only in after_config (added)
 
+        Args:
+            deep: If True, recursively compare nested dicts and return
+                dot-separated paths (e.g., "config.timeout"). If False (default),
+                only compare top-level keys using shallow comparison.
+
         Returns:
-            Set of keys where values differ or keys that exist in only one config.
+            Set of keys (or dot-separated paths if deep=True) where values differ
+            or keys that exist in only one config.
 
         Example:
             >>> proposal = ModelChangeProposal.create(
@@ -307,7 +384,26 @@ class ModelChangeProposal(BaseModel):
             ... )
             >>> sorted(proposal.get_changed_keys())
             ['b', 'c', 'd']
+
+        Example with deep comparison:
+            >>> proposal = ModelChangeProposal.create(
+            ...     change_type="config_change",
+            ...     description="Update nested settings",
+            ...     before_config={"config": {"timeout": 10, "retries": 3}},
+            ...     after_config={"config": {"timeout": 20, "retries": 3}},
+            ...     rationale="Increase timeout",
+            ... )
+            >>> proposal.get_changed_keys(deep=False)
+            {'config'}
+            >>> proposal.get_changed_keys(deep=True)
+            {'config.timeout'}
+
+        .. versionchanged:: 0.4.0
+            Added ``deep`` parameter for recursive nested dict comparison.
         """
+        if deep:
+            return self._deep_diff_keys(self.before_config, self.after_config)
+
         before_keys = set(self.before_config.keys())
         after_keys = set(self.after_config.keys())
 
@@ -325,7 +421,29 @@ class ModelChangeProposal(BaseModel):
 
         return added_keys | removed_keys | modified_keys
 
-    def get_diff_summary(self) -> str:
+    # ONEX_EXCLUDE: dict_str_any - arbitrary user config dicts with dynamic nested structure
+    def _get_nested_value(self, config: dict[str, Any], path: str) -> tuple[bool, Any]:
+        """
+        Get a value from a nested dict using a dot-separated path.
+
+        Args:
+            config: The configuration dictionary
+            path: Dot-separated path (e.g., "config.timeout")
+
+        Returns:
+            Tuple of (found: bool, value: Any). If found is False, value is None.
+
+        .. versionadded:: 0.4.0
+        """
+        parts = path.split(".")
+        current: Any = config
+        for part in parts:
+            if not isinstance(current, dict) or part not in current:
+                return (False, None)
+            current = current[part]
+        return (True, current)
+
+    def get_diff_summary(self, *, deep: bool = False) -> str:
         """
         Get a human-readable summary of the configuration differences.
 
@@ -333,6 +451,10 @@ class ModelChangeProposal(BaseModel):
         - Added keys (in after_config but not in before_config)
         - Removed keys (in before_config but not in after_config)
         - Modified keys (value changed between before and after)
+
+        Args:
+            deep: If True, show nested paths (e.g., "config.timeout") for nested
+                dict changes. If False (default), only show top-level keys.
 
         Returns:
             Formatted string showing before/after values for changed keys.
@@ -350,7 +472,25 @@ class ModelChangeProposal(BaseModel):
               [+] top_p: 0.9 (added)
               [~] model: 'v1' -> 'v2'
               [~] temp: 0.5 -> 0.7
+
+        Example with deep=True for nested configs:
+            >>> proposal = ModelChangeProposal.create(
+            ...     change_type="config_change",
+            ...     description="Update nested settings",
+            ...     before_config={"settings": {"timeout": 10, "retries": 3}},
+            ...     after_config={"settings": {"timeout": 20, "retries": 3}},
+            ...     rationale="Increase timeout",
+            ... )
+            >>> print(proposal.get_diff_summary(deep=True))
+            Configuration Changes:
+              [~] settings.timeout: 10 -> 20
+
+        .. versionchanged:: 0.4.0
+            Added ``deep`` parameter for nested path display.
         """
+        if deep:
+            return self._get_deep_diff_summary()
+
         before_keys = set(self.before_config.keys())
         after_keys = set(self.after_config.keys())
 
@@ -381,12 +521,49 @@ class ModelChangeProposal(BaseModel):
 
         return "\n".join(lines)
 
+    def _get_deep_diff_summary(self) -> str:
+        """
+        Get deep diff summary with nested paths.
+
+        This internal helper produces the summary when deep=True is used.
+        It uses the _deep_diff_keys method to find all nested changes and
+        then formats them appropriately.
+
+        Returns:
+            Formatted string showing nested path changes.
+
+        .. versionadded:: 0.4.0
+        """
+        changed_paths = sorted(
+            self._deep_diff_keys(self.before_config, self.after_config)
+        )
+
+        lines: list[str] = ["Configuration Changes:"]
+
+        for path in changed_paths:
+            before_found, before_val = self._get_nested_value(self.before_config, path)
+            after_found, after_val = self._get_nested_value(self.after_config, path)
+
+            if not before_found and after_found:
+                lines.append(f"  [+] {path}: {after_val!r} (added)")
+            elif before_found and not after_found:
+                lines.append(f"  [-] {path}: {before_val!r} (removed)")
+            else:
+                lines.append(f"  [~] {path}: {before_val!r} -> {after_val!r}")
+
+        if len(lines) == 1:
+            lines.append("  (no changes detected)")
+
+        return "\n".join(lines)
+
     def get_model_names(self) -> dict[str, str | None] | None:
         """
         Extract old and new model names for MODEL_SWAP change type.
 
         This method is specifically for MODEL_SWAP proposals to extract
-        the model names from the before/after configurations.
+        the model names from the before/after configurations. The key used
+        to look up model names is defined by MODEL_NAME_KEY class attribute
+        (defaults to "model_name"), which can be overridden in subclasses.
 
         Returns:
             Dictionary with "old_model" and "new_model" keys if change_type
@@ -406,8 +583,8 @@ class ModelChangeProposal(BaseModel):
         if self.change_type != EnumChangeType.MODEL_SWAP:
             return None
 
-        old_model = self.before_config.get("model_name")
-        new_model = self.after_config.get("model_name")
+        old_model = self.before_config.get(self.MODEL_NAME_KEY)
+        new_model = self.after_config.get(self.MODEL_NAME_KEY)
 
         return {
             "old_model": str(old_model) if old_model is not None else None,
@@ -437,7 +614,9 @@ class ModelChangeProposal(BaseModel):
 
         This is a convenience method that creates a ModelChangeProposal with
         change_type set to MODEL_SWAP and stores the old/new model names
-        in the configuration.
+        in the configuration using the MODEL_NAME_KEY class attribute
+        (defaults to "model_name"). Subclasses can override MODEL_NAME_KEY
+        to use a different configuration key.
 
         Args:
             old_model: Name of the model being replaced
@@ -467,15 +646,18 @@ class ModelChangeProposal(BaseModel):
             ...     after_config={"model_name": "gpt-4-turbo", "temperature": 0.5},
             ... )
         """
-        # Ensure model_name is in configs for get_model_names() to work
+        # Ensure model name key is in configs for get_model_names() to work
         # (but don't override if already present)
         final_before = dict(before_config)
         final_after = dict(after_config)
 
-        if "model_name" not in final_before:
-            final_before["model_name"] = old_model
-        if "model_name" not in final_after:
-            final_after["model_name"] = new_model
+        # Use type.__getattribute__ to bypass Pydantic's __getattr__ interception
+        # for ClassVar attributes in classmethods
+        model_name_key: str = type.__getattribute__(cls, "MODEL_NAME_KEY")
+        if model_name_key not in final_before:
+            final_before[model_name_key] = old_model
+        if model_name_key not in final_after:
+            final_after[model_name_key] = new_model
 
         return cls.create(
             change_type=EnumChangeType.MODEL_SWAP,
