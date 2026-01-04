@@ -33,7 +33,9 @@ See Also:
 
 from __future__ import annotations
 
+import time
 from typing import TYPE_CHECKING
+from uuid import UUID, uuid4
 
 from omnibase_core.enums import EnumNodeType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -60,6 +62,9 @@ if TYPE_CHECKING:
     )
     from omnibase_core.protocols.protocol_contract_profile_factory import (
         ProtocolContractProfileFactory,
+    )
+    from omnibase_core.protocols.protocol_contract_validation_event_emitter import (
+        ProtocolContractValidationEventEmitter,
     )
 
 
@@ -126,16 +131,40 @@ class ContractMergeEngine:
         - ProtocolContractProfileFactory: Base contract resolution
     """
 
-    def __init__(self, profile_factory: ProtocolContractProfileFactory) -> None:
+    def __init__(
+        self,
+        profile_factory: ProtocolContractProfileFactory,
+        event_emitter: ProtocolContractValidationEventEmitter | None = None,
+        correlation_id: UUID | None = None,
+    ) -> None:
         """
         Initialize with a profile factory for resolving base contracts.
 
         Args:
             profile_factory: Factory that provides base contracts for profiles.
                 Must implement ProtocolContractProfileFactory protocol.
+            event_emitter: Optional event emitter for merge lifecycle events.
+                If provided, merge_started and merge_completed events will be
+                emitted during merge operations.
+            correlation_id: Optional correlation ID for event tracing across
+                services. Passed through to all emitted events.
 
         Raises:
             ModelOnexError: If profile_factory is None.
+
+        Example:
+            >>> # Basic initialization (no events)
+            >>> engine = ContractMergeEngine(profile_factory)
+            >>>
+            >>> # With event emission
+            >>> engine = ContractMergeEngine(
+            ...     profile_factory,
+            ...     event_emitter=my_emitter,
+            ...     correlation_id=uuid4(),
+            ... )
+
+        .. versionchanged:: 0.4.1
+            Added event_emitter and correlation_id parameters for OMN-1151.
         """
         if profile_factory is None:
             raise ModelOnexError(
@@ -143,11 +172,14 @@ class ContractMergeEngine:
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
         self._profile_factory = profile_factory
+        self._event_emitter = event_emitter
+        self._correlation_id = correlation_id
 
     def merge(
         self,
         patch: ModelContractPatch,
         node_type: EnumNodeType | None = None,
+        run_id: UUID | None = None,
     ) -> ModelHandlerContract:
         """
         Merge patch with its base profile to produce expanded contract.
@@ -159,10 +191,15 @@ class ContractMergeEngine:
         4. Apply list operations for capabilities and dependencies
         5. Construct and validate final ModelHandlerContract
 
+        If an event_emitter was provided during initialization, this method
+        will emit merge_started and merge_completed events.
+
         Args:
             patch: Contract patch containing overrides to apply.
             node_type: Optional node type override. If not provided,
                 will be inferred from the profile name or base contract.
+            run_id: Optional run identifier for event correlation. If not
+                provided, a new UUID will be generated.
 
         Returns:
             Expanded ModelHandlerContract with merged values.
@@ -174,7 +211,42 @@ class ContractMergeEngine:
         Example:
             >>> contract = engine.merge(patch)
             >>> contract = engine.merge(patch, node_type=EnumNodeType.COMPUTE_GENERIC)
+            >>> contract = engine.merge(patch, run_id=uuid4())
+
+        .. versionchanged:: 0.4.1
+            Added run_id parameter and event emission for OMN-1151.
         """
+        # Import event models here to avoid circular imports at module level
+        from omnibase_core.models.events.contract_validation import (
+            ModelContractMergeCompletedEvent,
+            ModelContractMergeStartedEvent,
+        )
+
+        # Generate run_id if not provided
+        effective_run_id = run_id if run_id is not None else uuid4()
+
+        # Start timing for duration tracking
+        start_time_ns = time.perf_counter_ns()
+
+        # Track changes for diff summary
+        changes_applied: list[str] = []
+
+        # Determine contract name for events (use patch name or default)
+        event_contract_name = patch.name if patch.name else patch.extends.profile
+
+        # Emit merge_started event if emitter is available
+        if self._event_emitter is not None:
+            started_event = ModelContractMergeStartedEvent.create(
+                contract_name=event_contract_name,
+                run_id=effective_run_id,
+                merge_plan_name=None,
+                profile_names=[patch.extends.profile],
+                overlay_refs=[],
+                resolver_config_hash=None,
+                correlation_id=self._correlation_id,
+            )
+            self._event_emitter.emit_merge_started(started_event)
+
         # 1. Determine node type
         resolved_node_type = self._resolve_node_type(patch, node_type)
 
@@ -197,12 +269,24 @@ class ContractMergeEngine:
                 patch_value=patch.name,
             )
 
+        # Track name override
+        if patch.name is not None and patch.name != base.name:
+            changes_applied.append(f"name: {base.name} -> {patch.name}")
+
         # Version handling: patch uses ModelSemVer, base uses ModelSemVer
         merged_version = (
             str(patch.node_version) if patch.node_version else str(base.version)
         )
 
+        # Track version override
+        if patch.node_version is not None:
+            changes_applied.append(f"version: {base.version} -> {patch.node_version}")
+
         merged_description = merge_scalar(base.description, patch.description)
+
+        # Track description override
+        if patch.description is not None and patch.description != base.description:
+            changes_applied.append("description: updated")
 
         # Model references
         merged_input_model = merge_scalar(
@@ -216,6 +300,12 @@ class ContractMergeEngine:
                 field="input_model",
             )
 
+        # Track input_model override
+        if patch.input_model is not None:
+            changes_applied.append(
+                f"input_model: {base.input_model} -> {patch.input_model}"
+            )
+
         merged_output_model = merge_scalar(
             base.output_model,
             str(patch.output_model) if patch.output_model else None,
@@ -227,8 +317,18 @@ class ContractMergeEngine:
                 field="output_model",
             )
 
+        # Track output_model override
+        if patch.output_model is not None:
+            changes_applied.append(
+                f"output_model: {base.output_model} -> {patch.output_model}"
+            )
+
         # 4. Apply descriptor/behavior merge
         merged_behavior = self._merge_behavior(base.behavior, patch.descriptor)
+
+        # Track descriptor changes
+        if patch.descriptor is not None:
+            changes_applied.append("descriptor: updated")
 
         # 5. Apply list operations for capabilities
         merged_capability_inputs = self._merge_capability_inputs(
@@ -237,18 +337,42 @@ class ContractMergeEngine:
             remove_inputs=patch.capability_inputs__remove,
         )
 
+        # Track capability_inputs changes
+        if patch.capability_inputs__add:
+            changes_applied.append(
+                f"capability_inputs: added {len(patch.capability_inputs__add)} items"
+            )
+        if patch.capability_inputs__remove:
+            changes_applied.append(
+                f"capability_inputs: removed {len(patch.capability_inputs__remove)} items"
+            )
+
         merged_capability_outputs = self._merge_capability_outputs(
             base_outputs=merged_behavior.capability_outputs if merged_behavior else [],
             add_outputs=patch.capability_outputs__add,
             remove_outputs=patch.capability_outputs__remove,
         )
 
+        # Track capability_outputs changes
+        if patch.capability_outputs__add:
+            changes_applied.append(
+                f"capability_outputs: added {len(patch.capability_outputs__add)} items"
+            )
+        if patch.capability_outputs__remove:
+            changes_applied.append(
+                f"capability_outputs: removed {len(patch.capability_outputs__remove)} items"
+            )
+
         # 6. Generate handler_id from name
         # Convention: node.<name> for handler identification
         handler_id = f"node.{merged_name.lower().replace(' ', '_')}"
 
-        # 7. Construct final contract
-        return ModelHandlerContract(
+        # 7. Detect any conflicts (for reporting in completion event)
+        conflicts = self.detect_conflicts(patch)
+        conflicts_resolved_count = len(conflicts)
+
+        # 8. Construct final contract
+        result = ModelHandlerContract(
             handler_id=handler_id,
             name=merged_name,
             version=merged_version,
@@ -260,6 +384,28 @@ class ContractMergeEngine:
             output_model=merged_output_model,
             tags=list(base.tags) if base.tags else [],
         )
+
+        # 9. Emit merge_completed event if emitter is available
+        if self._event_emitter is not None:
+            # Calculate duration in milliseconds
+            end_time_ns = time.perf_counter_ns()
+            duration_ms = (end_time_ns - start_time_ns) // 1_000_000
+
+            completed_event = ModelContractMergeCompletedEvent.create(
+                contract_name=event_contract_name,
+                run_id=effective_run_id,
+                effective_contract_name=merged_name,
+                duration_ms=duration_ms,
+                effective_contract_hash=None,  # Could be computed if needed
+                overlays_applied_count=0,  # No overlays in current implementation
+                defaults_applied=True,  # Profile defaults are always applied
+                warnings_count=conflicts_resolved_count,
+                diff_ref="; ".join(changes_applied) if changes_applied else None,
+                correlation_id=self._correlation_id,
+            )
+            self._event_emitter.emit_merge_completed(completed_event)
+
+        return result
 
     def detect_conflicts(self, patch: ModelContractPatch) -> list[ModelMergeConflict]:
         """

@@ -211,6 +211,14 @@ class NamingConventionValidator:
         "merge/": [
             "ContractMergeEngine",  # Merge engine for typed contract merging (OMN-1127)
         ],
+        # REPLAY INFRASTRUCTURE: Deterministic replay for testing and debugging
+        # Location: pipeline/replay/ - Replay framework implementations
+        # Rationale: RecorderEffect records effects for replay, not an ONEX Effect node.
+        #            The heuristic flags "effect" as a node indicator, but RecorderEffect
+        #            is a recorder utility that captures effect invocations for deterministic replay.
+        "pipeline/replay/": [
+            "RecorderEffect",  # Effect recorder for deterministic replay (OMN-1116)
+        ],
     }
 
     @staticmethod

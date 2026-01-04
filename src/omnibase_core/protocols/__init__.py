@@ -183,6 +183,13 @@ from omnibase_core.protocols.protocol_context_aware_output_handler import (
 )
 
 # =============================================================================
+# Contract Validation Event Emitter (OMN-1151)
+# =============================================================================
+from omnibase_core.protocols.protocol_contract_validation_event_emitter import (
+    ProtocolContractValidationEventEmitter,
+)
+
+# =============================================================================
 # Core Module Exports
 # =============================================================================
 from omnibase_core.protocols.protocol_core import ProtocolCanonicalSerializer
@@ -479,6 +486,8 @@ __all__ = [
     "ProtocolQualityValidator",
     # Contract Validation Invariant Checker (OMN-1146)
     "ProtocolContractValidationInvariantChecker",
+    # Contract Validation Event Emitter (OMN-1151)
+    "ProtocolContractValidationEventEmitter",
     # ==========================================================================
     # Replay Module (OMN-1116)
     # ==========================================================================

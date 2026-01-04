@@ -53,16 +53,31 @@ Related:
 
 from __future__ import annotations
 
+import asyncio
 import logging
+import time
 from typing import TYPE_CHECKING, cast
+from uuid import UUID, uuid4
 
 from omnibase_core.enums import EnumNodeType
 from omnibase_core.enums.enum_validation_phase import EnumValidationPhase
 from omnibase_core.models.common.model_validation_result import ModelValidationResult
 from omnibase_core.models.contracts.model_contract_patch import ModelContractPatch
 from omnibase_core.models.contracts.model_handler_contract import ModelHandlerContract
+from omnibase_core.models.events.contract_validation import (
+    ModelContractMergeCompletedEvent,
+    ModelContractMergeStartedEvent,
+    ModelContractValidationContext,
+    ModelContractValidationEventBase,
+    ModelContractValidationFailedEvent,
+    ModelContractValidationPassedEvent,
+    ModelContractValidationStartedEvent,
+)
 from omnibase_core.models.validation.model_expanded_contract_result import (
     ModelExpandedContractResult,
+)
+from omnibase_core.protocols.validation.protocol_contract_validation_event_emitter import (
+    ProtocolContractValidationEventEmitter,
 )
 from omnibase_core.protocols.validation.protocol_contract_validation_pipeline import (
     ProtocolContractValidationPipeline,
@@ -191,6 +206,11 @@ class ContractValidationPipeline:  # naming-ok: validator class, not protocol
         _patch_validator: Phase 1 validator (ContractPatchValidator).
         _merge_validator: Phase 2 validator (MergeValidator).
         _expanded_validator: Phase 3 validator (ExpandedContractValidator).
+        _event_emitter: Optional event emitter for lifecycle events. When
+            provided, the pipeline emits events at each stage (started,
+            merge_started, merge_completed, passed/failed).
+        _correlation_id: Correlation ID for request tracing. All emitted
+            events include this ID for cross-service tracing.
 
     See Also:
         - ContractPatchValidator: Phase 1 validation
@@ -199,6 +219,7 @@ class ContractValidationPipeline:  # naming-ok: validator class, not protocol
         - ContractMergeEngine: Merge operations
         - ProtocolConstraintValidator: Interface for constraint validators
         - ProtocolConstraintValidationResult: Result interface
+        - ProtocolContractValidationEventEmitter: Event emission interface
 
     Design Decisions:
         Sequential vs Lazy Validation: The current implementation validates
@@ -233,6 +254,8 @@ class ContractValidationPipeline:  # naming-ok: validator class, not protocol
         patch_validator: ContractPatchValidator | None = None,
         merge_validator: MergeValidator | None = None,
         expanded_validator: ExpandedContractValidator | None = None,
+        event_emitter: ProtocolContractValidationEventEmitter | None = None,
+        correlation_id: UUID | None = None,
     ) -> None:
         """Initialize the pipeline with optional custom validators.
 
@@ -246,16 +269,73 @@ class ContractValidationPipeline:  # naming-ok: validator class, not protocol
                 MergeValidator().
             expanded_validator: Custom Phase 3 validator. Defaults to
                 ExpandedContractValidator().
+            event_emitter: Optional event emitter for lifecycle events.
+                When provided, the pipeline emits events at each stage
+                (started, phase completed, passed/failed). This is useful
+                for observability, auditing, and workflow tracking.
+            correlation_id: Optional correlation ID for tracing. If provided,
+                all emitted events will include this ID for request tracing
+                across services. If not provided, a new UUID is generated
+                per pipeline instance.
+
+        Example with event emission:
+            >>> emitter = MyEventEmitter(event_bus)
+            >>> pipeline = ContractValidationPipeline(
+            ...     event_emitter=emitter,
+            ...     correlation_id=uuid4(),
+            ... )
+            >>> result = pipeline.validate_all(patch, profile_factory)
+            # Events emitted: started -> merge_started -> merge_completed -> passed
         """
         self._constraint_validator = constraint_validator
         self._patch_validator = patch_validator or ContractPatchValidator()
         self._merge_validator = merge_validator or MergeValidator()
         self._expanded_validator = expanded_validator or ExpandedContractValidator()
+        self._event_emitter = event_emitter
+        self._correlation_id = correlation_id or uuid4()
 
         logger.debug(
             "ContractValidationPipeline initialized "
-            f"(constraint_validator={'present' if constraint_validator else 'none'})"
+            f"(constraint_validator={'present' if constraint_validator else 'none'}, "
+            f"event_emitter={'present' if event_emitter else 'none'}, "
+            f"correlation_id={self._correlation_id})"
         )
+
+    def _emit_event(self, event: ModelContractValidationEventBase) -> None:
+        """Emit a contract validation lifecycle event.
+
+        This helper handles event emission in a non-blocking way, suitable
+        for synchronous pipeline execution. If no event emitter is configured,
+        this method is a no-op.
+
+        The method runs the async emit coroutine synchronously using
+        asyncio.run() for simplicity. For high-throughput scenarios,
+        consider using an async pipeline variant.
+
+        Args:
+            event: The contract validation event to emit.
+
+        Note:
+            Event emission failures are logged but do not fail the pipeline.
+            This ensures that event bus issues don't break validation.
+        """
+        if self._event_emitter is None:
+            return
+
+        try:
+            # Run async emit synchronously - suitable for pipeline context
+            # For truly async pipelines, use async validate_all variant
+            asyncio.run(self._event_emitter.emit(event))
+            # event_type is defined on subclasses, use getattr for type safety
+            event_type = getattr(event, "event_type", type(event).__name__)
+            logger.debug(f"Emitted event: {event_type}")
+        except Exception as e:
+            # boundary-ok: event emission should not fail the pipeline
+            event_type = getattr(event, "event_type", type(event).__name__)
+            logger.warning(
+                f"Failed to emit event {event_type}: {e!s}. "
+                "Continuing pipeline execution."
+            )
 
     def validate_patch(self, patch: ModelContractPatch) -> ModelValidationResult[None]:
         """Validate a contract patch (Phase 1).
@@ -384,6 +464,10 @@ class ContractValidationPipeline:  # naming-ok: validator class, not protocol
             ProtocolConstraintValidator: Interface definition for validators.
             ProtocolConstraintValidationResult: Expected result interface.
         """
+        # Guard for type narrowing (called only when not None, but pyright needs this)
+        if self._constraint_validator is None:
+            return result
+
         if not hasattr(self._constraint_validator, "validate"):
             logger.debug(
                 "Constraint validator does not have 'validate' method, skipping"
@@ -393,8 +477,8 @@ class ContractValidationPipeline:  # naming-ok: validator class, not protocol
         logger.debug("Applying duck-typed constraint validator")
 
         try:
-            # Call the duck-typed validator
-            constraint_result = self._constraint_validator.validate(  # type: ignore[union-attr]
+            # Call the duck-typed validator (type: ignore for duck typing seam)
+            constraint_result = self._constraint_validator.validate(  # type: ignore[attr-defined]
                 base, patch, merged
             )
 
@@ -566,8 +650,21 @@ class ContractValidationPipeline:  # naming-ok: validator class, not protocol
             f"Pipeline: Starting validation for profile={patch.extends.profile}"
         )
 
+        # Initialize pipeline tracking
         result = ModelExpandedContractResult()
         all_errors: list[str] = []
+        run_id = uuid4()  # Links all events in this validation lifecycle
+        start_time = time.monotonic()
+        contract_name = patch.extends.profile  # Use profile as contract name initially
+
+        # Emit validation started event
+        started_event = ModelContractValidationStartedEvent.create(
+            contract_name=contract_name,
+            run_id=run_id,
+            context=ModelContractValidationContext(),
+            correlation_id=self._correlation_id,
+        )
+        self._emit_event(started_event)
 
         # =====================================================================
         # Phase 1: PATCH Validation
@@ -586,22 +683,75 @@ class ContractValidationPipeline:  # naming-ok: validator class, not protocol
             )
             result.errors = all_errors
             result.phase_failed = EnumValidationPhase.PATCH
+
+            # Emit validation failed event
+            duration_ms = int((time.monotonic() - start_time) * 1000)
+            failed_event = ModelContractValidationFailedEvent.create(
+                contract_name=contract_name,
+                run_id=run_id,
+                error_count=patch_result.error_count,
+                first_error_code="PATCH_VALIDATION_FAILED",
+                duration_ms=duration_ms,
+                violations=all_errors[:100],  # Bounded to MAX_VIOLATION_ENTRIES
+                correlation_id=self._correlation_id,
+            )
+            self._emit_event(failed_event)
             return result
 
         # =====================================================================
         # Merge Operation
         # =====================================================================
         logger.debug("Pipeline: Performing merge operation")
+
+        # Emit merge started event
+        merge_start_time = time.monotonic()
+        merge_started_event = ModelContractMergeStartedEvent.create(
+            contract_name=contract_name,
+            run_id=run_id,
+            profile_names=[patch.extends.profile],
+            correlation_id=self._correlation_id,
+        )
+        self._emit_event(merge_started_event)
+
         try:
             merged_contract, base_contract = self._perform_merge_operation(
                 patch, profile_factory
             )
+
+            # Emit merge completed event
+            merge_duration_ms = int((time.monotonic() - merge_start_time) * 1000)
+            merge_completed_event = ModelContractMergeCompletedEvent.create(
+                contract_name=contract_name,
+                run_id=run_id,
+                effective_contract_name=merged_contract.name,
+                duration_ms=merge_duration_ms,
+                defaults_applied=True,
+                correlation_id=self._correlation_id,
+            )
+            self._emit_event(merge_completed_event)
+
+            # Update contract_name to use the merged contract name
+            contract_name = merged_contract.name
+
         except Exception as e:
             # fallback-ok: merge can fail for many reasons, return error result
             logger.exception(f"Pipeline: Merge operation failed - {e}")
             all_errors.append(f"Merge operation failed: {e}")
             result.errors = all_errors
             result.phase_failed = EnumValidationPhase.MERGE
+
+            # Emit validation failed event for merge failure
+            duration_ms = int((time.monotonic() - start_time) * 1000)
+            failed_event = ModelContractValidationFailedEvent.create(
+                contract_name=contract_name,
+                run_id=run_id,
+                error_count=1,
+                first_error_code="MERGE_OPERATION_FAILED",
+                duration_ms=duration_ms,
+                violations=[str(e)],
+                correlation_id=self._correlation_id,
+            )
+            self._emit_event(failed_event)
             return result
 
         # =====================================================================
@@ -641,6 +791,19 @@ class ContractValidationPipeline:  # naming-ok: validator class, not protocol
             )
             result.errors = all_errors
             result.phase_failed = EnumValidationPhase.MERGE
+
+            # Emit validation failed event
+            duration_ms = int((time.monotonic() - start_time) * 1000)
+            failed_event = ModelContractValidationFailedEvent.create(
+                contract_name=contract_name,
+                run_id=run_id,
+                error_count=merge_result.error_count,
+                first_error_code="MERGE_VALIDATION_FAILED",
+                duration_ms=duration_ms,
+                violations=all_errors[:100],
+                correlation_id=self._correlation_id,
+            )
+            self._emit_event(failed_event)
             return result
 
         # =====================================================================
@@ -660,6 +823,19 @@ class ContractValidationPipeline:  # naming-ok: validator class, not protocol
             )
             result.errors = all_errors
             result.phase_failed = EnumValidationPhase.EXPANDED
+
+            # Emit validation failed event
+            duration_ms = int((time.monotonic() - start_time) * 1000)
+            failed_event = ModelContractValidationFailedEvent.create(
+                contract_name=contract_name,
+                run_id=run_id,
+                error_count=expanded_result.error_count,
+                first_error_code="EXPANDED_VALIDATION_FAILED",
+                duration_ms=duration_ms,
+                violations=all_errors[:100],
+                correlation_id=self._correlation_id,
+            )
+            self._emit_event(failed_event)
             return result
 
         # =====================================================================
@@ -669,5 +845,30 @@ class ContractValidationPipeline:  # naming-ok: validator class, not protocol
         result.success = True
         result.contract = merged_contract
         result.errors = all_errors  # May contain warnings from earlier phases
+
+        # Emit validation passed event
+        duration_ms = int((time.monotonic() - start_time) * 1000)
+        total_checks = (
+            patch_result.error_count
+            + patch_result.warning_count
+            + merge_result.error_count
+            + merge_result.warning_count
+            + expanded_result.error_count
+            + expanded_result.warning_count
+        )
+        total_warnings = (
+            patch_result.warning_count
+            + merge_result.warning_count
+            + expanded_result.warning_count
+        )
+        passed_event = ModelContractValidationPassedEvent.create(
+            contract_name=contract_name,
+            run_id=run_id,
+            duration_ms=duration_ms,
+            warnings_count=total_warnings,
+            checks_run=total_checks,
+            correlation_id=self._correlation_id,
+        )
+        self._emit_event(passed_event)
 
         return result
