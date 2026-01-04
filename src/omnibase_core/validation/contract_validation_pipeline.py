@@ -129,24 +129,52 @@ class ContractValidationPipeline:  # naming-ok: validator class, not protocol
         >>> result = pipeline.validate_all(patch, profile_factory)
 
     Error Handling:
-        When validation fails, the pipeline provides detailed error information:
+        When validation fails, the pipeline provides detailed error information.
+        The ``phase_failed`` attribute indicates which phase first encountered
+        critical errors, and ``validation_results`` contains detailed diagnostics
+        for each executed phase.
 
+        >>> from omnibase_core.enums.enum_validation_phase import EnumValidationPhase
+        >>> from omnibase_core.enums.enum_validation_severity import (
+        ...     EnumValidationSeverity
+        ... )
+        >>>
         >>> result = pipeline.validate_all(patch, profile_factory)
         >>> if not result.success:
-        ...     # Check which phase failed
+        ...     # Determine which phase failed and provide appropriate guidance
         ...     if result.phase_failed == EnumValidationPhase.PATCH:
-        ...         print("Patch structure is invalid")
+        ...         print("Patch structure is invalid - check patch definition")
         ...     elif result.phase_failed == EnumValidationPhase.MERGE:
-        ...         print("Merge produced inconsistent result")
+        ...         print("Merge produced inconsistent result - check base/patch compatibility")
         ...     elif result.phase_failed == EnumValidationPhase.EXPANDED:
-        ...         print("Expanded contract fails runtime validation")
+        ...         print("Expanded contract fails runtime validation - check handler references")
         ...
         ...     # Access phase-specific results for detailed diagnostics
-        ...     for phase, phase_result in result.validation_results.items():
+        ...     for phase_name, phase_result in result.validation_results.items():
         ...         if not phase_result.is_valid:
-        ...             print(f"Phase {phase}: {phase_result.error_count} errors")
+        ...             print(f"\nPhase {phase_name}: {phase_result.error_count} errors, "
+        ...                   f"{phase_result.warning_count} warnings")
+        ...
+        ...             # Iterate over all issues with full context
         ...             for issue in phase_result.issues:
-        ...                 print(f"  [{issue.severity}] {issue.message}")
+        ...                 print(f"  [{issue.severity.value}] {issue.message}")
+        ...                 if issue.code:
+        ...                     print(f"    Code: {issue.code}")
+        ...                 if issue.suggestion:
+        ...                     print(f"    Suggestion: {issue.suggestion}")
+        ...                 if issue.context:
+        ...                     for key, value in issue.context.items():
+        ...                         print(f"    {key}: {value}")
+        ...
+        ...     # Alternatively, filter issues by severity
+        ...     for phase_name, phase_result in result.validation_results.items():
+        ...         critical = phase_result.get_issues_by_severity(
+        ...             EnumValidationSeverity.CRITICAL
+        ...         )
+        ...         if critical:
+        ...             print(f"CRITICAL issues in {phase_name}:")
+        ...             for issue in critical:
+        ...                 print(f"  - {issue.message}")
 
     Attributes:
         _constraint_validator: Optional duck-typed validator for Phase 2.
@@ -159,6 +187,24 @@ class ContractValidationPipeline:  # naming-ok: validator class, not protocol
         - MergeValidator: Phase 2 validation
         - ExpandedContractValidator: Phase 3 validation
         - ContractMergeEngine: Merge operations
+
+    Design Decisions:
+        Sequential vs Lazy Validation: The current implementation validates
+        all three phases sequentially (PATCH -> MERGE -> EXPANDED). While lazy
+        validation (only validating phases that are needed) could improve
+        performance for some use cases, the sequential approach was chosen for:
+
+        1. Simplicity: Easier to reason about and debug
+        2. Fail-fast: Catches errors early in the pipeline
+        3. Consistency: All contracts go through the same validation path
+
+        Lazy validation could be considered for future optimization if
+        profiling shows significant performance impact from unused phases.
+        Potential implementations could include:
+
+        - Phase selection parameter in validate_all()
+        - Separate methods for partial validation workflows
+        - Caching of intermediate results for repeated validations
     """
 
     # Mapping from profile name prefixes to node types for base contract resolution
@@ -362,7 +408,7 @@ class ContractValidationPipeline:  # naming-ok: validator class, not protocol
         except (AttributeError, TypeError) as e:
             # fallback-ok: constraint validator may not be fully compatible
             logger.warning(
-                f"Constraint validator call failed (duck-typing mismatch): {e}"
+                f"Constraint validator call failed ({type(e).__name__}: {e})"
             )
 
         return result

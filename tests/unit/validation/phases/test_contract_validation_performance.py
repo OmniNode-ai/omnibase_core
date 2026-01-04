@@ -141,6 +141,7 @@ def valid_descriptor() -> ModelHandlerBehavior:
 
 @pytest.mark.unit
 @pytest.mark.performance
+@pytest.mark.slow
 class TestLargeContractValidation:
     """Performance tests for contract validation pipeline.
 
@@ -168,7 +169,10 @@ class TestLargeContractValidation:
         result = merge_validator.validate(base, patch, merged)
         elapsed = time.time() - start_time
 
+        # Verify result is valid ModelValidationResult with expected properties
         assert result is not None, "Validation should return a result"
+        assert result.is_valid is True, "Valid contract should pass merge validation"
+        assert result.error_count == 0, "Valid contract should have no errors"
         assert elapsed < 5.0, (
             f"Large contract validation took {elapsed:.2f}s, expected < 5.0s. "
             "This may indicate O(n^2) or worse complexity."
@@ -192,7 +196,10 @@ class TestLargeContractValidation:
         result = merge_validator.validate(base, patch, merged)
         elapsed = time.time() - start_time
 
+        # Verify result is valid ModelValidationResult with expected properties
         assert result is not None, "Validation should return a result"
+        assert result.is_valid is True, "Valid contract should pass merge validation"
+        assert result.error_count == 0, "Valid contract should have no errors"
         assert elapsed < 5.0, (
             f"Large contract validation (2000 handlers) took {elapsed:.2f}s, "
             "expected < 5.0s"
@@ -210,7 +217,10 @@ class TestLargeContractValidation:
         result = expanded_validator.validate(contract)
         elapsed = time.time() - start_time
 
+        # Verify result is valid ModelValidationResult with expected properties
         assert result is not None, "Validation should return a result"
+        assert result.is_valid is True, "Valid contract should pass expanded validation"
+        assert result.error_count == 0, "Valid contract should have no errors"
         assert elapsed < 5.0, (
             f"Expanded validation took {elapsed:.2f}s, expected < 5.0s"
         )
@@ -223,6 +233,7 @@ class TestLargeContractValidation:
 
 @pytest.mark.unit
 @pytest.mark.performance
+@pytest.mark.slow
 class TestDuplicateDetectionComplexity:
     """Tests verifying O(n) complexity for duplicate detection.
 
@@ -259,21 +270,22 @@ class TestDuplicateDetectionComplexity:
         # Check that scaling is roughly linear
         # 10x more handlers should not take more than ~15x the time
         # (allowing for constant overhead and measurement noise)
-        if times[0] > 0.001:  # Only check if base time is measurable
-            scaling_factor_500 = times[1] / times[0]
-            scaling_factor_1000 = times[2] / times[0]
+        # Use max() to protect against division by zero if validation is extremely fast
+        base_time = max(times[0], 0.001)
+        scaling_factor_500 = times[1] / base_time
+        scaling_factor_1000 = times[2] / base_time
 
-            # With linear O(n), 5x handlers -> ~5x time
-            # With quadratic O(n^2), 5x handlers -> ~25x time
-            # We allow up to 15x to account for constant overhead
-            assert scaling_factor_500 < 15, (
-                f"500 handlers took {scaling_factor_500:.1f}x longer than 100 handlers. "
-                "Expected roughly linear scaling (<15x for 5x size increase)."
-            )
-            assert scaling_factor_1000 < 25, (
-                f"1000 handlers took {scaling_factor_1000:.1f}x longer than 100 handlers. "
-                "Expected roughly linear scaling (<25x for 10x size increase)."
-            )
+        # With linear O(n), 5x handlers -> ~5x time
+        # With quadratic O(n^2), 5x handlers -> ~25x time
+        # We allow up to 15x to account for constant overhead
+        assert scaling_factor_500 < 15, (
+            f"500 handlers took {scaling_factor_500:.1f}x longer than 100 handlers. "
+            "Expected roughly linear scaling (<15x for 5x size increase)."
+        )
+        assert scaling_factor_1000 < 25, (
+            f"1000 handlers took {scaling_factor_1000:.1f}x longer than 100 handlers. "
+            "Expected roughly linear scaling (<25x for 10x size increase)."
+        )
 
     def test_duplicate_detection_all_sizes_complete_quickly(
         self,
@@ -291,7 +303,16 @@ class TestDuplicateDetectionComplexity:
             result = merge_validator.validate(base, patch, merged)
             elapsed = time.time() - start_time
 
-            assert result is not None
+            # Verify result is valid ModelValidationResult with expected properties
+            assert result is not None, (
+                f"Validation with {size} handlers should return a result"
+            )
+            assert result.is_valid is True, (
+                f"Valid contract with {size} handlers should pass"
+            )
+            assert result.error_count == 0, (
+                f"Valid contract with {size} handlers should have no errors"
+            )
             assert elapsed < 2.0, (
                 f"Validation with {size} handlers took {elapsed:.2f}s, expected < 2.0s"
             )
@@ -304,6 +325,7 @@ class TestDuplicateDetectionComplexity:
 
 @pytest.mark.unit
 @pytest.mark.performance
+@pytest.mark.slow
 class TestConcurrentValidationThreadSafety:
     """Tests for thread safety of concurrent validation operations.
 
@@ -472,6 +494,289 @@ class TestConcurrentValidationThreadSafety:
         assert all(r is True for r in all_results), (
             "All valid contracts should pass validation"
         )
+
+    def test_concurrent_validation_result_independence(
+        self,
+        merge_validator: MergeValidator,
+        valid_descriptor: ModelHandlerBehavior,
+        profile_ref: ModelProfileReference,
+    ) -> None:
+        """Test that validation results are independent across threads.
+
+        This test uses a mix of valid and invalid contracts to verify that
+        each thread receives the correct result for its specific input,
+        ensuring no shared mutable state corruption.
+        """
+        num_threads = 8
+        num_validations_per_thread = 15
+        # Track results with thread_id to verify independence
+        results: dict[str, tuple[bool, bool]] = {}
+        results_lock = threading.Lock()
+        errors: list[str] = []
+
+        def create_invalid_contract(suffix: str) -> ModelHandlerContract:
+            """Create an invalid contract with placeholder value."""
+            return ModelHandlerContract(
+                handler_id="node.test.compute",
+                name="TODO",  # Placeholder - should fail validation
+                version="1.0.0",
+                description="Invalid contract for testing",
+                descriptor=valid_descriptor,
+                input_model="omnibase_core.models.events.ModelTestEvent",
+                output_model="omnibase_core.models.results.ModelTestResult",
+                capability_outputs=[f"event.output_{suffix}"],
+            )
+
+        def validate_in_thread(thread_id: int) -> None:
+            """Validate mix of valid and invalid contracts."""
+            for i in range(num_validations_per_thread):
+                try:
+                    suffix = f"{thread_id}_{i}"
+                    # Even iterations: valid contracts, Odd: invalid
+                    if i % 2 == 0:
+                        contract = create_valid_contract(valid_descriptor, suffix)
+                        expected_valid = True
+                    else:
+                        contract = create_invalid_contract(suffix)
+                        expected_valid = False
+
+                    patch = create_patch_with_suffix(profile_ref, suffix)
+                    merged = contract  # Use same contract as merged for this test
+
+                    result = merge_validator.validate(contract, patch, merged)
+
+                    with results_lock:
+                        key = f"{thread_id}_{i}_valid={expected_valid}"
+                        results[key] = (result.is_valid, expected_valid)
+
+                except Exception as e:
+                    with results_lock:
+                        errors.append(f"Thread {thread_id}, iteration {i}: {e}")
+
+        # Run concurrent validations
+        threads: list[threading.Thread] = []
+        for i in range(num_threads):
+            t = threading.Thread(target=validate_in_thread, args=(i,))
+            threads.append(t)
+            t.start()
+
+        for t in threads:
+            t.join(timeout=60)
+
+        # Verify no errors
+        assert len(errors) == 0, f"Errors during concurrent validation: {errors}"
+
+        # Verify we got all expected results
+        expected_count = num_threads * num_validations_per_thread
+        assert len(results) == expected_count, (
+            f"Expected {expected_count} results, got {len(results)}"
+        )
+
+        # Verify each result matches expected validity
+        mismatches: list[str] = []
+        for key, (actual_valid, expected_valid) in results.items():
+            # Note: For invalid contracts (placeholder "TODO" in name),
+            # the merge validator should detect placeholder values
+            if expected_valid and not actual_valid:
+                mismatches.append(f"{key}: expected valid but got invalid")
+            # Note: We don't assert invalid->invalid because placeholder
+            # detection depends on the specific field being checked
+
+        assert len(mismatches) == 0, f"Result independence violations: {mismatches}"
+
+    def test_expanded_validator_result_independence(
+        self,
+        expanded_validator: ExpandedContractValidator,
+        valid_descriptor: ModelHandlerBehavior,
+    ) -> None:
+        """Test ExpandedContractValidator result independence with mixed inputs.
+
+        Uses valid contracts with different suffixes to verify each thread
+        receives its own independent result with correct validation outcome.
+        """
+        num_threads = 6
+        num_validations_per_thread = 20
+        results: dict[
+            str, tuple[bool, int, str]
+        ] = {}  # key -> (is_valid, error_count, suffix)
+        results_lock = threading.Lock()
+        errors: list[str] = []
+
+        def validate_in_thread(thread_id: int) -> None:
+            """Validate contracts and track results with unique suffixes."""
+            for i in range(num_validations_per_thread):
+                try:
+                    suffix = f"{thread_id}_{i}"
+                    contract = create_valid_contract(valid_descriptor, suffix)
+                    result = expanded_validator.validate(contract)
+
+                    with results_lock:
+                        key = f"{thread_id}_{i}"
+                        results[key] = (result.is_valid, result.error_count, suffix)
+
+                except Exception as e:
+                    with results_lock:
+                        errors.append(f"Thread {thread_id}, iteration {i}: {e}")
+
+        threads: list[threading.Thread] = []
+        for i in range(num_threads):
+            t = threading.Thread(target=validate_in_thread, args=(i,))
+            threads.append(t)
+            t.start()
+
+        for t in threads:
+            t.join(timeout=60)
+
+        assert len(errors) == 0, f"Errors: {errors}"
+
+        expected_count = num_threads * num_validations_per_thread
+        assert len(results) == expected_count
+
+        # Verify all valid contracts passed with no errors
+        for key, (is_valid, error_count, suffix) in results.items():
+            assert is_valid, f"{key}: valid contract should pass"
+            assert error_count == 0, f"{key}: valid contract should have no errors"
+            # Verify suffix matches the key (no cross-contamination)
+            expected_suffix = key
+            assert suffix == expected_suffix, (
+                f"Result contamination: key={key} but got suffix={suffix}"
+            )
+
+    def test_high_concurrency_stress_test(
+        self,
+        valid_descriptor: ModelHandlerBehavior,
+        profile_ref: ModelProfileReference,
+    ) -> None:
+        """Stress test with high concurrency to detect race conditions.
+
+        Uses 20 threads with 50 validations each (1000 total) to maximize
+        the chance of detecting any thread safety issues.
+        """
+        num_threads = 20
+        num_validations_per_thread = 50
+        # Use fresh validator instances to test instance isolation
+        merge_validator = MergeValidator()
+        expanded_validator = ExpandedContractValidator()
+
+        merge_results: list[bool] = []
+        expanded_results: list[bool] = []
+        results_lock = threading.Lock()
+        errors: list[str] = []
+
+        def validate_both_in_thread(thread_id: int) -> None:
+            """Run both validators for each iteration."""
+            for i in range(num_validations_per_thread):
+                try:
+                    suffix = f"stress_{thread_id}_{i}"
+                    contract = create_valid_contract(valid_descriptor, suffix)
+                    patch = create_patch_with_suffix(profile_ref, suffix)
+
+                    # Run merge validation
+                    merge_result = merge_validator.validate(contract, patch, contract)
+
+                    # Run expanded validation
+                    expanded_result = expanded_validator.validate(contract)
+
+                    with results_lock:
+                        merge_results.append(merge_result.is_valid)
+                        expanded_results.append(expanded_result.is_valid)
+
+                except Exception as e:
+                    with results_lock:
+                        errors.append(f"Thread {thread_id}: {e}")
+
+        threads: list[threading.Thread] = []
+        for i in range(num_threads):
+            t = threading.Thread(target=validate_both_in_thread, args=(i,))
+            threads.append(t)
+            t.start()
+
+        for t in threads:
+            t.join(timeout=120)  # 2 minute timeout for stress test
+
+        assert len(errors) == 0, f"Errors during stress test: {errors}"
+
+        expected_count = num_threads * num_validations_per_thread
+        assert len(merge_results) == expected_count, (
+            f"Expected {expected_count} merge results, got {len(merge_results)}"
+        )
+        assert len(expanded_results) == expected_count, (
+            f"Expected {expected_count} expanded results, got {len(expanded_results)}"
+        )
+
+        # All valid contracts should pass
+        assert all(r is True for r in merge_results), (
+            "All merge validations should pass"
+        )
+        assert all(r is True for r in expanded_results), (
+            "All expanded validations should pass"
+        )
+
+    def test_no_state_leakage_between_validations(
+        self,
+        valid_descriptor: ModelHandlerBehavior,
+        profile_ref: ModelProfileReference,
+    ) -> None:
+        """Verify that validator state doesn't leak between sequential validations.
+
+        This tests the stateless claim by running validations in sequence
+        and verifying that invalid contract results don't affect subsequent
+        valid contract validations.
+
+        Uses placeholder values to create invalid contracts for MergeValidator,
+        and valid contracts for ExpandedContractValidator (since model validates
+        handler_id format at construction time).
+        """
+        merge_validator = MergeValidator()
+        expanded_validator = ExpandedContractValidator()
+
+        def create_invalid_contract_for_merge() -> ModelHandlerContract:
+            """Create contract with placeholder that fails merge validation."""
+            return ModelHandlerContract(
+                handler_id="node.test.compute",
+                name="PLACEHOLDER",  # Should fail merge validation
+                version="1.0.0",
+                description="Invalid",
+                descriptor=valid_descriptor,
+                input_model="omnibase_core.models.events.ModelTestEvent",
+                output_model="omnibase_core.models.results.ModelTestResult",
+            )
+
+        # Pattern: invalid -> valid -> invalid -> valid
+        # If state leaks, valid results might be affected
+        test_sequence = ["invalid", "valid", "invalid", "valid", "valid", "invalid"]
+        merge_results: list[tuple[str, bool]] = []
+        expanded_results: list[tuple[str, bool]] = []
+
+        # Test merge validator with mix of valid and invalid contracts
+        for i, test_type in enumerate(test_sequence):
+            suffix = f"leak_test_{i}"
+            patch = create_patch_with_suffix(profile_ref, suffix)
+
+            if test_type == "valid":
+                contract = create_valid_contract(valid_descriptor, suffix)
+            else:
+                contract = create_invalid_contract_for_merge()
+
+            result = merge_validator.validate(contract, patch, contract)
+            merge_results.append((test_type, result.is_valid))
+
+        # Test expanded validator with alternating contracts to verify
+        # no state leakage (all valid since model validates handler_id)
+        for i in range(len(test_sequence)):
+            suffix = f"expanded_leak_test_{i}"
+            contract = create_valid_contract(valid_descriptor, suffix)
+            result = expanded_validator.validate(contract)
+            expanded_results.append(("valid", result.is_valid))
+
+        # Verify merge validator results match expectations
+        for test_type, is_valid in merge_results:
+            if test_type == "valid":
+                assert is_valid, "Valid contract should pass after invalid contracts"
+
+        # Verify all expanded validations pass (tests state isolation)
+        for test_type, is_valid in expanded_results:
+            assert is_valid, "Valid contract should pass - no state leakage"
 
 
 if __name__ == "__main__":

@@ -94,6 +94,11 @@ _PLACEHOLDER_EXACT_PATTERNS: frozenset[str] = frozenset(
         "default",
         "example",
         "sample",
+        # Special case: "test" is included because a critical field (handler_id,
+        # name, version, input_model, output_model) with just "test" as its value
+        # is likely a placeholder in production contracts. Handler names like
+        # "test_user_handler" will NOT match because this is exact matching, not
+        # substring matching.
         "test",
         "xxx",
         "???",

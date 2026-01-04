@@ -119,13 +119,26 @@ class ExpandedContractValidator:  # naming-ok: validator class, not protocol
         ...         print(f"{issue.severity}: {issue.message}")
 
     Thread Safety:
-        This class is stateless and safe for concurrent use from multiple threads.
+        This class is safe for concurrent use from multiple threads.
+        Instance configuration is set at construction time and read-only thereafter.
 
     See Also:
         - ModelHandlerContract: The contract model being validated
         - ContractPatchValidator: Phase 1 validation
         - EnumContractValidationErrorCode: Error codes used in this validator
     """
+
+    def __init__(self, *, emit_event_output_info: bool = True) -> None:
+        """Initialize the validator.
+
+        Args:
+            emit_event_output_info: Whether to emit INFO messages about
+                event outputs. Defaults to True. Set to False to suppress
+                informational messages about event outputs (e.g., when
+                event consumers are validated elsewhere or in batch processing
+                where these messages would be noise).
+        """
+        self._emit_event_output_info = emit_event_output_info
 
     def validate(self, contract: ModelHandlerContract) -> ModelValidationResult[None]:
         """Validate expanded contract for runtime correctness.
@@ -464,7 +477,7 @@ class ExpandedContractValidator:  # naming-ok: validator class, not protocol
         event_outputs = [
             o for o in contract.capability_outputs if o.startswith("event.")
         ]
-        if event_outputs:
+        if event_outputs and self._emit_event_output_info:
             logger.debug(
                 f"Found {len(event_outputs)} event outputs - cannot verify consumers without registry"
             )
@@ -513,7 +526,7 @@ class ExpandedContractValidator:  # naming-ok: validator class, not protocol
             return
 
         # Check for duplicate aliases
-        aliases: list[str] = []
+        duplicate_aliases: list[str] = []
         seen_aliases: set[str] = set()
 
         for dep in contract.capability_inputs:
@@ -529,12 +542,12 @@ class ExpandedContractValidator:  # naming-ok: validator class, not protocol
 
             # Track aliases for duplicate detection
             if dep.alias in seen_aliases:
-                aliases.append(dep.alias)
+                duplicate_aliases.append(dep.alias)
             seen_aliases.add(dep.alias)
 
         # Report duplicate aliases (should be caught by model, but verify)
-        if aliases:
-            duplicates = sorted(set(aliases))
+        if duplicate_aliases:
+            duplicates = sorted(set(duplicate_aliases))
             logger.debug(f"Duplicate capability input aliases: {duplicates}")
             result.add_error(
                 f"Duplicate capability input aliases found: {duplicates}. "

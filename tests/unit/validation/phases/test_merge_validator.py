@@ -11,12 +11,15 @@ Tests all validation checks performed by MergeValidator including:
 - Capability consistency
 - Valid merge passes validation
 - Multiple errors aggregation
+- Property-based tests for placeholder detection edge cases
 
 Related:
     - OMN-1128: Contract Validation Pipeline
 """
 
 import pytest
+from hypothesis import given, settings
+from hypothesis import strategies as st
 from pydantic import ValidationError
 
 from omnibase_core.enums.enum_contract_validation_error_code import (
@@ -33,7 +36,10 @@ from omnibase_core.models.contracts.model_handler_spec import ModelHandlerSpec
 from omnibase_core.models.contracts.model_profile_reference import ModelProfileReference
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.models.runtime.model_handler_behavior import ModelHandlerBehavior
-from omnibase_core.validation.phases.merge_validator import MergeValidator
+from omnibase_core.validation.phases.merge_validator import (
+    MergeValidator,
+    _is_placeholder_value,
+)
 
 
 @pytest.mark.unit
@@ -638,6 +644,259 @@ class TestMergeValidatorEdgeCases(TestMergeValidatorFixtures):
 
         result = validator.validate(valid_base, valid_patch, merged)
         assert result.is_valid is True
+
+
+@pytest.mark.unit
+class TestPlaceholderDetectionHypothesis:
+    """Property-based tests for _is_placeholder_value using hypothesis.
+
+    These tests verify edge cases and invariants of placeholder detection
+    that would be difficult to cover with example-based tests alone.
+    """
+
+    @given(st.text(min_size=0, alphabet=st.characters(blacklist_categories=["Cs"])))
+    @settings(max_examples=100)
+    def test_placeholder_detection_no_crash(self, text: str) -> None:
+        """Property test: _is_placeholder_value never crashes on any input.
+
+        Tests that the function handles arbitrary Unicode strings without
+        raising exceptions. Uses blacklist_categories=['Cs'] to exclude
+        surrogate characters which are invalid in Python strings.
+        """
+        result = _is_placeholder_value(text)
+        assert isinstance(result, bool)
+
+    @given(st.just(""))
+    def test_empty_string_is_placeholder(self, text: str) -> None:
+        """Property test: empty strings are always placeholders."""
+        assert _is_placeholder_value(text) is True
+
+    @given(st.text(alphabet=" \t\n\r\f\v", min_size=1, max_size=20))
+    @settings(max_examples=50)
+    def test_whitespace_only_is_placeholder(self, text: str) -> None:
+        """Property test: whitespace-only strings are always placeholders."""
+        assert _is_placeholder_value(text) is True
+
+    @given(
+        st.sampled_from(
+            [
+                "todo",
+                "TODO",
+                "Todo",
+                "tbd",
+                "TBD",
+                "fixme",
+                "FIXME",
+                "placeholder",
+                "PLACEHOLDER",
+                "replace_me",
+                "REPLACE_ME",
+                "change_me",
+                "CHANGE_ME",
+                "undefined",
+                "UNDEFINED",
+                "default",
+                "DEFAULT",
+                "example",
+                "EXAMPLE",
+                "sample",
+                "SAMPLE",
+                "test",
+                "TEST",
+                "xxx",
+                "XXX",
+                "???",
+                "...",
+            ]
+        )
+    )
+    def test_exact_patterns_are_placeholders(self, text: str) -> None:
+        """Property test: exact pattern matches are always placeholders.
+
+        Verifies that all known placeholder patterns are detected regardless
+        of case (for case-insensitive patterns).
+        """
+        assert _is_placeholder_value(text) is True
+
+    @given(
+        st.sampled_from(
+            [
+                "  todo  ",
+                "\tTODO\n",
+                " placeholder ",
+                "\n\ntest\n\n",
+                "  ???  ",
+            ]
+        )
+    )
+    def test_exact_patterns_with_whitespace_padding(self, text: str) -> None:
+        """Property test: exact patterns with whitespace padding are placeholders.
+
+        Verifies that the function correctly strips whitespace before matching.
+        """
+        assert _is_placeholder_value(text) is True
+
+    @given(
+        st.text(
+            alphabet=st.characters(
+                whitelist_categories=["Ll", "Lu", "Nd"], whitelist_characters="_"
+            ),
+            min_size=5,
+            max_size=50,
+        )
+    )
+    @settings(max_examples=100)
+    def test_normal_identifiers_not_placeholders(self, text: str) -> None:
+        """Property test: normal alphanumeric identifiers are not placeholders.
+
+        Generates valid identifier-like strings and verifies they're not
+        falsely detected as placeholders. Uses a prefix/suffix to avoid
+        accidentally generating exact matches like "test" or "default".
+        """
+        # Add a prefix to avoid matching exact patterns like "todo" or "test"
+        identifier = f"handler_{text}_service"
+        result = _is_placeholder_value(identifier)
+        assert result is False, f"'{identifier}' incorrectly detected as placeholder"
+
+    @given(
+        st.text(
+            alphabet=st.characters(
+                whitelist_categories=["Ll", "Lu", "Nd"], whitelist_characters="_"
+            ),
+            min_size=1,
+            max_size=30,
+        )
+    )
+    @settings(max_examples=100)
+    def test_valid_handler_names_not_placeholders(self, suffix: str) -> None:
+        """Property test: realistic handler names are never placeholders.
+
+        Uses common handler naming patterns to verify no false positives.
+        """
+        # Common handler naming patterns
+        handler_names = [
+            f"compute_{suffix}",
+            f"effect_{suffix}_handler",
+            f"NodeTest{suffix}Compute",
+            f"process_{suffix}_event",
+        ]
+        for name in handler_names:
+            result = _is_placeholder_value(name)
+            assert result is False, f"'{name}' incorrectly detected as placeholder"
+
+    @given(st.sampled_from(["${VAR}", "${SERVICE_NAME}", "${DB_HOST}"]))
+    def test_template_var_placeholders_detected(self, text: str) -> None:
+        """Property test: ${VAR} style templates are detected as placeholders."""
+        assert _is_placeholder_value(text) is True
+
+    @given(st.sampled_from(["{{name}}", "{{handler_name}}", "{{config.value}}"]))
+    def test_jinja_style_placeholders_detected(self, text: str) -> None:
+        """Property test: {{var}} Jinja-style templates are detected as placeholders."""
+        assert _is_placeholder_value(text) is True
+
+    @given(st.sampled_from(["<PLACEHOLDER>", "<NAME>", "<CONFIG_VALUE>"]))
+    def test_angle_bracket_placeholders_detected(self, text: str) -> None:
+        """Property test: <PLACEHOLDER> style markers are detected as placeholders."""
+        assert _is_placeholder_value(text) is True
+
+    @given(
+        st.sampled_from(
+            ["TODO: implement this", "TODO: add description", "TODO: fix later"]
+        )
+    )
+    def test_todo_prefix_placeholders_detected(self, text: str) -> None:
+        """Property test: 'TODO:' prefixed strings are detected as placeholders."""
+        assert _is_placeholder_value(text) is True
+
+    @given(
+        st.text(
+            alphabet=st.characters(
+                whitelist_categories=["Lu", "Ll", "Lo", "Nd"],
+                whitelist_characters="_-.",
+            ),
+            min_size=10,
+            max_size=100,
+        )
+    )
+    @settings(max_examples=100)
+    def test_long_strings_not_mistakenly_placeholders(self, text: str) -> None:
+        """Property test: long valid strings are not mistakenly detected.
+
+        Verifies that longer strings containing placeholder-like substrings
+        are not falsely detected when wrapped in valid identifiers.
+        """
+        # Wrap in a valid model path pattern
+        model_path = f"omnibase_core.models.{text}.Model"
+        result = _is_placeholder_value(model_path)
+        # Should only be True if it contains actual template patterns
+        if "${" not in model_path and "{{" not in model_path and "<" not in model_path:
+            # Check it's not an exact match after normalization
+            normalized = model_path.strip().lower()
+            exact_patterns = frozenset(
+                {
+                    "todo",
+                    "tbd",
+                    "fixme",
+                    "placeholder",
+                    "replace_me",
+                    "change_me",
+                    "undefined",
+                    "default",
+                    "example",
+                    "sample",
+                    "test",
+                    "xxx",
+                    "???",
+                    "...",
+                }
+            )
+            if normalized not in exact_patterns and not normalized.startswith("todo:"):
+                assert result is False, (
+                    f"'{model_path}' incorrectly detected as placeholder"
+                )
+
+    @given(
+        st.text(
+            alphabet=st.characters(
+                whitelist_categories=["L", "N", "P", "S"],
+                blacklist_categories=["Cs"],
+                blacklist_characters="${}|<>",
+            ),
+            min_size=20,
+            max_size=100,
+        )
+    )
+    @settings(max_examples=100)
+    def test_unicode_strings_without_template_markers(self, text: str) -> None:
+        """Property test: Unicode strings without template markers handled correctly.
+
+        Tests that various Unicode characters (letters, numbers, punctuation,
+        symbols) don't cause crashes and are correctly classified.
+        """
+        # Wrap to avoid exact matches
+        wrapped = f"prefix_{text}_suffix"
+        result = _is_placeholder_value(wrapped)
+        # Result should be bool (we're mostly testing no crash)
+        assert isinstance(result, bool)
+
+    @given(st.sampled_from(["testHandler", "test_handler", "mytest", "testing123"]))
+    def test_strings_containing_test_not_placeholders(self, text: str) -> None:
+        """Property test: strings containing 'test' as substring are not placeholders.
+
+        Verifies that only exact match of 'test' triggers placeholder detection,
+        not substrings like 'testing' or 'test_handler'.
+        """
+        result = _is_placeholder_value(text)
+        assert result is False, f"'{text}' incorrectly detected as placeholder"
+
+    @given(st.sampled_from(["default_value", "my_default", "defaultHandler"]))
+    def test_strings_containing_default_not_placeholders(self, text: str) -> None:
+        """Property test: strings containing 'default' as substring are not placeholders.
+
+        Verifies that only exact match of 'default' triggers placeholder detection.
+        """
+        result = _is_placeholder_value(text)
+        assert result is False, f"'{text}' incorrectly detected as placeholder"
 
 
 if __name__ == "__main__":

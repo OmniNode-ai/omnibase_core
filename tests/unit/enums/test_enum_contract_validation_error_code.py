@@ -250,7 +250,8 @@ class TestEnumContractValidationErrorCodeBehavior:
     def test_enum_iteration(self) -> None:
         """Test that enum can be iterated over."""
         members = list(EnumContractValidationErrorCode)
-        assert len(members) > 0
+        # 6 merge codes + 9 expanded codes = 15 total
+        assert len(members) == 15, f"Expected 15 enum members, got {len(members)}"
         assert all(isinstance(m, EnumContractValidationErrorCode) for m in members)
 
     def test_invalid_enum_value_raises_error(self) -> None:

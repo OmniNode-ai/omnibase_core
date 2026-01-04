@@ -67,6 +67,8 @@ class ModelExpandedContractResult(BaseModel):
         ...         print(f"  - {error}")
     """
 
+    # frozen=False: This result is built incrementally during pipeline execution.
+    # Fields like validation_results and errors are populated as phases complete.
     model_config = ConfigDict(frozen=False, extra="forbid", from_attributes=True)
 
     success: bool = Field(
