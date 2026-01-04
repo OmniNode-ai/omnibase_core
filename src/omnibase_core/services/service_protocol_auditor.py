@@ -12,7 +12,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from omnibase_core.errors.exceptions import (
+from omnibase_core.errors.exception_base import (
     ExceptionConfigurationError,
     ExceptionInputValidationError,
 )

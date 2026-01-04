@@ -29,7 +29,7 @@ from pathlib import Path
 
 # Import models and enums
 from omnibase_core.enums.enum_import_status import EnumImportStatus
-from omnibase_core.errors.exceptions import (
+from omnibase_core.errors.exception_base import (
     ExceptionConfigurationError,
     ExceptionInputValidationError,
     ExceptionValidationFrameworkError,

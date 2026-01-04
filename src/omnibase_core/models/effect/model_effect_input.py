@@ -70,7 +70,7 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, Field, model_validator
 
 from omnibase_core.constants import TIMEOUT_DEFAULT_MS
-from omnibase_core.decorators.allow_dict_any import allow_dict_any
+from omnibase_core.decorators.decorator_allow_dict_any import allow_dict_any
 from omnibase_core.enums.enum_effect_types import EnumEffectType
 from omnibase_core.models.context import ModelEffectInputData
 from omnibase_core.models.effect.model_effect_metadata import ModelEffectMetadata

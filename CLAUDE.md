@@ -396,7 +396,7 @@ raise ModelOnexError(
 #### Use @standard_error_handling decorator:
 
 ```python
-from omnibase_core.decorators.error_handling import standard_error_handling
+from omnibase_core.decorators.decorator_error_handling import standard_error_handling
 
 @standard_error_handling  # Eliminates 6+ lines of try/catch boilerplate
 async def my_operation(self):

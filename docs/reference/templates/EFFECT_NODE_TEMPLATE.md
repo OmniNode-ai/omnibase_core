@@ -92,7 +92,7 @@ from omnibase_core.enums.enum_effect_types import (
     EnumTransactionState,
     EnumCircuitBreakerState,
 )
-from omnibase_core.decorators.error_handling import standard_error_handling
+from omnibase_core.decorators.decorator_error_handling import standard_error_handling
 from omnibase_core.utils.error_sanitizer import ErrorSanitizer
 
 from .config import {DomainCamelCase}{MicroserviceCamelCase}EffectConfig

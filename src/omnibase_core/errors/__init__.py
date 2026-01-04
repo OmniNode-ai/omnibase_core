@@ -4,29 +4,29 @@ from typing import TYPE_CHECKING, Any
 # These symbols are re-exported via __all__ and resolved at runtime
 # through __getattr__ to avoid circular import dependencies.
 if TYPE_CHECKING:
-    from omnibase_core.errors.declarative_errors import (
+    from omnibase_core.errors.error_callable_not_found import CallableNotFoundError
+    from omnibase_core.errors.error_declarative import (
         AdapterBindingError,
         NodeExecutionError,
         PurityViolationError,
         UnsupportedCapabilityError,
     )
-    from omnibase_core.errors.error_callable_not_found import CallableNotFoundError
     from omnibase_core.errors.error_dependency_cycle import DependencyCycleError
     from omnibase_core.errors.error_duplicate_hook import DuplicateHookError
     from omnibase_core.errors.error_hook_registry_frozen import HookRegistryFrozenError
     from omnibase_core.errors.error_hook_timeout import HookTimeoutError
     from omnibase_core.errors.error_hook_type_mismatch import HookTypeMismatchError
     from omnibase_core.errors.error_pipeline import PipelineError
-    from omnibase_core.errors.error_unknown_dependency import UnknownDependencyError
-    from omnibase_core.errors.exception_compute_pipeline_error import (
-        ComputePipelineError,
-    )
-    from omnibase_core.errors.runtime_errors import (
+    from omnibase_core.errors.error_runtime import (
         ContractValidationError,
         EventBusError,
         HandlerExecutionError,
         InvalidOperationError,
         RuntimeHostError,
+    )
+    from omnibase_core.errors.error_unknown_dependency import UnknownDependencyError
+    from omnibase_core.errors.exception_compute_pipeline_error import (
+        ComputePipelineError,
     )
     from omnibase_core.models.common.model_onex_warning import ModelOnexWarning
     from omnibase_core.models.common.model_registry_error import ModelRegistryError
@@ -123,8 +123,8 @@ __all__ = [
 # - ModelOnexError, OnexError (alias) - from models.errors
 # - ModelOnexWarning, ModelRegistryError - from models.common
 # - ModelCLIAdapter - from models.core
-# - RuntimeHostError, HandlerExecutionError, etc. - from errors.runtime_errors
-# - AdapterBindingError, PurityViolationError, etc. - from errors.declarative_errors
+# - RuntimeHostError, HandlerExecutionError, etc. - from errors.error_runtime
+# - AdapterBindingError, PurityViolationError, etc. - from errors.error_declarative
 # - PipelineError, CallableNotFoundError, etc. - from errors.error_* modules
 # =============================================================================
 def __getattr__(name: str) -> Any:
@@ -177,9 +177,9 @@ def __getattr__(name: str) -> Any:
         "ContractValidationError",
     }
     if name in _runtime_error_classes:
-        from omnibase_core.errors import runtime_errors
+        from omnibase_core.errors import error_runtime
 
-        return getattr(runtime_errors, name)
+        return getattr(error_runtime, name)
 
     # Compute pipeline errors
     if name == "ComputePipelineError":
@@ -204,9 +204,9 @@ def __getattr__(name: str) -> Any:
         "UnsupportedCapabilityError",
     }
     if name in _declarative_error_classes:
-        from omnibase_core.errors import declarative_errors
+        from omnibase_core.errors import error_declarative
 
-        return getattr(declarative_errors, name)
+        return getattr(error_declarative, name)
 
     # -------------------------------------------------------------------------
     # Pipeline errors - consolidated import from individual modules

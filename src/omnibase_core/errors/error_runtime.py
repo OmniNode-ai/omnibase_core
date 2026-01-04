@@ -25,7 +25,7 @@ Design Principles:
 - No circular dependencies
 
 Usage:
-    from omnibase_core.errors.runtime_errors import (
+    from omnibase_core.errors.error_runtime import (
         RuntimeHostError,
         HandlerExecutionError,
         EventBusError,

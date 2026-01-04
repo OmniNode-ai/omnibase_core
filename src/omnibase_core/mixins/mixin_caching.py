@@ -64,7 +64,7 @@ import logging
 import time
 from typing import TYPE_CHECKING, Any
 
-from omnibase_core.decorators.allow_dict_any import allow_dict_any
+from omnibase_core.decorators.decorator_allow_dict_any import allow_dict_any
 from omnibase_core.enums import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.typed_dict_mixin_types import TypedDictCacheStats

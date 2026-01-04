@@ -1311,7 +1311,7 @@ Create centralized validation layer that validates contracts at node load time.
 **Description**:
 Define canonical error classes for the validation and adapter logic. Makes debugging tolerable and stack traces meaningful.
 
-**Location**: `src/omnibase_core/errors/declarative_errors.py`
+**Location**: `src/omnibase_core/errors/error_declarative.py`
 
 **Acceptance Criteria**:
 - [ ] `ContractValidationError` - invalid contract structure
