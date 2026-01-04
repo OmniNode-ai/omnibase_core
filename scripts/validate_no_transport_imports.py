@@ -95,6 +95,22 @@ class Violation:
         return f"{self.file_path}:{self.line_number}: Banned transport import: {self.module_name}"
 
 
+@dataclass(frozen=True)
+class FileProcessingError:
+    """Represents an error encountered while processing a file.
+
+    These are non-fatal warnings that indicate a file could not be fully processed,
+    but should not fail the overall validation run (errors do not cause exit code 1).
+    """
+
+    file_path: Path
+    error_type: str
+    error_message: str
+
+    def __str__(self) -> str:
+        return f"{self.file_path}: [{self.error_type}] {self.error_message}"
+
+
 class TransportImportChecker(ast.NodeVisitor):
     """AST visitor that detects banned transport imports outside TYPE_CHECKING blocks.
 
@@ -102,6 +118,11 @@ class TransportImportChecker(ast.NodeVisitor):
     1. Imports of TYPE_CHECKING (direct or aliased like `import typing as t`)
     2. Entry/exit from TYPE_CHECKING guarded blocks
     3. All import statements, flagging those importing banned modules at runtime
+
+    Thread Safety:
+        This class is NOT thread-safe. Each thread should create its own instance.
+        The instance maintains mutable state (violations list, type_checking context)
+        that is not synchronized.
     """
 
     def __init__(self, source_code: str) -> None:
@@ -242,28 +263,70 @@ def iter_python_files(root_dir: Path, excludes: set[Path]) -> Iterator[Path]:
             yield path
 
 
-def check_file(file_path: Path) -> list[Violation]:
+def check_file(
+    file_path: Path,
+) -> tuple[list[Violation], list[FileProcessingError]]:
     """Check a single Python file for banned transport imports.
 
-    Returns a list of violations found in the file.
+    Returns a tuple of (violations, errors) found in the file.
+    Errors are non-fatal warnings that do not affect the exit code.
     """
+    violations: list[Violation] = []
+    errors: list[FileProcessingError] = []
+
+    # Read file content with comprehensive error handling
     try:
         source_code = file_path.read_text(encoding="utf-8")
-    except (OSError, UnicodeDecodeError) as e:
-        print(f"Warning: Could not read {file_path}: {e}", file=sys.stderr)
-        return []
+    except PermissionError as e:
+        errors.append(
+            FileProcessingError(
+                file_path=file_path,
+                error_type="PermissionError",
+                error_message=f"Cannot read file: {e}",
+            )
+        )
+        return violations, errors
+    except UnicodeDecodeError as e:
+        # Likely a binary file or non-UTF-8 encoded file
+        errors.append(
+            FileProcessingError(
+                file_path=file_path,
+                error_type="UnicodeDecodeError",
+                error_message=f"File is not valid UTF-8 (possibly binary): {e}",
+            )
+        )
+        return violations, errors
+    except OSError as e:
+        errors.append(
+            FileProcessingError(
+                file_path=file_path,
+                error_type="OSError",
+                error_message=f"Could not read file: {e}",
+            )
+        )
+        return violations, errors
 
+    # Handle empty files gracefully (valid Python, no imports to check)
+    if not source_code.strip():
+        return violations, errors
+
+    # Parse the AST with error handling
     try:
         tree = ast.parse(source_code, filename=str(file_path))
     except SyntaxError as e:
-        print(f"Warning: Could not parse {file_path}: {e}", file=sys.stderr)
-        return []
+        errors.append(
+            FileProcessingError(
+                file_path=file_path,
+                error_type="SyntaxError",
+                error_message=f"Invalid Python syntax: {e.msg} (line {e.lineno})",
+            )
+        )
+        return violations, errors
 
     checker = TransportImportChecker(source_code)
     checker.visit(tree)
 
     # Update file paths in violations
-    violations = []
     for v in checker.violations:
         violations.append(
             Violation(
@@ -274,7 +337,7 @@ def check_file(file_path: Path) -> list[Violation]:
             )
         )
 
-    return violations
+    return violations, errors
 
 
 def main() -> int:
@@ -329,18 +392,28 @@ TYPE_CHECKING guarded imports are allowed per ADR-005.
         print(f"Error: Source path is not a directory: {src_dir}", file=sys.stderr)
         return 1
 
-    # Collect all violations
+    # Collect all violations and errors
     excludes = set(args.excludes)
     all_violations: list[Violation] = []
+    all_errors: list[FileProcessingError] = []
     file_count = 0
 
     print(f"Checking for transport/I/O library imports in {src_dir}...")
 
     for file_path in iter_python_files(src_dir, excludes):
         file_count += 1
-        violations = check_file(file_path)
+        violations, errors = check_file(file_path)
         all_violations.extend(violations)
+        all_errors.extend(errors)
 
+    # Report errors to stderr (these are warnings, not failures)
+    if all_errors:
+        print("\nWarnings (file processing errors):", file=sys.stderr)
+        for err in all_errors:
+            print(f"  {err}", file=sys.stderr)
+        print(file=sys.stderr)
+
+    # Report violations to stdout
     if all_violations:
         print("\nERROR: Found transport/I/O library imports in omnibase_core!")
         print()
@@ -358,10 +431,23 @@ TYPE_CHECKING guarded imports are allowed per ADR-005.
         print("  2. Implement the protocol in an infrastructure package")
         print("  3. Use TYPE_CHECKING guards for type-only imports (allowed per ADR-005)")
         print()
-        print(f"Total: {len(all_violations)} violation(s) in {file_count} files scanned")
+        print(
+            f"Total: {len(all_violations)} violation(s), "
+            f"{len(all_errors)} error(s) in {file_count} files scanned"
+        )
         return 1
 
-    print(f"No transport/I/O library imports found in omnibase_core ({file_count} files scanned)")
+    # Success case - still report error count if any
+    if all_errors:
+        print(
+            f"No transport/I/O library imports found in omnibase_core "
+            f"({file_count} files scanned, {len(all_errors)} file(s) could not be processed)"
+        )
+    else:
+        print(
+            f"No transport/I/O library imports found in omnibase_core "
+            f"({file_count} files scanned)"
+        )
     return 0
 
 
