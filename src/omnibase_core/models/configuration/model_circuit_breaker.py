@@ -7,6 +7,7 @@ cascade failures in load balancing systems.
 
 import threading
 from datetime import UTC, datetime, timedelta
+from typing import Any, Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
@@ -106,6 +107,83 @@ class ModelCircuitBreaker(BaseModel):
         """
         _ensure_models_rebuilt(cls)
         return super().__new__(cls)
+
+    @classmethod
+    def model_validate(
+        cls,
+        obj: Any,
+        *,
+        strict: bool | None = None,
+        extra: Literal["allow", "ignore", "forbid"] | None = None,
+        from_attributes: bool | None = None,
+        context: Any | None = None,
+        by_alias: bool | None = None,
+        by_name: bool | None = None,
+    ) -> "ModelCircuitBreaker":
+        """Validate data and create a model instance.
+
+        This override ensures forward references are resolved before validation,
+        enabling lazy initialization while supporting model_validate() calls.
+
+        Args:
+            obj: The object to validate.
+            strict: Whether to enforce strict validation.
+            extra: How to handle extra fields.
+            from_attributes: Whether to extract data from object attributes.
+            context: Additional context to pass to validators.
+            by_alias: Whether to populate by alias.
+            by_name: Whether to populate by field name.
+
+        Returns:
+            A validated ModelCircuitBreaker instance.
+        """
+        _ensure_models_rebuilt(cls)
+        return super().model_validate(
+            obj,
+            strict=strict,
+            extra=extra,
+            from_attributes=from_attributes,
+            context=context,
+            by_alias=by_alias,
+            by_name=by_name,
+        )
+
+    @classmethod
+    def model_validate_json(
+        cls,
+        json_data: str | bytes | bytearray,
+        *,
+        strict: bool | None = None,
+        extra: Literal["allow", "ignore", "forbid"] | None = None,
+        context: Any | None = None,
+        by_alias: bool | None = None,
+        by_name: bool | None = None,
+    ) -> "ModelCircuitBreaker":
+        """Validate JSON data and create a model instance.
+
+        This override ensures forward references are resolved before validation,
+        enabling lazy initialization while supporting model_validate_json() calls.
+
+        Args:
+            json_data: The JSON data to validate.
+            strict: Whether to enforce strict validation.
+            extra: How to handle extra fields.
+            context: Additional context to pass to validators.
+            by_alias: Whether to populate by alias.
+            by_name: Whether to populate by field name.
+
+        Returns:
+            A validated ModelCircuitBreaker instance.
+        """
+        _ensure_models_rebuilt(cls)
+        return super().model_validate_json(
+            json_data,
+            strict=strict,
+            extra=extra,
+            context=context,
+            by_alias=by_alias,
+            by_name=by_name,
+        )
 
     # Private lock for thread-safe operations
     _lock: threading.Lock = PrivateAttr(default_factory=threading.Lock)
