@@ -1618,6 +1618,217 @@ class TestModelExecutionCorpusVersioning:
 
 
 @pytest.mark.unit
+class TestModelExecutionCorpusSizeValidation:
+    """Test corpus size validation methods."""
+
+    def test_validate_size_under_limit_returns_none(
+        self, create_corpus_with_executions
+    ) -> None:
+        """validate_size returns None when corpus is under limit."""
+        corpus = create_corpus_with_executions(count=30)
+
+        result = corpus.validate_size()
+
+        assert result is None
+
+    def test_validate_size_at_limit_returns_none(self, create_test_manifest) -> None:
+        """validate_size returns None when corpus is exactly at limit (edge case)."""
+        from omnibase_core.models.replay.model_execution_corpus import (
+            ModelExecutionCorpus,
+        )
+
+        # Create corpus with exactly RECOMMENDED_MAX_EXECUTIONS
+        manifests = tuple(
+            create_test_manifest(node_id=f"node-{i}")
+            for i in range(ModelExecutionCorpus.RECOMMENDED_MAX_EXECUTIONS)
+        )
+
+        corpus = ModelExecutionCorpus(
+            name="exact-limit-corpus",
+            version="1.0.0",
+            source="tests",
+            executions=manifests,
+        )
+
+        result = corpus.validate_size()
+
+        assert result is None
+        assert corpus.execution_count == 50
+
+    def test_validate_size_over_limit_returns_warning(
+        self, create_test_manifest
+    ) -> None:
+        """validate_size returns warning message when corpus exceeds limit."""
+        from omnibase_core.models.replay.model_execution_corpus import (
+            ModelExecutionCorpus,
+        )
+
+        # Create corpus over the default limit
+        manifests = tuple(create_test_manifest(node_id=f"node-{i}") for i in range(60))
+
+        corpus = ModelExecutionCorpus(
+            name="oversized-corpus",
+            version="1.0.0",
+            source="tests",
+            executions=manifests,
+        )
+
+        result = corpus.validate_size()
+
+        assert result is not None
+        assert "oversized-corpus" in result
+        assert "60" in result
+        assert "50" in result
+        assert "exceeding" in result.lower()
+
+    def test_validate_size_custom_limit_under(
+        self, create_corpus_with_executions
+    ) -> None:
+        """validate_size with custom limit returns None when under."""
+        corpus = create_corpus_with_executions(count=30)
+
+        # Custom limit of 40
+        result = corpus.validate_size(limit=40)
+
+        assert result is None
+
+    def test_validate_size_custom_limit_over(
+        self, create_corpus_with_executions
+    ) -> None:
+        """validate_size with custom limit returns warning when over."""
+        corpus = create_corpus_with_executions(count=30)
+
+        # Custom limit of 20 (corpus has 30)
+        result = corpus.validate_size(limit=20)
+
+        assert result is not None
+        assert "30" in result
+        assert "20" in result
+
+    def test_validate_size_empty_corpus(self) -> None:
+        """validate_size returns None for empty corpus."""
+        from omnibase_core.models.replay.model_execution_corpus import (
+            ModelExecutionCorpus,
+        )
+
+        corpus = ModelExecutionCorpus(
+            name="empty-corpus",
+            version="1.0.0",
+            source="tests",
+        )
+
+        result = corpus.validate_size()
+
+        assert result is None
+
+    def test_validate_size_reference_mode_counts_refs(self) -> None:
+        """validate_size counts execution_ids in reference mode."""
+        from omnibase_core.models.replay.model_execution_corpus import (
+            ModelExecutionCorpus,
+        )
+
+        # Create reference-mode corpus with 60 refs (over limit)
+        ref_ids = tuple(uuid4() for _ in range(60))
+
+        corpus = ModelExecutionCorpus(
+            name="reference-corpus",
+            version="1.0.0",
+            source="tests",
+            execution_ids=ref_ids,
+            is_reference=True,
+        )
+
+        result = corpus.validate_size()
+
+        assert result is not None
+        assert "60" in result
+
+    def test_warn_if_large_triggers_warning(self, create_test_manifest) -> None:
+        """warn_if_large triggers UserWarning when corpus is over limit."""
+        from omnibase_core.models.replay.model_execution_corpus import (
+            ModelExecutionCorpus,
+        )
+
+        manifests = tuple(create_test_manifest(node_id=f"node-{i}") for i in range(60))
+
+        corpus = ModelExecutionCorpus(
+            name="oversized-corpus",
+            version="1.0.0",
+            source="tests",
+            executions=manifests,
+        )
+
+        with pytest.warns(UserWarning, match=r"oversized-corpus.*60.*exceeding.*50"):
+            corpus.warn_if_large()
+
+    def test_warn_if_large_no_warning_under_limit(
+        self, create_corpus_with_executions
+    ) -> None:
+        """warn_if_large does not trigger warning when under limit."""
+        import warnings as warn_module
+
+        corpus = create_corpus_with_executions(count=30)
+
+        # This should NOT raise any warnings
+        with warn_module.catch_warnings(record=True) as w:
+            warn_module.simplefilter("always")
+            corpus.warn_if_large()
+            # Filter for UserWarning only
+            user_warnings = [x for x in w if issubclass(x.category, UserWarning)]
+            assert len(user_warnings) == 0
+
+    def test_warn_if_large_returns_self_for_chaining(
+        self, create_corpus_with_executions
+    ) -> None:
+        """warn_if_large returns self for method chaining."""
+        corpus = create_corpus_with_executions(count=30)
+
+        result = corpus.warn_if_large()
+
+        assert result is corpus
+
+    def test_warn_if_large_returns_self_even_when_warning(
+        self, create_test_manifest
+    ) -> None:
+        """warn_if_large returns self for chaining even when warning is emitted."""
+        from omnibase_core.models.replay.model_execution_corpus import (
+            ModelExecutionCorpus,
+        )
+
+        manifests = tuple(create_test_manifest(node_id=f"node-{i}") for i in range(60))
+
+        corpus = ModelExecutionCorpus(
+            name="chained-corpus",
+            version="1.0.0",
+            source="tests",
+            executions=manifests,
+        )
+
+        with pytest.warns(UserWarning, match=r"exceeding recommended limit"):
+            result = corpus.warn_if_large()
+
+        assert result is corpus
+
+    def test_warn_if_large_custom_limit(self, create_corpus_with_executions) -> None:
+        """warn_if_large respects custom limit parameter."""
+        corpus = create_corpus_with_executions(count=30)
+
+        # Custom limit of 20 should trigger warning
+        with pytest.warns(UserWarning, match=r"30.*exceeding.*20"):
+            corpus.warn_if_large(limit=20)
+
+    def test_recommended_max_executions_constant_exists(self) -> None:
+        """RECOMMENDED_MAX_EXECUTIONS class constant exists and has correct value."""
+        from omnibase_core.models.replay.model_execution_corpus import (
+            ModelExecutionCorpus,
+        )
+
+        assert hasattr(ModelExecutionCorpus, "RECOMMENDED_MAX_EXECUTIONS")
+        assert ModelExecutionCorpus.RECOMMENDED_MAX_EXECUTIONS == 50
+        assert isinstance(ModelExecutionCorpus.RECOMMENDED_MAX_EXECUTIONS, int)
+
+
+@pytest.mark.unit
 class TestModelExecutionCorpusEdgeCases:
     """Test edge cases and boundary conditions."""
 
@@ -1864,3 +2075,657 @@ class TestModelExecutionCorpusStringRepresentation:
 
         assert "ModelExecutionCorpus" in repr_str
         assert "debug-corpus" in repr_str
+
+
+# =============================================================================
+# Test Classes - to_reference() Method
+# =============================================================================
+
+
+@pytest.mark.unit
+class TestModelExecutionCorpusToReference:
+    """Test to_reference() method for converting materialized corpus to reference mode."""
+
+    def test_to_reference_converts_materialized_corpus(
+        self, create_test_manifest
+    ) -> None:
+        """to_reference() converts materialized corpus to reference mode."""
+        from omnibase_core.models.replay.model_execution_corpus import (
+            ModelExecutionCorpus,
+        )
+
+        m1 = create_test_manifest(node_id="node-1")
+        m2 = create_test_manifest(node_id="node-2")
+        m3 = create_test_manifest(node_id="node-3")
+
+        corpus = ModelExecutionCorpus(
+            name="test-corpus",
+            version="1.0.0",
+            source="tests",
+            executions=(m1, m2, m3),
+        )
+
+        ref_corpus = corpus.to_reference()
+
+        assert ref_corpus.is_reference is True
+        assert ref_corpus.is_materialized is False
+        assert len(ref_corpus.executions) == 0
+        assert len(ref_corpus.execution_ids) == 3
+
+    def test_to_reference_extracts_manifest_ids_correctly(
+        self, create_test_manifest
+    ) -> None:
+        """to_reference() extracts correct manifest_id from each execution."""
+        from omnibase_core.models.replay.model_execution_corpus import (
+            ModelExecutionCorpus,
+        )
+
+        m1 = create_test_manifest(node_id="node-1")
+        m2 = create_test_manifest(node_id="node-2")
+
+        corpus = ModelExecutionCorpus(
+            name="test-corpus",
+            version="1.0.0",
+            source="tests",
+            executions=(m1, m2),
+        )
+
+        ref_corpus = corpus.to_reference()
+
+        # Verify the IDs match the original manifest IDs
+        assert ref_corpus.execution_ids[0] == m1.manifest_id
+        assert ref_corpus.execution_ids[1] == m2.manifest_id
+
+    def test_to_reference_preserves_metadata(self, create_test_manifest) -> None:
+        """to_reference() preserves all corpus metadata."""
+        from omnibase_core.models.replay.model_execution_corpus import (
+            ModelCorpusCaptureWindow,
+            ModelExecutionCorpus,
+        )
+
+        capture_window = ModelCorpusCaptureWindow(
+            start_time=datetime(2024, 1, 1, tzinfo=UTC),
+            end_time=datetime(2024, 1, 31, tzinfo=UTC),
+        )
+
+        corpus = ModelExecutionCorpus(
+            name="production-corpus",
+            version="2.1.0",
+            source="production",
+            description="Production requests from January",
+            tags=("regression", "api-v2"),
+            capture_window=capture_window,
+            executions=(create_test_manifest(node_id="node-1"),),
+        )
+
+        ref_corpus = corpus.to_reference()
+
+        # Verify all metadata is preserved
+        assert ref_corpus.name == corpus.name
+        assert ref_corpus.version == corpus.version
+        assert ref_corpus.source == corpus.source
+        assert ref_corpus.description == corpus.description
+        assert ref_corpus.tags == corpus.tags
+        assert ref_corpus.capture_window == corpus.capture_window
+        assert ref_corpus.corpus_id == corpus.corpus_id
+        assert ref_corpus.created_at == corpus.created_at
+
+    def test_to_reference_returns_new_instance(self, create_test_manifest) -> None:
+        """to_reference() returns a new corpus instance (immutable)."""
+        from omnibase_core.models.replay.model_execution_corpus import (
+            ModelExecutionCorpus,
+        )
+
+        corpus = ModelExecutionCorpus(
+            name="test-corpus",
+            version="1.0.0",
+            source="tests",
+            executions=(create_test_manifest(node_id="node-1"),),
+        )
+
+        ref_corpus = corpus.to_reference()
+
+        assert ref_corpus is not corpus
+        # Original corpus should be unchanged
+        assert len(corpus.executions) == 1
+        assert corpus.is_reference is False
+
+    def test_to_reference_on_already_reference_corpus_is_idempotent(self) -> None:
+        """to_reference() on an already-reference corpus returns a copy."""
+        from omnibase_core.models.replay.model_execution_corpus import (
+            ModelExecutionCorpus,
+        )
+
+        ref_corpus = ModelExecutionCorpus(
+            name="reference-corpus",
+            version="1.0.0",
+            source="tests",
+            execution_ids=(uuid4(), uuid4()),
+            is_reference=True,
+        )
+
+        result = ref_corpus.to_reference()
+
+        # Should still be in reference mode
+        assert result.is_reference is True
+        assert len(result.executions) == 0
+        # Should preserve existing execution_ids
+        assert len(result.execution_ids) == 2
+        assert result.execution_ids == ref_corpus.execution_ids
+        # Should be a new instance
+        assert result is not ref_corpus
+
+    def test_to_reference_on_empty_corpus(self) -> None:
+        """to_reference() on empty corpus returns empty reference corpus."""
+        from omnibase_core.models.replay.model_execution_corpus import (
+            ModelExecutionCorpus,
+        )
+
+        empty_corpus = ModelExecutionCorpus(
+            name="empty-corpus",
+            version="1.0.0",
+            source="tests",
+        )
+
+        ref_corpus = empty_corpus.to_reference()
+
+        assert ref_corpus.is_reference is True
+        assert len(ref_corpus.executions) == 0
+        assert len(ref_corpus.execution_ids) == 0
+        # Metadata preserved
+        assert ref_corpus.name == "empty-corpus"
+        assert ref_corpus.version == "1.0.0"
+
+    def test_to_reference_preserves_existing_execution_ids(
+        self, create_test_manifest
+    ) -> None:
+        """to_reference() preserves existing execution_ids and appends new ones."""
+        from omnibase_core.models.replay.model_execution_corpus import (
+            ModelExecutionCorpus,
+        )
+
+        # Create corpus with both executions and existing execution_ids (mixed mode)
+        existing_id = uuid4()
+        manifest = create_test_manifest(node_id="node-1")
+
+        corpus = ModelExecutionCorpus(
+            name="mixed-corpus",
+            version="1.0.0",
+            source="tests",
+            executions=(manifest,),
+            execution_ids=(existing_id,),
+            is_reference=False,
+        )
+
+        ref_corpus = corpus.to_reference()
+
+        # Should have both the existing ID and the extracted ID
+        assert len(ref_corpus.execution_ids) == 2
+        assert ref_corpus.execution_ids[0] == existing_id  # Existing preserved first
+        assert ref_corpus.execution_ids[1] == manifest.manifest_id  # New appended
+
+    def test_to_reference_with_large_corpus(self, create_test_manifest) -> None:
+        """to_reference() works correctly with large corpus (50+ executions)."""
+        from omnibase_core.models.replay.model_execution_corpus import (
+            ModelExecutionCorpus,
+        )
+
+        manifests = tuple(create_test_manifest(node_id=f"node-{i}") for i in range(50))
+        expected_ids = tuple(m.manifest_id for m in manifests)
+
+        corpus = ModelExecutionCorpus(
+            name="large-corpus",
+            version="1.0.0",
+            source="tests",
+            executions=manifests,
+        )
+
+        ref_corpus = corpus.to_reference()
+
+        assert ref_corpus.is_reference is True
+        assert len(ref_corpus.execution_ids) == 50
+        assert ref_corpus.execution_ids == expected_ids
+
+    def test_to_reference_execution_count_unchanged(self, create_test_manifest) -> None:
+        """to_reference() preserves execution_count (just in different mode)."""
+        from omnibase_core.models.replay.model_execution_corpus import (
+            ModelExecutionCorpus,
+        )
+
+        manifests = tuple(create_test_manifest(node_id=f"node-{i}") for i in range(5))
+
+        corpus = ModelExecutionCorpus(
+            name="test-corpus",
+            version="1.0.0",
+            source="tests",
+            executions=manifests,
+        )
+
+        ref_corpus = corpus.to_reference()
+
+        # Total count should be the same
+        assert corpus.execution_count == 5
+        assert ref_corpus.execution_count == 5
+
+    def test_to_reference_is_valid_for_replay(self, create_test_manifest) -> None:
+        """to_reference() result is still valid for replay."""
+        from omnibase_core.models.replay.model_execution_corpus import (
+            ModelExecutionCorpus,
+        )
+
+        corpus = ModelExecutionCorpus(
+            name="test-corpus",
+            version="1.0.0",
+            source="tests",
+            executions=(create_test_manifest(node_id="node-1"),),
+        )
+
+        ref_corpus = corpus.to_reference()
+
+        # Should still be valid for replay (has at least one execution ID)
+        assert ref_corpus.is_valid_for_replay is True
+        # Should pass validation
+        ref_corpus.validate_for_replay()  # Should not raise
+
+
+# =============================================================================
+# Test Classes - merge() Method
+# =============================================================================
+
+
+@pytest.mark.unit
+class TestModelExecutionCorpusMerge:
+    """Test merge() method for combining multiple corpora."""
+
+    def test_merge_two_materialized_corpora(self, create_test_manifest) -> None:
+        """Merging two materialized corpora combines their executions."""
+        from omnibase_core.models.replay.model_execution_corpus import (
+            ModelExecutionCorpus,
+        )
+
+        manifest1 = create_test_manifest(node_id="node-1")
+        manifest2 = create_test_manifest(node_id="node-2")
+
+        corpus_a = ModelExecutionCorpus(
+            name="corpus-a",
+            version="1.0.0",
+            source="production",
+            executions=(manifest1,),
+        )
+        corpus_b = ModelExecutionCorpus(
+            name="corpus-b",
+            version="2.0.0",
+            source="staging",
+            executions=(manifest2,),
+        )
+
+        merged = corpus_a.merge(corpus_b)
+
+        assert len(merged.executions) == 2
+        assert merged.executions[0].node_identity.node_id == "node-1"
+        assert merged.executions[1].node_identity.node_id == "node-2"
+        # Primary metadata preserved
+        assert merged.name == "corpus-a"
+        assert merged.version == "1.0.0"
+        assert merged.source == "production"
+
+    def test_merge_two_reference_corpora(self) -> None:
+        """Merging two reference corpora combines their execution_ids."""
+        from omnibase_core.models.replay.model_execution_corpus import (
+            ModelExecutionCorpus,
+        )
+
+        id1, id2, id3 = uuid4(), uuid4(), uuid4()
+
+        corpus_a = ModelExecutionCorpus(
+            name="corpus-a",
+            version="1.0.0",
+            source="tests",
+            execution_ids=(id1,),
+            is_reference=True,
+        )
+        corpus_b = ModelExecutionCorpus(
+            name="corpus-b",
+            version="1.0.0",
+            source="tests",
+            execution_ids=(id2, id3),
+            is_reference=True,
+        )
+
+        merged = corpus_a.merge(corpus_b)
+
+        assert len(merged.execution_ids) == 3
+        assert merged.execution_ids == (id1, id2, id3)
+        assert merged.is_reference is True
+        assert len(merged.executions) == 0
+
+    def test_merge_materialized_with_reference(self, create_test_manifest) -> None:
+        """Merging materialized with reference corpus produces mixed mode."""
+        from omnibase_core.models.replay.model_execution_corpus import (
+            ModelExecutionCorpus,
+        )
+
+        manifest = create_test_manifest(node_id="node-1")
+        ref_id = uuid4()
+
+        materialized = ModelExecutionCorpus(
+            name="materialized",
+            version="1.0.0",
+            source="production",
+            executions=(manifest,),
+        )
+        reference = ModelExecutionCorpus(
+            name="reference",
+            version="1.0.0",
+            source="tests",
+            execution_ids=(ref_id,),
+            is_reference=True,
+        )
+
+        merged = materialized.merge(reference)
+
+        assert len(merged.executions) == 1
+        assert len(merged.execution_ids) == 1
+        # Has executions, so it's materialized mode
+        assert merged.is_reference is False
+        assert merged.is_materialized is True
+
+    def test_merge_multiple_corpora_variadic(self, create_test_manifest) -> None:
+        """Merging multiple corpora via variadic args works correctly."""
+        from omnibase_core.models.replay.model_execution_corpus import (
+            ModelExecutionCorpus,
+        )
+
+        manifests = [create_test_manifest(node_id=f"node-{i}") for i in range(4)]
+
+        corpus_a = ModelExecutionCorpus(
+            name="corpus-a",
+            version="1.0.0",
+            source="tests",
+            executions=(manifests[0],),
+        )
+        corpus_b = ModelExecutionCorpus(
+            name="corpus-b",
+            version="1.0.0",
+            source="tests",
+            executions=(manifests[1],),
+        )
+        corpus_c = ModelExecutionCorpus(
+            name="corpus-c",
+            version="1.0.0",
+            source="tests",
+            executions=(manifests[2],),
+        )
+        corpus_d = ModelExecutionCorpus(
+            name="corpus-d",
+            version="1.0.0",
+            source="tests",
+            executions=(manifests[3],),
+        )
+
+        merged = corpus_a.merge(corpus_b, corpus_c, corpus_d)
+
+        assert len(merged.executions) == 4
+        for i, exec_manifest in enumerate(merged.executions):
+            assert exec_manifest.node_identity.node_id == f"node-{i}"
+
+    def test_merge_tags_deduplicated(self, create_test_manifest) -> None:
+        """Tags are deduplicated when merging corpora."""
+        from omnibase_core.models.replay.model_execution_corpus import (
+            ModelExecutionCorpus,
+        )
+
+        manifest1 = create_test_manifest(node_id="node-1")
+        manifest2 = create_test_manifest(node_id="node-2")
+
+        corpus_a = ModelExecutionCorpus(
+            name="corpus-a",
+            version="1.0.0",
+            source="tests",
+            executions=(manifest1,),
+            tags=("api", "beta", "v2"),
+        )
+        corpus_b = ModelExecutionCorpus(
+            name="corpus-b",
+            version="1.0.0",
+            source="tests",
+            executions=(manifest2,),
+            tags=("api", "production", "v2"),  # "api" and "v2" are duplicates
+        )
+
+        merged = corpus_a.merge(corpus_b)
+
+        # Should have unique tags in order: api, beta, v2, production
+        assert "api" in merged.tags
+        assert "beta" in merged.tags
+        assert "v2" in merged.tags
+        assert "production" in merged.tags
+        # Count each tag appears exactly once
+        assert merged.tags.count("api") == 1
+        assert merged.tags.count("v2") == 1
+        # Order preserved: corpus_a tags first, then new ones from corpus_b
+        assert merged.tags == ("api", "beta", "v2", "production")
+
+    def test_merge_with_empty_corpus(self, create_test_manifest) -> None:
+        """Merging with an empty corpus works correctly."""
+        from omnibase_core.models.replay.model_execution_corpus import (
+            ModelExecutionCorpus,
+        )
+
+        manifest = create_test_manifest(node_id="node-1")
+
+        corpus_a = ModelExecutionCorpus(
+            name="corpus-a",
+            version="1.0.0",
+            source="tests",
+            executions=(manifest,),
+            tags=("tag1",),
+        )
+        empty_corpus = ModelExecutionCorpus(
+            name="empty",
+            version="1.0.0",
+            source="tests",
+        )
+
+        merged = corpus_a.merge(empty_corpus)
+
+        assert len(merged.executions) == 1
+        assert merged.tags == ("tag1",)
+        assert merged.name == "corpus-a"
+
+    def test_merge_execution_ids_deduplicated(self) -> None:
+        """Duplicate execution_ids are deduplicated when merging."""
+        from omnibase_core.models.replay.model_execution_corpus import (
+            ModelExecutionCorpus,
+        )
+
+        shared_id = uuid4()
+        unique_id1 = uuid4()
+        unique_id2 = uuid4()
+
+        corpus_a = ModelExecutionCorpus(
+            name="corpus-a",
+            version="1.0.0",
+            source="tests",
+            execution_ids=(shared_id, unique_id1),
+            is_reference=True,
+        )
+        corpus_b = ModelExecutionCorpus(
+            name="corpus-b",
+            version="1.0.0",
+            source="tests",
+            execution_ids=(shared_id, unique_id2),  # shared_id is duplicate
+            is_reference=True,
+        )
+
+        merged = corpus_a.merge(corpus_b)
+
+        # shared_id should appear only once
+        assert len(merged.execution_ids) == 3
+        assert merged.execution_ids.count(shared_id) == 1
+        assert shared_id in merged.execution_ids
+        assert unique_id1 in merged.execution_ids
+        assert unique_id2 in merged.execution_ids
+        # Order preserved: corpus_a ids first
+        assert merged.execution_ids[0] == shared_id
+        assert merged.execution_ids[1] == unique_id1
+        assert merged.execution_ids[2] == unique_id2
+
+    def test_merge_no_args_returns_copy(self, create_test_manifest) -> None:
+        """Calling merge with no arguments returns a copy of self."""
+        from omnibase_core.models.replay.model_execution_corpus import (
+            ModelExecutionCorpus,
+        )
+
+        manifest = create_test_manifest(node_id="node-1")
+
+        corpus = ModelExecutionCorpus(
+            name="original",
+            version="1.0.0",
+            source="tests",
+            executions=(manifest,),
+            tags=("tag1",),
+        )
+
+        merged = corpus.merge()
+
+        assert merged is not corpus  # New instance
+        assert merged.name == corpus.name
+        assert merged.version == corpus.version
+        assert len(merged.executions) == 1
+        assert merged.tags == ("tag1",)
+
+    def test_merge_preserves_corpus_id(self, create_test_manifest) -> None:
+        """Merging preserves the primary corpus's corpus_id."""
+        from omnibase_core.models.replay.model_execution_corpus import (
+            ModelExecutionCorpus,
+        )
+
+        manifest1 = create_test_manifest(node_id="node-1")
+        manifest2 = create_test_manifest(node_id="node-2")
+
+        corpus_a = ModelExecutionCorpus(
+            name="corpus-a",
+            version="1.0.0",
+            source="tests",
+            executions=(manifest1,),
+        )
+        corpus_b = ModelExecutionCorpus(
+            name="corpus-b",
+            version="1.0.0",
+            source="tests",
+            executions=(manifest2,),
+        )
+
+        merged = corpus_a.merge(corpus_b)
+
+        assert merged.corpus_id == corpus_a.corpus_id
+
+    def test_merge_preserves_description(self, create_test_manifest) -> None:
+        """Merging preserves the primary corpus's description."""
+        from omnibase_core.models.replay.model_execution_corpus import (
+            ModelExecutionCorpus,
+        )
+
+        manifest1 = create_test_manifest(node_id="node-1")
+        manifest2 = create_test_manifest(node_id="node-2")
+
+        corpus_a = ModelExecutionCorpus(
+            name="corpus-a",
+            version="1.0.0",
+            source="tests",
+            description="Primary corpus description",
+            executions=(manifest1,),
+        )
+        corpus_b = ModelExecutionCorpus(
+            name="corpus-b",
+            version="1.0.0",
+            source="tests",
+            description="Secondary corpus description",
+            executions=(manifest2,),
+        )
+
+        merged = corpus_a.merge(corpus_b)
+
+        assert merged.description == "Primary corpus description"
+
+    def test_merge_returns_new_instance(self, create_test_manifest) -> None:
+        """Merging returns a new corpus instance (immutable pattern)."""
+        from omnibase_core.models.replay.model_execution_corpus import (
+            ModelExecutionCorpus,
+        )
+
+        manifest1 = create_test_manifest(node_id="node-1")
+        manifest2 = create_test_manifest(node_id="node-2")
+
+        corpus_a = ModelExecutionCorpus(
+            name="corpus-a",
+            version="1.0.0",
+            source="tests",
+            executions=(manifest1,),
+        )
+        corpus_b = ModelExecutionCorpus(
+            name="corpus-b",
+            version="1.0.0",
+            source="tests",
+            executions=(manifest2,),
+        )
+
+        merged = corpus_a.merge(corpus_b)
+
+        assert merged is not corpus_a
+        assert merged is not corpus_b
+        # Originals unchanged
+        assert len(corpus_a.executions) == 1
+        assert len(corpus_b.executions) == 1
+
+    def test_merge_reference_only_result_is_reference_mode(self) -> None:
+        """Merging only reference corpora results in reference mode."""
+        from omnibase_core.models.replay.model_execution_corpus import (
+            ModelExecutionCorpus,
+        )
+
+        corpus_a = ModelExecutionCorpus(
+            name="corpus-a",
+            version="1.0.0",
+            source="tests",
+            execution_ids=(uuid4(),),
+            is_reference=True,
+        )
+        corpus_b = ModelExecutionCorpus(
+            name="corpus-b",
+            version="1.0.0",
+            source="tests",
+            execution_ids=(uuid4(),),
+            is_reference=True,
+        )
+
+        merged = corpus_a.merge(corpus_b)
+
+        assert merged.is_reference is True
+        assert len(merged.executions) == 0
+        assert len(merged.execution_ids) == 2
+
+    def test_merge_empty_corpora(self) -> None:
+        """Merging two empty corpora results in an empty corpus."""
+        from omnibase_core.models.replay.model_execution_corpus import (
+            ModelExecutionCorpus,
+        )
+
+        corpus_a = ModelExecutionCorpus(
+            name="corpus-a",
+            version="1.0.0",
+            source="tests",
+        )
+        corpus_b = ModelExecutionCorpus(
+            name="corpus-b",
+            version="1.0.0",
+            source="tests",
+        )
+
+        merged = corpus_a.merge(corpus_b)
+
+        assert len(merged.executions) == 0
+        assert len(merged.execution_ids) == 0
+        assert merged.is_reference is False  # No refs, so materialized mode
+        assert merged.execution_count == 0

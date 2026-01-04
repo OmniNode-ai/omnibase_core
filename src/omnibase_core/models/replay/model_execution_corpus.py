@@ -71,11 +71,18 @@ Related:
     - ModelExecutionManifest: Individual execution records
     - ModelReplayContext: Determinism context for replay
 
+Guide:
+    See ``docs/guides/EXECUTION_CORPUS_GUIDE.md`` for comprehensive usage
+    documentation including when to use materialized vs reference mode,
+    best practices for corpus curation, and integration with replay testing.
+
 .. versionadded:: 0.4.0
 """
 
+import warnings
 from collections import Counter
 from datetime import UTC, datetime
+from typing import ClassVar
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -147,6 +154,9 @@ class ModelExecutionCorpus(BaseModel):
           Individual execution record model
         - :class:`~omnibase_core.models.replay.model_replay_context.ModelReplayContext`:
           Determinism context for replay execution
+        - ``docs/guides/EXECUTION_CORPUS_GUIDE.md``: Comprehensive usage guide
+          covering materialized vs reference mode, corpus curation best practices,
+          and integration with replay testing infrastructure.
 
     .. versionadded:: 0.4.0
     """
@@ -156,6 +166,13 @@ class ModelExecutionCorpus(BaseModel):
     # parallel execution where model classes are imported in separate workers).
     # See CLAUDE.md section "Pydantic from_attributes=True for Value Objects".
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
+
+    # === Class Constants ===
+
+    #: Recommended maximum number of executions in a corpus.
+    #: Exceeding this may indicate misuse or performance issues.
+    #: This is advisory only - the corpus will still function with larger sizes.
+    RECOMMENDED_MAX_EXECUTIONS: ClassVar[int] = 50
 
     # === Identity ===
 
@@ -509,6 +526,127 @@ class ModelExecutionCorpus(BaseModel):
             }
         )
 
+    def merge(self, *others: "ModelExecutionCorpus") -> "ModelExecutionCorpus":
+        """
+        Merge one or more corpora into this corpus.
+
+        Creates a new corpus instance combining the executions, execution_ids,
+        and tags from this corpus and all provided corpora. The metadata
+        (name, version, source, description, corpus_id, created_at, capture_window)
+        is taken from this corpus (the primary).
+
+        The merged corpus:
+        - Combines all materialized executions from all corpora
+        - Combines all execution_ids with deduplication (same ID appears once)
+        - Combines all tags with deduplication (same tag appears once)
+        - Preserves the primary corpus's identity and metadata
+
+        Args:
+            *others: One or more corpora to merge into this one.
+
+        Returns:
+            A new ModelExecutionCorpus with merged contents.
+
+        Note:
+            Execution manifests are NOT deduplicated (same manifest can appear
+            multiple times if added to different corpora). Only execution_ids
+            (UUIDs) are deduplicated to prevent redundant reference lookups.
+
+            The resulting corpus will be in materialized mode (is_reference=False)
+            if it contains any materialized executions. If it contains only
+            execution_ids, it will be in reference mode (is_reference=True).
+
+        Example:
+            Merge two corpora::
+
+                corpus_a = ModelExecutionCorpus(
+                    name="corpus-a", version="1.0.0", source="production",
+                    executions=(manifest1,), tags=("api",),
+                )
+                corpus_b = ModelExecutionCorpus(
+                    name="corpus-b", version="1.0.0", source="staging",
+                    executions=(manifest2,), tags=("api", "beta"),
+                )
+
+                merged = corpus_a.merge(corpus_b)
+                # merged.name == "corpus-a"  (primary's metadata)
+                # len(merged.executions) == 2
+                # merged.tags == ("api", "beta")  (deduplicated, ordered)
+
+            Merge multiple corpora::
+
+                merged = corpus_a.merge(corpus_b, corpus_c, corpus_d)
+                # All four corpora combined
+
+            Merge materialized with reference corpus::
+
+                materialized = ModelExecutionCorpus(
+                    name="mat", version="1.0.0", source="test",
+                    executions=(manifest1,),
+                )
+                reference = ModelExecutionCorpus(
+                    name="ref", version="1.0.0", source="test",
+                    execution_ids=(uuid1, uuid2),
+                    is_reference=True,
+                )
+
+                merged = materialized.merge(reference)
+                # len(merged.executions) == 1
+                # len(merged.execution_ids) == 2
+                # merged.is_reference == False  (has materialized executions)
+
+        .. versionadded:: 0.4.0
+        """
+        if not others:
+            # No corpora to merge - return a copy of self
+            return self.model_copy()
+
+        # Combine executions from all corpora
+        combined_executions: list[ModelExecutionManifest] = list(self.executions)
+        for other in others:
+            combined_executions.extend(other.executions)
+
+        # Combine execution_ids with deduplication (preserve order, remove dups)
+        seen_ids: set[UUID] = set()
+        combined_ids: list[UUID] = []
+        for exec_id in self.execution_ids:
+            if exec_id not in seen_ids:
+                seen_ids.add(exec_id)
+                combined_ids.append(exec_id)
+        for other in others:
+            for exec_id in other.execution_ids:
+                if exec_id not in seen_ids:
+                    seen_ids.add(exec_id)
+                    combined_ids.append(exec_id)
+
+        # Combine tags with deduplication (preserve order, remove dups)
+        seen_tags: set[str] = set()
+        combined_tags: list[str] = []
+        for tag in self.tags:
+            if tag not in seen_tags:
+                seen_tags.add(tag)
+                combined_tags.append(tag)
+        for other in others:
+            for tag in other.tags:
+                if tag not in seen_tags:
+                    seen_tags.add(tag)
+                    combined_tags.append(tag)
+
+        # Determine is_reference based on content:
+        # - If we have any materialized executions, we're in materialized mode
+        # - Otherwise, if we have execution_ids, we're in reference mode
+        has_executions = len(combined_executions) > 0
+        is_reference = not has_executions and len(combined_ids) > 0
+
+        return self.model_copy(
+            update={
+                "executions": tuple(combined_executions),
+                "execution_ids": tuple(combined_ids),
+                "tags": tuple(combined_tags),
+                "is_reference": is_reference,
+            }
+        )
+
     def validate_for_replay(self) -> None:
         """
         Validate that corpus is ready for replay.
@@ -614,6 +752,77 @@ class ModelExecutionCorpus(BaseModel):
         """
         return tuple(m for m in self.executions if not m.is_successful())
 
+    def validate_size(self, limit: int | None = None) -> str | None:
+        """
+        Check if corpus size exceeds the recommended limit.
+
+        This is an advisory validation that does NOT raise an error.
+        Use this to detect potentially oversized corpora that may indicate
+        misuse or performance issues.
+
+        Args:
+            limit: Custom limit to use. If None, uses RECOMMENDED_MAX_EXECUTIONS.
+
+        Returns:
+            Warning message if execution_count exceeds the limit, None otherwise.
+
+        Example:
+            >>> corpus = ModelExecutionCorpus(
+            ...     name="large-corpus",
+            ...     version="1.0.0",
+            ...     source="tests",
+            ... )
+            >>> # Add 60 executions...
+            >>> warning = corpus.validate_size()
+            >>> if warning:
+            ...     print(warning)
+            Corpus 'large-corpus' has 60 executions, exceeding recommended limit of 50.
+
+            >>> # Use custom limit
+            >>> warning = corpus.validate_size(limit=100)
+            >>> warning is None
+            True
+        """
+        effective_limit = (
+            limit if limit is not None else self.RECOMMENDED_MAX_EXECUTIONS
+        )
+
+        if self.execution_count > effective_limit:
+            return (
+                f"Corpus '{self.name}' has {self.execution_count} executions, "
+                f"exceeding recommended limit of {effective_limit}. "
+                "Very large corpora may indicate misuse or cause performance issues."
+            )
+
+        return None
+
+    def warn_if_large(self, limit: int | None = None) -> "ModelExecutionCorpus":
+        """
+        Log a warning if corpus size exceeds the recommended limit.
+
+        Uses Python's warnings module to emit a UserWarning if the corpus
+        size exceeds the specified or default limit. This method is chainable.
+
+        Args:
+            limit: Custom limit to use. If None, uses RECOMMENDED_MAX_EXECUTIONS.
+
+        Returns:
+            Self for method chaining.
+
+        Example:
+            >>> corpus = (
+            ...     ModelExecutionCorpus(name="test", version="1.0.0", source="tests")
+            ...     .with_executions(large_list_of_manifests)
+            ...     .warn_if_large()
+            ... )
+            # Emits: UserWarning: Corpus 'test' has 60 executions, exceeding...
+        """
+        warning_message = self.validate_size(limit=limit)
+        if warning_message:
+            warnings.warn(warning_message, UserWarning, stacklevel=2)
+
+        return self
+
     def get_unique_handlers(self) -> tuple[str, ...]:
         """
         Get tuple of unique handler/node IDs in the corpus.
@@ -629,6 +838,55 @@ class ModelExecutionCorpus(BaseModel):
                     if m.node_identity.handler_descriptor_id
                 }
             )
+        )
+
+    def to_reference(self) -> "ModelExecutionCorpus":
+        """
+        Convert a materialized corpus to reference mode.
+
+        Creates a new corpus instance with:
+        - ``is_reference=True``
+        - ``execution_ids`` populated with manifest IDs extracted from executions
+        - ``executions`` cleared (empty tuple)
+        - All other metadata preserved (name, version, source, tags, etc.)
+
+        This is useful for storing large corpora where full manifests are
+        persisted separately (e.g., in a database) and only IDs need to be
+        tracked in the corpus itself.
+
+        Returns:
+            A new ModelExecutionCorpus in reference mode.
+
+        Note:
+            - Calling on an already-reference corpus returns a copy (idempotent)
+            - Calling on an empty corpus returns an empty reference corpus
+            - Existing execution_ids are preserved and new IDs are appended
+
+        Example:
+            >>> corpus = ModelExecutionCorpus(
+            ...     name="test", version="1.0.0", source="test",
+            ...     executions=(manifest1, manifest2),
+            ... )
+            >>> ref_corpus = corpus.to_reference()
+            >>> ref_corpus.is_reference
+            True
+            >>> len(ref_corpus.execution_ids)
+            2
+            >>> len(ref_corpus.executions)
+            0
+        """
+        # Extract manifest IDs from materialized executions
+        new_ids = tuple(m.manifest_id for m in self.executions)
+
+        # Combine existing execution_ids with newly extracted IDs
+        combined_ids = (*self.execution_ids, *new_ids)
+
+        return self.model_copy(
+            update={
+                "executions": (),
+                "execution_ids": combined_ids,
+                "is_reference": True,
+            }
         )
 
     def __str__(self) -> str:
