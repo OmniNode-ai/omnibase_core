@@ -88,6 +88,12 @@ from .contract_patch_validator import ContractPatchValidator
 # Re-export from services (OMN-1146)
 ContractValidationInvariantChecker = ServiceContractValidationInvariantChecker
 
+# Import contract validation pipeline (OMN-1128)
+from .contract_validation_pipeline import (
+    ContractValidationPipeline,
+    ModelExpandedContractResult,
+)
+
 # =============================================================================
 # ALIAS LOADING STRATEGY: __getattr__ vs Direct Alias
 # =============================================================================
@@ -291,8 +297,6 @@ def validate_architecture(
     max_violations: int = 0,
 ) -> ModelValidationResult[None]:
     """Validate ONEX one-model-per-file architecture."""
-    from pathlib import Path
-
     return validate_architecture_directory(Path(directory_path), max_violations)
 
 
@@ -399,6 +403,9 @@ __all__ = [
     "ModelContractValidationEvent",
     "ContractValidationEventType",
     "ContractValidationInvariantChecker",
+    # Contract validation pipeline (OMN-1128)
+    "ContractValidationPipeline",
+    "ModelExpandedContractResult",
     # Reserved enum validation (OMN-669, OMN-675)
     # NOTE: validate_execution_mode takes EnumExecutionMode (type-safe)
     # while validate_execution_mode_string takes str (for YAML/config parsing)

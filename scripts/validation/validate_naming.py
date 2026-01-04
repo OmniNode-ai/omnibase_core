@@ -197,6 +197,10 @@ class NamingConventionValidator:
         "validation/": [
             "ContractPatchValidator",  # Validator for contract patches (OMN-1126)
             "ContractValidationInvariantChecker",  # Invariant checker implementation (OMN-1146)
+            "ContractValidationPipeline",  # Validation pipeline orchestrator (OMN-1128)
+            "ExpandedContractValidator",  # Expanded contract validator (OMN-1128)
+            "ExpandedContractGraphValidator",  # Multi-contract graph validator (OMN-1128)
+            "MergeValidator",  # Merge phase validator (OMN-1128)
         ],
         # MERGE INFRASTRUCTURE: Contract merge engine for typed contract merging
         # Location: merge/ - Contract merge framework implementations

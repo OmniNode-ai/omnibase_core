@@ -22,7 +22,13 @@ class ModelValidationIssue(BaseModel):
     comprehensive metadata and suggestions.
     """
 
-    model_config = ConfigDict(extra="forbid", validate_assignment=True)
+    # from_attributes=True: Required for pytest-xdist parallel execution where
+    # model classes may be imported in separate workers with different class identity.
+    model_config = ConfigDict(
+        extra="forbid",
+        validate_assignment=True,
+        from_attributes=True,
+    )
 
     severity: EnumValidationSeverity = Field(
         default=...,
