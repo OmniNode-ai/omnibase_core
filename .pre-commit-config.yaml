@@ -137,6 +137,9 @@ repos:
         pass_filenames: false
         stages: [pre-commit]
 
+      # CLASS vs FILE Naming Conventions:
+      # - validate-naming-conventions: CLASS naming (ModelUser, EnumStatus, ProtocolEventBus)
+      # - validate-file-naming-conventions: FILE naming (model_user.py, enum_status.py)
       - id: validate-naming-conventions
         name: ONEX Naming Convention Validation
         entry: poetry run python scripts/validation/validate_naming.py
@@ -147,6 +150,20 @@ repos:
         exclude: ^(tests/|archive/|archived/|scripts/validation/).*\.py$
         stages: [pre-push]  # Moved to pre-push: ~14s full codebase scan
         # Architectural exemptions documented in validate_naming.py ARCHITECTURAL_EXEMPTIONS
+
+      # PHASE 1 (OMN-1224): File naming hook runs in WARNING mode (non-blocking)
+      # The codebase has 71 existing violations that need incremental migration.
+      # Once all files are renamed, change || true to make this blocking.
+      # See: src/omnibase_core/validation/checker_naming_convention.py (Migration Plan)
+      - id: validate-file-naming-conventions
+        name: ONEX File Naming Convention Validation (Warning Mode)
+        entry: bash -c 'poetry run python -m omnibase_core.validation.checker_naming_convention || true'
+        language: system
+        pass_filenames: false
+        always_run: true
+        files: ^src/omnibase_core/.*\.py$
+        exclude: ^(tests/|archived/|archive/).*\.py$
+        stages: [pre-push]  # Full directory scan, warning mode until Phase 4
 
       - id: validate-file-locations
         name: ONEX File Location Enforcement
