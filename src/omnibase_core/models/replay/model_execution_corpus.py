@@ -226,15 +226,44 @@ class ModelExecutionCorpus(BaseModel):
     # === Validators ===
 
     @model_validator(mode="after")
-    def _validate_capture_window(self) -> "ModelExecutionCorpus":
-        """Validate that capture_window has start <= end if provided."""
-        if self.capture_window is not None:
-            if self.capture_window.start_time > self.capture_window.end_time:
-                msg = "capture_window start_time must be <= end_time"
-                raise ModelOnexError(
-                    message=msg,
-                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                )
+    def _validate_mode_consistency(self) -> "ModelExecutionCorpus":
+        """Validate that is_reference flag matches the data state.
+
+        A reference-mode corpus should have execution_ids but no executions.
+        A materialized corpus should have executions and optionally execution_ids
+        for mixed mode.
+
+        Returns:
+            Self if validation passes.
+
+        Raises:
+            ModelOnexError: If mode is inconsistent with data.
+        """
+        has_executions = len(self.executions) > 0
+        has_refs = len(self.execution_ids) > 0
+
+        # Reference mode should not have materialized executions
+        if self.is_reference and has_executions:
+            msg = (
+                "Reference mode corpus should not have materialized executions. "
+                f"Found {len(self.executions)} executions with is_reference=True."
+            )
+            raise ModelOnexError(
+                message=msg,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            )
+
+        # If only has refs and no executions, is_reference should be True
+        if has_refs and not has_executions and not self.is_reference:
+            msg = (
+                "Corpus with only execution_ids should have is_reference=True. "
+                f"Found {len(self.execution_ids)} refs with is_reference=False."
+            )
+            raise ModelOnexError(
+                message=msg,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            )
+
         return self
 
     # === Properties ===
@@ -285,8 +314,14 @@ class ModelExecutionCorpus(BaseModel):
             ModelCorpusStatistics with computed values.
 
         Note:
-            Statistics are only computed from materialized executions,
-            not from execution_ids (which would require external lookup).
+            Statistics are computed only from materialized executions in the
+            ``executions`` tuple. Reference-mode execution_ids are not included
+            since their manifests are stored externally.
+
+            When called on a reference-only corpus (executions tuple empty),
+            returns an empty ModelCorpusStatistics with all zero values. To get
+            meaningful statistics for reference-mode corpora, first resolve the
+            execution_ids to full manifests using your storage system.
 
         Example:
             >>> corpus = ModelExecutionCorpus(
@@ -371,6 +406,12 @@ class ModelExecutionCorpus(BaseModel):
             >>> corpus = corpus.with_execution(manifest)
             >>> len(corpus.executions)
             1
+
+        Note:
+            For large corpora (1000+ executions), prefer using ``with_executions()``
+            to add multiple manifests in a single operation, as this avoids
+            repeated tuple copying that occurs when calling ``with_execution()``
+            in a loop.
         """
         return self.model_copy(
             update={
@@ -428,6 +469,10 @@ class ModelExecutionCorpus(BaseModel):
             >>> corpus = corpus.with_execution_ref(uuid4())
             >>> len(corpus.execution_ids)
             1
+
+        Note:
+            For large corpora, prefer using ``with_execution_refs()`` to add
+            multiple references in a single operation.
         """
         return self.model_copy(
             update={

@@ -34,7 +34,10 @@ Related:
 .. versionadded:: 0.4.0
 """
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors import ModelOnexError
 
 
 class ModelCorpusStatistics(BaseModel):
@@ -113,6 +116,27 @@ class ModelCorpusStatistics(BaseModel):
         ge=0.0,
         description="Average execution duration in milliseconds",
     )
+
+    @model_validator(mode="after")
+    def _validate_counts(self) -> "ModelCorpusStatistics":
+        """Validate that success_count + failure_count == total_executions.
+
+        Returns:
+            Self if validation passes.
+
+        Raises:
+            ModelOnexError: If counts don't add up to total.
+        """
+        if self.success_count + self.failure_count != self.total_executions:
+            msg = (
+                f"success_count ({self.success_count}) + failure_count ({self.failure_count}) "
+                f"must equal total_executions ({self.total_executions})"
+            )
+            raise ModelOnexError(
+                message=msg,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            )
+        return self
 
     def __str__(self) -> str:
         """Return a human-readable string representation."""

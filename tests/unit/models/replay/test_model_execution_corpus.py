@@ -798,6 +798,7 @@ class TestModelExecutionCorpusBulkOperations:
             version="1.0.0",
             source="tests",
             execution_ids=(initial_id,),
+            is_reference=True,  # Required for corpus with only execution_ids
         )
 
         new_ids = [uuid4(), uuid4()]
@@ -1416,6 +1417,146 @@ class TestModelExecutionCorpusModes:
 
 
 # =============================================================================
+# Test Classes - Mode Consistency Validation
+# =============================================================================
+
+
+@pytest.mark.unit
+class TestModelExecutionCorpusModeConsistencyValidation:
+    """Test mode consistency validation between is_reference flag and data state."""
+
+    def test_reference_mode_with_executions_raises_error(
+        self, sample_manifest: ModelExecutionManifest
+    ) -> None:
+        """Reference mode corpus cannot have materialized executions."""
+        from omnibase_core.models.replay.model_execution_corpus import (
+            ModelExecutionCorpus,
+        )
+
+        with pytest.raises(
+            ModelOnexError,
+            match=r"Reference mode corpus should not have materialized executions",
+        ):
+            ModelExecutionCorpus(
+                name="inconsistent-corpus",
+                version="1.0.0",
+                source="tests",
+                executions=(sample_manifest,),
+                is_reference=True,
+            )
+
+    def test_refs_only_without_is_reference_raises_error(self) -> None:
+        """Corpus with only execution_ids must have is_reference=True."""
+        from omnibase_core.models.replay.model_execution_corpus import (
+            ModelExecutionCorpus,
+        )
+
+        with pytest.raises(
+            ModelOnexError,
+            match=r"Corpus with only execution_ids should have is_reference=True",
+        ):
+            ModelExecutionCorpus(
+                name="inconsistent-corpus",
+                version="1.0.0",
+                source="tests",
+                execution_ids=(uuid4(), uuid4()),
+                is_reference=False,  # Explicit False to show intent
+            )
+
+    def test_empty_corpus_with_is_reference_false_is_valid(self) -> None:
+        """Empty corpus (no executions, no refs) with is_reference=False is valid."""
+        from omnibase_core.models.replay.model_execution_corpus import (
+            ModelExecutionCorpus,
+        )
+
+        corpus = ModelExecutionCorpus(
+            name="empty-corpus",
+            version="1.0.0",
+            source="tests",
+            is_reference=False,
+        )
+
+        assert len(corpus.executions) == 0
+        assert len(corpus.execution_ids) == 0
+        assert corpus.is_reference is False
+
+    def test_empty_corpus_with_is_reference_true_is_valid(self) -> None:
+        """Empty corpus with is_reference=True is valid (awaiting refs)."""
+        from omnibase_core.models.replay.model_execution_corpus import (
+            ModelExecutionCorpus,
+        )
+
+        corpus = ModelExecutionCorpus(
+            name="empty-reference-corpus",
+            version="1.0.0",
+            source="tests",
+            is_reference=True,
+        )
+
+        assert len(corpus.executions) == 0
+        assert len(corpus.execution_ids) == 0
+        assert corpus.is_reference is True
+
+    def test_materialized_mode_with_executions_is_valid(
+        self, sample_manifest: ModelExecutionManifest
+    ) -> None:
+        """Materialized corpus with executions is valid."""
+        from omnibase_core.models.replay.model_execution_corpus import (
+            ModelExecutionCorpus,
+        )
+
+        corpus = ModelExecutionCorpus(
+            name="materialized-corpus",
+            version="1.0.0",
+            source="tests",
+            executions=(sample_manifest,),
+            is_reference=False,
+        )
+
+        assert len(corpus.executions) == 1
+        assert corpus.is_reference is False
+
+    def test_mixed_mode_corpus_is_valid(
+        self, sample_manifest: ModelExecutionManifest
+    ) -> None:
+        """Corpus with both executions and refs (mixed mode) is valid."""
+        from omnibase_core.models.replay.model_execution_corpus import (
+            ModelExecutionCorpus,
+        )
+
+        corpus = ModelExecutionCorpus(
+            name="mixed-corpus",
+            version="1.0.0",
+            source="tests",
+            executions=(sample_manifest,),
+            execution_ids=(uuid4(),),
+            is_reference=False,
+        )
+
+        assert len(corpus.executions) == 1
+        assert len(corpus.execution_ids) == 1
+        assert corpus.is_reference is False
+
+    def test_reference_mode_with_refs_only_is_valid(self) -> None:
+        """Reference mode corpus with only refs is valid."""
+        from omnibase_core.models.replay.model_execution_corpus import (
+            ModelExecutionCorpus,
+        )
+
+        corpus = ModelExecutionCorpus(
+            name="reference-corpus",
+            version="1.0.0",
+            source="tests",
+            execution_ids=(uuid4(), uuid4()),
+            is_reference=True,
+        )
+
+        assert len(corpus.executions) == 0
+        assert len(corpus.execution_ids) == 2
+        assert corpus.is_reference is True
+
+
+# =============================================================================
 # Test Classes - Versioning
 # =============================================================================
 
@@ -1652,6 +1793,41 @@ class TestModelCorpusCaptureWindow:
         )
 
         assert window.duration == timedelta(days=7)
+
+    def test_capture_window_equal_times_allowed(self) -> None:
+        """ModelCorpusCaptureWindow allows equal start and end times."""
+        from omnibase_core.models.replay.model_execution_corpus import (
+            ModelCorpusCaptureWindow,
+        )
+
+        same_time = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
+
+        window = ModelCorpusCaptureWindow(
+            start_time=same_time,
+            end_time=same_time,
+        )
+
+        assert window.start_time == same_time
+        assert window.end_time == same_time
+        assert window.duration == timedelta(0)
+
+    def test_capture_window_start_after_end_raises_error(self) -> None:
+        """ModelCorpusCaptureWindow raises error if start_time > end_time."""
+        from omnibase_core.errors import ModelOnexError
+        from omnibase_core.models.replay.model_execution_corpus import (
+            ModelCorpusCaptureWindow,
+        )
+
+        start = datetime(2024, 1, 8, 0, 0, 0, tzinfo=UTC)  # Later time
+        end = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)  # Earlier time
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelCorpusCaptureWindow(
+                start_time=start,
+                end_time=end,
+            )
+
+        assert "start_time must be <= end_time" in str(exc_info.value)
 
 
 # =============================================================================
