@@ -18,6 +18,7 @@ __all__ = [
     # Domain modules (names only; no runtime import here)
     "cli",
     "common",
+    "comparison",
     "config",
     "connections",
     "context",
