@@ -6,8 +6,6 @@
 Tests latency comparison statistics between baseline and replay executions.
 """
 
-from __future__ import annotations
-
 import pytest
 from pydantic import ValidationError
 

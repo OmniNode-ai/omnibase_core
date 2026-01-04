@@ -5,6 +5,10 @@
 
 This model provides comprehensive latency metrics including averages and
 percentiles (P50, P95) for comparing baseline vs replay execution performance.
+
+Thread Safety:
+    ModelLatencyStatistics is immutable (frozen=True) after creation,
+    making it thread-safe for concurrent read access.
 """
 
 import math
@@ -36,6 +40,10 @@ class ModelLatencyStatistics(BaseModel):
         delta_avg_percent: Percentage change in average latency
         delta_p50_percent: Percentage change in P50 latency
         delta_p95_percent: Percentage change in P95 latency
+
+    Thread Safety:
+        This model is immutable (frozen=True) after creation, making it
+        thread-safe for concurrent read access.
     """
 
     model_config = ConfigDict(

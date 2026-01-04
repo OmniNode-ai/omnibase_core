@@ -1,7 +1,12 @@
 # SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
 #
 # SPDX-License-Identifier: Apache-2.0
-"""Cost comparison statistics between baseline and replay executions."""
+"""Cost comparison statistics between baseline and replay executions.
+
+Thread Safety:
+    ModelCostStatistics is immutable (frozen=True) after creation,
+    making it thread-safe for concurrent read access.
+"""
 
 from pydantic import BaseModel, ConfigDict
 
@@ -21,6 +26,10 @@ class ModelCostStatistics(BaseModel):
             Set to 0.0 when baseline_total is zero (undefined).
         baseline_avg_per_execution: Average cost per baseline execution.
         replay_avg_per_execution: Average cost per replay execution.
+
+    Thread Safety:
+        This model is immutable (frozen=True) after creation, making it
+        thread-safe for concurrent read access.
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
