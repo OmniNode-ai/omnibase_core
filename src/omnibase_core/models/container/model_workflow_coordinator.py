@@ -33,7 +33,7 @@ class ModelWorkflowCoordinator:
 
     async def execute_workflow(
         self,
-        workflow_id: str,
+        workflow_id: str,  # string-id-ok: external workflow identifier from caller
         workflow_type: str,
         input_data: object,
         config: SerializedDict | None = None,
@@ -75,7 +75,7 @@ class ModelWorkflowCoordinator:
 
             return workflow_result
 
-        except (AttributeError, ValueError, TypeError, KeyError, RuntimeError) as e:
+        except (AttributeError, KeyError, RuntimeError, TypeError, ValueError) as e:
             # Log workflow failure
             from omnibase_core.logging.logging_structured import (
                 emit_log_event_sync as emit_log_event,
@@ -121,7 +121,7 @@ class ModelWorkflowCoordinator:
 
             return result
 
-        except (AttributeError, ValueError, TypeError, KeyError, RuntimeError) as e:
+        except (AttributeError, KeyError, RuntimeError, TypeError, ValueError) as e:
             from omnibase_core.logging.logging_structured import (
                 emit_log_event_sync as emit_log_event,
             )

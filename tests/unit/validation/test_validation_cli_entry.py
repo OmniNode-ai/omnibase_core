@@ -84,7 +84,9 @@ if __name__ == "__main__":
 
     def test_entry_point_exit_handling(self) -> None:
         """Test that entry point properly handles exit codes."""
-        with patch("omnibase_core.validation.cli.run_validation_cli") as mock_cli:
+        with patch(
+            "omnibase_core.validation.validation_cli_entry.run_validation_cli"
+        ) as mock_cli:
             # Test successful exit
             mock_cli.return_value = 0
 
