@@ -15,7 +15,7 @@ from typing import Any
 import pytest
 
 from omnibase_core.models.validation.model_union_pattern import ModelUnionPattern
-from omnibase_core.validation.union_usage_checker import UnionUsageChecker
+from omnibase_core.validation.checker_union_usage import UnionUsageChecker
 
 # =============================================================================
 # Fixtures
@@ -1279,7 +1279,7 @@ class TestCheckerCompanionLiteralDiscriminator:
         value_type: Literal["bool", "dict", "float", "int", "list", "str"]
 
     This tests the _is_discriminated_union method in UnionLegitimacyValidator
-    via the union_usage_checker module's fixtures.
+    via the checker_union_usage module's fixtures.
     """
 
     def test_basic_companion_literal_detection(

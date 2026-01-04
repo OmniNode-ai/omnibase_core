@@ -38,9 +38,9 @@ Removed holders (all migrated):
 - _CommandRegistryHolder -> container.command_registry()
 - _EventTypeRegistryHolder -> container.event_type_registry()
 - _SecretManagerHolder -> container.secret_manager()
-- _LoggerCache -> core_logging._get_cached_logger()
-- _ProtocolCacheHolder -> emit.get_protocol_services()
-- _SimpleFallbackLogger -> core_logging._get_cached_logger()
+- _LoggerCache -> logging_core._get_cached_logger()
+- _ProtocolCacheHolder -> logging_emit.get_protocol_services()
+- _SimpleFallbackLogger -> logging_core._get_cached_logger()
 
 This module exports nothing as all patterns have been migrated.
 """

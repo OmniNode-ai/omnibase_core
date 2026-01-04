@@ -28,7 +28,7 @@ allowed_files:
     added: "2024-10-15"
     review: "2026-06-13"
 
-  - file: "src/omnibase_core/validation/contracts.py"
+  - file: "src/omnibase_core/validation/validator_contracts.py"
     reason: "Central orchestrator for YAML contract file parsing and validation - provides high-level
       API for loading/validating contract YAML files"
     added: "2024-10-15"

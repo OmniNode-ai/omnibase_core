@@ -837,7 +837,7 @@ print(f"Processing time: {result.processing_time_ms:.2f}ms")
 ### 1. Add Logging
 
 ```
-from omnibase_core.logging.structured import emit_log_event_sync
+from omnibase_core.logging.logging_structured import emit_log_event_sync
 
 async def process(self, input_data):
     emit_log_event_sync(

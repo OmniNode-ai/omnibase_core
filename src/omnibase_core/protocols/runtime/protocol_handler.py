@@ -160,7 +160,7 @@ class ProtocolHandler(Protocol):
               Design for concurrent access from the start.
 
         See Also:
-            - :class:`~omnibase_core.runtime.envelope_router.EnvelopeRouter` for
+            - :class:`~omnibase_core.runtime.runtime_envelope_router.EnvelopeRouter` for
               registration semantics and runtime thread safety considerations.
             - :doc:`/docs/guides/THREADING` for comprehensive thread safety guidelines
               including production checklists and synchronization patterns.

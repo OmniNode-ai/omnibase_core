@@ -376,7 +376,7 @@ def validate_semantic_version(value: str) -> str:
 # 2. LINT-STYLE SHORT CODES (NOT validated here): XNNN
 #    Pattern: ^[A-Z]\d{3}$
 #    Examples: W001, E001, I001
-#    Use case: Workflow linting, static analysis warnings (see workflow_linter.py)
+#    Use case: Workflow linting, static analysis warnings (see checker_workflow_linter.py)
 #    - Single-character category prefix (W=warning, E=error, I=info)
 #    - No underscore separator
 #    - Fixed 3-digit suffix
@@ -387,13 +387,13 @@ def validate_semantic_version(value: str) -> str:
 # - Different validation requirements and use cases
 #
 # If you need lint-style short codes (W001, E001), use a separate validator or
-# the workflow_linter module directly. This validator enforces structured codes.
+# the checker_workflow_linter module directly. This validator enforces structured codes.
 #
 # The ERROR_CODE_PATTERN is imported from omnibase_core.constants.constants_error
 # which provides the single source of truth for error code validation across:
 # - omnibase_core.models.context.model_operational_error_context
 # - omnibase_core.models.context.model_retry_error_context
-# - omnibase_core.validation.validators.common_validators (this module)
+# - omnibase_core.validation.validators.validator_common (this module)
 
 
 def validate_error_code(value: str) -> str:
@@ -438,7 +438,7 @@ def validate_error_code(value: str) -> str:
         raise ValueError(
             f"Invalid error code format: '{value}'. "
             "Expected CATEGORY_NNN pattern (e.g., AUTH_001, VALIDATION_123). "
-            "For lint-style short codes (W001, E001), use workflow_linter module."
+            "For lint-style short codes (W001, E001), use checker_workflow_linter module."
         )
 
     return value
@@ -455,7 +455,7 @@ Use this type in Pydantic models for automatic validation:
 Examples of valid values: "AUTH_001", "VALIDATION_123", "NETWORK_TIMEOUT_001"
 
 Note: Does NOT support lint-style short codes (W001, E001).
-For those, see the workflow_linter module.
+For those, see the checker_workflow_linter module.
 """
 
 

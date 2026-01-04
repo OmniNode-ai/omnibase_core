@@ -49,6 +49,79 @@ find . -name "*.py" -exec sed -i 's/ModelHandlerBehaviorDescriptor/ModelHandlerB
 find . -name "*.py" -exec sed -i 's/model_handler_behavior_descriptor/model_handler_behavior/g' {} \;
 ```
 
+#### File Renames for Directory Prefix Naming Conventions [OMN-1222]
+
+Files across 4 directories have been renamed to follow consistent directory prefix naming conventions. **Direct module imports to old paths will fail with `ModuleNotFoundError`**.
+
+**Affected Directories**:
+
+| Directory | Old Pattern | New Pattern | Files Affected |
+|-----------|-------------|-------------|----------------|
+| `logging/` | `*.py` | `logging_*.py` | 4 files |
+| `runtime/` | `*.py` | `runtime_*.py` | 5 files |
+| `services/registry/` | `registry_*.py` | `service_registry_*.py` | 2 files |
+| `validation/` | `*.py` | `validator_*.py` | 5 files |
+
+**Impact**:
+- Direct module imports like `from omnibase_core.runtime.file_registry import FileRegistry` will fail
+- Package-level imports still work: `from omnibase_core.runtime import FileRegistry`
+- Class renames in `services/registry/` have deprecation warnings via `__getattr__`
+
+**Key File Renames**:
+
+```text
+# logging/
+core_logging.py          → logging_core.py
+emit.py                  → logging_emit.py
+pydantic_json_encoder.py → logging_pydantic_encoder.py
+structured.py            → logging_structured.py
+
+# runtime/
+envelope_router.py       → runtime_envelope_router.py
+file_registry.py         → runtime_file_registry.py
+handler_registry.py      → runtime_handler_registry.py
+message_dispatch_engine.py → runtime_message_dispatch.py
+protocol_node_runtime.py → runtime_protocol_node.py
+
+# services/registry/
+registry_capability.py   → service_registry_capability.py
+registry_provider.py     → service_registry_provider.py
+
+# validation/
+architecture.py          → validator_architecture.py
+cli.py                   → validator_cli.py
+contracts.py             → validator_contracts.py
+patterns.py              → validator_patterns.py
+types.py                 → validator_types.py
+```
+
+**Migration Guide**:
+
+```python
+# Before (v0.3.x) - Direct module imports
+from omnibase_core.runtime.file_registry import FileRegistry
+from omnibase_core.validation.architecture import validate_architecture_directory
+from omnibase_core.logging.structured import emit_log_event_sync
+
+# After (v0.4.0+) - Use package-level imports (recommended)
+from omnibase_core.runtime import FileRegistry
+from omnibase_core.validation import validate_architecture_directory
+from omnibase_core.logging import emit_log_event_sync
+
+# After (v0.4.0+) - Or use new module paths directly
+from omnibase_core.runtime.runtime_file_registry import FileRegistry
+from omnibase_core.validation.validator_architecture import validate_architecture_directory
+from omnibase_core.logging.logging_structured import emit_log_event_sync
+```
+
+**Quick Migration**:
+```bash
+# Find affected imports
+grep -rn "from omnibase_core\.\(logging\|runtime\|validation\)\.\(core_logging\|emit\|structured\|file_registry\|envelope_router\|architecture\|cli\|contracts\|patterns\|types\)" --include="*.py"
+
+# Recommended: Update to package-level imports for future compatibility
+```
+
 #### Hook Typing Enforcement Enabled by Default [OMN-1157]
 
 The default value of `BuilderExecutionPlan.enforce_hook_typing` has been changed from `False` to `True`. This is a **fail-fast behavior change** that affects code building execution plans with typed hooks.

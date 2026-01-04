@@ -19,7 +19,7 @@ import pytest
 
 from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.validation.workflow_validator import (
+from omnibase_core.validation.validator_workflow import (
     MAX_DFS_ITERATIONS,
     ModelWorkflowValidationResult,
     WorkflowValidator,
@@ -1004,7 +1004,7 @@ class TestWorkflowValidatorResourceExhaustion:
         steps = [step_a]
 
         # Mock MAX_DFS_ITERATIONS to a very low value to trigger the limit
-        with patch("omnibase_core.validation.workflow_validator.MAX_DFS_ITERATIONS", 0):
+        with patch("omnibase_core.validation.validator_workflow.MAX_DFS_ITERATIONS", 0):
             with pytest.raises(ModelOnexError) as exc_info:
                 validator.detect_cycles(steps)
 
@@ -1029,7 +1029,7 @@ class TestWorkflowValidatorResourceExhaustion:
         steps = [create_step(f"step_{i}", step_id=step_ids[i]) for i in range(5)]
 
         # Mock MAX_DFS_ITERATIONS to a very low value
-        with patch("omnibase_core.validation.workflow_validator.MAX_DFS_ITERATIONS", 0):
+        with patch("omnibase_core.validation.validator_workflow.MAX_DFS_ITERATIONS", 0):
             with pytest.raises(ModelOnexError) as exc_info:
                 validator.detect_cycles(steps)
 

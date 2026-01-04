@@ -140,7 +140,7 @@ logger = container.get_service("ProtocolLogger")
 ### Contract Loading with FileRegistry
 
 ```python
-from omnibase_core.runtime.file_registry import FileRegistry
+from omnibase_core.runtime.runtime_file_registry import FileRegistry
 from pathlib import Path
 
 registry = FileRegistry()

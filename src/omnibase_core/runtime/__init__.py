@@ -36,9 +36,9 @@ from omnibase_core.models.runtime.model_runtime_node_instance import (
     ModelRuntimeNodeInstance,
     NodeInstance,
 )
-from omnibase_core.runtime.envelope_router import EnvelopeRouter
-from omnibase_core.runtime.file_registry import FileRegistry
-from omnibase_core.runtime.protocol_node_runtime import ProtocolNodeRuntime
+from omnibase_core.runtime.runtime_envelope_router import EnvelopeRouter
+from omnibase_core.runtime.runtime_file_registry import FileRegistry
+from omnibase_core.runtime.runtime_protocol_node import ProtocolNodeRuntime
 
 __all__ = [
     "EnvelopeRouter",

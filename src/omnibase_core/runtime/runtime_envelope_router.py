@@ -51,7 +51,7 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_handler_type import EnumHandlerType
 from omnibase_core.models.core.model_onex_envelope import ModelOnexEnvelope
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.runtime.protocol_node_runtime import ProtocolNodeRuntime
+from omnibase_core.runtime.runtime_protocol_node import ProtocolNodeRuntime
 from omnibase_core.types.typed_dict_routing_info import TypedDictRoutingInfo
 
 if TYPE_CHECKING:

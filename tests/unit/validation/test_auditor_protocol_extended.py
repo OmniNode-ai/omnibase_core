@@ -24,7 +24,7 @@ from omnibase_core.models.validation.model_duplication_report import (
     ModelDuplicationReport,
 )
 from omnibase_core.services.service_protocol_auditor import ServiceProtocolAuditor
-from omnibase_core.validation.validation_utils import ModelProtocolInfo
+from omnibase_core.validation.validator_utils import ModelProtocolInfo
 
 if TYPE_CHECKING:
     from _pytest.capture import CaptureFixture

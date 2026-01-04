@@ -53,7 +53,7 @@ See Also:
 Example:
     Basic usage for FSM validation::
 
-        from omnibase_core.validation.fsm_analysis import analyze_fsm
+        from omnibase_core.validation.validator_fsm_analysis import analyze_fsm
 
         result = analyze_fsm(fsm_subcontract)
         if not result.is_valid:
