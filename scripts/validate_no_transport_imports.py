@@ -23,9 +23,9 @@ from __future__ import annotations
 import argparse
 import ast
 import sys
+from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterator
 
 # Banned transport/I/O modules that cannot be imported at runtime in omnibase_core
 # These create runtime dependencies on external I/O libraries
@@ -173,7 +173,7 @@ class TransportImportChecker(ast.NodeVisitor):
                 # typing.TYPE_CHECKING or aliased like t.TYPE_CHECKING
                 if test.value.id == "typing" or test.value.id in self._type_checking_aliases:
                     return True
-            return True  # Any X.TYPE_CHECKING is likely a TYPE_CHECKING guard
+            return False  # Only verified typing module references are TYPE_CHECKING guards
 
         return False
 
