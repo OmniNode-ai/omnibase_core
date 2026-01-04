@@ -109,7 +109,6 @@ class ServiceConfigOverrideInjector:
 
     Attributes:
         strict_mode: If True, validation fails on any warning. Default False.
-        PATH_SYNTAX_PATTERN: Compiled regex for valid dot-path syntax.
         MAX_PATH_DEPTH: Maximum allowed path depth to prevent DoS attacks.
 
     Thread Safety:
@@ -123,12 +122,6 @@ class ServiceConfigOverrideInjector:
         >>> if result.is_valid:
         ...     applied = injector.apply(override_set, config)
     """
-
-    # Valid path segment pattern: starts with letter or underscore,
-    # followed by letters, digits, or underscores
-    PATH_SYNTAX_PATTERN: re.Pattern[str] = re.compile(
-        r"^[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*|\.[0-9]+)*$"
-    )
 
     # Maximum path depth to prevent DoS via deeply nested paths
     MAX_PATH_DEPTH: int = 20

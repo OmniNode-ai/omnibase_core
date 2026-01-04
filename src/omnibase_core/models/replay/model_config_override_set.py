@@ -17,6 +17,8 @@ from omnibase_core.enums.replay.enum_override_injection_point import (
 )
 from omnibase_core.models.replay.model_config_override import ModelConfigOverride
 
+__all__ = ["ModelConfigOverrideSet"]
+
 
 class ModelConfigOverrideSet(BaseModel):
     """

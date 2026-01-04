@@ -25,11 +25,7 @@ import pytest
 from pydantic import ValidationError
 
 if TYPE_CHECKING:
-    from omnibase_core.models.replay.model_config_overrides import (
-        ModelConfigOverride,
-        ModelConfigOverrideSet,
-    )
-
+    from omnibase_core.models.replay import ModelConfigOverride, ModelConfigOverrideSet
     from omnibase_core.models.replay.model_replay_input import ModelReplayInput
 
 
@@ -46,7 +42,7 @@ def sample_data() -> dict[str, Any]:
 @pytest.fixture
 def simple_override() -> ModelConfigOverride:
     """Create a simple config override."""
-    from omnibase_core.models.replay.model_config_overrides import ModelConfigOverride
+    from omnibase_core.models.replay import ModelConfigOverride
 
     return ModelConfigOverride(path="test.path", value=42)
 
@@ -54,9 +50,7 @@ def simple_override() -> ModelConfigOverride:
 @pytest.fixture
 def override_set(simple_override: ModelConfigOverride) -> ModelConfigOverrideSet:
     """Create an override set with one override."""
-    from omnibase_core.models.replay.model_config_overrides import (
-        ModelConfigOverrideSet,
-    )
+    from omnibase_core.models.replay import ModelConfigOverrideSet
 
     return ModelConfigOverrideSet(overrides=(simple_override,))
 
@@ -213,10 +207,7 @@ class TestModelReplayInputHasOverrides:
 
     def test_has_overrides_false_when_empty(self, sample_data: dict[str, Any]) -> None:
         """has_overrides is False when empty override set."""
-        from omnibase_core.models.replay.model_config_overrides import (
-            ModelConfigOverrideSet,
-        )
-
+        from omnibase_core.models.replay import ModelConfigOverrideSet
         from omnibase_core.models.replay.model_replay_input import ModelReplayInput
 
         replay_input = ModelReplayInput(
@@ -275,7 +266,7 @@ class TestModelReplayInputWithOverrides:
         replay_input_with_overrides: ModelReplayInput[dict[str, Any]],
     ) -> None:
         """with_overrides replaces existing overrides."""
-        from omnibase_core.models.replay.model_config_overrides import (
+        from omnibase_core.models.replay import (
             ModelConfigOverride,
             ModelConfigOverrideSet,
         )

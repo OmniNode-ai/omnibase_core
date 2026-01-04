@@ -12,6 +12,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+__all__ = ["ModelConfigOverrideResult"]
+
 
 class ModelConfigOverrideResult(BaseModel):
     """

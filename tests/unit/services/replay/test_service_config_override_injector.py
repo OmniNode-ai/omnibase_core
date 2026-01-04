@@ -884,9 +884,7 @@ class TestEdgeCases:
         assert repr(MISSING) == "<MISSING>"
 
         # Same instance always
-        from omnibase_core.services.replay.service_config_override_injector import (
-            _Missing,
-        )
+        from omnibase_core.services.replay.sentinel_missing import _Missing
 
         assert _Missing() is MISSING
 
