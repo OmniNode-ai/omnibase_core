@@ -99,8 +99,12 @@ _SCHEME_REQUIREMENTS: dict[str, tuple[bool, bool]] = {
     "registry": (True, True),  # Must have host and path: registry://host/path
 }
 
-# Legacy compatibility - prefix-based matching
-_ALLOWED_SCHEMES = frozenset({"https://", "file:///", "oci://", "registry://"})
+# Derive allowed scheme prefixes from _SCHEME_REQUIREMENTS
+# file:// uses three slashes (file:///), others use two (scheme://)
+_ALLOWED_SCHEMES = frozenset(
+    "file:///" if scheme == "file" else f"{scheme}://"
+    for scheme in _SCHEME_REQUIREMENTS
+)
 
 
 def _validate_artifact_reference(reference: str) -> tuple[bool, str]:
