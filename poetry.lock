@@ -1699,14 +1699,14 @@ llama-index-llms-openai = ">=0.6.0,<0.7"
 
 [[package]]
 name = "llama-index-core"
-version = "0.14.10"
+version = "0.14.12"
 description = "Interface between LLMs and your data"
 optional = false
 python-versions = "<4.0,>=3.9"
 groups = ["main"]
 files = [
-    {file = "llama_index_core-0.14.10-py3-none-any.whl", hash = "sha256:ea0d563c777a7209664594588e3f0885a4784a1ae39dddaa28526867c79a3d65"},
-    {file = "llama_index_core-0.14.10.tar.gz", hash = "sha256:b930aac3161a5e145f4003e81ba94cbef062228a0d3ef39752e03471b0cb386b"},
+    {file = "llama_index_core-0.14.12-py3-none-any.whl", hash = "sha256:a3a7e3a084b01700458874dd635ba40d00af2680daa47f072e357e8f0d172872"},
+    {file = "llama_index_core-0.14.12.tar.gz", hash = "sha256:6917e5865c6c789046dca001ebeea5a7f80e1ba83ac646dc793aaa041e8feb12"},
 ]
 
 [package.dependencies]
