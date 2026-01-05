@@ -208,3 +208,6 @@ class EnumSignatureAlgorithm(str, Enum):
         This is the ONLY algorithm supported for handler packaging
         signatures in ONEX v1. Future versions may add ES256 support.
     """
+
+
+__all__ = ["EnumSignatureAlgorithm"]

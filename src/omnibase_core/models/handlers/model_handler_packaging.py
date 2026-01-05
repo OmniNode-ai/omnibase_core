@@ -92,6 +92,26 @@ def _validate_artifact_reference(reference: str) -> tuple[bool, str]:
     - netloc (host) is present when required by scheme
     - path is present when required by scheme
 
+    IP Address Literal Handling:
+        IP address literals (e.g., 192.168.1.1, [::1]) are ALLOWED in the netloc
+        (host) portion of URLs. This validation only checks that a netloc exists
+        when required by the scheme; it does not validate the format or
+        reachability of the host. IP addresses are valid hosts for artifact
+        references, useful for:
+        - Local development/testing with private registries
+        - Air-gapped environments without DNS
+        - Internal infrastructure with IP-based addressing
+
+        Examples of valid URLs with IP addresses:
+        - https://192.168.1.100:8080/artifacts/handler.whl
+        - oci://10.0.0.5:5000/myorg/handler:v1.0.0
+        - registry://[2001:db8::1]:8443/handlers/validator
+
+        Domain name validation (format, TLD, etc.) is intentionally NOT performed
+        here to keep this validation focused on URI structure. Domain/IP
+        resolution and reachability checks are the responsibility of the artifact
+        fetcher at runtime.
+
     Args:
         reference: Artifact reference string
 
@@ -400,10 +420,8 @@ class ModelHandlerPackaging(BaseModel):
     @model_validator(mode="after")
     def validate_signature_consistency(self) -> "ModelHandlerPackaging":
         """Validate signature_reference and signature_algorithm are consistent."""
-        has_ref = self.signature_reference is not None
-        has_algo = self.signature_algorithm is not None
-
-        if has_ref and not has_algo:
+        # Check: signature_reference set but signature_algorithm missing
+        if self.signature_reference is not None and self.signature_algorithm is None:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=(
@@ -413,15 +431,14 @@ class ModelHandlerPackaging(BaseModel):
                 ),
             )
 
-        if has_algo and not has_ref:
-            # Safe to access .value since has_algo ensures signature_algorithm is not None
-            assert self.signature_algorithm is not None  # for type narrowing
-            algo_value = self.signature_algorithm.value
+        # Check: signature_algorithm set but signature_reference missing
+        # Inline check allows mypy to narrow type without separate assert
+        if self.signature_algorithm is not None and self.signature_reference is None:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=(
                     "signature_reference is required when signature_algorithm is set. "
-                    f"Got signature_algorithm={algo_value} but "
+                    f"Got signature_algorithm={self.signature_algorithm.value} but "
                     f"signature_reference is None."
                 ),
             )

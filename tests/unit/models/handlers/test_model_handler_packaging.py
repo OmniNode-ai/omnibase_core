@@ -530,6 +530,187 @@ class TestModelHandlerPackagingSerialization:
 
 
 @pytest.mark.unit
+class TestModelHandlerPackagingURLQueryStringValidation:
+    """Tests for URL query string and fragment edge cases in artifact_reference validation.
+
+    These tests verify that URLs with query strings, fragments, and encoded characters
+    are correctly handled by the artifact_reference validator, which uses urlparse().
+    """
+
+    @pytest.mark.parametrize(
+        ("url", "description"),
+        [
+            # Simple query strings
+            (
+                "https://example.com/artifact.tar.gz?token=abc",
+                "simple query param",
+            ),
+            (
+                "https://releases.example.com/handler.whl?v=1.0.0",
+                "version query param",
+            ),
+            # Complex query strings with multiple params
+            (
+                "https://example.com/handler.whl?token=abc&version=1.0",
+                "multiple query params",
+            ),
+            (
+                "https://cdn.example.com/artifact.tar.gz?token=xyz&sig=def&ts=123",
+                "three query params",
+            ),
+            # Encoded characters in query strings
+            (
+                "https://example.com/handler.whl?name=my%20handler",
+                "URL encoded space in query",
+            ),
+            (
+                "https://example.com/handler.whl?param=value%3Dencoded",
+                "URL encoded equals sign in query",
+            ),
+            (
+                "https://example.com/handler.whl?path=%2Fopt%2Fhandlers",
+                "URL encoded path in query",
+            ),
+            # Fragment identifiers
+            (
+                "https://example.com/handler.whl#section",
+                "simple fragment",
+            ),
+            (
+                "https://releases.example.com/docs/handler.html#installation",
+                "fragment on doc URL",
+            ),
+            # Query strings with fragments
+            (
+                "https://example.com/handler.whl?token=abc#section",
+                "query and fragment combined",
+            ),
+            (
+                "https://example.com/artifact.tar.gz?v=1&sig=xyz#sha256",
+                "multiple params and fragment",
+            ),
+            # OCI scheme with query strings
+            (
+                "oci://ghcr.io/org/handler:v1.0.0?digest=sha256:abc",
+                "OCI URL with query param",
+            ),
+            (
+                "oci://docker.io/library/image:tag?platform=linux",
+                "OCI URL with platform query",
+            ),
+            # Registry scheme with query strings
+            (
+                "registry://internal.corp/handler/v1?token=secret",
+                "registry URL with token query",
+            ),
+            # File scheme with query strings (unusual but valid URI syntax)
+            (
+                "file:///opt/handlers/handler.whl?checksum=abc",
+                "file URL with query param",
+            ),
+            # Edge case: empty query value
+            (
+                "https://example.com/handler.whl?token=",
+                "empty query value",
+            ),
+            # Edge case: query with special characters
+            (
+                "https://example.com/handler.whl?redirect=https%3A%2F%2Fother.com",
+                "URL encoded URL in query",
+            ),
+        ],
+    )
+    def test_valid_urls_with_query_strings_accepted(
+        self, url: str, description: str
+    ) -> None:
+        """Test that URLs with query strings and fragments are accepted.
+
+        The artifact_reference validator uses urlparse() which correctly parses
+        query strings and fragments. The validation only checks scheme, netloc,
+        and path - query strings and fragments don't affect validation.
+        """
+        packaging = ModelHandlerPackaging(
+            artifact_reference=url,
+            integrity_hash=VALID_SHA256_HASH,
+            sandbox_compatibility=ModelSandboxRequirements(),
+            min_runtime_version=ModelSemVer(major=0, minor=6, patch=0),
+        )
+        assert packaging.artifact_reference == url
+
+    @pytest.mark.parametrize(
+        ("url", "expected_error"),
+        [
+            # Query string doesn't fix missing path
+            (
+                "https://example.com?token=abc",
+                "must include a path",
+            ),
+            # Query string doesn't fix missing path (root only)
+            (
+                "https://example.com/?token=abc",
+                "must include a path",
+            ),
+            # Fragment doesn't fix missing path
+            (
+                "https://example.com#section",
+                "must include a path",
+            ),
+            # OCI without path but with query
+            (
+                "oci://ghcr.io?token=abc",
+                "must include a path",
+            ),
+            # Registry without path but with fragment
+            (
+                "registry://internal.corp#section",
+                "must include a path",
+            ),
+        ],
+    )
+    def test_invalid_urls_with_query_strings_still_rejected(
+        self, url: str, expected_error: str
+    ) -> None:
+        """Test that invalid URL structure is still rejected even with query/fragment.
+
+        Query strings and fragments don't substitute for missing required URL
+        components (path for all schemes, host for https/oci/registry).
+        """
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelHandlerPackaging(
+                artifact_reference=url,
+                integrity_hash=VALID_SHA256_HASH,
+                sandbox_compatibility=ModelSandboxRequirements(),
+                min_runtime_version=ModelSemVer(major=0, minor=6, patch=0),
+            )
+        assert expected_error in str(exc_info.value)
+
+    def test_url_query_string_preserved_in_model(self) -> None:
+        """Test that query string is preserved exactly in the model."""
+        url = "https://example.com/handler.whl?token=abc123&version=1.0.0"
+        packaging = ModelHandlerPackaging(
+            artifact_reference=url,
+            integrity_hash=VALID_SHA256_HASH,
+            sandbox_compatibility=ModelSandboxRequirements(),
+            min_runtime_version=ModelSemVer(major=0, minor=6, patch=0),
+        )
+        # Verify the entire URL including query string is preserved
+        assert "token=abc123" in packaging.artifact_reference
+        assert "version=1.0.0" in packaging.artifact_reference
+
+    def test_url_fragment_preserved_in_model(self) -> None:
+        """Test that fragment is preserved exactly in the model."""
+        url = "https://example.com/handler.whl#sha256-checksum"
+        packaging = ModelHandlerPackaging(
+            artifact_reference=url,
+            integrity_hash=VALID_SHA256_HASH,
+            sandbox_compatibility=ModelSandboxRequirements(),
+            min_runtime_version=ModelSemVer(major=0, minor=6, patch=0),
+        )
+        # Verify fragment is preserved
+        assert "#sha256-checksum" in packaging.artifact_reference
+
+
+@pytest.mark.unit
 class TestModelHandlerPackagingRepr:
     """Tests for __repr__ output."""
 
