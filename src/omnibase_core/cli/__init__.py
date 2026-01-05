@@ -7,11 +7,13 @@ Usage:
     onex --help
     onex --version
     onex validate <path>
+    onex contract --help
 
     omninode-runtime-host-dev CONTRACT.yaml  # Dev/test only
 """
 
 from omnibase_core.cli.cli_commands import cli
+from omnibase_core.cli.cli_contract import contract
 from omnibase_core.cli.cli_runtime_host import main as runtime_host_dev_main
 
-__all__ = ["cli", "runtime_host_dev_main"]
+__all__ = ["cli", "contract", "runtime_host_dev_main"]

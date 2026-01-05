@@ -53,9 +53,10 @@ allowed_files:
     added: "2026-01-02"
     review: "2026-07-02"
 
-  - file: "src/omnibase_core/cli/cli_contract.py"
-    reason: "CLI tool for comparing arbitrary user-provided contract YAML/JSON files - must load raw YAML
-      to support comparing contracts with unknown or evolving schemas for diff rendering"
+  - file: "src/omnibase_core/cli/cli_contract_diff.py"
+    reason: "Loads arbitrary YAML contract files for semantic diff comparison - no model validation needed
+      as diffing works on raw dictionary structures to compare any two contract versions (load_contract_yaml_file
+      at line 483)"
     added: "2026-01-05"
     review: "2026-07-05"
 
@@ -107,3 +108,9 @@ allowed_functions:
       parser that loads user-defined validation rules from YAML strings"
     added: "2026-01-02"
     review: "2026-07-02"
+
+  - function: "load_contract_yaml_file"
+    reason: "Loads arbitrary YAML contract files for semantic diff comparison - no model validation needed
+      as diffing works on raw dictionary structures to compare any two contract versions (see cli_contract_diff.py:483)"
+    added: "2026-01-05"
+    review: "2026-07-05"
