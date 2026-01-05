@@ -59,11 +59,19 @@ class TestModelOutputDiffCreation:
 class TestModelOutputDiffComputedField:
     """Test has_differences computed field behavior.
 
-    IMPORTANT: has_differences is a computed field derived from content.
-    It should NOT be passed to the constructor.
+    IMPORTANT - Computed Field Behavior:
+        - ``has_differences`` is a @computed_field, NOT a stored field
+        - It is derived from checking if ANY of (values_changed, items_added,
+          items_removed, type_changes) contains data
+        - It cannot be overridden via constructor (extra="ignore" silently ignores it)
+        - The value is always dynamically computed from actual content
+
+    This test class verifies all computed field behaviors for has_differences.
     """
 
-    def test_has_differences_true_when_values_changed_not_empty(self) -> None:
+    def test_computed_has_differences_returns_true_when_values_changed_not_empty(
+        self,
+    ) -> None:
         """has_differences is True when values_changed has entries."""
         diff = ModelOutputDiff(
             values_changed={
@@ -116,8 +124,8 @@ class TestModelOutputDiffComputedField:
         )
         assert diff.has_differences is True
 
-    def test_has_differences_is_computed_not_stored(self) -> None:
-        """has_differences is recomputed based on current state."""
+    def test_computed_has_differences_is_derived_not_stored(self) -> None:
+        """Computed field has_differences is derived dynamically, not stored."""
         # Create empty diff
         diff = ModelOutputDiff()
         assert diff.has_differences is False
@@ -128,13 +136,14 @@ class TestModelOutputDiffComputedField:
         )
         assert diff_with_data.has_differences is True
 
-    def test_has_differences_constructor_param_ignored(self) -> None:
-        """Passing has_differences to constructor is ignored.
+    def test_computed_has_differences_ignores_constructor_param(self) -> None:
+        """Computed field has_differences ignores constructor parameter attempts.
 
-        has_differences is a @computed_field, not a stored field.
-        Any attempt to pass it to the constructor is silently ignored
-        (due to ConfigDict extra='ignore'), and the computed value
-        is always derived from the actual content fields.
+        IMPORTANT - Computed Field Behavior:
+            - ``has_differences`` is a @computed_field, NOT a stored field
+            - Any attempt to pass it to the constructor is silently ignored
+              (due to ConfigDict extra='ignore')
+            - The computed value is always derived from actual content fields
         """
         # Attempt to force has_differences=False when there ARE actual differences
         # The computed_field decorator ensures the value is derived from content
@@ -660,3 +669,268 @@ class TestModelOutputDiffFromDeepDiff:
             assert len(parts) == 2
             assert parts[0].strip()  # Non-empty old type
             assert parts[1].strip()  # Non-empty new type
+
+    def test_from_deepdiff_deeply_nested_structure_four_levels_succeeds(self) -> None:
+        """Factory handles deeply nested structures (4+ levels deep)."""
+        baseline = {
+            "level1": {
+                "level2": {
+                    "level3": {
+                        "level4": {
+                            "level5": "old_deep_value",
+                        },
+                    },
+                },
+            },
+        }
+        replay = {
+            "level1": {
+                "level2": {
+                    "level3": {
+                        "level4": {
+                            "level5": "new_deep_value",
+                        },
+                    },
+                },
+            },
+        }
+        diff = DeepDiff(baseline, replay)
+
+        output_diff = ModelOutputDiff.from_deepdiff(diff)
+
+        assert output_diff.has_differences is True
+        assert len(output_diff.values_changed) == 1
+        path = next(iter(output_diff.values_changed.keys()))
+        # Verify path contains all nesting levels
+        assert "level1" in path
+        assert "level2" in path
+        assert "level3" in path
+        assert "level4" in path
+        assert "level5" in path
+        change = output_diff.values_changed[path]
+        assert change.old_value == "old_deep_value"
+        assert change.new_value == "new_deep_value"
+
+    def test_from_deepdiff_mixed_list_and_dict_nesting_succeeds(self) -> None:
+        """Factory handles mixed list and dict nesting patterns."""
+        baseline = {"a": [{"b": {"c": [1, 2, 3]}}]}
+        replay = {"a": [{"b": {"c": [4, 5, 6]}}]}
+        diff = DeepDiff(baseline, replay)
+
+        output_diff = ModelOutputDiff.from_deepdiff(diff)
+
+        assert output_diff.has_differences is True
+        # The diff should capture the changes in the nested list
+        assert isinstance(output_diff, ModelOutputDiff)
+        # Verify conversion succeeded without errors
+        total_changes = (
+            len(output_diff.values_changed)
+            + len(output_diff.items_added)
+            + len(output_diff.items_removed)
+            + len(output_diff.type_changes)
+        )
+        assert total_changes > 0
+
+    def test_from_deepdiff_very_large_numeric_changes_succeeds(self) -> None:
+        """Factory handles very large percentage changes in numeric values."""
+        baseline = {
+            "tiny_to_huge": 0.0000001,
+            "huge_to_tiny": 999999999999,
+            "negative_to_positive": -1000000,
+            "zero_to_large": 0,
+        }
+        replay = {
+            "tiny_to_huge": 999999999999,
+            "huge_to_tiny": 0.0000001,
+            "negative_to_positive": 1000000,
+            "zero_to_large": float("inf"),
+        }
+        diff = DeepDiff(baseline, replay)
+
+        output_diff = ModelOutputDiff.from_deepdiff(diff)
+
+        assert output_diff.has_differences is True
+        # DeepDiff categorizes float<->int conversions as type_changes
+        # Only same-type value changes go into values_changed
+        total_changes = len(output_diff.values_changed) + len(output_diff.type_changes)
+        assert total_changes >= 4
+        # Verify type changes are captured for float/int conversions
+        assert len(output_diff.type_changes) >= 1
+        # Check that negative_to_positive (int -> int) is in values_changed
+        assert "root['negative_to_positive']" in output_diff.values_changed
+        change = output_diff.values_changed["root['negative_to_positive']"]
+        assert change.old_value == "-1000000"
+        assert change.new_value == "1000000"
+
+    def test_from_deepdiff_unicode_special_characters_in_keys_succeeds(self) -> None:
+        """Factory handles unicode and special characters in dictionary keys."""
+        baseline = {
+            "emoji_key_🔑": "old_value",
+            "日本語キー": "japanese_old",
+            "clé_française": "french_old",
+            "ключ_русский": "russian_old",
+            "key\nwith\nnewlines": "newline_old",
+            "key\twith\ttabs": "tab_old",
+        }
+        replay = {
+            "emoji_key_🔑": "new_value",
+            "日本語キー": "japanese_new",
+            "clé_française": "french_new",
+            "ключ_русский": "russian_new",
+            "key\nwith\nnewlines": "newline_new",
+            "key\twith\ttabs": "tab_new",
+        }
+        diff = DeepDiff(baseline, replay)
+
+        output_diff = ModelOutputDiff.from_deepdiff(diff)
+
+        assert output_diff.has_differences is True
+        assert len(output_diff.values_changed) == 6
+        # Verify all keys are properly converted
+        for change in output_diff.values_changed.values():
+            assert (
+                change.old_value.endswith("_old") or "old" in change.old_value.lower()
+            )
+            assert (
+                change.new_value.endswith("_new") or "new" in change.new_value.lower()
+            )
+
+    def test_from_deepdiff_unicode_special_characters_in_values_succeeds(self) -> None:
+        """Factory handles unicode and special characters in values."""
+        baseline = {
+            "emoji": "👍 thumbs up",
+            "chinese": "中文文本",
+            "arabic": "النص العربي",
+            "special": "line1\nline2\ttabbed",
+            "quotes": 'single\' and "double"',
+        }
+        replay = {
+            "emoji": "👎 thumbs down",
+            "chinese": "更新的中文",
+            "arabic": "تحديث النص",
+            "special": "updated\nlines\there",
+            "quotes": 'updated\' and "quotes"',
+        }
+        diff = DeepDiff(baseline, replay)
+
+        output_diff = ModelOutputDiff.from_deepdiff(diff)
+
+        assert output_diff.has_differences is True
+        assert len(output_diff.values_changed) == 5
+        # Check emoji key specifically
+        emoji_path = "root['emoji']"
+        if emoji_path in output_diff.values_changed:
+            change = output_diff.values_changed[emoji_path]
+            assert "👍" in change.old_value
+            assert "👎" in change.new_value
+
+    def test_from_deepdiff_empty_nested_dicts_succeeds(self) -> None:
+        """Factory handles empty nested dictionaries."""
+        baseline = {"outer": {"empty_dict": {}}}
+        replay = {"outer": {"empty_dict": {"now_has": "value"}}}
+        diff = DeepDiff(baseline, replay)
+
+        output_diff = ModelOutputDiff.from_deepdiff(diff)
+
+        assert output_diff.has_differences is True
+        # Item was added to the previously empty dict
+        assert len(output_diff.items_added) >= 1
+
+    def test_from_deepdiff_empty_nested_lists_succeeds(self) -> None:
+        """Factory handles empty nested lists."""
+        baseline = {"data": {"items": []}}
+        replay = {"data": {"items": [1, 2, 3]}}
+        diff = DeepDiff(baseline, replay)
+
+        output_diff = ModelOutputDiff.from_deepdiff(diff)
+
+        assert output_diff.has_differences is True
+        # Items were added to the previously empty list
+        assert len(output_diff.items_added) >= 1
+
+    def test_from_deepdiff_nested_becoming_empty_succeeds(self) -> None:
+        """Factory handles nested structures becoming empty."""
+        baseline = {"data": {"items": [1, 2, 3], "mapping": {"a": 1}}}
+        replay = {"data": {"items": [], "mapping": {}}}
+        diff = DeepDiff(baseline, replay)
+
+        output_diff = ModelOutputDiff.from_deepdiff(diff)
+
+        assert output_diff.has_differences is True
+        # Items were removed from both the list and dict
+        assert len(output_diff.items_removed) >= 1
+
+    def test_from_deepdiff_with_ignore_order_true_succeeds(self) -> None:
+        """Factory handles DeepDiff with ignore_order=True parameter."""
+        baseline = {"items": [1, 2, 3]}
+        replay = {"items": [3, 2, 1]}  # Same items, different order
+        diff = DeepDiff(baseline, replay, ignore_order=True)
+
+        output_diff = ModelOutputDiff.from_deepdiff(diff)
+
+        # With ignore_order=True, reordered lists should show no differences
+        assert output_diff.has_differences is False
+        assert output_diff.values_changed == {}
+        assert output_diff.items_added == []
+        assert output_diff.items_removed == []
+
+    def test_from_deepdiff_with_ignore_order_detects_value_changes(self) -> None:
+        """Factory with ignore_order=True still detects actual value changes."""
+        baseline = {"items": [1, 2, 3]}
+        replay = {"items": [3, 2, 4]}  # 1 changed to 4, reordered
+        diff = DeepDiff(baseline, replay, ignore_order=True)
+
+        output_diff = ModelOutputDiff.from_deepdiff(diff)
+
+        # Should detect that items changed even with ignore_order
+        assert output_diff.has_differences is True
+        total_changes = (
+            len(output_diff.values_changed)
+            + len(output_diff.items_added)
+            + len(output_diff.items_removed)
+        )
+        assert total_changes >= 1
+
+    def test_from_deepdiff_with_ignore_order_nested_dicts_in_lists(self) -> None:
+        """Factory handles ignore_order with nested dicts in lists."""
+        baseline = {"users": [{"id": 1, "name": "Alice"}, {"id": 2, "name": "Bob"}]}
+        replay = {"users": [{"id": 2, "name": "Bob"}, {"id": 1, "name": "Alice"}]}
+        diff = DeepDiff(baseline, replay, ignore_order=True)
+
+        output_diff = ModelOutputDiff.from_deepdiff(diff)
+
+        # Reordering identical dicts should show no differences
+        assert output_diff.has_differences is False
+
+    def test_from_deepdiff_complex_mixed_changes_succeeds(self) -> None:
+        """Factory handles complex structures with multiple change types."""
+        baseline = {
+            "metadata": {"version": 1, "tags": ["old"]},
+            "data": [
+                {"id": 1, "nested": {"deep": {"value": 100}}},
+                {"id": 2, "nested": {"deep": {"value": 200}}},
+            ],
+            "config": {"enabled": True, "threshold": 0.5},
+        }
+        replay = {
+            "metadata": {"version": 2, "tags": ["new", "updated"]},
+            "data": [
+                {"id": 1, "nested": {"deep": {"value": 150}}},
+                {"id": 3, "nested": {"deep": {"value": 300}}},  # id changed
+            ],
+            "config": {"enabled": "yes", "threshold": 0.8},  # type change on enabled
+        }
+        diff = DeepDiff(baseline, replay)
+
+        output_diff = ModelOutputDiff.from_deepdiff(diff)
+
+        assert output_diff.has_differences is True
+        # Verify multiple categories of changes are captured
+        assert isinstance(output_diff.values_changed, dict)
+        assert isinstance(output_diff.type_changes, dict)
+        # Type change for enabled: bool -> str
+        if output_diff.type_changes:
+            type_change_found = any(
+                "enabled" in path for path in output_diff.type_changes
+            )
+            assert type_change_found

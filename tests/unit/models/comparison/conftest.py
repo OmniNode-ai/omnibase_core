@@ -1,10 +1,23 @@
-"""
-Shared fixtures for comparison model tests.
+"""Shared fixtures for comparison model tests.
 
 Provides reusable fixtures for:
 - Sample execution data for baseline/replay comparison
 - Invariant result samples
 - Output hashes and diffs
+
+Centralized Constants:
+    - Test UUIDs (TEST_BASELINE_ID, TEST_REPLAY_ID, etc.) are defined here
+      to avoid duplication across test modules.
+
+Computed Fields (Important for Test Design):
+    - ``ModelInvariantComparisonSummary.regression_detected``: A @computed_field
+      derived from ``new_violations > 0``. Cannot be set via constructor.
+    - ``ModelOutputDiff.has_differences``: A @computed_field derived from
+      whether any of (values_changed, items_added, items_removed, type_changes)
+      contain data. Cannot be set via constructor.
+
+    These computed fields should NOT be included in fixture data dictionaries
+    as they are automatically derived from the model's content.
 """
 
 from typing import Any
@@ -114,8 +127,14 @@ def sample_invariant_comparison_summary() -> dict[str, Any]:
     """Provide sample invariant comparison summary data.
 
     Returns:
-        Dictionary with invariant comparison metrics including totals,
-        pass/fail counts, and regression detection flag.
+        Dictionary with invariant comparison metrics including totals
+        and pass/fail counts.
+
+    Note:
+        The ``regression_detected`` field is NOT included in this fixture
+        because it is a @computed_field derived from ``new_violations > 0``.
+        When this data is used to create a ModelInvariantComparisonSummary,
+        regression_detected will automatically be True (since new_violations=1).
     """
     return {
         "total_invariants": 5,

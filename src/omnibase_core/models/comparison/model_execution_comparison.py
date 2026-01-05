@@ -312,5 +312,49 @@ class ModelExecutionComparison(BaseModel):
 
         return self
 
+    @model_validator(mode="after")
+    def _validate_output_match_consistency(self) -> "ModelExecutionComparison":
+        """Validate that output_match field is consistent with hash comparison.
+
+        Validates data consistency between output_match flag and actual hash values:
+            - When output_match is True:
+                - baseline_output_hash must equal replay_output_hash
+                - output_diff should be None (identical outputs have no diff)
+            - When output_match is False:
+                - baseline_output_hash must NOT equal replay_output_hash
+
+        This ensures the output_match flag accurately reflects the actual
+        comparison state and prevents data inconsistencies where the flag
+        contradicts the underlying hash values.
+
+        Raises:
+            ValueError: If output_match value is inconsistent with hash comparison.
+        """
+        hashes_match = self.baseline_output_hash == self.replay_output_hash
+
+        if self.output_match and not hashes_match:
+            raise ValueError(
+                f"output_match is True but hashes differ: "
+                f"baseline_output_hash={self.baseline_output_hash!r}, "
+                f"replay_output_hash={self.replay_output_hash!r}. "
+                f"output_match must be False when hashes are different."
+            )
+
+        if not self.output_match and hashes_match:
+            raise ValueError(
+                f"output_match is False but hashes are identical: "
+                f"baseline_output_hash={self.baseline_output_hash!r}, "
+                f"replay_output_hash={self.replay_output_hash!r}. "
+                f"output_match must be True when hashes match."
+            )
+
+        if self.output_match and self.output_diff is not None:
+            raise ValueError(
+                "output_match is True but output_diff is present. "
+                "When outputs are identical, output_diff should be None."
+            )
+
+        return self
+
 
 __all__ = ["ModelExecutionComparison"]

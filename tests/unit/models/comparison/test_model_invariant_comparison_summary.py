@@ -4,12 +4,18 @@ Tests the invariant comparison summary model used for aggregating
 statistics about how invariant evaluations changed between baseline
 and replay executions.
 
+Computed Fields:
+    - ``regression_detected``: A @computed_field derived from ``new_violations > 0``.
+      This field is NOT a constructor parameter and cannot be overridden.
+      It is automatically computed based on the actual ``new_violations`` count.
+
 Test Categories:
     - Creation: Model instantiation and field validation
     - Validation: Constraint validation (non-negative values, count consistency)
     - Edge Cases: Boundary conditions (zero invariants, all passed/failed)
     - Equality: Model equality comparisons
     - Data Consistency: Validator that enforces counts sum to total
+    - Computed Fields: Verification that regression_detected is derived correctly
 """
 
 from typing import Any
@@ -81,8 +87,14 @@ class TestModelInvariantComparisonSummaryCreation:
                 f"Field {field} should be required"
             )
 
-    def test_regression_detected_true_when_new_violations_present(self) -> None:
-        """regression_detected is True when new_violations > 0."""
+    def test_computed_regression_detected_returns_true_when_new_violations_present(
+        self,
+    ) -> None:
+        """Computed field regression_detected returns True when new_violations > 0.
+
+        Note: regression_detected is a @computed_field derived from new_violations > 0.
+        It is not a constructor parameter and cannot be set directly.
+        """
         summary = ModelInvariantComparisonSummary(
             total_invariants=5,
             both_passed=3,
@@ -93,8 +105,14 @@ class TestModelInvariantComparisonSummaryCreation:
         assert summary.new_violations > 0
         assert summary.regression_detected is True
 
-    def test_regression_detected_false_when_no_new_violations(self) -> None:
-        """regression_detected is False when new_violations == 0."""
+    def test_computed_regression_detected_returns_false_when_no_new_violations(
+        self,
+    ) -> None:
+        """Computed field regression_detected returns False when new_violations == 0.
+
+        Note: regression_detected is a @computed_field derived from new_violations > 0.
+        It is not a constructor parameter and cannot be set directly.
+        """
         summary = ModelInvariantComparisonSummary(
             total_invariants=5,
             both_passed=4,
@@ -105,13 +123,21 @@ class TestModelInvariantComparisonSummaryCreation:
         assert summary.new_violations == 0
         assert summary.regression_detected is False
 
-    def test_regression_detected_is_computed_from_new_violations(self) -> None:
-        """regression_detected is a @computed_field derived from new_violations > 0, not a constructor parameter.
+    def test_computed_regression_detected_derives_from_new_violations_not_constructor(
+        self,
+    ) -> None:
+        """Computed field regression_detected derives from new_violations, not constructor.
 
-        This test explicitly documents that:
-        1. regression_detected is automatically computed based on new_violations
-        2. It cannot be overridden via constructor (extra="ignore" means it's silently ignored)
-        3. The value is always derived from the actual new_violations count
+        IMPORTANT - Computed Field Behavior:
+            - ``regression_detected`` is a @computed_field, NOT a stored field
+            - It is derived from the expression: ``new_violations > 0``
+            - It cannot be overridden via constructor (extra="ignore" silently ignores it)
+            - The value is always dynamically computed from actual new_violations count
+
+        This test explicitly verifies all three computed field behaviors:
+            1. new_violations=0 -> regression_detected=False
+            2. new_violations>0 -> regression_detected=True
+            3. Constructor parameter attempts are ignored
         """
         # Case 1: new_violations=0 -> regression_detected=False
         summary_no_regression = ModelInvariantComparisonSummary(
