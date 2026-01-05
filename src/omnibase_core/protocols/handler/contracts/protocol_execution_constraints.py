@@ -83,6 +83,7 @@ class ProtocolExecutionConstraints(Protocol):
                 except RetryableError:
                     if attempt == constraints.max_retries:
                         raise MaxRetriesExceededError()
+                    await asyncio.sleep(2 ** attempt)  # Exponential backoff
         ```
 
     Note:

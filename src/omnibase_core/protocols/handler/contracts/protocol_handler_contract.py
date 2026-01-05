@@ -24,7 +24,7 @@ See Also:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Protocol, Self, runtime_checkable
 
 if TYPE_CHECKING:
     from omnibase_core.protocols.handler.contracts.protocol_capability_dependency import (
@@ -309,7 +309,7 @@ class ProtocolHandlerContract(Protocol):
         ...
 
     @classmethod
-    def from_yaml(cls, content: str) -> ProtocolHandlerContract:
+    def from_yaml(cls, content: str) -> Self:
         """
         Deserialize a contract from YAML content.
 
