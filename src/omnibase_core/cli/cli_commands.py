@@ -532,6 +532,11 @@ from omnibase_core.cli.cli_composition_report import composition_report
 
 cli.add_command(composition_report)
 
+# Register contract command group from separate module
+from omnibase_core.cli.cli_contract import contract
+
+cli.add_command(contract)
+
 
 if __name__ == "__main__":
     cli()
