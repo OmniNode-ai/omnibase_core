@@ -43,7 +43,43 @@ class ProtocolExecutionConstrainable(Protocol):
         - Resource limit declaration for memory/CPU bounds
         - Constraint introspection for monitoring and debugging
 
+    Consistency Invariant:
+        Implementations MUST maintain consistency between ``has_constraints()``
+        and ``execution_constraints``. Specifically:
+
+        - ``has_constraints()`` MUST return ``True`` if and only if
+          ``execution_constraints`` returns a non-None value.
+        - ``has_constraints()`` MUST return ``False`` if and only if
+          ``execution_constraints`` returns ``None``.
+
+        **Recommended Implementation Pattern**: To guarantee consistency,
+        implementers SHOULD derive ``has_constraints()`` directly from
+        ``execution_constraints``:
+
+        ```python
+        def has_constraints(self) -> bool:
+            return self.execution_constraints is not None
+        ```
+
+        This pattern ensures the invariant cannot be violated, as the
+        boolean result is always derived from the same source of truth.
+
+        **Validation for Implementers**: When testing implementations,
+        verify both directions of the invariant:
+
+        ```python
+        # Test 1: has_constraints() True implies non-None constraints
+        if obj.has_constraints():
+            assert obj.execution_constraints is not None
+
+        # Test 2: has_constraints() False implies None constraints
+        if not obj.has_constraints():
+            assert obj.execution_constraints is None
+        ```
+
     Example:
+        Basic usage with constraint checking:
+
         ```python
         class MyHandler:
             '''Handler with execution constraints.'''
@@ -66,12 +102,27 @@ class ProtocolExecutionConstrainable(Protocol):
             print(f"Timeout: {constraints.timeout_seconds}s")
         ```
 
-    Note:
-        Objects implementing this protocol should return consistent values
-        from both methods. If ``has_constraints()`` returns True, then
-        ``execution_constraints`` should return a non-None value. Similarly,
-        if ``has_constraints()`` returns False, ``execution_constraints``
-        should return None.
+        Recommended implementation maintaining consistency:
+
+        ```python
+        class ConsistentConstrainable:
+            '''Implementation with guaranteed consistency.'''
+
+            def __init__(
+                self, constraints: ProtocolExecutionConstraints | None = None
+            ) -> None:
+                self._constraints = constraints
+
+            @property
+            def execution_constraints(self) -> ProtocolExecutionConstraints | None:
+                return self._constraints
+
+            def has_constraints(self) -> bool:
+                # Derived from execution_constraints to ensure consistency.
+                # This guarantees the invariant: has_constraints() returns True
+                # if and only if execution_constraints returns non-None.
+                return self._constraints is not None
+        ```
 
     See Also:
         ProtocolExecutionConstraints: The constraints definition protocol.
@@ -125,6 +176,27 @@ class ProtocolExecutionConstrainable(Protocol):
             True if constraints are defined, False otherwise.
             Returns True if and only if ``execution_constraints`` would
             return a non-None value.
+
+        Important:
+            This is a **derived property** that MUST be consistent with
+            ``execution_constraints``. The consistency invariant requires:
+
+            - Return ``True`` if and only if ``execution_constraints`` is not None
+            - Return ``False`` if and only if ``execution_constraints`` is None
+
+            **Recommended Implementation**: Derive directly from the constraints
+            property to guarantee consistency:
+
+            ```python
+            def has_constraints(self) -> bool:
+                return self.execution_constraints is not None
+            ```
+
+            Do NOT cache or independently track the boolean state, as this
+            can lead to inconsistency if the underlying constraints change.
+
+        See Also:
+            The class-level "Consistency Invariant" section for full details.
         """
         ...
 

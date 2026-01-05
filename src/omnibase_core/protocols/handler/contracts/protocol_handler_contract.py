@@ -99,6 +99,18 @@ class ProtocolHandlerContract(Protocol):
         in omnibase_core (OMN-1117). The protocol enables loose coupling
         between components while maintaining type safety.
 
+    Implementation Note (Pydantic Validation):
+        Implementations of this protocol (e.g., ModelHandlerContract) should use
+        Pydantic validators to enforce semantic constraints on field values:
+            - timeout_seconds > 0 (must be positive)
+            - max_retries >= 0 (must be non-negative)
+            - memory_limit_mb > 0 (must be positive if specified)
+            - cpu_limit > 0 (must be positive if specified)
+            - concurrency_limit >= 1 (must be at least 1 if specified)
+            - handler_version matches semver format
+        These validations ensure contract correctness at construction time
+        rather than deferring to runtime validation.
+
     See Also:
         ProtocolHandlerBehaviorDescriptor: Behavior characteristics
         ProtocolCapabilityDependency: Capability requirements
@@ -346,6 +358,31 @@ class ProtocolHandlerContract(Protocol):
             ```
         """
         ...
+
+
+def create_handler_contract_from_yaml(  # stub-ok
+    content: str,
+) -> ProtocolHandlerContract:
+    """
+    Factory function to create a handler contract from YAML content.
+
+    This is an alternative to ProtocolHandlerContract.from_yaml() that provides
+    better type inference in some contexts.
+
+    Args:
+        content: YAML string to parse.
+
+    Returns:
+        New contract instance parsed from YAML.
+
+    Raises:
+        ValueError: If YAML is malformed or missing required fields.
+        NotImplementedError: Protocol methods are abstract.
+    """
+    raise NotImplementedError(  # error-ok: intentional stub for abstract factory
+        "Factory function requires a concrete implementation. "
+        "Use ModelHandlerContract.from_yaml() when available (OMN-1117)."
+    )
 
 
 __all__ = ["ProtocolHandlerContract"]
