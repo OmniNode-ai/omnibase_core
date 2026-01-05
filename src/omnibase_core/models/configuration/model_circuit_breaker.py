@@ -3,6 +3,43 @@ ModelCircuitBreaker - Circuit breaker configuration for load balancing
 
 Circuit breaker model for implementing fault tolerance and preventing
 cascade failures in load balancing systems.
+
+# ============================================================================
+# PR #328 Context: Why This Fix Is Included in the Evidence Models PR
+# ============================================================================
+#
+# This file contains fixes for a LATENT BUG that existed before the evidence
+# models work but was EXPOSED when running tests with pytest-xdist parallel
+# execution.
+#
+# The Problem:
+# ------------
+# ModelCircuitBreaker has a forward reference to ModelCircuitBreakerMetadata,
+# which in turn has a forward reference to ModelCustomFields. When pytest-xdist
+# runs tests in parallel across multiple worker processes, each worker imports
+# modules independently and in potentially different orders. This caused
+# Pydantic to fail with "ModelCustomFields is not fully defined" errors because
+# the forward references were not resolved before validation.
+#
+# Why It Appeared in Evidence Model Tests:
+# ----------------------------------------
+# The evidence model tests (ModelEvidenceSummary, etc.) import modules that
+# transitively depend on ModelCircuitBreaker. When these tests run in parallel
+# with pytest-xdist (using `-n auto` or `-n 4` workers), the import order
+# becomes non-deterministic. This exposed the latent forward reference bug
+# that was hidden when tests ran sequentially.
+#
+# The Fix:
+# --------
+# 1. Added _ensure_models_rebuilt() with thread-safe double-checked locking
+# 2. Override __new__ to trigger rebuild before Pydantic validation
+# 3. Override model_validate() and model_validate_json() for class method calls
+#
+# This ensures forward references are resolved regardless of import order,
+# making the model safe for parallel test execution across worker processes.
+#
+# Related Issue: OMN-1195 (Evidence Summary Model implementation)
+# ============================================================================
 """
 
 import threading

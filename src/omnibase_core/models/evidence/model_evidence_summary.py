@@ -183,8 +183,27 @@ class ModelEvidenceSummary(BaseModel):
             ValueError: If comparisons list is empty.
 
         Note:
-            If no valid executed_at timestamps are found in comparisons,
-            both started_at and ended_at will default to the current UTC time.
+            **Timestamp handling**: If no valid executed_at timestamps are found
+            in comparisons, both started_at and ended_at will default to the
+            current UTC time.
+
+            **Cost statistics (cost_stats) - graceful degradation**: The cost_stats
+            field will be None when cost data is incomplete. This occurs when:
+
+            - ANY comparison has baseline_cost=None (missing baseline cost)
+            - ANY comparison has replay_cost=None (missing replay cost)
+            - ANY comparison has non-numeric cost values (converted to None)
+
+            This is intentional graceful degradation, not an error. Cost tracking
+            is optional in corpus replay, and incomplete cost data should not
+            prevent summary generation. When cost_stats is None:
+
+            - The headline omits the cost delta (shows "47/50 passed, 3 violations,
+              latency -18%" instead of including ", cost -42%")
+            - Confidence scoring skips the cost penalty factor
+            - All other metrics (pass rate, violations, latency) remain functional
+
+            See ModelCostStatistics.from_cost_values() for the underlying logic.
         """
         if not comparisons:
             # error-ok: factory method validation, simpler than OnexError for caller
@@ -297,19 +316,80 @@ class ModelEvidenceSummary(BaseModel):
     ) -> float:
         """Calculate confidence score using weighted factors.
 
+        Output Range:
+            Always returns a value in [0.0, 1.0], clamped at both ends.
+
         Formula:
             confidence = 1.0
-            confidence *= pass_rate  # Primary factor
+            confidence *= pass_rate  # Primary factor (multiplicative)
             if invariant_violations.new_critical_violations > 0:
-                confidence *= 0.5  # Heavy penalty for NEW critical violations (regressions)
+                confidence *= 0.5  # Heavy penalty for NEW critical violations
             if latency_stats.delta_avg_percent > 50:
-                confidence -= 0.1  # Moderate penalty for 50%+ latency regression
+                confidence -= 0.1  # Secondary penalty (subtractive)
             if cost_stats is not None and cost_stats.delta_percent > 50:
-                confidence -= 0.05  # Minor penalty for 50%+ cost increase
+                confidence -= 0.05  # Secondary penalty (subtractive)
             confidence = max(0.0, min(1.0, confidence))  # Clamp to [0, 1]
+
+        Design Rationale (Intentional Two-Tier Penalty System):
+            This formula uses INTENTIONALLY different penalty mechanisms:
+
+            1. MULTIPLICATIVE (pass_rate): The pass_rate multiplication is the
+               PRIMARY quality signal. It scales confidence proportionally - if
+               only 80% of tests pass, confidence can never exceed 0.8 regardless
+               of other factors. This ensures pass_rate dominates the score.
+
+            2. SUBTRACTIVE (latency/cost): These are SECONDARY adjustments that
+               apply fixed penalties when thresholds are exceeded. They represent
+               "additional concerns" that warrant caution even when tests pass.
+
+            This is NOT a "double penalty" but rather a hierarchical system:
+            - Pass rate determines the ceiling (multiplicative)
+            - Performance regressions lower the floor (subtractive)
+
+            The design ensures that a 100% pass rate with severe latency regression
+            still yields a lower confidence than 100% pass rate with acceptable
+            performance, while maintaining pass_rate as the dominant factor.
 
         NEW critical violations are regressions: invariants that passed in baseline
         but failed in replay (baseline_passed=True, replay_passed=False, severity=critical).
+
+        Example Calculations:
+            Example 1 - Perfect score:
+                pass_rate=1.0, no violations, latency_delta=10%, no cost data
+                confidence = 1.0 * 1.0 = 1.0 (no penalties apply)
+                Result: 1.0
+
+            Example 2 - Moderate pass rate only:
+                pass_rate=0.8, no violations, latency_delta=20%, no cost data
+                confidence = 1.0 * 0.8 = 0.8 (no penalties apply)
+                Result: 0.8
+
+            Example 3 - Good pass rate with latency regression:
+                pass_rate=0.95, no violations, latency_delta=60%, no cost data
+                confidence = 1.0 * 0.95 = 0.95
+                confidence = 0.95 - 0.1 = 0.85 (latency penalty)
+                Result: 0.85
+
+            Example 4 - Perfect pass rate with both regressions:
+                pass_rate=1.0, no violations, latency_delta=60%, cost_delta=60%
+                confidence = 1.0 * 1.0 = 1.0
+                confidence = 1.0 - 0.1 = 0.9 (latency penalty)
+                confidence = 0.9 - 0.05 = 0.85 (cost penalty)
+                Result: 0.85
+
+            Example 5 - New critical violation:
+                pass_rate=0.9, new_critical=1, latency_delta=10%, no cost data
+                confidence = 1.0 * 0.9 = 0.9
+                confidence = 0.9 * 0.5 = 0.45 (critical violation penalty)
+                Result: 0.45
+
+            Example 6 - Worst case (all penalties):
+                pass_rate=0.7, new_critical=1, latency_delta=60%, cost_delta=60%
+                confidence = 1.0 * 0.7 = 0.7
+                confidence = 0.7 * 0.5 = 0.35 (critical violation)
+                confidence = 0.35 - 0.1 = 0.25 (latency)
+                confidence = 0.25 - 0.05 = 0.2 (cost)
+                Result: 0.2
 
         Args:
             pass_rate: Ratio of passed executions (0.0 - 1.0).

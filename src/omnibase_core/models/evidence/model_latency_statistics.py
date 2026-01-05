@@ -94,17 +94,55 @@ class ModelLatencyStatistics(BaseModel):
     ) -> "ModelLatencyStatistics":
         """Compute statistics from raw latency measurements.
 
+        Design Decision - Equal Length Requirement:
+            This method requires baseline and replay lists to have identical lengths.
+            This is a deliberate design choice for statistical validity:
+
+            1. **Paired Comparisons**: The model assumes paired measurements where each
+               baseline measurement corresponds to a replay measurement of the same
+               operation. This enables meaningful delta calculations (e.g., "operation X
+               took 10ms in baseline vs 12ms in replay").
+
+            2. **Statistical Validity**: Comparing percentiles (P50, P95) across
+               different-sized samples introduces statistical bias. Equal lengths
+               ensure apples-to-apples comparisons.
+
+            3. **Caller Responsibility**: The caller should ensure equal-length lists
+               by design. In corpus replay scenarios, this means:
+               - Replaying the exact same corpus items as baseline
+               - Filtering to only include successfully executed items in both runs
+               - Using the same sampling/windowing strategy for both
+
+            4. **Alternative Approaches Not Implemented**: Supporting different lengths
+               would require resampling, interpolation, or windowing logic that
+               introduces assumptions about data distribution. This complexity is
+               intentionally left to the caller if needed.
+
         Args:
             baseline_values: List of baseline latency measurements (ms).
-                Must not be empty.
+                Must not be empty. Length must match replay_values.
             replay_values: List of replay latency measurements (ms).
-                Must not be empty.
+                Must not be empty. Length must match baseline_values.
 
         Returns:
             ModelLatencyStatistics with computed metrics.
 
         Raises:
             ModelOnexError: If either list is empty or lists have different lengths.
+                Error code: VALIDATION_ERROR with context indicating which constraint
+                was violated.
+
+        Example:
+            >>> # Correct usage: equal-length paired measurements
+            >>> baseline = [10.0, 15.0, 12.0]  # Same 3 operations
+            >>> replay = [11.0, 14.0, 13.0]    # Same 3 operations replayed
+            >>> stats = ModelLatencyStatistics.from_latency_values(baseline, replay)
+
+            >>> # Incorrect: different lengths will raise ModelOnexError
+            >>> baseline = [10.0, 15.0, 12.0]
+            >>> replay = [11.0, 14.0]  # Missing one measurement
+            >>> # This will raise: "baseline_values and replay_values must have
+            >>> # the same length"
         """
         if not baseline_values:
             raise ModelOnexError(
