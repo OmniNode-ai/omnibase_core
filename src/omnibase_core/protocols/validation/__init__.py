@@ -40,9 +40,13 @@ from omnibase_core.protocols.validation.protocol_constraint_validation_result im
 from omnibase_core.protocols.validation.protocol_constraint_validator import (
     ProtocolConstraintValidator,
 )
+from omnibase_core.protocols.validation.protocol_contract_validation_event_emitter import (
+    ProtocolContractValidationEventEmitter,
+)
 from omnibase_core.protocols.validation.protocol_contract_validation_pipeline import (
     ProtocolContractValidationPipeline,
 )
+from omnibase_core.protocols.validation.protocol_event_sink import ProtocolEventSink
 from omnibase_core.protocols.validation.protocol_onex_standards import (
     ProtocolONEXStandards,
 )
@@ -79,6 +83,10 @@ __all__ = [
     "ProtocolQualityValidator",
     # Contract Validation Pipeline (OMN-1128)
     "ProtocolContractValidationPipeline",
+    # Contract Validation Event Emitter (OMN-1151)
+    "ProtocolContractValidationEventEmitter",
+    # Event Sink Protocol (OMN-1151)
+    "ProtocolEventSink",
     # Constraint Validator (OMN-1128 SPI Seam)
     "ProtocolConstraintValidator",
     "ProtocolConstraintValidationResult",

@@ -80,6 +80,9 @@ from .enum_effect_types import (
 # Validation-related enums
 from .enum_environment_validation_rule_type import EnumEnvironmentValidationRuleType
 
+# Event sink type enum (OMN-1151)
+from .enum_event_sink_type import EnumEventSinkType
+
 # Execution-related enums
 from .enum_execution_mode import EnumExecutionMode
 from .enum_execution_shape import EnumExecutionShape, EnumMessageCategory
@@ -480,6 +483,8 @@ __all__ = [
     # Invariant domain (OMN-1192)
     "EnumInvariantSeverity",
     "EnumInvariantType",
+    # Event sink type domain (OMN-1151)
+    "EnumEventSinkType",
     # NOTE: Removed from __all__ due to missing module files or circular imports:
     # - "EnumRegistryType" (module doesn't exist)
     # - "ModelServiceModeEnum" (replaced with correct "EnumServiceMode")
