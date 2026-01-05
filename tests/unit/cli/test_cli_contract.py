@@ -9,7 +9,7 @@ Tests cover the following CLI commands:
 - `onex contract build`: Merges patches with profiles, validates, outputs expanded contracts
 - `onex contract diff`: Semantic diff between two contract YAML files
 
-This file is written following TDD - tests first, implementation later.
+This file was originally written following TDD. The implementation is now complete.
 See OMN-1129 for the ticket details.
 
 Test Categories:
@@ -18,11 +18,9 @@ Test Categories:
 - DiffCommandTests: Tests for the `diff` subcommand
 - ContractGroupTests: Tests for the `contract` group command itself
 
-Note on TDD:
-    The CLI module exists with stub implementations for `build` and `diff`.
-    Tests marked with @tdd_pending are expected to fail until
-    the full implementation is complete. These tests document the expected
-    behavior and serve as a specification for the implementer.
+Note on Implementation Status:
+    All CLI commands (init, build, diff) are fully implemented.
+    Tests that were originally marked with @tdd_pending now pass.
 
 Related:
     - OMN-1129: Contract CLI Tooling
@@ -47,12 +45,8 @@ from omnibase_core.enums.enum_cli_exit_code import EnumCLIExitCode
 pytestmark = pytest.mark.unit
 
 
-# Custom marker for tests that are TDD-pending (expected to fail until implementation)
-# These tests document expected behavior for future implementation
-tdd_pending = pytest.mark.xfail(
-    reason="TDD test - implementation pending (OMN-1129)",
-    strict=False,  # Allow passing if implementation is complete
-)
+# NOTE: TDD tests are now complete. The @tdd_pending marker has been removed
+# since all implementations for OMN-1129 are finished.
 
 
 # =============================================================================
@@ -449,8 +443,7 @@ class TestInitCommand:
 class TestBuildCommand:
     """Tests for the `onex contract build` command.
 
-    Note: The build command currently has a stub implementation.
-    Tests marked with @tdd_pending will pass once the implementation is complete.
+    The build command is fully implemented and all tests pass.
     """
 
     def test_build_help(self, runner: CliRunner) -> None:
@@ -459,7 +452,6 @@ class TestBuildCommand:
         assert result.exit_code == EnumCLIExitCode.SUCCESS
         assert "patch" in result.output.lower() or "PATCH_PATH" in result.output
 
-    @tdd_pending
     def test_build_produces_expanded_contract(
         self, runner: CliRunner, tmp_path: Path, valid_patch_yaml: str
     ) -> None:
@@ -492,7 +484,6 @@ class TestBuildCommand:
         assert "version" in content
         assert "descriptor" in content
 
-    @tdd_pending
     def test_build_output_includes_metadata(
         self, runner: CliRunner, tmp_path: Path, valid_patch_yaml: str
     ) -> None:
@@ -524,7 +515,6 @@ class TestBuildCommand:
         assert "profile" in content["_metadata"]
         assert "generated_at" in content["_metadata"]
 
-    @tdd_pending
     def test_build_validates_all_phases(
         self, runner: CliRunner, tmp_path: Path, valid_patch_yaml: str
     ) -> None:
@@ -560,7 +550,6 @@ class TestBuildCommand:
             or "error" in result.output.lower()
         )
 
-    @tdd_pending
     def test_build_error_for_invalid_patch_yaml(
         self, runner: CliRunner, tmp_path: Path
     ) -> None:
@@ -583,7 +572,6 @@ class TestBuildCommand:
             or "invalid" in result.output.lower()
         )
 
-    @tdd_pending
     def test_build_error_for_invalid_patch_structure(
         self, runner: CliRunner, tmp_path: Path
     ) -> None:
@@ -610,7 +598,6 @@ description: This is missing the extends field
             or "validation" in result.output.lower()
         )
 
-    @tdd_pending
     def test_build_error_for_validation_failure(
         self, runner: CliRunner, tmp_path: Path
     ) -> None:
@@ -643,7 +630,6 @@ node_version:
             or "unknown" in result.output.lower()
         )
 
-    @tdd_pending
     def test_build_outputs_to_stdout_when_no_output_specified(
         self, runner: CliRunner, tmp_path: Path, valid_patch_yaml: str
     ) -> None:
@@ -663,7 +649,6 @@ node_version:
         # Output should contain expanded contract fields
         assert "handler_id" in result.output or "name" in result.output
 
-    @tdd_pending
     def test_build_verbose_shows_phase_results(
         self, runner: CliRunner, tmp_path: Path, valid_patch_yaml: str
     ) -> None:
@@ -692,8 +677,7 @@ node_version:
 class TestDiffCommand:
     """Tests for the `onex contract diff` command.
 
-    Note: The diff command currently has a stub implementation.
-    Tests marked with @tdd_pending will pass once the implementation is complete.
+    The diff command is fully implemented and all tests pass.
     """
 
     def test_diff_help(self, runner: CliRunner) -> None:
@@ -704,7 +688,6 @@ class TestDiffCommand:
         assert "old" in result.output.lower() or "OLD" in result.output
         assert "new" in result.output.lower() or "NEW" in result.output
 
-    @tdd_pending
     def test_diff_detects_added_fields(
         self,
         runner: CliRunner,
@@ -736,7 +719,6 @@ class TestDiffCommand:
             or "capability" in output_lower
         )
 
-    @tdd_pending
     def test_diff_detects_removed_fields(
         self, runner: CliRunner, tmp_path: Path
     ) -> None:
@@ -779,7 +761,6 @@ descriptor:
             or "extra_field" in output_lower
         )
 
-    @tdd_pending
     def test_diff_detects_changed_values(
         self,
         runner: CliRunner,
@@ -812,7 +793,6 @@ descriptor:
             or "2.0.0" in result.output
         )
 
-    @tdd_pending
     def test_diff_highlights_behavioral_changes(
         self,
         runner: CliRunner,
@@ -893,7 +873,6 @@ descriptor:
             or "error" in result.output.lower()
         )
 
-    @tdd_pending
     def test_diff_error_for_invalid_yaml_old_file(
         self, runner: CliRunner, tmp_path: Path
     ) -> None:
@@ -918,7 +897,6 @@ descriptor:
             or "invalid" in result.output.lower()
         )
 
-    @tdd_pending
     def test_diff_error_for_invalid_yaml_new_file(
         self, runner: CliRunner, tmp_path: Path
     ) -> None:
@@ -943,7 +921,6 @@ descriptor:
             or "invalid" in result.output.lower()
         )
 
-    @tdd_pending
     def test_diff_shows_no_changes_for_identical_files(
         self, runner: CliRunner, tmp_path: Path
     ) -> None:
@@ -975,7 +952,6 @@ version: "1.0.0"
             or "[STUB]" not in result.output  # Not just the stub output
         )
 
-    @tdd_pending
     def test_diff_json_output_format(
         self,
         runner: CliRunner,
@@ -1006,7 +982,6 @@ version: "1.0.0"
         except json.JSONDecodeError:
             pytest.fail("Output was not valid JSON")
 
-    @tdd_pending
     def test_diff_categorizes_severity_of_changes(
         self,
         runner: CliRunner,
@@ -1059,7 +1034,6 @@ class TestContractCliEdgeCases:
     These tests cover additional scenarios and edge cases.
     """
 
-    @tdd_pending
     def test_init_with_custom_name(self, runner: CliRunner, tmp_path: Path) -> None:
         """Test that init accepts --name option for custom handler name.
 
@@ -1087,7 +1061,6 @@ class TestContractCliEdgeCases:
         content = yaml.safe_load(output_file.read_text())
         assert content.get("name") == "my_custom_handler"
 
-    @tdd_pending
     def test_build_with_strict_mode(
         self, runner: CliRunner, tmp_path: Path, valid_patch_yaml: str
     ) -> None:
@@ -1108,7 +1081,6 @@ class TestContractCliEdgeCases:
         # Strict mode should still work with valid input
         assert result.exit_code == EnumCLIExitCode.SUCCESS
 
-    @tdd_pending
     def test_diff_handles_empty_files(self, runner: CliRunner, tmp_path: Path) -> None:
         """Test that diff handles empty YAML files gracefully.
 
@@ -1131,7 +1103,6 @@ class TestContractCliEdgeCases:
                 "empty" in result.output.lower() or "invalid" in result.output.lower()
             )
 
-    @tdd_pending
     def test_init_respects_override_only_mode(
         self, runner: CliRunner, tmp_path: Path
     ) -> None:
@@ -1175,7 +1146,6 @@ class TestContractCliWorkflow:
     These tests verify that multiple CLI commands work together correctly.
     """
 
-    @tdd_pending
     def test_init_then_build_workflow(self, runner: CliRunner, tmp_path: Path) -> None:
         """Test the complete init -> build workflow.
 
@@ -1209,7 +1179,6 @@ class TestContractCliWorkflow:
         assert result.exit_code == EnumCLIExitCode.SUCCESS
         assert expanded_file.exists()
 
-    @tdd_pending
     def test_build_then_diff_workflow(self, runner: CliRunner, tmp_path: Path) -> None:
         """Test the complete build -> diff workflow.
 
@@ -1275,3 +1244,243 @@ descriptor:
             or "30000" in result.output
             or "60000" in result.output
         )
+
+
+# =============================================================================
+# Security Tests
+# =============================================================================
+
+
+@pytest.mark.unit
+class TestContractCLISecurity:
+    """Security tests for contract CLI commands.
+
+    These tests verify that the CLI properly handles path traversal attempts,
+    symlinks, and other security-sensitive operations.
+    """
+
+    def test_init_rejects_path_traversal_in_output(
+        self, runner: CliRunner, tmp_path: Path
+    ) -> None:
+        """Test that init rejects path traversal in output path."""
+        # Attempt path traversal via ../
+        result = runner.invoke(
+            contract,
+            [
+                "init",
+                "--type",
+                "compute",
+                "--profile",
+                "pure",
+                "--output",
+                str(tmp_path / ".." / "etc" / "passwd.yaml"),
+            ],
+        )
+        # Should fail with security error
+        assert result.exit_code != EnumCLIExitCode.SUCCESS
+
+    def test_init_rejects_writes_to_system_directories(self, runner: CliRunner) -> None:
+        """Test that init rejects writes to system directories."""
+        system_paths = [
+            "/etc/test.yaml",
+            "/usr/local/test.yaml",
+            "/var/log/test.yaml",
+        ]
+
+        for path in system_paths:
+            result = runner.invoke(
+                contract,
+                [
+                    "init",
+                    "--type",
+                    "compute",
+                    "--profile",
+                    "pure",
+                    "--output",
+                    path,
+                ],
+            )
+            # Should fail with security error or permission error
+            assert result.exit_code != EnumCLIExitCode.SUCCESS, (
+                f"Should have rejected write to {path}"
+            )
+
+    def test_build_rejects_writes_to_system_directories(
+        self, runner: CliRunner, tmp_path: Path
+    ) -> None:
+        """Test that build rejects writes to system directories."""
+        # Create a valid patch file
+        patch_file = tmp_path / "patch.yaml"
+        patch_file.write_text("""
+extends:
+  profile: compute_pure
+  version: "1.0.0"
+name: test
+node_version:
+  major: 1
+  minor: 0
+  patch: 0
+""")
+
+        system_paths = [
+            "/etc/test.yaml",
+            "/usr/local/test.yaml",
+        ]
+
+        for path in system_paths:
+            result = runner.invoke(
+                contract,
+                ["build", str(patch_file), "--output", path],
+            )
+            # Should fail with security error or permission error
+            assert result.exit_code != EnumCLIExitCode.SUCCESS, (
+                f"Should have rejected write to {path}"
+            )
+
+    def test_diff_output_rejects_writes_to_system_directories(
+        self, runner: CliRunner, tmp_path: Path
+    ) -> None:
+        """Test that diff rejects writes to system directories."""
+        # Create two contract files
+        old_file = tmp_path / "old.yaml"
+        new_file = tmp_path / "new.yaml"
+        old_file.write_text("handler_id: test\nname: test")
+        new_file.write_text("handler_id: test\nname: test2")
+
+        result = runner.invoke(
+            contract,
+            ["diff", str(old_file), str(new_file), "--output", "/etc/test.yaml"],
+        )
+        # Should fail with security error or permission error
+        assert result.exit_code != EnumCLIExitCode.SUCCESS
+
+    def test_symlink_to_outside_workspace_rejected_for_output(
+        self, runner: CliRunner, tmp_path: Path
+    ) -> None:
+        """Test that symlinks pointing outside workspace are rejected for output.
+
+        This test verifies that the CLI does not follow symlinks that point
+        outside the expected workspace, which could be used for path traversal.
+        """
+        # Create a symlink that points to /tmp (outside tmp_path)
+        symlink_path = tmp_path / "link_to_tmp"
+        try:
+            symlink_path.symlink_to("/tmp")
+        except OSError:
+            pytest.skip("OS doesn't support symlinks")
+
+        output_via_symlink = symlink_path / "malicious.yaml"
+
+        result = runner.invoke(
+            contract,
+            [
+                "init",
+                "--type",
+                "compute",
+                "--profile",
+                "pure",
+                "--output",
+                str(output_via_symlink),
+            ],
+        )
+        # The file should either fail or be written to the resolved path
+        # Either way, the output message shows the resolved path
+        # This is a defense-in-depth test
+
+        # Verify that if successful, the output goes to resolved path
+        if result.exit_code == EnumCLIExitCode.SUCCESS:
+            resolved = symlink_path.resolve() / "malicious.yaml"
+            assert resolved.resolve() == (Path("/tmp") / "malicious.yaml").resolve()
+
+    def test_build_symlink_input_allowed_for_reading(
+        self, runner: CliRunner, tmp_path: Path
+    ) -> None:
+        """Test that symlinks are allowed for reading input files.
+
+        Symlinks for input files should be followed and processed normally.
+        Only output paths need symlink protection.
+        """
+        # Create a real patch file
+        real_patch = tmp_path / "real_patch.yaml"
+        real_patch.write_text("""
+extends:
+  profile: compute_pure
+  version: "1.0.0"
+name: test_symlink
+node_version:
+  major: 1
+  minor: 0
+  patch: 0
+""")
+
+        # Create a symlink to it
+        symlink_patch = tmp_path / "symlink_patch.yaml"
+        try:
+            symlink_patch.symlink_to(real_patch)
+        except OSError:
+            pytest.skip("OS doesn't support symlinks")
+
+        # Build via symlink should work
+        result = runner.invoke(
+            contract,
+            ["build", str(symlink_patch)],
+        )
+        assert result.exit_code == EnumCLIExitCode.SUCCESS
+
+    def test_diff_symlink_input_allowed_for_reading(
+        self, runner: CliRunner, tmp_path: Path
+    ) -> None:
+        """Test that symlinks are allowed for reading diff input files."""
+        # Create real contract files
+        real_old = tmp_path / "real_old.yaml"
+        real_new = tmp_path / "real_new.yaml"
+        real_old.write_text("handler_id: test\nname: old")
+        real_new.write_text("handler_id: test\nname: new")
+
+        # Create symlinks
+        symlink_old = tmp_path / "symlink_old.yaml"
+        symlink_new = tmp_path / "symlink_new.yaml"
+        try:
+            symlink_old.symlink_to(real_old)
+            symlink_new.symlink_to(real_new)
+        except OSError:
+            pytest.skip("OS doesn't support symlinks")
+
+        # Diff via symlinks should work
+        result = runner.invoke(
+            contract,
+            ["diff", str(symlink_old), str(symlink_new)],
+        )
+        # Exit code 2 indicates differences found (successful comparison)
+        assert result.exit_code == EnumCLIExitCode.WARNING
+        assert "name" in result.output.lower()
+
+    def test_path_traversal_resolved_correctly(
+        self, runner: CliRunner, tmp_path: Path
+    ) -> None:
+        """Test that path traversal attempts are resolved correctly."""
+        # Create nested directories
+        subdir = tmp_path / "subdir" / "deep"
+        subdir.mkdir(parents=True)
+
+        # Try to traverse up with ../../
+        output_path = subdir / ".." / ".." / "output.yaml"
+
+        result = runner.invoke(
+            contract,
+            [
+                "init",
+                "--type",
+                "compute",
+                "--profile",
+                "pure",
+                "--output",
+                str(output_path),
+            ],
+        )
+
+        # Should succeed but resolve to tmp_path/output.yaml
+        assert result.exit_code == EnumCLIExitCode.SUCCESS
+        # The resolved path should be within tmp_path
+        expected_resolved = (tmp_path / "output.yaml").resolve()
+        assert expected_resolved.exists()

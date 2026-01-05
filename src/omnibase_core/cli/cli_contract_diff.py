@@ -63,14 +63,47 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Literal, cast
+from typing import Literal, TypeGuard
 
 import click
 import yaml
 
+from omnibase_core.enums.enum_log_level import EnumLogLevel
+from omnibase_core.logging.logging_structured import emit_log_event_sync
 from omnibase_core.models.cli.model_diff_entry import ModelDiffEntry
 from omnibase_core.models.cli.model_diff_result import ModelDiffResult
 from omnibase_core.types.type_json import JsonType
+
+# ==============================================================================
+# Type Guards for Type-Safe List Operations
+# ==============================================================================
+
+
+def _is_list_of_dicts(
+    items: list[JsonType],
+) -> TypeGuard[list[dict[str, JsonType]]]:
+    """Type guard to check if a list contains only dictionaries.
+
+    This provides proper type narrowing for mypy, allowing safe access to
+    dict methods on list elements after the guard passes. Using TypeGuard
+    is preferred over cast() because it provides both runtime verification
+    and compile-time type narrowing.
+
+    Args:
+        items: A list of JsonType values to check.
+
+    Returns:
+        True if all items are dicts, False otherwise. When True is returned,
+        mypy narrows the type to list[dict[str, JsonType]].
+
+    Examples:
+        >>> items: list[JsonType] = [{"a": 1}, {"b": 2}]
+        >>> if _is_list_of_dicts(items):
+        ...     # items is now typed as list[dict[str, JsonType]]
+        ...     keys = items[0].keys()  # Type-safe access
+    """
+    return bool(items) and all(isinstance(item, dict) for item in items)
+
 
 # ==============================================================================
 # Contract Diff Types and Constants
@@ -129,6 +162,30 @@ DEFAULT_EXCLUDE_PREFIXES: frozenset[str] = frozenset(
 DiffEntry = ModelDiffEntry
 DiffResult = ModelDiffResult
 
+# Maximum file size for contract files (10 MB).
+# This limit prevents denial-of-service attacks via extremely large input files
+# that could exhaust memory. 10 MB is generous for contract YAML files which
+# typically range from 1-50 KB. Files larger than this are almost certainly
+# not valid contracts and should be rejected early.
+MAX_CONTRACT_FILE_SIZE: int = 10 * 1024 * 1024  # 10 MB
+
+# Dangerous path prefixes that should never be read by CLI tools.
+# These system directories contain sensitive configuration and should
+# not be accessed by contract tools.
+_DANGEROUS_PATH_PREFIXES: tuple[str, ...] = (
+    "/etc",
+    "/usr",
+    "/bin",
+    "/sbin",
+    "/lib",
+    "/var/log",
+    "/boot",
+    "/root",
+    "/sys",
+    "/proc",
+    "/dev",
+)
+
 # Truncation constants for format_diff_value
 ELLIPSIS_STR: str = "..."
 ELLIPSIS_LENGTH: int = len(ELLIPSIS_STR)
@@ -137,6 +194,88 @@ ELLIPSIS_LENGTH: int = len(ELLIPSIS_STR)
 # 60 characters provides enough context for most field values while keeping
 # output readable in terminal displays (typical terminal width is 80-120 chars).
 DEFAULT_MAX_VALUE_LENGTH: int = 60
+
+# Width of the separator line in diff summary output.
+# 40 characters provides a clear visual break between the diff content and the
+# summary statistics while keeping the output compact for terminal displays.
+DIFF_SUMMARY_SEPARATOR_WIDTH: int = 40
+
+
+# ==============================================================================
+# Security Validation Functions
+# ==============================================================================
+
+
+def _validate_input_path_security(path: Path) -> Path:
+    """Validate and resolve an input file path for security.
+
+    Performs security checks to prevent path traversal attacks and
+    accidental access to sensitive system directories.
+
+    Args:
+        path: The input file path to validate.
+
+    Returns:
+        The resolved (absolute) path if valid.
+
+    Raises:
+        click.ClickException: If the path is invalid or potentially dangerous.
+
+    Security Checks:
+        1. Resolves the path to an absolute path (follows symlinks)
+        2. Detects path traversal patterns (.. in resolved path)
+        3. Blocks access to sensitive system directories
+    """
+    resolved = path.resolve()
+    resolved_str = str(resolved)
+
+    # Check for path traversal patterns in the resolved path.
+    # After resolve(), ".." should not appear in the path. If it does,
+    # it indicates a suspicious symlink chain or filesystem manipulation.
+    if ".." in resolved_str:
+        raise click.ClickException(
+            f"Path traversal detected: cannot read from '{resolved_str}'"
+        )
+
+    # Block access to sensitive system directories
+    for prefix in _DANGEROUS_PATH_PREFIXES:
+        if resolved_str.startswith(prefix + "/") or resolved_str == prefix:
+            raise click.ClickException(
+                f"Cannot read from system directory '{prefix}'. "
+                f"Resolved path: {resolved_str}"
+            )
+
+    return resolved
+
+
+def _validate_file_size(path: Path) -> None:
+    """Validate file size to prevent DoS attacks.
+
+    Args:
+        path: The resolved file path to check.
+
+    Raises:
+        click.ClickException: If the file is too large or cannot be accessed.
+    """
+    try:
+        file_size = path.stat().st_size
+    except FileNotFoundError:
+        raise click.ClickException(f"File not found: '{path}'") from None
+    except PermissionError:
+        raise click.ClickException(
+            f"Permission denied: cannot access '{path}'"
+        ) from None
+    except OSError as e:
+        raise click.ClickException(f"Cannot access file '{path}': {e}") from e
+
+    if file_size > MAX_CONTRACT_FILE_SIZE:
+        size_mb = file_size / (1024 * 1024)
+        limit_mb = MAX_CONTRACT_FILE_SIZE / (1024 * 1024)
+        raise click.ClickException(
+            f"File too large: '{path}' is {size_mb:.2f} MB. "
+            f"Maximum allowed size is {limit_mb:.0f} MB. "
+            f"Contract files should be small YAML documents."
+        )
 
 
 # ==============================================================================
@@ -391,16 +530,12 @@ def diff_contract_lists(
     # Check if lists contain dicts with identity keys.
     # We require ALL elements to be dicts (not just the first) for identity-based
     # comparison to work correctly. Mixed-type lists fall back to positional comparison.
-    if old_list and new_list:
-        all_old_are_dicts = all(isinstance(item, dict) for item in old_list)
-        all_new_are_dicts = all(isinstance(item, dict) for item in new_list)
-
-        if all_old_are_dicts and all_new_are_dicts:
-            old_dicts = cast(list[dict[str, JsonType]], old_list)
-            new_dicts = cast(list[dict[str, JsonType]], new_list)
-            identity_key = find_list_identity_key(old_dicts, new_dicts)
-            if identity_key:
-                return diff_lists_by_identity(old_dicts, new_dicts, path, identity_key)
+    # Using TypeGuard provides proper type narrowing for mypy without unsafe cast().
+    if _is_list_of_dicts(old_list) and _is_list_of_dicts(new_list):
+        # After TypeGuard check, both lists are typed as list[dict[str, JsonType]]
+        identity_key = find_list_identity_key(old_list, new_list)
+        if identity_key:
+            return diff_lists_by_identity(old_list, new_list, path, identity_key)
 
     # Fall back to positional comparison
     max_len = max(len(old_list), len(new_list))
@@ -694,7 +829,7 @@ def format_text_diff_output(result: DiffResult) -> str:
     lines.extend(_format_diff_section(result.changed, "CHANGED:", "~"))
 
     # Summary footer
-    lines.append("-" * 40)
+    lines.append("-" * DIFF_SUMMARY_SEPARATOR_WIDTH)
     lines.append(f"Total changes: {result.total_changes}")
     if result.behavioral_changes:
         lines.append(
@@ -792,6 +927,11 @@ def load_contract_yaml_file(path: Path) -> dict[str, JsonType]:
     a dictionary (as required for ONEX contracts). Provides detailed
     error messages with context for common issues.
 
+    Security Checks:
+        - Path traversal prevention (blocks ".." after resolution)
+        - System directory access prevention
+        - File size validation (max 10 MB to prevent DoS)
+
     Args:
         path: Path to the YAML file to load.
 
@@ -806,28 +946,51 @@ def load_contract_yaml_file(path: Path) -> dict[str, JsonType]:
         >>> from pathlib import Path
         >>> # load_contract_yaml_file(Path("contract.yaml"))  # doctest: +SKIP
     """
-    # Resolve path for consistent error messages
-    resolved_path = path.resolve()
+    # Security: Validate path before any file operations
+    resolved_path = _validate_input_path_security(path)
+
+    # Security: Check file size to prevent DoS attacks
+    _validate_file_size(resolved_path)
 
     try:
         content = resolved_path.read_text(encoding="utf-8")
     except FileNotFoundError:
+        emit_log_event_sync(
+            EnumLogLevel.ERROR,
+            "Contract file not found",
+            {"file_path": str(resolved_path)},
+        )
         raise click.ClickException(
             f"File not found: '{resolved_path}'\n"
             f"  Hint: Check that the file path is correct and the file exists."
         ) from None
     except PermissionError:
+        emit_log_event_sync(
+            EnumLogLevel.ERROR,
+            "Permission denied reading contract file",
+            {"file_path": str(resolved_path)},
+        )
         raise click.ClickException(
             f"Permission denied reading file: '{resolved_path}'\n"
             f"  Hint: Check file permissions with 'ls -la {resolved_path}'"
         ) from None
     except OSError as e:
+        emit_log_event_sync(
+            EnumLogLevel.ERROR,
+            "OS error reading contract file",
+            {"file_path": str(resolved_path), "error": str(e)},
+        )
         raise click.ClickException(
             f"Cannot read file '{resolved_path}': {e}\n  Error type: {type(e).__name__}"
         ) from e
 
     # Check for empty file
     if not content.strip():
+        emit_log_event_sync(
+            EnumLogLevel.ERROR,
+            "Contract file is empty",
+            {"file_path": str(resolved_path)},
+        )
         raise click.ClickException(
             f"File is empty: '{resolved_path}'\n"
             f"  Hint: Contract files must contain valid YAML content."
@@ -838,6 +1001,11 @@ def load_contract_yaml_file(path: Path) -> dict[str, JsonType]:
     except yaml.scanner.ScannerError as e:
         # Extract line/column info from YAML error if available
         error_context = _format_yaml_error_context(e, content)
+        emit_log_event_sync(
+            EnumLogLevel.ERROR,
+            "YAML syntax error in contract file",
+            {"file_path": str(resolved_path), "error": str(e)},
+        )
         raise click.ClickException(
             f"YAML syntax error in '{resolved_path}':\n{error_context}\n"
             f"  Hint: Check for incorrect indentation, missing colons, "
@@ -845,24 +1013,44 @@ def load_contract_yaml_file(path: Path) -> dict[str, JsonType]:
         ) from e
     except yaml.parser.ParserError as e:
         error_context = _format_yaml_error_context(e, content)
+        emit_log_event_sync(
+            EnumLogLevel.ERROR,
+            "YAML structure error in contract file",
+            {"file_path": str(resolved_path), "error": str(e)},
+        )
         raise click.ClickException(
             f"YAML structure error in '{resolved_path}':\n{error_context}\n"
             f"  Hint: Check for mismatched brackets, quotes, "
             f"or invalid YAML structure."
         ) from e
     except yaml.YAMLError as e:
+        emit_log_event_sync(
+            EnumLogLevel.ERROR,
+            "YAML error in contract file",
+            {"file_path": str(resolved_path), "error": str(e)},
+        )
         raise click.ClickException(
             f"Cannot parse YAML in '{resolved_path}': {e}\n"
             f"  Error type: {type(e).__name__}"
         ) from e
 
     if data is None:
+        emit_log_event_sync(
+            EnumLogLevel.ERROR,
+            "Contract file contains only comments or whitespace",
+            {"file_path": str(resolved_path)},
+        )
         raise click.ClickException(
             f"File contains only comments or whitespace: '{resolved_path}'\n"
             f"  Hint: Contract files must contain a YAML object/dictionary."
         )
 
     if not isinstance(data, dict):
+        emit_log_event_sync(
+            EnumLogLevel.ERROR,
+            "Contract file root element is not a dictionary",
+            {"file_path": str(resolved_path), "actual_type": type(data).__name__},
+        )
         raise click.ClickException(
             f"Expected YAML object/dict in '{resolved_path}', "
             f"got {type(data).__name__}\n"
@@ -876,6 +1064,8 @@ __all__ = [
     "BEHAVIORAL_FIELDS",
     "DEFAULT_EXCLUDE_PREFIXES",
     "DEFAULT_MAX_VALUE_LENGTH",
+    "DIFF_SUMMARY_SEPARATOR_WIDTH",
+    "MAX_CONTRACT_FILE_SIZE",
     # Type aliases
     "DiffEntry",
     "DiffResult",
