@@ -283,6 +283,9 @@ from .enum_vector_filter_operator import EnumVectorFilterOperator
 # Version and contract enums
 from .enum_version_status import EnumVersionStatus
 
+# Violation severity enum (OMN-1195)
+from .enum_violation_severity import EnumViolationSeverity
+
 # Workflow-related enums
 from .enum_workflow_coordination import EnumFailureRecoveryStrategy
 from .enum_workflow_dependency_type import EnumWorkflowDependencyType
@@ -492,6 +495,8 @@ __all__ = [
     "EnumComparisonType",
     "EnumInvariantSeverity",
     "EnumInvariantType",
+    # Violation severity domain (OMN-1195)
+    "EnumViolationSeverity",
     # Event sink type domain (OMN-1151)
     "EnumEventSinkType",
     # NOTE: Removed from __all__ due to missing module files or circular imports:
