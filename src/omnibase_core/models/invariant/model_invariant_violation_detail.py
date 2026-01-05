@@ -18,6 +18,9 @@ from pydantic import BaseModel, ConfigDict, Field
 from omnibase_core.enums.enum_comparison_type import EnumComparisonType
 from omnibase_core.enums.enum_invariant_severity import EnumInvariantSeverity
 from omnibase_core.enums.enum_invariant_type import EnumInvariantType
+from omnibase_core.models.invariant.model_invariant_definition import (
+    InvariantConfigUnion,
+)
 
 
 class ModelInvariantViolationDetail(BaseModel):
@@ -71,8 +74,8 @@ class ModelInvariantViolationDetail(BaseModel):
         default_factory=lambda: datetime.now(UTC),
         description="Timestamp when the evaluation occurred",
     )
-    config_snapshot: dict[str, object] = Field(
-        default_factory=dict,
+    config_snapshot: InvariantConfigUnion | None = Field(
+        default=None,
         description="The invariant config used for this evaluation",
     )
 

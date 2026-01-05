@@ -4,10 +4,18 @@ import uuid
 from datetime import UTC, datetime
 
 import pytest
+from pydantic import ValidationError
 
 from omnibase_core.enums import EnumInvariantSeverity, EnumInvariantType
 from omnibase_core.enums.enum_comparison_type import EnumComparisonType
 from omnibase_core.models.invariant import ModelInvariantViolationDetail
+from omnibase_core.models.invariant.model_field_value_config import (
+    ModelFieldValueConfig,
+)
+from omnibase_core.models.invariant.model_latency_config import ModelLatencyConfig
+from omnibase_core.models.invariant.model_schema_invariant_config import (
+    ModelSchemaInvariantConfig,
+)
 
 # Test UUIDs for consistent testing
 TEST_UUID_1 = uuid.UUID("12345678-1234-5678-1234-567812345678")
@@ -68,7 +76,7 @@ class TestModelInvariantViolationDetailCreation:
             explanation="Test explanation",
             comparison_type=EnumComparisonType.RANGE,
         )
-        with pytest.raises(Exception):  # ValidationError for frozen model
+        with pytest.raises(ValidationError):
             detail.message = "New message"
 
     def test_detail_auto_generates_evaluated_at(self) -> None:
@@ -149,7 +157,7 @@ class TestDetailGeneration:
 
     def test_detail_captures_config_snapshot(self) -> None:
         """Original invariant config preserved in detail."""
-        config = {"max_ms": 5000, "enabled": True}
+        config = ModelLatencyConfig(max_ms=5000)
         detail = ModelInvariantViolationDetail(
             invariant_id=TEST_UUID_3,
             invariant_name="Latency check",
@@ -161,7 +169,60 @@ class TestDetailGeneration:
             config_snapshot=config,
         )
         assert detail.config_snapshot == config
-        assert detail.config_snapshot["max_ms"] == 5000
+        assert isinstance(detail.config_snapshot, ModelLatencyConfig)
+        assert detail.config_snapshot.max_ms == 5000
+
+    def test_detail_with_schema_config_snapshot(self) -> None:
+        """Schema config type works with config_snapshot."""
+        config = ModelSchemaInvariantConfig(
+            json_schema={"type": "object", "properties": {"name": {"type": "string"}}}
+        )
+        detail = ModelInvariantViolationDetail(
+            invariant_id=TEST_UUID_2,
+            invariant_name="Schema validation",
+            invariant_type=EnumInvariantType.SCHEMA,
+            severity=EnumInvariantSeverity.CRITICAL,
+            message="Schema violation",
+            explanation="Response does not match expected schema",
+            comparison_type=EnumComparisonType.SCHEMA,
+            config_snapshot=config,
+        )
+        assert isinstance(detail.config_snapshot, ModelSchemaInvariantConfig)
+        assert detail.config_snapshot.json_schema["type"] == "object"
+
+    def test_detail_with_field_value_config_snapshot(self) -> None:
+        """Field value config type works with config_snapshot."""
+        config = ModelFieldValueConfig(
+            field_path="response.status",
+            expected_value="success",
+        )
+        detail = ModelInvariantViolationDetail(
+            invariant_id=TEST_UUID_1,
+            invariant_name="Status check",
+            invariant_type=EnumInvariantType.FIELD_VALUE,
+            severity=EnumInvariantSeverity.WARNING,
+            message="Status mismatch",
+            explanation="Expected success status",
+            comparison_type=EnumComparisonType.EXACT,
+            config_snapshot=config,
+        )
+        assert isinstance(detail.config_snapshot, ModelFieldValueConfig)
+        assert detail.config_snapshot.field_path == "response.status"
+        assert detail.config_snapshot.expected_value == "success"
+
+    def test_detail_with_none_config_snapshot(self) -> None:
+        """config_snapshot can be None."""
+        detail = ModelInvariantViolationDetail(
+            invariant_id=TEST_UUID_1,
+            invariant_name="Simple check",
+            invariant_type=EnumInvariantType.LATENCY,
+            severity=EnumInvariantSeverity.INFO,
+            message="Latency info",
+            explanation="For informational purposes",
+            comparison_type=EnumComparisonType.RANGE,
+            config_snapshot=None,
+        )
+        assert detail.config_snapshot is None
 
 
 @pytest.mark.unit
