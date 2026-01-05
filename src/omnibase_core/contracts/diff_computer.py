@@ -524,24 +524,20 @@ class ContractDiffComputer:
             True if items are equal, False otherwise.
 
         Note:
-            When max recursion depth is exceeded or a cycle is detected,
-            falls back to simple equality comparison with a warning logged.
+            When max recursion depth is exceeded, returns False (assumes unequal)
+            rather than attempting a fallback comparison that could still fail.
+            Cycle detection handles circular references at shallower depths.
         """
         # Depth check to prevent stack overflow
         if _depth > _MAX_RECURSION_DEPTH:
             logger.warning(
-                "Max recursion depth (%d) exceeded in _items_equal, "
-                "falling back to simple equality",
+                "Max recursion depth (%d) exceeded in _items_equal for types %s and %s, "
+                "assuming items are unequal",
                 _MAX_RECURSION_DEPTH,
+                type(item1).__name__,
+                type(item2).__name__,
             )
-            try:
-                return item1 == item2
-            except RecursionError:
-                # cleanup-resilience-ok: malformed data with deep circular refs
-                logger.warning(
-                    "RecursionError during fallback equality check, assuming unequal"
-                )
-                return False
+            return False
 
         # Initialize seen set for cycle detection
         if _seen is None:

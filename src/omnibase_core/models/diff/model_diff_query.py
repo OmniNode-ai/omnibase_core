@@ -151,7 +151,8 @@ class ModelDiffQuery(BaseModel):
 
     change_types: frozenset[EnumContractDiffChangeType] | None = Field(
         default=None,
-        description="Filter by change types present in the diff",
+        description="Filter by change types present in the diff. "
+        "If specified, must be non-empty. Use None to match all.",
     )
 
     has_changes: bool | None = Field(
@@ -185,6 +186,16 @@ class ModelDiffQuery(BaseModel):
                     f"computed_before ({self.computed_before}) cannot be before "
                     f"computed_after ({self.computed_after})"
                 )
+        return self
+
+    @model_validator(mode="after")
+    def validate_change_types_not_empty(self) -> "ModelDiffQuery":
+        """Validate that change_types is not an empty set when specified."""
+        if self.change_types is not None and len(self.change_types) == 0:
+            raise ValueError(
+                "change_types must be non-empty when specified. "
+                "Use None to match all change types."
+            )
         return self
 
     # === Utility Methods ===

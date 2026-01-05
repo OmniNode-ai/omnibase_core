@@ -45,6 +45,8 @@ See Also:
     Added as part of Diff Storage Infrastructure (OMN-1149)
 """
 
+import threading
+import warnings
 from uuid import UUID
 
 from omnibase_core.models.contracts.diff import ModelContractDiff
@@ -65,9 +67,21 @@ class StoreDiffInMemory:
     Attributes:
         _diffs: Internal dict mapping diff_id to ModelContractDiff.
         _config: Storage configuration.
+        _owner_thread: Thread ID that created/first accessed the store.
+        _thread_check_enabled: Whether thread safety checks are enabled.
 
     Thread Safety:
         NOT thread-safe. See module docstring for details.
+
+        Runtime Detection:
+            This class includes runtime detection for cross-thread access.
+            When a mutating method (put, delete, clear) is called from a
+            different thread than the one that first accessed the store,
+            a RuntimeWarning is emitted. This helps catch accidental
+            thread-safety violations during development.
+
+            To disable thread safety warnings (e.g., for testing):
+                store._thread_check_enabled = False
 
     Memory Considerations:
         All diffs are stored in memory. For long-running applications with
@@ -75,6 +89,19 @@ class StoreDiffInMemory:
         - Implementing a TTL-based eviction policy
         - Using a bounded dict with LRU eviction
         - Switching to a persistent backend
+
+    Performance Characteristics:
+        - put(): O(1)
+        - get(): O(1)
+        - delete(): O(1)
+        - exists(): O(1)
+        - query(): O(n) filter + O(n log n) sort where n = total diffs
+        - count(): O(n) filter
+        - clear(): O(1)
+        - get_all(): O(n log n) sort
+
+        This backend is suitable for <10,000 diffs. For larger datasets,
+        consider using a persistent backend with indexed queries.
 
     Example:
         >>> store = StoreDiffInMemory()
@@ -84,6 +111,9 @@ class StoreDiffInMemory:
     .. versionadded:: 0.6.0
         Added as part of Diff Storage Infrastructure (OMN-1149)
     """
+
+    _owner_thread: int | None
+    _thread_check_enabled: bool
 
     def __init__(self, config: ModelDiffStorageConfiguration | None = None) -> None:
         """
@@ -95,6 +125,8 @@ class StoreDiffInMemory:
         """
         self._diffs: dict[UUID, ModelContractDiff] = {}
         self._config = config or ModelDiffStorageConfiguration()
+        self._owner_thread: int | None = None
+        self._thread_check_enabled = True  # Can be disabled for testing
 
     def __len__(self) -> int:
         """Return the number of diffs in the store."""
@@ -105,6 +137,32 @@ class StoreDiffInMemory:
         """Get the storage configuration."""
         return self._config
 
+    def _check_thread_safety(self) -> None:
+        """
+        Check if the store is being accessed from the same thread.
+
+        On first call, records the current thread ID as the owner.
+        On subsequent calls, emits a RuntimeWarning if the current
+        thread differs from the owner thread.
+
+        This method is called at the start of mutating operations
+        (put, delete, clear) to detect accidental cross-thread access.
+        """
+        if not self._thread_check_enabled:
+            return
+
+        current_thread = threading.current_thread().ident
+        if self._owner_thread is None:
+            self._owner_thread = current_thread
+        elif current_thread != self._owner_thread:
+            warnings.warn(
+                f"StoreDiffInMemory accessed from thread {current_thread} but was created "
+                f"in thread {self._owner_thread}. StoreDiffInMemory is NOT thread-safe. "
+                f"Use separate instances per thread or wrap with threading.Lock.",
+                RuntimeWarning,
+                stacklevel=3,
+            )
+
     async def put(self, diff: ModelContractDiff) -> None:
         """
         Store a contract diff.
@@ -114,7 +172,12 @@ class StoreDiffInMemory:
 
         Args:
             diff: The contract diff to store.
+
+        Warning:
+            Emits RuntimeWarning if called from a different thread than
+            the one that first accessed this store instance.
         """
+        self._check_thread_safety()
         self._diffs[diff.diff_id] = diff
 
     async def get(self, diff_id: UUID) -> ModelContractDiff | None:
@@ -142,6 +205,10 @@ class StoreDiffInMemory:
 
         Returns:
             List of matching diffs, ordered by computed_at descending.
+
+        Performance:
+            O(n) filter + O(n log n) sort. For large datasets (>10,000 diffs),
+            consider using StoreDiffFile or a database-backed store.
         """
         # Apply filters
         matching_diffs = [
@@ -165,7 +232,12 @@ class StoreDiffInMemory:
 
         Returns:
             True if the diff was deleted, False if it was not found.
+
+        Warning:
+            Emits RuntimeWarning if called from a different thread than
+            the one that first accessed this store instance.
         """
+        self._check_thread_safety()
         if diff_id in self._diffs:
             del self._diffs[diff_id]
             return True
@@ -193,6 +265,9 @@ class StoreDiffInMemory:
 
         Returns:
             Number of diffs matching the filter criteria.
+
+        Performance:
+            O(n) filter where n = total diffs stored.
         """
         if filters is None:
             return len(self._diffs)
@@ -205,7 +280,12 @@ class StoreDiffInMemory:
         Remove all diffs from the store.
 
         Useful for testing and cleanup.
+
+        Warning:
+            Emits RuntimeWarning if called from a different thread than
+            the one that first accessed this store instance.
         """
+        self._check_thread_safety()
         self._diffs.clear()
 
     async def get_all(self) -> list[ModelContractDiff]:

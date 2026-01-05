@@ -35,6 +35,9 @@ from omnibase_core.models.contracts.diff.model_contract_diff import ModelContrac
 # Supported output formats for the diff command
 OutputFormat = Literal["text", "json", "markdown", "html"]
 
+# Maximum file size for contract files (10MB) - prevents DoS via large file processing
+MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
+
 
 # extra="allow" inherently uses Any for extra fields - this is intentional
 # for CLI processing of arbitrary contract schemas
@@ -66,6 +69,9 @@ def _load_contract(path: Path) -> dict[str, object]:
     Attempts to parse the file based on extension, with fallback detection
     for files without standard extensions.
 
+    File size is limited to MAX_FILE_SIZE (10MB) to prevent denial-of-service
+    attacks via excessively large files that could exhaust memory during parsing.
+
     Args:
         path: Path to the contract file.
 
@@ -73,9 +79,16 @@ def _load_contract(path: Path) -> dict[str, object]:
         Parsed contract data as a dictionary.
 
     Raises:
-        click.ClickException: If the file cannot be parsed or YAML support
-            is not available for YAML files.
+        click.ClickException: If the file is too large, cannot be parsed,
+            or YAML support is not available for YAML files.
     """
+    # Check file size before reading to prevent DoS via large files
+    file_size = path.stat().st_size
+    if file_size > MAX_FILE_SIZE:
+        raise click.ClickException(
+            f"Contract file too large: {file_size:,} bytes (max: {MAX_FILE_SIZE:,} bytes)"
+        )
+
     content = path.read_text(encoding="utf-8")
 
     if path.suffix in (".yaml", ".yml"):
@@ -87,7 +100,7 @@ def _load_contract(path: Path) -> dict[str, object]:
             )  # yaml-ok: loading arbitrary contract schemas from user files
             return yaml_result
         except ImportError as e:
-            msg = "PyYAML is required for YAML files. Install with: poetry add pyyaml"
+            msg = f"PyYAML is required to parse '{path.name}'. Install with: poetry add pyyaml"
             raise click.ClickException(msg) from e
     elif path.suffix == ".json":
         json_result: dict[str, object] = json.loads(content)
@@ -106,7 +119,10 @@ def _load_contract(path: Path) -> dict[str, object]:
                 )  # yaml-ok: loading arbitrary contract schemas from user files
                 return fallback_yaml
             except ImportError as e:
-                msg = "Could not parse file as JSON. Install PyYAML for YAML support: poetry add pyyaml"
+                msg = (
+                    f"Could not parse '{path.name}' as JSON. "
+                    "Install PyYAML for YAML support: poetry add pyyaml"
+                )
                 raise click.ClickException(msg) from e
 
 
@@ -252,7 +268,8 @@ def diff(
         return
 
     except FileNotFoundError as e:
-        raise click.ClickException(f"File not found: {e.filename}") from e
+        filename = getattr(e, "filename", "unknown")
+        raise click.ClickException(f"Contract file not found: {filename}") from e
     except json.JSONDecodeError as e:
         raise click.ClickException(f"Invalid JSON: {e}") from e
     except click.ClickException:

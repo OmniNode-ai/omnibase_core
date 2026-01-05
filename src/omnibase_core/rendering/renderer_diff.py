@@ -269,11 +269,19 @@ class RendererDiff:
 
         Args:
             diff: The contract diff to render.
-            options: Optional formatting configuration.
-            indent: JSON indentation level. Defaults to 2.
+            options: Optional formatting configuration. If provided,
+                options.pretty_print controls whether indentation is applied.
+            indent: JSON indentation level when pretty printing is enabled.
+                Ignored when options.pretty_print is False. Defaults to 2.
 
         Returns:
             JSON string representation of the diff.
+
+        Note:
+            The indent parameter only applies when pretty printing is enabled
+            (options.pretty_print=True or when options is None, which defaults
+            to pretty=True). When options.pretty_print=False, compact JSON
+            is returned regardless of the indent value.
 
         Example:
             >>> json_str = RendererDiff.render_json(diff, indent=4)
@@ -288,9 +296,11 @@ class RendererDiff:
         data = diff.model_dump(mode="json")
 
         if pretty:
+            # indent parameter only used when pretty printing
             return json.dumps(
                 data, indent=indent, sort_keys=sort_keys, ensure_ascii=False
             )
+        # Compact output ignores indent parameter
         return json.dumps(data, sort_keys=sort_keys, ensure_ascii=False)
 
     @staticmethod
@@ -774,7 +784,12 @@ class RendererDiff:
 
     @staticmethod
     def _format_value_for_markdown(value: ModelSchemaValue | None) -> str:
-        """Format a ModelSchemaValue for markdown display."""
+        """Format a ModelSchemaValue for markdown display.
+
+        Note:
+            Values are HTML-escaped as defense-in-depth against markdown
+            processors that don't properly handle code spans.
+        """
         if value is None:
             return "-"
         python_value = value.to_value()
@@ -782,8 +797,8 @@ class RendererDiff:
         if python_value is None:
             return "`null`"
         if isinstance(python_value, str):
-            # Escape pipe characters for markdown tables
-            escaped = python_value.replace("|", "\\|")
+            # Escape HTML chars first (defense-in-depth), then markdown pipe
+            escaped = html_module.escape(python_value).replace("|", "\\|")
             return f'`"{escaped}"`'
         if isinstance(python_value, bool):
             return "`true`" if python_value else "`false`"
@@ -792,8 +807,9 @@ class RendererDiff:
             json_str = json.dumps(python_value)
             if len(json_str) > 50:
                 json_str = json_str[:47] + "..."
-            return f"`{json_str}`"
-        return f"`{python_value}`"
+            # HTML escape JSON content
+            return f"`{html_module.escape(json_str)}`"
+        return f"`{html_module.escape(str(python_value))}`"
 
     @staticmethod
     def _format_value_for_html(value: ModelSchemaValue | None) -> str:

@@ -185,6 +185,28 @@ class TestModelValidation:
         with pytest.raises(ValidationError):
             query.limit = 50  # type: ignore[misc]
 
+    def test_change_types_empty_frozenset_raises(self) -> None:
+        """Query rejects empty change_types frozenset."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelDiffQuery(change_types=frozenset())
+
+        assert "change_types must be non-empty when specified" in str(exc_info.value)
+        assert "Use None to match all change types" in str(exc_info.value)
+
+    def test_change_types_non_empty_frozenset_valid(self) -> None:
+        """Query accepts non-empty change_types frozenset."""
+        query = ModelDiffQuery(
+            change_types=frozenset({EnumContractDiffChangeType.ADDED})
+        )
+
+        assert query.change_types == frozenset({EnumContractDiffChangeType.ADDED})
+
+    def test_change_types_none_valid(self) -> None:
+        """Query accepts None for change_types (default)."""
+        query = ModelDiffQuery(change_types=None)
+
+        assert query.change_types is None
+
 
 # ============================================================================
 # Test: matches_diff - Contract Name Filters
