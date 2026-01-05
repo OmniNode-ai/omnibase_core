@@ -132,7 +132,14 @@ from omnibase_core.protocols.event_bus import (
 # =============================================================================
 # Handler Module Exports
 # =============================================================================
-from omnibase_core.protocols.handler import ProtocolHandlerContext
+from omnibase_core.protocols.handler import (
+    ProtocolCapabilityDependency,
+    ProtocolExecutionConstrainable,
+    ProtocolExecutionConstraints,
+    ProtocolHandlerBehaviorDescriptor,
+    ProtocolHandlerContext,
+    ProtocolHandlerContract,
+)
 
 # =============================================================================
 # Handlers Module Exports (Handler Type Resolution)
@@ -244,6 +251,11 @@ from omnibase_core.protocols.schema import ProtocolSchemaLoader, ProtocolSchemaM
 # Services Module Exports
 # =============================================================================
 from omnibase_core.protocols.services import ProtocolSecretService
+
+# =============================================================================
+# Storage Module Exports (OMN-1149)
+# =============================================================================
+from omnibase_core.protocols.storage import ProtocolDiffStore
 
 # =============================================================================
 # Types Module Exports
@@ -452,6 +464,12 @@ __all__ = [
     # Handler Module
     # ==========================================================================
     "ProtocolHandlerContext",
+    # Handler Contracts (OMN-1164)
+    "ProtocolCapabilityDependency",
+    "ProtocolExecutionConstrainable",
+    "ProtocolExecutionConstraints",
+    "ProtocolHandlerBehaviorDescriptor",
+    "ProtocolHandlerContract",
     # ==========================================================================
     # Handlers Module (Handler Type Resolution)
     # ==========================================================================
@@ -494,4 +512,8 @@ __all__ = [
     "ProtocolEffectRecorder",
     "ProtocolRNGService",
     "ProtocolTimeService",
+    # ==========================================================================
+    # Storage Module (OMN-1149)
+    # ==========================================================================
+    "ProtocolDiffStore",
 ]

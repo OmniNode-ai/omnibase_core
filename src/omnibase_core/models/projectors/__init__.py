@@ -13,6 +13,10 @@ ModelIdempotencyConfig
     Configuration for idempotent event processing. Specifies the
     idempotency key and whether checking is enabled.
 
+ModelProjectionResult
+    Result of a projection operation, including success status,
+    rows affected, and any error information.
+
 ModelProjectorColumn
     Column definition with event field mapping for projector tables.
 
@@ -42,6 +46,9 @@ making them thread-safe for concurrent read access.
 from omnibase_core.models.projectors.model_idempotency_config import (
     ModelIdempotencyConfig,
 )
+from omnibase_core.models.projectors.model_projection_result import (
+    ModelProjectionResult,
+)
 from omnibase_core.models.projectors.model_projector_behavior import (
     ModelProjectorBehavior,
 )
@@ -56,6 +63,7 @@ from omnibase_core.models.projectors.model_projector_schema import ModelProjecto
 __all__ = [
     "EVENT_NAME_PATTERN",
     "ModelIdempotencyConfig",
+    "ModelProjectionResult",
     "ModelProjectorBehavior",
     "ModelProjectorColumn",
     "ModelProjectorContract",
