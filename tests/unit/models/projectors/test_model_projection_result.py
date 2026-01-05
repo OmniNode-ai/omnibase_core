@@ -392,6 +392,15 @@ class TestModelProjectionResultTypeValidation:
 
         assert "error" in str(exc_info.value)
 
+    def test_rows_affected_must_be_non_negative(self) -> None:
+        """rows_affected must be >= 0 (non-negative)."""
+        from omnibase_core.models.projectors import ModelProjectionResult
+
+        with pytest.raises(ValidationError) as exc_info:
+            ModelProjectionResult(success=True, rows_affected=-1)
+
+        assert "rows_affected" in str(exc_info.value)
+
 
 @pytest.mark.unit
 class TestModelProjectionResultEquality:
