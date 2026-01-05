@@ -53,6 +53,12 @@ allowed_files:
     added: "2026-01-02"
     review: "2026-07-02"
 
+  - file: "src/omnibase_core/cli/cli_contract_diff.py"
+    reason: "Loads arbitrary YAML contract files for semantic diff comparison - no model validation needed
+      as diffing works on raw dictionary structures to compare any two contract versions"
+    added: "2026-01-05"
+    review: "2026-07-05"
+
 # Specific filenames that are allowed (matched by basename)
 # Allows the same utility to be used across different module paths (e.g., copied utilities)
 allowed_filenames:
