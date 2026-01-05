@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-01-05
+
 ### ⚠️ BREAKING CHANGES
 
 #### ModelHandlerBehaviorDescriptor Renamed to ModelHandlerBehavior [OMN-1117]
@@ -707,8 +709,174 @@ self.dispose_event_bus_resources()
 - [ ] **NEW**: Replace empty string binding with `ModelEventBusRuntimeState.reset()` to clear bindings
 - [ ] **NEW**: Watch for binding lock warnings indicating thread-safety violations
 
+#### Invariant Validation Returns Detailed Violation Model [OMN-1207]
+
+Invariant validation methods that previously returned `bool` or raised generic exceptions now return `ModelInvariantViolationDetail` on failure. This provides structured debugging information but changes the return type signature.
+
+**Impact**:
+- Code checking invariant validation results via boolean comparison may need updates
+- Exception handlers catching generic `ValidationError` should now handle `ModelInvariantViolationDetail`
+
+**Migration Guide**:
+
+```python
+# Before (v0.5.x) - Boolean return or exception
+result = validate_invariant(data)
+if not result:
+    logger.error("Invariant failed")
+
+# After (v0.6.x) - Structured violation detail
+from omnibase_core.models.validation import ModelInvariantViolationDetail
+
+result = validate_invariant(data)
+if isinstance(result, ModelInvariantViolationDetail):
+    logger.error(f"Invariant failed: {result.violation_type} - {result.message}")
+    logger.debug(f"Context: {result.context}")
+```
+
+### Added
+
+#### Replay & Trace Infrastructure
+
+- **Deterministic Replay Infrastructure**: Foundation for deterministic execution replay and validation [OMN-1116]
+- **ModelExecutionComparison**: Comparison model for baseline vs replay execution validation [OMN-1194]
+- **ModelEvidenceSummary**: Evidence summary model for aggregating corpus replay results [OMN-1195]
+- **ModelExecutionCorpus**: Corpus model for organizing and managing replay test sets [OMN-1202]
+- **Configuration Override Injection**: Configuration override injection for A/B testing scenarios [OMN-1205]
+- **Execution Trace Models**: Models for capturing and storing execution traces [OMN-1208]
+- **ServiceTraceRecording**: Service for recording execution traces to storage backends [OMN-1209]
+
+#### Contract System
+
+- **AST-Based Transport Import Validator**: Static analysis validator for transport layer import compliance [OMN-1039]
+- **YAML !include Directive Support**: Support for !include directives in YAML contract files for modular composition [OMN-1047]
+- **Handler Contract Model & YAML Schema**: ModelHandlerContract with comprehensive YAML schema for handler definitions [OMN-1117]
+- **ModelContractPatch**: Patch model for incremental contract modifications with validation [OMN-1126]
+- **Typed Contract Merge Engine**: Type-safe engine for merging contract definitions with conflict resolution [OMN-1127]
+- **Contract Validation Pipeline**: Multi-stage pipeline for validating contracts through configurable stages [OMN-1128]
+- **Contract Validation Event Schema**: Event schema for contract validation lifecycle events [OMN-1146]
+- **Contract Diff Model**: Model for computing and representing patch-level diffs between contracts [OMN-1148]
+- **Validation Pipeline Event Emission**: Event emission hooks for contract validation pipeline stages [OMN-1151]
+
+#### Validation & Invariants
+
+- **Invariant Definition Models**: Models for defining and configuring invariant rules [OMN-1192]
+- **ServiceInvariantEvaluator**: Service for evaluating invariants against runtime state [OMN-1193]
+- **ModelInvariantViolationDetail**: Structured violation detail model for debugging invariant failures [OMN-1207]
+
+#### Pipeline & Execution
+
+- **ExecutionResolver**: Resolver for mapping handler contracts to executable implementations [OMN-1106]
+- **Runtime Execution Sequencing Model**: Model for defining execution ordering and dependencies [OMN-1108]
+- **Pure Handler Conversions**: Utilities for converting between handler types with type safety [OMN-1112]
+- **Execution Manifest Generation**: Generator for creating execution manifests from pipeline definitions [OMN-1113]
+- **Pipeline Runner & Hook Registry**: Pipeline execution engine with pluggable hook registry [OMN-1114]
+
+#### Observability
+
+- **Dispatch ID Propagation**: Correlation ID propagation through dispatch chains for distributed tracing [OMN-972]
+- **Prometheus Metrics Backend**: Prometheus-compatible metrics export backend [OMN-1188]
+- **Redis Cache Backend**: Redis-backed caching implementation for distributed deployments [OMN-1188]
+
+#### Security
+
+- **AES-256-GCM Encryption**: Symmetric encryption support using AES-256-GCM for sensitive data [OMN-1077]
+
+#### Handler & Capability System
+
+- **Handler Enums**: Enumeration types for handler classification and behavior [OMN-1085]
+- **Handler Descriptors**: Descriptor models for handler metadata and configuration [OMN-1086]
+- **Handler Metadata Models**: Comprehensive metadata models for handler introspection [OMN-1121]
+- **Capability Models**: Models for defining and advertising node capabilities [OMN-1122]
+- **Capability Factories**: Factory classes for capability instantiation and configuration [OMN-1123]
+- **Handler Contract Extensions**: Extended contract fields for advanced handler scenarios [OMN-1124]
+- **Handler Type Categories**: Category-based handler classification system [OMN-1125]
+- **Capability Dependencies**: Dependency declaration and resolution for capabilities [OMN-1152]
+- **Capability Providers**: Provider abstraction for capability implementations [OMN-1153]
+- **Capability Requirements**: Requirement specification for capability consumers [OMN-1154]
+- **Capability Requirement Bindings**: Binding mechanism connecting requirements to providers [OMN-1155]
+- **MixinEventBus Strict Binding Mode**: Fail-fast binding validation for event bus mixins [OMN-1156]
+- **ModelProjectorContract**: Contract model for projection/view definitions [OMN-1166]
+
+#### NodeOrchestrator Compliance
+
+- **v1.0.1 Compliance Fixes**: NodeOrchestrator compliance with ONEX specification v1.0.1 [OMN-658]
+- **v1.0.2 Compliance Fixes**: Enhanced orchestration patterns for v1.0.2 specification [OMN-659]
+- **v1.0.3 Compliance Fixes**: Workflow coordination improvements for v1.0.3 specification [OMN-660]
+- **v1.0.4 Compliance Fixes**: Action lease semantics updates for v1.0.4 specification [OMN-661]
+- **v1.0.5 Compliance Fixes**: Final compliance updates for v1.0.5 specification [OMN-662]
+- **Node Protocol Definitions**: Protocol definitions for node type contracts [OMN-664]
+
+#### Protocol & Type System
+
+- **Protocol ISP Split**: Interface Segregation Principle refactoring of monolithic protocols [OMN-1016]
+- **SemVer 2.0.0 Support**: Full Semantic Versioning 2.0.0 compliance with pre-release and build metadata [OMN-1020]
+
+#### Constants & Configuration
+
+- **Timeout Constants**: Centralized timeout configuration constants for consistency [OMN-1074]
+- **Field Limit Constants**: Centralized field size limit constants for validation [OMN-1076]
+
+#### Type Safety Improvements
+
+- **Typed Unions for Models**: Discriminated union types for model hierarchies [OMN-1008]
+- **Typed Metadata Models**: Strongly-typed metadata model replacements for dict[str, Any] [OMN-1009]
+- **Typed Union Utilities**: Utility functions for working with typed unions [OMN-1013]
+- **Typed Context Models**: Strongly-typed context models replacing generic dicts [OMN-1048, OMN-1049, OMN-1050, OMN-1051, OMN-1052, OMN-1053, OMN-1054]
+- **Any Type Removal (Errors Module)**: Eliminated dict[str, Any] from error models [OMN-1174]
+- **Any Type Removal (Events Module)**: Eliminated dict[str, Any] from event models [OMN-1175]
+- **Any Type Removal (Core Module)**: Eliminated dict[str, Any] from core models [OMN-1176]
+- **Any Type Removal (Validation Module)**: Eliminated dict[str, Any] from validation models [OMN-1177]
+- **Any Type Removal (Registry Module)**: Eliminated dict[str, Any] from registry models [OMN-1178]
+- **Any Type Removal (Infrastructure Module)**: Eliminated dict[str, Any] from infrastructure models [OMN-1179]
+- **PEP 604 Union Syntax Conversion**: Migrated Optional[X] and Union[X, Y] to X | Y syntax [OMN-1186]
+
+#### Change Management
+
+- **ModelChangeProposal**: Change proposal model for evaluating system changes [OMN-1196]
+
+#### File Naming Conventions
+
+- **Naming Convention Enforcement**: Automated enforcement of directory-based file naming prefixes [OMN-1224]
+- **Naming Convention Checker**: Pre-commit checker for file naming compliance [OMN-1225]
+
+### Fixed
+
+- **Bare Except Replacement**: Replaced bare `except:` clauses with specific exception types [OMN-1064]
+- **Generic Exception Catches**: Replaced generic `except Exception` with specific exception handling [OMN-1075]
+- **Broken get_metadata() Pattern**: Fixed incorrect get_metadata() implementations across node types [OMN-1083]
+
 ### Changed
-- Renamed `ModelOnexEnvelopeV1` to `ModelOnexEnvelope` ()
+
+#### Model Relocations and Renames
+
+- **ModelLogData Relocation**: Moved from `mixins/` to `models/mixins/` with Mixin→Model prefix change [OMN-1066]
+- **ModelNodeIntrospectionData Relocation**: Moved from `mixins/` to `models/mixins/` with Mixin→Model prefix change [OMN-1067]
+- **ModelCompletionData Relocation**: Moved from `mixins/` to `models/mixins/` with Mixin→Model prefix change [OMN-1069]
+- **ModelRuntimeNodeInstance Relocation**: Moved from `runtime/` to `models/runtime/` with class rename [OMN-1070]
+- **ModelErrorMetadata Rename**: Renamed from ModelErrorContext to ModelErrorMetadata [OMN-1071]
+
+#### MixinEventBus Refactoring
+
+- **MixinEventBus Architecture**: Refactored to composition-based architecture with ModelEventBusRuntimeState and ModelEventBusListenerHandle [OMN-1081]
+
+#### File Naming Convention Renames
+
+- **Logging Module Renames**: Renamed files to follow `logging_*` prefix convention [OMN-1213]
+- **Runtime Module Renames**: Renamed files to follow `runtime_*` prefix convention [OMN-1214]
+- **Services Registry Renames**: Renamed files to follow `service_registry_*` prefix convention [OMN-1215]
+- **Validation Module Renames**: Renamed files to follow `validator_*` prefix convention [OMN-1216]
+- **Additional Logging Renames**: Secondary logging file renames for consistency [OMN-1217]
+- **Additional Runtime Renames**: Secondary runtime file renames for consistency [OMN-1218]
+- **Additional Services Renames**: Secondary services file renames for consistency [OMN-1219]
+- **Additional Validation Renames**: Secondary validation file renames for consistency [OMN-1220]
+- **Cross-Module Rename Coordination**: Coordinated renames across related modules [OMN-1221]
+- **Final Naming Convention Compliance**: Final pass ensuring all files follow conventions [OMN-1222]
+- **Import Path Updates**: Updated all import paths to reflect new file names [OMN-1223]
+
+#### Envelope Model Updates
+
+- Renamed `ModelOnexEnvelopeV1` to `ModelOnexEnvelope`
 - Renamed fields: `event_id`→`envelope_id`, `source_service`→`source_node`, `event_type`→`operation`
 - Added new fields: `causation_id`, `target_node`, `handler_type`, `metadata`, `is_response`, `success`, `error`
 
