@@ -7,6 +7,54 @@ Contract Diff Helper Module.
 Provides semantic diffing functionality for ONEX contracts.
 This module is used by the cli_contract.py diff command.
 
+Diff Algorithm Overview
+-----------------------
+
+The diff algorithm performs a **semantic comparison** of two ONEX contract
+YAML files, producing categorized change reports:
+
+1. **Recursive Dictionary Traversal**: The ``diff_contract_dicts()`` function
+   recursively compares nested dictionaries, building dot-separated paths
+   (e.g., ``descriptor.timeout_ms``) for each field.
+
+2. **List Comparison Strategies**:
+
+   - **Identity-based matching**: For lists of dicts with identity keys
+     (``name``, ``id``, ``handler_id``, etc.), elements are matched by
+     identity rather than position.
+   - **Positional comparison**: For simple lists or lists without identity
+     keys, elements are compared by index position.
+
+3. **Change Categorization**: Detected changes are categorized into:
+
+   - **Behavioral changes**: Changes to fields that affect runtime behavior
+     (purity, idempotency, timeouts, handlers, FSM, etc.)
+   - **Added/Removed/Changed**: Standard diff categories for other fields
+
+4. **Severity Assignment**: Each change is assigned a severity level:
+
+   - **high**: Behavioral fields (may affect runtime semantics)
+   - **medium**: Version fields or removed fields
+   - **low**: Other modifications
+
+5. **Exclusion Filtering**: Metadata fields (``_metadata`` section) are
+   excluded by default to focus on functional contract differences.
+
+Example Usage::
+
+    from omnibase_core.cli.cli_contract_diff import (
+        diff_contract_dicts,
+        categorize_diff_entries,
+        format_text_diff_output,
+    )
+
+    old_data = {"name": "old", "descriptor": {"timeout_ms": 1000}}
+    new_data = {"name": "new", "descriptor": {"timeout_ms": 2000}}
+
+    diffs = diff_contract_dicts(old_data, new_data)
+    result = categorize_diff_entries(diffs)
+    print(format_text_diff_output(result))
+
 .. versionadded:: 0.6.0
     Added as part of Contract CLI Tooling (OMN-1129)
 """
@@ -15,7 +63,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import cast
+from typing import Literal, cast
 
 import click
 import yaml
@@ -28,9 +76,19 @@ from omnibase_core.types.type_json import JsonType
 # Contract Diff Types and Constants
 # ==============================================================================
 
-
-# Behavioral fields that warrant special attention during diff
-# Changes to these fields affect runtime behavior
+# Behavioral fields that warrant special attention during diff.
+#
+# These fields directly affect runtime behavior of ONEX nodes. Changes to these
+# fields may alter execution semantics, timing, error handling, or state transitions.
+# The diff algorithm highlights changes to these fields in a separate "BEHAVIORAL
+# CHANGES" section with high severity ratings.
+#
+# Field categories:
+# - descriptor.*: Node execution semantics (purity, idempotency, timeouts, retries)
+# - handlers: Event/intent handling registration (changes affect event routing)
+# - dependencies: External contract dependencies (changes may break execution)
+# - capabilities: Advertised node capabilities (changes affect discovery)
+# - state_machine/fsm: FSM configuration for reducers (changes affect state flow)
 BEHAVIORAL_FIELDS: frozenset[str] = frozenset(
     {
         "descriptor.purity",
@@ -48,7 +106,19 @@ BEHAVIORAL_FIELDS: frozenset[str] = frozenset(
     }
 )
 
-# Fields to exclude from comparison by default (metadata section)
+# Fields to exclude from comparison by default.
+#
+# The _metadata section contains build-time information (profile, version, hash,
+# timestamps) that is not part of the functional contract specification. These
+# fields are excluded to focus diff output on semantically meaningful changes.
+#
+# Excluded fields include:
+# - _metadata.profile: Base profile name
+# - _metadata.profile_version: Profile version
+# - _metadata.runtime_version: Build-time runtime version
+# - _metadata.merge_hash: Deterministic hash of merge inputs
+# - _metadata.generated_at: Build timestamp
+# - _metadata.source_patch: Source patch file path
 DEFAULT_EXCLUDE_PREFIXES: frozenset[str] = frozenset(
     {
         "_metadata",
@@ -63,6 +133,11 @@ DiffResult = ModelDiffResult
 ELLIPSIS_STR: str = "..."
 ELLIPSIS_LENGTH: int = len(ELLIPSIS_STR)
 
+# Default maximum length for formatted diff values before truncation.
+# 60 characters provides enough context for most field values while keeping
+# output readable in terminal displays (typical terminal width is 80-120 chars).
+DEFAULT_MAX_VALUE_LENGTH: int = 60
+
 
 # ==============================================================================
 # Contract Diff Helper Functions
@@ -72,11 +147,28 @@ ELLIPSIS_LENGTH: int = len(ELLIPSIS_STR)
 def is_behavioral_field(path: str) -> bool:
     """Check if a field path is a behavioral field.
 
+    Behavioral fields are those that affect runtime behavior of ONEX nodes.
+    This includes execution semantics, handlers, dependencies, and state machines.
+
+    The check handles nested paths by matching:
+    - Exact matches (e.g., "handlers")
+    - Child paths (e.g., "handlers.my_handler")
+    - Array access (e.g., "handlers[0]")
+    - Parent paths (e.g., "descriptor" matches "descriptor.purity")
+
     Args:
-        path: Dot-separated field path.
+        path: Dot-separated field path (e.g., "descriptor.timeout_ms").
 
     Returns:
         True if this is a behavioral field that affects runtime behavior.
+
+    Examples:
+        >>> is_behavioral_field("descriptor.timeout_ms")
+        True
+        >>> is_behavioral_field("handlers[0].name")
+        True
+        >>> is_behavioral_field("description")
+        False
     """
     if path in BEHAVIORAL_FIELDS:
         return True
@@ -91,11 +183,20 @@ def is_behavioral_field(path: str) -> bool:
 def should_exclude_from_diff(path: str) -> bool:
     """Check if a field path should be excluded from comparison.
 
+    Excluded paths are filtered out during diff to focus on semantically
+    meaningful changes. By default, the _metadata section is excluded.
+
     Args:
-        path: Dot-separated field path.
+        path: Dot-separated field path (e.g., "_metadata.generated_at").
 
     Returns:
-        True if this field should be excluded from diff.
+        True if this field should be excluded from diff output.
+
+    Examples:
+        >>> should_exclude_from_diff("_metadata.merge_hash")
+        True
+        >>> should_exclude_from_diff("descriptor.timeout_ms")
+        False
     """
     for prefix in DEFAULT_EXCLUDE_PREFIXES:
         if path == prefix or path.startswith(f"{prefix}."):
@@ -103,15 +204,29 @@ def should_exclude_from_diff(path: str) -> bool:
     return False
 
 
-def get_diff_severity(path: str, change_type: str) -> str:
-    """Determine severity of a change based on field path.
+def get_diff_severity(path: str, change_type: str) -> Literal["high", "medium", "low"]:
+    """Determine severity of a change based on field path and change type.
+
+    Severity levels help users prioritize review of contract changes:
+
+    - **high**: Behavioral fields that may change runtime semantics
+    - **medium**: Version fields or removed fields (potential breaking changes)
+    - **low**: Other modifications (documentation, metadata, etc.)
 
     Args:
         path: Dot-separated field path.
-        change_type: Type of change (added, removed, changed).
+        change_type: Type of change ("added", "removed", "changed").
 
     Returns:
-        Severity level for this change (high, medium, low).
+        Severity level: "high", "medium", or "low".
+
+    Examples:
+        >>> get_diff_severity("descriptor.timeout_ms", "changed")
+        'high'
+        >>> get_diff_severity("node_version.major", "changed")
+        'medium'
+        >>> get_diff_severity("description", "changed")
+        'low'
     """
     if is_behavioral_field(path):
         return "high"
@@ -122,15 +237,31 @@ def get_diff_severity(path: str, change_type: str) -> str:
     return "low"
 
 
-def format_diff_value(value: JsonType, max_length: int = 60) -> str:
-    """Format a value for text display.
+def format_diff_value(
+    value: JsonType, max_length: int = DEFAULT_MAX_VALUE_LENGTH
+) -> str:
+    """Format a value for human-readable text display.
+
+    Converts JSON-compatible values to string representations suitable for
+    diff output. Long values are truncated with ellipsis to maintain readability.
 
     Args:
-        value: Value to format.
-        max_length: Maximum length before truncation.
+        value: Value to format (None, bool, str, int, float, list, or dict).
+        max_length: Maximum length before truncation. Defaults to
+            DEFAULT_MAX_VALUE_LENGTH (60 chars).
 
     Returns:
-        Formatted string representation.
+        Formatted string representation of the value.
+
+    Examples:
+        >>> format_diff_value(None)
+        'null'
+        >>> format_diff_value(True)
+        'true'
+        >>> format_diff_value("hello")
+        '"hello"'
+        >>> format_diff_value({"key": "value"})
+        '{"key": "value"}'
     """
     if value is None:
         return "null"
@@ -154,13 +285,26 @@ def diff_contract_dicts(
 ) -> list[DiffEntry]:
     """Recursively diff two contract dictionaries.
 
+    Performs a deep comparison of two dictionaries, generating DiffEntry
+    objects for each difference found. Nested dicts and lists are compared
+    recursively.
+
     Args:
         old: The old contract dictionary.
         new: The new contract dictionary.
-        path: Current path prefix for nested fields.
+        path: Current path prefix for nested fields (used internally).
 
     Returns:
-        List of DiffEntry objects representing all differences.
+        List of DiffEntry objects representing all differences found.
+
+    Examples:
+        >>> old = {"name": "old", "version": 1}
+        >>> new = {"name": "new", "version": 1}
+        >>> diffs = diff_contract_dicts(old, new)
+        >>> len(diffs)
+        1
+        >>> diffs[0].path
+        'name'
     """
     diffs: list[DiffEntry] = []
     all_keys = set(old.keys()) | set(new.keys())
@@ -217,8 +361,15 @@ def diff_contract_lists(
 ) -> list[DiffEntry]:
     """Diff two lists, detecting additions, removals, and changes.
 
-    For lists of dicts, attempts to match by common identity keys.
-    For other lists, uses positional comparison.
+    Uses two strategies for list comparison:
+
+    1. **Identity-based matching**: For lists of dicts that all contain a
+       common identity key (name, id, handler_id, etc.), elements are matched
+       by identity value rather than position. This produces more meaningful
+       diffs when list order changes.
+
+    2. **Positional comparison**: For simple lists or lists without identity
+       keys, elements are compared by index position.
 
     Args:
         old_list: The old list.
@@ -227,24 +378,29 @@ def diff_contract_lists(
 
     Returns:
         List of DiffEntry objects for list differences.
+
+    Examples:
+        >>> old = [{"name": "a", "value": 1}]
+        >>> new = [{"name": "a", "value": 2}]
+        >>> diffs = diff_contract_lists(old, new, "items")
+        >>> diffs[0].path
+        'items[name=a].value'
     """
     diffs: list[DiffEntry] = []
 
-    # Check if lists contain dicts with identity keys
-    if (
-        old_list
-        and new_list
-        and isinstance(old_list[0], dict)
-        and isinstance(new_list[0], dict)
-    ):
-        # Validate all items are dicts (not just first element)
-        assert all(isinstance(item, dict) for item in old_list)
-        assert all(isinstance(item, dict) for item in new_list)
-        old_dicts = cast(list[dict[str, JsonType]], old_list)
-        new_dicts = cast(list[dict[str, JsonType]], new_list)
-        identity_key = find_list_identity_key(old_dicts, new_dicts)
-        if identity_key:
-            return diff_lists_by_identity(old_dicts, new_dicts, path, identity_key)
+    # Check if lists contain dicts with identity keys.
+    # We require ALL elements to be dicts (not just the first) for identity-based
+    # comparison to work correctly. Mixed-type lists fall back to positional comparison.
+    if old_list and new_list:
+        all_old_are_dicts = all(isinstance(item, dict) for item in old_list)
+        all_new_are_dicts = all(isinstance(item, dict) for item in new_list)
+
+        if all_old_are_dicts and all_new_are_dicts:
+            old_dicts = cast(list[dict[str, JsonType]], old_list)
+            new_dicts = cast(list[dict[str, JsonType]], new_list)
+            identity_key = find_list_identity_key(old_dicts, new_dicts)
+            if identity_key:
+                return diff_lists_by_identity(old_dicts, new_dicts, path, identity_key)
 
     # Fall back to positional comparison
     max_len = max(len(old_list), len(new_list))
@@ -294,14 +450,22 @@ def find_list_identity_key(
 ) -> str | None:
     """Find a common identity key for list element matching.
 
-    Looks for common keys that could serve as unique identifiers.
+    Searches for common keys in both lists' first elements that could serve
+    as unique identifiers. Candidate keys are checked in priority order:
+    name, id, handler_id, step_id, event_type, state_id.
 
     Args:
         old_list: List of dicts from old contract.
         new_list: List of dicts from new contract.
 
     Returns:
-        Identity key field name, or None if no suitable key found.
+        Identity key field name if found, None otherwise.
+
+    Examples:
+        >>> old = [{"handler_id": "h1", "name": "Handler 1"}]
+        >>> new = [{"handler_id": "h1", "name": "Handler One"}]
+        >>> find_list_identity_key(old, new)
+        'name'
     """
     candidates = ["name", "id", "handler_id", "step_id", "event_type", "state_id"]
     old_keys = set(old_list[0].keys()) if old_list else set()
@@ -321,14 +485,25 @@ def diff_lists_by_identity(
 ) -> list[DiffEntry]:
     """Diff lists using identity-based matching.
 
+    Matches list elements by their identity key value rather than position.
+    This produces more meaningful diffs when list order changes or elements
+    are inserted/removed.
+
     Args:
         old_list: List of dicts from old contract.
         new_list: List of dicts from new contract.
         path: Current path for this list field.
-        identity_key: Key to use for matching elements.
+        identity_key: Key to use for matching elements (e.g., "name").
 
     Returns:
         List of DiffEntry objects for list differences.
+
+    Examples:
+        >>> old = [{"name": "a", "v": 1}, {"name": "b", "v": 2}]
+        >>> new = [{"name": "b", "v": 2}, {"name": "a", "v": 9}]
+        >>> diffs = diff_lists_by_identity(old, new, "items", "name")
+        >>> diffs[0].path
+        'items[name=a].v'
     """
     diffs: list[DiffEntry] = []
     old_by_key: dict[JsonType, dict[str, JsonType]] = {}
@@ -375,11 +550,24 @@ def diff_lists_by_identity(
 def categorize_diff_entries(diffs: list[DiffEntry]) -> DiffResult:
     """Categorize diff entries into result categories.
 
+    Organizes diff entries into semantic categories for display:
+
+    - **behavioral_changes**: High-priority changes to runtime behavior fields
+    - **added**: Fields present in new but not old
+    - **removed**: Fields present in old but not new
+    - **changed**: Fields with different values
+
     Args:
-        diffs: List of all diff entries.
+        diffs: List of all diff entries from comparison.
 
     Returns:
         DiffResult with categorized entries.
+
+    Examples:
+        >>> entry = DiffEntry(change_type="added", path="name", new_value="x")
+        >>> result = categorize_diff_entries([entry])
+        >>> len(result.added)
+        1
     """
     result = DiffResult()
     for diff_entry in diffs:
@@ -394,14 +582,100 @@ def categorize_diff_entries(diffs: list[DiffEntry]) -> DiffResult:
     return result
 
 
+# ==============================================================================
+# Text Formatting Helpers
+# ==============================================================================
+
+
+def _format_diff_entry_line(entry: DiffEntry, prefix: str) -> str:
+    """Format a single diff entry as a text line.
+
+    Handles the three change types with appropriate formatting:
+    - changed: "path: old_value -> new_value"
+    - added: "path: (added) new_value" or just "path: new_value"
+    - removed: "path: (removed) old_value" or just "path: old_value"
+
+    Args:
+        entry: The diff entry to format.
+        prefix: Line prefix character ("!", "+", "-", "~").
+
+    Returns:
+        Formatted line string without newline.
+    """
+    if entry.change_type == "changed":
+        old_str = format_diff_value(entry.old_value)
+        new_str = format_diff_value(entry.new_value)
+        return f"  {prefix} {entry.path}: {old_str} -> {new_str}"
+    elif entry.change_type == "added":
+        new_str = format_diff_value(entry.new_value)
+        # For behavioral section, show "(added)" label; for ADDED section, just value
+        if prefix == "!":
+            return f"  {prefix} {entry.path}: (added) {new_str}"
+        return f"  {prefix} {entry.path}: {new_str}"
+    else:  # removed
+        old_str = format_diff_value(entry.old_value)
+        # For behavioral section, show "(removed)" label; for REMOVED section, just value
+        if prefix == "!":
+            return f"  {prefix} {entry.path}: (removed) {old_str}"
+        return f"  {prefix} {entry.path}: {old_str}"
+
+
+def _format_diff_section(
+    entries: list[DiffEntry],
+    section_name: str,
+    prefix: str,
+) -> list[str]:
+    """Format a section of diff entries with header.
+
+    Creates a formatted section with a header and indented entries.
+    Returns empty list if no entries.
+
+    Args:
+        entries: List of diff entries for this section.
+        section_name: Section header text (e.g., "ADDED:", "REMOVED:").
+        prefix: Line prefix character for entries.
+
+    Returns:
+        List of formatted lines including header and trailing blank line.
+    """
+    if not entries:
+        return []
+
+    lines: list[str] = [section_name]
+    for entry in entries:
+        lines.append(_format_diff_entry_line(entry, prefix))
+    lines.append("")  # Trailing blank line after section
+    return lines
+
+
 def format_text_diff_output(result: DiffResult) -> str:
     """Format diff result as human-readable text.
+
+    Produces a formatted text report with sections for each change category:
+    - BEHAVIORAL CHANGES (if any)
+    - ADDED
+    - REMOVED
+    - CHANGED
+
+    Each section shows the field path and values with appropriate symbols:
+    - ! for behavioral changes
+    - + for additions
+    - - for removals
+    - ~ for modifications
 
     Args:
         result: The diff result to format.
 
     Returns:
-        Formatted text output.
+        Formatted text output suitable for terminal display.
+
+    Examples:
+        >>> result = DiffResult(old_path="a.yaml", new_path="b.yaml")
+        >>> result.added.append(DiffEntry(
+        ...     change_type="added", path="name", new_value="test"))
+        >>> output = format_text_diff_output(result)
+        >>> "ADDED:" in output
+        True
     """
     lines: list[str] = []
     lines.append(f"Contract Diff: {result.old_path} -> {result.new_path}")
@@ -411,43 +685,15 @@ def format_text_diff_output(result: DiffResult) -> str:
         lines.append("No differences found.")
         return "\n".join(lines)
 
-    if result.behavioral_changes:
-        lines.append("BEHAVIORAL CHANGES:")
-        for diff_entry in result.behavioral_changes:
-            if diff_entry.change_type == "changed":
-                old_str = format_diff_value(diff_entry.old_value)
-                new_str = format_diff_value(diff_entry.new_value)
-                lines.append(f"  ! {diff_entry.path}: {old_str} -> {new_str}")
-            elif diff_entry.change_type == "added":
-                new_str = format_diff_value(diff_entry.new_value)
-                lines.append(f"  ! {diff_entry.path}: (added) {new_str}")
-            else:
-                old_str = format_diff_value(diff_entry.old_value)
-                lines.append(f"  ! {diff_entry.path}: (removed) {old_str}")
-        lines.append("")
+    # Format each section using the helper function
+    lines.extend(
+        _format_diff_section(result.behavioral_changes, "BEHAVIORAL CHANGES:", "!")
+    )
+    lines.extend(_format_diff_section(result.added, "ADDED:", "+"))
+    lines.extend(_format_diff_section(result.removed, "REMOVED:", "-"))
+    lines.extend(_format_diff_section(result.changed, "CHANGED:", "~"))
 
-    if result.added:
-        lines.append("ADDED:")
-        for diff_entry in result.added:
-            val_str = format_diff_value(diff_entry.new_value)
-            lines.append(f"  + {diff_entry.path}: {val_str}")
-        lines.append("")
-
-    if result.removed:
-        lines.append("REMOVED:")
-        for diff_entry in result.removed:
-            val_str = format_diff_value(diff_entry.old_value)
-            lines.append(f"  - {diff_entry.path}: {val_str}")
-        lines.append("")
-
-    if result.changed:
-        lines.append("CHANGED:")
-        for diff_entry in result.changed:
-            old_str = format_diff_value(diff_entry.old_value)
-            new_str = format_diff_value(diff_entry.new_value)
-            lines.append(f"  ~ {diff_entry.path}: {old_str} -> {new_str}")
-        lines.append("")
-
+    # Summary footer
     lines.append("-" * 40)
     lines.append(f"Total changes: {result.total_changes}")
     if result.behavioral_changes:
@@ -465,11 +711,20 @@ def format_text_diff_output(result: DiffResult) -> str:
 def format_json_diff_output(result: DiffResult) -> str:
     """Format diff result as JSON.
 
+    Produces a JSON representation of the diff result suitable for
+    programmatic consumption or storage.
+
     Args:
         result: The diff result to format.
 
     Returns:
-        JSON string output.
+        Pretty-printed JSON string with 2-space indentation.
+
+    Examples:
+        >>> result = DiffResult()
+        >>> output = format_json_diff_output(result)
+        >>> '"has_changes": false' in output
+        True
     """
     return json.dumps(result.to_dict(), indent=2, default=str)
 
@@ -477,40 +732,142 @@ def format_json_diff_output(result: DiffResult) -> str:
 def format_yaml_diff_output(result: DiffResult) -> str:
     """Format diff result as YAML.
 
+    Produces a YAML representation of the diff result suitable for
+    storage or integration with other YAML-based tools.
+
     Args:
         result: The diff result to format.
 
     Returns:
-        YAML string output.
+        YAML string with block style formatting.
+
+    Examples:
+        >>> result = DiffResult()
+        >>> output = format_yaml_diff_output(result)
+        >>> "has_changes: false" in output
+        True
     """
     return yaml.dump(result.to_dict(), default_flow_style=False, sort_keys=False)
+
+
+def _format_yaml_error_context(error: yaml.YAMLError, content: str) -> str:
+    """Extract and format error context from a YAML error.
+
+    Args:
+        error: The YAML error to extract context from.
+        content: The original file content for context.
+
+    Returns:
+        Formatted error context string with line information.
+    """
+    lines: list[str] = []
+
+    # Try to extract line/column from error mark
+    if hasattr(error, "problem_mark") and error.problem_mark is not None:
+        mark = error.problem_mark
+        lines.append(f"  Line {mark.line + 1}, Column {mark.column + 1}")
+
+        # Show the problematic line if possible
+        content_lines = content.splitlines()
+        if 0 <= mark.line < len(content_lines):
+            problem_line = content_lines[mark.line]
+            lines.append(f"  >>> {problem_line}")
+            if mark.column > 0:
+                lines.append(f"      {' ' * mark.column}^")
+
+    # Include the error problem description
+    if hasattr(error, "problem") and error.problem:
+        lines.append(f"  Problem: {error.problem}")
+
+    if not lines:
+        lines.append(f"  {error}")
+
+    return "\n".join(lines)
 
 
 def load_contract_yaml_file(path: Path) -> dict[str, JsonType]:
     """Load a YAML file and return its contents as a dictionary.
 
+    Reads and parses a YAML file, validating that the root element is
+    a dictionary (as required for ONEX contracts). Provides detailed
+    error messages with context for common issues.
+
     Args:
-        path: Path to the YAML file.
+        path: Path to the YAML file to load.
 
     Returns:
-        Dictionary containing the YAML contents.
+        Dictionary containing the parsed YAML contents.
 
     Raises:
-        click.ClickException: If file cannot be read or parsed.
+        click.ClickException: If file cannot be read, parsed, or is not a dict.
+            Error messages include context such as line numbers and hints.
+
+    Examples:
+        >>> from pathlib import Path
+        >>> # load_contract_yaml_file(Path("contract.yaml"))  # doctest: +SKIP
     """
+    # Resolve path for consistent error messages
+    resolved_path = path.resolve()
+
     try:
-        content = path.read_text(encoding="utf-8")
+        content = resolved_path.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        raise click.ClickException(
+            f"File not found: '{resolved_path}'\n"
+            f"  Hint: Check that the file path is correct and the file exists."
+        ) from None
+    except PermissionError:
+        raise click.ClickException(
+            f"Permission denied reading file: '{resolved_path}'\n"
+            f"  Hint: Check file permissions with 'ls -la {resolved_path}'"
+        ) from None
     except OSError as e:
-        raise click.ClickException(f"Cannot read file '{path}': {e}") from e
+        raise click.ClickException(
+            f"Cannot read file '{resolved_path}': {e}\n  Error type: {type(e).__name__}"
+        ) from e
+
+    # Check for empty file
+    if not content.strip():
+        raise click.ClickException(
+            f"File is empty: '{resolved_path}'\n"
+            f"  Hint: Contract files must contain valid YAML content."
+        )
 
     try:
         data = yaml.safe_load(content)
+    except yaml.scanner.ScannerError as e:
+        # Extract line/column info from YAML error if available
+        error_context = _format_yaml_error_context(e, content)
+        raise click.ClickException(
+            f"YAML syntax error in '{resolved_path}':\n{error_context}\n"
+            f"  Hint: Check for incorrect indentation, missing colons, "
+            f"or invalid characters."
+        ) from e
+    except yaml.parser.ParserError as e:
+        error_context = _format_yaml_error_context(e, content)
+        raise click.ClickException(
+            f"YAML structure error in '{resolved_path}':\n{error_context}\n"
+            f"  Hint: Check for mismatched brackets, quotes, "
+            f"or invalid YAML structure."
+        ) from e
     except yaml.YAMLError as e:
-        raise click.ClickException(f"Cannot parse YAML in '{path}': {e}") from e
+        raise click.ClickException(
+            f"Cannot parse YAML in '{resolved_path}': {e}\n"
+            f"  Error type: {type(e).__name__}"
+        ) from e
+
+    if data is None:
+        raise click.ClickException(
+            f"File contains only comments or whitespace: '{resolved_path}'\n"
+            f"  Hint: Contract files must contain a YAML object/dictionary."
+        )
 
     if not isinstance(data, dict):
         raise click.ClickException(
-            f"Expected YAML object/dict in '{path}', got {type(data).__name__}"
+            f"Expected YAML object/dict in '{resolved_path}', "
+            f"got {type(data).__name__}\n"
+            f"  Hint: Contract files must start with key-value pairs, "
+            f"not a list or scalar."
         )
     return data
 
@@ -518,6 +875,7 @@ def load_contract_yaml_file(path: Path) -> dict[str, JsonType]:
 __all__ = [
     "BEHAVIORAL_FIELDS",
     "DEFAULT_EXCLUDE_PREFIXES",
+    "DEFAULT_MAX_VALUE_LENGTH",
     # Type aliases
     "DiffEntry",
     "DiffResult",

@@ -43,6 +43,23 @@ if TYPE_CHECKING:
 BuildOutputFormat = Literal["yaml", "json"]
 DiffOutputFormat = Literal["text", "json", "yaml"]
 
+# LRU cache size for profile lookup. 8 slots are sufficient since there are
+# only 4 node kinds (orchestrator, reducer, effect, compute) and the cache
+# prevents redundant profile registry lookups during interactive sessions.
+PROFILE_CACHE_SIZE: int = 8
+
+# Truncation length for merge hashes. 32 hex characters (128 bits) provides
+# strong uniqueness for detecting contract changes. At this length, collision
+# probability is negligible: even with 10 billion contracts, the probability
+# of any collision is approximately 1.5e-20 (birthday paradox calculation:
+# n^2 / 2^129 where n = 10^10). This is effectively zero for all practical
+# purposes while keeping output readable in logs and CLI displays.
+#
+# Purpose: The merge hash serves as a fingerprint for build reproducibility.
+# Given the same profile + version + patch content, the hash will be identical,
+# allowing CI/CD pipelines to detect if a contract needs rebuilding.
+MERGE_HASH_LENGTH: int = 32
+
 # Mapping from EnumNodeKind to short names used in CLI
 _NODE_KIND_TO_CLI_NAME: dict[EnumNodeKind, str] = {
     EnumNodeKind.ORCHESTRATOR: "orchestrator",
@@ -57,7 +74,7 @@ _CLI_NAME_TO_NODE_KIND: dict[str, EnumNodeKind] = {
 }
 
 
-@functools.lru_cache(maxsize=8)
+@functools.lru_cache(maxsize=PROFILE_CACHE_SIZE)
 def _get_available_profiles_for_kind(node_kind: EnumNodeKind) -> tuple[str, ...]:
     """
     Get available profile short names for a node kind.
@@ -131,6 +148,63 @@ def _validate_profile_exists(node_type: str, profile: str) -> str | None:
         )
 
     return None
+
+
+# Dangerous path prefixes that should never be written to by CLI tools
+_DANGEROUS_PATH_PREFIXES: tuple[str, ...] = (
+    "/etc",
+    "/usr",
+    "/bin",
+    "/sbin",
+    "/lib",
+    "/var/log",
+    "/boot",
+    "/root",
+    "/sys",
+    "/proc",
+    "/dev",
+)
+
+
+def _validate_output_path(path: Path) -> Path:
+    """Validate and resolve an output path for safety.
+
+    Performs security checks to prevent path traversal attacks and
+    accidental writes to sensitive system directories.
+
+    Args:
+        path: The output path to validate.
+
+    Returns:
+        The resolved (absolute) path if valid.
+
+    Raises:
+        click.ClickException: If the path is invalid or potentially dangerous.
+
+    Security Checks:
+        1. Resolves the path to an absolute path
+        2. Detects path traversal patterns (.. in resolved path)
+        3. Blocks writes to sensitive system directories
+    """
+    resolved = path.resolve()
+    resolved_str = str(resolved)
+
+    # Check for path traversal patterns in the resolved path
+    # This catches cases where symlinks or other tricks result in suspicious paths
+    if ".." in resolved_str:
+        raise click.ClickException(
+            f"Path traversal detected in resolved path: {resolved_str}"
+        )
+
+    # Block writes to sensitive system directories
+    for prefix in _DANGEROUS_PATH_PREFIXES:
+        if resolved_str.startswith(prefix + "/") or resolved_str == prefix:
+            raise click.ClickException(
+                f"Cannot write to system directory '{prefix}'. "
+                f"Resolved path: {resolved_str}"
+            )
+
+    return resolved
 
 
 def _generate_patch_template(
@@ -304,7 +378,12 @@ def _generate_merge_hash(
     """Generate a deterministic hash from merge inputs.
 
     Creates a SHA256 hash from the profile name, version, and patch content,
-    truncated to 16 characters for readability.
+    truncated to MERGE_HASH_LENGTH characters for build reproducibility.
+
+    The hash serves as a fingerprint to detect when a contract needs rebuilding:
+    - Same inputs always produce the same hash
+    - Any change to profile, version, or patch content changes the hash
+    - CI/CD pipelines can compare hashes to skip unnecessary rebuilds
 
     Args:
         profile_name: The profile name (e.g., "compute_pure").
@@ -312,11 +391,54 @@ def _generate_merge_hash(
         patch_content: The raw patch file content as a string.
 
     Returns:
-        A 16-character hex hash string.
+        A 32-character hex hash string (128 bits). The truncation provides
+        negligible collision probability while maintaining readability.
     """
     hash_input = f"{profile_name}:{version_str}:{patch_content}"
     full_hash = hashlib.sha256(hash_input.encode("utf-8")).hexdigest()
-    return full_hash[:16]
+    return full_hash[:MERGE_HASH_LENGTH]
+
+
+# Common validation error suggestions by error code or field pattern
+_VALIDATION_SUGGESTIONS: dict[str, str] = {
+    "name": "Ensure 'name' is a valid identifier (letters, numbers, underscores)",
+    "node_version": "node_version requires major, minor, and patch as integers",
+    "extends": "Check that 'extends.profile' matches an available profile name",
+    "profile": "Run 'onex contract init --type <type> --profile invalid' to see available profiles",
+    "handler_id": "handler_id should be a dot-separated identifier (e.g., 'my.handler.name')",
+    "timeout_ms": "timeout_ms must be a positive integer (milliseconds)",
+    "required": "This field is required and cannot be omitted",
+    "type_error": "Check the field type matches the expected schema type",
+}
+
+# Separator line width for error output formatting
+ERROR_SEPARATOR_WIDTH: int = 60
+
+
+def _get_suggestion_for_error(field: str, message: str, code: str | None) -> str | None:
+    """Get a helpful suggestion for a validation error.
+
+    Args:
+        field: The field path that failed validation.
+        message: The error message.
+        code: The error code (if any).
+
+    Returns:
+        A suggestion string, or None if no suggestion applies.
+    """
+    # Check for exact field match
+    field_name = field.split(".")[-1] if "." in field else field
+    if field_name in _VALIDATION_SUGGESTIONS:
+        return _VALIDATION_SUGGESTIONS[field_name]
+
+    # Check for pattern in message
+    message_lower = message.lower()
+    if "required" in message_lower:
+        return _VALIDATION_SUGGESTIONS["required"]
+    if "type" in message_lower or "expected" in message_lower:
+        return _VALIDATION_SUGGESTIONS["type_error"]
+
+    return None
 
 
 def _format_validation_errors(
@@ -325,6 +447,9 @@ def _format_validation_errors(
 ) -> str:
     """Format validation errors for display.
 
+    Produces a detailed, user-friendly error message with context about
+    which validation phase failed and suggestions for fixing common issues.
+
     Args:
         validation_results: Dictionary of validation results by phase.
         phase_failed: The phase where validation failed (if any).
@@ -332,7 +457,21 @@ def _format_validation_errors(
     Returns:
         Formatted error string for CLI output.
     """
-    lines = ["ERROR: Contract validation failed", ""]
+    lines = ["=" * ERROR_SEPARATOR_WIDTH]
+    lines.append("ERROR: Contract validation failed")
+    lines.append("=" * ERROR_SEPARATOR_WIDTH)
+    lines.append("")
+
+    # Show which phase failed prominently
+    if phase_failed:
+        phase_descriptions = {
+            EnumValidationPhase.PATCH: "validating the patch file structure",
+            EnumValidationPhase.MERGE: "merging patch with base profile",
+            EnumValidationPhase.EXPANDED: "validating the expanded contract",
+        }
+        phase_desc = phase_descriptions.get(phase_failed, phase_failed.value)
+        lines.append(f"Failed during: {phase_failed.value.upper()} ({phase_desc})")
+        lines.append("")
 
     # Process phases in order
     phase_order = [
@@ -341,6 +480,7 @@ def _format_validation_errors(
         EnumValidationPhase.EXPANDED,
     ]
 
+    subseparator_width = ERROR_SEPARATOR_WIDTH // 2 + 10
     for phase in phase_order:
         phase_key = phase.value
         if phase_key not in validation_results:
@@ -350,29 +490,42 @@ def _format_validation_errors(
         if result.is_valid:
             continue
 
+        lines.append("-" * subseparator_width)
         lines.append(f"Phase: {phase.value.upper()}")
+        lines.append("-" * subseparator_width)
 
-        # Format issues if available
-        if hasattr(result, "issues") and result.issues:
+        # Format issues if available (issues is always a list, may be empty)
+        if result.issues:
             for issue in result.issues:
-                # Extract field path if available
-                field = getattr(issue, "field", None) or getattr(
-                    issue, "path", "unknown"
-                )
-                message = getattr(issue, "message", str(issue))
-                code = getattr(issue, "code", None)
+                # Use file_path for location info (ModelValidationIssue field)
+                file_path_str = str(issue.file_path) if issue.file_path else "unknown"
+                lines.append(f"  Field: {file_path_str}")
+                lines.append(f"  Error: {issue.message}")
+                if issue.code:
+                    lines.append(f"  Code:  {issue.code}")
 
-                lines.append(f"  - field: {field}")
-                lines.append(f"    message: {message}")
-                if code:
-                    lines.append(f"    code: {code}")
+                # Add suggestion if available
+                suggestion = _get_suggestion_for_error(
+                    file_path_str, issue.message, issue.code
+                )
+                if suggestion:
+                    lines.append(f"  Hint:  {suggestion}")
                 lines.append("")
 
-        # Fall back to errors list if no issues
-        elif hasattr(result, "errors") and result.errors:
+        # Fall back to errors list if no issues (errors is always a list, may be empty)
+        elif result.errors:
             for error in result.errors:
                 lines.append(f"  - {error}")
             lines.append("")
+
+    # Add general help footer
+    lines.append("=" * ERROR_SEPARATOR_WIDTH)
+    lines.append("For more information:")
+    lines.append("  - Check your patch file syntax with: onex contract build --help")
+    lines.append(
+        "  - View available profiles: onex contract init --type <type> --profile ?"
+    )
+    lines.append("=" * ERROR_SEPARATOR_WIDTH)
 
     return "\n".join(lines)
 
@@ -540,8 +693,8 @@ def init(
     # Output the result
     if output:
         try:
-            # Resolve path for defense in depth against path traversal
-            resolved_output = output.resolve()
+            # Validate and resolve path for security
+            resolved_output = _validate_output_path(output)
             resolved_output.write_text(patch_content)
             click.echo(f"Contract patch template written to {resolved_output}")
         except OSError as e:
@@ -711,7 +864,8 @@ def build(
         if strict:
             all_warnings: list[str] = []
             for phase_result in result.validation_results.values():
-                if hasattr(phase_result, "warnings") and phase_result.warnings:
+                # warnings is always a list on ModelValidationResult, may be empty
+                if phase_result.warnings:
                     all_warnings.extend(phase_result.warnings)
 
             if all_warnings:
@@ -771,8 +925,8 @@ def build(
 
         # Write output
         if output:
-            # Resolve path for defense in depth against path traversal
-            resolved_output = output.resolve()
+            # Validate and resolve path for security
+            resolved_output = _validate_output_path(output)
             resolved_output.write_text(output_content, encoding="utf-8")
             click.echo(f"Expanded contract written to {resolved_output}")
         else:
@@ -940,8 +1094,8 @@ def diff(
     # Write output
     if output:
         try:
-            # Resolve path for defense in depth against path traversal
-            resolved_output = output.resolve()
+            # Validate and resolve path for security
+            resolved_output = _validate_output_path(output)
             resolved_output.write_text(output_text, encoding="utf-8")
             click.echo(f"Diff written to {resolved_output}")
         except OSError as e:
