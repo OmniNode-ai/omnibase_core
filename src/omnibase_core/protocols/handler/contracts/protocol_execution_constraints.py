@@ -75,6 +75,8 @@ class ProtocolExecutionConstraints(Protocol):
         assert isinstance(constraints, ProtocolExecutionConstraints)
 
         # Runtime uses constraints for execution governance
+        import asyncio
+
         async with timeout(constraints.timeout_seconds):
             for attempt in range(constraints.max_retries + 1):
                 try:
