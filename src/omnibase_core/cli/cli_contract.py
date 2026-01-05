@@ -1,0 +1,962 @@
+# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
+#
+# SPDX-License-Identifier: Apache-2.0
+"""
+Contract CLI Commands.
+
+Provides CLI commands for contract management operations including
+initialization, building, and comparison of ONEX contracts.
+
+.. versionadded:: 0.6.0
+    Added as part of Contract CLI Tooling (OMN-1129)
+"""
+
+from __future__ import annotations
+
+import hashlib
+import json
+from datetime import UTC, datetime
+from pathlib import Path
+from typing import TYPE_CHECKING, Literal, cast
+
+import click
+import yaml
+
+from omnibase_core.enums.enum_cli_exit_code import EnumCLIExitCode
+from omnibase_core.enums.enum_log_level import EnumLogLevel
+from omnibase_core.enums.enum_node_kind import EnumNodeKind
+from omnibase_core.enums.enum_validation_phase import EnumValidationPhase
+from omnibase_core.logging.logging_structured import emit_log_event_sync
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+
+if TYPE_CHECKING:
+    from omnibase_core.models.common.model_validation_result import (
+        ModelValidationResult,
+    )
+    from omnibase_core.models.contracts.model_contract_patch import ModelContractPatch
+    from omnibase_core.models.contracts.model_handler_contract import (
+        ModelHandlerContract,
+    )
+
+# Type alias for output formats
+BuildOutputFormat = Literal["yaml", "json"]
+DiffOutputFormat = Literal["text", "json", "yaml"]
+
+# Mapping from EnumNodeKind to short names used in CLI
+_NODE_KIND_TO_CLI_NAME: dict[EnumNodeKind, str] = {
+    EnumNodeKind.ORCHESTRATOR: "orchestrator",
+    EnumNodeKind.REDUCER: "reducer",
+    EnumNodeKind.EFFECT: "effect",
+    EnumNodeKind.COMPUTE: "compute",
+}
+
+# Reverse mapping for CLI name to EnumNodeKind
+_CLI_NAME_TO_NODE_KIND: dict[str, EnumNodeKind] = {
+    v: k for k, v in _NODE_KIND_TO_CLI_NAME.items()
+}
+
+
+def _get_available_profiles_for_kind(node_kind: EnumNodeKind) -> list[str]:
+    """
+    Get available profile short names for a node kind.
+
+    Args:
+        node_kind: The node kind to get profiles for.
+
+    Returns:
+        List of profile short names (without the node type prefix).
+    """
+    from omnibase_core.factories.profiles import (
+        COMPUTE_PROFILES,
+        EFFECT_PROFILES,
+        ORCHESTRATOR_PROFILES,
+        REDUCER_PROFILES,
+    )
+
+    kind_name = _NODE_KIND_TO_CLI_NAME[node_kind]
+    prefix = f"{kind_name}_"
+
+    # Get profile names based on node kind
+    profile_names: list[str]
+    if node_kind == EnumNodeKind.ORCHESTRATOR:
+        profile_names = list(ORCHESTRATOR_PROFILES.keys())
+    elif node_kind == EnumNodeKind.REDUCER:
+        profile_names = list(REDUCER_PROFILES.keys())
+    elif node_kind == EnumNodeKind.EFFECT:
+        profile_names = list(EFFECT_PROFILES.keys())
+    else:
+        profile_names = list(COMPUTE_PROFILES.keys())
+
+    # Strip the prefix to get short names
+    return [p.removeprefix(prefix) for p in profile_names]
+
+
+def _build_full_profile_name(node_type: str, profile: str) -> str:
+    """
+    Build the full profile name from node type and profile short name.
+
+    Args:
+        node_type: The node type (e.g., "orchestrator").
+        profile: The profile short name (e.g., "safe").
+
+    Returns:
+        The full profile name (e.g., "orchestrator_safe").
+    """
+    return f"{node_type}_{profile}"
+
+
+def _validate_profile_exists(node_type: str, profile: str) -> str | None:
+    """
+    Validate that the profile exists for the given node type.
+
+    Args:
+        node_type: The node type (e.g., "orchestrator").
+        profile: The profile short name (e.g., "safe").
+
+    Returns:
+        None if valid, or an error message if invalid.
+    """
+    node_kind = _CLI_NAME_TO_NODE_KIND.get(node_type)
+    if node_kind is None:
+        return f"Unknown node type: {node_type}"
+
+    available = _get_available_profiles_for_kind(node_kind)
+    if profile not in available:
+        available_str = ", ".join(available)
+        return (
+            f"Unknown profile '{profile}' for {node_type}. "
+            f"Available profiles: {available_str}"
+        )
+
+    return None
+
+
+def _generate_patch_template(
+    node_type: str,
+    profile: str,
+    full_profile_name: str,
+    *,
+    name: str | None = None,
+    override_only: bool = False,
+) -> str:
+    """
+    Generate a patch template YAML for the given profile.
+
+    Args:
+        node_type: The node type (e.g., "orchestrator").
+        profile: The profile short name (e.g., "safe").
+        full_profile_name: The full profile name (e.g., "orchestrator_safe").
+        name: Optional custom name for the contract. If provided, uses this
+            instead of the placeholder "my-contract-name".
+        override_only: If True, omit name and node_version fields (for patches
+            that only override behavior without creating a new contract).
+
+    Returns:
+        The generated YAML patch template as a string.
+    """
+    # Common header
+    lines = [
+        "# Contract Patch - Generated by onex contract init",
+        "# Edit this file and run: onex contract build <this-file>",
+        "",
+        "extends:",
+        f"  profile: {full_profile_name}  # Base profile to extend",
+        '  version: "1.0.0"',
+        "",
+    ]
+
+    # Add name and version fields unless override_only mode
+    if not override_only:
+        contract_name = name if name else "my_contract_name"
+        name_comment = "" if name else "  # TODO: Change this"
+        lines.extend(
+            [
+                "# Required for new contracts:",
+                f"name: {contract_name}{name_comment}",
+                "node_version:",
+                "  major: 1",
+                "  minor: 0",
+                "  patch: 0",
+                "",
+            ]
+        )
+
+    lines.extend(
+        [
+            "# Optional overrides (uncomment to customize):",
+            '# description: "My contract description"',
+            "",
+            "# Behavior overrides:",
+            "# descriptor:",
+            "#   timeout_ms: 30000",
+            "#   retry_policy:",
+            "#     max_retries: 3",
+            "#     backoff_ms: 1000",
+        ]
+    )
+
+    # Add node-type-specific sections
+    if node_type in ("orchestrator", "reducer"):
+        lines.extend(
+            [
+                "",
+                "# Add handlers (for orchestrator/reducer):",
+                "# handlers__add:",
+                "#   - handler_id: my.handler",
+                "#     name: My Handler",
+            ]
+        )
+
+    if node_type == "orchestrator":
+        lines.extend(
+            [
+                "",
+                "# Workflow configuration:",
+                "# workflow_coordination:",
+                "#   execution_mode: serial",
+                "#   max_parallel_branches: 1",
+                "#   checkpoint_enabled: false",
+            ]
+        )
+
+    if node_type == "reducer":
+        lines.extend(
+            [
+                "",
+                "# FSM configuration:",
+                "# fsm:",
+                "#   initial_state: pending",
+                "#   states:",
+                "#     - name: pending",
+                "#       description: Initial state",
+            ]
+        )
+
+    if node_type == "effect":
+        lines.extend(
+            [
+                "",
+                "# Effect configuration:",
+                "# effect:",
+                "#   idempotency_key: request_id",
+                "#   timeout_ms: 5000",
+            ]
+        )
+
+    if node_type == "compute":
+        lines.extend(
+            [
+                "",
+                "# Compute configuration:",
+                "# compute:",
+                "#   deterministic: true",
+                "#   cacheable: true",
+            ]
+        )
+
+    # Common footer
+    lines.extend(
+        [
+            "",
+            "# Add dependencies:",
+            "# dependencies__add:",
+            '#   - "some.other.contract"',
+        ]
+    )
+
+    return "\n".join(lines) + "\n"
+
+
+# =============================================================================
+# Build Command Helper Functions
+# =============================================================================
+
+
+def _get_runtime_version() -> str:
+    """Get the runtime version from package metadata.
+
+    Returns:
+        The package version string, or "unknown" if not available.
+    """
+    try:
+        from importlib.metadata import PackageNotFoundError, version
+
+        return version("omnibase_core")
+    except (ImportError, PackageNotFoundError):
+        try:
+            from omnibase_core import __version__
+
+            return __version__
+        except (
+            AttributeError,
+            ImportError,
+        ):  # fallback-ok: version getter must never crash
+            return "unknown"
+
+
+def _generate_merge_hash(
+    profile_name: str,
+    version_str: str,
+    patch_content: str,
+) -> str:
+    """Generate a deterministic hash from merge inputs.
+
+    Creates a SHA256 hash from the profile name, version, and patch content,
+    truncated to 12 characters for readability.
+
+    Args:
+        profile_name: The profile name (e.g., "compute_pure").
+        version_str: The profile version string (e.g., "1.0.0").
+        patch_content: The raw patch file content as a string.
+
+    Returns:
+        A 12-character hex hash string.
+    """
+    hash_input = f"{profile_name}:{version_str}:{patch_content}"
+    full_hash = hashlib.sha256(hash_input.encode("utf-8")).hexdigest()
+    return full_hash[:12]
+
+
+def _format_validation_errors(
+    validation_results: dict[str, ModelValidationResult[None]],
+    phase_failed: EnumValidationPhase | None,
+) -> str:
+    """Format validation errors for display.
+
+    Args:
+        validation_results: Dictionary of validation results by phase.
+        phase_failed: The phase where validation failed (if any).
+
+    Returns:
+        Formatted error string for CLI output.
+    """
+    lines = ["ERROR: Contract validation failed", ""]
+
+    # Process phases in order
+    phase_order = [
+        EnumValidationPhase.PATCH,
+        EnumValidationPhase.MERGE,
+        EnumValidationPhase.EXPANDED,
+    ]
+
+    for phase in phase_order:
+        phase_key = phase.value
+        if phase_key not in validation_results:
+            continue
+
+        result = validation_results[phase_key]
+        if result.is_valid:
+            continue
+
+        lines.append(f"Phase: {phase.value.upper()}")
+
+        # Format issues if available
+        if hasattr(result, "issues") and result.issues:
+            for issue in result.issues:
+                # Extract field path if available
+                field = getattr(issue, "field", None) or getattr(
+                    issue, "path", "unknown"
+                )
+                message = getattr(issue, "message", str(issue))
+                code = getattr(issue, "code", None)
+
+                lines.append(f"  - field: {field}")
+                lines.append(f"    message: {message}")
+                if code:
+                    lines.append(f"    code: {code}")
+                lines.append("")
+
+        # Fall back to errors list if no issues
+        elif hasattr(result, "errors") and result.errors:
+            for error in result.errors:
+                lines.append(f"  - {error}")
+            lines.append("")
+
+    return "\n".join(lines)
+
+
+def _build_expanded_contract_with_metadata(
+    contract: ModelHandlerContract,
+    patch: ModelContractPatch,
+    patch_path: Path,
+    patch_content: str,
+) -> dict[str, object]:
+    """Build the expanded contract dictionary with metadata.
+
+    Args:
+        contract: The expanded ModelHandlerContract.
+        patch: The original contract patch.
+        patch_path: Path to the source patch file.
+        patch_content: Raw content of the patch file.
+
+    Returns:
+        Dictionary with _metadata section and expanded contract fields.
+    """
+    # Generate metadata
+    merge_hash = _generate_merge_hash(
+        profile_name=patch.extends.profile,
+        version_str=patch.extends.version,
+        patch_content=patch_content,
+    )
+
+    metadata: dict[str, str] = {
+        "profile": patch.extends.profile,
+        "profile_version": patch.extends.version,
+        "runtime_version": _get_runtime_version(),
+        "merge_hash": merge_hash,
+        "generated_at": datetime.now(UTC).isoformat(),
+        "source_patch": str(patch_path),
+    }
+
+    # Convert contract to dict
+    contract_dict = contract.model_dump(mode="json", exclude_none=True)
+
+    # Build output with _metadata first
+    output: dict[str, object] = {"_metadata": metadata}
+    output.update(contract_dict)
+
+    return output
+
+
+@click.group()
+@click.pass_context
+def contract(ctx: click.Context) -> None:
+    """Contract management commands for ONEX.
+
+    Provides tools for creating, building, and comparing ONEX contracts.
+    Contracts define the behavioral specification for nodes including
+    capabilities, handlers, and execution policies.
+
+    \b
+    Commands:
+        init   - Initialize a new contract patch file from a profile
+        build  - Expand a patch file into a complete contract
+        diff   - Compare two contracts and show differences
+
+    \b
+    Examples:
+        onex contract init --type orchestrator --profile safe
+        onex contract build my_patch.yaml --output my_contract.yaml
+        onex contract diff old_contract.yaml new_contract.yaml
+    """
+    ctx.ensure_object(dict)
+
+
+@contract.command()
+@click.option(
+    "--type",
+    "-t",
+    "node_type",
+    required=True,
+    type=click.Choice(["orchestrator", "reducer", "effect", "compute"]),
+    help="Node type for the contract (determines available profiles and capabilities).",
+)
+@click.option(
+    "--profile",
+    "-p",
+    required=True,
+    help="Profile name to use as base (e.g., 'safe', 'parallel', 'fsm_basic').",
+)
+@click.option(
+    "--name",
+    "-n",
+    "name",
+    default=None,
+    help="Custom name for the contract. If not specified, uses a placeholder.",
+)
+@click.option(
+    "--override-only",
+    "override_only",
+    is_flag=True,
+    default=False,
+    help="Generate override-only patch without name/node_version fields.",
+)
+@click.option(
+    "--output",
+    "-o",
+    type=click.Path(path_type=Path),
+    help="Output file path. If not specified, writes to stdout.",
+)
+@click.pass_context
+def init(
+    ctx: click.Context,
+    node_type: str,
+    profile: str,
+    name: str | None,
+    override_only: bool,
+    output: Path | None,
+) -> None:
+    """Initialize a new contract patch file from a profile template.
+
+    Creates a minimal patch file that extends a base profile. Edit the
+    generated file to customize your contract, then use 'onex contract build'
+    to generate the full contract.
+
+    \b
+    Profile Names:
+        orchestrator: safe, parallel, resilient
+        reducer: fsm_basic
+        effect: idempotent
+        compute: pure
+
+    \b
+    Examples:
+        onex contract init --type orchestrator --profile safe
+        onex contract init --type orchestrator --profile parallel -o my-workflow.yaml
+        onex contract init -t reducer -p fsm_basic --output state-machine.yaml
+    """
+    verbose = ctx.obj.get("verbose", False) if ctx.obj else False
+
+    # Validate the profile exists
+    error_message = _validate_profile_exists(node_type, profile)
+    if error_message:
+        if verbose:
+            emit_log_event_sync(
+                EnumLogLevel.ERROR,
+                "Invalid profile specified",
+                {"node_type": node_type, "profile": profile, "error": error_message},
+            )
+        raise click.ClickException(error_message)
+
+    # Build the full profile name
+    full_profile_name = _build_full_profile_name(node_type, profile)
+
+    if verbose:
+        emit_log_event_sync(
+            EnumLogLevel.INFO,
+            "Generating contract patch template",
+            {
+                "node_type": node_type,
+                "profile": profile,
+                "full_profile_name": full_profile_name,
+            },
+        )
+
+    # Generate the patch template
+    patch_content = _generate_patch_template(
+        node_type,
+        profile,
+        full_profile_name,
+        name=name,
+        override_only=override_only,
+    )
+
+    # Output the result
+    if output:
+        try:
+            output.write_text(patch_content)
+            click.echo(f"Contract patch template written to {output}")
+        except OSError as e:
+            if verbose:
+                emit_log_event_sync(
+                    EnumLogLevel.ERROR,
+                    "Failed to write patch file",
+                    {"output": str(output), "error": str(e)},
+                )
+            raise click.ClickException(f"Failed to write file: {e}") from e
+    else:
+        click.echo(patch_content)
+
+    ctx.exit(EnumCLIExitCode.SUCCESS)
+
+
+@contract.command()
+@click.argument(
+    "patch_path",
+    type=click.Path(exists=True, path_type=Path),
+)
+@click.option(
+    "--output",
+    "-o",
+    type=click.Path(path_type=Path),
+    help="Output file path. If not specified, writes to stdout.",
+)
+@click.option(
+    "--format",
+    "-f",
+    "output_format",
+    type=click.Choice(["yaml", "json"]),
+    default="yaml",
+    help="Output format (default: yaml).",
+)
+@click.option(
+    "--validate/--no-validate",
+    default=True,
+    help="Validate the expanded contract against schema (default: enabled).",
+)
+@click.option(
+    "--strict",
+    is_flag=True,
+    default=False,
+    help="Strict mode: treat warnings as errors.",
+)
+@click.pass_context
+def build(
+    ctx: click.Context,
+    patch_path: Path,
+    output: Path | None,
+    output_format: str,
+    validate: bool,
+    strict: bool,
+) -> None:
+    """Build an expanded contract from a patch file.
+
+    Reads a patch file, resolves the base profile, merges the patch
+    overrides, and produces a complete expanded contract. The resulting
+    contract includes all inherited capabilities, handlers, and policies.
+
+    \b
+    Examples:
+        onex contract build my_patch.yaml
+        onex contract build my_patch.yaml --output my_contract.yaml
+        onex contract build my_patch.yaml --format json -o contract.json
+        onex contract build my_patch.yaml --no-validate
+
+    \b
+    Output:
+        The expanded contract includes a _metadata section with:
+          - profile: The base profile name
+          - profile_version: The profile version
+          - runtime_version: The omnibase_core version
+          - merge_hash: Deterministic hash of merge inputs
+          - generated_at: ISO timestamp of generation
+          - source_patch: Path to the source patch file
+    """
+    verbose = ctx.obj.get("verbose", False) if ctx.obj else False
+
+    # Cast format to typed literal for type safety
+    format_typed: BuildOutputFormat = cast(BuildOutputFormat, output_format)
+
+    try:
+        # Read raw patch content for hash generation
+        patch_content = patch_path.read_text(encoding="utf-8")
+
+        if verbose:
+            emit_log_event_sync(
+                EnumLogLevel.INFO,
+                "Loading patch file",
+                {"patch_path": str(patch_path)},
+            )
+
+        # Load and validate patch file
+        from omnibase_core.models.contracts.model_contract_patch import (
+            ModelContractPatch,
+        )
+        from omnibase_core.utils.util_safe_yaml_loader import (
+            load_and_validate_yaml_model,
+            serialize_data_to_yaml,
+        )
+
+        try:
+            patch = load_and_validate_yaml_model(patch_path, ModelContractPatch)
+        except ModelOnexError as e:
+            emit_log_event_sync(
+                EnumLogLevel.ERROR,
+                "Failed to parse patch file",
+                {"patch_path": str(patch_path), "error": e.message},
+            )
+            click.echo(f"ERROR: Failed to parse patch file: {e.message}", err=True)
+            ctx.exit(EnumCLIExitCode.ERROR)
+
+        if verbose:
+            emit_log_event_sync(
+                EnumLogLevel.INFO,
+                "Patch file loaded",
+                {
+                    "profile": patch.extends.profile,
+                    "version": patch.extends.version,
+                    "is_new_contract": patch.is_new_contract,
+                },
+            )
+
+        # Create profile factory and validation pipeline
+        from omnibase_core.factories.factory_contract_profile import (
+            ContractProfileFactory,
+        )
+        from omnibase_core.validation.contract_validation_pipeline import (
+            ContractValidationPipeline,
+        )
+
+        profile_factory = ContractProfileFactory()
+        pipeline = ContractValidationPipeline()
+
+        if verbose:
+            emit_log_event_sync(
+                EnumLogLevel.INFO,
+                "Running validation pipeline",
+                {"validate_enabled": validate},
+            )
+
+        # Run full validation pipeline
+        result = pipeline.validate_all(patch, profile_factory)
+
+        # Check for validation failures
+        if not result.success:
+            error_output = _format_validation_errors(
+                result.validation_results,
+                result.phase_failed,
+            )
+            emit_log_event_sync(
+                EnumLogLevel.ERROR,
+                "Contract validation failed",
+                {
+                    "phase_failed": result.phase_failed.value
+                    if result.phase_failed
+                    else None,
+                    "error_count": len(result.errors),
+                },
+            )
+            click.echo(error_output, err=True)
+            ctx.exit(EnumCLIExitCode.ERROR)
+
+        # In strict mode, treat warnings as errors
+        if strict:
+            all_warnings: list[str] = []
+            for phase_result in result.validation_results.values():
+                if hasattr(phase_result, "warnings") and phase_result.warnings:
+                    all_warnings.extend(phase_result.warnings)
+
+            if all_warnings:
+                emit_log_event_sync(
+                    EnumLogLevel.ERROR,
+                    "Strict mode: warnings treated as errors",
+                    {"warning_count": len(all_warnings)},
+                )
+                click.echo("ERROR: Strict mode - warnings treated as errors:", err=True)
+                for warning in all_warnings:
+                    click.echo(f"  - {warning}", err=True)
+                ctx.exit(EnumCLIExitCode.ERROR)
+
+        # Build expanded contract with metadata
+        if result.contract is None:
+            emit_log_event_sync(
+                EnumLogLevel.ERROR,
+                "Validation succeeded but no contract was produced",
+                {},
+            )
+            click.echo(
+                "ERROR: Validation succeeded but no contract was produced",
+                err=True,
+            )
+            ctx.exit(EnumCLIExitCode.ERROR)
+
+        # Compute merge hash for logging and metadata
+        merge_hash = _generate_merge_hash(
+            profile_name=patch.extends.profile,
+            version_str=patch.extends.version,
+            patch_content=patch_content,
+        )
+
+        expanded = _build_expanded_contract_with_metadata(
+            contract=result.contract,
+            patch=patch,
+            patch_path=patch_path,
+            patch_content=patch_content,
+        )
+
+        if verbose:
+            emit_log_event_sync(
+                EnumLogLevel.INFO,
+                "Contract built successfully",
+                {
+                    "handler_id": result.contract.handler_id,
+                    "name": result.contract.name,
+                    "merge_hash": merge_hash,
+                },
+            )
+
+        # Format output
+        if format_typed == "json":
+            output_content = json.dumps(expanded, indent=2, ensure_ascii=False)
+        else:
+            output_content = serialize_data_to_yaml(expanded)
+
+        # Write output
+        if output:
+            output.write_text(output_content, encoding="utf-8")
+            click.echo(f"Expanded contract written to {output}")
+        else:
+            click.echo(output_content)
+
+        # Success - return normally (exit code 0)
+        return
+
+    except yaml.YAMLError as e:
+        emit_log_event_sync(
+            EnumLogLevel.ERROR,
+            "YAML parsing error",
+            {"error": str(e)},
+        )
+        click.echo(f"ERROR: YAML parsing error: {e}", err=True)
+        ctx.exit(EnumCLIExitCode.ERROR)
+    except ModelOnexError as e:
+        emit_log_event_sync(
+            EnumLogLevel.ERROR,
+            "ONEX error during build",
+            {"error_code": str(e.error_code), "message": e.message},
+        )
+        click.echo(f"ERROR: {e.message}", err=True)
+        ctx.exit(EnumCLIExitCode.ERROR)
+    except OSError as e:
+        emit_log_event_sync(
+            EnumLogLevel.ERROR,
+            "File I/O error",
+            {"error": str(e)},
+        )
+        click.echo(f"ERROR: File I/O error: {e}", err=True)
+        ctx.exit(EnumCLIExitCode.ERROR)
+    except click.exceptions.Exit:
+        # Re-raise click.Exit to allow ctx.exit() to work properly
+        raise
+    except (
+        Exception
+    ) as e:  # catch-all-ok: CLI catch-all for user-friendly error messages
+        # Catches unexpected errors for user-friendly output
+        emit_log_event_sync(
+            EnumLogLevel.ERROR,
+            "Unexpected error during build",
+            {"error": str(e), "type": type(e).__name__},
+        )
+        click.echo(f"ERROR: Unexpected error: {e}", err=True)
+        ctx.exit(EnumCLIExitCode.ERROR)
+
+
+@contract.command()
+@click.argument(
+    "old_contract",
+    type=click.Path(exists=True, path_type=Path),
+)
+@click.argument(
+    "new_contract",
+    type=click.Path(exists=True, path_type=Path),
+)
+@click.option(
+    "--format",
+    "-f",
+    "output_format",
+    type=click.Choice(["text", "json", "yaml"]),
+    default="text",
+    help="Output format for the diff (default: text).",
+)
+@click.option(
+    "--output",
+    "-o",
+    type=click.Path(path_type=Path),
+    help="Output file path. If not specified, writes to stdout.",
+)
+@click.pass_context
+def diff(
+    ctx: click.Context,
+    old_contract: Path,
+    new_contract: Path,
+    output_format: str,
+    output: Path | None,
+) -> None:
+    """Compare two expanded contracts and show semantic differences.
+
+    Performs a semantic diff between two contract YAML files, detecting
+    added, removed, and changed fields. Special attention is given to
+    behavioral changes (purity, idempotency, timeouts, etc.) that affect
+    runtime behavior.
+
+    \b
+    Exit Codes:
+        0 - No differences found
+        2 - Differences found (like git diff)
+        1 - Error loading or parsing files
+
+    \b
+    Examples:
+        onex contract diff old.yaml new.yaml
+        onex contract diff old.yaml new.yaml --format json
+        onex contract diff old.yaml new.yaml -o diff.txt
+        onex contract diff before.expanded.yaml after.expanded.yaml
+
+    \b
+    Output Formats:
+        text - Human-readable format with sections for behavioral/added/removed/changed
+        json - Structured JSON with severity levels and categorized changes
+        yaml - Structured YAML with severity levels and categorized changes
+    """
+    verbose = ctx.obj.get("verbose", False) if ctx.obj else False
+
+    # Import diff helpers
+    from omnibase_core.cli.cli_contract_diff import (
+        categorize_diff_entries,
+        diff_contract_dicts,
+        format_json_diff_output,
+        format_text_diff_output,
+        format_yaml_diff_output,
+        load_contract_yaml_file,
+    )
+
+    # Cast format to typed literal for type safety
+    format_typed: DiffOutputFormat = cast(DiffOutputFormat, output_format)
+
+    if verbose:
+        emit_log_event_sync(
+            EnumLogLevel.INFO,
+            "Starting contract diff",
+            {
+                "old_contract": str(old_contract),
+                "new_contract": str(new_contract),
+                "output_format": format_typed,
+            },
+        )
+
+    # Load both contracts
+    old_data = load_contract_yaml_file(old_contract)
+    new_data = load_contract_yaml_file(new_contract)
+
+    # Compute diff
+    diffs = diff_contract_dicts(old_data, new_data)
+
+    # Categorize diffs
+    result = categorize_diff_entries(diffs)
+    result.old_path = str(old_contract)
+    result.new_path = str(new_contract)
+
+    if verbose:
+        emit_log_event_sync(
+            EnumLogLevel.INFO,
+            "Diff computed",
+            {
+                "total_changes": result.total_changes,
+                "behavioral_changes": len(result.behavioral_changes),
+                "added": len(result.added),
+                "removed": len(result.removed),
+                "changed": len(result.changed),
+            },
+        )
+
+    # Format output
+    if format_typed == "json":
+        output_text = format_json_diff_output(result)
+    elif format_typed == "yaml":
+        output_text = format_yaml_diff_output(result)
+    else:
+        output_text = format_text_diff_output(result)
+
+    # Write output
+    if output:
+        try:
+            output.write_text(output_text, encoding="utf-8")
+            click.echo(f"Diff written to {output}")
+        except OSError as e:
+            emit_log_event_sync(
+                EnumLogLevel.ERROR,
+                "Failed to write diff output",
+                {"output": str(output), "error": str(e)},
+            )
+            raise click.ClickException(f"Cannot write to '{output}': {e}") from e
+    else:
+        click.echo(output_text)
+
+    # Exit with appropriate code
+    if result.has_changes:
+        ctx.exit(EnumCLIExitCode.WARNING)  # 2 - differences found
+    else:
+        ctx.exit(EnumCLIExitCode.SUCCESS)  # 0 - no differences
+
+
+__all__ = ["contract"]
