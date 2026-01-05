@@ -90,7 +90,7 @@ class ProtocolRNGService(Protocol):
         .. code-block:: python
 
             from omnibase_core.protocols.replay import ProtocolRNGService
-            from omnibase_core.pipeline.replay import InjectorRNG
+            from omnibase_core.services.replay.injector_rng import InjectorRNG
 
             # Create with specific seed for replay
             rng: ProtocolRNGService = InjectorRNG(seed=42)

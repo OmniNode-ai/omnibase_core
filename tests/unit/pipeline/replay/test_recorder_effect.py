@@ -30,10 +30,8 @@ import pytest
 
 if TYPE_CHECKING:
     from omnibase_core.models.replay.model_effect_record import ModelEffectRecord
-    from omnibase_core.pipeline.replay.recorder_effect import (
-        RecorderEffect,
-    )
     from omnibase_core.protocols.replay.protocol_time_service import ProtocolTimeService
+    from omnibase_core.services.replay.recorder_effect import RecorderEffect
 
 
 @pytest.fixture
@@ -45,7 +43,7 @@ def fixed_time() -> datetime:
 @pytest.fixture
 def mock_time_service(fixed_time: datetime) -> ProtocolTimeService:
     """Create a mock time service that returns fixed time."""
-    from omnibase_core.pipeline.replay.injector_time import InjectorTime
+    from omnibase_core.services.replay.injector_time import InjectorTime
 
     return InjectorTime(fixed_time=fixed_time)
 
@@ -73,7 +71,7 @@ def sample_result() -> dict[str, Any]:
 def pass_through_recorder() -> RecorderEffect:
     """Create a recorder in pass-through mode."""
     from omnibase_core.enums.replay import EnumRecorderMode
-    from omnibase_core.pipeline.replay.recorder_effect import RecorderEffect
+    from omnibase_core.services.replay.recorder_effect import RecorderEffect
 
     return RecorderEffect(mode=EnumRecorderMode.PASS_THROUGH)
 
@@ -84,7 +82,7 @@ def recording_recorder(
 ) -> RecorderEffect:
     """Create a recorder in recording mode."""
     from omnibase_core.enums.replay import EnumRecorderMode
-    from omnibase_core.pipeline.replay.recorder_effect import RecorderEffect
+    from omnibase_core.services.replay.recorder_effect import RecorderEffect
 
     return RecorderEffect(
         mode=EnumRecorderMode.RECORDING,
@@ -119,7 +117,7 @@ def sample_records(fixed_time: datetime) -> list[ModelEffectRecord]:
 def replay_recorder(sample_records: list[ModelEffectRecord]) -> RecorderEffect:
     """Create a recorder in replay mode with pre-recorded data."""
     from omnibase_core.enums.replay import EnumRecorderMode
-    from omnibase_core.pipeline.replay.recorder_effect import RecorderEffect
+    from omnibase_core.services.replay.recorder_effect import RecorderEffect
 
     return RecorderEffect(
         mode=EnumRecorderMode.REPLAYING,
@@ -386,10 +384,10 @@ class TestRecorderEffectProtocolCompliance:
 
     def test_implements_protocol(self) -> None:
         """Test that RecorderEffect implements ProtocolEffectRecorder."""
-        from omnibase_core.pipeline.replay.recorder_effect import RecorderEffect
         from omnibase_core.protocols.replay.protocol_effect_recorder import (
             ProtocolEffectRecorder,
         )
+        from omnibase_core.services.replay.recorder_effect import RecorderEffect
 
         recorder = RecorderEffect()
 
@@ -452,11 +450,9 @@ class TestRecorderEffectIntentMatching:
 
     def test_intent_matching_for_replay(self, fixed_time: datetime) -> None:
         """Test that replay correctly matches intents."""
+        from omnibase_core.enums.replay import EnumRecorderMode
         from omnibase_core.models.replay.model_effect_record import ModelEffectRecord
-        from omnibase_core.pipeline.replay.recorder_effect import (
-            EnumRecorderMode,
-            RecorderEffect,
-        )
+        from omnibase_core.services.replay.recorder_effect import RecorderEffect
 
         records = [
             ModelEffectRecord(
@@ -491,11 +487,9 @@ class TestRecorderEffectIntentMatching:
 
     def test_intent_matching_is_exact(self, fixed_time: datetime) -> None:
         """Test that intent matching is exact (not partial)."""
+        from omnibase_core.enums.replay import EnumRecorderMode
         from omnibase_core.models.replay.model_effect_record import ModelEffectRecord
-        from omnibase_core.pipeline.replay.recorder_effect import (
-            EnumRecorderMode,
-            RecorderEffect,
-        )
+        from omnibase_core.services.replay.recorder_effect import RecorderEffect
 
         records = [
             ModelEffectRecord(
@@ -535,7 +529,7 @@ class TestRecorderEffectModeEnum:
 
     def test_default_mode_is_pass_through(self) -> None:
         """Test that default mode is PASS_THROUGH."""
-        from omnibase_core.pipeline.replay.recorder_effect import RecorderEffect
+        from omnibase_core.services.replay.recorder_effect import RecorderEffect
 
         recorder = RecorderEffect()
         assert recorder.is_recording is False

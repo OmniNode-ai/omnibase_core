@@ -26,13 +26,13 @@ from typing import TYPE_CHECKING
 import pytest
 
 if TYPE_CHECKING:
-    from omnibase_core.pipeline.replay.injector_time import InjectorTime
+    from omnibase_core.services.replay.injector_time import InjectorTime
 
 
 @pytest.fixture
 def production_injector() -> InjectorTime:
     """Create an injector in production mode (no fixed time)."""
-    from omnibase_core.pipeline.replay.injector_time import InjectorTime
+    from omnibase_core.services.replay.injector_time import InjectorTime
 
     return InjectorTime()
 
@@ -46,7 +46,7 @@ def fixed_time() -> datetime:
 @pytest.fixture
 def replay_injector(fixed_time: datetime) -> InjectorTime:
     """Create an injector in replay mode with fixed time."""
-    from omnibase_core.pipeline.replay.injector_time import InjectorTime
+    from omnibase_core.services.replay.injector_time import InjectorTime
 
     return InjectorTime(fixed_time=fixed_time)
 
@@ -125,7 +125,7 @@ class TestInjectorTimeReplayMode:
 
     def test_fixed_time_preserves_timezone(self, fixed_time: datetime) -> None:
         """Test that the fixed time preserves the UTC timezone."""
-        from omnibase_core.pipeline.replay.injector_time import InjectorTime
+        from omnibase_core.services.replay.injector_time import InjectorTime
 
         injector = InjectorTime(fixed_time=fixed_time)
         result = injector.now()
@@ -156,7 +156,7 @@ class TestInjectorTimeTimezone:
 
     def test_fixed_time_without_timezone_gets_utc(self) -> None:
         """Test that naive datetime fixed_time raises or gets UTC."""
-        from omnibase_core.pipeline.replay.injector_time import InjectorTime
+        from omnibase_core.services.replay.injector_time import InjectorTime
 
         # Create naive datetime (no timezone)
         naive_time = datetime(2024, 6, 15, 12, 30, 45)
@@ -177,10 +177,10 @@ class TestInjectorTimeProtocolCompliance:
 
     def test_implements_protocol(self) -> None:
         """Test that InjectorTime implements ProtocolTimeService."""
-        from omnibase_core.pipeline.replay.injector_time import InjectorTime
         from omnibase_core.protocols.replay.protocol_time_service import (
             ProtocolTimeService,
         )
+        from omnibase_core.services.replay.injector_time import InjectorTime
 
         injector = InjectorTime()
 
@@ -235,7 +235,7 @@ class TestInjectorTimeEdgeCases:
 
     def test_epoch_fixed_time(self) -> None:
         """Test with Unix epoch as fixed time."""
-        from omnibase_core.pipeline.replay.injector_time import InjectorTime
+        from omnibase_core.services.replay.injector_time import InjectorTime
 
         epoch = datetime(1970, 1, 1, 0, 0, 0, tzinfo=UTC)
         injector = InjectorTime(fixed_time=epoch)
@@ -245,7 +245,7 @@ class TestInjectorTimeEdgeCases:
 
     def test_far_future_fixed_time(self) -> None:
         """Test with far future date as fixed time."""
-        from omnibase_core.pipeline.replay.injector_time import InjectorTime
+        from omnibase_core.services.replay.injector_time import InjectorTime
 
         future = datetime(2100, 12, 31, 23, 59, 59, tzinfo=UTC)
         injector = InjectorTime(fixed_time=future)
@@ -255,7 +255,7 @@ class TestInjectorTimeEdgeCases:
 
     def test_microsecond_precision(self) -> None:
         """Test that microsecond precision is preserved."""
-        from omnibase_core.pipeline.replay.injector_time import InjectorTime
+        from omnibase_core.services.replay.injector_time import InjectorTime
 
         precise_time = datetime(2024, 6, 15, 12, 30, 45, microsecond=123456, tzinfo=UTC)
         injector = InjectorTime(fixed_time=precise_time)

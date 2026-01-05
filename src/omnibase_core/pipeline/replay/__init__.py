@@ -2,15 +2,24 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 """
-Replay infrastructure injectors, recorders, and executor.
+Replay infrastructure injectors and executor.
 
 This module provides implementations for deterministic replay:
 
-- **InjectorRNG**: RNG injection for deterministic replay
-- **InjectorTime**: Time injection for deterministic replay
-- **RecorderEffect**: Effect recording and replay for determinism
+- **InjectorRNG**: RNG injection for deterministic replay (from services.replay)
+- **InjectorTime**: Time injection for deterministic replay (from services.replay)
+- **RecorderEffect**: Effect recording and replay for determinism (from services.replay)
 - **ExecutorReplay**: Replay executor orchestrating deterministic execution
 - **ReplaySession**: Active replay session with injected services
+
+Note:
+    InjectorRNG, InjectorTime, and RecorderEffect are now located in
+    omnibase_core.services.replay and re-exported here for convenience.
+    For direct imports, use:
+
+        from omnibase_core.services.replay.injector_rng import InjectorRNG
+        from omnibase_core.services.replay.injector_time import InjectorTime
+        from omnibase_core.services.replay.recorder_effect import RecorderEffect
 
 Usage:
     >>> from omnibase_core.pipeline.replay import (
@@ -43,10 +52,10 @@ Usage:
 """
 
 from omnibase_core.pipeline.replay.executor_replay import ExecutorReplay
-from omnibase_core.pipeline.replay.injector_rng import InjectorRNG
-from omnibase_core.pipeline.replay.injector_time import InjectorTime
-from omnibase_core.pipeline.replay.recorder_effect import RecorderEffect
 from omnibase_core.pipeline.replay.session_replay import ReplaySession
+from omnibase_core.services.replay.injector_rng import InjectorRNG
+from omnibase_core.services.replay.injector_time import InjectorTime
+from omnibase_core.services.replay.recorder_effect import RecorderEffect
 
 __all__ = [
     "ExecutorReplay",

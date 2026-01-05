@@ -335,7 +335,7 @@ class TestInjectorRNGImports:
 
     def test_import_from_injector_file(self):
         """Test direct import from injector file."""
-        from omnibase_core.pipeline.replay.injector_rng import InjectorRNG
+        from omnibase_core.services.replay.injector_rng import InjectorRNG
 
         assert InjectorRNG is not None
 

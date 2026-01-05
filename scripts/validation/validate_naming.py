@@ -219,19 +219,27 @@ class NamingConventionValidator:
         "merge/": [
             "ContractMergeEngine",  # Merge engine for typed contract merging (OMN-1127)
         ],
-        # REPLAY INFRASTRUCTURE: Effect recording and replay for deterministic testing
-        # Location: pipeline/replay/ - Replay/recording infrastructure for effects
-        # Rationale: RecorderEffect records effects for replay, not a Node class.
-        #            The heuristic flags "effect" as a Node indicator, but RecorderEffect
-        #            is a recorder that captures effects, not a node that processes them.
-        #            Similarly, other replay infrastructure classes use descriptive names
-        #            appropriate to their function (ExecutorReplay, InjectorRng, etc.)
+        # REPLAY INFRASTRUCTURE: Deterministic replay utilities for testing and debugging
+        # Location: services/replay/ - Replay infrastructure services (injectors/recorders)
+        # Rationale: These classes provide deterministic replay capabilities (OMN-1116, OMN-1205).
+        #            RecorderEffect, InjectorTime, InjectorRNG are passive observers and injection
+        #            mechanisms - NOT nodes. The heuristic flags "effect" as a Node indicator, but
+        #            RecorderEffect RECORDS effects, it doesn't PERFORM them as a node would.
+        #            Nodes are addressable graph vertices with contracts and dispatch semantics.
+        #            Recorders and injectors are lifecycle-bound utilities for side-effect capture.
+        "services/replay/": [
+            "RecorderEffect",  # Effect recording for deterministic replay (OMN-1116)
+            "InjectorTime",  # Time injection for deterministic replay (OMN-1116)
+            "InjectorRNG",  # RNG injection for deterministic replay (OMN-1116)
+        ],
+        # REPLAY INFRASTRUCTURE: Effect replay execution for deterministic testing
+        # Location: pipeline/replay/ - Replay execution and session management
+        # Rationale: ExecutorReplay and SessionReplay handle replay execution and session state.
+        #            The heuristic flags "effect" as a Node indicator, but these are replay
+        #            infrastructure classes that EXECUTE replays, not node implementations.
         "pipeline/replay/": [
-            "RecorderEffect",  # Effect recorder for deterministic replay (OMN-1116)
-            "ExecutorReplay",  # Replay executor for effect playback
-            "InjectorRng",  # RNG injector for deterministic randomness
-            "InjectorTime",  # Time injector for deterministic timestamps
-            "SessionReplay",  # Replay session manager
+            "ExecutorReplay",  # Replay executor for effect playback (OMN-1116)
+            "SessionReplay",  # Replay session manager (OMN-1116)
         ],
     }
 

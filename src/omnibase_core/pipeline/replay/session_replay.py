@@ -63,9 +63,9 @@ from omnibase_core.enums.replay.enum_replay_mode import EnumReplayMode
 from omnibase_core.models.replay.model_replay_context import ModelReplayContext
 
 if TYPE_CHECKING:
-    from omnibase_core.pipeline.replay.injector_rng import InjectorRNG
-    from omnibase_core.pipeline.replay.injector_time import InjectorTime
-    from omnibase_core.pipeline.replay.recorder_effect import RecorderEffect
+    from omnibase_core.services.replay.injector_rng import InjectorRNG
+    from omnibase_core.services.replay.injector_time import InjectorTime
+    from omnibase_core.services.replay.recorder_effect import RecorderEffect
 
 
 @dataclass
@@ -131,20 +131,20 @@ class ReplaySession:
 
 def _default_time_service() -> InjectorTime:
     """Create default time service (deferred import to avoid circular deps)."""
-    from omnibase_core.pipeline.replay.injector_time import InjectorTime
+    from omnibase_core.services.replay.injector_time import InjectorTime
 
     return InjectorTime()
 
 
 def _default_rng_service() -> InjectorRNG:
     """Create default RNG service (deferred import to avoid circular deps)."""
-    from omnibase_core.pipeline.replay.injector_rng import InjectorRNG
+    from omnibase_core.services.replay.injector_rng import InjectorRNG
 
     return InjectorRNG()
 
 
 def _default_effect_recorder() -> RecorderEffect:
     """Create default effect recorder (deferred import to avoid circular deps)."""
-    from omnibase_core.pipeline.replay.recorder_effect import RecorderEffect
+    from omnibase_core.services.replay.recorder_effect import RecorderEffect
 
     return RecorderEffect()
