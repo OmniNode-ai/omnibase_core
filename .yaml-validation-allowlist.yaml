@@ -55,7 +55,8 @@ allowed_files:
 
   - file: "src/omnibase_core/cli/cli_contract_diff.py"
     reason: "Loads arbitrary YAML contract files for semantic diff comparison - no model validation needed
-      as diffing works on raw dictionary structures to compare any two contract versions"
+      as diffing works on raw dictionary structures to compare any two contract versions (load_contract_yaml_file
+      at line 483)"
     added: "2026-01-05"
     review: "2026-07-05"
 
@@ -110,6 +111,6 @@ allowed_functions:
 
   - function: "load_contract_yaml_file"
     reason: "Loads arbitrary YAML contract files for semantic diff comparison - no model validation needed
-      as diffing works on raw dictionary structures to compare any two contract versions"
+      as diffing works on raw dictionary structures to compare any two contract versions (see cli_contract_diff.py:483)"
     added: "2026-01-05"
     review: "2026-07-05"

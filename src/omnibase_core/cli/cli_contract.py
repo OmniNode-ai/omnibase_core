@@ -13,6 +13,7 @@ initialization, building, and comparison of ONEX contracts.
 
 from __future__ import annotations
 
+import functools
 import hashlib
 import json
 from datetime import UTC, datetime
@@ -56,7 +57,8 @@ _CLI_NAME_TO_NODE_KIND: dict[str, EnumNodeKind] = {
 }
 
 
-def _get_available_profiles_for_kind(node_kind: EnumNodeKind) -> list[str]:
+@functools.lru_cache(maxsize=8)
+def _get_available_profiles_for_kind(node_kind: EnumNodeKind) -> tuple[str, ...]:
     """
     Get available profile short names for a node kind.
 
@@ -64,7 +66,7 @@ def _get_available_profiles_for_kind(node_kind: EnumNodeKind) -> list[str]:
         node_kind: The node kind to get profiles for.
 
     Returns:
-        List of profile short names (without the node type prefix).
+        Tuple of profile short names (without the node type prefix).
     """
     from omnibase_core.factories.profiles import (
         COMPUTE_PROFILES,
@@ -88,7 +90,7 @@ def _get_available_profiles_for_kind(node_kind: EnumNodeKind) -> list[str]:
         profile_names = list(COMPUTE_PROFILES.keys())
 
     # Strip the prefix to get short names
-    return [p.removeprefix(prefix) for p in profile_names]
+    return tuple(p.removeprefix(prefix) for p in profile_names)
 
 
 def _build_full_profile_name(node_type: str, profile: str) -> str:
@@ -302,7 +304,7 @@ def _generate_merge_hash(
     """Generate a deterministic hash from merge inputs.
 
     Creates a SHA256 hash from the profile name, version, and patch content,
-    truncated to 12 characters for readability.
+    truncated to 16 characters for readability.
 
     Args:
         profile_name: The profile name (e.g., "compute_pure").
@@ -310,11 +312,11 @@ def _generate_merge_hash(
         patch_content: The raw patch file content as a string.
 
     Returns:
-        A 12-character hex hash string.
+        A 16-character hex hash string.
     """
     hash_input = f"{profile_name}:{version_str}:{patch_content}"
     full_hash = hashlib.sha256(hash_input.encode("utf-8")).hexdigest()
-    return full_hash[:12]
+    return full_hash[:16]
 
 
 def _format_validation_errors(
@@ -379,7 +381,7 @@ def _build_expanded_contract_with_metadata(
     contract: ModelHandlerContract,
     patch: ModelContractPatch,
     patch_path: Path,
-    patch_content: str,
+    merge_hash: str,
 ) -> dict[str, object]:
     """Build the expanded contract dictionary with metadata.
 
@@ -387,18 +389,11 @@ def _build_expanded_contract_with_metadata(
         contract: The expanded ModelHandlerContract.
         patch: The original contract patch.
         patch_path: Path to the source patch file.
-        patch_content: Raw content of the patch file.
+        merge_hash: Pre-computed merge hash for metadata.
 
     Returns:
         Dictionary with _metadata section and expanded contract fields.
     """
-    # Generate metadata
-    merge_hash = _generate_merge_hash(
-        profile_name=patch.extends.profile,
-        version_str=patch.extends.version,
-        patch_content=patch_content,
-    )
-
     metadata: dict[str, str] = {
         "profile": patch.extends.profile,
         "profile_version": patch.extends.version,
@@ -493,11 +488,12 @@ def init(
     to generate the full contract.
 
     \b
-    Profile Names:
+    Profile Names (examples, may not be exhaustive):
         orchestrator: safe, parallel, resilient
         reducer: fsm_basic
         effect: idempotent
         compute: pure
+    Use an invalid profile name to see the current list of available profiles.
 
     \b
     Examples:
@@ -544,8 +540,10 @@ def init(
     # Output the result
     if output:
         try:
-            output.write_text(patch_content)
-            click.echo(f"Contract patch template written to {output}")
+            # Resolve path for defense in depth against path traversal
+            resolved_output = output.resolve()
+            resolved_output.write_text(patch_content)
+            click.echo(f"Contract patch template written to {resolved_output}")
         except OSError as e:
             if verbose:
                 emit_log_event_sync(
@@ -751,7 +749,7 @@ def build(
             contract=result.contract,
             patch=patch,
             patch_path=patch_path,
-            patch_content=patch_content,
+            merge_hash=merge_hash,
         )
 
         if verbose:
@@ -773,8 +771,10 @@ def build(
 
         # Write output
         if output:
-            output.write_text(output_content, encoding="utf-8")
-            click.echo(f"Expanded contract written to {output}")
+            # Resolve path for defense in depth against path traversal
+            resolved_output = output.resolve()
+            resolved_output.write_text(output_content, encoding="utf-8")
+            click.echo(f"Expanded contract written to {resolved_output}")
         else:
             click.echo(output_content)
 
@@ -940,8 +940,10 @@ def diff(
     # Write output
     if output:
         try:
-            output.write_text(output_text, encoding="utf-8")
-            click.echo(f"Diff written to {output}")
+            # Resolve path for defense in depth against path traversal
+            resolved_output = output.resolve()
+            resolved_output.write_text(output_text, encoding="utf-8")
+            click.echo(f"Diff written to {resolved_output}")
         except OSError as e:
             emit_log_event_sync(
                 EnumLogLevel.ERROR,

@@ -59,6 +59,10 @@ DEFAULT_EXCLUDE_PREFIXES: frozenset[str] = frozenset(
 DiffEntry = ModelDiffEntry
 DiffResult = ModelDiffResult
 
+# Truncation constants for format_diff_value
+ELLIPSIS_STR: str = "..."
+ELLIPSIS_LENGTH: int = len(ELLIPSIS_STR)
+
 
 # ==============================================================================
 # Contract Diff Helper Functions
@@ -139,7 +143,7 @@ def format_diff_value(value: JsonType, max_length: int = 60) -> str:
     else:
         result = str(value)
     if len(result) > max_length:
-        return result[: max_length - 3] + "..."
+        return result[: max_length - ELLIPSIS_LENGTH] + ELLIPSIS_STR
     return result
 
 
@@ -233,7 +237,9 @@ def diff_contract_lists(
         and isinstance(old_list[0], dict)
         and isinstance(new_list[0], dict)
     ):
-        # Type narrowing: we verified first elements are dicts
+        # Validate all items are dicts (not just first element)
+        assert all(isinstance(item, dict) for item in old_list)
+        assert all(isinstance(item, dict) for item in new_list)
         old_dicts = cast(list[dict[str, JsonType]], old_list)
         new_dicts = cast(list[dict[str, JsonType]], new_list)
         identity_key = find_list_identity_key(old_dicts, new_dicts)
