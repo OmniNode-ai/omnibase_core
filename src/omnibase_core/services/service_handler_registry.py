@@ -111,7 +111,7 @@ class ServiceHandlerRegistry:
 
     See Also:
         - :class:`ProtocolMessageHandler`: Handler protocol definition
-        - :class:`~omnibase_core.runtime.envelope_router.EnvelopeRouter`:
+        - :class:`~omnibase_core.runtime.runtime_envelope_router.EnvelopeRouter`:
           Similar freeze-after-init pattern
         - :class:`~omnibase_core.models.validation.model_execution_shape_validation.ModelExecutionShapeValidation`:
           Execution shape validation

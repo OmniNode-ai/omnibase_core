@@ -23,7 +23,7 @@ from omnibase_core.models.common.model_validation_metadata import (
 from omnibase_core.models.common.model_validation_result import ModelValidationResult
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.services.service_validation_suite import ServiceValidationSuite
-from omnibase_core.validation.cli import (
+from omnibase_core.validation.validator_cli import (
     create_parser,
     format_result,
 )
@@ -541,7 +541,7 @@ class TestRunValidationCLI:
         """Test CLI list command."""
         import sys
 
-        from omnibase_core.validation.cli import run_validation_cli
+        from omnibase_core.validation.validator_cli import run_validation_cli
 
         monkeypatch.setattr(sys, "argv", ["cli", "list"])
 
@@ -560,7 +560,7 @@ class TestRunValidationCLI:
         """Test CLI with nonexistent directory."""
         import sys
 
-        from omnibase_core.validation.cli import run_validation_cli
+        from omnibase_core.validation.validator_cli import run_validation_cli
 
         nonexistent = tmp_path / "does_not_exist"
         monkeypatch.setattr(
@@ -583,7 +583,7 @@ class TestRunValidationCLI:
         """Test CLI with nonexistent directory and exit-zero flag."""
         import sys
 
-        from omnibase_core.validation.cli import run_validation_cli
+        from omnibase_core.validation.validator_cli import run_validation_cli
 
         nonexistent = tmp_path / "does_not_exist"
         monkeypatch.setattr(
@@ -605,7 +605,7 @@ class TestRunValidationCLI:
         """Test CLI with no valid directories."""
         import sys
 
-        from omnibase_core.validation.cli import run_validation_cli
+        from omnibase_core.validation.validator_cli import run_validation_cli
 
         nonexistent1 = tmp_path / "dir1"
         nonexistent2 = tmp_path / "dir2"
@@ -632,7 +632,7 @@ class TestRunValidationCLI:
         """Test CLI with no valid directories and exit-zero flag."""
         import sys
 
-        from omnibase_core.validation.cli import run_validation_cli
+        from omnibase_core.validation.validator_cli import run_validation_cli
 
         nonexistent1 = tmp_path / "dir1"
         nonexistent2 = tmp_path / "dir2"
@@ -661,7 +661,7 @@ class TestRunValidationCLI:
         """Test CLI with single validation type."""
         import sys
 
-        from omnibase_core.validation.cli import run_validation_cli
+        from omnibase_core.validation.validator_cli import run_validation_cli
 
         # Create test file
         test_file = tmp_path / "test.py"
@@ -684,7 +684,7 @@ class TestRunValidationCLI:
         """Test CLI with all validations."""
         import sys
 
-        from omnibase_core.validation.cli import run_validation_cli
+        from omnibase_core.validation.validator_cli import run_validation_cli
 
         # Create test file
         test_file = tmp_path / "test.py"
@@ -706,7 +706,7 @@ class TestRunValidationCLI:
         """Test CLI with multiple directories."""
         import sys
 
-        from omnibase_core.validation.cli import run_validation_cli
+        from omnibase_core.validation.validator_cli import run_validation_cli
 
         dir1 = tmp_path / "dir1"
         dir1.mkdir()
@@ -736,7 +736,7 @@ class TestRunValidationCLI:
         """Test CLI quiet mode."""
         import sys
 
-        from omnibase_core.validation.cli import run_validation_cli
+        from omnibase_core.validation.validator_cli import run_validation_cli
 
         test_file = tmp_path / "test.py"
         test_file.write_text("# Test\n")
@@ -761,7 +761,7 @@ class TestRunValidationCLI:
         """Test CLI quiet mode with errors."""
         import sys
 
-        from omnibase_core.validation.cli import run_validation_cli
+        from omnibase_core.validation.validator_cli import run_validation_cli
 
         nonexistent = tmp_path / "nonexistent"
 
@@ -785,7 +785,7 @@ class TestRunValidationCLI:
         """Test CLI verbose mode."""
         import sys
 
-        from omnibase_core.validation.cli import run_validation_cli
+        from omnibase_core.validation.validator_cli import run_validation_cli
 
         test_file = tmp_path / "test.py"
         test_file.write_text("# Test\n")
@@ -809,7 +809,7 @@ class TestRunValidationCLI:
         """Test CLI with multiple flags."""
         import sys
 
-        from omnibase_core.validation.cli import run_validation_cli
+        from omnibase_core.validation.validator_cli import run_validation_cli
 
         test_file = tmp_path / "test.py"
         test_file.write_text("# Test\n")
@@ -840,7 +840,7 @@ class TestRunValidationCLI:
         """Test CLI union-usage validation with max-unions."""
         import sys
 
-        from omnibase_core.validation.cli import run_validation_cli
+        from omnibase_core.validation.validator_cli import run_validation_cli
 
         test_file = tmp_path / "test.py"
         test_file.write_text(
@@ -870,7 +870,7 @@ def func(x: Union[str, int]) -> None:
         """Test CLI exit-zero flag overrides failure."""
         import sys
 
-        from omnibase_core.validation.cli import run_validation_cli
+        from omnibase_core.validation.validator_cli import run_validation_cli
 
         # Create invalid scenario
         test_file = tmp_path / "test.py"

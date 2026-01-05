@@ -23,7 +23,7 @@ See Also:
     - omnibase_core.models.effect.model_effect_context: Effect handler context (with time)
     - omnibase_core.models.reducer.model_reducer_context: Reducer handler context (pure)
     - omnibase_core.models.orchestrator.model_orchestrator_context: Orchestrator context (with time)
-    - omnibase_core.runtime.message_dispatch_engine: Uses this for handler dispatch
+    - omnibase_core.runtime.runtime_message_dispatch: Uses this for handler dispatch
 """
 
 from typing import Protocol, runtime_checkable

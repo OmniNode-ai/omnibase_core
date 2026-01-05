@@ -13,7 +13,9 @@ from pydantic import TypeAdapter, ValidationError
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
+from omnibase_core.logging.logging_structured import (
+    emit_log_event_sync as emit_log_event,
+)
 from omnibase_core.models.core.model_discovery_request_response import (
     ModelDiscoveryRequestModelMetadata,
     ModelDiscoveryResponseModelMetadata,
@@ -235,7 +237,7 @@ class MixinDiscoveryResponder:
 
         except (ModelOnexError, RuntimeError, ValueError) as e:
             # Log non-fatal discovery errors for observability
-            from omnibase_core.logging.structured import (
+            from omnibase_core.logging.logging_structured import (
                 emit_log_event_sync as emit_log_event,
             )
 

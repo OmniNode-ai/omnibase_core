@@ -229,6 +229,11 @@ class EnumCoreErrorCode(EnumOnexErrorCode):
     CACHE_OPERATION_FAILED = "ONEX_CORE_324_CACHE_OPERATION_FAILED"
     CACHE_BACKEND_NOT_CONNECTED = "ONEX_CORE_325_CACHE_BACKEND_NOT_CONNECTED"
 
+    # Replay infrastructure errors (331-340)
+    REPLAY_RECORD_NOT_FOUND = "ONEX_CORE_331_REPLAY_RECORD_NOT_FOUND"
+    REPLAY_NOT_IN_REPLAY_MODE = "ONEX_CORE_332_REPLAY_NOT_IN_REPLAY_MODE"
+    REPLAY_INVALID_EFFECT_TYPE = "ONEX_CORE_333_REPLAY_INVALID_EFFECT_TYPE"
+
     def get_component(self) -> str:
         """Get the component identifier for this error code."""
         return "CORE"
@@ -374,6 +379,10 @@ CORE_ERROR_CODE_TO_EXIT_CODE: dict[EnumCoreErrorCode, EnumCLIExitCode] = {
     EnumCoreErrorCode.CACHE_TIMEOUT_ERROR: EnumCLIExitCode.ERROR,
     EnumCoreErrorCode.CACHE_OPERATION_FAILED: EnumCLIExitCode.ERROR,
     EnumCoreErrorCode.CACHE_BACKEND_NOT_CONNECTED: EnumCLIExitCode.ERROR,
+    # Replay infrastructure errors -> ERROR
+    EnumCoreErrorCode.REPLAY_RECORD_NOT_FOUND: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.REPLAY_NOT_IN_REPLAY_MODE: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.REPLAY_INVALID_EFFECT_TYPE: EnumCLIExitCode.ERROR,
 }
 
 
@@ -521,5 +530,9 @@ def get_core_error_description(error_code: EnumCoreErrorCode) -> str:
         EnumCoreErrorCode.CACHE_TIMEOUT_ERROR: "Cache operation timed out",
         EnumCoreErrorCode.CACHE_OPERATION_FAILED: "Cache operation failed",
         EnumCoreErrorCode.CACHE_BACKEND_NOT_CONNECTED: "Cache backend is not connected",
+        # Replay infrastructure errors
+        EnumCoreErrorCode.REPLAY_RECORD_NOT_FOUND: "Replay: no matching effect record found",
+        EnumCoreErrorCode.REPLAY_NOT_IN_REPLAY_MODE: "Replay: recorder is not in replay mode",
+        EnumCoreErrorCode.REPLAY_INVALID_EFFECT_TYPE: "Replay: effect_type must not be empty",
     }
     return descriptions.get(error_code, "Unknown error")

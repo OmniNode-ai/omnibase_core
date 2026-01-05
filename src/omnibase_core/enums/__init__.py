@@ -28,6 +28,9 @@ from .enum_case_mode import EnumCaseMode
 # Category filter enums
 from .enum_category_filter import EnumCategoryFilter
 
+# Change type enums (OMN-1196)
+from .enum_change_type import EnumChangeType
+
 # Checkpoint-related enums
 from .enum_checkpoint_type import EnumCheckpointType
 
@@ -79,6 +82,9 @@ from .enum_effect_types import (
 
 # Validation-related enums
 from .enum_environment_validation_rule_type import EnumEnvironmentValidationRuleType
+
+# Event sink type enum (OMN-1151)
+from .enum_event_sink_type import EnumEventSinkType
 
 # Execution-related enums
 from .enum_execution_mode import EnumExecutionMode
@@ -476,6 +482,8 @@ __all__ = [
     "EnumVectorFilterOperator",
     # Checkpoint domain
     "EnumCheckpointType",
+    # Change type domain (OMN-1196)
+    "EnumChangeType",
     # Token and authentication context domain (OMN-1054)
     "EnumTokenType",
     "EnumTriggerEvent",
@@ -485,6 +493,8 @@ __all__ = [
     "EnumInvariantType",
     # Violation severity domain (OMN-1195)
     "EnumViolationSeverity",
+    # Event sink type domain (OMN-1151)
+    "EnumEventSinkType",
     # NOTE: Removed from __all__ due to missing module files or circular imports:
     # - "EnumRegistryType" (module doesn't exist)
     # - "ModelServiceModeEnum" (replaced with correct "EnumServiceMode")

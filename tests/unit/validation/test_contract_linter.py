@@ -1,5 +1,5 @@
 """
-Unit tests for WorkflowLinter (workflow_linter.py).
+Unit tests for WorkflowLinter (checker_workflow_linter.py).
 
 Tests comprehensive workflow contract linting functionality including:
 - Warning on unused parallel_group with SEQUENTIAL mode
@@ -29,7 +29,7 @@ from omnibase_core.models.contracts.subcontracts.model_workflow_definition_metad
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.models.validation.model_lint_warning import ModelLintWarning
-from omnibase_core.validation.workflow_linter import (
+from omnibase_core.validation.checker_workflow_linter import (
     DEFAULT_MAX_WARNINGS_PER_CODE,
     WorkflowLinter,
 )

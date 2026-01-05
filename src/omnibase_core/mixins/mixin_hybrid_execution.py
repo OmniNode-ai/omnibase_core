@@ -12,7 +12,9 @@ from omnibase_core.constants import constants_contract_fields as cf
 # Import execution mode constants
 from omnibase_core.enums.enum_execution_mode import EnumExecutionMode as ExecutionMode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
+from omnibase_core.logging.logging_structured import (
+    emit_log_event_sync as emit_log_event,
+)
 from omnibase_core.models.core.model_workflow_metrics import ModelWorkflowMetrics
 
 

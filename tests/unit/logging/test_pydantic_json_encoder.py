@@ -18,7 +18,7 @@ from uuid import UUID, uuid4
 import pytest
 from pydantic import BaseModel
 
-from omnibase_core.logging.pydantic_json_encoder import PydanticJSONEncoder
+from omnibase_core.logging.logging_pydantic_encoder import PydanticJSONEncoder
 
 
 class SampleModel(BaseModel):
@@ -486,7 +486,7 @@ class TestEncoderExportAndUsage:
 
     def test_encoder_is_exported(self):
         """Test that PydanticJSONEncoder is properly exported."""
-        from omnibase_core.logging.pydantic_json_encoder import __all__
+        from omnibase_core.logging.logging_pydantic_encoder import __all__
 
         assert "PydanticJSONEncoder" in __all__
 

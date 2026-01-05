@@ -18,7 +18,7 @@ from pathlib import Path
 import pytest
 
 from omnibase_core.models.common.model_validation_result import ModelValidationResult
-from omnibase_core.validation.types import (
+from omnibase_core.validation.validator_types import (
     ModelUnionPattern,
     UnionUsageChecker,
     validate_union_usage_directory,

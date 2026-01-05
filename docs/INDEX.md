@@ -72,6 +72,7 @@ omnibase_core/docs/
 
 | Document | Description | Status |
 |----------|-------------|--------|
+| [**Execution Corpus Guide**](guides/EXECUTION_CORPUS_GUIDE.md) | ModelExecutionCorpus usage, modes, and best practices | ✅ Complete |
 | [**Custom Callable Patterns**](guides/CUSTOM_CALLABLE_PATTERNS.md) | Custom callable validators for invariant evaluation ⭐ **NEW** | ✅ Complete |
 | [**Pipeline Hook Registry**](guides/PIPELINE_HOOK_REGISTRY.md) | Pipeline runner and hook registry with usage examples | ✅ Complete |
 | [**Handler Conversion Guide**](guides/HANDLER_CONVERSION_GUIDE.md) | Mixin-to-handler conversion with examples ⭐ **NEW** | ✅ Complete |
@@ -334,6 +335,7 @@ def serialize_error(error: ModelOnexError) -> TypedDictValidationErrorSerialized
 | **Use pipeline hooks** | [Pipeline Hook Registry](guides/PIPELINE_HOOK_REGISTRY.md) - Phase-based hook execution |
 | **Convert mixins to handlers** | [Handler Conversion Guide](guides/HANDLER_CONVERSION_GUIDE.md) - Step-by-step conversion |
 | **Create custom validators** | [Custom Callable Patterns](guides/CUSTOM_CALLABLE_PATTERNS.md) - Custom invariant validation |
+| **Create replay test corpora** | [Execution Corpus Guide](guides/EXECUTION_CORPUS_GUIDE.md) - Corpus curation and usage |
 
 ---
 

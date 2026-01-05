@@ -12,7 +12,7 @@ Tests the handler registry functionality including:
 
 Related:
     - OMN-934: Handler registry for message dispatch engine
-    - src/omnibase_core/runtime/handler_registry.py
+    - src/omnibase_core/runtime/runtime_handler_registry.py
 """
 
 from __future__ import annotations
@@ -28,7 +28,7 @@ from omnibase_core.enums.enum_execution_shape import EnumMessageCategory
 from omnibase_core.enums.enum_node_kind import EnumNodeKind
 from omnibase_core.models.dispatch.model_dispatch_result import ModelDispatchResult
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.runtime.handler_registry import (
+from omnibase_core.runtime.runtime_handler_registry import (
     ProtocolMessageHandler,
     ServiceHandlerRegistry,
 )

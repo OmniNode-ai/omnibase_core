@@ -22,7 +22,7 @@ from pydantic import ValidationError
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.validation.contracts import (
+from omnibase_core.validation.validator_contracts import (
     MAX_FILE_SIZE,
     load_and_validate_yaml_model,
     timeout_handler,
@@ -1132,7 +1132,7 @@ operations: []
         monkeypatch.setattr(sys, "argv", ["validate_contracts", str(tmp_path)])
 
         # Patch within the contracts module's local namespace
-        import omnibase_core.validation.contracts as contracts_module
+        import omnibase_core.validation.validator_contracts as contracts_module
 
         with patch.object(
             contracts_module,
@@ -1238,7 +1238,7 @@ operations: []
         monkeypatch.setattr(sys, "argv", ["validate_contracts", str(tmp_path)])
 
         # Patch within the contracts module's local namespace
-        import omnibase_core.validation.contracts as contracts_module
+        import omnibase_core.validation.validator_contracts as contracts_module
 
         with patch.object(
             contracts_module,
@@ -1282,7 +1282,7 @@ operations: []
         monkeypatch.setattr(sys, "argv", ["validate_contracts", str(tmp_path)])
 
         # Patch within the contracts module's local namespace
-        import omnibase_core.validation.contracts as contracts_module
+        import omnibase_core.validation.validator_contracts as contracts_module
 
         with patch.object(
             contracts_module,

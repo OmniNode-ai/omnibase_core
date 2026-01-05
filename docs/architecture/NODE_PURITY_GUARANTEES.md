@@ -104,7 +104,7 @@ logger = logging.getLogger(__name__)
 
 **Alternative**: Use structured logging via container:
 ```python
-from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
+from omnibase_core.logging.logging_structured import emit_log_event_sync as emit_log_event
 emit_log_event(LogLevel.INFO, "message", {"context": "data"})
 ```
 
@@ -289,7 +289,7 @@ class NodeDataCompute(NodeCoreBase):
 
 ```python
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
-from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
+from omnibase_core.logging.logging_structured import emit_log_event_sync as emit_log_event
 
 class NodeDataCompute(NodeCoreBase):
     def __init__(self, container: ModelONEXContainer):

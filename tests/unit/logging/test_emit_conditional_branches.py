@@ -11,7 +11,7 @@ from uuid import UUID, uuid4
 import pytest
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.logging.emit import (
+from omnibase_core.logging.logging_emit import (
     _detect_node_id_from_context,
     _route_to_logger_node,
     _sanitize_data_dict,
@@ -265,7 +265,7 @@ class TestRouteToLoggerNodeCacheBranches:
 
     def test_route_to_logger_node_cache_expired(self):
         """Test _route_to_logger_node when cache is expired."""
-        import omnibase_core.logging.emit as emit_module
+        import omnibase_core.logging.logging_emit as emit_module
 
         # Reset cache state to ensure test isolation
         emit_module._CACHED_FORMATTER = None
@@ -291,7 +291,7 @@ class TestRouteToLoggerNodeCacheBranches:
             mock_container_class.return_value = mock_container
 
             # Mock time to simulate cache expiration
-            with patch("omnibase_core.logging.emit.time") as mock_time:
+            with patch("omnibase_core.logging.logging_emit.time") as mock_time:
                 # Provide enough time values: initial check + lock check
                 mock_time.time.side_effect = [400, 450]  # Well beyond 300s TTL
 
@@ -432,7 +432,7 @@ class TestLogCodeBlockConditionalBranches:
 
     def test_log_code_block_start_time_none_branch(self):
         """Test LogCodeBlock when start_time is None (edge case)."""
-        from omnibase_core.logging.emit import LogCodeBlock
+        from omnibase_core.logging.logging_emit import LogCodeBlock
 
         correlation_id = uuid4()
 
@@ -446,7 +446,7 @@ class TestLogCodeBlockConditionalBranches:
 
     def test_log_code_block_exception_type_none(self):
         """Test LogCodeBlock exception handling with None exc_type."""
-        from omnibase_core.logging.emit import LogCodeBlock
+        from omnibase_core.logging.logging_emit import LogCodeBlock
 
         correlation_id = uuid4()
 
@@ -456,7 +456,7 @@ class TestLogCodeBlockConditionalBranches:
 
     def test_log_code_block_exception_with_type(self):
         """Test LogCodeBlock exception logging branch."""
-        from omnibase_core.logging.emit import LogCodeBlock
+        from omnibase_core.logging.logging_emit import LogCodeBlock
 
         correlation_id = uuid4()
 

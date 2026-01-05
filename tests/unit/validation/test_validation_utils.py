@@ -1,5 +1,5 @@
 """
-Tests for validation_utils module.
+Tests for validator_utils module.
 
 Tests the core validation utilities including protocol signature extraction,
 input validation, and error handling improvements.
@@ -18,7 +18,7 @@ from omnibase_core.models.validation.model_protocol_info import ModelProtocolInf
 from omnibase_core.models.validation.model_protocol_signature_extractor import (
     ModelProtocolSignatureExtractor,
 )
-from omnibase_core.validation.validation_utils import (
+from omnibase_core.validation.validator_utils import (
     detect_add_remove_conflicts,
     determine_repository_name,
     extract_protocol_signature,
@@ -392,13 +392,11 @@ class TestLoggingIntegration:
 
     def test_logger_exists(self):
         """Test that the module logger is properly configured."""
-        from omnibase_core.validation import validation_utils
+        from omnibase_core.validation import validator_utils
 
-        assert hasattr(validation_utils, "logger")
-        assert isinstance(validation_utils.logger, logging.Logger)
-        assert (
-            validation_utils.logger.name == "omnibase_core.validation.validation_utils"
-        )
+        assert hasattr(validator_utils, "logger")
+        assert isinstance(validator_utils.logger, logging.Logger)
+        assert validator_utils.logger.name == "omnibase_core.validation.validator_utils"
 
     def test_exception_logging(self, caplog):
         """Test that exceptions are properly logged."""

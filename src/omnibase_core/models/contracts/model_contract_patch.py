@@ -35,7 +35,7 @@ from omnibase_core.models.contracts.model_handler_spec import ModelHandlerSpec
 from omnibase_core.models.contracts.model_profile_reference import ModelProfileReference
 from omnibase_core.models.contracts.model_reference import ModelReference
 from omnibase_core.models.primitives.model_semver import ModelSemVer
-from omnibase_core.validation.validation_utils import (
+from omnibase_core.validation.validator_utils import (
     detect_add_remove_conflicts,
     validate_onex_name_list,
     validate_string_list,
@@ -370,7 +370,7 @@ class ModelContractPatch(BaseModel):
         Handler names are stripped of whitespace and normalized to lowercase
         for consistent matching. Empty strings after stripping are rejected.
 
-        Uses shared validation from validation_utils to reduce code duplication.
+        Uses shared validation from validator_utils to reduce code duplication.
 
         Args:
             v: List of handler names to remove, or None.
@@ -391,7 +391,7 @@ class ModelContractPatch(BaseModel):
         Dependency names are stripped of whitespace. Empty strings are rejected.
         Minimum length is 2 characters to ensure meaningful names.
 
-        Uses shared validation from validation_utils to reduce code duplication.
+        Uses shared validation from validator_utils to reduce code duplication.
 
         Args:
             v: List of dependency names to remove, or None.
@@ -412,7 +412,7 @@ class ModelContractPatch(BaseModel):
         Event type names are stripped of whitespace. Empty strings are rejected.
         Event types typically use dot-separated format (e.g., 'user.created').
 
-        Uses shared validation from validation_utils to reduce code duplication.
+        Uses shared validation from validator_utils to reduce code duplication.
 
         Args:
             v: List of event type names, or None.
@@ -436,7 +436,7 @@ class ModelContractPatch(BaseModel):
         for consistent matching. Must contain only alphanumeric characters
         and underscores.
 
-        Uses shared validation from validation_utils to reduce code duplication.
+        Uses shared validation from validator_utils to reduce code duplication.
 
         Args:
             v: List of capability names, or None.
@@ -460,7 +460,7 @@ class ModelContractPatch(BaseModel):
         for consistent matching. Must contain only alphanumeric characters
         and underscores.
 
-        Uses shared validation from validation_utils to reduce code duplication.
+        Uses shared validation from validator_utils to reduce code duplication.
 
         Args:
             v: List of capability names to remove, or None.

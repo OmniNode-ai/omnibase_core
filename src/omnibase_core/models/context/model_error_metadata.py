@@ -213,7 +213,7 @@ class ModelErrorMetadata(BaseModel):
 
         Note:
             For direct validation outside Pydantic models, prefer using
-            validate_error_code() from common_validators instead.
+            validate_error_code() from validator_common instead.
             The pattern is intentionally duplicated here to avoid circular
             imports - see module-level comments for details.
 
@@ -234,7 +234,7 @@ class ModelErrorMetadata(BaseModel):
             raise ValueError(
                 f"Invalid error_code format '{value}': expected CATEGORY_NNN "
                 f"pattern (e.g., AUTH_001, VALIDATION_123). "
-                f"For lint-style short codes (W001, E001), use workflow_linter module."
+                f"For lint-style short codes (W001, E001), use checker_workflow_linter module."
             )
         return value
 

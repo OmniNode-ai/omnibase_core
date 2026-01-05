@@ -20,7 +20,7 @@ from omnibase_core.models.validation.model_import_validation_result import (
 from omnibase_core.models.validation.model_module_import_result import (
     ModelModuleImportResult,
 )
-from omnibase_core.validation.circular_import_validator import CircularImportValidator
+from omnibase_core.validation.validator_circular_import import CircularImportValidator
 
 
 @pytest.mark.unit

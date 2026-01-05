@@ -8,7 +8,7 @@ from collections import defaultdict
 
 from omnibase_core.enums.enum_handler_type_category import EnumHandlerTypeCategory
 from omnibase_core.enums.enum_log_level import EnumLogLevel
-from omnibase_core.logging.core_logging import emit_log_event
+from omnibase_core.logging.logging_core import emit_log_event
 from omnibase_core.models.pipeline import (
     ModelPhaseExecutionPlan,
     ModelPipelineExecutionPlan,

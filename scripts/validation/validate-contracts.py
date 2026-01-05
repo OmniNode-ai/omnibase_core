@@ -232,11 +232,18 @@ def discover_yaml_files_optimized(base_path: Path) -> Iterator[Path]:
                 "/archived/" in root_str
                 or "archived" in root_parts
                 or "tests/fixtures/validation/invalid/" in root_str
+                or "tests/unit/contracts/fixtures/" in root_str
                 or (
                     "tests" in root_parts
                     and "fixtures" in root_parts
                     and "validation" in root_parts
                     and "invalid" in root_parts
+                )
+                or (
+                    "tests" in root_parts
+                    and "unit" in root_parts
+                    and "contracts" in root_parts
+                    and "fixtures" in root_parts
                 )
             ):
                 continue

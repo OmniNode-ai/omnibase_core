@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode Team
 # SPDX-License-Identifier: Apache-2.0
 """
-Unit tests for RegistryCapability.
+Unit tests for ServiceRegistryCapability.
 
 Tests all aspects of the capability registry including:
 - Basic register/unregister lifecycle
@@ -14,7 +14,7 @@ Tests all aspects of the capability registry including:
 - count property and clear method
 - String representations
 
-OMN-1156: RegistryCapability unit tests.
+OMN-1156: ServiceRegistryCapability unit tests.
 """
 
 from __future__ import annotations
@@ -29,7 +29,9 @@ from omnibase_core.models.capabilities.model_capability_metadata import (
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
-from omnibase_core.services.registry.registry_capability import RegistryCapability
+from omnibase_core.services.registry.service_registry_capability import (
+    ServiceRegistryCapability,
+)
 
 # =============================================================================
 # Fixtures
@@ -37,9 +39,9 @@ from omnibase_core.services.registry.registry_capability import RegistryCapabili
 
 
 @pytest.fixture
-def registry() -> RegistryCapability:
-    """Create a fresh RegistryCapability instance."""
-    return RegistryCapability()
+def registry() -> ServiceRegistryCapability:
+    """Create a fresh ServiceRegistryCapability instance."""
+    return ServiceRegistryCapability()
 
 
 @pytest.fixture
@@ -99,15 +101,17 @@ def cache_capability() -> ModelCapabilityMetadata:
 
 
 @pytest.mark.unit
-class TestRegistryCapabilityInstantiation:
+class TestServiceRegistryCapabilityInstantiation:
     """Tests for registry instantiation."""
 
-    def test_empty_registry_on_creation(self, registry: RegistryCapability) -> None:
+    def test_empty_registry_on_creation(
+        self, registry: ServiceRegistryCapability
+    ) -> None:
         """Test that a new registry is empty."""
         assert registry.count == 0
         assert registry.list_all() == []
 
-    def test_registry_has_lock(self, registry: RegistryCapability) -> None:
+    def test_registry_has_lock(self, registry: ServiceRegistryCapability) -> None:
         """Test that registry has an RLock for thread safety."""
         assert hasattr(registry, "_lock")
         assert isinstance(registry._lock, type(threading.RLock()))
@@ -119,12 +123,12 @@ class TestRegistryCapabilityInstantiation:
 
 
 @pytest.mark.unit
-class TestRegistryCapabilityRegistration:
+class TestServiceRegistryCapabilityRegistration:
     """Tests for capability registration."""
 
     def test_register_single_capability(
         self,
-        registry: RegistryCapability,
+        registry: ServiceRegistryCapability,
         sample_capability: ModelCapabilityMetadata,
     ) -> None:
         """Test registering a single capability."""
@@ -135,7 +139,7 @@ class TestRegistryCapabilityRegistration:
 
     def test_register_multiple_capabilities(
         self,
-        registry: RegistryCapability,
+        registry: ServiceRegistryCapability,
         sample_capability: ModelCapabilityMetadata,
         nosql_capability: ModelCapabilityMetadata,
         cache_capability: ModelCapabilityMetadata,
@@ -152,7 +156,7 @@ class TestRegistryCapabilityRegistration:
 
     def test_register_duplicate_raises_model_onex_error(
         self,
-        registry: RegistryCapability,
+        registry: ServiceRegistryCapability,
         sample_capability: ModelCapabilityMetadata,
     ) -> None:
         """Test that registering a duplicate capability_id raises ModelOnexError."""
@@ -167,7 +171,7 @@ class TestRegistryCapabilityRegistration:
 
     def test_register_with_replace_true_overwrites(
         self,
-        registry: RegistryCapability,
+        registry: ServiceRegistryCapability,
         sample_capability: ModelCapabilityMetadata,
         sample_capability_v2: ModelCapabilityMetadata,
     ) -> None:
@@ -188,7 +192,7 @@ class TestRegistryCapabilityRegistration:
 
     def test_register_first_time_with_replace_true(
         self,
-        registry: RegistryCapability,
+        registry: ServiceRegistryCapability,
         sample_capability: ModelCapabilityMetadata,
     ) -> None:
         """Test that replace=True works for first registration too."""
@@ -204,12 +208,12 @@ class TestRegistryCapabilityRegistration:
 
 
 @pytest.mark.unit
-class TestRegistryCapabilityUnregistration:
+class TestServiceRegistryCapabilityUnregistration:
     """Tests for capability unregistration."""
 
     def test_unregister_existing_capability(
         self,
-        registry: RegistryCapability,
+        registry: ServiceRegistryCapability,
         sample_capability: ModelCapabilityMetadata,
     ) -> None:
         """Test unregistering an existing capability returns True."""
@@ -223,7 +227,7 @@ class TestRegistryCapabilityUnregistration:
         assert registry.get("database.relational") is None
 
     def test_unregister_nonexistent_capability(
-        self, registry: RegistryCapability
+        self, registry: ServiceRegistryCapability
     ) -> None:
         """Test unregistering a nonexistent capability returns False."""
         result = registry.unregister("nonexistent.capability")
@@ -232,7 +236,7 @@ class TestRegistryCapabilityUnregistration:
 
     def test_unregister_twice_returns_false_second_time(
         self,
-        registry: RegistryCapability,
+        registry: ServiceRegistryCapability,
         sample_capability: ModelCapabilityMetadata,
     ) -> None:
         """Test that unregistering twice returns False the second time."""
@@ -246,7 +250,7 @@ class TestRegistryCapabilityUnregistration:
 
     def test_unregister_preserves_other_capabilities(
         self,
-        registry: RegistryCapability,
+        registry: ServiceRegistryCapability,
         sample_capability: ModelCapabilityMetadata,
         nosql_capability: ModelCapabilityMetadata,
     ) -> None:
@@ -267,12 +271,12 @@ class TestRegistryCapabilityUnregistration:
 
 
 @pytest.mark.unit
-class TestRegistryCapabilityGet:
+class TestServiceRegistryCapabilityGet:
     """Tests for capability lookup."""
 
     def test_get_existing_capability(
         self,
-        registry: RegistryCapability,
+        registry: ServiceRegistryCapability,
         sample_capability: ModelCapabilityMetadata,
     ) -> None:
         """Test getting an existing capability."""
@@ -284,7 +288,7 @@ class TestRegistryCapabilityGet:
         assert result.name == "Relational Database"
 
     def test_get_nonexistent_capability_returns_none(
-        self, registry: RegistryCapability
+        self, registry: ServiceRegistryCapability
     ) -> None:
         """Test getting a nonexistent capability returns None."""
         result = registry.get("nonexistent.capability")
@@ -293,7 +297,7 @@ class TestRegistryCapabilityGet:
 
     def test_get_after_unregister_returns_none(
         self,
-        registry: RegistryCapability,
+        registry: ServiceRegistryCapability,
         sample_capability: ModelCapabilityMetadata,
     ) -> None:
         """Test that get returns None after unregistration."""
@@ -311,10 +315,10 @@ class TestRegistryCapabilityGet:
 
 
 @pytest.mark.unit
-class TestRegistryCapabilityListAll:
+class TestServiceRegistryCapabilityListAll:
     """Tests for list_all method."""
 
-    def test_list_all_empty_registry(self, registry: RegistryCapability) -> None:
+    def test_list_all_empty_registry(self, registry: ServiceRegistryCapability) -> None:
         """Test list_all on empty registry."""
         result = registry.list_all()
 
@@ -323,7 +327,7 @@ class TestRegistryCapabilityListAll:
 
     def test_list_all_single_capability(
         self,
-        registry: RegistryCapability,
+        registry: ServiceRegistryCapability,
         sample_capability: ModelCapabilityMetadata,
     ) -> None:
         """Test list_all with single capability."""
@@ -336,7 +340,7 @@ class TestRegistryCapabilityListAll:
 
     def test_list_all_preserves_insertion_order(
         self,
-        registry: RegistryCapability,
+        registry: ServiceRegistryCapability,
         sample_capability: ModelCapabilityMetadata,
         nosql_capability: ModelCapabilityMetadata,
         cache_capability: ModelCapabilityMetadata,
@@ -355,7 +359,7 @@ class TestRegistryCapabilityListAll:
 
     def test_list_all_returns_copy(
         self,
-        registry: RegistryCapability,
+        registry: ServiceRegistryCapability,
         sample_capability: ModelCapabilityMetadata,
     ) -> None:
         """Test that list_all returns a copy, not the internal list."""
@@ -374,10 +378,12 @@ class TestRegistryCapabilityListAll:
 
 
 @pytest.mark.unit
-class TestRegistryCapabilityFindByTags:
+class TestServiceRegistryCapabilityFindByTags:
     """Tests for find_by_tags method."""
 
-    def test_find_by_tags_empty_registry(self, registry: RegistryCapability) -> None:
+    def test_find_by_tags_empty_registry(
+        self, registry: ServiceRegistryCapability
+    ) -> None:
         """Test find_by_tags on empty registry."""
         result = registry.find_by_tags(["storage"])
 
@@ -385,7 +391,7 @@ class TestRegistryCapabilityFindByTags:
 
     def test_find_by_tags_single_tag_match(
         self,
-        registry: RegistryCapability,
+        registry: ServiceRegistryCapability,
         sample_capability: ModelCapabilityMetadata,
         nosql_capability: ModelCapabilityMetadata,
         cache_capability: ModelCapabilityMetadata,
@@ -404,7 +410,7 @@ class TestRegistryCapabilityFindByTags:
 
     def test_find_by_tags_match_any_default(
         self,
-        registry: RegistryCapability,
+        registry: ServiceRegistryCapability,
         sample_capability: ModelCapabilityMetadata,
         nosql_capability: ModelCapabilityMetadata,
         cache_capability: ModelCapabilityMetadata,
@@ -423,7 +429,7 @@ class TestRegistryCapabilityFindByTags:
 
     def test_find_by_tags_match_all_true(
         self,
-        registry: RegistryCapability,
+        registry: ServiceRegistryCapability,
         sample_capability: ModelCapabilityMetadata,
         nosql_capability: ModelCapabilityMetadata,
     ) -> None:
@@ -439,7 +445,7 @@ class TestRegistryCapabilityFindByTags:
 
     def test_find_by_tags_match_all_no_matches(
         self,
-        registry: RegistryCapability,
+        registry: ServiceRegistryCapability,
         sample_capability: ModelCapabilityMetadata,
         nosql_capability: ModelCapabilityMetadata,
     ) -> None:
@@ -453,7 +459,7 @@ class TestRegistryCapabilityFindByTags:
 
     def test_find_by_tags_preserves_insertion_order(
         self,
-        registry: RegistryCapability,
+        registry: ServiceRegistryCapability,
         sample_capability: ModelCapabilityMetadata,
         nosql_capability: ModelCapabilityMetadata,
     ) -> None:
@@ -468,7 +474,7 @@ class TestRegistryCapabilityFindByTags:
 
     def test_find_by_tags_no_matches(
         self,
-        registry: RegistryCapability,
+        registry: ServiceRegistryCapability,
         sample_capability: ModelCapabilityMetadata,
     ) -> None:
         """Test find_by_tags with no matching tags."""
@@ -480,7 +486,7 @@ class TestRegistryCapabilityFindByTags:
 
     def test_find_by_tags_empty_tags_list_match_any(
         self,
-        registry: RegistryCapability,
+        registry: ServiceRegistryCapability,
         sample_capability: ModelCapabilityMetadata,
     ) -> None:
         """Test find_by_tags with empty tags list (match_any returns none)."""
@@ -493,7 +499,7 @@ class TestRegistryCapabilityFindByTags:
 
     def test_find_by_tags_empty_tags_list_match_all(
         self,
-        registry: RegistryCapability,
+        registry: ServiceRegistryCapability,
         sample_capability: ModelCapabilityMetadata,
     ) -> None:
         """Test find_by_tags with empty tags list returns empty (both modes)."""
@@ -512,16 +518,16 @@ class TestRegistryCapabilityFindByTags:
 
 
 @pytest.mark.unit
-class TestRegistryCapabilityCountAndClear:
+class TestServiceRegistryCapabilityCountAndClear:
     """Tests for count property and clear method."""
 
-    def test_count_empty_registry(self, registry: RegistryCapability) -> None:
+    def test_count_empty_registry(self, registry: ServiceRegistryCapability) -> None:
         """Test count on empty registry."""
         assert registry.count == 0
 
     def test_count_after_registrations(
         self,
-        registry: RegistryCapability,
+        registry: ServiceRegistryCapability,
         sample_capability: ModelCapabilityMetadata,
         nosql_capability: ModelCapabilityMetadata,
     ) -> None:
@@ -534,7 +540,7 @@ class TestRegistryCapabilityCountAndClear:
 
     def test_count_after_unregistration(
         self,
-        registry: RegistryCapability,
+        registry: ServiceRegistryCapability,
         sample_capability: ModelCapabilityMetadata,
     ) -> None:
         """Test count after unregistration."""
@@ -544,14 +550,14 @@ class TestRegistryCapabilityCountAndClear:
         registry.unregister("database.relational")
         assert registry.count == 0
 
-    def test_clear_empty_registry(self, registry: RegistryCapability) -> None:
+    def test_clear_empty_registry(self, registry: ServiceRegistryCapability) -> None:
         """Test clear on empty registry (no error)."""
         registry.clear()
         assert registry.count == 0
 
     def test_clear_removes_all_capabilities(
         self,
-        registry: RegistryCapability,
+        registry: ServiceRegistryCapability,
         sample_capability: ModelCapabilityMetadata,
         nosql_capability: ModelCapabilityMetadata,
         cache_capability: ModelCapabilityMetadata,
@@ -575,16 +581,16 @@ class TestRegistryCapabilityCountAndClear:
 
 
 @pytest.mark.unit
-class TestRegistryCapabilityRepresentation:
+class TestServiceRegistryCapabilityRepresentation:
     """Tests for string representations."""
 
-    def test_str_empty_registry(self, registry: RegistryCapability) -> None:
+    def test_str_empty_registry(self, registry: ServiceRegistryCapability) -> None:
         """Test str representation of empty registry."""
-        assert str(registry) == "RegistryCapability[count=0]"
+        assert str(registry) == "ServiceRegistryCapability[count=0]"
 
     def test_str_with_capabilities(
         self,
-        registry: RegistryCapability,
+        registry: ServiceRegistryCapability,
         sample_capability: ModelCapabilityMetadata,
         nosql_capability: ModelCapabilityMetadata,
     ) -> None:
@@ -592,18 +598,18 @@ class TestRegistryCapabilityRepresentation:
         registry.register(sample_capability)
         registry.register(nosql_capability)
 
-        assert str(registry) == "RegistryCapability[count=2]"
+        assert str(registry) == "ServiceRegistryCapability[count=2]"
 
-    def test_repr_empty_registry(self, registry: RegistryCapability) -> None:
+    def test_repr_empty_registry(self, registry: ServiceRegistryCapability) -> None:
         """Test repr of empty registry."""
         result = repr(registry)
 
-        assert "RegistryCapability" in result
+        assert "ServiceRegistryCapability" in result
         assert "[]" in result or "capabilities" in result
 
     def test_repr_with_capabilities(
         self,
-        registry: RegistryCapability,
+        registry: ServiceRegistryCapability,
         sample_capability: ModelCapabilityMetadata,
         nosql_capability: ModelCapabilityMetadata,
     ) -> None:
@@ -613,7 +619,7 @@ class TestRegistryCapabilityRepresentation:
 
         result = repr(registry)
 
-        assert "RegistryCapability" in result
+        assert "ServiceRegistryCapability" in result
         assert "database.relational" in result
         assert "database.nosql" in result
 
@@ -624,10 +630,12 @@ class TestRegistryCapabilityRepresentation:
 
 
 @pytest.mark.unit
-class TestRegistryCapabilityThreadSafety:
+class TestServiceRegistryCapabilityThreadSafety:
     """Tests for thread safety."""
 
-    def test_concurrent_registrations(self, registry: RegistryCapability) -> None:
+    def test_concurrent_registrations(
+        self, registry: ServiceRegistryCapability
+    ) -> None:
         """Test concurrent registrations from multiple threads."""
         num_capabilities = 100
         errors: list[Exception] = []
@@ -657,7 +665,7 @@ class TestRegistryCapabilityThreadSafety:
 
     def test_concurrent_reads_and_writes(
         self,
-        registry: RegistryCapability,
+        registry: ServiceRegistryCapability,
         sample_capability: ModelCapabilityMetadata,
     ) -> None:
         """Test concurrent reads and writes."""
@@ -708,7 +716,9 @@ class TestRegistryCapabilityThreadSafety:
         # Original capability should always be accessible
         assert all(r == sample_capability for r in results if r is not None)
 
-    def test_concurrent_register_unregister(self, registry: RegistryCapability) -> None:
+    def test_concurrent_register_unregister(
+        self, registry: ServiceRegistryCapability
+    ) -> None:
         """Test concurrent register and unregister operations."""
         num_ops = 50
         errors: list[Exception] = []
@@ -742,7 +752,7 @@ class TestRegistryCapabilityThreadSafety:
 
     def test_concurrent_list_all(
         self,
-        registry: RegistryCapability,
+        registry: ServiceRegistryCapability,
         sample_capability: ModelCapabilityMetadata,
         nosql_capability: ModelCapabilityMetadata,
     ) -> None:
@@ -778,10 +788,12 @@ class TestRegistryCapabilityThreadSafety:
 
 
 @pytest.mark.unit
-class TestRegistryCapabilityEdgeCases:
+class TestServiceRegistryCapabilityEdgeCases:
     """Tests for edge cases."""
 
-    def test_capability_with_dots_in_id(self, registry: RegistryCapability) -> None:
+    def test_capability_with_dots_in_id(
+        self, registry: ServiceRegistryCapability
+    ) -> None:
         """Test capability ID with dots (hierarchical naming)."""
         cap = ModelCapabilityMetadata(
             capability="cloud.aws.s3.storage",
@@ -795,7 +807,7 @@ class TestRegistryCapabilityEdgeCases:
         assert result == cap
 
     def test_capability_with_underscores_and_numbers(
-        self, registry: RegistryCapability
+        self, registry: ServiceRegistryCapability
     ) -> None:
         """Test capability ID with underscores and numbers (valid characters)."""
         cap = ModelCapabilityMetadata(
@@ -811,7 +823,7 @@ class TestRegistryCapabilityEdgeCases:
 
     def test_reregister_after_unregister(
         self,
-        registry: RegistryCapability,
+        registry: ServiceRegistryCapability,
         sample_capability: ModelCapabilityMetadata,
     ) -> None:
         """Test re-registering after unregistering (no ValueError)."""
@@ -824,7 +836,7 @@ class TestRegistryCapabilityEdgeCases:
         assert registry.get("database.relational") == sample_capability
 
     def test_find_by_tags_with_capability_no_tags(
-        self, registry: RegistryCapability
+        self, registry: ServiceRegistryCapability
     ) -> None:
         """Test find_by_tags when capability has no tags."""
         cap = ModelCapabilityMetadata(

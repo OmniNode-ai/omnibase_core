@@ -20,7 +20,7 @@ from omnibase_core.models.validation.model_audit_result import ModelAuditResult
 from omnibase_core.models.validation.model_duplication_report import (
     ModelDuplicationReport,
 )
-from omnibase_core.validation.validation_utils import (
+from omnibase_core.validation.validator_utils import (
     ModelDuplicationInfo,
     ModelProtocolInfo,
     determine_repository_name,

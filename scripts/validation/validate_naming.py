@@ -162,6 +162,14 @@ class NamingConventionValidator:
             "ContractHashRegistry",  # Registry service for contract hash management
             "ContractDiffComputer",  # Utility class for computing contract diffs (OMN-1148)
         ],
+        # REPLAY INFRASTRUCTURE: Effect recorder for deterministic replay
+        # Location: pipeline/replay/ - Replay infrastructure utilities
+        # Rationale: RecorderEffect is a utility class that records/replays effects,
+        #            not a Node implementation. The "Effect" suffix indicates the domain
+        #            (effect handling), not that it's a Node type (OMN-1116)
+        "pipeline/replay/": [
+            "RecorderEffect",  # Utility class for effect recording/replay
+        ],
         # HANDLER INFRASTRUCTURE: Handler implementations for ONEX runtime
         # Location: runtime/handlers/ - Handler implementations for EnvelopeRouter
         # Rationale: Handlers implement ProtocolHandler and use Handler* prefix (e.g., HandlerLocal, HandlerHttp)
@@ -191,12 +199,16 @@ class NamingConventionValidator:
         # Rationale: ContractPatchValidator validates contract patches, not a Protocol interface.
         #            The heuristic flags "contract" as a Protocol indicator, but this is a
         #            validator that VALIDATES patches, not a Protocol interface.
-        #            The Protocol interface for this is ProtocolPatchValidator in protocol_patch_validator.py
+        #            The Protocol interface for this is ProtocolPatchValidator in validator_protocol_patch.py
         #            ContractValidationInvariantChecker is a concrete implementation (OMN-1146),
         #            not a Protocol. The Protocol interface is ProtocolContractValidationInvariantChecker.
         "validation/": [
             "ContractPatchValidator",  # Validator for contract patches (OMN-1126)
             "ContractValidationInvariantChecker",  # Invariant checker implementation (OMN-1146)
+            "ContractValidationPipeline",  # Validation pipeline orchestrator (OMN-1128)
+            "ExpandedContractValidator",  # Expanded contract validator (OMN-1128)
+            "ExpandedContractGraphValidator",  # Multi-contract graph validator (OMN-1128)
+            "MergeValidator",  # Merge phase validator (OMN-1128)
         ],
         # MERGE INFRASTRUCTURE: Contract merge engine for typed contract merging
         # Location: merge/ - Contract merge framework implementations
@@ -206,6 +218,20 @@ class NamingConventionValidator:
         #            The Protocol interface is ProtocolMergeEngine in protocols/merge/.
         "merge/": [
             "ContractMergeEngine",  # Merge engine for typed contract merging (OMN-1127)
+        ],
+        # REPLAY INFRASTRUCTURE: Effect recording and replay for deterministic testing
+        # Location: pipeline/replay/ - Replay/recording infrastructure for effects
+        # Rationale: RecorderEffect records effects for replay, not a Node class.
+        #            The heuristic flags "effect" as a Node indicator, but RecorderEffect
+        #            is a recorder that captures effects, not a node that processes them.
+        #            Similarly, other replay infrastructure classes use descriptive names
+        #            appropriate to their function (ExecutorReplay, InjectorRng, etc.)
+        "pipeline/replay/": [
+            "RecorderEffect",  # Effect recorder for deterministic replay (OMN-1116)
+            "ExecutorReplay",  # Replay executor for effect playback
+            "InjectorRng",  # RNG injector for deterministic randomness
+            "InjectorTime",  # Time injector for deterministic timestamps
+            "SessionReplay",  # Replay session manager
         ],
     }
 

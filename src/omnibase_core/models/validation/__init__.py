@@ -18,6 +18,9 @@ from .model_contract_validation_event import (
 # Workflow validation models (OMN-176) - safe to import
 from .model_cycle_detection_result import ModelCycleDetectionResult
 from .model_dependency_validation_result import ModelDependencyValidationResult
+
+# Event destination model (OMN-1151)
+from .model_event_destination import ModelEventDestination
 from .model_execution_shape import ModelExecutionShape
 from .model_execution_shape_validation import ModelExecutionShapeValidation
 from .model_isolated_step_result import ModelIsolatedStepResult
@@ -38,6 +41,8 @@ __all__ = [
     # Contract validation event model (OMN-1146)
     "ContractValidationEventType",
     "ModelContractValidationEvent",
+    # Event destination model (OMN-1151)
+    "ModelEventDestination",
     # Pydantic models (safe to import)
     "ModelLintStatistics",
     "ModelMigrationConflictUnion",

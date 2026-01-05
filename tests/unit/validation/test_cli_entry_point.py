@@ -20,7 +20,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from omnibase_core.validation.cli import run_validation_cli
+from omnibase_core.validation.validator_cli import run_validation_cli
 
 if TYPE_CHECKING:
     from _pytest.capture import CaptureFixture

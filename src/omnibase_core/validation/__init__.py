@@ -60,9 +60,6 @@ from omnibase_core.models.validation.model_fsm_analysis_result import (
 from omnibase_core.models.validation.model_import_validation_result import (
     ModelImportValidationResult,
 )
-
-# Backwards compat alias
-CircularImportValidationResult = ModelImportValidationResult
 from omnibase_core.models.validation.model_lint_statistics import ModelLintStatistics
 from omnibase_core.models.validation.model_lint_warning import ModelLintWarning
 from omnibase_core.models.validation.model_module_import_result import (
@@ -79,14 +76,23 @@ from omnibase_core.services.service_contract_validation_invariant_checker import
 from omnibase_core.services.service_validation_suite import ServiceValidationSuite
 
 # Import validation functions for easy access
-from .architecture import validate_architecture_directory, validate_one_model_per_file
-from .circular_import_validator import CircularImportValidator
+from .validator_architecture import (
+    validate_architecture_directory,
+    validate_one_model_per_file,
+)
+from .validator_circular_import import CircularImportValidator
 
 # Import contract patch validator (OMN-1126)
-from .contract_patch_validator import ContractPatchValidator
+from .validator_contract_patch import ContractPatchValidator
 
 # Re-export from services (OMN-1146)
 ContractValidationInvariantChecker = ServiceContractValidationInvariantChecker
+
+# Import contract validation pipeline (OMN-1128)
+from .contract_validation_pipeline import (
+    ContractValidationPipeline,
+    ModelExpandedContractResult,
+)
 
 # =============================================================================
 # ALIAS LOADING STRATEGY: __getattr__ vs Direct Alias
@@ -125,126 +131,75 @@ ContractValidationInvariantChecker = ServiceContractValidationInvariantChecker
 # =============================================================================
 
 
+# Lazy loading for service classes to avoid circular imports.
+# These service classes live in omnibase_core.services.* and have transitive
+# imports that eventually import from this validation module.
 def __getattr__(name: str) -> type:
-    """
-    Lazy import for service classes to avoid circular imports.
-
-    This function is called when an attribute is not found in the module's
-    namespace. We use it to defer imports of service classes that would
-    otherwise cause circular import errors.
-
-    Why not direct imports?
-    -----------------------
-    The service classes (ServiceProtocolAuditor, ServiceContractValidator,
-    ServiceProtocolMigrator) live in omnibase_core.services.* and have
-    transitive imports that eventually import from this validation module.
-    Importing them eagerly at module load time would create:
-
-        validation/__init__.py
-            -> services/service_protocol_auditor.py
-                -> validation/some_validator.py
-                    -> validation/__init__.py  (CIRCULAR!)
-
-    By using __getattr__, we defer the import until the class is actually
-    accessed, breaking the cycle.
-
-    Deprecated Aliases (OMN-1071):
-    ------------------------------
-    All deprecated aliases emit DeprecationWarning when accessed:
-    - ModelProtocolAuditor -> ServiceProtocolAuditor
-    - ProtocolContractValidator -> ServiceContractValidator
-    - ProtocolMigrator -> ServiceProtocolMigrator
-    - ModelValidationSuite -> ServiceValidationSuite
-    """
-    import warnings
-
-    # -------------------------------------------------------------------------
-    # Consolidated imports: Map deprecated aliases to canonical service classes
-    # Each entry: deprecated_alias -> (module_path, canonical_name)
-    # -------------------------------------------------------------------------
-    _deprecated_aliases: dict[str, tuple[str, str]] = {
-        "ModelProtocolAuditor": (
-            "omnibase_core.services.service_protocol_auditor",
-            "ServiceProtocolAuditor",
-        ),
-        "ProtocolContractValidator": (
-            "omnibase_core.services.service_contract_validator",
-            "ServiceContractValidator",
-        ),
-        "ProtocolMigrator": (
-            "omnibase_core.services.service_protocol_migrator",
-            "ServiceProtocolMigrator",
-        ),
-        "ModelValidationSuite": (
-            "omnibase_core.services.service_validation_suite",
-            "ServiceValidationSuite",
-        ),
-    }
-
-    # Emit deprecation warning for deprecated aliases
-    if name in _deprecated_aliases:
-        module_path, new_name = _deprecated_aliases[name]
-        warnings.warn(
-            f"'{name}' is deprecated, use '{new_name}' from '{module_path}' instead",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-
-    # -------------------------------------------------------------------------
-    # Consolidated lazy imports: Canonical names and deprecated aliases
-    # grouped by source module to avoid duplicate import statements
-    # -------------------------------------------------------------------------
-
-    # ServiceProtocolAuditor and its alias ModelProtocolAuditor
-    if name in {"ServiceProtocolAuditor", "ModelProtocolAuditor"}:
+    """Lazy import for service classes to avoid circular imports."""
+    if name == "ServiceProtocolAuditor":
         from omnibase_core.services.service_protocol_auditor import (
             ServiceProtocolAuditor,
         )
 
         return ServiceProtocolAuditor
 
-    # ServiceContractValidator and its alias ProtocolContractValidator
-    if name in {"ServiceContractValidator", "ProtocolContractValidator"}:
+    if name == "ServiceContractValidator":
         from omnibase_core.services.service_contract_validator import (
             ServiceContractValidator,
         )
 
         return ServiceContractValidator
 
-    # ServiceProtocolMigrator and its alias ProtocolMigrator
-    if name in {"ServiceProtocolMigrator", "ProtocolMigrator"}:
+    if name == "ServiceProtocolMigrator":
         from omnibase_core.services.service_protocol_migrator import (
             ServiceProtocolMigrator,
         )
 
         return ServiceProtocolMigrator
 
-    # ModelValidationSuite (alias) - ServiceValidationSuite already imported at top
-    if name == "ModelValidationSuite":
-        return ServiceValidationSuite
-
     raise AttributeError(  # error-ok: required for __getattr__ protocol
         f"module {__name__!r} has no attribute {name!r}"
     )
 
 
-from .contracts import (
+# Import FSM analysis
+# Import workflow linter
+from .checker_workflow_linter import WorkflowLinter
+from .validator_contracts import (
     validate_contracts_directory,
     validate_no_manual_yaml,
     validate_yaml_file,
 )
-
-# Import FSM analysis
-from .fsm_analysis import analyze_fsm
-from .patterns import validate_patterns_directory, validate_patterns_file
+from .validator_fsm_analysis import analyze_fsm
+from .validator_patterns import validate_patterns_directory, validate_patterns_file
 
 # Import reserved enum validator (OMN-669, OMN-675)
 # - validate_execution_mode takes EnumExecutionMode (type-safe, for validated enum values)
 # - Rejects CONDITIONAL/STREAMING modes reserved for future versions
 # - For string input (e.g., YAML config), use validate_execution_mode_string instead
-from .reserved_enum_validator import RESERVED_EXECUTION_MODES, validate_execution_mode
-from .types import validate_union_usage_directory, validate_union_usage_file
-from .validation_utils import ModelProtocolInfo, validate_protocol_compliance
+from .validator_reserved_enum import RESERVED_EXECUTION_MODES, validate_execution_mode
+from .validator_types import validate_union_usage_directory, validate_union_usage_file
+from .validator_utils import ModelProtocolInfo, validate_protocol_compliance
+from .validator_workflow import (
+    ModelCycleDetectionResult,
+    ModelDependencyValidationResult,
+    ModelIsolatedStepResult,
+    ModelUniqueNameResult,
+    ModelWorkflowValidationResult,
+    WorkflowValidator,
+    validate_dag_with_disabled_steps,
+    validate_execution_mode_string,
+    validate_unique_step_ids,
+    validate_workflow_definition,
+)
+
+# Import workflow constants (OMN-PR255)
+from .validator_workflow_constants import (
+    MAX_TIMEOUT_MS,
+    MIN_TIMEOUT_MS,
+    RESERVED_STEP_TYPES,
+    VALID_STEP_TYPES,
+)
 
 # Import common validators (OMN-1054)
 from .validators import (
@@ -261,29 +216,6 @@ from .validators import (
     validate_uuid,
 )
 
-# Import workflow constants (OMN-PR255)
-from .workflow_constants import (
-    MAX_TIMEOUT_MS,
-    MIN_TIMEOUT_MS,
-    RESERVED_STEP_TYPES,
-    VALID_STEP_TYPES,
-)
-
-# Import workflow linter
-from .workflow_linter import WorkflowLinter
-from .workflow_validator import (
-    ModelCycleDetectionResult,
-    ModelDependencyValidationResult,
-    ModelIsolatedStepResult,
-    ModelUniqueNameResult,
-    ModelWorkflowValidationResult,
-    WorkflowValidator,
-    validate_dag_with_disabled_steps,
-    validate_execution_mode_string,
-    validate_unique_step_ids,
-    validate_workflow_definition,
-)
-
 
 # Main validation functions (recommended interface)
 def validate_architecture(
@@ -291,8 +223,6 @@ def validate_architecture(
     max_violations: int = 0,
 ) -> ModelValidationResult[None]:
     """Validate ONEX one-model-per-file architecture."""
-    from pathlib import Path
-
     return validate_architecture_directory(Path(directory_path), max_violations)
 
 
@@ -334,23 +264,17 @@ def validate_all(
 __all__ = [
     # Core classes and types
     "CircularImportValidator",
-    "CircularImportValidationResult",  # Backwards compat alias
-    "ModelImportValidationResult",  # Canonical name (OMN-1126)
+    "ModelImportValidationResult",
     "ExceptionConfigurationError",
     "EnumImportStatus",
     "ModelContractValidationResult",
     "ModelModuleImportResult",
     "ModelValidationResult",
-    # OMN-1071: Canonical service classes (in services/)
+    # Service classes (lazy-loaded to avoid circular imports)
     "ServiceContractValidator",
     "ServiceProtocolAuditor",
     "ServiceProtocolMigrator",
     "ServiceValidationSuite",
-    # OMN-1071: Deprecated aliases (will be removed in future version)
-    "ProtocolContractValidator",  # DEPRECATED: Use ServiceContractValidator instead
-    "ModelProtocolAuditor",  # DEPRECATED: Use ServiceProtocolAuditor instead
-    "ProtocolMigrator",  # DEPRECATED: Use ServiceProtocolMigrator instead
-    "ModelValidationSuite",  # DEPRECATED: Use ServiceValidationSuite instead
     # Other exports
     "ExceptionInputValidationError",
     "ModelProtocolInfo",
@@ -399,6 +323,9 @@ __all__ = [
     "ModelContractValidationEvent",
     "ContractValidationEventType",
     "ContractValidationInvariantChecker",
+    # Contract validation pipeline (OMN-1128)
+    "ContractValidationPipeline",
+    "ModelExpandedContractResult",
     # Reserved enum validation (OMN-669, OMN-675)
     # NOTE: validate_execution_mode takes EnumExecutionMode (type-safe)
     # while validate_execution_mode_string takes str (for YAML/config parsing)

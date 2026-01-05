@@ -16,7 +16,7 @@ from unittest.mock import patch
 
 import pytest
 
-from omnibase_core.validation.types import (
+from omnibase_core.validation.validator_types import (
     validate_union_usage_cli,
     validate_union_usage_directory,
     validate_union_usage_file,

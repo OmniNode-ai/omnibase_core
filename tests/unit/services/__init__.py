@@ -7,7 +7,7 @@ Unit tests for omnibase_core services.
 This package contains unit tests for service implementations in omnibase_core.
 Tests are organized by service category:
 
-- registry/: Tests for RegistryProvider and RegistryCapability (OMN-1156)
+- registry/: Tests for ServiceRegistryProvider and ServiceRegistryCapability (OMN-1156)
 
 OMN-1156: Registry services for capability and provider management.
 """
