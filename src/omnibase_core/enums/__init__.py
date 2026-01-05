@@ -118,6 +118,9 @@ from .enum_handler_role import EnumHandlerRole
 from .enum_handler_type import EnumHandlerType
 from .enum_handler_type_category import EnumHandlerTypeCategory
 
+# Hash algorithm enum (handler packaging OMN-1119)
+from .enum_hash_algorithm import EnumHashAlgorithm
+
 # Header and query parameter transformation enums
 from .enum_header_transformation_type import EnumHeaderTransformationType
 
@@ -413,6 +416,8 @@ __all__ = [
     # Handler type domain (runtime handler registry)
     "EnumHandlerType",
     "EnumHandlerTypeCategory",
+    # Hash algorithm domain (handler packaging OMN-1119)
+    "EnumHashAlgorithm",
     # Version and contract domain
     "EnumVersionStatus",
     "EnumContractCompliance",

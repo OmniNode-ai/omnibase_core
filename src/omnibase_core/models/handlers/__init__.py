@@ -208,6 +208,7 @@ from omnibase_core.models.handlers.model_artifact_ref import ModelArtifactRef
 from omnibase_core.models.handlers.model_handler_descriptor import (
     ModelHandlerDescriptor,
 )
+from omnibase_core.models.handlers.model_handler_packaging import ModelHandlerPackaging
 from omnibase_core.models.handlers.model_handler_type_metadata import (
     ModelHandlerTypeMetadata,
     get_handler_type_metadata,
@@ -216,6 +217,9 @@ from omnibase_core.models.handlers.model_identifier import ModelIdentifier
 from omnibase_core.models.handlers.model_packaging_metadata_ref import (
     ModelPackagingMetadataRef,
 )
+from omnibase_core.models.handlers.model_sandbox_requirements import (
+    ModelSandboxRequirements,
+)
 from omnibase_core.models.handlers.model_security_metadata_ref import (
     ModelSecurityMetadataRef,
 )
@@ -223,9 +227,11 @@ from omnibase_core.models.handlers.model_security_metadata_ref import (
 __all__ = [
     "ModelArtifactRef",
     "ModelHandlerDescriptor",
+    "ModelHandlerPackaging",
     "ModelHandlerTypeMetadata",
     "ModelIdentifier",
     "ModelPackagingMetadataRef",
+    "ModelSandboxRequirements",
     "ModelSecurityMetadataRef",
     "get_handler_type_metadata",
 ]
