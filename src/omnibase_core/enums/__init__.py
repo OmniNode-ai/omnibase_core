@@ -40,6 +40,9 @@ from .enum_circuit_breaker_state import EnumCircuitBreakerState
 # Error code enums
 from .enum_cli_exit_code import EnumCLIExitCode
 
+# Comparison type enum (OMN-1207)
+from .enum_comparison_type import EnumComparisonType
+
 # Computation and processing enums
 from .enum_computation_type import EnumComputationType
 
@@ -485,7 +488,8 @@ __all__ = [
     "EnumTokenType",
     "EnumTriggerEvent",
     "EnumLikelihood",
-    # Invariant domain (OMN-1192)
+    # Invariant domain (OMN-1192, OMN-1207)
+    "EnumComparisonType",
     "EnumInvariantSeverity",
     "EnumInvariantType",
     # Event sink type domain (OMN-1151)
