@@ -57,8 +57,6 @@ See Also:
     - EnumSignatureAlgorithm: Supported signature algorithms
 """
 
-import re
-
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -72,9 +70,6 @@ from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 # Allowed artifact reference schemes (v1)
 _ALLOWED_SCHEMES = frozenset({"https://", "file:///", "oci://", "registry://"})
-
-# Pattern for SHA256 hash validation (64 lowercase hex chars)
-_SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
 
 
 def _validate_artifact_reference(reference: str) -> bool:
@@ -265,7 +260,7 @@ class ModelHandlerPackaging(BaseModel):
     @classmethod
     def validate_integrity_hash_format(cls, value: str) -> str:
         """Validate integrity hash is valid SHA256 format."""
-        if not _SHA256_PATTERN.match(value):
+        if not EnumHashAlgorithm.SHA256.validate_hash(value):
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=(
@@ -324,11 +319,8 @@ class ModelHandlerPackaging(BaseModel):
 
         if has_algo and not has_ref:
             # Safe to access .value since has_algo ensures signature_algorithm is not None
-            algo_value = (
-                self.signature_algorithm.value
-                if self.signature_algorithm
-                else "unknown"
-            )
+            assert self.signature_algorithm is not None  # for type narrowing
+            algo_value = self.signature_algorithm.value
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=(

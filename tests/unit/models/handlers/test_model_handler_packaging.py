@@ -7,6 +7,7 @@ from pydantic import ValidationError
 
 from omnibase_core.enums.enum_hash_algorithm import EnumHashAlgorithm
 from omnibase_core.enums.enum_signature_algorithm import EnumSignatureAlgorithm
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.handlers.model_handler_packaging import ModelHandlerPackaging
 from omnibase_core.models.handlers.model_sandbox_requirements import (
     ModelSandboxRequirements,
@@ -133,7 +134,7 @@ class TestModelHandlerPackagingArtifactReferenceValidation:
 
     def test_invalid_raw_local_path_rejected(self) -> None:
         """Test raw local path without file:// scheme is rejected."""
-        with pytest.raises(Exception) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             ModelHandlerPackaging(
                 artifact_reference="/opt/handlers/validator.whl",
                 integrity_hash=VALID_SHA256_HASH,
@@ -144,7 +145,7 @@ class TestModelHandlerPackagingArtifactReferenceValidation:
 
     def test_invalid_http_artifact_rejected(self) -> None:
         """Test HTTP (not HTTPS) artifact reference is rejected."""
-        with pytest.raises(Exception) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             ModelHandlerPackaging(
                 artifact_reference="http://example.com/handler.whl",
                 integrity_hash=VALID_SHA256_HASH,
@@ -155,7 +156,7 @@ class TestModelHandlerPackagingArtifactReferenceValidation:
 
     def test_invalid_unknown_scheme_rejected(self) -> None:
         """Test unknown scheme is rejected."""
-        with pytest.raises(Exception) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             ModelHandlerPackaging(
                 artifact_reference="ftp://example.com/handler.whl",
                 integrity_hash=VALID_SHA256_HASH,
@@ -191,8 +192,12 @@ class TestModelHandlerPackagingIntegrityHashValidation:
         assert packaging.integrity_hash == valid_hash
 
     def test_invalid_hash_wrong_length_rejected(self) -> None:
-        """Test hash with wrong length is rejected."""
-        with pytest.raises(Exception) as exc_info:
+        """Test hash with wrong length is rejected.
+
+        Note: Pydantic's min_length=64 constraint catches this before
+        the custom validator runs, so we expect ValidationError.
+        """
+        with pytest.raises(ValidationError) as exc_info:
             ModelHandlerPackaging(
                 artifact_reference=VALID_HTTPS_ARTIFACT,
                 integrity_hash="a" * 63,  # 63 chars - too short
@@ -200,11 +205,11 @@ class TestModelHandlerPackagingIntegrityHashValidation:
                 min_runtime_version=ModelSemVer(major=0, minor=6, patch=0),
             )
         error_str = str(exc_info.value)
-        assert "Invalid integrity_hash" in error_str or "64" in error_str
+        assert "64" in error_str or "string_too_short" in error_str
 
     def test_invalid_hash_uppercase_rejected(self) -> None:
         """Test hash with uppercase chars is rejected."""
-        with pytest.raises(Exception) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             ModelHandlerPackaging(
                 artifact_reference=VALID_HTTPS_ARTIFACT,
                 integrity_hash="A" * 64,  # uppercase
@@ -215,7 +220,7 @@ class TestModelHandlerPackagingIntegrityHashValidation:
 
     def test_invalid_hash_non_hex_rejected(self) -> None:
         """Test hash with non-hex chars is rejected."""
-        with pytest.raises(Exception) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             ModelHandlerPackaging(
                 artifact_reference=VALID_HTTPS_ARTIFACT,
                 integrity_hash="g" * 64,  # 'g' is not hex
@@ -257,7 +262,7 @@ class TestModelHandlerPackagingSignatureValidation:
 
     def test_signature_reference_without_algorithm_rejected(self) -> None:
         """Test signature_reference without signature_algorithm is rejected."""
-        with pytest.raises(Exception) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             ModelHandlerPackaging(
                 artifact_reference=VALID_HTTPS_ARTIFACT,
                 integrity_hash=VALID_SHA256_HASH,
@@ -270,7 +275,7 @@ class TestModelHandlerPackagingSignatureValidation:
 
     def test_signature_algorithm_without_reference_rejected(self) -> None:
         """Test signature_algorithm without signature_reference is rejected."""
-        with pytest.raises(Exception) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             ModelHandlerPackaging(
                 artifact_reference=VALID_HTTPS_ARTIFACT,
                 integrity_hash=VALID_SHA256_HASH,
@@ -295,7 +300,7 @@ class TestModelHandlerPackagingSignatureValidation:
 
     def test_non_ed25519_signature_algorithm_rejected(self) -> None:
         """Test non-ED25519 signature algorithms are rejected (v1)."""
-        with pytest.raises(Exception) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             ModelHandlerPackaging(
                 artifact_reference=VALID_HTTPS_ARTIFACT,
                 integrity_hash=VALID_SHA256_HASH,
@@ -313,7 +318,7 @@ class TestModelHandlerPackagingVersionValidation:
 
     def test_min_greater_than_max_rejected(self) -> None:
         """Test min_runtime_version > max_runtime_version is rejected."""
-        with pytest.raises(Exception) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             ModelHandlerPackaging(
                 artifact_reference=VALID_HTTPS_ARTIFACT,
                 integrity_hash=VALID_SHA256_HASH,

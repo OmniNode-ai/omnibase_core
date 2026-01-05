@@ -59,6 +59,7 @@ import pytest
 
 from omnibase_core.enums.enum_hash_algorithm import EnumHashAlgorithm
 from omnibase_core.enums.enum_signature_algorithm import EnumSignatureAlgorithm
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.handlers.model_handler_packaging import ModelHandlerPackaging
 from omnibase_core.models.handlers.model_sandbox_requirements import (
     ModelSandboxRequirements,
@@ -228,6 +229,7 @@ class SimulatedPackageVerifier:
         try:
             content = await self.download_artifact(packaging.artifact_reference)
         except Exception as e:
+            # boundary-ok: download failures can be network errors, timeouts, or server errors
             return VerificationResult(
                 success=False,
                 error_message=f"Download failed: {e}",
@@ -263,6 +265,7 @@ class SimulatedPackageVerifier:
                         signature_verified=False,
                     )
             except Exception as e:
+                # boundary-ok: signature download failures must not crash verification
                 return VerificationResult(
                     success=False,
                     error_message=f"Signature download failed: {e}",
@@ -963,7 +966,7 @@ class TestHandlerPackagingVerificationWorkflow:
             assert packaging.artifact_reference.startswith(scheme)
 
         # Invalid: raw local path
-        with pytest.raises(Exception):  # ModelOnexError
+        with pytest.raises(ModelOnexError):
             ModelHandlerPackaging(
                 artifact_reference="/path/to/local/handler.py",  # No scheme!
                 integrity_hash="a" * 64,
