@@ -53,6 +53,12 @@ allowed_files:
     added: "2026-01-02"
     review: "2026-07-02"
 
+  - file: "src/omnibase_core/cli/cli_contract.py"
+    reason: "CLI tool for comparing arbitrary user-provided contract YAML/JSON files - must load raw YAML
+      to support comparing contracts with unknown or evolving schemas for diff rendering"
+    added: "2026-01-05"
+    review: "2026-07-05"
+
 # Specific filenames that are allowed (matched by basename)
 # Allows the same utility to be used across different module paths (e.g., copied utilities)
 allowed_filenames:

@@ -246,6 +246,11 @@ from omnibase_core.protocols.schema import ProtocolSchemaLoader, ProtocolSchemaM
 from omnibase_core.protocols.services import ProtocolSecretService
 
 # =============================================================================
+# Storage Module Exports (OMN-1149)
+# =============================================================================
+from omnibase_core.protocols.storage import ProtocolDiffStore
+
+# =============================================================================
 # Types Module Exports
 # =============================================================================
 from omnibase_core.protocols.types import (
@@ -494,4 +499,8 @@ __all__ = [
     "ProtocolEffectRecorder",
     "ProtocolRNGService",
     "ProtocolTimeService",
+    # ==========================================================================
+    # Storage Module (OMN-1149)
+    # ==========================================================================
+    "ProtocolDiffStore",
 ]
