@@ -74,8 +74,10 @@ class ModelEventDestination(BaseModel):
         file_path: File path for file destinations.
         topic: Kafka topic for Kafka destinations.
         bootstrap_servers: Kafka bootstrap servers for Kafka destinations.
-        buffer_size: Buffer size for batched event writing.
-        flush_interval_ms: Flush interval in milliseconds.
+        buffer_size: Number of events to buffer before auto-flush. Default of 100
+            balances memory usage vs I/O frequency.
+        flush_interval_ms: Flush interval in milliseconds. Default of 5000ms
+            ensures events are persisted within reasonable time even under low load.
 
     Example:
         >>> from omnibase_core.models.validation.model_event_destination import (
@@ -146,15 +148,21 @@ class ModelEventDestination(BaseModel):
 
     buffer_size: int = Field(
         default=100,
-        description="Buffer size for batched event writing.",
+        description="Number of events to buffer before auto-flush. Default of 100 "
+        "balances memory usage vs I/O frequency. Increase for high-throughput "
+        "scenarios (reduces I/O overhead), decrease for low-latency scenarios "
+        "(faster persistence). Range: 1-10000.",
         ge=1,
         le=10000,
     )
 
     flush_interval_ms: int = Field(
         default=5000,
-        description="Flush interval in milliseconds. Events are flushed "
-        "when buffer is full or interval elapses.",
+        description="Flush interval in milliseconds. Events are flushed when buffer "
+        "is full or this interval elapses, whichever comes first. Default of 5000ms "
+        "(5 seconds) ensures events are persisted within reasonable time even under "
+        "low load. Decrease for lower latency (more frequent I/O), increase for "
+        "higher throughput (batches more events). Range: 100-60000ms.",
         ge=100,
         le=60000,
     )

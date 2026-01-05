@@ -41,6 +41,11 @@ class SinkMemory:
         This sink is NOT thread-safe. Use thread-local instances or
         external synchronization for concurrent access.
 
+    Event Ordering:
+        Events are stored in insertion order. Calls to `get_events()` return
+        events in the same order they were written, enabling deterministic
+        replay and testing of event sequences.
+
     Example:
         >>> sink = SinkMemory(name="test")
         >>> await sink.write(event)
