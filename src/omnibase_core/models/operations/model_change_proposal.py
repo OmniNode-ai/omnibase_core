@@ -33,19 +33,68 @@ from omnibase_core.enums.enum_change_type import EnumChangeType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
-__all__ = ["EnumChangeType", "ModelChangeProposal"]
+__all__ = ["ChangeConfigDict", "EnumChangeType", "ModelChangeProposal"]
 
-# URL validation pattern - supports domains, IPs, localhost, and simple hostnames
+# Type alias for configuration dictionaries used in change proposals.
+# Values can be any JSON-serializable type (str, int, float, bool, list, dict, None).
+# Named ChangeConfigDict to avoid conflict with pydantic.ConfigDict.
+ChangeConfigDict = dict[str, object]
+
+# =============================================================================
+# URL Validation Pattern Components
+# =============================================================================
+# This regex validates URLs for endpoint_change proposals. It supports:
+# - HTTP and HTTPS protocols
+# - Domain names with TLDs (e.g., example.com, api.example.co.uk)
+# - localhost for local development
+# - IPv4 addresses (0.0.0.0 to 255.255.255.255)
+# - Simple hostnames without TLD (e.g., internal-server)
+# - Optional port numbers (e.g., :8080)
+# - Optional paths and query strings
+# =============================================================================
+
+# Protocol: http:// or https://
+_URL_PROTOCOL = r"^https?://"
+
+# Domain with TLD: e.g., example.com, api.example.co.uk
+# - Label: starts with alphanumeric, allows hyphens in middle, ends with alphanumeric
+# - Supports multiple subdomains (label + dot repeated)
+# - TLD: 2-6 uppercase letters (case-insensitive via re.IGNORECASE)
+_URL_DOMAIN_LABEL = r"[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?"
+_URL_DOMAIN_WITH_TLD = rf"(?:{_URL_DOMAIN_LABEL}\.)+[A-Z]{{2,6}}\.?"
+
+# Localhost: for local development URLs
+_URL_LOCALHOST = r"localhost"
+
+# IPv4 address: four octets (0-255) separated by dots
+# - Octet pattern: 250-255, 200-249, 0-199 (with optional leading zeros)
+_URL_IP_OCTET = r"(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)"
+_URL_IP_ADDRESS = rf"({_URL_IP_OCTET}\.){{3}}{_URL_IP_OCTET}"
+
+# Simple hostname: single label without TLD (e.g., internal-server, db01)
+_URL_SIMPLE_HOSTNAME = r"[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?"
+
+# Port: optional colon followed by digits (e.g., :8080, :443)
+_URL_PORT = r"(?::\d+)?"
+
+# Path: optional path, query string, or fragment
+# - Empty path, single slash, or slash/question followed by non-whitespace
+_URL_PATH = r"(?:/?|[/?]\S+)$"
+
+# Combined URL pattern: protocol + host (one of four types) + optional port + optional path
 _URL_PATTERN = re.compile(
-    r"^https?://"  # http:// or https://
-    r"(?:"
-    r"(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}\.?|"  # domain with TLD
-    r"localhost|"  # localhost
-    r"((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)|"  # IP address (0-255 per octet)
-    r"[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?"  # simple hostname (no TLD)
-    r")"
-    r"(?::\d+)?"  # optional port
-    r"(?:/?|[/?]\S+)$",
+    _URL_PROTOCOL
+    + r"(?:"
+    + _URL_DOMAIN_WITH_TLD
+    + r"|"
+    + _URL_LOCALHOST
+    + r"|"
+    + _URL_IP_ADDRESS
+    + r"|"
+    + _URL_SIMPLE_HOSTNAME
+    + r")"
+    + _URL_PORT
+    + _URL_PATH,
     re.IGNORECASE,
 )
 
@@ -133,12 +182,12 @@ class ModelChangeProposal(BaseModel):
         description="Human-readable description of the change",
     )
 
-    before_config: dict[str, object] = Field(
+    before_config: ChangeConfigDict = Field(
         ...,
         description="Current configuration state",
     )
 
-    after_config: dict[str, object] = Field(
+    after_config: ChangeConfigDict = Field(
         ...,
         description="Proposed configuration state",
     )
@@ -194,7 +243,7 @@ class ModelChangeProposal(BaseModel):
 
     @field_validator("before_config", "after_config", mode="after")
     @classmethod
-    def _validate_config_not_empty(cls, v: dict[str, object]) -> dict[str, object]:
+    def _validate_config_not_empty(cls, v: ChangeConfigDict) -> ChangeConfigDict:
         """Validate that before_config and after_config are not empty."""
         if not v:
             raise ValueError("cannot be empty")
@@ -273,12 +322,18 @@ class ModelChangeProposal(BaseModel):
             raise ModelOnexError(
                 message="model_swap requires 'model' or 'model_name' key in before_config",
                 error_code=EnumCoreErrorCode.INVALID_INPUT,
+                change_type=self.change_type,
+                change_id=str(self.change_id),
+                available_keys=list(self.before_config.keys()),
             )
 
         if not after_has_model:
             raise ModelOnexError(
                 message="model_swap requires 'model' or 'model_name' key in after_config",
                 error_code=EnumCoreErrorCode.INVALID_INPUT,
+                change_type=self.change_type,
+                change_id=str(self.change_id),
+                available_keys=list(self.after_config.keys()),
             )
 
     def _validate_config_change(self) -> None:
@@ -299,6 +354,10 @@ class ModelChangeProposal(BaseModel):
             raise ModelOnexError(
                 message="config_change requires at least one common key between before_config and after_config",
                 error_code=EnumCoreErrorCode.INVALID_INPUT,
+                change_type=self.change_type,
+                change_id=str(self.change_id),
+                before_keys=list(before_keys),
+                after_keys=list(after_keys),
             )
 
     def _validate_endpoint_change(self) -> None:
@@ -327,6 +386,10 @@ class ModelChangeProposal(BaseModel):
             raise ModelOnexError(
                 message="endpoint_change requires 'url' or 'endpoint' key in at least one config",
                 error_code=EnumCoreErrorCode.INVALID_INPUT,
+                change_type=self.change_type,
+                change_id=str(self.change_id),
+                before_keys=list(self.before_config.keys()),
+                after_keys=list(self.after_config.keys()),
             )
 
         # Validate URL format for any url/endpoint values found
@@ -359,8 +422,8 @@ class ModelChangeProposal(BaseModel):
         cls,
         change_type: EnumChangeType | str,
         description: str,
-        before_config: dict[str, object],
-        after_config: dict[str, object],
+        before_config: ChangeConfigDict,
+        after_config: ChangeConfigDict,
         rationale: str,
         *,
         change_id: UUID | None = None,
@@ -807,8 +870,8 @@ class ModelChangeProposal(BaseModel):
         new_model: str,
         description: str,
         rationale: str,
-        before_config: dict[str, object],
-        after_config: dict[str, object],
+        before_config: ChangeConfigDict,
+        after_config: ChangeConfigDict,
         *,
         change_id: UUID | None = None,
         proposed_by: str | None = None,

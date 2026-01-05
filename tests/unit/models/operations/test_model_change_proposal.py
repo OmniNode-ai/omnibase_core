@@ -609,6 +609,111 @@ class TestChangeProposalFactory:
         assert proposal.change_type == EnumChangeType.MODEL_SWAP
         assert isinstance(proposal, ModelChangeProposal)
 
+    def test_create_model_swap_injects_model_names(self) -> None:
+        """create_model_swap injects model names when not present in configs."""
+        proposal = ModelChangeProposal.create_model_swap(
+            old_model="gpt-4",
+            new_model="gpt-4-turbo",
+            description="Upgrade model",
+            rationale="Better performance",
+            before_config={"temperature": 0.7},
+            after_config={"temperature": 0.5},
+        )
+
+        # MODEL_NAME_KEY ("model_name") should be auto-injected
+        assert proposal.before_config["model_name"] == "gpt-4"
+        assert proposal.after_config["model_name"] == "gpt-4-turbo"
+
+    def test_create_model_swap_preserves_existing_model_name(self) -> None:
+        """create_model_swap preserves existing model_name keys in configs."""
+        proposal = ModelChangeProposal.create_model_swap(
+            old_model="gpt-4",
+            new_model="gpt-4-turbo",
+            description="Upgrade model",
+            rationale="Better performance",
+            before_config={"model_name": "existing-old", "temperature": 0.7},
+            after_config={"model_name": "existing-new", "temperature": 0.5},
+        )
+
+        # Existing model_name keys should be preserved, not overwritten
+        assert proposal.before_config["model_name"] == "existing-old"
+        assert proposal.after_config["model_name"] == "existing-new"
+
+    def test_create_model_swap_get_model_names_integration(self) -> None:
+        """create_model_swap proposals work with get_model_names()."""
+        proposal = ModelChangeProposal.create_model_swap(
+            old_model="claude-3",
+            new_model="claude-3.5",
+            description="Upgrade Claude model",
+            rationale="Better capabilities",
+            before_config={"temperature": 0.7},
+            after_config={"temperature": 0.5},
+        )
+
+        model_names = proposal.get_model_names()
+        assert model_names is not None
+        assert model_names["old_model"] == "claude-3"
+        assert model_names["new_model"] == "claude-3.5"
+
+    def test_create_model_swap_with_optional_params(self) -> None:
+        """create_model_swap accepts all optional parameters."""
+        correlation_id = uuid4()
+        change_id = uuid4()
+
+        proposal = ModelChangeProposal.create_model_swap(
+            old_model="gpt-4",
+            new_model="gpt-4-turbo",
+            description="Upgrade model",
+            rationale="Better performance",
+            before_config={"temperature": 0.7},
+            after_config={"temperature": 0.5},
+            change_id=change_id,
+            proposed_by="auto-optimizer",
+            estimated_impact="50% cost reduction",
+            rollback_plan="Revert to gpt-4 config",
+            correlation_id=correlation_id,
+            tags=["performance", "cost"],
+            is_breaking_change=False,
+        )
+
+        assert proposal.change_id == change_id
+        assert proposal.proposed_by == "auto-optimizer"
+        assert proposal.estimated_impact == "50% cost reduction"
+        assert proposal.rollback_plan == "Revert to gpt-4 config"
+        assert proposal.correlation_id == correlation_id
+        assert proposal.tags == ["performance", "cost"]
+        assert proposal.is_breaking_change is False
+
+    def test_create_model_swap_additional_config_preserved(self) -> None:
+        """create_model_swap preserves all additional config fields."""
+        before = {
+            "temperature": 0.7,
+            "max_tokens": 1000,
+            "top_p": 0.9,
+        }
+        after = {
+            "temperature": 0.5,
+            "max_tokens": 2000,
+            "top_p": 0.95,
+        }
+
+        proposal = ModelChangeProposal.create_model_swap(
+            old_model="gpt-4",
+            new_model="gpt-4-turbo",
+            description="Upgrade model",
+            rationale="Better performance",
+            before_config=before,
+            after_config=after,
+        )
+
+        # All original config fields should be preserved
+        assert proposal.before_config["temperature"] == 0.7
+        assert proposal.before_config["max_tokens"] == 1000
+        assert proposal.before_config["top_p"] == 0.9
+        assert proposal.after_config["temperature"] == 0.5
+        assert proposal.after_config["max_tokens"] == 2000
+        assert proposal.after_config["top_p"] == 0.95
+
 
 # =============================================================================
 # Phase 4: Helper Method Tests
