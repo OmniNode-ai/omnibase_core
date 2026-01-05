@@ -21,7 +21,12 @@ Example:
     True
 """
 
+import re
 from enum import Enum
+
+# Compiled regex pattern for SHA256 validation (64 lowercase hex characters)
+# Using regex instead of string membership check for O(n) vs O(n*m) performance
+_SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
 
 
 class EnumHashAlgorithm(str, Enum):
@@ -43,9 +48,19 @@ class EnumHashAlgorithm(str, Enum):
 
     @property
     def expected_length(self) -> int:
-        """Return expected hash length in hex characters."""
+        """
+        Return expected hash length in hex characters.
+
+        v1 Scope:
+            - SHA256 only (64 lowercase hex characters)
+        Future v2:
+            - SHA384 (96 hex chars), SHA512 (128 hex chars)
+            - Update expected_length property and validate_hash logic
+            - Add corresponding _SHA384_PATTERN and _SHA512_PATTERN constants
+        """
         lengths = {
             EnumHashAlgorithm.SHA256: 64,
+            # Future v2: Add SHA384: 96, SHA512: 128
         }
         return lengths[self]
 
@@ -67,10 +82,10 @@ class EnumHashAlgorithm(str, Enum):
             >>> EnumHashAlgorithm.SHA256.validate_hash("a" * 63)  # wrong length
             False
         """
-        if len(hash_value) != self.expected_length:
-            return False
-        # Must be lowercase hex only
-        return all(c in "0123456789abcdef" for c in hash_value)
+        # Use compiled regex for O(n) performance vs O(n*m) string membership check
+        # Regex validates both length (64 chars) AND hex characters in one operation
+        # Future v2: Add pattern selection based on self (SHA384, SHA512)
+        return bool(_SHA256_PATTERN.match(hash_value))
 
 
 __all__ = ["EnumHashAlgorithm"]

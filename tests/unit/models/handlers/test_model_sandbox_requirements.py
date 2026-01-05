@@ -5,6 +5,8 @@
 import pytest
 from pydantic import ValidationError
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.handlers.model_sandbox_requirements import (
     ModelSandboxRequirements,
 )
@@ -163,45 +165,52 @@ class TestModelSandboxRequirementsDomainValidation:
 
     def test_invalid_nested_wildcard_rejected(self) -> None:
         """Test nested wildcard (*.*.example.com) is rejected."""
-        with pytest.raises(Exception) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             ModelSandboxRequirements(allowed_domains=["*.*.example.com"])
-        assert "Invalid domain" in str(exc_info.value)
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert "Invalid domain" in exc_info.value.message
 
     def test_invalid_wildcard_not_at_leftmost_rejected(self) -> None:
         """Test wildcard not at leftmost position is rejected."""
-        with pytest.raises(Exception) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             ModelSandboxRequirements(allowed_domains=["api.*.example.com"])
-        assert "Invalid domain" in str(exc_info.value)
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert "Invalid domain" in exc_info.value.message
 
     def test_invalid_wildcard_in_middle_rejected(self) -> None:
         """Test wildcard in middle of label is rejected."""
-        with pytest.raises(Exception) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             ModelSandboxRequirements(allowed_domains=["a*pi.example.com"])
-        assert "Invalid domain" in str(exc_info.value)
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert "Invalid domain" in exc_info.value.message
 
     def test_invalid_domain_with_scheme_rejected(self) -> None:
         """Test domain with scheme (https://) is rejected."""
-        with pytest.raises(Exception) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             ModelSandboxRequirements(allowed_domains=["https://example.com"])
-        assert "Invalid domain" in str(exc_info.value)
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert "Invalid domain" in exc_info.value.message
 
     def test_invalid_domain_with_path_rejected(self) -> None:
         """Test domain with path is rejected."""
-        with pytest.raises(Exception) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             ModelSandboxRequirements(allowed_domains=["example.com/api"])
-        assert "Invalid domain" in str(exc_info.value)
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert "Invalid domain" in exc_info.value.message
 
     def test_invalid_empty_domain_rejected(self) -> None:
         """Test empty domain string is rejected."""
-        with pytest.raises(Exception) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             ModelSandboxRequirements(allowed_domains=[""])
-        assert "Invalid domain" in str(exc_info.value)
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert "Invalid domain" in exc_info.value.message
 
     def test_invalid_domain_with_consecutive_dots_rejected(self) -> None:
         """Test domain with consecutive dots is rejected."""
-        with pytest.raises(Exception) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             ModelSandboxRequirements(allowed_domains=["api..example.com"])
-        assert "Invalid domain" in str(exc_info.value)
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert "Invalid domain" in exc_info.value.message
 
     def test_valid_single_label_domain(self) -> None:
         """Test valid single label domain (e.g., localhost)."""
@@ -217,15 +226,17 @@ class TestModelSandboxRequirementsDomainValidation:
 
     def test_invalid_domain_starting_with_hyphen_rejected(self) -> None:
         """Test domain label starting with hyphen is rejected."""
-        with pytest.raises(Exception) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             ModelSandboxRequirements(allowed_domains=["-api.example.com"])
-        assert "Invalid domain" in str(exc_info.value)
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert "Invalid domain" in exc_info.value.message
 
     def test_invalid_domain_ending_with_hyphen_rejected(self) -> None:
         """Test domain label ending with hyphen is rejected."""
-        with pytest.raises(Exception) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             ModelSandboxRequirements(allowed_domains=["api-.example.com"])
-        assert "Invalid domain" in str(exc_info.value)
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert "Invalid domain" in exc_info.value.message
 
 
 @pytest.mark.unit
@@ -236,19 +247,19 @@ class TestModelSandboxRequirementsImmutability:
         """Test that requires_network cannot be modified (frozen model)."""
         sandbox = ModelSandboxRequirements(requires_network=True)
         with pytest.raises(ValidationError, match="frozen"):
-            sandbox.requires_network = False  # type: ignore[misc]
+            sandbox.requires_network = False
 
     def test_frozen_immutability_requires_filesystem(self) -> None:
         """Test that requires_filesystem cannot be modified (frozen model)."""
         sandbox = ModelSandboxRequirements(requires_filesystem=True)
         with pytest.raises(ValidationError, match="frozen"):
-            sandbox.requires_filesystem = False  # type: ignore[misc]
+            sandbox.requires_filesystem = False
 
     def test_frozen_immutability_memory_limit(self) -> None:
         """Test that memory_limit_mb cannot be modified (frozen model)."""
         sandbox = ModelSandboxRequirements(memory_limit_mb=1024)
         with pytest.raises(ValidationError, match="frozen"):
-            sandbox.memory_limit_mb = 2048  # type: ignore[misc]
+            sandbox.memory_limit_mb = 2048
 
 
 @pytest.mark.unit
