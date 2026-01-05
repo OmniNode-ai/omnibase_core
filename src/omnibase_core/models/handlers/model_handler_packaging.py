@@ -13,10 +13,30 @@ Design Principles:
     - Sandbox-aware: Includes sandbox requirements for secure execution
 
 Artifact Reference Schemes (v1):
-    - https://...       - HTTPS URL
-    - file:///...       - Local file URL (absolute path)
-    - oci://...         - OCI container registry reference
-    - registry://...    - Internal registry reference
+    - https://...       - HTTPS URL (requires host and path)
+    - file:///...       - Local file URL (absolute path, no host)
+    - oci://...         - OCI container registry reference (requires host and path)
+    - registry://...    - Internal registry reference (requires host and path)
+
+File Scheme Notes:
+    The file:// scheme uses RFC 8089 semantics with three slashes for absolute paths:
+    - file:///path/to/file     - Correct: absolute path on local filesystem
+    - file://localhost/path    - Not supported: use file:/// instead
+    - file://./relative        - Invalid: relative paths not allowed
+    - file:///                  - Invalid: path must be non-empty
+
+    The three slashes consist of: scheme "file:" + "//" for authority + "/" for absolute path.
+    Since we require no host (empty authority), file:/// is the correct format.
+
+IP Address Literals:
+    IP addresses are ALLOWED in the netloc (host) portion of URLs:
+    - https://192.168.1.100:8080/path    - IPv4 address with port
+    - oci://10.0.0.5:5000/org/handler    - IPv4 in OCI reference
+    - registry://[2001:db8::1]:8443/path - IPv6 address (bracketed)
+
+    Validation only checks URL structure, not IP format or reachability.
+    Domain name format and DNS resolution are handled at runtime by the
+    artifact fetcher.
 
 Algorithm Support (v1):
     - Hash: SHA256 only (64 lowercase hex characters)
@@ -260,7 +280,10 @@ class ModelHandlerPackaging(BaseModel):
         description=(
             "URI pointing to the handler artifact. Must use an explicit scheme: "
             "https://, file:///, oci://, or registry://. "
-            "Raw local paths (e.g., /path/to/file) are not allowed."
+            "Raw local paths (e.g., /path/to/file) are not allowed. "
+            "IP address literals (IPv4 and IPv6) are allowed in the host portion. "
+            "For file:// URLs, use three slashes (file:///path) for absolute paths; "
+            "relative paths and hostnames are not supported."
         ),
         min_length=1,
     )

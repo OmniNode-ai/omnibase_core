@@ -68,8 +68,24 @@ def _validate_domain(domain: str) -> bool:
         - Must be a valid hostname (labels separated by dots)
         - Each label: alphanumeric, may contain hyphens (not at start/end)
         - Wildcard (*.) allowed ONLY at leftmost position
-        - No IP literals in v1
+        - No IP literals (see rationale below)
         - No scheme (http://) or path (/foo)
+
+    IP Literal Policy:
+        IP literals (e.g., 192.168.1.1, [::1]) are NOT allowed in allowed_domains.
+        This is intentional and differs from artifact_reference (which allows IPs):
+
+        - **allowed_domains** is a security allowlist for network access control.
+          Domains have clear ownership and can be verified via DNS/TLS certificates.
+          IP addresses lack this trust chain and could be spoofed or reassigned.
+
+        - **artifact_reference** is a location specifier for fetching artifacts.
+          IPs are allowed there because artifact integrity is verified via hash,
+          not network trust. Private registries often use IP addresses.
+
+        For handlers that need to access IP-based services, either:
+        1. Use a domain name that resolves to the IP
+        2. Set allowed_domains to empty list (allows all) with requires_network=True
 
     Args:
         domain: Domain string to validate
@@ -232,7 +248,9 @@ class ModelSandboxRequirements(BaseModel):
                     f"Invalid domain(s) in allowed_domains: {invalid_domains}. "
                     f"Domains must be valid hostnames. Wildcard (*.) is allowed "
                     f"only at the leftmost label (e.g., '*.example.com'). "
-                    f"IP literals, schemes, and paths are not allowed."
+                    f"IP literals (e.g., 192.168.1.1, [::1]), schemes (http://), "
+                    f"and paths (/foo) are not allowed. For IP-based access, use "
+                    f"an empty allowed_domains list with requires_network=True."
                 ),
             )
         return domains
