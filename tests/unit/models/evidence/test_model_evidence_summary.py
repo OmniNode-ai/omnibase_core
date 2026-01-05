@@ -7,6 +7,7 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
+from omnibase_core.errors import ModelOnexError
 from omnibase_core.models.evidence import (
     ModelEvidenceSummary,
 )
@@ -43,8 +44,8 @@ class TestAggregation:
     """Test aggregation of multiple comparisons."""
 
     def test_aggregate_empty_comparisons(self) -> None:
-        """Handle empty comparison list gracefully - raises ValueError."""
-        with pytest.raises(ValueError, match="comparisons cannot be empty"):
+        """Handle empty comparison list gracefully - raises ModelOnexError."""
+        with pytest.raises(ModelOnexError, match="comparisons list cannot be empty"):
             ModelEvidenceSummary.from_comparisons(
                 comparisons=[],
                 corpus_id="corpus-001",
@@ -753,6 +754,283 @@ class TestHeadline:
 
 
 @pytest.mark.unit
+class TestCriticalViolationsIdentification:
+    """Test correct identification of NEW critical violations.
+
+    These tests verify the fix for correctly identifying violations that are
+    in current (replay) but NOT in baseline. A "new critical violation" is:
+    - baseline_passed=True (was passing in baseline)
+    - replay_passed=False (now failing in replay)
+    - severity="critical"
+
+    This is distinct from:
+    - Existing violations (failed in both)
+    - Fixed violations (failed in baseline, passed in replay)
+    - Non-critical new violations (new but warning/info severity)
+    """
+
+    def test_identifies_new_critical_not_existing(self) -> None:
+        """NEW critical violations are correctly identified vs existing ones."""
+        comparisons = [
+            make_comparison(
+                comparison_id="cmp-1",
+                replay_passed=True,
+                violation_deltas=[
+                    # NEW critical: was passing, now failing
+                    {
+                        "type": "output_equivalence",
+                        "severity": "critical",
+                        "baseline_passed": True,
+                        "replay_passed": False,
+                    },
+                    # EXISTING critical: was failing, still failing (NOT new)
+                    {
+                        "type": "data_integrity",
+                        "severity": "critical",
+                        "baseline_passed": False,
+                        "replay_passed": False,
+                    },
+                ],
+            ),
+        ]
+
+        summary = ModelEvidenceSummary.from_comparisons(
+            comparisons=comparisons,
+            corpus_id="corpus-001",
+            baseline_version="v1.0.0",
+            replay_version="v1.1.0",
+        )
+
+        # Only 1 is NEW critical (output_equivalence), not data_integrity
+        assert summary.invariant_violations.new_critical_violations == 1
+        # Both are current violations (failed in replay)
+        assert summary.invariant_violations.by_severity["critical"] == 2
+        # Only 1 is NEW (the output_equivalence)
+        assert summary.invariant_violations.new_violations == 1
+
+    def test_distinguishes_new_critical_from_fixed(self) -> None:
+        """NEW critical violations are distinguished from FIXED ones."""
+        comparisons = [
+            make_comparison(
+                comparison_id="cmp-1",
+                replay_passed=True,
+                violation_deltas=[
+                    # NEW critical: was passing, now failing (regression)
+                    {
+                        "type": "schema_validation",
+                        "severity": "critical",
+                        "baseline_passed": True,
+                        "replay_passed": False,
+                    },
+                    # FIXED critical: was failing, now passing (improvement)
+                    {
+                        "type": "security_check",
+                        "severity": "critical",
+                        "baseline_passed": False,
+                        "replay_passed": True,
+                    },
+                ],
+            ),
+        ]
+
+        summary = ModelEvidenceSummary.from_comparisons(
+            comparisons=comparisons,
+            corpus_id="corpus-001",
+            baseline_version="v1.0.0",
+            replay_version="v1.1.0",
+        )
+
+        # NEW critical: only schema_validation
+        assert summary.invariant_violations.new_critical_violations == 1
+        # Fixed: security_check was fixed
+        assert summary.invariant_violations.fixed_violations == 1
+        # Current critical violations: only schema_validation (security_check passed)
+        assert summary.invariant_violations.by_severity.get("critical", 0) == 1
+
+    def test_new_critical_vs_new_non_critical(self) -> None:
+        """NEW critical are counted separately from NEW non-critical."""
+        comparisons = [
+            make_comparison(
+                comparison_id="cmp-1",
+                replay_passed=True,
+                violation_deltas=[
+                    # NEW critical
+                    {
+                        "type": "output_equivalence",
+                        "severity": "critical",
+                        "baseline_passed": True,
+                        "replay_passed": False,
+                    },
+                    # NEW warning (not critical)
+                    {
+                        "type": "latency",
+                        "severity": "warning",
+                        "baseline_passed": True,
+                        "replay_passed": False,
+                    },
+                    # NEW info (not critical)
+                    {
+                        "type": "cost",
+                        "severity": "info",
+                        "baseline_passed": True,
+                        "replay_passed": False,
+                    },
+                ],
+            ),
+        ]
+
+        summary = ModelEvidenceSummary.from_comparisons(
+            comparisons=comparisons,
+            corpus_id="corpus-001",
+            baseline_version="v1.0.0",
+            replay_version="v1.1.0",
+        )
+
+        # Only 1 is NEW + critical
+        assert summary.invariant_violations.new_critical_violations == 1
+        # All 3 are NEW (passed in baseline, failed in replay)
+        assert summary.invariant_violations.new_violations == 3
+        # Total violations
+        assert summary.invariant_violations.total_violations == 3
+
+    def test_multiple_new_critical_across_comparisons(self) -> None:
+        """NEW critical violations are aggregated across multiple comparisons."""
+        comparisons = [
+            make_comparison(
+                comparison_id="cmp-1",
+                replay_passed=True,
+                violation_deltas=[
+                    # NEW critical #1
+                    {
+                        "type": "output_equivalence",
+                        "severity": "critical",
+                        "baseline_passed": True,
+                        "replay_passed": False,
+                    },
+                ],
+            ),
+            make_comparison(
+                comparison_id="cmp-2",
+                replay_passed=True,
+                violation_deltas=[
+                    # NEW critical #2
+                    {
+                        "type": "schema_validation",
+                        "severity": "critical",
+                        "baseline_passed": True,
+                        "replay_passed": False,
+                    },
+                    # EXISTING critical (not new)
+                    {
+                        "type": "data_integrity",
+                        "severity": "critical",
+                        "baseline_passed": False,
+                        "replay_passed": False,
+                    },
+                ],
+            ),
+            make_comparison(
+                comparison_id="cmp-3",
+                replay_passed=True,
+                violation_deltas=[
+                    # NEW critical #3
+                    {
+                        "type": "security",
+                        "severity": "critical",
+                        "baseline_passed": True,
+                        "replay_passed": False,
+                    },
+                ],
+            ),
+        ]
+
+        summary = ModelEvidenceSummary.from_comparisons(
+            comparisons=comparisons,
+            corpus_id="corpus-001",
+            baseline_version="v1.0.0",
+            replay_version="v1.1.0",
+        )
+
+        # 3 NEW critical violations across all comparisons
+        assert summary.invariant_violations.new_critical_violations == 3
+        # 4 total critical violations (3 new + 1 existing)
+        assert summary.invariant_violations.by_severity["critical"] == 4
+        # 3 NEW violations total (all are critical in this case)
+        assert summary.invariant_violations.new_violations == 3
+
+    def test_new_critical_triggers_reject_recommendation(self) -> None:
+        """Any NEW critical violation should trigger 'reject' recommendation."""
+        # Perfect pass rate but with new critical violation
+        comparisons = [
+            make_comparison(
+                comparison_id=f"cmp-{i}",
+                replay_passed=True,
+                baseline_latency_ms=100.0,
+                replay_latency_ms=90.0,  # Good latency
+                violation_deltas=(
+                    [
+                        {
+                            "type": "output_equivalence",
+                            "severity": "critical",
+                            "baseline_passed": True,  # NEW
+                            "replay_passed": False,
+                        }
+                    ]
+                    if i == 0
+                    else []
+                ),
+            )
+            for i in range(10)
+        ]
+
+        summary = ModelEvidenceSummary.from_comparisons(
+            comparisons=comparisons,
+            corpus_id="corpus-001",
+            baseline_version="v1.0.0",
+            replay_version="v1.1.0",
+        )
+
+        # Despite 100% pass rate and good latency, should reject due to new critical
+        assert summary.pass_rate == 1.0
+        assert summary.invariant_violations.new_critical_violations == 1
+        assert summary.recommendation == "reject"
+
+    def test_existing_critical_does_not_trigger_reject_alone(self) -> None:
+        """EXISTING critical violations (not new) don't force reject by themselves."""
+        comparisons = [
+            make_comparison(
+                comparison_id=f"cmp-{i}",
+                replay_passed=True,
+                violation_deltas=[
+                    {
+                        "type": "known_issue",
+                        "severity": "critical",
+                        "baseline_passed": False,  # EXISTING - was already failing
+                        "replay_passed": False,
+                    },
+                ],
+            )
+            for i in range(10)
+        ]
+
+        summary = ModelEvidenceSummary.from_comparisons(
+            comparisons=comparisons,
+            corpus_id="corpus-001",
+            baseline_version="v1.0.0",
+            replay_version="v1.1.0",
+        )
+
+        # No NEW critical violations
+        assert summary.invariant_violations.new_critical_violations == 0
+        # But there ARE existing critical violations
+        assert summary.invariant_violations.by_severity["critical"] == 10
+        # High pass rate + no new criticals = could be approve
+        # (assuming confidence >= 0.95)
+        assert summary.pass_rate == 1.0
+        assert summary.recommendation == "approve"
+
+
+@pytest.mark.unit
 class TestModelProperties:
     """Test model configuration and properties."""
 
@@ -818,5 +1096,6 @@ __all__ = [
     "TestConfidenceScoring",
     "TestRecommendation",
     "TestHeadline",
+    "TestCriticalViolationsIdentification",
     "TestModelProperties",
 ]

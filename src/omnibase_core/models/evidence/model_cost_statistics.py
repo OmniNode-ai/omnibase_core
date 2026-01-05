@@ -8,6 +8,8 @@ Thread Safety:
     making it thread-safe for concurrent read access.
 """
 
+from typing import cast
+
 from pydantic import BaseModel, ConfigDict
 
 
@@ -74,17 +76,18 @@ class ModelCostStatistics(BaseModel):
         if any(cost is None for cost in replay_costs):
             return None
 
-        # At this point, all values are floats (not None)
-        baseline_values: list[float] = [c for c in baseline_costs if c is not None]
-        replay_values: list[float] = [c for c in replay_costs if c is not None]
+        # At this point, all values are floats (not None) - type narrowing via cast
+        # The None checks above guarantee this, so direct cast is safe
+        baseline_values = cast(list[float], baseline_costs)
+        replay_values = cast(list[float], replay_costs)
 
         # Compute totals
         baseline_total = sum(baseline_values)
         replay_total = sum(replay_values)
 
         # Compute averages
-        baseline_avg = baseline_total / len(baseline_values)
-        replay_avg = replay_total / len(replay_values)
+        baseline_avg = baseline_total / len(baseline_costs)
+        replay_avg = replay_total / len(replay_costs)
 
         # Compute deltas
         delta_total = replay_total - baseline_total

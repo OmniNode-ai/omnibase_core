@@ -17,6 +17,8 @@ from uuid import uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, computed_field
 
+from omnibase_core.enums import EnumCoreErrorCode
+from omnibase_core.errors import ModelOnexError
 from omnibase_core.models.evidence.model_cost_statistics import ModelCostStatistics
 from omnibase_core.models.evidence.model_invariant_violation_breakdown import (
     ModelInvariantViolationBreakdown,
@@ -180,7 +182,7 @@ class ModelEvidenceSummary(BaseModel):
             ModelEvidenceSummary with aggregated metrics.
 
         Raises:
-            ValueError: If comparisons list is empty.
+            ModelOnexError: If comparisons list is empty.
 
         Note:
             **Timestamp handling**: If no valid executed_at timestamps are found
@@ -206,8 +208,11 @@ class ModelEvidenceSummary(BaseModel):
             See ModelCostStatistics.from_cost_values() for the underlying logic.
         """
         if not comparisons:
-            # error-ok: factory method validation, simpler than OnexError for caller
-            raise ValueError("comparisons cannot be empty")
+            raise ModelOnexError(
+                message="comparisons list cannot be empty",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                context={"field": "comparisons", "reason": "empty_list"},
+            )
 
         # Calculate pass/fail counts
         total = len(comparisons)
