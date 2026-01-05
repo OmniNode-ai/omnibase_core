@@ -132,7 +132,14 @@ from omnibase_core.protocols.event_bus import (
 # =============================================================================
 # Handler Module Exports
 # =============================================================================
-from omnibase_core.protocols.handler import ProtocolHandlerContext
+from omnibase_core.protocols.handler import (
+    ProtocolCapabilityDependency,
+    ProtocolExecutionConstrainable,
+    ProtocolExecutionConstraints,
+    ProtocolHandlerBehaviorDescriptor,
+    ProtocolHandlerContext,
+    ProtocolHandlerContract,
+)
 
 # =============================================================================
 # Handlers Module Exports (Handler Type Resolution)
@@ -452,6 +459,12 @@ __all__ = [
     # Handler Module
     # ==========================================================================
     "ProtocolHandlerContext",
+    # Handler Contracts (OMN-1164)
+    "ProtocolCapabilityDependency",
+    "ProtocolExecutionConstrainable",
+    "ProtocolExecutionConstraints",
+    "ProtocolHandlerBehaviorDescriptor",
+    "ProtocolHandlerContract",
     # ==========================================================================
     # Handlers Module (Handler Type Resolution)
     # ==========================================================================
