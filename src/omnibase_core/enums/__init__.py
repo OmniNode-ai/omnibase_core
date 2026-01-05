@@ -28,6 +28,9 @@ from .enum_case_mode import EnumCaseMode
 # Category filter enums
 from .enum_category_filter import EnumCategoryFilter
 
+# Change type enums (OMN-1196)
+from .enum_change_type import EnumChangeType
+
 # Checkpoint-related enums
 from .enum_checkpoint_type import EnumCheckpointType
 
@@ -476,6 +479,8 @@ __all__ = [
     "EnumVectorFilterOperator",
     # Checkpoint domain
     "EnumCheckpointType",
+    # Change type domain (OMN-1196)
+    "EnumChangeType",
     # Token and authentication context domain (OMN-1054)
     "EnumTokenType",
     "EnumTriggerEvent",
