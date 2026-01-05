@@ -74,6 +74,8 @@ Related:
 import copy
 import logging
 import re
+import types
+from collections.abc import Mapping
 from typing import Any
 
 from pydantic import BaseModel
@@ -135,6 +137,50 @@ class ServiceConfigOverrideInjector:
         """
         self.strict_mode = strict_mode
 
+    def _is_frozen_pydantic_model(self, obj: Any) -> bool:
+        """Check if an object is a frozen Pydantic model.
+
+        Frozen Pydantic models cannot be modified after creation. This method
+        detects frozen models by checking the model_config attribute for
+        frozen=True setting.
+
+        Args:
+            obj: The object to check.
+
+        Returns:
+            True if the object is a frozen Pydantic BaseModel, False otherwise.
+
+        Examples:
+            >>> from pydantic import BaseModel, ConfigDict
+            >>> class FrozenModel(BaseModel):
+            ...     model_config = ConfigDict(frozen=True)
+            ...     value: int
+            >>> injector = ServiceConfigOverrideInjector()
+            >>> injector._is_frozen_pydantic_model(FrozenModel(value=1))
+            True
+            >>> class MutableModel(BaseModel):
+            ...     value: int
+            >>> injector._is_frozen_pydantic_model(MutableModel(value=1))
+            False
+        """
+        if not isinstance(obj, BaseModel):
+            return False
+
+        # Check model_config for frozen setting
+        model_config = getattr(obj, "model_config", None)
+        if model_config is None:
+            return False
+
+        # model_config can be a dict or ConfigDict
+        if isinstance(model_config, dict):
+            return model_config.get("frozen", False) is True
+
+        # For ConfigDict or other mapping types
+        if isinstance(model_config, Mapping):
+            return model_config.get("frozen", False) is True
+
+        return False
+
     def _is_valid_path_syntax(self, path: str) -> tuple[bool, str]:
         """Validate dot-path syntax.
 
@@ -190,7 +236,7 @@ class ServiceConfigOverrideInjector:
 
         return (True, "")
 
-    def _get_value_at_path(self, obj: Any, path: str) -> Any:
+    def _get_value_at_path(self, obj: Any, path: str | None) -> Any:
         """Get value at a dot-separated path.
 
         Traverses nested structures (dict, Pydantic model, list/tuple) to
@@ -215,26 +261,44 @@ class ServiceConfigOverrideInjector:
             >>> injector._get_value_at_path(data, "config.missing")
             <MISSING>
         """
-        parts = path.split(".")
+        # Handle None/invalid inputs gracefully
+        if obj is None or path is None:
+            return MISSING
+
+        try:
+            parts = path.split(".")
+        except AttributeError:
+            # boundary-ok: path is not a string-like object
+            return MISSING
+
         current: Any = obj
 
         for part in parts:
             if current is MISSING:
                 return MISSING
 
-            if isinstance(current, dict):
-                current = current.get(part, MISSING)
-            elif isinstance(current, BaseModel):
-                current = getattr(current, part, MISSING)
-            elif isinstance(current, (list, tuple)) and part.isdigit():
-                idx = int(part)
-                if 0 <= idx < len(current):
-                    current = current[idx]
+            try:
+                if isinstance(current, dict):
+                    current = current.get(part, MISSING)
+                elif isinstance(current, BaseModel):
+                    current = getattr(current, part, MISSING)
+                elif isinstance(current, (list, tuple)) and part.isdigit():
+                    idx = int(part)
+                    if 0 <= idx < len(current):
+                        current = current[idx]
+                    else:
+                        current = MISSING
                 else:
-                    current = MISSING
-            else:
-                # Try getattr for other objects
-                current = getattr(current, part, MISSING)
+                    # Try getattr for other objects
+                    current = getattr(current, part, MISSING)
+            except (AttributeError, IndexError, KeyError, TypeError) as e:
+                # boundary-ok: handle edge cases like non-subscriptable types
+                logger.debug(
+                    "Path traversal failed at '%s': %s",
+                    part,
+                    str(e),
+                )
+                return MISSING
 
         return current
 
@@ -264,101 +328,140 @@ class ServiceConfigOverrideInjector:
             >>> data["config"]["timeout"]
             60
         """
+        # Handle None object gracefully
+        if obj is None:
+            return (False, "Cannot set value on None object")
+
         parts = path.split(".")
+
         current: Any = obj
 
         # Navigate to parent of target
         for i, part in enumerate(parts[:-1]):
-            if isinstance(current, dict):
-                if part not in current:
-                    # Create intermediate dict
-                    current[part] = {}
-                current = current[part]
-            elif isinstance(current, BaseModel):
-                # Pydantic models are typically frozen, need special handling
-                child = getattr(current, part, MISSING)
-                if child is MISSING:
-                    return (
-                        False,
-                        f"Cannot create path segment '{part}' in frozen Pydantic model",
-                    )
-                current = child
-            elif isinstance(current, (list, tuple)) and part.isdigit():
-                idx = int(part)
-                if 0 <= idx < len(current):
-                    current = current[idx]
+            try:
+                if isinstance(current, dict):
+                    if part not in current:
+                        # Create intermediate dict
+                        current[part] = {}
+                    current = current[part]
+                elif isinstance(current, BaseModel):
+                    # Pydantic models are typically frozen, need special handling
+                    child = getattr(current, part, MISSING)
+                    if child is MISSING:
+                        return (
+                            False,
+                            f"Cannot create path segment '{part}' in frozen Pydantic model",
+                        )
+                    current = child
+                elif isinstance(current, (list, tuple)) and part.isdigit():
+                    idx = int(part)
+                    if 0 <= idx < len(current):
+                        current = current[idx]
+                    else:
+                        return (
+                            False,
+                            f"Index {idx} out of bounds for list at '{'.'.join(parts[:i])}'",
+                        )
                 else:
                     return (
                         False,
-                        f"Index {idx} out of bounds for list at '{'.'.join(parts[:i])}'",
+                        f"Cannot traverse non-container type {type(current).__name__} "
+                        f"at path segment '{part}'",
                     )
-            else:
+            except (AttributeError, IndexError, KeyError, TypeError) as e:
+                # boundary-ok: handle edge cases during path navigation
                 return (
                     False,
-                    f"Cannot traverse non-container type {type(current).__name__} "
-                    f"at path segment '{part}'",
+                    f"Path navigation failed at '{part}': {e}",
                 )
 
         # Set the final value
         final_part = parts[-1]
-        if isinstance(current, dict):
-            current[final_part] = value
-            return (True, "")
-        elif isinstance(current, BaseModel):
-            # Pydantic models: need to check if field exists and is settable
-            if not hasattr(current, final_part):
-                return (
-                    False,
-                    f"Field '{final_part}' does not exist on Pydantic model "
-                    f"{type(current).__name__}",
-                )
-            try:
-                setattr(current, final_part, value)
+        try:
+            if isinstance(current, dict):
+                current[final_part] = value
                 return (True, "")
-            except (AttributeError, TypeError, ValueError) as e:
-                return (
-                    False,
-                    f"Cannot set field '{final_part}' on Pydantic model: {e}",
-                )
-        elif isinstance(current, list) and final_part.isdigit():
-            idx = int(final_part)
-            if 0 <= idx < len(current):
-                current[idx] = value
-                return (True, "")
+            elif isinstance(current, BaseModel):
+                # Pydantic models: need to check if field exists and is settable
+                if not hasattr(current, final_part):
+                    return (
+                        False,
+                        f"Field '{final_part}' does not exist on Pydantic model "
+                        f"{type(current).__name__}",
+                    )
+                try:
+                    setattr(current, final_part, value)
+                    return (True, "")
+                except (AttributeError, TypeError, ValueError) as e:
+                    # catch-all-ok: Pydantic models may reject values for various reasons
+                    return (
+                        False,
+                        f"Cannot set field '{final_part}' on Pydantic model: {e}",
+                    )
+            elif isinstance(current, list) and final_part.isdigit():
+                idx = int(final_part)
+                if 0 <= idx < len(current):
+                    current[idx] = value
+                    return (True, "")
+                else:
+                    return (
+                        False,
+                        f"Index {idx} out of bounds for list",
+                    )
             else:
                 return (
                     False,
-                    f"Index {idx} out of bounds for list",
+                    f"Cannot set value on {type(current).__name__}",
                 )
-        else:
+        except (AttributeError, IndexError, KeyError, TypeError) as e:
+            # boundary-ok: handle edge cases during value assignment
             return (
                 False,
-                f"Cannot set value on {type(current).__name__}",
+                f"Failed to set value at '{final_part}': {e}",
             )
 
     def _deep_copy_config(self, config: Any) -> Any:
         """Deep copy a configuration object.
 
         Handles both dict and Pydantic model configurations.
-        For Pydantic models, uses model_copy(deep=True).
+        For mutable Pydantic models, uses model_copy(deep=True).
+        For frozen Pydantic models, converts to dict since frozen models
+        cannot be modified after creation.
 
         Args:
             config: The configuration to copy.
 
         Returns:
-            A deep copy of the configuration.
+            A deep copy of the configuration. For frozen Pydantic models,
+            returns a dict representation that can be modified.
 
         Thread Safety:
             This is a pure function that creates a new object.
+
+        Note:
+            Frozen Pydantic models are detected early and converted to dicts
+            to allow modification. This is intentional - if you need to apply
+            overrides to a frozen model, the result must be a dict since the
+            original frozen model's copy would also be frozen.
         """
         if isinstance(config, BaseModel):
+            # Check for frozen models first - they need special handling
+            if self._is_frozen_pydantic_model(config):
+                # Frozen models cannot be modified, so convert to dict
+                # This allows overrides to be applied to the dict representation
+                logger.debug(
+                    "Converting frozen Pydantic model %s to dict for override application",
+                    type(config).__name__,
+                )
+                return copy.deepcopy(config.model_dump())
+            # Mutable Pydantic model - use model_copy
             return config.model_copy(deep=True)
         else:
             return copy.deepcopy(config)
 
     def validate(
         self,
-        overrides: ModelConfigOverrideSet,
+        overrides: ModelConfigOverrideSet | None,
         config: Any,
         injection_point: EnumOverrideInjectionPoint | None = None,
     ) -> ModelConfigOverrideValidation:
@@ -368,8 +471,10 @@ class ServiceConfigOverrideInjector:
         Does NOT modify the original configuration.
 
         Args:
-            overrides: The set of overrides to validate.
-            config: The target configuration to validate against.
+            overrides: The set of overrides to validate. If None, returns
+                a validation result with is_valid=False.
+            config: The target configuration to validate against. If None,
+                all paths will be marked as non-existent.
             injection_point: Optional filter to only validate overrides for
                 a specific injection point. If None, validates all overrides.
 
@@ -387,11 +492,26 @@ class ServiceConfigOverrideInjector:
             ...     for v in validation.violations:
             ...         print(f"Error: {v}")
         """
+        # Handle None overrides gracefully
+        if overrides is None:
+            return ModelConfigOverrideValidation(
+                is_valid=False,
+                violations=("Overrides cannot be None",),
+                warnings=(),
+                suggestions=(),
+                paths_validated=0,
+                type_checks_passed=0,
+            )
+
         violations: list[str] = []
         warnings: list[str] = []
         suggestions: list[str] = []
         paths_validated = 0
         type_checks_passed = 0
+
+        # Handle None config - all paths will be treated as non-existent
+        if config is None:
+            warnings.append("Config is None - all paths will be treated as new")
 
         # Filter overrides by injection point if specified
         overrides_to_check = overrides.overrides
@@ -467,7 +587,7 @@ class ServiceConfigOverrideInjector:
 
     def preview(
         self,
-        overrides: ModelConfigOverrideSet,
+        overrides: ModelConfigOverrideSet | None,
         config: Any,
         injection_point: EnumOverrideInjectionPoint | None = None,
     ) -> ModelConfigOverridePreview:
@@ -477,8 +597,10 @@ class ServiceConfigOverrideInjector:
         override without modifying the original configuration.
 
         Args:
-            overrides: The set of overrides to preview.
-            config: The target configuration to preview against.
+            overrides: The set of overrides to preview. If None, returns
+                an empty preview.
+            config: The target configuration to preview against. If None,
+                all paths will be marked as not existing.
             injection_point: Optional filter to only preview overrides for
                 a specific injection point. If None, previews all overrides.
 
@@ -495,6 +617,14 @@ class ServiceConfigOverrideInjector:
             | Path | Injection Point | Before | After | Status |
             ...
         """
+        # Handle None overrides gracefully
+        if overrides is None:
+            return ModelConfigOverridePreview(
+                field_previews=(),
+                paths_not_found=(),
+                type_mismatches=(),
+            )
+
         field_previews: list[ModelConfigOverrideFieldPreview] = []
         paths_not_found: list[str] = []
         type_mismatches: list[str] = []
@@ -557,7 +687,7 @@ class ServiceConfigOverrideInjector:
 
     def apply(
         self,
-        overrides: ModelConfigOverrideSet,
+        overrides: ModelConfigOverrideSet | None,
         config: Any,
         injection_point: EnumOverrideInjectionPoint | None = None,
     ) -> ModelConfigOverrideResult:
@@ -567,8 +697,10 @@ class ServiceConfigOverrideInjector:
         The original configuration is NEVER modified.
 
         Args:
-            overrides: The set of overrides to apply.
+            overrides: The set of overrides to apply. If None, returns
+                an error result.
             config: The target configuration to patch. Will NOT be modified.
+                If None, returns an error result.
             injection_point: Optional filter to only apply overrides for
                 a specific injection point. If None, applies all overrides.
 
@@ -585,6 +717,26 @@ class ServiceConfigOverrideInjector:
             ...     new_config = result.patched_config
             ...     print(f"Applied {result.overrides_applied} overrides")
         """
+        # Handle None overrides gracefully
+        if overrides is None:
+            return ModelConfigOverrideResult(
+                success=False,
+                patched_config=config,
+                overrides_applied=0,
+                paths_created=(),
+                errors=("Overrides cannot be None",),
+            )
+
+        # Handle None config gracefully
+        if config is None:
+            return ModelConfigOverrideResult(
+                success=False,
+                patched_config=None,
+                overrides_applied=0,
+                paths_created=(),
+                errors=("Config cannot be None",),
+            )
+
         # Deep copy the config to avoid mutating the original
         patched_config = self._deep_copy_config(config)
 
@@ -632,35 +784,84 @@ class ServiceConfigOverrideInjector:
 
     def apply_environment_overlay(
         self,
-        overrides: ModelConfigOverrideSet,
-    ) -> dict[str, str]:
-        """Create an environment variable overlay from overrides.
+        overrides: ModelConfigOverrideSet | None,
+    ) -> types.MappingProxyType[str, str]:
+        """Create an immutable environment variable overlay from overrides.
 
-        Extracts ENVIRONMENT injection point overrides and creates a dict
-        that can be used as an environment overlay. Does NOT mutate os.environ.
+        Extracts ENVIRONMENT injection point overrides and creates an immutable
+        mapping that can be used as an environment overlay. Does NOT mutate
+        os.environ.
 
         The caller is responsible for applying the overlay to their environment
         context (e.g., passing to subprocess or using with os.environ.update()).
 
+        Environment Variable Naming Derivation:
+            The environment variable name is derived from the override path
+            using the **last segment** of the dot-separated path, converted
+            to **uppercase**. This allows for logical grouping in paths while
+            producing conventional environment variable names.
+
+            Path Segment Extraction::
+
+                path.split(".")[-1].upper()
+
+            Examples:
+                - "timeout"              -> "TIMEOUT"
+                - "llm.temperature"      -> "TEMPERATURE"
+                - "config.retry.count"   -> "COUNT"
+                - "my_setting"           -> "MY_SETTING"
+
+            Rationale:
+                - Paths may be hierarchical for organization/grouping purposes
+                - Environment variable names are traditionally SCREAMING_CASE
+                - Using the last segment prevents overly long env var names
+                - Underscores in path segments are preserved (my_var -> MY_VAR)
+
+        Value Conversion:
+            - None values become empty strings ("")
+            - Boolean True becomes "true", False becomes "false"
+            - All other values use str() conversion
+
         Args:
             overrides: The set of overrides to extract environment variables from.
+                If None, returns an empty mapping.
 
         Returns:
-            Dict of environment variable names to string values.
+            Immutable mapping of environment variable names to string values.
             Only includes overrides with injection_point=ENVIRONMENT.
+            Returns MappingProxyType to prevent callers from mutating the result.
 
         Thread Safety:
-            Pure function - returns a new dict, never mutates os.environ.
+            Pure function - returns an immutable mapping, never mutates os.environ.
 
         Example:
+            >>> from omnibase_core.models.replay import ModelConfigOverride, ModelConfigOverrideSet
+            >>> from omnibase_core.enums.replay import EnumOverrideInjectionPoint
+            >>> override = ModelConfigOverride(
+            ...     path="llm.openai.api_key",  # Grouped path
+            ...     value="sk-test-123",
+            ...     injection_point=EnumOverrideInjectionPoint.ENVIRONMENT,
+            ... )
+            >>> override_set = ModelConfigOverrideSet(overrides=(override,))
+            >>> injector = ServiceConfigOverrideInjector()
             >>> overlay = injector.apply_environment_overlay(override_set)
-            >>> # Pass to subprocess
+            >>> dict(overlay)
+            {'API_KEY': 'sk-test-123'}  # Last segment, uppercased
+            >>>
+            >>> # Pass to subprocess (dict() creates a mutable copy if needed)
             >>> subprocess.run(cmd, env={**os.environ, **overlay})
             >>>
             >>> # Or use as context manager (user-provided)
             >>> with env_context(overlay):
             ...     run_handler()
+            >>>
+            >>> # Attempting to mutate raises TypeError
+            >>> overlay["NEW_VAR"] = "value"  # Raises TypeError
         """
+        # Handle None overrides gracefully
+        if overrides is None:
+            return types.MappingProxyType({})
+
         env_overlay: dict[str, str] = {}
 
         for override in overrides.overrides:
@@ -682,7 +883,7 @@ class ServiceConfigOverrideInjector:
 
             env_overlay[env_name] = value_str
 
-        return env_overlay
+        return types.MappingProxyType(env_overlay)
 
 
 __all__ = ["ServiceConfigOverrideInjector", "MISSING"]

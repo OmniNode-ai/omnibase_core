@@ -96,9 +96,16 @@ def config_with_list() -> dict[str, Any]:
 
 
 class SamplePydanticConfig(BaseModel):
-    """Sample Pydantic model for testing override application."""
+    """Sample Pydantic model for testing override application.
 
-    model_config = ConfigDict(extra="forbid")
+    Note:
+        Uses from_attributes=True for pytest-xdist compatibility. When running
+        tests in parallel, xdist workers import classes independently, causing
+        class identity differences. from_attributes=True allows Pydantic to
+        accept valid instances from different worker processes.
+    """
+
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
 
     timeout: int = 30
     debug: bool = False
@@ -106,18 +113,26 @@ class SamplePydanticConfig(BaseModel):
 
 
 class FrozenPydanticConfig(BaseModel):
-    """Frozen Pydantic model for testing immutability."""
+    """Frozen Pydantic model for testing immutability.
 
-    model_config = ConfigDict(frozen=True, extra="forbid")
+    Note:
+        Uses from_attributes=True for pytest-xdist compatibility.
+    """
+
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     timeout: int = 30
     debug: bool = False
 
 
 class NestedPydanticConfig(BaseModel):
-    """Nested Pydantic model for testing deep paths."""
+    """Nested Pydantic model for testing deep paths.
 
-    model_config = ConfigDict(extra="forbid")
+    Note:
+        Uses from_attributes=True for pytest-xdist compatibility.
+    """
+
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
 
     inner: SamplePydanticConfig = SamplePydanticConfig()
     level: int = 1
@@ -330,6 +345,50 @@ class TestPreview:
         assert len(preview.type_mismatches) == 1
         assert "debug" in preview.type_mismatches[0]
 
+    def test_preview_filters_by_injection_point(
+        self,
+        injector: ServiceConfigOverrideInjector,
+        sample_dict_config: dict[str, Any],
+    ) -> None:
+        """Preview filters overrides by injection point when specified."""
+        overrides = ModelConfigOverrideSet(
+            overrides=(
+                ModelConfigOverride(
+                    path="llm.openai.temperature",
+                    value=0.5,
+                    injection_point=EnumOverrideInjectionPoint.HANDLER_CONFIG,
+                ),
+                ModelConfigOverride(
+                    path="env_var",
+                    value="test",
+                    injection_point=EnumOverrideInjectionPoint.ENVIRONMENT,
+                ),
+                ModelConfigOverride(
+                    path="context_var",
+                    value="ctx",
+                    injection_point=EnumOverrideInjectionPoint.CONTEXT,
+                ),
+            )
+        )
+
+        # Only preview HANDLER_CONFIG overrides
+        preview = injector.preview(
+            overrides,
+            sample_dict_config,
+            injection_point=EnumOverrideInjectionPoint.HANDLER_CONFIG,
+        )
+
+        assert len(preview.field_previews) == 1
+        assert preview.field_previews[0].path == "llm.openai.temperature"
+        assert (
+            preview.field_previews[0].injection_point
+            == EnumOverrideInjectionPoint.HANDLER_CONFIG
+        )
+
+        # Preview all (no filter)
+        preview_all = injector.preview(overrides, sample_dict_config)
+        assert len(preview_all.field_previews) == 3
+
 
 # =============================================================================
 # TEST APPLY
@@ -449,7 +508,12 @@ class TestEnvironmentOverlay:
         self,
         injector: ServiceConfigOverrideInjector,
     ) -> None:
-        """Environment overlay creates dict without touching os.environ."""
+        """Environment overlay creates dict without touching os.environ.
+
+        Environment variable names are converted to SCREAMING_SNAKE_CASE
+        (uppercase) by convention. The last segment of the path is used
+        as the variable name.
+        """
         original_environ = dict(os.environ)
 
         overrides = ModelConfigOverrideSet(
@@ -472,9 +536,12 @@ class TestEnvironmentOverlay:
         # os.environ must remain unchanged
         assert dict(os.environ) == original_environ
 
-        # Overlay should contain the environment variables
-        assert "TEST_VAR" in overlay or "test_var" in overlay
-        assert "KEY" in overlay  # Last segment, uppercased
+        # Overlay should contain environment variables in SCREAMING_SNAKE_CASE
+        # The service converts names to uppercase (last segment of path)
+        assert "TEST_VAR" in overlay
+        assert overlay["TEST_VAR"] == "test_value"
+        assert "KEY" in overlay  # Last segment of "api.key", uppercased
+        assert overlay["KEY"] == "secret123"
 
     def test_env_overlay_only_includes_environment_injection_point(
         self,
@@ -531,6 +598,49 @@ class TestEnvironmentOverlay:
         assert overlay["INT_VAR"] == "42"
         assert overlay["BOOL_VAR"] == "true"
         assert overlay["NONE_VAR"] == ""
+
+    def test_env_overlay_is_immutable(
+        self,
+        injector: ServiceConfigOverrideInjector,
+    ) -> None:
+        """Environment overlay returns immutable MappingProxyType.
+
+        The returned overlay cannot be mutated by callers, preventing
+        accidental modification of the overlay that could affect other
+        parts of the system.
+        """
+        import types
+
+        overrides = ModelConfigOverrideSet(
+            overrides=(
+                ModelConfigOverride(
+                    path="test_var",
+                    value="test_value",
+                    injection_point=EnumOverrideInjectionPoint.ENVIRONMENT,
+                ),
+            )
+        )
+
+        overlay = injector.apply_environment_overlay(overrides)
+
+        # Verify return type is MappingProxyType
+        assert isinstance(overlay, types.MappingProxyType)
+
+        # Verify it's readable
+        assert overlay["TEST_VAR"] == "test_value"
+
+        # Verify mutation raises TypeError
+        with pytest.raises(TypeError):
+            overlay["NEW_VAR"] = "should_fail"  # type: ignore[index]
+
+        with pytest.raises(TypeError):
+            del overlay["TEST_VAR"]  # type: ignore[misc]
+
+        # Verify dict() can create mutable copy for subprocess use
+        mutable_copy = dict(overlay)
+        mutable_copy["NEW_VAR"] = "can_add"
+        assert "NEW_VAR" in mutable_copy
+        assert "NEW_VAR" not in overlay
 
 
 # =============================================================================
@@ -651,11 +761,16 @@ class TestPydanticModelConfig:
         assert config.timeout == 30
         assert config.name == "original"
 
-    def test_apply_to_frozen_pydantic_model_fails_gracefully(
+    def test_apply_to_frozen_pydantic_model_converts_to_dict(
         self,
         injector: ServiceConfigOverrideInjector,
     ) -> None:
-        """Apply handles frozen Pydantic models appropriately."""
+        """Apply converts frozen Pydantic models to dict for modification.
+
+        Frozen Pydantic models cannot be modified in place. The service
+        detects frozen models early and converts them to dicts, allowing
+        the overrides to be applied successfully to the dict representation.
+        """
         config = FrozenPydanticConfig(timeout=30, debug=False)
         overrides = ModelConfigOverrideSet(
             overrides=(ModelConfigOverride(path="timeout", value=60),)
@@ -663,10 +778,15 @@ class TestPydanticModelConfig:
 
         result = injector.apply(overrides, config)
 
-        # Frozen models can't be modified in place
-        # The service should report an error
-        assert result.success is False
-        assert len(result.errors) >= 1
+        # Frozen models are converted to dicts, allowing modification
+        assert result.success is True
+        assert result.overrides_applied == 1
+        # Result is a dict, not the original frozen model
+        assert isinstance(result.patched_config, dict)
+        assert result.patched_config["timeout"] == 60
+        assert result.patched_config["debug"] is False
+        # Original frozen model is unchanged
+        assert config.timeout == 30
 
     def test_validate_pydantic_model_paths(
         self,
@@ -706,6 +826,26 @@ class TestPydanticModelConfig:
         assert result.success is True
         assert result.patched_config.inner.timeout == 120
         assert result.patched_config.level == 5
+
+    def test_is_frozen_pydantic_model_detection(
+        self,
+        injector: ServiceConfigOverrideInjector,
+    ) -> None:
+        """The _is_frozen_pydantic_model helper correctly detects frozen models."""
+        # Test frozen model detection
+        frozen_config = FrozenPydanticConfig(timeout=30, debug=False)
+        assert injector._is_frozen_pydantic_model(frozen_config) is True
+
+        # Test mutable model detection
+        mutable_config = SamplePydanticConfig(timeout=30)
+        assert injector._is_frozen_pydantic_model(mutable_config) is False
+
+        # Test non-Pydantic objects
+        assert injector._is_frozen_pydantic_model({"timeout": 30}) is False
+        assert injector._is_frozen_pydantic_model([1, 2, 3]) is False
+        assert injector._is_frozen_pydantic_model("string") is False
+        assert injector._is_frozen_pydantic_model(None) is False
+        assert injector._is_frozen_pydantic_model(42) is False
 
 
 # =============================================================================

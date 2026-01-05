@@ -39,6 +39,10 @@ class ModelConfigOverride(BaseModel):
         ... )
     """
 
+    # from_attributes=True: Enables construction from ORM/dataclass instances
+    # and ensures pytest-xdist compatibility across worker processes where
+    # class identity may differ due to independent imports.
+    # See CLAUDE.md "Pydantic from_attributes=True for Value Objects".
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     path: str = Field(
