@@ -56,6 +56,7 @@ from dataclasses import dataclass
 from typing import Any
 
 import pytest
+from pydantic import ValidationError
 
 from omnibase_core.enums.enum_hash_algorithm import EnumHashAlgorithm
 from omnibase_core.enums.enum_signature_algorithm import EnumSignatureAlgorithm
@@ -1003,7 +1004,7 @@ class TestHandlerPackagingVerificationWorkflow:
         assert packaging_unsigned.signature_algorithm is None
 
         # Invalid: reference without algorithm
-        with pytest.raises(Exception):
+        with pytest.raises(ModelOnexError):
             ModelHandlerPackaging(
                 artifact_reference="https://example.com/handler.py",
                 integrity_hash="a" * 64,
@@ -1014,7 +1015,7 @@ class TestHandlerPackagingVerificationWorkflow:
             )
 
         # Invalid: algorithm without reference
-        with pytest.raises(Exception):
+        with pytest.raises(ModelOnexError):
             ModelHandlerPackaging(
                 artifact_reference="https://example.com/handler.py",
                 integrity_hash="a" * 64,
@@ -1044,14 +1045,14 @@ class TestHandlerPackagingVerificationWorkflow:
         assert len(valid_requirements.allowed_domains) == 3
 
         # Invalid: wildcard not at leftmost position
-        with pytest.raises(Exception):
+        with pytest.raises(ModelOnexError):
             ModelSandboxRequirements(
                 requires_network=True,
                 allowed_domains=["api.*.example.com"],  # Invalid!
             )
 
         # Invalid: contains scheme
-        with pytest.raises(Exception):
+        with pytest.raises(ModelOnexError):
             ModelSandboxRequirements(
                 requires_network=True,
                 allowed_domains=["https://example.com"],  # Has scheme!
@@ -1100,7 +1101,7 @@ class TestHandlerPackagingEdgeCases:
         )
 
         # Invalid: min > max
-        with pytest.raises(Exception):
+        with pytest.raises(ModelOnexError):
             ModelHandlerPackaging(
                 artifact_reference="https://example.com/handler.py",
                 integrity_hash="a" * 64,
@@ -1126,8 +1127,8 @@ class TestHandlerPackagingEdgeCases:
         )
         assert len(packaging.integrity_hash) == 64
 
-        # Invalid: wrong length
-        with pytest.raises(Exception):
+        # Invalid: wrong length (Pydantic field constraint)
+        with pytest.raises(ValidationError):
             ModelHandlerPackaging(
                 artifact_reference="https://example.com/handler.py",
                 integrity_hash="a" * 63,  # Too short
@@ -1135,8 +1136,8 @@ class TestHandlerPackagingEdgeCases:
                 min_runtime_version=ModelSemVer(major=0, minor=6, patch=0),
             )
 
-        # Invalid: uppercase
-        with pytest.raises(Exception):
+        # Invalid: uppercase (custom validator raises ModelOnexError)
+        with pytest.raises(ModelOnexError):
             ModelHandlerPackaging(
                 artifact_reference="https://example.com/handler.py",
                 integrity_hash="A" * 64,  # Uppercase not allowed
@@ -1144,8 +1145,8 @@ class TestHandlerPackagingEdgeCases:
                 min_runtime_version=ModelSemVer(major=0, minor=6, patch=0),
             )
 
-        # Invalid: non-hex characters
-        with pytest.raises(Exception):
+        # Invalid: non-hex characters (custom validator raises ModelOnexError)
+        with pytest.raises(ModelOnexError):
             ModelHandlerPackaging(
                 artifact_reference="https://example.com/handler.py",
                 integrity_hash="g" * 64,  # 'g' is not hex
@@ -1188,12 +1189,12 @@ class TestHandlerPackagingEdgeCases:
         assert max_requirements.memory_limit_mb == 262144
         assert max_requirements.cpu_limit_cores == 256.0
 
-        # Below minimum memory
-        with pytest.raises(Exception):
+        # Below minimum memory (Pydantic field constraint)
+        with pytest.raises(ValidationError):
             ModelSandboxRequirements(memory_limit_mb=32)  # Below 64
 
-        # Above maximum CPU
-        with pytest.raises(Exception):
+        # Above maximum CPU (Pydantic field constraint)
+        with pytest.raises(ValidationError):
             ModelSandboxRequirements(cpu_limit_cores=300.0)  # Above 256
 
     def test_model_immutability(self) -> None:
@@ -1210,12 +1211,12 @@ class TestHandlerPackagingEdgeCases:
             min_runtime_version=ModelSemVer(major=0, minor=6, patch=0),
         )
 
-        # Attempting to modify should raise an error
-        with pytest.raises(Exception):  # ValidationError from Pydantic frozen=True
+        # Attempting to modify should raise an error (Pydantic frozen model)
+        with pytest.raises(ValidationError):
             packaging.integrity_hash = "b" * 64
 
         requirements = ModelSandboxRequirements(memory_limit_mb=512)
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             requirements.memory_limit_mb = 1024
 
     def test_model_repr_for_debugging(self) -> None:

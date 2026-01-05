@@ -57,6 +57,8 @@ See Also:
     - EnumSignatureAlgorithm: Supported signature algorithms
 """
 
+from urllib.parse import urlparse
+
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -69,20 +71,72 @@ from omnibase_core.models.handlers.model_sandbox_requirements import (
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 # Allowed artifact reference schemes (v1)
+# Keys are scheme names, values are tuples of (requires_netloc, requires_path)
+_SCHEME_REQUIREMENTS: dict[str, tuple[bool, bool]] = {
+    "https": (True, True),  # Must have host and path: https://host/path
+    "file": (False, True),  # No host, but must have path: file:///path
+    "oci": (True, True),  # Must have registry and reference: oci://registry/image
+    "registry": (True, True),  # Must have host and path: registry://host/path
+}
+
+# Legacy compatibility - prefix-based matching
 _ALLOWED_SCHEMES = frozenset({"https://", "file:///", "oci://", "registry://"})
 
 
-def _validate_artifact_reference(reference: str) -> bool:
+def _validate_artifact_reference(reference: str) -> tuple[bool, str]:
     """
-    Validate artifact reference uses an allowed URI scheme.
+    Validate artifact reference uses an allowed URI scheme and has proper structure.
+
+    Uses urllib.parse.urlparse() to validate URL structure including:
+    - Scheme is one of: https, file, oci, registry
+    - netloc (host) is present when required by scheme
+    - path is present when required by scheme
 
     Args:
         reference: Artifact reference string
 
     Returns:
-        True if reference starts with an allowed scheme
+        Tuple of (is_valid, error_message). If is_valid is True, error_message
+        is empty. If is_valid is False, error_message describes the issue.
+
+    Example:
+        >>> _validate_artifact_reference("https://example.com/handler.whl")
+        (True, "")
+        >>> _validate_artifact_reference("https://")
+        (False, "https:// URLs must include a host (netloc)")
     """
-    return any(reference.startswith(scheme) for scheme in _ALLOWED_SCHEMES)
+    # Fast prefix check before expensive URL parsing
+    if not any(reference.startswith(scheme) for scheme in _ALLOWED_SCHEMES):
+        return (False, "scheme_not_allowed")
+
+    # Parse URL for structural validation
+    parsed = urlparse(reference)
+    scheme = parsed.scheme.lower()
+
+    # Get requirements for this scheme
+    requirements = _SCHEME_REQUIREMENTS.get(scheme)
+    if requirements is None:
+        return (False, f"Unknown scheme: {scheme}")
+
+    requires_netloc, requires_path = requirements
+
+    # Validate netloc (host) if required
+    if requires_netloc and not parsed.netloc:
+        return (False, f"{scheme}:// URLs must include a host (netloc)")
+
+    # Validate path if required
+    # Note: file:// URLs have the path in parsed.path (e.g., file:///opt/x -> path=/opt/x)
+    # For https/oci/registry, path should be non-empty after the host
+    if requires_path:
+        if scheme == "file":
+            # file:/// URLs: path must be non-empty (absolute path)
+            if not parsed.path or parsed.path == "/":
+                return (False, "file:/// URLs must include a path")
+        # https/oci/registry: path must exist after host
+        elif not parsed.path or parsed.path == "/":
+            return (False, f"{scheme}:// URLs must include a path after the host")
+
+    return (True, "")
 
 
 class ModelHandlerPackaging(BaseModel):
@@ -100,16 +154,44 @@ class ModelHandlerPackaging(BaseModel):
     When a handler descriptor has a packaging_metadata_ref, it resolves to
     an instance of this model.
 
+    Public Key Distribution:
+        When using signature verification (signature_reference + signature_algorithm),
+        the runtime must have access to the public key to verify signatures. Public
+        keys are distributed through one of these mechanisms:
+
+        1. **Embedded in Runtime Configuration**: Public keys for trusted publishers
+           are configured in the runtime's trust store (e.g., via YAML config or
+           environment variables).
+
+        2. **Key Discovery via Well-Known Endpoints**: The runtime can fetch public
+           keys from well-known endpoints based on the artifact source (e.g.,
+           https://keys.example.com/.well-known/onex-keys.json).
+
+        3. **Registry-Provided Keys**: For oci:// and registry:// schemes, the
+           container registry or handler registry may provide the public key as
+           part of its metadata API.
+
+        4. **Signature File Metadata**: The detached signature file (.sig) may
+           include key ID/fingerprint hints that the runtime uses to look up the
+           appropriate public key from its trust store.
+
+        The public key is NOT embedded in this model to avoid key material bloat
+        and to allow key rotation without updating all handler manifests. The
+        signature_reference points to a detached signature file that the runtime
+        verifies using the appropriate public key from its trust store.
+
     Attributes:
         artifact_reference: URI pointing to the handler artifact. Must use an
             explicit scheme (https://, file:///, oci://, registry://). Raw local
-            paths are not allowed for portability.
+            paths are not allowed for portability. URLs must have proper structure
+            including host (for https/oci/registry) and path.
         integrity_hash: SHA256 hash of the artifact (64 lowercase hex chars).
             Used to verify artifact integrity after download.
         hash_algorithm: Hash algorithm used for integrity_hash. v1 supports
             only SHA256.
         signature_reference: Optional URI to detached signature file for
-            cryptographic verification.
+            cryptographic verification. The signature is verified using the
+            public key from the runtime's trust store (see Public Key Distribution).
         signature_algorithm: Algorithm used for signature. v1 supports only
             ED25519. Required if signature_reference is set.
         sandbox_compatibility: Resource constraints and permissions required
@@ -243,15 +325,29 @@ class ModelHandlerPackaging(BaseModel):
     @field_validator("artifact_reference", mode="after")
     @classmethod
     def validate_artifact_reference_scheme(cls, value: str) -> str:
-        """Validate artifact reference uses an allowed URI scheme."""
-        if not _validate_artifact_reference(value):
-            allowed = ", ".join(sorted(_ALLOWED_SCHEMES))
+        """Validate artifact reference uses an allowed URI scheme and structure.
+
+        Validates:
+        - Scheme is one of: https://, file:///, oci://, registry://
+        - URL has proper structure (host and path where required)
+        """
+        is_valid, error_msg = _validate_artifact_reference(value)
+        if not is_valid:
+            if error_msg == "scheme_not_allowed":
+                allowed = ", ".join(sorted(_ALLOWED_SCHEMES))
+                raise ModelOnexError(
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message=(
+                        f"Invalid artifact_reference: '{value}'. "
+                        f"Must use one of the allowed schemes: {allowed}. "
+                        f"Raw local paths are not allowed for portability."
+                    ),
+                )
+            # Structural validation error (missing host/path)
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=(
-                    f"Invalid artifact_reference: '{value}'. "
-                    f"Must use one of the allowed schemes: {allowed}. "
-                    f"Raw local paths are not allowed for portability."
+                    f"Invalid artifact_reference structure: '{value}'. {error_msg}"
                 ),
             )
         return value

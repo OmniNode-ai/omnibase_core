@@ -177,6 +177,108 @@ class TestModelHandlerPackagingArtifactReferenceValidation:
 
 
 @pytest.mark.unit
+class TestModelHandlerPackagingURLStructureValidation:
+    """Tests for URL structure validation using urlparse."""
+
+    def test_https_url_without_host_rejected(self) -> None:
+        """Test HTTPS URL without host is rejected."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelHandlerPackaging(
+                artifact_reference="https:///path/to/handler.whl",
+                integrity_hash=VALID_SHA256_HASH,
+                sandbox_compatibility=ModelSandboxRequirements(),
+                min_runtime_version=ModelSemVer(major=0, minor=6, patch=0),
+            )
+        assert "must include a host" in str(exc_info.value)
+
+    def test_https_url_without_path_rejected(self) -> None:
+        """Test HTTPS URL without path is rejected."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelHandlerPackaging(
+                artifact_reference="https://example.com",
+                integrity_hash=VALID_SHA256_HASH,
+                sandbox_compatibility=ModelSandboxRequirements(),
+                min_runtime_version=ModelSemVer(major=0, minor=6, patch=0),
+            )
+        assert "must include a path" in str(exc_info.value)
+
+    def test_https_url_with_only_slash_path_rejected(self) -> None:
+        """Test HTTPS URL with only root path is rejected."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelHandlerPackaging(
+                artifact_reference="https://example.com/",
+                integrity_hash=VALID_SHA256_HASH,
+                sandbox_compatibility=ModelSandboxRequirements(),
+                min_runtime_version=ModelSemVer(major=0, minor=6, patch=0),
+            )
+        assert "must include a path" in str(exc_info.value)
+
+    def test_oci_url_without_registry_rejected(self) -> None:
+        """Test OCI URL without registry host is rejected."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelHandlerPackaging(
+                artifact_reference="oci:///image:tag",
+                integrity_hash=VALID_SHA256_HASH,
+                sandbox_compatibility=ModelSandboxRequirements(),
+                min_runtime_version=ModelSemVer(major=0, minor=6, patch=0),
+            )
+        assert "must include a host" in str(exc_info.value)
+
+    def test_oci_url_without_image_path_rejected(self) -> None:
+        """Test OCI URL without image path is rejected."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelHandlerPackaging(
+                artifact_reference="oci://ghcr.io",
+                integrity_hash=VALID_SHA256_HASH,
+                sandbox_compatibility=ModelSandboxRequirements(),
+                min_runtime_version=ModelSemVer(major=0, minor=6, patch=0),
+            )
+        assert "must include a path" in str(exc_info.value)
+
+    def test_registry_url_without_host_rejected(self) -> None:
+        """Test registry URL without host is rejected."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelHandlerPackaging(
+                artifact_reference="registry:///org/handler",
+                integrity_hash=VALID_SHA256_HASH,
+                sandbox_compatibility=ModelSandboxRequirements(),
+                min_runtime_version=ModelSemVer(major=0, minor=6, patch=0),
+            )
+        assert "must include a host" in str(exc_info.value)
+
+    def test_file_url_without_path_rejected(self) -> None:
+        """Test file URL without path is rejected."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelHandlerPackaging(
+                artifact_reference="file:///",
+                integrity_hash=VALID_SHA256_HASH,
+                sandbox_compatibility=ModelSandboxRequirements(),
+                min_runtime_version=ModelSemVer(major=0, minor=6, patch=0),
+            )
+        assert "must include a path" in str(exc_info.value)
+
+    def test_valid_urls_with_proper_structure_accepted(self) -> None:
+        """Test valid URLs with proper structure are accepted."""
+        valid_urls = [
+            "https://example.com/path/to/handler.whl",
+            "https://releases.example.com/v1/handlers/my-handler.whl",
+            "oci://ghcr.io/org/handler:v1.0.0",
+            "oci://docker.io/library/python:3.12",
+            "registry://internal.corp/handlers/validator",
+            "file:///opt/handlers/handler.whl",
+            "file:///home/user/handlers/handler.whl",
+        ]
+        for url in valid_urls:
+            packaging = ModelHandlerPackaging(
+                artifact_reference=url,
+                integrity_hash=VALID_SHA256_HASH,
+                sandbox_compatibility=ModelSandboxRequirements(),
+                min_runtime_version=ModelSemVer(major=0, minor=6, patch=0),
+            )
+            assert packaging.artifact_reference == url
+
+
+@pytest.mark.unit
 class TestModelHandlerPackagingIntegrityHashValidation:
     """Tests for integrity_hash validation."""
 
