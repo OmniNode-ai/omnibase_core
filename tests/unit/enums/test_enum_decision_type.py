@@ -4,7 +4,9 @@ Tests serialization/deserialization and basic enum behavior
 for the decision classification type enum.
 """
 
+import copy
 import json
+import pickle
 
 import pytest
 
@@ -120,6 +122,7 @@ class TestEnumDecisionType:
         assert EnumDecisionType.TOOL_SELECTION.is_terminal_decision() is False
         assert EnumDecisionType.ROUTE_CHOICE.is_terminal_decision() is False
         assert EnumDecisionType.RETRY_STRATEGY.is_terminal_decision() is False
+        assert EnumDecisionType.CUSTOM.is_terminal_decision() is False
 
     def test_is_selection_decision(self) -> None:
         """Test is_selection_decision identifies selection-type decisions."""
@@ -132,3 +135,25 @@ class TestEnumDecisionType:
         assert EnumDecisionType.ESCALATION.is_selection_decision() is False
         assert EnumDecisionType.EARLY_TERMINATION.is_selection_decision() is False
         assert EnumDecisionType.RETRY_STRATEGY.is_selection_decision() is False
+        assert EnumDecisionType.CUSTOM.is_selection_decision() is False
+
+    def test_pickle_serialization(self) -> None:
+        """Test enum values can be pickled and unpickled correctly."""
+        for member in EnumDecisionType:
+            # Pickle and unpickle
+            pickled = pickle.dumps(member)
+            unpickled = pickle.loads(pickled)
+            # Verify identity and equality
+            assert unpickled == member
+            assert unpickled is member  # Enum identity preserved
+            assert unpickled.value == member.value
+
+    def test_deep_copy(self) -> None:
+        """Test enum values can be deep copied correctly."""
+        for member in EnumDecisionType:
+            # Deep copy
+            copied = copy.deepcopy(member)
+            # Verify identity and equality
+            assert copied == member
+            assert copied is member  # Enum identity preserved
+            assert copied.value == member.value

@@ -4,7 +4,9 @@ Tests serialization/deserialization and basic enum behavior
 for the failure classification type enum.
 """
 
+import copy
 import json
+import pickle
 
 import pytest
 
@@ -116,6 +118,8 @@ class TestEnumFailureType:
         assert EnumFailureType.INVARIANT_VIOLATION.is_retryable() is False
         assert EnumFailureType.VALIDATION_ERROR.is_retryable() is False
         assert EnumFailureType.COST_EXCEEDED.is_retryable() is False
+        # UNKNOWN is not retryable (unclassified failures should not auto-retry)
+        assert EnumFailureType.UNKNOWN.is_retryable() is False
 
     def test_is_resource_related(self) -> None:
         """Test is_resource_related identifies resource constraint failures."""
@@ -127,3 +131,26 @@ class TestEnumFailureType:
         assert EnumFailureType.INVARIANT_VIOLATION.is_resource_related() is False
         assert EnumFailureType.VALIDATION_ERROR.is_resource_related() is False
         assert EnumFailureType.MODEL_ERROR.is_resource_related() is False
+        # UNKNOWN is not resource-related (unclassified)
+        assert EnumFailureType.UNKNOWN.is_resource_related() is False
+
+    def test_pickle_serialization(self) -> None:
+        """Test enum values can be pickled and unpickled correctly."""
+        for member in EnumFailureType:
+            # Pickle and unpickle
+            pickled = pickle.dumps(member)
+            unpickled = pickle.loads(pickled)
+            # Verify identity and equality
+            assert unpickled == member
+            assert unpickled is member
+            assert unpickled.value == member.value
+
+    def test_deep_copy(self) -> None:
+        """Test enum values can be deep copied correctly."""
+        for member in EnumFailureType:
+            # Deep copy
+            copied = copy.deepcopy(member)
+            # Verify identity (enums are singletons, copy returns same instance)
+            assert copied is member
+            assert copied == member
+            assert copied.value == member.value

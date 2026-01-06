@@ -4,7 +4,9 @@ Tests serialization/deserialization and basic enum behavior
 for the memory ownership subject type enum.
 """
 
+import copy
 import json
+import pickle
 
 import pytest
 
@@ -119,6 +121,8 @@ class TestEnumSubjectType:
         assert EnumSubjectType.WORKFLOW.is_entity_type() is False
         assert EnumSubjectType.PROJECT.is_entity_type() is False
         assert EnumSubjectType.SESSION.is_entity_type() is False
+        # CUSTOM is not an entity type
+        assert EnumSubjectType.CUSTOM.is_entity_type() is False
 
     def test_is_scope_type(self) -> None:
         """Test is_scope_type identifies scope subjects (workflow, project, etc.)."""
@@ -133,6 +137,8 @@ class TestEnumSubjectType:
         assert EnumSubjectType.AGENT.is_scope_type() is False
         assert EnumSubjectType.USER.is_scope_type() is False
         assert EnumSubjectType.SERVICE.is_scope_type() is False
+        # CUSTOM is not a scope type
+        assert EnumSubjectType.CUSTOM.is_scope_type() is False
 
     def test_is_persistent(self) -> None:
         """Test is_persistent identifies subjects with long-term memory."""
@@ -141,5 +147,30 @@ class TestEnumSubjectType:
         assert EnumSubjectType.USER.is_persistent() is True
         assert EnumSubjectType.WORKFLOW.is_persistent() is True
         assert EnumSubjectType.PROJECT.is_persistent() is True
+        # CUSTOM defaults to persistent
+        assert EnumSubjectType.CUSTOM.is_persistent() is True
         # Non-persistent types (ephemeral)
         assert EnumSubjectType.SESSION.is_persistent() is False
+
+    def test_pickle_serialization(self) -> None:
+        """Test enum values can be pickled and unpickled correctly."""
+        for member in EnumSubjectType:
+            # Pickle and unpickle
+            pickled = pickle.dumps(member)
+            unpickled = pickle.loads(pickled)
+            # Verify identity and value
+            assert unpickled == member
+            assert unpickled.value == member.value
+            assert type(unpickled) is EnumSubjectType
+
+    def test_deep_copy(self) -> None:
+        """Test enum values can be deep copied correctly."""
+        for member in EnumSubjectType:
+            # Deep copy
+            copied = copy.deepcopy(member)
+            # Verify identity and value
+            assert copied == member
+            assert copied.value == member.value
+            assert type(copied) is EnumSubjectType
+            # For enums, deep copy should return the same object (singletons)
+            assert copied is member
