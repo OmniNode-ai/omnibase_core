@@ -17,7 +17,7 @@ This is a pure data model with no side effects.
 from datetime import datetime
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class ModelCostEntry(BaseModel):
@@ -111,6 +111,45 @@ class ModelCostEntry(BaseModel):
         ge=0.0,
         description="Running total at time of entry",
     )
+
+    # === Validators ===
+
+    @field_validator("timestamp")
+    @classmethod
+    def validate_timestamp_has_timezone(cls, v: datetime) -> datetime:
+        """Ensure timestamp is timezone-aware.
+
+        Args:
+            v: The timestamp value to validate.
+
+        Returns:
+            The validated timestamp.
+
+        Raises:
+            ValueError: If the timestamp has no timezone info.
+        """
+        if v.tzinfo is None:
+            raise ValueError("timestamp must be timezone-aware (tzinfo cannot be None)")
+        return v
+
+    @model_validator(mode="after")
+    def validate_cumulative_total_ge_cost(self) -> "ModelCostEntry":
+        """Ensure cumulative_total is at least as large as cost.
+
+        The cumulative total represents the running sum of all costs,
+        so it must be greater than or equal to any individual cost entry.
+
+        Returns:
+            The validated model instance.
+
+        Raises:
+            ValueError: If cumulative_total is less than cost.
+        """
+        if self.cumulative_total < self.cost:
+            raise ValueError(
+                f"cumulative_total ({self.cumulative_total}) must be >= cost ({self.cost})"
+            )
+        return self
 
     # === Utility Properties ===
 

@@ -331,6 +331,66 @@ class TestModelCostEntryValidation:
 
         assert entry.cumulative_total == 12345.6789
 
+    def test_naive_timestamp_rejected(self, minimal_entry_data: dict) -> None:
+        """Test that naive datetime (without tzinfo) is rejected."""
+        minimal_entry_data["timestamp"] = datetime(2025, 1, 1, 12, 0, 0)  # No tzinfo
+
+        with pytest.raises(ValidationError) as exc_info:
+            ModelCostEntry(**minimal_entry_data)
+
+        assert "timestamp" in str(exc_info.value)
+        assert "timezone-aware" in str(exc_info.value)
+
+    def test_timezone_aware_timestamp_accepted(self, minimal_entry_data: dict) -> None:
+        """Test that timezone-aware datetime is accepted."""
+        # Test with UTC
+        minimal_entry_data["timestamp"] = datetime(2025, 1, 1, 12, 0, 0, tzinfo=UTC)
+        entry = ModelCostEntry(**minimal_entry_data)
+        assert entry.timestamp.tzinfo is not None
+
+        # Test with explicit timezone offset
+        tz_offset = UTC
+        minimal_entry_data["timestamp"] = datetime(
+            2025, 1, 1, 12, 0, 0, tzinfo=tz_offset
+        )
+        entry = ModelCostEntry(**minimal_entry_data)
+        assert entry.timestamp.tzinfo is not None
+
+    def test_cumulative_total_less_than_cost_rejected(
+        self, minimal_entry_data: dict
+    ) -> None:
+        """Test that cumulative_total < cost is rejected."""
+        minimal_entry_data["cost"] = 1.50
+        minimal_entry_data["cumulative_total"] = 1.00  # Less than cost
+
+        with pytest.raises(ValidationError) as exc_info:
+            ModelCostEntry(**minimal_entry_data)
+
+        assert "cumulative_total" in str(exc_info.value)
+        assert "cost" in str(exc_info.value)
+
+    def test_cumulative_total_equal_to_cost_accepted(
+        self, minimal_entry_data: dict
+    ) -> None:
+        """Test that cumulative_total == cost is accepted (first entry case)."""
+        minimal_entry_data["cost"] = 0.0045
+        minimal_entry_data["cumulative_total"] = 0.0045  # Equal to cost
+
+        entry = ModelCostEntry(**minimal_entry_data)
+
+        assert entry.cost == entry.cumulative_total
+
+    def test_cumulative_total_greater_than_cost_accepted(
+        self, minimal_entry_data: dict
+    ) -> None:
+        """Test that cumulative_total > cost is accepted (normal case)."""
+        minimal_entry_data["cost"] = 0.0045
+        minimal_entry_data["cumulative_total"] = 10.0  # Greater than cost
+
+        entry = ModelCostEntry(**minimal_entry_data)
+
+        assert entry.cumulative_total > entry.cost
+
 
 # ============================================================================
 # Test: Type Coercion
