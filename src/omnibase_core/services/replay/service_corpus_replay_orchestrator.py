@@ -389,10 +389,27 @@ class ServiceCorpusReplayOrchestrator:
 
         Returns:
             List of individual replay results (in original order).
+
+        Note:
+            Thread Safety of Counters:
+            The ``completed_count`` and ``failed_count`` variables are shared across
+            coroutines via ``nonlocal``. These counters are used ONLY for real-time
+            progress UI updates. The authoritative final counts are computed from
+            the ``results`` list after all tasks complete (see ``replay()`` method,
+            lines 241-242), which eliminates any race condition concerns for the
+            actual return values.
+
+            In Python's asyncio single-threaded event loop, += operations on integers
+            are effectively atomic since there's no preemption mid-operation. However,
+            even if slight drift occurred, it would only affect intermediate progress
+            display, not the final reported counts.
         """
         results: list[ModelSingleReplayResult | None] = [None] * len(executions)
         semaphore = asyncio.Semaphore(config.concurrency)
         start_time = time.perf_counter()
+
+        # Progress counters - used ONLY for real-time UI updates.
+        # Final authoritative counts are computed from `results` list after completion.
         completed_count = 0
         failed_count = 0
         fail_fast_triggered = False
@@ -417,8 +434,8 @@ class ServiceCorpusReplayOrchestrator:
                 result = await self._replay_single(manifest, config)
                 results[index] = result
 
-                # Note: Counter updates are not atomic but acceptable for progress
-                # tracking - slight drift doesn't affect correctness, only UI display.
+                # Update progress counters for UI display only.
+                # These are not used for final counts - see docstring for thread safety notes.
                 if result.success:
                     completed_count += 1
                 else:
@@ -480,7 +497,7 @@ class ServiceCorpusReplayOrchestrator:
                 session = self._executor.create_replay_session(
                     time_frozen_at=manifest.created_at,
                     rng_seed=rng_seed,
-                    effect_records=[],  # TODO: Load from manifest if available
+                    effect_records=[],  # TODO(OMN-1204): Load from manifest if available
                     original_execution_id=manifest.manifest_id,
                 )
 
@@ -574,5 +591,5 @@ class ServiceCorpusReplayOrchestrator:
                 callback(progress)
             except (
                 Exception
-            ) as e:  # callback-resilience-ok: callback errors must not crash replay
+            ) as e:  # tool-resilience-ok: callback errors must not crash replay
                 _logger.warning("Progress callback failed: %s", e)

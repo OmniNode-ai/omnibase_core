@@ -70,7 +70,7 @@ class ModelCorpusReplayProgress(BaseModel):
         >>> progress.remaining
         23
         >>> progress.completion_percent
-        50.0
+        54.0
 
     .. versionadded:: 0.6.0
     """
