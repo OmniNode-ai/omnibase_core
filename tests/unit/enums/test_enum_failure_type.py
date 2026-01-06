@@ -11,6 +11,7 @@ import pytest
 from omnibase_core.enums.enum_failure_type import EnumFailureType
 
 
+@pytest.mark.unit
 class TestEnumFailureType:
     """Tests for EnumFailureType enum."""
 
@@ -51,7 +52,6 @@ class TestEnumFailureType:
     def test_serialization(self, member: EnumFailureType, expected_value: str) -> None:
         """Test enum serializes to expected string value."""
         assert member.value == expected_value
-        assert str(member.value) == expected_value
 
     @pytest.mark.parametrize(
         "value",

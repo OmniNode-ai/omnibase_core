@@ -11,6 +11,7 @@ import pytest
 from omnibase_core.enums.enum_decision_type import EnumDecisionType
 
 
+@pytest.mark.unit
 class TestEnumDecisionType:
     """Tests for EnumDecisionType enum."""
 
@@ -51,7 +52,6 @@ class TestEnumDecisionType:
     def test_serialization(self, member: EnumDecisionType, expected_value: str) -> None:
         """Test enum serializes to expected string value."""
         assert member.value == expected_value
-        assert str(member.value) == expected_value
 
     @pytest.mark.parametrize(
         "value",

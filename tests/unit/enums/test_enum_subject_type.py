@@ -11,6 +11,7 @@ import pytest
 from omnibase_core.enums.enum_subject_type import EnumSubjectType
 
 
+@pytest.mark.unit
 class TestEnumSubjectType:
     """Tests for EnumSubjectType enum."""
 
@@ -55,7 +56,6 @@ class TestEnumSubjectType:
     def test_serialization(self, member: EnumSubjectType, expected_value: str) -> None:
         """Test enum serializes to expected string value."""
         assert member.value == expected_value
-        assert str(member.value) == expected_value
 
     @pytest.mark.parametrize(
         "value",
