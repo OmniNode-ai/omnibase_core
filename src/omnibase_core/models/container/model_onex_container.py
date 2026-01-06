@@ -115,17 +115,9 @@ from omnibase_core.protocols.infrastructure import (
 # Compute protocol imports for tool caching
 from omnibase_core.protocols.compute import ProtocolToolCache
 
-# Optional ServiceRegistry import for runtime use
-# (TYPE_CHECKING import provides type hints; this provides runtime instantiation)
-try:
-    from omnibase_core.container.container_service_registry import (
-        ServiceRegistry as _ServiceRegistryClass,
-    )
-
-    _SERVICE_REGISTRY_AVAILABLE = True
-except ImportError:
-    _ServiceRegistryClass = None  # type: ignore[misc, assignment]
-    _SERVICE_REGISTRY_AVAILABLE = False
+# ServiceRegistry is imported lazily inside __init__ to avoid circular imports.
+# TYPE_CHECKING import in the header provides type hints for static analysis.
+# See OMN-1261 for details on the circular import chain.
 
 T = TypeVar("T")
 
@@ -225,16 +217,21 @@ class ModelONEXContainer:
         self._service_registry: "ServiceRegistry | None" = None  # noqa: UP037
         self._enable_service_registry = enable_service_registry
 
-        if enable_service_registry and _SERVICE_REGISTRY_AVAILABLE:
+        if enable_service_registry:
+            # Lazy import to avoid circular dependency (OMN-1261)
+            # The import is done here at instantiation time rather than at module load
+            # time to break the circular chain: model_onex_container -> container_service_registry
+            # -> models/container/__init__ -> model_onex_container
             try:
+                from omnibase_core.container.container_service_registry import (
+                    ServiceRegistry,
+                )
                 from omnibase_core.models.container.model_registry_config import (
                     create_default_registry_config,
                 )
 
                 registry_config = create_default_registry_config()
-                # Type narrowing: _SERVICE_REGISTRY_AVAILABLE guarantees _ServiceRegistryClass is not None
-                if _ServiceRegistryClass is not None:
-                    self._service_registry = _ServiceRegistryClass(registry_config)
+                self._service_registry = ServiceRegistry(registry_config)
 
                 emit_log_event(
                     LogLevel.INFO,
@@ -244,15 +241,9 @@ class ModelONEXContainer:
             except ImportError as e:
                 emit_log_event(
                     LogLevel.WARNING,
-                    f"ServiceRegistry config not available: {e}",
+                    f"ServiceRegistry not available: {e}",
                 )
                 self._enable_service_registry = False
-        elif enable_service_registry and not _SERVICE_REGISTRY_AVAILABLE:
-            emit_log_event(
-                LogLevel.WARNING,
-                "ServiceRegistry not available: module not installed",
-            )
-            self._enable_service_registry = False
 
         if enable_performance_cache and MemoryMappedToolCache is not None:
             # Initialize memory-mapped cache
