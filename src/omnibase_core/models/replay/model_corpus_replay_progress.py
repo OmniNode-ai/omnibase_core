@@ -22,7 +22,7 @@ Usage:
             completed=25,
             failed=2,
             skipped=0,
-            current_execution_id="manifest-123",
+            current_manifest="manifest-123",
         )
         print(f"Progress: {progress.completion_percent:.1f}%")
 
@@ -48,7 +48,7 @@ class ModelCorpusReplayProgress(BaseModel):
         completed: Number of successfully completed executions.
         failed: Number of failed executions.
         skipped: Number of skipped executions (filtered out or cancelled).
-        current_execution_id: ID of the currently executing manifest.
+        current_manifest: String representation of the currently executing manifest ID.
         current_execution_index: Index of current execution (0-based).
         elapsed_ms: Total elapsed time in milliseconds.
         estimated_remaining_ms: Estimated time remaining in milliseconds.

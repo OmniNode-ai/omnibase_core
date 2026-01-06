@@ -103,6 +103,10 @@ from omnibase_core.models.replay.model_single_replay_result import (
 )
 from omnibase_core.models.replay.model_subset_filter import ModelSubsetFilter
 
+# Rebuild ModelCorpusReplayConfig after ModelCorpusReplayProgress is defined
+# to resolve the TYPE_CHECKING forward reference in progress_callback type hint
+ModelCorpusReplayConfig.model_rebuild()
+
 __all__ = [
     # Configuration override models
     "ModelConfigOverride",

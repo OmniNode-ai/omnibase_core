@@ -40,11 +40,16 @@ Related:
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.replay.model_subset_filter import ModelSubsetFilter
+
+if TYPE_CHECKING:
+    from omnibase_core.models.replay.model_corpus_replay_progress import (
+        ModelCorpusReplayProgress,
+    )
 
 
 class ModelCorpusReplayConfig(BaseModel):
@@ -122,11 +127,11 @@ class ModelCorpusReplayConfig(BaseModel):
     )
 
     # Note: progress_callback is not serializable, excluded from model_dump
-    # Using Any for the callback type to avoid forward reference issues with Pydantic
-    progress_callback: Callable[[Any], None] | None = Field(
+    # Using TYPE_CHECKING import with string annotation to avoid circular imports
+    progress_callback: Callable[[ModelCorpusReplayProgress], None] | None = Field(
         default=None,
         exclude=True,
-        description="Optional callback for progress updates (receives ModelCorpusReplayProgress)",
+        description="Optional callback for progress updates",
     )
 
     @property

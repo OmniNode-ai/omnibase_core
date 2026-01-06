@@ -18,6 +18,7 @@ from omnibase_core.models.replay import (
 )
 
 
+@pytest.mark.unit
 class TestModelSubsetFilter:
     """Tests for ModelSubsetFilter."""
 
@@ -49,6 +50,7 @@ class TestModelSubsetFilter:
         assert "range" in s
 
 
+@pytest.mark.unit
 class TestModelCorpusReplayConfig:
     """Tests for ModelCorpusReplayConfig."""
 
@@ -83,6 +85,7 @@ class TestModelCorpusReplayConfig:
         assert "fail-fast" in s
 
 
+@pytest.mark.unit
 class TestModelCorpusReplayProgress:
     """Tests for ModelCorpusReplayProgress."""
 
@@ -118,6 +121,7 @@ class TestModelCorpusReplayProgress:
         assert progress.is_complete
 
 
+@pytest.mark.unit
 class TestModelSingleReplayResult:
     """Tests for ModelSingleReplayResult."""
 
@@ -153,6 +157,7 @@ class TestModelSingleReplayResult:
         assert result.has_output_mismatch
 
 
+@pytest.mark.unit
 class TestModelAggregateMetrics:
     """Tests for ModelAggregateMetrics."""
 
@@ -191,6 +196,7 @@ class TestModelAggregateMetrics:
         assert 50.0 <= metrics.p50_duration_ms <= 60.0
 
 
+@pytest.mark.unit
 class TestModelCorpusReplayResult:
     """Tests for ModelCorpusReplayResult."""
 

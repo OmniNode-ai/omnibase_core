@@ -155,6 +155,15 @@ class ServiceCorpusReplayOrchestrator:
         """Get the most recent progress update."""
         return self._last_progress
 
+    @property
+    def is_cancelled(self) -> bool:
+        """Check if cancellation was requested.
+
+        Returns:
+            True if cancel() was called.
+        """
+        return self._cancelled
+
     def cancel(self) -> None:
         """Request cancellation of the current replay.
 
@@ -318,6 +327,8 @@ class ServiceCorpusReplayOrchestrator:
         """
         results: list[ModelSingleReplayResult] = []
         start_time = time.perf_counter()
+        completed_count = 0
+        failed_count = 0
 
         for index, manifest in enumerate(executions):
             if self._cancelled:
@@ -330,8 +341,8 @@ class ServiceCorpusReplayOrchestrator:
             elapsed_ms = (time.perf_counter() - start_time) * 1000
             self._update_progress(
                 total=len(executions),
-                completed=len([r for r in results if r.success]),
-                failed=len([r for r in results if not r.success]),
+                completed=completed_count,
+                failed=failed_count,
                 skipped=0,
                 current_manifest=str(manifest.manifest_id),
                 current_index=index,
@@ -342,6 +353,12 @@ class ServiceCorpusReplayOrchestrator:
             # Execute single replay
             result = await self._replay_single(manifest, config)
             results.append(result)
+
+            # Track counts incrementally
+            if result.success:
+                completed_count += 1
+            else:
+                failed_count += 1
 
             # Check fail-fast
             if config.fail_fast and not result.success:
@@ -476,7 +493,7 @@ class ServiceCorpusReplayOrchestrator:
                     retry_count=retry_count,
                 )
 
-            except Exception as e:
+            except Exception as e:  # boundary-ok: retry logic must capture all exceptions to track attempts
                 last_error = e
                 retry_count += 1
 
@@ -548,5 +565,7 @@ class ServiceCorpusReplayOrchestrator:
         if callback:
             try:
                 callback(progress)
-            except Exception as e:
+            except (
+                Exception
+            ) as e:  # callback-resilience-ok: callback errors must not crash replay
                 _logger.warning("Progress callback failed: %s", e)

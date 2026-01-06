@@ -59,6 +59,7 @@ def _create_test_corpus(
     ).with_executions(manifests)
 
 
+@pytest.mark.unit
 class TestServiceCorpusReplayOrchestrator:
     """Tests for ServiceCorpusReplayOrchestrator."""
 
