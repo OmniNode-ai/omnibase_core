@@ -385,6 +385,7 @@ class NamingConventionChecker(ast.NodeVisitor):
         is_in_exempt_dir = (
             "errors" in self._file_path.parts
             or "handlers" in self._file_path.parts
+            or "services" in self._file_path.parts
             or self._file_path.name == "errors.py"
         )
 
