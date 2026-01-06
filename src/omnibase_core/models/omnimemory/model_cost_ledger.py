@@ -22,6 +22,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors import OnexError
 from omnibase_core.models.omnimemory.model_cost_entry import ModelCostEntry
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelCostLedger(BaseModel):
@@ -195,13 +196,46 @@ class ModelCostLedger(BaseModel):
 
         return self
 
+    @model_validator(mode="after")
+    def validate_entries_cumulative_totals(self) -> "ModelCostLedger":
+        """Validate that entries have consistent cumulative_total values.
+
+        Ensures that each entry's cumulative_total is consistent with the
+        previous entry's cumulative_total plus the current entry's cost.
+        The first entry's cumulative_total can be any value (representing
+        prior spending not tracked as entries).
+
+        Returns:
+            The validated model instance.
+
+        Raises:
+            ValueError: If any entry has inconsistent cumulative_total.
+        """
+        if len(self.entries) < 2:
+            return self
+
+        for i in range(1, len(self.entries)):
+            prev_entry = self.entries[i - 1]
+            curr_entry = self.entries[i]
+            expected_cumulative = prev_entry.cumulative_total + curr_entry.cost
+            # Allow small floating point differences
+            if abs(curr_entry.cumulative_total - expected_cumulative) > 1e-9:
+                raise ValueError(
+                    f"Entry {i} has cumulative_total {curr_entry.cumulative_total} "
+                    f"but expected {expected_cumulative} "
+                    f"(previous cumulative_total {prev_entry.cumulative_total} + "
+                    f"cost {curr_entry.cost})"
+                )
+
+        return self
+
     @model_validator(mode="before")
     @classmethod
-    def compute_budget_remaining(cls, data: dict) -> dict:  # type: ignore[type-arg]
+    def compute_budget_remaining(cls, data: object) -> SerializedDict:
         """Compute budget_remaining from budget_total and total_spent if not provided.
 
         Args:
-            data: The raw input data dictionary.
+            data: The raw input data (typically a dictionary).
 
         Returns:
             The data with budget_remaining computed if needed.
@@ -214,7 +248,9 @@ class ModelCostLedger(BaseModel):
             if "budget_remaining" not in data:
                 data["budget_remaining"] = budget_total - total_spent
 
-        return data
+            return data
+
+        return {}  # Return empty dict for non-dict input (Pydantic will fail validation)
 
     # === Immutable Mutation Methods ===
 
@@ -408,6 +444,20 @@ class ModelCostLedger(BaseModel):
             Fraction of budget spent (total_spent / budget_total).
         """
         return self.total_spent / self.budget_total
+
+    @property
+    def budget_utilization_pct(self) -> float:
+        """Get the current budget utilization as a percentage.
+
+        Returns:
+            Percentage of budget spent (0-100+). Can exceed 100 if overspent.
+
+        Example:
+            >>> ledger = ModelCostLedger(budget_total=100.0, total_spent=75.0, budget_remaining=25.0)
+            >>> ledger.budget_utilization_pct
+            75.0
+        """
+        return self.budget_utilization * 100
 
     # === Utility Methods ===
 

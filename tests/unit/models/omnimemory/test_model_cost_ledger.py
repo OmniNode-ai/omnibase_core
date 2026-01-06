@@ -324,6 +324,243 @@ class TestModelCostLedgerValidation:
 
 
 # ============================================================================
+# Test: Entries Cumulative Total Validation
+# ============================================================================
+
+
+class TestModelCostLedgerEntriesValidation:
+    """Tests for entries cumulative_total validation on creation.
+
+    The validator checks that adjacent entries have consistent cumulative_total
+    values: entry[i].cumulative_total == entry[i-1].cumulative_total + entry[i].cost.
+
+    Single entries are always valid (no relative validation possible).
+    The first entry's cumulative_total can be any value (may include prior
+    spending not tracked as entries).
+    """
+
+    def test_create_with_consistent_entries(self) -> None:
+        """Test that ledger can be created with consistent entries."""
+        entry1 = ModelCostEntry(
+            timestamp=datetime.now(UTC),
+            operation="op1",
+            model_used="gpt-4",
+            tokens_in=100,
+            tokens_out=50,
+            cost=1.0,
+            cumulative_total=1.0,
+        )
+        entry2 = ModelCostEntry(
+            timestamp=datetime.now(UTC),
+            operation="op2",
+            model_used="gpt-4",
+            tokens_in=100,
+            tokens_out=50,
+            cost=2.0,
+            cumulative_total=3.0,  # 1.0 + 2.0
+        )
+
+        ledger = ModelCostLedger(
+            budget_total=100.0,
+            entries=(entry1, entry2),
+            total_spent=3.0,
+            budget_remaining=97.0,
+        )
+
+        assert len(ledger.entries) == 2
+        assert ledger.total_spent == 3.0
+
+    def test_create_with_inconsistent_entries_rejected(self) -> None:
+        """Test that ledger rejects entries with inconsistent cumulative_total."""
+        entry1 = ModelCostEntry(
+            timestamp=datetime.now(UTC),
+            operation="op1",
+            model_used="gpt-4",
+            tokens_in=100,
+            tokens_out=50,
+            cost=1.0,
+            cumulative_total=1.0,
+        )
+        entry2 = ModelCostEntry(
+            timestamp=datetime.now(UTC),
+            operation="op2",
+            model_used="gpt-4",
+            tokens_in=100,
+            tokens_out=50,
+            cost=2.0,
+            cumulative_total=999.0,  # WRONG! Should be 3.0
+        )
+
+        with pytest.raises(ValidationError) as exc_info:
+            ModelCostLedger(
+                budget_total=100.0,
+                entries=(entry1, entry2),
+                total_spent=3.0,
+                budget_remaining=97.0,
+            )
+
+        assert "cumulative_total" in str(exc_info.value)
+
+    def test_create_with_empty_entries_valid(self) -> None:
+        """Test that ledger can be created with empty entries tuple."""
+        ledger = ModelCostLedger(budget_total=100.0, entries=())
+
+        assert ledger.entries == ()
+
+    def test_create_with_single_entry_any_cumulative_valid(self) -> None:
+        """Test single entry with any cumulative_total is valid.
+
+        Single entries are not validated since there's no previous entry
+        to compare against. The cumulative_total may include prior spending
+        not tracked as entries.
+        """
+        # Entry with cumulative_total matching cost (common case)
+        entry1 = ModelCostEntry(
+            timestamp=datetime.now(UTC),
+            operation="op1",
+            model_used="gpt-4",
+            tokens_in=100,
+            tokens_out=50,
+            cost=5.0,
+            cumulative_total=5.0,
+        )
+        ledger1 = ModelCostLedger(
+            budget_total=100.0,
+            entries=(entry1,),
+            total_spent=5.0,
+            budget_remaining=95.0,
+        )
+        assert len(ledger1.entries) == 1
+
+        # Entry with cumulative_total > cost (has prior untracked spending)
+        entry2 = ModelCostEntry(
+            timestamp=datetime.now(UTC),
+            operation="op2",
+            model_used="gpt-4",
+            tokens_in=100,
+            tokens_out=50,
+            cost=5.0,
+            cumulative_total=105.0,  # Prior spending of 100.0
+        )
+        ledger2 = ModelCostLedger(
+            budget_total=200.0,
+            entries=(entry2,),
+            total_spent=105.0,
+            budget_remaining=95.0,
+        )
+        assert len(ledger2.entries) == 1
+
+    def test_create_with_entries_within_float_tolerance(self) -> None:
+        """Test entries with cumulative_total within float tolerance are accepted."""
+        entry1 = ModelCostEntry(
+            timestamp=datetime.now(UTC),
+            operation="op1",
+            model_used="gpt-4",
+            tokens_in=100,
+            tokens_out=50,
+            cost=5.0,
+            cumulative_total=5.0,
+        )
+        entry2 = ModelCostEntry(
+            timestamp=datetime.now(UTC),
+            operation="op2",
+            model_used="gpt-4",
+            tokens_in=100,
+            tokens_out=50,
+            cost=3.0,
+            cumulative_total=8.0 + 1e-10,  # Within 1e-9 tolerance
+        )
+
+        ledger = ModelCostLedger(
+            budget_total=100.0,
+            entries=(entry1, entry2),
+            total_spent=8.0,
+            budget_remaining=92.0,
+        )
+
+        assert len(ledger.entries) == 2
+
+    def test_create_with_multiple_entries_validates_sequence(self) -> None:
+        """Test that validation checks the entire sequence of entries."""
+        entry1 = ModelCostEntry(
+            timestamp=datetime.now(UTC),
+            operation="op1",
+            model_used="gpt-4",
+            tokens_in=100,
+            tokens_out=50,
+            cost=1.0,
+            cumulative_total=1.0,
+        )
+        entry2 = ModelCostEntry(
+            timestamp=datetime.now(UTC),
+            operation="op2",
+            model_used="gpt-4",
+            tokens_in=100,
+            tokens_out=50,
+            cost=2.0,
+            cumulative_total=3.0,  # Correct: 1.0 + 2.0
+        )
+        entry3 = ModelCostEntry(
+            timestamp=datetime.now(UTC),
+            operation="op3",
+            model_used="gpt-4",
+            tokens_in=100,
+            tokens_out=50,
+            cost=3.0,
+            cumulative_total=100.0,  # WRONG! Should be 6.0
+        )
+
+        with pytest.raises(ValidationError) as exc_info:
+            ModelCostLedger(
+                budget_total=200.0,
+                entries=(entry1, entry2, entry3),
+                total_spent=6.0,
+                budget_remaining=194.0,
+            )
+
+        # Should report the error at entry 2 (0-indexed)
+        assert "cumulative_total" in str(exc_info.value)
+        assert "Entry 2" in str(exc_info.value)
+
+    def test_create_with_prior_spending_entries_valid(self) -> None:
+        """Test entries starting with prior spending are valid.
+
+        The first entry can have a cumulative_total that includes prior
+        spending not tracked as entries, as long as subsequent entries
+        maintain relative consistency.
+        """
+        # First entry starts at 100.0 (prior spending)
+        entry1 = ModelCostEntry(
+            timestamp=datetime.now(UTC),
+            operation="op1",
+            model_used="gpt-4",
+            tokens_in=100,
+            tokens_out=50,
+            cost=5.0,
+            cumulative_total=105.0,  # 100.0 prior + 5.0 cost
+        )
+        entry2 = ModelCostEntry(
+            timestamp=datetime.now(UTC),
+            operation="op2",
+            model_used="gpt-4",
+            tokens_in=100,
+            tokens_out=50,
+            cost=10.0,
+            cumulative_total=115.0,  # 105.0 + 10.0
+        )
+
+        ledger = ModelCostLedger(
+            budget_total=200.0,
+            entries=(entry1, entry2),
+            total_spent=115.0,
+            budget_remaining=85.0,
+        )
+
+        assert len(ledger.entries) == 2
+        assert ledger.total_spent == 115.0
+
+
+# ============================================================================
 # Test: with_entry() Method
 # ============================================================================
 
@@ -629,6 +866,47 @@ class TestModelCostLedgerThresholds:
 
 
 # ============================================================================
+# Test: Utility Properties
+# ============================================================================
+
+
+class TestModelCostLedgerUtilityProperties:
+    """Tests for utility properties like budget_utilization_pct."""
+
+    def test_budget_utilization_pct(self) -> None:
+        """Test budget_utilization_pct returns percentage value."""
+        ledger = ModelCostLedger(
+            budget_total=100.0,
+            total_spent=75.0,
+            budget_remaining=25.0,
+        )
+        assert ledger.budget_utilization_pct == 75.0
+
+    def test_budget_utilization_pct_zero_spent(self) -> None:
+        """Test budget_utilization_pct with zero spending."""
+        ledger = ModelCostLedger(budget_total=100.0)
+        assert ledger.budget_utilization_pct == 0.0
+
+    def test_budget_utilization_pct_overspent(self) -> None:
+        """Test budget_utilization_pct can exceed 100 when overspent."""
+        ledger = ModelCostLedger(
+            budget_total=100.0,
+            total_spent=150.0,
+            budget_remaining=-50.0,
+        )
+        assert ledger.budget_utilization_pct == 150.0
+
+    def test_budget_utilization_pct_matches_fraction(self) -> None:
+        """Test budget_utilization_pct is exactly 100x budget_utilization."""
+        ledger = ModelCostLedger(
+            budget_total=100.0,
+            total_spent=33.33,
+            budget_remaining=66.67,
+        )
+        assert ledger.budget_utilization_pct == ledger.budget_utilization * 100
+
+
+# ============================================================================
 # Test: Escalation Methods
 # ============================================================================
 
@@ -772,6 +1050,73 @@ class TestModelCostLedgerEscalation:
             ledger.with_escalation(50.0, "   ")
 
         assert "reason cannot be empty" in str(exc_info.value)
+
+    def test_with_escalation_rejects_very_small_negative_budget(
+        self, minimal_ledger_data: dict
+    ) -> None:
+        """Test that with_escalation rejects small negative additional_budget."""
+        ledger = ModelCostLedger(**minimal_ledger_data)
+
+        with pytest.raises(OnexError) as exc_info:
+            ledger.with_escalation(-0.0001, "Valid reason")
+
+        assert "additional_budget must be positive" in str(exc_info.value)
+
+    def test_with_escalation_accepts_very_small_positive_budget(
+        self, minimal_ledger_data: dict
+    ) -> None:
+        """Test that with_escalation accepts very small positive additional_budget."""
+        ledger = ModelCostLedger(**minimal_ledger_data)
+
+        new_ledger = ledger.with_escalation(0.0001, "Small increase")
+
+        assert new_ledger.budget_total == pytest.approx(100.0001)
+        assert new_ledger.escalation_count == 1
+
+    def test_with_escalation_rejects_tabs_only_reason(
+        self, minimal_ledger_data: dict
+    ) -> None:
+        """Test that with_escalation rejects tab-only reason string."""
+        ledger = ModelCostLedger(**minimal_ledger_data)
+
+        with pytest.raises(OnexError) as exc_info:
+            ledger.with_escalation(50.0, "\t\t\t")
+
+        assert "reason cannot be empty" in str(exc_info.value)
+
+    def test_with_escalation_rejects_newlines_only_reason(
+        self, minimal_ledger_data: dict
+    ) -> None:
+        """Test that with_escalation rejects newline-only reason string."""
+        ledger = ModelCostLedger(**minimal_ledger_data)
+
+        with pytest.raises(OnexError) as exc_info:
+            ledger.with_escalation(50.0, "\n\n")
+
+        assert "reason cannot be empty" in str(exc_info.value)
+
+    def test_with_escalation_accepts_reason_with_leading_trailing_whitespace(
+        self, minimal_ledger_data: dict
+    ) -> None:
+        """Test that with_escalation accepts reason with leading/trailing whitespace."""
+        ledger = ModelCostLedger(**minimal_ledger_data)
+
+        # Note: The reason has content, just with whitespace around it
+        new_ledger = ledger.with_escalation(50.0, "  Valid reason with spaces  ")
+
+        assert new_ledger.escalation_count == 1
+        assert new_ledger.last_escalation_reason == "  Valid reason with spaces  "
+
+    def test_with_escalation_accepts_very_large_budget(
+        self, minimal_ledger_data: dict
+    ) -> None:
+        """Test that with_escalation accepts very large additional_budget."""
+        ledger = ModelCostLedger(**minimal_ledger_data)
+
+        new_ledger = ledger.with_escalation(999999999.99, "Large budget increase")
+
+        assert new_ledger.budget_total == pytest.approx(1000000099.99)
+        assert new_ledger.escalation_count == 1
 
 
 # ============================================================================
