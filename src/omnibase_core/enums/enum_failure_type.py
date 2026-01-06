@@ -59,5 +59,60 @@ class EnumFailureType(str, Enum):
         """Return the string value for serialization."""
         return self.value
 
+    @classmethod
+    def is_valid(cls, value: str) -> bool:
+        """Check if a string value is a valid enum member.
+
+        Args:
+            value: The string value to check.
+
+        Returns:
+            True if the value is a valid enum member, False otherwise.
+
+        Example:
+            >>> EnumFailureType.is_valid("timeout")
+            True
+            >>> EnumFailureType.is_valid("invalid_type")
+            False
+        """
+        return value in cls._value2member_map_
+
+    def is_retryable(self) -> bool:
+        """Check if this failure type is typically retryable.
+
+        Returns:
+            True if this failure type may be resolved by retrying.
+
+        Example:
+            >>> EnumFailureType.TIMEOUT.is_retryable()
+            True
+            >>> EnumFailureType.INVARIANT_VIOLATION.is_retryable()
+            False
+        """
+        return self in {
+            EnumFailureType.TIMEOUT,
+            EnumFailureType.RATE_LIMIT,
+            EnumFailureType.EXTERNAL_SERVICE,
+            EnumFailureType.MODEL_ERROR,
+        }
+
+    def is_resource_related(self) -> bool:
+        """Check if this failure type is related to resource constraints.
+
+        Returns:
+            True if this failure is caused by resource limits or constraints.
+
+        Example:
+            >>> EnumFailureType.COST_EXCEEDED.is_resource_related()
+            True
+            >>> EnumFailureType.VALIDATION_ERROR.is_resource_related()
+            False
+        """
+        return self in {
+            EnumFailureType.COST_EXCEEDED,
+            EnumFailureType.RATE_LIMIT,
+            EnumFailureType.TIMEOUT,
+        }
+
 
 __all__ = ["EnumFailureType"]

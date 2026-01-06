@@ -37,7 +37,7 @@ class TestEnumDecisionType:
         assert EnumDecisionType.MODEL_SELECTION == "model_selection"
 
     @pytest.mark.parametrize(
-        ("member", "expected_value"),
+        ("member", "value"),
         [
             (EnumDecisionType.MODEL_SELECTION, "model_selection"),
             (EnumDecisionType.ROUTE_CHOICE, "route_choice"),
@@ -49,27 +49,16 @@ class TestEnumDecisionType:
             (EnumDecisionType.CUSTOM, "custom"),
         ],
     )
-    def test_serialization(self, member: EnumDecisionType, expected_value: str) -> None:
-        """Test enum serializes to expected string value."""
-        assert member.value == expected_value
-
-    @pytest.mark.parametrize(
-        "value",
-        [
-            "model_selection",
-            "route_choice",
-            "retry_strategy",
-            "tool_selection",
-            "escalation",
-            "early_termination",
-            "parameter_choice",
-            "custom",
-        ],
-    )
-    def test_deserialization(self, value: str) -> None:
-        """Test enum deserializes from string value."""
-        result = EnumDecisionType(value)
-        assert result.value == value
+    def test_serialization_roundtrip(
+        self, member: EnumDecisionType, value: str
+    ) -> None:
+        """Test enum serialization/deserialization round-trip."""
+        # Serialization: member.value equals expected string
+        assert member.value == value
+        # Direct string comparison (str subclass)
+        assert member == value
+        # Deserialization: string value constructs back to member
+        assert EnumDecisionType(value) == member
 
     def test_invalid_value_raises(self) -> None:
         """Test that invalid values raise ValueError."""
@@ -108,3 +97,38 @@ class TestEnumDecisionType:
         assert EnumDecisionType.MODEL_SELECTION == EnumDecisionType.MODEL_SELECTION
         assert EnumDecisionType.MODEL_SELECTION == "model_selection"
         assert EnumDecisionType.MODEL_SELECTION != EnumDecisionType.TOOL_SELECTION
+
+    def test_is_valid_with_valid_values(self) -> None:
+        """Test is_valid returns True for valid enum values."""
+        assert EnumDecisionType.is_valid("model_selection") is True
+        assert EnumDecisionType.is_valid("tool_selection") is True
+        assert EnumDecisionType.is_valid("custom") is True
+
+    def test_is_valid_with_invalid_values(self) -> None:
+        """Test is_valid returns False for invalid values."""
+        assert EnumDecisionType.is_valid("invalid_type") is False
+        assert EnumDecisionType.is_valid("") is False
+        assert EnumDecisionType.is_valid("MODEL_SELECTION") is False  # Case-sensitive
+
+    def test_is_terminal_decision(self) -> None:
+        """Test is_terminal_decision identifies workflow-ending decisions."""
+        # Terminal decisions
+        assert EnumDecisionType.ESCALATION.is_terminal_decision() is True
+        assert EnumDecisionType.EARLY_TERMINATION.is_terminal_decision() is True
+        # Non-terminal decisions
+        assert EnumDecisionType.MODEL_SELECTION.is_terminal_decision() is False
+        assert EnumDecisionType.TOOL_SELECTION.is_terminal_decision() is False
+        assert EnumDecisionType.ROUTE_CHOICE.is_terminal_decision() is False
+        assert EnumDecisionType.RETRY_STRATEGY.is_terminal_decision() is False
+
+    def test_is_selection_decision(self) -> None:
+        """Test is_selection_decision identifies selection-type decisions."""
+        # Selection decisions
+        assert EnumDecisionType.MODEL_SELECTION.is_selection_decision() is True
+        assert EnumDecisionType.TOOL_SELECTION.is_selection_decision() is True
+        assert EnumDecisionType.ROUTE_CHOICE.is_selection_decision() is True
+        assert EnumDecisionType.PARAMETER_CHOICE.is_selection_decision() is True
+        # Non-selection decisions
+        assert EnumDecisionType.ESCALATION.is_selection_decision() is False
+        assert EnumDecisionType.EARLY_TERMINATION.is_selection_decision() is False
+        assert EnumDecisionType.RETRY_STRATEGY.is_selection_decision() is False

@@ -39,7 +39,7 @@ class TestEnumSubjectType:
         assert EnumSubjectType.AGENT == "agent"
 
     @pytest.mark.parametrize(
-        ("member", "expected_value"),
+        ("member", "value"),
         [
             (EnumSubjectType.AGENT, "agent"),
             (EnumSubjectType.USER, "user"),
@@ -53,29 +53,14 @@ class TestEnumSubjectType:
             (EnumSubjectType.CUSTOM, "custom"),
         ],
     )
-    def test_serialization(self, member: EnumSubjectType, expected_value: str) -> None:
-        """Test enum serializes to expected string value."""
-        assert member.value == expected_value
-
-    @pytest.mark.parametrize(
-        "value",
-        [
-            "agent",
-            "user",
-            "workflow",
-            "project",
-            "service",
-            "org",
-            "task",
-            "corpus",
-            "session",
-            "custom",
-        ],
-    )
-    def test_deserialization(self, value: str) -> None:
-        """Test enum deserializes from string value."""
-        result = EnumSubjectType(value)
-        assert result.value == value
+    def test_serialization_roundtrip(self, member: EnumSubjectType, value: str) -> None:
+        """Test enum serialization/deserialization round-trip."""
+        # Serialization: member.value equals expected string
+        assert member.value == value
+        # Direct string comparison (str subclass)
+        assert member == value
+        # Deserialization: string value constructs back to member
+        assert EnumSubjectType(value) == member
 
     def test_invalid_value_raises(self) -> None:
         """Test that invalid values raise ValueError."""
@@ -111,3 +96,50 @@ class TestEnumSubjectType:
         assert EnumSubjectType.AGENT == EnumSubjectType.AGENT
         assert EnumSubjectType.AGENT == "agent"
         assert EnumSubjectType.AGENT != EnumSubjectType.USER
+
+    def test_is_valid_with_valid_values(self) -> None:
+        """Test is_valid returns True for valid enum values."""
+        assert EnumSubjectType.is_valid("agent") is True
+        assert EnumSubjectType.is_valid("workflow") is True
+        assert EnumSubjectType.is_valid("custom") is True
+
+    def test_is_valid_with_invalid_values(self) -> None:
+        """Test is_valid returns False for invalid values."""
+        assert EnumSubjectType.is_valid("invalid_type") is False
+        assert EnumSubjectType.is_valid("") is False
+        assert EnumSubjectType.is_valid("AGENT") is False  # Case-sensitive
+
+    def test_is_entity_type(self) -> None:
+        """Test is_entity_type identifies entity subjects (agent, user, service)."""
+        # Entity types
+        assert EnumSubjectType.AGENT.is_entity_type() is True
+        assert EnumSubjectType.USER.is_entity_type() is True
+        assert EnumSubjectType.SERVICE.is_entity_type() is True
+        # Non-entity types
+        assert EnumSubjectType.WORKFLOW.is_entity_type() is False
+        assert EnumSubjectType.PROJECT.is_entity_type() is False
+        assert EnumSubjectType.SESSION.is_entity_type() is False
+
+    def test_is_scope_type(self) -> None:
+        """Test is_scope_type identifies scope subjects (workflow, project, etc.)."""
+        # Scope types
+        assert EnumSubjectType.WORKFLOW.is_scope_type() is True
+        assert EnumSubjectType.PROJECT.is_scope_type() is True
+        assert EnumSubjectType.ORG.is_scope_type() is True
+        assert EnumSubjectType.TASK.is_scope_type() is True
+        assert EnumSubjectType.SESSION.is_scope_type() is True
+        assert EnumSubjectType.CORPUS.is_scope_type() is True
+        # Non-scope types
+        assert EnumSubjectType.AGENT.is_scope_type() is False
+        assert EnumSubjectType.USER.is_scope_type() is False
+        assert EnumSubjectType.SERVICE.is_scope_type() is False
+
+    def test_is_persistent(self) -> None:
+        """Test is_persistent identifies subjects with long-term memory."""
+        # Persistent types (most subjects)
+        assert EnumSubjectType.AGENT.is_persistent() is True
+        assert EnumSubjectType.USER.is_persistent() is True
+        assert EnumSubjectType.WORKFLOW.is_persistent() is True
+        assert EnumSubjectType.PROJECT.is_persistent() is True
+        # Non-persistent types (ephemeral)
+        assert EnumSubjectType.SESSION.is_persistent() is False

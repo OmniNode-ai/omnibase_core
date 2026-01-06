@@ -37,7 +37,7 @@ class TestEnumFailureType:
         assert EnumFailureType.TIMEOUT == "timeout"
 
     @pytest.mark.parametrize(
-        ("member", "expected_value"),
+        ("member", "value"),
         [
             (EnumFailureType.INVARIANT_VIOLATION, "invariant_violation"),
             (EnumFailureType.TIMEOUT, "timeout"),
@@ -49,27 +49,14 @@ class TestEnumFailureType:
             (EnumFailureType.UNKNOWN, "unknown"),
         ],
     )
-    def test_serialization(self, member: EnumFailureType, expected_value: str) -> None:
-        """Test enum serializes to expected string value."""
-        assert member.value == expected_value
-
-    @pytest.mark.parametrize(
-        "value",
-        [
-            "invariant_violation",
-            "timeout",
-            "model_error",
-            "cost_exceeded",
-            "validation_error",
-            "external_service",
-            "rate_limit",
-            "unknown",
-        ],
-    )
-    def test_deserialization(self, value: str) -> None:
-        """Test enum deserializes from string value."""
-        result = EnumFailureType(value)
-        assert result.value == value
+    def test_serialization_roundtrip(self, member: EnumFailureType, value: str) -> None:
+        """Test enum serialization/deserialization round-trip."""
+        # Serialization: member.value equals expected string
+        assert member.value == value
+        # Direct string comparison (str subclass)
+        assert member == value
+        # Deserialization: string value constructs back to member
+        assert EnumFailureType(value) == member
 
     def test_invalid_value_raises(self) -> None:
         """Test that invalid values raise ValueError."""
@@ -105,3 +92,38 @@ class TestEnumFailureType:
         assert EnumFailureType.TIMEOUT == EnumFailureType.TIMEOUT
         assert EnumFailureType.TIMEOUT == "timeout"
         assert EnumFailureType.TIMEOUT != EnumFailureType.RATE_LIMIT
+
+    def test_is_valid_with_valid_values(self) -> None:
+        """Test is_valid returns True for valid enum values."""
+        assert EnumFailureType.is_valid("timeout") is True
+        assert EnumFailureType.is_valid("rate_limit") is True
+        assert EnumFailureType.is_valid("unknown") is True
+
+    def test_is_valid_with_invalid_values(self) -> None:
+        """Test is_valid returns False for invalid values."""
+        assert EnumFailureType.is_valid("invalid_type") is False
+        assert EnumFailureType.is_valid("") is False
+        assert EnumFailureType.is_valid("TIMEOUT") is False  # Case-sensitive
+
+    def test_is_retryable(self) -> None:
+        """Test is_retryable identifies failures that may succeed on retry."""
+        # Retryable failures
+        assert EnumFailureType.TIMEOUT.is_retryable() is True
+        assert EnumFailureType.RATE_LIMIT.is_retryable() is True
+        assert EnumFailureType.EXTERNAL_SERVICE.is_retryable() is True
+        assert EnumFailureType.MODEL_ERROR.is_retryable() is True
+        # Non-retryable failures
+        assert EnumFailureType.INVARIANT_VIOLATION.is_retryable() is False
+        assert EnumFailureType.VALIDATION_ERROR.is_retryable() is False
+        assert EnumFailureType.COST_EXCEEDED.is_retryable() is False
+
+    def test_is_resource_related(self) -> None:
+        """Test is_resource_related identifies resource constraint failures."""
+        # Resource-related failures
+        assert EnumFailureType.COST_EXCEEDED.is_resource_related() is True
+        assert EnumFailureType.RATE_LIMIT.is_resource_related() is True
+        assert EnumFailureType.TIMEOUT.is_resource_related() is True
+        # Non-resource failures
+        assert EnumFailureType.INVARIANT_VIOLATION.is_resource_related() is False
+        assert EnumFailureType.VALIDATION_ERROR.is_resource_related() is False
+        assert EnumFailureType.MODEL_ERROR.is_resource_related() is False

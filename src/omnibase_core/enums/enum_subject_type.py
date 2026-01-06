@@ -71,5 +71,76 @@ class EnumSubjectType(str, Enum):
         """Return the string value for serialization."""
         return self.value
 
+    @classmethod
+    def is_valid(cls, value: str) -> bool:
+        """Check if a string value is a valid enum member.
+
+        Args:
+            value: The string value to check.
+
+        Returns:
+            True if the value is a valid enum member, False otherwise.
+
+        Example:
+            >>> EnumSubjectType.is_valid("agent")
+            True
+            >>> EnumSubjectType.is_valid("invalid_type")
+            False
+        """
+        return value in cls._value2member_map_
+
+    def is_entity_type(self) -> bool:
+        """Check if this subject type represents an entity (agent, user, or service).
+
+        Returns:
+            True if this is an entity-type subject.
+
+        Example:
+            >>> EnumSubjectType.AGENT.is_entity_type()
+            True
+            >>> EnumSubjectType.WORKFLOW.is_entity_type()
+            False
+        """
+        return self in {
+            EnumSubjectType.AGENT,
+            EnumSubjectType.USER,
+            EnumSubjectType.SERVICE,
+        }
+
+    def is_scope_type(self) -> bool:
+        """Check if this subject type represents a scope (workflow, project, etc.).
+
+        Returns:
+            True if this is a scope-type subject.
+
+        Example:
+            >>> EnumSubjectType.WORKFLOW.is_scope_type()
+            True
+            >>> EnumSubjectType.AGENT.is_scope_type()
+            False
+        """
+        return self in {
+            EnumSubjectType.WORKFLOW,
+            EnumSubjectType.PROJECT,
+            EnumSubjectType.ORG,
+            EnumSubjectType.TASK,
+            EnumSubjectType.SESSION,
+            EnumSubjectType.CORPUS,
+        }
+
+    def is_persistent(self) -> bool:
+        """Check if this subject type typically has persistent (long-term) memory.
+
+        Returns:
+            True if memory for this subject type is typically persisted long-term.
+
+        Example:
+            >>> EnumSubjectType.AGENT.is_persistent()
+            True
+            >>> EnumSubjectType.SESSION.is_persistent()
+            False
+        """
+        return self not in {EnumSubjectType.SESSION}
+
 
 __all__ = ["EnumSubjectType"]

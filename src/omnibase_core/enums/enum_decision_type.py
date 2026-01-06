@@ -59,5 +59,59 @@ class EnumDecisionType(str, Enum):
         """Return the string value for serialization."""
         return self.value
 
+    @classmethod
+    def is_valid(cls, value: str) -> bool:
+        """Check if a string value is a valid enum member.
+
+        Args:
+            value: The string value to check.
+
+        Returns:
+            True if the value is a valid enum member, False otherwise.
+
+        Example:
+            >>> EnumDecisionType.is_valid("model_selection")
+            True
+            >>> EnumDecisionType.is_valid("invalid_type")
+            False
+        """
+        return value in cls._value2member_map_
+
+    def is_terminal_decision(self) -> bool:
+        """Check if this decision type typically terminates a workflow.
+
+        Returns:
+            True if this is a terminal decision type (ESCALATION or EARLY_TERMINATION).
+
+        Example:
+            >>> EnumDecisionType.EARLY_TERMINATION.is_terminal_decision()
+            True
+            >>> EnumDecisionType.MODEL_SELECTION.is_terminal_decision()
+            False
+        """
+        return self in {
+            EnumDecisionType.ESCALATION,
+            EnumDecisionType.EARLY_TERMINATION,
+        }
+
+    def is_selection_decision(self) -> bool:
+        """Check if this decision type involves selecting from options.
+
+        Returns:
+            True if this is a selection-type decision.
+
+        Example:
+            >>> EnumDecisionType.MODEL_SELECTION.is_selection_decision()
+            True
+            >>> EnumDecisionType.ESCALATION.is_selection_decision()
+            False
+        """
+        return self in {
+            EnumDecisionType.MODEL_SELECTION,
+            EnumDecisionType.TOOL_SELECTION,
+            EnumDecisionType.ROUTE_CHOICE,
+            EnumDecisionType.PARAMETER_CHOICE,
+        }
+
 
 __all__ = ["EnumDecisionType"]
