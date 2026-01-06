@@ -36,6 +36,11 @@ class ModelCostEntry(BaseModel):
         cost: Cost of this individual operation in USD.
         cumulative_total: Running total cost at time of entry.
 
+    Note:
+        Cost values use Python floats for convenience. For applications requiring
+        exact decimal precision (e.g., financial auditing), consider converting
+        to Decimal at the application layer.
+
     Example:
         >>> from datetime import datetime, UTC
         >>> entry = ModelCostEntry(
@@ -49,10 +54,6 @@ class ModelCostEntry(BaseModel):
         ... )
         >>> entry.total_tokens
         200
-
-    See Also:
-        - :class:`~omnibase_core.models.omnimemory.model_cost_ledger.ModelCostLedger`:
-          The parent ledger containing cost entries
 
     .. versionadded:: 0.6.0
         Added as part of OmniMemory cost tracking infrastructure (OMN-1239)
@@ -129,7 +130,10 @@ class ModelCostEntry(BaseModel):
             ValueError: If the timestamp has no timezone info.
         """
         if v.tzinfo is None:
-            raise ValueError("timestamp must be timezone-aware (tzinfo cannot be None)")
+            raise ValueError(
+                "timestamp must be timezone-aware (use datetime.now(UTC) or include tzinfo). "
+                f"Got naive datetime: {v}"
+            )
         return v
 
     @model_validator(mode="after")
@@ -147,7 +151,8 @@ class ModelCostEntry(BaseModel):
         """
         if self.cumulative_total < self.cost:
             raise ValueError(
-                f"cumulative_total ({self.cumulative_total}) must be >= cost ({self.cost})"
+                f"cumulative_total ({self.cumulative_total}) must be >= cost ({self.cost}). "
+                "The cumulative total represents the running sum of all costs."
             )
         return self
 
