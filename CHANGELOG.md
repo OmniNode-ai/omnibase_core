@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.2] - 2026-01-06
+
+### Fixed
+
+- **Version Mismatch**: Fixed package version inconsistency where PyPI 0.6.1 was published with `__version__ = "0.5.3"` in source code. Both `pyproject.toml` and `__init__.py` now correctly report 0.6.2.
+
+## [0.6.1] - 2026-01-06
+
+### Added
+
+- **Contract CLI Tooling** (OMN-1129): Added CLI commands for contract management and validation
+- **ModelHandlerPackaging** (OMN-1119): Added secure handler distribution with cryptographic signing and verification
+- **Diff Rendering & Storage Hooks** (OMN-1149): Added explainability output support with diff rendering capabilities
+- **Handler Contract Protocols** (OMN-1164): Migrated handler contract protocols from SPI to Core
+- **ModelProjectionResult** (OMN-1233): Added projection result model for projection operations
+
 ## [0.6.0] - 2026-01-05
 
 ### ⚠️ BREAKING CHANGES
