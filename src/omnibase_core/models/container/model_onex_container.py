@@ -115,9 +115,12 @@ from omnibase_core.protocols.infrastructure import (
 # Compute protocol imports for tool caching
 from omnibase_core.protocols.compute import ProtocolToolCache
 
-# ServiceRegistry is imported lazily inside __init__ to avoid circular imports.
-# TYPE_CHECKING import in the header provides type hints for static analysis.
-# See OMN-1261 for details on the circular import chain.
+# ServiceRegistry Dual-Import Pattern (OMN-1261):
+# 1. TYPE_CHECKING import (header): Provides type hints for mypy/pyright static analysis
+#    without triggering runtime circular imports.
+# 2. Lazy import (__init__): Defers actual module loading to instantiation time,
+#    when all modules are fully loaded, breaking the circular dependency chain:
+#    model_onex_container -> container_service_registry -> models/container/__init__ -> model_onex_container
 
 T = TypeVar("T")
 
@@ -178,14 +181,22 @@ class ModelONEXContainer:
         compute_cache_config: ModelComputeCacheConfig | None = None,
         enable_service_registry: bool = True,
     ) -> None:
-        """
-        Initialize enhanced container with optional performance optimizations.
+        """Initialize enhanced container with optional performance optimizations.
+
+        This constructor uses a lazy import pattern for ServiceRegistry to avoid
+        circular imports (see OMN-1261). The ServiceRegistry is imported at
+        instantiation time rather than module load time.
 
         Args:
-            enable_performance_cache: Enable memory-mapped tool cache and performance monitoring
-            cache_dir: Optional cache directory (defaults to temp directory)
-            compute_cache_config: Cache configuration for NodeCompute instances (uses defaults if None)
-            enable_service_registry: Enable new ServiceRegistry (default: True)
+            enable_performance_cache: Enable memory-mapped tool cache and performance monitoring.
+            cache_dir: Optional cache directory (defaults to temp directory).
+            compute_cache_config: Cache configuration for NodeCompute instances (uses defaults if None).
+            enable_service_registry: Enable new ServiceRegistry for protocol-based DI (default: True).
+
+        Note:
+            If ServiceRegistry initialization fails (import error or other exception),
+            the container falls back to disabled service registry mode and logs the error.
+            This ensures container creation succeeds even when optional dependencies fail.
         """
         self._base_container = _BaseModelONEXContainer()
 
@@ -242,6 +253,13 @@ class ModelONEXContainer:
                 emit_log_event(
                     LogLevel.WARNING,
                     f"ServiceRegistry not available: {e}",
+                )
+                self._enable_service_registry = False
+            except Exception as e:
+                # init-errors-ok: use safe defaults if ServiceRegistry initialization fails
+                emit_log_event(
+                    LogLevel.ERROR,
+                    f"Failed to initialize ServiceRegistry: {e}",
                 )
                 self._enable_service_registry = False
 
