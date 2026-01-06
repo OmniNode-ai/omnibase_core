@@ -95,62 +95,71 @@ class TestEnumFailureType:
         assert EnumFailureType.TIMEOUT == "timeout"
         assert EnumFailureType.TIMEOUT != EnumFailureType.RATE_LIMIT
 
-    def test_is_valid_with_valid_values(self) -> None:
+    @pytest.mark.parametrize(
+        "value",
+        ["timeout", "rate_limit", "unknown", "model_error", "validation_error"],
+    )
+    def test_is_valid_with_valid_values(self, value: str) -> None:
         """Test is_valid returns True for valid enum values."""
-        assert EnumFailureType.is_valid("timeout") is True
-        assert EnumFailureType.is_valid("rate_limit") is True
-        assert EnumFailureType.is_valid("unknown") is True
+        assert EnumFailureType.is_valid(value) is True
 
-    def test_is_valid_with_invalid_values(self) -> None:
+    @pytest.mark.parametrize(
+        "value",
+        ["invalid_type", "", "TIMEOUT", "Timeout", "error"],
+    )
+    def test_is_valid_with_invalid_values(self, value: str) -> None:
         """Test is_valid returns False for invalid values."""
-        assert EnumFailureType.is_valid("invalid_type") is False
-        assert EnumFailureType.is_valid("") is False
-        assert EnumFailureType.is_valid("TIMEOUT") is False  # Case-sensitive
+        assert EnumFailureType.is_valid(value) is False
 
-    def test_is_retryable(self) -> None:
+    @pytest.mark.parametrize(
+        ("member", "expected"),
+        [
+            (EnumFailureType.TIMEOUT, True),
+            (EnumFailureType.RATE_LIMIT, True),
+            (EnumFailureType.EXTERNAL_SERVICE, True),
+            (EnumFailureType.MODEL_ERROR, True),
+            (EnumFailureType.INVARIANT_VIOLATION, False),
+            (EnumFailureType.VALIDATION_ERROR, False),
+            (EnumFailureType.COST_EXCEEDED, False),
+            (EnumFailureType.UNKNOWN, False),
+        ],
+    )
+    def test_is_retryable(self, member: EnumFailureType, expected: bool) -> None:
         """Test is_retryable identifies failures that may succeed on retry."""
-        # Retryable failures
-        assert EnumFailureType.TIMEOUT.is_retryable() is True
-        assert EnumFailureType.RATE_LIMIT.is_retryable() is True
-        assert EnumFailureType.EXTERNAL_SERVICE.is_retryable() is True
-        assert EnumFailureType.MODEL_ERROR.is_retryable() is True
-        # Non-retryable failures
-        assert EnumFailureType.INVARIANT_VIOLATION.is_retryable() is False
-        assert EnumFailureType.VALIDATION_ERROR.is_retryable() is False
-        assert EnumFailureType.COST_EXCEEDED.is_retryable() is False
-        # UNKNOWN is not retryable (unclassified failures should not auto-retry)
-        assert EnumFailureType.UNKNOWN.is_retryable() is False
+        assert member.is_retryable() is expected
 
-    def test_is_resource_related(self) -> None:
+    @pytest.mark.parametrize(
+        ("member", "expected"),
+        [
+            (EnumFailureType.COST_EXCEEDED, True),
+            (EnumFailureType.RATE_LIMIT, True),
+            (EnumFailureType.TIMEOUT, True),
+            (EnumFailureType.INVARIANT_VIOLATION, False),
+            (EnumFailureType.VALIDATION_ERROR, False),
+            (EnumFailureType.MODEL_ERROR, False),
+            (EnumFailureType.EXTERNAL_SERVICE, False),
+            (EnumFailureType.UNKNOWN, False),
+        ],
+    )
+    def test_is_resource_related(self, member: EnumFailureType, expected: bool) -> None:
         """Test is_resource_related identifies resource constraint failures."""
-        # Resource-related failures
-        assert EnumFailureType.COST_EXCEEDED.is_resource_related() is True
-        assert EnumFailureType.RATE_LIMIT.is_resource_related() is True
-        assert EnumFailureType.TIMEOUT.is_resource_related() is True
-        # Non-resource failures
-        assert EnumFailureType.INVARIANT_VIOLATION.is_resource_related() is False
-        assert EnumFailureType.VALIDATION_ERROR.is_resource_related() is False
-        assert EnumFailureType.MODEL_ERROR.is_resource_related() is False
-        # UNKNOWN is not resource-related (unclassified)
-        assert EnumFailureType.UNKNOWN.is_resource_related() is False
+        assert member.is_resource_related() is expected
 
-    def test_pickle_serialization(self) -> None:
+    @pytest.mark.parametrize("member", list(EnumFailureType))
+    def test_pickle_serialization(self, member: EnumFailureType) -> None:
         """Test enum values can be pickled and unpickled correctly."""
-        for member in EnumFailureType:
-            # Pickle and unpickle
-            pickled = pickle.dumps(member)
-            unpickled = pickle.loads(pickled)
-            # Verify identity and equality
-            assert unpickled == member
-            assert unpickled is member
-            assert unpickled.value == member.value
+        pickled = pickle.dumps(member)
+        unpickled = pickle.loads(pickled)
+        # Verify identity and equality
+        assert unpickled == member
+        assert unpickled is member
+        assert unpickled.value == member.value
 
-    def test_deep_copy(self) -> None:
+    @pytest.mark.parametrize("member", list(EnumFailureType))
+    def test_deep_copy(self, member: EnumFailureType) -> None:
         """Test enum values can be deep copied correctly."""
-        for member in EnumFailureType:
-            # Deep copy
-            copied = copy.deepcopy(member)
-            # Verify identity (enums are singletons, copy returns same instance)
-            assert copied is member
-            assert copied == member
-            assert copied.value == member.value
+        copied = copy.deepcopy(member)
+        # Verify identity (enums are singletons, copy returns same instance)
+        assert copied is member
+        assert copied == member
+        assert copied.value == member.value

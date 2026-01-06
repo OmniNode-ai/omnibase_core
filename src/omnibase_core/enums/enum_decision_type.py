@@ -10,12 +10,27 @@ from enum import Enum, unique
 
 @unique
 class EnumDecisionType(str, Enum):
-    """Decision types for memory snapshot classification.
+    """Decision type classification for omnimemory snapshots.
 
-    Each decision in a memory snapshot is tagged with its type,
-    enabling systematic analysis and reporting of decision patterns.
-    This enum supports the omnimemory system for tracking agent
-    decision-making processes.
+    Classifies decisions recorded in memory snapshots to enable systematic
+    analysis and reporting of agent decision-making patterns. Each decision
+    event is tagged with its type to support explainability, debugging, and
+    optimization of agent workflows in the omnimemory system.
+
+    See Also:
+        - docs/omnimemory/memory_snapshots.md: Memory snapshot architecture
+        - EnumFailureType: Classification of failures (may trigger retry decisions)
+        - EnumSubjectType: Classification of memory ownership
+
+    Values:
+        MODEL_SELECTION: Decision about which AI model to use for a task
+        ROUTE_CHOICE: Decision about routing or path selection in workflow execution
+        RETRY_STRATEGY: Decision about retry behavior after a failure occurs
+        TOOL_SELECTION: Decision about which tool or capability to invoke
+        ESCALATION: Decision to escalate to human oversight or higher authority
+        EARLY_TERMINATION: Decision to terminate early (success or abort)
+        PARAMETER_CHOICE: Decision about parameter values or configuration settings
+        CUSTOM: Forward-compatibility escape hatch for new decision types
 
     Example:
         >>> decision_type = EnumDecisionType.MODEL_SELECTION

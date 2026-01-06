@@ -100,60 +100,75 @@ class TestEnumDecisionType:
         assert EnumDecisionType.MODEL_SELECTION == "model_selection"
         assert EnumDecisionType.MODEL_SELECTION != EnumDecisionType.TOOL_SELECTION
 
-    def test_is_valid_with_valid_values(self) -> None:
+    @pytest.mark.parametrize(
+        "value",
+        ["model_selection", "tool_selection", "custom", "escalation", "route_choice"],
+    )
+    def test_is_valid_with_valid_values(self, value: str) -> None:
         """Test is_valid returns True for valid enum values."""
-        assert EnumDecisionType.is_valid("model_selection") is True
-        assert EnumDecisionType.is_valid("tool_selection") is True
-        assert EnumDecisionType.is_valid("custom") is True
+        assert EnumDecisionType.is_valid(value) is True
 
-    def test_is_valid_with_invalid_values(self) -> None:
+    @pytest.mark.parametrize(
+        "value",
+        ["invalid_type", "", "MODEL_SELECTION", "ModelSelection", "decision"],
+    )
+    def test_is_valid_with_invalid_values(self, value: str) -> None:
         """Test is_valid returns False for invalid values."""
-        assert EnumDecisionType.is_valid("invalid_type") is False
-        assert EnumDecisionType.is_valid("") is False
-        assert EnumDecisionType.is_valid("MODEL_SELECTION") is False  # Case-sensitive
+        assert EnumDecisionType.is_valid(value) is False
 
-    def test_is_terminal_decision(self) -> None:
+    @pytest.mark.parametrize(
+        ("member", "expected"),
+        [
+            (EnumDecisionType.ESCALATION, True),
+            (EnumDecisionType.EARLY_TERMINATION, True),
+            (EnumDecisionType.MODEL_SELECTION, False),
+            (EnumDecisionType.TOOL_SELECTION, False),
+            (EnumDecisionType.ROUTE_CHOICE, False),
+            (EnumDecisionType.RETRY_STRATEGY, False),
+            (EnumDecisionType.PARAMETER_CHOICE, False),
+            (EnumDecisionType.CUSTOM, False),
+        ],
+    )
+    def test_is_terminal_decision(
+        self, member: EnumDecisionType, expected: bool
+    ) -> None:
         """Test is_terminal_decision identifies workflow-ending decisions."""
-        # Terminal decisions
-        assert EnumDecisionType.ESCALATION.is_terminal_decision() is True
-        assert EnumDecisionType.EARLY_TERMINATION.is_terminal_decision() is True
-        # Non-terminal decisions
-        assert EnumDecisionType.MODEL_SELECTION.is_terminal_decision() is False
-        assert EnumDecisionType.TOOL_SELECTION.is_terminal_decision() is False
-        assert EnumDecisionType.ROUTE_CHOICE.is_terminal_decision() is False
-        assert EnumDecisionType.RETRY_STRATEGY.is_terminal_decision() is False
-        assert EnumDecisionType.CUSTOM.is_terminal_decision() is False
+        assert member.is_terminal_decision() is expected
 
-    def test_is_selection_decision(self) -> None:
+    @pytest.mark.parametrize(
+        ("member", "expected"),
+        [
+            (EnumDecisionType.MODEL_SELECTION, True),
+            (EnumDecisionType.TOOL_SELECTION, True),
+            (EnumDecisionType.ROUTE_CHOICE, True),
+            (EnumDecisionType.PARAMETER_CHOICE, True),
+            (EnumDecisionType.ESCALATION, False),
+            (EnumDecisionType.EARLY_TERMINATION, False),
+            (EnumDecisionType.RETRY_STRATEGY, False),
+            (EnumDecisionType.CUSTOM, False),
+        ],
+    )
+    def test_is_selection_decision(
+        self, member: EnumDecisionType, expected: bool
+    ) -> None:
         """Test is_selection_decision identifies selection-type decisions."""
-        # Selection decisions
-        assert EnumDecisionType.MODEL_SELECTION.is_selection_decision() is True
-        assert EnumDecisionType.TOOL_SELECTION.is_selection_decision() is True
-        assert EnumDecisionType.ROUTE_CHOICE.is_selection_decision() is True
-        assert EnumDecisionType.PARAMETER_CHOICE.is_selection_decision() is True
-        # Non-selection decisions
-        assert EnumDecisionType.ESCALATION.is_selection_decision() is False
-        assert EnumDecisionType.EARLY_TERMINATION.is_selection_decision() is False
-        assert EnumDecisionType.RETRY_STRATEGY.is_selection_decision() is False
-        assert EnumDecisionType.CUSTOM.is_selection_decision() is False
+        assert member.is_selection_decision() is expected
 
-    def test_pickle_serialization(self) -> None:
+    @pytest.mark.parametrize("member", list(EnumDecisionType))
+    def test_pickle_serialization(self, member: EnumDecisionType) -> None:
         """Test enum values can be pickled and unpickled correctly."""
-        for member in EnumDecisionType:
-            # Pickle and unpickle
-            pickled = pickle.dumps(member)
-            unpickled = pickle.loads(pickled)
-            # Verify identity and equality
-            assert unpickled == member
-            assert unpickled is member  # Enum identity preserved
-            assert unpickled.value == member.value
+        pickled = pickle.dumps(member)
+        unpickled = pickle.loads(pickled)
+        # Verify identity and equality
+        assert unpickled == member
+        assert unpickled is member  # Enum identity preserved
+        assert unpickled.value == member.value
 
-    def test_deep_copy(self) -> None:
+    @pytest.mark.parametrize("member", list(EnumDecisionType))
+    def test_deep_copy(self, member: EnumDecisionType) -> None:
         """Test enum values can be deep copied correctly."""
-        for member in EnumDecisionType:
-            # Deep copy
-            copied = copy.deepcopy(member)
-            # Verify identity and equality
-            assert copied == member
-            assert copied is member  # Enum identity preserved
-            assert copied.value == member.value
+        copied = copy.deepcopy(member)
+        # Verify identity and equality
+        assert copied == member
+        assert copied is member  # Enum identity preserved
+        assert copied.value == member.value

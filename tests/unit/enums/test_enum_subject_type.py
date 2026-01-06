@@ -99,78 +99,96 @@ class TestEnumSubjectType:
         assert EnumSubjectType.AGENT == "agent"
         assert EnumSubjectType.AGENT != EnumSubjectType.USER
 
-    def test_is_valid_with_valid_values(self) -> None:
+    @pytest.mark.parametrize(
+        "value",
+        ["agent", "workflow", "custom", "user", "session"],
+    )
+    def test_is_valid_with_valid_values(self, value: str) -> None:
         """Test is_valid returns True for valid enum values."""
-        assert EnumSubjectType.is_valid("agent") is True
-        assert EnumSubjectType.is_valid("workflow") is True
-        assert EnumSubjectType.is_valid("custom") is True
+        assert EnumSubjectType.is_valid(value) is True
 
-    def test_is_valid_with_invalid_values(self) -> None:
+    @pytest.mark.parametrize(
+        "value",
+        ["invalid_type", "", "AGENT", "Agent", "unknown"],
+    )
+    def test_is_valid_with_invalid_values(self, value: str) -> None:
         """Test is_valid returns False for invalid values."""
-        assert EnumSubjectType.is_valid("invalid_type") is False
-        assert EnumSubjectType.is_valid("") is False
-        assert EnumSubjectType.is_valid("AGENT") is False  # Case-sensitive
+        assert EnumSubjectType.is_valid(value) is False
 
-    def test_is_entity_type(self) -> None:
+    @pytest.mark.parametrize(
+        ("member", "expected"),
+        [
+            (EnumSubjectType.AGENT, True),
+            (EnumSubjectType.USER, True),
+            (EnumSubjectType.SERVICE, True),
+            (EnumSubjectType.WORKFLOW, False),
+            (EnumSubjectType.PROJECT, False),
+            (EnumSubjectType.ORG, False),
+            (EnumSubjectType.TASK, False),
+            (EnumSubjectType.CORPUS, False),
+            (EnumSubjectType.SESSION, False),
+            (EnumSubjectType.CUSTOM, False),
+        ],
+    )
+    def test_is_entity_type(self, member: EnumSubjectType, expected: bool) -> None:
         """Test is_entity_type identifies entity subjects (agent, user, service)."""
-        # Entity types
-        assert EnumSubjectType.AGENT.is_entity_type() is True
-        assert EnumSubjectType.USER.is_entity_type() is True
-        assert EnumSubjectType.SERVICE.is_entity_type() is True
-        # Non-entity types
-        assert EnumSubjectType.WORKFLOW.is_entity_type() is False
-        assert EnumSubjectType.PROJECT.is_entity_type() is False
-        assert EnumSubjectType.SESSION.is_entity_type() is False
-        # CUSTOM is not an entity type
-        assert EnumSubjectType.CUSTOM.is_entity_type() is False
+        assert member.is_entity_type() is expected
 
-    def test_is_scope_type(self) -> None:
+    @pytest.mark.parametrize(
+        ("member", "expected"),
+        [
+            (EnumSubjectType.WORKFLOW, True),
+            (EnumSubjectType.PROJECT, True),
+            (EnumSubjectType.ORG, True),
+            (EnumSubjectType.TASK, True),
+            (EnumSubjectType.SESSION, True),
+            (EnumSubjectType.CORPUS, True),
+            (EnumSubjectType.AGENT, False),
+            (EnumSubjectType.USER, False),
+            (EnumSubjectType.SERVICE, False),
+            (EnumSubjectType.CUSTOM, False),
+        ],
+    )
+    def test_is_scope_type(self, member: EnumSubjectType, expected: bool) -> None:
         """Test is_scope_type identifies scope subjects (workflow, project, etc.)."""
-        # Scope types
-        assert EnumSubjectType.WORKFLOW.is_scope_type() is True
-        assert EnumSubjectType.PROJECT.is_scope_type() is True
-        assert EnumSubjectType.ORG.is_scope_type() is True
-        assert EnumSubjectType.TASK.is_scope_type() is True
-        assert EnumSubjectType.SESSION.is_scope_type() is True
-        assert EnumSubjectType.CORPUS.is_scope_type() is True
-        # Non-scope types
-        assert EnumSubjectType.AGENT.is_scope_type() is False
-        assert EnumSubjectType.USER.is_scope_type() is False
-        assert EnumSubjectType.SERVICE.is_scope_type() is False
-        # CUSTOM is not a scope type
-        assert EnumSubjectType.CUSTOM.is_scope_type() is False
+        assert member.is_scope_type() is expected
 
-    def test_is_persistent(self) -> None:
+    @pytest.mark.parametrize(
+        ("member", "expected"),
+        [
+            (EnumSubjectType.AGENT, True),
+            (EnumSubjectType.USER, True),
+            (EnumSubjectType.WORKFLOW, True),
+            (EnumSubjectType.PROJECT, True),
+            (EnumSubjectType.SERVICE, True),
+            (EnumSubjectType.ORG, True),
+            (EnumSubjectType.TASK, True),
+            (EnumSubjectType.CORPUS, True),
+            (EnumSubjectType.CUSTOM, True),
+            (EnumSubjectType.SESSION, False),
+        ],
+    )
+    def test_is_persistent(self, member: EnumSubjectType, expected: bool) -> None:
         """Test is_persistent identifies subjects with long-term memory."""
-        # Persistent types (most subjects)
-        assert EnumSubjectType.AGENT.is_persistent() is True
-        assert EnumSubjectType.USER.is_persistent() is True
-        assert EnumSubjectType.WORKFLOW.is_persistent() is True
-        assert EnumSubjectType.PROJECT.is_persistent() is True
-        # CUSTOM defaults to persistent
-        assert EnumSubjectType.CUSTOM.is_persistent() is True
-        # Non-persistent types (ephemeral)
-        assert EnumSubjectType.SESSION.is_persistent() is False
+        assert member.is_persistent() is expected
 
-    def test_pickle_serialization(self) -> None:
+    @pytest.mark.parametrize("member", list(EnumSubjectType))
+    def test_pickle_serialization(self, member: EnumSubjectType) -> None:
         """Test enum values can be pickled and unpickled correctly."""
-        for member in EnumSubjectType:
-            # Pickle and unpickle
-            pickled = pickle.dumps(member)
-            unpickled = pickle.loads(pickled)
-            # Verify identity and value
-            assert unpickled == member
-            assert unpickled.value == member.value
-            assert type(unpickled) is EnumSubjectType
+        pickled = pickle.dumps(member)
+        unpickled = pickle.loads(pickled)
+        # Verify identity and value
+        assert unpickled == member
+        assert unpickled.value == member.value
+        assert type(unpickled) is EnumSubjectType
 
-    def test_deep_copy(self) -> None:
+    @pytest.mark.parametrize("member", list(EnumSubjectType))
+    def test_deep_copy(self, member: EnumSubjectType) -> None:
         """Test enum values can be deep copied correctly."""
-        for member in EnumSubjectType:
-            # Deep copy
-            copied = copy.deepcopy(member)
-            # Verify identity and value
-            assert copied == member
-            assert copied.value == member.value
-            assert type(copied) is EnumSubjectType
-            # For enums, deep copy should return the same object (singletons)
-            assert copied is member
+        copied = copy.deepcopy(member)
+        # Verify identity and value
+        assert copied == member
+        assert copied.value == member.value
+        assert type(copied) is EnumSubjectType
+        # For enums, deep copy should return the same object (singletons)
+        assert copied is member

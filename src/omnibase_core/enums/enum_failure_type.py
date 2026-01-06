@@ -10,12 +10,27 @@ from enum import Enum, unique
 
 @unique
 class EnumFailureType(str, Enum):
-    """Failure types for memory snapshot classification.
+    """Failure type classification for omnimemory snapshots.
 
-    Each failure in a memory snapshot is tagged with its type,
-    enabling systematic analysis of failure patterns. This enum
-    supports the omnimemory system for tracking and categorizing
-    failures across agent executions.
+    Classifies failures recorded in memory snapshots to enable systematic
+    analysis of failure patterns across agent executions. Each failure event
+    is tagged with its type to support retry logic, alerting, and post-mortem
+    analysis in the omnimemory system.
+
+    See Also:
+        - docs/omnimemory/memory_snapshots.md: Memory snapshot architecture
+        - EnumDecisionType: Classification of decisions (e.g., retry decisions)
+        - EnumSubjectType: Classification of memory ownership
+
+    Values:
+        INVARIANT_VIOLATION: A required invariant or constraint was violated
+        TIMEOUT: Operation exceeded its time limit
+        MODEL_ERROR: Error from the AI model (generation failure, context overflow)
+        COST_EXCEEDED: Operation exceeded its allocated cost budget
+        VALIDATION_ERROR: Input or output validation failed
+        EXTERNAL_SERVICE: External service or API failure (network, unavailable)
+        RATE_LIMIT: Rate limit exceeded for an API or service
+        UNKNOWN: Unclassified failure (escape hatch for unexpected failure modes)
 
     Example:
         >>> failure_type = EnumFailureType.TIMEOUT

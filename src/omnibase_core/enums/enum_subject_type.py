@@ -10,12 +10,29 @@ from enum import Enum, unique
 
 @unique
 class EnumSubjectType(str, Enum):
-    """Subject types for memory ownership classification.
+    """Memory subject type classification for omnimemory snapshots.
 
-    Each memory snapshot can be owned by different types of subjects,
-    enabling flexible scoping and filtering of memory data. This enum
-    supports the omnimemory system for multi-tenant memory management
-    across agents, users, workflows, and organizational contexts.
+    Classifies the ownership and scope of memory subjects in the omnimemory system,
+    enabling flexible multi-tenant memory management across agents, users, workflows,
+    and organizational contexts. Each memory snapshot is associated with a subject
+    type to support filtering, access control, and lifecycle management.
+
+    See Also:
+        - docs/omnimemory/memory_snapshots.md: Memory snapshot architecture
+        - EnumDecisionType: Classification of decisions recorded in memory
+        - EnumFailureType: Classification of failures recorded in memory
+
+    Values:
+        AGENT: Memory owned by an AI agent
+        USER: Memory owned by a human user
+        WORKFLOW: Memory scoped to a workflow execution
+        PROJECT: Memory scoped to a project context
+        SERVICE: Memory owned by a system service
+        ORG: Memory scoped to an organization
+        TASK: Memory scoped to a specific task
+        CORPUS: Memory associated with a knowledge corpus
+        SESSION: Ephemeral session memory (not persisted long-term)
+        CUSTOM: Forward-compatibility escape hatch for new subject types
 
     Example:
         >>> subject_type = EnumSubjectType.AGENT
