@@ -230,6 +230,10 @@ class ModelCostLedger(BaseModel):
         Returns:
             A new ModelCostLedger instance with the entry added.
 
+        Raises:
+            OnexError: If entry's cumulative_total does not match expected
+                cumulative total (self.total_spent + entry.cost).
+
         Example:
             >>> from datetime import datetime, UTC
             >>> ledger = ModelCostLedger(budget_total=10.0)
@@ -251,6 +255,17 @@ class ModelCostLedger(BaseModel):
         .. versionadded:: 0.6.0
         """
         new_total_spent = self.total_spent + entry.cost
+
+        # Validate cumulative_total consistency with small tolerance for floats
+        if abs(entry.cumulative_total - new_total_spent) > 1e-9:
+            raise OnexError(
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=(
+                    f"Entry cumulative_total ({entry.cumulative_total}) does not match "
+                    f"expected cumulative total ({new_total_spent})"
+                ),
+            )
+
         new_budget_remaining = self.budget_total - new_total_spent
 
         return ModelCostLedger(

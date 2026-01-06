@@ -21,6 +21,7 @@ from pydantic import ValidationError
 
 pytestmark = pytest.mark.unit
 
+from omnibase_core.errors import OnexError
 from omnibase_core.models.omnimemory import ModelCostEntry, ModelCostLedger
 
 # ============================================================================
@@ -276,7 +277,7 @@ class TestModelCostLedgerValidation:
         assert "hard_ceiling" in str(exc_info.value)
 
     def test_hard_ceiling_must_exceed_warning_threshold(self) -> None:
-        """Test that hard_ceiling must be >= warning_threshold."""
+        """Test that hard_ceiling must be > warning_threshold."""
         with pytest.raises(ValidationError) as exc_info:
             ModelCostLedger(budget_total=100.0, warning_threshold=0.8, hard_ceiling=0.5)
 
@@ -382,19 +383,27 @@ class TestModelCostLedgerWithEntry:
         assert len(new_ledger.entries) == 1
         assert new_ledger.entries[-1] == sample_entry
 
-    def test_multiple_entries_accumulate(
-        self, minimal_ledger_data: dict, sample_entry: ModelCostEntry
-    ) -> None:
+    def test_multiple_entries_accumulate(self, minimal_ledger_data: dict) -> None:
         """Test that multiple entries accumulate correctly."""
         ledger = ModelCostLedger(**minimal_ledger_data)
+        entry_cost = 0.0045
 
-        # Add three entries
-        ledger = ledger.with_entry(sample_entry)
-        ledger = ledger.with_entry(sample_entry)
-        ledger = ledger.with_entry(sample_entry)
+        # Add three entries with correct cumulative_total values
+        for i in range(3):
+            cumulative = (i + 1) * entry_cost
+            entry = ModelCostEntry(
+                timestamp=datetime.now(UTC),
+                operation="chat_completion",
+                model_used="gpt-4",
+                tokens_in=100,
+                tokens_out=50,
+                cost=entry_cost,
+                cumulative_total=cumulative,
+            )
+            ledger = ledger.with_entry(entry)
 
         assert len(ledger.entries) == 3
-        assert ledger.total_spent == sample_entry.cost * 3
+        assert ledger.total_spent == pytest.approx(entry_cost * 3)
 
     def test_with_entry_preserves_ledger_id(
         self, minimal_ledger_data: dict, sample_entry: ModelCostEntry
@@ -416,6 +425,77 @@ class TestModelCostLedgerWithEntry:
 
         assert new_ledger.warning_threshold == 0.7
         assert new_ledger.hard_ceiling == 0.9
+
+    def test_with_entry_rejects_inconsistent_cumulative_total(
+        self, minimal_ledger_data: dict
+    ) -> None:
+        """Test that with_entry rejects entries with inconsistent cumulative_total."""
+        ledger = ModelCostLedger(**minimal_ledger_data)
+
+        # Create entry with wrong cumulative_total (should be 5.0, not 999.0)
+        bad_entry = ModelCostEntry(
+            timestamp=datetime.now(UTC),
+            operation="test",
+            model_used="gpt-4",
+            tokens_in=100,
+            tokens_out=50,
+            cost=5.0,
+            cumulative_total=999.0,  # Wrong! Should be 5.0
+        )
+
+        with pytest.raises(OnexError) as exc_info:
+            ledger.with_entry(bad_entry)
+
+        assert "cumulative_total" in str(exc_info.value)
+        assert "999.0" in str(exc_info.value)
+        assert "5.0" in str(exc_info.value)
+
+    def test_with_entry_rejects_inconsistent_cumulative_total_with_prior_entries(
+        self, minimal_ledger_data: dict, sample_entry: ModelCostEntry
+    ) -> None:
+        """Test validation works correctly after prior entries have been added."""
+        ledger = ModelCostLedger(**minimal_ledger_data)
+
+        # Add first entry correctly
+        ledger = ledger.with_entry(sample_entry)
+
+        # sample_entry has cost=0.0045, so total_spent is now 0.0045
+        # Next entry with cost=1.0 should have cumulative_total = 0.0045 + 1.0 = 1.0045
+        bad_entry = ModelCostEntry(
+            timestamp=datetime.now(UTC),
+            operation="test",
+            model_used="gpt-4",
+            tokens_in=100,
+            tokens_out=50,
+            cost=1.0,
+            cumulative_total=1.0,  # Wrong! Should be 1.0045
+        )
+
+        with pytest.raises(OnexError) as exc_info:
+            ledger.with_entry(bad_entry)
+
+        assert "cumulative_total" in str(exc_info.value)
+
+    def test_with_entry_accepts_correct_cumulative_total_within_tolerance(
+        self, minimal_ledger_data: dict
+    ) -> None:
+        """Test that with_entry accepts cumulative_total within float tolerance."""
+        ledger = ModelCostLedger(**minimal_ledger_data)
+
+        # Create entry with cumulative_total that differs by less than 1e-9
+        entry = ModelCostEntry(
+            timestamp=datetime.now(UTC),
+            operation="test",
+            model_used="gpt-4",
+            tokens_in=100,
+            tokens_out=50,
+            cost=5.0,
+            cumulative_total=5.0 + 1e-10,  # Within tolerance
+        )
+
+        # Should not raise
+        new_ledger = ledger.with_entry(entry)
+        assert new_ledger.total_spent == 5.0
 
 
 # ============================================================================
@@ -481,9 +561,7 @@ class TestModelCostLedgerThresholds:
         )
         assert ledger.is_exceeded() is True
 
-    def test_is_exceeded_true_above_ceiling(
-        self, sample_entry_large: ModelCostEntry
-    ) -> None:
+    def test_is_exceeded_true_above_ceiling(self) -> None:
         """Test is_exceeded returns True when above ceiling via with_entry."""
         # Start with budget that will be exceeded by adding an entry
         ledger = ModelCostLedger(
@@ -492,8 +570,18 @@ class TestModelCostLedgerThresholds:
             budget_remaining=5.0,
             hard_ceiling=1.0,
         )
+        # Create entry with correct cumulative_total (95.0 + 50.0 = 145.0)
+        large_entry = ModelCostEntry(
+            timestamp=datetime.now(UTC),
+            operation="chat_completion",
+            model_used="gpt-4-turbo",
+            tokens_in=5000,
+            tokens_out=2000,
+            cost=50.0,
+            cumulative_total=145.0,  # 95.0 prior + 50.0 cost
+        )
         # Adding large entry (cost=50.0) should push us well over ceiling
-        ledger_exceeded = ledger.with_entry(sample_entry_large)
+        ledger_exceeded = ledger.with_entry(large_entry)
         assert ledger_exceeded.is_exceeded() is True
         assert ledger_exceeded.total_spent == 145.0  # 95 + 50
 
@@ -641,6 +729,50 @@ class TestModelCostLedgerEscalation:
 
         assert new_ledger.total_spent == original_spent
 
+    def test_with_escalation_rejects_zero_budget(
+        self, minimal_ledger_data: dict
+    ) -> None:
+        """Test that with_escalation rejects zero additional_budget."""
+        ledger = ModelCostLedger(**minimal_ledger_data)
+
+        with pytest.raises(OnexError) as exc_info:
+            ledger.with_escalation(0.0, "Valid reason")
+
+        assert "additional_budget must be positive" in str(exc_info.value)
+
+    def test_with_escalation_rejects_negative_budget(
+        self, minimal_ledger_data: dict
+    ) -> None:
+        """Test that with_escalation rejects negative additional_budget."""
+        ledger = ModelCostLedger(**minimal_ledger_data)
+
+        with pytest.raises(OnexError) as exc_info:
+            ledger.with_escalation(-50.0, "Valid reason")
+
+        assert "additional_budget must be positive" in str(exc_info.value)
+
+    def test_with_escalation_rejects_empty_reason(
+        self, minimal_ledger_data: dict
+    ) -> None:
+        """Test that with_escalation rejects empty reason string."""
+        ledger = ModelCostLedger(**minimal_ledger_data)
+
+        with pytest.raises(OnexError) as exc_info:
+            ledger.with_escalation(50.0, "")
+
+        assert "reason cannot be empty" in str(exc_info.value)
+
+    def test_with_escalation_rejects_whitespace_reason(
+        self, minimal_ledger_data: dict
+    ) -> None:
+        """Test that with_escalation rejects whitespace-only reason."""
+        ledger = ModelCostLedger(**minimal_ledger_data)
+
+        with pytest.raises(OnexError) as exc_info:
+            ledger.with_escalation(50.0, "   ")
+
+        assert "reason cannot be empty" in str(exc_info.value)
+
 
 # ============================================================================
 # Test: Serialization
@@ -737,17 +869,26 @@ class TestModelCostLedgerEdgeCases:
         assert ledger.budget_remaining == 0.0
         assert ledger.is_exceeded() is True
 
-    def test_negative_budget_remaining_after_overspend(
-        self, sample_entry_large: ModelCostEntry
-    ) -> None:
+    def test_negative_budget_remaining_after_overspend(self) -> None:
         """Test ledger can have negative budget_remaining via with_entry (overspent)."""
         # Start with budget near limit
         ledger = ModelCostLedger(
             budget_total=100.0, total_spent=95.0, budget_remaining=5.0
         )
 
+        # Create entry with correct cumulative_total (95.0 + 50.0 = 145.0)
+        large_entry = ModelCostEntry(
+            timestamp=datetime.now(UTC),
+            operation="chat_completion",
+            model_used="gpt-4-turbo",
+            tokens_in=5000,
+            tokens_out=2000,
+            cost=50.0,
+            cumulative_total=145.0,  # 95.0 prior + 50.0 cost
+        )
+
         # Add an entry that costs more than remaining budget (cost=50.0)
-        ledger_overspent = ledger.with_entry(sample_entry_large)
+        ledger_overspent = ledger.with_entry(large_entry)
 
         # budget_remaining becomes negative through with_entry (100 - 145 = -45)
         assert ledger_overspent.budget_remaining == -45.0
