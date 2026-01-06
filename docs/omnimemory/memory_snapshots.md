@@ -376,4 +376,4 @@ else:
 
 ---
 
-**Last Updated**: 2025-01-06 | **Version**: 0.6.0
+**Last Updated**: 2026-01-06 | **Version**: 0.6.0
