@@ -120,8 +120,8 @@ class EnumSubjectType(str, Enum):
         """
         return self in {
             EnumSubjectType.AGENT,
-            EnumSubjectType.USER,
             EnumSubjectType.SERVICE,
+            EnumSubjectType.USER,
         }
 
     def is_scope_type(self) -> bool:
@@ -137,12 +137,12 @@ class EnumSubjectType(str, Enum):
             False
         """
         return self in {
-            EnumSubjectType.WORKFLOW,
-            EnumSubjectType.PROJECT,
-            EnumSubjectType.ORG,
-            EnumSubjectType.TASK,
-            EnumSubjectType.SESSION,
             EnumSubjectType.CORPUS,
+            EnumSubjectType.ORG,
+            EnumSubjectType.PROJECT,
+            EnumSubjectType.SESSION,
+            EnumSubjectType.TASK,
+            EnumSubjectType.WORKFLOW,
         }
 
     def is_persistent(self) -> bool:

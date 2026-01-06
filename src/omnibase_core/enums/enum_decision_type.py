@@ -105,8 +105,8 @@ class EnumDecisionType(str, Enum):
             False
         """
         return self in {
-            EnumDecisionType.ESCALATION,
             EnumDecisionType.EARLY_TERMINATION,
+            EnumDecisionType.ESCALATION,
         }
 
     def is_selection_decision(self) -> bool:
@@ -123,9 +123,9 @@ class EnumDecisionType(str, Enum):
         """
         return self in {
             EnumDecisionType.MODEL_SELECTION,
-            EnumDecisionType.TOOL_SELECTION,
-            EnumDecisionType.ROUTE_CHOICE,
             EnumDecisionType.PARAMETER_CHOICE,
+            EnumDecisionType.ROUTE_CHOICE,
+            EnumDecisionType.TOOL_SELECTION,
         }
 
 

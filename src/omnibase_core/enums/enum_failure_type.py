@@ -105,10 +105,10 @@ class EnumFailureType(str, Enum):
             False
         """
         return self in {
-            EnumFailureType.TIMEOUT,
-            EnumFailureType.RATE_LIMIT,
             EnumFailureType.EXTERNAL_SERVICE,
             EnumFailureType.MODEL_ERROR,
+            EnumFailureType.RATE_LIMIT,
+            EnumFailureType.TIMEOUT,
         }
 
     def is_resource_related(self) -> bool:
