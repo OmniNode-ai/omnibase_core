@@ -33,7 +33,10 @@ Related:
 .. versionadded:: 0.6.0
 """
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors import ModelOnexError
 
 
 class ModelCorpusReplayProgress(BaseModel):
@@ -120,6 +123,26 @@ class ModelCorpusReplayProgress(BaseModel):
         ge=0.0,
         description="Estimated time remaining in milliseconds",
     )
+
+    @model_validator(mode="after")
+    def _validate_counts(self) -> "ModelCorpusReplayProgress":
+        """Validate that counts don't exceed total.
+
+        This ensures the `remaining` property never returns a negative value.
+
+        Returns:
+            Self if validation passes.
+
+        Raises:
+            ModelOnexError: If sum of counts exceeds total.
+        """
+        count_sum = self.completed + self.failed + self.skipped
+        if count_sum > self.total:
+            raise ModelOnexError(
+                message=f"Sum of counts ({count_sum}) exceeds total ({self.total})",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            )
+        return self
 
     @property
     def remaining(self) -> int:

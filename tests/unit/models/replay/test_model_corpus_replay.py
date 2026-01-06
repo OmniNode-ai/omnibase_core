@@ -170,13 +170,17 @@ class TestModelAggregateMetrics:
         assert metrics.p95_duration_ms is None
 
     def test_from_durations_single(self) -> None:
-        """Single duration should have matching avg/min/max."""
+        """Single duration should have matching avg/min/max and percentiles."""
         metrics = ModelAggregateMetrics.from_durations(
             durations=[100.0], total_duration_ms=100.0, success_count=1, total_count=1
         )
         assert metrics.avg_duration_ms == 100.0
         assert metrics.min_duration_ms == 100.0
         assert metrics.max_duration_ms == 100.0
+        # Verify percentiles for single-element list
+        assert metrics.p50_duration_ms == 100.0
+        assert metrics.p95_duration_ms == 100.0
+        assert metrics.p99_duration_ms == 100.0
 
     def test_from_durations_multiple(self) -> None:
         """Multiple durations should compute correct percentiles."""

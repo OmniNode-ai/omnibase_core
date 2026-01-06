@@ -10,6 +10,7 @@ from uuid import uuid4
 import pytest
 
 from omnibase_core.enums.enum_node_kind import EnumNodeKind
+from omnibase_core.errors import ModelOnexError
 from omnibase_core.models.manifest.model_contract_identity import ModelContractIdentity
 from omnibase_core.models.manifest.model_execution_manifest import (
     ModelExecutionManifest,
@@ -86,7 +87,7 @@ class TestServiceCorpusReplayOrchestrator:
         config = ModelCorpusReplayConfig()
 
         # Empty corpus should raise validation error
-        with pytest.raises(Exception):  # ModelOnexError
+        with pytest.raises(ModelOnexError):
             await orchestrator.replay(corpus, config)
 
     @pytest.mark.asyncio
@@ -206,14 +207,14 @@ class TestServiceCorpusReplayOrchestrator:
 
     def test_cancel_flag(self, orchestrator: ServiceCorpusReplayOrchestrator) -> None:
         """Cancel flag should be set correctly."""
-        # Test that cancel() sets the _cancelled flag
-        assert not orchestrator._cancelled
+        # Test that cancel() sets the cancelled flag
+        assert not orchestrator.is_cancelled
         orchestrator.cancel()
-        assert orchestrator._cancelled
+        assert orchestrator.is_cancelled
 
         # And reset() clears it
         orchestrator.reset()
-        assert not orchestrator._cancelled
+        assert not orchestrator.is_cancelled
 
     def test_reset(self, orchestrator: ServiceCorpusReplayOrchestrator) -> None:
         """Reset should clear state."""
@@ -222,8 +223,8 @@ class TestServiceCorpusReplayOrchestrator:
 
         orchestrator.reset()
 
-        assert not orchestrator._cancelled
-        assert orchestrator._last_progress is None
+        assert not orchestrator.is_cancelled
+        assert orchestrator.last_progress is None
 
     @pytest.mark.asyncio
     async def test_aggregate_metrics(
