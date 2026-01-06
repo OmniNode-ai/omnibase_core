@@ -66,6 +66,9 @@ from .enum_core_error_code import (
 # Security-related enums
 from .enum_data_classification import EnumDataClassification
 
+# Decision type enums (OMN-1235)
+from .enum_decision_type import EnumDecisionType
+
 # Detection and security enums
 from .enum_detection_type import EnumDetectionType
 
@@ -78,10 +81,7 @@ from .enum_dispatch_status import EnumDispatchStatus
 # Effect-related enums (from nodes)
 from .enum_effect_capability import EnumEffectCapability
 from .enum_effect_handler_type import EnumEffectHandlerType
-from .enum_effect_types import (
-    EnumEffectType,
-    EnumTransactionState,
-)
+from .enum_effect_types import EnumEffectType, EnumTransactionState
 
 # Validation-related enums
 from .enum_environment_validation_rule_type import EnumEnvironmentValidationRuleType
@@ -93,6 +93,9 @@ from .enum_event_sink_type import EnumEventSinkType
 from .enum_execution_mode import EnumExecutionMode
 from .enum_execution_shape import EnumExecutionShape, EnumMessageCategory
 from .enum_execution_trigger import EnumExecutionTrigger
+
+# Failure type enums (OMN-1236)
+from .enum_failure_type import EnumFailureType
 
 # Function-related enums
 from .enum_function_language import EnumFunctionLanguage
@@ -239,6 +242,9 @@ from .enum_service_status import EnumServiceStatus
 from .enum_service_tier import EnumServiceTier
 from .enum_service_type_category import EnumServiceTypeCategory
 from .enum_state_update_operation import EnumStateUpdateOperation
+
+# Subject type enums (OMN-1237)
+from .enum_subject_type import EnumSubjectType
 
 # Token and authentication context enums (OMN-1054)
 from .enum_token_type import EnumTokenType
@@ -499,6 +505,10 @@ __all__ = [
     "EnumViolationSeverity",
     # Event sink type domain (OMN-1151)
     "EnumEventSinkType",
+    # Omnimemory domain (OMN-1235, OMN-1236, OMN-1237)
+    "EnumDecisionType",
+    "EnumFailureType",
+    "EnumSubjectType",
     # NOTE: Removed from __all__ due to missing module files or circular imports:
     # - "EnumRegistryType" (module doesn't exist)
     # - "ModelServiceModeEnum" (replaced with correct "EnumServiceMode")
