@@ -95,6 +95,16 @@ class TestEnumFailureType:
         assert EnumFailureType.TIMEOUT == "timeout"
         assert EnumFailureType.TIMEOUT != EnumFailureType.RATE_LIMIT
 
+    def test_str_method(self) -> None:
+        """Test __str__ returns the enum value."""
+        # Test representative members
+        assert str(EnumFailureType.TIMEOUT) == "timeout"
+        assert str(EnumFailureType.RATE_LIMIT) == "rate_limit"
+        assert str(EnumFailureType.UNKNOWN) == "unknown"
+        # Verify str() equals .value for all members
+        for member in EnumFailureType:
+            assert str(member) == member.value
+
     @pytest.mark.parametrize(
         "value",
         ["timeout", "rate_limit", "unknown", "model_error", "validation_error"],

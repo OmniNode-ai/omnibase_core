@@ -100,6 +100,16 @@ class TestEnumDecisionType:
         assert EnumDecisionType.MODEL_SELECTION == "model_selection"
         assert EnumDecisionType.MODEL_SELECTION != EnumDecisionType.TOOL_SELECTION
 
+    def test_str_method(self) -> None:
+        """Test __str__ returns the enum value."""
+        # Test representative members
+        assert str(EnumDecisionType.MODEL_SELECTION) == "model_selection"
+        assert str(EnumDecisionType.ESCALATION) == "escalation"
+        assert str(EnumDecisionType.CUSTOM) == "custom"
+        # Verify str() equals .value for all members
+        for member in EnumDecisionType:
+            assert str(member) == member.value
+
     @pytest.mark.parametrize(
         "value",
         ["model_selection", "tool_selection", "custom", "escalation", "route_choice"],

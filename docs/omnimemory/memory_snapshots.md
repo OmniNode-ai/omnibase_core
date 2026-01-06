@@ -67,6 +67,8 @@ Scope types represent memory bound to a specific context or execution scope:
 |-------|-------------|----------|
 | `CUSTOM` | Forward-compatibility escape hatch | New subject types not yet in enum |
 
+**Note**: `CUSTOM` intentionally returns `False` for both `is_entity_type()` and `is_scope_type()` helper methods. This is by design - CUSTOM represents an undefined category that should be handled with application-specific logic. However, `CUSTOM.is_persistent()` returns `True` by default (only SESSION is non-persistent).
+
 ### Helper Methods
 
 ```python
@@ -75,14 +77,17 @@ from omnibase_core.enums import EnumSubjectType
 # Check if subject type is an entity (agent, user, service)
 EnumSubjectType.AGENT.is_entity_type()      # True
 EnumSubjectType.WORKFLOW.is_entity_type()   # False
+EnumSubjectType.CUSTOM.is_entity_type()     # False (undefined category)
 
 # Check if subject type is a scope (workflow, project, etc.)
 EnumSubjectType.WORKFLOW.is_scope_type()    # True
 EnumSubjectType.AGENT.is_scope_type()       # False
+EnumSubjectType.CUSTOM.is_scope_type()      # False (undefined category)
 
 # Check if memory is typically persistent
 EnumSubjectType.AGENT.is_persistent()       # True
 EnumSubjectType.SESSION.is_persistent()     # False
+EnumSubjectType.CUSTOM.is_persistent()      # True (only SESSION is non-persistent)
 ```
 
 ## Decision Types (EnumDecisionType)

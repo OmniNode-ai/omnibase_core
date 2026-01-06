@@ -82,7 +82,13 @@ class EnumSubjectType(str, Enum):
     """Ephemeral session memory (temporary, not persisted long-term)."""
 
     CUSTOM = "custom"
-    """Escape hatch for forward-compatibility with new subject types."""
+    """Escape hatch for forward-compatibility with new subject types.
+
+    Note: CUSTOM intentionally returns False for both is_entity_type() and
+    is_scope_type() as it represents an undefined category. Use application-level
+    logic to handle CUSTOM subject types appropriately. However, is_persistent()
+    returns True by default (only SESSION is non-persistent).
+    """
 
     def __str__(self) -> str:
         """Return the string value for serialization."""
@@ -112,10 +118,15 @@ class EnumSubjectType(str, Enum):
         Returns:
             True if this is an entity-type subject.
 
+        Note:
+            CUSTOM returns False as it represents an undefined category.
+
         Example:
             >>> EnumSubjectType.AGENT.is_entity_type()
             True
             >>> EnumSubjectType.WORKFLOW.is_entity_type()
+            False
+            >>> EnumSubjectType.CUSTOM.is_entity_type()
             False
         """
         return self in {
@@ -130,10 +141,15 @@ class EnumSubjectType(str, Enum):
         Returns:
             True if this is a scope-type subject.
 
+        Note:
+            CUSTOM returns False as it represents an undefined category.
+
         Example:
             >>> EnumSubjectType.WORKFLOW.is_scope_type()
             True
             >>> EnumSubjectType.AGENT.is_scope_type()
+            False
+            >>> EnumSubjectType.CUSTOM.is_scope_type()
             False
         """
         return self in {
@@ -151,11 +167,16 @@ class EnumSubjectType(str, Enum):
         Returns:
             True if memory for this subject type is typically persisted long-term.
 
+        Note:
+            CUSTOM returns True (only SESSION is non-persistent).
+
         Example:
             >>> EnumSubjectType.AGENT.is_persistent()
             True
             >>> EnumSubjectType.SESSION.is_persistent()
             False
+            >>> EnumSubjectType.CUSTOM.is_persistent()
+            True
         """
         return self not in {EnumSubjectType.SESSION}
 

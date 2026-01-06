@@ -99,6 +99,16 @@ class TestEnumSubjectType:
         assert EnumSubjectType.AGENT == "agent"
         assert EnumSubjectType.AGENT != EnumSubjectType.USER
 
+    def test_str_method(self) -> None:
+        """Test __str__ returns the enum value."""
+        # Test representative members
+        assert str(EnumSubjectType.AGENT) == "agent"
+        assert str(EnumSubjectType.WORKFLOW) == "workflow"
+        assert str(EnumSubjectType.CUSTOM) == "custom"
+        # Verify str() equals .value for all members
+        for member in EnumSubjectType:
+            assert str(member) == member.value
+
     @pytest.mark.parametrize(
         "value",
         ["agent", "workflow", "custom", "user", "session"],
