@@ -51,6 +51,9 @@ if TYPE_CHECKING:
         ModelCorpusReplayProgress,
     )
 
+DEFAULT_RETRY_DELAY_MS: float = 100.0
+"""Default delay between retries in milliseconds."""
+
 
 class ModelCorpusReplayConfig(BaseModel):
     """
@@ -121,7 +124,7 @@ class ModelCorpusReplayConfig(BaseModel):
     )
 
     retry_delay_ms: float = Field(
-        default=100.0,
+        default=DEFAULT_RETRY_DELAY_MS,
         ge=0.0,
         description="Delay between retries in milliseconds",
     )

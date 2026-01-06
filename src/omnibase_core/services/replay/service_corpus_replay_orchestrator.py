@@ -308,6 +308,11 @@ class ServiceCorpusReplayOrchestrator:
         # Apply tag filter (executions don't have tags, but corpus does)
         # Note: This is a placeholder for future tag-based filtering
         # on execution manifests if they gain tag support
+        if subset_filter.tags:
+            _logger.warning(
+                "Tag filter specified but not yet implemented - tags will be ignored: %s",
+                subset_filter.tags,
+            )
 
         return executions
 
@@ -412,6 +417,8 @@ class ServiceCorpusReplayOrchestrator:
                 result = await self._replay_single(manifest, config)
                 results[index] = result
 
+                # Note: Counter updates are not atomic but acceptable for progress
+                # tracking - slight drift doesn't affect correctness, only UI display.
                 if result.success:
                     completed_count += 1
                 else:
@@ -478,10 +485,10 @@ class ServiceCorpusReplayOrchestrator:
                 )
 
                 # Execute replay
-                # Note: The actual execution function would be provided
-                # by the handler/node. For now we simulate success since
-                # we don't have the actual handler to call.
-                # In production, this would call:
+                # TODO(OMN-1204): Wire up actual replay execution
+                # The actual execution function would be provided by the handler/node.
+                # For now we simulate success since we don't have the actual handler
+                # to call. In production, this would call:
                 # await self._executor.execute_async(session, handler.handle, envelope)
 
                 duration_ms = (time.perf_counter() - start_time) * 1000
