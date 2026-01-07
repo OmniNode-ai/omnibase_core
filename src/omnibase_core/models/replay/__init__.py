@@ -65,6 +65,7 @@ Usage:
 from omnibase_core.models.manifest.model_execution_manifest import (
     ModelExecutionManifest,
 )
+from omnibase_core.models.replay.model_aggregate_metrics import ModelAggregateMetrics
 from omnibase_core.models.replay.model_config_override import ModelConfigOverride
 from omnibase_core.models.replay.model_config_override_field_preview import (
     ModelConfigOverrideFieldPreview,
@@ -82,12 +83,29 @@ from omnibase_core.models.replay.model_config_override_validation import (
 from omnibase_core.models.replay.model_corpus_capture_window import (
     ModelCorpusCaptureWindow,
 )
+from omnibase_core.models.replay.model_corpus_replay_config import (
+    ModelCorpusReplayConfig,
+)
+from omnibase_core.models.replay.model_corpus_replay_progress import (
+    ModelCorpusReplayProgress,
+)
+from omnibase_core.models.replay.model_corpus_replay_result import (
+    ModelCorpusReplayResult,
+)
 from omnibase_core.models.replay.model_corpus_statistics import ModelCorpusStatistics
 from omnibase_core.models.replay.model_corpus_time_range import ModelCorpusTimeRange
 from omnibase_core.models.replay.model_effect_record import ModelEffectRecord
 from omnibase_core.models.replay.model_execution_corpus import ModelExecutionCorpus
 from omnibase_core.models.replay.model_replay_context import ModelReplayContext
 from omnibase_core.models.replay.model_replay_input import ModelReplayInput
+from omnibase_core.models.replay.model_single_replay_result import (
+    ModelSingleReplayResult,
+)
+from omnibase_core.models.replay.model_subset_filter import ModelSubsetFilter
+
+# Rebuild ModelCorpusReplayConfig after ModelCorpusReplayProgress is defined
+# to resolve the TYPE_CHECKING forward reference in progress_callback type hint
+ModelCorpusReplayConfig.model_rebuild()
 
 __all__ = [
     # Configuration override models
@@ -101,6 +119,13 @@ __all__ = [
     "ModelCorpusCaptureWindow",
     "ModelCorpusStatistics",
     "ModelCorpusTimeRange",
+    # Corpus replay models (OMN-1204)
+    "ModelAggregateMetrics",
+    "ModelCorpusReplayConfig",
+    "ModelCorpusReplayProgress",
+    "ModelCorpusReplayResult",
+    "ModelSingleReplayResult",
+    "ModelSubsetFilter",
     # Replay models
     "ModelEffectRecord",
     "ModelExecutionCorpus",
