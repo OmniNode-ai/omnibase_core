@@ -98,7 +98,7 @@ class ModelCorpusReplayProgress(BaseModel):
     skipped: int = Field(
         default=0,
         ge=0,
-        description="Number of skipped executions",
+        description="Number of skipped executions (filtered out or cancelled)",
     )
 
     current_manifest: str | None = Field(
@@ -149,9 +149,17 @@ class ModelCorpusReplayProgress(BaseModel):
         """Get number of remaining executions.
 
         Returns:
-            Number of executions not yet processed.
+            Number of executions not yet processed (always >= 0).
+
+        Note:
+            The model_validator ensures counts don't exceed total,
+            guaranteeing this property never returns a negative value.
         """
-        return self.total - self.completed - self.failed - self.skipped
+        result = self.total - self.completed - self.failed - self.skipped
+        # Belt-and-suspenders: model_validator already ensures this,
+        # but assert for defensive programming in case of future changes
+        assert result >= 0, f"remaining cannot be negative: {result}"
+        return result
 
     @property
     def processed(self) -> int:

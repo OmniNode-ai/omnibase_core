@@ -215,14 +215,17 @@ from omnibase_core.protocols.protocol_payload_data import (
     PayloadValue,
     ProtocolPayloadData,
 )
+
+# =============================================================================
+# Replay Module Exports (OMN-1116, OMN-1204)
+# =============================================================================
+from omnibase_core.protocols.protocol_replay_progress_callback import (
+    ProtocolReplayProgressCallback,
+)
 from omnibase_core.protocols.protocol_smart_log_formatter import (
     LogDataValue,
     ProtocolSmartLogFormatter,
 )
-
-# =============================================================================
-# Replay Module Exports (OMN-1116)
-# =============================================================================
 from omnibase_core.protocols.replay import (
     ProtocolEffectRecorder,
     ProtocolRNGService,
@@ -507,9 +510,10 @@ __all__ = [
     # Contract Validation Event Emitter (OMN-1151)
     "ProtocolContractValidationEventEmitter",
     # ==========================================================================
-    # Replay Module (OMN-1116)
+    # Replay Module (OMN-1116, OMN-1204)
     # ==========================================================================
     "ProtocolEffectRecorder",
+    "ProtocolReplayProgressCallback",
     "ProtocolRNGService",
     "ProtocolTimeService",
     # ==========================================================================

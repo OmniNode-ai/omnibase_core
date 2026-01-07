@@ -73,7 +73,6 @@ from __future__ import annotations
 import asyncio
 import logging
 import time
-from collections.abc import Callable
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
@@ -97,6 +96,9 @@ if TYPE_CHECKING:
     )
     from omnibase_core.models.replay.model_execution_corpus import ModelExecutionCorpus
     from omnibase_core.pipeline.replay.executor_replay import ExecutorReplay
+    from omnibase_core.protocols.protocol_replay_progress_callback import (
+        ProtocolReplayProgressCallback,
+    )
 
 _logger = logging.getLogger(__name__)
 
@@ -410,6 +412,9 @@ class ServiceCorpusReplayOrchestrator:
 
         # Progress counters - used ONLY for real-time UI updates.
         # Final authoritative counts are computed from `results` list after completion.
+        # Lock protects counter updates for clarity and future-proofing, even though
+        # asyncio coroutines don't have true preemption.
+        counter_lock = asyncio.Lock()
         completed_count = 0
         failed_count = 0
         fail_fast_triggered = False
@@ -434,27 +439,28 @@ class ServiceCorpusReplayOrchestrator:
                 result = await self._replay_single(manifest, config)
                 results[index] = result
 
-                # Update progress counters for UI display only.
-                # These are not used for final counts - see docstring for thread safety notes.
-                if result.success:
-                    completed_count += 1
-                else:
-                    failed_count += 1
-                    if config.fail_fast:
-                        fail_fast_triggered = True
+                # Update progress counters atomically for UI display.
+                # Lock ensures consistent reads even with concurrent coroutines.
+                async with counter_lock:
+                    if result.success:
+                        completed_count += 1
+                    else:
+                        failed_count += 1
+                        if config.fail_fast:
+                            fail_fast_triggered = True
 
-                # Update progress
-                elapsed_ms = (time.perf_counter() - start_time) * 1000
-                self._update_progress(
-                    total=len(executions),
-                    completed=completed_count,
-                    failed=failed_count,
-                    skipped=0,
-                    current_manifest=str(manifest.manifest_id),
-                    current_index=index,
-                    elapsed_ms=elapsed_ms,
-                    callback=config.progress_callback,
-                )
+                    # Update progress inside lock to ensure consistent counter values
+                    elapsed_ms = (time.perf_counter() - start_time) * 1000
+                    self._update_progress(
+                        total=len(executions),
+                        completed=completed_count,
+                        failed=failed_count,
+                        skipped=0,
+                        current_manifest=str(manifest.manifest_id),
+                        current_index=index,
+                        elapsed_ms=elapsed_ms,
+                        callback=config.progress_callback,
+                    )
 
         # Create tasks
         tasks = [
@@ -551,7 +557,7 @@ class ServiceCorpusReplayOrchestrator:
         current_manifest: str | None,
         current_index: int | None,
         elapsed_ms: float,
-        callback: Callable[[ModelCorpusReplayProgress], None] | None,
+        callback: ProtocolReplayProgressCallback | None,
     ) -> None:
         """Update and emit progress.
 
@@ -563,7 +569,7 @@ class ServiceCorpusReplayOrchestrator:
             current_manifest: String representation of current manifest ID.
             current_index: Current execution index.
             elapsed_ms: Elapsed time.
-            callback: Optional progress callback.
+            callback: Optional progress callback (satisfies ProtocolReplayProgressCallback).
         """
         # Estimate remaining time based on average
         processed = completed + failed + skipped
@@ -589,7 +595,6 @@ class ServiceCorpusReplayOrchestrator:
         if callback:
             try:
                 callback(progress)
-            except (
-                Exception
-            ) as e:  # tool-resilience-ok: callback errors must not crash replay
+            except Exception as e:
+                # tool-resilience-ok: callback errors must not crash replay
                 _logger.warning("Progress callback failed: %s", e)

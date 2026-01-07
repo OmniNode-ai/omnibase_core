@@ -167,8 +167,11 @@ class ModelAggregateMetrics(BaseModel):
         sorted_durations = sorted(durations)
         n = len(sorted_durations)
 
-        # Calculate percentiles
+        # Calculate percentiles using linear interpolation
         def percentile(p: float) -> float:
+            # Handle single-element list: all percentiles equal that element
+            if n == 1:
+                return sorted_durations[0]
             k = (n - 1) * p
             f = int(k)
             c = f + 1 if f + 1 < n else f

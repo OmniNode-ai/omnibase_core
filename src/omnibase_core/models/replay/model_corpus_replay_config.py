@@ -39,17 +39,18 @@ Related:
 
 from __future__ import annotations
 
-from collections.abc import Callable
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.replay.model_subset_filter import ModelSubsetFilter
 
-if TYPE_CHECKING:
-    from omnibase_core.models.replay.model_corpus_replay_progress import (
-        ModelCorpusReplayProgress,
-    )
+# Import at runtime (not TYPE_CHECKING) because Pydantic's model_rebuild()
+# needs to resolve this type annotation when the replay __init__.py calls it.
+# The Protocol is lightweight and safe to import at runtime.
+from omnibase_core.protocols.protocol_replay_progress_callback import (
+    ProtocolReplayProgressCallback,
+)
 
 DEFAULT_RETRY_DELAY_MS: float = 100.0
 """Default delay between retries in milliseconds."""
@@ -130,8 +131,8 @@ class ModelCorpusReplayConfig(BaseModel):
     )
 
     # Note: progress_callback is not serializable, excluded from model_dump
-    # Using TYPE_CHECKING import with string annotation to avoid circular imports
-    progress_callback: Callable[[ModelCorpusReplayProgress], None] | None = Field(
+    # Using ProtocolReplayProgressCallback for stronger type safety (OMN-1204)
+    progress_callback: ProtocolReplayProgressCallback | None = Field(
         default=None,
         exclude=True,
         description="Optional callback for progress updates",

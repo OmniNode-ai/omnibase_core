@@ -218,7 +218,11 @@ class TestServiceCorpusReplayOrchestrator:
 
     def test_reset(self, orchestrator: ServiceCorpusReplayOrchestrator) -> None:
         """Reset should clear state."""
-        orchestrator._cancelled = True
+        # Use public cancel() method instead of setting _cancelled directly
+        orchestrator.cancel()
+        # Note: Direct access to _last_progress is required for testing reset() because
+        # there's no public setter - _last_progress is only set internally during replay.
+        # This is intentional design: tests need to verify reset() clears internal state.
         orchestrator._last_progress = MagicMock()
 
         orchestrator.reset()
