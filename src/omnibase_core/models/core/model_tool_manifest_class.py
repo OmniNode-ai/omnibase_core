@@ -309,6 +309,5 @@ try:
 
     # Rebuild the model to resolve forward references
     ModelToolManifest.model_rebuild()
-except ImportError:
-    # catch-all-ok: circular import protection during model rebuild
+except Exception:  # catch-all-ok: circular import protection during model rebuild
     pass
