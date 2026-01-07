@@ -6,6 +6,8 @@ with nested data without causing RecursionError. This is a regression test for
 the fix in PR #358 (OMN-1264).
 """
 
+from collections.abc import Generator
+
 import pytest
 
 from omnibase_core.enums.enum_yaml_value_type import EnumYamlValueType
@@ -13,6 +15,24 @@ from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.core.model_action_category import ModelActionCategory
 from omnibase_core.models.security.model_mask_data import ModelMaskData
 from omnibase_core.models.utils.model_yaml_value import ModelYamlValue
+
+
+@pytest.fixture
+def clean_action_category_registry() -> Generator[None, None, None]:
+    """Fixture to clean up ModelActionCategory registry after tests.
+
+    This prevents test pollution from categories registered during tests.
+    """
+    # Record existing registry entries before test
+    existing_keys = set(ModelActionCategory._registry.keys())
+
+    yield
+
+    # After test: remove any new entries added during the test
+    current_keys = set(ModelActionCategory._registry.keys())
+    new_keys = current_keys - existing_keys
+    for key in new_keys:
+        del ModelActionCategory._registry[key]
 
 
 @pytest.mark.unit
@@ -172,6 +192,13 @@ class TestSelfReferentialNesting:
 
         result = outer.to_serializable()
         assert isinstance(result, dict)
+        # Verify the nested structure was serialized correctly
+        assert "nested" in result
+        # The inner SCHEMA_VALUE serializes to a ModelSchemaValue instance
+        nested_value = result["nested"]
+        assert isinstance(nested_value, ModelSchemaValue)
+        # Verify the actual value was preserved
+        assert nested_value.string_value == "inner"
 
     def test_model_yaml_value_from_dict_data(self) -> None:
         """Test ModelYamlValue.from_dict_data() creates nested structure."""
@@ -203,7 +230,9 @@ class TestSelfReferentialNesting:
     # ModelActionCategory Tests
     # -------------------------------------------------------------------------
 
-    def test_model_action_category_registry_multiple(self) -> None:
+    def test_model_action_category_registry_multiple(
+        self, clean_action_category_registry: None
+    ) -> None:
         """Test ModelActionCategory registry with multiple categories."""
         # Create test categories with unique names to avoid collision
         cat1 = ModelActionCategory(
@@ -244,7 +273,9 @@ class TestSelfReferentialNesting:
         assert "test_io_ops" in names
         assert "test_transform_ops" in names
 
-    def test_model_action_category_equality(self) -> None:
+    def test_model_action_category_equality(
+        self, clean_action_category_registry: None
+    ) -> None:
         """Test ModelActionCategory equality with registry values."""
         cat = ModelActionCategory(
             name="test_equality_cat",

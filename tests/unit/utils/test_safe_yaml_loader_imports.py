@@ -142,13 +142,11 @@ class TestSafeYamlLoaderImports:
         This test verifies the import works correctly even when we ensure
         no prior cached state could mask circular import issues.
         """
-        # Get current module references
+        # Get current module reference
         yaml_loader_module = "omnibase_core.utils.util_safe_yaml_loader"
-        model_yaml_value_module = "omnibase_core.models.utils.model_yaml_value"
 
-        # Store original modules if they exist
+        # Store original module if it exists
         original_yaml_loader = sys.modules.get(yaml_loader_module)
-        original_model_yaml_value = sys.modules.get(model_yaml_value_module)
 
         try:
             # Remove from cache to force fresh import
@@ -162,11 +160,9 @@ class TestSafeYamlLoaderImports:
             assert hasattr(util_safe_yaml_loader, "_dump_yaml_content")
 
         finally:
-            # Restore original modules to avoid test interference
+            # Restore original module to avoid test interference
             if original_yaml_loader is not None:
                 sys.modules[yaml_loader_module] = original_yaml_loader
-            if original_model_yaml_value is not None:
-                sys.modules[model_yaml_value_module] = original_model_yaml_value
 
 
 @pytest.mark.unit
