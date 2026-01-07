@@ -88,3 +88,9 @@ class ModelActionCategory(BaseModel):
     def get_all_registered(cls) -> list["ModelActionCategory"]:
         """Get all registered categories."""
         return list(cls._registry.values())
+
+
+try:
+    ModelActionCategory.model_rebuild()
+except Exception:  # catch-all-ok: circular import protection during model rebuild
+    pass

@@ -123,4 +123,11 @@ class ModelYamlValue(BaseModel):
             ) from e
 
 
+# Rebuild model to resolve forward references for self-referential fields
+try:
+    ModelYamlValue.model_rebuild()
+except Exception:  # catch-all-ok: circular import protection during model rebuild
+    pass
+
+
 __all__ = ["ModelYamlValue"]

@@ -48,7 +48,7 @@ from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.examples.model_schema_example import ModelSchemaExample
-from omnibase_core.models.utils import ModelYamlValue
+from omnibase_core.models.utils.model_yaml_value import ModelYamlValue
 from omnibase_core.types.typed_dict_yaml_dump_options import TypedDictYamlDumpOptions
 
 # ModelYamlWithExamples import removed - using direct YAML parsing

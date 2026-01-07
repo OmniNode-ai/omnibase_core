@@ -291,3 +291,24 @@ class ModelToolManifest(BaseModel):
             security_assessment=self.security.get_security_assessment(),
             testing_requirements=self.testing.get_test_requirement_summary(),
         )
+
+
+# Resolve forward references after all models are defined
+try:
+    # Import all models needed for forward references
+    from omnibase_core.enums.enum_business_logic_pattern import EnumBusinessLogicPattern
+    from omnibase_core.enums.enum_node_type import EnumNodeType
+    from omnibase_core.enums.enum_tool_status import EnumToolStatus
+    from omnibase_core.enums.enum_version_status import EnumVersionStatus
+    from omnibase_core.models.core.model_tool_capability import ModelToolCapability
+    from omnibase_core.models.core.model_tool_dependency import ModelToolDependency
+    from omnibase_core.models.core.model_tool_integration import ModelToolIntegration
+    from omnibase_core.models.core.model_tool_security import ModelToolSecurity
+    from omnibase_core.models.core.model_tool_testing import ModelToolTesting
+    from omnibase_core.models.core.model_tool_version import ModelToolVersion
+
+    # Rebuild the model to resolve forward references
+    ModelToolManifest.model_rebuild()
+except ImportError:
+    # catch-all-ok: circular import protection during model rebuild
+    pass
