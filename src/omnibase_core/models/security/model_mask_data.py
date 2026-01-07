@@ -85,3 +85,9 @@ class ModelMaskData(BaseModel):
             list_data=list_data,
             nested_data=nested_data,
         )
+
+
+try:
+    ModelMaskData.model_rebuild()
+except Exception:  # catch-all-ok: circular import protection during model rebuild
+    pass

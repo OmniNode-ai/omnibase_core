@@ -19,3 +19,9 @@ class ModelIntrospectionResult(BaseModel):
     examples: list["ModelUsageExample[object, object]"] = Field(
         description="Usage examples"
     )
+
+
+try:
+    ModelIntrospectionResult.model_rebuild()
+except Exception:  # catch-all-ok: circular import protection during model rebuild
+    pass

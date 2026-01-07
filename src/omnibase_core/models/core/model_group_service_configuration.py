@@ -1,11 +1,8 @@
-from typing import TYPE_CHECKING
-
 from pydantic import BaseModel, Field
 
-if TYPE_CHECKING:
-    from omnibase_core.models.core.model_group_service_endpoint import (
-        ModelGroupServiceEndpoint,
-    )
+from omnibase_core.models.core.model_group_service_endpoint import (
+    ModelGroupServiceEndpoint,
+)
 
 
 class ModelGroupServiceConfiguration(BaseModel):
@@ -31,3 +28,9 @@ class ModelGroupServiceConfiguration(BaseModel):
         description="Health check endpoint path",
     )
     metrics_path: str = Field(default="/metrics", description="Metrics endpoint path")
+
+
+try:
+    ModelGroupServiceConfiguration.model_rebuild()
+except Exception:  # catch-all-ok: circular import protection during model rebuild
+    pass

@@ -291,3 +291,50 @@ class ModelToolManifest(BaseModel):
             security_assessment=self.security.get_security_assessment(),
             testing_requirements=self.testing.get_test_requirement_summary(),
         )
+
+
+# Forward Reference Resolution
+# ============================
+# This module uses TYPE_CHECKING imports to break circular dependencies with
+# 10+ external models (ModelToolVersion, ModelToolCapability, ModelToolDependency,
+# ModelToolIntegration, ModelToolSecurity, ModelToolTesting) and 4 enums
+# (EnumNodeType, EnumBusinessLogicPattern, EnumToolStatus, EnumVersionStatus).
+#
+# WHY EXPLICIT IMPORTS ARE REQUIRED (vs TYPE_CHECKING-only):
+# ----------------------------------------------------------
+# 1. TYPE_CHECKING imports are ONLY available during static type analysis
+#    (mypy, pyright) - they do NOT exist at runtime.
+#
+# 2. Pydantic's model_rebuild() runs at RUNTIME and needs the actual types
+#    to resolve string annotations like "ModelToolVersion" into real classes.
+#
+# 3. For SELF-REFERENTIAL forward refs (e.g., ModelActionCategory referencing
+#    itself), no extra imports are needed - the class is already defined.
+#
+# 4. For CROSS-MODULE forward refs (like this file), we MUST import the types
+#    at runtime before calling model_rebuild() so Pydantic can find them.
+#
+# Pattern:
+#   - TYPE_CHECKING block: Static analysis sees proper types
+#   - Runtime imports below: Injects types for model_rebuild() resolution
+#   - try/except: Handles circular imports during module initialization
+#
+# See also: model_schema_property.py for a similar well-documented pattern.
+try:
+    # Runtime imports inject types into namespace for model_rebuild() resolution.
+    # These MUST be imported at runtime (not just under TYPE_CHECKING) because
+    # Pydantic's model_rebuild() needs to resolve the string annotations.
+    from omnibase_core.enums.enum_business_logic_pattern import EnumBusinessLogicPattern
+    from omnibase_core.enums.enum_node_type import EnumNodeType
+    from omnibase_core.enums.enum_tool_status import EnumToolStatus
+    from omnibase_core.enums.enum_version_status import EnumVersionStatus
+    from omnibase_core.models.core.model_tool_capability import ModelToolCapability
+    from omnibase_core.models.core.model_tool_dependency import ModelToolDependency
+    from omnibase_core.models.core.model_tool_integration import ModelToolIntegration
+    from omnibase_core.models.core.model_tool_security import ModelToolSecurity
+    from omnibase_core.models.core.model_tool_testing import ModelToolTesting
+    from omnibase_core.models.core.model_tool_version import ModelToolVersion
+
+    ModelToolManifest.model_rebuild()
+except Exception:  # catch-all-ok: circular import protection during model rebuild
+    pass
