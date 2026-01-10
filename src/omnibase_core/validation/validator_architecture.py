@@ -49,6 +49,7 @@ from typing import ClassVar
 import yaml
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
 from omnibase_core.errors.exception_groups import FILE_IO_ERRORS, YAML_PARSING_ERRORS
 from omnibase_core.models.common.model_validation_issue import ModelValidationIssue
 from omnibase_core.models.common.model_validation_metadata import (
@@ -172,6 +173,141 @@ class ValidatorArchitecture(ValidatorBase):
     # ONEX_EXCLUDE: string_id - human-readable validator identifier
     validator_id: ClassVar[str] = "architecture"
 
+    @classmethod
+    def main(cls) -> int:
+        """CLI entry point with emoji-rich output format.
+
+        Provides rich CLI output including:
+        - Header with emoji branding
+        - Per-directory validation results
+        - Summary statistics
+        - Help messages for failures
+
+        Returns:
+            Exit code: 0 for success, 1 for failure.
+        """
+        import argparse
+
+        parser = argparse.ArgumentParser(
+            description="ONEX One-Model-Per-File Architecture Validator",
+            formatter_class=argparse.RawDescriptionHelpFormatter,
+        )
+        parser.add_argument(
+            "targets",
+            nargs="*",
+            type=Path,
+            default=[Path("src/")],
+            help="Files or directories to validate (default: src/)",
+        )
+        parser.add_argument(
+            "--max-violations",
+            type=int,
+            default=0,
+            help="Maximum allowed violations before failing (default: 0)",
+        )
+        parser.add_argument(
+            "-v",
+            "--verbose",
+            action="store_true",
+            help="Print detailed output",
+        )
+
+        args = parser.parse_args()
+
+        # Print header
+        print("🔍 ONEX One-Model-Per-File Validation")
+        print("📋 Enforcing architectural separation")
+        print()
+
+        # Track overall stats
+        total_files_checked = 0
+        total_violations = 0
+        all_issues: list[ModelValidationIssue] = []
+        has_nonexistent = False
+
+        # Process each target
+        for target in args.targets:
+            if not target.exists():
+                print(f"Directory not found: {target}")
+                has_nonexistent = True
+                continue
+
+            print(f"Checking: {target}")
+
+            # Create validator and run validation
+            validator = cls()
+
+            # Override max_violations in contract if specified
+            if args.max_violations > 0:
+                # Create a modified contract with new max_violations
+                contract = validator.contract
+                # Use model_copy to update max_violations
+                validator._contract = contract.model_copy(
+                    update={"max_violations": args.max_violations}
+                )
+
+            result = validator.validate(target)
+
+            # Accumulate stats
+            if result.metadata:
+                total_files_checked += result.metadata.files_processed or 0
+                total_violations += result.metadata.violations_found or 0
+
+            all_issues.extend(result.issues)
+
+        print()
+
+        # Print summary header
+        print("📊 One-Model-Per-File Validation Summary")
+        print("-" * 40)
+        print(f"Files checked: {total_files_checked}")
+        print(f"Total violations: {total_violations}")
+
+        # Determine pass/fail based on max_violations
+        effective_max_violations = args.max_violations
+        is_passing = (
+            total_violations <= effective_max_violations and not has_nonexistent
+        )
+
+        print()
+
+        if is_passing and total_violations == 0:
+            print("✅ PASSED - All files comply with one-model-per-file principle")
+            return 0
+        elif is_passing:
+            print(
+                f"✅ PASSED - {total_violations} violations within allowed limit "
+                f"({effective_max_violations})"
+            )
+            return 0
+        else:
+            print("❌ FAILURE - ARCHITECTURAL VIOLATIONS DETECTED")
+            print()
+
+            # Print violations
+            if all_issues:
+                print("ARCHITECTURAL VIOLATIONS:")
+                for issue in all_issues:
+                    location = ""
+                    if issue.file_path:
+                        location = str(issue.file_path)
+                        if issue.line_number:
+                            location += f":{issue.line_number}"
+                        location += ": "
+                    print(f"  {location}{issue.message}")
+
+            print()
+            print("💡 How to fix:")
+            print(
+                "  - Split files with multiple models/enums/protocols into separate files"
+            )
+            print(
+                "  - Follow the one-model-per-file principle for better maintainability"
+            )
+            print("  - Each file should contain only one model, enum, or protocol")
+
+            return 1
+
     def _load_contract(self) -> ModelValidatorSubcontract:
         """Load contract from YAML, handling nested 'validation:' structure.
 
@@ -246,6 +382,30 @@ class ValidatorArchitecture(ValidatorBase):
                 },
             ) from e
 
+    def _get_rule_config(
+        self,
+        rule_id: str,
+        contract: ModelValidatorSubcontract,
+    ) -> tuple[bool, EnumValidationSeverity]:
+        """Get rule enabled state and severity from contract.
+
+        Looks up the rule configuration in the contract. If the rule is found,
+        returns its enabled state and severity. If not found, returns enabled=True
+        (default) and the contract's default severity.
+
+        Args:
+            rule_id: The rule identifier to look up.
+            contract: Validator contract with rule configurations.
+
+        Returns:
+            Tuple of (enabled, severity) for the rule.
+        """
+        for rule in contract.rules:
+            if rule.rule_id == rule_id:
+                return (rule.enabled, rule.severity)
+        # Rule not in contract - use defaults (enabled=True, default severity)
+        return (True, contract.severity_default)
+
     def _validate_file(
         self,
         path: Path,
@@ -265,8 +425,9 @@ class ValidatorArchitecture(ValidatorBase):
         """
         try:
             source = path.read_text(encoding="utf-8")
-        except OSError:
-            # File read error - skip silently (base class handles reporting)
+        except OSError as e:
+            # fallback-ok: log warning and skip file on read errors
+            logger.warning("Cannot read file %s: %s", path, e)
             return ()
 
         try:
@@ -281,11 +442,9 @@ class ValidatorArchitecture(ValidatorBase):
 
         issues: list[ModelValidationIssue] = []
 
-        # Get severity from contract
-        severity = contract.severity_default
-
-        # Check for multiple models
-        if len(counter.models) > 1:
+        # Check for multiple models (only if rule is enabled)
+        enabled, severity = self._get_rule_config(RULE_SINGLE_MODEL, contract)
+        if enabled and len(counter.models) > 1:
             issues.append(
                 ModelValidationIssue(
                     severity=severity,
@@ -298,8 +457,9 @@ class ValidatorArchitecture(ValidatorBase):
                 )
             )
 
-        # Check for multiple enums
-        if len(counter.enums) > 1:
+        # Check for multiple enums (only if rule is enabled)
+        enabled, severity = self._get_rule_config(RULE_SINGLE_ENUM, contract)
+        if enabled and len(counter.enums) > 1:
             issues.append(
                 ModelValidationIssue(
                     severity=severity,
@@ -312,8 +472,9 @@ class ValidatorArchitecture(ValidatorBase):
                 )
             )
 
-        # Check for multiple protocols
-        if len(counter.protocols) > 1:
+        # Check for multiple protocols (only if rule is enabled)
+        enabled, severity = self._get_rule_config(RULE_SINGLE_PROTOCOL, contract)
+        if enabled and len(counter.protocols) > 1:
             issues.append(
                 ModelValidationIssue(
                     severity=severity,
@@ -326,27 +487,29 @@ class ValidatorArchitecture(ValidatorBase):
                 )
             )
 
-        # Check for mixed types (models + enums + protocols)
-        type_categories: list[str] = []
-        if counter.models:
-            type_categories.append("models")
-        if counter.enums:
-            type_categories.append("enums")
-        if counter.protocols:
-            type_categories.append("protocols")
+        # Check for mixed types (models + enums + protocols) - only if rule is enabled
+        enabled, severity = self._get_rule_config(RULE_NO_MIXED_TYPES, contract)
+        if enabled:
+            type_categories: list[str] = []
+            if counter.models:
+                type_categories.append("models")
+            if counter.enums:
+                type_categories.append("enums")
+            if counter.protocols:
+                type_categories.append("protocols")
 
-        if len(type_categories) > 1:
-            issues.append(
-                ModelValidationIssue(
-                    severity=severity,
-                    message=f"Mixed types in one file: {', '.join(type_categories)}",
-                    code=RULE_NO_MIXED_TYPES,
-                    file_path=path,
-                    line_number=1,
-                    rule_name=RULE_NO_MIXED_TYPES,
-                    suggestion="Separate models, enums, and protocols into different files",
+            if len(type_categories) > 1:
+                issues.append(
+                    ModelValidationIssue(
+                        severity=severity,
+                        message=f"Mixed types in one file: {', '.join(type_categories)}",
+                        code=RULE_NO_MIXED_TYPES,
+                        file_path=path,
+                        line_number=1,
+                        rule_name=RULE_NO_MIXED_TYPES,
+                        suggestion="Separate models, enums, and protocols into different files",
+                    )
                 )
-            )
 
         return tuple(issues)
 
@@ -551,7 +714,7 @@ def validate_architecture_cli() -> int:
     Returns:
         Exit code (0 for success, 1 for failure).
     """
-    # Delegate to the new ValidatorBase.main() implementation
+    # Delegate to the new ValidatorArchitecture.main() implementation
     return ValidatorArchitecture.main()
 
 

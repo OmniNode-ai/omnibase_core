@@ -300,7 +300,7 @@ class ValidatorNamingConvention(ValidatorBase):
                         line_part = parts[0]  # "Line {lineno}"
                         line_number = int(line_part.replace("Line ", "").strip())
                         message = parts[1].strip()
-                except (ValueError, IndexError):
+                except (IndexError, ValueError):
                     pass
 
             # Determine rule type and severity based on message content

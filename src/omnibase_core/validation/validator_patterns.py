@@ -64,6 +64,7 @@ See Also:
 from __future__ import annotations
 
 import ast
+import logging
 import re
 import sys
 from pathlib import Path
@@ -71,7 +72,11 @@ from typing import ClassVar, Protocol
 
 import yaml
 
+# Configure logger for this module
+logger = logging.getLogger(__name__)
+
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
 from omnibase_core.errors.exception_groups import FILE_IO_ERRORS, YAML_PARSING_ERRORS
 from omnibase_core.models.common.model_validation_issue import ModelValidationIssue
 from omnibase_core.models.common.model_validation_metadata import (
@@ -289,6 +294,30 @@ class ValidatorPatterns(ValidatorBase):
                 },
             ) from e
 
+    def _get_rule_config(
+        self,
+        rule_id: str,
+        contract: ModelValidatorSubcontract,
+    ) -> tuple[bool, EnumValidationSeverity]:
+        """Get rule enabled state and severity from contract.
+
+        Looks up the rule configuration in the contract. If the rule is found,
+        returns its enabled state and severity. If not found, returns enabled=True
+        (default) and the contract's default severity.
+
+        Args:
+            rule_id: The rule identifier to look up.
+            contract: Validator contract with rule configurations.
+
+        Returns:
+            Tuple of (enabled, severity) for the rule.
+        """
+        for rule in contract.rules:
+            if rule.rule_id == rule_id:
+                return (rule.enabled, rule.severity)
+        # Rule not in contract - use defaults (enabled=True, default severity)
+        return (True, contract.severity_default)
+
     def _validate_file(
         self,
         path: Path,
@@ -308,8 +337,9 @@ class ValidatorPatterns(ValidatorBase):
         """
         try:
             source = path.read_text(encoding="utf-8")
-        except OSError:
-            # File read error - skip silently (base class handles reporting)
+        except OSError as e:
+            # fallback-ok: log warning and skip file on read errors
+            logger.warning("Cannot read file %s: %s", path, e)
             return ()
 
         try:
@@ -334,12 +364,11 @@ class ValidatorPatterns(ValidatorBase):
                 message = _parse_message(issue_str)
                 rule_id = _categorize_issue(issue_str)
 
-                # Get severity from contract rule, or use default
-                severity = contract.severity_default
-                for rule in contract.rules:
-                    if rule.rule_id == rule_id and rule.enabled:
-                        severity = rule.severity
-                        break
+                # Check if rule is enabled before adding issue
+                enabled, severity = self._get_rule_config(rule_id, contract)
+                if not enabled:
+                    # Rule is explicitly disabled in contract, skip this issue
+                    continue
 
                 all_issues.append(
                     ModelValidationIssue(

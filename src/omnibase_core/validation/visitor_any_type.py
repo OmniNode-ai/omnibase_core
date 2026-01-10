@@ -73,7 +73,6 @@ class AnyTypeVisitor(ast.NodeVisitor):
         issues: List of ModelValidationIssue instances for detected violations.
         source_lines: Source code lines for suppression checking.
         suppression_patterns: Patterns that suppress violations on a line.
-        exempted_nodes: Set of line numbers that are exempted by decorators.
         file_path: Path to the file being analyzed.
         severity: Default severity for detected violations.
     """
@@ -98,7 +97,6 @@ class AnyTypeVisitor(ast.NodeVisitor):
         self.suppression_patterns = suppression_patterns
         self.file_path = file_path
         self.severity = severity
-        self.exempted_lines: set[int] = set()
         self._any_imported = False
         self._current_class_exempted = False
         self._current_function_exempted = False
@@ -120,7 +118,7 @@ class AnyTypeVisitor(ast.NodeVisitor):
             if pattern in line:
                 return True
 
-        return lineno in self.exempted_lines
+        return False
 
     def _is_exempt_decorator(self, decorator: ast.expr) -> bool:
         """Check if a decorator exempts the node from Any checks.

@@ -50,12 +50,16 @@ See Also:
 
 import argparse
 import ast
+import logging
 import re
 import sys
 from pathlib import Path
 from typing import ClassVar
 
 import yaml
+
+# Configure logger for this module
+logger = logging.getLogger(__name__)
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
@@ -196,8 +200,9 @@ class ValidatorUnionUsage(ValidatorBase):
         """
         try:
             source = path.read_text(encoding="utf-8")
-        except OSError:
-            # File read error - skip silently (base class handles reporting)
+        except OSError as e:
+            # fallback-ok: log warning and skip file on read errors
+            logger.warning("Cannot read file %s: %s", path, e)
             return ()
 
         try:

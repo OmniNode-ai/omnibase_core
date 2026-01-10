@@ -53,6 +53,9 @@ validation:
       severity: error
       enabled: true
 
+  # Line-based suppression patterns: if ANY of these patterns appear on a line,
+  # violations on that line are suppressed. These are NOT rule-specific - they
+  # suppress all Any type violations on the line where they appear.
   suppression_comments:
     - "# ONEX_EXCLUDE: any_type"
     - "# ONEX_EXCLUDE: dict_str_any"
