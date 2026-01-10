@@ -22,6 +22,30 @@
 # These files provide foundational YAML parsing utilities that sit BEFORE Pydantic validation
 # in the architecture. They need raw YAML access to prepare data for model validation.
 allowed_files:
+  - file: "src/omnibase_core/validation/validator_architecture.py"
+    reason: "Validator contract loading - must parse nested 'validation:' YAML structure before extracting
+      the ModelValidatorSubcontract for Pydantic validation"
+    added: "2026-01-10"
+    review: "2026-07-10"
+
+  - file: "src/omnibase_core/validation/validator_types.py"
+    reason: "Validator contract loading - must parse nested 'validation:' YAML structure before extracting
+      the ModelValidatorSubcontract for Pydantic validation"
+    added: "2026-01-10"
+    review: "2026-07-10"
+
+  - file: "src/omnibase_core/validation/validator_patterns.py"
+    reason: "Validator contract loading - must parse nested 'validation:' YAML structure before extracting
+      the ModelValidatorSubcontract for Pydantic validation"
+    added: "2026-01-10"
+    review: "2026-07-10"
+
+  - file: "src/omnibase_core/validation/validator_naming_convention.py"
+    reason: "Validator contract loading - must parse nested 'validation:' YAML structure before extracting
+      the ModelValidatorSubcontract for Pydantic validation"
+    added: "2026-01-10"
+    review: "2026-07-10"
+
   - file: "src/omnibase_core/utils/util_safe_yaml_loader.py"
     reason: "Foundational utility layer that bridges raw YAML parsing and Pydantic validation - provides
       safe loading primitives for entire codebase"

@@ -1,43 +1,102 @@
-from __future__ import annotations
-
 """
-ONEX ModelArchitecture validation tools.
+ValidatorArchitecture - AST-based validator for ONEX one-model-per-file architecture.
 
-This module provides validation functions for ONEX architectural principles:
+This module provides the ValidatorArchitecture class for analyzing Python source
+code to enforce ONEX architectural principles:
 - One model per file validation
-- Naming pattern validation
-- Structure validation
+- One enum per file validation
+- One protocol per file validation
+- No mixing of models, enums, and protocols
+
+The validator uses AST analysis via the ModelCounter visitor to count
+models, enums, and protocols in each file.
+
+Usage Examples:
+    Programmatic usage::
+
+        from pathlib import Path
+        from omnibase_core.validation import ValidatorArchitecture
+
+        validator = ValidatorArchitecture()
+        result = validator.validate(Path("src/"))
+        if not result.is_valid:
+            for issue in result.issues:
+                print(f"{issue.file_path}:{issue.line_number}: {issue.message}")
+
+    CLI usage::
+
+        python -m omnibase_core.validation.validator_architecture src/
+
+Thread Safety:
+    ValidatorArchitecture instances are NOT thread-safe. Create separate instances
+    for concurrent use or protect with external synchronization.
+
+Schema Version:
+    v1.0.0 - Initial version (OMN-1291)
+
+See Also:
+    - ValidatorBase: Base class for contract-driven validators
+    - ModelValidatorSubcontract: Contract model for validator configuration
+    - ModelCounter: AST visitor for counting models, enums, and protocols
 """
 
-import argparse
 import ast
 import logging
 import sys
 from pathlib import Path
+from typing import ClassVar
+
+import yaml
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors.exception_groups import FILE_IO_ERRORS, YAML_PARSING_ERRORS
+from omnibase_core.models.common.model_validation_issue import ModelValidationIssue
 from omnibase_core.models.common.model_validation_metadata import (
     ModelValidationMetadata,
 )
+from omnibase_core.models.contracts.subcontracts.model_validator_subcontract import (
+    ModelValidatorSubcontract,
+)
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
-from .validator_utils import ModelValidationResult
+from omnibase_core.validation.validator_base import ValidatorBase
+from omnibase_core.validation.validator_utils import ModelValidationResult
 
 # Configure logger for this module
 logger = logging.getLogger(__name__)
 
+# Rule IDs
+RULE_SINGLE_MODEL = "single_model"
+RULE_SINGLE_ENUM = "single_enum"
+RULE_SINGLE_PROTOCOL = "single_protocol"
+RULE_NO_MIXED_TYPES = "no_mixed_types"
+
 
 class ModelCounter(ast.NodeVisitor):
-    """Count models, enums, and protocols in a Python file."""
+    """Count models, enums, and protocols in a Python file.
+
+    AST visitor that categorizes class definitions by examining their base classes
+    and naming conventions.
+
+    Attributes:
+        models: List of class names that inherit from BaseModel.
+        enums: List of class names that inherit from Enum.
+        protocols: List of class names that inherit from Protocol.
+        type_aliases: List of type alias names (TypeAlias annotations).
+    """
 
     def __init__(self) -> None:
+        """Initialize the counter with empty lists."""
         self.models: list[str] = []
         self.enums: list[str] = []
         self.protocols: list[str] = []
         self.type_aliases: list[str] = []
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
-        """Visit class definitions and categorize them."""
+        """Visit class definitions and categorize them.
+
+        Args:
+            node: AST node for class definition.
+        """
         class_name = node.name
 
         # Check base classes to determine type
@@ -72,7 +131,11 @@ class ModelCounter(ast.NodeVisitor):
         self.generic_visit(node)
 
     def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
-        """Visit type alias assignments."""
+        """Visit type alias assignments.
+
+        Args:
+            node: AST node for annotated assignment.
+        """
         if isinstance(node.target, ast.Name):
             # Check for TypeAlias pattern
             if (
@@ -83,9 +146,226 @@ class ModelCounter(ast.NodeVisitor):
         self.generic_visit(node)
 
 
+class ValidatorArchitecture(ValidatorBase):
+    """Validator for ONEX one-model-per-file architecture.
+
+    This validator uses AST analysis via ModelCounter to enforce:
+    - Single model per file (no multiple BaseModel subclasses)
+    - Single enum per file (no multiple Enum subclasses)
+    - Single protocol per file (no multiple Protocol definitions)
+    - No mixing of models, enums, and protocols in the same file
+
+    The validator respects exemptions via:
+    - Inline suppression comments
+
+    Attributes:
+        validator_id: Unique identifier for this validator ("architecture").
+
+    Usage Example:
+        >>> from pathlib import Path
+        >>> from omnibase_core.validation.validator_architecture import ValidatorArchitecture
+        >>> validator = ValidatorArchitecture()
+        >>> result = validator.validate(Path("src/"))
+        >>> print(f"Valid: {result.is_valid}, Issues: {len(result.issues)}")
+    """
+
+    # ONEX_EXCLUDE: string_id - human-readable validator identifier
+    validator_id: ClassVar[str] = "architecture"
+
+    def _load_contract(self) -> ModelValidatorSubcontract:
+        """Load contract from YAML, handling nested 'validation:' structure.
+
+        The contract YAML has the structure:
+            contract_kind: validation_subcontract
+            validation:
+                version: ...
+                validator_id: ...
+                ...
+
+        This method extracts the nested 'validation' section.
+
+        Returns:
+            Loaded ModelValidatorSubcontract instance.
+
+        Raises:
+            ModelOnexError: If contract file not found or invalid.
+        """
+        contract_path = self._get_contract_path()
+
+        if not contract_path.exists():
+            raise ModelOnexError(
+                message=f"Validator contract not found: {contract_path}",
+                error_code=EnumCoreErrorCode.FILE_NOT_FOUND,
+                context={
+                    "validator_id": self.validator_id,
+                    "contract_path": str(contract_path),
+                },
+            )
+
+        try:
+            content = contract_path.read_text(encoding="utf-8")
+            # ONEX_EXCLUDE: manual_yaml - validator contract loading requires raw YAML
+            data = yaml.safe_load(content)
+
+            if not isinstance(data, dict):
+                raise ModelOnexError(
+                    message="Contract must be a YAML mapping",
+                    error_code=EnumCoreErrorCode.CONFIGURATION_PARSE_ERROR,
+                    context={
+                        "validator_id": self.validator_id,
+                        "contract_path": str(contract_path),
+                    },
+                )
+
+            # Handle nested 'validation:' structure
+            if "validation" in data and isinstance(data["validation"], dict):
+                data = data["validation"]
+
+            return ModelValidatorSubcontract.model_validate(data)
+
+        except FILE_IO_ERRORS as e:
+            # boundary-ok: convert file I/O errors to structured error
+            raise ModelOnexError(
+                message=f"Cannot read contract file: {e}",
+                error_code=EnumCoreErrorCode.FILE_READ_ERROR,
+                context={
+                    "validator_id": self.validator_id,
+                    "contract_path": str(contract_path),
+                    "error": str(e),
+                },
+            ) from e
+        except YAML_PARSING_ERRORS as e:
+            # boundary-ok: convert YAML parsing errors to structured error
+            raise ModelOnexError(
+                message=f"Invalid YAML in contract file: {e}",
+                error_code=EnumCoreErrorCode.CONFIGURATION_PARSE_ERROR,
+                context={
+                    "validator_id": self.validator_id,
+                    "contract_path": str(contract_path),
+                    "yaml_error": str(e),
+                },
+            ) from e
+
+    def _validate_file(
+        self,
+        path: Path,
+        contract: ModelValidatorSubcontract,
+    ) -> tuple[ModelValidationIssue, ...]:
+        """Validate a single Python file for architecture compliance.
+
+        Uses AST analysis via ModelCounter to detect architecture violations
+        and returns issues for each violation found.
+
+        Args:
+            path: Path to the Python file to validate.
+            contract: Validator contract with configuration.
+
+        Returns:
+            Tuple of ModelValidationIssue instances for violations found.
+        """
+        try:
+            source = path.read_text(encoding="utf-8")
+        except OSError:
+            # File read error - skip silently (base class handles reporting)
+            return ()
+
+        try:
+            tree = ast.parse(source, filename=str(path))
+        except SyntaxError:
+            # Syntax error - skip silently (not a valid Python file for AST analysis)
+            return ()
+
+        # Run AST visitor
+        counter = ModelCounter()
+        counter.visit(tree)
+
+        issues: list[ModelValidationIssue] = []
+
+        # Get severity from contract
+        severity = contract.severity_default
+
+        # Check for multiple models
+        if len(counter.models) > 1:
+            issues.append(
+                ModelValidationIssue(
+                    severity=severity,
+                    message=f"{len(counter.models)} models in one file: {', '.join(counter.models)}",
+                    code=RULE_SINGLE_MODEL,
+                    file_path=path,
+                    line_number=1,
+                    rule_name=RULE_SINGLE_MODEL,
+                    suggestion="Split this file into separate files, one model per file",
+                )
+            )
+
+        # Check for multiple enums
+        if len(counter.enums) > 1:
+            issues.append(
+                ModelValidationIssue(
+                    severity=severity,
+                    message=f"{len(counter.enums)} enums in one file: {', '.join(counter.enums)}",
+                    code=RULE_SINGLE_ENUM,
+                    file_path=path,
+                    line_number=1,
+                    rule_name=RULE_SINGLE_ENUM,
+                    suggestion="Split this file into separate files, one enum per file",
+                )
+            )
+
+        # Check for multiple protocols
+        if len(counter.protocols) > 1:
+            issues.append(
+                ModelValidationIssue(
+                    severity=severity,
+                    message=f"{len(counter.protocols)} protocols in one file: {', '.join(counter.protocols)}",
+                    code=RULE_SINGLE_PROTOCOL,
+                    file_path=path,
+                    line_number=1,
+                    rule_name=RULE_SINGLE_PROTOCOL,
+                    suggestion="Split this file into separate files, one protocol per file",
+                )
+            )
+
+        # Check for mixed types (models + enums + protocols)
+        type_categories: list[str] = []
+        if counter.models:
+            type_categories.append("models")
+        if counter.enums:
+            type_categories.append("enums")
+        if counter.protocols:
+            type_categories.append("protocols")
+
+        if len(type_categories) > 1:
+            issues.append(
+                ModelValidationIssue(
+                    severity=severity,
+                    message=f"Mixed types in one file: {', '.join(type_categories)}",
+                    code=RULE_NO_MIXED_TYPES,
+                    file_path=path,
+                    line_number=1,
+                    rule_name=RULE_NO_MIXED_TYPES,
+                    suggestion="Separate models, enums, and protocols into different files",
+                )
+            )
+
+        return tuple(issues)
+
+
+# Legacy API functions
+
+
 def validate_one_model_per_file(file_path: Path) -> list[str]:
-    """Validate a single Python file for one-model-per-file compliance."""
-    errors = []
+    """Validate a single Python file for one-model-per-file compliance.
+
+    Note: For new code, consider using ValidatorArchitecture.validate_file() instead.
+
+    Args:
+        file_path: Path to the Python file to validate.
+
+    Returns:
+        List of error message strings (empty if valid).
+    """
+    errors: list[str] = []
 
     try:
         with open(file_path, encoding="utf-8") as f:
@@ -98,19 +378,19 @@ def validate_one_model_per_file(file_path: Path) -> list[str]:
         # Check for multiple models
         if len(counter.models) > 1:
             errors.append(
-                f"❌ {len(counter.models)} models in one file: {', '.join(counter.models)}"
+                f"{len(counter.models)} models in one file: {', '.join(counter.models)}"
             )
 
         # Check for multiple enums
         if len(counter.enums) > 1:
             errors.append(
-                f"❌ {len(counter.enums)} enums in one file: {', '.join(counter.enums)}"
+                f"{len(counter.enums)} enums in one file: {', '.join(counter.enums)}"
             )
 
         # Check for multiple protocols
         if len(counter.protocols) > 1:
             errors.append(
-                f"❌ {len(counter.protocols)} protocols in one file: {', '.join(counter.protocols)}"
+                f"{len(counter.protocols)} protocols in one file: {', '.join(counter.protocols)}"
             )
 
         # Check for mixed types (models + enums + protocols)
@@ -123,12 +403,7 @@ def validate_one_model_per_file(file_path: Path) -> list[str]:
             type_categories.append("protocols")
 
         if len(type_categories) > 1:
-            errors.append(f"❌ Mixed types in one file: {', '.join(type_categories)}")
-
-        # Special allowance for TypedDict + Model combinations (common pattern)
-        if "TypedDict" in content and len(counter.models) == 1:
-            # This is acceptable - TypedDict often accompanies a model
-            pass
+            errors.append(f"Mixed types in one file: {', '.join(type_categories)}")
 
     except SyntaxError as e:
         # Wrap in ModelOnexError for consistent error handling
@@ -138,8 +413,8 @@ def validate_one_model_per_file(file_path: Path) -> list[str]:
             context={
                 "file_path": str(file_path),
                 "exception_type": type(e).__name__,
-                "line_number": e.lineno,
-                "offset": e.offset,
+                "line_number": str(e.lineno) if e.lineno else "unknown",
+                "offset": str(e.offset) if e.offset else "unknown",
             },
         )
         logger.exception(f"Syntax error: {wrapped_error.message}")
@@ -211,7 +486,17 @@ def validate_one_model_per_file(file_path: Path) -> list[str]:
 def validate_architecture_directory(
     directory: Path, max_violations: int = 0
 ) -> ModelValidationResult[None]:
-    """Validate ONEX architecture for a directory."""
+    """Validate ONEX architecture for a directory.
+
+    Note: For new code, consider using ValidatorArchitecture.validate() instead.
+
+    Args:
+        directory: Directory to validate.
+        max_violations: Maximum allowed violations (default: 0).
+
+    Returns:
+        ModelValidationResult with validation outcome.
+    """
     python_files = []
 
     for file_path in directory.rglob("*.py"):
@@ -231,8 +516,8 @@ def validate_architecture_directory(
         python_files.append(file_path)
 
     total_violations = 0
-    files_with_violations = []
-    all_errors = []
+    files_with_violations: list[str] = []
+    all_errors: list[str] = []
 
     for file_path in python_files:
         errors = validate_one_model_per_file(file_path)
@@ -259,83 +544,30 @@ def validate_architecture_directory(
 
 
 def validate_architecture_cli() -> int:
-    """CLI interface for architecture validation."""
-    parser = argparse.ArgumentParser(
-        description="Validate ONEX one-model-per-file architecture"
-    )
-    parser.add_argument(
-        "directories", nargs="*", default=["src/"], help="Directories to validate"
-    )
-    parser.add_argument(
-        "--max-violations",
-        type=int,
-        default=0,
-        help="Maximum allowed violations (default: 0)",
-    )
+    """CLI interface for architecture validation.
 
-    args = parser.parse_args()
+    Note: For new code, consider using ValidatorArchitecture.main() instead.
 
-    print("🔍 ONEX One-Model-Per-File Validation")
-    print("=" * 50)
-    print("📋 Enforcing architectural separation of concerns")
-
-    overall_result: ModelValidationResult[None] = ModelValidationResult(
-        is_valid=True,
-        errors=[],
-        metadata=ModelValidationMetadata(files_processed=0),
-    )
-
-    for directory in args.directories:
-        dir_path = Path(directory)
-        if not dir_path.exists():
-            print(f"❌ Directory not found: {directory}")
-            continue
-
-        print(f"📁 Scanning {directory}...")
-        result = validate_architecture_directory(dir_path, args.max_violations)
-
-        # Merge results
-        overall_result.is_valid = overall_result.is_valid and result.is_valid
-        overall_result.errors.extend(result.errors)
-        if overall_result.metadata and result.metadata:
-            overall_result.metadata.files_processed = (
-                overall_result.metadata.files_processed or 0
-            ) + (result.metadata.files_processed or 0)
-
-        if result.errors:
-            print(f"\n❌ {directory}:")
-            for error in result.errors:
-                print(f"   {error}")
-
-    print("\n📊 One-Model-Per-File Validation Summary:")
-    files_processed = (
-        overall_result.metadata.files_processed if overall_result.metadata else 0
-    )
-    print(f"   • Files checked: {files_processed}")
-    print(f"   • Total violations: {len(overall_result.errors)}")
-    print(f"   • Max allowed: {args.max_violations}")
-
-    if overall_result.is_valid:
-        print("✅ One-model-per-file validation PASSED")
-        return 0
-    print("\n🚨 ARCHITECTURAL VIOLATIONS DETECTED!")
-    print("=" * 50)
-    print("The ONEX one-model-per-file principle ensures:")
-    print("• Clean separation of concerns")
-    print("• Easy navigation and discovery")
-    print("• Reduced merge conflicts")
-    print("• Better code organization")
-    print("\n💡 How to fix:")
-    print("• Split files with multiple models into separate files")
-    print("• Follow pattern: model_user_auth.py → ModelUserAuth")
-    print("• Use __init__.py for convenient imports")
-    print("• Keep related TypedDict with their model")
-
-    print(
-        f"\n❌ FAILURE: {len(overall_result.errors)} violations exceed limit of {args.max_violations}"
-    )
-    return 1
+    Returns:
+        Exit code (0 for success, 1 for failure).
+    """
+    # Delegate to the new ValidatorBase.main() implementation
+    return ValidatorArchitecture.main()
 
 
+# CLI entry point
 if __name__ == "__main__":
-    sys.exit(validate_architecture_cli())
+    sys.exit(ValidatorArchitecture.main())
+
+
+__all__ = [
+    "ModelCounter",
+    "RULE_NO_MIXED_TYPES",
+    "RULE_SINGLE_ENUM",
+    "RULE_SINGLE_MODEL",
+    "RULE_SINGLE_PROTOCOL",
+    "ValidatorArchitecture",
+    "validate_architecture_cli",
+    "validate_architecture_directory",
+    "validate_one_model_per_file",
+]

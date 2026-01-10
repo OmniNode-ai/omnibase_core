@@ -76,7 +76,14 @@ from omnibase_core.services.service_contract_validation_invariant_checker import
 from omnibase_core.services.service_validation_suite import ServiceValidationSuite
 
 # Import validation functions for easy access
+# Import Architecture validator (OMN-1291)
 from .validator_architecture import (
+    RULE_NO_MIXED_TYPES,
+    RULE_SINGLE_ENUM,
+    RULE_SINGLE_MODEL,
+    RULE_SINGLE_PROTOCOL,
+    ModelCounter,
+    ValidatorArchitecture,
     validate_architecture_directory,
     validate_one_model_per_file,
 )
@@ -119,6 +126,14 @@ from .validator_contract_linter import (
     RULE_SCHEMA_VALIDATION,
     RULE_YAML_SYNTAX,
     ValidatorContractLinter,
+)
+
+# Import Naming Convention validator (OMN-1291)
+from .validator_naming_convention import (
+    RULE_CLASS_NAMING,
+    RULE_FILE_NAMING,
+    RULE_FUNCTION_NAMING,
+    ValidatorNamingConvention,
 )
 from .visitor_any_type import (
     EXEMPT_DECORATORS,
@@ -207,14 +222,25 @@ from .validator_contracts import (
     validate_yaml_file,
 )
 from .validator_fsm_analysis import analyze_fsm
-from .validator_patterns import validate_patterns_directory, validate_patterns_file
+from .validator_patterns import (
+    ValidatorPatterns,
+    validate_patterns_directory,
+    validate_patterns_file,
+)
 
 # Import reserved enum validator (OMN-669, OMN-675)
 # - validate_execution_mode takes EnumExecutionMode (type-safe, for validated enum values)
 # - Rejects CONDITIONAL/STREAMING modes reserved for future versions
 # - For string input (e.g., YAML config), use validate_execution_mode_string instead
 from .validator_reserved_enum import RESERVED_EXECUTION_MODES, validate_execution_mode
-from .validator_types import validate_union_usage_directory, validate_union_usage_file
+
+# Import Union Usage validator (OMN-1291)
+from .validator_types import (
+    ValidatorUnionUsage,
+    validate_union_usage_cli,
+    validate_union_usage_directory,
+    validate_union_usage_file,
+)
 from .validator_utils import ModelProtocolInfo, validate_protocol_compliance
 from .validator_workflow import (
     ModelCycleDetectionResult,
@@ -389,6 +415,23 @@ __all__ = [
     "RULE_FINGERPRINT_FORMAT",
     "RULE_FINGERPRINT_MATCH",
     "RULE_SCHEMA_VALIDATION",
+    # Naming Convention validator (OMN-1291)
+    "ValidatorNamingConvention",
+    "RULE_FILE_NAMING",
+    "RULE_CLASS_NAMING",
+    "RULE_FUNCTION_NAMING",
+    # Architecture validator (OMN-1291)
+    "ValidatorArchitecture",
+    "ModelCounter",
+    "RULE_SINGLE_MODEL",
+    "RULE_SINGLE_ENUM",
+    "RULE_SINGLE_PROTOCOL",
+    "RULE_NO_MIXED_TYPES",
+    # Union Usage validator (OMN-1291)
+    "ValidatorUnionUsage",
+    "validate_union_usage_cli",
+    # Patterns validator (OMN-1291)
+    "ValidatorPatterns",
     # Reserved enum validation (OMN-669, OMN-675)
     # NOTE: validate_execution_mode takes EnumExecutionMode (type-safe)
     # while validate_execution_mode_string takes str (for YAML/config parsing)
