@@ -41,12 +41,12 @@ class ModelExecutionConflict(BaseModel):
     modification after resolution.
 
     Attributes:
-        conflict_type: Category of the conflict
-        severity: How critical the conflict is (error blocks execution)
+        conflict_type: Category of the conflict (e.g., 'cycle', 'must_run_conflict')
+        severity: How critical the conflict is ('error' blocks execution, 'warning' is advisory)
         message: Human-readable description of the conflict
-        handler_ids: Handler IDs involved in the conflict
-        constraint_refs: Constraint references involved
-        cycle_path: For CYCLE conflicts, the ordered path forming the cycle
+        handler_ids: Immutable tuple of handler IDs involved in the conflict
+        constraint_refs: Immutable tuple of constraint references involved (e.g., 'capability:auth')
+        cycle_path: For CYCLE conflicts, immutable tuple representing the ordered path forming the cycle
         phase: Phase where conflict was detected (if applicable)
         suggested_resolution: Optional suggestion for resolving the conflict
 
@@ -56,8 +56,8 @@ class ModelExecutionConflict(BaseModel):
         ...     conflict_type="cycle",
         ...     severity="error",
         ...     message="Circular dependency detected: A -> B -> A",
-        ...     handler_ids=["handler.a", "handler.b"],
-        ...     cycle_path=["handler.a", "handler.b", "handler.a"],
+        ...     handler_ids=("handler.a", "handler.b"),
+        ...     cycle_path=("handler.a", "handler.b", "handler.a"),
         ... )
         >>> conflict.is_blocking()
         True
@@ -67,7 +67,7 @@ class ModelExecutionConflict(BaseModel):
         ...     conflict_type="unsatisfiable",
         ...     severity="warning",
         ...     message="Constraint 'capability:unknown' has no matching handlers",
-        ...     constraint_refs=["capability:unknown"],
+        ...     constraint_refs=("capability:unknown",),
         ...     suggested_resolution="Remove the constraint or add a handler providing 'unknown'",
         ... )
         >>> warning.is_blocking()
@@ -131,19 +131,33 @@ class ModelExecutionConflict(BaseModel):
         description="Human-readable description of the conflict",
     )
 
-    handler_ids: list[str] = Field(
-        default_factory=list,
-        description="Handler IDs involved in the conflict",
+    handler_ids: tuple[str, ...] = Field(
+        default=(),
+        description=(
+            "Immutable tuple of handler IDs involved in the conflict. "
+            "Empty tuple if no specific handlers are involved. "
+            "For CYCLE conflicts, these are the handlers forming the cycle. "
+            "For MUST_RUN_CONFLICT, these are the handlers with conflicting declarations."
+        ),
     )
 
-    constraint_refs: list[str] = Field(
-        default_factory=list,
-        description="Constraint references involved (e.g., 'capability:auth')",
+    constraint_refs: tuple[str, ...] = Field(
+        default=(),
+        description=(
+            "Immutable tuple of constraint references involved in the conflict. "
+            "Format is typically 'type:value' (e.g., 'capability:auth', 'must_run:handler.a'). "
+            "Empty tuple if no specific constraints are involved."
+        ),
     )
 
-    cycle_path: list[str] | None = Field(
+    cycle_path: tuple[str, ...] | None = Field(
         default=None,
-        description="For CYCLE conflicts, the ordered path forming the cycle",
+        description=(
+            "For CYCLE conflicts, the immutable ordered path forming the cycle. "
+            "The first and last elements are the same handler, showing the cycle closure. "
+            "For example: ('handler.a', 'handler.b', 'handler.a') represents A -> B -> A. "
+            "None for non-cycle conflicts."
+        ),
     )
 
     phase: str | None = Field(

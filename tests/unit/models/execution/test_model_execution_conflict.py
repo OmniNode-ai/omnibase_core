@@ -44,13 +44,13 @@ class TestModelExecutionConflictCreation:
             conflict_type="must_run_conflict",
             severity="error",
             message="Conflicting must_run constraints",
-            handler_ids=["handler.a", "handler.b"],
-            constraint_refs=["must_run:handler.a", "must_run:handler.b"],
+            handler_ids=("handler.a", "handler.b"),
+            constraint_refs=("must_run:handler.a", "must_run:handler.b"),
             phase="execute",
             suggested_resolution="Remove one must_run constraint",
         )
-        assert conflict.handler_ids == ["handler.a", "handler.b"]
-        assert conflict.constraint_refs == ["must_run:handler.a", "must_run:handler.b"]
+        assert conflict.handler_ids == ("handler.a", "handler.b")
+        assert conflict.constraint_refs == ("must_run:handler.a", "must_run:handler.b")
         assert conflict.phase == "execute"
         assert conflict.suggested_resolution == "Remove one must_run constraint"
 
@@ -101,7 +101,7 @@ class TestMustRunConflictType:
             conflict_type="must_run_conflict",
             severity="error",
             message="Test",
-            handler_ids=["handler.a", "handler.b"],
+            handler_ids=("handler.a", "handler.b"),
         )
         assert conflict.involves_handler("handler.a") is True
         assert conflict.involves_handler("handler.b") is True
@@ -129,14 +129,14 @@ class TestAllConflictTypes:
         # cycle type requires cycle_path
         if conflict_type == "cycle":
             conflict = ModelExecutionConflict(
-                conflict_type=conflict_type,
+                conflict_type=conflict_type,  # type: ignore[arg-type]
                 severity="error",
                 message=f"Test {conflict_type}",
-                cycle_path=["a", "b", "a"],
+                cycle_path=("a", "b", "a"),
             )
         else:
             conflict = ModelExecutionConflict(
-                conflict_type=conflict_type,
+                conflict_type=conflict_type,  # type: ignore[arg-type]
                 severity="error",
                 message=f"Test {conflict_type}",
             )
@@ -173,7 +173,7 @@ class TestCycleConflictRequirements:
             conflict_type="cycle",
             severity="error",
             message="Circular dependency: A -> B -> A",
-            cycle_path=["handler.a", "handler.b", "handler.a"],
+            cycle_path=("handler.a", "handler.b", "handler.a"),
         )
         assert conflict.is_cycle() is True
         assert conflict.get_cycle_length() == 2
@@ -218,7 +218,7 @@ class TestHelperMethods:
             conflict_type="must_run_conflict",
             severity="error",
             message="Test",
-            handler_ids=["a", "b"],
+            handler_ids=("a", "b"),
         )
         repr_str = repr(conflict)
         assert "ModelExecutionConflict" in repr_str
@@ -245,10 +245,10 @@ class TestImmutability:
             conflict_type="must_run_conflict",
             severity="error",
             message="Test",
-            handler_ids=["handler.a"],
+            handler_ids=("handler.a",),
         )
         with pytest.raises(ValidationError):
-            conflict.handler_ids = ["handler.b"]  # type: ignore[misc]
+            conflict.handler_ids = ("handler.b",)  # type: ignore[misc]
 
 
 @pytest.mark.unit
@@ -256,16 +256,24 @@ class TestModelFromAttributes:
     """Tests for from_attributes compatibility."""
 
     def test_from_dict(self) -> None:
-        """Test creation from dictionary."""
+        """Test creation from dictionary.
+
+        Note: Pydantic automatically converts lists to tuples for tuple fields.
+        """
         data = {
             "conflict_type": "must_run_conflict",
             "severity": "error",
             "message": "Test conflict",
-            "handler_ids": ["handler.a", "handler.b"],
+            "handler_ids": [
+                "handler.a",
+                "handler.b",
+            ],  # List input is converted to tuple
         }
         conflict = ModelExecutionConflict.model_validate(data)
         assert conflict.conflict_type == "must_run_conflict"
-        assert conflict.handler_ids == ["handler.a", "handler.b"]
+        # Pydantic converts list to tuple
+        assert conflict.handler_ids == ("handler.a", "handler.b")
+        assert isinstance(conflict.handler_ids, tuple)
 
     def test_extra_fields_forbidden(self) -> None:
         """Test that extra fields are forbidden."""
@@ -278,3 +286,184 @@ class TestModelFromAttributes:
                     "unknown_field": "value",
                 }
             )
+
+    def test_from_object_with_attributes(self) -> None:
+        """Test creation from object with matching attributes (from_attributes=True).
+
+        Note: Pydantic automatically converts lists to tuples for tuple fields.
+        """
+
+        class ConflictLike:
+            """Mock object with conflict-like attributes."""
+
+            def __init__(self) -> None:
+                self.conflict_type = "must_run_conflict"
+                self.severity = "error"
+                self.message = "Conflict from object"
+                self.handler_ids = [
+                    "handler.x",
+                    "handler.y",
+                ]  # List is converted to tuple
+                self.constraint_refs: list[
+                    str
+                ] = []  # Empty list is converted to empty tuple
+                self.cycle_path = None
+                self.phase = "execute"
+                self.suggested_resolution = "Fix the conflict"
+
+        source_obj = ConflictLike()
+        conflict = ModelExecutionConflict.model_validate(source_obj)
+
+        assert conflict.conflict_type == "must_run_conflict"
+        assert conflict.severity == "error"
+        assert conflict.message == "Conflict from object"
+        # Pydantic converts list to tuple
+        assert conflict.handler_ids == ("handler.x", "handler.y")
+        assert isinstance(conflict.handler_ids, tuple)
+        assert conflict.phase == "execute"
+        assert conflict.suggested_resolution == "Fix the conflict"
+
+    def test_from_object_partial_attributes(self) -> None:
+        """Test creation from object with only required attributes."""
+
+        class MinimalConflict:
+            """Object with minimal required attributes."""
+
+            def __init__(self) -> None:
+                self.conflict_type = "duplicate_handler"
+                self.severity = "warning"
+                self.message = "Duplicate detected"
+
+        source_obj = MinimalConflict()
+        conflict = ModelExecutionConflict.model_validate(source_obj)
+
+        assert conflict.conflict_type == "duplicate_handler"
+        assert conflict.severity == "warning"
+        assert conflict.message == "Duplicate detected"
+        # Defaults applied as empty tuples
+        assert conflict.handler_ids == ()
+        assert conflict.constraint_refs == ()
+        assert isinstance(conflict.handler_ids, tuple)
+        assert isinstance(conflict.constraint_refs, tuple)
+
+
+@pytest.mark.unit
+class TestMultiErrorAggregation:
+    """Tests for multi-error aggregation behavior (OMN-1292)."""
+
+    def test_multiple_validation_errors_aggregated(self) -> None:
+        """Test that multiple validation errors are reported together."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelExecutionConflict.model_validate(
+                {
+                    "conflict_type": "invalid_type",  # Invalid
+                    "severity": "critical",  # Invalid (not error/warning)
+                    "message": "",  # Invalid (too short, min_length=1)
+                }
+            )
+
+        # Verify multiple errors are present in the exception
+        errors = exc_info.value.errors()
+        assert len(errors) >= 2, f"Expected multiple errors, got {len(errors)}"
+
+        # Check that different fields have errors
+        error_locs = {str(e["loc"]) for e in errors}
+        assert len(error_locs) >= 2, "Expected errors from multiple fields"
+
+    def test_cycle_without_path_and_invalid_severity(self) -> None:
+        """Test multiple errors: missing cycle_path AND invalid severity."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelExecutionConflict.model_validate(
+                {
+                    "conflict_type": "cycle",
+                    "severity": "unknown",  # Invalid
+                    "message": "Test cycle",
+                    # cycle_path missing - will fail model_validator
+                }
+            )
+
+        errors = exc_info.value.errors()
+        # At minimum, severity is invalid
+        assert len(errors) >= 1
+
+
+@pytest.mark.unit
+class TestTupleImmutability:
+    """Tests for tuple field true immutability.
+
+    With tuple[str, ...] fields, both field REASSIGNMENT and internal mutation
+    are prevented, providing true immutability.
+
+    See Also:
+        - OMN-1292: Core Models for ProtocolConstraintValidator
+    """
+
+    def test_field_reassignment_prevented(self) -> None:
+        """Test that direct field reassignment raises ValidationError."""
+        conflict = ModelExecutionConflict(
+            conflict_type="must_run_conflict",
+            severity="error",
+            message="Test",
+            handler_ids=("handler.a",),
+        )
+
+        with pytest.raises(ValidationError):
+            conflict.handler_ids = ("handler.new",)  # type: ignore[misc]
+
+    def test_tuple_is_truly_immutable(self) -> None:
+        """Test that tuple fields cannot be mutated internally.
+
+        Unlike lists, tuples do not have append, extend, or other mutation
+        methods, making them truly immutable.
+        """
+        conflict = ModelExecutionConflict(
+            conflict_type="must_run_conflict",
+            severity="error",
+            message="Test",
+            handler_ids=("handler.a",),
+        )
+
+        # Tuples don't have append method - this would raise AttributeError
+        assert not hasattr(conflict.handler_ids, "append")
+        assert not hasattr(conflict.handler_ids, "extend")
+        assert not hasattr(conflict.handler_ids, "clear")
+        assert not hasattr(conflict.handler_ids, "pop")
+
+        # Verify type is tuple
+        assert isinstance(conflict.handler_ids, tuple)
+
+    def test_cycle_path_tuple_immutability(self) -> None:
+        """Test that cycle_path tuple is truly immutable."""
+        conflict = ModelExecutionConflict(
+            conflict_type="cycle",
+            severity="error",
+            message="Cycle detected",
+            cycle_path=("a", "b", "a"),
+        )
+
+        # Field reassignment is blocked
+        with pytest.raises(ValidationError):
+            conflict.cycle_path = ("x", "y", "x")  # type: ignore[misc]
+
+        # Tuple has no mutation methods
+        assert conflict.cycle_path is not None
+        assert not hasattr(conflict.cycle_path, "append")
+        assert isinstance(conflict.cycle_path, tuple)
+
+    def test_constraint_refs_tuple_immutability(self) -> None:
+        """Test that constraint_refs tuple is truly immutable."""
+        conflict = ModelExecutionConflict(
+            conflict_type="unsatisfiable",
+            severity="warning",
+            message="Constraint cannot be satisfied",
+            constraint_refs=("capability:auth", "capability:logging"),
+        )
+
+        # Field reassignment is blocked
+        with pytest.raises(ValidationError):
+            conflict.constraint_refs = ("new_ref",)  # type: ignore[misc]
+
+        # Tuple has no mutation methods
+        assert not hasattr(conflict.constraint_refs, "append")
+        assert isinstance(conflict.constraint_refs, tuple)
+        assert len(conflict.constraint_refs) == 2

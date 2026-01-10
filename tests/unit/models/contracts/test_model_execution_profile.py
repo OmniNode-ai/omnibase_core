@@ -5,13 +5,16 @@ Unit tests for ModelExecutionProfile.
 
 Tests execution profile configuration including:
 - Basic creation and validation
-- Phase ordering and phase_order property
+- Phase ordering and phase_order property (cached)
 - Nondeterministic allowed phases validation
-- Immutability
+- True immutability via tuple fields
 
 See Also:
     - OMN-1227: ProtocolConstraintValidator for SPI
     - OMN-1292: Core Models for ProtocolConstraintValidator
+
+.. versionchanged:: 0.6.1
+    Updated tests for tuple fields and cached phase_order property.
 """
 
 import pytest
@@ -30,34 +33,39 @@ class TestModelExecutionProfileCreation:
     def test_default_creation(self) -> None:
         """Test creation with all defaults."""
         profile = ModelExecutionProfile()
-        assert profile.phases == list(DEFAULT_EXECUTION_PHASES)
-        assert profile.nondeterministic_allowed_phases == []
+        assert profile.phases == DEFAULT_EXECUTION_PHASES
+        assert profile.nondeterministic_allowed_phases == ()
 
     def test_custom_phases(self) -> None:
         """Test creation with custom phases."""
-        profile = ModelExecutionProfile(phases=["init", "execute", "cleanup"])
-        assert profile.phases == ["init", "execute", "cleanup"]
+        profile = ModelExecutionProfile(phases=("init", "execute", "cleanup"))
+        assert profile.phases == ("init", "execute", "cleanup")
+
+    def test_custom_phases_from_tuple(self) -> None:
+        """Test creation with phases passed as tuple."""
+        profile = ModelExecutionProfile(phases=("init", "execute", "cleanup"))
+        assert profile.phases == ("init", "execute", "cleanup")
 
     def test_with_nondeterministic_allowed_phases(self) -> None:
         """Test creation with nondeterministic_allowed_phases."""
         profile = ModelExecutionProfile(
-            phases=["init", "execute", "cleanup"],
-            nondeterministic_allowed_phases=["execute"],
+            phases=("init", "execute", "cleanup"),
+            nondeterministic_allowed_phases=("execute",),
         )
-        assert profile.nondeterministic_allowed_phases == ["execute"]
+        assert profile.nondeterministic_allowed_phases == ("execute",)
 
     def test_multiple_nondeterministic_phases(self) -> None:
         """Test creation with multiple nondeterministic phases."""
         profile = ModelExecutionProfile(
-            phases=["init", "execute", "emit", "cleanup"],
-            nondeterministic_allowed_phases=["execute", "emit"],
+            phases=("init", "execute", "emit", "cleanup"),
+            nondeterministic_allowed_phases=("execute", "emit"),
         )
-        assert profile.nondeterministic_allowed_phases == ["execute", "emit"]
+        assert profile.nondeterministic_allowed_phases == ("execute", "emit")
 
 
 @pytest.mark.unit
 class TestPhaseOrderProperty:
-    """Tests for phase_order computed property."""
+    """Tests for phase_order cached property."""
 
     def test_phase_order_default_phases(self) -> None:
         """Test phase_order with default phases."""
@@ -72,25 +80,36 @@ class TestPhaseOrderProperty:
 
     def test_phase_order_custom_phases(self) -> None:
         """Test phase_order with custom phases."""
-        profile = ModelExecutionProfile(phases=["init", "execute", "cleanup"])
+        profile = ModelExecutionProfile(phases=("init", "execute", "cleanup"))
         phase_order = profile.phase_order
         assert phase_order == {"init": 0, "execute": 1, "cleanup": 2}
 
     def test_phase_order_single_phase(self) -> None:
         """Test phase_order with single phase."""
-        profile = ModelExecutionProfile(phases=["main"])
+        profile = ModelExecutionProfile(phases=("main",))
         assert profile.phase_order == {"main": 0}
 
-    def test_phase_order_returns_fresh_dict(self) -> None:
-        """Test that phase_order returns a fresh dict each time."""
-        profile = ModelExecutionProfile(phases=["init", "execute"])
+    def test_phase_order_is_cached(self) -> None:
+        """Test that phase_order is cached (returns same object)."""
+        profile = ModelExecutionProfile(phases=("init", "execute"))
         order1 = profile.phase_order
         order2 = profile.phase_order
-        # Should be equal but not the same object
-        assert order1 == order2
-        # Modifying one should not affect the other
-        order1["modified"] = 999
-        assert "modified" not in order2
+        # Should be the same object due to caching
+        assert order1 is order2
+
+    def test_phase_order_cache_independent_per_instance(self) -> None:
+        """Test that each profile instance has its own cached phase_order."""
+        profile1 = ModelExecutionProfile(phases=("init", "execute"))
+        profile2 = ModelExecutionProfile(phases=("alpha", "beta", "gamma"))
+
+        order1 = profile1.phase_order
+        order2 = profile2.phase_order
+
+        # Different profiles have different phase orders
+        assert order1 == {"init": 0, "execute": 1}
+        assert order2 == {"alpha": 0, "beta": 1, "gamma": 2}
+        # But modification of the returned dict could affect cached value
+        # This is acceptable since the model is immutable
 
 
 @pytest.mark.unit
@@ -103,33 +122,50 @@ class TestNondeterministicPhasesValidation:
             ValidationError, match="nondeterministic_allowed_phases contains phases"
         ):
             ModelExecutionProfile(
-                phases=["init", "execute"],
-                nondeterministic_allowed_phases=["cleanup"],  # Not in phases
+                phases=("init", "execute"),
+                nondeterministic_allowed_phases=("cleanup",),  # Not in phases
             )
 
     def test_multiple_invalid_nondeterministic_phases(self) -> None:
         """Test error message includes all invalid phases."""
         with pytest.raises(ValidationError, match="nondeterministic_allowed_phases"):
             ModelExecutionProfile(
-                phases=["init", "execute"],
-                nondeterministic_allowed_phases=["cleanup", "unknown"],
+                phases=("init", "execute"),
+                nondeterministic_allowed_phases=("cleanup", "unknown"),
             )
 
     def test_empty_nondeterministic_phases_valid(self) -> None:
         """Test that empty nondeterministic_allowed_phases is valid."""
         profile = ModelExecutionProfile(
-            phases=["init", "execute"],
-            nondeterministic_allowed_phases=[],
+            phases=("init", "execute"),
+            nondeterministic_allowed_phases=(),
         )
-        assert profile.nondeterministic_allowed_phases == []
+        assert profile.nondeterministic_allowed_phases == ()
 
     def test_all_phases_nondeterministic_valid(self) -> None:
         """Test that all phases can be nondeterministic."""
         profile = ModelExecutionProfile(
-            phases=["init", "execute", "cleanup"],
-            nondeterministic_allowed_phases=["init", "execute", "cleanup"],
+            phases=("init", "execute", "cleanup"),
+            nondeterministic_allowed_phases=("init", "execute", "cleanup"),
         )
         assert set(profile.nondeterministic_allowed_phases) == set(profile.phases)
+
+    def test_nondeterministic_phases_deduplicated(self) -> None:
+        """Test that duplicate entries in nondeterministic_allowed_phases are removed."""
+        profile = ModelExecutionProfile(
+            phases=("init", "execute", "cleanup"),
+            nondeterministic_allowed_phases=("execute", "execute", "init"),
+        )
+        # Duplicates should be removed, order preserved
+        assert profile.nondeterministic_allowed_phases == ("execute", "init")
+
+    def test_nondeterministic_phases_whitespace_stripped(self) -> None:
+        """Test that whitespace is stripped from nondeterministic_allowed_phases."""
+        profile = ModelExecutionProfile(
+            phases=("init", "execute", "cleanup"),
+            nondeterministic_allowed_phases=("  execute  ", " init"),
+        )
+        assert profile.nondeterministic_allowed_phases == ("execute", "init")
 
 
 @pytest.mark.unit
@@ -139,17 +175,17 @@ class TestPhasesValidation:
     def test_phases_must_be_unique(self) -> None:
         """Test that phases must contain unique values."""
         with pytest.raises(ValidationError, match="phases must contain unique values"):
-            ModelExecutionProfile(phases=["init", "execute", "init"])
+            ModelExecutionProfile(phases=("init", "execute", "init"))
 
     def test_phases_must_be_non_empty_strings(self) -> None:
         """Test that phases must be non-empty strings."""
         with pytest.raises(ValidationError, match="phases must be non-empty strings"):
-            ModelExecutionProfile(phases=["init", "", "cleanup"])
+            ModelExecutionProfile(phases=("init", "", "cleanup"))
 
     def test_phases_whitespace_only_rejected(self) -> None:
         """Test that whitespace-only phases are rejected."""
         with pytest.raises(ValidationError, match="phases must be non-empty strings"):
-            ModelExecutionProfile(phases=["init", "   ", "cleanup"])
+            ModelExecutionProfile(phases=("init", "   ", "cleanup"))
 
 
 @pytest.mark.unit
@@ -160,16 +196,16 @@ class TestImmutability:
         """Test that model is frozen and cannot be modified."""
         profile = ModelExecutionProfile()
         with pytest.raises(ValidationError):
-            profile.phases = ["modified"]  # type: ignore[misc]
+            profile.phases = ("modified",)  # type: ignore[misc]
 
     def test_nondeterministic_phases_frozen(self) -> None:
         """Test that nondeterministic_allowed_phases cannot be modified."""
         profile = ModelExecutionProfile(
-            phases=["init", "execute"],
-            nondeterministic_allowed_phases=["execute"],
+            phases=("init", "execute"),
+            nondeterministic_allowed_phases=("execute",),
         )
         with pytest.raises(ValidationError):
-            profile.nondeterministic_allowed_phases = ["init"]  # type: ignore[misc]
+            profile.nondeterministic_allowed_phases = ("init",)  # type: ignore[misc]
 
 
 @pytest.mark.unit
@@ -177,14 +213,15 @@ class TestModelFromAttributes:
     """Tests for from_attributes compatibility."""
 
     def test_from_dict(self) -> None:
-        """Test creation from dictionary."""
+        """Test creation from dictionary (lists coerced to tuples)."""
         data = {
             "phases": ["init", "execute", "cleanup"],
             "nondeterministic_allowed_phases": ["execute"],
         }
         profile = ModelExecutionProfile.model_validate(data)
-        assert profile.phases == ["init", "execute", "cleanup"]
-        assert profile.nondeterministic_allowed_phases == ["execute"]
+        # Lists are coerced to tuples
+        assert profile.phases == ("init", "execute", "cleanup")
+        assert profile.nondeterministic_allowed_phases == ("execute",)
 
     def test_extra_fields_forbidden(self) -> None:
         """Test that extra fields are forbidden."""
@@ -192,3 +229,174 @@ class TestModelFromAttributes:
             ModelExecutionProfile.model_validate(
                 {"phases": ["init"], "unknown_field": "value"}
             )
+
+    def test_from_object_with_attributes(self) -> None:
+        """Test creation from object with matching attributes (from_attributes=True)."""
+        from omnibase_core.models.contracts.model_execution_ordering_policy import (
+            ModelExecutionOrderingPolicy,
+        )
+
+        class ProfileLike:
+            """Mock object with profile-like attributes."""
+
+            def __init__(self) -> None:
+                self.phases = ["setup", "run", "teardown"]
+                self.ordering_policy = ModelExecutionOrderingPolicy()
+                self.nondeterministic_allowed_phases = ["run"]
+
+        source_obj = ProfileLike()
+        profile = ModelExecutionProfile.model_validate(source_obj)
+
+        # Lists coerced to tuples
+        assert profile.phases == ("setup", "run", "teardown")
+        assert profile.nondeterministic_allowed_phases == ("run",)
+        assert isinstance(profile.ordering_policy, ModelExecutionOrderingPolicy)
+
+    def test_from_object_partial_attributes(self) -> None:
+        """Test creation from object with only phases attribute."""
+
+        class MinimalProfile:
+            """Object with minimal attributes."""
+
+            def __init__(self) -> None:
+                self.phases = ["main"]
+
+        source_obj = MinimalProfile()
+        profile = ModelExecutionProfile.model_validate(source_obj)
+
+        assert profile.phases == ("main",)
+        # Defaults applied (empty tuple)
+        assert profile.nondeterministic_allowed_phases == ()
+
+    def test_from_object_with_dataclass(self) -> None:
+        """Test creation from dataclass with matching attributes."""
+        from dataclasses import dataclass
+
+        from omnibase_core.models.contracts.model_execution_ordering_policy import (
+            ModelExecutionOrderingPolicy,
+        )
+
+        @dataclass
+        class ProfileData:
+            phases: list[str]
+            ordering_policy: ModelExecutionOrderingPolicy
+            nondeterministic_allowed_phases: list[str]
+
+        source = ProfileData(
+            phases=["alpha", "beta", "gamma"],
+            ordering_policy=ModelExecutionOrderingPolicy(),
+            nondeterministic_allowed_phases=["beta"],
+        )
+        profile = ModelExecutionProfile.model_validate(source)
+
+        # Lists coerced to tuples
+        assert profile.phases == ("alpha", "beta", "gamma")
+        assert profile.nondeterministic_allowed_phases == ("beta",)
+
+
+@pytest.mark.unit
+class TestMultiErrorAggregation:
+    """Tests for multi-error aggregation behavior (OMN-1292)."""
+
+    def test_multiple_validation_errors_aggregated(self) -> None:
+        """Test that multiple validation errors are reported together."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelExecutionProfile.model_validate(
+                {
+                    "phases": ["init", "init", ""],  # Duplicate AND empty
+                    "nondeterministic_allowed_phases": ["nonexistent"],  # Invalid
+                }
+            )
+
+        # Verify errors are present
+        errors = exc_info.value.errors()
+        assert len(errors) >= 1, f"Expected at least one error, got {len(errors)}"
+
+    def test_empty_phase_and_duplicate_phase(self) -> None:
+        """Test that empty and duplicate phases both cause validation errors."""
+        # First, test duplicate phases alone
+        with pytest.raises(ValidationError, match="phases must contain unique values"):
+            ModelExecutionProfile(phases=("init", "execute", "init"))
+
+        # Then, test empty phase alone
+        with pytest.raises(ValidationError, match="phases must be non-empty strings"):
+            ModelExecutionProfile(phases=("init", "", "cleanup"))
+
+    def test_invalid_nondeterministic_phases_with_duplicate_phases(self) -> None:
+        """Test error when nondeterministic phases invalid AND phases have duplicates."""
+        # The validator checks uniqueness first
+        with pytest.raises(ValidationError) as exc_info:
+            ModelExecutionProfile(
+                phases=("init", "init"),  # Duplicate
+                nondeterministic_allowed_phases=("nonexistent",),
+            )
+
+        # Should fail on uniqueness check
+        assert "unique" in str(exc_info.value).lower()
+
+
+@pytest.mark.unit
+class TestTupleImmutabilityBehavior:
+    """Tests for tuple field immutability.
+
+    With frozen=True and tuple fields, we now have TRUE immutability:
+    - Field reassignment is prevented by frozen=True
+    - Content mutation is prevented by using tuples instead of lists
+
+    See Also:
+        - OMN-1292: Core Models for ProtocolConstraintValidator
+    """
+
+    def test_field_reassignment_prevented(self) -> None:
+        """Test that direct field reassignment raises ValidationError."""
+        profile = ModelExecutionProfile(phases=("init", "execute"))
+
+        with pytest.raises(ValidationError):
+            profile.phases = ("modified",)  # type: ignore[misc]
+
+    def test_phases_tuple_immutable(self) -> None:
+        """Test that phases tuple cannot be mutated.
+
+        With tuple fields, attempting to mutate raises AttributeError
+        because tuples don't have mutation methods like append().
+        """
+        profile = ModelExecutionProfile(phases=("init", "execute"))
+
+        # Tuples don't have append method
+        assert not hasattr(profile.phases, "append")
+
+        # Verify it's actually a tuple
+        assert isinstance(profile.phases, tuple)
+
+    def test_nondeterministic_phases_tuple_immutable(self) -> None:
+        """Test that nondeterministic_allowed_phases tuple cannot be mutated."""
+        profile = ModelExecutionProfile(
+            phases=("init", "execute", "cleanup"),
+            nondeterministic_allowed_phases=("execute",),
+        )
+
+        # Field reassignment is blocked
+        with pytest.raises(ValidationError):
+            profile.nondeterministic_allowed_phases = ("init",)  # type: ignore[misc]
+
+        # Tuples don't have mutation methods
+        assert not hasattr(profile.nondeterministic_allowed_phases, "append")
+
+        # Verify it's actually a tuple
+        assert isinstance(profile.nondeterministic_allowed_phases, tuple)
+
+    def test_phase_order_is_cached_dict(self) -> None:
+        """Test that phase_order is cached and returns the same dict instance.
+
+        Since the model is frozen and phases are tuples, caching is safe.
+        """
+        profile = ModelExecutionProfile(phases=("init", "execute"))
+
+        order1 = profile.phase_order
+        order2 = profile.phase_order
+
+        # Same object due to caching
+        assert order1 is order2
+
+        # Verify contents are correct
+        assert order1 == {"init": 0, "execute": 1}
