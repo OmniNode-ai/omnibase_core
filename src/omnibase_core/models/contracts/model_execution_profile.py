@@ -141,29 +141,29 @@ class ModelExecutionProfile(BaseModel):
         cls, v: list[str] | tuple[str, ...]
     ) -> tuple[str, ...]:
         """
-        Coerce nondeterministic_allowed_phases input to tuple with validation.
+        Coerce nondeterministic_allowed_phases input to tuple and normalize entries.
 
-        Normalizes input by converting to tuple, stripping whitespace,
-        and removing duplicates while preserving order.
+        Normalizes input by converting to tuple and stripping whitespace
+        from each entry. This enables standard Pydantic validation patterns.
+
+        Note:
+            Deduplication is intentionally NOT performed here. The model_validator
+            enforces uniqueness and raises an error if duplicates are found,
+            consistent with the behavior for the phases field. This ensures
+            users are made aware of duplicate entries rather than having them
+            silently removed.
 
         Args:
             v: Input phases as list or tuple of strings.
 
         Returns:
-            Normalized, deduplicated tuple of phase names.
+            Normalized tuple of phase names (stripped, not deduplicated).
         """
         if isinstance(v, list):
             v = tuple(v)
-        # Normalize: strip whitespace
-        normalized = tuple(phase.strip() for phase in v)
-        # Remove duplicates while preserving order
-        seen: set[str] = set()
-        deduplicated: list[str] = []
-        for phase in normalized:
-            if phase not in seen:
-                seen.add(phase)
-                deduplicated.append(phase)
-        return tuple(deduplicated)
+        # Normalize: strip whitespace only
+        # Note: Uniqueness is validated in model_validator, not here
+        return tuple(phase.strip() for phase in v)
 
     @cached_property
     def phase_order(self) -> dict[str, int]:
@@ -196,11 +196,26 @@ class ModelExecutionProfile(BaseModel):
         """
         Validate profile invariants after all field validators have run.
 
+        Validation Chain:
+            1. Field validators (coerce_*_to_tuple) normalize input:
+               - Convert list to tuple
+               - Strip whitespace from each entry
+            2. This model_validator enforces invariants:
+               - Entries must be non-empty (whitespace-only becomes empty after strip)
+               - Entries must be unique (no duplicates - raises error, does NOT dedupe)
+               - nondeterministic_allowed_phases must be a subset of phases
+
+        Design Decision:
+            Both phases and nondeterministic_allowed_phases raise errors on duplicates
+            rather than silently deduplicating. This ensures users are made aware of
+            input issues rather than having them silently corrected.
+
         Ensures:
-        - phases are unique (no duplicate phase names)
-        - phases are non-empty strings (not empty or whitespace-only)
-        - nondeterministic_allowed_phases is a subset of phases
-        - nondeterministic_allowed_phases entries are non-empty strings
+            - phases are unique (no duplicate phase names)
+            - phases are non-empty strings (not empty or whitespace-only)
+            - nondeterministic_allowed_phases are unique (no duplicates)
+            - nondeterministic_allowed_phases entries are non-empty strings
+            - nondeterministic_allowed_phases is a subset of phases
 
         Returns:
             The validated profile instance.
@@ -209,6 +224,7 @@ class ModelExecutionProfile(BaseModel):
             ValueError: If any validation constraint is violated.
                 - "phases must contain unique values" if duplicates found
                 - "phases must be non-empty strings" if empty/whitespace phase found
+                - "nondeterministic_allowed_phases must contain unique values"
                 - "nondeterministic_allowed_phases must be non-empty strings" if invalid
                 - "nondeterministic_allowed_phases contains phases not in phases: [...]"
                   if invalid phase references found
@@ -218,11 +234,22 @@ class ModelExecutionProfile(BaseModel):
             raise ValueError("phases must contain unique values")
 
         # Validate phases are non-empty strings
+        # Note: Whitespace-only entries become empty after field validator stripping
         for phase in self.phases:
             if not phase:
                 raise ValueError("phases must be non-empty strings")
 
+        # Validate nondeterministic_allowed_phases are unique
+        # Note: Consistent with phases validation - raises error, does NOT deduplicate
+        if len(self.nondeterministic_allowed_phases) != len(
+            set(self.nondeterministic_allowed_phases)
+        ):
+            raise ValueError(
+                "nondeterministic_allowed_phases must contain unique values"
+            )
+
         # Validate nondeterministic_allowed_phases entries are non-empty strings
+        # Note: Whitespace-only entries become empty after field validator stripping
         for phase in self.nondeterministic_allowed_phases:
             if not phase:
                 raise ValueError(

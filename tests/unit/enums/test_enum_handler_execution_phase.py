@@ -90,7 +90,8 @@ class TestEnumHandlerExecutionPhaseAlignment:
 
     def test_alignment_with_default_execution_phases(self) -> None:
         """Test that enum values match DEFAULT_EXECUTION_PHASES exactly."""
-        enum_values = [phase.value for phase in EnumHandlerExecutionPhase]
+        # Use tuple to match DEFAULT_EXECUTION_PHASES type (tuple for immutability)
+        enum_values = tuple(phase.value for phase in EnumHandlerExecutionPhase)
         assert enum_values == DEFAULT_EXECUTION_PHASES, (
             f"Enum values {enum_values} must match DEFAULT_EXECUTION_PHASES "
             f"{DEFAULT_EXECUTION_PHASES}"
@@ -112,7 +113,8 @@ class TestEnumHandlerExecutionPhaseAlignment:
     def test_get_ordered_phases_matches_default(self) -> None:
         """Test that get_ordered_phases() returns phases in DEFAULT order."""
         ordered_phases = EnumHandlerExecutionPhase.get_ordered_phases()
-        ordered_values = [phase.value for phase in ordered_phases]
+        # Use tuple to match DEFAULT_EXECUTION_PHASES type (tuple for immutability)
+        ordered_values = tuple(phase.value for phase in ordered_phases)
         assert ordered_values == DEFAULT_EXECUTION_PHASES
 
 
@@ -249,13 +251,18 @@ class TestEnumHandlerExecutionPhaseSerialization:
         )
 
     def test_enum_string_comparison(self) -> None:
-        """Test that enum members can be compared with strings."""
-        assert EnumHandlerExecutionPhase.PREFLIGHT == "preflight"
-        assert EnumHandlerExecutionPhase.BEFORE == "before"
-        assert EnumHandlerExecutionPhase.EXECUTE == "execute"
-        assert EnumHandlerExecutionPhase.AFTER == "after"
-        assert EnumHandlerExecutionPhase.EMIT == "emit"
-        assert EnumHandlerExecutionPhase.FINALIZE == "finalize"
+        """Test that enum members can be compared with strings.
+
+        Note: StrEnum members ARE equal to their string values at runtime,
+        but mypy cannot statically verify this. Type ignores are appropriate here.
+        """
+        # StrEnum values are equal to their string values at runtime
+        assert EnumHandlerExecutionPhase.PREFLIGHT == "preflight"  # type: ignore[comparison-overlap]
+        assert EnumHandlerExecutionPhase.BEFORE == "before"  # type: ignore[comparison-overlap]
+        assert EnumHandlerExecutionPhase.EXECUTE == "execute"  # type: ignore[comparison-overlap]
+        assert EnumHandlerExecutionPhase.AFTER == "after"  # type: ignore[comparison-overlap]
+        assert EnumHandlerExecutionPhase.EMIT == "emit"  # type: ignore[comparison-overlap]
+        assert EnumHandlerExecutionPhase.FINALIZE == "finalize"  # type: ignore[comparison-overlap]
 
     def test_enum_serialization_json_compatible(self) -> None:
         """Test that enum values are JSON serializable."""
@@ -279,8 +286,8 @@ class TestEnumHandlerExecutionPhaseSerialization:
         model = TestModel(phase=EnumHandlerExecutionPhase.EXECUTE)
         assert model.phase == EnumHandlerExecutionPhase.EXECUTE
 
-        # Test string initialization
-        model = TestModel(phase="before")
+        # Test string initialization (Pydantic coerces string to enum at runtime)
+        model = TestModel(phase="before")  # type: ignore[arg-type]
         assert model.phase == EnumHandlerExecutionPhase.BEFORE
 
         # Test serialization
@@ -372,19 +379,25 @@ class TestEnumHandlerExecutionPhaseBehavior:
             EnumHandlerExecutionPhase("EXECUTE")  # Should be "execute"
 
     def test_enum_equality_and_identity(self) -> None:
-        """Test enum equality and identity behavior."""
+        """Test enum equality and identity behavior.
+
+        Note: mypy can statically determine that different enum members are not
+        identical, and that StrEnum comparisons with strings are type-incompatible.
+        These are runtime behavior tests, so type ignores are appropriate.
+        """
         # Same enum members should be identical
         assert EnumHandlerExecutionPhase.EXECUTE is EnumHandlerExecutionPhase.EXECUTE
 
         # Different enum members should not be identical
+        # mypy knows these are different at compile time, but we're testing runtime behavior
         assert (
             EnumHandlerExecutionPhase.PREFLIGHT
             is not EnumHandlerExecutionPhase.FINALIZE
-        )
+        )  # type: ignore[comparison-overlap]
 
-        # Equality with strings should work
-        assert EnumHandlerExecutionPhase.EXECUTE == "execute"
-        assert EnumHandlerExecutionPhase.EXECUTE != "finalize"
+        # Equality with strings should work (StrEnum runtime behavior)
+        assert EnumHandlerExecutionPhase.EXECUTE == "execute"  # type: ignore[comparison-overlap]
+        assert EnumHandlerExecutionPhase.EXECUTE != "finalize"  # type: ignore[comparison-overlap]
 
     def test_enum_string_behavior(self) -> None:
         """Test that enum values behave as strings."""
@@ -396,9 +409,11 @@ class TestEnumHandlerExecutionPhaseBehavior:
 
     def test_enum_docstring(self) -> None:
         """Test that enum has proper docstring."""
-        assert "execution phases" in EnumHandlerExecutionPhase.__doc__.lower()
-        assert "PREFLIGHT" in EnumHandlerExecutionPhase.__doc__
-        assert "FINALIZE" in EnumHandlerExecutionPhase.__doc__
+        docstring = EnumHandlerExecutionPhase.__doc__
+        assert docstring is not None, "Enum should have a docstring"
+        assert "execution phases" in docstring.lower()
+        assert "PREFLIGHT" in docstring
+        assert "FINALIZE" in docstring
 
 
 @pytest.mark.unit

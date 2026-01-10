@@ -150,14 +150,22 @@ class TestNondeterministicPhasesValidation:
         )
         assert set(profile.nondeterministic_allowed_phases) == set(profile.phases)
 
-    def test_nondeterministic_phases_deduplicated(self) -> None:
-        """Test that duplicate entries in nondeterministic_allowed_phases are removed."""
-        profile = ModelExecutionProfile(
-            phases=("init", "execute", "cleanup"),
-            nondeterministic_allowed_phases=("execute", "execute", "init"),
-        )
-        # Duplicates should be removed, order preserved
-        assert profile.nondeterministic_allowed_phases == ("execute", "init")
+    def test_nondeterministic_phases_must_be_unique(self) -> None:
+        """Test that duplicate entries in nondeterministic_allowed_phases raise error.
+
+        Design Decision:
+            Duplicates raise an error rather than being silently removed, consistent
+            with the behavior for the phases field. This ensures users are made aware
+            of input issues rather than having them silently corrected.
+        """
+        with pytest.raises(
+            ValidationError,
+            match="nondeterministic_allowed_phases must contain unique values",
+        ):
+            ModelExecutionProfile(
+                phases=("init", "execute", "cleanup"),
+                nondeterministic_allowed_phases=("execute", "execute", "init"),
+            )
 
     def test_nondeterministic_phases_whitespace_stripped(self) -> None:
         """Test that whitespace is stripped from nondeterministic_allowed_phases."""
@@ -572,3 +580,235 @@ class TestFromAttributesExplicit:
 
         assert profile.phases == ("alpha", "beta")
         assert profile.nondeterministic_allowed_phases == ("beta",)
+
+
+@pytest.mark.unit
+class TestPhaseOrderCaching:
+    """Tests for phase_order caching behavior (OMN-1292).
+
+    Verifies that the cached phase_order property:
+    - Returns the same object on repeated calls (caching)
+    - Contains correct values after caching
+    - Works correctly across multiple profile instances
+
+    See Also:
+        - OMN-1292: PR review feedback on caching verification
+    """
+
+    def test_phase_order_cache_returns_same_object(self) -> None:
+        """Test that phase_order is cached and returns the same object."""
+        profile = ModelExecutionProfile(phases=("init", "execute", "cleanup"))
+
+        order1 = profile.phase_order
+        order2 = profile.phase_order
+        order3 = profile.phase_order
+
+        # All calls should return the exact same object (identity check)
+        assert order1 is order2
+        assert order2 is order3
+
+    def test_phase_order_cached_value_is_correct(self) -> None:
+        """Test that the cached phase_order value is correct after caching.
+
+        Verifies that repeated accesses return the same correct values.
+        """
+        profile = ModelExecutionProfile(
+            phases=("preflight", "before", "execute", "after")
+        )
+
+        # First access - builds cache
+        order1 = profile.phase_order
+        assert order1 == {"preflight": 0, "before": 1, "execute": 2, "after": 3}
+
+        # Second access - returns cached value
+        order2 = profile.phase_order
+        assert order2 == {"preflight": 0, "before": 1, "execute": 2, "after": 3}
+
+        # Verify they are the same object
+        assert order1 is order2
+
+        # Verify all expected keys are present and correct
+        assert order2["preflight"] == 0
+        assert order2["before"] == 1
+        assert order2["execute"] == 2
+        assert order2["after"] == 3
+
+    def test_phase_order_cache_independent_per_instance(self) -> None:
+        """Test that each profile instance has independent cached phase_order."""
+        profile1 = ModelExecutionProfile(phases=("alpha", "beta"))
+        profile2 = ModelExecutionProfile(phases=("gamma", "delta", "epsilon"))
+
+        order1 = profile1.phase_order
+        order2 = profile2.phase_order
+
+        # Different instances, different caches
+        assert order1 is not order2
+
+        # But each instance's cache is correct
+        assert order1 == {"alpha": 0, "beta": 1}
+        assert order2 == {"gamma": 0, "delta": 1, "epsilon": 2}
+
+        # And each cache is stable
+        assert profile1.phase_order is order1
+        assert profile2.phase_order is order2
+
+    def test_phase_order_cache_with_single_phase(self) -> None:
+        """Test phase_order caching with single phase."""
+        profile = ModelExecutionProfile(phases=("main",))
+
+        order1 = profile.phase_order
+        order2 = profile.phase_order
+
+        assert order1 is order2
+        assert order1 == {"main": 0}
+
+    def test_phase_order_cache_with_many_phases(self) -> None:
+        """Test phase_order caching with many phases."""
+        phases = tuple(f"phase_{i}" for i in range(20))
+        profile = ModelExecutionProfile(phases=phases)
+
+        order1 = profile.phase_order
+        order2 = profile.phase_order
+
+        # Caching works
+        assert order1 is order2
+
+        # All phases present and correct
+        for i, phase in enumerate(phases):
+            assert order1[phase] == i
+
+
+@pytest.mark.unit
+class TestMultipleValidationErrors:
+    """Tests for multiple validation errors being collected (OMN-1292).
+
+    Verifies that Pydantic collects and reports multiple validation errors
+    when multiple fields or constraints fail validation.
+
+    See Also:
+        - OMN-1292: PR review feedback on multi-error validation
+    """
+
+    def test_multiple_field_type_errors(self) -> None:
+        """Test that type errors are raised for non-iterable inputs.
+
+        Note: When a non-iterable type is passed, the field validator
+        raises a TypeError rather than a ValidationError, since the
+        validator attempts to iterate over the value.
+        """
+        with pytest.raises(TypeError, match="not iterable"):
+            ModelExecutionProfile.model_validate(
+                {
+                    "phases": 123,  # Wrong type - not iterable
+                }
+            )
+
+    def test_multiple_validation_errors_in_model_validator(self) -> None:
+        """Test that validation errors from model_validator are raised."""
+        # Test case: phases with duplicates and nondeterministic_allowed_phases
+        # with invalid reference. The duplicate check fails first.
+        with pytest.raises(ValidationError) as exc_info:
+            ModelExecutionProfile.model_validate(
+                {
+                    "phases": ["init", "init"],  # Duplicate - fails uniqueness
+                    "nondeterministic_allowed_phases": [],
+                }
+            )
+
+        errors = exc_info.value.errors()
+        assert len(errors) >= 1
+        assert "unique" in str(exc_info.value).lower()
+
+    def test_phases_and_nondeterministic_phases_both_invalid(self) -> None:
+        """Test validation when both phases and nondeterministic phases are invalid."""
+        # Test that duplicate phases error is raised
+        with pytest.raises(ValidationError, match="unique"):
+            ModelExecutionProfile(
+                phases=("init", "init"),  # Duplicate
+                nondeterministic_allowed_phases=("init",),  # Valid subset
+            )
+
+        # Test that invalid nondeterministic phases error is raised
+        with pytest.raises(ValidationError, match="nondeterministic_allowed_phases"):
+            ModelExecutionProfile(
+                phases=("init", "execute"),  # Valid
+                nondeterministic_allowed_phases=("nonexistent",),  # Invalid reference
+            )
+
+    def test_empty_phase_string_validation(self) -> None:
+        """Test that empty phase strings are caught in validation."""
+        with pytest.raises(ValidationError, match="non-empty"):
+            ModelExecutionProfile(phases=("init", "", "cleanup"))
+
+    def test_whitespace_phase_normalized_to_empty(self) -> None:
+        """Test that whitespace-only phases are normalized to empty and rejected."""
+        with pytest.raises(ValidationError, match="non-empty"):
+            ModelExecutionProfile(phases=("init", "   ", "cleanup"))
+
+    def test_nondeterministic_empty_string_rejected(self) -> None:
+        """Test that empty string in nondeterministic_allowed_phases is rejected."""
+        with pytest.raises(ValidationError, match="non-empty"):
+            ModelExecutionProfile(
+                phases=("init", "execute", "cleanup"),
+                nondeterministic_allowed_phases=("execute", ""),  # Empty string
+            )
+
+    def test_validation_order_duplicate_then_empty(self) -> None:
+        """Test that validation catches issues in order.
+
+        When both duplicate and empty phases exist, uniqueness is checked first.
+        """
+        with pytest.raises(ValidationError, match="unique"):
+            ModelExecutionProfile(phases=("init", "init", ""))
+
+
+@pytest.mark.unit
+class TestListMutationPrevention:
+    """Additional tests for list mutation prevention (OMN-1292).
+
+    These tests verify that even if users attempt creative mutations,
+    the tuple fields prevent any in-place modification.
+
+    See Also:
+        - OMN-1292: PR review feedback on mutation prevention
+    """
+
+    def test_phases_slice_assignment_prevented(self) -> None:
+        """Test that slice assignment on phases tuple raises TypeError."""
+        profile = ModelExecutionProfile(phases=("init", "execute", "cleanup"))
+
+        with pytest.raises(TypeError, match="does not support item assignment"):
+            profile.phases[0:1] = ("modified",)  # type: ignore[index]
+
+    def test_nondeterministic_phases_slice_assignment_prevented(self) -> None:
+        """Test that slice assignment on nondeterministic_allowed_phases raises TypeError."""
+        profile = ModelExecutionProfile(
+            phases=("init", "execute", "cleanup"),
+            nondeterministic_allowed_phases=("execute", "cleanup"),
+        )
+
+        with pytest.raises(TypeError, match="does not support item assignment"):
+            profile.nondeterministic_allowed_phases[0:1] = ("init",)  # type: ignore[index]
+
+    def test_tuple_has_no_mutation_methods(self) -> None:
+        """Test that tuple fields lack all common mutation methods."""
+        profile = ModelExecutionProfile(
+            phases=("init", "execute"),
+            nondeterministic_allowed_phases=("execute",),
+        )
+
+        # List mutation methods should not exist on tuples
+        mutation_methods = ["append", "extend", "insert", "remove", "pop", "clear"]
+
+        for method in mutation_methods:
+            assert not hasattr(profile.phases, method), f"phases has {method}"
+            assert not hasattr(profile.nondeterministic_allowed_phases, method), (
+                f"nondeterministic_allowed_phases has {method}"
+            )
+
+    def test_tuple_delitem_prevented(self) -> None:
+        """Test that item deletion on tuple raises TypeError."""
+        profile = ModelExecutionProfile(phases=("init", "execute", "cleanup"))
+
+        with pytest.raises(TypeError, match="doesn't support item deletion"):
+            del profile.phases[0]  # type: ignore[misc]

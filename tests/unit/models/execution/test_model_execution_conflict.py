@@ -467,3 +467,201 @@ class TestTupleImmutability:
         assert not hasattr(conflict.constraint_refs, "append")
         assert isinstance(conflict.constraint_refs, tuple)
         assert len(conflict.constraint_refs) == 2
+
+    def test_handler_ids_tuple_prevents_index_mutation(self) -> None:
+        """Test that handler_ids tuple cannot be mutated via index assignment.
+
+        This verifies true immutability - tuples prevent in-place mutation
+        that would bypass Pydantic's frozen=True protection.
+
+        See Also:
+            - OMN-1292: PR review feedback on immutability protection
+        """
+        conflict = ModelExecutionConflict(
+            conflict_type="must_run_conflict",
+            severity="error",
+            message="Test",
+            handler_ids=("handler.a", "handler.b"),
+        )
+
+        # Attempting index assignment on tuple raises TypeError
+        with pytest.raises(TypeError, match="does not support item assignment"):
+            conflict.handler_ids[0] = "handler.modified"  # type: ignore[index]
+
+    def test_constraint_refs_tuple_prevents_index_mutation(self) -> None:
+        """Test that constraint_refs tuple cannot be mutated via index assignment."""
+        conflict = ModelExecutionConflict(
+            conflict_type="unsatisfiable",
+            severity="warning",
+            message="Test",
+            constraint_refs=("capability:auth", "capability:logging"),
+        )
+
+        # Attempting index assignment on tuple raises TypeError
+        with pytest.raises(TypeError, match="does not support item assignment"):
+            conflict.constraint_refs[0] = "capability:new"  # type: ignore[index]
+
+    def test_cycle_path_tuple_prevents_index_mutation(self) -> None:
+        """Test that cycle_path tuple cannot be mutated via index assignment."""
+        conflict = ModelExecutionConflict(
+            conflict_type="cycle",
+            severity="error",
+            message="Cycle detected",
+            cycle_path=("a", "b", "c", "a"),
+        )
+
+        # Attempting index assignment on tuple raises TypeError
+        with pytest.raises(TypeError, match="does not support item assignment"):
+            conflict.cycle_path[1] = "modified"  # type: ignore[index]
+
+
+@pytest.mark.unit
+class TestFromAttributesExplicit:
+    """Tests for explicit from_attributes=True parameter usage.
+
+    Verifies that model_validate works correctly with explicit from_attributes=True
+    parameter in addition to the ConfigDict setting.
+
+    See Also:
+        - OMN-1292: PR review feedback on from_attributes behavior
+    """
+
+    def test_from_attributes_explicit_with_tuple_attributes(self) -> None:
+        """Test model creation from object with tuple attributes using explicit parameter."""
+
+        class ConflictLike:
+            """Object with tuple attributes matching conflict fields."""
+
+            conflict_type = "duplicate_handler"
+            severity = "warning"
+            message = "Handler already exists"
+            handler_ids = ("handler.a",)
+            constraint_refs = ()
+            cycle_path = None
+            phase = None
+            suggested_resolution = None
+
+        # Explicit from_attributes=True parameter
+        conflict = ModelExecutionConflict.model_validate(
+            ConflictLike(), from_attributes=True
+        )
+
+        assert conflict.conflict_type == "duplicate_handler"
+        assert conflict.severity == "warning"
+        assert conflict.handler_ids == ("handler.a",)
+        assert isinstance(conflict.handler_ids, tuple)
+
+    def test_from_attributes_explicit_with_list_attributes(self) -> None:
+        """Test model creation from object with list attributes using explicit parameter.
+
+        Lists should be coerced to tuples even when reading from object attributes.
+        """
+
+        class ConflictLikeWithLists:
+            """Object with list attributes that should be coerced to tuples."""
+
+            conflict_type = "phase_conflict"
+            severity = "error"
+            message = "Phase conflict detected"
+            handler_ids = ["handler.x", "handler.y"]  # List, not tuple
+            constraint_refs = ["phase:execute"]  # List, not tuple
+            cycle_path = None
+            phase = "execute"
+            suggested_resolution = None
+
+        conflict = ModelExecutionConflict.model_validate(
+            ConflictLikeWithLists(), from_attributes=True
+        )
+
+        # Lists coerced to tuples
+        assert isinstance(conflict.handler_ids, tuple)
+        assert conflict.handler_ids == ("handler.x", "handler.y")
+        assert isinstance(conflict.constraint_refs, tuple)
+        assert conflict.constraint_refs == ("phase:execute",)
+
+    def test_from_attributes_with_namedtuple(self) -> None:
+        """Test model creation from namedtuple using from_attributes=True."""
+        from typing import NamedTuple
+
+        class ConflictTuple(NamedTuple):
+            conflict_type: str
+            severity: str
+            message: str
+            handler_ids: tuple[str, ...]
+            constraint_refs: tuple[str, ...]
+            cycle_path: tuple[str, ...] | None
+            phase: str | None
+            suggested_resolution: str | None
+
+        source = ConflictTuple(
+            conflict_type="missing_dependency",
+            severity="error",
+            message="Required handler not found",
+            handler_ids=("handler.dependent",),
+            constraint_refs=("requires:handler.missing",),
+            cycle_path=None,
+            phase="preflight",
+            suggested_resolution="Add the missing handler",
+        )
+
+        conflict = ModelExecutionConflict.model_validate(source, from_attributes=True)
+
+        assert conflict.conflict_type == "missing_dependency"
+        assert conflict.handler_ids == ("handler.dependent",)
+        assert conflict.phase == "preflight"
+        assert conflict.suggested_resolution == "Add the missing handler"
+
+    def test_from_attributes_with_dataclass(self) -> None:
+        """Test model creation from dataclass using from_attributes=True."""
+        from dataclasses import dataclass
+
+        @dataclass
+        class ConflictData:
+            conflict_type: str
+            severity: str
+            message: str
+            handler_ids: list[str]  # Dataclass with list
+            constraint_refs: list[str]
+            cycle_path: tuple[str, ...] | None = None
+            phase: str | None = None
+            suggested_resolution: str | None = None
+
+        source = ConflictData(
+            conflict_type="constraint_violation",
+            severity="error",
+            message="Constraint violated",
+            handler_ids=["handler.a", "handler.b"],  # Lists should be converted
+            constraint_refs=["constraint:ordering"],
+            phase="execute",
+        )
+
+        conflict = ModelExecutionConflict.model_validate(source, from_attributes=True)
+
+        # Lists should be coerced to tuples
+        assert isinstance(conflict.handler_ids, tuple)
+        assert conflict.handler_ids == ("handler.a", "handler.b")
+        assert isinstance(conflict.constraint_refs, tuple)
+        assert conflict.constraint_refs == ("constraint:ordering",)
+
+    def test_from_attributes_implicit_via_config(self) -> None:
+        """Test that from_attributes works implicitly via ConfigDict setting.
+
+        The model has from_attributes=True in ConfigDict, so it should work
+        without explicit parameter.
+        """
+
+        class ConflictLike:
+            conflict_type = "must_run_conflict"
+            severity = "warning"
+            message = "Potential conflict"
+            handler_ids = ("handler.x",)
+            constraint_refs = ()
+            cycle_path = None
+            phase = None
+            suggested_resolution = None
+
+        # No explicit from_attributes parameter - relies on ConfigDict
+        conflict = ModelExecutionConflict.model_validate(ConflictLike())
+
+        assert conflict.conflict_type == "must_run_conflict"
+        assert conflict.handler_ids == ("handler.x",)
