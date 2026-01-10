@@ -39,6 +39,7 @@ from omnibase_core.infrastructure.node_core_base import NodeCoreBase
 from omnibase_core.logging.logging_structured import (
     emit_log_event_sync as emit_log_event,
 )
+from omnibase_core.mixins.mixin_handler_routing import MixinHandlerRouting
 from omnibase_core.models.compute.model_compute_input import ModelComputeInput
 from omnibase_core.models.compute.model_compute_output import ModelComputeOutput
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
@@ -51,7 +52,7 @@ from omnibase_core.protocols.compute import (
 )
 
 
-class NodeCompute[T_Input, T_Output](NodeCoreBase):
+class NodeCompute[T_Input, T_Output](NodeCoreBase, MixinHandlerRouting):
     """
     Pure computation node for deterministic operations.
 
@@ -144,6 +145,17 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase):
 
         # Register built-in computations
         self._register_builtin_computations()
+
+        # Initialize handler routing from contract (optional - not all compute nodes have it)
+        # The handler_routing subcontract enables contract-driven message routing.
+        # If the node's contract has handler_routing defined, initialize the routing table.
+        handler_routing = None
+        if hasattr(self, "contract") and self.contract is not None:
+            handler_routing = getattr(self.contract, "handler_routing", None)
+
+        if handler_routing is not None:
+            handler_registry: object = container.get_service("ServiceHandlerRegistry")  # type: ignore[arg-type]  # String-based DI lookup for extensibility
+            self._init_handler_routing(handler_routing, handler_registry)  # type: ignore[arg-type]  # Registry retrieved via DI
 
     # =========================================================================
     # Cache Access Properties

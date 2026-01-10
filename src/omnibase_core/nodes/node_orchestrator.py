@@ -13,6 +13,7 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
 from omnibase_core.logging.logging_structured import emit_log_event_sync
+from omnibase_core.mixins.mixin_handler_routing import MixinHandlerRouting
 from omnibase_core.mixins.mixin_workflow_execution import MixinWorkflowExecution
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
@@ -65,7 +66,7 @@ _WARN_WORKFLOW_ALL_STEPS_FAILED = (
 )
 
 
-class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
+class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution, MixinHandlerRouting):
     """
         Workflow-driven orchestrator node for coordination.
 
@@ -319,6 +320,17 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
         # Use object.__setattr__() to bypass Pydantic validation when mixins with
         # Pydantic BaseModel are in the MRO (e.g., MixinEventBus in ModelServiceOrchestrator)
         object.__setattr__(self, "workflow_definition", None)
+
+        # Initialize handler routing from contract (optional - not all orchestrators have it)
+        # The handler_routing subcontract enables contract-driven message routing.
+        # If the node's contract has handler_routing defined, initialize the routing table.
+        handler_routing = None
+        if hasattr(self, "contract") and self.contract is not None:
+            handler_routing = getattr(self.contract, "handler_routing", None)
+
+        if handler_routing is not None:
+            handler_registry: object = container.get_service("ServiceHandlerRegistry")  # type: ignore[arg-type]  # String-based DI lookup for extensibility
+            self._init_handler_routing(handler_routing, handler_registry)  # type: ignore[arg-type]  # Registry retrieved via DI
 
     async def process(
         self,

@@ -28,6 +28,7 @@ from omnibase_core.constants.constants_effect import DEFAULT_OPERATION_TIMEOUT_M
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
 from omnibase_core.mixins.mixin_effect_execution import MixinEffectExecution
+from omnibase_core.mixins.mixin_handler_routing import MixinHandlerRouting
 from omnibase_core.models.configuration.model_circuit_breaker import ModelCircuitBreaker
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.contracts.subcontracts.model_effect_subcontract import (
@@ -64,7 +65,7 @@ _per_op_circuit_breaker_warning_emitted: bool = False
 _per_op_response_handling_warning_emitted: bool = False
 
 
-class NodeEffect(NodeCoreBase, MixinEffectExecution):
+class NodeEffect(NodeCoreBase, MixinEffectExecution, MixinHandlerRouting):
     """
     Contract-driven effect node for external I/O operations.
 
@@ -242,6 +243,17 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution):
         # providing consistent circuit breaker state across requests.
         # NOT thread-safe - each thread needs its own NodeEffect instance.
         object.__setattr__(self, "_circuit_breakers", {})
+
+        # Initialize handler routing from contract (optional - not all effects have it)
+        # The handler_routing subcontract enables contract-driven message routing.
+        # If the node's contract has handler_routing defined, initialize the routing table.
+        handler_routing = None
+        if hasattr(self, "contract") and self.contract is not None:
+            handler_routing = getattr(self.contract, "handler_routing", None)
+
+        if handler_routing is not None:
+            handler_registry: object = container.get_service("ServiceHandlerRegistry")  # type: ignore[arg-type]
+            self._init_handler_routing(handler_routing, handler_registry)  # type: ignore[arg-type]
 
     async def process(self, input_data: ModelEffectInput) -> ModelEffectOutput:
         """
