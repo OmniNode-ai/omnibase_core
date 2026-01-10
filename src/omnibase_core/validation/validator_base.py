@@ -115,6 +115,13 @@ class ValidatorBase(ABC):
     - _load_contract(): Custom contract loading logic
     - _get_contract_path(): Custom contract path resolution
 
+    Thread Safety:
+        ValidatorBase instances are NOT thread-safe due to internal mutable state
+        (specifically _file_line_cache). When using parallel execution (e.g.,
+        pytest-xdist workers), create separate validator instances per worker.
+        Do not share instances across threads without external synchronization.
+        The contract (ModelValidatorSubcontract) is immutable and safe to share.
+
     Attributes:
         validator_id: Unique identifier for this validator (must be set by subclass).
         contract: The validator contract (loaded lazily if not provided).
@@ -131,6 +138,10 @@ class ValidatorBase(ABC):
                 will be loaded from the default YAML location when first accessed.
         """
         self._contract = contract
+        # Thread Safety: This cache is NOT thread-safe. When using parallel
+        # execution (e.g., pytest-xdist), create separate validator instances
+        # per worker. Cache is cleared after validate() completes to prevent
+        # unbounded memory growth.
         self._file_line_cache: dict[Path, list[str]] = {}
 
     @property
