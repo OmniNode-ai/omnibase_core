@@ -11,6 +11,8 @@ This is a pure data model with no side effects.
 
 See Also:
     - OMN-1106: Beta Execution Order Resolution Pure Function
+    - OMN-1227: ProtocolConstraintValidator for SPI
+    - OMN-1292: Core Models for ProtocolConstraintValidator
     - ModelExecutionPlan: Contains the list of detected conflicts
     - ModelExecutionConstraints: The source of constraints that may conflict
 
@@ -33,6 +35,7 @@ class ModelExecutionConflict(BaseModel):
     - UNSATISFIABLE: Constraint references non-existent handler/capability
     - PHASE_CONFLICT: Handler constrained to run in incompatible phases
     - DUPLICATE_HANDLER: Same handler appears multiple times
+    - MUST_RUN_CONFLICT: Conflicting must_run declarations between handlers
 
     The model is immutable (frozen) to ensure thread safety and prevent
     modification after resolution.
@@ -111,6 +114,7 @@ class ModelExecutionConflict(BaseModel):
         "duplicate_handler",
         "missing_dependency",
         "constraint_violation",
+        "must_run_conflict",
     ] = Field(
         ...,
         description="Category of the conflict",
