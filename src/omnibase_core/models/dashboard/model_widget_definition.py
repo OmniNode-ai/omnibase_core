@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Widget definition model with discriminated union config."""
 
+from collections.abc import Mapping
 from typing import Annotated
 from uuid import UUID
 
@@ -60,6 +61,6 @@ class ModelWidgetDefinition(BaseModel):
     # Optional metadata
     description: str | None = Field(default=None, description="Widget description")
     data_source: str | None = Field(default=None, description="Data source identifier")
-    extra_config: dict[str, str] | None = Field(
+    extra_config: Mapping[str, str] | None = Field(
         default=None, description="Extension config (string values only)"
     )

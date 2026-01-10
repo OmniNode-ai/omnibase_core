@@ -19,7 +19,9 @@ class ModelWidgetConfigEventFeed(BaseModel):
     Displays a real-time feed of events with filtering.
     """
 
-    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
+    model_config = ConfigDict(
+        frozen=True, extra="forbid", from_attributes=True, populate_by_name=True
+    )
 
     config_kind: Literal["event_feed"] = Field(
         default="event_feed", description="Discriminator for widget config union"
@@ -30,8 +32,11 @@ class ModelWidgetConfigEventFeed(BaseModel):
     max_items: int = Field(
         default=50, ge=1, le=500, description="Maximum events to display"
     )
-    filter: ModelEventFilter | None = Field(
-        default=None, description="Event filtering configuration"
+    event_filter: ModelEventFilter | None = Field(
+        default=None,
+        alias="filter",
+        serialization_alias="filter",
+        description="Event filtering configuration",
     )
     show_timestamp: bool = Field(default=True, description="Show event timestamps")
     show_source: bool = Field(default=True, description="Show event source")

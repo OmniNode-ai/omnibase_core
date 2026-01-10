@@ -8,13 +8,27 @@ from uuid import UUID, uuid4
 import pytest
 from pydantic import ValidationError
 
-from omnibase_core.enums import EnumDashboardStatus
+from omnibase_core.enums import EnumDashboardStatus, EnumDashboardTheme
 from omnibase_core.models.dashboard import (
+    ModelChartSeriesConfig,
     ModelDashboardConfig,
     ModelDashboardLayoutConfig,
     ModelWidgetConfigChart,
     ModelWidgetDefinition,
 )
+
+
+def _make_pie_chart_config() -> ModelWidgetConfigChart:
+    """Create a pie chart config (no series required)."""
+    return ModelWidgetConfigChart(chart_type="pie")
+
+
+def _make_line_chart_config() -> ModelWidgetConfigChart:
+    """Create a line chart config with required series."""
+    return ModelWidgetConfigChart(
+        chart_type="line",
+        series=(ModelChartSeriesConfig(name="Series 1", data_key="value"),),
+    )
 
 
 class TestModelDashboardLayoutConfig:
@@ -78,7 +92,7 @@ class TestModelDashboardConfig:
         widget = ModelWidgetDefinition(
             widget_id=widget_id,
             title="Chart",
-            config=ModelWidgetConfigChart(),
+            config=_make_line_chart_config(),
         )
         dashboard = ModelDashboardConfig(
             dashboard_id=uuid4(),
@@ -111,7 +125,7 @@ class TestModelDashboardConfig:
         widget = ModelWidgetDefinition(
             widget_id=uuid4(),
             title="Chart",
-            config=ModelWidgetConfigChart(),
+            config=_make_line_chart_config(),
         )
         dashboard = ModelDashboardConfig(
             dashboard_id=uuid4(),
@@ -119,7 +133,7 @@ class TestModelDashboardConfig:
             description="Main monitoring dashboard",
             widgets=(widget,),
             refresh_interval_seconds=60,
-            theme="dark",
+            theme=EnumDashboardTheme.DARK,
         )
         data = dashboard.model_dump()
         restored = ModelDashboardConfig.model_validate(data)
@@ -133,13 +147,13 @@ class TestModelDashboardConfig:
             name="Test",
         )
         with pytest.raises(ValidationError):
-            dashboard.name = "New Name"  # type: ignore[misc]
+            dashboard.name = "New Name"
 
     def test_invalid_dashboard_id_raises(self) -> None:
         """Test that invalid dashboard_id raises ValidationError."""
         with pytest.raises(ValidationError):
             ModelDashboardConfig(
-                dashboard_id="not-a-uuid",  # type: ignore[arg-type]
+                dashboard_id="not-a-uuid",
                 name="Test",
             )
 
@@ -153,12 +167,12 @@ class TestModelDashboardConfig:
             )
 
     def test_theme_values(self) -> None:
-        """Test theme literal values."""
-        for theme in ["light", "dark", "system"]:
+        """Test theme enum values."""
+        for theme in EnumDashboardTheme:
             dashboard = ModelDashboardConfig(
                 dashboard_id=uuid4(),
                 name="Test",
-                theme=theme,  # type: ignore[arg-type]
+                theme=theme,
             )
             assert dashboard.theme == theme
 
@@ -187,6 +201,6 @@ class TestModelDashboardConfig:
         widget = ModelWidgetDefinition(
             widget_id=UUID(uuid_str),
             title="Chart",
-            config=ModelWidgetConfigChart(),
+            config=_make_pie_chart_config(),
         )
         assert str(widget.widget_id) == uuid_str

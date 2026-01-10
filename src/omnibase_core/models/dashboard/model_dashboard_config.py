@@ -3,12 +3,11 @@
 # SPDX-License-Identifier: Apache-2.0
 """Dashboard configuration model."""
 
-from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.enums import EnumDashboardStatus
+from omnibase_core.enums import EnumDashboardStatus, EnumDashboardTheme
 from omnibase_core.models.dashboard.model_dashboard_layout_config import (
     ModelDashboardLayoutConfig,
 )
@@ -50,8 +49,8 @@ class ModelDashboardConfig(BaseModel):
     )
 
     # Theme
-    theme: Literal["light", "dark", "system"] = Field(
-        default="system", description="Dashboard theme preference"
+    theme: EnumDashboardTheme = Field(
+        default=EnumDashboardTheme.SYSTEM, description="Dashboard theme preference"
     )
 
     # Status tracking (initial status only)

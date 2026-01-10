@@ -100,9 +100,12 @@ class TestEnumWidgetType:
 
     def test_enum_membership(self) -> None:
         """Test membership testing."""
+        # Enum member membership
         assert EnumWidgetType.CHART in EnumWidgetType
-        assert "chart" in EnumWidgetType
-        assert "invalid_widget" not in EnumWidgetType
+        # Value membership - check if string is a valid enum value
+        valid_values = {m.value for m in EnumWidgetType}
+        assert "chart" in valid_values
+        assert "invalid_widget" not in valid_values
 
     def test_enum_comparison(self) -> None:
         """Test enum comparison."""

@@ -63,8 +63,9 @@ from .enum_core_error_code import (
     get_exit_code_for_core_error,
 )
 
-# Dashboard status enums (OMN-1284)
+# Dashboard enums (OMN-1284)
 from .enum_dashboard_status import EnumDashboardStatus
+from .enum_dashboard_theme import EnumDashboardTheme
 
 # Security-related enums
 from .enum_data_classification import EnumDataClassification
@@ -333,7 +334,6 @@ __all__ = [
     # Category filter domain
     "EnumCategoryFilter",
     # Security domain
-    "EnumDashboardStatus",
     "EnumDataClassification",
     "EnumSecurityProfile",
     "EnumAuthenticationMethod",
@@ -515,7 +515,9 @@ __all__ = [
     "EnumInvariantType",
     # Violation severity domain (OMN-1195)
     "EnumViolationSeverity",
-    # Widget type domain (OMN-1284)
+    # Dashboard domain (OMN-1284)
+    "EnumDashboardStatus",
+    "EnumDashboardTheme",
     "EnumWidgetType",
     # Event sink type domain (OMN-1151)
     "EnumEventSinkType",

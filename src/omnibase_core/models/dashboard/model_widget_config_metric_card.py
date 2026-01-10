@@ -5,7 +5,7 @@
 
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums import EnumWidgetType
 from omnibase_core.models.dashboard.model_metric_threshold import ModelMetricThreshold
@@ -42,3 +42,10 @@ class ModelWidgetConfigMetricCard(BaseModel):
         default=(), description="Color thresholds for the metric"
     )
     icon: str | None = Field(default=None, description="Icon identifier")
+
+    @model_validator(mode="after")
+    def validate_trend_key_when_show_trend(self) -> "ModelWidgetConfigMetricCard":
+        """Validate that trend_key is set when show_trend is enabled."""
+        if self.show_trend and not self.trend_key:
+            raise ValueError("trend_key must be set when show_trend is enabled")
+        return self

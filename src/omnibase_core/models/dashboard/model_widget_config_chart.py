@@ -5,7 +5,7 @@
 
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums import EnumWidgetType
 from omnibase_core.models.dashboard.model_chart_axis_config import ModelChartAxisConfig
@@ -44,3 +44,13 @@ class ModelWidgetConfigChart(BaseModel):
     )
     show_legend: bool = Field(default=True, description="Show chart legend")
     stacked: bool = Field(default=False, description="Stack series values")
+
+    @model_validator(mode="after")
+    def validate_series_for_data_charts(self) -> "ModelWidgetConfigChart":
+        """Validate that data-driven chart types have at least one series."""
+        data_chart_types = {"line", "bar", "area", "scatter"}
+        if self.chart_type in data_chart_types and not self.series:
+            raise ValueError(
+                f"Chart type '{self.chart_type}' requires at least one series configuration"
+            )
+        return self

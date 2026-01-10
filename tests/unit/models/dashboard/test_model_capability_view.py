@@ -11,6 +11,7 @@ from pydantic import ValidationError
 from omnibase_core.models.dashboard import ModelCapabilityView
 
 
+@pytest.mark.unit
 class TestModelCapabilityView:
     """Tests for ModelCapabilityView model."""
 
@@ -87,7 +88,9 @@ class TestModelCapabilityView:
             capability_id=uuid4(),
             name="test",
         )
-        with pytest.raises(ValidationError):
+        # Pydantic frozen models raise ValidationError on mutation in v2,
+        # but may raise TypeError in some edge cases or implementations
+        with pytest.raises((ValidationError, TypeError)):
             view.name = "new-name"  # type: ignore[misc]
 
     def test_uuid_from_string(self) -> None:

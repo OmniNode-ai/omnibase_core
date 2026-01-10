@@ -11,7 +11,14 @@ __all__ = ["ModelChartSeriesConfig"]
 
 
 class ModelChartSeriesConfig(BaseModel):
-    """Configuration for a single chart series."""
+    """Configuration for a single data series in dashboard charts.
+
+    Defines how a dataset should be rendered within a chart widget,
+    including the data source key, visual styling, and chart type.
+
+    Multiple series configs can be combined to create multi-series
+    charts with different visualization styles (line, bar, area, scatter).
+    """
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 

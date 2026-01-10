@@ -9,7 +9,13 @@ __all__ = ["ModelChartAxisConfig"]
 
 
 class ModelChartAxisConfig(BaseModel):
-    """Configuration for a chart axis."""
+    """Configuration for a chart axis in dashboard visualizations.
+
+    Defines display properties for X or Y axes in chart widgets,
+    including labels, value ranges, and grid visibility.
+
+    Used by chart-based dashboard widgets to configure axis rendering.
+    """
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 

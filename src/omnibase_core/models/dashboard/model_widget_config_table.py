@@ -3,9 +3,9 @@
 # SPDX-License-Identifier: Apache-2.0
 """Table widget configuration model."""
 
-from typing import Literal
+from typing import Literal, Self
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums import EnumWidgetType
 from omnibase_core.models.dashboard.model_table_column_config import (
@@ -37,8 +37,18 @@ class ModelWidgetConfigTable(BaseModel):
     default_sort_key: str | None = Field(
         default=None, description="Default column key to sort by"
     )
-    default_sort_direction: Literal["asc", "desc"] = Field(
-        default="asc", description="Default sort direction"
+    default_sort_direction: Literal["asc", "desc"] | None = Field(
+        default=None,
+        description="Default sort direction (only used when default_sort_key is set)",
     )
     striped: bool = Field(default=True, description="Alternate row colors")
     hover_highlight: bool = Field(default=True, description="Highlight row on hover")
+
+    @model_validator(mode="after")
+    def validate_sort_direction(self) -> Self:
+        """Validate sort direction is only set when sort key is set."""
+        if self.default_sort_direction is not None and self.default_sort_key is None:
+            raise ValueError(
+                "default_sort_direction can only be set when default_sort_key is specified"
+            )
+        return self

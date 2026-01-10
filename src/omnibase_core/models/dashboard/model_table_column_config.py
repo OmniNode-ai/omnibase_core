@@ -11,7 +11,14 @@ __all__ = ["ModelTableColumnConfig"]
 
 
 class ModelTableColumnConfig(BaseModel):
-    """Configuration for a single table column."""
+    """Configuration for a single column in dashboard table widgets.
+
+    Defines column display properties including header text, width,
+    sorting behavior, alignment, and value formatting.
+
+    Used by table-based dashboard widgets to configure column rendering
+    and user interaction capabilities.
+    """
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 

@@ -9,7 +9,14 @@ __all__ = ["ModelStatusItemConfig"]
 
 
 class ModelStatusItemConfig(BaseModel):
-    """Configuration for a single status item in the grid."""
+    """Configuration for a status indicator in dashboard status grids.
+
+    Defines display properties for individual status items, including
+    the data key to monitor, display label, and optional icon.
+
+    Used by status grid widgets to render system health indicators,
+    metrics summaries, and key-value status displays.
+    """
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 

@@ -41,7 +41,7 @@ from omnibase_core.models.dashboard.model_widget_definition import (
     ModelWidgetDefinition,
 )
 
-__all__ = [
+__all__: tuple[str, ...] = (
     # Dashboard Configuration
     "ModelDashboardConfig",
     "ModelDashboardLayoutConfig",
@@ -67,4 +67,4 @@ __all__ = [
     # Event Feed Widget
     "ModelEventFilter",
     "ModelWidgetConfigEventFeed",
-]
+)
