@@ -14,6 +14,7 @@ Key Capabilities:
 - Retry policies and circuit breaker patterns
 - Event bus publishing for state changes
 - Atomic file operations for data integrity
+- Contract-driven handler routing via MixinHandlerRouting (OMN-1293)
 
 .. versionchanged:: 0.4.0
     Refactored from code-driven to contract-driven implementation.
@@ -90,6 +91,23 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution, MixinHandlerRouting):
     - Atomic file operations for data integrity
     - Event bus integration for state changes
     - Performance monitoring and logging
+    - Contract-driven handler routing via MixinHandlerRouting
+
+    Handler Routing (via MixinHandlerRouting):
+        Enables routing messages to handlers based on YAML contract configuration.
+        Use ``operation_match`` routing strategy for effect nodes to route by
+        operation field value (e.g., "http.get", "db.insert").
+
+        Example handler_routing contract section:
+            handler_routing:
+              version: { major: 1, minor: 0, patch: 0 }
+              routing_strategy: operation_match
+              handlers:
+                - routing_key: http.get
+                  handler_key: handle_http_get
+                - routing_key: db.insert
+                  handler_key: handle_db_insert
+              default_handler: handle_unknown_operation
 
     Contract Injection:
         The node requires an effect subcontract to be provided. Two approaches:
@@ -252,7 +270,7 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution, MixinHandlerRouting):
             handler_routing = getattr(self.contract, "handler_routing", None)
 
         if handler_routing is not None:
-            handler_registry: object = container.get_service("ServiceHandlerRegistry")  # type: ignore[arg-type]
+            handler_registry: object = container.get_service("ProtocolHandlerRegistry")  # type: ignore[arg-type]  # Protocol-based DI lookup per ONEX conventions
             self._init_handler_routing(handler_routing, handler_registry)  # type: ignore[arg-type]
 
     async def process(self, input_data: ModelEffectInput) -> ModelEffectOutput:

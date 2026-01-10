@@ -9,6 +9,7 @@ Key Capabilities:
 - Deterministic operation guarantees
 - Algorithm registration and execution
 - Optional infrastructure via protocol injection (caching, timing, parallelization)
+- Contract-driven handler routing via MixinHandlerRouting (OMN-1293)
 
 Infrastructure Concerns (Optional via Protocol Injection):
 - Caching: Injected via ProtocolComputeCache (OMN-700)
@@ -74,6 +75,23 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase, MixinHandlerRouting):
     - Optional caching via ProtocolComputeCache injection
     - Optional timing via ProtocolTimingService injection
     - Optional parallelization via ProtocolParallelExecutor injection
+    - Contract-driven handler routing via MixinHandlerRouting
+
+    Handler Routing (via MixinHandlerRouting):
+        Enables routing messages to handlers based on YAML contract configuration.
+        Use ``payload_type_match`` routing strategy to route by input data type.
+
+        Example handler_routing contract section::
+
+            handler_routing:
+              version: { major: 1, minor: 0, patch: 0 }
+              routing_strategy: payload_type_match
+              handlers:
+                - routing_key: UserData
+                  handler_key: compute_user_score
+                - routing_key: OrderData
+                  handler_key: compute_order_total
+              default_handler: compute_generic
 
     Pure Mode (default):
         When infrastructure protocols are not injected, NodeCompute operates
@@ -154,7 +172,7 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase, MixinHandlerRouting):
             handler_routing = getattr(self.contract, "handler_routing", None)
 
         if handler_routing is not None:
-            handler_registry: object = container.get_service("ServiceHandlerRegistry")  # type: ignore[arg-type]  # String-based DI lookup for extensibility
+            handler_registry: object = container.get_service("ProtocolHandlerRegistry")  # type: ignore[arg-type]  # Protocol-based DI lookup per ONEX conventions
             self._init_handler_routing(handler_routing, handler_registry)  # type: ignore[arg-type]  # Registry retrieved via DI
 
     # =========================================================================

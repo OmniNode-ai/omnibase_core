@@ -8,7 +8,7 @@ handler routing configuration.
 
 Example YAML:
     - routing_key: ModelEventJobCreated
-      handler_id: handle_job_created
+      handler_key: handle_job_created
       message_category: event
       priority: 0
       output_events:
@@ -58,6 +58,7 @@ class ModelHandlerRoutingEntry(BaseModel):
         extra="ignore",  # Allow extra fields from YAML contracts
         use_enum_values=False,  # Keep enum objects, don't convert to strings
         validate_assignment=True,
+        from_attributes=True,  # pytest-xdist compatibility
     )
 
     routing_key: str = Field(

@@ -21,6 +21,7 @@ from __future__ import annotations
 from typing import Any
 
 import pytest
+from pydantic import ValidationError
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_execution_shape import EnumMessageCategory
@@ -75,17 +76,33 @@ class MockMessageHandler:
 
 
 class MockServiceHandlerRegistry:
-    """Mock ServiceHandlerRegistry for testing handler routing.
+    """Mock implementation of ProtocolHandlerRegistry for testing handler routing.
+
+    This mock follows the same interface contract as ProtocolHandlerRegistry:
+    - Handlers are registered by ID before freeze
+    - Registry must be frozen before handler lookup
+    - After freeze, no new handlers can be registered
 
     Follows the freeze-after-init pattern of the real ServiceHandlerRegistry.
+
+    See Also:
+        omnibase_core.protocols.protocol_handler_registry.ProtocolHandlerRegistry
     """
 
     def __init__(self) -> None:
+        """Initialize an empty, unfrozen handler registry."""
         self._handlers: dict[str, MockMessageHandler] = {}
         self._frozen: bool = False
 
     def register_handler(self, handler: MockMessageHandler) -> None:
-        """Register a handler by its ID."""
+        """Register a handler by its ID.
+
+        Args:
+            handler: The handler to register (must have handler_id property).
+
+        Raises:
+            ModelOnexError: If registry is already frozen.
+        """
         if self._frozen:
             raise ModelOnexError(
                 message="Registry is frozen",
@@ -94,16 +111,27 @@ class MockServiceHandlerRegistry:
         self._handlers[handler.handler_id] = handler
 
     def freeze(self) -> None:
-        """Freeze the registry."""
+        """Freeze the registry, preventing further handler registration."""
         self._frozen = True
 
     @property
     def is_frozen(self) -> bool:
-        """Check if registry is frozen."""
+        """Check if registry is frozen.
+
+        Returns:
+            True if registry is frozen and no more handlers can be registered.
+        """
         return self._frozen
 
     def get_handler_by_id(self, handler_id: str) -> MockMessageHandler | None:
-        """Get a handler by its ID."""
+        """Get a handler by its ID.
+
+        Args:
+            handler_id: The unique identifier of the handler.
+
+        Returns:
+            The handler if found, None otherwise.
+        """
         return self._handlers.get(handler_id)
 
 
@@ -545,6 +573,24 @@ class TestHandlerResolution:
 
         assert exc_info.value.error_code == EnumCoreErrorCode.INVALID_STATE
 
+    def test_route_to_handlers_with_unfrozen_registry_raises_error(
+        self,
+        mock_registry_unfrozen: MockServiceHandlerRegistry,
+        sample_handler_routing: ModelHandlerRoutingSubcontract,
+    ) -> None:
+        """Test that routing with unfrozen registry raises error."""
+        node = TestNodeWithMixin()
+        node._init_handler_routing(sample_handler_routing, mock_registry_unfrozen)
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            node.route_to_handlers(
+                routing_key="UserCreatedEvent",
+                category=EnumMessageCategory.EVENT,
+            )
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.INVALID_STATE
+        assert "not frozen" in str(exc_info.value).lower()
+
     def test_get_routing_table_before_init_raises_error(self) -> None:
         """Test that getting routing table before init raises error."""
         node = TestNodeWithMixin()
@@ -684,6 +730,21 @@ class TestHandlerValidation:
 
         assert len(errors) == 1
         assert "None" in errors[0]
+
+    def test_validate_handler_routing_with_unfrozen_registry_raises_error(
+        self,
+        mock_registry_unfrozen: MockServiceHandlerRegistry,
+        sample_handler_routing: ModelHandlerRoutingSubcontract,
+    ) -> None:
+        """Test validation raises error when registry is not frozen."""
+        node = TestNodeWithMixin()
+        node._init_handler_routing(sample_handler_routing, mock_registry_unfrozen)
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            node.validate_handler_routing()
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.INVALID_STATE
+        assert "not frozen" in str(exc_info.value).lower()
 
 
 # =============================================================================
@@ -886,15 +947,15 @@ class TestEdgeCases:
 
     def test_empty_routing_key_not_allowed(self) -> None:
         """Test that empty routing_key raises validation error."""
-        with pytest.raises(Exception):  # Pydantic validation
+        with pytest.raises(ValidationError):
             ModelHandlerRoutingEntry(
                 routing_key="",
                 handler_key="handler_1",
             )
 
     def test_empty_handler_id_not_allowed(self) -> None:
-        """Test that empty handler_id raises validation error."""
-        with pytest.raises(Exception):  # Pydantic validation
+        """Test that empty handler_key raises validation error."""
+        with pytest.raises(ValidationError):
             ModelHandlerRoutingEntry(
                 routing_key="ValidKey",
                 handler_key="",
@@ -904,32 +965,56 @@ class TestEdgeCases:
         self,
         mock_registry: MockServiceHandlerRegistry,
     ) -> None:
-        """Test handlers are ordered by priority in routing table."""
-        # Note: With unique routing keys, each key maps to one handler.
-        # This test verifies the build_routing_table sorts by priority.
+        """Test handlers are ordered by priority when building routing table.
+
+        The build_routing_table method should sort handlers by priority (ascending)
+        before processing, ensuring lower priority values are processed first.
+        This ordering is important for deterministic routing behavior.
+        """
+        # Create handlers with different priorities in non-sorted order
         routing = ModelHandlerRoutingSubcontract(
             version=ModelSemVer(major=1, minor=0, patch=0),
             routing_strategy="payload_type_match",
             handlers=[
                 ModelHandlerRoutingEntry(
                     routing_key="EventA",
-                    handler_key="handle_user_updated",  # priority 10 (default 0)
-                    priority=10,
+                    handler_key="handle_user_updated",
+                    priority=10,  # Higher priority value (processed later)
                 ),
                 ModelHandlerRoutingEntry(
                     routing_key="EventB",
-                    handler_key="handle_user_created",  # priority 0
-                    priority=0,
+                    handler_key="handle_user_created",
+                    priority=0,  # Lower priority value (processed first)
+                ),
+                ModelHandlerRoutingEntry(
+                    routing_key="EventC",
+                    handler_key="handle_unknown",
+                    priority=5,  # Middle priority
                 ),
             ],
         )
 
-        # build_routing_table should process lower priority first
+        # Verify handlers are sorted by priority in the subcontract
+        sorted_handlers = sorted(routing.handlers, key=lambda h: h.priority)
+        assert sorted_handlers[0].priority == 0
+        assert sorted_handlers[0].handler_key == "handle_user_created"
+        assert sorted_handlers[1].priority == 5
+        assert sorted_handlers[1].handler_key == "handle_unknown"
+        assert sorted_handlers[2].priority == 10
+        assert sorted_handlers[2].handler_key == "handle_user_updated"
+
+        # build_routing_table should process in priority order
         table = routing.build_routing_table()
 
-        # Both keys should be present
+        # All keys should be present in the routing table
         assert "EventA" in table
         assert "EventB" in table
+        assert "EventC" in table
+
+        # Each routing key maps to its handler
+        assert table["EventA"] == ["handle_user_updated"]
+        assert table["EventB"] == ["handle_user_created"]
+        assert table["EventC"] == ["handle_unknown"]
 
     def test_mixin_cooperative_inheritance(self) -> None:
         """Test mixin works with cooperative multiple inheritance."""
@@ -997,10 +1082,12 @@ class TestProperties:
         assert node.routing_strategy == "payload_type_match"
 
         # After init with operation_match
+        # Note: Empty handlers requires a default_handler per validation rules
         routing = ModelHandlerRoutingSubcontract(
             version=ModelSemVer(major=1, minor=0, patch=0),
             routing_strategy="operation_match",
             handlers=[],
+            default_handler="fallback_handler",
         )
         node._init_handler_routing(routing, mock_registry)
 
@@ -1010,7 +1097,7 @@ class TestProperties:
         self,
         mock_registry: MockServiceHandlerRegistry,
     ) -> None:
-        """Test default_handler_id property returns correct value."""
+        """Test default_handler_key property returns correct value."""
         node = TestNodeWithMixin()
 
         # Default before init
@@ -1038,10 +1125,12 @@ class TestProperties:
         assert node.is_routing_initialized is False
 
         # After init
+        # Note: Empty handlers requires a default_handler per validation rules
         routing = ModelHandlerRoutingSubcontract(
             version=ModelSemVer(major=1, minor=0, patch=0),
             routing_strategy="payload_type_match",
             handlers=[],
+            default_handler="fallback_handler",
         )
         node._init_handler_routing(routing, mock_registry)
 

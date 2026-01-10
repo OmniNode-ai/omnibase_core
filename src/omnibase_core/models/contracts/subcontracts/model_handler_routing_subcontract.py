@@ -24,13 +24,13 @@ Example YAML contract configuration:
       routing_strategy: payload_type_match
       handlers:
         - routing_key: ModelEventJobCreated
-          handler_id: handle_job_created
+          handler_key: handle_job_created
           message_category: event
           priority: 0
           output_events:
             - ModelEventJobStarted
         - routing_key: ModelEventJobCompleted
-          handler_id: handle_job_completed
+          handler_key: handle_job_completed
           priority: 10
       default_handler: handle_unknown
 
@@ -78,10 +78,10 @@ class ModelHandlerRoutingSubcontract(BaseModel):
           routing_strategy: payload_type_match
           handlers:
             - routing_key: ModelEventJobCreated
-              handler_id: handle_job_created
+              handler_key: handle_job_created
               priority: 0
             - routing_key: ModelEventJobCompleted
-              handler_id: handle_job_completed
+              handler_key: handle_job_completed
               priority: 10
           default_handler: handle_unknown
 
@@ -109,6 +109,7 @@ class ModelHandlerRoutingSubcontract(BaseModel):
         extra="ignore",  # Allow extra fields from YAML contracts
         use_enum_values=False,  # Keep enum objects, don't convert to strings
         validate_assignment=True,
+        from_attributes=True,  # pytest-xdist compatibility
     )
 
     # Interface version for code generation stability
@@ -158,7 +159,26 @@ class ModelHandlerRoutingSubcontract(BaseModel):
         Validates:
         - No duplicate routing_keys (ensures deterministic routing)
         - At least one handler entry or default_handler is defined
+
+        Raises:
+            ModelOnexError: If validation fails (VALIDATION_ERROR).
+                Per ADR-012, ModelOnexError is used in Pydantic validators
+                for framework consistency and structured error context.
         """
+        # Validate that configuration is not empty (at least one handler or default)
+        if not self.handlers and self.default_handler is None:
+            raise ModelOnexError(
+                message="Empty routing configuration: must define at least one "
+                "handler entry or a default_handler.",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                # Standard context keys per ERROR_HANDLING_BEST_PRACTICES.md
+                field="handlers",
+                value=None,
+                constraint="non_empty_configuration",
+                # Domain-specific context
+                routing_strategy=self.routing_strategy,
+            )
+
         # Validate routing keys are unique (deterministic routing requirement)
         routing_keys: list[str] = []
         for entry in self.handlers:
@@ -167,7 +187,11 @@ class ModelHandlerRoutingSubcontract(BaseModel):
                     message=f"Duplicate routing_key found: '{entry.routing_key}'. "
                     "Routing keys must be unique for deterministic routing.",
                     error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                    duplicate_routing_key=entry.routing_key,
+                    # Standard context keys per ERROR_HANDLING_BEST_PRACTICES.md
+                    field="handlers.routing_key",
+                    value=entry.routing_key,
+                    constraint="unique_routing_key",
+                    # Domain-specific context for debugging
                     handler_key=entry.handler_key,
                 )
             routing_keys.append(entry.routing_key)

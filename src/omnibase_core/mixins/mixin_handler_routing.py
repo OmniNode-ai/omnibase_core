@@ -19,7 +19,7 @@ Example YAML contract:
       routing_strategy: payload_type_match
       handlers:
         - routing_key: UserCreatedEvent
-          handler_id: handle_user_created
+          handler_key: handle_user_created
           priority: 0
       default_handler: handle_unknown
 
@@ -28,7 +28,8 @@ Usage:
         def __init__(self, container: ModelONEXContainer, contract: ModelContract):
             super().__init__(container)
             # Initialize handler routing from contract
-            registry = container.get_service("ServiceHandlerRegistry")
+            # Use protocol-based DI token per ONEX conventions
+            registry = container.get_service("ProtocolHandlerRegistry")
             self._init_handler_routing(
                 contract.handler_routing,
                 registry
@@ -53,6 +54,10 @@ if TYPE_CHECKING:
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_execution_shape import EnumMessageCategory
+from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
+from omnibase_core.logging.logging_structured import (
+    emit_log_event_sync as emit_log_event,
+)
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 __all__ = ["MixinHandlerRouting"]
@@ -74,7 +79,8 @@ class MixinHandlerRouting:
 
     Thread Safety:
         After initialization, the routing table is read-only and thread-safe.
-        The registry must be frozen before use (enforced by ServiceHandlerRegistry).
+        The registry must be frozen before use (enforced by route_to_handlers and
+        validate_handler_routing methods).
 
     Usage:
         class NodeMyOrchestrator(NodeOrchestrator, MixinHandlerRouting):
@@ -136,7 +142,8 @@ class MixinHandlerRouting:
         Example:
             def __init__(self, container, contract):
                 super().__init__(container)
-                registry = container.get_service("ServiceHandlerRegistry")
+                # Use protocol-based DI token per ONEX conventions
+                registry = container.get_service("ProtocolHandlerRegistry")
                 self._init_handler_routing(contract.handler_routing, registry)
         """
         if registry is None:
@@ -182,8 +189,21 @@ class MixinHandlerRouting:
             category: The message category for filtering handlers.
 
         Returns:
-            list[ProtocolMessageHandler]: List of handlers for the routing key.
-                Empty list if no handlers match and no default_handler is set.
+            list[ProtocolMessageHandler]: List of handlers for the routing key,
+                filtered by category. Returns an empty list in these scenarios:
+
+                1. **No routing key match and no default handler**: The routing_key
+                   does not match any entry in the routing table, and no
+                   default_handler is configured in the contract.
+
+                2. **Handler not found in registry**: The handler_key from the
+                   routing table or default_handler cannot be resolved via
+                   ServiceHandlerRegistry.get_handler_by_id(). This indicates
+                   a misconfiguration between the contract and registered handlers.
+
+                3. **Handler category mismatch**: All matched handlers have a
+                   category that differs from the requested category parameter.
+                   A DEBUG log is emitted for each filtered handler.
 
         Raises:
             ModelOnexError: If routing is not initialized (INVALID_STATE).
@@ -209,6 +229,15 @@ class MixinHandlerRouting:
                 error_code=EnumCoreErrorCode.INVALID_STATE,
             )
 
+        # Enforce frozen contract for thread safety
+        if not self._handler_registry.is_frozen:
+            raise ModelOnexError(
+                message="ServiceHandlerRegistry is not frozen. "
+                "Registration MUST complete and freeze() MUST be called before routing. "
+                "This is required for thread safety.",
+                error_code=EnumCoreErrorCode.INVALID_STATE,
+            )
+
         # Look up handler keys for the routing key
         handler_keys = self._get_handler_keys_for_routing_key(routing_key)
 
@@ -220,6 +249,17 @@ class MixinHandlerRouting:
                 # Filter by category if handler has category mismatch
                 if handler.category == category:
                     handlers.append(handler)
+                else:
+                    emit_log_event(
+                        LogLevel.DEBUG,
+                        "Handler filtered due to category mismatch",
+                        {
+                            "handler_id": handler_key,
+                            "expected_category": category.value,
+                            "actual_category": handler.category.value,
+                            "routing_key": routing_key,
+                        },
+                    )
 
         return handlers
 
@@ -231,19 +271,22 @@ class MixinHandlerRouting:
             routing_key: The routing key to look up.
 
         Returns:
-            list[str]: List of handler keys for the routing key.
+            list[str]: Copy of handler keys for the routing key.
+                Returns a new list to prevent mutation of internal state.
         """
         # Direct lookup for payload_type_match and operation_match
         if self._routing_strategy in ("payload_type_match", "operation_match"):
             handler_keys = self._handler_routing_table.get(routing_key)
             if handler_keys:
-                return handler_keys
+                # Return copy to prevent mutation of internal state
+                return list(handler_keys)
 
         # Glob pattern matching for topic_pattern
         elif self._routing_strategy == "topic_pattern":
             for pattern, handler_keys in self._handler_routing_table.items():
                 if fnmatch.fnmatch(routing_key, pattern):
-                    return handler_keys
+                    # Return copy to prevent mutation of internal state
+                    return list(handler_keys)
 
         # Fall back to default handler
         if self._default_handler_key is not None:
@@ -263,6 +306,7 @@ class MixinHandlerRouting:
 
         Raises:
             ModelOnexError: If routing is not initialized (INVALID_STATE).
+            ModelOnexError: If registry is not frozen (INVALID_STATE).
 
         Example:
             errors = self.validate_handler_routing()
@@ -279,6 +323,15 @@ class MixinHandlerRouting:
 
         if self._handler_registry is None:
             return ["ServiceHandlerRegistry is None"]
+
+        # Enforce frozen contract for thread safety
+        if not self._handler_registry.is_frozen:
+            raise ModelOnexError(
+                message="ServiceHandlerRegistry is not frozen. "
+                "Registration MUST complete and freeze() MUST be called before validation. "
+                "This is required for thread safety.",
+                error_code=EnumCoreErrorCode.INVALID_STATE,
+            )
 
         errors: list[str] = []
 
@@ -302,11 +355,13 @@ class MixinHandlerRouting:
 
     def get_routing_table(self) -> dict[str, list[str]]:
         """
-        Get a copy of the routing table for inspection.
+        Get a deep copy of the routing table for inspection.
 
         Returns:
-            dict[str, list[str]]: Copy of the routing table mapping
-                routing_key to list of handler_keys.
+            dict[str, list[str]]: Deep copy of the routing table mapping
+                routing_key to list of handler_keys. Both the dict and
+                the inner lists are new objects to prevent mutation of
+                internal state.
 
         Raises:
             ModelOnexError: If routing is not initialized (INVALID_STATE).
@@ -316,7 +371,8 @@ class MixinHandlerRouting:
                 message="Handler routing not initialized. Call _init_handler_routing() first.",
                 error_code=EnumCoreErrorCode.INVALID_STATE,
             )
-        return dict(self._handler_routing_table)
+        # Deep copy: create new dict with new lists to prevent mutation
+        return {k: list(v) for k, v in self._handler_routing_table.items()}
 
     @property
     def routing_strategy(self) -> str:

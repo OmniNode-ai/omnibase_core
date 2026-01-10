@@ -3,6 +3,12 @@ NodeOrchestrator - Workflow-driven orchestrator node for coordination.
 
 Primary orchestrator implementation using workflow definitions for coordination.
 Zero custom Python code required - all coordination logic defined declaratively.
+
+Key Capabilities:
+- Workflow-driven coordination via declarative YAML contracts
+- Event-driven message handling with ModelIntent/ModelAction patterns
+- Workflow state snapshot and restore capabilities
+- Contract-driven handler routing via MixinHandlerRouting (OMN-1293)
 """
 
 import copy
@@ -68,12 +74,39 @@ _WARN_WORKFLOW_ALL_STEPS_FAILED = (
 
 class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution, MixinHandlerRouting):
     """
-        Workflow-driven orchestrator node for coordination.
+    Workflow-driven orchestrator node for coordination.
 
-        Enables creating orchestrator nodes entirely from YAML contracts without custom Python code.
-        Workflow steps, dependencies, and execution modes are all defined in workflow definitions.
+    Enables creating orchestrator nodes entirely from YAML contracts without custom Python code.
+    Workflow steps, dependencies, and execution modes are all defined in workflow definitions.
 
-        Thread Safety:
+    Key Features:
+        - Workflow-driven coordination with step dependencies
+        - ModelAction emission for deferred execution
+        - Workflow state snapshot and restore
+        - Contract-driven handler routing via MixinHandlerRouting
+
+    Handler Routing (via MixinHandlerRouting):
+        Enables routing events to handlers based on YAML contract configuration.
+        Use ``payload_type_match`` routing strategy for orchestrator nodes to route
+        by event model class name (e.g., "UserCreatedEvent", "OrderCompletedEvent").
+
+        Example handler_routing contract section::
+
+            handler_routing:
+              version: { major: 1, minor: 0, patch: 0 }
+              routing_strategy: payload_type_match
+              handlers:
+                - routing_key: UserCreatedEvent
+                  handler_key: handle_user_created
+                  message_category: event
+                  priority: 0
+                - routing_key: OrderCompletedEvent
+                  handler_key: handle_order_completed
+                  message_category: event
+                  priority: 10
+              default_handler: handle_unknown_event
+
+    Thread Safety:
             **MVP Design Decision**: NodeOrchestrator uses mutable workflow state intentionally
             for the MVP phase to enable workflow coordination with minimal complexity.
             This is a documented trade-off.
@@ -329,7 +362,7 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution, MixinHandlerRouting
             handler_routing = getattr(self.contract, "handler_routing", None)
 
         if handler_routing is not None:
-            handler_registry: object = container.get_service("ServiceHandlerRegistry")  # type: ignore[arg-type]  # String-based DI lookup for extensibility
+            handler_registry: object = container.get_service("ProtocolHandlerRegistry")  # type: ignore[arg-type]  # Protocol-based DI lookup per ONEX conventions
             self._init_handler_routing(handler_routing, handler_registry)  # type: ignore[arg-type]  # Registry retrieved via DI
 
     async def process(
