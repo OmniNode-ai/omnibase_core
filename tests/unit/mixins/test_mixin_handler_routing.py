@@ -18,7 +18,7 @@ Related:
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Protocol, runtime_checkable
 
 import pytest
 from pydantic import ValidationError
@@ -39,8 +39,37 @@ from omnibase_core.models.primitives.model_semver import ModelSemVer
 # =============================================================================
 
 
+@runtime_checkable
+class ProtocolMockHandler(Protocol):
+    """Protocol defining the handler interface for type checking mocks.
+
+    This protocol mirrors ProtocolMessageHandler for test mock typing.
+    """
+
+    @property
+    def handler_id(self) -> str: ...
+
+    @property
+    def category(self) -> EnumMessageCategory: ...
+
+    @property
+    def message_types(self) -> set[str]: ...
+
+    @property
+    def node_kind(self) -> EnumNodeKind: ...
+
+    async def handle(self, envelope: Any) -> Any: ...
+
+
 class MockMessageHandler:
-    """Mock handler implementing ProtocolMessageHandler for testing."""
+    """Mock handler implementing ProtocolMessageHandler for testing.
+
+    This mock implements the same interface as ProtocolMessageHandler,
+    providing the required properties and handle method for routing tests.
+
+    See Also:
+        omnibase_core.protocols.runtime.protocol_message_handler.ProtocolMessageHandler
+    """
 
     def __init__(
         self,
@@ -49,44 +78,70 @@ class MockMessageHandler:
         node_kind: EnumNodeKind = EnumNodeKind.ORCHESTRATOR,
         message_types: set[str] | None = None,
     ) -> None:
-        self._handler_id = handler_id
-        self._category = category
-        self._node_kind = node_kind
-        self._message_types = message_types or set()
+        """Initialize mock handler with required properties.
+
+        Args:
+            handler_id: Unique identifier for the handler.
+            category: Message category this handler processes.
+            node_kind: Node kind for execution shape validation.
+            message_types: Optional set of message types to handle.
+        """
+        self._handler_id: str = handler_id
+        self._category: EnumMessageCategory = category
+        self._node_kind: EnumNodeKind = node_kind
+        self._message_types: set[str] = message_types or set()
 
     @property
     def handler_id(self) -> str:
+        """Get the handler's unique identifier."""
         return self._handler_id
 
     @property
     def category(self) -> EnumMessageCategory:
+        """Get the message category this handler processes."""
         return self._category
 
     @property
     def message_types(self) -> set[str]:
+        """Get the set of message types this handler accepts."""
         return self._message_types
 
     @property
     def node_kind(self) -> EnumNodeKind:
+        """Get the node kind for execution shape validation."""
         return self._node_kind
 
-    async def handle(self, envelope: Any) -> Any:
-        """Mock handle method."""
+    async def handle(self, envelope: Any) -> dict[str, Any]:
+        """Mock handle method.
+
+        Args:
+            envelope: The message envelope to process.
+
+        Returns:
+            dict with handler_id and processed flag.
+        """
         return {"handler_id": self._handler_id, "processed": True}
 
 
 class MockServiceHandlerRegistry:
-    """Mock implementation of ProtocolHandlerRegistry for testing handler routing.
+    """Mock implementation of ServiceHandlerRegistry for testing handler routing.
 
-    This mock follows the same interface contract as ProtocolHandlerRegistry:
+    This mock follows the same interface contract as ServiceHandlerRegistry:
     - Handlers are registered by ID before freeze
     - Registry must be frozen before handler lookup
     - After freeze, no new handlers can be registered
 
     Follows the freeze-after-init pattern of the real ServiceHandlerRegistry.
 
+    The mock provides the minimal interface needed by MixinHandlerRouting:
+    - register_handler: Register handlers during setup
+    - freeze: Lock registry for thread-safe read access
+    - is_frozen: Check frozen state
+    - get_handler_by_id: Look up handler by ID
+    - handler_count: Get total registered handlers
+
     See Also:
-        omnibase_core.protocols.protocol_handler_registry.ProtocolHandlerRegistry
+        omnibase_core.services.service_handler_registry.ServiceHandlerRegistry
     """
 
     def __init__(self) -> None:
@@ -94,11 +149,16 @@ class MockServiceHandlerRegistry:
         self._handlers: dict[str, MockMessageHandler] = {}
         self._frozen: bool = False
 
-    def register_handler(self, handler: MockMessageHandler) -> None:
+    def register_handler(
+        self,
+        handler: MockMessageHandler,
+        message_types: set[str] | None = None,
+    ) -> None:
         """Register a handler by its ID.
 
         Args:
             handler: The handler to register (must have handler_id property).
+            message_types: Optional message types (ignored in mock, mirrors real interface).
 
         Raises:
             ModelOnexError: If registry is already frozen.
@@ -122,6 +182,15 @@ class MockServiceHandlerRegistry:
             True if registry is frozen and no more handlers can be registered.
         """
         return self._frozen
+
+    @property
+    def handler_count(self) -> int:
+        """Get the total number of registered handlers.
+
+        Returns:
+            Number of handlers in the registry.
+        """
+        return len(self._handlers)
 
     def get_handler_by_id(self, handler_id: str) -> MockMessageHandler | None:
         """Get a handler by its ID.
@@ -953,8 +1022,8 @@ class TestEdgeCases:
                 handler_key="handler_1",
             )
 
-    def test_empty_handler_id_not_allowed(self) -> None:
-        """Test that empty handler_key raises validation error."""
+    def test_empty_handler_key_not_allowed(self) -> None:
+        """Test that empty handler_key raises ValidationError."""
         with pytest.raises(ValidationError):
             ModelHandlerRoutingEntry(
                 routing_key="ValidKey",
@@ -969,7 +1038,14 @@ class TestEdgeCases:
 
         The build_routing_table method should sort handlers by priority (ascending)
         before processing, ensuring lower priority values are processed first.
-        This ordering is important for deterministic routing behavior.
+        This ordering is important for:
+        1. Deterministic routing table construction
+        2. First-match-wins behavior in topic_pattern strategy
+
+        This test verifies:
+        - Handlers with different priorities can be sorted correctly
+        - The routing table is built with consistent ordering regardless of input order
+        - Each routing_key maps to exactly one handler_key as expected
         """
         # Create handlers with different priorities in non-sorted order
         routing = ModelHandlerRoutingSubcontract(
@@ -994,27 +1070,45 @@ class TestEdgeCases:
             ],
         )
 
-        # Verify handlers are sorted by priority in the subcontract
+        # Verify handlers CAN BE sorted by priority (ascending = lower values first)
         sorted_handlers = sorted(routing.handlers, key=lambda h: h.priority)
-        assert sorted_handlers[0].priority == 0
-        assert sorted_handlers[0].handler_key == "handle_user_created"
-        assert sorted_handlers[1].priority == 5
-        assert sorted_handlers[1].handler_key == "handle_unknown"
-        assert sorted_handlers[2].priority == 10
-        assert sorted_handlers[2].handler_key == "handle_user_updated"
+        expected_order = [
+            ("handle_user_created", 0),  # Lowest priority value = first
+            ("handle_unknown", 5),  # Middle priority
+            ("handle_user_updated", 10),  # Highest priority value = last
+        ]
+        for i, (expected_key, expected_priority) in enumerate(expected_order):
+            assert sorted_handlers[i].handler_key == expected_key, (
+                f"Position {i}: expected handler_key '{expected_key}', "
+                f"got '{sorted_handlers[i].handler_key}'"
+            )
+            assert sorted_handlers[i].priority == expected_priority, (
+                f"Position {i}: expected priority {expected_priority}, "
+                f"got {sorted_handlers[i].priority}"
+            )
 
-        # build_routing_table should process in priority order
+        # Build routing table and verify deterministic output
         table = routing.build_routing_table()
 
-        # All keys should be present in the routing table
-        assert "EventA" in table
-        assert "EventB" in table
-        assert "EventC" in table
+        # Verify all routing_keys are present
+        assert set(table.keys()) == {"EventA", "EventB", "EventC"}, (
+            f"Expected routing keys {{'EventA', 'EventB', 'EventC'}}, got {set(table.keys())}"
+        )
 
-        # Each routing key maps to its handler
-        assert table["EventA"] == ["handle_user_updated"]
-        assert table["EventB"] == ["handle_user_created"]
-        assert table["EventC"] == ["handle_unknown"]
+        # Verify each routing_key maps to exactly one handler_key
+        assert table["EventA"] == ["handle_user_updated"], (
+            f"EventA should map to ['handle_user_updated'], got {table['EventA']}"
+        )
+        assert table["EventB"] == ["handle_user_created"], (
+            f"EventB should map to ['handle_user_created'], got {table['EventB']}"
+        )
+        assert table["EventC"] == ["handle_unknown"], (
+            f"EventC should map to ['handle_unknown'], got {table['EventC']}"
+        )
+
+        # Verify determinism: building table twice gives same result
+        table2 = routing.build_routing_table()
+        assert table == table2, "Routing table should be deterministic across builds"
 
     def test_mixin_cooperative_inheritance(self) -> None:
         """Test mixin works with cooperative multiple inheritance."""
@@ -1135,3 +1229,123 @@ class TestProperties:
         node._init_handler_routing(routing, mock_registry)
 
         assert node.is_routing_initialized is True
+
+
+# =============================================================================
+# Performance Optimization Tests
+# =============================================================================
+
+
+@pytest.mark.unit
+class TestTopicPatternPerformanceOptimization:
+    """Test topic_pattern performance optimizations.
+
+    Verifies that:
+    - Patterns are pre-compiled to regex at initialization time
+    - Routing results are cached with LRU cache
+    - Cache is properly cleared on re-initialization
+    """
+
+    def test_patterns_are_precompiled_at_initialization(
+        self,
+        mock_registry: MockServiceHandlerRegistry,
+        topic_pattern_routing: ModelHandlerRoutingSubcontract,
+    ) -> None:
+        """Test that glob patterns are pre-compiled to regex at init time."""
+        import re
+
+        node = TestNodeWithMixin()
+        node._init_handler_routing(topic_pattern_routing, mock_registry)
+
+        # Verify _compiled_patterns contains compiled regex objects
+        assert len(node._compiled_patterns) == 2
+        for compiled_regex, handler_keys in node._compiled_patterns:
+            # Each entry should be (Pattern, list[str])
+            assert isinstance(compiled_regex, re.Pattern)
+            assert isinstance(handler_keys, list)
+            assert all(isinstance(k, str) for k in handler_keys)
+
+    def test_routing_cache_is_populated(
+        self,
+        mock_registry: MockServiceHandlerRegistry,
+        topic_pattern_routing: ModelHandlerRoutingSubcontract,
+    ) -> None:
+        """Test that routing results are cached after first lookup."""
+        node = TestNodeWithMixin()
+        node._init_handler_routing(topic_pattern_routing, mock_registry)
+
+        # Get initial cache info
+        cache_info_before = node._get_handler_keys_for_topic_pattern.cache_info()
+        assert cache_info_before.hits == 0
+        assert cache_info_before.misses == 0
+
+        # First lookup - should be a cache miss
+        node.route_to_handlers("events.user.created", EnumMessageCategory.EVENT)
+        cache_info_after_first = node._get_handler_keys_for_topic_pattern.cache_info()
+        assert cache_info_after_first.misses == 1
+        assert cache_info_after_first.hits == 0
+
+        # Second lookup with same key - should be a cache hit
+        node.route_to_handlers("events.user.created", EnumMessageCategory.EVENT)
+        cache_info_after_second = node._get_handler_keys_for_topic_pattern.cache_info()
+        assert cache_info_after_second.misses == 1
+        assert cache_info_after_second.hits == 1
+
+    def test_cache_cleared_on_reinitialization(
+        self,
+        mock_registry: MockServiceHandlerRegistry,
+        topic_pattern_routing: ModelHandlerRoutingSubcontract,
+    ) -> None:
+        """Test that cache is cleared when routing is re-initialized."""
+        node = TestNodeWithMixin()
+        node._init_handler_routing(topic_pattern_routing, mock_registry)
+
+        # Populate cache
+        node.route_to_handlers("events.user.created", EnumMessageCategory.EVENT)
+        node.route_to_handlers("events.user.updated", EnumMessageCategory.EVENT)
+        cache_info_before = node._get_handler_keys_for_topic_pattern.cache_info()
+        assert cache_info_before.currsize > 0
+
+        # Re-initialize with same routing
+        node._routing_initialized = False  # Allow re-init
+        node._init_handler_routing(topic_pattern_routing, mock_registry)
+
+        # Cache should be cleared
+        cache_info_after = node._get_handler_keys_for_topic_pattern.cache_info()
+        assert cache_info_after.currsize == 0
+        assert cache_info_after.hits == 0
+        assert cache_info_after.misses == 0
+
+    def test_no_compiled_patterns_for_non_topic_strategy(
+        self,
+        mock_registry: MockServiceHandlerRegistry,
+        sample_handler_routing: ModelHandlerRoutingSubcontract,
+    ) -> None:
+        """Test that _compiled_patterns is empty for non-topic_pattern strategies."""
+        node = TestNodeWithMixin()
+        node._init_handler_routing(sample_handler_routing, mock_registry)
+
+        # payload_type_match strategy should not compile patterns
+        assert node.routing_strategy == "payload_type_match"
+        assert len(node._compiled_patterns) == 0
+
+    def test_cached_result_is_not_mutable(
+        self,
+        mock_registry: MockServiceHandlerRegistry,
+        topic_pattern_routing: ModelHandlerRoutingSubcontract,
+    ) -> None:
+        """Test that modifying returned handler list doesn't affect cache."""
+        node = TestNodeWithMixin()
+        node._init_handler_routing(topic_pattern_routing, mock_registry)
+
+        # Get handler keys (returns a copy)
+        keys1 = node._get_handler_keys_for_routing_key("events.user.created")
+
+        # Modify the returned list
+        original_len = len(keys1)
+        keys1.append("mutated_handler")
+
+        # Get again - should not include our mutation
+        keys2 = node._get_handler_keys_for_routing_key("events.user.created")
+        assert len(keys2) == original_len
+        assert "mutated_handler" not in keys2

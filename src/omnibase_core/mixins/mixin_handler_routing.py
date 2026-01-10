@@ -11,7 +11,7 @@ handlers are always returned.
 Routing Strategies:
 - payload_type_match: Route by event model class name (for orchestrators)
 - operation_match: Route by operation field value (for effects)
-- topic_pattern: Route by topic glob pattern matching
+- topic_pattern: Route by topic glob pattern matching (first-match-wins)
 
 Example YAML contract:
     handler_routing:
@@ -36,21 +36,34 @@ Usage:
             )
 
 Typing: Strongly typed with strategic use of Protocol for handler resolution.
+
+Performance Characteristics (topic_pattern strategy):
+    - Patterns are pre-compiled to regex at initialization time (O(n) once)
+    - Routing lookups use compiled regex matching (O(n) per lookup, n = patterns)
+    - Routing results are cached with LRU cache (128 entries by default)
+    - Expected scale: Optimized for 10-100 patterns; performs well up to 1000+
+    - For very high-frequency routing (>10k/sec), consider payload_type_match
+      which uses O(1) dict lookup instead of O(n) pattern matching.
 """
 
 from __future__ import annotations
 
 import fnmatch
+import re
+from functools import lru_cache
+from re import Pattern
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from omnibase_core.models.contracts.subcontracts.model_handler_routing_subcontract import (
         ModelHandlerRoutingSubcontract,
     )
+    from omnibase_core.protocols.runtime.protocol_handler_registry import (
+        ProtocolHandlerRegistry,
+    )
     from omnibase_core.protocols.runtime.protocol_message_handler import (
         ProtocolMessageHandler,
     )
-    from omnibase_core.services.service_handler_registry import ServiceHandlerRegistry
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_execution_shape import EnumMessageCategory
@@ -75,7 +88,9 @@ class MixinHandlerRouting:
     Routing Strategies:
     - payload_type_match: Route by event/message model class name (orchestrators)
     - operation_match: Route by operation field value (effects)
-    - topic_pattern: Route by topic glob pattern matching
+    - topic_pattern: Route by topic glob pattern matching (first-match-wins:
+      patterns are evaluated in routing table order, and the first matching
+      pattern's handlers are returned; subsequent patterns are not evaluated)
 
     Thread Safety:
         After initialization, the routing table is read-only and thread-safe.
@@ -89,18 +104,21 @@ class MixinHandlerRouting:
 
     Attributes:
         _handler_routing_table: Mapping of routing_key to list of handler_keys.
-        _handler_registry: Reference to the ServiceHandlerRegistry for handler lookup.
+        _handler_registry: Reference to the ProtocolHandlerRegistry for handler lookup.
         _routing_strategy: The routing strategy from the contract.
         _default_handler_key: Default handler key for unmatched routing keys.
         _routing_initialized: Whether routing has been initialized.
+        _compiled_patterns: Pre-compiled regex patterns for topic_pattern strategy.
+            List of (compiled_regex, handler_keys) tuples in evaluation order.
     """
 
     # Type annotations for mixin attributes
     _handler_routing_table: dict[str, list[str]]
-    _handler_registry: ServiceHandlerRegistry | None
+    _handler_registry: ProtocolHandlerRegistry | None
     _routing_strategy: str
     _default_handler_key: str | None
     _routing_initialized: bool
+    _compiled_patterns: list[tuple[Pattern[str], list[str]]]
 
     def __init__(self, **kwargs: object) -> None:
         """
@@ -117,11 +135,12 @@ class MixinHandlerRouting:
         self._routing_strategy = "payload_type_match"
         self._default_handler_key = None
         self._routing_initialized = False
+        self._compiled_patterns = []
 
     def _init_handler_routing(
         self,
         handler_routing: ModelHandlerRoutingSubcontract | None,
-        registry: ServiceHandlerRegistry,
+        registry: ProtocolHandlerRegistry,
     ) -> None:
         """
         Initialize routing table from contract.
@@ -133,7 +152,7 @@ class MixinHandlerRouting:
         Args:
             handler_routing: Handler routing subcontract from node contract.
                 If None, routing will use default_handler only.
-            registry: The ServiceHandlerRegistry for handler resolution.
+            registry: The ProtocolHandlerRegistry for handler resolution.
                 Must be frozen before handler lookup is performed.
 
         Raises:
@@ -148,7 +167,7 @@ class MixinHandlerRouting:
         """
         if registry is None:
             raise ModelOnexError(
-                message="ServiceHandlerRegistry cannot be None for handler routing",
+                message="ProtocolHandlerRegistry cannot be None for handler routing",
                 error_code=EnumCoreErrorCode.INVALID_PARAMETER,
             )
 
@@ -159,13 +178,30 @@ class MixinHandlerRouting:
             self._handler_routing_table = {}
             self._routing_strategy = "payload_type_match"
             self._default_handler_key = None
+            self._compiled_patterns = []
             self._routing_initialized = True
+            # Clear any cached routing results from previous initialization
+            self._get_handler_keys_for_topic_pattern.cache_clear()
             return
 
         # Build routing table from contract
         self._handler_routing_table = handler_routing.build_routing_table()
         self._routing_strategy = handler_routing.routing_strategy
         self._default_handler_key = handler_routing.default_handler
+
+        # Pre-compile patterns for topic_pattern strategy (performance optimization)
+        # This converts glob patterns to compiled regex at init time instead of
+        # re-translating patterns on every routing call.
+        self._compiled_patterns = []
+        if self._routing_strategy == "topic_pattern":
+            for pattern, handler_keys in self._handler_routing_table.items():
+                # fnmatch.translate converts glob pattern to regex pattern
+                regex_pattern = fnmatch.translate(pattern)
+                compiled = re.compile(regex_pattern)
+                self._compiled_patterns.append((compiled, handler_keys))
+
+        # Clear any cached routing results from previous initialization
+        self._get_handler_keys_for_topic_pattern.cache_clear()
         self._routing_initialized = True
 
     def route_to_handlers(
@@ -198,7 +234,7 @@ class MixinHandlerRouting:
 
                 2. **Handler not found in registry**: The handler_key from the
                    routing table or default_handler cannot be resolved via
-                   ServiceHandlerRegistry.get_handler_by_id(). This indicates
+                   ProtocolHandlerRegistry.get_handler_by_id(). This indicates
                    a misconfiguration between the contract and registered handlers.
 
                 3. **Handler category mismatch**: All matched handlers have a
@@ -225,14 +261,14 @@ class MixinHandlerRouting:
 
         if self._handler_registry is None:
             raise ModelOnexError(
-                message="ServiceHandlerRegistry is None. Routing cannot proceed.",
+                message="ProtocolHandlerRegistry is None. Routing cannot proceed.",
                 error_code=EnumCoreErrorCode.INVALID_STATE,
             )
 
         # Enforce frozen contract for thread safety
         if not self._handler_registry.is_frozen:
             raise ModelOnexError(
-                message="ServiceHandlerRegistry is not frozen. "
+                message="ProtocolHandlerRegistry is not frozen. "
                 "Registration MUST complete and freeze() MUST be called before routing. "
                 "This is required for thread safety.",
                 error_code=EnumCoreErrorCode.INVALID_STATE,
@@ -254,7 +290,7 @@ class MixinHandlerRouting:
                         LogLevel.DEBUG,
                         "Handler filtered due to category mismatch",
                         {
-                            "handler_id": handler_key,
+                            "handler_key": handler_key,
                             "expected_category": category.value,
                             "actual_category": handler.category.value,
                             "routing_key": routing_key,
@@ -273,6 +309,17 @@ class MixinHandlerRouting:
         Returns:
             list[str]: Copy of handler keys for the routing key.
                 Returns a new list to prevent mutation of internal state.
+
+        Note:
+            For topic_pattern strategy, this method uses first-match-wins semantics:
+            patterns are evaluated in iteration order, and the first matching
+            pattern's handlers are returned. Subsequent patterns are NOT evaluated
+            even if they would also match. This provides predictable, deterministic
+            routing but requires careful pattern ordering in the contract.
+
+        Performance:
+            - payload_type_match/operation_match: O(1) dict lookup
+            - topic_pattern: O(n) with pre-compiled regex, results cached (LRU 128)
         """
         # Direct lookup for payload_type_match and operation_match
         if self._routing_strategy in ("payload_type_match", "operation_match"):
@@ -281,12 +328,13 @@ class MixinHandlerRouting:
                 # Return copy to prevent mutation of internal state
                 return list(handler_keys)
 
-        # Glob pattern matching for topic_pattern
+        # Glob pattern matching for topic_pattern (uses compiled patterns + cache)
         elif self._routing_strategy == "topic_pattern":
-            for pattern, handler_keys in self._handler_routing_table.items():
-                if fnmatch.fnmatch(routing_key, pattern):
-                    # Return copy to prevent mutation of internal state
-                    return list(handler_keys)
+            # Use cached lookup - returns tuple of handler keys or None
+            cached_result = self._get_handler_keys_for_topic_pattern(routing_key)
+            if cached_result is not None:
+                # Return copy to prevent mutation of cached/internal state
+                return list(cached_result)
 
         # Fall back to default handler
         if self._default_handler_key is not None:
@@ -294,12 +342,47 @@ class MixinHandlerRouting:
 
         return []
 
+    @lru_cache(maxsize=128)
+    def _get_handler_keys_for_topic_pattern(
+        self, routing_key: str
+    ) -> tuple[str, ...] | None:
+        """
+        Get handler keys for a routing key using pre-compiled topic patterns.
+
+        This is an LRU-cached helper method that matches the routing_key against
+        pre-compiled regex patterns. Results are cached to avoid repeated regex
+        matching for frequently-used routing keys.
+
+        Args:
+            routing_key: The topic name to match against patterns.
+
+        Returns:
+            tuple[str, ...] | None: Tuple of handler keys if a pattern matches,
+                None if no pattern matches. Returns tuple (immutable) for cache
+                compatibility.
+
+        Performance:
+            - Cache hit: O(1)
+            - Cache miss: O(n) where n = number of patterns
+            - Cache size: 128 entries (LRU eviction)
+
+        Note:
+            This method uses first-match-wins semantics: patterns are evaluated
+            in the order they appear in _compiled_patterns, and the first matching
+            pattern's handlers are returned.
+        """
+        for compiled_regex, handler_keys in self._compiled_patterns:
+            if compiled_regex.match(routing_key):
+                # Return as tuple for cache immutability
+                return tuple(handler_keys)
+        return None
+
     def validate_handler_routing(self) -> list[str]:
         """
         Validate all handlers in the routing table are resolvable.
 
         Checks that every handler_key referenced in the routing table
-        and default_handler can be resolved from the ServiceHandlerRegistry.
+        and default_handler can be resolved from the ProtocolHandlerRegistry.
 
         Returns:
             list[str]: List of validation errors. Empty if all handlers valid.
@@ -322,12 +405,12 @@ class MixinHandlerRouting:
             )
 
         if self._handler_registry is None:
-            return ["ServiceHandlerRegistry is None"]
+            return ["ProtocolHandlerRegistry is None"]
 
         # Enforce frozen contract for thread safety
         if not self._handler_registry.is_frozen:
             raise ModelOnexError(
-                message="ServiceHandlerRegistry is not frozen. "
+                message="ProtocolHandlerRegistry is not frozen. "
                 "Registration MUST complete and freeze() MUST be called before validation. "
                 "This is required for thread safety.",
                 error_code=EnumCoreErrorCode.INVALID_STATE,
@@ -348,7 +431,7 @@ class MixinHandlerRouting:
             handler = self._handler_registry.get_handler_by_id(handler_key)
             if handler is None:
                 errors.append(
-                    f"Handler '{handler_key}' not found in ServiceHandlerRegistry"
+                    f"Handler '{handler_key}' not found in ProtocolHandlerRegistry"
                 )
 
         return errors
