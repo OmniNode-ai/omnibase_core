@@ -22,6 +22,7 @@ See Also:
 """
 
 from functools import cached_property
+from types import MappingProxyType
 from typing import Self
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -66,8 +67,8 @@ class ModelExecutionProfile(BaseModel):
             subset of the phases field.
 
     Properties:
-        phase_order: Cached dictionary mapping phase names to their position
-            indices for efficient phase ordering lookups.
+        phase_order: Cached immutable mapping (MappingProxyType) of phase names
+            to their position indices for efficient phase ordering lookups.
 
     Example:
         >>> profile = ModelExecutionProfile(
@@ -75,7 +76,7 @@ class ModelExecutionProfile(BaseModel):
         ...     nondeterministic_allowed_phases=("execute",),
         ... )
         >>> profile.phase_order
-        {'init': 0, 'execute': 1, 'cleanup': 2}
+        mappingproxy({'init': 0, 'execute': 1, 'cleanup': 2})
         >>> "execute" in profile.nondeterministic_allowed_phases
         True
 
@@ -128,12 +129,21 @@ class ModelExecutionProfile(BaseModel):
 
         Returns:
             Normalized tuple of phase names.
+
+        Raises:
+            ValueError: If any element is not a string.
         """
         if isinstance(v, list):
             v = tuple(v)
-        # Normalize: strip whitespace
-        normalized = tuple(phase.strip() for phase in v)
-        return normalized
+        # Validate all elements are strings before calling .strip()
+        normalized: list[str] = []
+        for i, phase in enumerate(v):
+            if not isinstance(phase, str):
+                raise ValueError(
+                    f"phases[{i}] must be a string, got {type(phase).__name__}"
+                )
+            normalized.append(phase.strip())
+        return tuple(normalized)
 
     @field_validator("nondeterministic_allowed_phases", mode="before")
     @classmethod
@@ -158,38 +168,50 @@ class ModelExecutionProfile(BaseModel):
 
         Returns:
             Normalized tuple of phase names (stripped, not deduplicated).
+
+        Raises:
+            ValueError: If any element is not a string.
         """
         if isinstance(v, list):
             v = tuple(v)
-        # Normalize: strip whitespace only
+        # Validate all elements are strings before calling .strip()
         # Note: Uniqueness is validated in model_validator, not here
-        return tuple(phase.strip() for phase in v)
+        normalized: list[str] = []
+        for i, phase in enumerate(v):
+            if not isinstance(phase, str):
+                raise ValueError(
+                    f"nondeterministic_allowed_phases[{i}] must be a string, "
+                    f"got {type(phase).__name__}"
+                )
+            normalized.append(phase.strip())
+        return tuple(normalized)
 
     @cached_property
-    def phase_order(self) -> dict[str, int]:
+    def phase_order(self) -> MappingProxyType[str, int]:
         """
         Phase -> position mapping derived from phases tuple.
 
-        This property is cached for performance - the dictionary is computed
+        This property is cached for performance - the mapping is computed
         once on first access and then reused for subsequent accesses.
 
         Returns:
-            Dictionary mapping phase names to their zero-based position indices.
-            The mapping is immutable in practice since the underlying phases
-            tuple is immutable.
+            Immutable mapping (MappingProxyType) of phase names to their
+            zero-based position indices. The MappingProxyType wrapper ensures
+            the returned mapping cannot be mutated, maintaining the model's
+            immutability contract.
 
         Example:
             >>> profile = ModelExecutionProfile(phases=("init", "execute", "cleanup"))
             >>> profile.phase_order
-            {'init': 0, 'execute': 1, 'cleanup': 2}
+            mappingproxy({'init': 0, 'execute': 1, 'cleanup': 2})
             >>> profile.phase_order["execute"]
             1
 
         Note:
-            Since the model is frozen and phases is a tuple, the phase_order
-            dictionary will always be consistent with the phases tuple.
+            The returned MappingProxyType is truly immutable - attempts to
+            modify it will raise TypeError.
         """
-        return {phase: idx for idx, phase in enumerate(self.phases)}
+        return MappingProxyType({phase: idx for idx, phase in enumerate(self.phases)})
 
     @model_validator(mode="after")
     def validate_profile(self) -> Self:
@@ -200,7 +222,9 @@ class ModelExecutionProfile(BaseModel):
             1. Field validators (coerce_*_to_tuple) normalize input:
                - Convert list to tuple
                - Strip whitespace from each entry
+               - Validate all elements are strings
             2. This model_validator enforces invariants:
+               - phases must not be empty (at least one phase required)
                - Entries must be non-empty (whitespace-only becomes empty after strip)
                - Entries must be unique (no duplicates - raises error, does NOT dedupe)
                - nondeterministic_allowed_phases must be a subset of phases
@@ -211,6 +235,7 @@ class ModelExecutionProfile(BaseModel):
             input issues rather than having them silently corrected.
 
         Ensures:
+            - phases tuple is not empty (at least one phase required)
             - phases are unique (no duplicate phase names)
             - phases are non-empty strings (not empty or whitespace-only)
             - nondeterministic_allowed_phases are unique (no duplicates)
@@ -222,6 +247,7 @@ class ModelExecutionProfile(BaseModel):
 
         Raises:
             ValueError: If any validation constraint is violated.
+                - "phases must contain at least one phase" if empty tuple
                 - "phases must contain unique values" if duplicates found
                 - "phases must be non-empty strings" if empty/whitespace phase found
                 - "nondeterministic_allowed_phases must contain unique values"
@@ -229,6 +255,10 @@ class ModelExecutionProfile(BaseModel):
                 - "nondeterministic_allowed_phases contains phases not in phases: [...]"
                   if invalid phase references found
         """
+        # Validate phases is not empty
+        if len(self.phases) == 0:
+            raise ValueError("phases must contain at least one phase")
+
         # Validate phases are unique
         if len(self.phases) != len(set(self.phases)):
             raise ValueError("phases must contain unique values")

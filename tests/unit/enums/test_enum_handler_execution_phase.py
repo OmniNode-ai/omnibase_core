@@ -253,10 +253,11 @@ class TestEnumHandlerExecutionPhaseSerialization:
     def test_enum_string_comparison(self) -> None:
         """Test that enum members can be compared with strings.
 
-        Note: StrEnum members ARE equal to their string values at runtime,
-        but mypy cannot statically verify this. Type ignores are appropriate here.
+        Note: This enum uses the `str, Enum` pattern (not StrEnum), which means
+        members ARE equal to their string values at runtime. However, mypy cannot
+        statically verify this. Type ignores are appropriate here.
         """
-        # StrEnum values are equal to their string values at runtime
+        # str, Enum values are equal to their string values at runtime
         assert EnumHandlerExecutionPhase.PREFLIGHT == "preflight"  # type: ignore[comparison-overlap]
         assert EnumHandlerExecutionPhase.BEFORE == "before"  # type: ignore[comparison-overlap]
         assert EnumHandlerExecutionPhase.EXECUTE == "execute"  # type: ignore[comparison-overlap]
@@ -382,7 +383,7 @@ class TestEnumHandlerExecutionPhaseBehavior:
         """Test enum equality and identity behavior.
 
         Note: mypy can statically determine that different enum members are not
-        identical, and that StrEnum comparisons with strings are type-incompatible.
+        identical, and that `str, Enum` comparisons with strings are type-incompatible.
         These are runtime behavior tests, so type ignores are appropriate.
         """
         # Same enum members should be identical
@@ -395,7 +396,7 @@ class TestEnumHandlerExecutionPhaseBehavior:
             is not EnumHandlerExecutionPhase.FINALIZE
         )  # type: ignore[comparison-overlap]
 
-        # Equality with strings should work (StrEnum runtime behavior)
+        # Equality with strings should work (str, Enum runtime behavior)
         assert EnumHandlerExecutionPhase.EXECUTE == "execute"  # type: ignore[comparison-overlap]
         assert EnumHandlerExecutionPhase.EXECUTE != "finalize"  # type: ignore[comparison-overlap]
 

@@ -812,3 +812,42 @@ class TestListMutationPrevention:
 
         with pytest.raises(TypeError, match="doesn't support item deletion"):
             del profile.phases[0]  # type: ignore[misc]
+
+
+@pytest.mark.unit
+class TestTypeValidation:
+    """Tests for type validation in field validators.
+
+    Verifies that non-string elements in tuple fields are properly rejected
+    with informative error messages.
+
+    See Also:
+        - OMN-1292: PR review feedback on type validation
+    """
+
+    def test_phases_non_string_element_rejected(self) -> None:
+        """Test that non-string elements in phases raise ValueError."""
+        with pytest.raises(ValidationError, match="must be a string"):
+            ModelExecutionProfile(phases=(123, "execute"))  # type: ignore[arg-type]
+
+    def test_nondeterministic_phases_non_string_element_rejected(self) -> None:
+        """Test that non-string elements in nondeterministic_allowed_phases raise ValueError."""
+        with pytest.raises(ValidationError, match="must be a string"):
+            ModelExecutionProfile(
+                phases=("init", "execute"),
+                nondeterministic_allowed_phases=(123,),  # type: ignore[arg-type]
+            )
+
+    def test_empty_phases_rejected(self) -> None:
+        """Test that empty phases tuple is rejected."""
+        with pytest.raises(ValidationError, match="at least one phase"):
+            ModelExecutionProfile(phases=())
+
+    def test_phase_order_is_immutable_mapping(self) -> None:
+        """Test that phase_order returns an immutable mapping."""
+        from types import MappingProxyType
+
+        profile = ModelExecutionProfile(phases=("init", "execute"))
+        assert isinstance(profile.phase_order, MappingProxyType)
+        with pytest.raises(TypeError):
+            profile.phase_order["new"] = 99  # type: ignore[index]
