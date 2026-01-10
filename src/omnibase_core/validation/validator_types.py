@@ -58,9 +58,6 @@ from typing import ClassVar
 
 import yaml
 
-# Configure logger for this module
-logger = logging.getLogger(__name__)
-
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
 from omnibase_core.errors.exception_groups import FILE_IO_ERRORS, YAML_PARSING_ERRORS
@@ -76,6 +73,9 @@ from omnibase_core.models.validation.model_union_pattern import ModelUnionPatter
 from omnibase_core.validation.checker_union_usage import UnionUsageChecker
 from omnibase_core.validation.validator_base import ValidatorBase
 from omnibase_core.validation.validator_utils import ModelValidationResult
+
+# Configure logger for this module
+logger = logging.getLogger(__name__)
 
 
 class ValidatorUnionUsage(ValidatorBase):

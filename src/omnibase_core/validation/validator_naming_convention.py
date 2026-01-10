@@ -44,11 +44,14 @@ See Also:
 """
 
 import ast
+import logging
 import sys
 from pathlib import Path
 from typing import ClassVar
 
 import yaml
+
+logger = logging.getLogger(__name__)
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
@@ -71,6 +74,7 @@ from omnibase_core.validation.validator_base import ValidatorBase
 RULE_FILE_NAMING = "file_naming"
 RULE_CLASS_NAMING = "class_naming"
 RULE_FUNCTION_NAMING = "function_naming"
+RULE_UNKNOWN_NAMING = "unknown_naming"
 
 
 class ValidatorNamingConvention(ValidatorBase):
@@ -239,6 +243,7 @@ class ValidatorNamingConvention(ValidatorBase):
         if class_naming_enabled or function_naming_enabled:
             ast_issues = self._validate_ast(
                 path=path,
+                contract=contract,
                 class_naming_enabled=class_naming_enabled,
                 function_naming_enabled=function_naming_enabled,
                 class_naming_severity=class_naming_severity,
@@ -251,6 +256,7 @@ class ValidatorNamingConvention(ValidatorBase):
     def _validate_ast(
         self,
         path: Path,
+        contract: ModelValidatorSubcontract,
         class_naming_enabled: bool,
         function_naming_enabled: bool,
         class_naming_severity: EnumValidationSeverity,
@@ -260,6 +266,7 @@ class ValidatorNamingConvention(ValidatorBase):
 
         Args:
             path: Path to Python file to analyze.
+            contract: Validator contract with configuration.
             class_naming_enabled: Whether to check class naming.
             function_naming_enabled: Whether to check function naming.
             class_naming_severity: Severity for class naming issues.
@@ -272,8 +279,9 @@ class ValidatorNamingConvention(ValidatorBase):
 
         try:
             source = path.read_text(encoding="utf-8")
-        except OSError:
-            # File read error - skip silently
+        except OSError as e:
+            # fallback-ok: log warning and skip file on read errors
+            logger.warning("Cannot read file %s: %s", path, e)
             return issues
 
         try:
@@ -317,12 +325,11 @@ class ValidatorNamingConvention(ValidatorBase):
                 rule_name = RULE_FUNCTION_NAMING
                 code = RULE_FUNCTION_NAMING
             else:
-                # Unknown issue type - default to class naming
-                if not class_naming_enabled:
-                    continue
-                severity = class_naming_severity
-                rule_name = RULE_CLASS_NAMING
-                code = RULE_CLASS_NAMING
+                # Unknown issue type - emit with default severity (never skip)
+                logger.debug(f"Unknown naming issue type: {issue_str}")
+                severity = contract.severity_default
+                rule_name = RULE_UNKNOWN_NAMING
+                code = RULE_UNKNOWN_NAMING
 
             issues.append(
                 ModelValidationIssue(
@@ -382,5 +389,6 @@ __all__ = [
     "RULE_CLASS_NAMING",
     "RULE_FILE_NAMING",
     "RULE_FUNCTION_NAMING",
+    "RULE_UNKNOWN_NAMING",
     "ValidatorNamingConvention",
 ]

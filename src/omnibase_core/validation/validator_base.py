@@ -448,6 +448,10 @@ class ValidatorBase(ABC):
                     },
                 )
 
+            # Handle nested 'validation:' structure (common in validation_subcontract files)
+            if "validation" in data and isinstance(data["validation"], dict):
+                data = data["validation"]
+
             return ModelValidatorSubcontract.model_validate(data)
 
         except FILE_IO_ERRORS as e:

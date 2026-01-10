@@ -133,6 +133,7 @@ from .validator_naming_convention import (
     RULE_CLASS_NAMING,
     RULE_FILE_NAMING,
     RULE_FUNCTION_NAMING,
+    RULE_UNKNOWN_NAMING,
     ValidatorNamingConvention,
 )
 from .visitor_any_type import (
@@ -223,6 +224,7 @@ from .validator_contracts import (
 )
 from .validator_fsm_analysis import analyze_fsm
 from .validator_patterns import (
+    RULE_UNKNOWN,
     ValidatorPatterns,
     validate_patterns_directory,
     validate_patterns_file,
@@ -420,6 +422,7 @@ __all__ = [
     "RULE_FILE_NAMING",
     "RULE_CLASS_NAMING",
     "RULE_FUNCTION_NAMING",
+    "RULE_UNKNOWN_NAMING",
     # Architecture validator (OMN-1291)
     "ValidatorArchitecture",
     "ModelCounter",
@@ -432,6 +435,7 @@ __all__ = [
     "validate_union_usage_cli",
     # Patterns validator (OMN-1291)
     "ValidatorPatterns",
+    "RULE_UNKNOWN",
     # Reserved enum validation (OMN-669, OMN-675)
     # NOTE: validate_execution_mode takes EnumExecutionMode (type-safe)
     # while validate_execution_mode_string takes str (for YAML/config parsing)

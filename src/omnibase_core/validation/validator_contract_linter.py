@@ -126,6 +126,16 @@ NODE_TYPE_MAPPING: dict[str, str] = {
 # Fingerprint format regex: semver:12-hex
 FINGERPRINT_PATTERN = re.compile(r"^\d+\.\d+\.\d+:[a-fA-F0-9]{12}$")
 
+# Naming convention patterns for stricter validation
+# PascalCase: Must start with uppercase, at least 2 characters (e.g., "Ab", "NodeCompute")
+# Single uppercase letters like "A" are NOT considered valid PascalCase
+PASCAL_CASE_PATTERN = re.compile(r"^[A-Z][a-zA-Z0-9]+$")
+
+# snake_case: Must start with lowercase, can contain underscores between segments
+# Underscores must be followed by at least one alphanumeric character (no trailing underscores)
+# Examples: "a", "node_compute", "my_node_123" are valid; "a_", "_foo" are invalid
+SNAKE_CASE_PATTERN = re.compile(r"^[a-z][a-z0-9]*(_[a-z0-9]+)*$")
+
 
 def _detect_contract_type(data: dict[str, object]) -> str | None:
     """Detect contract type from YAML data using heuristics.
@@ -560,8 +570,11 @@ class ValidatorContractLinter(ValidatorBase):
         name = data.get("name", "")
         if isinstance(name, str) and name:
             # Contract names should be PascalCase or snake_case
-            is_pascal = name[0].isupper()
-            is_snake = "_" in name
+            # Use strict regex patterns for validation:
+            # - PascalCase: starts with uppercase, at least 2 chars (e.g., "Ab", "NodeCompute")
+            # - snake_case: lowercase with underscores between segments (e.g., "a", "node_compute")
+            is_pascal = PASCAL_CASE_PATTERN.match(name) is not None
+            is_snake = SNAKE_CASE_PATTERN.match(name) is not None
             if not (is_pascal or is_snake):
                 issues.append(
                     ModelValidationIssue(
@@ -935,6 +948,7 @@ if __name__ == "__main__":
 __all__ = [
     "CONTRACT_MODELS",
     "NODE_TYPE_MAPPING",
+    "PASCAL_CASE_PATTERN",
     "RULE_FINGERPRINT_FORMAT",
     "RULE_FINGERPRINT_MATCH",
     "RULE_MODEL_PREFIX",
@@ -943,5 +957,6 @@ __all__ = [
     "RULE_REQUIRED_FIELDS",
     "RULE_SCHEMA_VALIDATION",
     "RULE_YAML_SYNTAX",
+    "SNAKE_CASE_PATTERN",
     "ValidatorContractLinter",
 ]

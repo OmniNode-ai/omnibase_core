@@ -9,7 +9,7 @@ validation:
   validator_name: ONEX Pattern Validator
   validator_description: |
     Validates code patterns for ONEX compliance including Pydantic model patterns,
-    naming conventions, and generic anti-patterns.
+    complexity limits, and generic anti-patterns.
 
     Checks performed:
     - Pydantic models must start with 'Model' prefix
@@ -17,9 +17,12 @@ validation:
     - Category/type/status fields should use enums
     - Functions should not have too many parameters
     - Classes should not have too many methods (god class)
-    - Function names should use snake_case
-    - Class names should use PascalCase
     - Avoid overly generic function names
+    - Avoid generic class name terms (Manager, Handler, Helper)
+
+    Note: class_pascal_case and function_snake_case rules are disabled by default
+    to avoid overlap with naming_convention.validation.yaml. Enable them only if
+    not using the naming_convention validator.
 
   target_patterns:
     - "**/*.py"
@@ -79,15 +82,19 @@ validation:
       severity: warning
       enabled: true
 
+    # NOTE: class_pascal_case and function_snake_case overlap with class_naming and
+    # function_naming rules in naming_convention.validation.yaml. If using both
+    # validators, consider keeping these disabled to avoid duplicate issues.
+    # The naming_convention validator is the canonical source for naming checks.
     - rule_id: class_pascal_case
       description: Class names should use PascalCase
       severity: warning
-      enabled: true
+      enabled: false  # Disabled by default - use naming_convention validator instead
 
     - rule_id: function_snake_case
       description: Function names should use snake_case
       severity: warning
-      enabled: true
+      enabled: false  # Disabled by default - use naming_convention validator instead
 
   suppression_comments:
     - "# ONEX_EXCLUDE:"

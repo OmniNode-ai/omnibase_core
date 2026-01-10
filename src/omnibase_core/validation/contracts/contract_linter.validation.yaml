@@ -65,6 +65,11 @@ validation:
       severity: error
       enabled: true
 
+    - rule_id: yaml_syntax
+      description: YAML file must have valid syntax
+      severity: error
+      enabled: true
+
   suppression_comments:
     - "# contract-ok:"
     - "# ONEX_EXCLUDE: contract_lint"

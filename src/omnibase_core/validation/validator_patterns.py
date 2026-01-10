@@ -104,6 +104,7 @@ RULE_GOD_CLASS = "god_class"
 RULE_CLASS_ANTI_PATTERN = "class_anti_pattern"
 RULE_CLASS_PASCAL_CASE = "class_pascal_case"
 RULE_FUNCTION_SNAKE_CASE = "function_snake_case"
+RULE_UNKNOWN: str = "unknown"
 
 
 class ProtocolPatternChecker(Protocol):
@@ -127,7 +128,7 @@ def _parse_line_number(issue: str) -> int | None:
     Returns:
         Line number if found, None otherwise.
     """
-    match = re.match(r"Line (\d+):", issue)
+    match = re.match(r"^Line (\d+):", issue)
     if match:
         return int(match.group(1))
     return None
@@ -144,7 +145,7 @@ def _parse_message(issue: str) -> str:
     Returns:
         The message part of the issue string.
     """
-    match = re.match(r"Line \d+: (.*)", issue)
+    match = re.match(r"^Line \d+: (.*)", issue)
     if match:
         return match.group(1)
     return issue
@@ -189,8 +190,8 @@ def _categorize_issue(issue: str) -> str:
     if "should use snake_case" in issue_lower:
         return RULE_FUNCTION_SNAKE_CASE
 
-    # Default to generic pattern if cannot categorize
-    return RULE_GENERIC_FUNCTION
+    # Default to unknown if cannot categorize
+    return RULE_UNKNOWN
 
 
 class ValidatorPatterns(ValidatorBase):
@@ -573,6 +574,7 @@ __all__ = [
     "RULE_GOD_CLASS",
     "RULE_MAX_PARAMS",
     "RULE_PYDANTIC_PREFIX",
+    "RULE_UNKNOWN",
     "RULE_UUID_FIELD",
     "ValidatorPatterns",
     "validate_patterns_cli",
