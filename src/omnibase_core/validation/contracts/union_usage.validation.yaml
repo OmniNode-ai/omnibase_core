@@ -69,4 +69,9 @@ validation:
   fail_on_error: true
   fail_on_warning: false
   max_violations: 0
+
+  # PARALLEL EXECUTION: Indicates PROCESS-safe parallel file processing is supported.
+  # This does NOT mean thread-safe within a single process - each worker must create
+  # its own validator instance. For full thread safety details, see:
+  # docs/guides/THREADING.md and contracts/any_type.validation.yaml
   parallel_execution: true

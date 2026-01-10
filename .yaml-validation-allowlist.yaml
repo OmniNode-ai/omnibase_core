@@ -9,9 +9,13 @@
 # Next Review: 2026-06-13
 #
 # Format Requirements:
-#   - reason: Architectural justification for allowing YAML parsing
+#   - reason: Architectural justification for allowing YAML parsing (use >- folded scalar)
 #   - added: Date entry was added (YYYY-MM-DD)
-#   - review: Target date for next review/removal consideration (YYYY-MM-DD)
+#   - review: Target date for next review (YYYY-MM-DD, aligned to semi-annual cycle: June/December)
+#
+# Review Date Policy:
+#   All review dates should align to the next semi-annual review cycle (June 13 or December 13).
+#   When adding new entries, set review to the next cycle date, not 6 months from added date.
 #
 # Maintenance Notes:
 #   - Run tests/unit/validation/test_allowlist_integrity.py to validate entries
@@ -27,28 +31,28 @@ allowed_files:
       Validator contract loading - must parse nested 'validation:' YAML structure before extracting the
       ModelValidatorSubcontract for Pydantic validation
     added: "2026-01-10"
-    review: "2026-07-10"
+    review: "2026-06-13"
 
   - file: "src/omnibase_core/validation/validator_types.py"
     reason: >-
       Validator contract loading - must parse nested 'validation:' YAML structure before extracting the
       ModelValidatorSubcontract for Pydantic validation
     added: "2026-01-10"
-    review: "2026-07-10"
+    review: "2026-06-13"
 
   - file: "src/omnibase_core/validation/validator_patterns.py"
     reason: >-
       Validator contract loading - must parse nested 'validation:' YAML structure before extracting the
       ModelValidatorSubcontract for Pydantic validation
     added: "2026-01-10"
-    review: "2026-07-10"
+    review: "2026-06-13"
 
   - file: "src/omnibase_core/validation/validator_naming_convention.py"
     reason: >-
       Validator contract loading - must parse nested 'validation:' YAML structure before extracting the
       ModelValidatorSubcontract for Pydantic validation
     added: "2026-01-10"
-    review: "2026-07-10"
+    review: "2026-06-13"
 
   - file: "src/omnibase_core/utils/util_safe_yaml_loader.py"
     reason: >-
@@ -77,14 +81,14 @@ allowed_files:
       fingerprint regeneration requires raw YAML to determine which model (ModelContractCompute, ModelContractEffect,
       etc.) to use for validation via detect_contract_model()
     added: "2025-12-12"
-    review: "2026-03-12"
+    review: "2026-06-13"
 
   - file: "src/omnibase_core/utils/util_invariant_yaml_parser.py"
     reason: >-
       Parses invariant set YAML files before Pydantic validation - utility for loading user-defined validation
       rules (invariants) from YAML configuration files for the Beta Demo
     added: "2026-01-02"
-    review: "2026-07-02"
+    review: "2026-06-13"
 
   - file: "src/omnibase_core/cli/cli_contract_diff.py"
     reason: >-
@@ -92,7 +96,7 @@ allowed_files:
       diffing works on raw dictionary structures to compare any two contract versions (load_contract_yaml_file
       at line 483)
     added: "2026-01-05"
-    review: "2026-07-05"
+    review: "2026-06-13"
 
 # Specific filenames that are allowed (matched by basename)
 # Allows the same utility to be used across different module paths (e.g., copied utilities)
@@ -148,11 +152,11 @@ allowed_functions:
       Parses invariant YAML content before Pydantic ModelInvariantSet validation - invariant definition
       parser that loads user-defined validation rules from YAML strings
     added: "2026-01-02"
-    review: "2026-07-02"
+    review: "2026-06-13"
 
   - function: "load_contract_yaml_file"
     reason: >-
       Loads arbitrary YAML contract files for semantic diff comparison - no model validation needed as
       diffing works on raw dictionary structures to compare any two contract versions (see cli_contract_diff.py:483)
     added: "2026-01-05"
-    review: "2026-07-05"
+    review: "2026-06-13"

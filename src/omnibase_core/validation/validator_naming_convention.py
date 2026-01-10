@@ -49,18 +49,11 @@ import sys
 from pathlib import Path
 from typing import ClassVar
 
-import yaml
-
-logger = logging.getLogger(__name__)
-
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
-from omnibase_core.errors.exception_groups import FILE_IO_ERRORS, YAML_PARSING_ERRORS
 from omnibase_core.models.common.model_validation_issue import ModelValidationIssue
 from omnibase_core.models.contracts.subcontracts.model_validator_subcontract import (
     ModelValidatorSubcontract,
 )
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.validation.checker_naming_convention import (
     ALLOWED_FILE_PREFIXES,
     ALLOWED_FILES,
@@ -69,6 +62,9 @@ from omnibase_core.validation.checker_naming_convention import (
     check_file_name,
 )
 from omnibase_core.validation.validator_base import ValidatorBase
+
+# Configure logger for this module
+logger = logging.getLogger(__name__)
 
 # Rule identifiers for issue tracking
 RULE_FILE_NAMING = "file_naming"
@@ -107,80 +103,6 @@ class ValidatorNamingConvention(ValidatorBase):
 
     # ONEX_EXCLUDE: string_id - human-readable validator identifier
     validator_id: ClassVar[str] = "naming_convention"
-
-    def _load_contract(self) -> ModelValidatorSubcontract:
-        """Load contract from YAML, handling nested 'validation:' structure.
-
-        The contract YAML has the structure:
-            contract_kind: validation_subcontract
-            validation:
-                version: ...
-                validator_id: ...
-                ...
-
-        This method extracts the nested 'validation' section.
-
-        Returns:
-            Loaded ModelValidatorSubcontract instance.
-
-        Raises:
-            ModelOnexError: If contract file not found or invalid.
-        """
-        contract_path = self._get_contract_path()
-
-        if not contract_path.exists():
-            raise ModelOnexError(
-                message=f"Validator contract not found: {contract_path}",
-                error_code=EnumCoreErrorCode.FILE_NOT_FOUND,
-                context={
-                    "validator_id": self.validator_id,
-                    "contract_path": str(contract_path),
-                },
-            )
-
-        try:
-            content = contract_path.read_text(encoding="utf-8")
-            # ONEX_EXCLUDE: manual_yaml - validator contract loading requires raw YAML
-            data = yaml.safe_load(content)
-
-            if not isinstance(data, dict):
-                raise ModelOnexError(
-                    message="Contract must be a YAML mapping",
-                    error_code=EnumCoreErrorCode.CONFIGURATION_PARSE_ERROR,
-                    context={
-                        "validator_id": self.validator_id,
-                        "contract_path": str(contract_path),
-                    },
-                )
-
-            # Handle nested 'validation:' structure
-            if "validation" in data and isinstance(data["validation"], dict):
-                data = data["validation"]
-
-            return ModelValidatorSubcontract.model_validate(data)
-
-        except FILE_IO_ERRORS as e:
-            # boundary-ok: convert file I/O errors to structured error
-            raise ModelOnexError(
-                message=f"Cannot read contract file: {e}",
-                error_code=EnumCoreErrorCode.FILE_READ_ERROR,
-                context={
-                    "validator_id": self.validator_id,
-                    "contract_path": str(contract_path),
-                    "error": str(e),
-                },
-            ) from e
-        except YAML_PARSING_ERRORS as e:
-            # boundary-ok: convert YAML parsing errors to structured error
-            raise ModelOnexError(
-                message=f"Invalid YAML in contract file: {e}",
-                error_code=EnumCoreErrorCode.CONFIGURATION_PARSE_ERROR,
-                context={
-                    "validator_id": self.validator_id,
-                    "contract_path": str(contract_path),
-                    "yaml_error": str(e),
-                },
-            ) from e
 
     def _validate_file(
         self,
@@ -294,6 +216,14 @@ class ValidatorNamingConvention(ValidatorBase):
         checker = NamingConventionChecker(str(path))
         checker.visit(tree)
 
+        # Get rule enablement for unknown issues (class/function already passed as args)
+        rules_enabled = {rule.rule_id: rule.enabled for rule in contract.rules}
+        rules_severity = {rule.rule_id: rule.severity for rule in contract.rules}
+        unknown_naming_enabled = rules_enabled.get(RULE_UNKNOWN_NAMING, True)
+        unknown_naming_severity = rules_severity.get(
+            RULE_UNKNOWN_NAMING, contract.severity_default
+        )
+
         # Convert checker issues to ModelValidationIssue
         for issue_str in checker.issues:
             # Parse the issue string format: "Line {lineno}: {message}"
@@ -308,8 +238,20 @@ class ValidatorNamingConvention(ValidatorBase):
                         line_part = parts[0]  # "Line {lineno}"
                         line_number = int(line_part.replace("Line ", "").strip())
                         message = parts[1].strip()
-                except (IndexError, ValueError):
-                    pass
+                except (IndexError, ValueError) as e:
+                    # fallback-ok: log parsing failure, use original message
+                    # but strip "Line X:" prefix if present to avoid duplication
+                    logger.warning(
+                        "Failed to parse line number from issue '%s': %s",
+                        issue_str,
+                        e,
+                    )
+                    # Attempt to clean up message even on parse failure
+                    if ":" in issue_str:
+                        # Strip everything before first colon if it looks like "Line X"
+                        potential_prefix = issue_str.split(":", 1)[0]
+                        if potential_prefix.strip().startswith("Line"):
+                            message = issue_str.split(":", 1)[1].strip()
 
             # Determine rule type and severity based on message content
             if "Class name" in issue_str:
@@ -325,9 +267,20 @@ class ValidatorNamingConvention(ValidatorBase):
                 rule_name = RULE_FUNCTION_NAMING
                 code = RULE_FUNCTION_NAMING
             else:
-                # Unknown issue type - emit with default severity (never skip)
-                logger.debug(f"Unknown naming issue type: {issue_str}")
-                severity = contract.severity_default
+                # Unknown issue type - log at warning level (unexpected pattern)
+                # Check if unknown_naming rule is enabled before emitting
+                if not unknown_naming_enabled:
+                    logger.debug(
+                        "Skipping unknown naming issue (rule disabled): %s",
+                        issue_str,
+                    )
+                    continue
+                # Log at warning level to surface unexpected patterns for investigation
+                logger.warning(
+                    "Unknown naming issue type detected (not class/function): %s",
+                    issue_str,
+                )
+                severity = unknown_naming_severity
                 rule_name = RULE_UNKNOWN_NAMING
                 code = RULE_UNKNOWN_NAMING
 

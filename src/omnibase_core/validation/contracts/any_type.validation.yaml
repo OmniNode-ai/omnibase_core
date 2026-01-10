@@ -53,17 +53,66 @@ validation:
       severity: error
       enabled: true
 
-  # Line-based suppression patterns: if ANY of these patterns appear on a line,
-  # violations on that line are suppressed. These are NOT rule-specific - they
-  # suppress all Any type violations on the line where they appear.
+  # ============================================================================
+  # LINE-BASED SUPPRESSION (NOT rule-specific!)
+  # ============================================================================
+  # IMPORTANT: Suppression operates on WHOLE LINES, not individual rules.
+  #
+  # How it works:
+  #   - If ANY pattern below appears anywhere on a source line, ALL Any-type
+  #     violations on that line are suppressed (regardless of which rule triggered).
+  #   - The validator performs a simple substring match against the entire line.
+  #
+  # Pattern naming convention:
+  #   - Pattern suffixes like "any_type" or "dict_str_any" are DOCUMENTATION HINTS
+  #     to help developers understand which violation they are suppressing.
+  #   - These names intentionally mirror rule_ids for discoverability, but they
+  #     do NOT selectively target those rules - ALL violations on the line are
+  #     suppressed regardless of which pattern text is used.
+  #
+  # Example - this comment suppresses ALL Any violations on the line:
+  #   data: dict[str, Any]  # ONEX_EXCLUDE: any_type
+  #
+  # Best practice - use "any-ok:" with a reason explaining why Any is acceptable:
+  #   def handle_json(payload: Any) -> None:  # any-ok: external API returns untyped JSON
+  #
+  # Matching: Case-sensitive substring search (no regex).
+  # ============================================================================
   suppression_comments:
+    # Legacy patterns - suffix is a documentation hint only (suppresses ALL violations on line)
     - "# ONEX_EXCLUDE: any_type"
     - "# ONEX_EXCLUDE: dict_str_any"
-    - "# type: ignore"
-    - "# any-ok:"
+    # Standard patterns
+    - "# type: ignore"  # Mypy ignore marker - also suppresses here
+    - "# any-ok:"  # Preferred: include reason after colon
 
   severity_default: error
   fail_on_error: true
   fail_on_warning: false
   max_violations: 0
+
+  # ============================================================================
+  # PARALLEL EXECUTION SEMANTICS
+  # ============================================================================
+  # This flag indicates that the validator SUPPORTS parallel file processing,
+  # meaning files can be validated concurrently by separate worker processes
+  # (e.g., pytest-xdist splits).
+  #
+  # CRITICAL THREAD SAFETY CONSTRAINT:
+  #   Parallel execution is PROCESS-safe, NOT THREAD-safe within a single process.
+  #   Each worker process MUST create its own validator instance.
+  #
+  # How it works:
+  #   - When parallel_execution=true, external orchestration tools (CI, test
+  #     runners) MAY split the file list across multiple worker processes.
+  #   - Each worker process creates an independent validator instance.
+  #   - Files are processed independently with no shared mutable state.
+  #
+  # What it does NOT mean:
+  #   - It does NOT enable internal multi-threading within the validator.
+  #   - It does NOT make validator instances thread-safe.
+  #   - It does NOT allow sharing a single validator instance across threads.
+  #
+  # For thread safety details, see: docs/guides/THREADING.md
+  # ============================================================================
   parallel_execution: true

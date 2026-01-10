@@ -61,6 +61,7 @@ See Also:
 
 import argparse
 import fnmatch
+import logging
 import sys
 import time
 from abc import ABC, abstractmethod
@@ -82,6 +83,9 @@ from omnibase_core.models.contracts.subcontracts.model_validator_subcontract imp
     ModelValidatorSubcontract,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+
+# Configure logger for this module
+logger = logging.getLogger(__name__)
 
 # Exit code constants
 EXIT_SUCCESS = 0
@@ -313,11 +317,18 @@ class ValidatorBase(ABC):
         - If it's a file, include it directly
         - If it's a directory, expand using contract's target_patterns
 
+        Security: Validates source_root for path traversal before use.
+        This is defense-in-depth; the primary validation is in
+        ModelValidatorSubcontract.validate_source_root_no_traversal().
+
         Args:
             targets: List of file or directory paths.
 
         Returns:
             Deduplicated list of file paths, sorted for deterministic order.
+
+        Raises:
+            ModelOnexError: If source_root contains path traversal sequences.
         """
         resolved: set[Path] = set()
 
@@ -330,6 +341,25 @@ class ValidatorBase(ABC):
             elif target.is_dir():
                 # Use source_root from contract if set, otherwise use target
                 base_dir = self.contract.source_root or target
+
+                # Security: Defense-in-depth path traversal check for source_root
+                if self.contract.source_root is not None:
+                    source_root_str = str(self.contract.source_root)
+                    # Check for traversal patterns (.., //)
+                    if ".." in source_root_str or "//" in source_root_str:
+                        raise ModelOnexError(
+                            message=(
+                                f"Security: Path traversal detected in "
+                                f"source_root: {source_root_str}"
+                            ),
+                            error_code=EnumCoreErrorCode.SECURITY_VIOLATION,
+                            context={
+                                "source_root": source_root_str,
+                                "validator_id": self.validator_id,
+                            },
+                        )
+                    # Resolve to absolute path and verify it exists
+                    base_dir = self.contract.source_root.resolve()
 
                 for pattern in self.contract.target_patterns:
                     # Handle absolute vs relative glob patterns
@@ -416,8 +446,13 @@ class ValidatorBase(ABC):
             lines = path.read_text(encoding="utf-8").splitlines()
             self._file_line_cache[path] = lines
             return lines
-        except FILE_IO_ERRORS:
-            # fallback-ok: return empty list if file cannot be read
+        except FILE_IO_ERRORS as e:
+            # fallback-ok: log warning and return empty list if file cannot be read
+            logger.warning(
+                "Cannot read file for suppression check: %s (error: %s)",
+                path,
+                e,
+            )
             return []
 
     def _load_contract(self) -> ModelValidatorSubcontract:
@@ -615,11 +650,52 @@ class ValidatorBase(ABC):
         return EXIT_WARNINGS
 
     @classmethod
+    def _validate_cli_path(cls, path: Path, context: str) -> Path | None:
+        """Validate CLI-provided path for security.
+
+        Security: Checks for path traversal attempts in user-provided paths.
+        This is critical for CLI tools where paths come from untrusted input.
+
+        Args:
+            path: User-provided path to validate.
+            context: Description of the path for error messages.
+
+        Returns:
+            Resolved path if valid, None if security check fails.
+        """
+        path_str = str(path)
+
+        # Security: Reject paths with traversal sequences
+        if ".." in path_str:
+            print(
+                f"Security error: Path traversal detected in {context}: {path}",
+                file=sys.stderr,
+            )
+            return None
+
+        # Security: Reject paths with double slashes (bypass attempts)
+        if "//" in path_str:
+            print(
+                f"Security error: Invalid path format in {context}: {path}",
+                file=sys.stderr,
+            )
+            return None
+
+        try:
+            return path.resolve()
+        except (OSError, ValueError) as e:
+            print(f"Error resolving {context}: {path} ({e})", file=sys.stderr)
+            return None
+
+    @classmethod
     def main(cls) -> int:
         """CLI entry point for running validator standalone.
 
         Parses command-line arguments and runs validation on the specified
         targets (or current directory by default).
+
+        Security: All user-provided paths are validated for path traversal
+        attacks before use. Paths containing ".." or "//" are rejected.
 
         Returns:
             Exit code for shell integration (0 = success, non-zero = failure).
@@ -655,11 +731,38 @@ class ValidatorBase(ABC):
 
         args = parser.parse_args()
 
+        # Security: Validate all user-provided target paths
+        validated_targets: list[Path] = []
+        for target in args.targets:
+            validated = cls._validate_cli_path(target, "target path")
+            if validated is None:
+                return EXIT_ERRORS
+            validated_targets.append(validated)
+
         # Load custom contract if specified
         contract: ModelValidatorSubcontract | None = None
         if args.contract:
+            # Security: Validate contract path before reading
+            validated_contract = cls._validate_cli_path(args.contract, "contract path")
+            if validated_contract is None:
+                return EXIT_ERRORS
+
+            if not validated_contract.exists():
+                print(
+                    f"Error: Contract file not found: {validated_contract}",
+                    file=sys.stderr,
+                )
+                return EXIT_ERRORS
+
+            if not validated_contract.is_file():
+                print(
+                    f"Error: Contract path is not a file: {validated_contract}",
+                    file=sys.stderr,
+                )
+                return EXIT_ERRORS
+
             try:
-                content = args.contract.read_text(encoding="utf-8")
+                content = validated_contract.read_text(encoding="utf-8")
                 data = yaml.safe_load(
                     content
                 )  # ONEX_EXCLUDE: manual_yaml - validator contract loading
@@ -672,7 +775,7 @@ class ValidatorBase(ABC):
         validator = cls(contract=contract)
 
         try:
-            result = validator.validate(args.targets)
+            result = validator.validate(validated_targets)
         except ModelOnexError as e:
             print(f"Validation error: {e.message}", file=sys.stderr)
             return EXIT_ERRORS

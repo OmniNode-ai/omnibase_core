@@ -55,9 +55,7 @@ from omnibase_core.contracts import (
     ModelContractFingerprint,
     compute_contract_fingerprint,
 )
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
-from omnibase_core.errors.exception_groups import FILE_IO_ERRORS, YAML_PARSING_ERRORS
 from omnibase_core.models.common.model_validation_issue import ModelValidationIssue
 from omnibase_core.models.contracts.model_contract_compute import ModelContractCompute
 from omnibase_core.models.contracts.model_contract_effect import ModelContractEffect
@@ -226,78 +224,6 @@ class ValidatorContractLinter(ValidatorBase):
         """
         super().__init__(contract=contract)
         self.registry = registry
-
-    def _load_contract(self) -> ModelValidatorSubcontract:
-        """Load contract from YAML, handling nested 'validation:' structure.
-
-        The contract YAML has the structure:
-            contract_kind: validation_subcontract
-            validation:
-                version: ...
-                validator_id: ...
-                ...
-
-        Returns:
-            Loaded ModelValidatorSubcontract instance.
-
-        Raises:
-            ModelOnexError: If contract file not found or invalid.
-        """
-        contract_path = self._get_contract_path()
-
-        if not contract_path.exists():
-            raise ModelOnexError(
-                message=f"Validator contract not found: {contract_path}",
-                error_code=EnumCoreErrorCode.FILE_NOT_FOUND,
-                context={
-                    "validator_id": self.validator_id,
-                    "contract_path": str(contract_path),
-                },
-            )
-
-        try:
-            content = contract_path.read_text(encoding="utf-8")
-            # ONEX_EXCLUDE: manual_yaml - validator contract loading requires raw YAML
-            data = yaml.safe_load(content)
-
-            if not isinstance(data, dict):
-                raise ModelOnexError(
-                    message="Contract must be a YAML mapping",
-                    error_code=EnumCoreErrorCode.CONFIGURATION_PARSE_ERROR,
-                    context={
-                        "validator_id": self.validator_id,
-                        "contract_path": str(contract_path),
-                    },
-                )
-
-            # Handle nested 'validation:' structure
-            if "validation" in data and isinstance(data["validation"], dict):
-                data = data["validation"]
-
-            return ModelValidatorSubcontract.model_validate(data)
-
-        except FILE_IO_ERRORS as e:
-            # boundary-ok: convert file I/O errors to structured error
-            raise ModelOnexError(
-                message=f"Cannot read contract file: {e}",
-                error_code=EnumCoreErrorCode.FILE_READ_ERROR,
-                context={
-                    "validator_id": self.validator_id,
-                    "contract_path": str(contract_path),
-                    "error": str(e),
-                },
-            ) from e
-        except YAML_PARSING_ERRORS as e:
-            # boundary-ok: convert YAML parsing errors to structured error
-            raise ModelOnexError(
-                message=f"Invalid YAML in contract file: {e}",
-                error_code=EnumCoreErrorCode.CONFIGURATION_PARSE_ERROR,
-                context={
-                    "validator_id": self.validator_id,
-                    "contract_path": str(contract_path),
-                    "yaml_error": str(e),
-                },
-            ) from e
 
     def _is_contract_file(self, data: dict[str, object]) -> bool:
         """Check if YAML data looks like an ONEX contract.

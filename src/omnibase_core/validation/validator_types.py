@@ -56,11 +56,8 @@ import sys
 from pathlib import Path
 from typing import ClassVar
 
-import yaml
-
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
-from omnibase_core.errors.exception_groups import FILE_IO_ERRORS, YAML_PARSING_ERRORS
+from omnibase_core.errors.exception_groups import FILE_IO_ERRORS
 from omnibase_core.models.common.model_validation_issue import ModelValidationIssue
 from omnibase_core.models.common.model_validation_metadata import (
     ModelValidationMetadata,
@@ -68,7 +65,6 @@ from omnibase_core.models.common.model_validation_metadata import (
 from omnibase_core.models.contracts.subcontracts.model_validator_subcontract import (
     ModelValidatorSubcontract,
 )
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.validation.model_union_pattern import ModelUnionPattern
 from omnibase_core.validation.checker_union_usage import UnionUsageChecker
 from omnibase_core.validation.validator_base import ValidatorBase
@@ -93,6 +89,23 @@ class ValidatorUnionUsage(ValidatorBase):
     The validator respects exemptions via:
     - Inline suppression comments from contract configuration
 
+    Thread Safety:
+        ValidatorUnionUsage instances are NOT thread-safe due to internal
+        mutable state inherited from ValidatorBase:
+
+        - ``_file_line_cache``: Caches file contents during validation.
+          Concurrent access from multiple threads could cause cache corruption
+          or stale reads.
+
+        **When using parallel execution (e.g., pytest-xdist workers or
+        ThreadPoolExecutor), create separate validator instances per worker.**
+
+        The contract (ModelValidatorSubcontract) is immutable (frozen=True)
+        and safe to share across threads.
+
+        For more details, see the Threading Guide:
+        ``docs/guides/THREADING.md``
+
     Attributes:
         validator_id: Unique identifier for this validator ("union_usage").
 
@@ -107,79 +120,32 @@ class ValidatorUnionUsage(ValidatorBase):
     # ONEX_EXCLUDE: string_id - human-readable validator identifier
     validator_id: ClassVar[str] = "union_usage"
 
-    def _load_contract(self) -> ModelValidatorSubcontract:
-        """Load contract from YAML, handling nested 'validation:' structure.
+    def _get_rule_config(
+        self,
+        rule_id: str | None,
+        contract: ModelValidatorSubcontract,
+    ) -> tuple[bool, EnumValidationSeverity]:
+        """Get rule enabled state and severity from contract.
 
-        The contract YAML has the structure:
-            contract_kind: validation_subcontract
-            validation:
-                version: ...
-                validator_id: ...
-                ...
+        Looks up the rule configuration in the contract. If the rule is found,
+        returns its enabled state and severity. If not found, returns enabled=True
+        (default) and the contract's default severity.
 
-        This method extracts the nested 'validation' section.
+        Args:
+            rule_id: The rule identifier to look up (None returns defaults).
+            contract: Validator contract with rule configurations.
 
         Returns:
-            Loaded ModelValidatorSubcontract instance.
-
-        Raises:
-            ModelOnexError: If contract file not found or invalid.
+            Tuple of (enabled, severity) for the rule.
         """
-        contract_path = self._get_contract_path()
+        if rule_id is None:
+            return (True, contract.severity_default)
 
-        if not contract_path.exists():
-            raise ModelOnexError(
-                message=f"Validator contract not found: {contract_path}",
-                error_code=EnumCoreErrorCode.FILE_NOT_FOUND,
-                context={
-                    "validator_id": self.validator_id,
-                    "contract_path": str(contract_path),
-                },
-            )
-
-        try:
-            content = contract_path.read_text(encoding="utf-8")
-            # ONEX_EXCLUDE: manual_yaml - validator contract loading requires raw YAML
-            data = yaml.safe_load(content)
-
-            if not isinstance(data, dict):
-                raise ModelOnexError(
-                    message="Contract must be a YAML mapping",
-                    error_code=EnumCoreErrorCode.CONFIGURATION_PARSE_ERROR,
-                    context={
-                        "validator_id": self.validator_id,
-                        "contract_path": str(contract_path),
-                    },
-                )
-
-            # Handle nested 'validation:' structure
-            if "validation" in data and isinstance(data["validation"], dict):
-                data = data["validation"]
-
-            return ModelValidatorSubcontract.model_validate(data)
-
-        except FILE_IO_ERRORS as e:
-            # boundary-ok: convert file I/O errors to structured error
-            raise ModelOnexError(
-                message=f"Cannot read contract file: {e}",
-                error_code=EnumCoreErrorCode.FILE_READ_ERROR,
-                context={
-                    "validator_id": self.validator_id,
-                    "contract_path": str(contract_path),
-                    "error": str(e),
-                },
-            ) from e
-        except YAML_PARSING_ERRORS as e:
-            # boundary-ok: convert YAML parsing errors to structured error
-            raise ModelOnexError(
-                message=f"Invalid YAML in contract file: {e}",
-                error_code=EnumCoreErrorCode.CONFIGURATION_PARSE_ERROR,
-                context={
-                    "validator_id": self.validator_id,
-                    "contract_path": str(contract_path),
-                    "yaml_error": str(e),
-                },
-            ) from e
+        for rule in contract.rules:
+            if rule.rule_id == rule_id:
+                return (rule.enabled, rule.severity)
+        # Rule not in contract - use defaults (enabled=True, default severity)
+        return (True, contract.severity_default)
 
     def _validate_file(
         self,
@@ -191,6 +157,11 @@ class ValidatorUnionUsage(ValidatorBase):
         Uses AST analysis to detect Union type patterns and returns
         issues for each violation found.
 
+        Note:
+            A fresh UnionUsageChecker instance is created for each file,
+            ensuring clean AST visitor state between files. This prevents
+            state leakage (e.g., _in_union_binop flag) across file boundaries.
+
         Args:
             path: Path to the Python file to validate.
             contract: Validator contract with configuration.
@@ -200,18 +171,30 @@ class ValidatorUnionUsage(ValidatorBase):
         """
         try:
             source = path.read_text(encoding="utf-8")
-        except OSError as e:
+        except FILE_IO_ERRORS as e:
             # fallback-ok: log warning and skip file on read errors
-            logger.warning("Cannot read file %s: %s", path, e)
+            logger.warning(
+                "Cannot read file for union validation: path=%s, error_type=%s, error=%s",
+                path,
+                type(e).__name__,
+                e,
+            )
             return ()
 
         try:
             tree = ast.parse(source, filename=str(path))
-        except SyntaxError:
-            # Syntax error - skip silently (not a valid Python file for AST analysis)
+        except SyntaxError as e:
+            # fallback-ok: log warning and skip file with syntax errors
+            logger.warning(
+                "Skipping file with syntax error during AST parsing: "
+                "path=%s, line=%s, error=%s",
+                path,
+                e.lineno,
+                e.msg,
+            )
             return ()
 
-        # Create checker and visit the AST
+        # Create fresh checker instance for this file (ensures clean visitor state)
         checker = UnionUsageChecker(str(path))
         checker.visit(tree)
 
@@ -221,8 +204,13 @@ class ValidatorUnionUsage(ValidatorBase):
         for issue_str in checker.issues:
             # Parse line number from issue string (format: "Line N: message")
             line_number = self._extract_line_number(issue_str)
-            severity = self._determine_severity(issue_str, contract)
             rule_name = self._determine_rule_name(issue_str)
+
+            # Check if rule is enabled before adding issue
+            enabled, severity = self._get_rule_config(rule_name, contract)
+            if not enabled:
+                # Rule is explicitly disabled in contract, skip this issue
+                continue
 
             issues.append(
                 ModelValidationIssue(
@@ -250,31 +238,6 @@ class ValidatorUnionUsage(ValidatorBase):
         if match:
             return int(match.group(1))
         return None
-
-    def _determine_severity(
-        self,
-        issue_str: str,
-        contract: ModelValidatorSubcontract,
-    ) -> EnumValidationSeverity:
-        """Determine severity for an issue based on contract rules.
-
-        Args:
-            issue_str: The issue message string.
-            contract: Validator contract with rule configurations.
-
-        Returns:
-            Appropriate severity level based on issue type and contract.
-        """
-        # Map issue patterns to rule IDs
-        rule_id = self._determine_rule_name(issue_str)
-
-        # Find matching rule in contract
-        if rule_id:
-            for rule in contract.rules:
-                if rule.rule_id == rule_id and rule.enabled:
-                    return rule.severity
-
-        return contract.severity_default
 
     def _determine_rule_name(self, issue_str: str) -> str | None:
         """Determine the rule name from the issue string.

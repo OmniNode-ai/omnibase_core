@@ -401,8 +401,12 @@ class TestValidatorNamingConventionSeverity:
         result = validator.validate_file(file_path)
 
         class_naming_issues = [i for i in result.issues if i.code == RULE_CLASS_NAMING]
-        if class_naming_issues:
-            assert class_naming_issues[0].severity == EnumValidationSeverity.WARNING
+        # Lowercase class name should be flagged
+        assert len(class_naming_issues) >= 1, (
+            "Expected class naming issue for lowercase class name"
+        )
+        # Custom severity should be applied
+        assert class_naming_issues[0].severity == EnumValidationSeverity.WARNING
 
 
 # =============================================================================
@@ -538,9 +542,12 @@ class TestValidatorNamingConventionSuggestions:
         result = validator.validate_file(bad_file)
 
         file_naming_issues = [i for i in result.issues if i.code == RULE_FILE_NAMING]
-        if file_naming_issues:
-            # Should have a suggestion
-            assert file_naming_issues[0].suggestion is not None or True
+        # File in models/ without required prefix should be flagged
+        assert len(file_naming_issues) >= 1, (
+            "Expected file naming issue for file without required prefix"
+        )
+        # Issue should have a suggestion for fixing
+        assert file_naming_issues[0].suggestion is not None
 
 
 # =============================================================================

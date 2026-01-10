@@ -307,6 +307,50 @@ class ModelValidatorSubcontract(BaseModel):
             )
         return self
 
+    @model_validator(mode="after")
+    def validate_source_root_no_traversal(self) -> "ModelValidatorSubcontract":
+        """Validate that source_root does not contain path traversal sequences.
+
+        Security: Prevents path traversal attacks via malicious YAML contracts
+        that could specify source_root values like '../../../etc' to escape
+        the intended validation directory.
+
+        Returns:
+            The validated instance (self).
+
+        Raises:
+            ModelOnexError: If source_root contains path traversal patterns.
+        """
+        if self.source_root is None:
+            return self
+
+        path_str = str(self.source_root)
+
+        # Security: Reject paths with traversal sequences
+        # Check for parent directory traversal (..) and double slashes (//)
+        traversal_patterns = ["..", "//"]
+        for pattern in traversal_patterns:
+            if pattern in path_str:
+                msg = f"source_root contains path traversal sequence: {pattern}"
+                raise ModelOnexError(
+                    message=msg,
+                    error_code=EnumCoreErrorCode.SECURITY_VIOLATION,
+                    details=ModelErrorContext.with_context(
+                        {
+                            "error_type": ModelSchemaValue.from_value("securityerror"),
+                            "validation_context": ModelSchemaValue.from_value(
+                                "path_traversal_check",
+                            ),
+                            "field": ModelSchemaValue.from_value("source_root"),
+                            "pattern_detected": ModelSchemaValue.from_value(pattern),
+                            "validator_id": ModelSchemaValue.from_value(
+                                self.validator_id
+                            ),
+                        },
+                    ),
+                )
+        return self
+
     model_config = ConfigDict(
         extra="ignore",  # Allow extra fields from YAML contracts
         frozen=True,  # Immutability after creation for thread safety

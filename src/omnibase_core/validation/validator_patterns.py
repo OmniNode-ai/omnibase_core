@@ -70,14 +70,7 @@ import sys
 from pathlib import Path
 from typing import ClassVar, Protocol
 
-import yaml
-
-# Configure logger for this module
-logger = logging.getLogger(__name__)
-
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
-from omnibase_core.errors.exception_groups import FILE_IO_ERRORS, YAML_PARSING_ERRORS
 from omnibase_core.models.common.model_validation_issue import ModelValidationIssue
 from omnibase_core.models.common.model_validation_metadata import (
     ModelValidationMetadata,
@@ -85,13 +78,15 @@ from omnibase_core.models.common.model_validation_metadata import (
 from omnibase_core.models.contracts.subcontracts.model_validator_subcontract import (
     ModelValidatorSubcontract,
 )
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.validation.validator_base import ValidatorBase
 from omnibase_core.validation.validator_utils import ModelValidationResult
 
 from .checker_generic_pattern import GenericPatternChecker
 from .checker_naming_convention import NamingConventionChecker
 from .checker_pydantic_pattern import PydanticPatternChecker
+
+# Configure logger for this module
+logger = logging.getLogger(__name__)
 
 # Rule IDs for mapping checker issues to contract rules
 RULE_PYDANTIC_PREFIX = "pydantic_model_prefix"
@@ -105,6 +100,55 @@ RULE_CLASS_ANTI_PATTERN = "class_anti_pattern"
 RULE_CLASS_PASCAL_CASE = "class_pascal_case"
 RULE_FUNCTION_SNAKE_CASE = "function_snake_case"
 RULE_UNKNOWN: str = "unknown"
+
+# Compiled regex patterns for issue categorization
+# Patterns use anchored phrases from actual checker output messages for precise matching.
+# Order matters: more specific patterns should come before generic ones.
+#
+# Pattern Design Principles:
+# 1. Match exact phrases from checker output (see checker_*.py files)
+# 2. Use word boundaries (\b) to prevent partial matches
+# 3. Use case-insensitive matching for robustness
+# 4. More specific patterns BEFORE generic ones (e.g., "Async function" before "Function")
+#
+# If a pattern fails to match, the issue falls back to RULE_UNKNOWN which defaults
+# to enabled. Keep patterns synchronized with checker output to prevent miscategorization.
+_ISSUE_CATEGORY_PATTERNS: tuple[tuple[re.Pattern[str], str], ...] = (
+    # Pydantic pattern checks - match exact phrases from PydanticPatternChecker
+    # Message: "Pydantic model '{name}' should start with 'Model'"
+    (
+        re.compile(r"^Pydantic model '.*' should start with 'Model'$"),
+        RULE_PYDANTIC_PREFIX,
+    ),
+    # Message: "Field '{name}' should use UUID type instead of str"
+    (re.compile(r"^Field '.*' should use UUID type instead of str$"), RULE_UUID_FIELD),
+    # Message: "Field '{name}' should use Enum instead of str"
+    (re.compile(r"^Field '.*' should use Enum instead of str$"), RULE_ENUM_FIELD),
+    # Message: "Field '{name}' might reference an entity - consider using ID + display_name pattern"
+    (re.compile(r"^Field '.*' might reference an entity"), RULE_ENTITY_NAME),
+    # Generic pattern checks - match exact phrases from GenericPatternChecker
+    # Message: "Function name '{name}' is too generic - use specific domain terminology"
+    (re.compile(r"^Function name '.*' is too generic\b"), RULE_GENERIC_FUNCTION),
+    # Message: "Function '{name}' has {count} parameters - consider using a model or breaking into smaller functions"
+    (re.compile(r"^Function '.*' has \d+ parameters\b"), RULE_MAX_PARAMS),
+    # Message: "Class '{name}' has {count} methods - consider breaking into smaller classes"
+    (re.compile(r"^Class '.*' has \d+ methods\b"), RULE_GOD_CLASS),
+    # Naming convention checks - match exact phrases from NamingConventionChecker
+    # Message: "Class name '{name}' contains anti-pattern '{pattern}' - use specific domain terminology"
+    (re.compile(r"^Class name '.*' contains anti-pattern\b"), RULE_CLASS_ANTI_PATTERN),
+    # Message: "Class name '{name}' should use PascalCase"
+    (re.compile(r"^Class name '.*' should use PascalCase$"), RULE_CLASS_PASCAL_CASE),
+    # Message: "Async function name '{name}' should use snake_case" (check async first - more specific)
+    (
+        re.compile(r"^Async function name '.*' should use snake_case$"),
+        RULE_FUNCTION_SNAKE_CASE,
+    ),
+    # Message: "Function name '{name}' should use snake_case"
+    (
+        re.compile(r"^Function name '.*' should use snake_case$"),
+        RULE_FUNCTION_SNAKE_CASE,
+    ),
+)
 
 
 class ProtocolPatternChecker(Protocol):
@@ -152,45 +196,25 @@ def _parse_message(issue: str) -> str:
 
 
 def _categorize_issue(issue: str) -> str:
-    """Categorize an issue string to a rule ID.
+    """Categorize an issue string to a rule ID using compiled regex patterns.
 
-    Maps issue messages to their corresponding rule IDs based on content.
+    Uses pre-compiled regex patterns with word boundaries and anchoring for
+    precise matching. Patterns are checked in order, with more specific
+    patterns before generic ones.
 
     Args:
         issue: The issue message to categorize.
 
     Returns:
-        The rule ID corresponding to the issue type.
+        The rule ID corresponding to the issue type, or RULE_UNKNOWN if
+        no pattern matches (with a debug log).
     """
-    issue_lower = issue.lower()
+    for pattern, rule_id in _ISSUE_CATEGORY_PATTERNS:
+        if pattern.search(issue):
+            return rule_id
 
-    # Pydantic pattern checks
-    if "should start with 'model'" in issue_lower:
-        return RULE_PYDANTIC_PREFIX
-    if "should use uuid type" in issue_lower:
-        return RULE_UUID_FIELD
-    if "should use enum" in issue_lower:
-        return RULE_ENUM_FIELD
-    if "might reference an entity" in issue_lower:
-        return RULE_ENTITY_NAME
-
-    # Generic pattern checks
-    if "is too generic" in issue_lower and "function" in issue_lower:
-        return RULE_GENERIC_FUNCTION
-    if "parameters" in issue_lower:
-        return RULE_MAX_PARAMS
-    if "methods" in issue_lower and "breaking into smaller" in issue_lower:
-        return RULE_GOD_CLASS
-
-    # Naming convention checks
-    if "contains anti-pattern" in issue_lower:
-        return RULE_CLASS_ANTI_PATTERN
-    if "should use pascalcase" in issue_lower:
-        return RULE_CLASS_PASCAL_CASE
-    if "should use snake_case" in issue_lower:
-        return RULE_FUNCTION_SNAKE_CASE
-
-    # Default to unknown if cannot categorize
+    # Log uncategorized issues for debugging - helps identify missing patterns
+    logger.debug("Could not categorize issue to a rule: %s", issue[:100])
     return RULE_UNKNOWN
 
 
@@ -207,6 +231,31 @@ class ValidatorPatterns(ValidatorBase):
     The validator respects exemptions via inline suppression comments
     defined in the contract.
 
+    Rule configuration is precomputed at initialization for O(1) lookups
+    during validation, avoiding repeated iteration over contract rules.
+
+    Thread Safety:
+        ValidatorPatterns instances are NOT thread-safe due to internal mutable
+        state. Specifically:
+
+        - ``_file_line_cache`` (inherited from ValidatorBase): Caches file
+          contents during validation. Concurrent access from multiple threads
+          could cause cache corruption or stale reads.
+
+        - ``_rule_config_cache``: Lazily built dictionary mapping rule IDs to
+          configurations. While the lazy initialization is mostly safe due to
+          Python's GIL, concurrent first-access from multiple threads could
+          cause redundant computation.
+
+        **When using parallel execution (e.g., pytest-xdist workers or
+        ThreadPoolExecutor), create separate validator instances per worker.**
+
+        The contract (ModelValidatorSubcontract) is immutable (frozen=True)
+        and safe to share across threads.
+
+        For more details, see the Threading Guide:
+        ``docs/guides/THREADING.md``
+
     Attributes:
         validator_id: Unique identifier for this validator ("patterns").
 
@@ -221,102 +270,78 @@ class ValidatorPatterns(ValidatorBase):
     # ONEX_EXCLUDE: string_id - human-readable validator identifier
     validator_id: ClassVar[str] = "patterns"
 
-    def _load_contract(self) -> ModelValidatorSubcontract:
-        """Load contract from YAML, handling nested 'validation:' structure.
+    def __init__(
+        self,
+        contract: ModelValidatorSubcontract | None = None,
+    ) -> None:
+        """Initialize validator with optional pre-loaded contract.
 
-        The contract YAML has the structure:
-            contract_kind: validation_subcontract
-            validation:
-                version: ...
-                validator_id: ...
-                ...
+        Args:
+            contract: Pre-loaded validator contract. If None, the contract
+                will be loaded from the default YAML location when first accessed.
+        """
+        super().__init__(contract)
+        # Precomputed rule configuration cache for O(1) lookups
+        # Maps rule_id -> (enabled, severity)
+        # Lazily initialized on first access to contract
+        self._rule_config_cache: (
+            dict[str, tuple[bool, EnumValidationSeverity]] | None
+        ) = None
 
-        This method extracts the nested 'validation' section.
+    def _build_rule_config_cache(
+        self,
+        contract: ModelValidatorSubcontract,
+    ) -> dict[str, tuple[bool, EnumValidationSeverity]]:
+        """Build precomputed cache of rule configurations for O(1) lookups.
+
+        Creates a dictionary mapping rule_id to (enabled, severity) tuple.
+        This is called once when the contract is first accessed, avoiding
+        repeated iteration over contract rules during validation.
+
+        Args:
+            contract: Validator contract with rule configurations.
 
         Returns:
-            Loaded ModelValidatorSubcontract instance.
-
-        Raises:
-            ModelOnexError: If contract file not found or invalid.
+            Dictionary mapping rule_id to (enabled, severity) tuple.
         """
-        contract_path = self._get_contract_path()
-
-        if not contract_path.exists():
-            raise ModelOnexError(
-                message=f"Validator contract not found: {contract_path}",
-                error_code=EnumCoreErrorCode.FILE_NOT_FOUND,
-                context={
-                    "validator_id": self.validator_id,
-                    "contract_path": str(contract_path),
-                },
-            )
-
-        try:
-            content = contract_path.read_text(encoding="utf-8")
-            # ONEX_EXCLUDE: manual_yaml - validator contract loading requires raw YAML
-            data = yaml.safe_load(content)
-
-            if not isinstance(data, dict):
-                raise ModelOnexError(
-                    message="Contract must be a YAML mapping",
-                    error_code=EnumCoreErrorCode.CONFIGURATION_PARSE_ERROR,
-                    context={
-                        "validator_id": self.validator_id,
-                        "contract_path": str(contract_path),
-                    },
-                )
-
-            # Handle nested 'validation:' structure
-            if "validation" in data and isinstance(data["validation"], dict):
-                data = data["validation"]
-
-            return ModelValidatorSubcontract.model_validate(data)
-
-        except FILE_IO_ERRORS as e:
-            # boundary-ok: convert file I/O errors to structured error
-            raise ModelOnexError(
-                message=f"Cannot read contract file: {e}",
-                error_code=EnumCoreErrorCode.FILE_READ_ERROR,
-                context={
-                    "validator_id": self.validator_id,
-                    "contract_path": str(contract_path),
-                    "error": str(e),
-                },
-            ) from e
-        except YAML_PARSING_ERRORS as e:
-            # boundary-ok: convert YAML parsing errors to structured error
-            raise ModelOnexError(
-                message=f"Invalid YAML in contract file: {e}",
-                error_code=EnumCoreErrorCode.CONFIGURATION_PARSE_ERROR,
-                context={
-                    "validator_id": self.validator_id,
-                    "contract_path": str(contract_path),
-                    "yaml_error": str(e),
-                },
-            ) from e
+        cache: dict[str, tuple[bool, EnumValidationSeverity]] = {}
+        for rule in contract.rules:
+            cache[rule.rule_id] = (rule.enabled, rule.severity)
+        return cache
 
     def _get_rule_config(
         self,
         rule_id: str,
         contract: ModelValidatorSubcontract,
     ) -> tuple[bool, EnumValidationSeverity]:
-        """Get rule enabled state and severity from contract.
+        """Get rule enabled state and severity from precomputed cache.
 
-        Looks up the rule configuration in the contract. If the rule is found,
-        returns its enabled state and severity. If not found, returns enabled=True
-        (default) and the contract's default severity.
+        Uses O(1) dictionary lookup instead of iterating through all rules.
+        Cache is lazily built on first access.
 
         Args:
             rule_id: The rule identifier to look up.
             contract: Validator contract with rule configurations.
 
         Returns:
-            Tuple of (enabled, severity) for the rule.
+            Tuple of (enabled, severity) for the rule. If rule is not in
+            contract, returns (True, default_severity).
         """
-        for rule in contract.rules:
-            if rule.rule_id == rule_id:
-                return (rule.enabled, rule.severity)
+        # Lazily build cache on first access
+        if self._rule_config_cache is None:
+            self._rule_config_cache = self._build_rule_config_cache(contract)
+
+        # O(1) lookup from cache
+        if rule_id in self._rule_config_cache:
+            return self._rule_config_cache[rule_id]
+
         # Rule not in contract - use defaults (enabled=True, default severity)
+        # Log this for debugging potential misconfigurations
+        if rule_id != RULE_UNKNOWN:
+            logger.debug(
+                "Rule '%s' not found in contract, using defaults",
+                rule_id,
+            )
         return (True, contract.severity_default)
 
     def _validate_file(
@@ -363,7 +388,9 @@ class ValidatorPatterns(ValidatorBase):
             for issue_str in checker.issues:
                 line_number = _parse_line_number(issue_str)
                 message = _parse_message(issue_str)
-                rule_id = _categorize_issue(issue_str)
+                # Categorize using the extracted message (without "Line N:" prefix)
+                # to match anchored regex patterns correctly
+                rule_id = _categorize_issue(message)
 
                 # Check if rule is enabled before adding issue
                 enabled, severity = self._get_rule_config(rule_id, contract)
@@ -420,7 +447,13 @@ def validate_patterns_file(file_path: Path) -> list[str]:
             checker.visit(tree)
             all_issues.extend(checker.issues)
 
+    except OSError as e:
+        # fallback-ok: log file read errors for debugging
+        logger.warning("Cannot read file %s: %s", file_path, e)
+        all_issues.append(f"Error reading {file_path}: {e}")
     except (SyntaxError, UnicodeDecodeError, ValueError) as e:
+        # fallback-ok: log parsing errors for debugging
+        logger.debug("Error parsing %s: %s", file_path, e)
         all_issues.append(f"Error parsing {file_path}: {e}")
 
     return all_issues

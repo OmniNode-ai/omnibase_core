@@ -807,20 +807,166 @@ def find_protocol_files(directory: Path) -> list[Path]:
     return protocol_files
 
 
-def validate_directory_path(directory_path: Path, context: str = "directory") -> Path:
+def validate_path_within_bounds(
+    path: Path,
+    allowed_root: Path | None = None,
+    context: str = "path",
+) -> Path:
     """
-    Validate that a directory path is safe and exists.
+    Validate that a path stays within allowed boundaries (path traversal protection).
+
+    This function prevents path traversal attacks by:
+    1. Resolving the path to its canonical absolute form
+    2. Checking the original input for traversal sequences (.., //, etc.)
+    3. Optionally verifying the resolved path is under an allowed root
 
     Args:
-        directory_path: Path to validate
-        context: Context for error messages (e.g., 'repository', 'SPI directory')
+        path: Path to validate
+        allowed_root: Optional root directory the path must stay within.
+            If provided, the resolved path must be equal to or a child of this root.
+        context: Context for error messages
 
     Returns:
         Resolved absolute path
 
     Raises:
-        ModelOnexError: If path is invalid, does not exist, or is not a directory
+        ModelOnexError: If path contains traversal sequences or escapes allowed root
+
+    Example:
+        >>> validate_path_within_bounds(Path("../etc/passwd"), Path("/app"))
+        ModelOnexError: Path traversal detected in path: ../etc/passwd
+        >>> validate_path_within_bounds(Path("config/app.yaml"), Path("/app"))
+        Path('/app/config/app.yaml')
     """
+    path_str = str(path)
+
+    # Security: Reject paths with traversal sequences
+    # Check for various traversal patterns before resolution
+    traversal_patterns = [
+        "..",  # Parent directory traversal
+        "//",  # Double slash (can bypass naive checks)
+    ]
+
+    for pattern in traversal_patterns:
+        if pattern in path_str:
+            msg = f"Path traversal detected in {context}: {path}"
+            logger.error(msg)
+            raise ModelOnexError(
+                message=msg,
+                error_code=EnumCoreErrorCode.SECURITY_VIOLATION,
+                context={
+                    "path": path_str,
+                    "context": context,
+                    "pattern_detected": pattern,
+                },
+            )
+
+    # Security: Reject absolute paths when relative expected (if root provided)
+    if allowed_root is not None and path.is_absolute():
+        msg = f"Absolute path not allowed for {context}: {path}"
+        logger.error(msg)
+        raise ModelOnexError(
+            message=msg,
+            error_code=EnumCoreErrorCode.SECURITY_VIOLATION,
+            context={
+                "path": path_str,
+                "context": context,
+                "reason": "absolute_path_rejected",
+            },
+        )
+
+    try:
+        resolved_path = path.resolve()
+    except (OSError, ValueError) as e:
+        msg = f"Invalid {context} path: {path} ({e})"
+        logger.exception(msg)
+        raise ModelOnexError(
+            message=msg,
+            error_code=EnumCoreErrorCode.INVALID_INPUT,
+            context={
+                "path": path_str,
+                "context": context,
+                "error": str(e),
+            },
+        ) from e
+
+    # Security: Verify path is within allowed root (bounds checking)
+    if allowed_root is not None:
+        try:
+            resolved_root = allowed_root.resolve()
+            # Check if resolved_path is the same as or a child of resolved_root
+            # Use is_relative_to for Python 3.9+ compatibility
+            if not resolved_path.is_relative_to(resolved_root):
+                msg = f"Path escapes allowed directory for {context}: {path}"
+                logger.error(msg)
+                raise ModelOnexError(
+                    message=msg,
+                    error_code=EnumCoreErrorCode.SECURITY_VIOLATION,
+                    context={
+                        "path": path_str,
+                        "resolved_path": str(resolved_path),
+                        "allowed_root": str(resolved_root),
+                        "context": context,
+                    },
+                )
+        except (OSError, ValueError) as e:
+            msg = f"Invalid allowed_root path: {allowed_root} ({e})"
+            logger.exception(msg)
+            raise ModelOnexError(
+                message=msg,
+                error_code=EnumCoreErrorCode.INVALID_INPUT,
+                context={
+                    "allowed_root": str(allowed_root),
+                    "context": context,
+                    "error": str(e),
+                },
+            ) from e
+
+    logger.debug(f"Validated {context} path within bounds: {resolved_path}")
+    return resolved_path
+
+
+def validate_directory_path(
+    directory_path: Path,
+    context: str = "directory",
+    *,
+    allowed_root: Path | None = None,
+) -> Path:
+    """
+    Validate that a directory path is safe and exists.
+
+    Security: This function now rejects path traversal attempts rather than
+    just logging a warning. Use the allowed_root parameter for strict bounds
+    checking when validating user-provided paths.
+
+    Args:
+        directory_path: Path to validate
+        context: Context for error messages (e.g., 'repository', 'SPI directory')
+        allowed_root: Optional root directory the path must stay within.
+            If provided, the resolved path must be equal to or a child of this root.
+
+    Returns:
+        Resolved absolute path
+
+    Raises:
+        ModelOnexError: If path is invalid, contains traversal sequences,
+            does not exist, or is not a directory
+    """
+    # Security: Check for path traversal before any other validation
+    path_str = str(directory_path)
+    if ".." in path_str:
+        msg = f"Path traversal detected in {context} path: {directory_path}"
+        logger.error(msg)
+        raise ModelOnexError(
+            message=msg,
+            error_code=EnumCoreErrorCode.SECURITY_VIOLATION,
+            context={
+                "path": path_str,
+                "context": context,
+                "pattern_detected": "..",
+            },
+        )
+
     try:
         resolved_path = directory_path.resolve()
     except (OSError, ValueError) as e:
@@ -831,14 +977,37 @@ def validate_directory_path(directory_path: Path, context: str = "directory") ->
             error_code=EnumCoreErrorCode.INVALID_INPUT,
             path=str(directory_path),
             context=context,
-        )
+        ) from e
 
-    # Check for potential directory traversal
-    if ".." in str(directory_path):
-        logger.warning(
-            f"Potential directory traversal in {context} path: {directory_path}",
-        )
-        # Allow but log suspicious paths - some legitimate cases use ..
+    # Security: Verify path is within allowed root (bounds checking)
+    if allowed_root is not None:
+        try:
+            resolved_root = allowed_root.resolve()
+            if not resolved_path.is_relative_to(resolved_root):
+                msg = f"Path escapes allowed directory for {context}: {directory_path}"
+                logger.error(msg)
+                raise ModelOnexError(
+                    message=msg,
+                    error_code=EnumCoreErrorCode.SECURITY_VIOLATION,
+                    context={
+                        "path": path_str,
+                        "resolved_path": str(resolved_path),
+                        "allowed_root": str(resolved_root),
+                        "context": context,
+                    },
+                )
+        except (OSError, ValueError) as e:
+            msg = f"Invalid allowed_root path: {allowed_root} ({e})"
+            logger.exception(msg)
+            raise ModelOnexError(
+                message=msg,
+                error_code=EnumCoreErrorCode.INVALID_INPUT,
+                context={
+                    "allowed_root": str(allowed_root),
+                    "context": context,
+                    "error": str(e),
+                },
+            ) from e
 
     if not resolved_path.exists():
         msg = f"{context.capitalize()} path does not exist: {resolved_path}"
@@ -864,20 +1033,46 @@ def validate_directory_path(directory_path: Path, context: str = "directory") ->
     return resolved_path
 
 
-def validate_file_path(file_path: Path, context: str = "file") -> Path:
+def validate_file_path(
+    file_path: Path,
+    context: str = "file",
+    *,
+    allowed_root: Path | None = None,
+) -> Path:
     """
     Validate that a file path is safe and accessible.
+
+    Security: This function now checks for path traversal attempts and optionally
+    validates that the path stays within an allowed root directory.
 
     Args:
         file_path: Path to validate
         context: Context for error messages
+        allowed_root: Optional root directory the path must stay within.
+            If provided, the resolved path must be equal to or a child of this root.
 
     Returns:
         Resolved absolute path
 
     Raises:
-        ModelOnexError: If path is invalid, does not exist, or is not a file
+        ModelOnexError: If path is invalid, contains traversal sequences,
+            does not exist, or is not a file
     """
+    # Security: Check for path traversal before any other validation
+    path_str = str(file_path)
+    if ".." in path_str:
+        msg = f"Path traversal detected in {context} path: {file_path}"
+        logger.error(msg)
+        raise ModelOnexError(
+            message=msg,
+            error_code=EnumCoreErrorCode.SECURITY_VIOLATION,
+            context={
+                "path": path_str,
+                "context": context,
+                "pattern_detected": "..",
+            },
+        )
+
     try:
         resolved_path = file_path.resolve()
     except (OSError, ValueError) as e:
@@ -888,7 +1083,37 @@ def validate_file_path(file_path: Path, context: str = "file") -> Path:
             error_code=EnumCoreErrorCode.INVALID_INPUT,
             path=str(file_path),
             context=context,
-        )
+        ) from e
+
+    # Security: Verify path is within allowed root (bounds checking)
+    if allowed_root is not None:
+        try:
+            resolved_root = allowed_root.resolve()
+            if not resolved_path.is_relative_to(resolved_root):
+                msg = f"Path escapes allowed directory for {context}: {file_path}"
+                logger.error(msg)
+                raise ModelOnexError(
+                    message=msg,
+                    error_code=EnumCoreErrorCode.SECURITY_VIOLATION,
+                    context={
+                        "path": path_str,
+                        "resolved_path": str(resolved_path),
+                        "allowed_root": str(resolved_root),
+                        "context": context,
+                    },
+                )
+        except (OSError, ValueError) as e:
+            msg = f"Invalid allowed_root path: {allowed_root} ({e})"
+            logger.exception(msg)
+            raise ModelOnexError(
+                message=msg,
+                error_code=EnumCoreErrorCode.INVALID_INPUT,
+                context={
+                    "allowed_root": str(allowed_root),
+                    "context": context,
+                    "error": str(e),
+                },
+            ) from e
 
     if not resolved_path.exists():
         msg = f"{context.capitalize()} does not exist: {resolved_path}"
@@ -961,7 +1186,8 @@ __all__ = [
     "find_protocol_files",
     "is_protocol_file",
     "suggest_spi_location",
-    # Path validation
+    # Path validation (with security)
     "validate_directory_path",
     "validate_file_path",
+    "validate_path_within_bounds",
 ]
