@@ -400,3 +400,175 @@ class TestTupleImmutabilityBehavior:
 
         # Verify contents are correct
         assert order1 == {"init": 0, "execute": 1}
+
+    def test_phases_tuple_prevents_index_mutation(self) -> None:
+        """Test that phases tuple cannot be mutated via index assignment.
+
+        This verifies true immutability - tuples prevent in-place mutation
+        that would bypass Pydantic's frozen=True protection.
+
+        See Also:
+            - OMN-1292: PR review feedback on immutability protection
+        """
+        profile = ModelExecutionProfile(phases=("execute", "after"))
+
+        # Attempting index assignment on tuple raises TypeError
+        with pytest.raises(TypeError, match="does not support item assignment"):
+            profile.phases[0] = "before"  # type: ignore[index]
+
+    def test_nondeterministic_phases_tuple_prevents_index_mutation(self) -> None:
+        """Test that nondeterministic_allowed_phases tuple cannot be mutated via index."""
+        profile = ModelExecutionProfile(
+            phases=("init", "execute", "cleanup"),
+            nondeterministic_allowed_phases=("execute", "cleanup"),
+        )
+
+        # Attempting index assignment on tuple raises TypeError
+        with pytest.raises(TypeError, match="does not support item assignment"):
+            profile.nondeterministic_allowed_phases[0] = "init"  # type: ignore[index]
+
+
+@pytest.mark.unit
+class TestListToTupleCoercion:
+    """Tests for list-to-tuple coercion behavior.
+
+    Verifies that list inputs are properly coerced to tuples for immutability.
+
+    See Also:
+        - OMN-1292: PR review feedback on coercion behavior
+    """
+
+    def test_list_input_coerced_to_tuple_for_phases(self) -> None:
+        """Test that list input for phases is coerced to tuple."""
+        profile = ModelExecutionProfile(phases=["execute", "after"])  # type: ignore[arg-type]
+
+        assert isinstance(profile.phases, tuple)
+        assert profile.phases == ("execute", "after")
+
+    def test_list_input_coerced_to_tuple_for_nondeterministic_phases(self) -> None:
+        """Test that list input for nondeterministic_allowed_phases is coerced to tuple."""
+        profile = ModelExecutionProfile(
+            phases=("init", "execute", "cleanup"),
+            nondeterministic_allowed_phases=["execute", "cleanup"],  # type: ignore[arg-type]
+        )
+
+        assert isinstance(profile.nondeterministic_allowed_phases, tuple)
+        assert profile.nondeterministic_allowed_phases == ("execute", "cleanup")
+
+    def test_mixed_list_and_tuple_inputs(self) -> None:
+        """Test creation with mixed list and tuple inputs."""
+        profile = ModelExecutionProfile(
+            phases=["alpha", "beta", "gamma"],  # type: ignore[arg-type]
+            nondeterministic_allowed_phases=("beta",),  # Already tuple
+        )
+
+        # Both should be tuples
+        assert isinstance(profile.phases, tuple)
+        assert isinstance(profile.nondeterministic_allowed_phases, tuple)
+        assert profile.phases == ("alpha", "beta", "gamma")
+        assert profile.nondeterministic_allowed_phases == ("beta",)
+
+
+@pytest.mark.unit
+class TestFromAttributesExplicit:
+    """Tests for explicit from_attributes=True parameter usage.
+
+    Verifies that model_validate works correctly with explicit from_attributes=True
+    parameter in addition to the ConfigDict setting.
+
+    See Also:
+        - OMN-1292: PR review feedback on from_attributes behavior
+    """
+
+    def test_from_attributes_explicit_with_tuple_attributes(self) -> None:
+        """Test model creation from object with tuple attributes using explicit parameter."""
+        from omnibase_core.models.contracts.model_execution_ordering_policy import (
+            ModelExecutionOrderingPolicy,
+        )
+
+        class ProfileLike:
+            """Object with tuple attributes matching profile fields."""
+
+            phases = ("execute", "after")
+            ordering_policy = ModelExecutionOrderingPolicy()
+            nondeterministic_allowed_phases = ()
+
+        # Explicit from_attributes=True parameter
+        profile = ModelExecutionProfile.model_validate(
+            ProfileLike(), from_attributes=True
+        )
+
+        assert profile.phases == ("execute", "after")
+        assert profile.nondeterministic_allowed_phases == ()
+        assert isinstance(profile.ordering_policy, ModelExecutionOrderingPolicy)
+
+    def test_from_attributes_explicit_with_list_attributes(self) -> None:
+        """Test model creation from object with list attributes using explicit parameter.
+
+        Lists should be coerced to tuples even when reading from object attributes.
+        """
+        from omnibase_core.models.contracts.model_execution_ordering_policy import (
+            ModelExecutionOrderingPolicy,
+        )
+
+        class ProfileLikeWithLists:
+            """Object with list attributes that should be coerced to tuples."""
+
+            phases = ["init", "execute", "cleanup"]
+            ordering_policy = ModelExecutionOrderingPolicy()
+            nondeterministic_allowed_phases = ["execute"]
+
+        profile = ModelExecutionProfile.model_validate(
+            ProfileLikeWithLists(), from_attributes=True
+        )
+
+        # Lists coerced to tuples
+        assert isinstance(profile.phases, tuple)
+        assert profile.phases == ("init", "execute", "cleanup")
+        assert isinstance(profile.nondeterministic_allowed_phases, tuple)
+        assert profile.nondeterministic_allowed_phases == ("execute",)
+
+    def test_from_attributes_with_namedtuple(self) -> None:
+        """Test model creation from namedtuple using from_attributes=True."""
+        from typing import NamedTuple
+
+        from omnibase_core.models.contracts.model_execution_ordering_policy import (
+            ModelExecutionOrderingPolicy,
+        )
+
+        class ProfileTuple(NamedTuple):
+            phases: tuple[str, ...]
+            ordering_policy: ModelExecutionOrderingPolicy
+            nondeterministic_allowed_phases: tuple[str, ...]
+
+        source = ProfileTuple(
+            phases=("pre", "main", "post"),
+            ordering_policy=ModelExecutionOrderingPolicy(),
+            nondeterministic_allowed_phases=("main",),
+        )
+
+        profile = ModelExecutionProfile.model_validate(source, from_attributes=True)
+
+        assert profile.phases == ("pre", "main", "post")
+        assert profile.nondeterministic_allowed_phases == ("main",)
+
+    def test_from_attributes_implicit_via_config(self) -> None:
+        """Test that from_attributes works implicitly via ConfigDict setting.
+
+        The model has from_attributes=True in ConfigDict, so it should work
+        without explicit parameter.
+        """
+        from omnibase_core.models.contracts.model_execution_ordering_policy import (
+            ModelExecutionOrderingPolicy,
+        )
+
+        class ProfileLike:
+            phases = ("alpha", "beta")
+            ordering_policy = ModelExecutionOrderingPolicy()
+            nondeterministic_allowed_phases = ("beta",)
+
+        # No explicit from_attributes parameter - relies on ConfigDict
+        profile = ModelExecutionProfile.model_validate(ProfileLike())
+
+        assert profile.phases == ("alpha", "beta")
+        assert profile.nondeterministic_allowed_phases == ("beta",)

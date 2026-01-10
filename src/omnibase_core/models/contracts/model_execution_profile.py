@@ -128,9 +128,6 @@ class ModelExecutionProfile(BaseModel):
 
         Returns:
             Normalized tuple of phase names.
-
-        Raises:
-            ValueError: If any phase is empty after stripping.
         """
         if isinstance(v, list):
             v = tuple(v)
@@ -154,9 +151,6 @@ class ModelExecutionProfile(BaseModel):
 
         Returns:
             Normalized, deduplicated tuple of phase names.
-
-        Raises:
-            ValueError: If any phase is empty after stripping.
         """
         if isinstance(v, list):
             v = tuple(v)
@@ -225,12 +219,12 @@ class ModelExecutionProfile(BaseModel):
 
         # Validate phases are non-empty strings
         for phase in self.phases:
-            if not phase or not phase.strip():
+            if not phase:
                 raise ValueError("phases must be non-empty strings")
 
         # Validate nondeterministic_allowed_phases entries are non-empty strings
         for phase in self.nondeterministic_allowed_phases:
-            if not phase or not phase.strip():
+            if not phase:
                 raise ValueError(
                     "nondeterministic_allowed_phases must be non-empty strings"
                 )
