@@ -1,0 +1,66 @@
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: any_type
+  validator_name: Any Type Policy Validator
+  validator_description: |
+    Enforces strict typing policy by detecting use of Any type.
+    Checks for Any imports, annotations, dict[str, Any], and Union[..., Any].
+    Supports exemptions via decorators and inline comments.
+
+  target_patterns:
+    - "**/*.py"
+  exclude_patterns:
+    - "**/node_modules/**"
+    - "**/.git/**"
+    - "**/venv/**"
+    - "**/__pycache__/**"
+    - "**/archived/**"
+    - "**/tests/**"
+    - "**/*_test.py"
+    - "**/test_*.py"
+    - "**/conftest.py"
+
+  rules:
+    - rule_id: any_import
+      description: Detects 'from typing import Any' statements
+      severity: warning
+      enabled: true
+
+    - rule_id: any_annotation
+      description: "Detects Any in type annotations (param: Any, -> Any)"
+      severity: error
+      enabled: true
+
+    - rule_id: dict_str_any
+      description: Detects dict[str, Any] usage
+      severity: error
+      enabled: true
+      parameters:
+        allow_in_tests: true
+
+    - rule_id: list_any
+      description: Detects list[Any] usage
+      severity: warning
+      enabled: true
+
+    - rule_id: union_with_any
+      description: Detects Union[..., Any] or ... | Any
+      severity: error
+      enabled: true
+
+  suppression_comments:
+    - "# ONEX_EXCLUDE: any_type"
+    - "# ONEX_EXCLUDE: dict_str_any"
+    - "# type: ignore"
+    - "# any-ok:"
+
+  severity_default: error
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+  parallel_execution: true

@@ -94,6 +94,42 @@ from .contract_validation_pipeline import (
     ModelExpandedContractResult,
 )
 
+# Import Any type validator (OMN-1291)
+from .validator_any_type import ValidatorAnyType
+
+# Import validator base class (OMN-1291)
+from .validator_base import (
+    EXIT_ERRORS,
+    EXIT_SUCCESS,
+    EXIT_WARNINGS,
+    SEVERITY_PRIORITY,
+    ValidatorBase,
+)
+
+# Import Contract Linter validator (OMN-1291)
+from .validator_contract_linter import (
+    CONTRACT_MODELS,
+    NODE_TYPE_MAPPING,
+    RULE_FINGERPRINT_FORMAT,
+    RULE_FINGERPRINT_MATCH,
+    RULE_MODEL_PREFIX,
+    RULE_NAMING_CONVENTION,
+    RULE_RECOMMENDED_FIELDS,
+    RULE_REQUIRED_FIELDS,
+    RULE_SCHEMA_VALIDATION,
+    RULE_YAML_SYNTAX,
+    ValidatorContractLinter,
+)
+from .visitor_any_type import (
+    EXEMPT_DECORATORS,
+    RULE_ANY_ANNOTATION,
+    RULE_ANY_IMPORT,
+    RULE_DICT_STR_ANY,
+    RULE_LIST_ANY,
+    RULE_UNION_WITH_ANY,
+    AnyTypeVisitor,
+)
+
 # =============================================================================
 # ALIAS LOADING STRATEGY: __getattr__ vs Direct Alias
 # =============================================================================
@@ -326,6 +362,33 @@ __all__ = [
     # Contract validation pipeline (OMN-1128)
     "ContractValidationPipeline",
     "ModelExpandedContractResult",
+    # Validator base class (OMN-1291)
+    "ValidatorBase",
+    "EXIT_SUCCESS",
+    "EXIT_ERRORS",
+    "EXIT_WARNINGS",
+    "SEVERITY_PRIORITY",
+    # Any type validator (OMN-1291)
+    "ValidatorAnyType",
+    "AnyTypeVisitor",
+    "RULE_ANY_IMPORT",
+    "RULE_ANY_ANNOTATION",
+    "RULE_DICT_STR_ANY",
+    "RULE_LIST_ANY",
+    "RULE_UNION_WITH_ANY",
+    "EXEMPT_DECORATORS",
+    # Contract Linter validator (OMN-1291)
+    "ValidatorContractLinter",
+    "CONTRACT_MODELS",
+    "NODE_TYPE_MAPPING",
+    "RULE_YAML_SYNTAX",
+    "RULE_REQUIRED_FIELDS",
+    "RULE_RECOMMENDED_FIELDS",
+    "RULE_NAMING_CONVENTION",
+    "RULE_MODEL_PREFIX",
+    "RULE_FINGERPRINT_FORMAT",
+    "RULE_FINGERPRINT_MATCH",
+    "RULE_SCHEMA_VALIDATION",
     # Reserved enum validation (OMN-669, OMN-675)
     # NOTE: validate_execution_mode takes EnumExecutionMode (type-safe)
     # while validate_execution_mode_string takes str (for YAML/config parsing)

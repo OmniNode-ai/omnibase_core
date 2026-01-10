@@ -121,6 +121,8 @@ from .model_statistical_computation import ModelStatisticalComputation
 from .model_synchronization_point import ModelSynchronizationPoint
 from .model_tool_execution_subcontract import ModelToolExecutionSubcontract
 from .model_validation_subcontract import ModelValidationSubcontract
+from .model_validator_rule import ModelValidatorRule
+from .model_validator_subcontract import ModelValidatorSubcontract
 from .model_windowing_strategy import ModelWindowingStrategy
 from .model_workflow_coordination_subcontract import (
     ModelWorkflowCoordinationSubcontract,
@@ -231,8 +233,11 @@ __all__ = [
     "ModelStateVersioning",
     # Tool execution subcontracts
     "ModelToolExecutionSubcontract",
-    # Validation subcontracts
+    # Validation subcontracts (Pydantic validation behavior)
     "ModelValidationSubcontract",
+    # Validator subcontracts (file-based validators)
+    "ModelValidatorRule",
+    "ModelValidatorSubcontract",
     # Workflow coordination subcontracts and components
     "ModelWorkflowCoordinationSubcontract",
     "ModelCoordinationResult",

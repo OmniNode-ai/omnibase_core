@@ -215,7 +215,7 @@ repos:
         language: system
         pass_filenames: true
         files: ^.*\.(py|yaml|yml)$
-        exclude: ^(tests/fixtures/validation/|archived/|archive/|src/omnibase_core/protocols/)
+        exclude: ^(tests/fixtures/validation/|archived/|archive/|src/omnibase_core/protocols/|src/omnibase_core/validation/validator_|src/omnibase_core/validation/visitor_|src/omnibase_core/models/contracts/subcontracts/model_validator_)
         stages: [pre-commit]
 
       - id: validate-archived-imports
@@ -244,7 +244,7 @@ repos:
         language: system
         pass_filenames: true
         files: ^.*\.py$
-        exclude: ^(scripts/validation/validate-contracts\.py|scripts/validation/validate-string-versions\.py|scripts/validation/check_stub_implementations\.py|scripts/validation/validate-no-manual-yaml\.py|scripts/compute_contract_fingerprint\.py|scripts/lint_contract\.py|src/omnibase_core/utils/safe_yaml_loader\.py|src/omnibase_core/utils/util_safe_yaml_loader\.py|src/omnibase_core/validation/contracts\.py|src/omnibase_core/validation/contract_validator\.py|src/omnibase_core/discovery/mixin_discovery\.py|tests/fixtures/validation/)
+        exclude: ^(scripts/validation/validate-contracts\.py|scripts/validation/validate-string-versions\.py|scripts/validation/check_stub_implementations\.py|scripts/validation/validate-no-manual-yaml\.py|scripts/compute_contract_fingerprint\.py|scripts/lint_contract\.py|src/omnibase_core/utils/safe_yaml_loader\.py|src/omnibase_core/utils/util_safe_yaml_loader\.py|src/omnibase_core/validation/contracts\.py|src/omnibase_core/validation/contract_validator\.py|src/omnibase_core/validation/validator_base\.py|src/omnibase_core/validation/validator_any_type\.py|src/omnibase_core/validation/validator_contract_linter\.py|src/omnibase_core/discovery/mixin_discovery\.py|tests/fixtures/validation/)
         stages: [pre-commit]
 
       # AST-based validators - accept file arguments for fast pre-commit
