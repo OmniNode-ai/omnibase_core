@@ -3,11 +3,17 @@
 # SPDX-License-Identifier: Apache-2.0
 """Chart series configuration model."""
 
+import re
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-__all__ = ["ModelChartSeriesConfig"]
+__all__ = ("ModelChartSeriesConfig",)
+
+# Pattern for valid hex color formats: #RGB, #RRGGBB, #RGBA, #RRGGBBAA
+HEX_COLOR_PATTERN = re.compile(
+    r"^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{4}|[0-9a-fA-F]{8})$"
+)
 
 
 class ModelChartSeriesConfig(BaseModel):
@@ -28,3 +34,14 @@ class ModelChartSeriesConfig(BaseModel):
     series_type: Literal["line", "bar", "area", "scatter"] = Field(
         default="line", description="How to render this series"
     )
+
+    @field_validator("color")
+    @classmethod
+    def validate_hex_color(cls, v: str | None) -> str | None:
+        """Validate that color is a valid hex color code when provided."""
+        if v is not None and not HEX_COLOR_PATTERN.match(v):
+            raise ValueError(
+                f"Invalid hex color format: {v}. "
+                "Expected #RGB, #RRGGBB, #RGBA, or #RRGGBBAA"
+            )
+        return v

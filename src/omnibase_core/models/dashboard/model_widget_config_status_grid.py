@@ -1,24 +1,86 @@
 # SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
 #
 # SPDX-License-Identifier: Apache-2.0
-"""Status grid widget configuration model."""
+"""Status grid widget configuration model.
 
+This module defines the configuration for status grid dashboard widgets,
+which display a grid of status indicators for monitoring multiple systems,
+services, or components at a glance.
+
+Example:
+    Create a status grid for service health::
+
+        from omnibase_core.models.dashboard import (
+            ModelWidgetConfigStatusGrid,
+            ModelStatusItemConfig,
+        )
+
+        config = ModelWidgetConfigStatusGrid(
+            items=(
+                ModelStatusItemConfig(key="api", label="API Server", icon="server"),
+                ModelStatusItemConfig(key="db", label="Database", icon="database"),
+                ModelStatusItemConfig(key="cache", label="Redis Cache", icon="cache"),
+            ),
+            columns=3,
+            status_colors={
+                "healthy": "#22c55e",
+                "degraded": "#eab308",
+                "down": "#ef4444",
+            },
+        )
+"""
+
+import re
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums import EnumWidgetType
 from omnibase_core.models.dashboard.model_status_item_config import (
     ModelStatusItemConfig,
 )
 
-__all__ = ["ModelWidgetConfigStatusGrid"]
+__all__ = ("ModelWidgetConfigStatusGrid",)
+
+#: Pattern for valid hex color formats: #RGB, #RRGGBB, #RGBA, #RRGGBBAA
+HEX_COLOR_PATTERN = re.compile(
+    r"^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{4}|[0-9a-fA-F]{8})$"
+)
 
 
 class ModelWidgetConfigStatusGrid(BaseModel):
-    """Status grid widget configuration.
+    """Configuration for status grid dashboard widgets.
 
-    Displays a grid of status indicators for multiple items.
+    Displays a grid of status indicators, ideal for monitoring the health
+    of multiple systems, services, or components. Each item shows a status
+    value with color-coded visualization based on the configured color mapping.
+
+    The status_colors mapping defines how status values are rendered. Any
+    status value not in the mapping uses the "unknown" color (gray by default).
+
+    Attributes:
+        config_kind: Literal discriminator value, always "status_grid".
+        widget_type: Widget type enum, always STATUS_GRID.
+        items: Tuple of status item configurations to display in the grid.
+        columns: Number of columns in the grid layout (1-12).
+        show_labels: Whether to display text labels under each indicator.
+        compact: Whether to use compact mode with smaller indicators.
+        status_colors: Mapping of status values to hex color codes. Default
+            includes "healthy" (green), "warning" (yellow), "error" (red),
+            and "unknown" (gray).
+
+    Raises:
+        ValueError: If any color in status_colors is not a valid hex format.
+
+    Example:
+        Compact 4-column grid::
+
+            config = ModelWidgetConfigStatusGrid(
+                items=(item1, item2, item3, item4),
+                columns=4,
+                compact=True,
+                show_labels=False,
+            )
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
@@ -44,3 +106,15 @@ class ModelWidgetConfigStatusGrid(BaseModel):
         },
         description="Status value to color mapping",
     )
+
+    @field_validator("status_colors")
+    @classmethod
+    def validate_status_colors(cls, v: dict[str, str]) -> dict[str, str]:
+        """Validate that all color values are valid hex color codes."""
+        for status, color in v.items():
+            if not HEX_COLOR_PATTERN.match(color):
+                raise ValueError(
+                    f"Invalid hex color format for status '{status}': {color}. "
+                    "Expected #RGB, #RRGGBB, #RGBA, or #RRGGBBAA"
+                )
+        return v

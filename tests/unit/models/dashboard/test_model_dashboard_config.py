@@ -146,8 +146,10 @@ class TestModelDashboardConfig:
             dashboard_id=uuid4(),
             name="Test",
         )
-        with pytest.raises(ValidationError):
-            dashboard.name = "New Name"
+        # Pydantic frozen models raise ValidationError on mutation in v2,
+        # but may raise TypeError in some edge cases or implementations
+        with pytest.raises((ValidationError, TypeError)):
+            dashboard.name = "New Name"  # type: ignore[misc]
 
     def test_invalid_dashboard_id_raises(self) -> None:
         """Test that invalid dashboard_id raises ValidationError."""

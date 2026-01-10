@@ -7,7 +7,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-__all__ = ["ModelTableColumnConfig"]
+__all__ = ("ModelTableColumnConfig",)
 
 
 class ModelTableColumnConfig(BaseModel):
@@ -24,7 +24,9 @@ class ModelTableColumnConfig(BaseModel):
 
     key: str = Field(..., description="Data key for this column")
     header: str = Field(..., description="Column header display text")
-    width: int | None = Field(default=None, description="Column width in pixels")
+    width: int | None = Field(
+        default=None, ge=1, description="Column width in pixels (minimum 1 when set)"
+    )
     sortable: bool = Field(default=True, description="Allow sorting by this column")
     align: Literal["left", "center", "right"] = Field(
         default="left", description="Text alignment"

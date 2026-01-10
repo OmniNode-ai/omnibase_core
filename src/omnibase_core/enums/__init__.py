@@ -298,8 +298,6 @@ from .enum_version_status import EnumVersionStatus
 
 # Violation severity enum (OMN-1195)
 from .enum_violation_severity import EnumViolationSeverity
-
-# Widget type enum (OMN-1284)
 from .enum_widget_type import EnumWidgetType
 
 # Workflow-related enums

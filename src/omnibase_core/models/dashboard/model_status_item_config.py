@@ -5,7 +5,7 @@
 
 from pydantic import BaseModel, ConfigDict, Field
 
-__all__ = ["ModelStatusItemConfig"]
+__all__ = ("ModelStatusItemConfig",)
 
 
 class ModelStatusItemConfig(BaseModel):

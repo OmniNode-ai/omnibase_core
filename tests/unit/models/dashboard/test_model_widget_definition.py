@@ -233,47 +233,27 @@ class TestModelWidgetDefinition:
                 config=_make_pie_chart_config(),
             )
 
-    def test_layout_constraints(self) -> None:
+    @pytest.mark.parametrize(
+        ("field", "value", "description"),
+        [
+            ("row", -1, "row must be >= 0"),
+            ("col", -1, "col must be >= 0"),
+            ("width", 0, "width must be >= 1"),
+            ("width", 13, "width must be <= 12"),
+            ("height", 0, "height must be >= 1"),
+        ],
+    )
+    def test_layout_constraints(self, field: str, value: int, description: str) -> None:
         """Test layout field constraints."""
         pie_config = _make_pie_chart_config()
-        # Test row and col must be >= 0
+        kwargs = {
+            "widget_id": uuid4(),
+            "title": "Test",
+            "config": pie_config,
+            field: value,
+        }
         with pytest.raises(ValidationError):
-            ModelWidgetDefinition(
-                widget_id=uuid4(),
-                title="Test",
-                config=pie_config,
-                row=-1,
-            )
-        with pytest.raises(ValidationError):
-            ModelWidgetDefinition(
-                widget_id=uuid4(),
-                title="Test",
-                config=pie_config,
-                col=-1,
-            )
-        # Test width must be >= 1 and <= 12
-        with pytest.raises(ValidationError):
-            ModelWidgetDefinition(
-                widget_id=uuid4(),
-                title="Test",
-                config=pie_config,
-                width=0,
-            )
-        with pytest.raises(ValidationError):
-            ModelWidgetDefinition(
-                widget_id=uuid4(),
-                title="Test",
-                config=pie_config,
-                width=13,
-            )
-        # Test height must be >= 1
-        with pytest.raises(ValidationError):
-            ModelWidgetDefinition(
-                widget_id=uuid4(),
-                title="Test",
-                config=pie_config,
-                height=0,
-            )
+            ModelWidgetDefinition(**kwargs)  # type: ignore[arg-type]
 
     def test_optional_description(self) -> None:
         """Test optional description field."""
@@ -364,25 +344,11 @@ class TestModelWidgetDefinition:
         )
         assert str(widget.widget_id) == uuid_str
 
-    def test_chart_validation_line_requires_series(self) -> None:
-        """Test that line chart type requires at least one series."""
+    @pytest.mark.parametrize("chart_type", ["line", "bar", "area", "scatter"])
+    def test_chart_validation_requires_series(self, chart_type: str) -> None:
+        """Test that non-pie chart types require at least one series."""
         with pytest.raises(ValidationError, match="requires at least one series"):
-            ModelWidgetConfigChart(chart_type="line", series=())
-
-    def test_chart_validation_bar_requires_series(self) -> None:
-        """Test that bar chart type requires at least one series."""
-        with pytest.raises(ValidationError, match="requires at least one series"):
-            ModelWidgetConfigChart(chart_type="bar", series=())
-
-    def test_chart_validation_area_requires_series(self) -> None:
-        """Test that area chart type requires at least one series."""
-        with pytest.raises(ValidationError, match="requires at least one series"):
-            ModelWidgetConfigChart(chart_type="area", series=())
-
-    def test_chart_validation_scatter_requires_series(self) -> None:
-        """Test that scatter chart type requires at least one series."""
-        with pytest.raises(ValidationError, match="requires at least one series"):
-            ModelWidgetConfigChart(chart_type="scatter", series=())
+            ModelWidgetConfigChart(chart_type=chart_type, series=())
 
     def test_chart_validation_pie_allows_empty_series(self) -> None:
         """Test that pie chart type allows empty series."""
@@ -390,11 +356,12 @@ class TestModelWidgetDefinition:
         assert config.chart_type == "pie"
         assert config.series == ()
 
-    def test_chart_validation_line_with_series_succeeds(self) -> None:
-        """Test that line chart with series is valid."""
+    @pytest.mark.parametrize("chart_type", ["line", "bar", "area", "scatter"])
+    def test_chart_validation_with_series_succeeds(self, chart_type: str) -> None:
+        """Test that chart types with series are valid."""
         series = (ModelChartSeriesConfig(name="Test", data_key="value"),)
-        config = ModelWidgetConfigChart(chart_type="line", series=series)
-        assert config.chart_type == "line"
+        config = ModelWidgetConfigChart(chart_type=chart_type, series=series)
+        assert config.chart_type == chart_type
         assert len(config.series) == 1
 
     def test_metric_card_validation_show_trend_requires_trend_key(self) -> None:

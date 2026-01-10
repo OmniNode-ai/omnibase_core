@@ -7,7 +7,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-__all__ = ["ModelCapabilityView"]
+__all__ = ("ModelCapabilityView",)
 
 
 class ModelCapabilityView(BaseModel):

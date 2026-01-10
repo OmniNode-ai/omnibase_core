@@ -3,9 +3,11 @@
 # SPDX-License-Identifier: Apache-2.0
 """Chart axis configuration model."""
 
-from pydantic import BaseModel, ConfigDict, Field
+from typing import Self
 
-__all__ = ["ModelChartAxisConfig"]
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+__all__ = ("ModelChartAxisConfig",)
 
 
 class ModelChartAxisConfig(BaseModel):
@@ -23,3 +25,16 @@ class ModelChartAxisConfig(BaseModel):
     min_value: float | None = Field(default=None, description="Minimum axis value")
     max_value: float | None = Field(default=None, description="Maximum axis value")
     show_grid: bool = Field(default=True, description="Show grid lines")
+
+    @model_validator(mode="after")
+    def validate_min_less_than_max(self) -> Self:
+        """Validate that min_value is less than max_value when both are set."""
+        if (
+            self.min_value is not None
+            and self.max_value is not None
+            and self.min_value >= self.max_value
+        ):
+            raise ValueError(
+                f"min_value ({self.min_value}) must be less than max_value ({self.max_value})"
+            )
+        return self

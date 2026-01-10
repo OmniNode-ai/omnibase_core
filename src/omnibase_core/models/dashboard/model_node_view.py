@@ -5,7 +5,7 @@
 
 from pydantic import BaseModel, ConfigDict, Field
 
-__all__ = ["ModelNodeView"]
+__all__ = ("ModelNodeView",)
 
 
 class ModelNodeView(BaseModel):
