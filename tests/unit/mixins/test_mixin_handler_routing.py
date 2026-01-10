@@ -27,8 +27,10 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_execution_shape import EnumMessageCategory
 from omnibase_core.enums.enum_node_kind import EnumNodeKind
 from omnibase_core.mixins.mixin_handler_routing import MixinHandlerRouting
-from omnibase_core.models.contracts.subcontracts.model_handler_routing_subcontract import (
+from omnibase_core.models.contracts.subcontracts.model_handler_routing_entry import (
     ModelHandlerRoutingEntry,
+)
+from omnibase_core.models.contracts.subcontracts.model_handler_routing_subcontract import (
     ModelHandlerRoutingSubcontract,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -202,6 +204,30 @@ class MockServiceHandlerRegistry:
             The handler if found, None otherwise.
         """
         return self._handlers.get(handler_id)
+
+    def get_handlers(
+        self,
+        category: EnumMessageCategory,
+        message_type: str | None = None,
+    ) -> list[MockMessageHandler]:
+        """Get handlers matching the given category and optional message type.
+
+        This method mirrors ProtocolHandlerRegistry.get_handlers to enable
+        proper protocol compatibility for testing.
+
+        Args:
+            category: The message category to filter by.
+            message_type: Optional specific message type to filter by.
+
+        Returns:
+            List of matching handlers, or empty list if none match.
+        """
+        matching: list[MockMessageHandler] = []
+        for handler in self._handlers.values():
+            if handler.category == category:
+                if message_type is None or message_type in handler.message_types:
+                    matching.append(handler)
+        return matching
 
 
 class TestNodeWithMixin(MixinHandlerRouting):
@@ -1242,7 +1268,7 @@ class TestTopicPatternPerformanceOptimization:
 
     Verifies that:
     - Patterns are pre-compiled to regex at initialization time
-    - Routing results are cached with LRU cache
+    - Routing results are cached per-instance (FIFO eviction, thread-safe)
     - Cache is properly cleared on re-initialization
     """
 
@@ -1270,51 +1296,55 @@ class TestTopicPatternPerformanceOptimization:
         mock_registry: MockServiceHandlerRegistry,
         topic_pattern_routing: ModelHandlerRoutingSubcontract,
     ) -> None:
-        """Test that routing results are cached after first lookup."""
+        """Test that routing results are cached after first lookup.
+
+        Uses per-instance _topic_pattern_cache dict for caching.
+        """
         node = TestNodeWithMixin()
         node._init_handler_routing(topic_pattern_routing, mock_registry)
 
-        # Get initial cache info
-        cache_info_before = node._get_handler_keys_for_topic_pattern.cache_info()
-        assert cache_info_before.hits == 0
-        assert cache_info_before.misses == 0
+        # Per-instance cache should be empty initially
+        assert len(node._topic_pattern_cache) == 0
 
-        # First lookup - should be a cache miss
+        # First lookup - should populate cache
         node.route_to_handlers("events.user.created", EnumMessageCategory.EVENT)
-        cache_info_after_first = node._get_handler_keys_for_topic_pattern.cache_info()
-        assert cache_info_after_first.misses == 1
-        assert cache_info_after_first.hits == 0
+        assert len(node._topic_pattern_cache) == 1
+        assert "events.user.created" in node._topic_pattern_cache
 
-        # Second lookup with same key - should be a cache hit
+        # Second lookup with same key - should use cached result
         node.route_to_handlers("events.user.created", EnumMessageCategory.EVENT)
-        cache_info_after_second = node._get_handler_keys_for_topic_pattern.cache_info()
-        assert cache_info_after_second.misses == 1
-        assert cache_info_after_second.hits == 1
+        # Cache size should still be 1 (hit, not miss)
+        assert len(node._topic_pattern_cache) == 1
+
+        # Third lookup with different key - should add to cache
+        node.route_to_handlers("events.order.completed", EnumMessageCategory.EVENT)
+        assert len(node._topic_pattern_cache) == 2
+        assert "events.order.completed" in node._topic_pattern_cache
 
     def test_cache_cleared_on_reinitialization(
         self,
         mock_registry: MockServiceHandlerRegistry,
         topic_pattern_routing: ModelHandlerRoutingSubcontract,
     ) -> None:
-        """Test that cache is cleared when routing is re-initialized."""
+        """Test that cache is cleared when routing is re-initialized.
+
+        Uses per-instance _topic_pattern_cache dict which is cleared
+        during re-initialization.
+        """
         node = TestNodeWithMixin()
         node._init_handler_routing(topic_pattern_routing, mock_registry)
 
         # Populate cache
         node.route_to_handlers("events.user.created", EnumMessageCategory.EVENT)
         node.route_to_handlers("events.user.updated", EnumMessageCategory.EVENT)
-        cache_info_before = node._get_handler_keys_for_topic_pattern.cache_info()
-        assert cache_info_before.currsize > 0
+        assert len(node._topic_pattern_cache) > 0
 
         # Re-initialize with same routing
         node._routing_initialized = False  # Allow re-init
         node._init_handler_routing(topic_pattern_routing, mock_registry)
 
         # Cache should be cleared
-        cache_info_after = node._get_handler_keys_for_topic_pattern.cache_info()
-        assert cache_info_after.currsize == 0
-        assert cache_info_after.hits == 0
-        assert cache_info_after.misses == 0
+        assert len(node._topic_pattern_cache) == 0
 
     def test_no_compiled_patterns_for_non_topic_strategy(
         self,

@@ -40,7 +40,7 @@ Typing: Strongly typed with strategic use of Protocol for handler resolution.
 Performance Characteristics (topic_pattern strategy):
     - Patterns are pre-compiled to regex at initialization time (O(n) once)
     - Routing lookups use compiled regex matching (O(n) per lookup, n = patterns)
-    - Routing results are cached with LRU cache (128 entries by default)
+    - Routing results are cached per-instance (128 entries with FIFO eviction)
     - Expected scale: Optimized for 10-100 patterns; performs well up to 1000+
     - For very high-frequency routing (>10k/sec), consider payload_type_match
       which uses O(1) dict lookup instead of O(n) pattern matching.
@@ -50,7 +50,6 @@ from __future__ import annotations
 
 import fnmatch
 import re
-from functools import lru_cache
 from re import Pattern
 from typing import TYPE_CHECKING
 
@@ -74,6 +73,9 @@ from omnibase_core.logging.logging_structured import (
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 __all__ = ["MixinHandlerRouting"]
+
+# Maximum size for per-instance topic pattern cache (FIFO eviction when exceeded)
+_TOPIC_PATTERN_CACHE_MAX_SIZE = 128
 
 
 class MixinHandlerRouting:
@@ -119,6 +121,7 @@ class MixinHandlerRouting:
     _default_handler_key: str | None
     _routing_initialized: bool
     _compiled_patterns: list[tuple[Pattern[str], list[str]]]
+    _topic_pattern_cache: dict[str, tuple[str, ...] | None]
 
     def __init__(self, **kwargs: object) -> None:
         """
@@ -136,6 +139,7 @@ class MixinHandlerRouting:
         self._default_handler_key = None
         self._routing_initialized = False
         self._compiled_patterns = []
+        self._topic_pattern_cache = {}
 
     def _init_handler_routing(
         self,
@@ -180,8 +184,8 @@ class MixinHandlerRouting:
             self._default_handler_key = None
             self._compiled_patterns = []
             self._routing_initialized = True
-            # Clear any cached routing results from previous initialization
-            self._get_handler_keys_for_topic_pattern.cache_clear()
+            # Clear per-instance cache from previous initialization
+            self._topic_pattern_cache = {}
             return
 
         # Build routing table from contract
@@ -200,8 +204,8 @@ class MixinHandlerRouting:
                 compiled = re.compile(regex_pattern)
                 self._compiled_patterns.append((compiled, handler_keys))
 
-        # Clear any cached routing results from previous initialization
-        self._get_handler_keys_for_topic_pattern.cache_clear()
+        # Clear per-instance cache from previous initialization
+        self._topic_pattern_cache = {}
         self._routing_initialized = True
 
     def route_to_handlers(
@@ -342,16 +346,15 @@ class MixinHandlerRouting:
 
         return []
 
-    @lru_cache(maxsize=128)
     def _get_handler_keys_for_topic_pattern(
         self, routing_key: str
     ) -> tuple[str, ...] | None:
         """
         Get handler keys for a routing key using pre-compiled topic patterns.
 
-        This is an LRU-cached helper method that matches the routing_key against
-        pre-compiled regex patterns. Results are cached to avoid repeated regex
-        matching for frequently-used routing keys.
+        Uses a per-instance cache to avoid repeated regex matching for
+        frequently-used routing keys. This is thread-safe for read access
+        after initialization (dict operations are atomic in CPython).
 
         Args:
             routing_key: The topic name to match against patterns.
@@ -359,23 +362,44 @@ class MixinHandlerRouting:
         Returns:
             tuple[str, ...] | None: Tuple of handler keys if a pattern matches,
                 None if no pattern matches. Returns tuple (immutable) for cache
-                compatibility.
+                safety.
 
         Performance:
             - Cache hit: O(1)
             - Cache miss: O(n) where n = number of patterns
-            - Cache size: 128 entries (LRU eviction)
+            - Cache size: 128 entries (FIFO eviction when exceeded)
 
         Note:
             This method uses first-match-wins semantics: patterns are evaluated
             in the order they appear in _compiled_patterns, and the first matching
             pattern's handlers are returned.
+
+        Thread Safety:
+            Uses per-instance cache instead of @lru_cache to avoid memory leaks
+            and thread safety issues that arise from using @lru_cache on instance
+            methods. The cache is safe for concurrent reads after initialization.
         """
+        # Check per-instance cache first
+        if routing_key in self._topic_pattern_cache:
+            return self._topic_pattern_cache[routing_key]
+
+        # Cache miss - compute result by matching against pre-compiled patterns
+        result: tuple[str, ...] | None = None
         for compiled_regex, handler_keys in self._compiled_patterns:
             if compiled_regex.match(routing_key):
                 # Return as tuple for cache immutability
-                return tuple(handler_keys)
-        return None
+                result = tuple(handler_keys)
+                break
+
+        # FIFO eviction if cache is full (simple bounded cache)
+        if len(self._topic_pattern_cache) >= _TOPIC_PATTERN_CACHE_MAX_SIZE:
+            # Remove first (oldest) item - Python 3.7+ dicts maintain insertion order
+            first_key = next(iter(self._topic_pattern_cache))
+            del self._topic_pattern_cache[first_key]
+
+        # Store result in cache (including None for no-match)
+        self._topic_pattern_cache[routing_key] = result
+        return result
 
     def validate_handler_routing(self) -> list[str]:
         """
