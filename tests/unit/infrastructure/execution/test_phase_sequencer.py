@@ -23,6 +23,7 @@ Test Categories:
 from __future__ import annotations
 
 import pytest
+from pydantic import ValidationError
 
 from omnibase_core.enums.enum_handler_execution_phase import EnumHandlerExecutionPhase
 from omnibase_core.infrastructure.execution.phase_sequencer import (
@@ -104,7 +105,7 @@ class TestValidatePhaseList:
 
     def test_default_phases_are_valid(self) -> None:
         """Test that DEFAULT_EXECUTION_PHASES is valid."""
-        assert validate_phase_list(DEFAULT_EXECUTION_PHASES) is True
+        assert validate_phase_list(list(DEFAULT_EXECUTION_PHASES)) is True
 
     def test_single_phase_is_valid(self) -> None:
         """Test that a single valid phase is valid."""
@@ -153,7 +154,7 @@ class TestValidatePhaseListStrict:
 
     def test_valid_list_returns_true_and_none(self) -> None:
         """Test that valid lists return (True, None)."""
-        is_valid, error = validate_phase_list_strict(DEFAULT_EXECUTION_PHASES)
+        is_valid, error = validate_phase_list_strict(list(DEFAULT_EXECUTION_PHASES))
         assert is_valid is True
         assert error is None
 
@@ -437,7 +438,7 @@ class TestCreateExecutionPlan:
     def test_invalid_phase_list_raises_error(self) -> None:
         """Test that invalid phase list raises ModelOnexError."""
         # Create profile with invalid phase order
-        profile = ModelExecutionProfile(phases=["execute", "before"])  # Wrong order
+        profile = ModelExecutionProfile(phases=("execute", "before"))  # Wrong order
 
         with pytest.raises(ModelOnexError) as exc_info:
             create_execution_plan(profile, {})
@@ -451,7 +452,7 @@ class TestCreateExecutionPlanEdgeCases:
 
     def test_subset_of_phases(self) -> None:
         """Test with profile containing only subset of phases."""
-        profile = ModelExecutionProfile(phases=["preflight", "execute", "finalize"])
+        profile = ModelExecutionProfile(phases=("preflight", "execute", "finalize"))
         mapping = {
             "h1": EnumHandlerExecutionPhase.PREFLIGHT,
             "h2": EnumHandlerExecutionPhase.EXECUTE,
@@ -469,7 +470,7 @@ class TestCreateExecutionPlanEdgeCases:
     def test_handlers_for_missing_phase(self) -> None:
         """Test that handlers for missing phases are ignored."""
         # Profile only has execute phase
-        profile = ModelExecutionProfile(phases=["execute"])
+        profile = ModelExecutionProfile(phases=("execute",))
         # But we map handlers to before and after too
         mapping = {
             "h_before": EnumHandlerExecutionPhase.BEFORE,
@@ -688,7 +689,7 @@ class TestErrorHandling:
 
     def test_invalid_phase_in_profile(self) -> None:
         """Test that invalid phase in profile raises error."""
-        profile = ModelExecutionProfile(phases=["invalid_phase"])
+        profile = ModelExecutionProfile(phases=("invalid_phase",))
 
         with pytest.raises(ModelOnexError) as exc_info:
             create_execution_plan(profile, {})
@@ -697,7 +698,7 @@ class TestErrorHandling:
 
     def test_error_contains_context(self) -> None:
         """Test that error contains useful context."""
-        profile = ModelExecutionProfile(phases=["execute", "before"])  # Wrong order
+        profile = ModelExecutionProfile(phases=("execute", "before"))  # Wrong order
 
         with pytest.raises(ModelOnexError) as exc_info:
             create_execution_plan(profile, {})
@@ -712,8 +713,14 @@ class TestErrorHandling:
             assert "phases" in error.context
 
     def test_duplicate_phase_raises_error(self) -> None:
-        """Test that duplicate phase raises error."""
-        profile = ModelExecutionProfile(phases=["execute", "execute"])
+        """Test that duplicate phase raises error during model creation.
 
-        with pytest.raises(ModelOnexError):
-            create_execution_plan(profile, {})
+        ModelExecutionProfile has a Pydantic validator that prevents duplicate
+        phases at model instantiation time, raising ValidationError.
+        """
+        with pytest.raises(ValidationError) as exc_info:
+            ModelExecutionProfile(phases=("execute", "execute"))
+
+        # Verify the error message mentions uniqueness
+        error_str = str(exc_info.value)
+        assert "unique" in error_str.lower()

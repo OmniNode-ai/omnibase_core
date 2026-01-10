@@ -437,8 +437,8 @@ class ExecutionResolver:
                 conflict_type="missing_dependency",
                 severity=severity,
                 message=f"Handler '{value}' referenced in constraint not found",
-                handler_ids=[source_handler],
-                constraint_refs=[ref],
+                handler_ids=(source_handler,),
+                constraint_refs=(ref,),
                 suggested_resolution=f"Ensure handler '{value}' is included in contracts",
             )
 
@@ -451,8 +451,8 @@ class ExecutionResolver:
                 conflict_type="missing_dependency",
                 severity=severity,
                 message=f"No handlers provide capability '{value}'",
-                handler_ids=[source_handler],
-                constraint_refs=[ref],
+                handler_ids=(source_handler,),
+                constraint_refs=(ref,),
                 suggested_resolution=f"Add a handler that provides capability '{value}'",
             )
 
@@ -465,8 +465,8 @@ class ExecutionResolver:
                 conflict_type="missing_dependency",
                 severity=severity,
                 message=f"No handlers have tag '{value}'",
-                handler_ids=[source_handler],
-                constraint_refs=[ref],
+                handler_ids=(source_handler,),
+                constraint_refs=(ref,),
                 suggested_resolution=f"Add tag '{value}' to a handler",
             )
 
@@ -550,8 +550,8 @@ class ExecutionResolver:
                             conflict_type="cycle",
                             severity="error",
                             message=f"Circular dependency detected: {cycle_str}",
-                            handler_ids=cycle[:-1],  # Unique handlers in cycle
-                            cycle_path=cycle,
+                            handler_ids=tuple(cycle[:-1]),  # Unique handlers in cycle
+                            cycle_path=tuple(cycle),
                             suggested_resolution=(
                                 "Remove one of the dependencies to break the cycle"
                             ),
@@ -692,7 +692,7 @@ class ExecutionResolver:
     def _assign_to_phases(
         self,
         sorted_handlers: list[str],
-        profile_phases: list[str],
+        profile_phases: tuple[str, ...],
         handler_info_map: dict[str, _HandlerInfo],
     ) -> list[ModelPhaseStep]:
         """

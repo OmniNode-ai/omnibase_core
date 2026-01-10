@@ -46,16 +46,16 @@ class TestModelExecutionProfile:
     """Tests for ModelExecutionProfile model."""
 
     def test_default_phases(self) -> None:
-        """Test default execution phases."""
+        """Test default execution phases (stored as tuple for immutability)."""
         profile = ModelExecutionProfile()
-        expected_phases = [
+        expected_phases = (
             "preflight",
             "before",
             "execute",
             "after",
             "emit",
             "finalize",
-        ]
+        )
         assert profile.phases == expected_phases
 
     def test_default_ordering_policy(self) -> None:
@@ -65,10 +65,11 @@ class TestModelExecutionProfile:
         assert profile.ordering_policy.strategy == "topological_sort"
 
     def test_custom_phases(self) -> None:
-        """Test custom phases can be set."""
-        custom_phases = ["init", "execute", "cleanup"]
+        """Test custom phases can be set (coerced to tuple)."""
+        custom_phases = ("init", "execute", "cleanup")
         profile = ModelExecutionProfile(phases=custom_phases)
-        assert profile.phases == custom_phases
+        # Lists are coerced to tuples for true immutability
+        assert profile.phases == ("init", "execute", "cleanup")
 
 
 @pytest.mark.unit

@@ -77,7 +77,7 @@ def get_canonical_phase_order() -> list[EnumHandlerExecutionPhase]:
     return EnumHandlerExecutionPhase.get_ordered_phases()
 
 
-def validate_phase_list(phases: list[str]) -> bool:
+def validate_phase_list(phases: list[str] | tuple[str, ...]) -> bool:
     """
     Validate that a phase list contains valid canonical phases in correct order.
 
@@ -124,7 +124,9 @@ def validate_phase_list(phases: list[str]) -> bool:
     return True
 
 
-def validate_phase_list_strict(phases: list[str]) -> tuple[bool, str | None]:
+def validate_phase_list_strict(
+    phases: list[str] | tuple[str, ...],
+) -> tuple[bool, str | None]:
     """
     Validate phase list with detailed error message.
 
@@ -471,7 +473,7 @@ def create_default_execution_plan(
         True
     """
     profile = ModelExecutionProfile(
-        phases=list(DEFAULT_EXECUTION_PHASES),
+        phases=DEFAULT_EXECUTION_PHASES,
         ordering_policy=ModelExecutionOrderingPolicy(),
     )
     return create_execution_plan(profile, handler_phase_mapping, created_at=created_at)
