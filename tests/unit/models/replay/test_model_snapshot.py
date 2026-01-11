@@ -67,6 +67,84 @@ class TestModelInputSnapshotCreation:
 
 
 @pytest.mark.unit
+class TestModelInputSnapshotSizeValidation:
+    """Test non-negative size validation for ModelInputSnapshot."""
+
+    def test_validation_fails_when_original_size_bytes_is_negative(self) -> None:
+        """Validation fails if original_size_bytes is negative."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelInputSnapshot(
+                raw={"key": "value"},
+                truncated=False,
+                original_size_bytes=-1,
+                display_size_bytes=100,
+            )
+        errors = exc_info.value.errors()
+        assert any(e["loc"] == ("original_size_bytes",) for e in errors)
+        assert any("greater than or equal to 0" in str(e["msg"]) for e in errors)
+
+    def test_validation_fails_when_display_size_bytes_is_negative(self) -> None:
+        """Validation fails if display_size_bytes is negative."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelInputSnapshot(
+                raw={"key": "value"},
+                truncated=False,
+                original_size_bytes=100,
+                display_size_bytes=-1,
+            )
+        errors = exc_info.value.errors()
+        assert any(e["loc"] == ("display_size_bytes",) for e in errors)
+        assert any("greater than or equal to 0" in str(e["msg"]) for e in errors)
+
+    def test_validation_fails_when_both_size_bytes_are_negative(self) -> None:
+        """Validation fails if both size fields are negative."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelInputSnapshot(
+                raw={"key": "value"},
+                truncated=False,
+                original_size_bytes=-10,
+                display_size_bytes=-5,
+            )
+        errors = exc_info.value.errors()
+        assert any(e["loc"] == ("original_size_bytes",) for e in errors)
+        assert any(e["loc"] == ("display_size_bytes",) for e in errors)
+
+    def test_validation_fails_when_original_size_bytes_is_large_negative(self) -> None:
+        """Validation fails if original_size_bytes is a large negative number."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelInputSnapshot(
+                raw={"key": "value"},
+                truncated=False,
+                original_size_bytes=-999999,
+                display_size_bytes=100,
+            )
+        errors = exc_info.value.errors()
+        assert any(e["loc"] == ("original_size_bytes",) for e in errors)
+
+    def test_validation_succeeds_when_size_bytes_are_zero(self) -> None:
+        """Validation succeeds when both size fields are zero (edge case)."""
+        snapshot = ModelInputSnapshot(
+            raw={},
+            truncated=False,
+            original_size_bytes=0,
+            display_size_bytes=0,
+        )
+        assert snapshot.original_size_bytes == 0
+        assert snapshot.display_size_bytes == 0
+
+    def test_validation_succeeds_when_size_bytes_are_positive(self) -> None:
+        """Validation succeeds when both size fields are positive."""
+        snapshot = ModelInputSnapshot(
+            raw={"key": "value"},
+            truncated=False,
+            original_size_bytes=100,
+            display_size_bytes=100,
+        )
+        assert snapshot.original_size_bytes == 100
+        assert snapshot.display_size_bytes == 100
+
+
+@pytest.mark.unit
 class TestModelInputSnapshotTruncationValidation:
     """Test truncation constraint validation for ModelInputSnapshot."""
 
@@ -283,6 +361,90 @@ class TestModelOutputSnapshotCreation:
         errors = exc_info.value.errors()
         assert any(e["loc"] == ("output_hash",) for e in errors)
         assert any("at least 1 character" in str(e["msg"]).lower() for e in errors)
+
+
+@pytest.mark.unit
+class TestModelOutputSnapshotSizeValidation:
+    """Test non-negative size validation for ModelOutputSnapshot."""
+
+    def test_validation_fails_when_original_size_bytes_is_negative(self) -> None:
+        """Validation fails if original_size_bytes is negative."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelOutputSnapshot(
+                raw={"key": "value"},
+                truncated=False,
+                original_size_bytes=-1,
+                display_size_bytes=100,
+                output_hash="sha256:test",
+            )
+        errors = exc_info.value.errors()
+        assert any(e["loc"] == ("original_size_bytes",) for e in errors)
+        assert any("greater than or equal to 0" in str(e["msg"]) for e in errors)
+
+    def test_validation_fails_when_display_size_bytes_is_negative(self) -> None:
+        """Validation fails if display_size_bytes is negative."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelOutputSnapshot(
+                raw={"key": "value"},
+                truncated=False,
+                original_size_bytes=100,
+                display_size_bytes=-1,
+                output_hash="sha256:test",
+            )
+        errors = exc_info.value.errors()
+        assert any(e["loc"] == ("display_size_bytes",) for e in errors)
+        assert any("greater than or equal to 0" in str(e["msg"]) for e in errors)
+
+    def test_validation_fails_when_both_size_bytes_are_negative(self) -> None:
+        """Validation fails if both size fields are negative."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelOutputSnapshot(
+                raw={"key": "value"},
+                truncated=False,
+                original_size_bytes=-10,
+                display_size_bytes=-5,
+                output_hash="sha256:test",
+            )
+        errors = exc_info.value.errors()
+        assert any(e["loc"] == ("original_size_bytes",) for e in errors)
+        assert any(e["loc"] == ("display_size_bytes",) for e in errors)
+
+    def test_validation_fails_when_original_size_bytes_is_large_negative(self) -> None:
+        """Validation fails if original_size_bytes is a large negative number."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelOutputSnapshot(
+                raw={"key": "value"},
+                truncated=False,
+                original_size_bytes=-999999,
+                display_size_bytes=100,
+                output_hash="sha256:test",
+            )
+        errors = exc_info.value.errors()
+        assert any(e["loc"] == ("original_size_bytes",) for e in errors)
+
+    def test_validation_succeeds_when_size_bytes_are_zero(self) -> None:
+        """Validation succeeds when both size fields are zero (edge case)."""
+        snapshot = ModelOutputSnapshot(
+            raw={},
+            truncated=False,
+            original_size_bytes=0,
+            display_size_bytes=0,
+            output_hash="sha256:empty",
+        )
+        assert snapshot.original_size_bytes == 0
+        assert snapshot.display_size_bytes == 0
+
+    def test_validation_succeeds_when_size_bytes_are_positive(self) -> None:
+        """Validation succeeds when both size fields are positive."""
+        snapshot = ModelOutputSnapshot(
+            raw={"key": "value"},
+            truncated=False,
+            original_size_bytes=100,
+            display_size_bytes=100,
+            output_hash="sha256:test",
+        )
+        assert snapshot.original_size_bytes == 100
+        assert snapshot.display_size_bytes == 100
 
 
 @pytest.mark.unit

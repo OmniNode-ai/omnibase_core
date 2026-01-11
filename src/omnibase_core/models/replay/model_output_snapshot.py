@@ -52,8 +52,12 @@ class ModelOutputSnapshot(MixinTruncationValidation, BaseModel):
 
     raw: dict[str, Any]
     truncated: bool = False
-    original_size_bytes: int
-    display_size_bytes: int
+    original_size_bytes: int = Field(
+        ge=0, description="Size of the original output in bytes (must be >= 0)"
+    )
+    display_size_bytes: int = Field(
+        ge=0, description="Size of the displayed/stored output in bytes (must be >= 0)"
+    )
     output_hash: str = Field(
         min_length=1,
         description=(

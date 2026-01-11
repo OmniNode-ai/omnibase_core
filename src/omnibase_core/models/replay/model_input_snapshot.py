@@ -11,7 +11,7 @@ Thread Safety:
 
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.decorators import allow_dict_any
 from omnibase_core.mixins.mixin_truncation_validation import (
@@ -49,8 +49,12 @@ class ModelInputSnapshot(MixinTruncationValidation, BaseModel):
 
     raw: dict[str, Any]
     truncated: bool = False
-    original_size_bytes: int
-    display_size_bytes: int
+    original_size_bytes: int = Field(
+        ge=0, description="Original size of the input in bytes (must be >= 0)"
+    )
+    display_size_bytes: int = Field(
+        ge=0, description="Size of the displayed/stored input in bytes (must be >= 0)"
+    )
 
 
 __all__ = ["ModelInputSnapshot"]
