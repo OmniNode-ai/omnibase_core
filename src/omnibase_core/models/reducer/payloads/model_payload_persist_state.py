@@ -33,6 +33,7 @@ See Also:
 """
 
 from typing import Literal
+from uuid import UUID
 
 from pydantic import Field
 
@@ -115,4 +116,12 @@ class ModelPayloadPersistState(ModelIntentPayloadBase):
             "the current version before writing to prevent concurrent update conflicts."
         ),
         ge=0,
+    )
+
+    correlation_id: UUID | None = Field(
+        default=None,
+        description=(
+            "Correlation ID from FSMSubcontract for distributed tracing. "
+            "Enables end-to-end tracking of state persistence operations."
+        ),
     )
