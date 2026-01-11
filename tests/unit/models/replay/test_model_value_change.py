@@ -9,7 +9,7 @@ from typing import Any
 import pytest
 from pydantic import ValidationError
 
-from omnibase_core.models.comparison import ModelValueChange
+from omnibase_core.models.replay import ModelValueChange
 
 
 @pytest.mark.unit
@@ -313,7 +313,7 @@ class TestModelValueChangeWithFixture:
         self, sample_value_change: ModelValueChange
     ) -> None:
         """Fixture can be used as a component in ModelOutputDiff."""
-        from omnibase_core.models.comparison import ModelOutputDiff
+        from omnibase_core.models.replay import ModelOutputDiff
 
         diff = ModelOutputDiff(
             values_changed={"root['key']": sample_value_change},

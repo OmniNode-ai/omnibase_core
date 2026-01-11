@@ -14,11 +14,11 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from omnibase_core.models.comparison.model_invariant_comparison_summary import (
+from omnibase_core.models.invariant.model_invariant_result import ModelInvariantResult
+from omnibase_core.models.replay.model_invariant_comparison_summary import (
     ModelInvariantComparisonSummary,
 )
-from omnibase_core.models.comparison.model_output_diff import ModelOutputDiff
-from omnibase_core.models.invariant.model_invariant_result import ModelInvariantResult
+from omnibase_core.models.replay.model_output_diff import ModelOutputDiff
 
 
 class ModelExecutionComparison(BaseModel):
