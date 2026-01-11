@@ -483,28 +483,18 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution, MixinHandlerRouting):
                 op_dict: dict[str, object] = {
                     "operation_name": op.operation_name,
                     "description": op.description,
-                    "io_config": (
-                        op.io_config.model_dump()
-                        if hasattr(op.io_config, "model_dump")
-                        else op.io_config
-                    ),
+                    "io_config": op.io_config.model_dump(),
                     "operation_timeout_ms": timeout_ms,
                     # Include response handling for field extraction
                     "response_handling": (
                         op.response_handling.model_dump()
-                        if hasattr(op.response_handling, "model_dump")
+                        if op.response_handling is not None
                         else {}
                     ),
                     # Include merged retry/circuit breaker/transaction configs
-                    "retry_policy": (
-                        op_retry.model_dump() if hasattr(op_retry, "model_dump") else {}
-                    ),
-                    "circuit_breaker": (
-                        op_cb.model_dump() if hasattr(op_cb, "model_dump") else {}
-                    ),
-                    "transaction_config": (
-                        op_tx.model_dump() if hasattr(op_tx, "model_dump") else {}
-                    ),
+                    "retry_policy": op_retry.model_dump(),
+                    "circuit_breaker": op_cb.model_dump(),
+                    "transaction_config": op_tx.model_dump(),
                 }
                 # TODO (v2.0): Per-operation configs (response_handling, retry_policy,
                 # circuit_breaker) are serialized into operation_data but NOT YET

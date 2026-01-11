@@ -13,7 +13,7 @@ contract configuration rather than hardcoded logic.
 Routing Strategies:
 - payload_type_match: Route by event model class name (orchestrators)
 - operation_match: Route by operation field value (effects)
-- topic_pattern: Route by topic glob pattern matching
+- topic_pattern: Route by topic glob pattern matching (first-match-wins)
 
 Example YAML contract configuration:
     handler_routing:
@@ -67,7 +67,9 @@ class ModelHandlerRoutingSubcontract(BaseModel):
     - operation_match: Route based on operation field in the message.
       Used by EFFECT nodes to dispatch to appropriate I/O handlers.
     - topic_pattern: Route based on glob pattern matching against topic.
-      Used for topic-based subscription routing.
+      Used for topic-based subscription routing. Uses first-match-wins
+      semantics: patterns are evaluated in priority order, and the first
+      matching pattern's handlers are returned.
 
     Example YAML configuration:
         handler_routing:
@@ -131,7 +133,7 @@ class ModelHandlerRoutingSubcontract(BaseModel):
             "Strategy for matching messages to handlers. "
             "payload_type_match: Route by event model class name (orchestrators). "
             "operation_match: Route by operation field (effects). "
-            "topic_pattern: Route by topic glob pattern matching"
+            "topic_pattern: Route by topic glob pattern matching (first-match-wins)"
         ),
     )
 
