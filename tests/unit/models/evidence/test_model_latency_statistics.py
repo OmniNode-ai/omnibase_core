@@ -294,6 +294,85 @@ class TestFromLatencyValuesEdgeCases:
 
 
 @pytest.mark.unit
+class TestPercentileOrderingValidation:
+    """Test percentile ordering validation."""
+
+    def test_valid_baseline_percentile_ordering(self) -> None:
+        """Valid: p50 <= p95 for baseline."""
+        stats = ModelLatencyStatistics(
+            baseline_avg_ms=100.0,
+            baseline_p50_ms=95.0,  # p50 < p95
+            baseline_p95_ms=150.0,
+            replay_avg_ms=120.0,
+            replay_p50_ms=115.0,
+            replay_p95_ms=180.0,
+            delta_avg_ms=20.0,
+            delta_avg_percent=20.0,
+            delta_p50_percent=21.05,
+            delta_p95_percent=20.0,
+        )
+        assert stats.baseline_p50_ms <= stats.baseline_p95_ms
+
+    def test_valid_equal_percentiles(self) -> None:
+        """Valid: p50 == p95 is allowed (same value for all percentiles)."""
+        stats = ModelLatencyStatistics(
+            baseline_avg_ms=100.0,
+            baseline_p50_ms=100.0,  # p50 == p95 is valid
+            baseline_p95_ms=100.0,
+            replay_avg_ms=100.0,
+            replay_p50_ms=100.0,
+            replay_p95_ms=100.0,
+            delta_avg_ms=0.0,
+            delta_avg_percent=0.0,
+            delta_p50_percent=0.0,
+            delta_p95_percent=0.0,
+        )
+        assert stats.baseline_p50_ms == stats.baseline_p95_ms
+
+    def test_invalid_baseline_percentile_ordering_raises(self) -> None:
+        """Invalid: p50 > p95 for baseline raises ModelOnexError."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelLatencyStatistics(
+                baseline_avg_ms=100.0,
+                baseline_p50_ms=200.0,  # p50 > p95 is INVALID
+                baseline_p95_ms=150.0,
+                replay_avg_ms=120.0,
+                replay_p50_ms=115.0,
+                replay_p95_ms=180.0,
+                delta_avg_ms=20.0,
+                delta_avg_percent=20.0,
+                delta_p50_percent=21.05,
+                delta_p95_percent=20.0,
+            )
+
+        assert "Baseline latency percentiles must be ordered" in str(exc_info.value)
+        assert "p50 <= p95" in str(exc_info.value)
+        assert "200" in str(exc_info.value)  # baseline_p50_ms value
+        assert "150" in str(exc_info.value)  # baseline_p95_ms value
+
+    def test_invalid_replay_percentile_ordering_raises(self) -> None:
+        """Invalid: p50 > p95 for replay raises ModelOnexError."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelLatencyStatistics(
+                baseline_avg_ms=100.0,
+                baseline_p50_ms=95.0,
+                baseline_p95_ms=150.0,
+                replay_avg_ms=120.0,
+                replay_p50_ms=200.0,  # p50 > p95 is INVALID
+                replay_p95_ms=180.0,
+                delta_avg_ms=20.0,
+                delta_avg_percent=20.0,
+                delta_p50_percent=21.05,
+                delta_p95_percent=20.0,
+            )
+
+        assert "Replay latency percentiles must be ordered" in str(exc_info.value)
+        assert "p50 <= p95" in str(exc_info.value)
+        assert "200" in str(exc_info.value)  # replay_p50_ms value
+        assert "180" in str(exc_info.value)  # replay_p95_ms value
+
+
+@pytest.mark.unit
 class TestSerialization:
     """Test model serialization."""
 

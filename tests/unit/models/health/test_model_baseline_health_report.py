@@ -304,36 +304,32 @@ class TestDateRangeValidation:
         )
         assert report.corpus_date_range[0] < report.corpus_date_range[1]
 
-    def test_invalid_date_range_start_equals_end(
+    def test_valid_date_range_start_equals_end(
         self,
         healthy_metrics: ModelPerformanceMetrics,
     ) -> None:
-        """Test that equal start and end dates raise ModelOnexError."""
+        """Test that equal start and end dates are valid (same-day range)."""
         same_time = datetime(2024, 1, 15, 10, 0, 0, tzinfo=UTC)
-        with pytest.raises(ModelOnexError) as exc_info:
-            ModelBaselineHealthReport(
-                report_id=uuid4(),
-                generated_at=datetime.now(UTC),
-                current_config={},  # type: ignore[arg-type]
-                config_hash="test",
-                corpus_size=100,
-                corpus_date_range=(same_time, same_time),
-                input_diversity_score=0.5,
-                invariants_checked=[],
-                all_invariants_passing=True,
-                metrics=healthy_metrics,
-                stability_score=0.8,
-                stability_status="stable",
-                stability_details="test",
-                confidence_level=0.8,
-                confidence_reasoning="test",
-            )
+        # Same-day date ranges are valid (start == end is allowed)
+        report = ModelBaselineHealthReport(
+            report_id=uuid4(),
+            generated_at=datetime.now(UTC),
+            current_config={},  # type: ignore[arg-type]
+            config_hash="test",
+            corpus_size=100,
+            corpus_date_range=(same_time, same_time),
+            input_diversity_score=0.5,
+            invariants_checked=[],
+            all_invariants_passing=True,
+            metrics=healthy_metrics,
+            stability_score=0.8,
+            stability_status="stable",
+            stability_details="test",
+            confidence_level=0.8,
+            confidence_reasoning="test",
+        )
 
-        assert "corpus_date_range start must be before end" in str(exc_info.value)
-        assert exc_info.value.context is not None
-        additional_context = exc_info.value.context.get("additional_context", {})
-        assert "start" in additional_context
-        assert "end" in additional_context
+        assert report.corpus_date_range[0] == report.corpus_date_range[1]
 
     def test_invalid_date_range_start_after_end(
         self,
@@ -361,7 +357,9 @@ class TestDateRangeValidation:
                 confidence_reasoning="test",
             )
 
-        assert "corpus_date_range start must be before end" in str(exc_info.value)
+        assert "corpus_date_range start must be before or equal to end" in str(
+            exc_info.value
+        )
         # Verify context contains actual dates
         assert exc_info.value.context is not None
         additional_context = exc_info.value.context.get("additional_context", {})
@@ -398,8 +396,12 @@ class TestDateRangeValidation:
         # Verify ISO format in context
         assert exc_info.value.context is not None
         additional_context = exc_info.value.context.get("additional_context", {})
+        # Start/end are stored as direct kwargs in additional_context
         assert "2024-06-15" in additional_context["start"]
         assert "2024-06-01" in additional_context["end"]
+        # Also verify the error message contains formatted dates
+        assert "2024-06-15" in str(exc_info.value)
+        assert "2024-06-01" in str(exc_info.value)
 
 
 # ============================================================================

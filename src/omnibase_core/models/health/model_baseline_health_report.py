@@ -2,6 +2,28 @@
 Model for baseline health report.
 
 Provides a comprehensive snapshot of system health before proposing changes.
+
+Timezone Handling:
+    All datetime fields in this model accept both naive and timezone-aware
+    datetime objects. For consistency across distributed systems, it is
+    **strongly recommended** to use timezone-aware UTC datetimes:
+
+    .. code-block:: python
+
+        from datetime import UTC, datetime
+
+        report = ModelBaselineHealthReport(
+            generated_at=datetime.now(UTC),
+            corpus_date_range=(datetime(2024, 1, 1, tzinfo=UTC),
+                               datetime(2024, 1, 31, tzinfo=UTC)),
+            ...
+        )
+
+    Using UTC ensures:
+
+    - Consistent ordering when comparing reports across time zones
+    - Correct duration calculations for corpus_date_range
+    - Unambiguous timestamps in logs and audit trails
 """
 
 from datetime import datetime
@@ -11,7 +33,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.errors import ModelOnexError
 from omnibase_core.models.health.model_invariant_status import ModelInvariantStatus
 from omnibase_core.models.health.model_performance_metrics import (
     ModelPerformanceMetrics,
@@ -44,7 +66,7 @@ class ModelBaselineHealthReport(BaseModel):
         confidence_reasoning: Explanation of confidence level.
 
     Example:
-        >>> from datetime import datetime
+        >>> from datetime import UTC, datetime
         >>> from uuid import uuid4
         >>> metrics = ModelPerformanceMetrics(
         ...     avg_latency_ms=150.5,
@@ -56,11 +78,14 @@ class ModelBaselineHealthReport(BaseModel):
         ... )
         >>> report = ModelBaselineHealthReport(
         ...     report_id=uuid4(),
-        ...     generated_at=datetime.now(),
+        ...     generated_at=datetime.now(UTC),
         ...     current_config={"model": "gpt-4"},
         ...     config_hash="abc123def456",
         ...     corpus_size=1000,
-        ...     corpus_date_range=(datetime(2024, 1, 1), datetime(2024, 1, 31)),
+        ...     corpus_date_range=(
+        ...         datetime(2024, 1, 1, tzinfo=UTC),
+        ...         datetime(2024, 1, 31, tzinfo=UTC),
+        ...     ),
         ...     input_diversity_score=0.85,
         ...     invariants_checked=[],
         ...     all_invariants_passing=True,
@@ -83,7 +108,10 @@ class ModelBaselineHealthReport(BaseModel):
     )
     generated_at: datetime = Field(
         ...,
-        description="Timestamp when the report was generated",
+        description=(
+            "Timestamp when the report was generated. "
+            "Recommend using UTC timezone (datetime.now(UTC)) for consistency."
+        ),
     )
 
     # Current Configuration
@@ -104,7 +132,10 @@ class ModelBaselineHealthReport(BaseModel):
     )
     corpus_date_range: tuple[datetime, datetime] = Field(
         ...,
-        description="Date range of corpus samples (start, end)",
+        description=(
+            "Date range of corpus samples (start, end). "
+            "Recommend using UTC timezone for consistency in duration calculations."
+        ),
     )
     input_diversity_score: float = Field(
         ...,
@@ -159,18 +190,21 @@ class ModelBaselineHealthReport(BaseModel):
 
     @model_validator(mode="after")
     def _validate_date_range_ordering(self) -> Self:
-        """Validate that corpus_date_range start is before end.
+        """Validate that corpus_date_range start is before or equal to end.
 
         Returns:
             Self: The validated model instance.
 
         Raises:
-            ModelOnexError: If start date is not before end date.
+            ModelOnexError: If start date is after end date.
         """
         start, end = self.corpus_date_range
-        if start >= end:
+        if start > end:
             raise ModelOnexError(
-                message="corpus_date_range start must be before end",
+                message=(
+                    f"corpus_date_range start must be before or equal to end "
+                    f"(start={start.isoformat()}, end={end.isoformat()})"
+                ),
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 start=start.isoformat(),
                 end=end.isoformat(),

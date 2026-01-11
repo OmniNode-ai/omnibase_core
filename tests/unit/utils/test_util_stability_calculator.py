@@ -1,11 +1,31 @@
 """Tests for stability calculator utility.
 
-Phase 2: Stability Detection Tests
+This module tests the stability calculation functions that determine system health
+based on invariant pass rates, error rates, latency metrics, and corpus size.
+
+Test Coverage:
+    - TestStabilityDetection: Core stability detection logic
+    - TestStabilityEdgeCases: Edge cases and error handling
+    - TestConfidenceCalculation: Confidence level calculation
+    - TestConfidenceInputValidation: Input validation for confidence function
+
+Design Rationale:
+    The tests verify the weighted multi-factor approach to stability assessment:
+
+    - Invariants (40%): Correctness checks are most critical
+    - Error Rate (30%): Production error rates impact user experience
+    - Latency Consistency (20%): Predictable response times indicate health
+    - Corpus Size (10%): Statistical significance of the assessment
+
+    Key invariant: Any failing invariant immediately results in "unstable" status,
+    regardless of other metrics. This fail-fast behavior ensures correctness
+    is never sacrificed for performance.
 """
 
 from uuid import uuid4
 
 import pytest
+from pydantic import ValidationError
 
 pytestmark = pytest.mark.unit
 
@@ -19,6 +39,10 @@ from omnibase_core.utils.util_stability_calculator import (
     calculate_confidence,
     calculate_stability,
 )
+
+# Test constants for magic number clarity
+MINIMUM_CONFIDENCE_THRESHOLD = 0.8
+BOUNDARY_CORPUS_SIZE = 50
 
 # ============================================================================
 # Fixtures
@@ -288,18 +312,18 @@ class TestConfidenceCalculation:
             invariant_count=15,
         )
 
-        assert confidence >= 0.8
+        assert confidence >= MINIMUM_CONFIDENCE_THRESHOLD
         assert "adequate" in reasoning.lower() or "corpus" in reasoning.lower()
 
     def test_low_confidence_with_small_corpus(self) -> None:
         """Small corpus = low confidence."""
         confidence, reasoning = calculate_confidence(
-            corpus_size=50,
+            corpus_size=BOUNDARY_CORPUS_SIZE,
             input_diversity_score=0.9,
             invariant_count=15,
         )
 
-        assert confidence < 0.8
+        assert confidence < MINIMUM_CONFIDENCE_THRESHOLD
         assert "below minimum" in reasoning.lower() or "corpus" in reasoning.lower()
 
     def test_low_confidence_with_low_diversity(self) -> None:
@@ -433,3 +457,112 @@ class TestConfidenceInputValidation:
             invariant_count=0,
         )
         assert confidence >= 0.0
+
+
+class TestPydanticFieldValidation:
+    """Test Pydantic field validation on models.
+
+    These tests verify that Pydantic field constraints (ge=0.0, le=1.0, etc.)
+    properly raise ValidationError when violated. This is distinct from the
+    business logic validation in calculate_stability which raises ModelOnexError.
+    """
+
+    def test_negative_avg_latency_raises_validation_error(self) -> None:
+        """Negative avg_latency_ms should raise Pydantic ValidationError."""
+        with pytest.raises(ValidationError, match="avg_latency_ms"):
+            ModelPerformanceMetrics(
+                avg_latency_ms=-1.0,  # Invalid: must be >= 0
+                p95_latency_ms=150.0,
+                p99_latency_ms=200.0,
+                avg_cost_per_call=0.002,
+                total_calls=1000,
+                error_rate=0.01,
+            )
+
+    def test_negative_p95_latency_raises_validation_error(self) -> None:
+        """Negative p95_latency_ms should raise Pydantic ValidationError."""
+        with pytest.raises(ValidationError, match="p95_latency_ms"):
+            ModelPerformanceMetrics(
+                avg_latency_ms=100.0,
+                p95_latency_ms=-50.0,  # Invalid: must be >= 0
+                p99_latency_ms=200.0,
+                avg_cost_per_call=0.002,
+                total_calls=1000,
+                error_rate=0.01,
+            )
+
+    def test_negative_p99_latency_raises_validation_error(self) -> None:
+        """Negative p99_latency_ms should raise Pydantic ValidationError."""
+        with pytest.raises(ValidationError, match="p99_latency_ms"):
+            ModelPerformanceMetrics(
+                avg_latency_ms=100.0,
+                p95_latency_ms=150.0,
+                p99_latency_ms=-10.0,  # Invalid: must be >= 0
+                avg_cost_per_call=0.002,
+                total_calls=1000,
+                error_rate=0.01,
+            )
+
+    def test_error_rate_above_one_raises_validation_error(self) -> None:
+        """Error rate > 1.0 should raise Pydantic ValidationError."""
+        with pytest.raises(ValidationError, match="error_rate"):
+            ModelPerformanceMetrics(
+                avg_latency_ms=100.0,
+                p95_latency_ms=150.0,
+                p99_latency_ms=200.0,
+                avg_cost_per_call=0.002,
+                total_calls=1000,
+                error_rate=1.5,  # Invalid: must be <= 1.0
+            )
+
+    def test_error_rate_below_zero_raises_validation_error(self) -> None:
+        """Error rate < 0.0 should raise Pydantic ValidationError."""
+        with pytest.raises(ValidationError, match="error_rate"):
+            ModelPerformanceMetrics(
+                avg_latency_ms=100.0,
+                p95_latency_ms=150.0,
+                p99_latency_ms=200.0,
+                avg_cost_per_call=0.002,
+                total_calls=1000,
+                error_rate=-0.1,  # Invalid: must be >= 0.0
+            )
+
+    def test_negative_total_calls_raises_validation_error(self) -> None:
+        """Negative total_calls should raise Pydantic ValidationError."""
+        with pytest.raises(ValidationError, match="total_calls"):
+            ModelPerformanceMetrics(
+                avg_latency_ms=100.0,
+                p95_latency_ms=150.0,
+                p99_latency_ms=200.0,
+                avg_cost_per_call=0.002,
+                total_calls=-100,  # Invalid: must be >= 0
+                error_rate=0.01,
+            )
+
+    def test_negative_avg_cost_raises_validation_error(self) -> None:
+        """Negative avg_cost_per_call should raise Pydantic ValidationError."""
+        with pytest.raises(ValidationError, match="avg_cost_per_call"):
+            ModelPerformanceMetrics(
+                avg_latency_ms=100.0,
+                p95_latency_ms=150.0,
+                p99_latency_ms=200.0,
+                avg_cost_per_call=-0.001,  # Invalid: must be >= 0
+                total_calls=1000,
+                error_rate=0.01,
+            )
+
+    def test_percentile_ordering_raises_model_onex_error(self) -> None:
+        """Invalid percentile ordering raises ModelOnexError (not ValidationError).
+
+        This is business logic validation via model_validator, not field-level
+        Pydantic validation.
+        """
+        with pytest.raises(ModelOnexError, match="percentiles must be ordered"):
+            ModelPerformanceMetrics(
+                avg_latency_ms=200.0,  # avg > p95 violates ordering
+                p95_latency_ms=100.0,
+                p99_latency_ms=300.0,
+                avg_cost_per_call=0.002,
+                total_calls=1000,
+                error_rate=0.01,
+            )
