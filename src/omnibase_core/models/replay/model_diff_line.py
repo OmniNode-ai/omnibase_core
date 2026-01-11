@@ -10,6 +10,15 @@ class ModelDiffLine(BaseModel):
 
     Represents one line of a side-by-side comparison between
     baseline and replay execution outputs.
+
+    Attributes:
+        line_number: The line number in the comparison.
+        baseline_content: Content from baseline output (None if line was added).
+        replay_content: Content from replay output (None if line was removed).
+        change_type: Type of change for this line.
+
+    Thread Safety:
+        This model is immutable (frozen=True) and safe for concurrent access.
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)

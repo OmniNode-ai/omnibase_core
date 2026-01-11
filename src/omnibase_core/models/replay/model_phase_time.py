@@ -8,6 +8,15 @@ class ModelPhaseTime(BaseModel):
 
     Captures timing metrics for individual phases within an execution,
     comparing baseline vs replay performance.
+
+    Attributes:
+        phase_name: Name identifier for this execution phase.
+        baseline_ms: Baseline execution time in milliseconds.
+        replay_ms: Replay execution time in milliseconds.
+        delta_percent: Percentage difference between replay and baseline.
+
+    Thread Safety:
+        This model is immutable (frozen=True) and safe for concurrent access.
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)

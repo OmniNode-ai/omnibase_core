@@ -494,6 +494,60 @@ class TestModelTimingBreakdown:
         with pytest.raises(ValidationError):
             breakdown.phases = []
 
+    def test_negative_baseline_total_ms_rejected(self) -> None:
+        """Negative baseline_total_ms raises ValidationError."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelTimingBreakdown(
+                baseline_total_ms=-100.0,  # Invalid: must be >= 0
+                replay_total_ms=150.0,
+                delta_ms=250.0,
+                delta_percent=250.0,
+            )
+        errors = exc_info.value.errors()
+        assert len(errors) == 1
+        assert errors[0]["loc"] == ("baseline_total_ms",)
+        assert errors[0]["type"] == "greater_than_equal"
+
+    def test_negative_replay_total_ms_rejected(self) -> None:
+        """Negative replay_total_ms raises ValidationError."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelTimingBreakdown(
+                baseline_total_ms=100.0,
+                replay_total_ms=-50.0,  # Invalid: must be >= 0
+                delta_ms=-150.0,
+                delta_percent=-150.0,
+            )
+        errors = exc_info.value.errors()
+        assert len(errors) == 1
+        assert errors[0]["loc"] == ("replay_total_ms",)
+        assert errors[0]["type"] == "greater_than_equal"
+
+    def test_both_negative_timings_rejected(self) -> None:
+        """Both negative timing values raise ValidationError with multiple errors."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelTimingBreakdown(
+                baseline_total_ms=-100.0,  # Invalid
+                replay_total_ms=-50.0,  # Invalid
+                delta_ms=50.0,
+                delta_percent=50.0,
+            )
+        errors = exc_info.value.errors()
+        assert len(errors) == 2
+        error_locs = {e["loc"] for e in errors}
+        assert ("baseline_total_ms",) in error_locs
+        assert ("replay_total_ms",) in error_locs
+
+    def test_zero_timing_values_valid(self) -> None:
+        """Zero timing values are valid (edge case for boundary)."""
+        breakdown = ModelTimingBreakdown(
+            baseline_total_ms=0.0,
+            replay_total_ms=0.0,
+            delta_ms=0.0,
+            delta_percent=0.0,
+        )
+        assert breakdown.baseline_total_ms == 0.0
+        assert breakdown.replay_total_ms == 0.0
+
 
 @pytest.mark.unit
 class TestModelSideBySideComparison:
