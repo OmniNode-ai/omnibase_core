@@ -25,8 +25,8 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 __all__ = ("ModelMetricThreshold",)
 
-#: Pattern for valid hex color formats: #RGB, #RRGGBB, #RGBA, #RRGGBBAA
-HEX_COLOR_PATTERN = re.compile(
+# Internal pattern for valid hex color formats: #RGB, #RRGGBB, #RGBA, #RRGGBBAA
+_HEX_COLOR_PATTERN = re.compile(
     r"^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{4}|[0-9a-fA-F]{8})$"
 )
 
@@ -72,7 +72,7 @@ class ModelMetricThreshold(BaseModel):
     @classmethod
     def validate_hex_color(cls, v: str) -> str:
         """Validate that color is a valid hex color code."""
-        if not HEX_COLOR_PATTERN.match(v):
+        if not _HEX_COLOR_PATTERN.match(v):
             raise ValueError(
                 f"Invalid hex color format: {v}. "
                 "Expected #RGB, #RRGGBB, #RGBA, or #RRGGBBAA"

@@ -20,6 +20,6 @@ class ModelStatusItemConfig(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
-    key: str = Field(..., description="Data key for this status item")
-    label: str = Field(..., description="Display label")
+    key: str = Field(..., min_length=1, description="Data key for this status item")
+    label: str = Field(..., min_length=1, description="Display label")
     icon: str | None = Field(default=None, description="Icon identifier")

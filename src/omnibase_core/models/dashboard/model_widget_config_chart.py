@@ -40,6 +40,9 @@ from omnibase_core.models.dashboard.model_chart_series_config import (
 
 __all__ = ("ModelWidgetConfigChart",)
 
+#: Expected config_kind value for this widget type.
+_EXPECTED_CONFIG_KIND = "chart"
+
 
 class ModelWidgetConfigChart(BaseModel):
     """Configuration for chart-type dashboard widgets.
@@ -110,5 +113,26 @@ class ModelWidgetConfigChart(BaseModel):
         if self.chart_type in self.DATA_CHART_TYPES and not self.series:
             raise ValueError(
                 f"Chart type '{self.chart_type}' requires at least one series configuration"
+            )
+        return self
+
+    @model_validator(mode="after")
+    def validate_widget_type_config_kind_consistency(self) -> Self:
+        """Validate that widget_type is consistent with config_kind.
+
+        Ensures that the widget_type enum matches the expected config_kind
+        discriminator value. widget_type=CHART must have config_kind="chart".
+
+        Raises:
+            ValueError: If widget_type does not match config_kind.
+        """
+        if self.widget_type != EnumWidgetType.CHART:
+            raise ValueError(
+                f"widget_type must be CHART for chart config, got {self.widget_type.value}"
+            )
+        if self.config_kind != _EXPECTED_CONFIG_KIND:
+            raise ValueError(
+                f"config_kind must be '{_EXPECTED_CONFIG_KIND}' for CHART widget, "
+                f"got '{self.config_kind}'"
             )
         return self

@@ -31,6 +31,7 @@ def _make_line_chart_config() -> ModelWidgetConfigChart:
     )
 
 
+@pytest.mark.unit
 class TestModelDashboardLayoutConfig:
     """Tests for ModelDashboardLayoutConfig."""
 
@@ -60,6 +61,7 @@ class TestModelDashboardLayoutConfig:
         assert restored == layout
 
 
+@pytest.mark.unit
 class TestModelDashboardConfig:
     """Tests for ModelDashboardConfig."""
 

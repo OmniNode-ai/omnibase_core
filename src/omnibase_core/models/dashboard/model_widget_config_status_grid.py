@@ -31,9 +31,10 @@ Example:
 """
 
 import re
-from typing import Literal
+from collections.abc import Mapping
+from typing import Literal, Self
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from omnibase_core.enums import EnumWidgetType
 from omnibase_core.models.dashboard.model_status_item_config import (
@@ -42,10 +43,13 @@ from omnibase_core.models.dashboard.model_status_item_config import (
 
 __all__ = ("ModelWidgetConfigStatusGrid",)
 
-#: Pattern for valid hex color formats: #RGB, #RRGGBB, #RGBA, #RRGGBBAA
-HEX_COLOR_PATTERN = re.compile(
+# Internal pattern for valid hex color formats: #RGB, #RRGGBB, #RGBA, #RRGGBBAA
+_HEX_COLOR_PATTERN = re.compile(
     r"^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{4}|[0-9a-fA-F]{8})$"
 )
+
+#: Expected config_kind value for this widget type.
+_EXPECTED_CONFIG_KIND = "status_grid"
 
 
 class ModelWidgetConfigStatusGrid(BaseModel):
@@ -97,7 +101,7 @@ class ModelWidgetConfigStatusGrid(BaseModel):
     columns: int = Field(default=3, ge=1, le=12, description="Number of grid columns")
     show_labels: bool = Field(default=True, description="Show item labels")
     compact: bool = Field(default=False, description="Use compact display mode")
-    status_colors: dict[str, str] = Field(
+    status_colors: Mapping[str, str] = Field(
         default_factory=lambda: {
             "healthy": "#22c55e",
             "warning": "#eab308",
@@ -109,12 +113,35 @@ class ModelWidgetConfigStatusGrid(BaseModel):
 
     @field_validator("status_colors")
     @classmethod
-    def validate_status_colors(cls, v: dict[str, str]) -> dict[str, str]:
+    def validate_status_colors(cls, v: Mapping[str, str]) -> Mapping[str, str]:
         """Validate that all color values are valid hex color codes."""
         for status, color in v.items():
-            if not HEX_COLOR_PATTERN.match(color):
+            if not _HEX_COLOR_PATTERN.match(color):
                 raise ValueError(
                     f"Invalid hex color format for status '{status}': {color}. "
                     "Expected #RGB, #RRGGBB, #RGBA, or #RRGGBBAA"
                 )
         return v
+
+    @model_validator(mode="after")
+    def validate_widget_type_config_kind_consistency(self) -> Self:
+        """Validate that widget_type is consistent with config_kind.
+
+        Ensures that the widget_type enum matches the expected config_kind
+        discriminator value. widget_type=STATUS_GRID must have
+        config_kind="status_grid".
+
+        Raises:
+            ValueError: If widget_type does not match config_kind.
+        """
+        if self.widget_type != EnumWidgetType.STATUS_GRID:
+            raise ValueError(
+                f"widget_type must be STATUS_GRID for status_grid config, "
+                f"got {self.widget_type.value}"
+            )
+        if self.config_kind != _EXPECTED_CONFIG_KIND:
+            raise ValueError(
+                f"config_kind must be '{_EXPECTED_CONFIG_KIND}' for STATUS_GRID widget, "
+                f"got '{self.config_kind}'"
+            )
+        return self

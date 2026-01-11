@@ -27,14 +27,17 @@ Example:
         )
 """
 
-from typing import Literal
+from typing import Literal, Self
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums import EnumWidgetType
 from omnibase_core.models.dashboard.model_event_filter import ModelEventFilter
 
 __all__ = ("ModelWidgetConfigEventFeed",)
+
+#: Expected config_kind value for this widget type.
+_EXPECTED_CONFIG_KIND = "event_feed"
 
 
 class ModelWidgetConfigEventFeed(BaseModel):
@@ -90,3 +93,26 @@ class ModelWidgetConfigEventFeed(BaseModel):
     show_severity: bool = Field(default=True, description="Show severity indicator")
     group_by_type: bool = Field(default=False, description="Group events by type")
     auto_scroll: bool = Field(default=True, description="Auto-scroll to new events")
+
+    @model_validator(mode="after")
+    def validate_widget_type_config_kind_consistency(self) -> Self:
+        """Validate that widget_type is consistent with config_kind.
+
+        Ensures that the widget_type enum matches the expected config_kind
+        discriminator value. widget_type=EVENT_FEED must have
+        config_kind="event_feed".
+
+        Raises:
+            ValueError: If widget_type does not match config_kind.
+        """
+        if self.widget_type != EnumWidgetType.EVENT_FEED:
+            raise ValueError(
+                f"widget_type must be EVENT_FEED for event_feed config, "
+                f"got {self.widget_type.value}"
+            )
+        if self.config_kind != _EXPECTED_CONFIG_KIND:
+            raise ValueError(
+                f"config_kind must be '{_EXPECTED_CONFIG_KIND}' for EVENT_FEED widget, "
+                f"got '{self.config_kind}'"
+            )
+        return self

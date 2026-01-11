@@ -65,7 +65,7 @@ class EnumDashboardStatus(str, Enum):
         Returns:
             True if the status is CONNECTED, False otherwise.
         """
-        return self == EnumDashboardStatus.CONNECTED
+        return self is EnumDashboardStatus.CONNECTED
 
     @property
     def is_terminal(self) -> bool:
@@ -77,7 +77,7 @@ class EnumDashboardStatus(str, Enum):
         Returns:
             True if the status is ERROR, False otherwise.
         """
-        return self == EnumDashboardStatus.ERROR
+        return self is EnumDashboardStatus.ERROR
 
     @property
     def requires_reconnection(self) -> bool:

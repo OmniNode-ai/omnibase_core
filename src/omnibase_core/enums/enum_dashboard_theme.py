@@ -60,4 +60,4 @@ class EnumDashboardTheme(str, Enum):
             True if this is the SYSTEM theme, False for explicit
             LIGHT or DARK themes.
         """
-        return self == EnumDashboardTheme.SYSTEM
+        return self is EnumDashboardTheme.SYSTEM

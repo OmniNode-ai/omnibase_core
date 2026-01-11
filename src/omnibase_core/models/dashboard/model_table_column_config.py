@@ -22,8 +22,8 @@ class ModelTableColumnConfig(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
-    key: str = Field(..., description="Data key for this column")
-    header: str = Field(..., description="Column header display text")
+    key: str = Field(..., min_length=1, description="Data key for this column")
+    header: str = Field(..., min_length=1, description="Column header display text")
     width: int | None = Field(
         default=None, ge=1, description="Column width in pixels (minimum 1 when set)"
     )

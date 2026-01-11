@@ -6,11 +6,17 @@
 import pytest
 from pydantic import ValidationError
 
+from omnibase_core.enums import EnumWidgetType
 from omnibase_core.models.dashboard import (
     ModelChartAxisConfig,
     ModelChartSeriesConfig,
+    ModelStatusItemConfig,
     ModelTableColumnConfig,
+    ModelWidgetConfigChart,
+    ModelWidgetConfigEventFeed,
+    ModelWidgetConfigMetricCard,
     ModelWidgetConfigStatusGrid,
+    ModelWidgetConfigTable,
 )
 
 
@@ -286,3 +292,150 @@ class TestModelValidationsRoundtrip:
         data = config.model_dump()
         restored = ModelTableColumnConfig.model_validate(data)
         assert restored == config
+
+
+@pytest.mark.unit
+class TestWidgetTypeConfigKindConsistency:
+    """Tests for widget_type / config_kind consistency validation."""
+
+    def test_chart_valid_defaults(self) -> None:
+        """Test that chart config with default widget_type and config_kind is valid."""
+        config = ModelWidgetConfigChart(
+            chart_type="pie"  # pie doesn't require series
+        )
+        assert config.widget_type == EnumWidgetType.CHART
+        assert config.config_kind == "chart"
+
+    def test_chart_mismatched_widget_type_invalid(self) -> None:
+        """Test that chart config with wrong widget_type raises ValidationError."""
+        with pytest.raises(ValidationError, match="widget_type must be CHART"):
+            ModelWidgetConfigChart(
+                chart_type="pie",
+                widget_type=EnumWidgetType.TABLE,
+            )
+
+    def test_table_valid_defaults(self) -> None:
+        """Test that table config with default widget_type and config_kind is valid."""
+        config = ModelWidgetConfigTable()
+        assert config.widget_type == EnumWidgetType.TABLE
+        assert config.config_kind == "table"
+
+    def test_table_mismatched_widget_type_invalid(self) -> None:
+        """Test that table config with wrong widget_type raises ValidationError."""
+        with pytest.raises(ValidationError, match="widget_type must be TABLE"):
+            ModelWidgetConfigTable(
+                widget_type=EnumWidgetType.CHART,
+            )
+
+    def test_metric_card_valid_defaults(self) -> None:
+        """Test that metric_card config with default widget_type and config_kind is valid."""
+        config = ModelWidgetConfigMetricCard(
+            metric_key="cpu",
+            label="CPU Usage",
+        )
+        assert config.widget_type == EnumWidgetType.METRIC_CARD
+        assert config.config_kind == "metric_card"
+
+    def test_metric_card_mismatched_widget_type_invalid(self) -> None:
+        """Test that metric_card config with wrong widget_type raises ValidationError."""
+        with pytest.raises(ValidationError, match="widget_type must be METRIC_CARD"):
+            ModelWidgetConfigMetricCard(
+                metric_key="cpu",
+                label="CPU Usage",
+                widget_type=EnumWidgetType.CHART,
+            )
+
+    def test_status_grid_valid_defaults(self) -> None:
+        """Test that status_grid config with default widget_type and config_kind is valid."""
+        config = ModelWidgetConfigStatusGrid()
+        assert config.widget_type == EnumWidgetType.STATUS_GRID
+        assert config.config_kind == "status_grid"
+
+    def test_status_grid_mismatched_widget_type_invalid(self) -> None:
+        """Test that status_grid config with wrong widget_type raises ValidationError."""
+        with pytest.raises(ValidationError, match="widget_type must be STATUS_GRID"):
+            ModelWidgetConfigStatusGrid(
+                widget_type=EnumWidgetType.TABLE,
+            )
+
+    def test_event_feed_valid_defaults(self) -> None:
+        """Test that event_feed config with default widget_type and config_kind is valid."""
+        config = ModelWidgetConfigEventFeed()
+        assert config.widget_type == EnumWidgetType.EVENT_FEED
+        assert config.config_kind == "event_feed"
+
+    def test_event_feed_mismatched_widget_type_invalid(self) -> None:
+        """Test that event_feed config with wrong widget_type raises ValidationError."""
+        with pytest.raises(ValidationError, match="widget_type must be EVENT_FEED"):
+            ModelWidgetConfigEventFeed(
+                widget_type=EnumWidgetType.CHART,
+            )
+
+
+@pytest.mark.unit
+class TestStringMinLengthConstraints:
+    """Tests for min_length=1 constraints on required string fields."""
+
+    def test_chart_series_name_empty_invalid(self) -> None:
+        """Test that empty name in chart series raises ValidationError."""
+        with pytest.raises(ValidationError, match="String should have at least 1"):
+            ModelChartSeriesConfig(name="", data_key="value")
+
+    def test_chart_series_data_key_empty_invalid(self) -> None:
+        """Test that empty data_key in chart series raises ValidationError."""
+        with pytest.raises(ValidationError, match="String should have at least 1"):
+            ModelChartSeriesConfig(name="Test", data_key="")
+
+    def test_chart_series_valid_fields(self) -> None:
+        """Test that non-empty name and data_key are valid."""
+        config = ModelChartSeriesConfig(name="X", data_key="y")
+        assert config.name == "X"
+        assert config.data_key == "y"
+
+    def test_table_column_key_empty_invalid(self) -> None:
+        """Test that empty key in table column raises ValidationError."""
+        with pytest.raises(ValidationError, match="String should have at least 1"):
+            ModelTableColumnConfig(key="", header="Header")
+
+    def test_table_column_header_empty_invalid(self) -> None:
+        """Test that empty header in table column raises ValidationError."""
+        with pytest.raises(ValidationError, match="String should have at least 1"):
+            ModelTableColumnConfig(key="id", header="")
+
+    def test_table_column_valid_fields(self) -> None:
+        """Test that non-empty key and header are valid."""
+        config = ModelTableColumnConfig(key="a", header="b")
+        assert config.key == "a"
+        assert config.header == "b"
+
+    def test_status_item_key_empty_invalid(self) -> None:
+        """Test that empty key in status item raises ValidationError."""
+        with pytest.raises(ValidationError, match="String should have at least 1"):
+            ModelStatusItemConfig(key="", label="Label")
+
+    def test_status_item_label_empty_invalid(self) -> None:
+        """Test that empty label in status item raises ValidationError."""
+        with pytest.raises(ValidationError, match="String should have at least 1"):
+            ModelStatusItemConfig(key="api", label="")
+
+    def test_status_item_valid_fields(self) -> None:
+        """Test that non-empty key and label are valid."""
+        config = ModelStatusItemConfig(key="a", label="b")
+        assert config.key == "a"
+        assert config.label == "b"
+
+    def test_metric_card_metric_key_empty_invalid(self) -> None:
+        """Test that empty metric_key in metric card raises ValidationError."""
+        with pytest.raises(ValidationError, match="String should have at least 1"):
+            ModelWidgetConfigMetricCard(metric_key="", label="Label")
+
+    def test_metric_card_label_empty_invalid(self) -> None:
+        """Test that empty label in metric card raises ValidationError."""
+        with pytest.raises(ValidationError, match="String should have at least 1"):
+            ModelWidgetConfigMetricCard(metric_key="cpu", label="")
+
+    def test_metric_card_valid_fields(self) -> None:
+        """Test that non-empty metric_key and label are valid."""
+        config = ModelWidgetConfigMetricCard(metric_key="a", label="b")
+        assert config.metric_key == "a"
+        assert config.label == "b"

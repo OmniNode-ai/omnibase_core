@@ -31,7 +31,7 @@ Example:
         )
 """
 
-from typing import Literal
+from typing import Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -39,6 +39,9 @@ from omnibase_core.enums import EnumWidgetType
 from omnibase_core.models.dashboard.model_metric_threshold import ModelMetricThreshold
 
 __all__ = ("ModelWidgetConfigMetricCard",)
+
+#: Expected config_kind value for this widget type.
+_EXPECTED_CONFIG_KIND = "metric_card"
 
 
 class ModelWidgetConfigMetricCard(BaseModel):
@@ -86,8 +89,10 @@ class ModelWidgetConfigMetricCard(BaseModel):
     widget_type: EnumWidgetType = Field(
         default=EnumWidgetType.METRIC_CARD, description="Widget type enum value"
     )
-    metric_key: str = Field(..., description="Key to extract metric value from data")
-    label: str = Field(..., description="Metric display label")
+    metric_key: str = Field(
+        ..., min_length=1, description="Key to extract metric value from data"
+    )
+    label: str = Field(..., min_length=1, description="Metric display label")
     unit: str | None = Field(default=None, description="Unit of measurement")
     format: Literal["number", "currency", "percent", "duration"] = Field(
         default="number", description="How to format the value"
@@ -103,8 +108,31 @@ class ModelWidgetConfigMetricCard(BaseModel):
     icon: str | None = Field(default=None, description="Icon identifier")
 
     @model_validator(mode="after")
-    def validate_trend_key_when_show_trend(self) -> "ModelWidgetConfigMetricCard":
+    def validate_trend_key_when_show_trend(self) -> Self:
         """Validate that trend_key is set when show_trend is enabled."""
         if self.show_trend and not self.trend_key:
             raise ValueError("trend_key must be set when show_trend is enabled")
+        return self
+
+    @model_validator(mode="after")
+    def validate_widget_type_config_kind_consistency(self) -> Self:
+        """Validate that widget_type is consistent with config_kind.
+
+        Ensures that the widget_type enum matches the expected config_kind
+        discriminator value. widget_type=METRIC_CARD must have
+        config_kind="metric_card".
+
+        Raises:
+            ValueError: If widget_type does not match config_kind.
+        """
+        if self.widget_type != EnumWidgetType.METRIC_CARD:
+            raise ValueError(
+                f"widget_type must be METRIC_CARD for metric_card config, "
+                f"got {self.widget_type.value}"
+            )
+        if self.config_kind != _EXPECTED_CONFIG_KIND:
+            raise ValueError(
+                f"config_kind must be '{_EXPECTED_CONFIG_KIND}' for METRIC_CARD widget, "
+                f"got '{self.config_kind}'"
+            )
         return self

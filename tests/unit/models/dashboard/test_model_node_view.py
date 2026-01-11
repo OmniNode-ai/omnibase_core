@@ -9,6 +9,7 @@ from pydantic import ValidationError
 from omnibase_core.models.dashboard import ModelNodeView
 
 
+@pytest.mark.unit
 class TestModelNodeView:
     """Tests for ModelNodeView model."""
 

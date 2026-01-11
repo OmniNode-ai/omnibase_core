@@ -13,74 +13,43 @@ from omnibase_core.models.dashboard import ModelMetricThreshold
 class TestModelMetricThreshold:
     """Tests for ModelMetricThreshold model."""
 
-    def test_create_with_valid_hex_6(self) -> None:
-        """Test creating threshold with valid 6-digit hex color."""
-        threshold = ModelMetricThreshold(value=90.0, color="#FF0000")
-        assert threshold.value == 90.0
-        assert threshold.color == "#FF0000"
-        assert threshold.label is None
+    @pytest.mark.parametrize(
+        ("color", "description"),
+        [
+            ("#FF0000", "6-digit hex"),
+            ("#F00", "3-digit hex"),
+            ("#FF0000FF", "8-digit hex (RRGGBBAA)"),
+            ("#F00F", "4-digit hex (RGBA)"),
+            ("#abcdef", "lowercase hex"),
+            ("#AbCdEf", "mixed case hex"),
+        ],
+    )
+    def test_valid_hex_color_formats(self, color: str, description: str) -> None:
+        """Test creating threshold with valid hex color formats."""
+        threshold = ModelMetricThreshold(value=90.0, color=color)
+        assert threshold.color == color
 
-    def test_create_with_valid_hex_3(self) -> None:
-        """Test creating threshold with valid 3-digit hex color."""
+    def test_create_with_label(self) -> None:
+        """Test creating threshold with label."""
         threshold = ModelMetricThreshold(value=50.0, color="#F00", label="Warning")
         assert threshold.color == "#F00"
         assert threshold.label == "Warning"
 
-    def test_create_with_valid_hex_8_rgba(self) -> None:
-        """Test creating threshold with valid 8-digit hex color (RRGGBBAA)."""
-        threshold = ModelMetricThreshold(value=75.0, color="#FF0000FF")
-        assert threshold.color == "#FF0000FF"
-
-    def test_create_with_valid_hex_4_rgba(self) -> None:
-        """Test creating threshold with valid 4-digit hex color (RGBA)."""
-        threshold = ModelMetricThreshold(value=25.0, color="#F00F")
-        assert threshold.color == "#F00F"
-
-    def test_lowercase_hex_valid(self) -> None:
-        """Test that lowercase hex is valid."""
-        threshold = ModelMetricThreshold(value=80.0, color="#abcdef")
-        assert threshold.color == "#abcdef"
-
-    def test_mixed_case_hex_valid(self) -> None:
-        """Test that mixed case hex is valid."""
-        threshold = ModelMetricThreshold(value=80.0, color="#AbCdEf")
-        assert threshold.color == "#AbCdEf"
-
-    def test_invalid_hex_missing_hash(self) -> None:
-        """Test that hex without # is invalid."""
-        with pytest.raises(ValidationError) as exc_info:
-            ModelMetricThreshold(value=90.0, color="FF0000")
-        assert "Invalid hex color format" in str(exc_info.value)
-
-    def test_invalid_hex_wrong_length(self) -> None:
-        """Test that hex with wrong length is invalid."""
-        # 5 chars is invalid (not 3, 4, 6, or 8)
-        with pytest.raises(ValidationError) as exc_info:
-            ModelMetricThreshold(value=90.0, color="#FF000")
-        assert "Invalid hex color format" in str(exc_info.value)
-
-        # 7 chars is also invalid
-        with pytest.raises(ValidationError) as exc_info:
-            ModelMetricThreshold(value=90.0, color="#FF0000F")
-        assert "Invalid hex color format" in str(exc_info.value)
-
-    def test_invalid_hex_non_hex_chars(self) -> None:
-        """Test that non-hex characters are invalid."""
-        with pytest.raises(ValidationError) as exc_info:
-            ModelMetricThreshold(value=90.0, color="#GGGGGG")
-        assert "Invalid hex color format" in str(exc_info.value)
-
-    def test_invalid_hex_empty(self) -> None:
-        """Test that empty color is invalid."""
-        with pytest.raises(ValidationError) as exc_info:
-            ModelMetricThreshold(value=90.0, color="")
-        assert "Invalid hex color format" in str(exc_info.value)
-
-    def test_invalid_hex_only_hash(self) -> None:
-        """Test that only # is invalid."""
-        with pytest.raises(ValidationError) as exc_info:
-            ModelMetricThreshold(value=90.0, color="#")
-        assert "Invalid hex color format" in str(exc_info.value)
+    @pytest.mark.parametrize(
+        ("color", "description"),
+        [
+            ("FF0000", "missing hash prefix"),
+            ("#FF000", "5 chars (invalid length)"),
+            ("#FF0000F", "7 chars (invalid length)"),
+            ("#GGGGGG", "non-hex characters"),
+            ("", "empty string"),
+            ("#", "only hash"),
+        ],
+    )
+    def test_invalid_hex_color_formats(self, color: str, description: str) -> None:
+        """Test that invalid hex color formats raise ValidationError."""
+        with pytest.raises(ValidationError, match="Invalid hex color format"):
+            ModelMetricThreshold(value=90.0, color=color)
 
     def test_roundtrip_serialization(self) -> None:
         """Test model_dump and model_validate roundtrip."""

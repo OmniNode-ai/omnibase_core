@@ -38,6 +38,9 @@ from omnibase_core.models.dashboard.model_table_column_config import (
 
 __all__ = ("ModelWidgetConfigTable",)
 
+#: Expected config_kind value for this widget type.
+_EXPECTED_CONFIG_KIND = "table"
+
 
 class ModelWidgetConfigTable(BaseModel):
     """Configuration for table-type dashboard widgets.
@@ -101,5 +104,26 @@ class ModelWidgetConfigTable(BaseModel):
         if self.default_sort_direction is not None and self.default_sort_key is None:
             raise ValueError(
                 "default_sort_direction can only be set when default_sort_key is specified"
+            )
+        return self
+
+    @model_validator(mode="after")
+    def validate_widget_type_config_kind_consistency(self) -> Self:
+        """Validate that widget_type is consistent with config_kind.
+
+        Ensures that the widget_type enum matches the expected config_kind
+        discriminator value. widget_type=TABLE must have config_kind="table".
+
+        Raises:
+            ValueError: If widget_type does not match config_kind.
+        """
+        if self.widget_type != EnumWidgetType.TABLE:
+            raise ValueError(
+                f"widget_type must be TABLE for table config, got {self.widget_type.value}"
+            )
+        if self.config_kind != _EXPECTED_CONFIG_KIND:
+            raise ValueError(
+                f"config_kind must be '{_EXPECTED_CONFIG_KIND}' for TABLE widget, "
+                f"got '{self.config_kind}'"
             )
         return self
