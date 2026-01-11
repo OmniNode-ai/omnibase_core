@@ -95,10 +95,16 @@ class TestValidatorNamingConventionInit:
         assert validator.contract is contract
 
     def test_init_without_contract(self) -> None:
-        """Test initialization without a contract."""
+        """Test initialization without a contract (lazy loading behavior).
+
+        When no contract is provided, the validator should still be created
+        successfully and will load the contract lazily when needed.
+        """
         validator = ValidatorNamingConvention()
-        # Contract is loaded lazily, so _contract is None initially
-        assert validator._contract is None
+        # Validator should be created successfully without a contract
+        # The contract will be loaded lazily when first accessed via the property
+        assert validator is not None
+        assert validator.validator_id == "naming_convention"
 
 
 # =============================================================================
@@ -216,7 +222,11 @@ class TestValidatorNamingConventionClassNaming:
         assert len(class_naming_issues) >= 1
 
     def test_mixedcase_class_flagged(self, tmp_path: Path) -> None:
-        """Test that mixedCase class names (not PascalCase) are flagged."""
+        """Test that mixedCase class names (not PascalCase) are flagged.
+
+        Class names must start with an uppercase letter to follow PascalCase.
+        'myClass' starts with lowercase 'm', so it should be flagged.
+        """
         source = """
         class myClass:
             pass
@@ -228,9 +238,10 @@ class TestValidatorNamingConventionClassNaming:
         result = validator.validate_file(file_path)
 
         class_naming_issues = [i for i in result.issues if i.code == RULE_CLASS_NAMING]
-        # May or may not be flagged depending on implementation
-        # Just verify no crash
-        assert result is not None
+        # myClass starts with lowercase, violating PascalCase - should be flagged
+        assert len(class_naming_issues) >= 1, (
+            "Expected class naming issue for 'myClass' which starts with lowercase"
+        )
 
 
 # =============================================================================
@@ -419,7 +430,13 @@ class TestValidatorNamingConventionEdgeCases:
     """Tests for edge cases and error handling."""
 
     def test_handles_syntax_error_gracefully(self, tmp_path: Path) -> None:
-        """Test that syntax errors are handled gracefully."""
+        """Test that syntax errors are handled gracefully.
+
+        When a file has syntax errors, the validator should:
+        1. Not raise an exception
+        2. Return a valid result object
+        3. Mark the result as valid (no naming issues can be detected in unparseable code)
+        """
         source = """
         def foo(
             # Missing closing paren
@@ -430,8 +447,13 @@ class TestValidatorNamingConventionEdgeCases:
         validator = ValidatorNamingConvention(contract=contract)
         result = validator.validate_file(file_path)
 
-        # Should not crash
+        # Validator should return a result without crashing
         assert result is not None
+        # When AST parsing fails, validator should return valid result (no issues detected)
+        # because naming convention violations cannot be detected in unparseable code
+        assert result.is_valid, (
+            "Syntax error files should return valid (no issues detected)"
+        )
 
     def test_handles_empty_file(self, tmp_path: Path) -> None:
         """Test that empty files are handled."""

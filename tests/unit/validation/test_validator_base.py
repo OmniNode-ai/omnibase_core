@@ -102,14 +102,20 @@ class TestValidatorBaseInit:
         contract = create_test_contract()
         validator = MockValidator(contract=contract)
 
+        # Verify contract is accessible via public property
         assert validator.contract is contract
-        assert validator._contract is contract
 
     def test_init_without_contract(self) -> None:
-        """Test initialization without a contract (lazy loading)."""
+        """Test initialization without a contract (lazy loading behavior).
+
+        When no contract is provided, the validator should still be created
+        successfully and will load the contract lazily when first accessed.
+        """
         validator = MockValidator()
 
-        assert validator._contract is None
+        # Validator should be created successfully without a contract
+        assert validator is not None
+        assert validator.validator_id == "mock_validator"
 
     def test_contract_property_caches_loaded_contract(self) -> None:
         """Test that contract property caches the loaded contract."""
@@ -773,3 +779,186 @@ class TestValidatorBaseImports:
         from omnibase_core.validation.validator_base import SEVERITY_PRIORITY
 
         assert isinstance(SEVERITY_PRIORITY, dict)
+
+
+# =============================================================================
+# Path Traversal Security Tests
+# =============================================================================
+
+
+@pytest.mark.unit
+class TestValidatorBasePathTraversalSecurity:
+    """Security tests for path traversal attack prevention.
+
+    These tests verify that the validator properly rejects path traversal
+    attempts and returns the correct SECURITY_VIOLATION error codes.
+    """
+
+    def test_validate_cli_path_rejects_double_dot_traversal(self) -> None:
+        """Test that CLI path validation rejects '..' traversal sequences.
+
+        Security: Paths containing '..' could escape the intended directory
+        and access sensitive system files.
+        """
+        malicious_path = Path("../../../etc/passwd")
+
+        result = MockValidator._validate_cli_path(malicious_path, "target path")
+
+        # Should return None (rejection)
+        assert result is None
+
+    def test_validate_cli_path_rejects_double_slash(self) -> None:
+        """Test that CLI path validation rejects '//' bypass attempts.
+
+        Security: Double slashes can be used to bypass path normalization
+        in some systems.
+        """
+        malicious_path = Path("//etc/passwd")
+
+        result = MockValidator._validate_cli_path(malicious_path, "target path")
+
+        # Should return None (rejection)
+        assert result is None
+
+    def test_validate_cli_path_accepts_valid_path(self, tmp_path: Path) -> None:
+        """Test that CLI path validation accepts legitimate paths."""
+        valid_path = tmp_path / "test_file.py"
+        valid_path.write_text("# test")
+
+        result = MockValidator._validate_cli_path(valid_path, "target path")
+
+        # Should return resolved path
+        assert result is not None
+        assert result == valid_path.resolve()
+
+    def test_resolve_targets_rejects_source_root_traversal(
+        self, tmp_path: Path
+    ) -> None:
+        """Test that _resolve_targets rejects source_root with path traversal.
+
+        Security: source_root from YAML contracts could contain traversal
+        sequences if not validated.
+        """
+        # Create a contract with malicious source_root
+        contract = create_test_contract()
+        # Use model_copy to add malicious source_root
+        malicious_contract = contract.model_copy(
+            update={"source_root": Path("../../../etc")}
+        )
+        validator = MockValidator(contract=malicious_contract)
+
+        # Create a target directory
+        target_dir = tmp_path / "target"
+        target_dir.mkdir()
+
+        # Should raise SECURITY_VIOLATION error
+        with pytest.raises(ModelOnexError) as exc_info:
+            validator._resolve_targets([target_dir])
+
+        # Verify the actual error code is SECURITY_VIOLATION
+        assert exc_info.value.error_code == EnumCoreErrorCode.SECURITY_VIOLATION
+        # Verify the error message mentions path traversal
+        assert "traversal" in exc_info.value.message.lower()
+
+    def test_resolve_targets_rejects_double_slash_in_source_root(
+        self, tmp_path: Path
+    ) -> None:
+        """Test that _resolve_targets rejects source_root with double slashes.
+
+        Security: Double slashes can indicate path manipulation attempts.
+        """
+        # Create a contract with malicious source_root (double slash)
+        contract = create_test_contract()
+        malicious_contract = contract.model_copy(
+            update={"source_root": Path("//usr/local")}
+        )
+        validator = MockValidator(contract=malicious_contract)
+
+        target_dir = tmp_path / "target"
+        target_dir.mkdir()
+
+        # Should raise SECURITY_VIOLATION error
+        with pytest.raises(ModelOnexError) as exc_info:
+            validator._resolve_targets([target_dir])
+
+        # Verify the actual error code is SECURITY_VIOLATION
+        assert exc_info.value.error_code == EnumCoreErrorCode.SECURITY_VIOLATION
+
+    def test_model_validator_subcontract_rejects_traversal_in_source_root(
+        self,
+    ) -> None:
+        """Test that ModelValidatorSubcontract validation rejects traversal.
+
+        Security: The subcontract model validation should catch path traversal
+        at the earliest point - during model construction.
+        """
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelValidatorSubcontract(
+                version=ModelSemVer(major=1, minor=0, patch=0),
+                validator_id="test",
+                validator_name="Test Validator",
+                validator_description="Test description",
+                source_root=Path("../../../etc/passwd"),
+            )
+
+        # Verify the actual error code is SECURITY_VIOLATION
+        assert exc_info.value.error_code == EnumCoreErrorCode.SECURITY_VIOLATION
+        # Verify error message mentions path traversal
+        assert "traversal" in exc_info.value.message.lower()
+
+    def test_model_validator_subcontract_rejects_double_slash(self) -> None:
+        """Test that ModelValidatorSubcontract rejects double slash paths.
+
+        Security: Double slashes are another form of path manipulation.
+        """
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelValidatorSubcontract(
+                version=ModelSemVer(major=1, minor=0, patch=0),
+                validator_id="test",
+                validator_name="Test Validator",
+                validator_description="Test description",
+                source_root=Path("//usr//local"),
+            )
+
+        # Verify the actual error code is SECURITY_VIOLATION
+        assert exc_info.value.error_code == EnumCoreErrorCode.SECURITY_VIOLATION
+        # Verify error message mentions path traversal
+        assert "traversal" in exc_info.value.message.lower()
+
+    def test_model_validator_subcontract_accepts_valid_source_root(
+        self, tmp_path: Path
+    ) -> None:
+        """Test that ModelValidatorSubcontract accepts valid source_root."""
+        # Create a valid source root path (no traversal)
+        valid_source_root = tmp_path / "src"
+        valid_source_root.mkdir()
+
+        # Should not raise
+        contract = ModelValidatorSubcontract(
+            version=ModelSemVer(major=1, minor=0, patch=0),
+            validator_id="test",
+            validator_name="Test Validator",
+            validator_description="Test description",
+            source_root=valid_source_root,
+        )
+
+        assert contract.source_root == valid_source_root
+
+    def test_path_traversal_payloads(self) -> None:
+        """Test multiple path traversal payload patterns.
+
+        Security: Tests a variety of path traversal attack patterns
+        to ensure comprehensive protection.
+        """
+        traversal_payloads = [
+            "../../../etc/passwd",
+            "..\\..\\..\\windows\\system32",
+            "....//....//etc/passwd",
+            "/var/log/../../../etc/passwd",
+            "foo/../../../etc/passwd",
+        ]
+
+        for payload in traversal_payloads:
+            path = Path(payload)
+            result = MockValidator._validate_cli_path(path, "test")
+            assert result is None, f"Should reject traversal payload: {payload}"

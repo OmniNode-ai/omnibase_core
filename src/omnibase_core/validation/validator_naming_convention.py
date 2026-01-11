@@ -72,6 +72,19 @@ RULE_CLASS_NAMING = "class_naming"
 RULE_FUNCTION_NAMING = "function_naming"
 RULE_UNKNOWN_NAMING = "unknown_naming"
 
+# Message prefix constants for issue categorization
+# These MUST match the exact prefixes used by NamingConventionChecker in
+# checker_naming_convention.py. If checker messages change, update these constants.
+#
+# Current checker message formats:
+#   - Class: "Class name '{name}' contains anti-pattern..."
+#   - Class: "Class name '{name}' should use PascalCase"
+#   - Function: "Function name '{name}' should use snake_case"
+#   - Async: "Async function name '{name}' should use snake_case"
+_MSG_PREFIX_CLASS: str = "Class name"
+_MSG_PREFIX_FUNCTION: str = "Function name"
+_MSG_PREFIX_ASYNC_FUNCTION: str = "Async function name"
+
 
 class ValidatorNamingConvention(ValidatorBase):
     """Validator for naming conventions in Python code.
@@ -87,6 +100,31 @@ class ValidatorNamingConvention(ValidatorBase):
     - Allowed files (__init__.py, conftest.py, py.typed)
     - Private modules (files starting with _)
     - Inline suppression comments
+
+    Rule configuration is precomputed at initialization for O(1) lookups
+    during validation, avoiding repeated iteration over contract rules.
+
+    Thread Safety:
+        ValidatorNamingConvention instances are NOT thread-safe due to internal
+        mutable state. Specifically:
+
+        - ``_file_line_cache`` (inherited from ValidatorBase): Caches file
+          contents during validation. Concurrent access from multiple threads
+          could cause cache corruption or stale reads.
+
+        - ``_rule_config_cache``: Lazily built dictionary mapping rule IDs to
+          configurations. While the lazy initialization is mostly safe due to
+          Python's GIL, concurrent first-access from multiple threads could
+          cause redundant computation.
+
+        **When using parallel execution (e.g., pytest-xdist workers or
+        ThreadPoolExecutor), create separate validator instances per worker.**
+
+        The contract (ModelValidatorSubcontract) is immutable (frozen=True)
+        and safe to share across threads.
+
+        For more details, see the Threading Guide:
+        ``docs/guides/THREADING.md``
 
     Attributes:
         validator_id: Unique identifier for this validator ("naming_convention").
@@ -125,24 +163,15 @@ class ValidatorNamingConvention(ValidatorBase):
         """
         issues: list[ModelValidationIssue] = []
 
-        # Get rule enablement from contract
-        rules_enabled = {rule.rule_id: rule.enabled for rule in contract.rules}
-        rules_severity = {rule.rule_id: rule.severity for rule in contract.rules}
-
-        # Default to enabled if rule not in contract
-        file_naming_enabled = rules_enabled.get(RULE_FILE_NAMING, True)
-        class_naming_enabled = rules_enabled.get(RULE_CLASS_NAMING, True)
-        function_naming_enabled = rules_enabled.get(RULE_FUNCTION_NAMING, True)
-
-        # Get severities (default to contract's severity_default)
-        file_naming_severity = rules_severity.get(
-            RULE_FILE_NAMING, contract.severity_default
+        # Get rule configs from precomputed cache (O(1) lookups)
+        file_naming_enabled, file_naming_severity = self._get_rule_config(
+            RULE_FILE_NAMING, contract
         )
-        class_naming_severity = rules_severity.get(
-            RULE_CLASS_NAMING, contract.severity_default
+        class_naming_enabled, class_naming_severity = self._get_rule_config(
+            RULE_CLASS_NAMING, contract
         )
-        function_naming_severity = rules_severity.get(
-            RULE_FUNCTION_NAMING, contract.severity_default
+        function_naming_enabled, function_naming_severity = self._get_rule_config(
+            RULE_FUNCTION_NAMING, contract
         )
 
         # 1. Check file naming (line 0 = file-level issue)
@@ -208,8 +237,14 @@ class ValidatorNamingConvention(ValidatorBase):
 
         try:
             tree = ast.parse(source, filename=str(path))
-        except SyntaxError:
-            # Syntax error - skip silently (not a valid Python file for AST analysis)
+        except SyntaxError as e:
+            # fallback-ok: log warning and skip file with syntax errors
+            logger.warning(
+                "Skipping file with syntax error: path=%s, line=%s, error=%s",
+                path,
+                e.lineno,
+                e.msg,
+            )
             return issues
 
         # Use the existing NamingConventionChecker from checker_naming_convention
@@ -217,11 +252,9 @@ class ValidatorNamingConvention(ValidatorBase):
         checker.visit(tree)
 
         # Get rule enablement for unknown issues (class/function already passed as args)
-        rules_enabled = {rule.rule_id: rule.enabled for rule in contract.rules}
-        rules_severity = {rule.rule_id: rule.severity for rule in contract.rules}
-        unknown_naming_enabled = rules_enabled.get(RULE_UNKNOWN_NAMING, True)
-        unknown_naming_severity = rules_severity.get(
-            RULE_UNKNOWN_NAMING, contract.severity_default
+        # Uses precomputed cache for O(1) lookup
+        unknown_naming_enabled, unknown_naming_severity = self._get_rule_config(
+            RULE_UNKNOWN_NAMING, contract
         )
 
         # Convert checker issues to ModelValidationIssue
@@ -254,20 +287,36 @@ class ValidatorNamingConvention(ValidatorBase):
                             message = issue_str.split(":", 1)[1].strip()
 
             # Determine rule type and severity based on message content
-            if "Class name" in issue_str:
+            # IMPORTANT: Use the defined constants (_MSG_PREFIX_*) for pattern matching.
+            # These constants MUST be kept synchronized with checker_naming_convention.py.
+            # Check message (extracted content) not issue_str (which includes "Line N:" prefix)
+            # to ensure accurate matching against the actual violation message.
+            if message.startswith(_MSG_PREFIX_CLASS):
                 if not class_naming_enabled:
                     continue
                 severity = class_naming_severity
                 rule_name = RULE_CLASS_NAMING
                 code = RULE_CLASS_NAMING
-            elif "Function name" in issue_str or "Async function name" in issue_str:
+            elif message.startswith(_MSG_PREFIX_ASYNC_FUNCTION):
+                # Check async first - it's more specific than plain "Function name"
+                if not function_naming_enabled:
+                    continue
+                severity = function_naming_severity
+                rule_name = RULE_FUNCTION_NAMING
+                code = RULE_FUNCTION_NAMING
+            elif message.startswith(_MSG_PREFIX_FUNCTION):
                 if not function_naming_enabled:
                     continue
                 severity = function_naming_severity
                 rule_name = RULE_FUNCTION_NAMING
                 code = RULE_FUNCTION_NAMING
             else:
-                # Unknown issue type - log at warning level (unexpected pattern)
+                # Unknown issue type - this indicates either:
+                # 1. A new issue type was added to NamingConventionChecker without updating
+                #    the _MSG_PREFIX_* constants here
+                # 2. A message format change that broke pattern matching
+                # 3. A genuinely unexpected issue from a different source
+                #
                 # Check if unknown_naming rule is enabled before emitting
                 if not unknown_naming_enabled:
                     logger.debug(
@@ -276,9 +325,15 @@ class ValidatorNamingConvention(ValidatorBase):
                     )
                     continue
                 # Log at warning level to surface unexpected patterns for investigation
+                # Include the extracted message to help identify the pattern
                 logger.warning(
-                    "Unknown naming issue type detected (not class/function): %s",
+                    "Unknown naming issue type detected - message does not match "
+                    "known prefixes ('%s', '%s', '%s'). Raw issue: %s, Extracted message: %s",
+                    _MSG_PREFIX_CLASS,
+                    _MSG_PREFIX_ASYNC_FUNCTION,
+                    _MSG_PREFIX_FUNCTION,
                     issue_str,
+                    message,
                 )
                 severity = unknown_naming_severity
                 rule_name = RULE_UNKNOWN_NAMING

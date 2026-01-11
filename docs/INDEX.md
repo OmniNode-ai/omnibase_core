@@ -255,6 +255,30 @@ def serialize_error(error: ModelOnexError) -> TypedDictValidationErrorSerialized
 | Document | Description | Status |
 |----------|-------------|--------|
 | [**Security Validators**](../scripts/validation/README.md) | Secret detection and environment variable validation | ✅ Complete |
+| [**ValidatorBase Framework**](../src/omnibase_core/validation/validator_base.py) | Contract-driven base class for file validators (OMN-1291) | ✅ Complete |
+
+#### ValidatorBase Framework (OMN-1291)
+
+The `ValidatorBase` framework provides a contract-driven approach for building file-based validators with shared behavior:
+
+- **Contract-driven configuration** via `ModelValidatorSubcontract` YAML files
+- **Glob-based file targeting** with exclusion patterns
+- **Inline suppression comments** for selective rule bypassing
+- **Deterministic violation ordering** (severity -> file -> line)
+- **CLI integration** with exit code mapping
+
+**Key Files**:
+- Base class: [`validator_base.py`](../src/omnibase_core/validation/validator_base.py)
+- Contract model: [`model_validator_subcontract.py`](../src/omnibase_core/models/contracts/subcontracts/model_validator_subcontract.py)
+- Validation contracts: [`src/omnibase_core/validation/contracts/`](../src/omnibase_core/validation/contracts/)
+
+**Example Validators** (using ValidatorBase):
+- `validator_naming_convention.py` - File naming conventions
+- `validator_patterns.py` - Code pattern detection
+- `validator_union_usage.py` - Union type usage validation
+- `validator_architecture.py` - Architecture rule enforcement
+
+**Thread Safety**: ValidatorBase instances are NOT thread-safe. See [Threading Guide](guides/THREADING.md#validator-thread-safety) for details.
 
 ### Concurrency & Threading
 
@@ -335,6 +359,7 @@ def serialize_error(error: ModelOnexError) -> TypedDictValidationErrorSerialized
 | **Use pipeline hooks** | [Pipeline Hook Registry](guides/PIPELINE_HOOK_REGISTRY.md) - Phase-based hook execution |
 | **Convert mixins to handlers** | [Handler Conversion Guide](guides/HANDLER_CONVERSION_GUIDE.md) - Step-by-step conversion |
 | **Create custom validators** | [Custom Callable Patterns](guides/CUSTOM_CALLABLE_PATTERNS.md) - Custom invariant validation |
+| **Build file validators** | [ValidatorBase Framework](#validatorbase-framework-omn-1291) - Contract-driven file validation |
 | **Create replay test corpora** | [Execution Corpus Guide](guides/EXECUTION_CORPUS_GUIDE.md) - Corpus curation and usage |
 
 ---
@@ -374,10 +399,10 @@ def serialize_error(error: ModelOnexError) -> TypedDictValidationErrorSerialized
 | **Architecture** | 18 | 0 | 0 | 18 |
 | **Reference** | 14 | 0 | 0 | 14 |
 | **Standards** | 1 | 0 | 0 | 1 |
-| **Specialized** | 15 | 0 | 0 | 15 |
-| **TOTAL** | **62** | **0** | **0** | **62** |
+| **Specialized** | 16 | 0 | 0 | 16 |
+| **TOTAL** | **63** | **0** | **0** | **63** |
 
-**Overall Progress**: 100% complete (62/62 documents)
+**Overall Progress**: 100% complete (63/63 documents)
 
 ### Priority Items
 
@@ -389,6 +414,7 @@ def serialize_error(error: ModelOnexError) -> TypedDictValidationErrorSerialized
 - ✅ Integration Testing Guide
 - ✅ All node tutorials (COMPUTE, EFFECT, REDUCER, ORCHESTRATOR)
 - ✅ Agent Templates (AI-optimized node templates)
+- ✅ ValidatorBase Framework (OMN-1291) - Contract-driven file validation
 
 ---
 
@@ -455,7 +481,7 @@ See [Documentation Architecture](architecture/DOCUMENTATION_ARCHITECTURE.md) for
 
 ---
 
-**Last Updated**: 2025-12-17
+**Last Updated**: 2026-01-11
 **Documentation Version**: 1.1.0
 **Framework Version**: omnibase_core 0.4.0+
 

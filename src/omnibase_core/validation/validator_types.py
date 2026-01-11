@@ -56,7 +56,6 @@ import sys
 from pathlib import Path
 from typing import ClassVar
 
-from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
 from omnibase_core.errors.exception_groups import FILE_IO_ERRORS
 from omnibase_core.models.common.model_validation_issue import ModelValidationIssue
 from omnibase_core.models.common.model_validation_metadata import (
@@ -89,13 +88,21 @@ class ValidatorUnionUsage(ValidatorBase):
     The validator respects exemptions via:
     - Inline suppression comments from contract configuration
 
+    Rule configuration is precomputed at initialization for O(1) lookups
+    during validation, avoiding repeated iteration over contract rules.
+
     Thread Safety:
         ValidatorUnionUsage instances are NOT thread-safe due to internal
-        mutable state inherited from ValidatorBase:
+        mutable state. Specifically:
 
-        - ``_file_line_cache``: Caches file contents during validation.
-          Concurrent access from multiple threads could cause cache corruption
-          or stale reads.
+        - ``_file_line_cache`` (inherited from ValidatorBase): Caches file
+          contents during validation. Concurrent access from multiple threads
+          could cause cache corruption or stale reads.
+
+        - ``_rule_config_cache``: Lazily built dictionary mapping rule IDs to
+          configurations. While the lazy initialization is mostly safe due to
+          Python's GIL, concurrent first-access from multiple threads could
+          cause redundant computation.
 
         **When using parallel execution (e.g., pytest-xdist workers or
         ThreadPoolExecutor), create separate validator instances per worker.**
@@ -119,33 +126,6 @@ class ValidatorUnionUsage(ValidatorBase):
 
     # ONEX_EXCLUDE: string_id - human-readable validator identifier
     validator_id: ClassVar[str] = "union_usage"
-
-    def _get_rule_config(
-        self,
-        rule_id: str | None,
-        contract: ModelValidatorSubcontract,
-    ) -> tuple[bool, EnumValidationSeverity]:
-        """Get rule enabled state and severity from contract.
-
-        Looks up the rule configuration in the contract. If the rule is found,
-        returns its enabled state and severity. If not found, returns enabled=True
-        (default) and the contract's default severity.
-
-        Args:
-            rule_id: The rule identifier to look up (None returns defaults).
-            contract: Validator contract with rule configurations.
-
-        Returns:
-            Tuple of (enabled, severity) for the rule.
-        """
-        if rule_id is None:
-            return (True, contract.severity_default)
-
-        for rule in contract.rules:
-            if rule.rule_id == rule_id:
-                return (rule.enabled, rule.severity)
-        # Rule not in contract - use defaults (enabled=True, default severity)
-        return (True, contract.severity_default)
 
     def _validate_file(
         self,
@@ -216,6 +196,7 @@ class ValidatorUnionUsage(ValidatorBase):
                 ModelValidationIssue(
                     severity=severity,
                     message=issue_str,
+                    code=rule_name,
                     file_path=path,
                     line_number=line_number,
                     rule_name=rule_name,

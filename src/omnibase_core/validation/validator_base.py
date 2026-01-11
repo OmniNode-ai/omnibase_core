@@ -120,11 +120,24 @@ class ValidatorBase(ABC):
     - _get_contract_path(): Custom contract path resolution
 
     Thread Safety:
-        ValidatorBase instances are NOT thread-safe due to internal mutable state
-        (specifically _file_line_cache). When using parallel execution (e.g.,
-        pytest-xdist workers), create separate validator instances per worker.
+        ValidatorBase instances are NOT thread-safe due to internal mutable state.
+        Specifically:
+
+        - ``_file_line_cache``: Caches file contents during validation. Concurrent
+          access from multiple threads could cause cache corruption or stale reads.
+
+        - ``_rule_config_cache``: Lazily built dictionary mapping rule IDs to
+          configurations. While the lazy initialization is mostly safe due to
+          Python's GIL, concurrent first-access from multiple threads could
+          cause redundant computation.
+
+        **When using parallel execution (e.g., pytest-xdist workers or
+        ThreadPoolExecutor), create separate validator instances per worker.**
         Do not share instances across threads without external synchronization.
-        The contract (ModelValidatorSubcontract) is immutable and safe to share.
+        The contract (ModelValidatorSubcontract) is immutable (frozen=True) and
+        safe to share across threads.
+
+        For more details, see the Threading Guide: ``docs/guides/THREADING.md``
 
     Attributes:
         validator_id: Unique identifier for this validator (must be set by subclass).
@@ -147,6 +160,16 @@ class ValidatorBase(ABC):
         # per worker. Cache is cleared after validate() completes to prevent
         # unbounded memory growth.
         self._file_line_cache: dict[Path, list[str]] = {}
+        # Precomputed rule configuration cache for O(1) lookups
+        # Maps rule_id -> (enabled, severity)
+        # Thread Safety: This cache is lazily initialized on first access.
+        # While Python's GIL provides basic atomicity, concurrent first-access
+        # from multiple threads could cause redundant computation. For thread-safe
+        # usage, create separate validator instances per thread/worker.
+        # See docs/guides/THREADING.md for details.
+        self._rule_config_cache: (
+            dict[str, tuple[bool, EnumValidationSeverity]] | None
+        ) = None
 
     @property
     def contract(self) -> ModelValidatorSubcontract:
@@ -373,7 +396,19 @@ class ValidatorBase(ABC):
         """Check if path matches any exclusion pattern.
 
         Uses fnmatch for pattern matching against the contract's
-        exclude_patterns.
+        exclude_patterns. Supports three matching strategies:
+
+        1. **Full path match**: Pattern matched against complete path string
+           (both OS-native and POSIX formats for cross-platform compatibility)
+
+        2. **Directory component match**: For patterns that target specific
+           directories (like `**/__pycache__/**`), extracts the core directory
+           name and matches against individual path components.
+
+        Pattern Handling:
+            - Patterns like `**/dirname/**` match any path containing `dirname/`
+            - Patterns like `**/*_test.py` match files ending with `_test.py`
+            - Literal patterns (no wildcards) require exact matches
 
         Args:
             path: Path to check.
@@ -390,10 +425,35 @@ class ValidatorBase(ABC):
                 return True
             if fnmatch.fnmatch(path_posix, pattern):
                 return True
-            # Also check if pattern matches any part of the path
-            for part in path.parts:
-                if fnmatch.fnmatch(part, pattern.strip("*/")):
-                    return True
+
+            # Component-based matching for directory patterns
+            # Only strip leading/trailing wildcards if the pattern is a typical
+            # glob pattern (contains **). This handles patterns like:
+            #   - "**/node_modules/**" -> matches 'node_modules' in any path part
+            #   - "**/__pycache__/**" -> matches '__pycache__' in any path part
+            #
+            # We use lstrip/rstrip separately to be more precise about what we remove,
+            # avoiding the issue where strip("*/") would remove characters in any order.
+            if "**" in pattern or pattern.startswith("*/") or pattern.endswith("/*"):
+                # Extract the core pattern by removing glob traversal markers
+                # Start with the full pattern
+                core_pattern = pattern
+                # Remove leading glob patterns (**, */)
+                while core_pattern.startswith(("**/", "*/")):
+                    core_pattern = core_pattern[
+                        3 if core_pattern.startswith("**/") else 2 :
+                    ]
+                # Remove trailing glob patterns (**, /*)
+                while core_pattern.endswith(("/**", "/*")):
+                    core_pattern = core_pattern[
+                        : -3 if core_pattern.endswith("/**") else -2
+                    ]
+
+                # Only proceed if we extracted a meaningful pattern
+                if core_pattern and core_pattern != "*":
+                    for part in path.parts:
+                        if fnmatch.fnmatch(part, core_pattern):
+                            return True
 
         return False
 
@@ -454,6 +514,78 @@ class ValidatorBase(ABC):
                 e,
             )
             return []
+
+    def _build_rule_config_cache(
+        self,
+        contract: ModelValidatorSubcontract,
+    ) -> dict[str, tuple[bool, EnumValidationSeverity]]:
+        """Build precomputed cache of rule configurations for O(1) lookups.
+
+        Creates a dictionary mapping rule_id to (enabled, severity) tuple.
+        This is called once when the contract is first accessed, avoiding
+        repeated iteration over contract rules during validation.
+
+        Thread Safety:
+            This method itself is safe to call from multiple threads, but the
+            cache it builds should only be stored in instance state when the
+            caller can guarantee single-writer semantics. See class docstring
+            for thread safety guidelines.
+
+        Args:
+            contract: Validator contract with rule configurations.
+
+        Returns:
+            Dictionary mapping rule_id to (enabled, severity) tuple.
+        """
+        cache: dict[str, tuple[bool, EnumValidationSeverity]] = {}
+        for rule in contract.rules:
+            # Guard against None severity - use contract default if None
+            severity = (
+                rule.severity
+                if rule.severity is not None
+                else contract.severity_default
+            )
+            cache[rule.rule_id] = (rule.enabled, severity)
+        return cache
+
+    def _get_rule_config(
+        self,
+        rule_id: str | None,
+        contract: ModelValidatorSubcontract,
+    ) -> tuple[bool, EnumValidationSeverity]:
+        """Get rule enabled state and severity from precomputed cache.
+
+        Uses O(1) dictionary lookup instead of iterating through all rules.
+        Cache is lazily built on first access.
+
+        Thread Safety:
+            This method uses lazy initialization which is mostly safe due to
+            Python's GIL, but concurrent first-access from multiple threads
+            could cause redundant computation. For thread-safe usage, create
+            separate validator instances per thread/worker.
+            See docs/guides/THREADING.md for details.
+
+        Args:
+            rule_id: The rule identifier to look up. If None, returns defaults.
+            contract: Validator contract with rule configurations.
+
+        Returns:
+            Tuple of (enabled, severity) for the rule. If rule is not in
+            contract or rule_id is None, returns (True, default_severity).
+        """
+        if rule_id is None:
+            return (True, contract.severity_default)
+
+        # Lazily build cache on first access
+        if self._rule_config_cache is None:
+            self._rule_config_cache = self._build_rule_config_cache(contract)
+
+        # O(1) lookup from cache
+        if rule_id in self._rule_config_cache:
+            return self._rule_config_cache[rule_id]
+
+        # Rule not in contract - use defaults (enabled=True, default severity)
+        return (True, contract.severity_default)
 
     def _load_contract(self) -> ModelValidatorSubcontract:
         """Load contract from default YAML location.
@@ -763,9 +895,20 @@ class ValidatorBase(ABC):
 
             try:
                 content = validated_contract.read_text(encoding="utf-8")
-                data = yaml.safe_load(
-                    content
-                )  # ONEX_EXCLUDE: manual_yaml - validator contract loading
+                # ONEX_EXCLUDE: manual_yaml - validator contract loading
+                data = yaml.safe_load(content)
+
+                if not isinstance(data, dict):
+                    print(
+                        "Error loading contract: must be a YAML mapping",
+                        file=sys.stderr,
+                    )
+                    return EXIT_ERRORS
+
+                # Handle nested 'validation:' structure (match _load_contract behavior)
+                if "validation" in data and isinstance(data["validation"], dict):
+                    data = data["validation"]
+
                 contract = ModelValidatorSubcontract.model_validate(data)
             except (*FILE_IO_ERRORS, *YAML_PARSING_ERRORS) as e:
                 print(f"Error loading contract: {e}", file=sys.stderr)

@@ -328,6 +328,21 @@ class ModelValidatorSubcontract(BaseModel):
 
         # Security: Reject paths with traversal sequences
         # Check for parent directory traversal (..) and double slashes (//)
+        #
+        # SECURITY ASSUMPTION (OMN-1291):
+        # This validation provides defense-in-depth for path traversal attacks.
+        # It is the FIRST LINE of defense - catching malicious paths during model
+        # construction from YAML contracts. Additional defense exists in:
+        # - ValidatorBase._validate_cli_path() for CLI-provided paths
+        # - ValidatorBase._resolve_targets() as a second check before file access
+        #
+        # Attack Vector: Malicious YAML contracts could specify source_root values
+        # like '../../../etc' to escape the intended validation directory and
+        # potentially access sensitive system files.
+        #
+        # Patterns detected:
+        # - '..' : Parent directory traversal (../../../etc/passwd)
+        # - '//' : Double slash (path bypass attempts)
         traversal_patterns = ["..", "//"]
         for pattern in traversal_patterns:
             if pattern in path_str:
@@ -349,6 +364,7 @@ class ModelValidatorSubcontract(BaseModel):
                         },
                     ),
                 )
+        # Security validated: source_root does not contain traversal patterns
         return self
 
     model_config = ConfigDict(

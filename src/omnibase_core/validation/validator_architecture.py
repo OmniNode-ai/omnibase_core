@@ -47,7 +47,6 @@ from pathlib import Path
 from typing import ClassVar
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
 from omnibase_core.models.common.model_validation_issue import ModelValidationIssue
 from omnibase_core.models.common.model_validation_metadata import (
     ModelValidationMetadata,
@@ -156,6 +155,31 @@ class ValidatorArchitecture(ValidatorBase):
     The validator respects exemptions via:
     - Inline suppression comments
 
+    Rule configuration is precomputed at initialization for O(1) lookups
+    during validation, avoiding repeated iteration over contract rules.
+
+    Thread Safety:
+        ValidatorArchitecture instances are NOT thread-safe due to internal
+        mutable state. Specifically:
+
+        - ``_file_line_cache`` (inherited from ValidatorBase): Caches file
+          contents during validation. Concurrent access from multiple threads
+          could cause cache corruption or stale reads.
+
+        - ``_rule_config_cache``: Lazily built dictionary mapping rule IDs to
+          configurations. While the lazy initialization is mostly safe due to
+          Python's GIL, concurrent first-access from multiple threads could
+          cause redundant computation.
+
+        **When using parallel execution (e.g., pytest-xdist workers or
+        ThreadPoolExecutor), create separate validator instances per worker.**
+
+        The contract (ModelValidatorSubcontract) is immutable (frozen=True)
+        and safe to share across threads.
+
+        For more details, see the Threading Guide:
+        ``docs/guides/THREADING.md``
+
     Attributes:
         validator_id: Unique identifier for this validator ("architecture").
 
@@ -179,6 +203,9 @@ class ValidatorArchitecture(ValidatorBase):
         - Per-directory validation results
         - Summary statistics
         - Help messages for failures
+
+        Security: All user-provided paths are validated for path traversal
+        attacks before use. Paths containing ".." or "//" are rejected.
 
         Returns:
             Exit code: 0 for success, 1 for failure.
@@ -211,6 +238,14 @@ class ValidatorArchitecture(ValidatorBase):
 
         args = parser.parse_args()
 
+        # Security: Validate all user-provided target paths for path traversal
+        validated_targets: list[Path] = []
+        for target in args.targets:
+            validated = cls._validate_cli_path(target, "target path")
+            if validated is None:
+                return 1
+            validated_targets.append(validated)
+
         # Print header
         print("🔍 ONEX One-Model-Per-File Validation")
         print("📋 Enforcing architectural separation")
@@ -222,8 +257,8 @@ class ValidatorArchitecture(ValidatorBase):
         all_issues: list[ModelValidationIssue] = []
         has_nonexistent = False
 
-        # Process each target
-        for target in args.targets:
+        # Process each target (using validated paths)
+        for target in validated_targets:
             if not target.exists():
                 print(f"Directory not found: {target}")
                 has_nonexistent = True
@@ -305,30 +340,6 @@ class ValidatorArchitecture(ValidatorBase):
 
             return 1
 
-    def _get_rule_config(
-        self,
-        rule_id: str,
-        contract: ModelValidatorSubcontract,
-    ) -> tuple[bool, EnumValidationSeverity]:
-        """Get rule enabled state and severity from contract.
-
-        Looks up the rule configuration in the contract. If the rule is found,
-        returns its enabled state and severity. If not found, returns enabled=True
-        (default) and the contract's default severity.
-
-        Args:
-            rule_id: The rule identifier to look up.
-            contract: Validator contract with rule configurations.
-
-        Returns:
-            Tuple of (enabled, severity) for the rule.
-        """
-        for rule in contract.rules:
-            if rule.rule_id == rule_id:
-                return (rule.enabled, rule.severity)
-        # Rule not in contract - use defaults (enabled=True, default severity)
-        return (True, contract.severity_default)
-
     def _validate_file(
         self,
         path: Path,
@@ -355,8 +366,14 @@ class ValidatorArchitecture(ValidatorBase):
 
         try:
             tree = ast.parse(source, filename=str(path))
-        except SyntaxError:
-            # Syntax error - skip silently (not a valid Python file for AST analysis)
+        except SyntaxError as e:
+            # fallback-ok: log warning and skip file with syntax errors
+            logger.warning(
+                "Skipping file with syntax error: path=%s, line=%s, error=%s",
+                path,
+                e.lineno,
+                e.msg,
+            )
             return ()
 
         # Run AST visitor

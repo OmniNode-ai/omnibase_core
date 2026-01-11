@@ -20,6 +20,13 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
 
+# Type alias for rule parameter values to avoid inline union soup.
+# Supports common JSON-serializable primitive types.
+type RuleParameterValue = str | int | float | bool | list[str]
+
+# Type alias for the parameters dictionary used in validator rules.
+type RuleParameterDict = dict[str, RuleParameterValue]
+
 
 class ModelValidatorRule(BaseModel):
     """
@@ -61,7 +68,7 @@ class ModelValidatorRule(BaseModel):
         description="Whether this rule is active",
     )
 
-    parameters: dict[str, str | int | float | bool | list[str]] | None = Field(
+    parameters: RuleParameterDict | None = Field(
         default=None,
         description="Rule-specific configuration parameters",
     )
@@ -74,4 +81,4 @@ class ModelValidatorRule(BaseModel):
     )
 
 
-__all__ = ["ModelValidatorRule"]
+__all__ = ["ModelValidatorRule", "RuleParameterDict", "RuleParameterValue"]

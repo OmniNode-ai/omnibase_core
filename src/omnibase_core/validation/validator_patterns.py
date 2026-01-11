@@ -70,7 +70,6 @@ import sys
 from pathlib import Path
 from typing import ClassVar, Protocol
 
-from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
 from omnibase_core.models.common.model_validation_issue import ModelValidationIssue
 from omnibase_core.models.common.model_validation_metadata import (
     ModelValidationMetadata,
@@ -107,9 +106,13 @@ RULE_UNKNOWN: str = "unknown"
 #
 # Pattern Design Principles:
 # 1. Match exact phrases from checker output (see checker_*.py files)
-# 2. Use word boundaries (\b) to prevent partial matches
-# 3. Use case-insensitive matching for robustness
+# 2. All patterns MUST be fully anchored with ^ and $ for precise matching
+# 3. Use case-insensitive matching for robustness where appropriate
 # 4. More specific patterns BEFORE generic ones (e.g., "Async function" before "Function")
+#
+# IMPORTANT: All patterns use full anchoring (^ and $) to prevent partial matches.
+# The .* captures variable content like names and counts. Without $ anchors,
+# patterns could match unintended messages leading to misclassification.
 #
 # If a pattern fails to match, the issue falls back to RULE_UNKNOWN which defaults
 # to enabled. Keep patterns synchronized with checker output to prevent miscategorization.
@@ -125,17 +128,42 @@ _ISSUE_CATEGORY_PATTERNS: tuple[tuple[re.Pattern[str], str], ...] = (
     # Message: "Field '{name}' should use Enum instead of str"
     (re.compile(r"^Field '.*' should use Enum instead of str$"), RULE_ENUM_FIELD),
     # Message: "Field '{name}' might reference an entity - consider using ID + display_name pattern"
-    (re.compile(r"^Field '.*' might reference an entity"), RULE_ENTITY_NAME),
+    (
+        re.compile(
+            r"^Field '.*' might reference an entity - consider using ID \+ display_name pattern$"
+        ),
+        RULE_ENTITY_NAME,
+    ),
     # Generic pattern checks - match exact phrases from GenericPatternChecker
     # Message: "Function name '{name}' is too generic - use specific domain terminology"
-    (re.compile(r"^Function name '.*' is too generic\b"), RULE_GENERIC_FUNCTION),
+    (
+        re.compile(
+            r"^Function name '.*' is too generic - use specific domain terminology$"
+        ),
+        RULE_GENERIC_FUNCTION,
+    ),
     # Message: "Function '{name}' has {count} parameters - consider using a model or breaking into smaller functions"
-    (re.compile(r"^Function '.*' has \d+ parameters\b"), RULE_MAX_PARAMS),
+    (
+        re.compile(
+            r"^Function '.*' has \d+ parameters - consider using a model or breaking into smaller functions$"
+        ),
+        RULE_MAX_PARAMS,
+    ),
     # Message: "Class '{name}' has {count} methods - consider breaking into smaller classes"
-    (re.compile(r"^Class '.*' has \d+ methods\b"), RULE_GOD_CLASS),
+    (
+        re.compile(
+            r"^Class '.*' has \d+ methods - consider breaking into smaller classes$"
+        ),
+        RULE_GOD_CLASS,
+    ),
     # Naming convention checks - match exact phrases from NamingConventionChecker
     # Message: "Class name '{name}' contains anti-pattern '{pattern}' - use specific domain terminology"
-    (re.compile(r"^Class name '.*' contains anti-pattern\b"), RULE_CLASS_ANTI_PATTERN),
+    (
+        re.compile(
+            r"^Class name '.*' contains anti-pattern '.*' - use specific domain terminology$"
+        ),
+        RULE_CLASS_ANTI_PATTERN,
+    ),
     # Message: "Class name '{name}' should use PascalCase"
     (re.compile(r"^Class name '.*' should use PascalCase$"), RULE_CLASS_PASCAL_CASE),
     # Message: "Async function name '{name}' should use snake_case" (check async first - more specific)
@@ -270,80 +298,6 @@ class ValidatorPatterns(ValidatorBase):
     # ONEX_EXCLUDE: string_id - human-readable validator identifier
     validator_id: ClassVar[str] = "patterns"
 
-    def __init__(
-        self,
-        contract: ModelValidatorSubcontract | None = None,
-    ) -> None:
-        """Initialize validator with optional pre-loaded contract.
-
-        Args:
-            contract: Pre-loaded validator contract. If None, the contract
-                will be loaded from the default YAML location when first accessed.
-        """
-        super().__init__(contract)
-        # Precomputed rule configuration cache for O(1) lookups
-        # Maps rule_id -> (enabled, severity)
-        # Lazily initialized on first access to contract
-        self._rule_config_cache: (
-            dict[str, tuple[bool, EnumValidationSeverity]] | None
-        ) = None
-
-    def _build_rule_config_cache(
-        self,
-        contract: ModelValidatorSubcontract,
-    ) -> dict[str, tuple[bool, EnumValidationSeverity]]:
-        """Build precomputed cache of rule configurations for O(1) lookups.
-
-        Creates a dictionary mapping rule_id to (enabled, severity) tuple.
-        This is called once when the contract is first accessed, avoiding
-        repeated iteration over contract rules during validation.
-
-        Args:
-            contract: Validator contract with rule configurations.
-
-        Returns:
-            Dictionary mapping rule_id to (enabled, severity) tuple.
-        """
-        cache: dict[str, tuple[bool, EnumValidationSeverity]] = {}
-        for rule in contract.rules:
-            cache[rule.rule_id] = (rule.enabled, rule.severity)
-        return cache
-
-    def _get_rule_config(
-        self,
-        rule_id: str,
-        contract: ModelValidatorSubcontract,
-    ) -> tuple[bool, EnumValidationSeverity]:
-        """Get rule enabled state and severity from precomputed cache.
-
-        Uses O(1) dictionary lookup instead of iterating through all rules.
-        Cache is lazily built on first access.
-
-        Args:
-            rule_id: The rule identifier to look up.
-            contract: Validator contract with rule configurations.
-
-        Returns:
-            Tuple of (enabled, severity) for the rule. If rule is not in
-            contract, returns (True, default_severity).
-        """
-        # Lazily build cache on first access
-        if self._rule_config_cache is None:
-            self._rule_config_cache = self._build_rule_config_cache(contract)
-
-        # O(1) lookup from cache
-        if rule_id in self._rule_config_cache:
-            return self._rule_config_cache[rule_id]
-
-        # Rule not in contract - use defaults (enabled=True, default severity)
-        # Log this for debugging potential misconfigurations
-        if rule_id != RULE_UNKNOWN:
-            logger.debug(
-                "Rule '%s' not found in contract, using defaults",
-                rule_id,
-            )
-        return (True, contract.severity_default)
-
     def _validate_file(
         self,
         path: Path,
@@ -370,8 +324,14 @@ class ValidatorPatterns(ValidatorBase):
 
         try:
             tree = ast.parse(source, filename=str(path))
-        except SyntaxError:
-            # Syntax error - skip silently (not a valid Python file for AST analysis)
+        except SyntaxError as e:
+            # fallback-ok: log warning and skip file with syntax errors
+            logger.warning(
+                "Skipping file with syntax error: path=%s, line=%s, error=%s",
+                path,
+                e.lineno,
+                e.msg,
+            )
             return ()
 
         # Run all pattern checkers

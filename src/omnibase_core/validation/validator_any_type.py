@@ -53,9 +53,6 @@ import sys
 from pathlib import Path
 from typing import ClassVar
 
-# Configure logger for this module
-logger = logging.getLogger(__name__)
-
 from omnibase_core.models.common.model_validation_issue import ModelValidationIssue
 from omnibase_core.models.contracts.subcontracts.model_validator_subcontract import (
     ModelValidatorSubcontract,
@@ -70,6 +67,9 @@ from omnibase_core.validation.visitor_any_type import (
     RULE_UNION_WITH_ANY,
     AnyTypeVisitor,
 )
+
+# Configure logger for this module
+logger = logging.getLogger(__name__)
 
 
 class ValidatorAnyType(ValidatorBase):
@@ -87,6 +87,31 @@ class ValidatorAnyType(ValidatorBase):
     - @allow_any_type decorator
     - @allow_dict_any decorator
     - Inline suppression comments
+
+    Rule configuration is precomputed at initialization for O(1) lookups
+    during validation, avoiding repeated iteration over contract rules.
+
+    Thread Safety:
+        ValidatorAnyType instances are NOT thread-safe due to internal mutable
+        state inherited from ValidatorBase. Specifically:
+
+        - ``_file_line_cache`` (inherited from ValidatorBase): Caches file
+          contents during validation. Concurrent access from multiple threads
+          could cause cache corruption or stale reads.
+
+        - ``_rule_config_cache`` (inherited from ValidatorBase): Lazily built
+          dictionary mapping rule IDs to configurations. While the lazy
+          initialization is mostly safe due to Python's GIL, concurrent
+          first-access from multiple threads could cause redundant computation.
+
+        **When using parallel execution (e.g., pytest-xdist workers or
+        ThreadPoolExecutor), create separate validator instances per worker.**
+
+        The contract (ModelValidatorSubcontract) is immutable (frozen=True)
+        and safe to share across threads.
+
+        For more details, see the Threading Guide:
+        ``docs/guides/THREADING.md``
 
     Attributes:
         validator_id: Unique identifier for this validator ("any_type").
@@ -110,7 +135,8 @@ class ValidatorAnyType(ValidatorBase):
         """Validate a single Python file for Any type usage.
 
         Uses AST analysis to detect Any type patterns and returns
-        issues for each violation found.
+        issues for each violation found. Applies per-rule enablement
+        and severity overrides from the contract.
 
         Args:
             path: Path to the Python file to validate.
@@ -128,13 +154,20 @@ class ValidatorAnyType(ValidatorBase):
 
         try:
             tree = ast.parse(source, filename=str(path))
-        except SyntaxError:
-            # Syntax error - skip silently (not a valid Python file for AST analysis)
+        except SyntaxError as e:
+            # fallback-ok: log warning and skip file with syntax errors
+            logger.warning(
+                "Skipping file with syntax error: path=%s, line=%s, error=%s",
+                path,
+                e.lineno,
+                e.msg,
+            )
             return ()
 
         lines = source.splitlines()
 
         # Create visitor with contract configuration
+        # We use default severity here; per-rule overrides are applied below
         visitor = AnyTypeVisitor(
             source_lines=lines,
             suppression_patterns=contract.suppression_comments,
@@ -145,7 +178,33 @@ class ValidatorAnyType(ValidatorBase):
         # Visit the AST
         visitor.visit(tree)
 
-        return tuple(visitor.issues)
+        # Apply per-rule enablement and severity overrides from contract
+        filtered_issues: list[ModelValidationIssue] = []
+        for issue in visitor.issues:
+            # Get rule configuration (use code as rule_id)
+            rule_id = issue.code if issue.code else "unknown"
+            enabled, severity = self._get_rule_config(rule_id, contract)
+
+            # Skip disabled rules
+            if not enabled:
+                continue
+
+            # Apply per-rule severity override if different from default
+            if severity != issue.severity:
+                # Create new issue with overridden severity
+                issue = ModelValidationIssue(
+                    severity=severity,
+                    message=issue.message,
+                    code=issue.code,
+                    file_path=issue.file_path,
+                    line_number=issue.line_number,
+                    rule_name=issue.rule_name,
+                    suggestion=issue.suggestion,
+                )
+
+            filtered_issues.append(issue)
+
+        return tuple(filtered_issues)
 
 
 # CLI entry point
