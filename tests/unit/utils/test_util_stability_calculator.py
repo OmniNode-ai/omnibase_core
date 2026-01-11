@@ -9,7 +9,7 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-from omnibase_core.errors import OnexError
+from omnibase_core.errors import ModelOnexError
 from omnibase_core.models.health.model_invariant_status import ModelInvariantStatus
 from omnibase_core.models.health.model_performance_metrics import (
     ModelPerformanceMetrics,
@@ -221,8 +221,8 @@ class TestStabilityEdgeCases:
         self,
         healthy_metrics: ModelPerformanceMetrics,
     ) -> None:
-        """Empty invariants list should raise OnexError."""
-        with pytest.raises(OnexError, match="cannot be empty"):
+        """Empty invariants list should raise ModelOnexError."""
+        with pytest.raises(ModelOnexError, match="cannot be empty"):
             calculate_stability(
                 invariants=[],
                 metrics=healthy_metrics,
@@ -233,7 +233,7 @@ class TestStabilityEdgeCases:
         self,
         all_passing_invariants: list[ModelInvariantStatus],
     ) -> None:
-        """Zero average latency should raise OnexError."""
+        """Zero average latency should raise ModelOnexError."""
         zero_latency_metrics = ModelPerformanceMetrics(
             avg_latency_ms=0.0,  # This would cause division by zero
             p95_latency_ms=0.0,
@@ -243,7 +243,7 @@ class TestStabilityEdgeCases:
             error_rate=0.0,
         )
 
-        with pytest.raises(OnexError, match="must be greater than 0"):
+        with pytest.raises(ModelOnexError, match="must be greater than 0"):
             calculate_stability(
                 invariants=all_passing_invariants,
                 metrics=zero_latency_metrics,
@@ -329,13 +329,39 @@ class TestConfidenceCalculation:
 
         assert "invariant" in reasoning.lower()
 
+    def test_confidence_increases_monotonically_with_corpus_size(self) -> None:
+        """Verify confidence increases monotonically as corpus size grows."""
+        # Test with fixed diversity and invariant count
+        fixed_diversity = 0.8
+        fixed_invariants = 10
+
+        # Sample corpus sizes from 0 to 2000
+        corpus_sizes = [0, 50, 100, 200, 500, 1000, 1500, 2000]
+        confidences: list[float] = []
+
+        for size in corpus_sizes:
+            confidence, _ = calculate_confidence(
+                corpus_size=size,
+                input_diversity_score=fixed_diversity,
+                invariant_count=fixed_invariants,
+            )
+            confidences.append(confidence)
+
+        # Verify monotonically increasing (each value >= previous)
+        for i in range(1, len(confidences)):
+            assert confidences[i] >= confidences[i - 1], (
+                f"Confidence should increase monotonically: "
+                f"size {corpus_sizes[i - 1]}={confidences[i - 1]:.4f} > "
+                f"size {corpus_sizes[i]}={confidences[i]:.4f}"
+            )
+
 
 class TestConfidenceInputValidation:
     """Test input validation in calculate_confidence."""
 
     def test_negative_corpus_size_raises_error(self) -> None:
-        """Negative corpus_size should raise OnexError."""
-        with pytest.raises(OnexError, match="corpus_size must be non-negative"):
+        """Negative corpus_size should raise ModelOnexError."""
+        with pytest.raises(ModelOnexError, match="corpus_size must be non-negative"):
             calculate_confidence(
                 corpus_size=-1,
                 input_diversity_score=0.5,
@@ -343,9 +369,9 @@ class TestConfidenceInputValidation:
             )
 
     def test_diversity_score_below_zero_raises_error(self) -> None:
-        """input_diversity_score below 0.0 should raise OnexError."""
+        """input_diversity_score below 0.0 should raise ModelOnexError."""
         with pytest.raises(
-            OnexError, match=r"input_diversity_score must be between 0\.0 and 1\.0"
+            ModelOnexError, match=r"input_diversity_score must be between 0\.0 and 1\.0"
         ):
             calculate_confidence(
                 corpus_size=100,
@@ -354,9 +380,9 @@ class TestConfidenceInputValidation:
             )
 
     def test_diversity_score_above_one_raises_error(self) -> None:
-        """input_diversity_score above 1.0 should raise OnexError."""
+        """input_diversity_score above 1.0 should raise ModelOnexError."""
         with pytest.raises(
-            OnexError, match=r"input_diversity_score must be between 0\.0 and 1\.0"
+            ModelOnexError, match=r"input_diversity_score must be between 0\.0 and 1\.0"
         ):
             calculate_confidence(
                 corpus_size=100,
@@ -365,8 +391,10 @@ class TestConfidenceInputValidation:
             )
 
     def test_negative_invariant_count_raises_error(self) -> None:
-        """Negative invariant_count should raise OnexError."""
-        with pytest.raises(OnexError, match="invariant_count must be non-negative"):
+        """Negative invariant_count should raise ModelOnexError."""
+        with pytest.raises(
+            ModelOnexError, match="invariant_count must be non-negative"
+        ):
             calculate_confidence(
                 corpus_size=100,
                 input_diversity_score=0.5,

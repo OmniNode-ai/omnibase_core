@@ -10,6 +10,11 @@ class TypedDictSystemConfig(TypedDict, total=False):
     used during the measurement period. All fields are optional to
     accommodate varying configuration schemas.
 
+    Note:
+        Uses ``total=False`` to make all fields optional. This is preferred
+        over wrapping each field with ``NotRequired`` for cleaner syntax
+        when all fields should be optional.
+
     Attributes:
         model: The model identifier (e.g., "gpt-4", "claude-3").
         temperature: Sampling temperature for the model.

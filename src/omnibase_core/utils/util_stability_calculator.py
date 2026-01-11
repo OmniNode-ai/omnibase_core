@@ -21,6 +21,7 @@ DEFAULT_STABLE_THRESHOLD = 0.8
 DEFAULT_DEGRADED_THRESHOLD = 0.5
 DEFAULT_MIN_CORPUS_SIZE = 100
 DEFAULT_TARGET_CORPUS_SIZE = 1000
+DEFAULT_FULL_INVARIANT_COUNT = 10  # Number of invariants for full coverage score
 
 # Stability calculation thresholds
 ERROR_RATE_THRESHOLD = 0.10  # 10% error rate = 0 stability score
@@ -97,7 +98,7 @@ def calculate_stability(
     if metrics.avg_latency_ms == 0:
         raise ModelOnexError(
             message="avg_latency_ms must be greater than 0 (current: 0.0, expected: > 0.0)",
-            error_code=EnumCoreErrorCode.INVALID_PARAMETER,
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
         )
 
     factors: list[tuple[str, float, float]] = []
@@ -156,6 +157,7 @@ def calculate_confidence(
     *,
     min_corpus_size: int = DEFAULT_MIN_CORPUS_SIZE,
     target_corpus_size: int = DEFAULT_TARGET_CORPUS_SIZE,
+    full_invariant_count: int = DEFAULT_FULL_INVARIANT_COUNT,
 ) -> tuple[float, str]:
     """Calculate confidence level in the baseline assessment.
 
@@ -170,6 +172,7 @@ def calculate_confidence(
         invariant_count: Number of invariants checked.
         min_corpus_size: Minimum corpus size for any confidence.
         target_corpus_size: Target corpus size for full confidence.
+        full_invariant_count: Number of invariants for full coverage score.
 
     Returns:
         Tuple of (confidence_level, reasoning) where:
@@ -212,8 +215,13 @@ def calculate_confidence(
     factors = []
 
     # Factor 1: Corpus size (50% weight)
+    # Ensures continuity at min_corpus_size boundary: both branches produce identical
+    # values at exactly min_corpus_size. Below min, we scale linearly from 0 to the
+    # value that would be produced at min_corpus_size (min_corpus_size/target_corpus_size).
     if corpus_size < min_corpus_size:
-        corpus_factor = corpus_size / min_corpus_size * 0.5  # Cap at 0.5 if below min
+        # min_factor is the corpus_factor value at exactly min_corpus_size
+        min_factor = min(1.0, min_corpus_size / target_corpus_size)
+        corpus_factor = (corpus_size / min_corpus_size) * min_factor
     else:
         corpus_factor = min(1.0, corpus_size / target_corpus_size)
     factors.append(("corpus_size", corpus_factor, 0.5))
@@ -222,8 +230,10 @@ def calculate_confidence(
     factors.append(("diversity", input_diversity_score, 0.3))
 
     # Factor 3: Invariant coverage (20% weight)
-    # 10+ invariants = full score
-    invariant_factor = min(1.0, invariant_count / 10)
+    # full_invariant_count (default 10) is the threshold for full confidence score.
+    # This threshold represents a reasonable baseline: most systems have 5-15 core
+    # invariants, and 10 provides meaningful coverage without penalizing simpler systems.
+    invariant_factor = min(1.0, invariant_count / full_invariant_count)
     factors.append(("invariants", invariant_factor, 0.2))
 
     # Calculate weighted confidence
@@ -245,6 +255,8 @@ def calculate_confidence(
 
     if invariant_count < 5:
         reasons.append(f"only {invariant_count} invariants checked")
+    elif invariant_count >= full_invariant_count:
+        reasons.append("comprehensive invariant coverage")
 
     reasoning = "; ".join(reasons) if reasons else "all factors nominal"
 
