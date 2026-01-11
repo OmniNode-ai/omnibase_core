@@ -447,8 +447,9 @@ class TestImports:
 
     def test_import_from_validation_package(self) -> None:
         """Test that exports are available from validation package."""
-        # This test will be updated once we add exports to __init__.py
-        from omnibase_core.validation.validator_hex_color import (
+        from omnibase_core.validation import (
+            HEX_COLOR_PATTERN,
+            HexColorValidator,
             validate_hex_color,
             validate_hex_color_mapping,
             validate_hex_color_optional,
@@ -457,6 +458,8 @@ class TestImports:
         assert callable(validate_hex_color)
         assert callable(validate_hex_color_optional)
         assert callable(validate_hex_color_mapping)
+        assert HexColorValidator is not None
+        assert HEX_COLOR_PATTERN is not None
 
 
 # =============================================================================

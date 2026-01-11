@@ -189,8 +189,8 @@ class TestModelWidgetDefinition:
             title="Test",
             config=_make_pie_chart_config(),
         )
-        # Pydantic frozen models raise ValidationError on attribute mutation
-        with pytest.raises((ValidationError, TypeError)):
+        # Pydantic v2 frozen models consistently raise ValidationError on mutation
+        with pytest.raises(ValidationError):
             widget.title = "New Title"  # type: ignore[misc]
 
     def test_default_layout_values(self) -> None:

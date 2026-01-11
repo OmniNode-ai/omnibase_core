@@ -88,9 +88,8 @@ class TestModelCapabilityView:
             capability_id=uuid4(),
             name="test",
         )
-        # Pydantic frozen models raise ValidationError on mutation in v2,
-        # but may raise TypeError in some edge cases or implementations
-        with pytest.raises((ValidationError, TypeError)):
+        # Pydantic v2 frozen models consistently raise ValidationError on mutation
+        with pytest.raises(ValidationError):
             view.name = "new-name"  # type: ignore[misc]
 
     def test_uuid_from_string(self) -> None:
