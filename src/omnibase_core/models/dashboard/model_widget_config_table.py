@@ -117,7 +117,7 @@ class ModelWidgetConfigTable(BaseModel):
         Raises:
             ValueError: If widget_type does not match config_kind.
         """
-        if self.widget_type != EnumWidgetType.TABLE:
+        if self.widget_type is not EnumWidgetType.TABLE:
             raise ValueError(
                 f"widget_type must be TABLE for table config, got {self.widget_type.value}"
             )

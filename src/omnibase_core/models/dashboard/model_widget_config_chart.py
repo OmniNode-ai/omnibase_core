@@ -126,7 +126,7 @@ class ModelWidgetConfigChart(BaseModel):
         Raises:
             ValueError: If widget_type does not match config_kind.
         """
-        if self.widget_type != EnumWidgetType.CHART:
+        if self.widget_type is not EnumWidgetType.CHART:
             raise ValueError(
                 f"widget_type must be CHART for chart config, got {self.widget_type.value}"
             )

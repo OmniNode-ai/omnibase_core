@@ -20,7 +20,9 @@ class ModelTableColumnConfig(BaseModel):
     and user interaction capabilities.
     """
 
-    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
+    model_config = ConfigDict(
+        frozen=True, extra="forbid", from_attributes=True, populate_by_name=True
+    )
 
     key: str = Field(..., min_length=1, description="Data key for this column")
     header: str = Field(..., min_length=1, description="Column header display text")
@@ -31,6 +33,8 @@ class ModelTableColumnConfig(BaseModel):
     align: Literal["left", "center", "right"] = Field(
         default="left", description="Text alignment"
     )
-    format: str | None = Field(
-        default=None, description="Display format (e.g., 'currency', 'percent', 'date')"
+    display_format: str | None = Field(
+        default=None,
+        alias="format",
+        description="Display format (e.g., 'currency', 'percent', 'date')",
     )

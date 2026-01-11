@@ -32,6 +32,7 @@ Example:
 
 import re
 from collections.abc import Mapping
+from types import MappingProxyType
 from typing import Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -102,12 +103,14 @@ class ModelWidgetConfigStatusGrid(BaseModel):
     show_labels: bool = Field(default=True, description="Show item labels")
     compact: bool = Field(default=False, description="Use compact display mode")
     status_colors: Mapping[str, str] = Field(
-        default_factory=lambda: {
-            "healthy": "#22c55e",
-            "warning": "#eab308",
-            "error": "#ef4444",
-            "unknown": "#6b7280",
-        },
+        default_factory=lambda: MappingProxyType(
+            {
+                "healthy": "#22c55e",
+                "warning": "#eab308",
+                "error": "#ef4444",
+                "unknown": "#6b7280",
+            }
+        ),
         description="Status value to color mapping",
     )
 
@@ -134,7 +137,7 @@ class ModelWidgetConfigStatusGrid(BaseModel):
         Raises:
             ValueError: If widget_type does not match config_kind.
         """
-        if self.widget_type != EnumWidgetType.STATUS_GRID:
+        if self.widget_type is not EnumWidgetType.STATUS_GRID:
             raise ValueError(
                 f"widget_type must be STATUS_GRID for status_grid config, "
                 f"got {self.widget_type.value}"

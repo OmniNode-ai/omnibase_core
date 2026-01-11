@@ -233,18 +233,27 @@ class TestModelTableColumnConfigWidthValidation:
 
     def test_width_0_invalid(self) -> None:
         """Test that width=0 is invalid."""
-        with pytest.raises(ValidationError, match="greater than or equal to 1"):
+        with pytest.raises(ValidationError) as exc_info:
             ModelTableColumnConfig(key="id", header="ID", width=0)
+        # Verify it's a constraint violation on the width field
+        errors = exc_info.value.errors()
+        assert any(e["loc"] == ("width",) for e in errors)
 
     def test_width_negative_invalid(self) -> None:
         """Test that negative width is invalid."""
-        with pytest.raises(ValidationError, match="greater than or equal to 1"):
+        with pytest.raises(ValidationError) as exc_info:
             ModelTableColumnConfig(key="id", header="ID", width=-1)
+        # Verify it's a constraint violation on the width field
+        errors = exc_info.value.errors()
+        assert any(e["loc"] == ("width",) for e in errors)
 
     def test_width_negative_large_invalid(self) -> None:
         """Test that large negative width is invalid."""
-        with pytest.raises(ValidationError, match="greater than or equal to 1"):
+        with pytest.raises(ValidationError) as exc_info:
             ModelTableColumnConfig(key="id", header="ID", width=-100)
+        # Verify it's a constraint violation on the width field
+        errors = exc_info.value.errors()
+        assert any(e["loc"] == ("width",) for e in errors)
 
     def test_default_width_is_none(self) -> None:
         """Test that default width is None."""
@@ -378,13 +387,24 @@ class TestStringMinLengthConstraints:
 
     def test_chart_series_name_empty_invalid(self) -> None:
         """Test that empty name in chart series raises ValidationError."""
-        with pytest.raises(ValidationError, match="String should have at least 1"):
+        with pytest.raises(ValidationError) as exc_info:
             ModelChartSeriesConfig(name="", data_key="value")
+        # Verify it's a string_too_short error on the name field
+        errors = exc_info.value.errors()
+        assert any(
+            e["loc"] == ("name",) and e["type"] == "string_too_short" for e in errors
+        )
 
     def test_chart_series_data_key_empty_invalid(self) -> None:
         """Test that empty data_key in chart series raises ValidationError."""
-        with pytest.raises(ValidationError, match="String should have at least 1"):
+        with pytest.raises(ValidationError) as exc_info:
             ModelChartSeriesConfig(name="Test", data_key="")
+        # Verify it's a string_too_short error on the data_key field
+        errors = exc_info.value.errors()
+        assert any(
+            e["loc"] == ("data_key",) and e["type"] == "string_too_short"
+            for e in errors
+        )
 
     def test_chart_series_valid_fields(self) -> None:
         """Test that non-empty name and data_key are valid."""
@@ -394,13 +414,23 @@ class TestStringMinLengthConstraints:
 
     def test_table_column_key_empty_invalid(self) -> None:
         """Test that empty key in table column raises ValidationError."""
-        with pytest.raises(ValidationError, match="String should have at least 1"):
+        with pytest.raises(ValidationError) as exc_info:
             ModelTableColumnConfig(key="", header="Header")
+        # Verify it's a string_too_short error on the key field
+        errors = exc_info.value.errors()
+        assert any(
+            e["loc"] == ("key",) and e["type"] == "string_too_short" for e in errors
+        )
 
     def test_table_column_header_empty_invalid(self) -> None:
         """Test that empty header in table column raises ValidationError."""
-        with pytest.raises(ValidationError, match="String should have at least 1"):
+        with pytest.raises(ValidationError) as exc_info:
             ModelTableColumnConfig(key="id", header="")
+        # Verify it's a string_too_short error on the header field
+        errors = exc_info.value.errors()
+        assert any(
+            e["loc"] == ("header",) and e["type"] == "string_too_short" for e in errors
+        )
 
     def test_table_column_valid_fields(self) -> None:
         """Test that non-empty key and header are valid."""
@@ -410,13 +440,23 @@ class TestStringMinLengthConstraints:
 
     def test_status_item_key_empty_invalid(self) -> None:
         """Test that empty key in status item raises ValidationError."""
-        with pytest.raises(ValidationError, match="String should have at least 1"):
+        with pytest.raises(ValidationError) as exc_info:
             ModelStatusItemConfig(key="", label="Label")
+        # Verify it's a string_too_short error on the key field
+        errors = exc_info.value.errors()
+        assert any(
+            e["loc"] == ("key",) and e["type"] == "string_too_short" for e in errors
+        )
 
     def test_status_item_label_empty_invalid(self) -> None:
         """Test that empty label in status item raises ValidationError."""
-        with pytest.raises(ValidationError, match="String should have at least 1"):
+        with pytest.raises(ValidationError) as exc_info:
             ModelStatusItemConfig(key="api", label="")
+        # Verify it's a string_too_short error on the label field
+        errors = exc_info.value.errors()
+        assert any(
+            e["loc"] == ("label",) and e["type"] == "string_too_short" for e in errors
+        )
 
     def test_status_item_valid_fields(self) -> None:
         """Test that non-empty key and label are valid."""
@@ -426,13 +466,24 @@ class TestStringMinLengthConstraints:
 
     def test_metric_card_metric_key_empty_invalid(self) -> None:
         """Test that empty metric_key in metric card raises ValidationError."""
-        with pytest.raises(ValidationError, match="String should have at least 1"):
+        with pytest.raises(ValidationError) as exc_info:
             ModelWidgetConfigMetricCard(metric_key="", label="Label")
+        # Verify it's a string_too_short error on the metric_key field
+        errors = exc_info.value.errors()
+        assert any(
+            e["loc"] == ("metric_key",) and e["type"] == "string_too_short"
+            for e in errors
+        )
 
     def test_metric_card_label_empty_invalid(self) -> None:
         """Test that empty label in metric card raises ValidationError."""
-        with pytest.raises(ValidationError, match="String should have at least 1"):
+        with pytest.raises(ValidationError) as exc_info:
             ModelWidgetConfigMetricCard(metric_key="cpu", label="")
+        # Verify it's a string_too_short error on the label field
+        errors = exc_info.value.errors()
+        assert any(
+            e["loc"] == ("label",) and e["type"] == "string_too_short" for e in errors
+        )
 
     def test_metric_card_valid_fields(self) -> None:
         """Test that non-empty metric_key and label are valid."""

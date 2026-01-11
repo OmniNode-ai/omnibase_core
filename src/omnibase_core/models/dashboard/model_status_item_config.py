@@ -22,4 +22,4 @@ class ModelStatusItemConfig(BaseModel):
 
     key: str = Field(..., min_length=1, description="Data key for this status item")
     label: str = Field(..., min_length=1, description="Display label")
-    icon: str | None = Field(default=None, description="Icon identifier")
+    icon: str | None = Field(default=None, min_length=1, description="Icon identifier")

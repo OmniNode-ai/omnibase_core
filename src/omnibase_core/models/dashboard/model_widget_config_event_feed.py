@@ -105,7 +105,7 @@ class ModelWidgetConfigEventFeed(BaseModel):
         Raises:
             ValueError: If widget_type does not match config_kind.
         """
-        if self.widget_type != EnumWidgetType.EVENT_FEED:
+        if self.widget_type is not EnumWidgetType.EVENT_FEED:
             raise ValueError(
                 f"widget_type must be EVENT_FEED for event_feed config, "
                 f"got {self.widget_type.value}"

@@ -19,7 +19,7 @@ Example:
             metric_key="error_rate",
             label="Error Rate",
             unit="%",
-            format="percent",
+            value_format="percent",
             precision=2,
             show_trend=True,
             trend_key="error_rate_previous",
@@ -60,7 +60,8 @@ class ModelWidgetConfigMetricCard(BaseModel):
         metric_key: Data key to extract the metric value from the data source.
         label: Human-readable label displayed above/below the value.
         unit: Unit of measurement displayed after the value (e.g., "%", "ms").
-        format: Value formatting mode - number, currency, percent, or duration.
+        value_format: Value formatting mode - number, currency, percent, or duration.
+            Aliased as "format" in JSON for API compatibility.
         precision: Decimal places to show (0-10).
         show_trend: Whether to show up/down trend indicator.
         trend_key: Data key for the comparison value when show_trend is True.
@@ -76,12 +77,14 @@ class ModelWidgetConfigMetricCard(BaseModel):
             config = ModelWidgetConfigMetricCard(
                 metric_key="active_users",
                 label="Active Users",
-                format="number",
+                value_format="number",
                 precision=0,
             )
     """
 
-    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
+    model_config = ConfigDict(
+        frozen=True, extra="forbid", from_attributes=True, populate_by_name=True
+    )
 
     config_kind: Literal["metric_card"] = Field(
         default="metric_card", description="Discriminator for widget config union"
@@ -94,8 +97,8 @@ class ModelWidgetConfigMetricCard(BaseModel):
     )
     label: str = Field(..., min_length=1, description="Metric display label")
     unit: str | None = Field(default=None, description="Unit of measurement")
-    format: Literal["number", "currency", "percent", "duration"] = Field(
-        default="number", description="How to format the value"
+    value_format: Literal["number", "currency", "percent", "duration"] = Field(
+        default="number", alias="format", description="How to format the value"
     )
     precision: int = Field(default=2, ge=0, le=10, description="Decimal precision")
     show_trend: bool = Field(default=False, description="Show trend indicator")
@@ -105,7 +108,7 @@ class ModelWidgetConfigMetricCard(BaseModel):
     thresholds: tuple[ModelMetricThreshold, ...] = Field(
         default=(), description="Color thresholds for the metric"
     )
-    icon: str | None = Field(default=None, description="Icon identifier")
+    icon: str | None = Field(default=None, min_length=1, description="Icon identifier")
 
     @model_validator(mode="after")
     def validate_trend_key_when_show_trend(self) -> Self:
@@ -125,7 +128,7 @@ class ModelWidgetConfigMetricCard(BaseModel):
         Raises:
             ValueError: If widget_type does not match config_kind.
         """
-        if self.widget_type != EnumWidgetType.METRIC_CARD:
+        if self.widget_type is not EnumWidgetType.METRIC_CARD:
             raise ValueError(
                 f"widget_type must be METRIC_CARD for metric_card config, "
                 f"got {self.widget_type.value}"
