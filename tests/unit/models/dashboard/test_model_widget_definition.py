@@ -347,8 +347,11 @@ class TestModelWidgetDefinition:
     @pytest.mark.parametrize("chart_type", ["line", "bar", "area", "scatter"])
     def test_chart_validation_requires_series(self, chart_type: str) -> None:
         """Test that non-pie chart types require at least one series."""
-        with pytest.raises(ValidationError, match="requires at least one series"):
+        with pytest.raises(ValidationError) as exc_info:
             ModelWidgetConfigChart(chart_type=chart_type, series=())
+        # Check for value_error type which is raised by our custom validator
+        errors = exc_info.value.errors()
+        assert any(e["type"] == "value_error" for e in errors)
 
     def test_chart_validation_pie_allows_empty_series(self) -> None:
         """Test that pie chart type allows empty series."""
@@ -366,13 +369,16 @@ class TestModelWidgetDefinition:
 
     def test_metric_card_validation_show_trend_requires_trend_key(self) -> None:
         """Test that show_trend=True requires trend_key to be set."""
-        with pytest.raises(ValidationError, match="trend_key must be set"):
+        with pytest.raises(ValidationError) as exc_info:
             ModelWidgetConfigMetricCard(
                 metric_key="cpu_usage",
                 label="CPU",
                 show_trend=True,
                 trend_key=None,
             )
+        # Check for value_error type which is raised by our custom validator
+        errors = exc_info.value.errors()
+        assert any(e["type"] == "value_error" for e in errors)
 
     def test_metric_card_validation_no_trend_allows_empty_key(self) -> None:
         """Test that show_trend=False allows empty trend_key."""

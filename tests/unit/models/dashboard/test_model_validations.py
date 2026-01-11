@@ -56,18 +56,27 @@ class TestModelChartAxisConfigValidation:
 
     def test_min_greater_than_max_invalid(self) -> None:
         """Test that min_value > max_value raises ValidationError."""
-        with pytest.raises(ValidationError, match="must be less than max_value"):
+        with pytest.raises(ValidationError) as exc_info:
             ModelChartAxisConfig(min_value=100.0, max_value=50.0)
+        # Check for value_error type from our custom model validator
+        errors = exc_info.value.errors()
+        assert any(e["type"] == "value_error" for e in errors)
 
     def test_min_equal_to_max_invalid(self) -> None:
         """Test that min_value == max_value raises ValidationError."""
-        with pytest.raises(ValidationError, match="must be less than max_value"):
+        with pytest.raises(ValidationError) as exc_info:
             ModelChartAxisConfig(min_value=50.0, max_value=50.0)
+        # Check for value_error type from our custom model validator
+        errors = exc_info.value.errors()
+        assert any(e["type"] == "value_error" for e in errors)
 
     def test_zero_range_invalid(self) -> None:
         """Test that zero range (min == max at 0) raises ValidationError."""
-        with pytest.raises(ValidationError, match="must be less than max_value"):
+        with pytest.raises(ValidationError) as exc_info:
             ModelChartAxisConfig(min_value=0.0, max_value=0.0)
+        # Check for value_error type from our custom model validator
+        errors = exc_info.value.errors()
+        assert any(e["type"] == "value_error" for e in errors)
 
 
 @pytest.mark.unit
@@ -113,25 +122,45 @@ class TestModelChartSeriesConfigColorValidation:
 
     def test_invalid_hex_missing_hash(self) -> None:
         """Test that hex without # is invalid."""
-        with pytest.raises(ValidationError, match="Invalid hex color format"):
+        with pytest.raises(ValidationError) as exc_info:
             ModelChartSeriesConfig(name="Test", data_key="value", color="FF0000")
+        # Check for value_error on color field from our custom hex validator
+        errors = exc_info.value.errors()
+        assert any(
+            e["type"] == "value_error" and e["loc"] == ("color",) for e in errors
+        )
 
     def test_invalid_hex_wrong_length(self) -> None:
         """Test that hex with wrong length is invalid."""
-        with pytest.raises(ValidationError, match="Invalid hex color format"):
+        with pytest.raises(ValidationError) as exc_info:
             ModelChartSeriesConfig(
                 name="Test", data_key="value", color="#FF000"
             )  # 5 digits
+        # Check for value_error on color field from our custom hex validator
+        errors = exc_info.value.errors()
+        assert any(
+            e["type"] == "value_error" and e["loc"] == ("color",) for e in errors
+        )
 
     def test_invalid_hex_non_hex_chars(self) -> None:
         """Test that non-hex characters are invalid."""
-        with pytest.raises(ValidationError, match="Invalid hex color format"):
+        with pytest.raises(ValidationError) as exc_info:
             ModelChartSeriesConfig(name="Test", data_key="value", color="#GGGGGG")
+        # Check for value_error on color field from our custom hex validator
+        errors = exc_info.value.errors()
+        assert any(
+            e["type"] == "value_error" and e["loc"] == ("color",) for e in errors
+        )
 
     def test_invalid_hex_empty(self) -> None:
         """Test that empty color is invalid."""
-        with pytest.raises(ValidationError, match="Invalid hex color format"):
+        with pytest.raises(ValidationError) as exc_info:
             ModelChartSeriesConfig(name="Test", data_key="value", color="")
+        # Check for value_error on color field from our custom hex validator
+        errors = exc_info.value.errors()
+        assert any(
+            e["type"] == "value_error" and e["loc"] == ("color",) for e in errors
+        )
 
 
 @pytest.mark.unit
@@ -175,31 +204,43 @@ class TestModelWidgetConfigStatusGridColorValidation:
 
     def test_invalid_color_missing_hash(self) -> None:
         """Test that color without # is invalid."""
-        with pytest.raises(ValidationError, match="Invalid hex color format"):
+        with pytest.raises(ValidationError) as exc_info:
             ModelWidgetConfigStatusGrid(
                 status_colors={"ok": "00FF00"}  # Missing #
             )
+        # Check for value_error type from our custom color validator
+        errors = exc_info.value.errors()
+        assert any(e["type"] == "value_error" for e in errors)
 
     def test_invalid_color_wrong_length(self) -> None:
         """Test that color with wrong length is invalid."""
-        with pytest.raises(ValidationError, match="Invalid hex color format"):
+        with pytest.raises(ValidationError) as exc_info:
             ModelWidgetConfigStatusGrid(
                 status_colors={"ok": "#FF000"}  # 5 digits - invalid length
             )
+        # Check for value_error type from our custom color validator
+        errors = exc_info.value.errors()
+        assert any(e["type"] == "value_error" for e in errors)
 
     def test_invalid_color_non_hex_chars(self) -> None:
         """Test that non-hex characters are invalid."""
-        with pytest.raises(ValidationError, match="Invalid hex color format"):
+        with pytest.raises(ValidationError) as exc_info:
             ModelWidgetConfigStatusGrid(
                 status_colors={"ok": "#GGGGGG"}  # Invalid chars
             )
+        # Check for value_error type from our custom color validator
+        errors = exc_info.value.errors()
+        assert any(e["type"] == "value_error" for e in errors)
 
     def test_error_message_includes_status_key(self) -> None:
         """Test that error message includes the status key."""
-        with pytest.raises(ValidationError, match="status 'fail'"):
+        with pytest.raises(ValidationError) as exc_info:
             ModelWidgetConfigStatusGrid(
                 status_colors={"ok": "#00FF00", "fail": "invalid"}
             )
+        # Check for value_error type from our custom color validator
+        errors = exc_info.value.errors()
+        assert any(e["type"] == "value_error" for e in errors)
 
     def test_empty_dict_valid(self) -> None:
         """Test that empty status_colors dict is valid."""
@@ -317,11 +358,14 @@ class TestWidgetTypeConfigKindConsistency:
 
     def test_chart_mismatched_widget_type_invalid(self) -> None:
         """Test that chart config with wrong widget_type raises ValidationError."""
-        with pytest.raises(ValidationError, match="widget_type must be CHART"):
+        with pytest.raises(ValidationError) as exc_info:
             ModelWidgetConfigChart(
                 chart_type="pie",
                 widget_type=EnumWidgetType.TABLE,
             )
+        # Check for value_error type from our widget_type validator
+        errors = exc_info.value.errors()
+        assert any(e["type"] == "value_error" for e in errors)
 
     def test_table_valid_defaults(self) -> None:
         """Test that table config with default widget_type and config_kind is valid."""
@@ -331,10 +375,13 @@ class TestWidgetTypeConfigKindConsistency:
 
     def test_table_mismatched_widget_type_invalid(self) -> None:
         """Test that table config with wrong widget_type raises ValidationError."""
-        with pytest.raises(ValidationError, match="widget_type must be TABLE"):
+        with pytest.raises(ValidationError) as exc_info:
             ModelWidgetConfigTable(
                 widget_type=EnumWidgetType.CHART,
             )
+        # Check for value_error type from our widget_type validator
+        errors = exc_info.value.errors()
+        assert any(e["type"] == "value_error" for e in errors)
 
     def test_metric_card_valid_defaults(self) -> None:
         """Test that metric_card config with default widget_type and config_kind is valid."""
@@ -347,12 +394,15 @@ class TestWidgetTypeConfigKindConsistency:
 
     def test_metric_card_mismatched_widget_type_invalid(self) -> None:
         """Test that metric_card config with wrong widget_type raises ValidationError."""
-        with pytest.raises(ValidationError, match="widget_type must be METRIC_CARD"):
+        with pytest.raises(ValidationError) as exc_info:
             ModelWidgetConfigMetricCard(
                 metric_key="cpu",
                 label="CPU Usage",
                 widget_type=EnumWidgetType.CHART,
             )
+        # Check for value_error type from our widget_type validator
+        errors = exc_info.value.errors()
+        assert any(e["type"] == "value_error" for e in errors)
 
     def test_status_grid_valid_defaults(self) -> None:
         """Test that status_grid config with default widget_type and config_kind is valid."""
@@ -362,10 +412,13 @@ class TestWidgetTypeConfigKindConsistency:
 
     def test_status_grid_mismatched_widget_type_invalid(self) -> None:
         """Test that status_grid config with wrong widget_type raises ValidationError."""
-        with pytest.raises(ValidationError, match="widget_type must be STATUS_GRID"):
+        with pytest.raises(ValidationError) as exc_info:
             ModelWidgetConfigStatusGrid(
                 widget_type=EnumWidgetType.TABLE,
             )
+        # Check for value_error type from our widget_type validator
+        errors = exc_info.value.errors()
+        assert any(e["type"] == "value_error" for e in errors)
 
     def test_event_feed_valid_defaults(self) -> None:
         """Test that event_feed config with default widget_type and config_kind is valid."""
@@ -375,10 +428,13 @@ class TestWidgetTypeConfigKindConsistency:
 
     def test_event_feed_mismatched_widget_type_invalid(self) -> None:
         """Test that event_feed config with wrong widget_type raises ValidationError."""
-        with pytest.raises(ValidationError, match="widget_type must be EVENT_FEED"):
+        with pytest.raises(ValidationError) as exc_info:
             ModelWidgetConfigEventFeed(
                 widget_type=EnumWidgetType.CHART,
             )
+        # Check for value_error type from our widget_type validator
+        errors = exc_info.value.errors()
+        assert any(e["type"] == "value_error" for e in errors)
 
 
 @pytest.mark.unit

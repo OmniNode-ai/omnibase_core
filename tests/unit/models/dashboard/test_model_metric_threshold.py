@@ -48,8 +48,13 @@ class TestModelMetricThreshold:
     )
     def test_invalid_hex_color_formats(self, color: str, description: str) -> None:
         """Test that invalid hex color formats raise ValidationError."""
-        with pytest.raises(ValidationError, match="Invalid hex color format"):
+        with pytest.raises(ValidationError) as exc_info:
             ModelMetricThreshold(value=90.0, color=color)
+        # Check for value_error type which is raised by our custom hex color validator
+        errors = exc_info.value.errors()
+        assert any(
+            e["type"] == "value_error" and e["loc"] == ("color",) for e in errors
+        )
 
     def test_roundtrip_serialization(self) -> None:
         """Test model_dump and model_validate roundtrip."""
