@@ -118,34 +118,31 @@ class ServiceDecisionReportGenerator:
         if violation_count == 0:
             lines.append("No violations detected.")
         else:
-            # Group by severity (critical first, then warning)
             by_severity = summary.invariant_violations.by_severity
             by_type = summary.invariant_violations.by_type
 
-            # Show critical violations
+            # Show severity summary (since we cannot correlate types to severities)
+            severity_parts = []
             critical_count = by_severity.get("critical", 0)
-            if critical_count > 0:
-                for violation_type, count in by_type.items():
-                    # We show all types but mark critical ones
-                    lines.append(f"[CRITICAL] {violation_type}: {count} violation(s)")
-
-            # Show warning violations
             warning_count = by_severity.get("warning", 0)
-            if warning_count > 0:
-                for violation_type, count in by_type.items():
-                    if by_severity.get("critical", 0) == 0:
-                        lines.append(
-                            f"[WARNING]  {violation_type}: {count} violation(s)"
-                        )
+            info_count = by_severity.get("info", 0)
 
-            # Show info violations in verbose mode
-            if verbosity == "verbose":
-                info_count = by_severity.get("info", 0)
-                if info_count > 0:
-                    for violation_type, count in by_type.items():
-                        lines.append(
-                            f"[INFO]     {violation_type}: {count} violation(s)"
-                        )
+            if critical_count > 0:
+                severity_parts.append(f"{critical_count} critical")
+            if warning_count > 0:
+                severity_parts.append(f"{warning_count} warning")
+            if verbosity == "verbose" and info_count > 0:
+                severity_parts.append(f"{info_count} info")
+
+            if severity_parts:
+                lines.append(f"Severity: {', '.join(severity_parts)}")
+
+            # Show type breakdown without severity labels
+            # (types and severities are independent aggregations)
+            if by_type:
+                lines.append("By type:")
+                for violation_type, count in sorted(by_type.items()):
+                    lines.append(f"  - {violation_type}: {count} violation(s)")
 
         lines.append("")
 

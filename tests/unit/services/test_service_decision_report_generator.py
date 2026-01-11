@@ -22,6 +22,7 @@ Thread Safety:
 from __future__ import annotations
 
 import json
+import re
 from datetime import UTC, datetime, timedelta
 from typing import Literal
 from uuid import uuid4
@@ -830,8 +831,6 @@ class TestMarkdownFormat:
         )
 
         # Find all markdown links [text](url)
-        import re
-
         links = re.findall(r"\[([^\]]+)\]\(([^)]+)\)", report)
 
         for text, url in links:
