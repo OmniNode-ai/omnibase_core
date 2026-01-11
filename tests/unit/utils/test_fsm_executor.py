@@ -1440,11 +1440,15 @@ class TestCorrelationIdPropagation:
         assert custom_correlation_id in correlation_ids_found
 
     @pytest.mark.asyncio
-    async def test_default_correlation_id_is_valid_uuid(self, simple_fsm):
-        """Test that default correlation_id is a valid UUID when not explicitly set."""
+    async def test_auto_generated_correlation_id_is_valid_uuid(self, simple_fsm):
+        """Test that auto-generated correlation_id is a valid UUID when not explicitly set.
+
+        Note: The simple_fsm fixture doesn't set correlation_id, so ModelFSMSubcontract
+        uses default_factory=uuid4 to auto-generate a valid UUID.
+        """
         from uuid import UUID
 
-        # simple_fsm fixture doesn't set correlation_id, so it uses default
+        # simple_fsm fixture doesn't set correlation_id, so it uses default_factory=uuid4
         result = await execute_transition(simple_fsm, "idle", "start_event", {})
 
         assert result.success
