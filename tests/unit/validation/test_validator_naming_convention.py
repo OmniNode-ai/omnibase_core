@@ -101,10 +101,19 @@ class TestValidatorNamingConventionInit:
         successfully and will load the contract lazily when needed.
         """
         validator = ValidatorNamingConvention()
-        # Validator should be created successfully without a contract
-        # The contract will be loaded lazily when first accessed via the property
-        assert validator is not None
+        # Verify validator is properly initialized with correct class-level ID
         assert validator.validator_id == "naming_convention"
+        # Verify the validator can perform validation (triggering lazy contract load)
+        # by checking that it has the expected rule constants
+        from omnibase_core.validation.validator_naming_convention import (
+            RULE_CLASS_NAMING,
+            RULE_FILE_NAMING,
+            RULE_FUNCTION_NAMING,
+        )
+
+        assert RULE_FILE_NAMING == "file_naming"
+        assert RULE_CLASS_NAMING == "class_naming"
+        assert RULE_FUNCTION_NAMING == "function_naming"
 
 
 # =============================================================================

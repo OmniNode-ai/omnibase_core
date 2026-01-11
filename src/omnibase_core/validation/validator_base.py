@@ -73,7 +73,11 @@ import yaml
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
-from omnibase_core.errors.exception_groups import FILE_IO_ERRORS, YAML_PARSING_ERRORS
+from omnibase_core.errors.exception_groups import (
+    FILE_IO_ERRORS,
+    PYDANTIC_MODEL_ERRORS,
+    YAML_PARSING_ERRORS,
+)
 from omnibase_core.models.common.model_validation_issue import ModelValidationIssue
 from omnibase_core.models.common.model_validation_metadata import (
     ModelValidationMetadata,
@@ -219,37 +223,33 @@ class ValidatorBase(ABC):
         all_issues: list[ModelValidationIssue] = []
         files_with_violations: list[str] = []
 
-        for file_path in files_to_validate:
-            file_issues = self._validate_file_with_suppression(file_path)
-            if file_issues:
-                all_issues.extend(file_issues)
-                files_with_violations.append(str(file_path))
+        try:
+            for file_path in files_to_validate:
+                file_issues = self._validate_file_with_suppression(file_path)
+                if file_issues:
+                    all_issues.extend(file_issues)
+                    files_with_violations.append(str(file_path))
 
-            # Check violation limit
-            if (
-                self.contract.max_violations > 0
-                and len(all_issues) >= self.contract.max_violations
-            ):
-                break
+                # Check violation limit
+                if (
+                    self.contract.max_violations > 0
+                    and len(all_issues) >= self.contract.max_violations
+                ):
+                    break
 
-        # Cache lifecycle: _file_line_cache is populated during validation via
-        # _get_file_lines() calls, and cleared here at the end to prevent unbounded
-        # memory growth. Note: If an exception occurs during validation (e.g., in
-        # _validate_file), the cache remains populated until the instance is garbage
-        # collected or the next successful validation call. This is acceptable because:
-        # 1. The cached data (file lines) is read-only and not sensitive
-        # 2. Instance lifetime is typically short (one validation run)
-        # 3. Adding a finally block would complicate the control flow for minimal gain
-        self._file_line_cache.clear()
+            duration_ms = int((time.time() - start_time) * 1000)
 
-        duration_ms = int((time.time() - start_time) * 1000)
-
-        return self._build_result(
-            files_checked=files_to_validate,
-            issues=all_issues,
-            files_with_violations=files_with_violations,
-            duration_ms=duration_ms,
-        )
+            return self._build_result(
+                files_checked=files_to_validate,
+                issues=all_issues,
+                files_with_violations=files_with_violations,
+                duration_ms=duration_ms,
+            )
+        finally:
+            # Cache lifecycle: _file_line_cache is populated during validation via
+            # _get_file_lines() calls. Clear in finally block to ensure cleanup even
+            # on errors, preventing unbounded memory growth in long-lived instances.
+            self._file_line_cache.clear()
 
     def validate_file(self, path: Path) -> ModelValidationResult[None]:
         """Validate a single file and return result.
@@ -271,23 +271,24 @@ class ValidatorBase(ABC):
                 summary=f"File excluded by pattern: {path}",
             )
 
-        # Validate with suppression handling
-        issues = self._validate_file_with_suppression(path)
+        try:
+            # Validate with suppression handling
+            issues = self._validate_file_with_suppression(path)
 
-        # Cache lifecycle: Same as validate() - clear after use to prevent memory growth.
-        # See validate() for detailed cache lifecycle documentation.
-        self._file_line_cache.clear()
+            duration_ms = int((time.time() - start_time) * 1000)
 
-        duration_ms = int((time.time() - start_time) * 1000)
+            files_with_violations = [str(path)] if issues else []
 
-        files_with_violations = [str(path)] if issues else []
-
-        return self._build_result(
-            files_checked=[path],
-            issues=list(issues),
-            files_with_violations=files_with_violations,
-            duration_ms=duration_ms,
-        )
+            return self._build_result(
+                files_checked=[path],
+                issues=list(issues),
+                files_with_violations=files_with_violations,
+                duration_ms=duration_ms,
+            )
+        finally:
+            # Cache lifecycle: Same as validate() - clear in finally block to ensure
+            # cleanup even on errors, preventing unbounded memory growth.
+            self._file_line_cache.clear()
 
     @abstractmethod
     def _validate_file(
@@ -655,7 +656,19 @@ class ValidatorBase(ABC):
             if "validation" in data and isinstance(data["validation"], dict):
                 data = data["validation"]
 
-            return ModelValidatorSubcontract.model_validate(data)
+            try:
+                return ModelValidatorSubcontract.model_validate(data)
+            except PYDANTIC_MODEL_ERRORS as e:
+                # boundary-ok: convert Pydantic validation errors to structured error
+                raise ModelOnexError(
+                    message=f"Contract schema validation failed: {e}",
+                    error_code=EnumCoreErrorCode.CONTRACT_VALIDATION_ERROR,
+                    context={
+                        "validator_id": self.validator_id,
+                        "contract_path": str(contract_path),
+                        "validation_error": str(e),
+                    },
+                ) from e
 
         except FILE_IO_ERRORS as e:
             # boundary-ok: convert file I/O errors to structured error
@@ -920,23 +933,41 @@ class ValidatorBase(ABC):
 
             try:
                 content = validated_contract.read_text(encoding="utf-8")
+            except FILE_IO_ERRORS as e:
+                print(
+                    f"Error reading contract file {validated_contract}: {e}",
+                    file=sys.stderr,
+                )
+                return EXIT_ERRORS
+
+            try:
                 # ONEX_EXCLUDE: manual_yaml - validator contract loading
                 data = yaml.safe_load(content)
+            except YAML_PARSING_ERRORS as e:
+                print(
+                    f"Error parsing contract YAML {validated_contract}: {e}",
+                    file=sys.stderr,
+                )
+                return EXIT_ERRORS
 
-                if not isinstance(data, dict):
-                    print(
-                        "Error loading contract: must be a YAML mapping",
-                        file=sys.stderr,
-                    )
-                    return EXIT_ERRORS
+            if not isinstance(data, dict):
+                print(
+                    f"Error loading contract {validated_contract}: must be a YAML mapping",
+                    file=sys.stderr,
+                )
+                return EXIT_ERRORS
 
-                # Handle nested 'validation:' structure (match _load_contract behavior)
-                if "validation" in data and isinstance(data["validation"], dict):
-                    data = data["validation"]
+            # Handle nested 'validation:' structure (match _load_contract behavior)
+            if "validation" in data and isinstance(data["validation"], dict):
+                data = data["validation"]
 
+            try:
                 contract = ModelValidatorSubcontract.model_validate(data)
-            except (*FILE_IO_ERRORS, *YAML_PARSING_ERRORS) as e:
-                print(f"Error loading contract: {e}", file=sys.stderr)
+            except PYDANTIC_MODEL_ERRORS as e:
+                print(
+                    f"Contract schema validation failed for {validated_contract}: {e}",
+                    file=sys.stderr,
+                )
                 return EXIT_ERRORS
 
         # Create validator and run

@@ -43,10 +43,12 @@ See Also:
 import ast
 import logging
 import sys
+import urllib.parse
 from pathlib import Path
 from typing import ClassVar
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
 from omnibase_core.models.common.model_validation_issue import ModelValidationIssue
 from omnibase_core.models.common.model_validation_metadata import (
     ModelValidationMetadata,
@@ -339,6 +341,144 @@ class ValidatorArchitecture(ValidatorBase):
             print("  - Each file should contain only one model, enum, or protocol")
 
             return 1
+
+    @classmethod
+    def _validate_cli_path(cls, path: Path, context: str) -> Path | None:
+        """Validate CLI-provided path with enhanced security checks.
+
+        Extends the base class validation with additional checks for:
+        - URL-encoded path traversal sequences (%2e%2e, %2f)
+        - Double URL-encoded traversal (%252e%252e)
+        - Null byte injection (\\x00)
+        - Windows-style path traversal (..\\\\)
+        - Mixed encoding attacks
+
+        Args:
+            path: User-provided path to validate.
+            context: Description of the path for error messages.
+
+        Returns:
+            Resolved path if valid, None if security check fails.
+
+        Security:
+            This method provides defense-in-depth against path traversal attacks.
+            It complements the base class checks with additional patterns that
+            could bypass simple string matching.
+        """
+        path_str = str(path)
+
+        # Security: Check for null byte injection (can truncate paths in some systems)
+        if "\x00" in path_str:
+            print(
+                f"Security error: Null byte detected in {context}: {path}",
+                file=sys.stderr,
+            )
+            return None
+
+        # Security: Check for URL-encoded traversal sequences
+        # Decode once to catch %2e%2e (encoded ..) and %2f (encoded /)
+        try:
+            decoded_once = urllib.parse.unquote(path_str)
+        except (UnicodeDecodeError, ValueError):
+            # If decoding fails, treat as suspicious
+            print(
+                f"Security error: Invalid encoding in {context}: {path}",
+                file=sys.stderr,
+            )
+            return None
+
+        # Check decoded path for traversal
+        if ".." in decoded_once:
+            print(
+                f"Security error: URL-encoded path traversal detected in {context}: {path}",
+                file=sys.stderr,
+            )
+            return None
+
+        # Security: Check for double URL-encoding (%252e = %2e after first decode)
+        try:
+            decoded_twice = urllib.parse.unquote(decoded_once)
+        except (UnicodeDecodeError, ValueError):
+            # If second decode fails, proceed with single decode check
+            pass
+        else:
+            if ".." in decoded_twice:
+                print(
+                    f"Security error: Double URL-encoded path traversal detected in {context}: {path}",
+                    file=sys.stderr,
+                )
+                return None
+
+        # Security: Check for Windows-style path traversal (explicit check for clarity)
+        if "..\\" in path_str or "..\\\\" in path_str:
+            print(
+                f"Security error: Windows-style path traversal detected in {context}: {path}",
+                file=sys.stderr,
+            )
+            return None
+
+        # Security: Check for mixed forward/back slash attacks
+        # Normalize and check for traversal attempts
+        normalized = path_str.replace("\\", "/")
+        if ".." in normalized:
+            print(
+                f"Security error: Path traversal detected in {context}: {path}",
+                file=sys.stderr,
+            )
+            return None
+
+        # Security: Reject paths with double slashes (bypass attempts)
+        if "//" in path_str or "\\\\" in path_str:
+            print(
+                f"Security error: Invalid path format in {context}: {path}",
+                file=sys.stderr,
+            )
+            return None
+
+        # Delegate to base class for additional validation
+        return super()._validate_cli_path(path, context)
+
+    def _get_rule_config(
+        self,
+        rule_id: str | None,
+        contract: ModelValidatorSubcontract,
+    ) -> tuple[bool, EnumValidationSeverity]:
+        """Get rule enabled state and severity with contract-driven defaults.
+
+        Overrides base class to ensure rules not explicitly defined in the
+        contract are DISABLED by default. This enforces strict contract-driven
+        validation where only explicitly configured rules are applied.
+
+        Args:
+            rule_id: The rule identifier to look up. If None, returns defaults.
+            contract: Validator contract with rule configurations.
+
+        Returns:
+            Tuple of (enabled, severity) for the rule. If rule is not in
+            contract or rule_id is None, returns (False, default_severity).
+        """
+        if rule_id is None:
+            logger.debug(
+                "Rule ID is None, using default severity: %s",
+                contract.severity_default,
+            )
+            return (True, contract.severity_default)
+
+        # Lazily build cache on first access
+        if self._rule_config_cache is None:
+            self._rule_config_cache = self._build_rule_config_cache(contract)
+
+        # O(1) lookup from cache
+        if rule_id in self._rule_config_cache:
+            return self._rule_config_cache[rule_id]
+
+        # Contract-driven behavior: rules NOT in contract are DISABLED
+        # This ensures only explicitly configured rules are applied
+        logger.debug(
+            "Rule %s not in contract, disabling (contract-driven behavior)",
+            rule_id,
+        )
+        return (False, contract.severity_default)
 
     def _validate_file(
         self,

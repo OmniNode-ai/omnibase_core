@@ -391,4 +391,4 @@ class ModelValidatorSubcontract(BaseModel):
     )
 
 
-__all__ = ["ModelValidatorSubcontract"]
+__all__ = ["ModelValidatorRule", "ModelValidatorSubcontract"]

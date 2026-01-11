@@ -13,6 +13,7 @@ from pathlib import Path
 
 import pytest
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.validation.model_protocol_info import ModelProtocolInfo
 from omnibase_core.models.validation.model_protocol_signature_extractor import (
@@ -247,15 +248,24 @@ class TestPathValidation:
                 validate_file_path(temp_path, "test")
 
     def test_directory_traversal_raises_error(self, caplog):
-        """Test directory traversal attempts raise security error."""
+        """Test directory traversal attempts raise SECURITY_VIOLATION error.
+
+        Security: Path traversal attempts must be rejected with the correct
+        error code (SECURITY_VIOLATION) to ensure proper security handling.
+        """
         with tempfile.TemporaryDirectory() as temp_dir:
             # Create a path with .. in it (path traversal attempt)
             temp_path = Path(temp_dir) / ".." / Path(temp_dir).name
 
-            # Path traversal should now raise a security error (not just warn)
+            # Path traversal should raise a SECURITY_VIOLATION error
             with caplog.at_level(logging.ERROR):
-                with pytest.raises(ModelOnexError, match="Path traversal detected"):
+                with pytest.raises(ModelOnexError) as exc_info:
                     validate_directory_path(temp_path, "test")
+
+                # CRITICAL: Verify the correct error code is SECURITY_VIOLATION
+                assert exc_info.value.error_code == EnumCoreErrorCode.SECURITY_VIOLATION
+                # Verify error message mentions path traversal
+                assert "path traversal" in exc_info.value.message.lower()
 
                 # Should have logged an error
                 assert len(caplog.records) >= 1

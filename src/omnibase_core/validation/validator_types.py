@@ -220,14 +220,17 @@ class ValidatorUnionUsage(ValidatorBase):
             return int(match.group(1))
         return None
 
-    def _determine_rule_name(self, issue_str: str) -> str | None:
+    def _determine_rule_name(self, issue_str: str) -> str:
         """Determine the rule name from the issue string.
 
         Args:
             issue_str: The issue message string.
 
         Returns:
-            Rule ID if pattern matches, None otherwise.
+            Rule ID matching the issue pattern. Returns "unknown_union_pattern"
+            as fallback if no specific pattern matches, ensuring all
+            ModelValidationIssue instances have a valid code for programmatic
+            handling.
         """
         lower_issue = issue_str.lower()
 
@@ -244,7 +247,8 @@ class ValidatorUnionUsage(ValidatorBase):
         if "3+" in lower_issue or "complex" in lower_issue:
             return "complex_union"
 
-        return None
+        # Fallback: Always return a valid code for programmatic handling
+        return "unknown_union_pattern"
 
 
 # =============================================================================

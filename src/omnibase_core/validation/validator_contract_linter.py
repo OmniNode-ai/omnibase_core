@@ -61,6 +61,7 @@ from omnibase_core.contracts import (
     compute_contract_fingerprint,
 )
 from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
+from omnibase_core.errors.exception_groups import FILE_IO_ERRORS, VALIDATION_ERRORS
 from omnibase_core.models.common.model_validation_issue import ModelValidationIssue
 from omnibase_core.models.contracts.model_contract_compute import ModelContractCompute
 from omnibase_core.models.contracts.model_contract_effect import ModelContractEffect
@@ -720,8 +721,8 @@ class ValidatorContractLinter(ValidatorBase):
                     )
                 )
 
-        except (TypeError, ValidationError):
-            # Schema validation failed - can't compute fingerprint
+        except VALIDATION_ERRORS:
+            # fallback-ok: schema validation failed - can't compute fingerprint
             # This will be reported by schema_validation rule
             pass
 
@@ -758,41 +759,44 @@ class ValidatorContractLinter(ValidatorBase):
 
         try:
             model_class.model_validate(data)
-        except ValidationError as e:
-            # Format error details
-            error_details = []
-            for error in e.errors():
-                loc = ".".join(str(x) for x in error["loc"])
-                msg = error["msg"]
-                error_details.append(f"  - {loc}: {msg}")
+        except VALIDATION_ERRORS as e:
+            # Handle Pydantic ValidationError with detailed error extraction
+            if isinstance(e, ValidationError):
+                # Format error details
+                error_details = []
+                for error in e.errors():
+                    loc = ".".join(str(x) for x in error["loc"])
+                    msg = error["msg"]
+                    error_details.append(f"  - {loc}: {msg}")
 
-            error_list = "\n".join(error_details[:5])
-            if len(e.errors()) > 5:
-                error_list += f"\n  ... and {len(e.errors()) - 5} more errors"
+                error_list = "\n".join(error_details[:5])
+                if len(e.errors()) > 5:
+                    error_list += f"\n  ... and {len(e.errors()) - 5} more errors"
 
-            issues.append(
-                ModelValidationIssue(
-                    severity=severity,
-                    message=f"Contract schema validation failed ({len(e.errors())} errors):\n{error_list}",
-                    code=RULE_SCHEMA_VALIDATION,
-                    file_path=path,
-                    line_number=1,
-                    rule_name=RULE_SCHEMA_VALIDATION,
-                    suggestion="Fix the schema errors listed above",
+                issues.append(
+                    ModelValidationIssue(
+                        severity=severity,
+                        message=f"Contract schema validation failed ({len(e.errors())} errors):\n{error_list}",
+                        code=RULE_SCHEMA_VALIDATION,
+                        file_path=path,
+                        line_number=1,
+                        rule_name=RULE_SCHEMA_VALIDATION,
+                        suggestion="Fix the schema errors listed above",
+                    )
                 )
-            )
-        except TypeError as e:
-            issues.append(
-                ModelValidationIssue(
-                    severity=severity,
-                    message=f"Contract validation type error: {e}",
-                    code=RULE_SCHEMA_VALIDATION,
-                    file_path=path,
-                    line_number=1,
-                    rule_name=RULE_SCHEMA_VALIDATION,
-                    suggestion="Fix the type errors in the contract",
+            else:
+                # Handle TypeError/ValueError with generic message
+                issues.append(
+                    ModelValidationIssue(
+                        severity=severity,
+                        message=f"Contract validation error: {e}",
+                        code=RULE_SCHEMA_VALIDATION,
+                        file_path=path,
+                        line_number=1,
+                        rule_name=RULE_SCHEMA_VALIDATION,
+                        suggestion="Fix the validation errors in the contract",
+                    )
                 )
-            )
 
         return issues
 
@@ -817,8 +821,8 @@ class ValidatorContractLinter(ValidatorBase):
         # Read file content
         try:
             content = path.read_text(encoding="utf-8")
-        except OSError:
-            # File read error - skip silently
+        except FILE_IO_ERRORS:
+            # fallback-ok: file read error - skip silently
             return ()
 
         # Parse YAML

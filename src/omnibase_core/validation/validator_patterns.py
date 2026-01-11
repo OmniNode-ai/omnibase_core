@@ -226,19 +226,25 @@ def _parse_message(issue: str) -> str:
 def _categorize_issue(issue: str) -> str:
     """Categorize an issue string to a rule ID using compiled regex patterns.
 
-    Uses pre-compiled regex patterns with word boundaries and anchoring for
+    Uses pre-compiled regex patterns with full anchoring (^ and $) for
     precise matching. Patterns are checked in order, with more specific
     patterns before generic ones.
 
+    Implementation Notes:
+        - Uses ``fullmatch()`` for fully-anchored patterns (^ and $) to ensure
+          exact string matching and avoid partial match misclassification.
+        - If a pattern fails to match, the issue falls back to RULE_UNKNOWN.
+        - Keep patterns synchronized with checker output to prevent miscategorization.
+
     Args:
-        issue: The issue message to categorize.
+        issue: The issue message to categorize (without "Line N:" prefix).
 
     Returns:
         The rule ID corresponding to the issue type, or RULE_UNKNOWN if
         no pattern matches (with a debug log).
     """
     for pattern, rule_id in _ISSUE_CATEGORY_PATTERNS:
-        if pattern.search(issue):
+        if pattern.fullmatch(issue):
             return rule_id
 
     # Log uncategorized issues for debugging - helps identify missing patterns

@@ -79,12 +79,20 @@ validation:
   # Matching: Case-sensitive substring search (no regex).
   # ============================================================================
   suppression_comments:
-    # Legacy patterns - suffix is a documentation hint only (suppresses ALL violations on line)
+    # -------------------------------------------------------------------------
+    # NOTE: These are LINE-BASED patterns. The suffix text (e.g., "any_type",
+    # "dict_str_any") is purely for developer documentation - it does NOT
+    # selectively suppress specific rules. ANY pattern match suppresses ALL
+    # Any-type violations on that line.
+    # -------------------------------------------------------------------------
+
+    # Legacy patterns (suffix is documentation hint only - suppresses ALL violations on line)
     - "# ONEX_EXCLUDE: any_type"
     - "# ONEX_EXCLUDE: dict_str_any"
+
     # Standard patterns
     - "# type: ignore"  # Mypy ignore marker - also suppresses here
-    - "# any-ok:"  # Preferred: include reason after colon
+    - "# any-ok:"  # Preferred: include reason after colon (e.g., "# any-ok: external API")
 
   severity_default: error
   fail_on_error: true
