@@ -185,19 +185,24 @@ class ModelBaselineHealthReport(BaseModel):
         """
         return self.stability_status == "stable" and self.all_invariants_passing
 
-    def is_safe_for_changes(self, min_stability_score: float = 0.8) -> bool:
-        """Determine if it's safe to propose changes based on baseline health.
+    def is_safe_for_changes(
+        self,
+        min_stability_score: float = 0.8,
+        min_confidence: float = 0.7,
+    ) -> bool:
+        """Check if system is safe for making changes.
 
         Args:
-            min_stability_score: Minimum stability score required (default 0.8).
+            min_stability_score: Minimum required stability score (default: 0.8).
+            min_confidence: Minimum required confidence level (default: 0.7).
 
         Returns:
-            True if the system meets minimum stability requirements.
+            True if system is stable with sufficient confidence for changes.
         """
         return (
             self.is_stable()
             and self.stability_score >= min_stability_score
-            and self.confidence_level >= 0.7
+            and self.confidence_level >= min_confidence
         )
 
     def get_failing_invariants(self) -> list[ModelInvariantStatus]:

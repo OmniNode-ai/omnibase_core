@@ -22,6 +22,10 @@ DEFAULT_DEGRADED_THRESHOLD = 0.5
 DEFAULT_MIN_CORPUS_SIZE = 100
 DEFAULT_TARGET_CORPUS_SIZE = 1000
 
+# Stability calculation thresholds
+ERROR_RATE_THRESHOLD = 0.10  # 10% error rate = 0 stability score
+MAX_LATENCY_RATIO = 6.0  # p99 = 6x avg latency = 0 stability score
+
 
 def calculate_stability(
     invariants: list["ModelInvariantStatus"],
@@ -92,7 +96,7 @@ def calculate_stability(
 
     if metrics.avg_latency_ms == 0:
         raise ModelOnexError(
-            message="avg_latency_ms cannot be zero (would cause division by zero)",
+            message="avg_latency_ms must be greater than 0 (current: 0.0, expected: > 0.0)",
             error_code=EnumCoreErrorCode.INVALID_PARAMETER,
         )
 
@@ -104,13 +108,13 @@ def calculate_stability(
 
     # Factor 2: Error rate (30% weight)
     # 10% error rate = 0 score, 0% error rate = 1 score
-    error_score = max(0.0, 1.0 - (metrics.error_rate * 10))
+    error_score = max(0.0, 1.0 - (metrics.error_rate / ERROR_RATE_THRESHOLD))
     factors.append(("errors", error_score, 0.3))
 
     # Factor 3: Latency consistency (20% weight)
     # p99 = 6x avg = 0 score, p99 = avg = 1 score
     latency_ratio = metrics.p99_latency_ms / metrics.avg_latency_ms
-    latency_score = max(0.0, 1.0 - (latency_ratio - 1) / 5)
+    latency_score = max(0.0, 1.0 - (latency_ratio - 1) / (MAX_LATENCY_RATIO - 1))
     factors.append(("latency", latency_score, 0.2))
 
     # Factor 4: Corpus size (10% weight)

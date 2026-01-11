@@ -243,7 +243,7 @@ class TestStabilityEdgeCases:
             error_rate=0.0,
         )
 
-        with pytest.raises(OnexError, match="cannot be zero"):
+        with pytest.raises(OnexError, match="must be greater than 0"):
             calculate_stability(
                 invariants=all_passing_invariants,
                 metrics=zero_latency_metrics,
