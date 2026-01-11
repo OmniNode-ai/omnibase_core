@@ -234,16 +234,16 @@ class TestModelWidgetDefinition:
             )
 
     @pytest.mark.parametrize(
-        ("field", "value", "description"),
+        ("field", "value"),
         [
-            ("row", -1, "row must be >= 0"),
-            ("col", -1, "col must be >= 0"),
-            ("width", 0, "width must be >= 1"),
-            ("width", 13, "width must be <= 12"),
-            ("height", 0, "height must be >= 1"),
+            ("row", -1),
+            ("col", -1),
+            ("width", 0),
+            ("width", 13),
+            ("height", 0),
         ],
     )
-    def test_layout_constraints(self, field: str, value: int, description: str) -> None:
+    def test_layout_constraints(self, field: str, value: int) -> None:
         """Test layout field constraints."""
         pie_config = _make_pie_chart_config()
         kwargs = {
@@ -252,8 +252,11 @@ class TestModelWidgetDefinition:
             "config": pie_config,
             field: value,
         }
-        with pytest.raises(ValidationError):
+        with pytest.raises(ValidationError) as exc_info:
             ModelWidgetDefinition(**kwargs)  # type: ignore[arg-type]
+        errors = exc_info.value.errors()
+        assert len(errors) >= 1
+        assert any(e["loc"] == (field,) for e in errors)
 
     def test_optional_description(self) -> None:
         """Test optional description field."""

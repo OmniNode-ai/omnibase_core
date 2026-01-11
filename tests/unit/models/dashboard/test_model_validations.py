@@ -232,8 +232,8 @@ class TestModelWidgetConfigStatusGridColorValidation:
         errors = exc_info.value.errors()
         assert any(e["type"] == "value_error" for e in errors)
 
-    def test_error_message_includes_status_key(self) -> None:
-        """Test that error message includes the status key."""
+    def test_invalid_color_value_raises_value_error(self) -> None:
+        """Test that invalid color value in status_colors raises ValidationError with value_error type."""
         with pytest.raises(ValidationError) as exc_info:
             ModelWidgetConfigStatusGrid(
                 status_colors={"ok": "#00FF00", "fail": "invalid"}
