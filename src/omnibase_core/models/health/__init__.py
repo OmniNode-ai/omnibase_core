@@ -2,6 +2,7 @@
 Health domain models for ONEX.
 """
 
+from .model_baseline_health_report import ModelBaselineHealthReport
 from .model_health_attributes import ModelHealthAttributes
 from .model_health_check import ModelHealthCheck
 from .model_health_check_config import ModelHealthCheckConfig
@@ -11,9 +12,12 @@ from .model_health_metadata import ModelHealthMetadata
 from .model_health_metric import ModelHealthMetric
 from .model_health_metrics import ModelHealthMetrics
 from .model_health_status import ModelHealthStatus
+from .model_invariant_status import ModelInvariantStatus
+from .model_performance_metrics import ModelPerformanceMetrics
 from .model_tool_health import ModelToolHealth
 
 __all__: list[str] = [
+    "ModelBaselineHealthReport",
     "ModelHealthAttributes",
     "ModelHealthCheck",
     "ModelHealthCheckConfig",
@@ -23,6 +27,8 @@ __all__: list[str] = [
     "ModelHealthMetric",
     "ModelHealthMetrics",
     "ModelHealthStatus",
+    "ModelInvariantStatus",
+    "ModelPerformanceMetrics",
     "ModelToolHealth",
 ]
 

@@ -1,0 +1,40 @@
+"""TypedDict for system configuration in baseline health reports."""
+
+from typing import NotRequired, TypedDict
+
+
+class TypedDictSystemConfig(TypedDict, total=False):
+    """System configuration for baseline health reporting.
+
+    This TypedDict captures LLM and system configuration parameters
+    used during the measurement period. All fields are optional to
+    accommodate varying configuration schemas.
+
+    Attributes:
+        model: The model identifier (e.g., "gpt-4", "claude-3").
+        temperature: Sampling temperature for the model.
+        max_tokens: Maximum tokens for responses.
+        top_p: Top-p sampling parameter.
+        frequency_penalty: Frequency penalty for sampling.
+        presence_penalty: Presence penalty for sampling.
+        system_prompt: The system prompt used.
+        tools_enabled: Whether tools/functions are enabled.
+        streaming: Whether streaming responses are enabled.
+
+    Example:
+        >>> config: TypedDictSystemConfig = {
+        ...     "model": "gpt-4",
+        ...     "temperature": 0.7,
+        ...     "max_tokens": 1000,
+        ... }
+    """
+
+    model: NotRequired[str]
+    temperature: NotRequired[float]
+    max_tokens: NotRequired[int]
+    top_p: NotRequired[float]
+    frequency_penalty: NotRequired[float]
+    presence_penalty: NotRequired[float]
+    system_prompt: NotRequired[str]
+    tools_enabled: NotRequired[bool]
+    streaming: NotRequired[bool]
