@@ -22,6 +22,7 @@ from omnibase_core.models.health.model_invariant_status import ModelInvariantSta
 from omnibase_core.models.health.model_performance_metrics import (
     ModelPerformanceMetrics,
 )
+from omnibase_core.types.typed_dict_system_config import TypedDictSystemConfig
 
 # ============================================================================
 # Fixtures
@@ -77,20 +78,10 @@ def degraded_metrics() -> ModelPerformanceMetrics:
 
 
 @pytest.fixture
-def sample_config() -> dict[str, str | float | int]:
-    """Create a sample configuration."""
-    return {
-        "model": "gpt-4",
-        "temperature": 0.7,
-        "max_tokens": 1000,
-    }
-
-
-@pytest.fixture
 def sample_report(
     passing_invariant: ModelInvariantStatus,
     healthy_metrics: ModelPerformanceMetrics,
-    sample_config: dict[str, str | float | int],
+    sample_config: TypedDictSystemConfig,
 ) -> ModelBaselineHealthReport:
     """Create a sample baseline health report."""
     config_str = json.dumps(sample_config, sort_keys=True)

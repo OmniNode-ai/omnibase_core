@@ -1,6 +1,7 @@
 """Tests for ModelPerformanceMetrics."""
 
 import pytest
+from pydantic import ValidationError
 
 from omnibase_core.errors import ModelOnexError
 from omnibase_core.models.health.model_performance_metrics import (
@@ -41,7 +42,7 @@ class TestModelPerformanceMetricsBasics:
             error_rate=0.05,
         )
 
-        with pytest.raises(Exception):  # Pydantic frozen model raises
+        with pytest.raises(ValidationError):  # Pydantic frozen model raises
             metrics.avg_latency_ms = 200.0
 
 
@@ -182,7 +183,7 @@ class TestModelPerformanceMetricsFieldValidation:
 
     def test_negative_latency_rejected(self):
         """Test that negative latency values are rejected."""
-        with pytest.raises(Exception):  # Pydantic validation error
+        with pytest.raises(ValidationError):  # Pydantic validation error
             ModelPerformanceMetrics(
                 avg_latency_ms=-1.0,
                 p95_latency_ms=200.0,
@@ -217,7 +218,7 @@ class TestModelPerformanceMetricsFieldValidation:
         assert metrics.error_rate == 1.0
 
         # Invalid: error_rate > 1
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             ModelPerformanceMetrics(
                 avg_latency_ms=100.0,
                 p95_latency_ms=200.0,
@@ -228,7 +229,7 @@ class TestModelPerformanceMetricsFieldValidation:
             )
 
         # Invalid: error_rate < 0
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             ModelPerformanceMetrics(
                 avg_latency_ms=100.0,
                 p95_latency_ms=200.0,
@@ -240,7 +241,7 @@ class TestModelPerformanceMetricsFieldValidation:
 
     def test_negative_total_calls_rejected(self):
         """Test that negative total_calls is rejected."""
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             ModelPerformanceMetrics(
                 avg_latency_ms=100.0,
                 p95_latency_ms=200.0,

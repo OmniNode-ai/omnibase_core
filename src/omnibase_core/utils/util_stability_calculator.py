@@ -7,7 +7,7 @@ based on invariant pass rates, error rates, latency metrics, and corpus size.
 from typing import TYPE_CHECKING, Literal
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.errors import OnexError
+from omnibase_core.errors import ModelOnexError
 
 if TYPE_CHECKING:
     from omnibase_core.models.health.model_invariant_status import ModelInvariantStatus
@@ -63,7 +63,7 @@ def calculate_stability(
         metrics (error rate, latency, corpus size) indicate suboptimal operation.
 
     Raises:
-        OnexError: If invariants list is empty or avg_latency_ms is zero.
+        ModelOnexError: If invariants list is empty or avg_latency_ms is zero.
 
     Example:
         >>> from uuid import uuid4
@@ -85,13 +85,13 @@ def calculate_stability(
         'stable'
     """
     if not invariants:
-        raise OnexError(
+        raise ModelOnexError(
             message="invariants list cannot be empty",
             error_code=EnumCoreErrorCode.VALIDATION_ERROR,
         )
 
     if metrics.avg_latency_ms == 0:
-        raise OnexError(
+        raise ModelOnexError(
             message="avg_latency_ms cannot be zero (would cause division by zero)",
             error_code=EnumCoreErrorCode.INVALID_PARAMETER,
         )
@@ -173,7 +173,7 @@ def calculate_confidence(
         - reasoning: String explaining the confidence level
 
     Raises:
-        OnexError: If corpus_size or invariant_count is negative, or if
+        ModelOnexError: If corpus_size or invariant_count is negative, or if
             input_diversity_score is not between 0.0 and 1.0.
 
     Example:
@@ -187,19 +187,19 @@ def calculate_confidence(
     """
     # Input validation
     if corpus_size < 0:
-        raise OnexError(
+        raise ModelOnexError(
             message="corpus_size must be non-negative",
             error_code=EnumCoreErrorCode.INVALID_PARAMETER,
             context={"corpus_size": corpus_size},
         )
     if not (0.0 <= input_diversity_score <= 1.0):
-        raise OnexError(
+        raise ModelOnexError(
             message="input_diversity_score must be between 0.0 and 1.0",
             error_code=EnumCoreErrorCode.INVALID_PARAMETER,
             context={"input_diversity_score": input_diversity_score},
         )
     if invariant_count < 0:
-        raise OnexError(
+        raise ModelOnexError(
             message="invariant_count must be non-negative",
             error_code=EnumCoreErrorCode.INVALID_PARAMETER,
             context={"invariant_count": invariant_count},

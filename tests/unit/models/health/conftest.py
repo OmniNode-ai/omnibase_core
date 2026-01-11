@@ -5,7 +5,7 @@ Provides shared fixtures for testing baseline health report models
 and related health calculation components.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 import pytest
 
@@ -26,10 +26,13 @@ def sample_config() -> TypedDictSystemConfig:
 @pytest.fixture
 def sample_date_range() -> tuple[datetime, datetime]:
     """Create a sample date range for corpus data."""
-    return (datetime(2024, 1, 1, 0, 0, 0), datetime(2024, 1, 14, 23, 59, 59))
+    return (
+        datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC),
+        datetime(2024, 1, 14, 23, 59, 59, tzinfo=UTC),
+    )
 
 
 @pytest.fixture
 def generated_timestamp() -> datetime:
     """Create a sample report generation timestamp."""
-    return datetime(2024, 1, 15, 10, 0, 0)
+    return datetime(2024, 1, 15, 10, 0, 0, tzinfo=UTC)
