@@ -9,9 +9,11 @@ from datetime import datetime
 
 import pytest
 
+from omnibase_core.types.typed_dict_system_config import TypedDictSystemConfig
+
 
 @pytest.fixture
-def sample_config() -> dict:
+def sample_config() -> TypedDictSystemConfig:
     """Create a sample LLM configuration."""
     return {
         "model": "gpt-4",

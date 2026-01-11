@@ -4,7 +4,10 @@ Model for performance metrics tracking.
 Captures key performance indicators for the system during the measurement period.
 """
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors import ModelOnexError
 
 
 class ModelPerformanceMetrics(BaseModel):
@@ -34,7 +37,7 @@ class ModelPerformanceMetrics(BaseModel):
         0.01
     """
 
-    model_config = ConfigDict(frozen=True, extra="forbid")
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     avg_latency_ms: float = Field(
         ...,
@@ -67,3 +70,28 @@ class ModelPerformanceMetrics(BaseModel):
         le=1.0,
         description="Error rate as a decimal (0.0 to 1.0)",
     )
+
+    @model_validator(mode="after")
+    def _validate_percentile_ordering(self) -> "ModelPerformanceMetrics":
+        """Validate that latency percentiles are properly ordered.
+
+        Ensures that avg_latency_ms <= p95_latency_ms <= p99_latency_ms,
+        which is mathematically required for valid percentile data.
+
+        Returns:
+            Self if validation passes.
+
+        Raises:
+            ModelOnexError: If percentiles are not properly ordered.
+        """
+        if not (self.avg_latency_ms <= self.p95_latency_ms <= self.p99_latency_ms):
+            raise ModelOnexError(
+                message="Latency percentiles must be ordered: avg <= p95 <= p99",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                context={
+                    "avg_latency_ms": self.avg_latency_ms,
+                    "p95_latency_ms": self.p95_latency_ms,
+                    "p99_latency_ms": self.p99_latency_ms,
+                },
+            )
+        return self

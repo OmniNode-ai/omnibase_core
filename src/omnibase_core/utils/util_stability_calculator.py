@@ -54,6 +54,14 @@ def calculate_stability(
         - status: One of "stable", "unstable", "degraded"
         - details: String describing the score breakdown
 
+    Note:
+        Any failing invariant immediately results in "unstable" status,
+        regardless of the overall stability score. This is intentional:
+        invariants represent critical correctness checks that must ALL pass
+        for the system to be considered operationally healthy. The "degraded"
+        status is reserved for cases where all invariants pass but performance
+        metrics (error rate, latency, corpus size) indicate suboptimal operation.
+
     Raises:
         OnexError: If invariants list is empty or avg_latency_ms is zero.
 
@@ -114,6 +122,11 @@ def calculate_stability(
     score = sum(factor_score * weight for _, factor_score, weight in factors)
 
     # Determine status
+    # NOTE: Any failing invariant immediately results in "unstable" status,
+    # regardless of overall score. This is intentional - invariants are critical
+    # correctness checks that must ALL pass for the system to be considered
+    # stable. The "degraded" status is reserved for when all invariants pass
+    # but performance metrics indicate suboptimal operation.
     if pass_rate < 1.0:
         status: Literal["stable", "unstable", "degraded"] = "unstable"
     elif score >= stable_threshold:
@@ -159,6 +172,10 @@ def calculate_confidence(
         - confidence_level: Float between 0 and 1
         - reasoning: String explaining the confidence level
 
+    Raises:
+        OnexError: If corpus_size or invariant_count is negative, or if
+            input_diversity_score is not between 0.0 and 1.0.
+
     Example:
         >>> confidence, reasoning = calculate_confidence(
         ...     corpus_size=500,
@@ -168,6 +185,26 @@ def calculate_confidence(
         >>> confidence > 0.5
         True
     """
+    # Input validation
+    if corpus_size < 0:
+        raise OnexError(
+            message="corpus_size must be non-negative",
+            error_code=EnumCoreErrorCode.INVALID_PARAMETER,
+            context={"corpus_size": corpus_size},
+        )
+    if not (0.0 <= input_diversity_score <= 1.0):
+        raise OnexError(
+            message="input_diversity_score must be between 0.0 and 1.0",
+            error_code=EnumCoreErrorCode.INVALID_PARAMETER,
+            context={"input_diversity_score": input_diversity_score},
+        )
+    if invariant_count < 0:
+        raise OnexError(
+            message="invariant_count must be non-negative",
+            error_code=EnumCoreErrorCode.INVALID_PARAMETER,
+            context={"invariant_count": invariant_count},
+        )
+
     factors = []
 
     # Factor 1: Corpus size (50% weight)

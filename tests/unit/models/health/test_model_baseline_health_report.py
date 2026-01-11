@@ -16,6 +16,7 @@ from uuid import uuid4
 import pytest
 from pydantic import ValidationError
 
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.health.model_baseline_health_report import (
     ModelBaselineHealthReport,
 )
@@ -255,7 +256,10 @@ class TestModelBaselineHealthReport:
                 current_config={},  # type: ignore[arg-type]
                 config_hash="test",
                 corpus_size=100,
-                corpus_date_range=(datetime.now(UTC), datetime.now(UTC)),
+                corpus_date_range=(
+                    datetime(2024, 1, 1, tzinfo=UTC),
+                    datetime(2024, 1, 14, tzinfo=UTC),
+                ),
                 input_diversity_score=0.5,
                 invariants_checked=[],
                 all_invariants_passing=True,
@@ -273,6 +277,140 @@ class TestModelBaselineHealthReport:
                 confidence_level=0.8,
                 confidence_reasoning="test",
             )
+
+
+# ============================================================================
+# Date Range Validation Tests
+# ============================================================================
+
+
+@pytest.mark.unit
+class TestDateRangeValidation:
+    """Test corpus_date_range ordering validation."""
+
+    def test_valid_date_range_start_before_end(
+        self,
+        healthy_metrics: ModelPerformanceMetrics,
+    ) -> None:
+        """Test that valid date range (start < end) is accepted."""
+        report = ModelBaselineHealthReport(
+            report_id=uuid4(),
+            generated_at=datetime.now(UTC),
+            current_config={},  # type: ignore[arg-type]
+            config_hash="test",
+            corpus_size=100,
+            corpus_date_range=(
+                datetime(2024, 1, 1, tzinfo=UTC),
+                datetime(2024, 1, 31, tzinfo=UTC),
+            ),
+            input_diversity_score=0.5,
+            invariants_checked=[],
+            all_invariants_passing=True,
+            metrics=healthy_metrics,
+            stability_score=0.8,
+            stability_status="stable",
+            stability_details="test",
+            confidence_level=0.8,
+            confidence_reasoning="test",
+        )
+        assert report.corpus_date_range[0] < report.corpus_date_range[1]
+
+    def test_invalid_date_range_start_equals_end(
+        self,
+        healthy_metrics: ModelPerformanceMetrics,
+    ) -> None:
+        """Test that equal start and end dates raise ModelOnexError."""
+        same_time = datetime(2024, 1, 15, 10, 0, 0, tzinfo=UTC)
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelBaselineHealthReport(
+                report_id=uuid4(),
+                generated_at=datetime.now(UTC),
+                current_config={},  # type: ignore[arg-type]
+                config_hash="test",
+                corpus_size=100,
+                corpus_date_range=(same_time, same_time),
+                input_diversity_score=0.5,
+                invariants_checked=[],
+                all_invariants_passing=True,
+                metrics=healthy_metrics,
+                stability_score=0.8,
+                stability_status="stable",
+                stability_details="test",
+                confidence_level=0.8,
+                confidence_reasoning="test",
+            )
+
+        assert "corpus_date_range start must be before end" in str(exc_info.value)
+        assert exc_info.value.context is not None
+        additional_context = exc_info.value.context.get("additional_context", {})
+        assert "start" in additional_context
+        assert "end" in additional_context
+
+    def test_invalid_date_range_start_after_end(
+        self,
+        healthy_metrics: ModelPerformanceMetrics,
+    ) -> None:
+        """Test that start > end raises ModelOnexError."""
+        start = datetime(2024, 1, 31, tzinfo=UTC)
+        end = datetime(2024, 1, 1, tzinfo=UTC)
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelBaselineHealthReport(
+                report_id=uuid4(),
+                generated_at=datetime.now(UTC),
+                current_config={},  # type: ignore[arg-type]
+                config_hash="test",
+                corpus_size=100,
+                corpus_date_range=(start, end),
+                input_diversity_score=0.5,
+                invariants_checked=[],
+                all_invariants_passing=True,
+                metrics=healthy_metrics,
+                stability_score=0.8,
+                stability_status="stable",
+                stability_details="test",
+                confidence_level=0.8,
+                confidence_reasoning="test",
+            )
+
+        assert "corpus_date_range start must be before end" in str(exc_info.value)
+        # Verify context contains actual dates
+        assert exc_info.value.context is not None
+        additional_context = exc_info.value.context.get("additional_context", {})
+        assert additional_context["start"] == start.isoformat()
+        assert additional_context["end"] == end.isoformat()
+
+    def test_date_range_error_includes_context(
+        self,
+        healthy_metrics: ModelPerformanceMetrics,
+    ) -> None:
+        """Test that error context includes ISO-formatted dates."""
+        start = datetime(2024, 6, 15, 12, 30, 0, tzinfo=UTC)
+        end = datetime(2024, 6, 1, 8, 0, 0, tzinfo=UTC)
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelBaselineHealthReport(
+                report_id=uuid4(),
+                generated_at=datetime.now(UTC),
+                current_config={},  # type: ignore[arg-type]
+                config_hash="test",
+                corpus_size=100,
+                corpus_date_range=(start, end),
+                input_diversity_score=0.5,
+                invariants_checked=[],
+                all_invariants_passing=True,
+                metrics=healthy_metrics,
+                stability_score=0.8,
+                stability_status="stable",
+                stability_details="test",
+                confidence_level=0.8,
+                confidence_reasoning="test",
+            )
+
+        # Verify ISO format in context
+        assert exc_info.value.context is not None
+        additional_context = exc_info.value.context.get("additional_context", {})
+        assert "2024-06-15" in additional_context["start"]
+        assert "2024-06-01" in additional_context["end"]
 
 
 # ============================================================================
@@ -325,7 +463,10 @@ class TestHealthCalculation:
             current_config={},  # type: ignore[arg-type]
             config_hash="test",
             corpus_size=100,
-            corpus_date_range=(datetime.now(UTC), datetime.now(UTC)),
+            corpus_date_range=(
+                datetime(2024, 1, 1, tzinfo=UTC),
+                datetime(2024, 1, 14, tzinfo=UTC),
+            ),
             input_diversity_score=0.5,
             invariants_checked=invariants,
             all_invariants_passing=all_passing,
@@ -355,7 +496,10 @@ class TestHealthCalculation:
             current_config={},  # type: ignore[arg-type]
             config_hash="test",
             corpus_size=100,
-            corpus_date_range=(datetime.now(UTC), datetime.now(UTC)),
+            corpus_date_range=(
+                datetime(2024, 1, 1, tzinfo=UTC),
+                datetime(2024, 1, 14, tzinfo=UTC),
+            ),
             input_diversity_score=0.5,
             invariants_checked=invariants,
             all_invariants_passing=all_passing,
@@ -383,7 +527,10 @@ class TestHealthCalculation:
             current_config={},  # type: ignore[arg-type]
             config_hash="test",
             corpus_size=100,
-            corpus_date_range=(datetime.now(UTC), datetime.now(UTC)),
+            corpus_date_range=(
+                datetime(2024, 1, 1, tzinfo=UTC),
+                datetime(2024, 1, 14, tzinfo=UTC),
+            ),
             input_diversity_score=0.5,
             invariants_checked=[passing_invariant],
             all_invariants_passing=True,
@@ -414,7 +561,10 @@ class TestHealthCalculation:
             current_config={},  # type: ignore[arg-type]
             config_hash="test",
             corpus_size=1000,
-            corpus_date_range=(datetime.now(UTC), datetime.now(UTC)),
+            corpus_date_range=(
+                datetime(2024, 1, 1, tzinfo=UTC),
+                datetime(2024, 1, 14, tzinfo=UTC),
+            ),
             input_diversity_score=0.8,
             invariants_checked=[passing_invariant],
             all_invariants_passing=True,

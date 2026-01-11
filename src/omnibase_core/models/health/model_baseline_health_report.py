@@ -5,11 +5,13 @@ Provides a comprehensive snapshot of system health before proposing changes.
 """
 
 from datetime import datetime
-from typing import Literal
+from typing import Literal, Self
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.health.model_invariant_status import ModelInvariantStatus
 from omnibase_core.models.health.model_performance_metrics import (
     ModelPerformanceMetrics,
@@ -73,7 +75,7 @@ class ModelBaselineHealthReport(BaseModel):
         'stable'
     """
 
-    model_config = ConfigDict(frozen=True, extra="forbid")
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     report_id: UUID = Field(
         ...,
@@ -154,6 +156,26 @@ class ModelBaselineHealthReport(BaseModel):
         ...,
         description="Explanation of confidence level",
     )
+
+    @model_validator(mode="after")
+    def _validate_date_range_ordering(self) -> Self:
+        """Validate that corpus_date_range start is before end.
+
+        Returns:
+            Self: The validated model instance.
+
+        Raises:
+            ModelOnexError: If start date is not before end date.
+        """
+        start, end = self.corpus_date_range
+        if start >= end:
+            raise ModelOnexError(
+                message="corpus_date_range start must be before end",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                start=start.isoformat(),
+                end=end.isoformat(),
+            )
+        return self
 
     def is_stable(self) -> bool:
         """Check if the system is in a stable state.

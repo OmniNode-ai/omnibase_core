@@ -7,6 +7,8 @@ from uuid import uuid4
 
 import pytest
 
+pytestmark = pytest.mark.unit
+
 from omnibase_core.errors import OnexError
 from omnibase_core.models.health.model_invariant_status import ModelInvariantStatus
 from omnibase_core.models.health.model_performance_metrics import (
@@ -326,3 +328,80 @@ class TestConfidenceCalculation:
         )
 
         assert "invariant" in reasoning.lower()
+
+
+class TestConfidenceInputValidation:
+    """Test input validation in calculate_confidence."""
+
+    def test_negative_corpus_size_raises_error(self) -> None:
+        """Negative corpus_size should raise OnexError."""
+        with pytest.raises(OnexError, match="corpus_size must be non-negative"):
+            calculate_confidence(
+                corpus_size=-1,
+                input_diversity_score=0.5,
+                invariant_count=10,
+            )
+
+    def test_diversity_score_below_zero_raises_error(self) -> None:
+        """input_diversity_score below 0.0 should raise OnexError."""
+        with pytest.raises(
+            OnexError, match=r"input_diversity_score must be between 0\.0 and 1\.0"
+        ):
+            calculate_confidence(
+                corpus_size=100,
+                input_diversity_score=-0.1,
+                invariant_count=10,
+            )
+
+    def test_diversity_score_above_one_raises_error(self) -> None:
+        """input_diversity_score above 1.0 should raise OnexError."""
+        with pytest.raises(
+            OnexError, match=r"input_diversity_score must be between 0\.0 and 1\.0"
+        ):
+            calculate_confidence(
+                corpus_size=100,
+                input_diversity_score=1.5,
+                invariant_count=10,
+            )
+
+    def test_negative_invariant_count_raises_error(self) -> None:
+        """Negative invariant_count should raise OnexError."""
+        with pytest.raises(OnexError, match="invariant_count must be non-negative"):
+            calculate_confidence(
+                corpus_size=100,
+                input_diversity_score=0.5,
+                invariant_count=-5,
+            )
+
+    def test_boundary_values_are_valid(self) -> None:
+        """Boundary values (0 corpus, 0.0/1.0 diversity, 0 invariants) are valid."""
+        # Zero corpus_size is valid (though results in low confidence)
+        confidence, _ = calculate_confidence(
+            corpus_size=0,
+            input_diversity_score=0.5,
+            invariant_count=10,
+        )
+        assert confidence >= 0.0
+
+        # Boundary diversity scores are valid
+        confidence, _ = calculate_confidence(
+            corpus_size=100,
+            input_diversity_score=0.0,
+            invariant_count=10,
+        )
+        assert confidence >= 0.0
+
+        confidence, _ = calculate_confidence(
+            corpus_size=100,
+            input_diversity_score=1.0,
+            invariant_count=10,
+        )
+        assert confidence >= 0.0
+
+        # Zero invariant_count is valid
+        confidence, _ = calculate_confidence(
+            corpus_size=100,
+            input_diversity_score=0.5,
+            invariant_count=0,
+        )
+        assert confidence >= 0.0

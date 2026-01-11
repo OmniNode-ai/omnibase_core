@@ -1,6 +1,6 @@
 """TypedDict for system configuration in baseline health reports."""
 
-from typing import NotRequired, TypedDict
+from typing import TypedDict
 
 
 class TypedDictSystemConfig(TypedDict, total=False):
@@ -29,12 +29,12 @@ class TypedDictSystemConfig(TypedDict, total=False):
         ... }
     """
 
-    model: NotRequired[str]
-    temperature: NotRequired[float]
-    max_tokens: NotRequired[int]
-    top_p: NotRequired[float]
-    frequency_penalty: NotRequired[float]
-    presence_penalty: NotRequired[float]
-    system_prompt: NotRequired[str]
-    tools_enabled: NotRequired[bool]
-    streaming: NotRequired[bool]
+    model: str
+    temperature: float
+    max_tokens: int
+    top_p: float
+    frequency_penalty: float
+    presence_penalty: float
+    system_prompt: str
+    tools_enabled: bool
+    streaming: bool
