@@ -4,6 +4,8 @@ Unit tests for FSM execution utilities.
 Tests the pure functions in utils/util_fsm_executor.py for FSM transition execution.
 """
 
+from uuid import UUID
+
 import pytest
 
 pytestmark = pytest.mark.unit
@@ -1242,8 +1244,6 @@ class TestCorrelationIdPropagation:
     @pytest.fixture
     def custom_correlation_id(self) -> "UUID":
         """Create a known UUID for testing correlation_id propagation."""
-        from uuid import UUID
-
         return UUID("12345678-1234-5678-1234-567812345678")
 
     @pytest.fixture
@@ -1446,8 +1446,6 @@ class TestCorrelationIdPropagation:
         Note: The simple_fsm fixture doesn't set correlation_id, so ModelFSMSubcontract
         uses default_factory=uuid4 to auto-generate a valid UUID.
         """
-        from uuid import UUID
-
         # simple_fsm fixture doesn't set correlation_id, so it uses default_factory=uuid4
         result = await execute_transition(simple_fsm, "idle", "start_event", {})
 
@@ -1466,21 +1464,25 @@ class TestCorrelationIdPropagation:
         assert isinstance(corr_id, UUID)
 
     @pytest.mark.asyncio
-    async def test_correlation_id_consistency_across_multiple_transitions(
+    async def test_correlation_id_consistency_in_single_transition(
         self,
         fsm_with_custom_correlation_id: ModelFSMSubcontract,
         custom_correlation_id: "UUID",
     ):
-        """Test that correlation_id remains consistent across the FSM instance."""
-        # Execute first transition
-        result1 = await execute_transition(
+        """Test that correlation_id is consistent across all intents in a single transition.
+
+        Verifies that when executing a transition, all generated intents
+        (state actions, transition actions, persist_state) carry the same
+        correlation_id from the FSMSubcontract for distributed tracing.
+        """
+        result = await execute_transition(
             fsm_with_custom_correlation_id, "idle", "go", {}
         )
 
-        assert result1.success
+        assert result.success
 
-        # Verify all intents from first transition have the correlation_id
-        for intent in result1.intents:
+        # Verify all intents from the transition have the correlation_id
+        for intent in result.intents:
             if intent.intent_type in (
                 "fsm_state_action",
                 "fsm_transition_action",
@@ -1491,8 +1493,6 @@ class TestCorrelationIdPropagation:
     @pytest.mark.asyncio
     async def test_correlation_id_propagated_with_non_default_uuid(self):
         """Test correlation_id propagation with a specific non-default UUID value."""
-        from uuid import UUID
-
         # Create a distinctive UUID that's clearly not auto-generated
         specific_uuid = UUID("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee")
 
