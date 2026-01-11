@@ -27,6 +27,7 @@ Example:
         )
 """
 
+import warnings
 from typing import Self
 from uuid import UUID
 
@@ -138,4 +139,29 @@ class ModelDashboardConfig(BaseModel):
                         f"Widget '{widget.widget_id}' width ({widget.width}) exceeds "
                         f"dashboard grid columns ({max_cols})"
                     )
+        return self
+
+    @model_validator(mode="after")
+    def warn_aggressive_refresh(self) -> Self:
+        """Warn if refresh interval is aggressively low for production use.
+
+        Emits a UserWarning when refresh_interval_seconds is below 5 seconds,
+        as such aggressive refresh rates may cause excessive server load in
+        production environments. The 1-second minimum is still allowed for
+        development and real-time debugging scenarios.
+
+        Returns:
+            Self for chaining.
+        """
+        if (
+            self.refresh_interval_seconds is not None
+            and self.refresh_interval_seconds < 5
+        ):
+            warnings.warn(
+                f"refresh_interval_seconds={self.refresh_interval_seconds}s is below "
+                "recommended minimum of 5s for production. This may cause excessive "
+                "server load. Consider using 5-30s for production deployments.",
+                UserWarning,
+                stacklevel=2,
+            )
         return self

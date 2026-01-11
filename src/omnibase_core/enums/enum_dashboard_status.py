@@ -42,12 +42,24 @@ class EnumDashboardStatus(str, Enum):
         ERROR: Dashboard encountered a fatal error and cannot operate.
             Manual intervention or restart may be required.
 
+    Properties:
+        is_operational: True if status is CONNECTED.
+        is_terminal: True if status is ERROR.
+        requires_reconnection: True if DISCONNECTED or ERROR.
+        requires_manual_intervention: True if ERROR (may need human investigation).
+
     Example:
         Check dashboard health::
 
             status = EnumDashboardStatus.DISCONNECTED
             if status.requires_reconnection:
                 print("Attempting to reconnect...")
+
+        Handle errors requiring investigation::
+
+            status = EnumDashboardStatus.ERROR
+            if status.requires_manual_intervention:
+                notify_operators("Dashboard error requires investigation")
     """
 
     INITIALIZING = "initializing"
@@ -112,3 +124,32 @@ class EnumDashboardStatus(str, Enum):
             EnumDashboardStatus.DISCONNECTED,
             EnumDashboardStatus.ERROR,
         }
+
+    @property
+    def requires_manual_intervention(self) -> bool:
+        """Check if this status indicates manual intervention may be required.
+
+        Returns True for ERROR state, indicating the dashboard encountered
+        an error that may require manual investigation or configuration
+        changes before recovery is possible.
+
+        This differs from requires_reconnection in that:
+
+        - **requires_reconnection**: Automatic retry/reconnect may help
+          (DISCONNECTED, ERROR).
+        - **requires_manual_intervention**: Human investigation likely needed
+          (ERROR only).
+
+        Use Case:
+            If both requires_reconnection and requires_manual_intervention are
+            True, the system should attempt reconnection but also notify
+            operators for investigation in case the error is not transient.
+
+        Returns:
+            True if ERROR state, False otherwise.
+
+        See Also:
+            :attr:`requires_reconnection`: Check if reconnection is appropriate.
+            :attr:`is_terminal`: Check for fatal error states.
+        """
+        return self is EnumDashboardStatus.ERROR

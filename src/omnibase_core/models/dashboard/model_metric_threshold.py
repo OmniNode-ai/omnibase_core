@@ -19,16 +19,11 @@ Example:
         )
 """
 
-import re
-
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-__all__ = ("ModelMetricThreshold",)
+from omnibase_core.validation.validator_hex_color import validate_hex_color
 
-# Internal pattern for valid hex color formats: #RGB, #RRGGBB, #RGBA, #RRGGBBAA
-_HEX_COLOR_PATTERN = re.compile(
-    r"^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{4}|[0-9a-fA-F]{8})$"
-)
+__all__ = ("ModelMetricThreshold",)
 
 
 class ModelMetricThreshold(BaseModel):
@@ -70,11 +65,6 @@ class ModelMetricThreshold(BaseModel):
 
     @field_validator("color")
     @classmethod
-    def validate_hex_color(cls, v: str) -> str:
+    def validate_color(cls, v: str) -> str:
         """Validate that color is a valid hex color code."""
-        if not _HEX_COLOR_PATTERN.match(v):
-            raise ValueError(
-                f"Invalid hex color format: {v}. "
-                "Expected #RGB, #RRGGBB, #RGBA, or #RRGGBBAA"
-            )
-        return v
+        return validate_hex_color(v)

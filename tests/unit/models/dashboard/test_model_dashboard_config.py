@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Unit tests for ModelDashboardConfig."""
 
+import warnings
 from uuid import UUID, uuid4
 
 import pytest
@@ -275,3 +276,85 @@ class TestModelDashboardConfig:
         assert len(errors) == 1
         assert "8" in str(errors[0]["msg"])  # Invalid widget width
         assert "6" in str(errors[0]["msg"])  # Column count
+
+    def test_low_refresh_interval_emits_warning(self) -> None:
+        """Test that refresh intervals below 5s emit a warning."""
+        with pytest.warns(UserWarning, match="below recommended minimum"):
+            ModelDashboardConfig(
+                dashboard_id=uuid4(),
+                name="Test",
+                refresh_interval_seconds=2,
+            )
+
+    def test_low_refresh_interval_warning_includes_value(self) -> None:
+        """Test that the warning message includes the actual interval value."""
+        with pytest.warns(UserWarning, match="refresh_interval_seconds=2s"):
+            ModelDashboardConfig(
+                dashboard_id=uuid4(),
+                name="Test",
+                refresh_interval_seconds=2,
+            )
+
+    def test_minimum_refresh_interval_emits_warning(self) -> None:
+        """Test that the minimum 1-second interval emits a warning."""
+        with pytest.warns(UserWarning, match="below recommended minimum"):
+            ModelDashboardConfig(
+                dashboard_id=uuid4(),
+                name="Test",
+                refresh_interval_seconds=1,
+            )
+
+    def test_boundary_refresh_interval_4s_emits_warning(self) -> None:
+        """Test that 4-second refresh (just below threshold) emits warning."""
+        with pytest.warns(UserWarning, match="below recommended minimum"):
+            ModelDashboardConfig(
+                dashboard_id=uuid4(),
+                name="Test",
+                refresh_interval_seconds=4,
+            )
+
+    def test_recommended_refresh_interval_5s_no_warning(self) -> None:
+        """Test that 5-second refresh (at threshold) does not emit warning."""
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")  # Convert warnings to errors
+            dashboard = ModelDashboardConfig(
+                dashboard_id=uuid4(),
+                name="Test",
+                refresh_interval_seconds=5,
+            )
+            assert dashboard.refresh_interval_seconds == 5
+
+    def test_production_refresh_interval_no_warning(self) -> None:
+        """Test that production-appropriate intervals do not emit warnings."""
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")  # Convert warnings to errors
+            for interval in [5, 10, 30, 60, 300]:
+                dashboard = ModelDashboardConfig(
+                    dashboard_id=uuid4(),
+                    name="Test",
+                    refresh_interval_seconds=interval,
+                )
+                assert dashboard.refresh_interval_seconds == interval
+
+    def test_none_refresh_interval_no_warning(self) -> None:
+        """Test that None refresh interval (disabled) does not emit warning."""
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")  # Convert warnings to errors
+            dashboard = ModelDashboardConfig(
+                dashboard_id=uuid4(),
+                name="Test",
+                refresh_interval_seconds=None,
+            )
+            assert dashboard.refresh_interval_seconds is None
+
+    def test_low_refresh_interval_still_valid(self) -> None:
+        """Test that low refresh intervals are still valid despite warning."""
+        # The warning should not prevent model creation
+        with pytest.warns(UserWarning, match="below recommended minimum"):
+            dashboard = ModelDashboardConfig(
+                dashboard_id=uuid4(),
+                name="Test",
+                refresh_interval_seconds=2,
+            )
+        assert dashboard.refresh_interval_seconds == 2
+        assert dashboard.name == "Test"

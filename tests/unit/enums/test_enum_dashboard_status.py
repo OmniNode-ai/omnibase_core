@@ -51,6 +51,35 @@ class TestEnumDashboardStatus:
         assert EnumDashboardStatus.CONNECTED.requires_reconnection is False
         assert EnumDashboardStatus.INITIALIZING.requires_reconnection is False
 
+    def test_requires_manual_intervention_error_only(self) -> None:
+        """Test requires_manual_intervention property returns True only for ERROR."""
+        assert EnumDashboardStatus.ERROR.requires_manual_intervention is True
+        assert EnumDashboardStatus.DISCONNECTED.requires_manual_intervention is False
+        assert EnumDashboardStatus.CONNECTED.requires_manual_intervention is False
+        assert EnumDashboardStatus.INITIALIZING.requires_manual_intervention is False
+
+    def test_requires_manual_intervention_subset_of_reconnection(self) -> None:
+        """Test that manual intervention is a subset of requires_reconnection.
+
+        Any status requiring manual intervention should also require reconnection,
+        but not vice versa (DISCONNECTED requires reconnection but not intervention).
+        """
+        for status in EnumDashboardStatus:
+            if status.requires_manual_intervention:
+                assert status.requires_reconnection is True
+
+    def test_error_requires_both_reconnection_and_intervention(self) -> None:
+        """Test that ERROR state requires both reconnection and manual intervention."""
+        error_status = EnumDashboardStatus.ERROR
+        assert error_status.requires_reconnection is True
+        assert error_status.requires_manual_intervention is True
+
+    def test_disconnected_requires_reconnection_not_intervention(self) -> None:
+        """Test that DISCONNECTED requires reconnection but not manual intervention."""
+        disconnected_status = EnumDashboardStatus.DISCONNECTED
+        assert disconnected_status.requires_reconnection is True
+        assert disconnected_status.requires_manual_intervention is False
+
     def test_operational_does_not_require_reconnection(self) -> None:
         """Test that operational status does not require reconnection."""
         for status in EnumDashboardStatus:

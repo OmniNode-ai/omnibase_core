@@ -30,7 +30,6 @@ Example:
         )
 """
 
-import re
 from collections.abc import Mapping
 from types import MappingProxyType
 from typing import Literal, Self
@@ -41,13 +40,9 @@ from omnibase_core.enums import EnumWidgetType
 from omnibase_core.models.dashboard.model_status_item_config import (
     ModelStatusItemConfig,
 )
+from omnibase_core.validation.validator_hex_color import validate_hex_color_mapping
 
 __all__ = ("ModelWidgetConfigStatusGrid",)
-
-# Internal pattern for valid hex color formats: #RGB, #RRGGBB, #RGBA, #RRGGBBAA
-_HEX_COLOR_PATTERN = re.compile(
-    r"^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{4}|[0-9a-fA-F]{8})$"
-)
 
 #: Expected config_kind value for this widget type.
 _EXPECTED_CONFIG_KIND = "status_grid"
@@ -118,13 +113,7 @@ class ModelWidgetConfigStatusGrid(BaseModel):
     @classmethod
     def validate_status_colors(cls, v: Mapping[str, str]) -> Mapping[str, str]:
         """Validate that all color values are valid hex color codes."""
-        for status, color in v.items():
-            if not _HEX_COLOR_PATTERN.match(color):
-                raise ValueError(
-                    f"Invalid hex color format for status '{status}': {color}. "
-                    "Expected #RGB, #RRGGBB, #RGBA, or #RRGGBBAA"
-                )
-        return v
+        return validate_hex_color_mapping(v, "status")
 
     @model_validator(mode="after")
     def validate_widget_type_config_kind_consistency(self) -> Self:
