@@ -1060,13 +1060,16 @@ class TestEdgeCases:
         self,
         mock_registry: MockServiceHandlerRegistry,
     ) -> None:
-        """Test handlers are ordered by priority when building routing table.
+        """Test build_routing_table sorts handlers by priority for deterministic output.
 
-        The build_routing_table method should sort handlers by priority (ascending)
-        before processing, ensuring lower priority values are processed first.
-        This ordering is important for:
+        The build_routing_table method sorts handlers by priority (ascending)
+        before processing, ensuring consistent routing table construction regardless
+        of input order. This is important for:
         1. Deterministic routing table construction
-        2. First-match-wins behavior in topic_pattern strategy
+        2. Consistent dict iteration order (used by topic_pattern's first-match-wins)
+
+        Note: This test uses payload_type_match where each routing_key is unique.
+        For topic_pattern's first-match-wins behavior, see dedicated topic_pattern tests.
 
         This test verifies:
         - Handlers with different priorities can be sorted correctly
@@ -1135,6 +1138,79 @@ class TestEdgeCases:
         # Verify determinism: building table twice gives same result
         table2 = routing.build_routing_table()
         assert table == table2, "Routing table should be deterministic across builds"
+
+    def test_topic_pattern_priority_first_match_wins(
+        self,
+        mock_registry: MockServiceHandlerRegistry,
+    ) -> None:
+        """Test topic_pattern strategy uses priority for first-match-wins ordering.
+
+        When multiple patterns could match the same routing key, the pattern with
+        the LOWEST priority value should match first. This tests the actual
+        first-match-wins behavior in MixinHandlerRouting for topic_pattern strategy.
+
+        The pattern evaluation order is determined by build_routing_table's priority
+        sort, which affects the order of _compiled_patterns in the mixin.
+
+        This test verifies:
+        - Patterns are evaluated in priority order (lower priority = evaluated first)
+        - First matching pattern's handler is returned
+        - Higher priority (larger value) patterns are not evaluated if an earlier match exists
+        """
+        # Create overlapping patterns with different priorities
+        # events.* is more specific but has higher priority (evaluated later)
+        # events.user.* has lower priority (evaluated first)
+        routing = ModelHandlerRoutingSubcontract(
+            version=ModelSemVer(major=1, minor=0, patch=0),
+            routing_strategy="topic_pattern",
+            handlers=[
+                ModelHandlerRoutingEntry(
+                    routing_key="events.*",  # Broader pattern
+                    handler_key="handle_unknown",  # Generic handler
+                    priority=10,  # Higher priority value = evaluated later
+                ),
+                ModelHandlerRoutingEntry(
+                    routing_key="events.user.*",  # More specific pattern
+                    handler_key="handle_user_created",  # Specific handler
+                    priority=0,  # Lower priority value = evaluated first
+                ),
+            ],
+        )
+
+        node = TestNodeWithMixin()
+        node._init_handler_routing(routing, mock_registry)
+
+        # Test 1: "events.user.created" matches BOTH patterns,
+        # but lower priority pattern (events.user.*) should win
+        handlers = node.route_to_handlers(
+            routing_key="events.user.created",
+            category=EnumMessageCategory.EVENT,
+        )
+        assert len(handlers) == 1, "Should return exactly one handler"
+        assert handlers[0].handler_id == "handle_user_created", (
+            "Lower priority pattern (events.user.*) should match first and win"
+        )
+
+        # Test 2: "events.order.created" matches only events.* pattern
+        handlers = node.route_to_handlers(
+            routing_key="events.order.created",
+            category=EnumMessageCategory.EVENT,
+        )
+        assert len(handlers) == 1, "Should return exactly one handler"
+        assert handlers[0].handler_id == "handle_unknown", (
+            "Only events.* pattern should match for events.order.*"
+        )
+
+        # Verify the compiled patterns are in priority order
+        assert len(node._compiled_patterns) == 2, "Should have 2 compiled patterns"
+        # First pattern (index 0) should be events.user.* (priority 0)
+        # Second pattern (index 1) should be events.* (priority 10)
+        assert node._compiled_patterns[0][1] == ["handle_user_created"], (
+            "First compiled pattern should be events.user.* (priority 0)"
+        )
+        assert node._compiled_patterns[1][1] == ["handle_unknown"], (
+            "Second compiled pattern should be events.* (priority 10)"
+        )
 
     def test_mixin_cooperative_inheritance(self) -> None:
         """Test mixin works with cooperative multiple inheritance."""
