@@ -49,6 +49,7 @@ from typing import ClassVar
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
+from omnibase_core.errors.exception_groups import FILE_IO_ERRORS
 from omnibase_core.models.common.model_validation_issue import ModelValidationIssue
 from omnibase_core.models.common.model_validation_metadata import (
     ModelValidationMetadata,
@@ -499,7 +500,7 @@ class ValidatorArchitecture(ValidatorBase):
         """
         try:
             source = path.read_text(encoding="utf-8")
-        except OSError as e:
+        except FILE_IO_ERRORS as e:
             # fallback-ok: log warning and skip file on read errors
             logger.warning("Cannot read file %s: %s", path, e)
             return ()
