@@ -202,6 +202,11 @@ class NamingConventionValidator:
         #            The Protocol interface for this is ProtocolPatchValidator in validator_protocol_patch.py
         #            ContractValidationInvariantChecker is a concrete implementation (OMN-1146),
         #            not a Protocol. The Protocol interface is ProtocolContractValidationInvariantChecker.
+        #            Validator* classes (ValidatorAnyType, ValidatorContractLinter, etc.) are
+        #            concrete validator implementations in the validation framework (OMN-1291).
+        #            *Visitor classes (AnyTypeVisitor, etc.) are AST visitors for code analysis.
+        #            The heuristics flag "type" as Enum indicator and "contract" as Protocol
+        #            indicator, but these are validation infrastructure classes.
         "validation/": [
             "ContractPatchValidator",  # Validator for contract patches (OMN-1126)
             "ContractValidationInvariantChecker",  # Invariant checker implementation (OMN-1146)
@@ -209,6 +214,8 @@ class NamingConventionValidator:
             "ExpandedContractValidator",  # Expanded contract validator (OMN-1128)
             "ExpandedContractGraphValidator",  # Multi-contract graph validator (OMN-1128)
             "MergeValidator",  # Merge phase validator (OMN-1128)
+            "Validator*",  # All Validator* classes (ValidatorAnyType, ValidatorContractLinter, etc.) (OMN-1291)
+            "*Visitor",  # All *Visitor classes (AnyTypeVisitor, etc.) for AST analysis (OMN-1291)
         ],
         # MERGE INFRASTRUCTURE: Contract merge engine for typed contract merging
         # Location: merge/ - Contract merge framework implementations
@@ -269,9 +276,14 @@ class NamingConventionValidator:
             # Check if class matches any exempted pattern
             for pattern in exempted_patterns:
                 if pattern.endswith("*"):
-                    # Wildcard pattern (e.g., "Model*")
+                    # Prefix wildcard pattern (e.g., "Model*")
                     prefix = pattern[:-1]
                     if class_name.startswith(prefix):
+                        return True
+                elif pattern.startswith("*"):
+                    # Suffix wildcard pattern (e.g., "*Visitor")
+                    suffix = pattern[1:]
+                    if class_name.endswith(suffix):
                         return True
                 elif class_name == pattern:
                     # Exact match

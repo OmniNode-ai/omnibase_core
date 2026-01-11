@@ -1,0 +1,126 @@
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: any_type
+  validator_name: Any Type Policy Validator
+  validator_description: |
+    Enforces strict typing policy by detecting use of Any type.
+    Checks for Any imports, annotations, dict[str, Any], and Union[..., Any].
+    Supports exemptions via decorators and inline comments.
+
+  target_patterns:
+    - "**/*.py"
+  exclude_patterns:
+    - "**/node_modules/**"
+    - "**/.git/**"
+    - "**/venv/**"
+    - "**/__pycache__/**"
+    - "**/archived/**"
+    - "**/tests/**"
+    - "**/*_test.py"
+    - "**/test_*.py"
+    - "**/conftest.py"
+
+  rules:
+    - rule_id: any_import
+      description: Detects 'from typing import Any' statements
+      severity: warning
+      enabled: true
+
+    - rule_id: any_annotation
+      description: "Detects Any in type annotations (param: Any, -> Any)"
+      severity: error
+      enabled: true
+
+    - rule_id: dict_str_any
+      description: Detects dict[str, Any] usage
+      severity: error
+      enabled: true
+      parameters:
+        allow_in_tests: true
+
+    - rule_id: list_any
+      description: Detects list[Any] usage
+      severity: warning
+      enabled: true
+
+    - rule_id: union_with_any
+      description: Detects Union[..., Any] or ... | Any
+      severity: error
+      enabled: true
+
+  # ============================================================================
+  # LINE-BASED SUPPRESSION (NOT rule-specific!)
+  # ============================================================================
+  # IMPORTANT: Suppression operates on WHOLE LINES, not individual rules.
+  #
+  # How it works:
+  #   - If ANY pattern below appears anywhere on a source line, ALL Any-type
+  #     violations on that line are suppressed (regardless of which rule triggered).
+  #   - The validator performs a simple substring match against the entire line.
+  #
+  # Pattern naming convention:
+  #   - Pattern suffixes like "any_type" or "dict_str_any" are DOCUMENTATION HINTS
+  #     to help developers understand which violation they are suppressing.
+  #   - These names intentionally mirror rule_ids for discoverability, but they
+  #     do NOT selectively target those rules - ALL violations on the line are
+  #     suppressed regardless of which pattern text is used.
+  #
+  # Example - this comment suppresses ALL Any violations on the line:
+  #   data: dict[str, Any]  # ONEX_EXCLUDE: any_type
+  #
+  # Best practice - use "any-ok:" with a reason explaining why Any is acceptable:
+  #   def handle_json(payload: Any) -> None:  # any-ok: external API returns untyped JSON
+  #
+  # Matching: Case-sensitive substring search (no regex).
+  # ============================================================================
+  suppression_comments:
+    # -------------------------------------------------------------------------
+    # NOTE: These are LINE-BASED patterns. The suffix text (e.g., "any_type",
+    # "dict_str_any") is purely for developer documentation - it does NOT
+    # selectively suppress specific rules. ANY pattern match suppresses ALL
+    # Any-type violations on that line.
+    # -------------------------------------------------------------------------
+
+    # Legacy patterns (suffix is documentation hint only - suppresses ALL violations on line)
+    - "# ONEX_EXCLUDE: any_type"
+    - "# ONEX_EXCLUDE: dict_str_any"
+
+    # Standard patterns
+    - "# type: ignore"  # Mypy ignore marker - also suppresses here
+    - "# any-ok:"  # Preferred: include reason after colon (e.g., "# any-ok: external API")
+
+  severity_default: error
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+
+  # ============================================================================
+  # PARALLEL EXECUTION SEMANTICS
+  # ============================================================================
+  # This flag indicates that the validator SUPPORTS parallel file processing,
+  # meaning files can be validated concurrently by separate worker processes
+  # (e.g., pytest-xdist splits).
+  #
+  # CRITICAL THREAD SAFETY CONSTRAINT:
+  #   Parallel execution is PROCESS-safe, NOT THREAD-safe within a single process.
+  #   Each worker process MUST create its own validator instance.
+  #
+  # How it works:
+  #   - When parallel_execution=true, external orchestration tools (CI, test
+  #     runners) MAY split the file list across multiple worker processes.
+  #   - Each worker process creates an independent validator instance.
+  #   - Files are processed independently with no shared mutable state.
+  #
+  # What it does NOT mean:
+  #   - It does NOT enable internal multi-threading within the validator.
+  #   - It does NOT make validator instances thread-safe.
+  #   - It does NOT allow sharing a single validator instance across threads.
+  #
+  # For thread safety details, see: docs/guides/THREADING.md
+  # ============================================================================
+  parallel_execution: true

@@ -1,0 +1,114 @@
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: patterns
+  validator_name: ONEX Pattern Validator
+  validator_description: |
+    Validates code patterns for ONEX compliance including Pydantic model patterns,
+    complexity limits, and generic anti-patterns.
+
+    Checks performed:
+    - Pydantic models must start with 'Model' prefix
+    - UUID fields should use UUID type, not str
+    - Category/type/status fields should use enums
+    - Functions should not have too many parameters
+    - Classes should not have too many methods (god class)
+    - Avoid overly generic function names
+    - Avoid generic class name terms (Manager, Handler, Helper)
+
+    Note: class_pascal_case and function_snake_case rules are disabled by default
+    to avoid overlap with naming_convention.validation.yaml. Enable them only if
+    not using the naming_convention validator.
+
+  target_patterns:
+    - "**/*.py"
+
+  exclude_patterns:
+    - "**/node_modules/**"
+    - "**/.git/**"
+    - "**/venv/**"
+    - "**/.venv/**"
+    - "**/__pycache__/**"
+    - "**/archived/**"
+    - "**/examples/**"
+    - "**/tests/fixtures/**"
+
+  rules:
+    - rule_id: pydantic_model_prefix
+      description: Pydantic models must start with 'Model' prefix
+      severity: warning
+      enabled: true
+
+    - rule_id: uuid_field_type
+      description: UUID fields should use UUID type, not str
+      severity: warning
+      enabled: true
+
+    - rule_id: enum_field_type
+      description: Category/type/status fields should use enums
+      severity: warning
+      enabled: true
+
+    - rule_id: entity_name_pattern
+      description: Fields ending with _name might reference entities
+      severity: info
+      enabled: true
+
+    - rule_id: generic_function_name
+      description: Avoid overly generic function names like process, handle, execute
+      severity: warning
+      enabled: true
+
+    - rule_id: max_parameters
+      description: Functions should not have more than 5 parameters
+      severity: warning
+      enabled: true
+      parameters:
+        max_params: 5
+
+    - rule_id: god_class
+      description: Classes should not have more than 10 methods
+      severity: warning
+      enabled: true
+      parameters:
+        max_methods: 10
+
+    - rule_id: class_anti_pattern
+      description: Avoid generic class name terms like Manager, Handler, Helper
+      severity: warning
+      enabled: true
+
+    # NOTE: class_pascal_case and function_snake_case overlap with class_naming and
+    # function_naming rules in naming_convention.validation.yaml. If using both
+    # validators, consider keeping these disabled to avoid duplicate issues.
+    # The naming_convention validator is the canonical source for naming checks.
+    - rule_id: class_pascal_case
+      description: Class names should use PascalCase
+      severity: warning
+      enabled: false  # Disabled by default - use naming_convention validator instead
+
+    - rule_id: function_snake_case
+      description: Function names should use snake_case
+      severity: warning
+      enabled: false  # Disabled by default - use naming_convention validator instead
+
+  suppression_comments:
+    - "# ONEX_EXCLUDE:"
+    - "# noqa: pattern"
+    - "# pattern-ok:"
+    - "# type: ignore"
+
+  severity_default: warning
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+
+  # PARALLEL EXECUTION: Indicates PROCESS-safe parallel file processing is supported.
+  # This does NOT mean thread-safe within a single process - each worker must create
+  # its own validator instance. For full thread safety details, see:
+  # docs/guides/THREADING.md and contracts/any_type.validation.yaml
+  parallel_execution: true

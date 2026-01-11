@@ -1,0 +1,63 @@
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: architecture
+  validator_name: ONEX Architecture Validator
+  validator_description: |
+    Validates one-model-per-file architecture principle for ONEX projects.
+    Ensures clean separation of concerns by enforcing:
+    - Single model per file (no multiple BaseModel subclasses)
+    - Single enum per file (no multiple Enum subclasses)
+    - Single protocol per file (no multiple Protocol definitions)
+    - No mixing of models, enums, and protocols in the same file
+
+  target_patterns:
+    - "**/*.py"
+
+  exclude_patterns:
+    - "**/__pycache__/**"
+    - "**/.git/**"
+    - "**/archived/**"
+    - "**/tests/fixtures/**"
+    - "**/__init__.py"
+
+  rules:
+    - rule_id: single_model
+      description: Only one model (BaseModel subclass) per file allowed
+      severity: error
+      enabled: true
+
+    - rule_id: single_enum
+      description: Only one enum (Enum subclass) per file allowed
+      severity: error
+      enabled: true
+
+    - rule_id: single_protocol
+      description: Only one protocol (Protocol subclass) per file allowed
+      severity: error
+      enabled: true
+
+    - rule_id: no_mixed_types
+      description: Cannot mix models, enums, and protocols in the same file
+      severity: error
+      enabled: true
+
+  suppression_comments:
+    - "# ONEX_EXCLUDE:"
+    - "# noqa: architecture"
+    - "# architecture-ok:"
+
+  severity_default: error
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+
+  # PARALLEL EXECUTION: Indicates PROCESS-safe parallel file processing is supported.
+  # This does NOT mean thread-safe within a single process - each worker must create
+  # its own validator instance. For full thread safety details, see:
+  # docs/guides/THREADING.md and contracts/any_type.validation.yaml
+  parallel_execution: true
