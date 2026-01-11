@@ -56,9 +56,15 @@ Key Invariant:
     Same mode + same effect type -> Same enforcement decision (determinism)
 
 Thread Safety:
-    ServiceReplaySafetyEnforcer instances are NOT thread-safe. The audit trail
-    is a mutable list without synchronization. Use separate instances
-    per thread for concurrent usage.
+    ServiceReplaySafetyEnforcer instances are NOT thread-safe.
+
+    **Mutable State**: ``_audit_trail`` (list), injector references.
+
+    **Recommended Patterns**:
+        - Use separate instances per thread
+        - Or wrap ``enforce()`` and ``get_audit_trail()`` calls with ``threading.Lock``
+
+    See ``docs/guides/THREADING.md`` for comprehensive guidance.
 
 Related:
     - OMN-1150: Replay Safety Enforcement
@@ -206,7 +212,9 @@ class ServiceReplaySafetyEnforcer:
         'allowed'
 
     Thread Safety:
-        Not thread-safe. Use separate instances per thread.
+        NOT thread-safe. Mutable state: ``_audit_trail`` list.
+        Use separate instances per thread or synchronize access.
+        See ``docs/guides/THREADING.md``.
 
     .. versionadded:: 0.6.3
     """

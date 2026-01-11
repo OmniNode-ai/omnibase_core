@@ -25,9 +25,40 @@ Architecture:
             |
             +-- ModelEnforcementDecision (input)
 
+Performance:
+    The service maintains in-memory indices for common query patterns:
+
+    - **Outcome index**: O(1) lookup + O(k) iteration for outcome-filtered queries
+    - **Source index**: O(1) lookup + O(k) iteration for source-filtered queries
+
+    Where k = number of matching entries.
+
+    Without indices, queries would be O(n) where n = total entries.
+
+    Expected Size Limits:
+        - Typical usage: 10-100 decisions per session
+        - Moderate usage: 100-1,000 decisions per session
+        - Heavy usage: 1,000-10,000 decisions per session
+        - Index overhead: ~48 bytes per entry (two dict references)
+
+    Indexing Benefit:
+        - < 100 entries: Marginal benefit (linear scan is fast)
+        - 100-1,000 entries: Noticeable benefit for filtered queries
+        - > 1,000 entries: Significant benefit (10-100x speedup)
+
+    Indices are maintained incrementally on ``record()``, not rebuilt on query.
+
 Thread Safety:
     ServiceAuditTrail instances are NOT thread-safe.
-    Create separate instances per thread for concurrent use.
+
+    **Mutable State**: ``_entries`` (list), ``_sequence_counter`` (int),
+    ``_index_by_outcome`` (dict), ``_index_by_source`` (dict).
+
+    **Recommended Patterns**:
+        - Use separate instances per thread (preferred)
+        - Or wrap ``record()`` and ``get_entries()`` calls with ``threading.Lock``
+
+    See ``docs/guides/THREADING.md`` for comprehensive guidance.
 
 Usage:
     .. code-block:: python
@@ -125,8 +156,15 @@ class ServiceAuditTrail:
         >>> audit_trail.session_id
         'my-session'
 
+    Performance:
+        Queries by outcome or source use O(1) index lookup + O(k) iteration
+        where k = matching entries. See module docstring for details.
+
     Thread Safety:
-        NOT thread-safe. Create separate instances per thread.
+        NOT thread-safe. Mutable state: ``_entries`` list, ``_sequence_counter``,
+        ``_index_by_outcome``, ``_index_by_source``.
+        Use separate instances per thread or synchronize access.
+        See ``docs/guides/THREADING.md``.
 
     .. versionadded:: 0.6.3
     """
@@ -142,6 +180,20 @@ class ServiceAuditTrail:
         self._session_id = session_id or uuid.uuid4()
         self._entries: list[ModelAuditTrailEntry] = []
         self._sequence_counter = 0
+
+        # Indices for O(1) lookup by common query patterns
+        # Key: outcome string (e.g., "blocked", "allowed", "mocked")
+        # Value: list of entries with that outcome, in sequence order
+        self._index_by_outcome: dict[str, list[ModelAuditTrailEntry]] = defaultdict(
+            list
+        )
+
+        # Key: source enum value (or None for deterministic effects)
+        # Value: list of entries with that source, in sequence order
+
+        self._index_by_source: dict[
+            EnumNonDeterministicSource | None, list[ModelAuditTrailEntry]
+        ] = defaultdict(list)
 
     @property
     def session_id(self) -> UUID:
@@ -167,6 +219,7 @@ class ServiceAuditTrail:
         Record an enforcement decision.
 
         Creates a new audit trail entry with automatic ID and sequencing.
+        Indices are updated incrementally for O(1) query performance.
 
         Args:
             decision: The enforcement decision to record.
@@ -174,6 +227,9 @@ class ServiceAuditTrail:
 
         Returns:
             ModelAuditTrailEntry: The created audit entry.
+
+        Complexity:
+            O(1) - Appends to list and updates two dict indices.
 
         Example:
             >>> entry = audit_trail.record(
@@ -191,8 +247,13 @@ class ServiceAuditTrail:
             context=context or {},
         )
 
+        # Append to primary storage
         self._entries.append(entry)
         self._sequence_counter += 1
+
+        # Update indices for O(1) query lookup
+        self._index_by_outcome[decision.decision].append(entry)
+        self._index_by_source[decision.source].append(entry)
 
         return entry
 
@@ -216,6 +277,12 @@ class ServiceAuditTrail:
         Returns:
             list[ModelAuditTrailEntry]: Matching entries in sequence order.
 
+        Complexity:
+            - No filters: O(n) copy of all entries
+            - Outcome only: O(1) lookup + O(k) copy where k = matching entries
+            - Source only: O(1) lookup + O(k) copy where k = matching entries
+            - Both filters: O(1) lookup + O(min(k1, k2)) intersection
+
         Example:
             >>> blocked = audit_trail.get_entries(outcome="blocked")
             >>> time_decisions = audit_trail.get_entries(
@@ -223,21 +290,35 @@ class ServiceAuditTrail:
             ...     limit=10,
             ... )
         """
-        result = self._entries
+        # Use indices for filtered queries (O(1) lookup + O(k) iteration)
+        if outcome is not None and source is not None:
+            # Both filters: use the smaller index and filter the other
+            outcome_entries = self._index_by_outcome.get(outcome, [])
+            source_entries = self._index_by_source.get(source, [])
 
-        # Apply outcome filter
-        if outcome is not None:
-            result = [e for e in result if e.decision.decision == outcome]
+            # Use smaller set as base, filter by other criterion
+            if len(outcome_entries) <= len(source_entries):
+                result = [e for e in outcome_entries if e.decision.source == source]
+            else:
+                result = [e for e in source_entries if e.decision.decision == outcome]
 
-        # Apply source filter
-        if source is not None:
-            result = [e for e in result if e.decision.source == source]
+        elif outcome is not None:
+            # Outcome filter only: O(1) lookup
+            result = list(self._index_by_outcome.get(outcome, []))
+
+        elif source is not None:
+            # Source filter only: O(1) lookup
+            result = list(self._index_by_source.get(source, []))
+
+        else:
+            # No filters: return all entries
+            result = list(self._entries)
 
         # Apply limit
         if limit is not None:
             result = result[:limit]
 
-        return list(result)
+        return result
 
     def get_summary(self) -> ModelAuditTrailSummary:
         """
@@ -336,7 +417,7 @@ class ServiceAuditTrail:
         """
         Clear all entries for the current session.
 
-        Resets the entry list and sequence counter.
+        Resets the entry list, sequence counter, and all indices.
 
         Example:
             >>> audit_trail.record(decision)
@@ -348,6 +429,8 @@ class ServiceAuditTrail:
         """
         self._entries = []
         self._sequence_counter = 0
+        self._index_by_outcome.clear()
+        self._index_by_source.clear()
 
     @property
     def entry_count(self) -> int:

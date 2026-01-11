@@ -29,6 +29,11 @@ Import directly from the specific service module:
         ServiceReplaySafetyEnforcer,
     )
 
+Integration Guide:
+    For detailed integration patterns, including recording/replaying effects,
+    configuring enforcement modes, and troubleshooting, see:
+    ``docs/guides/replay/REPLAY_SAFETY_INTEGRATION.md``
+
 .. versionadded:: 0.4.0
     Added Replay Infrastructure (OMN-1116)
     Added Configuration Override Injection (OMN-1205)

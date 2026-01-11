@@ -61,8 +61,6 @@ __all__ = ["ProtocolReplaySafetyEnforcer"]
 
 from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
-from omnibase_core.types.type_json import JsonType
-
 if TYPE_CHECKING:
     from omnibase_core.enums.replay.enum_effect_determinism import EnumEffectDeterminism
     from omnibase_core.enums.replay.enum_non_deterministic_source import (
@@ -71,6 +69,7 @@ if TYPE_CHECKING:
     from omnibase_core.models.replay.model_enforcement_decision import (
         ModelEnforcementDecision,
     )
+    from omnibase_core.types.type_json import JsonType
 
 
 @runtime_checkable

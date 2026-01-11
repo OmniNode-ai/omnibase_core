@@ -63,9 +63,15 @@ Key Invariant:
         assert replay.uuid4() == id2
 
 Thread Safety:
-    InjectorUUID instances are NOT thread-safe. The sequence counter
-    and internal recording list are mutable state that is not protected.
-    Use separate instances per thread for concurrent usage.
+    InjectorUUID instances are NOT thread-safe.
+
+    **Mutable State**: ``_sequence_index`` (int), ``_recorded`` (list).
+
+    **Recommended Patterns**:
+        - Use separate instances per thread (preferred)
+        - Or wrap ``uuid4()``/``uuid1()`` calls with ``threading.Lock``
+
+    See ``docs/guides/THREADING.md`` for comprehensive guidance.
 
 Related:
     - OMN-1150: Replay Safety Enforcement
@@ -123,7 +129,9 @@ class InjectorUUID:
         True
 
     Thread Safety:
-        Not thread-safe. Use separate instances per thread.
+        NOT thread-safe. Mutable state: ``_sequence_index``, ``_recorded`` list.
+        Use separate instances per thread or synchronize access.
+        See ``docs/guides/THREADING.md``.
 
     .. versionadded:: 0.6.3
     """

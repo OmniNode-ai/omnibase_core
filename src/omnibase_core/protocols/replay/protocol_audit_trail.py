@@ -43,12 +43,12 @@ Related:
 .. versionadded:: 0.6.3
 """
 
+from __future__ import annotations
+
 __all__ = ["ProtocolAuditTrail"]
 
 from typing import TYPE_CHECKING, Protocol, runtime_checkable
 from uuid import UUID
-
-from omnibase_core.types.type_json import JsonType
 
 if TYPE_CHECKING:
     from omnibase_core.enums.replay.enum_non_deterministic_source import (
@@ -61,6 +61,7 @@ if TYPE_CHECKING:
     from omnibase_core.models.replay.model_enforcement_decision import (
         ModelEnforcementDecision,
     )
+    from omnibase_core.types.type_json import JsonType
 
 
 @runtime_checkable
@@ -151,9 +152,9 @@ class ProtocolAuditTrail(Protocol):
 
     def record(
         self,
-        decision: "ModelEnforcementDecision",
+        decision: ModelEnforcementDecision,
         context: dict[str, JsonType] | None = None,
-    ) -> "ModelAuditTrailEntry":
+    ) -> ModelAuditTrailEntry:
         """
         Record an enforcement decision.
 
@@ -181,9 +182,9 @@ class ProtocolAuditTrail(Protocol):
     def get_entries(
         self,
         outcome: str | None = None,
-        source: "EnumNonDeterministicSource | None" = None,
+        source: EnumNonDeterministicSource | None = None,
         limit: int | None = None,
-    ) -> "list[ModelAuditTrailEntry]":
+    ) -> list[ModelAuditTrailEntry]:
         """
         Query entries with optional filters.
 
@@ -212,7 +213,7 @@ class ProtocolAuditTrail(Protocol):
         """
         ...
 
-    def get_summary(self) -> "ModelAuditTrailSummary":
+    def get_summary(self) -> ModelAuditTrailSummary:
         """
         Get summary statistics for the current session.
 
