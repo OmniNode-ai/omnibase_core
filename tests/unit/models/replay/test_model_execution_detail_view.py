@@ -254,10 +254,12 @@ class TestModelOutputSnapshot:
             truncated=True,
             original_size_bytes=100000,
             display_size_bytes=1000,
-            output_hash="sha256:full_output_hash_xyz789",
+            output_hash="sha256:abcdef123456789012345678901234567890abcdef",
         )
         assert snapshot.truncated is True
-        assert snapshot.output_hash == "sha256:full_output_hash_xyz789"
+        assert (
+            snapshot.output_hash == "sha256:abcdef123456789012345678901234567890abcdef"
+        )
 
     def test_default_truncated_false(self) -> None:
         """Default value for truncated is False."""
@@ -265,7 +267,7 @@ class TestModelOutputSnapshot:
             raw={"output": "data"},
             original_size_bytes=100,
             display_size_bytes=100,
-            output_hash="sha256:hash",
+            output_hash="sha256:abc123",
         )
         assert snapshot.truncated is False
 
@@ -275,10 +277,10 @@ class TestModelOutputSnapshot:
             raw={"key": "value"},
             original_size_bytes=50,
             display_size_bytes=50,
-            output_hash="sha256:test_hash",
+            output_hash="sha256:def456",
         )
         with pytest.raises(ValidationError):
-            snapshot.output_hash = "sha256:modified_hash"
+            snapshot.output_hash = "sha256:fedcba987654"
         with pytest.raises(ValidationError):
             snapshot.truncated = True
 
@@ -662,7 +664,7 @@ class TestModelExecutionDetailView:
             truncated=False,
             original_size_bytes=150,
             display_size_bytes=150,
-            output_hash="sha256:baseline_hash_abc123",
+            output_hash="sha256:abc123def456789012345678901234567890abcdef",
         )
 
     @pytest.fixture
@@ -673,7 +675,7 @@ class TestModelExecutionDetailView:
             truncated=False,
             original_size_bytes=150,
             display_size_bytes=150,
-            output_hash="sha256:replay_hash_xyz789",
+            output_hash="sha256:def456789012345678901234567890abcdef123456",
         )
 
     @pytest.fixture
@@ -684,7 +686,7 @@ class TestModelExecutionDetailView:
             truncated=False,
             original_size_bytes=150,
             display_size_bytes=150,
-            output_hash="sha256:baseline_hash_abc123",  # Same hash as baseline
+            output_hash="sha256:abc123def456789012345678901234567890abcdef",  # Same hash as baseline
         )
 
     @pytest.fixture
@@ -748,7 +750,7 @@ class TestModelExecutionDetailView:
             baseline_execution_id=TEST_BASELINE_ID,
             replay_execution_id=TEST_REPLAY_ID,
             original_input=sample_input_snapshot,
-            input_hash="sha256:input_hash_abc",
+            input_hash="sha256:abc123def456",
             input_display='{"prompt": "Hello, world!"}',
             baseline_output=sample_baseline_output,
             replay_output=sample_replay_output,
@@ -791,7 +793,7 @@ class TestModelExecutionDetailView:
             baseline_execution_id=baseline_id,
             replay_execution_id=replay_id,
             original_input=sample_input_snapshot,
-            input_hash="sha256:input_hash",
+            input_hash="sha256:def456abc123",
             input_display='{"prompt": "test"}',
             baseline_output=sample_baseline_output,
             replay_output=sample_matching_replay_output,
@@ -826,7 +828,7 @@ class TestModelExecutionDetailView:
             baseline_execution_id=baseline_id,
             replay_execution_id=replay_id,
             original_input=sample_input_snapshot,
-            input_hash="sha256:input",
+            input_hash="sha256:fedcba654321",
             input_display="{}",
             baseline_output=sample_baseline_output,
             replay_output=sample_replay_output,
@@ -880,7 +882,7 @@ class TestModelExecutionDetailView:
             baseline_execution_id=baseline_id,
             replay_execution_id=replay_id,
             original_input=sample_input_snapshot,
-            input_hash="sha256:hash",
+            input_hash="sha256:123abc456def",
             input_display="{}",
             baseline_output=sample_baseline_output,
             replay_output=sample_baseline_output,
@@ -936,7 +938,7 @@ class TestModelExecutionDetailView:
             baseline_execution_id=baseline_id,
             replay_execution_id=replay_id,
             original_input=sample_input_snapshot,
-            input_hash="sha256:hash",
+            input_hash="sha256:123abc456def",
             input_display="{}",
             baseline_output=sample_baseline_output,
             replay_output=sample_baseline_output,
@@ -1005,7 +1007,7 @@ class TestModelExecutionDetailView:
             baseline_execution_id=baseline_id,
             replay_execution_id=replay_id,
             original_input=sample_input_snapshot,
-            input_hash="sha256:hash",
+            input_hash="sha256:123abc456def",
             input_display="{}",
             baseline_output=sample_baseline_output,
             replay_output=sample_baseline_output,
@@ -1051,7 +1053,7 @@ class TestModelExecutionDetailView:
             baseline_execution_id=baseline_id,
             replay_execution_id=replay_id,
             original_input=sample_input_snapshot,
-            input_hash="sha256:hash",
+            input_hash="sha256:123abc456def",
             input_display="{}",
             baseline_output=sample_baseline_output,
             replay_output=sample_baseline_output,
@@ -1084,7 +1086,7 @@ class TestModelExecutionDetailView:
             baseline_execution_id=baseline_id,
             replay_execution_id=replay_id,
             original_input=sample_input_snapshot,
-            input_hash="sha256:hash",
+            input_hash="sha256:123abc456def",
             input_display="{}",
             baseline_output=sample_baseline_output,
             replay_output=sample_baseline_output,
@@ -1124,7 +1126,7 @@ class TestModelExecutionDetailView:
                 self.baseline_execution_id = attrs_baseline_id
                 self.replay_execution_id = attrs_replay_id
                 self.original_input = sample_input_snapshot
-                self.input_hash = "sha256:attrs_hash"
+                self.input_hash = "sha256:aabbccdd1122"
                 self.input_display = '{"from": "attributes"}'
                 self.baseline_output = sample_baseline_output
                 self.replay_output = sample_baseline_output
@@ -1164,37 +1166,180 @@ class TestModelOutputSnapshotHashValidation:
         errors = exc_info.value.errors()
         assert any(e["loc"] == ("output_hash",) for e in errors)
 
+    def test_valid_sha256_hash(self) -> None:
+        """Valid sha256 hash is accepted."""
+        snapshot = ModelOutputSnapshot(
+            raw={"key": "value"},
+            original_size_bytes=100,
+            display_size_bytes=100,
+            output_hash="sha256:abc123def456",
+        )
+        assert snapshot.output_hash == "sha256:abc123def456"
+
+    def test_valid_md5_hash(self) -> None:
+        """Valid md5 hash is accepted."""
+        snapshot = ModelOutputSnapshot(
+            raw={"key": "value"},
+            original_size_bytes=100,
+            display_size_bytes=100,
+            output_hash="md5:d41d8cd98f00b204e9800998ecf8427e",
+        )
+        assert snapshot.output_hash == "md5:d41d8cd98f00b204e9800998ecf8427e"
+
+    def test_valid_sha1_hash(self) -> None:
+        """Valid sha1 hash is accepted."""
+        snapshot = ModelOutputSnapshot(
+            raw={"key": "value"},
+            original_size_bytes=100,
+            display_size_bytes=100,
+            output_hash="sha1:a94a8fe5ccb19ba61c4c0873d391e987982fbbd3",
+        )
+        assert snapshot.output_hash == "sha1:a94a8fe5ccb19ba61c4c0873d391e987982fbbd3"
+
+    def test_valid_uppercase_algorithm_hash(self) -> None:
+        """Uppercase algorithm name is accepted for flexibility."""
+        snapshot = ModelOutputSnapshot(
+            raw={"key": "value"},
+            original_size_bytes=100,
+            display_size_bytes=100,
+            output_hash="SHA256:abc123def456",
+        )
+        assert snapshot.output_hash == "SHA256:abc123def456"
+
+    def test_valid_mixed_case_digest(self) -> None:
+        """Mixed case hexadecimal digest is accepted."""
+        snapshot = ModelOutputSnapshot(
+            raw={"key": "value"},
+            original_size_bytes=100,
+            display_size_bytes=100,
+            output_hash="sha256:AbC123DeF456",
+        )
+        assert snapshot.output_hash == "sha256:AbC123DeF456"
+
+    def test_invalid_hash_no_algorithm_prefix(self) -> None:
+        """Hash without algorithm prefix is rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelOutputSnapshot(
+                raw={"key": "value"},
+                original_size_bytes=100,
+                display_size_bytes=100,
+                output_hash="abc123def456",  # Missing algorithm prefix
+            )
+        errors = exc_info.value.errors()
+        assert any(e["loc"] == ("output_hash",) for e in errors)
+        assert any("algorithm:hexdigest" in str(e["msg"]) for e in errors)
+
+    def test_invalid_hash_empty_digest(self) -> None:
+        """Hash with empty digest is rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelOutputSnapshot(
+                raw={"key": "value"},
+                original_size_bytes=100,
+                display_size_bytes=100,
+                output_hash="sha256:",  # Empty digest
+            )
+        errors = exc_info.value.errors()
+        assert any(e["loc"] == ("output_hash",) for e in errors)
+
+    def test_invalid_hash_empty_algorithm(self) -> None:
+        """Hash with empty algorithm is rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelOutputSnapshot(
+                raw={"key": "value"},
+                original_size_bytes=100,
+                display_size_bytes=100,
+                output_hash=":abc123",  # Empty algorithm
+            )
+        errors = exc_info.value.errors()
+        assert any(e["loc"] == ("output_hash",) for e in errors)
+
+    def test_invalid_hash_non_hex_digest(self) -> None:
+        """Hash with non-hexadecimal digest is rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelOutputSnapshot(
+                raw={"key": "value"},
+                original_size_bytes=100,
+                display_size_bytes=100,
+                output_hash="sha256:xyz123",  # 'xyz' is not valid hex
+            )
+        errors = exc_info.value.errors()
+        assert any(e["loc"] == ("output_hash",) for e in errors)
+
+    def test_invalid_hash_special_chars_in_algorithm(self) -> None:
+        """Hash with special characters in algorithm is rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelOutputSnapshot(
+                raw={"key": "value"},
+                original_size_bytes=100,
+                display_size_bytes=100,
+                output_hash="sha-256:abc123",  # Hyphen not allowed
+            )
+        errors = exc_info.value.errors()
+        assert any(e["loc"] == ("output_hash",) for e in errors)
+
+    def test_invalid_hash_multiple_colons(self) -> None:
+        """Hash with multiple colons is rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelOutputSnapshot(
+                raw={"key": "value"},
+                original_size_bytes=100,
+                display_size_bytes=100,
+                output_hash="sha256:abc:123",  # Multiple colons
+            )
+        errors = exc_info.value.errors()
+        assert any(e["loc"] == ("output_hash",) for e in errors)
+
 
 @pytest.mark.unit
 class TestModelExecutionDetailViewInputHashValidation:
     """Tests for input_hash validation in ModelExecutionDetailView."""
 
-    def test_empty_input_hash_rejected(
-        self,
-    ) -> None:
-        """Empty input_hash raises ValidationError."""
-        input_snapshot = ModelInputSnapshot(
+    @pytest.fixture
+    def input_snapshot(self) -> ModelInputSnapshot:
+        """Provide input snapshot for hash validation tests."""
+        return ModelInputSnapshot(
             raw={"key": "value"},
             original_size_bytes=50,
             display_size_bytes=50,
         )
-        output_snapshot = ModelOutputSnapshot(
+
+    @pytest.fixture
+    def output_snapshot(self) -> ModelOutputSnapshot:
+        """Provide output snapshot for hash validation tests."""
+        return ModelOutputSnapshot(
             raw={"result": "data"},
             original_size_bytes=60,
             display_size_bytes=60,
-            output_hash="sha256:hash",
+            output_hash="sha256:abc123",
         )
-        side_by_side = ModelSideBySideComparison(
+
+    @pytest.fixture
+    def side_by_side(self) -> ModelSideBySideComparison:
+        """Provide side-by-side comparison for hash validation tests."""
+        return ModelSideBySideComparison(
             baseline_formatted="{}",
             replay_formatted="{}",
             diff_lines=[],
         )
-        timing = ModelTimingBreakdown(
+
+    @pytest.fixture
+    def timing(self) -> ModelTimingBreakdown:
+        """Provide timing breakdown for hash validation tests."""
+        return ModelTimingBreakdown(
             baseline_total_ms=100.0,
             replay_total_ms=100.0,
             delta_ms=0.0,
             delta_percent=0.0,
         )
+
+    def test_empty_input_hash_rejected(
+        self,
+        input_snapshot: ModelInputSnapshot,
+        output_snapshot: ModelOutputSnapshot,
+        side_by_side: ModelSideBySideComparison,
+        timing: ModelTimingBreakdown,
+    ) -> None:
+        """Empty input_hash raises ValidationError."""
         with pytest.raises(ValidationError) as exc_info:
             ModelExecutionDetailView(
                 comparison_id=TEST_COMPARISON_ID,
@@ -1202,6 +1347,262 @@ class TestModelExecutionDetailViewInputHashValidation:
                 replay_execution_id=TEST_REPLAY_ID,
                 original_input=input_snapshot,
                 input_hash="",  # Empty string should be rejected
+                input_display="{}",
+                baseline_output=output_snapshot,
+                replay_output=output_snapshot,
+                outputs_match=True,
+                side_by_side=side_by_side,
+                invariant_results=[],
+                invariants_all_passed=True,
+                timing_breakdown=timing,
+                execution_timestamp=datetime(2025, 1, 4, 12, 0, 0, tzinfo=UTC),
+                corpus_entry_id=TEST_CORPUS_ID,
+            )
+        errors = exc_info.value.errors()
+        assert any(e["loc"] == ("input_hash",) for e in errors)
+
+    def test_valid_sha256_input_hash(
+        self,
+        input_snapshot: ModelInputSnapshot,
+        output_snapshot: ModelOutputSnapshot,
+        side_by_side: ModelSideBySideComparison,
+        timing: ModelTimingBreakdown,
+    ) -> None:
+        """Valid sha256 input_hash is accepted."""
+        detail_view = ModelExecutionDetailView(
+            comparison_id=TEST_COMPARISON_ID,
+            baseline_execution_id=TEST_BASELINE_ID,
+            replay_execution_id=TEST_REPLAY_ID,
+            original_input=input_snapshot,
+            input_hash="sha256:abc123def456",
+            input_display="{}",
+            baseline_output=output_snapshot,
+            replay_output=output_snapshot,
+            outputs_match=True,
+            side_by_side=side_by_side,
+            invariant_results=[],
+            invariants_all_passed=True,
+            timing_breakdown=timing,
+            execution_timestamp=datetime(2025, 1, 4, 12, 0, 0, tzinfo=UTC),
+            corpus_entry_id=TEST_CORPUS_ID,
+        )
+        assert detail_view.input_hash == "sha256:abc123def456"
+
+    def test_valid_md5_input_hash(
+        self,
+        input_snapshot: ModelInputSnapshot,
+        output_snapshot: ModelOutputSnapshot,
+        side_by_side: ModelSideBySideComparison,
+        timing: ModelTimingBreakdown,
+    ) -> None:
+        """Valid md5 input_hash is accepted."""
+        detail_view = ModelExecutionDetailView(
+            comparison_id=TEST_COMPARISON_ID,
+            baseline_execution_id=TEST_BASELINE_ID,
+            replay_execution_id=TEST_REPLAY_ID,
+            original_input=input_snapshot,
+            input_hash="md5:d41d8cd98f00b204e9800998ecf8427e",
+            input_display="{}",
+            baseline_output=output_snapshot,
+            replay_output=output_snapshot,
+            outputs_match=True,
+            side_by_side=side_by_side,
+            invariant_results=[],
+            invariants_all_passed=True,
+            timing_breakdown=timing,
+            execution_timestamp=datetime(2025, 1, 4, 12, 0, 0, tzinfo=UTC),
+            corpus_entry_id=TEST_CORPUS_ID,
+        )
+        assert detail_view.input_hash == "md5:d41d8cd98f00b204e9800998ecf8427e"
+
+    def test_valid_uppercase_algorithm_input_hash(
+        self,
+        input_snapshot: ModelInputSnapshot,
+        output_snapshot: ModelOutputSnapshot,
+        side_by_side: ModelSideBySideComparison,
+        timing: ModelTimingBreakdown,
+    ) -> None:
+        """Uppercase algorithm name in input_hash is accepted for flexibility."""
+        detail_view = ModelExecutionDetailView(
+            comparison_id=TEST_COMPARISON_ID,
+            baseline_execution_id=TEST_BASELINE_ID,
+            replay_execution_id=TEST_REPLAY_ID,
+            original_input=input_snapshot,
+            input_hash="SHA256:abc123def456",
+            input_display="{}",
+            baseline_output=output_snapshot,
+            replay_output=output_snapshot,
+            outputs_match=True,
+            side_by_side=side_by_side,
+            invariant_results=[],
+            invariants_all_passed=True,
+            timing_breakdown=timing,
+            execution_timestamp=datetime(2025, 1, 4, 12, 0, 0, tzinfo=UTC),
+            corpus_entry_id=TEST_CORPUS_ID,
+        )
+        assert detail_view.input_hash == "SHA256:abc123def456"
+
+    def test_invalid_input_hash_no_algorithm_prefix(
+        self,
+        input_snapshot: ModelInputSnapshot,
+        output_snapshot: ModelOutputSnapshot,
+        side_by_side: ModelSideBySideComparison,
+        timing: ModelTimingBreakdown,
+    ) -> None:
+        """Input hash without algorithm prefix is rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelExecutionDetailView(
+                comparison_id=TEST_COMPARISON_ID,
+                baseline_execution_id=TEST_BASELINE_ID,
+                replay_execution_id=TEST_REPLAY_ID,
+                original_input=input_snapshot,
+                input_hash="abc123def456",  # Missing algorithm prefix
+                input_display="{}",
+                baseline_output=output_snapshot,
+                replay_output=output_snapshot,
+                outputs_match=True,
+                side_by_side=side_by_side,
+                invariant_results=[],
+                invariants_all_passed=True,
+                timing_breakdown=timing,
+                execution_timestamp=datetime(2025, 1, 4, 12, 0, 0, tzinfo=UTC),
+                corpus_entry_id=TEST_CORPUS_ID,
+            )
+        errors = exc_info.value.errors()
+        assert any(e["loc"] == ("input_hash",) for e in errors)
+        assert any("algorithm:hexdigest" in str(e["msg"]) for e in errors)
+
+    def test_invalid_input_hash_empty_digest(
+        self,
+        input_snapshot: ModelInputSnapshot,
+        output_snapshot: ModelOutputSnapshot,
+        side_by_side: ModelSideBySideComparison,
+        timing: ModelTimingBreakdown,
+    ) -> None:
+        """Input hash with empty digest is rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelExecutionDetailView(
+                comparison_id=TEST_COMPARISON_ID,
+                baseline_execution_id=TEST_BASELINE_ID,
+                replay_execution_id=TEST_REPLAY_ID,
+                original_input=input_snapshot,
+                input_hash="sha256:",  # Empty digest
+                input_display="{}",
+                baseline_output=output_snapshot,
+                replay_output=output_snapshot,
+                outputs_match=True,
+                side_by_side=side_by_side,
+                invariant_results=[],
+                invariants_all_passed=True,
+                timing_breakdown=timing,
+                execution_timestamp=datetime(2025, 1, 4, 12, 0, 0, tzinfo=UTC),
+                corpus_entry_id=TEST_CORPUS_ID,
+            )
+        errors = exc_info.value.errors()
+        assert any(e["loc"] == ("input_hash",) for e in errors)
+
+    def test_invalid_input_hash_empty_algorithm(
+        self,
+        input_snapshot: ModelInputSnapshot,
+        output_snapshot: ModelOutputSnapshot,
+        side_by_side: ModelSideBySideComparison,
+        timing: ModelTimingBreakdown,
+    ) -> None:
+        """Input hash with empty algorithm is rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelExecutionDetailView(
+                comparison_id=TEST_COMPARISON_ID,
+                baseline_execution_id=TEST_BASELINE_ID,
+                replay_execution_id=TEST_REPLAY_ID,
+                original_input=input_snapshot,
+                input_hash=":abc123",  # Empty algorithm
+                input_display="{}",
+                baseline_output=output_snapshot,
+                replay_output=output_snapshot,
+                outputs_match=True,
+                side_by_side=side_by_side,
+                invariant_results=[],
+                invariants_all_passed=True,
+                timing_breakdown=timing,
+                execution_timestamp=datetime(2025, 1, 4, 12, 0, 0, tzinfo=UTC),
+                corpus_entry_id=TEST_CORPUS_ID,
+            )
+        errors = exc_info.value.errors()
+        assert any(e["loc"] == ("input_hash",) for e in errors)
+
+    def test_invalid_input_hash_non_hex_digest(
+        self,
+        input_snapshot: ModelInputSnapshot,
+        output_snapshot: ModelOutputSnapshot,
+        side_by_side: ModelSideBySideComparison,
+        timing: ModelTimingBreakdown,
+    ) -> None:
+        """Input hash with non-hexadecimal digest is rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelExecutionDetailView(
+                comparison_id=TEST_COMPARISON_ID,
+                baseline_execution_id=TEST_BASELINE_ID,
+                replay_execution_id=TEST_REPLAY_ID,
+                original_input=input_snapshot,
+                input_hash="sha256:xyz123",  # 'xyz' is not valid hex
+                input_display="{}",
+                baseline_output=output_snapshot,
+                replay_output=output_snapshot,
+                outputs_match=True,
+                side_by_side=side_by_side,
+                invariant_results=[],
+                invariants_all_passed=True,
+                timing_breakdown=timing,
+                execution_timestamp=datetime(2025, 1, 4, 12, 0, 0, tzinfo=UTC),
+                corpus_entry_id=TEST_CORPUS_ID,
+            )
+        errors = exc_info.value.errors()
+        assert any(e["loc"] == ("input_hash",) for e in errors)
+
+    def test_invalid_input_hash_special_chars_in_algorithm(
+        self,
+        input_snapshot: ModelInputSnapshot,
+        output_snapshot: ModelOutputSnapshot,
+        side_by_side: ModelSideBySideComparison,
+        timing: ModelTimingBreakdown,
+    ) -> None:
+        """Input hash with special characters in algorithm is rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelExecutionDetailView(
+                comparison_id=TEST_COMPARISON_ID,
+                baseline_execution_id=TEST_BASELINE_ID,
+                replay_execution_id=TEST_REPLAY_ID,
+                original_input=input_snapshot,
+                input_hash="sha-256:abc123",  # Hyphen not allowed
+                input_display="{}",
+                baseline_output=output_snapshot,
+                replay_output=output_snapshot,
+                outputs_match=True,
+                side_by_side=side_by_side,
+                invariant_results=[],
+                invariants_all_passed=True,
+                timing_breakdown=timing,
+                execution_timestamp=datetime(2025, 1, 4, 12, 0, 0, tzinfo=UTC),
+                corpus_entry_id=TEST_CORPUS_ID,
+            )
+        errors = exc_info.value.errors()
+        assert any(e["loc"] == ("input_hash",) for e in errors)
+
+    def test_invalid_input_hash_multiple_colons(
+        self,
+        input_snapshot: ModelInputSnapshot,
+        output_snapshot: ModelOutputSnapshot,
+        side_by_side: ModelSideBySideComparison,
+        timing: ModelTimingBreakdown,
+    ) -> None:
+        """Input hash with multiple colons is rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelExecutionDetailView(
+                comparison_id=TEST_COMPARISON_ID,
+                baseline_execution_id=TEST_BASELINE_ID,
+                replay_execution_id=TEST_REPLAY_ID,
+                original_input=input_snapshot,
+                input_hash="sha256:abc:123",  # Multiple colons
                 input_display="{}",
                 baseline_output=output_snapshot,
                 replay_output=output_snapshot,
@@ -1315,7 +1716,7 @@ class TestModelSnapshotEdgeCases:
             raw={},
             original_size_bytes=2,
             display_size_bytes=2,
-            output_hash="sha256:empty_hash",
+            output_hash="sha256:1234567890ab",
         )
         assert snapshot.raw == {}
 
@@ -1355,7 +1756,7 @@ class TestModelExecutionDetailViewSerialization:
             raw={"result": "data"},
             original_size_bytes=60,
             display_size_bytes=60,
-            output_hash="sha256:hash",
+            output_hash="sha256:abc123",
         )
         side_by_side = ModelSideBySideComparison(
             baseline_formatted="{}",
@@ -1373,7 +1774,7 @@ class TestModelExecutionDetailViewSerialization:
             baseline_execution_id=baseline_id,
             replay_execution_id=replay_id,
             original_input=input_snapshot,
-            input_hash="sha256:input",
+            input_hash="sha256:fedcba654321",
             input_display="{}",
             baseline_output=output_snapshot,
             replay_output=output_snapshot,
@@ -1410,7 +1811,7 @@ class TestModelExecutionDetailViewSerialization:
             raw={"result": "data"},
             original_size_bytes=60,
             display_size_bytes=60,
-            output_hash="sha256:hash",
+            output_hash="sha256:abc123",
         )
         side_by_side = ModelSideBySideComparison(
             baseline_formatted="{}",
@@ -1428,7 +1829,7 @@ class TestModelExecutionDetailViewSerialization:
             baseline_execution_id=baseline_id,
             replay_execution_id=replay_id,
             original_input=input_snapshot,
-            input_hash="sha256:input",
+            input_hash="sha256:fedcba654321",
             input_display="{}",
             baseline_output=output_snapshot,
             replay_output=output_snapshot,
@@ -1473,7 +1874,7 @@ class TestModelExecutionDetailViewEdgeCases:
             raw={"result": "data"},
             original_size_bytes=60,
             display_size_bytes=60,
-            output_hash="sha256:hash",
+            output_hash="sha256:abc123def456",
         )
 
     @pytest.fixture
@@ -1518,7 +1919,7 @@ class TestModelExecutionDetailViewEdgeCases:
             baseline_execution_id=baseline_id,
             replay_execution_id=replay_id,
             original_input=minimal_input_snapshot,
-            input_hash="sha256:empty_invariants_test",
+            input_hash="sha256:aaaa1111bbbb2222",
             input_display='{"key": "value"}',
             baseline_output=minimal_output_snapshot,
             replay_output=minimal_output_snapshot,
@@ -1556,7 +1957,7 @@ class TestModelExecutionDetailViewEdgeCases:
             baseline_execution_id=baseline_id,
             replay_execution_id=replay_id,
             original_input=minimal_input_snapshot,
-            input_hash="sha256:vacuously_true_test",
+            input_hash="sha256:cccc3333dddd4444",
             input_display='{"test": "data"}',
             baseline_output=minimal_output_snapshot,
             replay_output=minimal_output_snapshot,
@@ -1610,7 +2011,7 @@ class TestModelExecutionDetailViewEdgeCases:
             baseline_execution_id=baseline_id,
             replay_execution_id=replay_id,
             original_input=input_snapshot,
-            input_hash="sha256:truncated_display_test",
+            input_hash="sha256:eeee5555ffff6666",
             input_display=truncated_display,  # Truncated for UI
             baseline_output=minimal_output_snapshot,
             replay_output=minimal_output_snapshot,
@@ -1652,7 +2053,7 @@ class TestModelExecutionDetailViewEdgeCases:
             baseline_execution_id=baseline_id,
             replay_execution_id=replay_id,
             original_input=minimal_input_snapshot,
-            input_hash="sha256:large_input_test",
+            input_hash="sha256:1122334455667788",
             input_display=large_input_display,
             baseline_output=minimal_output_snapshot,
             replay_output=minimal_output_snapshot,
@@ -1695,7 +2096,7 @@ class TestModelExecutionDetailViewEdgeCases:
             baseline_execution_id=baseline_id,
             replay_execution_id=replay_id,
             original_input=minimal_input_snapshot,
-            input_hash="sha256:unicode_test",
+            input_hash="sha256:99aabbccddee00",
             input_display=unicode_input_display,
             baseline_output=minimal_output_snapshot,
             replay_output=minimal_output_snapshot,

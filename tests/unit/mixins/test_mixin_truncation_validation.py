@@ -224,7 +224,7 @@ class TestMixinTruncationValidationIntegration:
                 truncated=False,
                 original_size_bytes=50,
                 display_size_bytes=100,
-                output_hash="sha256:test",
+                output_hash="sha256:abc456",
             )
 
         # Error messages should contain the same validation text

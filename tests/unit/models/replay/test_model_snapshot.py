@@ -319,7 +319,7 @@ class TestModelOutputSnapshotCreation:
             truncated=True,
             original_size_bytes=2000,
             display_size_bytes=800,
-            output_hash="sha256:xyz789",
+            output_hash="sha256:def789",
         )
         assert snapshot.raw == {"result": "truncated_output"}
         assert snapshot.truncated is True
@@ -332,7 +332,7 @@ class TestModelOutputSnapshotCreation:
             raw={},
             original_size_bytes=50,
             display_size_bytes=50,
-            output_hash="sha256:empty",
+            output_hash="sha256:aaa111",
         )
         assert snapshot.truncated is False
 
@@ -375,7 +375,7 @@ class TestModelOutputSnapshotSizeValidation:
                 truncated=False,
                 original_size_bytes=-1,
                 display_size_bytes=100,
-                output_hash="sha256:test",
+                output_hash="sha256:bbb222",
             )
         errors = exc_info.value.errors()
         assert any(e["loc"] == ("original_size_bytes",) for e in errors)
@@ -389,7 +389,7 @@ class TestModelOutputSnapshotSizeValidation:
                 truncated=False,
                 original_size_bytes=100,
                 display_size_bytes=-1,
-                output_hash="sha256:test",
+                output_hash="sha256:bbb222",
             )
         errors = exc_info.value.errors()
         assert any(e["loc"] == ("display_size_bytes",) for e in errors)
@@ -403,7 +403,7 @@ class TestModelOutputSnapshotSizeValidation:
                 truncated=False,
                 original_size_bytes=-10,
                 display_size_bytes=-5,
-                output_hash="sha256:test",
+                output_hash="sha256:bbb222",
             )
         errors = exc_info.value.errors()
         assert any(e["loc"] == ("original_size_bytes",) for e in errors)
@@ -417,7 +417,7 @@ class TestModelOutputSnapshotSizeValidation:
                 truncated=False,
                 original_size_bytes=-999999,
                 display_size_bytes=100,
-                output_hash="sha256:test",
+                output_hash="sha256:bbb222",
             )
         errors = exc_info.value.errors()
         assert any(e["loc"] == ("original_size_bytes",) for e in errors)
@@ -429,7 +429,7 @@ class TestModelOutputSnapshotSizeValidation:
             truncated=False,
             original_size_bytes=0,
             display_size_bytes=0,
-            output_hash="sha256:empty",
+            output_hash="sha256:aaa111",
         )
         assert snapshot.original_size_bytes == 0
         assert snapshot.display_size_bytes == 0
@@ -441,7 +441,7 @@ class TestModelOutputSnapshotSizeValidation:
             truncated=False,
             original_size_bytes=100,
             display_size_bytes=100,
-            output_hash="sha256:test",
+            output_hash="sha256:bbb222",
         )
         assert snapshot.original_size_bytes == 100
         assert snapshot.display_size_bytes == 100
@@ -459,7 +459,7 @@ class TestModelOutputSnapshotTruncationValidation:
                 truncated=False,
                 original_size_bytes=100,
                 display_size_bytes=150,
-                output_hash="sha256:test",
+                output_hash="sha256:bbb222",
             )
         error_msg = str(exc_info.value)
         assert "display_size_bytes (150) cannot exceed" in error_msg
@@ -473,7 +473,7 @@ class TestModelOutputSnapshotTruncationValidation:
                 truncated=True,
                 original_size_bytes=100,
                 display_size_bytes=100,
-                output_hash="sha256:test",
+                output_hash="sha256:bbb222",
             )
         error_msg = str(exc_info.value)
         assert "When truncated=True" in error_msg
@@ -487,7 +487,7 @@ class TestModelOutputSnapshotTruncationValidation:
                 truncated=True,
                 original_size_bytes=100,
                 display_size_bytes=150,
-                output_hash="sha256:test",
+                output_hash="sha256:bbb222",
             )
         error_msg = str(exc_info.value)
         assert "display_size_bytes (150) cannot exceed" in error_msg
@@ -500,7 +500,7 @@ class TestModelOutputSnapshotTruncationValidation:
                 truncated=False,
                 original_size_bytes=100,
                 display_size_bytes=80,
-                output_hash="sha256:test",
+                output_hash="sha256:bbb222",
             )
         error_msg = str(exc_info.value)
         assert "When truncated=False" in error_msg
@@ -513,7 +513,7 @@ class TestModelOutputSnapshotTruncationValidation:
             truncated=True,
             original_size_bytes=100,
             display_size_bytes=99,
-            output_hash="sha256:edge",
+            output_hash="sha256:ccc333",
         )
         assert snapshot.truncated is True
         assert snapshot.display_size_bytes == 99
@@ -525,7 +525,7 @@ class TestModelOutputSnapshotTruncationValidation:
             truncated=False,
             original_size_bytes=0,
             display_size_bytes=0,
-            output_hash="sha256:empty",
+            output_hash="sha256:aaa111",
         )
         assert snapshot.original_size_bytes == 0
         assert snapshot.display_size_bytes == 0
@@ -542,12 +542,12 @@ class TestModelOutputSnapshotImmutability:
             truncated=False,
             original_size_bytes=100,
             display_size_bytes=100,
-            output_hash="sha256:test",
+            output_hash="sha256:bbb222",
         )
         with pytest.raises(ValidationError):
             snapshot.truncated = True  # type: ignore[misc]
         with pytest.raises(ValidationError):
-            snapshot.output_hash = "sha256:modified"  # type: ignore[misc]
+            snapshot.output_hash = "sha256:ddd444"  # type: ignore[misc]
 
     def test_equality_with_identical_values_returns_true(self) -> None:
         """Two instances with identical values are equal."""
@@ -556,14 +556,14 @@ class TestModelOutputSnapshotImmutability:
             truncated=False,
             original_size_bytes=100,
             display_size_bytes=100,
-            output_hash="sha256:test",
+            output_hash="sha256:bbb222",
         )
         snapshot2 = ModelOutputSnapshot(
             raw={"key": "value"},
             truncated=False,
             original_size_bytes=100,
             display_size_bytes=100,
-            output_hash="sha256:test",
+            output_hash="sha256:bbb222",
         )
         assert snapshot1 == snapshot2
 
@@ -579,7 +579,7 @@ class TestModelOutputSnapshotSerialization:
             truncated=True,
             original_size_bytes=1000,
             display_size_bytes=500,
-            output_hash="sha256:serialized",
+            output_hash="sha256:eee555",
         )
         data = snapshot.model_dump()
         assert isinstance(data, dict)
@@ -587,7 +587,7 @@ class TestModelOutputSnapshotSerialization:
         assert data["truncated"] is True
         assert data["original_size_bytes"] == 1000
         assert data["display_size_bytes"] == 500
-        assert data["output_hash"] == "sha256:serialized"
+        assert data["output_hash"] == "sha256:eee555"
 
     def test_deserialization_from_dict_succeeds(self) -> None:
         """Deserialization from dictionary creates valid model."""
@@ -596,12 +596,12 @@ class TestModelOutputSnapshotSerialization:
             "truncated": True,
             "original_size_bytes": 300,
             "display_size_bytes": 150,
-            "output_hash": "sha256:deserialized",
+            "output_hash": "sha256:fff666",
         }
         snapshot = ModelOutputSnapshot(**data)
         assert snapshot.raw == {"test": "output"}
         assert snapshot.truncated is True
-        assert snapshot.output_hash == "sha256:deserialized"
+        assert snapshot.output_hash == "sha256:fff666"
 
 
 @pytest.mark.unit
@@ -626,7 +626,7 @@ class TestSnapshotEdgeCases:
             truncated=True,
             original_size_bytes=5000000,
             display_size_bytes=5000,
-            output_hash="sha256:large",
+            output_hash="sha256:111777",
         )
         assert snapshot.original_size_bytes == 5000000
         assert snapshot.display_size_bytes == 5000
@@ -666,7 +666,7 @@ class TestSnapshotEdgeCases:
             truncated=False,
             original_size_bytes=200,
             display_size_bytes=200,
-            output_hash="sha256:complex",
+            output_hash="sha256:222888",
         )
         assert snapshot.raw["string"] == "text"
         assert snapshot.raw["null"] is None

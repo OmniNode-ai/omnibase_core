@@ -156,7 +156,6 @@ class TestModelPhaseTimeZeroBaselineEdgeCases:
             replay_ms=0.0,
             delta_percent=0.0,  # 0 is reasonable, but any value is allowed
         )
-        assert phase.delta_ms == 0.0 if hasattr(phase, "delta_ms") else True
         assert phase.delta_percent == 0.0
 
 

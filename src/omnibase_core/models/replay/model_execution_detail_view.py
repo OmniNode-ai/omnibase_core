@@ -1,9 +1,16 @@
 """Model for detailed view of a single execution comparison."""
 
+import re
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+# Pattern for validating hash format: "algorithm:hexdigest"
+# - Algorithm: alphanumeric (allows uppercase for flexibility, e.g., "SHA256" or "sha256")
+# - Separator: colon
+# - Digest: hexadecimal characters (0-9, a-f, A-F)
+HASH_FORMAT_PATTERN = re.compile(r"^[a-zA-Z0-9]+:[a-fA-F0-9]+$")
 
 from omnibase_core.models.replay.model_input_snapshot import ModelInputSnapshot
 from omnibase_core.models.replay.model_invariant_result_detail import (
@@ -35,7 +42,8 @@ class ModelExecutionDetailView(BaseModel):
         - invariant_results: Can be an empty list, which is valid for executions
           where no invariant checks are configured. When empty, invariants_all_passed
           should typically be True (vacuously true - no invariants means none failed).
-        - input_hash: Must be non-empty. Validated via Field(min_length=1).
+        - input_hash: Must be formatted as "algorithm:hexdigest" (e.g., "sha256:abc123").
+          Algorithm must be alphanumeric, digest must be hexadecimal.
         - All nested models (ModelInputSnapshot, ModelOutputSnapshot, etc.) perform
           their own validation; see their respective docstrings for details.
 
@@ -44,8 +52,9 @@ class ModelExecutionDetailView(BaseModel):
         baseline_execution_id: ID of the baseline execution.
         replay_execution_id: ID of the replay execution.
         original_input: Snapshot of the execution input (canonical input data).
-        input_hash: Hash identifier of the input for deduplication. Typically
-            formatted as "algorithm:hexdigest" (e.g., "sha256:abc123"). Must be non-empty.
+        input_hash: Hash identifier of the input for deduplication. Must be
+            formatted as "algorithm:hexdigest" (e.g., "sha256:abc123").
+            Algorithm must be alphanumeric, digest must be hexadecimal.
         input_display: JSON-formatted input string for display (may be truncated
             for large inputs to maintain UI responsiveness). This is independent
             of original_input.raw and serves as a pre-formatted display value.
@@ -77,10 +86,33 @@ class ModelExecutionDetailView(BaseModel):
         min_length=1,
         description=(
             "Hash identifier of the input for deduplication. "
-            "Typically formatted as 'algorithm:hexdigest' (e.g., 'sha256:abc123')."
+            "Must be formatted as 'algorithm:hexdigest' (e.g., 'sha256:abc123'). "
+            "Algorithm must be alphanumeric, digest must be hexadecimal."
         ),
     )
     input_display: str
+
+    @field_validator("input_hash")
+    @classmethod
+    def validate_hash_format(cls, v: str) -> str:
+        """Validate that input_hash follows the 'algorithm:hexdigest' format.
+
+        Args:
+            v: The hash string to validate.
+
+        Returns:
+            The validated hash string.
+
+        Raises:
+            ValueError: If the hash format is invalid.
+        """
+        if not HASH_FORMAT_PATTERN.match(v):
+            raise ValueError(
+                f"Invalid hash format: '{v}'. "
+                "Must be 'algorithm:hexdigest' format (e.g., 'sha256:abc123'). "
+                "Algorithm must be alphanumeric, digest must be hexadecimal."
+            )
+        return v
 
     # Output Comparison
     baseline_output: ModelOutputSnapshot
