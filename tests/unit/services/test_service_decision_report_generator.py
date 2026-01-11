@@ -1203,6 +1203,239 @@ class TestServiceInstantiation:
         assert callable(service.generate_recommendation)
 
 
+@pytest.mark.unit
+class TestEdgeCasesExtended:
+    """Extended edge case tests for ServiceDecisionReportGenerator."""
+
+    def test_missing_cost_data_warning_in_recommendation(
+        self,
+        service: ServiceDecisionReportGenerator,
+    ) -> None:
+        """Test that missing cost data produces a warning."""
+        # Create summary with cost_stats=None
+        summary = create_evidence_summary(
+            cost_stats=None,
+            passed_count=45,
+            failed_count=5,
+            pass_rate=0.90,
+            confidence_score=0.85,
+        )
+
+        recommendation = service.generate_recommendation(summary)
+
+        # Verify recommendation.warnings contains cost data incomplete message
+        assert any(
+            "cost" in warning.lower() and "incomplete" in warning.lower()
+            for warning in recommendation.warnings
+        ), f"Expected cost incomplete warning in: {recommendation.warnings}"
+
+    def test_long_text_truncation_in_cli(
+        self,
+        service: ServiceDecisionReportGenerator,
+    ) -> None:
+        """Test that the _center_text method truncates text longer than REPORT_WIDTH."""
+        # Test the internal _center_text method directly for truncation behavior
+        long_text = "A" * 100  # 100 characters, well over REPORT_WIDTH (80)
+        centered = service._center_text(long_text)
+
+        # Verify truncation: text should be truncated to REPORT_WIDTH (80) with ellipsis
+        from omnibase_core.services.service_decision_report_generator import (
+            REPORT_WIDTH,
+        )
+
+        assert len(centered) == REPORT_WIDTH, (
+            f"Centered text should be exactly {REPORT_WIDTH} chars, got {len(centered)}"
+        )
+        assert centered.endswith("..."), "Truncated text should end with ellipsis"
+
+        # Also test that CLI report handles long corpus_id gracefully (no crash)
+        long_corpus_id = "test-corpus-" + "x" * 100
+        summary = create_evidence_summary(corpus_id=long_corpus_id)
+
+        # Should not raise - handles long text without crashing
+        report = service.generate_cli_report(
+            summary,
+            comparisons=[],
+            verbosity="standard",
+        )
+
+        # Verify the report was generated and contains the (possibly long) corpus_id
+        assert isinstance(report, str)
+        assert len(report) > 0
+        # The corpus_id should appear somewhere in the report
+        assert "test-corpus-" in report
+
+    def test_unicode_in_violation_messages(
+        self,
+        service: ServiceDecisionReportGenerator,
+        sample_comparisons: list[ModelExecutionComparison],
+    ) -> None:
+        """Test JSON serialization handles unicode/emoji in violations."""
+        # Create violation types with unicode characters
+        summary = create_evidence_summary(
+            invariant_violations=create_violation_breakdown(
+                total_violations=5,
+                by_type={
+                    "schema_mismatch_\u2713": 2,  # Unicode checkmark
+                    "constraint_\u26a0_warning": 3,  # Unicode warning sign
+                },
+                by_severity={"warning": 5},
+                new_violations=3,
+            ),
+        )
+
+        report = service.generate_json_report(summary, sample_comparisons)
+
+        # Verify JSON report serializes correctly
+        import json
+
+        json_str = json.dumps(report, default=str, ensure_ascii=False)
+        assert isinstance(json_str, str)
+        assert len(json_str) > 0
+
+        # Parse back and verify unicode preserved
+        parsed = json.loads(json_str)
+        assert "\u2713" in str(parsed["violations"]["by_type"])
+        assert "\u26a0" in str(parsed["violations"]["by_type"])
+
+    def test_pre_generated_recommendation_reuse(
+        self,
+        service: ServiceDecisionReportGenerator,
+        sample_evidence_summary: ModelEvidenceSummary,
+        sample_comparisons: list[ModelExecutionComparison],
+    ) -> None:
+        """Test that pre-generated recommendation is reused across formats."""
+        # Generate recommendation once
+        recommendation = service.generate_recommendation(sample_evidence_summary)
+
+        # Pass to all three report methods
+        cli_report = service.generate_cli_report(
+            sample_evidence_summary,
+            sample_comparisons,
+            verbosity="standard",
+            recommendation=recommendation,
+        )
+        json_report = service.generate_json_report(
+            sample_evidence_summary,
+            sample_comparisons,
+            recommendation=recommendation,
+        )
+        md_report = service.generate_markdown_report(
+            sample_evidence_summary,
+            sample_comparisons,
+            recommendation=recommendation,
+        )
+
+        # Verify same recommendation action used in all formats
+        assert recommendation.action.upper() in cli_report
+        assert json_report["recommendation"]["action"] == recommendation.action
+        assert recommendation.action.upper() in md_report
+
+        # Verify same confidence used
+        assert json_report["recommendation"]["confidence"] == recommendation.confidence
+        assert f"{recommendation.confidence:.0%}" in cli_report
+
+        # Verify same blockers/warnings lists
+        assert json_report["recommendation"]["blockers"] == recommendation.blockers
+        assert json_report["recommendation"]["warnings"] == recommendation.warnings
+
+    def test_class_constants_used_in_recommendation(
+        self,
+        service: ServiceDecisionReportGenerator,
+    ) -> None:
+        """Test that class constants control recommendation thresholds."""
+        # Verify thresholds match class constants
+        assert service.CONFIDENCE_APPROVE_THRESHOLD == 0.9
+        assert service.CONFIDENCE_REVIEW_THRESHOLD == 0.7
+        assert service.PASS_RATE_OPTIMAL == 0.95
+        assert service.PASS_RATE_MINIMUM == 0.70
+        assert service.LATENCY_BLOCKER_PERCENT == 50.0
+        assert service.LATENCY_WARNING_PERCENT == 20.0
+        assert service.COST_BLOCKER_PERCENT == 50.0
+        assert service.COST_WARNING_PERCENT == 20.0
+
+        # Test boundary conditions at threshold values
+        # At exactly CONFIDENCE_APPROVE_THRESHOLD with no violations = approve
+        approve_summary = create_evidence_summary(
+            passed_count=100,
+            failed_count=0,
+            pass_rate=1.0,
+            confidence_score=service.CONFIDENCE_APPROVE_THRESHOLD,  # Exactly 0.9
+            invariant_violations=create_violation_breakdown(
+                total_violations=0,
+                new_critical_violations=0,
+            ),
+            cost_stats=create_cost_stats(
+                baseline_total=10.0,
+                replay_total=10.0,  # No cost increase
+            ),
+        )
+        rec = service.generate_recommendation(approve_summary)
+        assert rec.action == "approve", (
+            f"Expected approve at confidence threshold, got {rec.action}"
+        )
+
+        # Just below CONFIDENCE_APPROVE_THRESHOLD = review (not approve)
+        review_summary = create_evidence_summary(
+            passed_count=100,
+            failed_count=0,
+            pass_rate=1.0,
+            confidence_score=service.CONFIDENCE_APPROVE_THRESHOLD - 0.01,  # 0.89
+            invariant_violations=create_violation_breakdown(
+                total_violations=0,
+                new_critical_violations=0,
+            ),
+            cost_stats=create_cost_stats(
+                baseline_total=10.0,
+                replay_total=10.0,
+            ),
+        )
+        rec = service.generate_recommendation(review_summary)
+        assert rec.action == "review", (
+            f"Expected review below approve threshold, got {rec.action}"
+        )
+
+        # At exactly CONFIDENCE_REVIEW_THRESHOLD = review
+        at_review_threshold = create_evidence_summary(
+            passed_count=100,
+            failed_count=0,
+            pass_rate=1.0,
+            confidence_score=service.CONFIDENCE_REVIEW_THRESHOLD,  # Exactly 0.7
+            invariant_violations=create_violation_breakdown(
+                total_violations=0,
+                new_critical_violations=0,
+            ),
+            cost_stats=create_cost_stats(
+                baseline_total=10.0,
+                replay_total=10.0,
+            ),
+        )
+        rec = service.generate_recommendation(at_review_threshold)
+        assert rec.action == "review", (
+            f"Expected review at review threshold, got {rec.action}"
+        )
+
+        # Just below CONFIDENCE_REVIEW_THRESHOLD = reject
+        reject_summary = create_evidence_summary(
+            passed_count=100,
+            failed_count=0,
+            pass_rate=1.0,
+            confidence_score=service.CONFIDENCE_REVIEW_THRESHOLD - 0.01,  # 0.69
+            invariant_violations=create_violation_breakdown(
+                total_violations=0,
+                new_critical_violations=0,
+            ),
+            cost_stats=create_cost_stats(
+                baseline_total=10.0,
+                replay_total=10.0,
+            ),
+        )
+        rec = service.generate_recommendation(reject_summary)
+        assert rec.action == "reject", (
+            f"Expected reject below review threshold, got {rec.action}"
+        )
+
+
 __all__ = [
     "TestCLIFormat",
     "TestJSONFormat",
@@ -1210,5 +1443,6 @@ __all__ = [
     "TestReportStructure",
     "TestRecommendationLogic",
     "TestEdgeCases",
+    "TestEdgeCasesExtended",
     "TestServiceInstantiation",
 ]

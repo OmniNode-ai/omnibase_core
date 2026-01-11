@@ -70,7 +70,11 @@ class ModelDecisionRecommendation(BaseModel):
     )
     generated_at: datetime = Field(
         default_factory=lambda: datetime.now(tz=UTC),
-        description="When this recommendation was generated",
+        description=(
+            "When this recommendation was generated. Note: This may differ from "
+            "the report's generated_at timestamp if the recommendation is cached "
+            "or reused across multiple report formats."
+        ),
     )
 
 

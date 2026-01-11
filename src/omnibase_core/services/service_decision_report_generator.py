@@ -57,11 +57,28 @@ class ServiceDecisionReportGenerator:
     .. versionadded:: 0.6.5
     """
 
+    # Recommendation thresholds - confidence levels
+    CONFIDENCE_APPROVE_THRESHOLD: float = 0.9
+    CONFIDENCE_REVIEW_THRESHOLD: float = 0.7
+
+    # Recommendation thresholds - pass rate
+    PASS_RATE_OPTIMAL: float = 0.95
+    PASS_RATE_MINIMUM: float = 0.70
+
+    # Recommendation thresholds - latency regression (percent)
+    LATENCY_BLOCKER_PERCENT: float = 50.0
+    LATENCY_WARNING_PERCENT: float = 20.0
+
+    # Recommendation thresholds - cost regression (percent)
+    COST_BLOCKER_PERCENT: float = 50.0
+    COST_WARNING_PERCENT: float = 20.0
+
     def generate_cli_report(
         self,
         summary: ModelEvidenceSummary,
         comparisons: list[ModelExecutionComparison],
         verbosity: Literal["minimal", "standard", "verbose"] = "standard",
+        recommendation: ModelDecisionRecommendation | None = None,
     ) -> str:
         """Generate formatted CLI output for terminal display.
 
@@ -75,6 +92,8 @@ class ServiceDecisionReportGenerator:
                 - "minimal": Headline and recommendation only
                 - "standard": Full summary with sections
                 - "verbose": Everything including comparison details
+            recommendation: Pre-generated recommendation. If None, generates a new one.
+                Providing this avoids redundant computation when generating multiple formats.
 
         Returns:
             Formatted string report for terminal display.
@@ -86,7 +105,7 @@ class ServiceDecisionReportGenerator:
         lines: list[str] = []
 
         if verbosity == "minimal":
-            return self._generate_minimal_cli_report(summary)
+            return self._generate_minimal_cli_report(summary, recommendation)
 
         # Header
         lines.append(SEPARATOR_LINE)
@@ -121,7 +140,10 @@ class ServiceDecisionReportGenerator:
             by_severity = summary.invariant_violations.by_severity
             by_type = summary.invariant_violations.by_type
 
-            # Show severity summary (since we cannot correlate types to severities)
+            # Severity and type are independent aggregations in ModelInvariantViolationBreakdown.
+            # by_severity counts violations by severity level (critical/warning/info).
+            # by_type counts violations by type (e.g., "schema_mismatch", "constraint_violation").
+            # These cannot be correlated since we don't have per-violation severity-type pairs.
             severity_parts = []
             critical_count = by_severity.get("critical", 0)
             warning_count = by_severity.get("warning", 0)
@@ -174,7 +196,8 @@ class ServiceDecisionReportGenerator:
         lines.append("")
 
         # Recommendation section
-        recommendation = self.generate_recommendation(summary)
+        if recommendation is None:
+            recommendation = self.generate_recommendation(summary)
         action_upper = recommendation.action.upper()
         lines.append(f"RECOMMENDATION: {action_upper}")
         lines.append(SUBSECTION_CHAR * (len(f"RECOMMENDATION: {action_upper}")))
@@ -217,16 +240,22 @@ class ServiceDecisionReportGenerator:
 
         return "\n".join(lines)
 
-    def _generate_minimal_cli_report(self, summary: ModelEvidenceSummary) -> str:
+    def _generate_minimal_cli_report(
+        self,
+        summary: ModelEvidenceSummary,
+        recommendation: ModelDecisionRecommendation | None = None,
+    ) -> str:
         """Generate minimal CLI report (headline + recommendation only).
 
         Args:
             summary: Aggregated evidence summary.
+            recommendation: Pre-generated recommendation. If None, generates a new one.
 
         Returns:
             Minimal formatted report string.
         """
-        recommendation = self.generate_recommendation(summary)
+        if recommendation is None:
+            recommendation = self.generate_recommendation(summary)
         lines = [
             summary.headline,
             f"Recommendation: {recommendation.action.upper()} "
@@ -235,14 +264,16 @@ class ServiceDecisionReportGenerator:
         return "\n".join(lines)
 
     def _center_text(self, text: str) -> str:
-        """Center text within REPORT_WIDTH.
+        """Center text within REPORT_WIDTH, truncating if necessary.
 
         Args:
             text: Text to center.
 
         Returns:
-            Centered text string.
+            Centered text string, truncated with ellipsis if too long.
         """
+        if len(text) >= REPORT_WIDTH:
+            return text[: REPORT_WIDTH - 3] + "..."
         return text.center(REPORT_WIDTH)
 
     def generate_json_report(
@@ -250,6 +281,7 @@ class ServiceDecisionReportGenerator:
         summary: ModelEvidenceSummary,
         comparisons: list[ModelExecutionComparison],
         include_details: bool = False,
+        recommendation: ModelDecisionRecommendation | None = None,
     ) -> TypedDictDecisionReport:
         """Generate structured JSON report for machine consumption.
 
@@ -260,6 +292,8 @@ class ServiceDecisionReportGenerator:
             summary: Aggregated evidence summary from corpus replay.
             comparisons: Individual execution comparisons.
             include_details: Whether to include individual comparison details.
+            recommendation: Pre-generated recommendation. If None, generates a new one.
+                Providing this avoids redundant computation when generating multiple formats.
 
         Returns:
             TypedDictDecisionReport with report data.
@@ -268,7 +302,8 @@ class ServiceDecisionReportGenerator:
             >>> report = generator.generate_json_report(summary, comparisons)
             >>> json_str = json.dumps(report, sort_keys=True)
         """
-        recommendation = self.generate_recommendation(summary)
+        if recommendation is None:
+            recommendation = self.generate_recommendation(summary)
 
         report: TypedDictDecisionReport = {
             "report_version": REPORT_VERSION,
@@ -365,6 +400,7 @@ class ServiceDecisionReportGenerator:
         summary: ModelEvidenceSummary,
         comparisons: list[ModelExecutionComparison],
         include_details: bool = True,
+        recommendation: ModelDecisionRecommendation | None = None,
     ) -> str:
         """Generate Markdown report for PR/documentation.
 
@@ -375,6 +411,8 @@ class ServiceDecisionReportGenerator:
             summary: Aggregated evidence summary from corpus replay.
             comparisons: Individual execution comparisons.
             include_details: Whether to include individual comparison details.
+            recommendation: Pre-generated recommendation. If None, generates a new one.
+                Providing this avoids redundant computation when generating multiple formats.
 
         Returns:
             GitHub-flavored markdown string.
@@ -384,7 +422,8 @@ class ServiceDecisionReportGenerator:
             >>> with open("report.md", "w") as f:
             ...     f.write(md_report)
         """
-        recommendation = self.generate_recommendation(summary)
+        if recommendation is None:
+            recommendation = self.generate_recommendation(summary)
         lines: list[str] = []
 
         # Header
@@ -596,12 +635,25 @@ class ServiceDecisionReportGenerator:
         """Generate actionable recommendation from evidence.
 
         Analyzes the evidence summary and generates a recommendation with
-        blockers, warnings, and next steps based on defined thresholds.
+        blockers, warnings, and next steps based on configurable class-level
+        thresholds. See class constants for threshold values:
+
+        - CONFIDENCE_APPROVE_THRESHOLD: Minimum confidence for auto-approve
+        - CONFIDENCE_REVIEW_THRESHOLD: Minimum confidence for review recommendation
+        - PASS_RATE_OPTIMAL: Target pass rate (below triggers warning)
+        - PASS_RATE_MINIMUM: Minimum pass rate (below triggers blocker)
+        - LATENCY_BLOCKER_PERCENT: Latency increase that triggers blocker
+        - LATENCY_WARNING_PERCENT: Latency increase that triggers warning
+        - COST_BLOCKER_PERCENT: Cost increase that triggers blocker
+        - COST_WARNING_PERCENT: Cost increase that triggers warning
 
         Recommendation Logic:
-            - **approve**: confidence >= 0.9 AND no critical violations AND no blockers
-            - **review**: confidence >= 0.7 AND no critical violations (warnings OK)
-            - **reject**: confidence < 0.7 OR critical violations present
+            - **approve**: confidence >= CONFIDENCE_APPROVE_THRESHOLD AND
+              no critical violations AND no blockers
+            - **review**: confidence >= CONFIDENCE_REVIEW_THRESHOLD AND
+              no critical violations (warnings OK)
+            - **reject**: confidence < CONFIDENCE_REVIEW_THRESHOLD OR
+              critical violations present
 
         Args:
             summary: Aggregated evidence summary from corpus replay.
@@ -630,24 +682,26 @@ class ServiceDecisionReportGenerator:
             )
 
         # Check pass rate
-        if summary.pass_rate < 0.95:
-            if summary.pass_rate < 0.70:
+        if summary.pass_rate < self.PASS_RATE_OPTIMAL:
+            if summary.pass_rate < self.PASS_RATE_MINIMUM:
                 blockers.append(
-                    f"Pass rate too low: {summary.pass_rate:.0%} (minimum: 70%)"
+                    f"Pass rate too low: {summary.pass_rate:.0%} "
+                    f"(minimum: {self.PASS_RATE_MINIMUM:.0%})"
                 )
             else:
                 warnings.append(
-                    f"Pass rate below optimal: {summary.pass_rate:.0%} (target: 95%)"
+                    f"Pass rate below optimal: {summary.pass_rate:.0%} "
+                    f"(target: {self.PASS_RATE_OPTIMAL:.0%})"
                 )
 
         # Check latency regression
         latency_delta = summary.latency_stats.delta_avg_percent
-        if latency_delta > 50:
+        if latency_delta > self.LATENCY_BLOCKER_PERCENT:
             blockers.append(
                 f"Significant latency regression: +{latency_delta:.0f}% "
-                f"(threshold: 50%)"
+                f"(threshold: {self.LATENCY_BLOCKER_PERCENT:.0f}%)"
             )
-        elif latency_delta > 20:
+        elif latency_delta > self.LATENCY_WARNING_PERCENT:
             warnings.append(
                 f"Latency increased: +{latency_delta:.0f}% (consider optimization)"
             )
@@ -655,14 +709,18 @@ class ServiceDecisionReportGenerator:
         # Check cost regression
         if summary.cost_stats is not None:
             cost_delta = summary.cost_stats.delta_percent
-            if cost_delta > 50:
+            if cost_delta > self.COST_BLOCKER_PERCENT:
                 blockers.append(
-                    f"Significant cost increase: +{cost_delta:.0f}% (threshold: 50%)"
+                    f"Significant cost increase: +{cost_delta:.0f}% "
+                    f"(threshold: {self.COST_BLOCKER_PERCENT:.0f}%)"
                 )
-            elif cost_delta > 20:
+            elif cost_delta > self.COST_WARNING_PERCENT:
                 warnings.append(
                     f"Cost increased: +{cost_delta:.0f}% (consider optimization)"
                 )
+        else:
+            # Warn about incomplete cost data
+            warnings.append("Cost data incomplete - manual cost review recommended")
 
         # Check for new violations (non-critical)
         if violations.new_violations > 0 and violations.new_critical_violations == 0:
@@ -674,10 +732,14 @@ class ServiceDecisionReportGenerator:
         has_critical = violations.new_critical_violations > 0
         has_blockers = len(blockers) > 0
 
-        if confidence >= 0.9 and not has_critical and not has_blockers:
+        if (
+            confidence >= self.CONFIDENCE_APPROVE_THRESHOLD
+            and not has_critical
+            and not has_blockers
+        ):
             action: Literal["approve", "review", "reject"] = "approve"
             rationale = "High confidence score with no critical violations or blockers."
-        elif confidence >= 0.7 and not has_critical:
+        elif confidence >= self.CONFIDENCE_REVIEW_THRESHOLD and not has_critical:
             action = "review"
             rationale = (
                 "Acceptable confidence but requires human review due to warnings."
@@ -686,7 +748,7 @@ class ServiceDecisionReportGenerator:
             action = "reject"
             if has_critical:
                 rationale = "Critical violations detected that must be resolved."
-            elif confidence < 0.7:
+            elif confidence < self.CONFIDENCE_REVIEW_THRESHOLD:
                 rationale = f"Confidence too low ({confidence:.0%}) for approval."
             else:
                 rationale = "Blocking issues detected that must be resolved."
@@ -707,11 +769,14 @@ class ServiceDecisionReportGenerator:
         else:  # reject
             if has_critical:
                 next_steps.append("Fix critical invariant violations")
-            if summary.pass_rate < 0.70:
+            if summary.pass_rate < self.PASS_RATE_MINIMUM:
                 next_steps.append("Investigate and fix failing test cases")
-            if latency_delta > 50:
+            if latency_delta > self.LATENCY_BLOCKER_PERCENT:
                 next_steps.append("Optimize code to reduce latency regression")
-            if summary.cost_stats and summary.cost_stats.delta_percent > 50:
+            if (
+                summary.cost_stats
+                and summary.cost_stats.delta_percent > self.COST_BLOCKER_PERCENT
+            ):
                 next_steps.append("Optimize to reduce cost increase")
             next_steps.append("Re-run corpus replay after fixes")
 
