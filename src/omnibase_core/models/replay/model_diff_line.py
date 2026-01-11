@@ -2,7 +2,7 @@
 
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelDiffLine(BaseModel):
@@ -23,7 +23,7 @@ class ModelDiffLine(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
-    line_number: int
+    line_number: int = Field(ge=1, description="Line number (1-indexed, must be >= 1)")
     baseline_content: str | None
     replay_content: str | None
     change_type: Literal["unchanged", "modified", "added", "removed"]

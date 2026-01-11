@@ -31,11 +31,13 @@ class ModelExecutionDetailView(BaseModel):
         baseline_execution_id: ID of the baseline execution.
         replay_execution_id: ID of the replay execution.
         original_input: Snapshot of the execution input.
-        input_hash: Hash of the input for deduplication.
-        input_display: Formatted input for human reading (may be truncated).
+        input_hash: SHA-256 hash of the input for deduplication.
+        input_display: JSON-formatted input string for display (may be truncated
+            for large inputs to maintain UI responsiveness).
         baseline_output: Snapshot of baseline execution output.
         replay_output: Snapshot of replay execution output.
-        output_diff_display: Human-readable diff (None if outputs match).
+        output_diff_display: Unified diff format showing differences between
+            baseline and replay outputs (None if outputs match exactly).
         outputs_match: Whether baseline and replay outputs are identical.
         side_by_side: Side-by-side comparison view.
         invariant_results: Results of all invariant checks.

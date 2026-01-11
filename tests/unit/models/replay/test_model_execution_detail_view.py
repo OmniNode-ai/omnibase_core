@@ -99,7 +99,7 @@ class TestModelDiffLine:
                 line_number=1,
                 baseline_content="content",
                 replay_content="content",
-                change_type="invalid_type",
+                change_type="invalid_type",  # type: ignore[arg-type]
             )
         errors = exc_info.value.errors()
         assert len(errors) == 1
@@ -394,7 +394,7 @@ class TestModelInvariantResultDetail:
                 invariant_type="test",
                 baseline_passed=True,
                 replay_passed=True,
-                status_change="invalid_status",
+                status_change="invalid_status",  # type: ignore[arg-type]
             )
         errors = exc_info.value.errors()
         assert len(errors) == 1
@@ -1162,15 +1162,19 @@ class TestModelDiffLineEdgeCases:
         assert diff_line.baseline_content == ""
         assert diff_line.replay_content == ""
 
-    def test_line_number_zero_valid(self) -> None:
-        """Line number zero is valid."""
-        diff_line = ModelDiffLine(
-            line_number=0,
-            baseline_content="content",
-            replay_content="content",
-            change_type="unchanged",
-        )
-        assert diff_line.line_number == 0
+    def test_line_number_zero_rejected(self) -> None:
+        """Line number zero is invalid (line numbers are 1-indexed)."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelDiffLine(
+                line_number=0,
+                baseline_content="content",
+                replay_content="content",
+                change_type="unchanged",
+            )
+        errors = exc_info.value.errors()
+        assert len(errors) == 1
+        assert errors[0]["loc"] == ("line_number",)
+        assert "greater than or equal to 1" in str(errors[0]["msg"])
 
     def test_special_characters_in_content(self) -> None:
         """Special characters in content are preserved."""
