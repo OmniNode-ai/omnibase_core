@@ -1242,13 +1242,13 @@ class TestCorrelationIdPropagation:
     """
 
     @pytest.fixture
-    def custom_correlation_id(self) -> "UUID":
+    def custom_correlation_id(self) -> UUID:
         """Create a known UUID for testing correlation_id propagation."""
         return UUID("12345678-1234-5678-1234-567812345678")
 
     @pytest.fixture
     def fsm_with_custom_correlation_id(
-        self, custom_correlation_id: "UUID"
+        self, custom_correlation_id: UUID
     ) -> ModelFSMSubcontract:
         """Create FSM with a custom correlation_id for testing propagation."""
         return ModelFSMSubcontract(
@@ -1307,7 +1307,7 @@ class TestCorrelationIdPropagation:
     async def test_entry_actions_include_correlation_id(
         self,
         fsm_with_custom_correlation_id: ModelFSMSubcontract,
-        custom_correlation_id: "UUID",
+        custom_correlation_id: UUID,
     ):
         """Test that entry action intents include correlation_id from FSMSubcontract."""
         result = await execute_transition(
@@ -1336,7 +1336,7 @@ class TestCorrelationIdPropagation:
     async def test_exit_actions_include_correlation_id(
         self,
         fsm_with_custom_correlation_id: ModelFSMSubcontract,
-        custom_correlation_id: "UUID",
+        custom_correlation_id: UUID,
     ):
         """Test that exit action intents include correlation_id from FSMSubcontract."""
         result = await execute_transition(
@@ -1364,7 +1364,7 @@ class TestCorrelationIdPropagation:
     async def test_transition_actions_include_correlation_id(
         self,
         fsm_with_custom_correlation_id: ModelFSMSubcontract,
-        custom_correlation_id: "UUID",
+        custom_correlation_id: UUID,
     ):
         """Test that transition action intents include correlation_id from FSMSubcontract."""
         result = await execute_transition(
@@ -1388,7 +1388,7 @@ class TestCorrelationIdPropagation:
     async def test_persist_state_includes_correlation_id(
         self,
         fsm_with_custom_correlation_id: ModelFSMSubcontract,
-        custom_correlation_id: "UUID",
+        custom_correlation_id: UUID,
     ):
         """Test that persist_state intents include correlation_id from FSMSubcontract."""
         result = await execute_transition(
@@ -1412,7 +1412,7 @@ class TestCorrelationIdPropagation:
     async def test_all_intents_share_same_correlation_id(
         self,
         fsm_with_custom_correlation_id: ModelFSMSubcontract,
-        custom_correlation_id: "UUID",
+        custom_correlation_id: UUID,
     ):
         """Test that all intent types share the same correlation_id for tracing."""
         result = await execute_transition(
@@ -1467,7 +1467,7 @@ class TestCorrelationIdPropagation:
     async def test_correlation_id_consistency_in_single_transition(
         self,
         fsm_with_custom_correlation_id: ModelFSMSubcontract,
-        custom_correlation_id: "UUID",
+        custom_correlation_id: UUID,
     ):
         """Test that correlation_id is consistent across all intents in a single transition.
 
