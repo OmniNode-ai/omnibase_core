@@ -582,20 +582,29 @@ class ValidatorBase(ABC):
             separate validator instances per thread/worker.
             See docs/guides/THREADING.md for details.
 
+        Default Behavior for Missing Rules:
+            Rules NOT explicitly defined in the contract are **disabled** by default.
+            This follows the principle of explicit opt-in: validators must explicitly
+            list rules they want to enforce. This ensures consistent behavior across
+            all validators and prevents unexpected validation failures when new rules
+            are added to a validator implementation.
+
         Args:
-            rule_id: The rule identifier to look up. If None, returns defaults.
+            rule_id: The rule identifier to look up. If None, returns
+                (False, default_severity) - no rule ID means rule is not configured.
             contract: Validator contract with rule configurations.
 
         Returns:
             Tuple of (enabled, severity) for the rule. If rule is not in
-            contract or rule_id is None, returns (True, default_severity).
+            contract or rule_id is None, returns (False, default_severity)
+            because missing rules are disabled by default.
         """
         if rule_id is None:
             logger.debug(
-                "Rule ID is None, using default severity: %s",
+                "Rule ID is None, rule disabled by default (severity: %s)",
                 contract.severity_default,
             )
-            return (True, contract.severity_default)
+            return (False, contract.severity_default)
 
         # Lazily build cache on first access
         if self._rule_config_cache is None:
@@ -605,13 +614,13 @@ class ValidatorBase(ABC):
         if rule_id in self._rule_config_cache:
             return self._rule_config_cache[rule_id]
 
-        # Rule not in contract - use defaults (enabled=True, default severity)
+        # Rule not in contract - disabled by default (explicit opt-in required)
         logger.debug(
-            "Rule %s not in contract, using default severity: %s",
+            "Rule %s not in contract, disabled by default (severity: %s)",
             rule_id,
             contract.severity_default,
         )
-        return (True, contract.severity_default)
+        return (False, contract.severity_default)
 
     def _load_contract(self) -> ModelValidatorSubcontract:
         """Load contract from default YAML location.
@@ -823,8 +832,18 @@ class ValidatorBase(ABC):
     def _validate_cli_path(cls, path: Path, context: str) -> Path | None:
         """Validate CLI-provided path for security.
 
-        Security: Checks for path traversal attempts in user-provided paths.
-        This is critical for CLI tools where paths come from untrusted input.
+        Security: Comprehensive checks for path traversal attempts in user-provided
+        paths. This is critical for CLI tools where paths come from untrusted input.
+
+        Checks performed:
+            - Standard traversal: ``..`` patterns (Unix-style)
+            - Windows traversal: ``..\\`` patterns (backslash separator)
+            - URL-encoded traversal: ``%2e%2e`` (encoded dots), ``%2f`` (encoded slash)
+            - Null bytes: ``\\x00`` (can truncate paths in some systems)
+            - Double slashes: ``//`` (can bypass path normalization)
+
+        This method is available for all validators to use for consistent
+        path validation across the validation framework.
 
         Args:
             path: User-provided path to validate.
@@ -835,10 +854,29 @@ class ValidatorBase(ABC):
         """
         path_str = str(path)
 
-        # Security: Reject paths with traversal sequences
+        # Security: Reject paths with null bytes (can truncate paths)
+        if "\x00" in path_str:
+            print(
+                f"Security error: Null byte detected in {context}: {path!r}",
+                file=sys.stderr,
+            )
+            return None
+
+        # Security: Reject paths with traversal sequences (..)
+        # This catches both Unix-style (../) and Windows-style (..\\) traversal
         if ".." in path_str:
             print(
                 f"Security error: Path traversal detected in {context}: {path}",
+                file=sys.stderr,
+            )
+            return None
+
+        # Security: Reject paths with URL-encoded traversal sequences
+        # %2e = '.', %2f = '/', %5c = '\\' - common bypass attempts
+        path_lower = path_str.lower()
+        if "%2e" in path_lower or "%2f" in path_lower or "%5c" in path_lower:
+            print(
+                f"Security error: URL-encoded path traversal detected in {context}: {path}",
                 file=sys.stderr,
             )
             return None

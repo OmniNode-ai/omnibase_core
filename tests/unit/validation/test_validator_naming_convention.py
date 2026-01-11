@@ -31,6 +31,7 @@ from omnibase_core.validation.validator_naming_convention import (
     RULE_CLASS_NAMING,
     RULE_FILE_NAMING,
     RULE_FUNCTION_NAMING,
+    RULE_UNKNOWN_NAMING,
     ValidatorNamingConvention,
 )
 
@@ -44,7 +45,37 @@ def create_test_contract(
     severity_default: EnumValidationSeverity = EnumValidationSeverity.ERROR,
     rules: list[ModelValidatorRule] | None = None,
 ) -> ModelValidatorSubcontract:
-    """Create a test contract for ValidatorNamingConvention."""
+    """Create a test contract for ValidatorNamingConvention.
+
+    Note: Rules must be explicitly defined since missing rules default to disabled
+    per validator_base.py:615 alignment (OMN-1291 PR #360).
+    """
+    default_rules = [
+        ModelValidatorRule(
+            rule_id=RULE_FILE_NAMING,
+            description="Validates file naming conventions",
+            severity=EnumValidationSeverity.ERROR,
+            enabled=True,
+        ),
+        ModelValidatorRule(
+            rule_id=RULE_CLASS_NAMING,
+            description="Validates class naming (PascalCase)",
+            severity=EnumValidationSeverity.ERROR,
+            enabled=True,
+        ),
+        ModelValidatorRule(
+            rule_id=RULE_FUNCTION_NAMING,
+            description="Validates function naming (snake_case)",
+            severity=EnumValidationSeverity.ERROR,
+            enabled=True,
+        ),
+        ModelValidatorRule(
+            rule_id=RULE_UNKNOWN_NAMING,
+            description="Catch-all for unknown naming issues",
+            severity=EnumValidationSeverity.WARNING,
+            enabled=True,
+        ),
+    ]
     return ModelValidatorSubcontract(
         version=ModelSemVer(major=1, minor=0, patch=0),
         validator_id="naming_convention",
@@ -56,7 +87,7 @@ def create_test_contract(
         fail_on_error=True,
         fail_on_warning=False,
         severity_default=severity_default,
-        rules=rules or [],
+        rules=rules if rules is not None else default_rules,
     )
 
 

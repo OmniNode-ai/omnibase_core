@@ -21,6 +21,9 @@ from pathlib import Path
 import pytest
 
 from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
+from omnibase_core.models.contracts.subcontracts.model_validator_rule import (
+    ModelValidatorRule,
+)
 from omnibase_core.models.contracts.subcontracts.model_validator_subcontract import (
     ModelValidatorSubcontract,
 )
@@ -42,8 +45,45 @@ from omnibase_core.validation.visitor_any_type import (
 def create_test_contract(
     suppression_comments: list[str] | None = None,
     severity_default: EnumValidationSeverity = EnumValidationSeverity.ERROR,
+    rules: list[ModelValidatorRule] | None = None,
 ) -> ModelValidatorSubcontract:
-    """Create a test contract for ValidatorAnyType."""
+    """Create a test contract for ValidatorAnyType.
+
+    Note: Rules must be explicitly defined since missing rules default to disabled
+    per validator_base.py:615 alignment (OMN-1291 PR #360).
+    """
+    default_rules = [
+        ModelValidatorRule(
+            rule_id=RULE_ANY_IMPORT,
+            description="Detects 'from typing import Any' statements",
+            severity=EnumValidationSeverity.WARNING,
+            enabled=True,
+        ),
+        ModelValidatorRule(
+            rule_id=RULE_ANY_ANNOTATION,
+            description="Detects Any in type annotations",
+            severity=EnumValidationSeverity.ERROR,
+            enabled=True,
+        ),
+        ModelValidatorRule(
+            rule_id=RULE_DICT_STR_ANY,
+            description="Detects dict[str, Any] usage",
+            severity=EnumValidationSeverity.ERROR,
+            enabled=True,
+        ),
+        ModelValidatorRule(
+            rule_id=RULE_LIST_ANY,
+            description="Detects list[Any] usage",
+            severity=EnumValidationSeverity.WARNING,
+            enabled=True,
+        ),
+        ModelValidatorRule(
+            rule_id=RULE_UNION_WITH_ANY,
+            description="Detects Union[..., Any] or ... | Any",
+            severity=EnumValidationSeverity.ERROR,
+            enabled=True,
+        ),
+    ]
     return ModelValidatorSubcontract(
         version=ModelSemVer(major=1, minor=0, patch=0),
         validator_id="any_type",
@@ -55,6 +95,7 @@ def create_test_contract(
         fail_on_error=True,
         fail_on_warning=False,
         severity_default=severity_default,
+        rules=rules if rules is not None else default_rules,
     )
 
 
@@ -832,8 +873,12 @@ class TestValidatorAnyTypePerRuleConfiguration:
         assert len(dict_issues) >= 1
         assert dict_issues[0].severity == EnumValidationSeverity.ERROR
 
-    def test_unconfigured_rule_uses_defaults(self, tmp_path: Path) -> None:
-        """Test that rules not in contract use default severity."""
+    def test_unconfigured_rule_is_disabled_by_default(self, tmp_path: Path) -> None:
+        """Test that rules not in contract are disabled by default.
+
+        Per validator_base.py:615 alignment (OMN-1291 PR #360), missing rules
+        default to disabled for consistent contract-driven behavior.
+        """
         source = """
         from typing import Any
 
@@ -852,10 +897,14 @@ class TestValidatorAnyTypePerRuleConfiguration:
         validator = ValidatorAnyType(contract=contract)
         result = validator.validate_file(file_path)
 
-        # list_any should use default severity (CRITICAL)
+        # any_import should be detected (it's configured and enabled)
+        import_issues = [i for i in result.issues if i.code == RULE_ANY_IMPORT]
+        assert len(import_issues) >= 1
+        assert import_issues[0].severity == EnumValidationSeverity.WARNING
+
+        # list_any should NOT be detected (unconfigured = disabled by default)
         list_issues = [i for i in result.issues if i.code == RULE_LIST_ANY]
-        assert len(list_issues) >= 1
-        assert list_issues[0].severity == EnumValidationSeverity.CRITICAL
+        assert len(list_issues) == 0
 
     def test_disable_all_rules_produces_no_issues(self, tmp_path: Path) -> None:
         """Test that disabling all rules produces no issues."""

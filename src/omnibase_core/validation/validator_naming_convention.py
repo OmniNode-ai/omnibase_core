@@ -63,6 +63,9 @@ from omnibase_core.validation.checker_naming_convention import (
 )
 from omnibase_core.validation.validator_base import ValidatorBase
 
+# Configure logger for this module (must be after all imports per PEP 8)
+logger = logging.getLogger(__name__)
+
 # Rule identifiers for issue tracking
 RULE_FILE_NAMING = "file_naming"
 RULE_CLASS_NAMING = "class_naming"
@@ -81,9 +84,6 @@ RULE_UNKNOWN_NAMING = "unknown_naming"
 _MSG_PREFIX_CLASS: str = "Class name"
 _MSG_PREFIX_FUNCTION: str = "Function name"
 _MSG_PREFIX_ASYNC_FUNCTION: str = "Async function name"
-
-# Configure logger for this module (after all imports and constants)
-logger = logging.getLogger(__name__)
 
 
 class ValidatorNamingConvention(ValidatorBase):
@@ -163,22 +163,69 @@ class ValidatorNamingConvention(ValidatorBase):
         """
         issues: list[ModelValidationIssue] = []
 
+        # Compute default severity with defensive fallback and logging
+        # Note: contract.severity_default should never be None per model definition,
+        # but we guard against it for robustness against external data sources
+        default_severity = contract.severity_default or EnumValidationSeverity.WARNING
+        if contract.severity_default is None:
+            logger.warning(  # type: ignore[unreachable]
+                "Contract severity_default is None - using WARNING as fallback. "
+                "This indicates a contract configuration issue."
+            )
+
         # Get rule configs from precomputed cache (O(1) lookups)
         # Note: _get_rule_config returns non-None severity (base class handles fallback),
-        # but we add defensive fallback here for robustness against future changes
-        default_severity = contract.severity_default or EnumValidationSeverity.WARNING
+        # but we add defensive fallback here for robustness against future changes.
+        # Log warnings when severity is None to surface contract issues.
         file_naming_enabled, file_naming_severity = self._get_rule_config(
             RULE_FILE_NAMING, contract
         )
-        file_naming_severity = file_naming_severity or default_severity
+        if file_naming_severity is None:
+            logger.warning(  # type: ignore[unreachable]
+                "Rule %s has None severity - using default %s. "
+                "This indicates a contract configuration issue.",
+                RULE_FILE_NAMING,
+                default_severity,
+            )
+            file_naming_severity = default_severity
+
         class_naming_enabled, class_naming_severity = self._get_rule_config(
             RULE_CLASS_NAMING, contract
         )
-        class_naming_severity = class_naming_severity or default_severity
+        if class_naming_severity is None:
+            logger.warning(  # type: ignore[unreachable]
+                "Rule %s has None severity - using default %s. "
+                "This indicates a contract configuration issue.",
+                RULE_CLASS_NAMING,
+                default_severity,
+            )
+            class_naming_severity = default_severity
+
         function_naming_enabled, function_naming_severity = self._get_rule_config(
             RULE_FUNCTION_NAMING, contract
         )
-        function_naming_severity = function_naming_severity or default_severity
+        if function_naming_severity is None:
+            logger.warning(  # type: ignore[unreachable]
+                "Rule %s has None severity - using default %s. "
+                "This indicates a contract configuration issue.",
+                RULE_FUNCTION_NAMING,
+                default_severity,
+            )
+            function_naming_severity = default_severity
+
+        # Hoist unknown_naming rule config lookup (optimization: avoids repeated
+        # lookup in _validate_ast for each file and keeps all rule lookups together)
+        unknown_naming_enabled, unknown_naming_severity = self._get_rule_config(
+            RULE_UNKNOWN_NAMING, contract
+        )
+        if unknown_naming_severity is None:
+            logger.warning(  # type: ignore[unreachable]
+                "Rule %s has None severity - using default %s. "
+                "This indicates a contract configuration issue.",
+                RULE_UNKNOWN_NAMING,
+                default_severity,
+            )
+            unknown_naming_severity = default_severity
 
         # 1. Check file naming (line 0 = file-level issue)
         if file_naming_enabled:
@@ -205,6 +252,8 @@ class ValidatorNamingConvention(ValidatorBase):
                 function_naming_enabled=function_naming_enabled,
                 class_naming_severity=class_naming_severity,
                 function_naming_severity=function_naming_severity,
+                unknown_naming_enabled=unknown_naming_enabled,
+                unknown_naming_severity=unknown_naming_severity,
             )
             issues.extend(ast_issues)
 
@@ -218,6 +267,8 @@ class ValidatorNamingConvention(ValidatorBase):
         function_naming_enabled: bool,
         class_naming_severity: EnumValidationSeverity,
         function_naming_severity: EnumValidationSeverity,
+        unknown_naming_enabled: bool,
+        unknown_naming_severity: EnumValidationSeverity,
     ) -> list[ModelValidationIssue]:
         """Run AST-based validation for class and function naming.
 
@@ -228,6 +279,8 @@ class ValidatorNamingConvention(ValidatorBase):
             function_naming_enabled: Whether to check function naming.
             class_naming_severity: Severity for class naming issues.
             function_naming_severity: Severity for function naming issues.
+            unknown_naming_enabled: Whether to emit issues for unknown naming patterns.
+            unknown_naming_severity: Severity for unknown naming issues.
 
         Returns:
             List of ModelValidationIssue instances for AST-based violations.
@@ -257,14 +310,9 @@ class ValidatorNamingConvention(ValidatorBase):
         checker = NamingConventionChecker(str(path))
         checker.visit(tree)
 
-        # Get rule enablement for unknown issues (class/function already passed as args)
-        # Uses precomputed cache for O(1) lookup
-        # Defensive fallback: ensure severity is never None
+        # Default severity for fallback in edge cases (all severities should be
+        # non-None at this point, but we keep a final fallback for safety)
         default_severity = contract.severity_default or EnumValidationSeverity.WARNING
-        unknown_naming_enabled, unknown_naming_severity = self._get_rule_config(
-            RULE_UNKNOWN_NAMING, contract
-        )
-        unknown_naming_severity = unknown_naming_severity or default_severity
 
         # Convert checker issues to ModelValidationIssue
         for issue_str in checker.issues:
@@ -300,10 +348,13 @@ class ValidatorNamingConvention(ValidatorBase):
             # These constants MUST be kept synchronized with checker_naming_convention.py.
             # Check message (extracted content) not issue_str (which includes "Line N:" prefix)
             # to ensure accurate matching against the actual violation message.
+            #
+            # Severity fallback chain:
+            # 1. Passed-in severity (guaranteed non-None by _validate_file)
+            # 2. default_severity (from contract.severity_default, for edge cases)
             if message.startswith(_MSG_PREFIX_CLASS):
                 if not class_naming_enabled:
                     continue
-                # Defensive fallback: ensure severity is never None
                 severity = class_naming_severity or default_severity
                 rule_name = RULE_CLASS_NAMING
                 code = RULE_CLASS_NAMING
@@ -311,14 +362,12 @@ class ValidatorNamingConvention(ValidatorBase):
                 # Check async first - it's more specific than plain "Function name"
                 if not function_naming_enabled:
                     continue
-                # Defensive fallback: ensure severity is never None
                 severity = function_naming_severity or default_severity
                 rule_name = RULE_FUNCTION_NAMING
                 code = RULE_FUNCTION_NAMING
             elif message.startswith(_MSG_PREFIX_FUNCTION):
                 if not function_naming_enabled:
                     continue
-                # Defensive fallback: ensure severity is never None
                 severity = function_naming_severity or default_severity
                 rule_name = RULE_FUNCTION_NAMING
                 code = RULE_FUNCTION_NAMING
@@ -336,6 +385,7 @@ class ValidatorNamingConvention(ValidatorBase):
                         issue_str,
                     )
                     continue
+
                 # Log at warning level to surface unexpected patterns for investigation
                 # Include the extracted message to help identify the pattern
                 logger.warning(
@@ -347,9 +397,9 @@ class ValidatorNamingConvention(ValidatorBase):
                     issue_str,
                     message,
                 )
-                # Use unknown_naming_severity with defensive fallback to WARNING
-                # This ensures unknown issues are always categorized consistently
-                severity = unknown_naming_severity or EnumValidationSeverity.WARNING
+
+                # Use unknown_naming_severity with fallback for edge cases
+                severity = unknown_naming_severity or default_severity
                 rule_name = RULE_UNKNOWN_NAMING
                 code = RULE_UNKNOWN_NAMING
 

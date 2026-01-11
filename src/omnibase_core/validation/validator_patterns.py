@@ -340,6 +340,12 @@ class ValidatorPatterns(ValidatorBase):
             )
             return ()
 
+        # Precompute rule configuration cache for O(1) lookups during issue processing.
+        # This is done once per validator instance (on first file), then reused.
+        # The cache maps rule_id -> (enabled, severity) for fast filtering.
+        if self._rule_config_cache is None:
+            self._rule_config_cache = self._build_rule_config_cache(contract)
+
         # Run all pattern checkers
         checkers: list[ProtocolPatternChecker] = [
             PydanticPatternChecker(str(path)),
@@ -358,10 +364,15 @@ class ValidatorPatterns(ValidatorBase):
                 # to match anchored regex patterns correctly
                 rule_id = _categorize_issue(message)
 
-                # Check if rule is enabled before adding issue
+                # Check if rule is enabled before adding issue (O(1) cache lookup)
                 enabled, severity = self._get_rule_config(rule_id, contract)
                 if not enabled:
                     # Rule is explicitly disabled in contract, skip this issue
+                    logger.debug(
+                        "Skipping issue for disabled rule %s: %s",
+                        rule_id,
+                        message[:50],
+                    )
                     continue
 
                 all_issues.append(
