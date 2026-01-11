@@ -95,8 +95,12 @@ class ModelHandlerRoutingEntry(BaseModel):
         le=1000,
         description=(
             "Handler priority for ordering when multiple handlers match. "
-            "Lower values = higher priority. Range: -1000 to 1000. "
-            "Default 0 for normal priority"
+            "Lower values = higher priority (evaluated first in routing table). "
+            "Range: -1000 to 1000. Default 0 for normal priority. "
+            "For topic_pattern strategy with first-match-wins semantics: "
+            "use negative values (e.g., -100) for patterns that must match first "
+            "(specific patterns), use positive values (e.g., 100) for fallback "
+            "or catch-all patterns (e.g., '*' wildcard)"
         ),
     )
 

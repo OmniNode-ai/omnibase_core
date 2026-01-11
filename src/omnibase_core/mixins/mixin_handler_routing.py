@@ -95,7 +95,17 @@ class MixinHandlerRouting:
       pattern's handlers are returned; subsequent patterns are not evaluated)
 
     Thread Safety:
-        After initialization, the routing table is read-only and thread-safe.
+        WARNING: This mixin is NOT fully thread-safe for concurrent routing calls.
+
+        The routing table (_handler_routing_table) and compiled patterns
+        (_compiled_patterns) are read-only after initialization. However, the
+        topic_pattern cache (_topic_pattern_cache) is MUTATED during
+        route_to_handlers() calls for the topic_pattern strategy.
+
+        Do NOT share node instances using this mixin across threads without
+        external synchronization. Use separate node instances per thread.
+        See docs/guides/THREADING.md for ONEX thread safety patterns.
+
         The registry must be frozen before use (enforced by route_to_handlers and
         validate_handler_routing methods).
 
@@ -301,6 +311,18 @@ class MixinHandlerRouting:
                         },
                     )
 
+        if not handlers:
+            emit_log_event(
+                LogLevel.DEBUG,
+                "No handlers found for routing key",
+                {
+                    "routing_key": routing_key,
+                    "category": category.value,
+                    "routing_strategy": self._routing_strategy,
+                    "has_default_handler": self._default_handler_key is not None,
+                },
+            )
+
         return handlers
 
     def _get_handler_keys_for_routing_key(self, routing_key: str) -> list[str]:
@@ -392,6 +414,10 @@ class MixinHandlerRouting:
                 break
 
         # FIFO eviction if cache is full (simple bounded cache)
+        # Note: This is NOT thread-safe for concurrent writes. In rare concurrent
+        # scenarios, cache may temporarily exceed max size. This is acceptable per
+        # ONEX thread safety policy (nodes are not shared across threads).
+        # See docs/guides/THREADING.md for thread-local instance patterns.
         if len(self._topic_pattern_cache) >= _TOPIC_PATTERN_CACHE_MAX_SIZE:
             # Remove first (oldest) item - Python 3.7+ dicts maintain insertion order
             first_key = next(iter(self._topic_pattern_cache))

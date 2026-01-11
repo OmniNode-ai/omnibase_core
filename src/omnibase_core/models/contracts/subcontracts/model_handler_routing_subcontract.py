@@ -205,8 +205,30 @@ class ModelHandlerRoutingSubcontract(BaseModel):
         The routing table is deterministic for a given (contract_version, routing_key)
         pair. Handler order is based on priority (lower priority value = first).
 
+        Priority Ordering Behavior:
+            Handlers are sorted by priority before building the routing table.
+            Lower priority values are inserted first, which affects the iteration
+            order of the resulting dictionary (Python 3.7+ preserves insertion order).
+
+            This is significant for the ``topic_pattern`` routing strategy, which
+            uses first-match-wins semantics: when iterating over the routing table
+            to find a matching pattern, lower-priority entries are evaluated first.
+
+            Example priority ordering:
+                - priority=-10: Evaluated first (high-priority, specific patterns)
+                - priority=0: Default priority (normal patterns)
+                - priority=100: Evaluated last (catch-all/fallback patterns)
+
+        Deterministic Routing:
+            Duplicate routing_keys are prevented by model validation
+            (``validate_routing_configuration``), ensuring each routing_key maps
+            to exactly one handler. This guarantees deterministic routing for
+            any given (contract_version, routing_key) pair.
+
         Returns:
             dict[str, list[str]]: Mapping of routing_key to list of handler_keys.
+                The dictionary iteration order reflects priority ordering
+                (lowest priority value first).
 
         Example:
             >>> subcontract = ModelHandlerRoutingSubcontract(
@@ -227,6 +249,11 @@ class ModelHandlerRoutingSubcontract(BaseModel):
             >>> routing_table = subcontract.build_routing_table()
             >>> routing_table
             {'EventA': ['handler_a'], 'EventB': ['handler_b']}
+
+        Example with topic_pattern (first-match-wins):
+            For topic_pattern strategy, priority determines evaluation order.
+            A handler with routing_key="*.events.*" and priority=-10 will be
+            checked before a handler with routing_key="*" and priority=100.
         """
         # Sort entries by priority (lower first = higher priority)
         sorted_entries = sorted(self.handlers, key=lambda e: e.priority)
