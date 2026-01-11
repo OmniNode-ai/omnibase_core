@@ -14,6 +14,7 @@ Key Capabilities:
 - Retry policies and circuit breaker patterns
 - Event bus publishing for state changes
 - Atomic file operations for data integrity
+- Contract-driven handler routing via MixinHandlerRouting (OMN-1293)
 
 .. versionchanged:: 0.4.0
     Refactored from code-driven to contract-driven implementation.
@@ -28,6 +29,7 @@ from omnibase_core.constants.constants_effect import DEFAULT_OPERATION_TIMEOUT_M
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
 from omnibase_core.mixins.mixin_effect_execution import MixinEffectExecution
+from omnibase_core.mixins.mixin_handler_routing import MixinHandlerRouting
 from omnibase_core.models.configuration.model_circuit_breaker import ModelCircuitBreaker
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.contracts.subcontracts.model_effect_subcontract import (
@@ -64,7 +66,7 @@ _per_op_circuit_breaker_warning_emitted: bool = False
 _per_op_response_handling_warning_emitted: bool = False
 
 
-class NodeEffect(NodeCoreBase, MixinEffectExecution):
+class NodeEffect(NodeCoreBase, MixinEffectExecution, MixinHandlerRouting):
     """
     Contract-driven effect node for external I/O operations.
 
@@ -89,6 +91,23 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution):
     - Atomic file operations for data integrity
     - Event bus integration for state changes
     - Performance monitoring and logging
+    - Contract-driven handler routing via MixinHandlerRouting
+
+    Handler Routing (via MixinHandlerRouting):
+        Enables routing messages to handlers based on YAML contract configuration.
+        Use ``operation_match`` routing strategy for effect nodes to route by
+        operation field value (e.g., "http.get", "db.insert").
+
+        Example handler_routing contract section:
+            handler_routing:
+              version: { major: 1, minor: 0, patch: 0 }
+              routing_strategy: operation_match
+              handlers:
+                - routing_key: http.get
+                  handler_key: handle_http_get
+                - routing_key: db.insert
+                  handler_key: handle_db_insert
+              default_handler: handle_unknown_operation
 
     Contract Injection:
         The node requires an effect subcontract to be provided. Two approaches:
@@ -242,6 +261,14 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution):
         # providing consistent circuit breaker state across requests.
         # NOT thread-safe - each thread needs its own NodeEffect instance.
         object.__setattr__(self, "_circuit_breakers", {})
+
+        # Note: Handler routing initialization is not performed here because
+        # ModelEffectSubcontract does not include handler_routing configuration.
+        # Effect nodes use effect_subcontract for operation definitions, which
+        # handles I/O operations directly rather than routing to message handlers.
+        # For nodes that need handler routing (e.g., NodeOrchestrator), the
+        # MixinHandlerRouting can be initialized with a contract that includes
+        # handler_routing subcontract configuration.
 
     async def process(self, input_data: ModelEffectInput) -> ModelEffectOutput:
         """
@@ -456,28 +483,18 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution):
                 op_dict: dict[str, object] = {
                     "operation_name": op.operation_name,
                     "description": op.description,
-                    "io_config": (
-                        op.io_config.model_dump()
-                        if hasattr(op.io_config, "model_dump")
-                        else op.io_config
-                    ),
+                    "io_config": op.io_config.model_dump(),
                     "operation_timeout_ms": timeout_ms,
                     # Include response handling for field extraction
                     "response_handling": (
                         op.response_handling.model_dump()
-                        if hasattr(op.response_handling, "model_dump")
+                        if op.response_handling is not None
                         else {}
                     ),
                     # Include merged retry/circuit breaker/transaction configs
-                    "retry_policy": (
-                        op_retry.model_dump() if hasattr(op_retry, "model_dump") else {}
-                    ),
-                    "circuit_breaker": (
-                        op_cb.model_dump() if hasattr(op_cb, "model_dump") else {}
-                    ),
-                    "transaction_config": (
-                        op_tx.model_dump() if hasattr(op_tx, "model_dump") else {}
-                    ),
+                    "retry_policy": op_retry.model_dump(),
+                    "circuit_breaker": op_cb.model_dump(),
+                    "transaction_config": op_tx.model_dump(),
                 }
                 # TODO (v2.0): Per-operation configs (response_handling, retry_policy,
                 # circuit_breaker) are serialized into operation_data but NOT YET
