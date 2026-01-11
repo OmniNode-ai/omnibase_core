@@ -223,6 +223,15 @@ from .validator_contracts import (
     validate_yaml_file,
 )
 from .validator_fsm_analysis import analyze_fsm
+
+# Import hex color validators (OMN-1284)
+from .validator_hex_color import (
+    HEX_COLOR_PATTERN,
+    HexColorValidator,
+    validate_hex_color,
+    validate_hex_color_mapping,
+    validate_hex_color_optional,
+)
 from .validator_patterns import (
     RULE_UNKNOWN,
     ValidatorPatterns,
@@ -461,4 +470,10 @@ __all__ = [
     "UUIDString",
     "SemanticVersion",
     "ErrorCode",
+    # Hex color validators (OMN-1284)
+    "HEX_COLOR_PATTERN",
+    "HexColorValidator",
+    "validate_hex_color",
+    "validate_hex_color_optional",
+    "validate_hex_color_mapping",
 ]

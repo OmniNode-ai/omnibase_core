@@ -90,6 +90,8 @@ from .model_execution_graph import ModelExecutionGraph
 from .model_fsm_state_definition import ModelFSMStateDefinition
 from .model_fsm_state_transition import ModelFSMStateTransition
 from .model_fsm_subcontract import ModelFSMSubcontract
+from .model_handler_routing_entry import ModelHandlerRoutingEntry
+from .model_handler_routing_subcontract import ModelHandlerRoutingSubcontract
 from .model_health_check_subcontract import ModelHealthCheckSubcontract
 from .model_introspection_subcontract import ModelIntrospectionSubcontract
 from .model_lifecycle_subcontract import ModelLifecycleSubcontract
@@ -196,6 +198,9 @@ __all__ = [
     "ModelFSMStateTransition",
     "ModelFSMTransitionAction",
     "ModelFSMTransitionCondition",
+    # Handler routing subcontracts and components
+    "ModelHandlerRoutingEntry",
+    "ModelHandlerRoutingSubcontract",
     # Health check subcontracts and components
     "ModelComponentHealth",
     "ModelComponentHealthCollection",

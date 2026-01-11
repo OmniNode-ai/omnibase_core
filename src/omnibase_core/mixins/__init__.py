@@ -32,6 +32,7 @@ from omnibase_core.mixins.mixin_event_handler import MixinEventHandler
 from omnibase_core.mixins.mixin_event_listener import MixinEventListener
 from omnibase_core.mixins.mixin_fail_fast import MixinFailFast
 from omnibase_core.mixins.mixin_fsm_execution import MixinFSMExecution
+from omnibase_core.mixins.mixin_handler_routing import MixinHandlerRouting
 from omnibase_core.mixins.mixin_hash_computation import MixinHashComputation
 from omnibase_core.mixins.mixin_health_check import (
     MixinHealthCheck,
@@ -85,6 +86,7 @@ __all__ = [
     "MixinEventListener",
     "MixinFailFast",
     "MixinFSMExecution",
+    "MixinHandlerRouting",
     "MixinHealthCheck",
     "MixinHybridExecution",
     "MixinIntrospectFromContract",
