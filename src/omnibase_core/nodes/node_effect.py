@@ -271,7 +271,7 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution, MixinHandlerRouting):
 
         if handler_routing is not None:
             handler_registry: object = container.get_service("ProtocolHandlerRegistry")  # type: ignore[arg-type]  # Protocol-based DI lookup per ONEX conventions
-            self._init_handler_routing(handler_routing, handler_registry)  # type: ignore[arg-type]
+            self._init_handler_routing(handler_routing, handler_registry)  # type: ignore[arg-type]  # Registry retrieved via DI
 
     async def process(self, input_data: ModelEffectInput) -> ModelEffectOutput:
         """

@@ -951,6 +951,37 @@ class TestRoutingDeterminism:
         table3 = node.get_routing_table()
         assert "NewKey" not in table3
 
+    def test_routing_table_inner_lists_are_deep_copied(
+        self,
+        mock_registry: MockServiceHandlerRegistry,
+        sample_handler_routing: ModelHandlerRoutingSubcontract,
+    ) -> None:
+        """Test get_routing_table returns deep copy with new inner lists.
+
+        Verifies that both the dict AND the inner lists are new objects,
+        preventing mutation of internal state through the returned lists.
+        """
+        node = TestNodeWithMixin()
+        node._init_handler_routing(sample_handler_routing, mock_registry)
+
+        table1 = node.get_routing_table()
+        table2 = node.get_routing_table()
+
+        # Inner lists should be equal but not the same object
+        assert "UserCreatedEvent" in table1
+        assert "UserCreatedEvent" in table2
+        assert table1["UserCreatedEvent"] == table2["UserCreatedEvent"]
+        assert table1["UserCreatedEvent"] is not table2["UserCreatedEvent"]
+
+        # Mutating inner list should not affect internal state
+        original_handlers = table1["UserCreatedEvent"].copy()
+        table1["UserCreatedEvent"].append("mutated_handler")
+
+        # Get fresh copy and verify it's unchanged
+        table3 = node.get_routing_table()
+        assert table3["UserCreatedEvent"] == original_handlers
+        assert "mutated_handler" not in table3["UserCreatedEvent"]
+
 
 # =============================================================================
 # Node Integration Tests
