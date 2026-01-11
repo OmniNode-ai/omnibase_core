@@ -3,6 +3,8 @@
 # SPDX-License-Identifier: Apache-2.0
 """Node view model for dashboard UI projection."""
 
+from uuid import UUID
+
 from pydantic import BaseModel, ConfigDict, Field
 
 __all__ = ("ModelNodeView",)
@@ -12,15 +14,18 @@ class ModelNodeView(BaseModel):
     """UI projection of node data.
 
     Thin view model containing only fields needed for dashboard rendering.
-    References canonical node models by ID. Uses string-based IDs for
-    flexibility in UI contexts, consistent with ModelNodeIdentity.
+    References canonical node models by UUID, consistent with the core
+    architecture pattern used throughout the codebase (NodeCoreBase,
+    ModelCapabilityView, etc.).
 
     This is NOT a full domain model - it contains only the subset of
     fields required for dashboard display purposes.
 
     See Also:
-        - :class:`~omnibase_core.models.manifest.model_node_identity.ModelNodeIdentity`:
-          Canonical node identity model for execution manifests
+        - :class:`~omnibase_core.models.dashboard.model_capability_view.ModelCapabilityView`:
+          Sister view model using UUID for capability_id
+        - :class:`~omnibase_core.infrastructure.node_core_base.NodeCoreBase`:
+          Base infrastructure class defining node_id as UUID
         - :class:`~omnibase_core.models.metadata.node_info.model_node_core.ModelNodeCore`:
           Full node core metadata model
     """
@@ -29,10 +34,9 @@ class ModelNodeView(BaseModel):
 
     # === Required Identity Fields ===
 
-    node_id: str = Field(  # string-id-ok: UI display identifier
+    node_id: UUID = Field(
         ...,
-        min_length=1,
-        description="Unique node identifier",
+        description="Unique node identifier (UUID)",
     )
     name: str = Field(
         ...,
@@ -109,6 +113,7 @@ class ModelNodeView(BaseModel):
         Returns:
             Qualified ID in format 'namespace/node_id' or just 'node_id'
         """
+        node_id_str = str(self.node_id)
         if self.namespace:
-            return f"{self.namespace}/{self.node_id}"
-        return self.node_id
+            return f"{self.namespace}/{node_id_str}"
+        return node_id_str
