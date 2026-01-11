@@ -81,13 +81,32 @@ class EnumDashboardStatus(str, Enum):
 
     @property
     def requires_reconnection(self) -> bool:
-        """Check if dashboard needs reconnection.
+        """Check if this status indicates a reconnection attempt is appropriate.
 
-        Dashboards in DISCONNECTED or ERROR state should attempt
-        to re-establish their data connections.
+        Returns True for statuses where reconnection may restore functionality:
+
+        - **DISCONNECTED**: Connection was lost (e.g., network interruption,
+          server restart). Reconnection is the standard recovery path and
+          typically succeeds once connectivity is restored.
+
+        - **ERROR**: Some errors are transient and recoverable via reconnection
+          (e.g., network timeouts, temporary service unavailability, rate
+          limiting). However, fatal errors (e.g., invalid credentials,
+          misconfigured endpoints, schema mismatches) will not be resolved
+          by reconnection alone.
+
+        Note:
+            Callers should inspect error context before reconnecting in ERROR
+            state to distinguish transient issues from fatal configuration
+            problems. Use :attr:`is_terminal` to check if the dashboard is in
+            a terminal error state that may require manual intervention.
 
         Returns:
             True if the status is DISCONNECTED or ERROR, False otherwise.
+
+        See Also:
+            :attr:`is_terminal`: Check for fatal error states.
+            :attr:`is_operational`: Check for healthy connected state.
         """
         return self in {
             EnumDashboardStatus.DISCONNECTED,

@@ -27,9 +27,10 @@ Example:
         )
 """
 
+from typing import Self
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums import EnumDashboardStatus, EnumDashboardTheme
 from omnibase_core.models.dashboard.model_dashboard_layout_config import (
@@ -59,7 +60,8 @@ class ModelDashboardConfig(BaseModel):
         layout: Grid layout configuration (columns, row height, gaps).
         widgets: Tuple of widget definitions with their configurations.
         refresh_interval_seconds: Auto-refresh interval in seconds, or None
-            to disable auto-refresh. Must be >= 1 if specified.
+            to disable auto-refresh. Minimum 1s for dev/testing scenarios;
+            production deployments should use 5-30s.
         theme: Visual theme preference (light, dark, or system-following).
         initial_status: Starting lifecycle status for the dashboard.
 
@@ -92,10 +94,15 @@ class ModelDashboardConfig(BaseModel):
     )
 
     # Refresh (simple - no runtime timestamps in config)
+    # NOTE: 1-second minimum allows rapid refresh for development, debugging, and
+    # real-time monitoring scenarios. Production deployments should typically use
+    # 5-30 seconds to balance data freshness with server/network load.
     refresh_interval_seconds: int | None = Field(
         default=None,
-        ge=1,
-        description="Auto-refresh interval in seconds (None = disabled)",
+        ge=1,  # 1s minimum for dev/test; production should use 5-30s
+        description="Auto-refresh interval in seconds (None = disabled). "
+        "Minimum 1s supported for development and real-time debugging; "
+        "production deployments should use 5-30s to balance freshness with load.",
     )
 
     # Theme
@@ -108,3 +115,27 @@ class ModelDashboardConfig(BaseModel):
         default=EnumDashboardStatus.INITIALIZING,
         description="Initial dashboard status",
     )
+
+    @model_validator(mode="after")
+    def validate_widget_widths(self) -> Self:
+        """Ensure all widget widths fit within dashboard grid columns.
+
+        Validates that no widget spans more columns than available in the
+        dashboard grid layout. This prevents invalid configurations where
+        widgets would overflow the grid boundaries.
+
+        Returns:
+            Self for chaining.
+
+        Raises:
+            ValueError: If any widget's width exceeds the layout columns.
+        """
+        if self.layout and self.widgets:
+            max_cols = self.layout.columns
+            for widget in self.widgets:
+                if widget.width > max_cols:
+                    raise ValueError(
+                        f"Widget '{widget.widget_id}' width ({widget.width}) exceeds "
+                        f"dashboard grid columns ({max_cols})"
+                    )
+        return self

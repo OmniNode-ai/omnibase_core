@@ -208,3 +208,70 @@ class TestModelDashboardConfig:
             config=_make_pie_chart_config(),
         )
         assert str(widget.widget_id) == uuid_str
+
+    def test_widget_width_exceeds_columns_raises(self) -> None:
+        """Test that widget width exceeding grid columns raises ValidationError."""
+        # Create a widget with width=6 for a 4-column grid
+        widget = ModelWidgetDefinition(
+            widget_id=uuid4(),
+            title="Wide Chart",
+            config=_make_pie_chart_config(),
+            width=6,  # Exceeds 4 columns
+        )
+        with pytest.raises(ValidationError) as exc_info:
+            ModelDashboardConfig(
+                dashboard_id=uuid4(),
+                name="Test",
+                layout=ModelDashboardLayoutConfig(columns=4),
+                widgets=(widget,),
+            )
+        # Verify error message mentions the widget width and column constraint
+        errors = exc_info.value.errors()
+        assert len(errors) == 1
+        assert "width" in str(errors[0]["msg"]).lower()
+        assert "6" in str(errors[0]["msg"])
+        assert "4" in str(errors[0]["msg"])
+
+    def test_widget_width_at_column_limit_succeeds(self) -> None:
+        """Test that widget width equal to grid columns is valid."""
+        # Create a widget that spans all 6 columns
+        widget = ModelWidgetDefinition(
+            widget_id=uuid4(),
+            title="Full Width Chart",
+            config=_make_pie_chart_config(),
+            width=6,
+        )
+        dashboard = ModelDashboardConfig(
+            dashboard_id=uuid4(),
+            name="Test",
+            layout=ModelDashboardLayoutConfig(columns=6),
+            widgets=(widget,),
+        )
+        assert dashboard.widgets[0].width == 6
+        assert dashboard.layout.columns == 6
+
+    def test_multiple_widgets_one_exceeds_columns_raises(self) -> None:
+        """Test that validation catches any widget exceeding columns."""
+        valid_widget = ModelWidgetDefinition(
+            widget_id=uuid4(),
+            title="Small Chart",
+            config=_make_pie_chart_config(),
+            width=3,
+        )
+        invalid_widget = ModelWidgetDefinition(
+            widget_id=uuid4(),
+            title="Too Wide Chart",
+            config=_make_pie_chart_config(),
+            width=8,  # Exceeds 6 columns
+        )
+        with pytest.raises(ValidationError) as exc_info:
+            ModelDashboardConfig(
+                dashboard_id=uuid4(),
+                name="Test",
+                layout=ModelDashboardLayoutConfig(columns=6),
+                widgets=(valid_widget, invalid_widget),
+            )
+        errors = exc_info.value.errors()
+        assert len(errors) == 1
+        assert "8" in str(errors[0]["msg"])  # Invalid widget width
+        assert "6" in str(errors[0]["msg"])  # Column count

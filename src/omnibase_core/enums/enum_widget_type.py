@@ -60,14 +60,20 @@ class EnumWidgetType(str, Enum):
 
     @property
     def is_data_bound(self) -> bool:
-        """Check if widget type requires data binding.
+        """Check if widget type requires external data binding.
 
-        Data-bound widgets need continuous data updates and typically
-        subscribe to a data source for real-time updates.
+        Data-bound widgets (CHART, TABLE, EVENT_FEED) display real-time or
+        historical data from external sources. They need continuous data
+        updates and typically subscribe to a data source for real-time updates.
+
+        Note:
+            Mutually exclusive with :attr:`is_aggregation` - a widget type is
+            either data-bound OR aggregation, never both. All defined widget
+            types fall into exactly one of these two categories.
 
         Returns:
             True if the widget type requires data binding (CHART, TABLE,
-            EVENT_FEED), False otherwise.
+            EVENT_FEED), False otherwise (METRIC_CARD, STATUS_GRID).
         """
         return self in {
             EnumWidgetType.CHART,
@@ -77,14 +83,20 @@ class EnumWidgetType(str, Enum):
 
     @property
     def is_aggregation(self) -> bool:
-        """Check if widget displays aggregated metrics.
+        """Check if widget type displays aggregated/computed values.
 
-        Aggregation widgets display point-in-time metrics or status
-        rather than streaming data.
+        Aggregation widgets (METRIC_CARD, STATUS_GRID) show pre-computed
+        summary values or status indicators rather than raw data streams.
+        They display point-in-time metrics or status snapshots.
+
+        Note:
+            Mutually exclusive with :attr:`is_data_bound` - a widget type is
+            either aggregation OR data-bound, never both. All defined widget
+            types fall into exactly one of these two categories.
 
         Returns:
             True if the widget displays aggregated data (METRIC_CARD,
-            STATUS_GRID), False otherwise.
+            STATUS_GRID), False otherwise (CHART, TABLE, EVENT_FEED).
         """
         return self in {
             EnumWidgetType.METRIC_CARD,
