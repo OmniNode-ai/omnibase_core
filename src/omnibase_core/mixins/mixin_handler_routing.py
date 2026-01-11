@@ -345,7 +345,7 @@ class MixinHandlerRouting:
 
         Performance:
             - payload_type_match/operation_match: O(1) dict lookup
-            - topic_pattern: O(n) with pre-compiled regex, results cached (LRU 128)
+            - topic_pattern: O(n) with pre-compiled regex, results cached (FIFO 128)
         """
         # Direct lookup for payload_type_match and operation_match
         if self._routing_strategy in ("payload_type_match", "operation_match"):

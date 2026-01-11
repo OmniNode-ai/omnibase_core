@@ -126,24 +126,27 @@ class MockMessageHandler:
 
 
 class MockServiceHandlerRegistry:
-    """Mock implementation of ServiceHandlerRegistry for testing handler routing.
+    """Mock implementation of ProtocolHandlerRegistry for testing handler routing.
 
-    This mock follows the same interface contract as ServiceHandlerRegistry:
+    This mock implements the exact ProtocolHandlerRegistry interface contract:
     - Handlers are registered by ID before freeze
-    - Registry must be frozen before handler lookup
+    - Registry MUST be frozen before handler lookup (enforced with INVALID_STATE error)
     - After freeze, no new handlers can be registered
 
-    Follows the freeze-after-init pattern of the real ServiceHandlerRegistry.
+    Follows the "freeze-after-init" pattern for thread-safe read access.
 
-    The mock provides the minimal interface needed by MixinHandlerRouting:
+    Implements ProtocolHandlerRegistry interface:
+    - is_frozen (property): Check frozen state
+    - get_handler_by_id: Look up handler by ID (raises if not frozen)
+    - get_handlers: Look up handlers by category (raises if not frozen)
+    - handler_count (property): Get total registered handlers
+
+    Additional methods for test setup (not in protocol):
     - register_handler: Register handlers during setup
     - freeze: Lock registry for thread-safe read access
-    - is_frozen: Check frozen state
-    - get_handler_by_id: Look up handler by ID
-    - handler_count: Get total registered handlers
 
     See Also:
-        omnibase_core.services.service_handler_registry.ServiceHandlerRegistry
+        omnibase_core.protocols.runtime.protocol_handler_registry.ProtocolHandlerRegistry
     """
 
     def __init__(self) -> None:
@@ -197,12 +200,22 @@ class MockServiceHandlerRegistry:
     def get_handler_by_id(self, handler_id: str) -> MockMessageHandler | None:
         """Get a handler by its ID.
 
+        Enforces frozen state per ProtocolHandlerRegistry contract.
+
         Args:
             handler_id: The unique identifier of the handler.
 
         Returns:
             The handler if found, None otherwise.
+
+        Raises:
+            ModelOnexError: If registry is not frozen (INVALID_STATE).
         """
+        if not self._frozen:
+            raise ModelOnexError(
+                message="Registry is not frozen. Call freeze() before lookup.",
+                error_code=EnumCoreErrorCode.INVALID_STATE,
+            )
         return self._handlers.get(handler_id)
 
     def get_handlers(
@@ -212,8 +225,7 @@ class MockServiceHandlerRegistry:
     ) -> list[MockMessageHandler]:
         """Get handlers matching the given category and optional message type.
 
-        This method mirrors ProtocolHandlerRegistry.get_handlers to enable
-        proper protocol compatibility for testing.
+        Enforces frozen state per ProtocolHandlerRegistry contract.
 
         Args:
             category: The message category to filter by.
@@ -221,7 +233,15 @@ class MockServiceHandlerRegistry:
 
         Returns:
             List of matching handlers, or empty list if none match.
+
+        Raises:
+            ModelOnexError: If registry is not frozen (INVALID_STATE).
         """
+        if not self._frozen:
+            raise ModelOnexError(
+                message="Registry is not frozen. Call freeze() before lookup.",
+                error_code=EnumCoreErrorCode.INVALID_STATE,
+            )
         matching: list[MockMessageHandler] = []
         for handler in self._handlers.values():
             if handler.category == category:
@@ -1103,11 +1123,13 @@ class TestEdgeCases:
         For topic_pattern's first-match-wins behavior, see dedicated topic_pattern tests.
 
         This test verifies:
-        - Handlers with different priorities can be sorted correctly
-        - The routing table is built with consistent ordering regardless of input order
+        - build_routing_table sorts handlers by priority (dict iteration order)
+        - Handlers with different priorities are processed in priority order
+        - The routing table is deterministic regardless of input order
         - Each routing_key maps to exactly one handler_key as expected
         """
-        # Create handlers with different priorities in non-sorted order
+        # Create handlers with different priorities in NON-sorted order
+        # Input order: priority 10, 0, 5 (intentionally unsorted)
         routing = ModelHandlerRoutingSubcontract(
             version=ModelSemVer(major=1, minor=0, patch=0),
             routing_strategy="payload_type_match",
@@ -1130,27 +1152,24 @@ class TestEdgeCases:
             ],
         )
 
-        # Verify handlers CAN BE sorted by priority (ascending = lower values first)
-        sorted_handlers = sorted(routing.handlers, key=lambda h: h.priority)
-        expected_order = [
-            ("handle_user_created", 0),  # Lowest priority value = first
-            ("handle_unknown", 5),  # Middle priority
-            ("handle_user_updated", 10),  # Highest priority value = last
-        ]
-        for i, (expected_key, expected_priority) in enumerate(expected_order):
-            assert sorted_handlers[i].handler_key == expected_key, (
-                f"Position {i}: expected handler_key '{expected_key}', "
-                f"got '{sorted_handlers[i].handler_key}'"
-            )
-            assert sorted_handlers[i].priority == expected_priority, (
-                f"Position {i}: expected priority {expected_priority}, "
-                f"got {sorted_handlers[i].priority}"
-            )
-
-        # Build routing table and verify deterministic output
+        # Build routing table
         table = routing.build_routing_table()
 
-        # Verify all routing_keys are present
+        # CRITICAL ASSERTION: Verify dict iteration order reflects priority sorting
+        # Python 3.7+ dicts maintain insertion order. If build_routing_table sorts
+        # handlers by priority before inserting, keys should appear in priority order.
+        table_keys = list(table.keys())
+        expected_key_order = [
+            "EventB",
+            "EventC",
+            "EventA",
+        ]  # Sorted by priority: 0, 5, 10
+        assert table_keys == expected_key_order, (
+            f"Dict iteration order should reflect priority sorting. "
+            f"Expected {expected_key_order}, got {table_keys}"
+        )
+
+        # Verify all routing_keys are present with correct mappings
         assert set(table.keys()) == {"EventA", "EventB", "EventC"}, (
             f"Expected routing keys {{'EventA', 'EventB', 'EventC'}}, got {set(table.keys())}"
         )
@@ -1166,9 +1185,12 @@ class TestEdgeCases:
             f"EventC should map to ['handle_unknown'], got {table['EventC']}"
         )
 
-        # Verify determinism: building table twice gives same result
+        # Verify determinism: building table twice gives same result AND same order
         table2 = routing.build_routing_table()
         assert table == table2, "Routing table should be deterministic across builds"
+        assert list(table.keys()) == list(table2.keys()), (
+            "Dict iteration order should be consistent across builds"
+        )
 
     def test_topic_pattern_priority_first_match_wins(
         self,

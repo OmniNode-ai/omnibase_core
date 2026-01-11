@@ -3,6 +3,9 @@
 """
 Handler Routing Entry Model.
 
+NOTE: This module uses `from __future__ import annotations` for consistency
+with model_handler_routing_subcontract.py and to enable forward references.
+
 Pydantic model for a single handler routing entry in contract-driven
 handler routing configuration.
 
@@ -17,7 +20,11 @@ Example YAML:
 Strict typing is enforced: No Any types allowed in implementation.
 """
 
-from pydantic import BaseModel, ConfigDict, Field
+from __future__ import annotations
+
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums.enum_execution_shape import EnumMessageCategory
 
@@ -111,3 +118,22 @@ class ModelHandlerRoutingEntry(BaseModel):
             "Used for documentation, validation, and graph analysis"
         ),
     )
+
+    @field_validator("routing_key", "handler_key", mode="before")
+    @classmethod
+    def strip_and_validate_whitespace(cls, v: Any) -> Any:
+        """
+        Strip whitespace and reject empty/whitespace-only values.
+
+        This prevents contract typos where keys contain leading/trailing
+        whitespace or are entirely whitespace.
+
+        Uses Any type hints because mode="before" validators receive
+        raw input values before type coercion.
+        """
+        if not isinstance(v, str):
+            return v  # Let Pydantic handle type validation
+        stripped = v.strip()
+        if not stripped:
+            raise ValueError("Value cannot be empty or whitespace-only")
+        return stripped

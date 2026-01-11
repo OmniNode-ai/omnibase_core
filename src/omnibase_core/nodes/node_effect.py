@@ -262,16 +262,13 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution, MixinHandlerRouting):
         # NOT thread-safe - each thread needs its own NodeEffect instance.
         object.__setattr__(self, "_circuit_breakers", {})
 
-        # Initialize handler routing from contract (optional - not all effects have it)
-        # The handler_routing subcontract enables contract-driven message routing.
-        # If the node's contract has handler_routing defined, initialize the routing table.
-        handler_routing = None
-        if hasattr(self, "contract") and self.contract is not None:
-            handler_routing = getattr(self.contract, "handler_routing", None)
-
-        if handler_routing is not None:
-            handler_registry: object = container.get_service("ProtocolHandlerRegistry")  # type: ignore[arg-type]  # Protocol-based DI lookup per ONEX conventions
-            self._init_handler_routing(handler_routing, handler_registry)  # type: ignore[arg-type]  # Registry retrieved via DI
+        # Note: Handler routing initialization is not performed here because
+        # ModelEffectSubcontract does not include handler_routing configuration.
+        # Effect nodes use effect_subcontract for operation definitions, which
+        # handles I/O operations directly rather than routing to message handlers.
+        # For nodes that need handler routing (e.g., NodeOrchestrator), the
+        # MixinHandlerRouting can be initialized with a contract that includes
+        # handler_routing subcontract configuration.
 
     async def process(self, input_data: ModelEffectInput) -> ModelEffectOutput:
         """
