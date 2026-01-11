@@ -232,7 +232,14 @@ class ValidatorBase(ABC):
             ):
                 break
 
-        # Clear line cache after validation
+        # Cache lifecycle: _file_line_cache is populated during validation via
+        # _get_file_lines() calls, and cleared here at the end to prevent unbounded
+        # memory growth. Note: If an exception occurs during validation (e.g., in
+        # _validate_file), the cache remains populated until the instance is garbage
+        # collected or the next successful validation call. This is acceptable because:
+        # 1. The cached data (file lines) is read-only and not sensitive
+        # 2. Instance lifetime is typically short (one validation run)
+        # 3. Adding a finally block would complicate the control flow for minimal gain
         self._file_line_cache.clear()
 
         duration_ms = int((time.time() - start_time) * 1000)
@@ -267,7 +274,8 @@ class ValidatorBase(ABC):
         # Validate with suppression handling
         issues = self._validate_file_with_suppression(path)
 
-        # Clear line cache
+        # Cache lifecycle: Same as validate() - clear after use to prevent memory growth.
+        # See validate() for detailed cache lifecycle documentation.
         self._file_line_cache.clear()
 
         duration_ms = int((time.time() - start_time) * 1000)
@@ -540,6 +548,14 @@ class ValidatorBase(ABC):
         cache: dict[str, tuple[bool, EnumValidationSeverity]] = {}
         for rule in contract.rules:
             # Guard against None severity - use contract default if None
+            # Note: severity has a default in ModelValidatorRule, but this is defensive
+            # for future model changes or external data sources
+            if rule.severity is None:
+                logger.debug(  # type: ignore[unreachable]
+                    "Rule %s missing severity, using default: %s",
+                    rule.rule_id,
+                    contract.severity_default,
+                )
             severity = (
                 rule.severity
                 if rule.severity is not None
@@ -574,6 +590,10 @@ class ValidatorBase(ABC):
             contract or rule_id is None, returns (True, default_severity).
         """
         if rule_id is None:
+            logger.debug(
+                "Rule ID is None, using default severity: %s",
+                contract.severity_default,
+            )
             return (True, contract.severity_default)
 
         # Lazily build cache on first access
@@ -585,6 +605,11 @@ class ValidatorBase(ABC):
             return self._rule_config_cache[rule_id]
 
         # Rule not in contract - use defaults (enabled=True, default severity)
+        logger.debug(
+            "Rule %s not in contract, using default severity: %s",
+            rule_id,
+            contract.severity_default,
+        )
         return (True, contract.severity_default)
 
     def _load_contract(self) -> ModelValidatorSubcontract:

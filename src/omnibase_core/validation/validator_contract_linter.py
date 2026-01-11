@@ -42,12 +42,17 @@ See Also:
     - scripts/lint_contract.py: Original standalone linting script
 """
 
+import logging
 import re
 import sys
 from pathlib import Path
 from typing import ClassVar
 
 import yaml
+
+# Configure logger for this module
+logger = logging.getLogger(__name__)
+
 from pydantic import ValidationError
 
 from omnibase_core.contracts import (
@@ -289,18 +294,27 @@ class ValidatorContractLinter(ValidatorBase):
         self,
         rule: ModelValidatorRule | None,
         contract: ModelValidatorSubcontract,
+        rule_id: str | None = None,
     ) -> EnumValidationSeverity:
         """Get severity for a rule, falling back to default.
 
         Args:
             rule: The rule (may be None if not found).
             contract: The validator contract.
+            rule_id: Optional rule identifier for logging when rule is None.
 
         Returns:
             The severity to use for issues from this rule.
         """
         if rule is not None:
             return rule.severity
+        # Log when falling back to default severity
+        effective_rule_id = rule_id or "unknown"
+        logger.debug(
+            "Rule %s not found in contract, using default severity: %s",
+            effective_rule_id,
+            contract.severity_default,
+        )
         return contract.severity_default
 
     def _validate_yaml_syntax(

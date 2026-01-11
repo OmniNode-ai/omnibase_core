@@ -340,10 +340,26 @@ class ModelValidatorSubcontract(BaseModel):
         # like '../../../etc' to escape the intended validation directory and
         # potentially access sensitive system files.
         #
-        # Patterns detected:
-        # - '..' : Parent directory traversal (../../../etc/passwd)
-        # - '//' : Double slash (path bypass attempts)
-        traversal_patterns = ["..", "//"]
+        # Patterns detected (security hardening for multiple encoding variants):
+        # - '..'       : Parent directory traversal (../../../etc/passwd)
+        # - '//'       : Double slash (path bypass attempts)
+        # - '%2e%2e%2f': URL-encoded ../ (full encoding bypass)
+        # - '%2e%2e/'  : Partial URL encoding (mixed encoding bypass)
+        # - '..%2f'    : Partial URL encoding (mixed encoding bypass)
+        # - '..\\'     : Windows-style backslash traversal
+        # - '.\\.\\'   : Windows dot-backslash traversal variant
+        #
+        # These patterns cover common evasion techniques attackers use to bypass
+        # naive path validation that only checks for literal '..' sequences.
+        traversal_patterns = [
+            "..",  # Parent directory traversal
+            "//",  # Double slash bypass
+            "%2e%2e%2f",  # URL-encoded ../
+            "%2e%2e/",  # Partial URL encoding
+            "..%2f",  # Partial URL encoding variant
+            "..\\",  # Windows backslash traversal
+            ".\\.\\",  # Windows dot-backslash variant
+        ]
         for pattern in traversal_patterns:
             if pattern in path_str:
                 msg = f"source_root contains path traversal sequence: {pattern}"
