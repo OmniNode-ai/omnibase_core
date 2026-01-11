@@ -11,6 +11,7 @@ while maintaining type clarity for FSM-specific usage.
 
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Literal, cast
+from uuid import UUID
 
 if TYPE_CHECKING:
     from typing import SupportsFloat
@@ -156,7 +157,9 @@ async def execute_transition(
     intents.extend(exit_intents)
 
     # 5. Execute transition actions
-    transition_intents = await _execute_transition_actions(transition, context)
+    transition_intents = await _execute_transition_actions(
+        transition, context, correlation_id=fsm.correlation_id
+    )
     intents.extend(transition_intents)
 
     # 6. Get target state definition
@@ -189,6 +192,7 @@ async def execute_transition(
                         "context": context,
                         "timestamp": datetime.now(UTC).isoformat(),
                     },
+                    correlation_id=fsm.correlation_id,
                 ),
                 priority=1,  # High priority for persistence
             )
@@ -649,6 +653,7 @@ async def _execute_state_actions(
                     action_type=payload_action_type,
                     action_name=action_name,
                     parameters={"fsm": fsm.state_machine_name, "context": context},
+                    correlation_id=fsm.correlation_id,
                 ),
                 priority=2,
             )
@@ -660,6 +665,8 @@ async def _execute_state_actions(
 async def _execute_transition_actions(
     transition: ModelFSMStateTransition,
     context: FSMContextType,
+    *,
+    correlation_id: UUID | None = None,
 ) -> list[ModelIntent]:
     """
     Execute transition actions, returning intents.
@@ -667,6 +674,7 @@ async def _execute_transition_actions(
     Args:
         transition: Transition with actions to execute
         context: Execution context
+        correlation_id: Optional correlation ID from FSM subcontract for tracing
 
     Returns:
         List of intents for executing actions
@@ -694,6 +702,7 @@ async def _execute_transition_actions(
                         "is_critical": action.is_critical,
                         "timeout_ms": action.timeout_ms,
                     },
+                    correlation_id=correlation_id,
                 ),
                 priority=2,
             )

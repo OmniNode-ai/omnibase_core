@@ -64,6 +64,7 @@ class ModelPayloadFSMStateAction(ModelIntentPayloadBase):
         action_name: Name of the action to execute (maps to handler function).
         parameters: Optional parameters to pass to the action handler.
         fsm_id: Optional FSM instance identifier for multi-instance scenarios.
+        correlation_id: Optional correlation ID for distributed tracing.
 
     Example:
         >>> payload = ModelPayloadFSMStateAction(
@@ -125,5 +126,13 @@ class ModelPayloadFSMStateAction(ModelIntentPayloadBase):
         description=(
             "Optional FSM instance identifier. Required for multi-instance FSM "
             "scenarios to route the action to the correct instance."
+        ),
+    )
+
+    correlation_id: UUID | None = Field(
+        default=None,
+        description=(
+            "Correlation ID from FSMSubcontract for distributed tracing. "
+            "Enables end-to-end tracking of FSM operations across Effect nodes."
         ),
     )

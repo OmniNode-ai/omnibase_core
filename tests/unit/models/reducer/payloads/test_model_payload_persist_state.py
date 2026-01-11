@@ -248,6 +248,7 @@ class TestModelPayloadPersistStateSerialization:
         )
         data = payload.model_dump()
         expected_keys = {
+            "correlation_id",
             "intent_type",
             "state_key",
             "state_data",
