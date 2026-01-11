@@ -273,17 +273,19 @@ class TestModelDiffLineEquality:
 
     def test_equality_when_different_change_type_returns_false(self) -> None:
         """Two instances with different change_type are not equal."""
+        # Note: With semantic validation, we must use valid combinations
+        # for each change_type. Here we compare "added" vs "removed".
         line1 = ModelDiffLine(
             line_number=1,
-            baseline_content="old",
-            replay_content="new",
-            change_type="modified",
+            baseline_content=None,
+            replay_content="content",
+            change_type="added",
         )
         line2 = ModelDiffLine(
             line_number=1,
-            baseline_content="old",
-            replay_content="new",
-            change_type="unchanged",
+            baseline_content="content",
+            replay_content=None,
+            change_type="removed",
         )
         assert line1 != line2
 
@@ -335,3 +337,144 @@ class TestModelDiffLineEdgeCases:
         )
         assert line.baseline_content is None
         assert line.replay_content is None
+
+
+@pytest.mark.unit
+class TestModelDiffLineChangeTypeValidation:
+    """Test change_type semantic consistency validation.
+
+    These tests verify that the model enforces correct relationships
+    between change_type and content field values.
+    """
+
+    def test_added_with_baseline_content_raises_error(self) -> None:
+        """change_type='added' with non-None baseline_content raises ValidationError."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelDiffLine(
+                line_number=1,
+                baseline_content="should be None",
+                replay_content="new content",
+                change_type="added",
+            )
+        errors = exc_info.value.errors()
+        assert len(errors) == 1
+        assert "baseline_content to be None" in str(errors[0]["msg"])
+
+    def test_added_with_none_baseline_succeeds(self) -> None:
+        """change_type='added' with None baseline_content succeeds."""
+        line = ModelDiffLine(
+            line_number=1,
+            baseline_content=None,
+            replay_content="new content",
+            change_type="added",
+        )
+        assert line.change_type == "added"
+        assert line.baseline_content is None
+
+    def test_removed_with_replay_content_raises_error(self) -> None:
+        """change_type='removed' with non-None replay_content raises ValidationError."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelDiffLine(
+                line_number=1,
+                baseline_content="old content",
+                replay_content="should be None",
+                change_type="removed",
+            )
+        errors = exc_info.value.errors()
+        assert len(errors) == 1
+        assert "replay_content to be None" in str(errors[0]["msg"])
+
+    def test_removed_with_none_replay_succeeds(self) -> None:
+        """change_type='removed' with None replay_content succeeds."""
+        line = ModelDiffLine(
+            line_number=1,
+            baseline_content="old content",
+            replay_content=None,
+            change_type="removed",
+        )
+        assert line.change_type == "removed"
+        assert line.replay_content is None
+
+    def test_unchanged_with_different_contents_raises_error(self) -> None:
+        """change_type='unchanged' with different content values raises ValidationError."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelDiffLine(
+                line_number=1,
+                baseline_content="content A",
+                replay_content="content B",
+                change_type="unchanged",
+            )
+        errors = exc_info.value.errors()
+        assert len(errors) == 1
+        assert "to be equal" in str(errors[0]["msg"])
+
+    def test_unchanged_with_equal_contents_succeeds(self) -> None:
+        """change_type='unchanged' with equal content values succeeds."""
+        line = ModelDiffLine(
+            line_number=1,
+            baseline_content="same content",
+            replay_content="same content",
+            change_type="unchanged",
+        )
+        assert line.change_type == "unchanged"
+        assert line.baseline_content == line.replay_content
+
+    def test_unchanged_with_both_none_succeeds(self) -> None:
+        """change_type='unchanged' with both contents None succeeds."""
+        line = ModelDiffLine(
+            line_number=1,
+            baseline_content=None,
+            replay_content=None,
+            change_type="unchanged",
+        )
+        assert line.change_type == "unchanged"
+
+    def test_modified_with_missing_baseline_raises_error(self) -> None:
+        """change_type='modified' with None baseline_content raises ValidationError."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelDiffLine(
+                line_number=1,
+                baseline_content=None,
+                replay_content="new content",
+                change_type="modified",
+            )
+        errors = exc_info.value.errors()
+        assert len(errors) == 1
+        assert "baseline_content to be present" in str(errors[0]["msg"])
+
+    def test_modified_with_missing_replay_raises_error(self) -> None:
+        """change_type='modified' with None replay_content raises ValidationError."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelDiffLine(
+                line_number=1,
+                baseline_content="old content",
+                replay_content=None,
+                change_type="modified",
+            )
+        errors = exc_info.value.errors()
+        assert len(errors) == 1
+        assert "replay_content to be present" in str(errors[0]["msg"])
+
+    def test_modified_with_same_contents_raises_error(self) -> None:
+        """change_type='modified' with identical content values raises ValidationError."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelDiffLine(
+                line_number=1,
+                baseline_content="same content",
+                replay_content="same content",
+                change_type="modified",
+            )
+        errors = exc_info.value.errors()
+        assert len(errors) == 1
+        assert "to be different" in str(errors[0]["msg"])
+
+    def test_modified_with_different_contents_succeeds(self) -> None:
+        """change_type='modified' with different content values succeeds."""
+        line = ModelDiffLine(
+            line_number=1,
+            baseline_content="old content",
+            replay_content="new content",
+            change_type="modified",
+        )
+        assert line.change_type == "modified"
+        assert line.baseline_content != line.replay_content

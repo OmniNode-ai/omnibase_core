@@ -3,7 +3,7 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.replay.model_input_snapshot import ModelInputSnapshot
 from omnibase_core.models.replay.model_invariant_result_detail import (
@@ -26,22 +26,39 @@ class ModelExecutionDetailView(BaseModel):
     Thread Safety:
         This model is immutable (frozen=True) and safe for concurrent access.
 
+    Validation:
+        - input_display: This is a convenience field for UI display purposes.
+          It is independent of original_input.raw and may contain a truncated
+          or formatted representation of the input. For the canonical input data,
+          always use original_input.raw. The input_display field supports Unicode
+          characters and can contain very large strings if needed.
+        - invariant_results: Can be an empty list, which is valid for executions
+          where no invariant checks are configured. When empty, invariants_all_passed
+          should typically be True (vacuously true - no invariants means none failed).
+        - input_hash: Must be non-empty. Validated via Field(min_length=1).
+        - All nested models (ModelInputSnapshot, ModelOutputSnapshot, etc.) perform
+          their own validation; see their respective docstrings for details.
+
     Attributes:
         comparison_id: Unique identifier for this comparison.
         baseline_execution_id: ID of the baseline execution.
         replay_execution_id: ID of the replay execution.
-        original_input: Snapshot of the execution input.
-        input_hash: SHA-256 hash of the input for deduplication.
+        original_input: Snapshot of the execution input (canonical input data).
+        input_hash: Hash identifier of the input for deduplication. Typically
+            formatted as "algorithm:hexdigest" (e.g., "sha256:abc123"). Must be non-empty.
         input_display: JSON-formatted input string for display (may be truncated
-            for large inputs to maintain UI responsiveness).
+            for large inputs to maintain UI responsiveness). This is independent
+            of original_input.raw and serves as a pre-formatted display value.
         baseline_output: Snapshot of baseline execution output.
         replay_output: Snapshot of replay execution output.
         output_diff_display: Unified diff format showing differences between
             baseline and replay outputs (None if outputs match exactly).
         outputs_match: Whether baseline and replay outputs are identical.
         side_by_side: Side-by-side comparison view.
-        invariant_results: Results of all invariant checks.
-        invariants_all_passed: Whether all invariants passed.
+        invariant_results: Results of all invariant checks. Can be empty if no
+            invariants are configured for this execution.
+        invariants_all_passed: Whether all invariants passed. True when
+            invariant_results is empty (vacuously true).
         timing_breakdown: Detailed timing comparison.
         execution_timestamp: When the execution occurred.
         corpus_entry_id: ID of the corpus entry this execution belongs to.
@@ -56,7 +73,13 @@ class ModelExecutionDetailView(BaseModel):
 
     # Input Context
     original_input: ModelInputSnapshot
-    input_hash: str
+    input_hash: str = Field(
+        min_length=1,
+        description=(
+            "Hash identifier of the input for deduplication. "
+            "Typically formatted as 'algorithm:hexdigest' (e.g., 'sha256:abc123')."
+        ),
+    )
     input_display: str
 
     # Output Comparison

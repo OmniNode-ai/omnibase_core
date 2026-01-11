@@ -68,6 +68,9 @@ Usage:
     Added Execution Corpus Model (OMN-1202)
 """
 
+from omnibase_core.mixins.mixin_truncation_validation import (
+    MixinTruncationValidation,
+)
 from omnibase_core.models.manifest.model_execution_manifest import (
     ModelExecutionManifest,
 )
@@ -176,6 +179,7 @@ __all__ = [
     "ModelExecutionDetailView",
     "ModelInputSnapshot",
     "ModelInvariantResultDetail",
+    "MixinTruncationValidation",
     "ModelOutputSnapshot",
     "ModelSideBySideComparison",
     "ModelTimingBreakdown",

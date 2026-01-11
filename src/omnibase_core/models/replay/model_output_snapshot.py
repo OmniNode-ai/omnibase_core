@@ -9,17 +9,20 @@ Thread Safety:
     making it thread-safe for concurrent read access.
 """
 
-from typing import Any, Self
+from typing import Any
 
-from pydantic import BaseModel, ConfigDict, model_validator
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.decorators import allow_dict_any
+from omnibase_core.mixins.mixin_truncation_validation import (
+    MixinTruncationValidation,
+)
 
 
 @allow_dict_any(
     reason="raw field captures arbitrary execution output data which varies by node type"
 )
-class ModelOutputSnapshot(BaseModel):
+class ModelOutputSnapshot(MixinTruncationValidation, BaseModel):
     """Snapshot of execution output.
 
     Captures the output data for an execution, with support for
@@ -31,7 +34,9 @@ class ModelOutputSnapshot(BaseModel):
         truncated: Whether the output was truncated due to size limits.
         original_size_bytes: Size of the original output in bytes.
         display_size_bytes: Size of the displayed/stored output in bytes.
-        output_hash: Hash of the original output for comparison.
+        output_hash: Hash identifier of the original output for comparison.
+            Typically formatted as "algorithm:hexdigest" (e.g., "sha256:abc123").
+            Must be non-empty.
 
     Thread Safety:
         This model is immutable (frozen=True) after creation, making it
@@ -49,36 +54,13 @@ class ModelOutputSnapshot(BaseModel):
     truncated: bool = False
     original_size_bytes: int
     display_size_bytes: int
-    output_hash: str
-
-    @model_validator(mode="after")
-    def validate_truncation_constraints(self) -> Self:
-        """Validate logical constraints between truncation flag and size fields.
-
-        Raises:
-            ValueError: If display_size_bytes > original_size_bytes.
-            ValueError: If truncated=True but display_size_bytes >= original_size_bytes.
-            ValueError: If truncated=False but display_size_bytes != original_size_bytes.
-        """
-        if self.display_size_bytes > self.original_size_bytes:
-            raise ValueError(
-                f"display_size_bytes ({self.display_size_bytes}) cannot exceed "
-                f"original_size_bytes ({self.original_size_bytes})"
-            )
-
-        if self.truncated:
-            if self.display_size_bytes >= self.original_size_bytes:
-                raise ValueError(
-                    f"When truncated=True, display_size_bytes ({self.display_size_bytes}) "
-                    f"must be less than original_size_bytes ({self.original_size_bytes})"
-                )
-        elif self.display_size_bytes != self.original_size_bytes:
-            raise ValueError(
-                f"When truncated=False, display_size_bytes ({self.display_size_bytes}) "
-                f"must equal original_size_bytes ({self.original_size_bytes})"
-            )
-
-        return self
+    output_hash: str = Field(
+        min_length=1,
+        description=(
+            "Hash identifier of the original output for comparison. "
+            "Typically formatted as 'algorithm:hexdigest' (e.g., 'sha256:abc123')."
+        ),
+    )
 
 
 __all__ = ["ModelOutputSnapshot"]

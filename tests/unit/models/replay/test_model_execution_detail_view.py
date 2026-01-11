@@ -1148,6 +1148,76 @@ class TestModelExecutionDetailView:
 
 
 @pytest.mark.unit
+class TestModelOutputSnapshotHashValidation:
+    """Tests for output_hash validation in ModelOutputSnapshot."""
+
+    def test_empty_output_hash_rejected(self) -> None:
+        """Empty output_hash raises ValidationError."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelOutputSnapshot(
+                raw={"key": "value"},
+                truncated=False,
+                original_size_bytes=100,
+                display_size_bytes=100,
+                output_hash="",  # Empty string should be rejected
+            )
+        errors = exc_info.value.errors()
+        assert any(e["loc"] == ("output_hash",) for e in errors)
+
+
+@pytest.mark.unit
+class TestModelExecutionDetailViewInputHashValidation:
+    """Tests for input_hash validation in ModelExecutionDetailView."""
+
+    def test_empty_input_hash_rejected(
+        self,
+    ) -> None:
+        """Empty input_hash raises ValidationError."""
+        input_snapshot = ModelInputSnapshot(
+            raw={"key": "value"},
+            original_size_bytes=50,
+            display_size_bytes=50,
+        )
+        output_snapshot = ModelOutputSnapshot(
+            raw={"result": "data"},
+            original_size_bytes=60,
+            display_size_bytes=60,
+            output_hash="sha256:hash",
+        )
+        side_by_side = ModelSideBySideComparison(
+            baseline_formatted="{}",
+            replay_formatted="{}",
+            diff_lines=[],
+        )
+        timing = ModelTimingBreakdown(
+            baseline_total_ms=100.0,
+            replay_total_ms=100.0,
+            delta_ms=0.0,
+            delta_percent=0.0,
+        )
+        with pytest.raises(ValidationError) as exc_info:
+            ModelExecutionDetailView(
+                comparison_id=TEST_COMPARISON_ID,
+                baseline_execution_id=TEST_BASELINE_ID,
+                replay_execution_id=TEST_REPLAY_ID,
+                original_input=input_snapshot,
+                input_hash="",  # Empty string should be rejected
+                input_display="{}",
+                baseline_output=output_snapshot,
+                replay_output=output_snapshot,
+                outputs_match=True,
+                side_by_side=side_by_side,
+                invariant_results=[],
+                invariants_all_passed=True,
+                timing_breakdown=timing,
+                execution_timestamp=datetime(2025, 1, 4, 12, 0, 0, tzinfo=UTC),
+                corpus_entry_id=TEST_CORPUS_ID,
+            )
+        errors = exc_info.value.errors()
+        assert any(e["loc"] == ("input_hash",) for e in errors)
+
+
+@pytest.mark.unit
 class TestModelDiffLineEdgeCases:
     """Additional edge case tests for ModelDiffLine."""
 
@@ -1377,3 +1447,271 @@ class TestModelExecutionDetailViewSerialization:
         # UUID is serialized as string in JSON
         assert '"comparison_id":"1234567c-1234-5678-1234-567812345678"' in json_str
         assert '"outputs_match":true' in json_str
+
+
+@pytest.mark.unit
+class TestModelExecutionDetailViewEdgeCases:
+    """Edge case tests for ModelExecutionDetailView.
+
+    These tests verify the behavior documented in the Validation section
+    of the ModelExecutionDetailView docstring.
+    """
+
+    @pytest.fixture
+    def minimal_input_snapshot(self) -> ModelInputSnapshot:
+        """Provide minimal input snapshot for edge case tests."""
+        return ModelInputSnapshot(
+            raw={"key": "value"},
+            original_size_bytes=50,
+            display_size_bytes=50,
+        )
+
+    @pytest.fixture
+    def minimal_output_snapshot(self) -> ModelOutputSnapshot:
+        """Provide minimal output snapshot for edge case tests."""
+        return ModelOutputSnapshot(
+            raw={"result": "data"},
+            original_size_bytes=60,
+            display_size_bytes=60,
+            output_hash="sha256:hash",
+        )
+
+    @pytest.fixture
+    def minimal_side_by_side(self) -> ModelSideBySideComparison:
+        """Provide minimal side-by-side comparison for edge case tests."""
+        return ModelSideBySideComparison(
+            baseline_formatted="{}",
+            replay_formatted="{}",
+            diff_lines=[],
+        )
+
+    @pytest.fixture
+    def minimal_timing(self) -> ModelTimingBreakdown:
+        """Provide minimal timing breakdown for edge case tests."""
+        return ModelTimingBreakdown(
+            baseline_total_ms=100.0,
+            replay_total_ms=100.0,
+            delta_ms=0.0,
+            delta_percent=0.0,
+        )
+
+    def test_empty_invariant_results_valid(
+        self,
+        minimal_input_snapshot: ModelInputSnapshot,
+        minimal_output_snapshot: ModelOutputSnapshot,
+        minimal_side_by_side: ModelSideBySideComparison,
+        minimal_timing: ModelTimingBreakdown,
+    ) -> None:
+        """Verify empty invariant_results list is valid.
+
+        This tests the documented behavior that invariant_results can be
+        an empty list for executions with no invariant checks configured.
+        """
+        comparison_id = UUID("aaaaaaaa-1111-2222-3333-444444444444")
+        baseline_id = UUID("bbbbbbbb-1111-2222-3333-444444444444")
+        replay_id = UUID("cccccccc-1111-2222-3333-444444444444")
+        corpus_id = UUID("dddddddd-1111-2222-3333-444444444444")
+
+        # Should not raise - empty invariant_results is valid
+        detail_view = ModelExecutionDetailView(
+            comparison_id=comparison_id,
+            baseline_execution_id=baseline_id,
+            replay_execution_id=replay_id,
+            original_input=minimal_input_snapshot,
+            input_hash="sha256:empty_invariants_test",
+            input_display='{"key": "value"}',
+            baseline_output=minimal_output_snapshot,
+            replay_output=minimal_output_snapshot,
+            outputs_match=True,
+            side_by_side=minimal_side_by_side,
+            invariant_results=[],  # Empty list is valid
+            invariants_all_passed=True,
+            timing_breakdown=minimal_timing,
+            execution_timestamp=datetime.now(UTC),
+            corpus_entry_id=corpus_id,
+        )
+
+        assert detail_view.invariant_results == []
+        assert len(detail_view.invariant_results) == 0
+
+    def test_invariants_all_passed_consistency_with_empty_results(
+        self,
+        minimal_input_snapshot: ModelInputSnapshot,
+        minimal_output_snapshot: ModelOutputSnapshot,
+        minimal_side_by_side: ModelSideBySideComparison,
+        minimal_timing: ModelTimingBreakdown,
+    ) -> None:
+        """Test that invariants_all_passed can be True with empty list.
+
+        When invariant_results is empty, invariants_all_passed should typically
+        be True (vacuously true - no invariants means none failed).
+        """
+        comparison_id = UUID("eeeeeeee-1111-2222-3333-444444444444")
+        baseline_id = UUID("ffffffff-1111-2222-3333-444444444444")
+        replay_id = UUID("00000000-1111-2222-3333-444444444444")
+        corpus_id = UUID("11111111-1111-2222-3333-444444444444")
+
+        detail_view = ModelExecutionDetailView(
+            comparison_id=comparison_id,
+            baseline_execution_id=baseline_id,
+            replay_execution_id=replay_id,
+            original_input=minimal_input_snapshot,
+            input_hash="sha256:vacuously_true_test",
+            input_display='{"test": "data"}',
+            baseline_output=minimal_output_snapshot,
+            replay_output=minimal_output_snapshot,
+            outputs_match=True,
+            side_by_side=minimal_side_by_side,
+            invariant_results=[],  # No invariants configured
+            invariants_all_passed=True,  # Vacuously true
+            timing_breakdown=minimal_timing,
+            execution_timestamp=datetime.now(UTC),
+            corpus_entry_id=corpus_id,
+        )
+
+        # With no invariants, all passed is vacuously true
+        assert detail_view.invariant_results == []
+        assert detail_view.invariants_all_passed is True
+
+    def test_input_display_can_differ_from_raw(
+        self,
+        minimal_output_snapshot: ModelOutputSnapshot,
+        minimal_side_by_side: ModelSideBySideComparison,
+        minimal_timing: ModelTimingBreakdown,
+    ) -> None:
+        """Show that input_display is independent from original_input.raw.
+
+        input_display is a convenience field for UI display and may contain
+        a truncated representation. For canonical data, use original_input.raw.
+        """
+        comparison_id = UUID("22222222-1111-2222-3333-444444444444")
+        baseline_id = UUID("33333333-1111-2222-3333-444444444444")
+        replay_id = UUID("44444444-1111-2222-3333-444444444444")
+        corpus_id = UUID("55555555-1111-2222-3333-444444444444")
+
+        # Create input snapshot with full data
+        full_raw_data: dict[str, Any] = {
+            "prompt": "This is a very long prompt that would be truncated in display",
+            "parameters": {"temperature": 0.7, "max_tokens": 100},
+            "metadata": {"user_id": "user123", "session_id": "session456"},
+        }
+        input_snapshot = ModelInputSnapshot(
+            raw=full_raw_data,
+            truncated=False,
+            original_size_bytes=500,
+            display_size_bytes=500,
+        )
+
+        # input_display can be a truncated/formatted version
+        truncated_display = '{"prompt": "This is a very long..."}'
+
+        detail_view = ModelExecutionDetailView(
+            comparison_id=comparison_id,
+            baseline_execution_id=baseline_id,
+            replay_execution_id=replay_id,
+            original_input=input_snapshot,
+            input_hash="sha256:truncated_display_test",
+            input_display=truncated_display,  # Truncated for UI
+            baseline_output=minimal_output_snapshot,
+            replay_output=minimal_output_snapshot,
+            outputs_match=True,
+            side_by_side=minimal_side_by_side,
+            invariant_results=[],
+            invariants_all_passed=True,
+            timing_breakdown=minimal_timing,
+            execution_timestamp=datetime.now(UTC),
+            corpus_entry_id=corpus_id,
+        )
+
+        # input_display differs from original_input.raw
+        assert detail_view.input_display != str(detail_view.original_input.raw)
+        # Canonical data is in original_input.raw
+        assert detail_view.original_input.raw == full_raw_data
+        # Display is truncated
+        assert "..." in detail_view.input_display
+
+    def test_large_input_display_accepted(
+        self,
+        minimal_input_snapshot: ModelInputSnapshot,
+        minimal_output_snapshot: ModelOutputSnapshot,
+        minimal_side_by_side: ModelSideBySideComparison,
+        minimal_timing: ModelTimingBreakdown,
+    ) -> None:
+        """Very large input_display string works without issues."""
+        comparison_id = UUID("66666666-1111-2222-3333-444444444444")
+        baseline_id = UUID("77777777-1111-2222-3333-444444444444")
+        replay_id = UUID("88888888-1111-2222-3333-444444444444")
+        corpus_id = UUID("99999999-1111-2222-3333-444444444444")
+
+        # Create a very large input display string (100KB)
+        large_content = "x" * 100_000
+        large_input_display = f'{{"large_data": "{large_content}"}}'
+
+        detail_view = ModelExecutionDetailView(
+            comparison_id=comparison_id,
+            baseline_execution_id=baseline_id,
+            replay_execution_id=replay_id,
+            original_input=minimal_input_snapshot,
+            input_hash="sha256:large_input_test",
+            input_display=large_input_display,
+            baseline_output=minimal_output_snapshot,
+            replay_output=minimal_output_snapshot,
+            outputs_match=True,
+            side_by_side=minimal_side_by_side,
+            invariant_results=[],
+            invariants_all_passed=True,
+            timing_breakdown=minimal_timing,
+            execution_timestamp=datetime.now(UTC),
+            corpus_entry_id=corpus_id,
+        )
+
+        assert len(detail_view.input_display) > 100_000
+        assert large_content in detail_view.input_display
+
+    def test_unicode_in_input_display(
+        self,
+        minimal_input_snapshot: ModelInputSnapshot,
+        minimal_output_snapshot: ModelOutputSnapshot,
+        minimal_side_by_side: ModelSideBySideComparison,
+        minimal_timing: ModelTimingBreakdown,
+    ) -> None:
+        """Unicode characters are preserved in input_display."""
+        comparison_id = UUID("aaaaaaaa-2222-3333-4444-555555555555")
+        baseline_id = UUID("bbbbbbbb-2222-3333-4444-555555555555")
+        replay_id = UUID("cccccccc-2222-3333-4444-555555555555")
+        corpus_id = UUID("dddddddd-2222-3333-4444-555555555555")
+
+        # Input display with various Unicode characters
+        unicode_input_display = (
+            '{"message": "Hello, World! Bonjour! Hallo!", '
+            '"emoji": "Test: check_mark sword fire rocket", '
+            '"cjk": "Chinese Japanese Korean characters", '
+            '"arabic": "Arabic text sample", '
+            '"math": "Mathematical symbols: sum integral infinity"}'
+        )
+
+        detail_view = ModelExecutionDetailView(
+            comparison_id=comparison_id,
+            baseline_execution_id=baseline_id,
+            replay_execution_id=replay_id,
+            original_input=minimal_input_snapshot,
+            input_hash="sha256:unicode_test",
+            input_display=unicode_input_display,
+            baseline_output=minimal_output_snapshot,
+            replay_output=minimal_output_snapshot,
+            outputs_match=True,
+            side_by_side=minimal_side_by_side,
+            invariant_results=[],
+            invariants_all_passed=True,
+            timing_breakdown=minimal_timing,
+            execution_timestamp=datetime.now(UTC),
+            corpus_entry_id=corpus_id,
+        )
+
+        # All Unicode content is preserved
+        assert "Hello, World!" in detail_view.input_display
+        assert "Bonjour" in detail_view.input_display
+        assert "emoji" in detail_view.input_display
+        assert "cjk" in detail_view.input_display
+        assert "arabic" in detail_view.input_display
+        assert "math" in detail_view.input_display

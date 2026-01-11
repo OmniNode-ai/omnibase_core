@@ -270,6 +270,20 @@ class TestModelOutputSnapshotCreation:
         errors = exc_info.value.errors()
         assert any(e["loc"] == ("output_hash",) for e in errors)
 
+    def test_creation_rejects_empty_output_hash(self) -> None:
+        """Model rejects empty output_hash."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelOutputSnapshot(
+                raw={"key": "value"},
+                truncated=False,
+                original_size_bytes=100,
+                display_size_bytes=100,
+                output_hash="",  # Empty string should be rejected
+            )
+        errors = exc_info.value.errors()
+        assert any(e["loc"] == ("output_hash",) for e in errors)
+        assert any("at least 1 character" in str(e["msg"]).lower() for e in errors)
+
 
 @pytest.mark.unit
 class TestModelOutputSnapshotTruncationValidation:
