@@ -18,6 +18,7 @@ Output Determinism:
     and reproducible. When omitted, current UTC time is used, making output time-dependent.
 """
 
+import json
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Literal
@@ -524,6 +525,8 @@ class ServiceDecisionReportGenerator:
         """
         if len(text) > REPORT_WIDTH:
             return text[: REPORT_WIDTH - ELLIPSIS_LENGTH] + ELLIPSIS
+        if len(text) == REPORT_WIDTH:
+            return text
         return text.center(REPORT_WIDTH)
 
     def generate_json_report(
@@ -1121,7 +1124,14 @@ class ServiceDecisionReportGenerator:
             )
 
         content = generators[output_format]()
-        path.write_text(content, encoding="utf-8")
+        try:
+            path.write_text(content, encoding="utf-8")
+        except OSError as e:
+            raise ModelOnexError(
+                message=f"Failed to write report to {path}: {e}",
+                error_code=EnumCoreErrorCode.FILE_WRITE_ERROR,
+                context={"path": str(path), "format": output_format, "error": str(e)},
+            ) from e
 
     def _serialize_json_report(self, report: TypedDictDecisionReport) -> str:
         """Serialize JSON report to string.
@@ -1132,8 +1142,6 @@ class ServiceDecisionReportGenerator:
         Returns:
             JSON string representation of the report.
         """
-        import json
-
         return json.dumps(report, indent=2, default=str)
 
     def save_to_markdown(
@@ -1218,11 +1226,16 @@ class ServiceDecisionReportGenerator:
 
 
 __all__ = [
+    "COMPARISON_LIMIT_CLI_VERBOSE",
+    "COMPARISON_LIMIT_MARKDOWN",
+    "COST_NA_CLI",
+    "COST_NA_MARKDOWN",
+    "COST_NA_WARNING",
     "DEFAULT_FALLBACK_SORT_ORDER",
     "ELLIPSIS",
     "ELLIPSIS_LENGTH",
-    "COMPARISON_LIMIT_CLI_VERBOSE",
-    "COMPARISON_LIMIT_MARKDOWN",
+    "REPORT_VERSION",
+    "REPORT_WIDTH",
     "SEVERITY_SORT_ORDER",
     "ServiceDecisionReportGenerator",
     "UUID_DISPLAY_LENGTH",
