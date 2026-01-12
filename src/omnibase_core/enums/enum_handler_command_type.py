@@ -13,9 +13,11 @@ from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 @unique
 class EnumHandlerCommandType(StrValueHelper, str, Enum):
-    """Typed command identifiers for handler operations.
+    """Handler command types for ONEX operations.
 
-    Commands: EXECUTE, VALIDATE, DRY_RUN, ROLLBACK, HEALTH_CHECK, DESCRIBE, CONFIGURE, RESET.
+    SINGLE SOURCE OF TRUTH for typed command identifiers.
+    Commands: EXECUTE, VALIDATE, DRY_RUN (simulate without side effects),
+    ROLLBACK (undo), HEALTH_CHECK, DESCRIBE, CONFIGURE, RESET.
     """
 
     EXECUTE = "execute"

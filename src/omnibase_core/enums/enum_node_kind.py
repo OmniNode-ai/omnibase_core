@@ -14,7 +14,7 @@ from omnibase_core.utils.util_str_enum_base import StrValueHelper
 @unique
 class EnumNodeKind(StrValueHelper, str, Enum):
     """
-    High-level architectural classification for ONEX nodes.
+    High-level architectural classification for ONEX four-node architecture.
 
     Values: EFFECT (I/O), COMPUTE (transform), REDUCER (state), ORCHESTRATOR (workflow),
     RUNTIME_HOST (infrastructure). Data flows: EFFECT -> COMPUTE -> REDUCER -> ORCHESTRATOR.

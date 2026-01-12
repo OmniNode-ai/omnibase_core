@@ -15,7 +15,8 @@ from omnibase_core.utils.util_str_enum_base import StrValueHelper
 class EnumHandlerRole(StrValueHelper, str, Enum):
     """Architectural role classification of handlers.
 
-    Roles: INFRA_HANDLER, NODE_HANDLER, PROJECTION_HANDLER, COMPUTE_HANDLER.
+    Roles: INFRA_HANDLER (protocol/transport), NODE_HANDLER (event/business logic),
+    PROJECTION_HANDLER (read model), COMPUTE_HANDLER (pure computation).
     """
 
     INFRA_HANDLER = "infra_handler"

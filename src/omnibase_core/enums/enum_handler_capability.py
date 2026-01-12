@@ -14,7 +14,7 @@ from omnibase_core.utils.util_str_enum_base import StrValueHelper
 @unique
 class EnumHandlerCapability(StrValueHelper, str, Enum):
     """
-    Unified handler capabilities that apply across all node types.
+    Unified handler capabilities for COMPUTE, EFFECT, REDUCER, and ORCHESTRATOR nodes.
 
     Capabilities: TRANSFORM, VALIDATE, CACHE, RETRY, BATCH, STREAM, ASYNC, IDEMPOTENT.
 

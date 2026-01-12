@@ -10,7 +10,7 @@ class StrValueHelper:
     string serialization. The __str__ returns the enum's value directly.
 
     Example:
-        class EnumExample(MixinEnumStr, str, Enum):
+        class EnumExample(StrValueHelper, str, Enum):
             VALUE_A = "value_a"
             VALUE_B = "value_b"
 
