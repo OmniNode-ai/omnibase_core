@@ -118,6 +118,34 @@ class TestEnumHandlerRoutingStrategyPydanticIntegration:
         loaded = json.loads(json_str)
         assert loaded == {"routing_strategy": "payload_type_match"}
 
+    def test_yaml_string_coercion_in_subcontract(self) -> None:
+        """Test that YAML-style string inputs are coerced to enum in subcontract.
+
+        Verifies Pydantic's automatic string-to-enum coercion works correctly
+        for ModelHandlerRoutingSubcontract, enabling backward compatibility
+        with existing YAML contracts that use string values.
+        """
+        from omnibase_core.models.contracts.subcontracts.model_handler_routing_subcontract import (
+            ModelHandlerRoutingSubcontract,
+        )
+        from omnibase_core.models.primitives.model_semver import ModelSemVer
+
+        # String input (as would come from YAML parsing)
+        subcontract = ModelHandlerRoutingSubcontract(
+            version=ModelSemVer(major=1, minor=0, patch=0),
+            routing_strategy="payload_type_match",  # String, not enum
+            handlers=[],
+            default_handler="fallback",
+        )
+
+        # Should be coerced to enum member
+        assert isinstance(subcontract.routing_strategy, EnumHandlerRoutingStrategy)
+        assert (
+            subcontract.routing_strategy
+            == EnumHandlerRoutingStrategy.PAYLOAD_TYPE_MATCH
+        )
+        assert subcontract.routing_strategy.value == "payload_type_match"
+
 
 @pytest.mark.unit
 class TestEnumHandlerRoutingStrategySerialization:

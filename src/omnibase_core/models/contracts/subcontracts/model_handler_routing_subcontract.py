@@ -100,7 +100,7 @@ class ModelHandlerRoutingSubcontract(BaseModel):
         ...     ],
         ...     default_handler="handle_fallback"
         ... )
-        >>> subcontract.routing_strategy
+        >>> subcontract.routing_strategy.value
         'payload_type_match'
         >>> len(subcontract.handlers)
         1
@@ -174,7 +174,7 @@ class ModelHandlerRoutingSubcontract(BaseModel):
             )
 
         # Validate routing keys are unique (deterministic routing requirement)
-        routing_keys: list[str] = []
+        routing_keys: set[str] = set()
         for entry in self.handlers:
             if entry.routing_key in routing_keys:
                 raise ModelOnexError(
@@ -188,7 +188,7 @@ class ModelHandlerRoutingSubcontract(BaseModel):
                     # Domain-specific context for debugging
                     handler_key=entry.handler_key,
                 )
-            routing_keys.append(entry.routing_key)
+            routing_keys.add(entry.routing_key)
 
         return self
 
