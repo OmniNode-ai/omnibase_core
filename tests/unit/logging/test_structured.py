@@ -98,7 +98,7 @@ class TestEmitLogEventSyncBasic:
 
     def test_emit_log_event_sync_fatal(self, caplog):
         """Test emit_log_event_sync with FATAL level."""
-        with caplog.at_level(logging.INFO):  # FATAL falls back to INFO level
+        with caplog.at_level(logging.CRITICAL):  # FATAL maps to CRITICAL level
             emit_log_event_sync(LogLevel.FATAL, "Test fatal message")
 
         assert len(caplog.records) > 0
@@ -295,12 +295,12 @@ class TestLogLevelMapping:
         assert caplog.records[0].levelno == logging.CRITICAL
 
     def test_fatal_level_mapping(self, caplog):
-        """Test FATAL level falls back to logging.INFO."""
-        with caplog.at_level(logging.INFO):
+        """Test FATAL level maps to logging.CRITICAL."""
+        with caplog.at_level(logging.CRITICAL):
             emit_log_event_sync(LogLevel.FATAL, "Fatal test")
 
-        # FATAL should fall back to INFO (not in mapping)
-        assert caplog.records[0].levelno == logging.INFO
+        # FATAL maps to CRITICAL
+        assert caplog.records[0].levelno == logging.CRITICAL
 
     def test_unknown_level_fallback(self, caplog):
         """Test unknown level falls back to INFO."""

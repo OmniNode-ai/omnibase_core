@@ -160,9 +160,7 @@ class ContractValidationPipeline:  # naming-ok: validator class, not protocol
         for each executed phase.
 
         >>> from omnibase_core.enums.enum_validation_phase import EnumValidationPhase
-        >>> from omnibase_core.enums.enum_validation_severity import (
-        ...     EnumValidationSeverity
-        ... )
+        >>> from omnibase_core.enums.enum_severity import EnumSeverity
         >>>
         >>> result = pipeline.validate_all(patch, profile_factory)
         >>> if not result.success:
@@ -194,7 +192,7 @@ class ContractValidationPipeline:  # naming-ok: validator class, not protocol
         ...     # Alternatively, filter issues by severity
         ...     for phase_name, phase_result in result.validation_results.items():
         ...         critical = phase_result.get_issues_by_severity(
-        ...             EnumValidationSeverity.CRITICAL
+        ...             EnumSeverity.CRITICAL
         ...         )
         ...         if critical:
         ...             print(f"CRITICAL issues in {phase_name}:")

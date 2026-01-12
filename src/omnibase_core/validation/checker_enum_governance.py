@@ -124,9 +124,11 @@ class CollectorAST(ast.NodeVisitor):
         is_enum = False
         for base in node.bases:
             base_name = self._get_base_name(base)
+            # Note: "str, Enum" is NOT needed here because for `class Foo(str, Enum)`,
+            # the AST represents multiple bases, each checked separately. The "Enum"
+            # check handles this case since _get_base_name() returns individual names.
             if base_name in {
                 "Enum",
-                "str, Enum",
                 "IntEnum",
                 "StrEnum",
                 "Flag",
@@ -145,6 +147,9 @@ class CollectorAST(ast.NodeVisitor):
                     for target in item.targets:
                         if isinstance(target, ast.Name):
                             member_name = target.id
+                            # Skip dunder and private members during collection
+                            if member_name.startswith("_"):
+                                continue
                             member_value = self._extract_value(item.value)
                             self.enums[node.name].append(
                                 MemberInfo(
@@ -158,6 +163,9 @@ class CollectorAST(ast.NodeVisitor):
                 elif isinstance(item, ast.AnnAssign) and item.target:
                     if isinstance(item.target, ast.Name):
                         member_name = item.target.id
+                        # Skip dunder and private members during collection
+                        if member_name.startswith("_"):
+                            continue
                         member_value = (
                             self._extract_value(item.value) if item.value else None
                         )
@@ -487,8 +495,8 @@ def validate_literal_usage(
     for file_path in source_dir.rglob("*.py"):
         if file_path.is_symlink():
             continue
-        # Skip test files
-        if "/tests/" in str(file_path):
+        # Skip test files (use Path.parts for platform-independent check)
+        if "tests" in file_path.parts:
             continue
 
         if verbose:

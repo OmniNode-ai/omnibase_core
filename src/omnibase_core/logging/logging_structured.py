@@ -33,7 +33,7 @@ def emit_log_event_sync(
     # Create structured log entry
     log_entry = {
         "timestamp": datetime.now(UTC).isoformat(),
-        "level": level.value,
+        "level": level.value.lower(),
         "message": message,
         "context": context or {},
     }
@@ -45,6 +45,7 @@ def emit_log_event_sync(
         LogLevel.WARNING: logging.WARNING,
         LogLevel.ERROR: logging.ERROR,
         LogLevel.CRITICAL: logging.CRITICAL,
+        LogLevel.FATAL: logging.CRITICAL,
     }.get(level, logging.INFO)
 
     logger.log(python_level, json.dumps(log_entry, cls=PydanticJSONEncoder))
