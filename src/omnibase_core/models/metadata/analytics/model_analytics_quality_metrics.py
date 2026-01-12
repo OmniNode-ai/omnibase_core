@@ -114,7 +114,7 @@ class ModelAnalyticsQualityMetrics(BaseModel):
         )
 
     def get_improvement_suggestions(self) -> list[str]:
-        """Get list[Any]of improvement suggestions based on metrics."""
+        """Get list of improvement suggestions based on metrics."""
         suggestions = []
 
         if self.health_score < 70.0:

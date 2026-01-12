@@ -26,7 +26,7 @@ class ModelResultSummary(BaseModel):
 
     execution_id: UUID = Field(description="Execution identifier")
     command: str = Field(description="Command name")
-    target_node: str | None = Field(description="Target node name")
+    target_node: str | None = Field(default=None, description="Target node name")
     success: bool = Field(description="Whether execution succeeded")
     exit_code: int = Field(description="Exit code")
     duration_ms: float = Field(ge=0, description="Duration in milliseconds")

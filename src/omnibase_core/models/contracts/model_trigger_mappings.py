@@ -7,7 +7,6 @@ with proper Pydantic validation and type safety.
 Strict typing is enforced: No Any types or dict[str, Any]patterns allowed.
 """
 
-from typing import Any
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -200,7 +199,7 @@ class ModelTriggerMappings(BaseModel):
 
         if category not in category_mapping:
             raise ModelOnexError(
-                message=f"Invalid mapping category '{category}'. Valid categories: {list[Any](category_mapping.keys())}",
+                message=f"Invalid mapping category '{category}'. Valid categories: {list(category_mapping.keys())}",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
 

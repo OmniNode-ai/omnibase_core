@@ -58,7 +58,7 @@ Safe Runtime Imports (OK to import at module level):
 from __future__ import annotations
 
 import math
-from typing import Any, Literal
+from typing import Any, ClassVar, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -110,8 +110,9 @@ class ModelPolicyValue(BaseModel):
     """
 
     # Security constants - prevent DoS via large collections
-    MAX_LIST_SIZE: int = 10000
-    MAX_DICT_SIZE: int = 1000
+    # ClassVar prevents per-instance override attacks
+    MAX_LIST_SIZE: ClassVar[int] = 10000
+    MAX_DICT_SIZE: ClassVar[int] = 1000
 
     # ONEX_EXCLUDE: dict_str_any - security policy values support arbitrary nested data
     value: None | bool | int | float | str | list[Any] | dict[str, Any] = Field(
