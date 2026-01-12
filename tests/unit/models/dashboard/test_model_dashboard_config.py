@@ -1,0 +1,359 @@
+# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
+#
+# SPDX-License-Identifier: Apache-2.0
+"""Unit tests for ModelDashboardConfig."""
+
+import warnings
+from uuid import UUID, uuid4
+
+import pytest
+from pydantic import ValidationError
+
+from omnibase_core.enums import EnumDashboardStatus, EnumDashboardTheme
+from omnibase_core.models.dashboard import (
+    ModelChartSeriesConfig,
+    ModelDashboardConfig,
+    ModelDashboardLayoutConfig,
+    ModelWidgetConfigChart,
+    ModelWidgetDefinition,
+)
+
+
+def _make_pie_chart_config() -> ModelWidgetConfigChart:
+    """Create a pie chart config (no series required)."""
+    return ModelWidgetConfigChart(chart_type="pie")
+
+
+def _make_line_chart_config() -> ModelWidgetConfigChart:
+    """Create a line chart config with required series."""
+    return ModelWidgetConfigChart(
+        chart_type="line",
+        series=(ModelChartSeriesConfig(name="Series 1", data_key="value"),),
+    )
+
+
+@pytest.mark.unit
+class TestModelDashboardLayoutConfig:
+    """Tests for ModelDashboardLayoutConfig."""
+
+    def test_default_values(self) -> None:
+        """Test default layout values."""
+        layout = ModelDashboardLayoutConfig()
+        assert layout.columns == 12
+        assert layout.row_height == 100
+        assert layout.gap == 16
+        assert layout.responsive is True
+
+    def test_custom_values(self) -> None:
+        """Test custom layout values."""
+        layout = ModelDashboardLayoutConfig(
+            columns=24, row_height=150, gap=8, responsive=False
+        )
+        assert layout.columns == 24
+        assert layout.row_height == 150
+        assert layout.gap == 8
+        assert layout.responsive is False
+
+    def test_roundtrip(self) -> None:
+        """Test serialization roundtrip."""
+        layout = ModelDashboardLayoutConfig(columns=16)
+        data = layout.model_dump()
+        restored = ModelDashboardLayoutConfig.model_validate(data)
+        assert restored == layout
+
+
+@pytest.mark.unit
+class TestModelDashboardConfig:
+    """Tests for ModelDashboardConfig."""
+
+    def test_minimal_creation(self) -> None:
+        """Test creating dashboard with minimal fields."""
+        dashboard_id = uuid4()
+        dashboard = ModelDashboardConfig(
+            dashboard_id=dashboard_id,
+            name="Test Dashboard",
+        )
+        assert dashboard.dashboard_id == dashboard_id
+        assert dashboard.name == "Test Dashboard"
+        assert dashboard.widgets == ()
+        assert dashboard.refresh_interval_seconds is None
+
+    def test_default_values(self) -> None:
+        """Test default values."""
+        dashboard = ModelDashboardConfig(
+            dashboard_id=uuid4(),
+            name="Test",
+        )
+        assert dashboard.theme == "system"
+        assert dashboard.initial_status == EnumDashboardStatus.INITIALIZING
+        assert dashboard.description is None
+        assert dashboard.layout.columns == 12
+
+    def test_with_widgets(self) -> None:
+        """Test creating dashboard with widgets."""
+        widget_id = uuid4()
+        widget = ModelWidgetDefinition(
+            widget_id=widget_id,
+            title="Chart",
+            config=_make_line_chart_config(),
+        )
+        dashboard = ModelDashboardConfig(
+            dashboard_id=uuid4(),
+            name="Test",
+            widgets=(widget,),
+        )
+        assert len(dashboard.widgets) == 1
+        assert dashboard.widgets[0].widget_id == widget_id
+
+    def test_refresh_interval(self) -> None:
+        """Test refresh interval configuration."""
+        dashboard = ModelDashboardConfig(
+            dashboard_id=uuid4(),
+            name="Test",
+            refresh_interval_seconds=30,
+        )
+        assert dashboard.refresh_interval_seconds == 30
+
+    def test_refresh_interval_none_is_disabled(self) -> None:
+        """Test that None means refresh is disabled."""
+        dashboard = ModelDashboardConfig(
+            dashboard_id=uuid4(),
+            name="Test",
+            refresh_interval_seconds=None,
+        )
+        assert dashboard.refresh_interval_seconds is None
+
+    def test_roundtrip_serialization(self) -> None:
+        """Test full roundtrip serialization."""
+        widget = ModelWidgetDefinition(
+            widget_id=uuid4(),
+            title="Chart",
+            config=_make_line_chart_config(),
+        )
+        dashboard = ModelDashboardConfig(
+            dashboard_id=uuid4(),
+            name="Production Dashboard",
+            description="Main monitoring dashboard",
+            widgets=(widget,),
+            refresh_interval_seconds=60,
+            theme=EnumDashboardTheme.DARK,
+        )
+        data = dashboard.model_dump()
+        restored = ModelDashboardConfig.model_validate(data)
+        assert restored == dashboard
+        assert restored.widgets[0].config.config_kind == "chart"
+
+    def test_frozen_model(self) -> None:
+        """Test that model is frozen."""
+        dashboard = ModelDashboardConfig(
+            dashboard_id=uuid4(),
+            name="Test",
+        )
+        # Pydantic v2 frozen models consistently raise ValidationError on mutation
+        with pytest.raises(ValidationError):
+            dashboard.name = "New Name"  # type: ignore[misc]
+
+    def test_invalid_dashboard_id_raises(self) -> None:
+        """Test that invalid dashboard_id raises ValidationError."""
+        with pytest.raises(ValidationError):
+            ModelDashboardConfig(
+                dashboard_id="not-a-uuid",
+                name="Test",
+            )
+
+    def test_invalid_refresh_interval_raises(self) -> None:
+        """Test that invalid refresh interval raises ValidationError."""
+        with pytest.raises(ValidationError):
+            ModelDashboardConfig(
+                dashboard_id=uuid4(),
+                name="Test",
+                refresh_interval_seconds=0,  # Must be >= 1
+            )
+
+    def test_theme_values(self) -> None:
+        """Test theme enum values."""
+        for theme in EnumDashboardTheme:
+            dashboard = ModelDashboardConfig(
+                dashboard_id=uuid4(),
+                name="Test",
+                theme=theme,
+            )
+            assert dashboard.theme == theme
+
+    def test_status_enum_values(self) -> None:
+        """Test initial_status enum values."""
+        for status in EnumDashboardStatus:
+            dashboard = ModelDashboardConfig(
+                dashboard_id=uuid4(),
+                name="Test",
+                initial_status=status,
+            )
+            assert dashboard.initial_status == status
+
+    def test_uuid_from_string(self) -> None:
+        """Test that UUID can be created from valid string."""
+        uuid_str = "12345678-1234-5678-1234-567812345678"
+        dashboard = ModelDashboardConfig(
+            dashboard_id=UUID(uuid_str),
+            name="Test",
+        )
+        assert str(dashboard.dashboard_id) == uuid_str
+
+    def test_widget_uuid_from_string(self) -> None:
+        """Test that widget UUID can be created from valid string."""
+        uuid_str = "abcdef12-3456-7890-abcd-ef1234567890"
+        widget = ModelWidgetDefinition(
+            widget_id=UUID(uuid_str),
+            title="Chart",
+            config=_make_pie_chart_config(),
+        )
+        assert str(widget.widget_id) == uuid_str
+
+    def test_widget_width_exceeds_columns_raises(self) -> None:
+        """Test that widget width exceeding grid columns raises ValidationError."""
+        # Create a widget with width=6 for a 4-column grid
+        widget = ModelWidgetDefinition(
+            widget_id=uuid4(),
+            title="Wide Chart",
+            config=_make_pie_chart_config(),
+            width=6,  # Exceeds 4 columns
+        )
+        with pytest.raises(ValidationError) as exc_info:
+            ModelDashboardConfig(
+                dashboard_id=uuid4(),
+                name="Test",
+                layout=ModelDashboardLayoutConfig(columns=4),
+                widgets=(widget,),
+            )
+        # Verify error message mentions the widget width and column constraint
+        errors = exc_info.value.errors()
+        assert len(errors) == 1
+        assert "width" in str(errors[0]["msg"]).lower()
+        assert "6" in str(errors[0]["msg"])
+        assert "4" in str(errors[0]["msg"])
+
+    def test_widget_width_at_column_limit_succeeds(self) -> None:
+        """Test that widget width equal to grid columns is valid."""
+        # Create a widget that spans all 6 columns
+        widget = ModelWidgetDefinition(
+            widget_id=uuid4(),
+            title="Full Width Chart",
+            config=_make_pie_chart_config(),
+            width=6,
+        )
+        dashboard = ModelDashboardConfig(
+            dashboard_id=uuid4(),
+            name="Test",
+            layout=ModelDashboardLayoutConfig(columns=6),
+            widgets=(widget,),
+        )
+        assert dashboard.widgets[0].width == 6
+        assert dashboard.layout.columns == 6
+
+    def test_multiple_widgets_one_exceeds_columns_raises(self) -> None:
+        """Test that validation catches any widget exceeding columns."""
+        valid_widget = ModelWidgetDefinition(
+            widget_id=uuid4(),
+            title="Small Chart",
+            config=_make_pie_chart_config(),
+            width=3,
+        )
+        invalid_widget = ModelWidgetDefinition(
+            widget_id=uuid4(),
+            title="Too Wide Chart",
+            config=_make_pie_chart_config(),
+            width=8,  # Exceeds 6 columns
+        )
+        with pytest.raises(ValidationError) as exc_info:
+            ModelDashboardConfig(
+                dashboard_id=uuid4(),
+                name="Test",
+                layout=ModelDashboardLayoutConfig(columns=6),
+                widgets=(valid_widget, invalid_widget),
+            )
+        errors = exc_info.value.errors()
+        assert len(errors) == 1
+        assert "8" in str(errors[0]["msg"])  # Invalid widget width
+        assert "6" in str(errors[0]["msg"])  # Column count
+
+    def test_low_refresh_interval_emits_warning(self) -> None:
+        """Test that refresh intervals below 5s emit a warning."""
+        with pytest.warns(UserWarning, match="below recommended minimum"):
+            ModelDashboardConfig(
+                dashboard_id=uuid4(),
+                name="Test",
+                refresh_interval_seconds=2,
+            )
+
+    def test_low_refresh_interval_warning_includes_value(self) -> None:
+        """Test that the warning message includes the actual interval value."""
+        with pytest.warns(UserWarning, match="refresh_interval_seconds=2s"):
+            ModelDashboardConfig(
+                dashboard_id=uuid4(),
+                name="Test",
+                refresh_interval_seconds=2,
+            )
+
+    def test_minimum_refresh_interval_emits_warning(self) -> None:
+        """Test that the minimum 1-second interval emits a warning."""
+        with pytest.warns(UserWarning, match="below recommended minimum"):
+            ModelDashboardConfig(
+                dashboard_id=uuid4(),
+                name="Test",
+                refresh_interval_seconds=1,
+            )
+
+    def test_boundary_refresh_interval_4s_emits_warning(self) -> None:
+        """Test that 4-second refresh (just below threshold) emits warning."""
+        with pytest.warns(UserWarning, match="below recommended minimum"):
+            ModelDashboardConfig(
+                dashboard_id=uuid4(),
+                name="Test",
+                refresh_interval_seconds=4,
+            )
+
+    def test_recommended_refresh_interval_5s_no_warning(self) -> None:
+        """Test that 5-second refresh (at threshold) does not emit warning."""
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")  # Convert warnings to errors
+            dashboard = ModelDashboardConfig(
+                dashboard_id=uuid4(),
+                name="Test",
+                refresh_interval_seconds=5,
+            )
+            assert dashboard.refresh_interval_seconds == 5
+
+    def test_production_refresh_interval_no_warning(self) -> None:
+        """Test that production-appropriate intervals do not emit warnings."""
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")  # Convert warnings to errors
+            for interval in [5, 10, 30, 60, 300]:
+                dashboard = ModelDashboardConfig(
+                    dashboard_id=uuid4(),
+                    name="Test",
+                    refresh_interval_seconds=interval,
+                )
+                assert dashboard.refresh_interval_seconds == interval
+
+    def test_none_refresh_interval_no_warning(self) -> None:
+        """Test that None refresh interval (disabled) does not emit warning."""
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")  # Convert warnings to errors
+            dashboard = ModelDashboardConfig(
+                dashboard_id=uuid4(),
+                name="Test",
+                refresh_interval_seconds=None,
+            )
+            assert dashboard.refresh_interval_seconds is None
+
+    def test_low_refresh_interval_still_valid(self) -> None:
+        """Test that low refresh intervals are still valid despite warning."""
+        # The warning should not prevent model creation
+        with pytest.warns(UserWarning, match="below recommended minimum"):
+            dashboard = ModelDashboardConfig(
+                dashboard_id=uuid4(),
+                name="Test",
+                refresh_interval_seconds=2,
+            )
+        assert dashboard.refresh_interval_seconds == 2
+        assert dashboard.name == "Test"

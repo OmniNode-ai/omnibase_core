@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.5] - 2026-01-12
+
+### Changed
+
+- Version bump from 0.6.4 to 0.6.5 for release tagging
+
+## [0.6.4] - 2026-01-11
+
+### Added
+
+- **MixinHandlerRouting** (OMN-1293): Added contract-driven handler routing mixin for flexible handler resolution
+- **Correlation ID Propagation** (OMN-601): Implemented correlation_id propagation across all intents for improved traceability
+- **ModelExecutionProfile Extensions** (OMN-1292): Extended ModelExecutionProfile and ModelExecutionConflict for ProtocolConstraintValidator
+
 ## [0.6.3] - 2026-01-08
 
 ### Changed

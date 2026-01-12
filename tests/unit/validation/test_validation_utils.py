@@ -13,6 +13,7 @@ from pathlib import Path
 
 import pytest
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.validation.model_protocol_info import ModelProtocolInfo
 from omnibase_core.models.validation.model_protocol_signature_extractor import (
@@ -246,20 +247,31 @@ class TestPathValidation:
             with pytest.raises(ModelOnexError, match="not a file"):
                 validate_file_path(temp_path, "test")
 
-    def test_directory_traversal_warning(self, caplog):
-        """Test directory traversal attempts are logged."""
+    def test_directory_traversal_raises_error(self, caplog):
+        """Test directory traversal attempts raise SECURITY_VIOLATION error.
+
+        Security: Path traversal attempts must be rejected with the correct
+        error code (SECURITY_VIOLATION) to ensure proper security handling.
+        """
         with tempfile.TemporaryDirectory() as temp_dir:
-            # Create a path with .. in it (but still valid)
+            # Create a path with .. in it (path traversal attempt)
             temp_path = Path(temp_dir) / ".." / Path(temp_dir).name
 
-            with caplog.at_level(logging.WARNING):
-                validated_path = validate_directory_path(temp_path, "test")
+            # Path traversal should raise a SECURITY_VIOLATION error
+            with caplog.at_level(logging.ERROR):
+                with pytest.raises(ModelOnexError) as exc_info:
+                    validate_directory_path(temp_path, "test")
 
-                assert validated_path.exists()
-                assert len(caplog.records) == 1
-                assert caplog.records[0].levelname == "WARNING"
-                log_message = caplog.records[0].message
-                assert "directory traversal" in log_message.lower()
+                # CRITICAL: Verify the correct error code is SECURITY_VIOLATION
+                assert exc_info.value.error_code == EnumCoreErrorCode.SECURITY_VIOLATION
+                # Verify error message mentions path traversal
+                assert "path traversal" in exc_info.value.message.lower()
+
+                # Should have logged an error
+                assert len(caplog.records) >= 1
+                error_records = [r for r in caplog.records if r.levelname == "ERROR"]
+                assert len(error_records) >= 1
+                assert "path traversal" in error_records[0].message.lower()
 
 
 @pytest.mark.unit

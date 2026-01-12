@@ -10,7 +10,7 @@ import pytest
 from deepdiff import DeepDiff
 from pydantic import ValidationError
 
-from omnibase_core.models.comparison import ModelOutputDiff, ModelValueChange
+from omnibase_core.models.replay import ModelOutputDiff, ModelValueChange
 
 
 @pytest.mark.unit

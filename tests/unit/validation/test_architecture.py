@@ -610,20 +610,32 @@ class EnumStatus(Enum):
         assert str(dir2) in captured.out
 
     def test_cli_default_directory(self, monkeypatch, capsys):
-        """Test CLI with default directory (src/)."""
+        """Test CLI with default directory (src/).
+
+        When no directory is specified, the CLI defaults to scanning 'src/'.
+        This test verifies:
+        1. The exit code is 0 (valid) or 1 (violations found) - both are valid outcomes
+        2. The output contains expected header and summary sections
+        3. The output contains file/violation count information
+        """
         monkeypatch.setattr("sys.argv", ["script.py"])
 
         from omnibase_core.validation.validator_architecture import (
             validate_architecture_cli,
         )
 
-        # This will try to scan src/ which may or may not exist
-        # Just verify it doesn't crash
         exit_code = validate_architecture_cli()
         captured = capsys.readouterr()
 
-        assert isinstance(exit_code, int)
-        assert "ONEX" in captured.out
+        # Exit code must be 0 (success) or 1 (violations) - both are valid
+        assert exit_code in (0, 1), f"Unexpected exit code: {exit_code}"
+        # Verify expected output sections are present
+        assert "🔍 ONEX One-Model-Per-File Validation" in captured.out
+        assert "📋 Enforcing architectural separation" in captured.out
+        assert "📊 One-Model-Per-File Validation Summary" in captured.out
+        # Verify summary statistics are shown
+        assert "Files checked:" in captured.out
+        assert "Total violations:" in captured.out
 
     def test_cli_output_format(self, tmp_path: Path, monkeypatch, capsys):
         """Test CLI output format and messages."""

@@ -23,6 +23,12 @@ This module provides model definitions for deterministic replay infrastructure:
 - **ModelCorpusTimeRange**: Time range for corpus executions
 - **ModelCorpusCaptureWindow**: Capture window for corpus collection
 
+Comparison models (for baseline vs replay evaluation):
+- **ModelExecutionComparison**: Complete comparison between baseline and replay execution
+- **ModelInvariantComparisonSummary**: Aggregated statistics of invariant comparison
+- **ModelOutputDiff**: Structured representation of output differences
+- **ModelValueChange**: Single value change between baseline and replay
+
 Related models re-exported for convenience:
 - **ModelExecutionManifest**: Individual execution manifest (from models.manifest)
 
@@ -68,6 +74,9 @@ Usage:
     Added ModelEnforcementDecision (OMN-1150)
 """
 
+from omnibase_core.mixins.mixin_truncation_validation import (
+    MixinTruncationValidation,
+)
 from omnibase_core.models.manifest.model_execution_manifest import (
     ModelExecutionManifest,
 )
@@ -102,18 +111,44 @@ from omnibase_core.models.replay.model_corpus_replay_result import (
 )
 from omnibase_core.models.replay.model_corpus_statistics import ModelCorpusStatistics
 from omnibase_core.models.replay.model_corpus_time_range import ModelCorpusTimeRange
+
+# Execution detail view models
+from omnibase_core.models.replay.model_diff_line import ModelDiffLine
 from omnibase_core.models.replay.model_effect_record import ModelEffectRecord
 from omnibase_core.models.replay.model_enforcement_decision import (
     EnforcementOutcome,
     ModelEnforcementDecision,
 )
+
+# Comparison models (consolidated from models.comparison)
+from omnibase_core.models.replay.model_execution_comparison import (
+    ModelExecutionComparison,
+)
 from omnibase_core.models.replay.model_execution_corpus import ModelExecutionCorpus
+from omnibase_core.models.replay.model_execution_detail_view import (
+    ModelExecutionDetailView,
+)
+from omnibase_core.models.replay.model_input_snapshot import ModelInputSnapshot
+from omnibase_core.models.replay.model_invariant_comparison_summary import (
+    ModelInvariantComparisonSummary,
+)
+from omnibase_core.models.replay.model_invariant_result_detail import (
+    ModelInvariantResultDetail,
+)
+from omnibase_core.models.replay.model_output_diff import ModelOutputDiff
+from omnibase_core.models.replay.model_output_snapshot import ModelOutputSnapshot
+from omnibase_core.models.replay.model_phase_time import ModelPhaseTime
 from omnibase_core.models.replay.model_replay_context import ModelReplayContext
 from omnibase_core.models.replay.model_replay_input import ModelReplayInput
+from omnibase_core.models.replay.model_side_by_side_comparison import (
+    ModelSideBySideComparison,
+)
 from omnibase_core.models.replay.model_single_replay_result import (
     ModelSingleReplayResult,
 )
 from omnibase_core.models.replay.model_subset_filter import ModelSubsetFilter
+from omnibase_core.models.replay.model_timing_breakdown import ModelTimingBreakdown
+from omnibase_core.models.replay.model_value_change import ModelValueChange
 
 # Rebuild ModelCorpusReplayConfig after ModelCorpusReplayProgress is defined
 # to resolve the TYPE_CHECKING forward reference in progress_callback type hint
@@ -150,4 +185,19 @@ __all__ = [
     "ModelReplayInput",
     # Related models re-exported for convenience
     "ModelExecutionManifest",
+    # Comparison models (consolidated from models.comparison)
+    "ModelExecutionComparison",
+    "ModelInvariantComparisonSummary",
+    "ModelOutputDiff",
+    "ModelPhaseTime",
+    "ModelValueChange",
+    # Execution detail view models
+    "ModelDiffLine",
+    "ModelExecutionDetailView",
+    "ModelInputSnapshot",
+    "ModelInvariantResultDetail",
+    "MixinTruncationValidation",
+    "ModelOutputSnapshot",
+    "ModelSideBySideComparison",
+    "ModelTimingBreakdown",
 ]

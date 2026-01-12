@@ -50,4 +50,4 @@ class TypedDictMonitoringDashboard(TypedDict, total=False):
     p99_duration_ms: float
 
 
-__all__ = ["TypedDictMonitoringDashboard"]
+__all__ = ("TypedDictMonitoringDashboard",)

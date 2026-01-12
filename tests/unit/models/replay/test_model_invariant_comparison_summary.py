@@ -23,7 +23,7 @@ from typing import Any
 import pytest
 from pydantic import ValidationError
 
-from omnibase_core.models.comparison import ModelInvariantComparisonSummary
+from omnibase_core.models.replay import ModelInvariantComparisonSummary
 
 
 @pytest.mark.unit

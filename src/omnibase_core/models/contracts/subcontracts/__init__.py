@@ -90,6 +90,8 @@ from .model_execution_graph import ModelExecutionGraph
 from .model_fsm_state_definition import ModelFSMStateDefinition
 from .model_fsm_state_transition import ModelFSMStateTransition
 from .model_fsm_subcontract import ModelFSMSubcontract
+from .model_handler_routing_entry import ModelHandlerRoutingEntry
+from .model_handler_routing_subcontract import ModelHandlerRoutingSubcontract
 from .model_health_check_subcontract import ModelHealthCheckSubcontract
 from .model_introspection_subcontract import ModelIntrospectionSubcontract
 from .model_lifecycle_subcontract import ModelLifecycleSubcontract
@@ -121,6 +123,8 @@ from .model_statistical_computation import ModelStatisticalComputation
 from .model_synchronization_point import ModelSynchronizationPoint
 from .model_tool_execution_subcontract import ModelToolExecutionSubcontract
 from .model_validation_subcontract import ModelValidationSubcontract
+from .model_validator_rule import ModelValidatorRule
+from .model_validator_subcontract import ModelValidatorSubcontract
 from .model_windowing_strategy import ModelWindowingStrategy
 from .model_workflow_coordination_subcontract import (
     ModelWorkflowCoordinationSubcontract,
@@ -194,6 +198,9 @@ __all__ = [
     "ModelFSMStateTransition",
     "ModelFSMTransitionAction",
     "ModelFSMTransitionCondition",
+    # Handler routing subcontracts and components
+    "ModelHandlerRoutingEntry",
+    "ModelHandlerRoutingSubcontract",
     # Health check subcontracts and components
     "ModelComponentHealth",
     "ModelComponentHealthCollection",
@@ -231,8 +238,11 @@ __all__ = [
     "ModelStateVersioning",
     # Tool execution subcontracts
     "ModelToolExecutionSubcontract",
-    # Validation subcontracts
+    # Validation subcontracts (Pydantic validation behavior)
     "ModelValidationSubcontract",
+    # Validator subcontracts (file-based validators)
+    "ModelValidatorRule",
+    "ModelValidatorSubcontract",
     # Workflow coordination subcontracts and components
     "ModelWorkflowCoordinationSubcontract",
     "ModelCoordinationResult",
