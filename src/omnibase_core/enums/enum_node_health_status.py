@@ -9,11 +9,11 @@ Defines the health states for nodes in the system.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueMixin
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
 @unique
-class EnumNodeHealthStatus(StrValueMixin, str, Enum):
+class EnumNodeHealthStatus(StrValueHelper, str, Enum):
     """Health status for nodes."""
 
     HEALTHY = "healthy"

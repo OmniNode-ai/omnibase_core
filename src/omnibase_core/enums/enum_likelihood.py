@@ -11,12 +11,12 @@ from enum import Enum
 from functools import cache
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.utils.util_str_enum_base import StrValueMixin
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 __all__ = ["EnumLikelihood"]
 
 
-class EnumLikelihood(StrValueMixin, str, Enum):
+class EnumLikelihood(StrValueHelper, str, Enum):
     """
     Enumeration for likelihood or probability levels.
 

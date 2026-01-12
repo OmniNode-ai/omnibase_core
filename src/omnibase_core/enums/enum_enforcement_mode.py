@@ -6,10 +6,10 @@ Enforcement strategy modes for resource limits and constraints.
 
 from enum import Enum
 
-from omnibase_core.utils.util_str_enum_base import StrValueMixin
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumEnforcementMode(StrValueMixin, str, Enum):
+class EnumEnforcementMode(StrValueHelper, str, Enum):
     """
     Enforcement strategy modes for resource limits and constraints.
 

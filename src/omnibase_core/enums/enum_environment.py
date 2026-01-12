@@ -6,10 +6,10 @@ Execution environment types for ONEX deployments.
 
 from enum import Enum
 
-from omnibase_core.utils.util_str_enum_base import StrValueMixin
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumEnvironment(StrValueMixin, str, Enum):
+class EnumEnvironment(StrValueHelper, str, Enum):
     """Execution environment types for ONEX deployments."""
 
     DEVELOPMENT = "development"

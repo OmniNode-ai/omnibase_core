@@ -10,11 +10,11 @@ and implementation complexity.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueMixin
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
 @unique
-class EnumMetadataToolComplexity(StrValueMixin, str, Enum):
+class EnumMetadataToolComplexity(StrValueHelper, str, Enum):
     """
     Complexity levels for metadata tools.
 

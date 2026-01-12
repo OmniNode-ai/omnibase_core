@@ -6,10 +6,10 @@ Priority levels for operations and requests across tools.
 
 from enum import Enum
 
-from omnibase_core.utils.util_str_enum_base import StrValueMixin
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumPriorityLevel(StrValueMixin, str, Enum):
+class EnumPriorityLevel(StrValueHelper, str, Enum):
     """
     Priority levels for operations and requests across tools.
 

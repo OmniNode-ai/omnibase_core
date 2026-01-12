@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 
-class StrValueMixin:
+class StrValueHelper:
     """Mixin providing __str__ that returns self.value for str-based enums.
 
     Use with enums that inherit from (str, Enum) to provide consistent

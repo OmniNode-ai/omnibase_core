@@ -4,10 +4,10 @@ Data classification enum for ONEX security policies.
 
 from enum import Enum
 
-from omnibase_core.utils.util_str_enum_base import StrValueMixin
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumDataClassification(StrValueMixin, str, Enum):
+class EnumDataClassification(StrValueHelper, str, Enum):
     """Data classification levels for security and compliance."""
 
     PUBLIC = "public"

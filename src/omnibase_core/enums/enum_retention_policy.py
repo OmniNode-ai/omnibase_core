@@ -9,11 +9,11 @@ Defines data retention policies for compliance and lifecycle management.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueMixin
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
 @unique
-class EnumRetentionPolicy(StrValueMixin, str, Enum):
+class EnumRetentionPolicy(StrValueHelper, str, Enum):
     """
     Enumeration of data retention policies.
 

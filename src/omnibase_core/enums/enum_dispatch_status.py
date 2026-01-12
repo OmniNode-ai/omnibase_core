@@ -13,11 +13,11 @@ Thread Safety:
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueMixin
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
 @unique
-class EnumDispatchStatus(StrValueMixin, str, Enum):
+class EnumDispatchStatus(StrValueHelper, str, Enum):
     """
     Status values for dispatch operations.
 

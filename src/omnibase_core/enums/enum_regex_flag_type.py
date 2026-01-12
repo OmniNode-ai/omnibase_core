@@ -9,11 +9,11 @@ Strongly typed enumeration for regex flag type discriminators.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueMixin
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
 @unique
-class EnumRegexFlagType(StrValueMixin, str, Enum):
+class EnumRegexFlagType(StrValueHelper, str, Enum):
     """
     Strongly typed regex flag type discriminators.
 

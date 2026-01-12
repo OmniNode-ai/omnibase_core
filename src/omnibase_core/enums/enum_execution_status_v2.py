@@ -10,13 +10,13 @@ values with execution-specific states while eliminating conflicts with other dom
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueMixin
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 from .enum_base_status import EnumBaseStatus
 
 
 @unique
-class EnumExecutionStatusV2(StrValueMixin, str, Enum):
+class EnumExecutionStatusV2(StrValueHelper, str, Enum):
     """
     Execution status enumeration extending base status hierarchy.
 

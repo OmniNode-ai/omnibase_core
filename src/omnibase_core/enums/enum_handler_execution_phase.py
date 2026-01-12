@@ -13,11 +13,11 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueMixin
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
 @unique
-class EnumHandlerExecutionPhase(StrValueMixin, str, Enum):
+class EnumHandlerExecutionPhase(StrValueHelper, str, Enum):
     """
     Canonical execution phases for handler processing.
 

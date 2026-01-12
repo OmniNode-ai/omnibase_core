@@ -9,11 +9,11 @@ Defines purposes for data collections and analytics.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueMixin
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
 @unique
-class EnumCollectionPurpose(StrValueMixin, str, Enum):
+class EnumCollectionPurpose(StrValueHelper, str, Enum):
     """
     Enumeration of collection purposes.
 

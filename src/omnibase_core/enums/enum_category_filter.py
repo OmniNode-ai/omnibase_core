@@ -9,11 +9,11 @@ Strongly typed category filter values for ONEX architecture filtering operations
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueMixin
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
 @unique
-class EnumCategoryFilter(StrValueMixin, str, Enum):
+class EnumCategoryFilter(StrValueHelper, str, Enum):
     """
     Strongly typed category filter values for ONEX architecture.
 

@@ -1,9 +1,9 @@
 from enum import Enum
 
-from omnibase_core.utils.util_str_enum_base import StrValueMixin
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumAuthenticationMethod(StrValueMixin, str, Enum):
+class EnumAuthenticationMethod(StrValueHelper, str, Enum):
     """Authentication methods supported for session and identity contexts."""
 
     # No authentication

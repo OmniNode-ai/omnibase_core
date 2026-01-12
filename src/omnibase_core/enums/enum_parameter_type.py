@@ -9,11 +9,11 @@ Strongly typed parameter type values for ONEX architecture parameter validation.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueMixin
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
 @unique
-class EnumParameterType(StrValueMixin, str, Enum):
+class EnumParameterType(StrValueHelper, str, Enum):
     """
     Strongly typed parameter type values for ONEX architecture.
 

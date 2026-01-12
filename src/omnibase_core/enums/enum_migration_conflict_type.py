@@ -8,11 +8,11 @@ Strongly typed enumeration for migration conflict type discriminators.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueMixin
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
 @unique
-class EnumMigrationConflictType(StrValueMixin, str, Enum):
+class EnumMigrationConflictType(StrValueHelper, str, Enum):
     """Strongly typed migration conflict type discriminators.
 
     Used for discriminated union patterns in migration conflict handling.

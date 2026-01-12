@@ -470,7 +470,7 @@ class NodeMyServiceCompute(NodeCompute, MixinDiscoveryResponder):
         self.event_bus = container.get_service("ProtocolEventBus")
 ```
 
-**Available Mixins**: `MixinDiscoveryResponder`, `MixinEventHandler`, `MixinEventListener`, `MixinNodeExecutor`, `MixinNodeLifecycle`, `MixinRequestResponseIntrospection`, `MixinWorkflowExecution`, `StrValueMixin`
+**Available Mixins**: `MixinDiscoveryResponder`, `MixinEventHandler`, `MixinEventListener`, `MixinNodeExecutor`, `MixinNodeLifecycle`, `MixinRequestResponseIntrospection`, `MixinWorkflowExecution`, `StrValueHelper`
 
 ### Docstring Guidelines
 
@@ -554,18 +554,18 @@ execution states that a node can be in during its lifecycle...
 
 #### Enum String Serialization
 
-All string-based enums should use `StrValueMixin` for consistent `__str__` behavior:
+All string-based enums should use `StrValueHelper` for consistent `__str__` behavior:
 
 ```python
-from omnibase_core.utils.util_str_enum_base import StrValueMixin
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
-class EnumStatus(StrValueMixin, str, Enum):
+class EnumStatus(StrValueHelper, str, Enum):
     """Status values for workflow execution."""
     PENDING = "pending"
     RUNNING = "running"
     COMPLETED = "completed"
 
-# StrValueMixin provides __str__ that returns self.value
+# StrValueHelper provides __str__ that returns self.value
 str(EnumStatus.PENDING)  # Returns: "pending"
 ```
 

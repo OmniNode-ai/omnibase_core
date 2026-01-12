@@ -10,11 +10,11 @@ Part of the unified complexity enum consolidation strategy.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueMixin
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
 @unique
-class EnumConceptualComplexity(StrValueMixin, str, Enum):
+class EnumConceptualComplexity(StrValueHelper, str, Enum):
     """
     Conceptual complexity levels for understanding and skill requirements.
 

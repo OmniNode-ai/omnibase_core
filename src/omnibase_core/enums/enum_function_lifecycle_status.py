@@ -11,13 +11,13 @@ clear separation from execution-oriented enums.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueMixin
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 from .enum_base_status import EnumBaseStatus
 
 
 @unique
-class EnumFunctionLifecycleStatus(StrValueMixin, str, Enum):
+class EnumFunctionLifecycleStatus(StrValueHelper, str, Enum):
     """
     Function lifecycle status enumeration for component lifecycle management.
 

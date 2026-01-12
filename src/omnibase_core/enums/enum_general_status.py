@@ -11,13 +11,13 @@ base status values while adding commonly needed general status concepts.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueMixin
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 from .enum_base_status import EnumBaseStatus
 
 
 @unique
-class EnumGeneralStatus(StrValueMixin, str, Enum):
+class EnumGeneralStatus(StrValueHelper, str, Enum):
     """
     General purpose status enumeration extending base status hierarchy.
 

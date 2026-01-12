@@ -10,11 +10,11 @@ Replaces Literal["orchestrator", "compute", "reducer", "effect"] patterns.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueMixin
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
 @unique
-class EnumNodeArchitectureType(StrValueMixin, str, Enum):
+class EnumNodeArchitectureType(StrValueHelper, str, Enum):
     """
     Strongly typed 4-node architecture type discriminators.
 

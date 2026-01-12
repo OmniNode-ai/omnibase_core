@@ -9,11 +9,11 @@ Defines the available retry backoff strategies for retry policies.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueMixin
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
 @unique
-class EnumRetryBackoffStrategy(StrValueMixin, str, Enum):
+class EnumRetryBackoffStrategy(StrValueHelper, str, Enum):
     """Retry backoff strategy enumeration."""
 
     FIXED = "fixed"  # Fixed delay between retries

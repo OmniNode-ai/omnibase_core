@@ -11,11 +11,11 @@ Replaces Literal["rollback", "forward_recovery", "mixed"] patterns.
 from enum import Enum, unique
 from typing import Literal, assert_never
 
-from omnibase_core.utils.util_str_enum_base import StrValueMixin
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
 @unique
-class EnumCompensationStrategy(StrValueMixin, str, Enum):
+class EnumCompensationStrategy(StrValueHelper, str, Enum):
     """
     Strongly typed compensation strategy discriminators.
 

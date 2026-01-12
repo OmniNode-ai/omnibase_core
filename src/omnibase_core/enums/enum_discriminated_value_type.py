@@ -9,11 +9,11 @@ Used in ModelDiscriminatedValue for type-safe union handling.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueMixin
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
 @unique
-class EnumDiscriminatedValueType(StrValueMixin, str, Enum):
+class EnumDiscriminatedValueType(StrValueHelper, str, Enum):
     """
     Strongly typed discriminated value type discriminators.
 

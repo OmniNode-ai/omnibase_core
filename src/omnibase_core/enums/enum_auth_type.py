@@ -6,10 +6,10 @@ Authentication types for webhook notifications in ONEX infrastructure.
 
 from enum import Enum
 
-from omnibase_core.utils.util_str_enum_base import StrValueMixin
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumAuthType(StrValueMixin, str, Enum):
+class EnumAuthType(StrValueHelper, str, Enum):
     """Enumeration for authentication types used in webhook communications."""
 
     # No authentication

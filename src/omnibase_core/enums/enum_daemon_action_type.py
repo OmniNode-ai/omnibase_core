@@ -6,10 +6,10 @@ Action types for daemon management operations.
 
 from enum import Enum
 
-from omnibase_core.utils.util_str_enum_base import StrValueMixin
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumDaemonActionType(StrValueMixin, str, Enum):
+class EnumDaemonActionType(StrValueHelper, str, Enum):
     """
     Action types for daemon management operations.
 

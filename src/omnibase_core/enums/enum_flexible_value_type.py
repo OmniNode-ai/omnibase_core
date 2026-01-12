@@ -8,11 +8,11 @@ Strongly typed enumeration for flexible value type discriminators.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueMixin
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
 @unique
-class EnumFlexibleValueType(StrValueMixin, str, Enum):
+class EnumFlexibleValueType(StrValueHelper, str, Enum):
     """
     Strongly typed flexible value type discriminators.
 

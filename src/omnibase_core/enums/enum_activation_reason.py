@@ -14,11 +14,11 @@ explainability for activation decisions.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueMixin
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
 @unique
-class EnumActivationReason(StrValueMixin, str, Enum):
+class EnumActivationReason(StrValueHelper, str, Enum):
     """
     Reason for capability activation or skip.
 

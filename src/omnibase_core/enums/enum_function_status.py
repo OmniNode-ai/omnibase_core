@@ -10,11 +10,11 @@ Follows ONEX one-enum-per-file naming conventions.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueMixin
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
 @unique
-class EnumFunctionStatus(StrValueMixin, str, Enum):
+class EnumFunctionStatus(StrValueHelper, str, Enum):
     """
     Strongly typed function status for node operations.
 

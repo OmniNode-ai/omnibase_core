@@ -10,11 +10,11 @@ Replaces Literal["code", "markdown"] patterns.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueMixin
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
 @unique
-class EnumCellType(StrValueMixin, str, Enum):
+class EnumCellType(StrValueHelper, str, Enum):
     """
     Strongly typed cell type discriminators.
 

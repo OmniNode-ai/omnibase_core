@@ -9,11 +9,11 @@ Defines complexity levels for functions and operations.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueMixin
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
 @unique
-class EnumComplexityLevel(StrValueMixin, str, Enum):
+class EnumComplexityLevel(StrValueHelper, str, Enum):
     """Complexity levels for functions and operations."""
 
     SIMPLE = "simple"

@@ -9,11 +9,11 @@ Defines supported languages for function discovery and tool definitions.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueMixin
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
 @unique
-class EnumFunctionLanguage(StrValueMixin, str, Enum):
+class EnumFunctionLanguage(StrValueHelper, str, Enum):
     """
     Supported function discovery languages.
 

@@ -11,11 +11,11 @@ from __future__ import annotations
 from enum import Enum, unique
 from typing import Never, NoReturn
 
-from omnibase_core.utils.util_str_enum_base import StrValueMixin
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
 @unique
-class EnumReducerCapability(StrValueMixin, str, Enum):
+class EnumReducerCapability(StrValueHelper, str, Enum):
     """Reducer node capabilities (currently: FSM_INTERPRETER for state management)."""
 
     FSM_INTERPRETER = "fsm_interpreter"

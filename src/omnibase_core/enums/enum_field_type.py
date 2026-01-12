@@ -10,11 +10,11 @@ Follows ONEX one-enum-per-file naming conventions.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueMixin
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
 @unique
-class EnumFieldType(StrValueMixin, str, Enum):
+class EnumFieldType(StrValueHelper, str, Enum):
     """
     Strongly typed field type for metadata field definitions.
 

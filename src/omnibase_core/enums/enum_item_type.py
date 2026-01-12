@@ -9,11 +9,11 @@ Provides standardized item type values for item classification and filtering.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueMixin
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
 @unique
-class EnumItemType(StrValueMixin, str, Enum):
+class EnumItemType(StrValueHelper, str, Enum):
     """
     Item type enumeration for collection item classification.
 

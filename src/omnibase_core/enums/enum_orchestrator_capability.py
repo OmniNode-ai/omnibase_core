@@ -11,11 +11,11 @@ from __future__ import annotations
 from enum import Enum, unique
 from typing import Never, NoReturn
 
-from omnibase_core.utils.util_str_enum_base import StrValueMixin
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
 @unique
-class EnumOrchestratorCapability(StrValueMixin, str, Enum):
+class EnumOrchestratorCapability(StrValueHelper, str, Enum):
     """Orchestrator node capabilities (currently: WORKFLOW_RESOLVER for coordination)."""
 
     WORKFLOW_RESOLVER = "workflow_resolver"

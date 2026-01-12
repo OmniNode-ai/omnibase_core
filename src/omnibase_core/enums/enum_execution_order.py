@@ -10,11 +10,11 @@ Replaces Literal["reverse", "forward", "parallel"] patterns.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueMixin
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
 @unique
-class EnumExecutionOrder(StrValueMixin, str, Enum):
+class EnumExecutionOrder(StrValueHelper, str, Enum):
     """
     Strongly typed execution order discriminators.
 

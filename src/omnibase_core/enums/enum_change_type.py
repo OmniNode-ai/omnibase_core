@@ -5,11 +5,11 @@
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueMixin
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
 @unique
-class EnumChangeType(StrValueMixin, str, Enum):
+class EnumChangeType(StrValueHelper, str, Enum):
     """
     Types of system changes that can be proposed.
 

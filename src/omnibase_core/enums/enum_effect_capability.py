@@ -11,11 +11,11 @@ from __future__ import annotations
 from enum import Enum, unique
 from typing import Never, NoReturn
 
-from omnibase_core.utils.util_str_enum_base import StrValueMixin
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
 @unique
-class EnumEffectCapability(StrValueMixin, str, Enum):
+class EnumEffectCapability(StrValueHelper, str, Enum):
     """Effect node capabilities: HTTP, DB, KAFKA, FILESYSTEM for external I/O."""
 
     HTTP = "http"

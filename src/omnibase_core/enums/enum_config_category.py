@@ -10,11 +10,11 @@ across the ONEX architecture.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueMixin
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
 @unique
-class EnumConfigCategory(StrValueMixin, str, Enum):
+class EnumConfigCategory(StrValueHelper, str, Enum):
     """
     Strongly typed configuration categories.
 

@@ -9,11 +9,11 @@ Strongly typed enumeration for error value type discriminators.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueMixin
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
 @unique
-class EnumErrorValueType(StrValueMixin, str, Enum):
+class EnumErrorValueType(StrValueHelper, str, Enum):
     """
     Strongly typed error value type discriminators.
 

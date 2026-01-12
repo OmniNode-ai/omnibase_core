@@ -7,11 +7,11 @@ Used for validating that execution patterns conform to architectural standards.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueMixin
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
 @unique
-class EnumMessageCategory(StrValueMixin, str, Enum):
+class EnumMessageCategory(StrValueHelper, str, Enum):
     """
     Categories of messages in ONEX for routing and topic mapping.
 
@@ -270,7 +270,7 @@ class EnumMessageCategory(StrValueMixin, str, Enum):
 
 
 @unique
-class EnumExecutionShape(StrValueMixin, str, Enum):
+class EnumExecutionShape(StrValueHelper, str, Enum):
     """
     Canonical execution shapes in ONEX.
 

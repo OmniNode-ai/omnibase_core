@@ -9,11 +9,11 @@ Defines quality levels for documentation assessment.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueMixin
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
 @unique
-class EnumDocumentationQuality(StrValueMixin, str, Enum):
+class EnumDocumentationQuality(StrValueHelper, str, Enum):
     """
     Enumeration of documentation quality levels.
 

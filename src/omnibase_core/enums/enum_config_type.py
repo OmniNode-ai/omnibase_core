@@ -9,11 +9,11 @@ Strongly typed configuration type values for system configuration classification
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueMixin
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
 @unique
-class EnumConfigType(StrValueMixin, str, Enum):
+class EnumConfigType(StrValueHelper, str, Enum):
     """
     Strongly typed configuration type values.
 

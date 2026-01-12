@@ -9,11 +9,11 @@ Defines types of metadata tools available in the ONEX ecosystem.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueMixin
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
 @unique
-class EnumMetadataToolType(StrValueMixin, str, Enum):
+class EnumMetadataToolType(StrValueHelper, str, Enum):
     """
     Types of metadata tools.
 

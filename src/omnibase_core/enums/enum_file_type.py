@@ -1,6 +1,6 @@
 from enum import Enum
 
-from omnibase_core.utils.util_str_enum_base import StrValueMixin
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 # === OmniNode:Metadata ===
 # author: OmniNode Team
@@ -26,7 +26,7 @@ from omnibase_core.utils.util_str_enum_base import StrValueMixin
 # === /OmniNode:Metadata ===
 
 
-class EnumFileType(StrValueMixin, str, Enum):
+class EnumFileType(StrValueHelper, str, Enum):
     PYTHON = "python"
     YAML = "yaml"
     MARKDOWN = "markdown"

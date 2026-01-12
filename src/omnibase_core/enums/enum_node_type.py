@@ -10,7 +10,7 @@ Strongly typed node type values for ONEX architecture node classification.
 from enum import Enum, unique
 from typing import TYPE_CHECKING
 
-from omnibase_core.utils.util_str_enum_base import StrValueMixin
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 if TYPE_CHECKING:
     from omnibase_core.enums.enum_node_kind import EnumNodeKind
@@ -95,7 +95,7 @@ def _populate_kind_map() -> None:
 
 
 @unique
-class EnumNodeType(StrValueMixin, str, Enum):
+class EnumNodeType(StrValueHelper, str, Enum):
     """
     Specific node implementation types for ONEX architecture.
 

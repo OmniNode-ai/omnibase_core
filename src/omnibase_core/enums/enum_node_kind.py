@@ -8,11 +8,11 @@ Types of ONEX nodes in the four-node architecture.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueMixin
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
 @unique
-class EnumNodeKind(StrValueMixin, str, Enum):
+class EnumNodeKind(StrValueHelper, str, Enum):
     """
     High-level architectural classification for ONEX nodes.
 

@@ -9,11 +9,11 @@ Defines the various phases of execution for CLI commands and operations.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueMixin
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
 @unique
-class EnumExecutionPhase(StrValueMixin, str, Enum):
+class EnumExecutionPhase(StrValueHelper, str, Enum):
     """
     Execution phase enumeration.
 

@@ -19,10 +19,10 @@ See Also:
 
 from enum import Enum
 
-from omnibase_core.utils.util_str_enum_base import StrValueMixin
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumMergeConflictType(StrValueMixin, str, Enum):
+class EnumMergeConflictType(StrValueHelper, str, Enum):
     """
     Types of conflicts that can occur during contract merge.
 

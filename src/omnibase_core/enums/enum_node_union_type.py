@@ -9,11 +9,11 @@ Strongly typed enumeration for node union type discriminators.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueMixin
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
 @unique
-class EnumNodeUnionType(StrValueMixin, str, Enum):
+class EnumNodeUnionType(StrValueHelper, str, Enum):
     """
     Strongly typed node union type discriminators.
 

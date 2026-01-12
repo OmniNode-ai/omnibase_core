@@ -9,11 +9,11 @@ Used in ModelNumericValue for type-safe numeric union handling.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueMixin
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
 @unique
-class EnumNumericValueType(StrValueMixin, str, Enum):
+class EnumNumericValueType(StrValueHelper, str, Enum):
     """
     Strongly typed numeric value type discriminators.
 

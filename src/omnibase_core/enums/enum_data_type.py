@@ -9,11 +9,11 @@ Strongly typed data type values for configuration and processing.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueMixin
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
 @unique
-class EnumDataType(StrValueMixin, str, Enum):
+class EnumDataType(StrValueHelper, str, Enum):
     """
     Strongly typed data type values.
 

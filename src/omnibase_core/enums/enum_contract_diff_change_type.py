@@ -7,11 +7,11 @@ during semantic diffing operations.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueMixin
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
 @unique
-class EnumContractDiffChangeType(StrValueMixin, str, Enum):
+class EnumContractDiffChangeType(StrValueHelper, str, Enum):
     """
     Types of changes detected during contract diff operations.
 

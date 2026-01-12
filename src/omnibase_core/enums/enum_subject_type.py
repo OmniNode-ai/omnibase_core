@@ -7,11 +7,11 @@ enabling filtering and scoping of memory beyond just agents.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueMixin
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
 @unique
-class EnumSubjectType(StrValueMixin, str, Enum):
+class EnumSubjectType(StrValueHelper, str, Enum):
     """Memory subject type classification for omnimemory snapshots.
 
     Classifies the ownership and scope of memory subjects in the omnimemory system,

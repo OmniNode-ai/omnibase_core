@@ -6,10 +6,10 @@ Status values for ONEX execution lifecycle tracking.
 
 from enum import Enum
 
-from omnibase_core.utils.util_str_enum_base import StrValueMixin
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumExecutionStatus(StrValueMixin, str, Enum):
+class EnumExecutionStatus(StrValueHelper, str, Enum):
     """Execution status values for ONEX lifecycle tracking."""
 
     PENDING = "pending"

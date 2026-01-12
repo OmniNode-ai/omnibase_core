@@ -9,11 +9,11 @@ Defines format types for data collections and exports.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueMixin
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
 @unique
-class EnumCollectionFormat(StrValueMixin, str, Enum):
+class EnumCollectionFormat(StrValueHelper, str, Enum):
     """
     Enumeration of collection format types.
 

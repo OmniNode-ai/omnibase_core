@@ -10,11 +10,11 @@ Replaces Literal["replace", "insert", "delete"] patterns.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueMixin
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
 @unique
-class EnumEditMode(StrValueMixin, str, Enum):
+class EnumEditMode(StrValueHelper, str, Enum):
     """
     Strongly typed edit mode discriminators.
 
