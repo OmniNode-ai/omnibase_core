@@ -33,6 +33,11 @@ SEPARATOR_CHAR = "="
 SEPARATOR_LINE = SEPARATOR_CHAR * REPORT_WIDTH
 SUBSECTION_CHAR = "-"
 
+# Cost data unavailability messages (consistent terminology across formats)
+COST_NA_CLI = "Cost:     N/A (incomplete cost data)"
+COST_NA_MARKDOWN = "_Cost data not available (incomplete data)_"
+COST_NA_WARNING = "Cost data incomplete - manual cost review recommended"
+
 
 class ServiceDecisionReportGenerator:
     """Generate decision-ready reports from corpus replay evidence.
@@ -41,18 +46,30 @@ class ServiceDecisionReportGenerator:
     into human-readable and machine-readable report formats suitable for different
     stakeholders and use cases.
 
+    Runtime Configuration:
+        All recommendation thresholds can be customized at instantiation time.
+        If not provided, class-level constants are used as defaults.
+
     Thread Safety:
-        This service is stateless and thread-safe. All methods are pure functions
-        that take inputs and return outputs without modifying any shared state.
-        Multiple threads can safely call any method concurrently.
+        This service is stateless per-call and thread-safe. Instance attributes
+        are set once during initialization and never modified. All methods are
+        pure functions that take inputs and return outputs without modifying
+        any shared state. Multiple threads can safely call any method concurrently.
 
     Example:
         >>> from omnibase_core.services.service_decision_report_generator import (
         ...     ServiceDecisionReportGenerator
         ... )
+        >>> # Use default thresholds
         >>> generator = ServiceDecisionReportGenerator()
         >>> cli_report = generator.generate_cli_report(summary, comparisons)
         >>> print(cli_report)
+        >>>
+        >>> # Custom thresholds for stricter review
+        >>> strict_generator = ServiceDecisionReportGenerator(
+        ...     confidence_approve_threshold=0.95,
+        ...     pass_rate_minimum=0.85,
+        ... )
 
     .. versionadded:: 0.6.5
     """
@@ -72,6 +89,78 @@ class ServiceDecisionReportGenerator:
     # Recommendation thresholds - cost regression (percent)
     COST_BLOCKER_PERCENT: float = 50.0
     COST_WARNING_PERCENT: float = 20.0
+
+    def __init__(
+        self,
+        confidence_approve_threshold: float | None = None,
+        confidence_review_threshold: float | None = None,
+        pass_rate_optimal: float | None = None,
+        pass_rate_minimum: float | None = None,
+        latency_blocker_percent: float | None = None,
+        latency_warning_percent: float | None = None,
+        cost_blocker_percent: float | None = None,
+        cost_warning_percent: float | None = None,
+    ) -> None:
+        """Initialize report generator with optional threshold overrides.
+
+        Args:
+            confidence_approve_threshold: Minimum confidence for auto-approve.
+                Defaults to CONFIDENCE_APPROVE_THRESHOLD (0.9).
+            confidence_review_threshold: Minimum confidence for review recommendation.
+                Defaults to CONFIDENCE_REVIEW_THRESHOLD (0.7).
+            pass_rate_optimal: Target pass rate (below triggers warning).
+                Defaults to PASS_RATE_OPTIMAL (0.95).
+            pass_rate_minimum: Minimum pass rate (below triggers blocker).
+                Defaults to PASS_RATE_MINIMUM (0.70).
+            latency_blocker_percent: Latency increase percentage that triggers blocker.
+                Defaults to LATENCY_BLOCKER_PERCENT (50.0).
+            latency_warning_percent: Latency increase percentage that triggers warning.
+                Defaults to LATENCY_WARNING_PERCENT (20.0).
+            cost_blocker_percent: Cost increase percentage that triggers blocker.
+                Defaults to COST_BLOCKER_PERCENT (50.0).
+            cost_warning_percent: Cost increase percentage that triggers warning.
+                Defaults to COST_WARNING_PERCENT (20.0).
+        """
+        self.confidence_approve_threshold = (
+            confidence_approve_threshold
+            if confidence_approve_threshold is not None
+            else self.CONFIDENCE_APPROVE_THRESHOLD
+        )
+        self.confidence_review_threshold = (
+            confidence_review_threshold
+            if confidence_review_threshold is not None
+            else self.CONFIDENCE_REVIEW_THRESHOLD
+        )
+        self.pass_rate_optimal = (
+            pass_rate_optimal
+            if pass_rate_optimal is not None
+            else self.PASS_RATE_OPTIMAL
+        )
+        self.pass_rate_minimum = (
+            pass_rate_minimum
+            if pass_rate_minimum is not None
+            else self.PASS_RATE_MINIMUM
+        )
+        self.latency_blocker_percent = (
+            latency_blocker_percent
+            if latency_blocker_percent is not None
+            else self.LATENCY_BLOCKER_PERCENT
+        )
+        self.latency_warning_percent = (
+            latency_warning_percent
+            if latency_warning_percent is not None
+            else self.LATENCY_WARNING_PERCENT
+        )
+        self.cost_blocker_percent = (
+            cost_blocker_percent
+            if cost_blocker_percent is not None
+            else self.COST_BLOCKER_PERCENT
+        )
+        self.cost_warning_percent = (
+            cost_warning_percent
+            if cost_warning_percent is not None
+            else self.COST_WARNING_PERCENT
+        )
 
     def generate_cli_report(
         self,
@@ -191,7 +280,7 @@ class ServiceDecisionReportGenerator:
                 f"(${baseline_cost:.4f} -> ${replay_cost:.4f} per execution)"
             )
         else:
-            lines.append("Cost:     N/A (incomplete cost data)")
+            lines.append(COST_NA_CLI)
 
         lines.append("")
 
@@ -282,6 +371,7 @@ class ServiceDecisionReportGenerator:
         comparisons: list[ModelExecutionComparison],
         include_details: bool = False,
         recommendation: ModelDecisionRecommendation | None = None,
+        generated_at: datetime | None = None,
     ) -> TypedDictDecisionReport:
         """Generate structured JSON report for machine consumption.
 
@@ -294,6 +384,9 @@ class ServiceDecisionReportGenerator:
             include_details: Whether to include individual comparison details.
             recommendation: Pre-generated recommendation. If None, generates a new one.
                 Providing this avoids redundant computation when generating multiple formats.
+            generated_at: Optional timestamp for report generation. If None, uses
+                current UTC time. Providing a fixed timestamp enables deterministic
+                output for testing.
 
         Returns:
             TypedDictDecisionReport with report data.
@@ -307,7 +400,9 @@ class ServiceDecisionReportGenerator:
 
         report: TypedDictDecisionReport = {
             "report_version": REPORT_VERSION,
-            "generated_at": datetime.now(UTC).isoformat(),
+            "generated_at": generated_at.isoformat()
+            if generated_at
+            else datetime.now(UTC).isoformat(),
             "summary": {
                 "summary_id": summary.summary_id,
                 "corpus_id": summary.corpus_id,
@@ -401,6 +496,7 @@ class ServiceDecisionReportGenerator:
         comparisons: list[ModelExecutionComparison],
         include_details: bool = True,
         recommendation: ModelDecisionRecommendation | None = None,
+        generated_at: datetime | None = None,
     ) -> str:
         """Generate Markdown report for PR/documentation.
 
@@ -413,6 +509,9 @@ class ServiceDecisionReportGenerator:
             include_details: Whether to include individual comparison details.
             recommendation: Pre-generated recommendation. If None, generates a new one.
                 Providing this avoids redundant computation when generating multiple formats.
+            generated_at: Optional timestamp for report generation. If None, uses
+                current UTC time. Providing a fixed timestamp enables deterministic
+                output for testing.
 
         Returns:
             GitHub-flavored markdown string.
@@ -429,7 +528,10 @@ class ServiceDecisionReportGenerator:
         # Header
         lines.append("# Corpus Replay Evidence Report")
         lines.append("")
-        lines.append(f"> **Generated**: {datetime.now(UTC).isoformat()}")
+        generated_at_str = (
+            generated_at.isoformat() if generated_at else datetime.now(UTC).isoformat()
+        )
+        lines.append(f"> **Generated**: {generated_at_str}")
         lines.append("")
 
         # Summary section
@@ -593,7 +695,7 @@ class ServiceDecisionReportGenerator:
                 f"${cost.replay_avg_per_execution:.6f} | - |"
             )
         else:
-            lines.append("_Cost data not available (incomplete data)_")
+            lines.append(COST_NA_MARKDOWN)
         lines.append("")
 
         # Details section (if requested)
@@ -635,24 +737,25 @@ class ServiceDecisionReportGenerator:
         """Generate actionable recommendation from evidence.
 
         Analyzes the evidence summary and generates a recommendation with
-        blockers, warnings, and next steps based on configurable class-level
-        thresholds. See class constants for threshold values:
+        blockers, warnings, and next steps based on configurable instance
+        thresholds. Thresholds can be customized at instantiation or use
+        class constant defaults:
 
-        - CONFIDENCE_APPROVE_THRESHOLD: Minimum confidence for auto-approve
-        - CONFIDENCE_REVIEW_THRESHOLD: Minimum confidence for review recommendation
-        - PASS_RATE_OPTIMAL: Target pass rate (below triggers warning)
-        - PASS_RATE_MINIMUM: Minimum pass rate (below triggers blocker)
-        - LATENCY_BLOCKER_PERCENT: Latency increase that triggers blocker
-        - LATENCY_WARNING_PERCENT: Latency increase that triggers warning
-        - COST_BLOCKER_PERCENT: Cost increase that triggers blocker
-        - COST_WARNING_PERCENT: Cost increase that triggers warning
+        - confidence_approve_threshold: Minimum confidence for auto-approve
+        - confidence_review_threshold: Minimum confidence for review recommendation
+        - pass_rate_optimal: Target pass rate (below triggers warning)
+        - pass_rate_minimum: Minimum pass rate (below triggers blocker)
+        - latency_blocker_percent: Latency increase that triggers blocker
+        - latency_warning_percent: Latency increase that triggers warning
+        - cost_blocker_percent: Cost increase that triggers blocker
+        - cost_warning_percent: Cost increase that triggers warning
 
         Recommendation Logic:
-            - **approve**: confidence >= CONFIDENCE_APPROVE_THRESHOLD AND
+            - **approve**: confidence >= confidence_approve_threshold AND
               no critical violations AND no blockers
-            - **review**: confidence >= CONFIDENCE_REVIEW_THRESHOLD AND
+            - **review**: confidence >= confidence_review_threshold AND
               no critical violations (warnings OK)
-            - **reject**: confidence < CONFIDENCE_REVIEW_THRESHOLD OR
+            - **reject**: confidence < confidence_review_threshold OR
               critical violations present
 
         Args:
@@ -682,26 +785,26 @@ class ServiceDecisionReportGenerator:
             )
 
         # Check pass rate
-        if summary.pass_rate < self.PASS_RATE_OPTIMAL:
-            if summary.pass_rate < self.PASS_RATE_MINIMUM:
+        if summary.pass_rate < self.pass_rate_optimal:
+            if summary.pass_rate < self.pass_rate_minimum:
                 blockers.append(
                     f"Pass rate too low: {summary.pass_rate:.0%} "
-                    f"(minimum: {self.PASS_RATE_MINIMUM:.0%})"
+                    f"(minimum: {self.pass_rate_minimum:.0%})"
                 )
             else:
                 warnings.append(
                     f"Pass rate below optimal: {summary.pass_rate:.0%} "
-                    f"(target: {self.PASS_RATE_OPTIMAL:.0%})"
+                    f"(target: {self.pass_rate_optimal:.0%})"
                 )
 
         # Check latency regression
         latency_delta = summary.latency_stats.delta_avg_percent
-        if latency_delta > self.LATENCY_BLOCKER_PERCENT:
+        if latency_delta > self.latency_blocker_percent:
             blockers.append(
                 f"Significant latency regression: +{latency_delta:.0f}% "
-                f"(threshold: {self.LATENCY_BLOCKER_PERCENT:.0f}%)"
+                f"(threshold: {self.latency_blocker_percent:.0f}%)"
             )
-        elif latency_delta > self.LATENCY_WARNING_PERCENT:
+        elif latency_delta > self.latency_warning_percent:
             warnings.append(
                 f"Latency increased: +{latency_delta:.0f}% (consider optimization)"
             )
@@ -709,18 +812,18 @@ class ServiceDecisionReportGenerator:
         # Check cost regression
         if summary.cost_stats is not None:
             cost_delta = summary.cost_stats.delta_percent
-            if cost_delta > self.COST_BLOCKER_PERCENT:
+            if cost_delta > self.cost_blocker_percent:
                 blockers.append(
                     f"Significant cost increase: +{cost_delta:.0f}% "
-                    f"(threshold: {self.COST_BLOCKER_PERCENT:.0f}%)"
+                    f"(threshold: {self.cost_blocker_percent:.0f}%)"
                 )
-            elif cost_delta > self.COST_WARNING_PERCENT:
+            elif cost_delta > self.cost_warning_percent:
                 warnings.append(
                     f"Cost increased: +{cost_delta:.0f}% (consider optimization)"
                 )
         else:
             # Warn about incomplete cost data
-            warnings.append("Cost data incomplete - manual cost review recommended")
+            warnings.append(COST_NA_WARNING)
 
         # Check for new violations (non-critical)
         if violations.new_violations > 0 and violations.new_critical_violations == 0:
@@ -733,13 +836,13 @@ class ServiceDecisionReportGenerator:
         has_blockers = len(blockers) > 0
 
         if (
-            confidence >= self.CONFIDENCE_APPROVE_THRESHOLD
+            confidence >= self.confidence_approve_threshold
             and not has_critical
             and not has_blockers
         ):
             action: Literal["approve", "review", "reject"] = "approve"
             rationale = "High confidence score with no critical violations or blockers."
-        elif confidence >= self.CONFIDENCE_REVIEW_THRESHOLD and not has_critical:
+        elif confidence >= self.confidence_review_threshold and not has_critical:
             action = "review"
             rationale = (
                 "Acceptable confidence but requires human review due to warnings."
@@ -748,7 +851,7 @@ class ServiceDecisionReportGenerator:
             action = "reject"
             if has_critical:
                 rationale = "Critical violations detected that must be resolved."
-            elif confidence < self.CONFIDENCE_REVIEW_THRESHOLD:
+            elif confidence < self.confidence_review_threshold:
                 rationale = f"Confidence too low ({confidence:.0%}) for approval."
             else:
                 rationale = "Blocking issues detected that must be resolved."
@@ -769,13 +872,13 @@ class ServiceDecisionReportGenerator:
         else:  # reject
             if has_critical:
                 next_steps.append("Fix critical invariant violations")
-            if summary.pass_rate < self.PASS_RATE_MINIMUM:
+            if summary.pass_rate < self.pass_rate_minimum:
                 next_steps.append("Investigate and fix failing test cases")
-            if latency_delta > self.LATENCY_BLOCKER_PERCENT:
+            if latency_delta > self.latency_blocker_percent:
                 next_steps.append("Optimize code to reduce latency regression")
             if (
                 summary.cost_stats
-                and summary.cost_stats.delta_percent > self.COST_BLOCKER_PERCENT
+                and summary.cost_stats.delta_percent > self.cost_blocker_percent
             ):
                 next_steps.append("Optimize to reduce cost increase")
             next_steps.append("Re-run corpus replay after fixes")
