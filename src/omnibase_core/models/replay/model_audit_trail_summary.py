@@ -12,7 +12,7 @@ Design:
     - Total enforcement decisions made
     - Breakdown by outcome (allowed, blocked, warned, mocked)
     - Breakdown by non-determinism source (time, random, network, etc.)
-    - Breakdown by enforcement mode (strict, lenient, mocked)
+    - Breakdown by enforcement mode (strict, warn, permissive, mocked)
     - Time range of decisions
     - List of blocked effect types for quick identification
 
@@ -71,9 +71,9 @@ class ModelAuditTrailSummary(BaseModel):
         decisions_by_outcome: Count of decisions by outcome type.
             Keys: "allowed", "blocked", "warned", "mocked"
         decisions_by_source: Count of decisions by non-determinism source.
-            Keys: "time", "random", "network", "file_system", "external_state", "unknown"
+            Keys: "time", "random", "uuid", "network", "database", "filesystem", "environment"
         decisions_by_mode: Count of decisions by enforcement mode.
-            Keys: "strict", "lenient", "mocked", "disabled"
+            Keys: "strict", "warn", "permissive", "mocked"
         first_decision_at: Timestamp of the first decision, or None if no decisions.
         last_decision_at: Timestamp of the last decision, or None if no decisions.
         blocked_effects: List of unique effect types that were blocked.
@@ -128,14 +128,14 @@ class ModelAuditTrailSummary(BaseModel):
         default_factory=dict,
         description=(
             "Count of decisions by non-determinism source. "
-            "Keys: 'time', 'random', 'network', 'file_system', 'external_state', 'unknown'"
+            "Keys: 'time', 'random', 'uuid', 'network', 'database', 'filesystem', 'environment'"
         ),
     )
     decisions_by_mode: dict[str, int] = Field(
         default_factory=dict,
         description=(
             "Count of decisions by enforcement mode. "
-            "Keys: 'strict', 'lenient', 'mocked', 'disabled'"
+            "Keys: 'strict', 'warn', 'permissive', 'mocked'"
         ),
     )
     first_decision_at: datetime | None = Field(

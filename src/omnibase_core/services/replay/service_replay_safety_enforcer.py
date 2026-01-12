@@ -382,8 +382,7 @@ class ServiceReplaySafetyEnforcer:
     ) -> None:
         """Log a warning using the configured logger or module logger."""
         if self._logger is not None:
-            # ProtocolLoggerLike only requires info(), use info with [WARNING] prefix
-            self._logger.info(f"[WARNING] {message}", extra=extra)
+            self._logger.warning(message, extra=extra)
         else:
             _logger.warning(message, extra=extra or {})
 

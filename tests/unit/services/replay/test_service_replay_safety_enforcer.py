@@ -204,11 +204,11 @@ class TestWarnMode:
 
         _ = enforcer.enforce("time.now")
 
-        # ProtocolLoggerLike only has info(), so warnings are logged via info with prefix
-        mock_logger.info.assert_called()
-        # Verify the message includes [WARNING] prefix
-        call_args = mock_logger.info.call_args
-        assert "[WARNING]" in call_args[0][0]
+        # ProtocolLoggerLike has warning() method for proper log level
+        mock_logger.warning.assert_called()
+        # Verify the message describes the non-deterministic effect
+        call_args = mock_logger.warning.call_args
+        assert "time.now" in call_args[0][0]
 
 
 # =============================================================================

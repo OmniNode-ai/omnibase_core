@@ -551,7 +551,7 @@ class ServiceAuditTrail:
         summary = self.get_summary()
 
         export_data = {
-            "session_id": self._session_id,
+            "session_id": str(self._session_id),
             "summary": summary.model_dump(mode="json"),
             "entries": [e.model_dump(mode="json") for e in self._entries],
         }
