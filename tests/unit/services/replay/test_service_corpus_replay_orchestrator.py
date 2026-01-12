@@ -23,7 +23,7 @@ from omnibase_core.models.replay import (
     ModelExecutionCorpus,
     ModelSubsetFilter,
 )
-from omnibase_core.pipeline.replay.executor_replay import ExecutorReplay
+from omnibase_core.pipeline.replay.runner_replay_executor import ExecutorReplay
 from omnibase_core.services.replay.service_corpus_replay_orchestrator import (
     ServiceCorpusReplayOrchestrator,
 )

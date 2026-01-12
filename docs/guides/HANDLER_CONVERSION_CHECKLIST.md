@@ -41,22 +41,10 @@ First conversions demonstrating the mixin-to-handler pattern with stub implement
 
 | Mixin | Handler | Status | Ticket | Notes |
 |-------|---------|--------|--------|-------|
-| `MixinMetrics` | `ModelCapabilityMetrics` | Completed | OMN-1112 | First conversion - stub impl |
-| `MixinCaching` | `ModelCapabilityCaching` | Completed | OMN-1112 | First conversion - stub impl |
+| `MixinMetrics` | `HandlerCapabilityMetrics` | Completed | OMN-1112 | First conversion - stub impl |
+| `MixinCaching` | `HandlerCapabilityCaching` | Completed | OMN-1112 | First conversion - stub impl |
 
-### MixinMetrics -> ModelCapabilityMetrics
-
-- [x] Handler design documented
-- [x] TDD tests written
-- [x] Handler implemented
-- [x] All original mixin tests pass
-- [x] Handler works standalone (no inheritance)
-- [x] Added to `pipeline/handlers/__init__.py`
-- [x] Ticket closed: OMN-1112
-
-**Location**: `src/omnibase_core/pipeline/handlers/model_capability_metrics.py`
-
-### MixinCaching -> ModelCapabilityCaching
+### MixinMetrics -> HandlerCapabilityMetrics
 
 - [x] Handler design documented
 - [x] TDD tests written
@@ -66,7 +54,19 @@ First conversions demonstrating the mixin-to-handler pattern with stub implement
 - [x] Added to `pipeline/handlers/__init__.py`
 - [x] Ticket closed: OMN-1112
 
-**Location**: `src/omnibase_core/pipeline/handlers/model_capability_caching.py`
+**Location**: `src/omnibase_core/pipeline/handlers/handler_capability_metrics.py`
+
+### MixinCaching -> HandlerCapabilityCaching
+
+- [x] Handler design documented
+- [x] TDD tests written
+- [x] Handler implemented
+- [x] All original mixin tests pass
+- [x] Handler works standalone (no inheritance)
+- [x] Added to `pipeline/handlers/__init__.py`
+- [x] Ticket closed: OMN-1112
+
+**Location**: `src/omnibase_core/pipeline/handlers/handler_capability_caching.py`
 
 ---
 
@@ -76,12 +76,12 @@ Production-ready resilience patterns with full implementations.
 
 | Mixin | Handler | Status | Ticket | Notes |
 |-------|---------|--------|--------|-------|
-| `MixinHealthCheck` | `ModelCapabilityHealthCheck` | Planned | - | HTTP, Kafka, PostgreSQL, Redis checks |
-| `MixinFailFast` | `ModelCapabilityFailFast` | Planned | - | Circuit breaker integration |
-| (New) | `ModelCapabilityRetry` | Planned | - | Exponential backoff, jitter |
-| (New) | `ModelCapabilityCircuitBreaker` | Planned | - | Failure threshold, recovery |
+| `MixinHealthCheck` | `HandlerCapabilityHealthCheck` | Planned | - | HTTP, Kafka, PostgreSQL, Redis checks |
+| `MixinFailFast` | `HandlerCapabilityFailFast` | Planned | - | Circuit breaker integration |
+| (New) | `HandlerCapabilityRetry` | Planned | - | Exponential backoff, jitter |
+| (New) | `HandlerCapabilityCircuitBreaker` | Planned | - | Failure threshold, recovery |
 
-### MixinHealthCheck -> ModelCapabilityHealthCheck
+### MixinHealthCheck -> HandlerCapabilityHealthCheck
 
 - [ ] Handler design documented
 - [ ] TDD tests written
@@ -94,7 +94,7 @@ Production-ready resilience patterns with full implementations.
 
 **Original Location**: `src/omnibase_core/mixins/mixin_health_check.py`
 
-### MixinFailFast -> ModelCapabilityFailFast
+### MixinFailFast -> HandlerCapabilityFailFast
 
 - [ ] Handler design documented
 - [ ] TDD tests written
@@ -114,14 +114,14 @@ Event-driven architecture and service discovery patterns.
 
 | Mixin | Handler | Status | Ticket | Notes |
 |-------|---------|--------|--------|-------|
-| `MixinEventBus` | `ModelCapabilityEventBus` | Planned | - | Core event bus integration |
-| `MixinEventDrivenNode` | `ModelCapabilityEventDrivenNode` | Planned | - | Event-driven node pattern |
-| `MixinEventHandler` | `ModelCapabilityEventHandler` | Planned | - | Event handling |
-| `MixinEventListener` | `ModelCapabilityEventListener` | Planned | - | Event subscription |
-| `MixinDiscoveryResponder` | `ModelCapabilityDiscoveryResponder` | Planned | - | Discovery response |
-| `MixinDiscovery` | `ModelCapabilityDiscovery` | Planned | - | Service discovery |
-| `MixinDebugDiscoveryLogging` | `ModelCapabilityDebugDiscoveryLogging` | Planned | - | Debug logging |
-| `MixinServiceRegistry` | `ModelCapabilityServiceRegistry` | Planned | - | Service registration |
+| `MixinEventBus` | `HandlerCapabilityEventBus` | Planned | - | Core event bus integration |
+| `MixinEventDrivenNode` | `HandlerCapabilityEventDrivenNode` | Planned | - | Event-driven node pattern |
+| `MixinEventHandler` | `HandlerCapabilityEventHandler` | Planned | - | Event handling |
+| `MixinEventListener` | `HandlerCapabilityEventListener` | Planned | - | Event subscription |
+| `MixinDiscoveryResponder` | `HandlerCapabilityDiscoveryResponder` | Planned | - | Discovery response |
+| `MixinDiscovery` | `HandlerCapabilityDiscovery` | Planned | - | Service discovery |
+| `MixinDebugDiscoveryLogging` | `HandlerCapabilityDebugDiscoveryLogging` | Planned | - | Debug logging |
+| `MixinServiceRegistry` | `HandlerCapabilityServiceRegistry` | Planned | - | Service registration |
 
 ---
 
@@ -131,12 +131,12 @@ Node execution and lifecycle patterns.
 
 | Mixin | Handler | Status | Ticket | Notes |
 |-------|---------|--------|--------|-------|
-| `MixinComputeExecution` | `ModelCapabilityComputeExecution` | Planned | - | Compute node execution |
-| `MixinEffectExecution` | `ModelCapabilityEffectExecution` | Planned | - | Effect node execution |
-| `MixinFSMExecution` | `ModelCapabilityFSMExecution` | Planned | - | FSM-based execution |
-| `MixinHybridExecution` | `ModelCapabilityHybridExecution` | Planned | - | Hybrid sync/async |
-| `MixinNodeExecutor` | `ModelCapabilityNodeExecutor` | Planned | - | Generic node execution |
-| `MixinNodeLifecycle` | `ModelCapabilityNodeLifecycle` | Planned | - | Lifecycle management |
+| `MixinComputeExecution` | `HandlerCapabilityComputeExecution` | Planned | - | Compute node execution |
+| `MixinEffectExecution` | `HandlerCapabilityEffectExecution` | Planned | - | Effect node execution |
+| `MixinFSMExecution` | `HandlerCapabilityFSMExecution` | Planned | - | FSM-based execution |
+| `MixinHybridExecution` | `HandlerCapabilityHybridExecution` | Planned | - | Hybrid sync/async |
+| `MixinNodeExecutor` | `HandlerCapabilityNodeExecutor` | Planned | - | Generic node execution |
+| `MixinNodeLifecycle` | `HandlerCapabilityNodeLifecycle` | Planned | - | Lifecycle management |
 
 ---
 
@@ -146,11 +146,11 @@ Contract metadata and state management patterns.
 
 | Mixin | Handler | Status | Ticket | Notes |
 |-------|---------|--------|--------|-------|
-| `MixinContractMetadata` | `ModelCapabilityContractMetadata` | Planned | - | Contract metadata extraction |
-| `MixinContractStateReducer` | `ModelCapabilityContractStateReducer` | Planned | - | State reduction |
-| `MixinIntentPublisher` | `ModelCapabilityIntentPublisher` | Planned | - | Intent publishing |
-| `MixinNodeIdFromContract` | `ModelCapabilityNodeIdFromContract` | Planned | - | Node ID extraction |
-| `MixinNodeSetup` | `ModelCapabilityNodeSetup` | Planned | - | Node initialization |
+| `MixinContractMetadata` | `HandlerCapabilityContractMetadata` | Planned | - | Contract metadata extraction |
+| `MixinContractStateReducer` | `HandlerCapabilityContractStateReducer` | Planned | - | State reduction |
+| `MixinIntentPublisher` | `HandlerCapabilityIntentPublisher` | Planned | - | Intent publishing |
+| `MixinNodeIdFromContract` | `HandlerCapabilityNodeIdFromContract` | Planned | - | Node ID extraction |
+| `MixinNodeSetup` | `HandlerCapabilityNodeSetup` | Planned | - | Node initialization |
 
 ---
 
@@ -160,10 +160,10 @@ Data serialization and transformation patterns.
 
 | Mixin | Handler | Status | Ticket | Notes |
 |-------|---------|--------|--------|-------|
-| `MixinCanonicalYAMLSerializer` | `ModelCapabilityCanonicalSerializer` | Planned | - | Canonical YAML |
-| `MixinYAMLSerialization` | `ModelCapabilityYAMLSerialization` | Planned | - | YAML serialization |
-| `MixinSerializable` | `ModelCapabilitySerializable` | Planned | - | Generic serialization |
-| `MixinHashComputation` | `ModelCapabilityHashComputation` | Planned | - | Hash computation |
+| `MixinCanonicalYAMLSerializer` | `HandlerCapabilityCanonicalSerializer` | Planned | - | Canonical YAML |
+| `MixinYAMLSerialization` | `HandlerCapabilityYAMLSerialization` | Planned | - | YAML serialization |
+| `MixinSerializable` | `HandlerCapabilitySerializable` | Planned | - | Generic serialization |
+| `MixinHashComputation` | `HandlerCapabilityHashComputation` | Planned | - | Hash computation |
 
 ---
 
@@ -173,12 +173,12 @@ Utility mixins and specialized patterns.
 
 | Mixin | Handler | Status | Ticket | Notes |
 |-------|---------|--------|--------|-------|
-| `MixinWorkflowExecution` | `ModelCapabilityWorkflowExecution` | Planned | - | Workflow orchestration |
-| `MixinToolExecution` | `ModelCapabilityToolExecution` | Planned | - | Tool execution |
-| `MixinLazyEvaluation` | `ModelCapabilityLazyEvaluation` | Planned | - | Lazy evaluation |
-| `MixinLazyValue` | `ModelCapabilityLazyValue` | Planned | - | Lazy value wrapper |
-| `MixinSensitiveFieldRedaction` | `ModelCapabilityRedaction` | Planned | - | PII/secret redaction |
-| `MixinCLIHandler` | `ModelCapabilityCLIHandler` | Planned | - | CLI integration |
+| `MixinWorkflowExecution` | `HandlerCapabilityWorkflowExecution` | Planned | - | Workflow orchestration |
+| `MixinToolExecution` | `HandlerCapabilityToolExecution` | Planned | - | Tool execution |
+| `MixinLazyEvaluation` | `HandlerCapabilityLazyEvaluation` | Planned | - | Lazy evaluation |
+| `MixinLazyValue` | `HandlerCapabilityLazyValue` | Planned | - | Lazy value wrapper |
+| `MixinSensitiveFieldRedaction` | `HandlerCapabilityRedaction` | Planned | - | PII/secret redaction |
+| `MixinCLIHandler` | `HandlerCapabilityCLIHandler` | Planned | - | CLI integration |
 
 ---
 
@@ -223,7 +223,7 @@ grep -r "MixinCaching" src/omnibase_core/pipeline/handlers/
 
 ```bash
 # Verify handlers are exported
-grep -r "ModelCapability" src/omnibase_core/pipeline/handlers/__init__.py
+grep -r "HandlerCapability" src/omnibase_core/pipeline/handlers/__init__.py
 ```
 
 ### Full Validation Suite
@@ -281,7 +281,7 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, PrivateAttr
 
 
-class ModelCapabilityExample(BaseModel):
+class HandlerCapabilityExample(BaseModel):
     """
     Example capability handler.
 
@@ -311,11 +311,11 @@ Handlers are registered in `pipeline/handlers/__init__.py`:
 
 ```python
 from omnibase_core.pipeline.handlers.model_capability_example import (
-    ModelCapabilityExample,
+    HandlerCapabilityExample,
 )
 
 __all__ = [
-    "ModelCapabilityExample",
+    "HandlerCapabilityExample",
     # ... other handlers
 ]
 ```

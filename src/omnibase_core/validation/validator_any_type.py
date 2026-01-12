@@ -57,8 +57,7 @@ from omnibase_core.models.common.model_validation_issue import ModelValidationIs
 from omnibase_core.models.contracts.subcontracts.model_validator_subcontract import (
     ModelValidatorSubcontract,
 )
-from omnibase_core.validation.validator_base import ValidatorBase
-from omnibase_core.validation.visitor_any_type import (
+from omnibase_core.validation.checker_visitor_any_type import (
     EXEMPT_DECORATORS,
     RULE_ANY_ANNOTATION,
     RULE_ANY_IMPORT,
@@ -67,6 +66,7 @@ from omnibase_core.validation.visitor_any_type import (
     RULE_UNION_WITH_ANY,
     AnyTypeVisitor,
 )
+from omnibase_core.validation.validator_base import ValidatorBase
 
 # Configure logger for this module
 logger = logging.getLogger(__name__)

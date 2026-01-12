@@ -9,20 +9,20 @@ for development, testing, and single-instance deployments. For production
 multi-instance deployments, use a persistent backend like PostgreSQL.
 
 Thread Safety:
-    StoreDiffInMemory is NOT thread-safe. The internal dict is not protected
+    ServiceDiffInMemoryStore is NOT thread-safe. The internal dict is not protected
     by locks, and concurrent access from multiple threads may cause data
     corruption or race conditions.
 
     For thread-safe usage:
-    - Use separate StoreDiffInMemory instances per thread, OR
+    - Use separate ServiceDiffInMemoryStore instances per thread, OR
     - Wrap all operations with threading.Lock
 
 Example:
-    >>> from omnibase_core.services.diff.store_diff_in_memory import StoreDiffInMemory
+    >>> from omnibase_core.services.diff.service_diff_in_memory_store import ServiceDiffInMemoryStore
     >>> from omnibase_core.models.diff.model_diff_query import ModelDiffQuery
     >>> from omnibase_core.models.contracts.diff import ModelContractDiff
     >>>
-    >>> store = StoreDiffInMemory()
+    >>> store = ServiceDiffInMemoryStore()
     >>>
     >>> # Store a diff
     >>> diff = ModelContractDiff(
@@ -57,7 +57,7 @@ from omnibase_core.models.diff.model_diff_storage_configuration import (
 from omnibase_core.protocols.storage.protocol_diff_store import ProtocolDiffStore
 
 
-class StoreDiffInMemory:
+class ServiceDiffInMemoryStore:
     """
     In-memory diff storage implementation.
 
@@ -104,7 +104,7 @@ class StoreDiffInMemory:
         consider using a persistent backend with indexed queries.
 
     Example:
-        >>> store = StoreDiffInMemory()
+        >>> store = ServiceDiffInMemoryStore()
         >>> await store.put(diff)
         >>> print(f"Stored {len(store)} diffs")
 
@@ -156,8 +156,8 @@ class StoreDiffInMemory:
             self._owner_thread = current_thread
         elif current_thread != self._owner_thread:
             warnings.warn(
-                f"StoreDiffInMemory accessed from thread {current_thread} but was created "
-                f"in thread {self._owner_thread}. StoreDiffInMemory is NOT thread-safe. "
+                f"ServiceDiffInMemoryStore accessed from thread {current_thread} but was created "
+                f"in thread {self._owner_thread}. ServiceDiffInMemoryStore is NOT thread-safe. "
                 f"Use separate instances per thread or wrap with threading.Lock.",
                 RuntimeWarning,
                 stacklevel=3,
@@ -208,7 +208,7 @@ class StoreDiffInMemory:
 
         Performance:
             O(n) filter + O(n log n) sort. For large datasets (>10,000 diffs),
-            consider using StoreDiffFile or a database-backed store.
+            consider using ServiceDiffFileStore or a database-backed store.
         """
         # Apply filters
         matching_diffs = [
@@ -301,6 +301,6 @@ class StoreDiffInMemory:
 
 
 # Verify protocol compliance at module load time
-_store_check: ProtocolDiffStore = StoreDiffInMemory()
+_store_check: ProtocolDiffStore = ServiceDiffInMemoryStore()
 
-__all__ = ["StoreDiffInMemory"]
+__all__ = ["ServiceDiffInMemoryStore"]

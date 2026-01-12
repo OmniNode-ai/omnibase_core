@@ -143,7 +143,7 @@ Each tier inherits from the one below, **adding features without removing flexib
 """Price calculator using Tier 1 ModelServiceCompute wrapper."""
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.infrastructure.infrastructure_bases import ModelServiceCompute
+from omnibase_core.infrastructure.infra_bases import ModelServiceCompute
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.nodes import ModelComputeInput, ModelComputeOutput
@@ -266,7 +266,7 @@ class NodePriceCalculatorCompute(ModelServiceCompute):
 """Database writer using Tier 1 ModelServiceEffect wrapper."""
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.infrastructure.infrastructure_bases import ModelServiceEffect
+from omnibase_core.infrastructure.infra_bases import ModelServiceEffect
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.nodes import ModelEffectInput, ModelEffectOutput
@@ -1117,7 +1117,7 @@ When migrating between tiers:
 **Solution**: **Tier 1 - ModelServiceCompute**
 
 ```python
-from omnibase_core.infrastructure.infrastructure_bases import ModelServiceCompute
+from omnibase_core.infrastructure.infra_bases import ModelServiceCompute
 
 class NodeMcpCalculatorCompute(ModelServiceCompute):
     """MCP server with all features built-in."""
@@ -1251,7 +1251,7 @@ class NodeCustomValidator(NodeCoreBase):
 **Solution**: **Tier 1 - ModelServiceEffect**
 
 ```python
-from omnibase_core.infrastructure.infrastructure_bases import ModelServiceEffect
+from omnibase_core.infrastructure.infra_bases import ModelServiceEffect
 
 class NodeDatabaseWriterEffect(ModelServiceEffect):
     """Database writer with all features."""

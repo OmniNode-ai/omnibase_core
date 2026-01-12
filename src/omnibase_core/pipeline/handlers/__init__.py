@@ -8,14 +8,14 @@ with composition-based handlers for the ONEX pipeline.
     Added as part of Mixin-to-Handler conversion (OMN-1112)
 """
 
-from omnibase_core.pipeline.handlers.model_capability_caching import (
-    ModelCapabilityCaching,
+from omnibase_core.pipeline.handlers.handler_capability_caching import (
+    HandlerCapabilityCaching,
 )
-from omnibase_core.pipeline.handlers.model_capability_metrics import (
-    ModelCapabilityMetrics,
+from omnibase_core.pipeline.handlers.handler_capability_metrics import (
+    HandlerCapabilityMetrics,
 )
 
 __all__ = [
-    "ModelCapabilityCaching",
-    "ModelCapabilityMetrics",
+    "HandlerCapabilityCaching",
+    "HandlerCapabilityMetrics",
 ]

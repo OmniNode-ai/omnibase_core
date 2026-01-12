@@ -22,7 +22,7 @@ from omnibase_core.backends.cache import (
     REDIS_AVAILABLE,
     BackendCacheRedis,
 )
-from omnibase_core.infrastructure.execution.phase_sequencer import (
+from omnibase_core.infrastructure.execution.infra_phase_sequencer import (
     create_execution_plan,
 )
 from omnibase_core.infrastructure.node_base import NodeBase
@@ -39,7 +39,7 @@ __all__ = [
     # Cache backends (OMN-1188) - from backends.cache
     "REDIS_AVAILABLE",
     "BackendCacheRedis",
-    # Execution sequencing - from execution.phase_sequencer
+    # Execution sequencing - from execution.infra_phase_sequencer
     "create_execution_plan",
     # Node bases
     "NodeBase",

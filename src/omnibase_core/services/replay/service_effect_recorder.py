@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 """
-RecorderEffect - Effect recorder for deterministic replay.
+ServiceEffectRecorder - Effect recorder for deterministic replay.
 
 This module provides the default ProtocolEffectRecorder implementation for
 capturing and replaying effects in the ONEX pipeline.
@@ -22,14 +22,14 @@ Architecture:
 Usage:
     .. code-block:: python
 
-        from omnibase_core.services.replay.recorder_effect import RecorderEffect
+        from omnibase_core.services.replay.service_effect_recorder import ServiceEffectRecorder
         from omnibase_core.enums.replay import EnumRecorderMode
 
         # Production mode (default): pass-through, no recording
-        prod_recorder = RecorderEffect()
+        prod_recorder = ServiceEffectRecorder()
 
         # Recording mode: capture effect executions
-        recording_recorder = RecorderEffect(mode=EnumRecorderMode.RECORDING)
+        recording_recorder = ServiceEffectRecorder(mode=EnumRecorderMode.RECORDING)
         record = recording_recorder.record(
             effect_type="http.get",
             intent={"url": "https://api.example.com"},
@@ -38,7 +38,7 @@ Usage:
 
         # Replay mode: return pre-recorded results
         records = recording_recorder.get_all_records()
-        replay_recorder = RecorderEffect(
+        replay_recorder = ServiceEffectRecorder(
             mode=EnumRecorderMode.REPLAYING,
             records=records,
         )
@@ -54,17 +54,17 @@ Key Invariant:
     .. code-block:: python
 
         # Record
-        recorder = RecorderEffect(mode=EnumRecorderMode.RECORDING)
+        recorder = ServiceEffectRecorder(mode=EnumRecorderMode.RECORDING)
         recorder.record("http.get", intent, result)
         records = recorder.get_all_records()
 
         # Replay
-        replay = RecorderEffect(mode=EnumRecorderMode.REPLAYING, records=records)
+        replay = ServiceEffectRecorder(mode=EnumRecorderMode.REPLAYING, records=records)
         replayed_result = replay.get_replay_result("http.get", intent)
         assert replayed_result == result
 
 Thread Safety:
-    RecorderEffect uses a list for internal storage. While the ModelEffectRecord
+    ServiceEffectRecorder uses a list for internal storage. While the ModelEffectRecord
     instances are immutable (frozen), concurrent recording from multiple threads
     is NOT safe. Use thread-local recorders or external synchronization if
     concurrent recording is needed.
@@ -73,14 +73,14 @@ Related:
     - OMN-1116: Implement Effect Recorder for Replay Infrastructure
     - ProtocolEffectRecorder: Protocol definition
     - ModelEffectRecord: Effect record model
-    - InjectorTime: Time service for timestamps
+    - ServiceTimeInjector: Time service for timestamps
 
 .. versionadded:: 0.4.0
 """
 
 from __future__ import annotations
 
-__all__ = ["RecorderEffect"]
+__all__ = ["ServiceEffectRecorder"]
 
 import json
 from collections.abc import Iterator
@@ -100,7 +100,7 @@ if TYPE_CHECKING:
     from omnibase_core.protocols.replay.protocol_time_service import ProtocolTimeService
 
 
-class RecorderEffect:
+class ServiceEffectRecorder:
     """
     Effect recorder for deterministic replay.
 
@@ -121,17 +121,17 @@ class RecorderEffect:
         is_replaying: Whether the recorder is in replay mode.
 
     Example:
-        >>> from omnibase_core.services.replay.recorder_effect import RecorderEffect
+        >>> from omnibase_core.services.replay.service_effect_recorder import ServiceEffectRecorder
         >>> from omnibase_core.enums.replay import EnumRecorderMode
         >>> # Production mode (default)
-        >>> recorder = RecorderEffect()
+        >>> recorder = ServiceEffectRecorder()
         >>> recorder.is_recording
         False
         >>> recorder.is_replaying
         False
         >>>
         >>> # Recording mode
-        >>> recorder = RecorderEffect(mode=EnumRecorderMode.RECORDING)
+        >>> recorder = ServiceEffectRecorder(mode=EnumRecorderMode.RECORDING)
         >>> recorder.is_recording
         True
 
@@ -176,7 +176,7 @@ class RecorderEffect:
             bool: True if in recording mode, False otherwise.
 
         Example:
-            >>> recorder = RecorderEffect(mode=EnumRecorderMode.RECORDING)
+            >>> recorder = ServiceEffectRecorder(mode=EnumRecorderMode.RECORDING)
             >>> recorder.is_recording
             True
         """
@@ -191,7 +191,7 @@ class RecorderEffect:
             bool: True if in replay mode, False otherwise.
 
         Example:
-            >>> recorder = RecorderEffect(mode=EnumRecorderMode.REPLAYING, records=[])
+            >>> recorder = ServiceEffectRecorder(mode=EnumRecorderMode.REPLAYING, records=[])
             >>> recorder.is_replaying
             True
         """
@@ -262,7 +262,7 @@ class RecorderEffect:
             ModelEffectRecord: The created effect record.
 
         Example:
-            >>> recorder = RecorderEffect(mode=EnumRecorderMode.RECORDING)
+            >>> recorder = ServiceEffectRecorder(mode=EnumRecorderMode.RECORDING)
             >>> record = recorder.record(
             ...     effect_type="http.get",
             ...     intent={"url": "https://api.example.com"},
@@ -325,7 +325,7 @@ class RecorderEffect:
 
         Example:
             >>> records = [...]  # Pre-recorded effects
-            >>> recorder = RecorderEffect(
+            >>> recorder = ServiceEffectRecorder(
             ...     mode=EnumRecorderMode.REPLAYING,
             ...     records=records,
             ... )
@@ -369,7 +369,7 @@ class RecorderEffect:
 
         Example:
             >>> records = [...]  # Pre-recorded effects
-            >>> recorder = RecorderEffect(
+            >>> recorder = ServiceEffectRecorder(
             ...     mode=EnumRecorderMode.REPLAYING,
             ...     records=records,
             ... )
@@ -425,7 +425,7 @@ class RecorderEffect:
             list[ModelEffectRecord]: Copy of all recorded effects.
 
         Example:
-            >>> recorder = RecorderEffect(mode=EnumRecorderMode.RECORDING)
+            >>> recorder = ServiceEffectRecorder(mode=EnumRecorderMode.RECORDING)
             >>> recorder.record("http.get", {"url": "..."}, {"status": 200})
             >>> records = recorder.get_all_records()
             >>> len(records)
@@ -446,7 +446,7 @@ class RecorderEffect:
             Iterator[ModelEffectRecord]: Iterator over all recorded effects.
 
         Example:
-            >>> recorder = RecorderEffect(mode=EnumRecorderMode.RECORDING)
+            >>> recorder = ServiceEffectRecorder(mode=EnumRecorderMode.RECORDING)
             >>> recorder.record("http.get", {"url": "..."}, {"status": 200})
             >>> for record in recorder.iter_records():
             ...     print(record.effect_type)
@@ -473,7 +473,7 @@ class RecorderEffect:
             int: Number of recorded effects.
 
         Example:
-            >>> recorder = RecorderEffect(mode=EnumRecorderMode.RECORDING)
+            >>> recorder = ServiceEffectRecorder(mode=EnumRecorderMode.RECORDING)
             >>> recorder.record("http.get", {"url": "..."}, {"status": 200})
             >>> recorder.record_count
             1
@@ -484,4 +484,4 @@ class RecorderEffect:
 
 
 # Verify protocol compliance at module load time
-_recorder_check: ProtocolEffectRecorder = RecorderEffect()
+_recorder_check: ProtocolEffectRecorder = ServiceEffectRecorder()

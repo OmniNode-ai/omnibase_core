@@ -26,7 +26,7 @@ CORRECT USAGE:
 --------------
 Always import directly from the specific module:
 
-    from omnibase_core.services.diff.store_diff_in_memory import StoreDiffInMemory
+    from omnibase_core.services.diff.service_diff_in_memory_store import ServiceDiffInMemoryStore
     from omnibase_core.protocols.storage.protocol_diff_store import ProtocolDiffStore
     from omnibase_core.models.diff.model_diff_query import ModelDiffQuery
     from omnibase_core.models.diff.model_diff_storage_configuration import (
@@ -38,7 +38,7 @@ INCORRECT USAGE (WILL FAIL):
 Do NOT attempt to import from the package level:
 
     # This will raise ImportError - not exported!
-    from omnibase_core.services.diff import StoreDiffInMemory  # WRONG!
+    from omnibase_core.services.diff import ServiceDiffInMemoryStore  # WRONG!
 
 For protocol-based dependency injection, use the container:
 

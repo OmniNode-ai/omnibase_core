@@ -5,7 +5,7 @@
 In-memory event sink for contract validation events.
 
 Location:
-    ``omnibase_core.services.sinks.sink_memory``
+    ``omnibase_core.services.sinks.service_sink_memory``
 
 .. versionadded:: 0.4.0
 """
@@ -23,10 +23,10 @@ if TYPE_CHECKING:
         ModelContractValidationEventBase,
     )
 
-__all__ = ["SinkMemory"]
+__all__ = ["ServiceMemorySink"]
 
 
-class SinkMemory:
+class ServiceMemorySink:
     """
     In-memory event sink for testing and process-local collection.
 
@@ -47,7 +47,7 @@ class SinkMemory:
         replay and testing of event sequences.
 
     Example:
-        >>> sink = SinkMemory(name="test")
+        >>> sink = ServiceMemorySink(name="test")
         >>> await sink.write(event)
         >>> events = sink.get_events()
         >>> len(events)
