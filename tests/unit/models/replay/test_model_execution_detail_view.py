@@ -2116,3 +2116,352 @@ class TestModelExecutionDetailViewEdgeCases:
         assert "cjk" in detail_view.input_display
         assert "arabic" in detail_view.input_display
         assert "math" in detail_view.input_display
+
+    def test_naive_datetime_rejected(
+        self,
+        minimal_input_snapshot: ModelInputSnapshot,
+        minimal_output_snapshot: ModelOutputSnapshot,
+        minimal_side_by_side: ModelSideBySideComparison,
+        minimal_timing: ModelTimingBreakdown,
+    ) -> None:
+        """Naive datetime (without timezone) is rejected.
+
+        The execution_timestamp field requires timezone-aware datetimes
+        for consistency across distributed systems.
+        """
+        comparison_id = UUID("eeeeeeee-2222-3333-4444-555555555555")
+        baseline_id = UUID("ffffffff-2222-3333-4444-555555555555")
+        replay_id = UUID("00000000-2222-3333-4444-555555555555")
+        corpus_id = UUID("11111111-2222-3333-4444-555555555555")
+
+        # Use a naive datetime (no tzinfo)
+        naive_timestamp = datetime(2025, 1, 4, 12, 0, 0)  # No tzinfo!
+
+        with pytest.raises(ValidationError) as exc_info:
+            ModelExecutionDetailView(
+                comparison_id=comparison_id,
+                baseline_execution_id=baseline_id,
+                replay_execution_id=replay_id,
+                original_input=minimal_input_snapshot,
+                input_hash="sha256:aabbccdd11223344",
+                input_display="{}",
+                baseline_output=minimal_output_snapshot,
+                replay_output=minimal_output_snapshot,
+                outputs_match=True,
+                side_by_side=minimal_side_by_side,
+                invariant_results=[],
+                invariants_all_passed=True,
+                timing_breakdown=minimal_timing,
+                execution_timestamp=naive_timestamp,  # Naive datetime
+                corpus_entry_id=corpus_id,
+            )
+
+        errors = exc_info.value.errors()
+        assert any(e["loc"] == ("execution_timestamp",) for e in errors)
+        assert any("timezone-aware" in str(e["msg"]) for e in errors)
+
+    def test_utc_timezone_accepted(
+        self,
+        minimal_input_snapshot: ModelInputSnapshot,
+        minimal_output_snapshot: ModelOutputSnapshot,
+        minimal_side_by_side: ModelSideBySideComparison,
+        minimal_timing: ModelTimingBreakdown,
+    ) -> None:
+        """UTC timezone datetime is accepted."""
+        comparison_id = UUID("22222222-2222-3333-4444-555555555555")
+        baseline_id = UUID("33333333-2222-3333-4444-555555555555")
+        replay_id = UUID("44444444-2222-3333-4444-555555555555")
+        corpus_id = UUID("55555555-2222-3333-4444-555555555555")
+
+        utc_timestamp = datetime(2025, 1, 4, 12, 0, 0, tzinfo=UTC)
+
+        detail_view = ModelExecutionDetailView(
+            comparison_id=comparison_id,
+            baseline_execution_id=baseline_id,
+            replay_execution_id=replay_id,
+            original_input=minimal_input_snapshot,
+            input_hash="sha256:5566778899aabbcc",
+            input_display="{}",
+            baseline_output=minimal_output_snapshot,
+            replay_output=minimal_output_snapshot,
+            outputs_match=True,
+            side_by_side=minimal_side_by_side,
+            invariant_results=[],
+            invariants_all_passed=True,
+            timing_breakdown=minimal_timing,
+            execution_timestamp=utc_timestamp,
+            corpus_entry_id=corpus_id,
+        )
+
+        assert detail_view.execution_timestamp == utc_timestamp
+        assert detail_view.execution_timestamp.tzinfo is not None
+
+
+@pytest.mark.unit
+class TestModelExecutionDetailViewOutputsConsistency:
+    """Tests for outputs_match and output_diff_display consistency validation.
+
+    These tests verify the model_validator that ensures consistency between
+    the outputs_match flag and the output_diff_display field.
+    """
+
+    @pytest.fixture
+    def minimal_input_snapshot(self) -> ModelInputSnapshot:
+        """Provide minimal input snapshot for consistency tests."""
+        return ModelInputSnapshot(
+            raw={"key": "value"},
+            original_size_bytes=50,
+            display_size_bytes=50,
+        )
+
+    @pytest.fixture
+    def minimal_output_snapshot(self) -> ModelOutputSnapshot:
+        """Provide minimal output snapshot for consistency tests."""
+        return ModelOutputSnapshot(
+            raw={"result": "data"},
+            original_size_bytes=60,
+            display_size_bytes=60,
+            output_hash="sha256:abc123def456",
+        )
+
+    @pytest.fixture
+    def minimal_side_by_side(self) -> ModelSideBySideComparison:
+        """Provide minimal side-by-side comparison for consistency tests."""
+        return ModelSideBySideComparison(
+            baseline_formatted="{}",
+            replay_formatted="{}",
+            diff_lines=[],
+        )
+
+    @pytest.fixture
+    def minimal_timing(self) -> ModelTimingBreakdown:
+        """Provide minimal timing breakdown for consistency tests."""
+        return ModelTimingBreakdown(
+            baseline_total_ms=100.0,
+            replay_total_ms=100.0,
+            delta_ms=0.0,
+            delta_percent=0.0,
+        )
+
+    def test_outputs_match_true_with_none_diff_valid(
+        self,
+        minimal_input_snapshot: ModelInputSnapshot,
+        minimal_output_snapshot: ModelOutputSnapshot,
+        minimal_side_by_side: ModelSideBySideComparison,
+        minimal_timing: ModelTimingBreakdown,
+    ) -> None:
+        """Valid: outputs_match=True with output_diff_display=None."""
+        comparison_id = UUID("11111111-aaaa-bbbb-cccc-111111111111")
+        baseline_id = UUID("22222222-aaaa-bbbb-cccc-111111111111")
+        replay_id = UUID("33333333-aaaa-bbbb-cccc-111111111111")
+        corpus_id = UUID("44444444-aaaa-bbbb-cccc-111111111111")
+
+        detail_view = ModelExecutionDetailView(
+            comparison_id=comparison_id,
+            baseline_execution_id=baseline_id,
+            replay_execution_id=replay_id,
+            original_input=minimal_input_snapshot,
+            input_hash="sha256:1122334455667788",
+            input_display="{}",
+            baseline_output=minimal_output_snapshot,
+            replay_output=minimal_output_snapshot,
+            outputs_match=True,
+            output_diff_display=None,
+            side_by_side=minimal_side_by_side,
+            invariant_results=[],
+            invariants_all_passed=True,
+            timing_breakdown=minimal_timing,
+            execution_timestamp=datetime.now(UTC),
+            corpus_entry_id=corpus_id,
+        )
+
+        assert detail_view.outputs_match is True
+        assert detail_view.output_diff_display is None
+
+    def test_outputs_match_false_with_diff_valid(
+        self,
+        minimal_input_snapshot: ModelInputSnapshot,
+        minimal_output_snapshot: ModelOutputSnapshot,
+        minimal_side_by_side: ModelSideBySideComparison,
+        minimal_timing: ModelTimingBreakdown,
+    ) -> None:
+        """Valid: outputs_match=False with output_diff_display containing diff."""
+        comparison_id = UUID("55555555-aaaa-bbbb-cccc-222222222222")
+        baseline_id = UUID("66666666-aaaa-bbbb-cccc-222222222222")
+        replay_id = UUID("77777777-aaaa-bbbb-cccc-222222222222")
+        corpus_id = UUID("88888888-aaaa-bbbb-cccc-222222222222")
+
+        diff_content = "--- baseline\n+++ replay\n- old value\n+ new value"
+
+        detail_view = ModelExecutionDetailView(
+            comparison_id=comparison_id,
+            baseline_execution_id=baseline_id,
+            replay_execution_id=replay_id,
+            original_input=minimal_input_snapshot,
+            input_hash="sha256:aabbccdd11223344",
+            input_display="{}",
+            baseline_output=minimal_output_snapshot,
+            replay_output=minimal_output_snapshot,
+            outputs_match=False,
+            output_diff_display=diff_content,
+            side_by_side=minimal_side_by_side,
+            invariant_results=[],
+            invariants_all_passed=True,
+            timing_breakdown=minimal_timing,
+            execution_timestamp=datetime.now(UTC),
+            corpus_entry_id=corpus_id,
+        )
+
+        assert detail_view.outputs_match is False
+        assert detail_view.output_diff_display == diff_content
+
+    def test_outputs_match_true_with_diff_rejected(
+        self,
+        minimal_input_snapshot: ModelInputSnapshot,
+        minimal_output_snapshot: ModelOutputSnapshot,
+        minimal_side_by_side: ModelSideBySideComparison,
+        minimal_timing: ModelTimingBreakdown,
+    ) -> None:
+        """Invalid: outputs_match=True but output_diff_display is not None."""
+        comparison_id = UUID("99999999-aaaa-bbbb-cccc-333333333333")
+        baseline_id = UUID("aaaaaaaa-aaaa-bbbb-cccc-333333333333")
+        replay_id = UUID("bbbbbbbb-aaaa-bbbb-cccc-333333333333")
+        corpus_id = UUID("cccccccc-aaaa-bbbb-cccc-333333333333")
+
+        with pytest.raises(ValidationError) as exc_info:
+            ModelExecutionDetailView(
+                comparison_id=comparison_id,
+                baseline_execution_id=baseline_id,
+                replay_execution_id=replay_id,
+                original_input=minimal_input_snapshot,
+                input_hash="sha256:ddeeff0011223344",
+                input_display="{}",
+                baseline_output=minimal_output_snapshot,
+                replay_output=minimal_output_snapshot,
+                outputs_match=True,  # Says outputs match...
+                output_diff_display="Some diff content",  # ...but diff exists!
+                side_by_side=minimal_side_by_side,
+                invariant_results=[],
+                invariants_all_passed=True,
+                timing_breakdown=minimal_timing,
+                execution_timestamp=datetime.now(UTC),
+                corpus_entry_id=corpus_id,
+            )
+
+        errors = exc_info.value.errors()
+        assert len(errors) == 1
+        assert "outputs_match=True" in str(errors[0]["msg"])
+        assert "output_diff_display should be None" in str(errors[0]["msg"])
+
+    def test_outputs_match_false_with_none_diff_rejected(
+        self,
+        minimal_input_snapshot: ModelInputSnapshot,
+        minimal_output_snapshot: ModelOutputSnapshot,
+        minimal_side_by_side: ModelSideBySideComparison,
+        minimal_timing: ModelTimingBreakdown,
+    ) -> None:
+        """Invalid: outputs_match=False but output_diff_display is None."""
+        comparison_id = UUID("dddddddd-aaaa-bbbb-cccc-444444444444")
+        baseline_id = UUID("eeeeeeee-aaaa-bbbb-cccc-444444444444")
+        replay_id = UUID("ffffffff-aaaa-bbbb-cccc-444444444444")
+        corpus_id = UUID("00000000-aaaa-bbbb-cccc-444444444444")
+
+        with pytest.raises(ValidationError) as exc_info:
+            ModelExecutionDetailView(
+                comparison_id=comparison_id,
+                baseline_execution_id=baseline_id,
+                replay_execution_id=replay_id,
+                original_input=minimal_input_snapshot,
+                input_hash="sha256:0011223344556677",
+                input_display="{}",
+                baseline_output=minimal_output_snapshot,
+                replay_output=minimal_output_snapshot,
+                outputs_match=False,  # Says outputs don't match...
+                output_diff_display=None,  # ...but no diff provided!
+                side_by_side=minimal_side_by_side,
+                invariant_results=[],
+                invariants_all_passed=True,
+                timing_breakdown=minimal_timing,
+                execution_timestamp=datetime.now(UTC),
+                corpus_entry_id=corpus_id,
+            )
+
+        errors = exc_info.value.errors()
+        assert len(errors) == 1
+        assert "outputs_match=False" in str(errors[0]["msg"])
+        assert "output_diff_display should contain" in str(errors[0]["msg"])
+
+    def test_outputs_match_false_with_empty_string_diff_valid(
+        self,
+        minimal_input_snapshot: ModelInputSnapshot,
+        minimal_output_snapshot: ModelOutputSnapshot,
+        minimal_side_by_side: ModelSideBySideComparison,
+        minimal_timing: ModelTimingBreakdown,
+    ) -> None:
+        """Valid: outputs_match=False with empty string diff (edge case).
+
+        An empty string is still a "non-None" value, representing minimal or
+        whitespace-only differences.
+        """
+        comparison_id = UUID("11111111-bbbb-cccc-dddd-555555555555")
+        baseline_id = UUID("22222222-bbbb-cccc-dddd-555555555555")
+        replay_id = UUID("33333333-bbbb-cccc-dddd-555555555555")
+        corpus_id = UUID("44444444-bbbb-cccc-dddd-555555555555")
+
+        detail_view = ModelExecutionDetailView(
+            comparison_id=comparison_id,
+            baseline_execution_id=baseline_id,
+            replay_execution_id=replay_id,
+            original_input=minimal_input_snapshot,
+            input_hash="sha256:8899aabbccddeeff",
+            input_display="{}",
+            baseline_output=minimal_output_snapshot,
+            replay_output=minimal_output_snapshot,
+            outputs_match=False,
+            output_diff_display="",  # Empty string, but still not None
+            side_by_side=minimal_side_by_side,
+            invariant_results=[],
+            invariants_all_passed=True,
+            timing_breakdown=minimal_timing,
+            execution_timestamp=datetime.now(UTC),
+            corpus_entry_id=corpus_id,
+        )
+
+        assert detail_view.outputs_match is False
+        assert detail_view.output_diff_display == ""
+
+    def test_outputs_match_true_default_none_valid(
+        self,
+        minimal_input_snapshot: ModelInputSnapshot,
+        minimal_output_snapshot: ModelOutputSnapshot,
+        minimal_side_by_side: ModelSideBySideComparison,
+        minimal_timing: ModelTimingBreakdown,
+    ) -> None:
+        """Valid: outputs_match=True without explicit output_diff_display (defaults to None)."""
+        comparison_id = UUID("55555555-bbbb-cccc-dddd-666666666666")
+        baseline_id = UUID("66666666-bbbb-cccc-dddd-666666666666")
+        replay_id = UUID("77777777-bbbb-cccc-dddd-666666666666")
+        corpus_id = UUID("88888888-bbbb-cccc-dddd-666666666666")
+
+        # Don't pass output_diff_display - should default to None
+        detail_view = ModelExecutionDetailView(
+            comparison_id=comparison_id,
+            baseline_execution_id=baseline_id,
+            replay_execution_id=replay_id,
+            original_input=minimal_input_snapshot,
+            input_hash="sha256:ffeeddccbbaa9988",
+            input_display="{}",
+            baseline_output=minimal_output_snapshot,
+            replay_output=minimal_output_snapshot,
+            outputs_match=True,
+            # output_diff_display not specified, defaults to None
+            side_by_side=minimal_side_by_side,
+            invariant_results=[],
+            invariants_all_passed=True,
+            timing_breakdown=minimal_timing,
+            execution_timestamp=datetime.now(UTC),
+            corpus_entry_id=corpus_id,
+        )
+
+        assert detail_view.outputs_match is True
+        assert detail_view.output_diff_display is None

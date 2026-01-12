@@ -17,6 +17,36 @@ class ModelTimingBreakdown(BaseModel):
     Captures total execution timing for baseline and replay,
     with delta calculations and optional per-phase breakdown.
 
+    Example:
+        A timing breakdown showing 50% slower replay execution::
+
+            >>> breakdown = ModelTimingBreakdown(
+            ...     baseline_total_ms=100.0,
+            ...     replay_total_ms=150.0,
+            ...     delta_ms=50.0,        # 150 - 100 = 50ms slower
+            ...     delta_percent=50.0,   # (50 / 100) * 100 = 50% slower
+            ...     phases=[
+            ...         ModelPhaseTime(
+            ...             phase_name="initialization",
+            ...             baseline_ms=20.0,
+            ...             replay_ms=25.0,
+            ...             delta_percent=25.0
+            ...         ),
+            ...         ModelPhaseTime(
+            ...             phase_name="computation",
+            ...             baseline_ms=80.0,
+            ...             replay_ms=125.0,
+            ...             delta_percent=56.25
+            ...         ),
+            ...     ]
+            ... )
+
+        Interpretation:
+            - delta_ms > 0: Replay is slower than baseline
+            - delta_ms < 0: Replay is faster than baseline
+            - delta_percent = 50.0: Replay took 50% more time
+            - delta_percent = -25.0: Replay took 25% less time
+
     Thread Safety:
         This model is immutable (frozen=True) and safe for concurrent access.
 

@@ -8,6 +8,7 @@ and delta_percent consistency.
 import pytest
 from pydantic import ValidationError
 
+from omnibase_core.models.replay import ModelTimingBreakdown
 from omnibase_core.models.replay.model_phase_time import ModelPhaseTime
 
 
@@ -450,8 +451,6 @@ class TestModelPhaseTimeInTimingBreakdown:
 
     def test_phase_time_can_be_used_in_timing_breakdown(self) -> None:
         """ModelPhaseTime instances can be used in ModelTimingBreakdown phases."""
-        from omnibase_core.models.replay import ModelTimingBreakdown
-
         phases = [
             ModelPhaseTime(
                 phase_name="init",

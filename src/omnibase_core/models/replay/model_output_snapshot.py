@@ -9,7 +9,6 @@ Thread Safety:
     making it thread-safe for concurrent read access.
 """
 
-import re
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -18,16 +17,9 @@ from omnibase_core.decorators import allow_dict_any
 from omnibase_core.mixins.mixin_truncation_validation import (
     MixinTruncationValidation,
 )
-
-# Pattern for validating hash format: "algorithm:hexdigest"
-# - Algorithm: alphanumeric (allows uppercase for flexibility, e.g., "SHA256" or "sha256")
-# - Separator: colon
-# - Digest: hexadecimal characters (0-9, a-f, A-F)
-HASH_FORMAT_PATTERN = re.compile(r"^[a-zA-Z0-9]+:[a-fA-F0-9]+$")
-
-# Maximum length for hash strings to prevent ReDoS attacks.
-# Covers SHA-512 (128 hex chars) + algorithm prefix (e.g., "sha512:") with margin.
-MAX_HASH_LENGTH = 256
+from omnibase_core.utils.util_hash_validation import (
+    validate_hash_format as _validate_hash_format,
+)
 
 
 @allow_dict_any(
@@ -46,8 +38,19 @@ class ModelOutputSnapshot(MixinTruncationValidation, BaseModel):
         original_size_bytes: Size of the original output in bytes.
         display_size_bytes: Size of the displayed/stored output in bytes.
         output_hash: Hash identifier of the original output for comparison.
-            Must be formatted as "algorithm:hexdigest" (e.g., "sha256:abc123").
+            Must be formatted as "algorithm:hexdigest"
+            (e.g., "sha256:a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2").
             Algorithm must be alphanumeric, digest must be hexadecimal.
+            Common algorithms: sha256 (64 hex chars), sha512 (128 hex chars), md5 (32 hex chars).
+
+    Example:
+        >>> snapshot = ModelOutputSnapshot(
+        ...     raw={"result": "success", "value": 42},
+        ...     truncated=False,
+        ...     original_size_bytes=48,
+        ...     display_size_bytes=48,
+        ...     output_hash="sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        ... )
 
     Thread Safety:
         This model is immutable (frozen=True) after creation, making it
@@ -74,8 +77,10 @@ class ModelOutputSnapshot(MixinTruncationValidation, BaseModel):
         min_length=1,
         description=(
             "Hash identifier of the original output for comparison. "
-            "Must be formatted as 'algorithm:hexdigest' (e.g., 'sha256:abc123'). "
-            "Algorithm must be alphanumeric, digest must be hexadecimal."
+            "Must be formatted as 'algorithm:hexdigest' "
+            "(e.g., 'sha256:a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2'). "
+            "Algorithm must be alphanumeric, digest must be hexadecimal. "
+            "Common algorithms: sha256 (64 hex chars), sha512 (128 hex chars), md5 (32 hex chars)."
         ),
     )
 
@@ -93,19 +98,7 @@ class ModelOutputSnapshot(MixinTruncationValidation, BaseModel):
         Raises:
             ValueError: If the hash format is invalid or too long.
         """
-        # Length check before regex to prevent ReDoS attacks
-        if len(v) > MAX_HASH_LENGTH:
-            raise ValueError(
-                f"Hash too long: {len(v)} characters (max {MAX_HASH_LENGTH}). "
-                "This may indicate malformed or malicious input."
-            )
-        if not HASH_FORMAT_PATTERN.match(v):
-            raise ValueError(
-                f"Invalid hash format: '{v}'. "
-                "Must be 'algorithm:hexdigest' format (e.g., 'sha256:abc123'). "
-                "Algorithm must be alphanumeric, digest must be hexadecimal."
-            )
-        return v
+        return _validate_hash_format(v)
 
 
 __all__ = ["ModelOutputSnapshot"]

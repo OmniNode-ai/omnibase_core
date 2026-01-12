@@ -29,6 +29,25 @@ class ModelInputSnapshot(MixinTruncationValidation, BaseModel):
     truncation of large payloads while preserving metadata about
     the original size.
 
+    Example:
+        Non-truncated input (full data preserved)::
+
+            >>> snapshot = ModelInputSnapshot(
+            ...     raw={"user_id": "u123", "action": "process"},
+            ...     truncated=False,
+            ...     original_size_bytes=42,
+            ...     display_size_bytes=42,  # Must equal original when not truncated
+            ... )
+
+        Truncated input (large payload shortened)::
+
+            >>> snapshot = ModelInputSnapshot(
+            ...     raw={"user_id": "u123", "data": "...truncated..."},
+            ...     truncated=True,
+            ...     original_size_bytes=1048576,  # 1MB original
+            ...     display_size_bytes=1024,       # 1KB displayed
+            ... )
+
     Attributes:
         raw: The raw input data dictionary.
         truncated: Whether the input was truncated due to size limits.

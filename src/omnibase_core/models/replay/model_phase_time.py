@@ -14,6 +14,30 @@ class ModelPhaseTime(BaseModel):
     Captures timing metrics for individual phases within an execution,
     comparing baseline vs replay performance.
 
+    Example:
+        A phase that took 25% longer in replay::
+
+            >>> phase = ModelPhaseTime(
+            ...     phase_name="data_processing",
+            ...     baseline_ms=80.0,
+            ...     replay_ms=100.0,
+            ...     delta_percent=25.0  # ((100 - 80) / 80) * 100 = 25%
+            ... )
+
+        A phase that was 20% faster in replay::
+
+            >>> phase = ModelPhaseTime(
+            ...     phase_name="initialization",
+            ...     baseline_ms=50.0,
+            ...     replay_ms=40.0,
+            ...     delta_percent=-20.0  # ((40 - 50) / 50) * 100 = -20%
+            ... )
+
+        Interpretation:
+            - delta_percent > 0: Phase is slower in replay
+            - delta_percent < 0: Phase is faster in replay
+            - delta_percent = 0: No timing difference
+
     Attributes:
         phase_name: Name identifier for this execution phase.
         baseline_ms: Baseline execution time in milliseconds.

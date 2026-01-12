@@ -11,8 +11,45 @@ class ModelDiffLine(BaseModel):
     Represents one line of a side-by-side comparison between
     baseline and replay execution outputs.
 
+    Example:
+        Unchanged line (identical in both outputs)::
+
+            >>> line = ModelDiffLine(
+            ...     line_number=1,
+            ...     baseline_content='{"status": "ok"}',
+            ...     replay_content='{"status": "ok"}',
+            ...     change_type="unchanged",
+            ... )
+
+        Modified line (different content)::
+
+            >>> line = ModelDiffLine(
+            ...     line_number=2,
+            ...     baseline_content='{"count": 10}',
+            ...     replay_content='{"count": 15}',
+            ...     change_type="modified",
+            ... )
+
+        Added line (only in replay)::
+
+            >>> line = ModelDiffLine(
+            ...     line_number=3,
+            ...     baseline_content=None,
+            ...     replay_content='{"new_field": true}',
+            ...     change_type="added",
+            ... )
+
+        Removed line (only in baseline)::
+
+            >>> line = ModelDiffLine(
+            ...     line_number=4,
+            ...     baseline_content='{"old_field": false}',
+            ...     replay_content=None,
+            ...     change_type="removed",
+            ... )
+
     Attributes:
-        line_number: The line number in the comparison.
+        line_number: The line number in the comparison (1-indexed).
         baseline_content: Content from baseline output (None if line was added).
         replay_content: Content from replay output (None if line was removed).
         change_type: Type of change for this line.

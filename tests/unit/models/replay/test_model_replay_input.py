@@ -18,15 +18,15 @@ Tests cover:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
-from uuid import UUID
+import json
+from typing import Any
+from uuid import UUID, uuid4
 
 import pytest
 from pydantic import ValidationError
 
-if TYPE_CHECKING:
-    from omnibase_core.models.replay import ModelConfigOverride, ModelConfigOverrideSet
-    from omnibase_core.models.replay.model_replay_input import ModelReplayInput
+from omnibase_core.models.replay import ModelConfigOverride, ModelConfigOverrideSet
+from omnibase_core.models.replay.model_replay_input import ModelReplayInput
 
 
 @pytest.fixture
@@ -42,16 +42,12 @@ def sample_data() -> dict[str, Any]:
 @pytest.fixture
 def simple_override() -> ModelConfigOverride:
     """Create a simple config override."""
-    from omnibase_core.models.replay import ModelConfigOverride
-
     return ModelConfigOverride(path="test.path", value=42)
 
 
 @pytest.fixture
 def override_set(simple_override: ModelConfigOverride) -> ModelConfigOverrideSet:
     """Create an override set with one override."""
-    from omnibase_core.models.replay import ModelConfigOverrideSet
-
     return ModelConfigOverrideSet(overrides=(simple_override,))
 
 
@@ -60,8 +56,6 @@ def replay_input_with_data(
     sample_data: dict[str, Any],
 ) -> ModelReplayInput[dict[str, Any]]:
     """Create a replay input with data only."""
-    from omnibase_core.models.replay.model_replay_input import ModelReplayInput
-
     return ModelReplayInput(data=sample_data)
 
 
@@ -71,8 +65,6 @@ def replay_input_with_overrides(
     override_set: ModelConfigOverrideSet,
 ) -> ModelReplayInput[dict[str, Any]]:
     """Create a replay input with data and overrides."""
-    from omnibase_core.models.replay.model_replay_input import ModelReplayInput
-
     return ModelReplayInput(data=sample_data, config_overrides=override_set)
 
 
@@ -82,8 +74,6 @@ class TestModelReplayInputCreation:
 
     def test_create_with_data_only(self, sample_data: dict[str, Any]) -> None:
         """Can create with just data."""
-        from omnibase_core.models.replay.model_replay_input import ModelReplayInput
-
         replay_input = ModelReplayInput(data=sample_data)
 
         assert replay_input.data == sample_data
@@ -91,8 +81,6 @@ class TestModelReplayInputCreation:
 
     def test_default_input_id_generated(self, sample_data: dict[str, Any]) -> None:
         """Test that input_id is auto-generated as UUID."""
-        from omnibase_core.models.replay.model_replay_input import ModelReplayInput
-
         replay_input = ModelReplayInput(data=sample_data)
 
         assert replay_input.input_id is not None
@@ -102,8 +90,6 @@ class TestModelReplayInputCreation:
         self, sample_data: dict[str, Any]
     ) -> None:
         """Test that each instance gets a unique input_id."""
-        from omnibase_core.models.replay.model_replay_input import ModelReplayInput
-
         input1 = ModelReplayInput(data=sample_data)
         input2 = ModelReplayInput(data=sample_data)
 
@@ -111,10 +97,6 @@ class TestModelReplayInputCreation:
 
     def test_create_with_explicit_input_id(self, sample_data: dict[str, Any]) -> None:
         """Can create with explicit input_id."""
-        from uuid import UUID
-
-        from omnibase_core.models.replay.model_replay_input import ModelReplayInput
-
         explicit_id = UUID("12345678-1234-5678-1234-567812345678")
         replay_input = ModelReplayInput(data=sample_data, input_id=explicit_id)
 
@@ -126,8 +108,6 @@ class TestModelReplayInputCreation:
         override_set: ModelConfigOverrideSet,
     ) -> None:
         """Can create with config overrides."""
-        from omnibase_core.models.replay.model_replay_input import ModelReplayInput
-
         replay_input = ModelReplayInput(
             data=sample_data,
             config_overrides=override_set,
@@ -152,8 +132,6 @@ class TestModelReplayInputImmutability:
         self, replay_input_with_data: ModelReplayInput[dict[str, Any]]
     ) -> None:
         """Test that input_id field cannot be reassigned."""
-        from uuid import uuid4
-
         with pytest.raises(ValidationError):
             replay_input_with_data.input_id = uuid4()
 
@@ -173,8 +151,6 @@ class TestModelReplayInputValidation:
 
     def test_data_required(self) -> None:
         """Test that data is required."""
-        from omnibase_core.models.replay.model_replay_input import ModelReplayInput
-
         with pytest.raises(ValidationError) as exc_info:
             ModelReplayInput()  # type: ignore[call-arg]
 
@@ -182,8 +158,6 @@ class TestModelReplayInputValidation:
 
     def test_extra_fields_forbidden(self, sample_data: dict[str, Any]) -> None:
         """Test that extra fields are forbidden."""
-        from omnibase_core.models.replay.model_replay_input import ModelReplayInput
-
         with pytest.raises(ValidationError) as exc_info:
             ModelReplayInput(
                 data=sample_data,
@@ -207,9 +181,6 @@ class TestModelReplayInputHasOverrides:
 
     def test_has_overrides_false_when_empty(self, sample_data: dict[str, Any]) -> None:
         """has_overrides is False when empty override set."""
-        from omnibase_core.models.replay import ModelConfigOverrideSet
-        from omnibase_core.models.replay.model_replay_input import ModelReplayInput
-
         replay_input = ModelReplayInput(
             data=sample_data,
             config_overrides=ModelConfigOverrideSet(),
@@ -266,11 +237,6 @@ class TestModelReplayInputWithOverrides:
         replay_input_with_overrides: ModelReplayInput[dict[str, Any]],
     ) -> None:
         """with_overrides replaces existing overrides."""
-        from omnibase_core.models.replay import (
-            ModelConfigOverride,
-            ModelConfigOverrideSet,
-        )
-
         new_override = ModelConfigOverride(path="new.path", value="new_value")
         new_set = ModelConfigOverrideSet(overrides=(new_override,))
 
@@ -287,8 +253,6 @@ class TestModelReplayInputGenericType:
 
     def test_generic_type_with_dict(self) -> None:
         """Generic type is preserved with dict."""
-        from omnibase_core.models.replay.model_replay_input import ModelReplayInput
-
         data_dict: dict[str, int] = {"count": 42, "total": 100}
         replay_input: ModelReplayInput[dict[str, int]] = ModelReplayInput(
             data=data_dict
@@ -298,24 +262,18 @@ class TestModelReplayInputGenericType:
 
     def test_generic_type_with_list(self) -> None:
         """Generic type works with list data."""
-        from omnibase_core.models.replay.model_replay_input import ModelReplayInput
-
         data_list = [1, 2, 3, 4, 5]
         replay_input: ModelReplayInput[list[int]] = ModelReplayInput(data=data_list)
         assert replay_input.data == [1, 2, 3, 4, 5]
 
     def test_generic_type_with_string(self) -> None:
         """Generic type works with string data."""
-        from omnibase_core.models.replay.model_replay_input import ModelReplayInput
-
         data_str = "simple string data"
         replay_input: ModelReplayInput[str] = ModelReplayInput(data=data_str)
         assert replay_input.data == "simple string data"
 
     def test_generic_type_with_nested_structure(self) -> None:
         """Generic type works with complex nested data."""
-        from omnibase_core.models.replay.model_replay_input import ModelReplayInput
-
         nested_data: dict[str, list[dict[str, int]]] = {
             "items": [{"a": 1}, {"b": 2}],
         }
@@ -333,8 +291,6 @@ class TestModelReplayInputSerialization:
         self, replay_input_with_data: ModelReplayInput[dict[str, Any]]
     ) -> None:
         """Test that model can be serialized and deserialized without overrides."""
-        from omnibase_core.models.replay.model_replay_input import ModelReplayInput
-
         # Serialize to dict
         data = replay_input_with_data.model_dump()
 
@@ -349,8 +305,6 @@ class TestModelReplayInputSerialization:
         self, replay_input_with_overrides: ModelReplayInput[dict[str, Any]]
     ) -> None:
         """Test that model can be serialized and deserialized with overrides."""
-        from omnibase_core.models.replay.model_replay_input import ModelReplayInput
-
         # Serialize to dict
         data = replay_input_with_overrides.model_dump()
 
@@ -360,17 +314,14 @@ class TestModelReplayInputSerialization:
         assert restored.input_id == replay_input_with_overrides.input_id
         assert restored.data == replay_input_with_overrides.data
         assert restored.config_overrides is not None
-        assert (
-            len(restored.config_overrides.overrides)
-            == len(replay_input_with_overrides.config_overrides.overrides)  # type: ignore[union-attr]
-        )
+        assert len(restored.config_overrides.overrides) == len(
+            replay_input_with_overrides.config_overrides.overrides
+        )  # type: ignore[union-attr]
 
     def test_json_serialization_roundtrip(
         self, replay_input_with_overrides: ModelReplayInput[dict[str, Any]]
     ) -> None:
         """Test that model can be serialized to JSON and back."""
-        from omnibase_core.models.replay.model_replay_input import ModelReplayInput
-
         # Serialize to JSON
         json_str = replay_input_with_overrides.model_dump_json()
 
@@ -384,8 +335,6 @@ class TestModelReplayInputSerialization:
         self, replay_input_with_data: ModelReplayInput[dict[str, Any]]
     ) -> None:
         """Test that input_id serializes to string in JSON."""
-        import json
-
         json_str = replay_input_with_data.model_dump_json()
         data = json.loads(json_str)
 
