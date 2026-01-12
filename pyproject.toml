@@ -253,8 +253,6 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "scripts/validation/test_timeout_compatibility.py" = ["I001"]  # Import sorting conflicts with isort
-"tests/unit/validation/test_protocol_compliance.py" = ["I001"]  # Import sorting conflicts with isort
-"tests/unit/services/test_service_decision_report_generator.py" = ["I001"]  # Import sorting CI/local mismatch
 "tests/unit/validation/test_yaml_allowlist.py" = ["DTZ007"]  # Date format validation without timezone
 "src/omnibase_core/mixins/mixin_event_bus.py" = ["I001"]  # Import order conflicts with import semantics
 "src/omnibase_core/mixins/mixin_event_handler.py" = ["I001"]  # Import order conflicts with import semantics
@@ -262,7 +260,6 @@ ignore = [
 "src/omnibase_core/mixins/__init__.py" = ["I001"]  # Import order to avoid circular dependencies
 "src/omnibase_core/infrastructure/node_base.py" = ["I001"]  # Import order to avoid circular dependencies
 "src/omnibase_core/models/container/model_onex_container.py" = ["I001"]  # Import order to avoid circular dependencies
-"src/omnibase_core/types/constraints.py" = ["I001"]  # Import order to avoid circular dependencies (lazy imports)
 
 [tool.mypy]
 # Strict mode enables: warn_return_any, warn_unused_configs, disallow_untyped_defs,

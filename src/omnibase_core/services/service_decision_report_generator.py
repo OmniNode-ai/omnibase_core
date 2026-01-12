@@ -10,11 +10,16 @@ Generates decision-ready reports from corpus replay evidence in multiple formats
 
 Thread Safety:
     ServiceDecisionReportGenerator is stateless and thread-safe. All methods
-    are pure functions that take inputs and return outputs without modifying
-    any shared state.
+    take inputs and return outputs without modifying any shared state.
+
+Output Determinism:
+    Report methods that include timestamps (generate_json_report, generate_markdown_report)
+    accept an optional `generated_at` parameter. When provided, output is fully deterministic
+    and reproducible. When omitted, current UTC time is used, making output time-dependent.
 """
 
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Literal
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -39,6 +44,21 @@ SUBSECTION_CHAR = "-"
 COMPARISON_LIMIT_CLI_VERBOSE = 10
 COMPARISON_LIMIT_MARKDOWN = 50
 
+# Text truncation constants
+ELLIPSIS = "..."
+ELLIPSIS_LENGTH = len(ELLIPSIS)  # 3 characters for "..."
+
+# UUID display truncation (shows first N characters of UUID for brevity in tables)
+UUID_DISPLAY_LENGTH = 8
+
+# Severity sort order for markdown tables (lower value = higher priority in display)
+SEVERITY_SORT_ORDER: dict[str, int] = {
+    "critical": 0,
+    "warning": 1,
+    "info": 2,
+}
+DEFAULT_FALLBACK_SORT_ORDER = 99  # Unknown severities sort last
+
 # Cost data unavailability messages (consistent terminology across formats)
 COST_NA_CLI = "Cost:     N/A (incomplete cost data)"
 COST_NA_MARKDOWN = "_Cost data not available (incomplete data)_"
@@ -58,9 +78,15 @@ class ServiceDecisionReportGenerator:
 
     Thread Safety:
         This service is stateless per-call and thread-safe. Instance attributes
-        are set once during initialization and never modified. All methods are
-        pure functions that take inputs and return outputs without modifying
-        any shared state. Multiple threads can safely call any method concurrently.
+        are set once during initialization and never modified. All methods take
+        inputs and return outputs without modifying any shared state. Multiple
+        threads can safely call any method concurrently.
+
+    Output Determinism:
+        Report methods that include timestamps (generate_json_report,
+        generate_markdown_report) accept an optional `generated_at` parameter.
+        When provided, output is fully deterministic and reproducible for testing.
+        When omitted, current UTC time is used, making output time-dependent.
 
     Example:
         >>> from omnibase_core.services.service_decision_report_generator import (
@@ -126,6 +152,31 @@ class ServiceDecisionReportGenerator:
                 Defaults to COST_BLOCKER_PERCENT (50.0).
             cost_warning_percent: Cost increase percentage that triggers warning.
                 Defaults to COST_WARNING_PERCENT (20.0).
+
+        Raises:
+            ModelOnexError: If any threshold value is out of valid range or if
+                threshold relationships are violated.
+
+        Validation Rules:
+            Range Validation:
+                - confidence_approve_threshold: Must be in [0.0, 1.0]
+                - confidence_review_threshold: Must be in [0.0, 1.0]
+                - pass_rate_optimal: Must be in [0.0, 1.0]
+                - pass_rate_minimum: Must be in [0.0, 1.0]
+                - latency_blocker_percent: Must be >= 0
+                - latency_warning_percent: Must be >= 0
+                - cost_blocker_percent: Must be >= 0
+                - cost_warning_percent: Must be >= 0
+
+            Relationship Validation:
+                - confidence_approve_threshold >= confidence_review_threshold
+                  (approve requires higher confidence than review)
+                - pass_rate_optimal >= pass_rate_minimum
+                  (optimal target must be at least the minimum)
+                - latency_blocker_percent >= latency_warning_percent
+                  (blockers triggered at higher regression than warnings)
+                - cost_blocker_percent >= cost_warning_percent
+                  (blockers triggered at higher regression than warnings)
         """
         self.confidence_approve_threshold = (
             confidence_approve_threshold
@@ -174,48 +225,56 @@ class ServiceDecisionReportGenerator:
                 message=f"confidence_approve_threshold must be between 0.0 and 1.0, "
                 f"got {self.confidence_approve_threshold}",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                context={"threshold": self.confidence_approve_threshold},
             )
         if not (0.0 <= self.confidence_review_threshold <= 1.0):
             raise ModelOnexError(
                 message=f"confidence_review_threshold must be between 0.0 and 1.0, "
                 f"got {self.confidence_review_threshold}",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                context={"threshold": self.confidence_review_threshold},
             )
         if not (0.0 <= self.pass_rate_optimal <= 1.0):
             raise ModelOnexError(
                 message=f"pass_rate_optimal must be between 0.0 and 1.0, "
                 f"got {self.pass_rate_optimal}",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                context={"threshold": self.pass_rate_optimal},
             )
         if not (0.0 <= self.pass_rate_minimum <= 1.0):
             raise ModelOnexError(
                 message=f"pass_rate_minimum must be between 0.0 and 1.0, "
                 f"got {self.pass_rate_minimum}",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                context={"threshold": self.pass_rate_minimum},
             )
         if self.latency_blocker_percent < 0:
             raise ModelOnexError(
                 message=f"latency_blocker_percent must be >= 0, "
                 f"got {self.latency_blocker_percent}",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                context={"threshold": self.latency_blocker_percent},
             )
         if self.latency_warning_percent < 0:
             raise ModelOnexError(
                 message=f"latency_warning_percent must be >= 0, "
                 f"got {self.latency_warning_percent}",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                context={"threshold": self.latency_warning_percent},
             )
         if self.cost_blocker_percent < 0:
             raise ModelOnexError(
                 message=f"cost_blocker_percent must be >= 0, "
                 f"got {self.cost_blocker_percent}",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                context={"threshold": self.cost_blocker_percent},
             )
         if self.cost_warning_percent < 0:
             raise ModelOnexError(
                 message=f"cost_warning_percent must be >= 0, "
                 f"got {self.cost_warning_percent}",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                context={"threshold": self.cost_warning_percent},
             )
 
         # Validate threshold relationships
@@ -224,24 +283,40 @@ class ServiceDecisionReportGenerator:
                 message=f"confidence_approve_threshold ({self.confidence_approve_threshold}) "
                 f"must be >= confidence_review_threshold ({self.confidence_review_threshold})",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                context={
+                    "approve": self.confidence_approve_threshold,
+                    "review": self.confidence_review_threshold,
+                },
             )
         if self.pass_rate_optimal < self.pass_rate_minimum:
             raise ModelOnexError(
                 message=f"pass_rate_optimal ({self.pass_rate_optimal}) "
                 f"must be >= pass_rate_minimum ({self.pass_rate_minimum})",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                context={
+                    "optimal": self.pass_rate_optimal,
+                    "minimum": self.pass_rate_minimum,
+                },
             )
         if self.latency_blocker_percent < self.latency_warning_percent:
             raise ModelOnexError(
                 message=f"latency_blocker_percent ({self.latency_blocker_percent}) "
                 f"must be >= latency_warning_percent ({self.latency_warning_percent})",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                context={
+                    "blocker": self.latency_blocker_percent,
+                    "warning": self.latency_warning_percent,
+                },
             )
         if self.cost_blocker_percent < self.cost_warning_percent:
             raise ModelOnexError(
                 message=f"cost_blocker_percent ({self.cost_blocker_percent}) "
                 f"must be >= cost_warning_percent ({self.cost_warning_percent})",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                context={
+                    "blocker": self.cost_blocker_percent,
+                    "warning": self.cost_warning_percent,
+                },
             )
 
     def generate_cli_report(
@@ -315,10 +390,12 @@ class ServiceDecisionReportGenerator:
             # by_severity counts violations by severity level (critical/warning/info).
             # by_type counts violations by type (e.g., "schema_mismatch", "constraint_violation").
             # These cannot be correlated since we don't have per-violation severity-type pairs.
+            # Normalize severity keys to lowercase for case-insensitive lookup.
+            normalized_severity = {k.lower(): v for k, v in by_severity.items()}
             severity_parts = []
-            critical_count = by_severity.get("critical", 0)
-            warning_count = by_severity.get("warning", 0)
-            info_count = by_severity.get("info", 0)
+            critical_count = normalized_severity.get("critical", 0)
+            warning_count = normalized_severity.get("warning", 0)
+            info_count = normalized_severity.get("info", 0)
 
             if critical_count > 0:
                 severity_parts.append(f"{critical_count} critical")
@@ -446,7 +523,7 @@ class ServiceDecisionReportGenerator:
             Centered text string, truncated with ellipsis if too long.
         """
         if len(text) > REPORT_WIDTH:
-            return text[: REPORT_WIDTH - 3] + "..."
+            return text[: REPORT_WIDTH - ELLIPSIS_LENGTH] + ELLIPSIS
         return text.center(REPORT_WIDTH)
 
     def generate_json_report(
@@ -707,18 +784,25 @@ class ServiceDecisionReportGenerator:
                 lines.append("")
 
             # Violations by severity table
+            # Normalize severity keys to lowercase for consistent sorting and display.
             if summary.invariant_violations.by_severity:
                 lines.append("### By Severity")
                 lines.append("")
                 lines.append("| Severity | Count |")
                 lines.append("|----------|-------|")
+                # Normalize keys to lowercase for sorting, capitalize for display
+                normalized_items = [
+                    (severity.lower(), count)
+                    for severity, count in summary.invariant_violations.by_severity.items()
+                ]
                 for severity, count in sorted(
-                    summary.invariant_violations.by_severity.items(),
-                    key=lambda x: {"critical": 0, "warning": 1, "info": 2}.get(
-                        x[0], 99
+                    normalized_items,
+                    key=lambda x: SEVERITY_SORT_ORDER.get(
+                        x[0], DEFAULT_FALLBACK_SORT_ORDER
                     ),
                 ):
-                    lines.append(f"| {severity} | {count} |")
+                    # Capitalize severity for consistent display (e.g., "Critical")
+                    lines.append(f"| {severity.capitalize()} | {count} |")
                 lines.append("")
 
         # Performance section
@@ -798,7 +882,7 @@ class ServiceDecisionReportGenerator:
             for c in comparisons[:COMPARISON_LIMIT_MARKDOWN]:
                 status = ":white_check_mark:" if c.output_match else ":x:"
                 lines.append(
-                    f"| {status} | `{str(c.comparison_id)[:8]}...` | "
+                    f"| {status} | `{str(c.comparison_id)[:UUID_DISPLAY_LENGTH]}...` | "
                     f"{c.latency_delta_percent:+.1f}% | "
                     f"{'Yes' if c.output_match else 'No'} |"
                 )
@@ -981,9 +1065,165 @@ class ServiceDecisionReportGenerator:
             rationale=rationale,
         )
 
+    def save_to_file(
+        self,
+        summary: ModelEvidenceSummary,
+        comparisons: list[ModelExecutionComparison],
+        path: Path,
+        output_format: Literal["cli", "markdown", "json"] = "markdown",
+        recommendation: ModelDecisionRecommendation | None = None,
+    ) -> None:
+        """Save report to file in specified format.
+
+        Generates the report in the requested format and writes it to the specified
+        file path. This is a convenience method that combines report generation
+        and file writing.
+
+        Args:
+            summary: Aggregated evidence summary from corpus replay.
+            comparisons: Individual execution comparisons.
+            path: Path to save the file to.
+            output_format: Output format - "cli", "markdown", or "json".
+            recommendation: Pre-generated recommendation. If None, generates a new one.
+
+        Raises:
+            ModelOnexError: If format is invalid or file cannot be written.
+
+        Example:
+            >>> generator = ServiceDecisionReportGenerator()
+            >>> generator.save_to_file(summary, comparisons, Path("report.md"))
+        """
+        generators = {
+            "cli": lambda: self.generate_cli_report(
+                summary,
+                comparisons,
+                verbosity="standard",
+                recommendation=recommendation,
+            ),
+            "markdown": lambda: self.generate_markdown_report(
+                summary, comparisons, recommendation=recommendation
+            ),
+            "json": lambda: self._serialize_json_report(
+                self.generate_json_report(
+                    summary, comparisons, recommendation=recommendation
+                )
+            ),
+        }
+
+        if output_format not in generators:
+            raise ModelOnexError(
+                message=f"Invalid format '{output_format}'. Must be one of: {list(generators.keys())}",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                context={
+                    "format": output_format,
+                    "valid_formats": list(generators.keys()),
+                },
+            )
+
+        content = generators[output_format]()
+        path.write_text(content, encoding="utf-8")
+
+    def _serialize_json_report(self, report: TypedDictDecisionReport) -> str:
+        """Serialize JSON report to string.
+
+        Args:
+            report: The typed dict report to serialize.
+
+        Returns:
+            JSON string representation of the report.
+        """
+        import json
+
+        return json.dumps(report, indent=2, default=str)
+
+    def save_to_markdown(
+        self,
+        summary: ModelEvidenceSummary,
+        comparisons: list[ModelExecutionComparison],
+        path: Path,
+        recommendation: ModelDecisionRecommendation | None = None,
+    ) -> None:
+        """Convenience method to save markdown report to file.
+
+        This is a shorthand for calling save_to_file with format="markdown".
+
+        Args:
+            summary: Aggregated evidence summary from corpus replay.
+            comparisons: Individual execution comparisons.
+            path: Path to save the markdown file to.
+            recommendation: Pre-generated recommendation. If None, generates a new one.
+
+        Example:
+            >>> generator = ServiceDecisionReportGenerator()
+            >>> generator.save_to_markdown(summary, comparisons, Path("report.md"))
+        """
+        self.save_to_file(
+            summary,
+            comparisons,
+            path,
+            output_format="markdown",
+            recommendation=recommendation,
+        )
+
+    def generate_all_formats(
+        self,
+        summary: ModelEvidenceSummary,
+        comparisons: list[ModelExecutionComparison],
+        recommendation: ModelDecisionRecommendation | None = None,
+    ) -> dict[str, str]:
+        """Generate report in all available formats.
+
+        Convenience method that generates CLI, Markdown, and JSON
+        formats in a single call. Generates the recommendation once
+        and reuses it across all formats for consistency.
+
+        Args:
+            summary: The evidence summary to format.
+            comparisons: Individual execution comparisons.
+            recommendation: Pre-generated recommendation. If None, generates a new one.
+                Providing this avoids redundant computation.
+
+        Returns:
+            Dictionary with format names as keys and formatted output as values:
+            {
+                "cli": "...",
+                "markdown": "...",
+                "json": "..."
+            }
+
+        Example:
+            >>> generator = ServiceDecisionReportGenerator()
+            >>> result = generator.generate_all_formats(summary, comparisons)
+            >>> print(result["cli"])
+            >>> with open("report.md", "w") as f:
+            ...     f.write(result["markdown"])
+        """
+        # Generate recommendation once and reuse across all formats
+        if recommendation is None:
+            recommendation = self.generate_recommendation(summary)
+
+        return {
+            "cli": self.generate_cli_report(
+                summary, comparisons, recommendation=recommendation
+            ),
+            "markdown": self.generate_markdown_report(
+                summary, comparisons, recommendation=recommendation
+            ),
+            "json": self._serialize_json_report(
+                self.generate_json_report(
+                    summary, comparisons, recommendation=recommendation
+                )
+            ),
+        }
+
 
 __all__ = [
+    "DEFAULT_FALLBACK_SORT_ORDER",
+    "ELLIPSIS",
+    "ELLIPSIS_LENGTH",
     "COMPARISON_LIMIT_CLI_VERBOSE",
     "COMPARISON_LIMIT_MARKDOWN",
+    "SEVERITY_SORT_ORDER",
     "ServiceDecisionReportGenerator",
+    "UUID_DISPLAY_LENGTH",
 ]
