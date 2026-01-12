@@ -34,7 +34,9 @@ from omnibase_core.models.contracts.diff import (
 )
 from omnibase_core.models.diff.model_diff_query import ModelDiffQuery
 from omnibase_core.services.diff.service_diff_history import ServiceDiffHistory
-from omnibase_core.services.diff.store_diff_in_memory import StoreDiffInMemory
+from omnibase_core.services.diff.service_diff_in_memory_store import (
+    ServiceDiffInMemoryStore,
+)
 
 from .conftest import create_test_diff
 
@@ -47,13 +49,13 @@ pytestmark = [pytest.mark.unit, pytest.mark.asyncio]
 
 
 @pytest.fixture
-def store() -> StoreDiffInMemory:
+def store() -> ServiceDiffInMemoryStore:
     """Create a fresh in-memory store."""
-    return StoreDiffInMemory()
+    return ServiceDiffInMemoryStore()
 
 
 @pytest.fixture
-def service(store: StoreDiffInMemory) -> ServiceDiffHistory:
+def service(store: ServiceDiffInMemoryStore) -> ServiceDiffHistory:
     """Create a service with in-memory backend."""
     return ServiceDiffHistory(store)
 

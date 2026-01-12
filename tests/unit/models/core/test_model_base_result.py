@@ -91,24 +91,25 @@ class TestModelBaseResult:
         # metadata should not be in result when exclude_none=True
         assert dumped.get("metadata") is None or "metadata" not in dumped
 
-    def test_dict_method(self):
-        """Test dict() method calls model_dump()."""
+    def test_model_dump_method(self):
+        """Test model_dump() method returns dict representation."""
         result = ModelBaseResult(exit_code=0, success=True)
 
-        dict_result = result.dict()
         dump_result = result.model_dump()
 
-        assert dict_result == dump_result
+        assert isinstance(dump_result, dict)
+        assert dump_result["exit_code"] == 0
+        assert dump_result["success"] is True
 
-    def test_dict_method_with_kwargs(self):
-        """Test dict() method passes kwargs to model_dump()."""
+    def test_model_dump_method_with_kwargs(self):
+        """Test model_dump() method accepts kwargs."""
         metadata = ModelGenericMetadata()
         result = ModelBaseResult(exit_code=0, success=True, metadata=metadata)
 
-        dict_result = result.dict(exclude_none=False)
+        dump_result = result.model_dump(exclude_none=False)
 
-        assert isinstance(dict_result, dict)
-        assert "metadata" in dict_result
+        assert isinstance(dump_result, dict)
+        assert "metadata" in dump_result
 
     def test_model_validate_without_metadata(self):
         """Test model_validate without metadata."""

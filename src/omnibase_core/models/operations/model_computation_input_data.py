@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from pydantic import BaseModel, Field, ValidationInfo, field_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 
 from omnibase_core.enums.enum_computation_type import EnumComputationType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -113,11 +113,11 @@ class ModelComputationInputData(BaseModel):
 
         return v
 
-    model_config = {
-        "extra": "forbid",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="forbid",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
 
 # Export for use

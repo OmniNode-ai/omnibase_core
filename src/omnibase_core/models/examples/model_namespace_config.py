@@ -5,7 +5,7 @@ Namespace configuration model.
 """
 
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.enums.enum_namespace_strategy import EnumNamespaceStrategy
 from omnibase_core.types.type_serializable_value import SerializedDict
@@ -22,11 +22,11 @@ class ModelNamespaceConfig(BaseModel):
     enabled: bool = True
     strategy: EnumNamespaceStrategy = EnumNamespaceStrategy.ONEX_DEFAULT
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 

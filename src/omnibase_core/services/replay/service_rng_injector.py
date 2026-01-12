@@ -2,27 +2,27 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 """
-InjectorRNG - RNG injector for deterministic replay.
+ServiceRNGInjector - RNG injector for deterministic replay.
 
 This module provides the default ProtocolRNGService implementation using
 Python's random.Random class for isolated, seeded random number generation.
 
 Design:
-    Each InjectorRNG instance contains its own random.Random instance,
+    Each ServiceRNGInjector instance contains its own random.Random instance,
     ensuring isolation and thread safety when using separate instances
     per thread. The seed is recorded for manifest storage and replay.
 
 Usage:
     .. code-block:: python
 
-        from omnibase_core.services.replay.injector_rng import InjectorRNG
+        from omnibase_core.services.replay.service_rng_injector import ServiceRNGInjector
 
         # Replay mode: use specific seed
-        rng = InjectorRNG(seed=42)
+        rng = ServiceRNGInjector(seed=42)
         value = rng.random()
 
         # Production mode: auto-generate secure seed
-        rng = InjectorRNG()
+        rng = ServiceRNGInjector()
         seed_for_manifest = rng.seed
 
 Key Invariant:
@@ -30,12 +30,12 @@ Key Invariant:
 
     .. code-block:: python
 
-        rng1 = InjectorRNG(seed=42)
-        rng2 = InjectorRNG(seed=42)
+        rng1 = ServiceRNGInjector(seed=42)
+        rng2 = ServiceRNGInjector(seed=42)
         assert [rng1.random() for _ in range(10)] == [rng2.random() for _ in range(10)]
 
 Thread Safety:
-    InjectorRNG instances are NOT thread-safe. Use separate instances
+    ServiceRNGInjector instances are NOT thread-safe. Use separate instances
     per thread for concurrent usage. The underlying random.Random
     instance is per-injector, providing isolation.
 
@@ -49,7 +49,7 @@ Related:
 
 from __future__ import annotations
 
-__all__ = ["InjectorRNG"]
+__all__ = ["ServiceRNGInjector"]
 
 import os
 import random
@@ -61,7 +61,7 @@ from omnibase_core.protocols.replay import ProtocolRNGService
 T = TypeVar("T")
 
 
-class InjectorRNG:
+class ServiceRNGInjector:
     """
     RNG injector for deterministic replay.
 
@@ -76,7 +76,7 @@ class InjectorRNG:
         seed: The seed used for this RNG instance (read-only property).
 
     Example:
-        >>> rng = InjectorRNG(seed=42)
+        >>> rng = ServiceRNGInjector(seed=42)
         >>> rng.random()  # Returns deterministic value
         0.6394267984578837
         >>> rng.randint(1, 10)
@@ -120,10 +120,10 @@ class InjectorRNG:
             The seed value as an integer.
 
         Example:
-            >>> rng = InjectorRNG(seed=42)
+            >>> rng = ServiceRNGInjector(seed=42)
             >>> rng.seed
             42
-            >>> rng_auto = InjectorRNG()
+            >>> rng_auto = ServiceRNGInjector()
             >>> isinstance(rng_auto.seed, int)
             True
         """
@@ -137,7 +137,7 @@ class InjectorRNG:
             A random float N such that 0.0 <= N < 1.0.
 
         Example:
-            >>> rng = InjectorRNG(seed=42)
+            >>> rng = ServiceRNGInjector(seed=42)
             >>> value = rng.random()
             >>> 0.0 <= value < 1.0
             True
@@ -156,7 +156,7 @@ class InjectorRNG:
             A random integer in the range [a, b].
 
         Example:
-            >>> rng = InjectorRNG(seed=42)
+            >>> rng = ServiceRNGInjector(seed=42)
             >>> die_roll = rng.randint(1, 6)
             >>> 1 <= die_roll <= 6
             True
@@ -177,7 +177,7 @@ class InjectorRNG:
             IndexError: If the sequence is empty.
 
         Example:
-            >>> rng = InjectorRNG(seed=42)
+            >>> rng = ServiceRNGInjector(seed=42)
             >>> colors = ["red", "green", "blue"]
             >>> rng.choice(colors) in colors
             True
@@ -186,4 +186,4 @@ class InjectorRNG:
 
 
 # Verify protocol compliance at module load time
-_rng_check: ProtocolRNGService = InjectorRNG(seed=0)
+_rng_check: ProtocolRNGService = ServiceRNGInjector(seed=0)

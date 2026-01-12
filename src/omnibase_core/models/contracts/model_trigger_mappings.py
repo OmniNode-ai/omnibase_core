@@ -7,10 +7,9 @@ with proper Pydantic validation and type safety.
 Strict typing is enforced: No Any types or dict[str, Any]patterns allowed.
 """
 
-from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -145,11 +144,11 @@ class ModelTriggerMappings(BaseModel):
 
         return validated
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     def get_all_mappings(self) -> dict[str, str]:
         """
@@ -200,7 +199,7 @@ class ModelTriggerMappings(BaseModel):
 
         if category not in category_mapping:
             raise ModelOnexError(
-                message=f"Invalid mapping category '{category}'. Valid categories: {list[Any](category_mapping.keys())}",
+                message=f"Invalid mapping category '{category}'. Valid categories: {list(category_mapping.keys())}",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
 

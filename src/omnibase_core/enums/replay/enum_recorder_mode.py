@@ -29,7 +29,7 @@ Usage:
 
 Related:
     - OMN-1116: Implement Effect Recorder for Replay Infrastructure
-    - RecorderEffect: Uses this enum for mode configuration
+    - ServiceEffectRecorder: Uses this enum for mode configuration
     - ProtocolEffectRecorder: Protocol defining recorder interface
 
 .. versionadded:: 0.4.0

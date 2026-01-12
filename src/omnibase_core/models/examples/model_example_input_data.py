@@ -13,7 +13,7 @@ Follows ONEX one-model-per-file naming conventions.
 """
 
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.enums.enum_data_type import EnumDataType
 from omnibase_core.enums.enum_io_type import EnumIoType
@@ -58,11 +58,11 @@ class ModelExampleInputData(BaseModel):
     )
     is_validated: bool = Field(default=False, description="Whether input is validated")
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Export the model
 

@@ -6,7 +6,7 @@ Model for configuration source specifications in the ONEX configuration manageme
 
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
@@ -20,11 +20,11 @@ class ModelConfigurationSource(BaseModel):
         description="Model version (MUST be provided in YAML contract)",
     )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # ONEX: Add unique identifier for source tracking
     source_id: UUID = Field(

@@ -9,7 +9,7 @@ Strict typing is enforced: No Any types allowed.
 
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.constants import (
     MAX_DESCRIPTION_LENGTH,
@@ -116,11 +116,11 @@ class ModelWorkflow(BaseModel):
         max_length=MAX_ERROR_MESSAGE_LENGTH,
     )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
 
 __all__ = ["ModelWorkflow"]

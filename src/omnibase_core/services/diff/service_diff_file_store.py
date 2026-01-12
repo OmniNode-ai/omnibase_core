@@ -16,20 +16,20 @@ Storage Format:
     - Human-readable storage
 
 Thread Safety:
-    StoreDiffFile is NOT thread-safe. The internal buffer and file operations
+    ServiceDiffFileStore is NOT thread-safe. The internal buffer and file operations
     are not protected by locks, and concurrent access from multiple threads
     may cause data corruption or race conditions.
 
     For thread-safe usage:
-    - Use separate StoreDiffFile instances per thread, OR
+    - Use separate ServiceDiffFileStore instances per thread, OR
     - Wrap all operations with threading.Lock
 
 Example:
     >>> from pathlib import Path
-    >>> from omnibase_core.services.diff.store_diff_file import StoreDiffFile
+    >>> from omnibase_core.services.diff.service_diff_file_store import ServiceDiffFileStore
     >>> from omnibase_core.models.contracts.diff import ModelContractDiff
     >>>
-    >>> store = StoreDiffFile(base_path=Path("/tmp/diffs"))
+    >>> store = ServiceDiffFileStore(base_path=Path("/tmp/diffs"))
     >>>
     >>> # Store a diff
     >>> diff = ModelContractDiff(
@@ -51,9 +51,9 @@ Example:
 See Also:
     - :class:`~omnibase_core.protocols.storage.protocol_diff_store.ProtocolDiffStore`:
       The protocol this class implements
-    - :class:`~omnibase_core.services.diff.store_diff_in_memory.StoreDiffInMemory`:
+    - :class:`~omnibase_core.services.diff.service_diff_in_memory_store.ServiceDiffInMemoryStore`:
       In-memory implementation for comparison
-    - :class:`~omnibase_core.services.sinks.sink_file.SinkFile`:
+    - :class:`~omnibase_core.services.sinks.service_sink_file.ServiceFileSink`:
       Similar pattern for event sinks
 
 .. versionadded:: 0.6.0
@@ -74,7 +74,7 @@ from omnibase_core.models.diff.model_diff_storage_configuration import (
 from omnibase_core.protocols.storage.protocol_diff_store import ProtocolDiffStore
 
 
-class StoreDiffFile:
+class ServiceDiffFileStore:
     """
     File-based diff storage using JSONL format.
 
@@ -98,10 +98,10 @@ class StoreDiffFile:
     Performance Considerations:
         - Uses load-then-filter for queries (simple but not optimal for large files)
         - Buffered writes reduce I/O overhead
-        - Consider StoreDiffInMemory or PostgreSQL backend for high-volume usage
+        - Consider ServiceDiffInMemoryStore or PostgreSQL backend for high-volume usage
 
     Example:
-        >>> store = StoreDiffFile(base_path=Path("/tmp/diffs"))
+        >>> store = ServiceDiffFileStore(base_path=Path("/tmp/diffs"))
         >>> await store.put(diff)
         >>> await store.flush()
         >>> print(f"Stored diff, buffer has {store.buffer_count} pending writes")
@@ -581,6 +581,6 @@ class StoreDiffFile:
 
 
 # Verify protocol compliance at module load time
-_store_check: ProtocolDiffStore = StoreDiffFile(base_path=Path("/tmp"))
+_store_check: ProtocolDiffStore = ServiceDiffFileStore(base_path=Path("/tmp"))
 
-__all__ = ["StoreDiffFile"]
+__all__ = ["ServiceDiffFileStore"]

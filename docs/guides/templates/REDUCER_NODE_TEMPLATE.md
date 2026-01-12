@@ -245,7 +245,7 @@ class Node{DomainCamelCase}{MicroserviceCamelCase}Reducer(NodeReducer):
                     target="pattern_analyzer",
                     payload={
                         "event_type": "patterns_detected",
-                        "patterns": [p.dict() for p in patterns],
+                        "patterns": [p.model_dump() for p in patterns],
                         "reduction_type": input_data.reduction_type.value,
                         "correlation_id": str(input_data.correlation_id)
                     }

@@ -21,14 +21,14 @@ Usage:
     .. code-block:: python
 
         from omnibase_core.protocols.replay import ProtocolEffectRecorder
-        from omnibase_core.services.replay.recorder_effect import RecorderEffect
+        from omnibase_core.services.replay.service_effect_recorder import ServiceEffectRecorder
         from omnibase_core.enums.replay import EnumRecorderMode
 
         # Production mode - pass-through (no recording)
-        recorder: ProtocolEffectRecorder = RecorderEffect()
+        recorder: ProtocolEffectRecorder = ServiceEffectRecorder()
 
         # Recording mode - capture effects
-        recorder: ProtocolEffectRecorder = RecorderEffect(
+        recorder: ProtocolEffectRecorder = ServiceEffectRecorder(
             mode=EnumRecorderMode.RECORDING
         )
         record = recorder.record(
@@ -39,7 +39,7 @@ Usage:
 
         # Replay mode - stub effects
         records = recorder.get_all_records()
-        replay_recorder = RecorderEffect(
+        replay_recorder = ServiceEffectRecorder(
             mode=EnumRecorderMode.REPLAYING,
             records=records,
         )
@@ -50,7 +50,7 @@ Usage:
 
 Related:
     - OMN-1116: Implement Effect Recorder for Replay Infrastructure
-    - RecorderEffect: Default implementation
+    - ServiceEffectRecorder: Default implementation
     - ModelEffectRecord: Effect record model
 
 .. versionadded:: 0.4.0
@@ -143,7 +143,7 @@ class ProtocolEffectRecorder(Protocol):
         Example:
             .. code-block:: python
 
-                recorder = RecorderEffect(mode=EnumRecorderMode.RECORDING)
+                recorder = ServiceEffectRecorder(mode=EnumRecorderMode.RECORDING)
                 assert recorder.is_recording is True
         """
         ...
@@ -162,7 +162,7 @@ class ProtocolEffectRecorder(Protocol):
         Example:
             .. code-block:: python
 
-                recorder = RecorderEffect(mode=EnumRecorderMode.REPLAYING, records=records)
+                recorder = ServiceEffectRecorder(mode=EnumRecorderMode.REPLAYING, records=records)
                 assert recorder.is_replaying is True
         """
         ...

@@ -5,7 +5,7 @@
 File-based event sink for contract validation events.
 
 Location:
-    ``omnibase_core.services.sinks.sink_file``
+    ``omnibase_core.services.sinks.service_sink_file``
 
 .. versionadded:: 0.4.0
 """
@@ -25,10 +25,10 @@ if TYPE_CHECKING:
         ModelContractValidationEventBase,
     )
 
-__all__ = ["SinkFile"]
+__all__ = ["ServiceFileSink"]
 
 
-class SinkFile:
+class ServiceFileSink:
     """
     File-based event sink for persistent JSONL logging.
 
@@ -44,7 +44,7 @@ class SinkFile:
         external synchronization for concurrent access.
 
     Example:
-        >>> sink = SinkFile(
+        >>> sink = ServiceFileSink(
         ...     name="events",
         ...     file_path=Path("/tmp/events.jsonl"),
         ... )

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -62,7 +62,7 @@ class ModelProjectMetadataBlock(BaseModel):
     tree_generator: ModelTreeGeneratorConfig | None = None
     # Add project-specific fields as needed
 
-    model_config = {"extra": "allow"}
+    model_config = ConfigDict(extra="allow")
 
     @classmethod
     def _parse_entrypoint(cls, value: object) -> str:

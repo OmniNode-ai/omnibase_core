@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 """
-InjectorTime - Time injector for deterministic replay.
+ServiceTimeInjector - Time injector for deterministic replay.
 
 This module provides the default ProtocolTimeService implementation for
 controlled time injection in the ONEX pipeline.
@@ -15,16 +15,16 @@ Design:
 Usage:
     .. code-block:: python
 
-        from omnibase_core.services.replay.injector_time import InjectorTime
+        from omnibase_core.services.replay.service_time_injector import ServiceTimeInjector
         from datetime import datetime, timezone
 
         # Production mode: returns current time
-        time_svc = InjectorTime()
+        time_svc = ServiceTimeInjector()
         current = time_svc.now()
 
         # Replay mode: returns fixed time
         fixed = datetime(2024, 6, 15, 12, 0, 0, tzinfo=timezone.utc)
-        time_svc = InjectorTime(fixed_time=fixed)
+        time_svc = ServiceTimeInjector(fixed_time=fixed)
         replayed = time_svc.now()  # Always returns fixed time
 
 Key Invariant:
@@ -33,12 +33,12 @@ Key Invariant:
     .. code-block:: python
 
         fixed = datetime(2024, 6, 15, 12, 0, 0, tzinfo=timezone.utc)
-        time1 = InjectorTime(fixed_time=fixed)
-        time2 = InjectorTime(fixed_time=fixed)
+        time1 = ServiceTimeInjector(fixed_time=fixed)
+        time2 = ServiceTimeInjector(fixed_time=fixed)
         assert time1.now() == time2.now() == fixed
 
 Thread Safety:
-    InjectorTime is thread-safe. The fixed_time is immutable after
+    ServiceTimeInjector is thread-safe. The fixed_time is immutable after
     initialization, and datetime.now() is thread-safe.
 
 Related:
@@ -52,14 +52,14 @@ Related:
 
 from __future__ import annotations
 
-__all__ = ["InjectorTime"]
+__all__ = ["ServiceTimeInjector"]
 
 from datetime import UTC, datetime
 
 from omnibase_core.protocols.replay import ProtocolTimeService
 
 
-class InjectorTime:
+class ServiceTimeInjector:
     """
     Time injector for deterministic replay.
 
@@ -77,13 +77,13 @@ class InjectorTime:
     Example:
         >>> from datetime import datetime, timezone
         >>> # Production mode
-        >>> time_svc = InjectorTime()
+        >>> time_svc = ServiceTimeInjector()
         >>> current = time_svc.now()  # Returns current UTC time
         >>> assert current.tzinfo == timezone.utc
         >>>
         >>> # Replay mode
         >>> fixed = datetime(2024, 6, 15, 12, 0, 0, tzinfo=timezone.utc)
-        >>> time_svc = InjectorTime(fixed_time=fixed)
+        >>> time_svc = ServiceTimeInjector(fixed_time=fixed)
         >>> time_svc.now()
         datetime.datetime(2024, 6, 15, 12, 0, tzinfo=datetime.timezone.utc)
 
@@ -121,10 +121,10 @@ class InjectorTime:
 
         Example:
             >>> fixed = datetime(2024, 6, 15, 12, 0, 0, tzinfo=timezone.utc)
-            >>> time_svc = InjectorTime(fixed_time=fixed)
+            >>> time_svc = ServiceTimeInjector(fixed_time=fixed)
             >>> time_svc.fixed_time == fixed
             True
-            >>> prod_svc = InjectorTime()
+            >>> prod_svc = ServiceTimeInjector()
             >>> prod_svc.fixed_time is None
             True
         """
@@ -141,12 +141,12 @@ class InjectorTime:
             datetime: Current time with timezone info (always UTC).
 
         Example:
-            >>> time_svc = InjectorTime()
+            >>> time_svc = ServiceTimeInjector()
             >>> current = time_svc.now()
             >>> assert current.tzinfo == timezone.utc
             >>>
             >>> fixed = datetime(2024, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
-            >>> replay_svc = InjectorTime(fixed_time=fixed)
+            >>> replay_svc = ServiceTimeInjector(fixed_time=fixed)
             >>> replay_svc.now() == fixed
             True
         """
@@ -165,7 +165,7 @@ class InjectorTime:
             datetime: Current UTC time with timezone.utc tzinfo.
 
         Example:
-            >>> time_svc = InjectorTime()
+            >>> time_svc = ServiceTimeInjector()
             >>> utc = time_svc.utc_now()
             >>> assert utc.tzinfo == timezone.utc
         """
@@ -173,4 +173,4 @@ class InjectorTime:
 
 
 # Verify protocol compliance at module load time
-_time_check: ProtocolTimeService = InjectorTime()
+_time_check: ProtocolTimeService = ServiceTimeInjector()

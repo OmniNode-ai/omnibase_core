@@ -37,7 +37,7 @@ v1.1+ Roadmap:
     See Linear ticket OMN-656 for tracking of execution_graph activation timeline.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
@@ -85,14 +85,10 @@ class ModelExecutionGraph(BaseModel):
         description="Nodes in the execution graph",
     )
 
-    model_config = {
-        # v1.0.5 Fix 54: Reserved Fields Governance
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-        "frozen": True,
-        # from_attributes=True allows Pydantic to accept objects with matching
-        # attributes even when class identity differs (e.g., in pytest-xdist
-        # parallel execution where model classes are imported in separate workers)
-        "from_attributes": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+        frozen=True,
+        from_attributes=True,
+    )

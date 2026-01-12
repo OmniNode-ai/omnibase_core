@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 """
-ModelCapabilityCaching - Result Caching Handler.
+HandlerCapabilityCaching - Result Caching Handler.
 
 Provides result caching capabilities for ONEX pipeline.
 This is a pure handler replacement for MixinCaching with no inheritance.
@@ -11,7 +11,7 @@ This is a standalone handler that uses composition instead of mixin inheritance.
 It can be embedded in any component that needs caching capabilities.
 
 Usage:
-    >>> cache = ModelCapabilityCaching(default_ttl_seconds=600)
+    >>> cache = HandlerCapabilityCaching(default_ttl_seconds=600)
     >>> cache_key = cache.generate_cache_key({"param": "value"})
     >>> await cache.set_cached(cache_key, result)
     >>> cached = await cache.get_cached(cache_key)
@@ -32,7 +32,7 @@ from omnibase_core.errors.exception_groups import VALIDATION_ERRORS
 from omnibase_core.types.typed_dict_mixin_types import TypedDictCacheStats
 
 
-class ModelCapabilityCaching(BaseModel):
+class HandlerCapabilityCaching(BaseModel):
     """
     Handler providing result caching capabilities.
 
@@ -45,7 +45,7 @@ class ModelCapabilityCaching(BaseModel):
         default_ttl_seconds: Default time-to-live for cached entries (default 3600)
 
     Example:
-        >>> cache = ModelCapabilityCaching(enabled=True, default_ttl_seconds=600)
+        >>> cache = HandlerCapabilityCaching(enabled=True, default_ttl_seconds=600)
         >>> key = cache.generate_cache_key({"user_id": 123})
         >>> await cache.set_cached(key, {"result": "data"})
         >>> result = await cache.get_cached(key)
@@ -172,4 +172,4 @@ class ModelCapabilityCaching(BaseModel):
         )
 
 
-__all__ = ["ModelCapabilityCaching"]
+__all__ = ["HandlerCapabilityCaching"]

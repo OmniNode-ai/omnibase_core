@@ -7,7 +7,7 @@ dot notation support and type safety.
 
 from __future__ import annotations
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.errors.exception_groups import ATTRIBUTE_ACCESS_ERRORS
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
@@ -171,11 +171,11 @@ class ModelFieldAccessor(BaseModel):
         except ATTRIBUTE_ACCESS_ERRORS:
             return False
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 

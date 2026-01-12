@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelActionConfigBooleanValue(BaseModel):
@@ -39,11 +39,11 @@ class ModelActionConfigBooleanValue(BaseModel):
         """Get configuration value as string."""
         return str(self.value).lower()
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
 
 __all__ = ["ModelActionConfigBooleanValue"]

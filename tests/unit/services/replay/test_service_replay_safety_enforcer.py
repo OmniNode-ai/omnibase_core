@@ -324,10 +324,12 @@ class TestMockedMode:
 
     def test_mocked_mode_with_time_injector(self) -> None:
         """Test MOCKED mode uses provided time injector."""
-        from omnibase_core.services.replay.injector_time import InjectorTime
+        from omnibase_core.services.replay.service_time_injector import (
+            ServiceTimeInjector,
+        )
 
         fixed_time = datetime(2024, 6, 15, 12, 0, 0, tzinfo=UTC)
-        time_injector = InjectorTime(fixed_time=fixed_time)
+        time_injector = ServiceTimeInjector(fixed_time=fixed_time)
         enforcer = ServiceReplaySafetyEnforcer(
             mode=EnumEnforcementMode.MOCKED, time_injector=time_injector
         )
@@ -505,13 +507,17 @@ class TestGetMockValue:
     def test_get_mock_value_with_custom_injectors(self) -> None:
         """Test get_mock_value uses custom injectors when provided."""
         from omnibase_core.enums.replay.enum_recorder_mode import EnumRecorderMode
-        from omnibase_core.services.replay.injector_rng import InjectorRNG
-        from omnibase_core.services.replay.injector_time import InjectorTime
         from omnibase_core.services.replay.injector_uuid import InjectorUUID
+        from omnibase_core.services.replay.service_rng_injector import (
+            ServiceRNGInjector,
+        )
+        from omnibase_core.services.replay.service_time_injector import (
+            ServiceTimeInjector,
+        )
 
         fixed_time = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
-        time_injector = InjectorTime(fixed_time=fixed_time)
-        rng_injector = InjectorRNG(seed=42)
+        time_injector = ServiceTimeInjector(fixed_time=fixed_time)
+        rng_injector = ServiceRNGInjector(seed=42)
 
         sample_uuid = UUID("550e8400-e29b-41d4-a716-446655440001")
         uuid_injector = InjectorUUID(

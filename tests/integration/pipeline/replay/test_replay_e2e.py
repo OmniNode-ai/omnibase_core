@@ -29,7 +29,11 @@ import pytest
 
 from omnibase_core.enums.replay import EnumRecorderMode, EnumReplayMode
 from omnibase_core.models.replay import ModelEffectRecord, ModelReplayContext
-from omnibase_core.pipeline.replay import InjectorRNG, InjectorTime, RecorderEffect
+from omnibase_core.pipeline.replay import (
+    ServiceEffectRecorder,
+    ServiceRNGInjector,
+    ServiceTimeInjector,
+)
 
 
 @pytest.mark.integration
@@ -45,17 +49,17 @@ class TestTimeDeterminism:
         """Function using time produces same result with fixed time.
 
         Verifies:
-        - InjectorTime with fixed_time returns that time consistently
+        - ServiceTimeInjector with fixed_time returns that time consistently
         - Multiple executions with same fixed time produce identical results
         """
         fixed_time = datetime(2024, 6, 15, 12, 0, 0, tzinfo=UTC)
 
-        def time_sensitive_func(time_svc: InjectorTime) -> str:
+        def time_sensitive_func(time_svc: ServiceTimeInjector) -> str:
             return f"Generated at {time_svc.now().isoformat()}"
 
         # Execute twice with same fixed time
-        result1 = time_sensitive_func(InjectorTime(fixed_time=fixed_time))
-        result2 = time_sensitive_func(InjectorTime(fixed_time=fixed_time))
+        result1 = time_sensitive_func(ServiceTimeInjector(fixed_time=fixed_time))
+        result2 = time_sensitive_func(ServiceTimeInjector(fixed_time=fixed_time))
 
         assert result1 == result2
         assert "2024-06-15T12:00:00" in result1
@@ -64,11 +68,11 @@ class TestTimeDeterminism:
         """Multiple time.now() calls return the same fixed time.
 
         Verifies:
-        - InjectorTime with fixed_time is frozen
+        - ServiceTimeInjector with fixed_time is frozen
         - All calls to now() return identical values
         """
         fixed_time = datetime(2024, 1, 1, 0, 0, 0, tzinfo=UTC)
-        time_svc = InjectorTime(fixed_time=fixed_time)
+        time_svc = ServiceTimeInjector(fixed_time=fixed_time)
 
         times = [time_svc.now() for _ in range(100)]
 
@@ -98,11 +102,11 @@ class TestTimeDeterminism:
         """Naive datetime is treated as UTC.
 
         Verifies:
-        - InjectorTime accepts naive datetimes
+        - ServiceTimeInjector accepts naive datetimes
         - Naive datetimes are interpreted as UTC
         """
         naive_time = datetime(2024, 6, 15, 12, 0, 0)  # No tzinfo
-        time_svc = InjectorTime(fixed_time=naive_time)
+        time_svc = ServiceTimeInjector(fixed_time=naive_time)
 
         result = time_svc.now()
 
@@ -119,7 +123,7 @@ class TestTimeDeterminism:
         - API consistency is maintained
         """
         fixed_time = datetime(2024, 6, 15, 12, 0, 0, tzinfo=UTC)
-        time_svc = InjectorTime(fixed_time=fixed_time)
+        time_svc = ServiceTimeInjector(fixed_time=fixed_time)
 
         assert time_svc.now() == time_svc.utc_now()
 
@@ -137,15 +141,15 @@ class TestRNGDeterminism:
         """Function using RNG produces same result with same seed.
 
         Verifies:
-        - InjectorRNG with same seed produces identical sequences
+        - ServiceRNGInjector with same seed produces identical sequences
         - random() method is deterministic
         """
 
-        def random_func(rng: InjectorRNG) -> list[float]:
+        def random_func(rng: ServiceRNGInjector) -> list[float]:
             return [rng.random() for _ in range(5)]
 
-        result1 = random_func(InjectorRNG(seed=42))
-        result2 = random_func(InjectorRNG(seed=42))
+        result1 = random_func(ServiceRNGInjector(seed=42))
+        result2 = random_func(ServiceRNGInjector(seed=42))
 
         assert result1 == result2
 
@@ -158,11 +162,11 @@ class TestRNGDeterminism:
         """
         options = ["a", "b", "c", "d", "e"]
 
-        def choose_func(rng: InjectorRNG) -> list[str]:
+        def choose_func(rng: ServiceRNGInjector) -> list[str]:
             return [rng.choice(options) for _ in range(10)]
 
-        result1 = choose_func(InjectorRNG(seed=123))
-        result2 = choose_func(InjectorRNG(seed=123))
+        result1 = choose_func(ServiceRNGInjector(seed=123))
+        result2 = choose_func(ServiceRNGInjector(seed=123))
 
         assert result1 == result2
 
@@ -174,11 +178,11 @@ class TestRNGDeterminism:
         - Range bounds are respected
         """
 
-        def dice_rolls(rng: InjectorRNG) -> list[int]:
+        def dice_rolls(rng: ServiceRNGInjector) -> list[int]:
             return [rng.randint(1, 6) for _ in range(20)]
 
-        result1 = dice_rolls(InjectorRNG(seed=999))
-        result2 = dice_rolls(InjectorRNG(seed=999))
+        result1 = dice_rolls(ServiceRNGInjector(seed=999))
+        result2 = dice_rolls(ServiceRNGInjector(seed=999))
 
         assert result1 == result2
         assert all(1 <= x <= 6 for x in result1)
@@ -191,7 +195,7 @@ class TestRNGDeterminism:
         - Operation order matters and is preserved
         """
 
-        def mixed_ops(rng: InjectorRNG) -> dict[str, Any]:
+        def mixed_ops(rng: ServiceRNGInjector) -> dict[str, Any]:
             return {
                 "float1": rng.random(),
                 "int1": rng.randint(1, 100),
@@ -201,8 +205,8 @@ class TestRNGDeterminism:
                 "choice2": rng.choice(list("abcdefghij")),
             }
 
-        result1 = mixed_ops(InjectorRNG(seed=42))
-        result2 = mixed_ops(InjectorRNG(seed=42))
+        result1 = mixed_ops(ServiceRNGInjector(seed=42))
+        result2 = mixed_ops(ServiceRNGInjector(seed=42))
 
         assert result1 == result2
 
@@ -213,10 +217,10 @@ class TestRNGDeterminism:
         - Explicit seed is accessible via property
         - Auto-generated seed is also accessible
         """
-        explicit_rng = InjectorRNG(seed=12345)
+        explicit_rng = ServiceRNGInjector(seed=12345)
         assert explicit_rng.seed == 12345
 
-        auto_rng = InjectorRNG()
+        auto_rng = ServiceRNGInjector()
         assert isinstance(auto_rng.seed, int)
 
     def test_different_seeds_produce_different_sequences(self) -> None:
@@ -227,11 +231,11 @@ class TestRNGDeterminism:
         - Statistical independence of different seeds
         """
 
-        def random_func(rng: InjectorRNG) -> list[float]:
+        def random_func(rng: ServiceRNGInjector) -> list[float]:
             return [rng.random() for _ in range(5)]
 
-        result1 = random_func(InjectorRNG(seed=42))
-        result2 = random_func(InjectorRNG(seed=99))
+        result1 = random_func(ServiceRNGInjector(seed=42))
+        result2 = random_func(ServiceRNGInjector(seed=99))
 
         assert result1 != result2, "Different seeds should produce different results"
 
@@ -249,15 +253,15 @@ class TestEffectRecording:
         """Recorded effects return same results on replay.
 
         Verifies:
-        - RecorderEffect captures effects in RECORDING mode
+        - ServiceEffectRecorder captures effects in RECORDING mode
         - Replay returns exact same result for matching effect_id and intent
         """
         fixed_time = datetime(2024, 6, 15, 12, 0, 0, tzinfo=UTC)
 
         # Recording phase
-        recorder = RecorderEffect(
+        recorder = ServiceEffectRecorder(
             mode=EnumRecorderMode.RECORDING,
-            time_service=InjectorTime(fixed_time=fixed_time),
+            time_service=ServiceTimeInjector(fixed_time=fixed_time),
         )
         _record = recorder.record(
             effect_type="api.call",
@@ -266,7 +270,7 @@ class TestEffectRecording:
         )
 
         # Replay phase
-        replay_recorder = RecorderEffect(
+        replay_recorder = ServiceEffectRecorder(
             mode=EnumRecorderMode.REPLAYING,
             records=recorder.get_all_records(),
         )
@@ -287,9 +291,9 @@ class TestEffectRecording:
         fixed_time = datetime(2024, 6, 15, 12, 0, 0, tzinfo=UTC)
 
         # Recording phase
-        recorder = RecorderEffect(
+        recorder = ServiceEffectRecorder(
             mode=EnumRecorderMode.RECORDING,
-            time_service=InjectorTime(fixed_time=fixed_time),
+            time_service=ServiceTimeInjector(fixed_time=fixed_time),
         )
 
         # Record multiple effects
@@ -310,7 +314,7 @@ class TestEffectRecording:
         )
 
         # Replay phase
-        replay_recorder = RecorderEffect(
+        replay_recorder = ServiceEffectRecorder(
             mode=EnumRecorderMode.REPLAYING,
             records=recorder.get_all_records(),
         )
@@ -338,7 +342,7 @@ class TestEffectRecording:
         - Each record gets unique sequence_index
         - Index starts at 0 and increments
         """
-        recorder = RecorderEffect(mode=EnumRecorderMode.RECORDING)
+        recorder = ServiceEffectRecorder(mode=EnumRecorderMode.RECORDING)
 
         r0 = recorder.record("e1", {"k": "v1"}, {"r": 1})
         r1 = recorder.record("e2", {"k": "v2"}, {"r": 2})
@@ -373,7 +377,7 @@ class TestEffectRecording:
         - PASS_THROUGH mode creates records but does not store them
         - get_all_records() returns empty list
         """
-        recorder = RecorderEffect(mode=EnumRecorderMode.PASS_THROUGH)
+        recorder = ServiceEffectRecorder(mode=EnumRecorderMode.PASS_THROUGH)
         recorder.record("effect1", {"k": "v"}, {"r": 1})
         recorder.record("effect2", {"k": "v"}, {"r": 2})
 
@@ -386,7 +390,7 @@ class TestEffectRecording:
         - Missing effects return None, not error
         - Partial intent mismatch returns None
         """
-        recorder = RecorderEffect(
+        recorder = ServiceEffectRecorder(
             mode=EnumRecorderMode.RECORDING,
         )
         recorder.record(
@@ -395,7 +399,7 @@ class TestEffectRecording:
             result={"data": "result"},
         )
 
-        replay_recorder = RecorderEffect(
+        replay_recorder = ServiceEffectRecorder(
             mode=EnumRecorderMode.REPLAYING,
             records=recorder.get_all_records(),
         )
@@ -425,7 +429,7 @@ class TestEffectRecording:
         - success=False flag is recorded
         - error_message is preserved
         """
-        recorder = RecorderEffect(mode=EnumRecorderMode.RECORDING)
+        recorder = ServiceEffectRecorder(mode=EnumRecorderMode.RECORDING)
 
         error_record = recorder.record(
             effect_type="db.query",
@@ -458,9 +462,9 @@ class TestFullPipelineReplay:
         """
 
         def complex_operation(
-            time_svc: InjectorTime,
-            rng_svc: InjectorRNG,
-            effect_recorder: RecorderEffect,
+            time_svc: ServiceTimeInjector,
+            rng_svc: ServiceRNGInjector,
+            effect_recorder: ServiceEffectRecorder,
         ) -> dict[str, Any]:
             """Operation using time, RNG, and effects."""
             timestamp = time_svc.now().isoformat()
@@ -495,9 +499,9 @@ class TestFullPipelineReplay:
 
         # RECORDING PHASE
         fixed_time = datetime(2024, 6, 15, 12, 0, 0, tzinfo=UTC)
-        recording_time = InjectorTime(fixed_time=fixed_time)
-        recording_rng = InjectorRNG(seed=42)
-        recording_effects = RecorderEffect(
+        recording_time = ServiceTimeInjector(fixed_time=fixed_time)
+        recording_rng = ServiceRNGInjector(seed=42)
+        recording_effects = ServiceEffectRecorder(
             mode=EnumRecorderMode.RECORDING,
             time_service=recording_time,
         )
@@ -512,9 +516,9 @@ class TestFullPipelineReplay:
         }
 
         # REPLAY PHASE
-        replay_time = InjectorTime(fixed_time=manifest["time_frozen_at"])
-        replay_rng = InjectorRNG(seed=manifest["rng_seed"])
-        replay_effects = RecorderEffect(
+        replay_time = ServiceTimeInjector(fixed_time=manifest["time_frozen_at"])
+        replay_rng = ServiceRNGInjector(seed=manifest["rng_seed"])
+        replay_effects = ServiceEffectRecorder(
             mode=EnumRecorderMode.REPLAYING,
             records=manifest["effect_records"],
         )
@@ -547,9 +551,9 @@ class TestFullPipelineReplay:
         """
 
         def multi_step_workflow(
-            time_svc: InjectorTime,
-            rng_svc: InjectorRNG,
-            effect_recorder: RecorderEffect,
+            time_svc: ServiceTimeInjector,
+            rng_svc: ServiceRNGInjector,
+            effect_recorder: ServiceEffectRecorder,
         ) -> dict[str, Any]:
             """Multi-step workflow with dependencies between steps."""
             results: dict[str, Any] = {"steps": [], "final_timestamp": None}
@@ -612,9 +616,9 @@ class TestFullPipelineReplay:
 
         # RECORDING
         fixed_time = datetime(2024, 12, 1, 10, 30, 0, tzinfo=UTC)
-        rec_time = InjectorTime(fixed_time=fixed_time)
-        rec_rng = InjectorRNG(seed=7777)
-        rec_effects = RecorderEffect(
+        rec_time = ServiceTimeInjector(fixed_time=fixed_time)
+        rec_rng = ServiceRNGInjector(seed=7777)
+        rec_effects = ServiceEffectRecorder(
             mode=EnumRecorderMode.RECORDING,
             time_service=rec_time,
         )
@@ -623,9 +627,9 @@ class TestFullPipelineReplay:
         recorded_effects = rec_effects.get_all_records()
 
         # REPLAY
-        replay_time = InjectorTime(fixed_time=fixed_time)
-        replay_rng = InjectorRNG(seed=7777)
-        replay_effects = RecorderEffect(
+        replay_time = ServiceTimeInjector(fixed_time=fixed_time)
+        replay_rng = ServiceRNGInjector(seed=7777)
+        replay_effects = ServiceEffectRecorder(
             mode=EnumRecorderMode.REPLAYING,
             records=recorded_effects,
         )
@@ -649,7 +653,7 @@ class TestFullPipelineReplay:
         )
 
         # Simulate execution and capture
-        time_svc = InjectorTime()
+        time_svc = ServiceTimeInjector()
         captured_time = time_svc.now()
         ctx = ctx.with_time_capture(captured_time)
 
@@ -757,8 +761,8 @@ class TestManifestSerialization:
         """
 
         def deterministic_func(
-            time_svc: InjectorTime,
-            rng_svc: InjectorRNG,
+            time_svc: ServiceTimeInjector,
+            rng_svc: ServiceRNGInjector,
         ) -> dict[str, Any]:
             return {
                 "time": time_svc.now().isoformat(),
@@ -768,8 +772,8 @@ class TestManifestSerialization:
 
         # Execute and capture
         fixed_time = datetime(2024, 6, 15, 12, 0, 0, tzinfo=UTC)
-        time_svc = InjectorTime(fixed_time=fixed_time)
-        rng_svc = InjectorRNG(seed=42)
+        time_svc = ServiceTimeInjector(fixed_time=fixed_time)
+        rng_svc = ServiceRNGInjector(seed=42)
 
         original_result = deterministic_func(time_svc, rng_svc)
 
@@ -784,10 +788,10 @@ class TestManifestSerialization:
         restored_manifest = json.loads(manifest_json)
 
         # Replay with restored manifest
-        replay_time = InjectorTime(
+        replay_time = ServiceTimeInjector(
             fixed_time=datetime.fromisoformat(restored_manifest["time_frozen_at"])
         )
-        replay_rng = InjectorRNG(seed=restored_manifest["rng_seed"])
+        replay_rng = ServiceRNGInjector(seed=restored_manifest["rng_seed"])
 
         replayed_result = deterministic_func(replay_time, replay_rng)
 
@@ -809,11 +813,11 @@ class TestEdgeCases:
         This is a sanity check that the RNG seed is actually being used.
         """
 
-        def random_func(rng: InjectorRNG) -> list[float]:
+        def random_func(rng: ServiceRNGInjector) -> list[float]:
             return [rng.random() for _ in range(5)]
 
-        result1 = random_func(InjectorRNG(seed=42))
-        result2 = random_func(InjectorRNG(seed=99))
+        result1 = random_func(ServiceRNGInjector(seed=42))
+        result2 = random_func(ServiceRNGInjector(seed=99))
 
         assert result1 != result2, "Different seeds should produce different results"
 
@@ -821,10 +825,10 @@ class TestEdgeCases:
         """Production mode uses actual current time.
 
         Verifies:
-        - InjectorTime without fixed_time uses real time
+        - ServiceTimeInjector without fixed_time uses real time
         - Time is within expected bounds
         """
-        time_svc = InjectorTime()  # No fixed time
+        time_svc = ServiceTimeInjector()  # No fixed time
         before = datetime.now(UTC)
         result = time_svc.now()
         after = datetime.now(UTC)
@@ -839,7 +843,7 @@ class TestEdgeCases:
         - Empty records list is handled gracefully
         - get_replay_result returns None, not error
         """
-        replay_recorder = RecorderEffect(
+        replay_recorder = ServiceEffectRecorder(
             mode=EnumRecorderMode.REPLAYING,
             records=[],
         )
@@ -859,9 +863,9 @@ class TestEdgeCases:
         - is_replaying property
         - Mode flags are mutually exclusive (for non-pass-through)
         """
-        recording = RecorderEffect(mode=EnumRecorderMode.RECORDING)
-        replaying = RecorderEffect(mode=EnumRecorderMode.REPLAYING, records=[])
-        pass_through = RecorderEffect(mode=EnumRecorderMode.PASS_THROUGH)
+        recording = ServiceEffectRecorder(mode=EnumRecorderMode.RECORDING)
+        replaying = ServiceEffectRecorder(mode=EnumRecorderMode.REPLAYING, records=[])
+        pass_through = ServiceEffectRecorder(mode=EnumRecorderMode.PASS_THROUGH)
 
         assert recording.is_recording is True
         assert recording.is_replaying is False
@@ -879,7 +883,7 @@ class TestEdgeCases:
         - Modifying returned list doesn't affect internal state
         - Data encapsulation is maintained
         """
-        recorder = RecorderEffect(mode=EnumRecorderMode.RECORDING)
+        recorder = ServiceEffectRecorder(mode=EnumRecorderMode.RECORDING)
         recorder.record("e1", {"k": "v"}, {"r": 1})
 
         records = recorder.get_all_records()
@@ -898,7 +902,7 @@ class TestEdgeCases:
         - Complex nested dicts are matched exactly
         - Order-independent matching (dict equality)
         """
-        recorder = RecorderEffect(mode=EnumRecorderMode.RECORDING)
+        recorder = ServiceEffectRecorder(mode=EnumRecorderMode.RECORDING)
         complex_intent = {
             "level1": {
                 "level2": {
@@ -915,7 +919,7 @@ class TestEdgeCases:
             result={"matched": True},
         )
 
-        replay = RecorderEffect(
+        replay = ServiceEffectRecorder(
             mode=EnumRecorderMode.REPLAYING,
             records=recorder.get_all_records(),
         )
@@ -954,7 +958,7 @@ class TestReplayInvariants:
         """
 
         def deterministic_operation(
-            time_svc: InjectorTime, rng_svc: InjectorRNG
+            time_svc: ServiceTimeInjector, rng_svc: ServiceRNGInjector
         ) -> dict[str, Any]:
             return {
                 "time": time_svc.now().isoformat(),
@@ -965,12 +969,12 @@ class TestReplayInvariants:
         R = 12345
 
         manifest_1 = deterministic_operation(
-            InjectorTime(fixed_time=T),
-            InjectorRNG(seed=R),
+            ServiceTimeInjector(fixed_time=T),
+            ServiceRNGInjector(seed=R),
         )
         manifest_2 = deterministic_operation(
-            InjectorTime(fixed_time=T),
-            InjectorRNG(seed=R),
+            ServiceTimeInjector(fixed_time=T),
+            ServiceRNGInjector(seed=R),
         )
 
         assert manifest_1 == manifest_2
@@ -983,9 +987,9 @@ class TestReplayInvariants:
         """
 
         def operation(
-            time_svc: InjectorTime,
-            rng_svc: InjectorRNG,
-            effect_recorder: RecorderEffect,
+            time_svc: ServiceTimeInjector,
+            rng_svc: ServiceRNGInjector,
+            effect_recorder: ServiceEffectRecorder,
         ) -> dict[str, Any]:
             values = [rng_svc.random() for _ in range(5)]
             timestamp = time_svc.now().isoformat()
@@ -1017,27 +1021,27 @@ class TestReplayInvariants:
         seed = 999
 
         rec_result = operation(
-            InjectorTime(fixed_time=fixed_time),
-            InjectorRNG(seed=seed),
-            RecorderEffect(mode=EnumRecorderMode.RECORDING),
+            ServiceTimeInjector(fixed_time=fixed_time),
+            ServiceRNGInjector(seed=seed),
+            ServiceEffectRecorder(mode=EnumRecorderMode.RECORDING),
         )
 
         # We need to re-run recording to get the records
-        rec_recorder = RecorderEffect(
+        rec_recorder = ServiceEffectRecorder(
             mode=EnumRecorderMode.RECORDING,
-            time_service=InjectorTime(fixed_time=fixed_time),
+            time_service=ServiceTimeInjector(fixed_time=fixed_time),
         )
         rec_result = operation(
-            InjectorTime(fixed_time=fixed_time),
-            InjectorRNG(seed=seed),
+            ServiceTimeInjector(fixed_time=fixed_time),
+            ServiceRNGInjector(seed=seed),
             rec_recorder,
         )
 
         # Replay phase
         replay_result = operation(
-            InjectorTime(fixed_time=fixed_time),
-            InjectorRNG(seed=seed),
-            RecorderEffect(
+            ServiceTimeInjector(fixed_time=fixed_time),
+            ServiceRNGInjector(seed=seed),
+            ServiceEffectRecorder(
                 mode=EnumRecorderMode.REPLAYING,
                 records=rec_recorder.get_all_records(),
             ),
@@ -1052,7 +1056,9 @@ class TestReplayInvariants:
         replay_1 == replay_2 == replay_3 == ... == replay_N
         """
 
-        def operation(time_svc: InjectorTime, rng_svc: InjectorRNG) -> dict[str, Any]:
+        def operation(
+            time_svc: ServiceTimeInjector, rng_svc: ServiceRNGInjector
+        ) -> dict[str, Any]:
             return {
                 "timestamp": time_svc.now().isoformat(),
                 "random_values": [rng_svc.random() for _ in range(10)],
@@ -1067,7 +1073,10 @@ class TestReplayInvariants:
 
         # Execute multiple replays
         replays = [
-            operation(InjectorTime(fixed_time=fixed_time), InjectorRNG(seed=seed))
+            operation(
+                ServiceTimeInjector(fixed_time=fixed_time),
+                ServiceRNGInjector(seed=seed),
+            )
             for _ in range(10)
         ]
 
@@ -1083,7 +1092,7 @@ class TestReplayInvariants:
         All time queries return the same frozen time.
         """
         fixed_time = datetime(2024, 6, 15, 12, 0, 0, tzinfo=UTC)
-        time_svc = InjectorTime(fixed_time=fixed_time)
+        time_svc = ServiceTimeInjector(fixed_time=fixed_time)
 
         # Simulate multiple time queries during a long operation
         times = []
@@ -1102,7 +1111,7 @@ class TestReplayInvariants:
         """
         seed = 12345
 
-        def generate_sequence(rng: InjectorRNG) -> list[Any]:
+        def generate_sequence(rng: ServiceRNGInjector) -> list[Any]:
             return [
                 rng.random(),
                 rng.randint(1, 100),
@@ -1112,9 +1121,9 @@ class TestReplayInvariants:
                 rng.choice(list(range(100))),
             ]
 
-        seq1 = generate_sequence(InjectorRNG(seed=seed))
-        seq2 = generate_sequence(InjectorRNG(seed=seed))
-        seq3 = generate_sequence(InjectorRNG(seed=seed))
+        seq1 = generate_sequence(ServiceRNGInjector(seed=seed))
+        seq2 = generate_sequence(ServiceRNGInjector(seed=seed))
+        seq3 = generate_sequence(ServiceRNGInjector(seed=seed))
 
         assert seq1 == seq2 == seq3
 
@@ -1133,14 +1142,14 @@ class TestReplayInvariants:
             "items": [{"id": 1}, {"id": 2}, {"id": 3}],
         }
 
-        recorder = RecorderEffect(mode=EnumRecorderMode.RECORDING)
+        recorder = ServiceEffectRecorder(mode=EnumRecorderMode.RECORDING)
         recorder.record(
             effect_type="complex.effect",
             intent={"action": "fetch"},
             result=recorded_result,
         )
 
-        replay = RecorderEffect(
+        replay = ServiceEffectRecorder(
             mode=EnumRecorderMode.REPLAYING,
             records=recorder.get_all_records(),
         )

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.models.types import MetadataValue
 
@@ -14,4 +14,4 @@ class ModelOnexResultMetadata(BaseModel):
     value: MetadataValue = None
     # Add more fields as needed for protocol
 
-    model_config = {"arbitrary_types_allowed": True}
+    model_config = ConfigDict(arbitrary_types_allowed=True)

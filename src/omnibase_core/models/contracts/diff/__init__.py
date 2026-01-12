@@ -33,7 +33,7 @@ Example:
     ...     ModelContractDiff,
     ...     ModelDiffConfiguration,
     ... )
-    >>> from omnibase_core.contracts.diff_computer import compute_contract_diff
+    >>> from omnibase_core.contracts.contract_diff_computer import compute_contract_diff
     >>> config = ModelDiffConfiguration(
     ...     exclude_fields=frozenset({"computed_at"}),
     ...     identity_keys={"transitions": "name"},

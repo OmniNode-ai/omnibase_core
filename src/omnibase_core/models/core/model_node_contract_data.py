@@ -7,7 +7,7 @@ in node initialization, ensuring required fields are validated properly.
 
 from typing import TYPE_CHECKING
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
@@ -29,7 +29,7 @@ class ModelNodeContractData(BaseModel):
     )
 
     # Allow additional fields since contract data can be flexible
-    model_config = {"extra": "allow"}
+    model_config = ConfigDict(extra="allow")
 
     @classmethod
     def from_dict(cls, data: "SerializedDict") -> "ModelNodeContractData":

@@ -48,7 +48,7 @@ from __future__ import annotations
 import math
 from typing import ClassVar, Literal
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -371,10 +371,11 @@ class ModelValueUnion(BaseModel):
         """Detailed representation."""
         return f"ModelValueUnion(value_type='{self.value_type}', value={self.value!r})"
 
-    model_config = {
-        "extra": "ignore",
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        validate_assignment=True,
+        from_attributes=True,
+    )
 
 
 __all__ = ["ModelValueUnion"]

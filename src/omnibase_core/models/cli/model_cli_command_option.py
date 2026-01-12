@@ -13,7 +13,7 @@ Replaces dict[str, Any] for command options with structured typing.
 
 from uuid import UUID
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, ConfigDict, model_validator
 
 from omnibase_core.enums.enum_cli_option_value_type import EnumCliOptionValueType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -399,11 +399,11 @@ class ModelCliCommandOption(BaseModel):
             valid_choices=valid_choices,
         )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 

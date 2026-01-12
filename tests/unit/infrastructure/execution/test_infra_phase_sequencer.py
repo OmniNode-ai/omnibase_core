@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 """
-Unit tests for phase_sequencer.
+Unit tests for infra_phase_sequencer.
 
 This module tests the phase sequencer functions for converting execution profiles
 and handler mappings into executable plans.
@@ -26,7 +26,7 @@ import pytest
 from pydantic import ValidationError
 
 from omnibase_core.enums.enum_handler_execution_phase import EnumHandlerExecutionPhase
-from omnibase_core.infrastructure.execution.phase_sequencer import (
+from omnibase_core.infrastructure.execution.infra_phase_sequencer import (
     create_default_execution_plan,
     create_empty_execution_plan,
     create_execution_plan,

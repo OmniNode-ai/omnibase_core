@@ -12,7 +12,7 @@ methods that can be inherited by any model requiring validation.
 
 from typing import cast
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
 from omnibase_core.types.typed_dict_validation_base_serialized import (
@@ -230,11 +230,11 @@ class ModelValidationBase(BaseModel):
             self.model_dump(exclude_none=False, by_alias=True),
         )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
 
 # Export for use

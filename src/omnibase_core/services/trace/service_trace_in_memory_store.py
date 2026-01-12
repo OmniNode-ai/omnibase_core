@@ -9,23 +9,23 @@ for development, testing, and single-instance deployments. For production
 multi-instance deployments, use a persistent backend like PostgreSQL.
 
 Thread Safety:
-    StoreTraceInMemory is NOT thread-safe. The internal dict is not protected
+    ServiceTraceInMemoryStore is NOT thread-safe. The internal dict is not protected
     by locks, and concurrent access from multiple threads may cause data
     corruption or race conditions.
 
     For thread-safe usage:
-    - Use separate StoreTraceInMemory instances per thread, OR
+    - Use separate ServiceTraceInMemoryStore instances per thread, OR
     - Wrap all operations with threading.Lock
 
 Example:
-    >>> from omnibase_core.services.trace.store_trace_in_memory import StoreTraceInMemory
+    >>> from omnibase_core.services.trace.service_trace_in_memory_store import ServiceTraceInMemoryStore
     >>> from omnibase_core.models.trace_query import ModelTraceQuery
     >>> from omnibase_core.models.trace import ModelExecutionTrace
     >>> from omnibase_core.enums.enum_execution_status import EnumExecutionStatus
     >>> from datetime import datetime, UTC
     >>> from uuid import uuid4
     >>>
-    >>> store = StoreTraceInMemory()
+    >>> store = ServiceTraceInMemoryStore()
     >>>
     >>> # Store a trace
     >>> trace = ModelExecutionTrace(
@@ -42,7 +42,7 @@ Example:
     >>> assert retrieved == trace
 
 See Also:
-    - :class:`~omnibase_core.services.trace.protocol_trace_store.ProtocolTraceStore`:
+    - :class:`~omnibase_core.protocols.storage.protocol_trace_store.ProtocolTraceStore`:
       The protocol this class implements
 
 .. versionadded:: 0.4.0
@@ -55,10 +55,10 @@ from uuid import UUID
 from omnibase_core.enums.enum_execution_status import EnumExecutionStatus
 from omnibase_core.models.trace import ModelExecutionTrace
 from omnibase_core.models.trace_query import ModelTraceQuery, ModelTraceSummary
-from omnibase_core.services.trace.protocol_trace_store import ProtocolTraceStore
+from omnibase_core.protocols.storage.protocol_trace_store import ProtocolTraceStore
 
 
-class StoreTraceInMemory:
+class ServiceTraceInMemoryStore:
     """
     In-memory trace storage implementation.
 
@@ -79,7 +79,7 @@ class StoreTraceInMemory:
         - Switching to a persistent backend
 
     Example:
-        >>> store = StoreTraceInMemory()
+        >>> store = ServiceTraceInMemoryStore()
         >>> await store.put(trace)
         >>> print(f"Stored {len(store)} traces")
 
@@ -307,6 +307,6 @@ class StoreTraceInMemory:
 
 
 # Verify protocol compliance at module load time
-_store_check: ProtocolTraceStore = StoreTraceInMemory()
+_store_check: ProtocolTraceStore = ServiceTraceInMemoryStore()
 
-__all__ = ["StoreTraceInMemory"]
+__all__ = ["ServiceTraceInMemoryStore"]
