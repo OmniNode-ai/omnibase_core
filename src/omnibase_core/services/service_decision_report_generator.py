@@ -258,7 +258,7 @@ class ServiceDecisionReportGenerator:
 
         # Summary section
         lines.append("SUMMARY")
-        lines.append(SUBSECTION_CHAR * 7)
+        lines.append(SUBSECTION_CHAR * len("SUMMARY"))
         lines.append(f"Corpus: {summary.corpus_id}")
         lines.append(
             f"Baseline: {summary.baseline_version} | Replay: {summary.replay_version}"
@@ -368,7 +368,7 @@ class ServiceDecisionReportGenerator:
         # Verbose: include comparison details
         if verbosity == "verbose" and comparisons:
             lines.append("COMPARISON DETAILS")
-            lines.append(SUBSECTION_CHAR * 18)
+            lines.append(SUBSECTION_CHAR * len("COMPARISON DETAILS"))
             for comparison in comparisons[:10]:  # Limit to first 10
                 status = "PASS" if comparison.output_match else "FAIL"
                 lines.append(
