@@ -11,7 +11,7 @@ Replaces Union[TypedDictMigrationDuplicateConflictDict, TypedDictMigrationNameCo
 with ONEX-compatible discriminated union pattern.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_migration_conflict_type import EnumMigrationConflictType
@@ -199,11 +199,11 @@ class ModelMigrationConflictUnion(BaseModel):
         """Check if this is an exact duplicate conflict."""
         return self.conflict_type == EnumMigrationConflictType.EXACT_DUPLICATE
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
 
 # Export for ONEX compliance

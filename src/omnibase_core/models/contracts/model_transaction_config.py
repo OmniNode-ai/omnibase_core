@@ -5,7 +5,7 @@ Defines transaction isolation, rollback policies,
 and consistency guarantees for side-effect operations.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelTransactionConfig(BaseModel):
@@ -51,11 +51,11 @@ class ModelTransactionConfig(BaseModel):
         description="Enable consistency checking before commit",
     )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
 
 __all__ = ["ModelTransactionConfig"]

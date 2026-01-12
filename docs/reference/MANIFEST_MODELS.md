@@ -390,7 +390,7 @@ manifest.save_to_yaml(Path("docker-compose.yaml"))
 
 # ❌ Bad: Manual YAML serialization
 with open("docker-compose.yaml", "w") as f:
-    yaml.dump(manifest.dict(), f)  # Loses validation and formatting
+    yaml.dump(manifest.model_dump(), f)  # Loses validation and formatting
 ```
 
 ### 4. Version Control Configuration Files

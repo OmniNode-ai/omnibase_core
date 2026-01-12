@@ -4,7 +4,7 @@ Event Transformation Model.
 Model for event transformation specifications in the ONEX event-driven architecture system.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
@@ -63,8 +63,8 @@ class ModelEventTransformation(BaseModel):
         ge=1,
     )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )

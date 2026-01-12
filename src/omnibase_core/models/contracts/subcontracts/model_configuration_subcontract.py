@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import ClassVar
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_environment import EnumEnvironment
@@ -60,11 +60,11 @@ class ModelConfigurationSubcontract(BaseModel):
         description="Model version (MUST be provided in YAML contract)",
     )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # ONEX: Universal correlation ID for tracing
     correlation_id: UUID = Field(

@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelComputationMetadataContext(BaseModel):
@@ -49,11 +49,11 @@ class ModelComputationMetadataContext(BaseModel):
         description="Whether execution tracing is enabled",
     )
 
-    model_config = {
-        "extra": "forbid",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="forbid",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
 
 # Export for use

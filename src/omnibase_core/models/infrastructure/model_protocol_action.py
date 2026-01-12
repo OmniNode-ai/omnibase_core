@@ -9,7 +9,7 @@ Follows ONEX strong typing principles and one-model-per-file architecture.
 
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.core.model_action_payload import ModelActionPayload
 
@@ -28,11 +28,11 @@ class ModelAction(BaseModel):
     )
     timestamp: datetime = Field(default_factory=datetime.now)
 
-    model_config = {
-        "extra": "forbid",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="forbid",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # ProtocolAction required methods
     async def validate_action(self) -> bool:

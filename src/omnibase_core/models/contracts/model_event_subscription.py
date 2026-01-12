@@ -7,7 +7,7 @@ and handler configuration for event subscriptions.
 Strict typing is enforced: No Any types allowed in implementation.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.constants import KAFKA_REQUEST_TIMEOUT_MS
 from omnibase_core.types.type_constraints import PrimitiveValueType
@@ -65,8 +65,8 @@ class ModelEventSubscription(BaseModel):
         description="Enable dead letter queue for failed events",
     )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )

@@ -13,7 +13,7 @@ Follows ONEX one-model-per-file naming conventions.
 
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_data_format import EnumDataFormat
@@ -79,11 +79,11 @@ class ModelExamplesCollectionSummary(BaseModel):
         else:
             self.completion_rate = 0.0
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Export the models
 

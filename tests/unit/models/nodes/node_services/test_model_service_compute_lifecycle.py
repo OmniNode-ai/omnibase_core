@@ -43,7 +43,7 @@ class ComputeNodeForTesting(ModelServiceCompute):
 
     async def execute_compute(self, contract: ModelContractCompute) -> dict:
         """Simple compute execution for testing."""
-        return {"result": "compute_complete", "data": contract.dict()}
+        return {"result": "compute_complete", "data": contract.model_dump()}
 
     async def run(self, input_state):
         """Run method for tool execution."""

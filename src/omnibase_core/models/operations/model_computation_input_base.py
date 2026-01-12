@@ -5,7 +5,7 @@ from pydantic import Field
 "\nBase computation input model for discriminated union.\n\nProvides common interface for all computation input types.\nFollows ONEX strong typing principles and one-model-per-file architecture.\n"
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.enums.enum_computation_type import EnumComputationType
 from omnibase_core.enums.enum_input_data_type import EnumInputDataType
@@ -33,11 +33,11 @@ class ModelComputationInputBase(BaseModel):
     metadata: dict[str, ModelSchemaValue] = Field(
         default_factory=dict, description="Additional metadata for computation input"
     )
-    model_config = {
-        "extra": "forbid",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="forbid",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
 
 __all__ = ["ModelComputationInputBase"]

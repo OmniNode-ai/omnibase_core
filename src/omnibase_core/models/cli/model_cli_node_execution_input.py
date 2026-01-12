@@ -10,7 +10,7 @@ from __future__ import annotations
 from typing import cast
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.decorators import allow_dict_any
 from omnibase_core.enums.enum_category_filter import EnumCategoryFilter
@@ -109,12 +109,12 @@ class ModelCliNodeExecutionInput(BaseModel):
         description="Request UUID for tracking and correlation",
     )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": True,
-        "validate_assignment": True,
-        "from_attributes": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=True,
+        validate_assignment=True,
+        from_attributes=True,
+    )
 
     # Protocol method implementations
 

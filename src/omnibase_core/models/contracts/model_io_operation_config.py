@@ -5,7 +5,7 @@ Defines configuration for file operations, database interactions,
 API calls, and other external I/O operations.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelIOOperationConfig(BaseModel):
@@ -56,11 +56,11 @@ class ModelIOOperationConfig(BaseModel):
         description="Enable operation result validation",
     )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
 
 __all__ = ["ModelIOOperationConfig"]

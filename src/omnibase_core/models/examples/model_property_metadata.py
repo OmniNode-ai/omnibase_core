@@ -12,7 +12,7 @@ about individual properties in the environment property system.
 """
 
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_property_type import EnumPropertyType
@@ -46,11 +46,11 @@ class ModelPropertyMetadata(BaseModel):
         description="Allowed values for enum-like properties",
     )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 

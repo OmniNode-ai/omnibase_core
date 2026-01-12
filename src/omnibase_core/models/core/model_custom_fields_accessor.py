@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import copy
 
-from pydantic import Field, model_validator
+from pydantic import ConfigDict, Field, model_validator
 
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.types.type_constraints import PrimitiveValueType
@@ -50,11 +50,11 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
     custom_fields: dict[str, PrimitiveValueType] | None = Field(default=None)
 
     # Pydantic configuration to allow extra fields
-    model_config = {
-        "extra": "allow",  # Allow dynamic fields
-        "use_enum_values": False,
-        "validate_assignment": False,  # Disable strict validation for dynamic fields
-    }
+    model_config = ConfigDict(
+        extra="allow",  # Allow dynamic fields,
+        use_enum_values=False,
+        validate_assignment=False,  # Disable strict validation for dynamic fields,
+    )
 
     @model_validator(mode="before")
     @classmethod

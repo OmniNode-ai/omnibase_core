@@ -18,7 +18,7 @@ with usage metrics and performance tracking.
 from datetime import UTC
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.enums.enum_conceptual_complexity import EnumConceptualComplexity
 from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
@@ -473,11 +473,11 @@ class ModelMetadataNodeInfo(BaseModel):
             version=ModelSemVer(major=1, minor=0, patch=0),
         )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 

@@ -10,7 +10,7 @@ Environment Properties Collection Model
 Type-safe collection of environment properties with metadata support.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.types.type_serializable_value import SerializedDict
@@ -49,11 +49,11 @@ class ModelEnvironmentPropertiesCollection(BaseModel):
         """Check if collection has any properties."""
         return len(self.properties) > 0
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Note: Removed to_dict() and from_dict() methods to comply with pure Pydantic architecture
     # Use model.properties directly or ModelEnvironmentPropertiesCollection(**data) for creation
