@@ -73,12 +73,15 @@ Related:
 .. versionadded:: 0.6.3
 """
 
-__all__ = ["ModelEnforcementDecision"]
+__all__ = ["ModelEnforcementDecision", "EnforcementOutcome"]
 
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
+
+# Type alias for enforcement decision outcomes
+EnforcementOutcome = Literal["allowed", "blocked", "warned", "mocked"]
 
 from omnibase_core.enums.replay.enum_effect_determinism import EnumEffectDeterminism
 from omnibase_core.enums.replay.enum_enforcement_mode import EnumEnforcementMode
@@ -168,7 +171,7 @@ class ModelEnforcementDecision(BaseModel):
         ...,
         description="Enforcement mode in effect when decision was made.",
     )
-    decision: str = Field(
+    decision: EnforcementOutcome = Field(
         ...,
         description="Enforcement outcome: 'allowed', 'blocked', 'warned', or 'mocked'.",
     )

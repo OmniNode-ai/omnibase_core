@@ -30,11 +30,12 @@ Thread Safety:
 Usage:
     .. code-block:: python
 
+        from uuid import UUID
         from omnibase_core.models.replay import ModelAuditTrailSummary
         from omnibase_core.services.replay.service_audit_trail import ServiceAuditTrail
 
         # Get summary from audit trail service
-        service = ServiceAuditTrail(session_id="session-abc")
+        service = ServiceAuditTrail(session_id=UUID("550e8400-e29b-41d4-a716-446655440000"))
         # ... record some decisions ...
         summary = service.get_summary()
 
@@ -79,8 +80,9 @@ class ModelAuditTrailSummary(BaseModel):
 
     Example:
         >>> from datetime import datetime, timezone
+        >>> from uuid import UUID
         >>> summary = ModelAuditTrailSummary(
-        ...     session_id="session-abc",
+        ...     session_id=UUID("550e8400-e29b-41d4-a716-446655440000"),
         ...     total_decisions=10,
         ...     decisions_by_outcome={"allowed": 6, "blocked": 2, "mocked": 2},
         ...     decisions_by_source={"time": 3, "random": 2, "network": 5},

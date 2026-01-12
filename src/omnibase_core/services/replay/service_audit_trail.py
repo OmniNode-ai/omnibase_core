@@ -147,14 +147,139 @@ class ServiceAuditTrail:
 
     Attributes:
         session_id: The session identifier for this audit trail.
+        entry_count: Number of recorded entries.
 
     Example:
         >>> from omnibase_core.services.replay.service_audit_trail import (
         ...     ServiceAuditTrail,
         ... )
-        >>> audit_trail = ServiceAuditTrail(session_id="my-session")
-        >>> audit_trail.session_id
-        'my-session'
+        >>> audit_trail = ServiceAuditTrail()
+        >>> audit_trail.session_id  # UUID generated automatically
+        UUID('...')
+
+    Integration:
+        **With ServiceReplaySafetyEnforcer**:
+
+        The audit trail is designed to work with the replay safety enforcer
+        to provide detailed logging and analysis of enforcement decisions:
+
+        .. code-block:: python
+
+            from omnibase_core.services.replay.service_replay_safety_enforcer import (
+                ServiceReplaySafetyEnforcer,
+            )
+            from omnibase_core.services.replay.service_audit_trail import ServiceAuditTrail
+            from omnibase_core.enums.replay import EnumEnforcementMode
+
+            enforcer = ServiceReplaySafetyEnforcer(mode=EnumEnforcementMode.PERMISSIVE)
+            audit_trail = ServiceAuditTrail()
+
+            # Process effects and record decisions
+            for effect in effects_to_process:
+                decision = enforcer.enforce(effect.type, effect.metadata)
+                audit_trail.record(
+                    decision,
+                    context={
+                        "node_id": node.id,
+                        "handler": effect.handler_name,
+                    },
+                )
+
+            # Analyze results
+            summary = audit_trail.get_summary()
+            if summary.decisions_by_outcome.get("blocked", 0) > 0:
+                blocked = audit_trail.get_entries(outcome="blocked")
+                for entry in blocked:
+                    logger.warning(f"Blocked: {entry.decision.effect_type}")
+
+        **Querying Patterns**:
+
+        The audit trail supports efficient queries by outcome and source:
+
+        .. code-block:: python
+
+            # Get all blocked decisions (O(1) lookup + O(k) iteration)
+            blocked = audit_trail.get_entries(outcome="blocked")
+
+            # Get all time-related decisions
+            from omnibase_core.enums.replay import EnumNonDeterministicSource
+            time_decisions = audit_trail.get_entries(
+                source=EnumNonDeterministicSource.TIME
+            )
+
+            # Combined filter with limit
+            recent_blocked_time = audit_trail.get_entries(
+                outcome="blocked",
+                source=EnumNonDeterministicSource.TIME,
+                limit=10,
+            )
+
+        **Export for Compliance/Debugging**:
+
+        Export the complete audit trail as JSON for external analysis:
+
+        .. code-block:: python
+
+            # Export full audit trail
+            json_output = audit_trail.export_json()
+
+            # Write to file for compliance
+            with open("audit_trail.json", "w") as f:
+                f.write(json_output)
+
+            # Or analyze programmatically
+            import json
+            data = json.loads(json_output)
+            print(f"Session: {data['session_id']}")
+            print(f"Total decisions: {data['summary']['total_decisions']}")
+
+        **Session Management**:
+
+        Use session IDs to correlate audit trails across components:
+
+        .. code-block:: python
+
+            import uuid
+
+            # Create session ID for correlation
+            session_id = uuid.uuid4()
+
+            # Use same session across components
+            audit_trail = ServiceAuditTrail(session_id=session_id)
+            enforcer = ServiceReplaySafetyEnforcer(mode=EnumEnforcementMode.WARN)
+
+            # Session ID appears in all audit entries
+            entry = audit_trail.record(enforcer.enforce("time.now"))
+            assert entry.session_id == session_id
+
+        **With Pipeline Execution**:
+
+        Integrate the audit trail into pipeline execution for comprehensive
+        logging:
+
+        .. code-block:: python
+
+            class NodeEffectWithAudit(NodeEffect):
+                def __init__(
+                    self,
+                    container: ModelONEXContainer,
+                    audit_trail: ServiceAuditTrail,
+                    enforcer: ServiceReplaySafetyEnforcer,
+                ):
+                    super().__init__(container)
+                    self._audit_trail = audit_trail
+                    self._enforcer = enforcer
+
+                async def execute_effect(
+                    self,
+                    ctx: ProtocolPipelineContext,
+                ) -> dict[str, Any]:
+                    decision = self._enforcer.enforce("http.get")
+                    self._audit_trail.record(
+                        decision,
+                        context={"correlation_id": ctx.correlation_id},
+                    )
+                    # ... proceed with effect
 
     Performance:
         Queries by outcome or source use O(1) index lookup + O(k) iteration
@@ -165,6 +290,12 @@ class ServiceAuditTrail:
         ``_index_by_outcome``, ``_index_by_source``.
         Use separate instances per thread or synchronize access.
         See ``docs/guides/THREADING.md``.
+
+    See Also:
+        - :class:`ServiceReplaySafetyEnforcer`: Creates enforcement decisions.
+        - :class:`ModelAuditTrailEntry`: Individual audit entry model.
+        - :class:`ModelAuditTrailSummary`: Summary statistics model.
+        - :class:`ModelEnforcementDecision`: Enforcement decision model.
 
     .. versionadded:: 0.6.3
     """
@@ -329,6 +460,14 @@ class ServiceAuditTrail:
         Returns:
             ModelAuditTrailSummary: Summary with counts and breakdowns.
 
+        Performance:
+            Uses single-pass aggregation for optimal performance.
+            Leverages existing indices for outcome/source counts (O(k) where k = unique keys).
+            Single pass over entries for mode counts, timestamps, and blocked effects.
+
+            Previous implementation: 5 separate passes over O(n) entries.
+            Optimized implementation: O(k) index lookups + 1 O(n) pass.
+
         Example:
             >>> summary = audit_trail.get_summary()
             >>> summary.total_decisions
@@ -346,45 +485,51 @@ class ServiceAuditTrail:
                 blocked_effects=[],
             )
 
-        # Count by outcome
-        decisions_by_outcome: dict[str, int] = defaultdict(int)
-        for entry in self._entries:
-            decisions_by_outcome[entry.decision.decision] += 1
+        # OPTIMIZATION: Leverage existing indices for outcome/source counts.
+        # This is O(k) where k = number of unique outcomes/sources, not O(n).
+        # The indices are maintained incrementally during record(), so no
+        # iteration over entries is needed for these two aggregations.
+        decisions_by_outcome = {
+            outcome: len(entries) for outcome, entries in self._index_by_outcome.items()
+        }
 
-        # Count by source
-        decisions_by_source: dict[str, int] = defaultdict(int)
-        for entry in self._entries:
-            source = entry.decision.source
-            source_key = source.value if source is not None else "unknown"
-            decisions_by_source[source_key] += 1
+        decisions_by_source = {
+            (source.value if source is not None else "unknown"): len(entries)
+            for source, entries in self._index_by_source.items()
+        }
 
-        # Count by mode
+        # OPTIMIZATION: Single-pass aggregation for remaining metrics.
+        # Collects mode counts, timestamps, and blocked effects in one iteration.
+        # Previous implementation used 3 separate passes (mode, min/max, blocked set).
         decisions_by_mode: dict[str, int] = defaultdict(int)
+        blocked_effects_set: set[str] = set()
+        first_decision_at = self._entries[0].decision.timestamp
+        last_decision_at = first_decision_at
+
         for entry in self._entries:
-            decisions_by_mode[entry.decision.mode.value] += 1
+            decision = entry.decision
 
-        # Time range
-        first_decision_at = min(e.decision.timestamp for e in self._entries)
-        last_decision_at = max(e.decision.timestamp for e in self._entries)
+            # Aggregate mode counts
+            decisions_by_mode[decision.mode.value] += 1
 
-        # Blocked effects
-        blocked_effects = sorted(
-            {
-                e.decision.effect_type
-                for e in self._entries
-                if e.decision.decision == "blocked"
-            }
-        )
+            # Track timestamp range (avoids separate min/max passes)
+            timestamp = decision.timestamp
+            first_decision_at = min(first_decision_at, timestamp)
+            last_decision_at = max(last_decision_at, timestamp)
+
+            # Collect blocked effect types
+            if decision.decision == "blocked":
+                blocked_effects_set.add(decision.effect_type)
 
         return ModelAuditTrailSummary(
             session_id=self._session_id,
             total_decisions=len(self._entries),
-            decisions_by_outcome=dict(decisions_by_outcome),
-            decisions_by_source=dict(decisions_by_source),
+            decisions_by_outcome=decisions_by_outcome,
+            decisions_by_source=decisions_by_source,
             decisions_by_mode=dict(decisions_by_mode),
             first_decision_at=first_decision_at,
             last_decision_at=last_decision_at,
-            blocked_effects=blocked_effects,
+            blocked_effects=sorted(blocked_effects_set),
         )
 
     def export_json(self) -> str:

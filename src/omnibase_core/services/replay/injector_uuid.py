@@ -112,6 +112,8 @@ class InjectorUUID:
     Attributes:
         is_recording: Whether the injector is in recording mode.
         is_replaying: Whether the injector is in replay mode.
+        sequence_index: Current position in replay sequence.
+        recorded_count: Number of recorded UUIDs.
 
     Example:
         >>> from omnibase_core.services.replay.injector_uuid import InjectorUUID
@@ -128,10 +130,97 @@ class InjectorUUID:
         >>> uuid_svc.is_recording
         True
 
+    Integration:
+        **With ServiceReplaySafetyEnforcer**:
+
+        The UUID injector integrates with the replay safety enforcer to provide
+        deterministic UUID generation during replay. Pass the injector to the
+        enforcer for automatic UUID mocking in MOCKED mode:
+
+        .. code-block:: python
+
+            from omnibase_core.services.replay.injector_uuid import InjectorUUID
+            from omnibase_core.services.replay.service_replay_safety_enforcer import (
+                ServiceReplaySafetyEnforcer,
+            )
+            from omnibase_core.enums.replay import EnumEnforcementMode, EnumRecorderMode
+
+            # Create UUID injector with recorded data for replay
+            uuid_injector = InjectorUUID(
+                mode=EnumRecorderMode.REPLAYING,
+                recorded_uuids=manifest.recorded_uuids,
+            )
+
+            # Pass to enforcer for automatic mocking
+            enforcer = ServiceReplaySafetyEnforcer(
+                mode=EnumEnforcementMode.MOCKED,
+                uuid_injector=uuid_injector,
+            )
+
+        **With Pipeline Context**:
+
+        In pipeline execution, the injector is typically accessed via the
+        pipeline context for consistent UUID generation across all nodes:
+
+        .. code-block:: python
+
+            class MyEffectNode(NodeEffect):
+                async def execute_effect(self, ctx: ProtocolPipelineContext):
+                    # Use context's UUID service instead of uuid.uuid4()
+                    new_id = ctx.uuid.uuid4()
+                    return {"id": str(new_id)}
+
+        **Recording and Replay Workflow**:
+
+        1. **Recording Phase**: Create an injector in RECORDING mode during
+           initial execution to capture UUIDs:
+
+           .. code-block:: python
+
+               recorder = InjectorUUID(mode=EnumRecorderMode.RECORDING)
+               # Execute pipeline with recorder...
+               recorded_uuids = recorder.get_recorded()
+               # Store in execution manifest
+
+        2. **Replay Phase**: Create an injector in REPLAYING mode with the
+           stored UUIDs to reproduce the exact sequence:
+
+           .. code-block:: python
+
+               replayer = InjectorUUID(
+                   mode=EnumRecorderMode.REPLAYING,
+                   recorded_uuids=manifest.recorded_uuids,
+               )
+               # Execute pipeline - UUIDs match original execution
+
+        **With Other Injectors**:
+
+        InjectorUUID follows the same pattern as InjectorTime and InjectorRNG.
+        They can be used together for complete determinism:
+
+        .. code-block:: python
+
+            from omnibase_core.services.replay.injector_time import InjectorTime
+            from omnibase_core.services.replay.injector_rng import InjectorRNG
+
+            # Create a fully deterministic replay context
+            time_injector = InjectorTime(fixed_time=manifest.recorded_time)
+            rng_injector = InjectorRNG(seed=manifest.rng_seed)
+            uuid_injector = InjectorUUID(
+                mode=EnumRecorderMode.REPLAYING,
+                recorded_uuids=manifest.recorded_uuids,
+            )
+
     Thread Safety:
         NOT thread-safe. Mutable state: ``_sequence_index``, ``_recorded`` list.
         Use separate instances per thread or synchronize access.
         See ``docs/guides/THREADING.md``.
+
+    See Also:
+        - :class:`InjectorTime`: Time injection for replay.
+        - :class:`InjectorRNG`: RNG injection for replay.
+        - :class:`ServiceReplaySafetyEnforcer`: Policy enforcement integration.
+        - :class:`RecorderEffect`: Effect recording for network/database replay.
 
     .. versionadded:: 0.6.3
     """
@@ -197,15 +286,32 @@ class InjectorUUID:
         """
         if self._mode == EnumRecorderMode.REPLAYING:
             if self._sequence_index >= len(self._recorded):
+                # Build helpful error context
+                recorded_count = len(self._recorded)
+                # Show recorded UUIDs if few, for debugging
+                recorded_preview = (
+                    [str(u) for u in self._recorded[:5]]
+                    if recorded_count <= 5
+                    else [str(u) for u in self._recorded[:3]] + ["..."]
+                )
                 raise ModelOnexError(
                     message=(
-                        f"UUID replay sequence exhausted: requested index "
-                        f"{self._sequence_index} but only {len(self._recorded)} "
-                        f"UUIDs were recorded"
+                        f"UUID replay sequence exhausted: requested UUID "
+                        f"#{self._sequence_index + 1} but only {recorded_count} "
+                        f"UUID(s) were recorded during the original run. "
+                        f"This typically means the code path during replay "
+                        f"generated more UUIDs than the original recording. "
+                        f"Possible causes: (1) conditional logic that wasn't "
+                        f"executed during recording, (2) retry logic generating "
+                        f"additional UUIDs, (3) recording was incomplete. "
+                        f"To fix: re-record the execution with all code paths "
+                        f"exercised, or check for non-deterministic control flow."
                     ),
                     error_code=EnumCoreErrorCode.REPLAY_SEQUENCE_EXHAUSTED,
                     sequence_index=self._sequence_index,
-                    recorded_count=len(self._recorded),
+                    recorded_count=recorded_count,
+                    recorded_uuids_preview=recorded_preview,
+                    hint="Re-run in RECORDING mode to capture all UUIDs",
                 )
             result = self._recorded[self._sequence_index]
             self._sequence_index += 1
@@ -312,18 +418,60 @@ class InjectorUUID:
     @property
     def sequence_index(self) -> int:
         """
-        Return the current sequence index.
+        Return the current sequence index for replay position tracking.
+
+        The sequence index tracks the current position when replaying pre-recorded
+        UUIDs. It indicates how many UUIDs have been consumed from the recorded
+        sequence during replay.
+
+        Mode-specific behavior:
+            - **PASS_THROUGH**: Always 0 (no sequence tracking needed).
+            - **RECORDING**: Always 0 (UUIDs are appended to ``_recorded`` list,
+              not consumed from a sequence).
+            - **REPLAYING**: Increments with each ``uuid4()`` or ``uuid1()`` call,
+              indicating the next UUID position to return.
 
         Returns:
-            int: The current position in the UUID sequence.
+            int: The current position in the UUID sequence. In REPLAYING mode,
+                this equals the number of UUIDs that have been replayed. In
+                other modes, this is always 0.
 
         Example:
-            >>> uuid_svc = InjectorUUID(mode=EnumRecorderMode.RECORDING)
-            >>> uuid_svc.sequence_index
+            >>> from uuid import UUID
+            >>> from omnibase_core.services.replay.injector_uuid import InjectorUUID
+            >>> from omnibase_core.enums.replay import EnumRecorderMode
+            >>>
+            >>> # Recording mode: sequence_index stays at 0
+            >>> rec_svc = InjectorUUID(mode=EnumRecorderMode.RECORDING)
+            >>> rec_svc.sequence_index
             0
-            >>> _ = uuid_svc.uuid4()
-            >>> uuid_svc.sequence_index
-            0  # Recording mode doesn't advance sequence_index
+            >>> _ = rec_svc.uuid4()
+            >>> rec_svc.sequence_index  # Still 0 in recording mode
+            0
+            >>> rec_svc.recorded_count  # But recorded_count increases
+            1
+            >>>
+            >>> # Replay mode: sequence_index advances with each call
+            >>> recorded = rec_svc.get_recorded()
+            >>> replay_svc = InjectorUUID(
+            ...     mode=EnumRecorderMode.REPLAYING,
+            ...     recorded_uuids=recorded,
+            ... )
+            >>> replay_svc.sequence_index  # Before any calls
+            0
+            >>> _ = replay_svc.uuid4()
+            >>> replay_svc.sequence_index  # After one call
+            1
+
+        Note:
+            To check how many UUIDs remain in replay mode, compare
+            ``sequence_index`` with ``recorded_count``:
+
+            >>> remaining = replay_svc.recorded_count - replay_svc.sequence_index
+
+        See Also:
+            - :meth:`recorded_count`: Total number of recorded UUIDs.
+            - :meth:`reset`: Resets sequence_index to 0 for replay restart.
         """
         return self._sequence_index
 

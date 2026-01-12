@@ -104,6 +104,7 @@ from omnibase_core.models.replay.model_corpus_statistics import ModelCorpusStati
 from omnibase_core.models.replay.model_corpus_time_range import ModelCorpusTimeRange
 from omnibase_core.models.replay.model_effect_record import ModelEffectRecord
 from omnibase_core.models.replay.model_enforcement_decision import (
+    EnforcementOutcome,
     ModelEnforcementDecision,
 )
 from omnibase_core.models.replay.model_execution_corpus import ModelExecutionCorpus
@@ -120,6 +121,7 @@ ModelCorpusReplayConfig.model_rebuild()
 
 __all__ = [
     # Audit trail models (OMN-1150)
+    "EnforcementOutcome",
     "ModelAuditTrailEntry",
     "ModelAuditTrailSummary",
     # Configuration override models

@@ -192,6 +192,7 @@ class ServiceReplaySafetyEnforcer:
 
     Attributes:
         mode: The enforcement mode in effect.
+        audit_count: Number of decisions in the audit trail.
 
     Example:
         >>> from omnibase_core.services.replay.service_replay_safety_enforcer import (
@@ -211,10 +212,124 @@ class ServiceReplaySafetyEnforcer:
         >>> decision.decision
         'allowed'
 
+    Integration:
+        **With ServiceAuditTrail**:
+
+        For detailed audit logging, combine the enforcer with ServiceAuditTrail:
+
+        .. code-block:: python
+
+            from omnibase_core.services.replay.service_replay_safety_enforcer import (
+                ServiceReplaySafetyEnforcer,
+            )
+            from omnibase_core.services.replay.service_audit_trail import ServiceAuditTrail
+            from omnibase_core.enums.replay import EnumEnforcementMode
+
+            enforcer = ServiceReplaySafetyEnforcer(mode=EnumEnforcementMode.PERMISSIVE)
+            audit_trail = ServiceAuditTrail()
+
+            # Record enforcement decisions in the audit trail
+            decision = enforcer.enforce("http.get", {"url": "https://api.example.com"})
+            entry = audit_trail.record(decision, context={"handler": "api_fetch"})
+
+            # Query and analyze decisions
+            blocked = audit_trail.get_entries(outcome="blocked")
+            summary = audit_trail.get_summary()
+
+        **With Pipeline Execution**:
+
+        The enforcer is typically used within EFFECT nodes to validate operations
+        before execution:
+
+        .. code-block:: python
+
+            class NodeApiCallEffect(NodeEffect):
+                def __init__(
+                    self,
+                    container: ModelONEXContainer,
+                    enforcer: ServiceReplaySafetyEnforcer,
+                ):
+                    super().__init__(container)
+                    self._enforcer = enforcer
+
+                async def execute_effect(
+                    self,
+                    ctx: ProtocolPipelineContext,
+                ) -> dict[str, Any]:
+                    # Enforce replay safety before making API call
+                    decision = self._enforcer.enforce(
+                        "http.get",
+                        {"url": self._url},
+                    )
+
+                    if decision.decision == "blocked":
+                        raise RuntimeError(f"Effect blocked: {decision.reason}")
+
+                    if decision.decision == "mocked":
+                        return decision.mocked_value
+
+                    # Proceed with actual API call
+                    return await self._make_api_call()
+
+        **Mode Selection Guide**:
+
+        Choose the appropriate mode based on your use case:
+
+        - **STRICT**: For CI/CD pipelines and integration tests where all
+          non-deterministic effects must be controlled. Raises exceptions
+          on any non-deterministic effect.
+
+        - **WARN**: For migration phases when adding replay safety to existing
+          code. Logs warnings but allows execution to continue.
+
+        - **PERMISSIVE**: For production environments where full audit logging
+          is needed but execution should not be blocked. Records all decisions.
+
+        - **MOCKED**: For unit tests and deterministic replay where all
+          non-deterministic effects should be automatically replaced with
+          mock values from the configured injectors.
+
+        **With Dependency Injection Container**:
+
+        Register the enforcer as a service for container-based resolution:
+
+        .. code-block:: python
+
+            from omnibase_core.models.container.model_onex_container import (
+                ModelONEXContainer,
+            )
+
+            # Create container with replay services
+            container = ModelONEXContainer()
+            container.register_service(
+                "ProtocolReplaySafetyEnforcer",
+                ServiceReplaySafetyEnforcer(
+                    mode=EnumEnforcementMode.MOCKED,
+                    time_injector=time_injector,
+                    rng_injector=rng_injector,
+                    uuid_injector=uuid_injector,
+                ),
+            )
+
+            # Resolve in nodes
+            class MyNode(NodeEffect):
+                def __init__(self, container: ModelONEXContainer):
+                    super().__init__(container)
+                    self._enforcer = container.get_service(
+                        "ProtocolReplaySafetyEnforcer"
+                    )
+
     Thread Safety:
         NOT thread-safe. Mutable state: ``_audit_trail`` list.
         Use separate instances per thread or synchronize access.
         See ``docs/guides/THREADING.md``.
+
+    See Also:
+        - :class:`ServiceAuditTrail`: Detailed audit logging and query.
+        - :class:`InjectorTime`: Time injection for mocking.
+        - :class:`InjectorRNG`: RNG injection for mocking.
+        - :class:`InjectorUUID`: UUID injection for mocking.
+        - :class:`RecorderEffect`: Effect recording for network/database replay.
 
     .. versionadded:: 0.6.3
     """
@@ -267,7 +382,8 @@ class ServiceReplaySafetyEnforcer:
     ) -> None:
         """Log a warning using the configured logger or module logger."""
         if self._logger is not None:
-            self._logger.info(message, extra=extra)
+            # ProtocolLoggerLike only requires info(), use info with [WARNING] prefix
+            self._logger.info(f"[WARNING] {message}", extra=extra)
         else:
             _logger.warning(message, extra=extra or {})
 
@@ -540,7 +656,10 @@ class ServiceReplaySafetyEnforcer:
         if source == EnumNonDeterministicSource.TIME:
             if self._time_injector is not None:
                 return self._time_injector.now()
-            return datetime.now(UTC)
+            # Return deterministic Unix epoch when no injector provided.
+            # This is clearly recognizable as a mock value.
+            # For proper replay control, configure a time_injector with fixed_time.
+            return datetime(1970, 1, 1, tzinfo=UTC)
 
         elif source == EnumNonDeterministicSource.RANDOM:
             if self._rng_injector is not None:

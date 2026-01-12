@@ -85,17 +85,18 @@ class ProtocolAuditTrail(Protocol):
     Example:
         .. code-block:: python
 
+            from uuid import UUID, uuid4
             from omnibase_core.protocols.replay import ProtocolAuditTrail
 
             class DatabaseAuditTrail:
                 '''Database-backed audit trail implementation.'''
 
-                def __init__(self, session_id: str | None = None):
-                    self._session_id = session_id or str(uuid.uuid4())
+                def __init__(self, session_id: UUID | None = None):
+                    self._session_id = session_id or uuid4()
                     self._connection = get_database_connection()
 
                 @property
-                def session_id(self) -> str:
+                def session_id(self) -> UUID:
                     return self._session_id
 
                 def record(

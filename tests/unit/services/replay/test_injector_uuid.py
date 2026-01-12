@@ -362,6 +362,36 @@ class TestSequenceExhaustion:
 
         assert exc_info.value.error_code == EnumCoreErrorCode.REPLAY_SEQUENCE_EXHAUSTED
 
+    def test_exhausted_sequence_error_has_helpful_context(
+        self, replaying_injector: InjectorUUID
+    ) -> None:
+        """Test that exhausted sequence error includes helpful debug context."""
+        # Consume all 3 UUIDs
+        for _ in range(3):
+            replaying_injector.uuid4()
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            replaying_injector.uuid4()
+
+        error = exc_info.value
+        # Context is stored in error.model.context
+        ctx = error.model.context
+        assert "sequence_index" in ctx
+        assert ctx["sequence_index"] == 3  # 0-indexed, so asking for 4th
+        assert "recorded_count" in ctx
+        assert ctx["recorded_count"] == 3
+        assert "recorded_uuids_preview" in ctx
+        # Preview should contain the recorded UUIDs as strings
+        assert isinstance(ctx["recorded_uuids_preview"], list)
+        assert len(ctx["recorded_uuids_preview"]) == 3
+        assert "hint" in ctx
+        assert "RECORDING" in ctx["hint"]
+
+        # Message should have actionable guidance
+        error_msg = str(error.model.message)
+        assert "code path" in error_msg.lower()
+        assert "re-record" in error_msg.lower() or "recording" in error_msg.lower()
+
 
 # =============================================================================
 # TEST INVARIANTS

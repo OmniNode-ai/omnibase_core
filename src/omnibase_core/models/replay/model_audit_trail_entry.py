@@ -28,6 +28,7 @@ Thread Safety:
 Usage:
     .. code-block:: python
 
+        from uuid import UUID
         from omnibase_core.models.replay import (
             ModelAuditTrailEntry,
             ModelEnforcementDecision,
@@ -35,8 +36,8 @@ Usage:
 
         # Create an audit trail entry
         entry = ModelAuditTrailEntry(
-            id="entry-001",
-            session_id="session-abc",
+            id=UUID("550e8400-e29b-41d4-a716-446655440001"),
+            session_id=UUID("550e8400-e29b-41d4-a716-446655440000"),
             sequence_number=0,
             decision=decision,
             context={"handler": "my_handler"},
@@ -78,6 +79,7 @@ class ModelAuditTrailEntry(BaseModel):
 
     Example:
         >>> from datetime import datetime, timezone
+        >>> from uuid import UUID
         >>> from omnibase_core.enums.replay import (
         ...     EnumEffectDeterminism,
         ...     EnumEnforcementMode,
@@ -92,13 +94,13 @@ class ModelAuditTrailEntry(BaseModel):
         ...     timestamp=datetime.now(timezone.utc),
         ... )
         >>> entry = ModelAuditTrailEntry(
-        ...     id="entry-001",
-        ...     session_id="session-abc",
+        ...     id=UUID("550e8400-e29b-41d4-a716-446655440001"),
+        ...     session_id=UUID("550e8400-e29b-41d4-a716-446655440000"),
         ...     sequence_number=0,
         ...     decision=decision,
         ... )
         >>> entry.session_id
-        'session-abc'
+        UUID('550e8400-e29b-41d4-a716-446655440000')
 
     Thread Safety:
         Thread-safe. Model is frozen (immutable) after creation.

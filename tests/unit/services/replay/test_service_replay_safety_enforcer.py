@@ -204,7 +204,11 @@ class TestWarnMode:
 
         _ = enforcer.enforce("time.now")
 
+        # ProtocolLoggerLike only has info(), so warnings are logged via info with prefix
         mock_logger.info.assert_called()
+        # Verify the message includes [WARNING] prefix
+        call_args = mock_logger.info.call_args
+        assert "[WARNING]" in call_args[0][0]
 
 
 # =============================================================================
@@ -523,6 +527,35 @@ class TestGetMockValue:
 
         assert enforcer.get_mock_value(EnumNonDeterministicSource.TIME) == fixed_time
         assert enforcer.get_mock_value(EnumNonDeterministicSource.UUID) == sample_uuid
+
+    def test_get_mock_value_time_fallback_is_deterministic(self) -> None:
+        """Test that TIME fallback returns deterministic epoch when no injector."""
+        enforcer1 = ServiceReplaySafetyEnforcer(mode=EnumEnforcementMode.MOCKED)
+        enforcer2 = ServiceReplaySafetyEnforcer(mode=EnumEnforcementMode.MOCKED)
+
+        value1 = enforcer1.get_mock_value(EnumNonDeterministicSource.TIME)
+        value2 = enforcer2.get_mock_value(EnumNonDeterministicSource.TIME)
+
+        # Values should be identical (deterministic)
+        assert value1 == value2
+        # Should be Unix epoch (1970-01-01 00:00:00 UTC)
+        assert value1 == datetime(1970, 1, 1, tzinfo=UTC)
+        assert value1.year == 1970
+        assert value1.month == 1
+        assert value1.day == 1
+
+    def test_get_mock_value_uuid_fallback_is_deterministic(self) -> None:
+        """Test that UUID fallback returns deterministic value when no injector."""
+        enforcer1 = ServiceReplaySafetyEnforcer(mode=EnumEnforcementMode.MOCKED)
+        enforcer2 = ServiceReplaySafetyEnforcer(mode=EnumEnforcementMode.MOCKED)
+
+        value1 = enforcer1.get_mock_value(EnumNonDeterministicSource.UUID)
+        value2 = enforcer2.get_mock_value(EnumNonDeterministicSource.UUID)
+
+        # Values should be identical (deterministic)
+        assert value1 == value2
+        # Should be the fixed deterministic UUID
+        assert value1 == UUID("00000000-0000-4000-8000-000000000000")
 
 
 # =============================================================================
