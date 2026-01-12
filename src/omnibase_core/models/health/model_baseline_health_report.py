@@ -24,6 +24,37 @@ Timezone Handling:
     - Consistent ordering when comparing reports across time zones
     - Correct duration calculations for corpus_date_range
     - Unambiguous timestamps in logs and audit trails
+
+Example Workflow::
+
+    from datetime import UTC, datetime
+    from uuid import uuid4
+    from omnibase_core.utils.util_stability_calculator import (
+        calculate_stability,
+        calculate_confidence,
+    )
+
+    # 1. Calculate metrics
+    stability_score, status, details = calculate_stability(
+        invariants, metrics, corpus_size
+    )
+    confidence, reasoning = calculate_confidence(
+        corpus_size, diversity, inv_count
+    )
+
+    # 2. Create report
+    report = ModelBaselineHealthReport(
+        report_id=uuid4(),
+        generated_at=datetime.now(UTC),
+        stability_score=stability_score,
+        stability_status=status,
+        confidence_level=confidence,
+        # ... other fields
+    )
+
+    # 3. Use report
+    if report.is_safe_for_changes():
+        propose_optimization()
 """
 
 from datetime import datetime
@@ -128,6 +159,7 @@ class ModelBaselineHealthReport(BaseModel):
     corpus_size: int = Field(
         ...,
         ge=0,
+        le=1_000_000_000,
         description="Number of samples in the execution corpus",
     )
     corpus_date_range: tuple[datetime, datetime] = Field(
@@ -246,3 +278,15 @@ class ModelBaselineHealthReport(BaseModel):
             List of ModelInvariantStatus objects where passed is False.
         """
         return [inv for inv in self.invariants_checked if not inv.passed]
+
+    def __str__(self) -> str:
+        """Return a human-readable summary of the health report.
+
+        Returns:
+            String representation with report ID, status, score, and confidence.
+        """
+        return (
+            f"Health Report {self.report_id}: "
+            f"{self.stability_status} (score={self.stability_score:.2f}, "
+            f"confidence={self.confidence_level:.2f})"
+        )
