@@ -20,7 +20,7 @@ Example:
 
         config = ModelConfig(
             provider="anthropic",
-            model_name="claude-3-5-sonnet",
+            model_name="claude-3-5-sonnet-20241022",
             temperature=0.5,
             max_tokens=1000,
             api_key_env="ANTHROPIC_API_KEY",
@@ -49,7 +49,7 @@ class ModelConfig(BaseModel):
 
     Attributes:
         provider: The LLM provider type ("openai", "anthropic", or "local").
-        model_name: The name of the model to use (e.g., "gpt-4", "claude-3-5-sonnet").
+        model_name: The name of the model to use (e.g., "gpt-4o", "claude-3-5-sonnet-20241022").
         endpoint_url: Custom endpoint URL for local/custom providers. Required for
             "local" provider, optional for cloud providers.
         temperature: Sampling temperature (0.0 to 2.0). Higher values make output
@@ -132,7 +132,7 @@ OPENAI_CONFIG = ModelConfig(
 
 ANTHROPIC_CONFIG = ModelConfig(
     provider="anthropic",
-    model_name="claude-sonnet-4-20250514",  # Latest Claude Sonnet model
+    model_name="claude-3-5-sonnet-20241022",  # Claude 3.5 Sonnet model
     temperature=0.7,
     api_key_env="ANTHROPIC_API_KEY",
 )

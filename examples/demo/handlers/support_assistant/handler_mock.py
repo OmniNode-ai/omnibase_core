@@ -33,8 +33,9 @@ from __future__ import annotations
 import json
 from typing import Literal
 
-from examples.demo.handlers.support_assistant.protocol_llm_client import \
-    ProtocolLLMClient
+from examples.demo.handlers.support_assistant.protocol_llm_client import (
+    ProtocolLLMClient,
+)
 
 
 class MockLLMClient:
@@ -226,10 +227,18 @@ class MockLLMClient:
         return "neutral"
 
 
-# Verify protocol compliance at module level
-assert isinstance(
-    MockLLMClient(), ProtocolLLMClient
-), "MockLLMClient must implement ProtocolLLMClient"
+def _verify_protocol_compliance() -> None:
+    """Verify MockLLMClient implements ProtocolLLMClient.
+
+    This function is provided for test suites to verify protocol compliance
+    without import-time side effects. Tests should call this explicitly.
+
+    Raises:
+        AssertionError: If MockLLMClient does not implement ProtocolLLMClient.
+    """
+    assert isinstance(
+        MockLLMClient(), ProtocolLLMClient
+    ), "MockLLMClient must implement ProtocolLLMClient"
 
 
-__all__ = ["MockLLMClient"]
+__all__ = ["MockLLMClient", "_verify_protocol_compliance"]

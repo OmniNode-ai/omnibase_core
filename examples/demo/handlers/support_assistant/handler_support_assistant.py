@@ -41,19 +41,23 @@ from typing import TYPE_CHECKING, Literal, cast, get_args, get_type_hints
 
 from pydantic import ValidationError
 
-from examples.demo.handlers.support_assistant.model_support_request import \
-    SupportRequest
-from examples.demo.handlers.support_assistant.model_support_response import \
-    SupportResponse
-from examples.demo.handlers.support_assistant.protocol_llm_client import \
-    ProtocolLLMClient
+from examples.demo.handlers.support_assistant.model_support_request import (
+    SupportRequest,
+)
+from examples.demo.handlers.support_assistant.model_support_response import (
+    SupportResponse,
+)
+from examples.demo.handlers.support_assistant.protocol_llm_client import (
+    ProtocolLLMClient,
+)
 from omnibase_core.decorators.decorator_allow_dict_any import allow_dict_any
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors import ModelOnexError
 
 if TYPE_CHECKING:
-    from omnibase_core.models.container.model_onex_container import \
-        ModelONEXContainer
+    from omnibase_core.models.container.model_onex_container import (
+        ModelONEXContainer,
+    )
 
 
 def _extract_literal_values(model_class: type, field_name: str) -> frozenset[str]:
@@ -100,13 +104,11 @@ Required JSON structure:
     "sentiment": "neutral"
 }
 
-Valid values:
-{
-    "category": ["billing", "technical", "general", "account"],
-    "sentiment": ["positive", "neutral", "negative"],
-    "confidence": "number from 0.0 to 1.0",
-    "requires_escalation": "true or false"
-}
+Field constraints:
+- category: one of "billing", "technical", "general", "account"
+- sentiment: one of "positive", "neutral", "negative"
+- confidence: a number between 0.0 and 1.0
+- requires_escalation: true or false (boolean)
 
 Example response for a billing question:
 {
@@ -139,17 +141,25 @@ class SupportAssistantHandler:
             container: ONEX container for protocol-based service resolution.
 
         Raises:
-            ModelOnexError: If required services are not registered in the container.
+            ModelOnexError: If required services are not registered in the container
+                or do not implement required protocol methods.
         """
         self.container = container
 
-        # Fail-fast: Resolve LLM client with explicit type checking
+        # Fail-fast: Resolve LLM client with explicit type and protocol checking
         llm_client = container.get_service("ProtocolLLMClient")
         if llm_client is None:
             raise ModelOnexError(
                 message="Required service 'ProtocolLLMClient' not found in container",
                 error_code=EnumCoreErrorCode.CONFIGURATION_ERROR,
                 context={"service_name": "ProtocolLLMClient"},
+            )
+        # Verify protocol compliance via duck-typing (check required method exists)
+        if not callable(getattr(llm_client, "complete", None)):
+            raise ModelOnexError(
+                message="Service 'ProtocolLLMClient' does not implement required 'complete' method",
+                error_code=EnumCoreErrorCode.CONFIGURATION_ERROR,
+                context={"service_name": "ProtocolLLMClient", "missing_method": "complete"},
             )
         self.llm_client: ProtocolLLMClient = llm_client
 
@@ -161,7 +171,8 @@ class SupportAssistantHandler:
                 error_code=EnumCoreErrorCode.CONFIGURATION_ERROR,
                 context={"service_name": "ProtocolLogger"},
             )
-        self.logger = logger
+        # Logger protocol compliance is verified at usage time via hasattr in _log_error
+        self.logger: object = logger
 
     async def handle(self, request: SupportRequest) -> SupportResponse:
         """Process support request and return structured response.
@@ -296,7 +307,10 @@ class SupportAssistantHandler:
         except json.JSONDecodeError:
             pass
 
-        # Try to extract JSON from code blocks (handles nested objects)
+        # Try to extract JSON from markdown code blocks.
+        # Note: The regex uses code block markers (```) as delimiters, so nested
+        # braces within the JSON are captured correctly. For JSON without code
+        # block markers, _extract_json_object provides balanced brace matching.
         json_match = re.search(
             r"```(?:json)?\s*(\{.*\})\s*```", raw_response, re.DOTALL
         )
@@ -491,6 +505,7 @@ class SupportAssistantHandler:
             conf = float(value)  # type: ignore[arg-type]
             return max(0.0, min(1.0, conf))
         except (TypeError, ValueError):
+            # fallback-ok: return safe default when conversion fails
             return 0.5
 
     def _ensure_category(

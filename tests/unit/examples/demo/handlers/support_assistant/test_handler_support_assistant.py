@@ -89,9 +89,12 @@ def mock_container_with_invalid_json() -> MagicMock:
     return container
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def sample_request() -> SupportRequest:
-    """Create a sample support request for testing."""
+    """Create a sample support request for testing.
+
+    Uses module scope since SupportRequest is immutable after creation.
+    """
     return SupportRequest(
         user_identifier="user-123",
         message="I need help with my billing statement.",
@@ -99,9 +102,12 @@ def sample_request() -> SupportRequest:
     )
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def high_urgency_request() -> SupportRequest:
-    """Create a high urgency request that may trigger escalation."""
+    """Create a high urgency request that may trigger escalation.
+
+    Uses module scope since SupportRequest is immutable after creation.
+    """
     return SupportRequest(
         user_identifier="user-456",
         message="I'm very frustrated! My payment failed and I've been charged twice!",

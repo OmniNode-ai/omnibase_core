@@ -15,9 +15,11 @@
 handler_id: effect.demo.support_assistant
 name: Support Assistant Demo Handler
 # Semantic versioning: MAJOR.MINOR.PATCH
-# Consumers should depend on ^1.0.0 (any 1.x.x compatible version)
+# Consumers should depend on ^1.x (compatible with any 1.x.x version)
 version: "1.0.0"
-description: AI support assistant that responds to user requests with structured output
+# Note: LLM responses may vary between invocations due to model temperature,
+# sampling, and provider state - this is inherent to LLM-based handlers.
+description: AI support assistant that responds to user requests with structured JSON output
 
 descriptor:
   handler_kind: effect
@@ -25,9 +27,9 @@ descriptor:
   # LLM handlers cannot guarantee idempotency - same input may produce different
   # outputs due to model temperature, context window state, and API variations
   idempotent: false
-  # Note: LLM outputs are inherently nondeterministic - identical prompts yield
-  # varying responses due to sampling, temperature settings, and model state.
-  # This is captured by nondeterministic_effect: true in execution_constraints.
+  # LLM outputs are inherently nondeterministic - identical prompts yield varying
+  # responses due to sampling, temperature settings, and model state
+  deterministic: false
   timeout_ms: 30000  # LLM calls can be slow
   retry_policy:
     enabled: true
@@ -51,13 +53,12 @@ capability_inputs:
         supports_structured_output: true
       prefer:
         max_latency_ms: 5000
-        # Streaming is a nice-to-have for progress feedback; structured output
-        # takes precedence as it's in 'must'. Provider may disable streaming
-        # when structured output is active.
-        supports_streaming: true
+        # Structured JSON output is required; streaming is typically disabled
+        # by providers when structured output is active to ensure valid JSON
+        supports_streaming: false
     selection_policy: auto_if_unique
     strict: true
-    description: LLM provider for generating support responses
+    description: LLM provider for generating structured JSON support responses
 
 capability_outputs:
   - support.response.generated

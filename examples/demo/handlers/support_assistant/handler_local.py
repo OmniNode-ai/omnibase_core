@@ -221,10 +221,18 @@ class LocalLLMClient:
             return False
 
 
-# Verify protocol compliance
-assert isinstance(
-    LocalLLMClient(), ProtocolLLMClient
-), "LocalLLMClient must implement ProtocolLLMClient"
+def _verify_protocol_compliance() -> None:
+    """Verify LocalLLMClient implements ProtocolLLMClient.
+
+    This function is provided for test suites to verify protocol compliance
+    without import-time side effects. Tests should call this explicitly.
+
+    Raises:
+        AssertionError: If LocalLLMClient does not implement ProtocolLLMClient.
+    """
+    assert isinstance(
+        LocalLLMClient(), ProtocolLLMClient
+    ), "LocalLLMClient must implement ProtocolLLMClient"
 
 
-__all__ = ["LocalLLMClient"]
+__all__ = ["LocalLLMClient", "_verify_protocol_compliance"]
