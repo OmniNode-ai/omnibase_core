@@ -12,7 +12,7 @@ __all__ = ["ModelUniqueNameResult"]
 class ModelUniqueNameResult(BaseModel):
     """Result of unique step name validation."""
 
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(frozen=True, from_attributes=True)
 
     is_valid: bool = Field(
         default=True,

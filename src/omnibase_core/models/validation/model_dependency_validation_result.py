@@ -14,7 +14,7 @@ __all__ = ["ModelDependencyValidationResult"]
 class ModelDependencyValidationResult(BaseModel):
     """Result of dependency validation in workflow."""
 
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(frozen=True, from_attributes=True)
 
     is_valid: bool = Field(
         default=True,

@@ -14,7 +14,7 @@ __all__ = ["ModelCycleDetectionResult"]
 class ModelCycleDetectionResult(BaseModel):
     """Result of cycle detection in workflow DAG."""
 
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(frozen=True, from_attributes=True)
 
     has_cycle: bool = Field(
         default=False,

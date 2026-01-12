@@ -122,7 +122,7 @@ class ModelAuditEntry(BaseModel):
         description="Additional context as key-value pairs",
     )
 
-    model_config = ConfigDict()
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     @classmethod
     def from_dict(cls, data: SerializedDict) -> "ModelAuditEntry":

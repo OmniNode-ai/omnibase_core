@@ -11,7 +11,7 @@ from pydantic import BaseModel, ConfigDict, StringConstraints
 class ModelSourceRepository(BaseModel):
     """Immutable source repository information."""
 
-    model_config = ConfigDict(frozen=True, extra="forbid")
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     url: str | None = None
     commit_hash: (

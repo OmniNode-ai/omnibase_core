@@ -47,7 +47,7 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
     list_fields: dict[str, list[ModelSchemaValue]] = Field(default_factory=dict)
     float_fields: dict[str, float] = Field(default_factory=dict)
     # Custom fields storage - can be overridden by subclasses to have default=None
-    custom_fields: dict[str, PrimitiveValueType] | None = Field(default=None)
+    custom_fields: dict[str, PrimitiveValueType] | None = None
 
     # Pydantic configuration to allow extra fields
     model_config = ConfigDict(

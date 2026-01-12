@@ -137,7 +137,7 @@ class ModelBusinessImpact(BaseModel):
         description="Confidence in the assessment (0-1)",
     )
 
-    model_config = ConfigDict()
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     @classmethod
     def from_dict(cls, data: "SerializedDict") -> "ModelBusinessImpact":

@@ -158,7 +158,7 @@ class ModelSecurityAssessment(BaseModel):
         description="Next scheduled assessment",
     )
 
-    model_config = ConfigDict()
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     @classmethod
     def from_dict(cls, data: "SerializedDict") -> "ModelSecurityAssessment":

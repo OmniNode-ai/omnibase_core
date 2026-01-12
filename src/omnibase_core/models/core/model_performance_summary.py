@@ -71,7 +71,7 @@ class ModelPerformanceSummary(BaseModel):
     measurement_duration_seconds: float = Field(
         default=..., description="Measurement duration"
     )
-    model_config = ConfigDict()
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     def calculate_success_rate(self) -> float:
         """Calculate success rate percentage."""

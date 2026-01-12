@@ -35,7 +35,7 @@ class ModelNodeConfigEntry(BaseModel):
         description="Default value for this configuration",
     )
 
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(frozen=True, from_attributes=True)
 
     @model_validator(mode="after")
     def validate_default_type(self) -> "ModelNodeConfigEntry":

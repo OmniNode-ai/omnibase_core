@@ -72,7 +72,7 @@ class ModelRequestConfig(BaseModel):
     max_redirects: int = Field(default=10, description="Maximum number of redirects")
     stream: bool = Field(default=False, description="Stream response content")
 
-    model_config = ConfigDict()
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     @property
     def masked_auth_summary(self) -> ModelAuthSummary:

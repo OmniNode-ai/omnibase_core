@@ -35,4 +35,4 @@ class ModelPatternExclusionInfo(BaseModel):
         description="Optional code reviewer who approved the exclusion",
     )
 
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(frozen=True, from_attributes=True)

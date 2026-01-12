@@ -14,7 +14,7 @@ __all__ = ["ModelIsolatedStepResult"]
 class ModelIsolatedStepResult(BaseModel):
     """Result of isolated step detection."""
 
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(frozen=True, from_attributes=True)
 
     isolated_steps: list[UUID] = Field(
         default_factory=list,

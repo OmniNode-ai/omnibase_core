@@ -155,7 +155,7 @@ class ModelPerformanceProfile(BaseModel):
         description="Load pattern used for profiling",
     )
 
-    model_config = ConfigDict()
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     # ONEX Phase 3C: Factory method eliminated - use direct instantiation
     # Old pattern: ModelPerformanceProfile.from_dict(data)
