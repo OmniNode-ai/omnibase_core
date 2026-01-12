@@ -29,11 +29,16 @@ import os
 import httpx
 
 from examples.demo.handlers.support_assistant.model_config import ModelConfig
+from examples.demo.handlers.support_assistant.protocol_llm_client import (
+    ProtocolLLMClient,
+)
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors import ModelOnexError
 
 # Anthropic API configuration
 ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages"
+# API version is pinned for stability - Anthropic recommends using a fixed version
+# to ensure consistent behavior. Update when new features are needed.
 ANTHROPIC_VERSION = "2023-06-01"
 DEFAULT_MODEL = "claude-sonnet-4-20250514"
 DEFAULT_TIMEOUT = 60.0
@@ -81,13 +86,21 @@ class AnthropicLLMClient:
                     "Anthropic API key is required. Set ANTHROPIC_API_KEY environment "
                     "variable or pass api_key parameter."
                 ),
-                error_code=EnumCoreErrorCode.AUTHENTICATION_ERROR,
-                context={"provider": "anthropic", "env_var": "ANTHROPIC_API_KEY"},
+                error_code=EnumCoreErrorCode.MISSING_REQUIRED_PARAMETER,
+                parameter_name="api_key",
             )
 
         self.model_name = model_name
-        # Anthropic uses 0.0-1.0 range, clamp if needed
-        self.temperature = min(1.0, max(0.0, temperature))
+
+        # Validate temperature range (Anthropic uses 0.0-1.0 range)
+        if not 0.0 <= temperature <= 1.0:
+            raise ModelOnexError(
+                message=f"Temperature must be between 0.0 and 1.0, got {temperature}",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                context={"temperature": temperature, "valid_range": "0.0-1.0"},
+            )
+
+        self.temperature = temperature
         self.max_tokens = max_tokens
         self.timeout = timeout
 
@@ -108,10 +121,8 @@ class AnthropicLLMClient:
             raise ModelOnexError(
                 message=f"Expected anthropic provider, got {config.provider}",
                 error_code=EnumCoreErrorCode.INVALID_CONFIGURATION,
-                context={
-                    "expected_provider": "anthropic",
-                    "actual_provider": config.provider,
-                },
+                expected_provider="anthropic",
+                actual_provider=config.provider,
             )
 
         api_key = os.getenv(config.api_key_env)
@@ -140,8 +151,10 @@ class AnthropicLLMClient:
             The LLM's response text.
 
         Raises:
-            httpx.HTTPError: If the HTTP request fails.
-            ModelOnexError: If the response format is unexpected.
+            ModelOnexError: If the HTTP request fails, times out, or response
+                format is unexpected. Wraps underlying httpx errors with
+                appropriate error codes (EXTERNAL_SERVICE_ERROR, TIMEOUT_ERROR,
+                PROCESSING_ERROR).
         """
         messages = [{"role": "user", "content": prompt}]
 
@@ -164,32 +177,57 @@ class AnthropicLLMClient:
             "Content-Type": "application/json",
         }
 
-        async with httpx.AsyncClient(timeout=self.timeout) as client:
-            response = await client.post(
-                ANTHROPIC_API_URL,
-                json=payload,
-                headers=headers,
-            )
-            response.raise_for_status()
-
-            data = response.json()
-
-            # Anthropic response format differs from OpenAI
-            content_blocks = data.get("content", [])
-            if not content_blocks:
-                raise ModelOnexError(
-                    message="No content in Anthropic response",
-                    error_code=EnumCoreErrorCode.PROCESSING_ERROR,
-                    context={"provider": "anthropic", "model": self.model_name},
+        try:
+            async with httpx.AsyncClient(timeout=self.timeout) as client:
+                response = await client.post(
+                    ANTHROPIC_API_URL,
+                    json=payload,
+                    headers=headers,
                 )
+                response.raise_for_status()
 
-            # Extract text from content blocks
-            text_parts = []
-            for block in content_blocks:
-                if block.get("type") == "text":
-                    text_parts.append(block.get("text", ""))
+                data = response.json()
 
-            return "".join(text_parts)
+                # Anthropic response format differs from OpenAI
+                content_blocks = data.get("content", [])
+                if not content_blocks:
+                    raise ModelOnexError(
+                        message="No content in Anthropic response",
+                        error_code=EnumCoreErrorCode.PROCESSING_ERROR,
+                        model=self.model_name,
+                    )
+
+                # Extract text from content blocks
+                text_parts = []
+                for block in content_blocks:
+                    if block.get("type") == "text":
+                        text_parts.append(block.get("text", ""))
+
+                return "".join(text_parts)
+
+        except httpx.HTTPStatusError as e:
+            # boundary-ok: wrap HTTP errors with structured error for API boundary
+            raise ModelOnexError(
+                message=f"Anthropic API request failed: {e.response.status_code}",
+                error_code=EnumCoreErrorCode.EXTERNAL_SERVICE_ERROR,
+                status_code=e.response.status_code,
+                model=self.model_name,
+            ) from e
+        except httpx.TimeoutException as e:
+            # boundary-ok: wrap timeout errors with structured error for API boundary
+            raise ModelOnexError(
+                message=f"Anthropic API request timed out after {self.timeout}s",
+                error_code=EnumCoreErrorCode.TIMEOUT_ERROR,
+                timeout=self.timeout,
+                model=self.model_name,
+            ) from e
+        except httpx.RequestError as e:
+            # boundary-ok: wrap network errors with structured error for API boundary
+            raise ModelOnexError(
+                message=f"Anthropic API request failed: {e!s}",
+                error_code=EnumCoreErrorCode.EXTERNAL_SERVICE_ERROR,
+                model=self.model_name,
+            ) from e
 
     async def health_check(self) -> bool:
         """Check if the Anthropic API is reachable.
@@ -219,13 +257,32 @@ class AnthropicLLMClient:
                 # 401 means API is reachable but key is invalid
                 return response.status_code in [200, 400, 401]
 
+        except (httpx.HTTPStatusError, httpx.RequestError):
+            # boundary-ok: health check returns False on API/network errors
+            return False
         except Exception:
-            # boundary-ok: health check must not crash, returns False on any error
+            # catch-all-ok: health check must not raise on unexpected errors
             return False
 
 
-# Note: Cannot verify protocol compliance at module level without API key
-# The check is done when the class is instantiated with valid credentials
+def _verify_protocol_compliance() -> None:
+    """Verify AnthropicLLMClient implements ProtocolLLMClient.
+
+    This function is provided for test suites to verify protocol compliance
+    without import-time side effects. Tests should call this explicitly.
+
+    Note: Cannot verify at module level without API key - the class requires
+    valid credentials in __init__.
+
+    Raises:
+        AssertionError: If AnthropicLLMClient does not implement ProtocolLLMClient.
+    """
+    # Create a mock instance for protocol checking by bypassing __init__
+    # This is safe because we're only checking protocol method signatures
+    instance = object.__new__(AnthropicLLMClient)
+    assert isinstance(
+        instance, ProtocolLLMClient
+    ), "AnthropicLLMClient must implement ProtocolLLMClient"
 
 
-__all__ = ["AnthropicLLMClient"]
+__all__ = ["AnthropicLLMClient", "_verify_protocol_compliance"]

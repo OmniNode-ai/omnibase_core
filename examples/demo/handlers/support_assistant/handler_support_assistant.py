@@ -177,7 +177,19 @@ class SupportAssistantHandler:
                 error_code=EnumCoreErrorCode.CONFIGURATION_ERROR,
                 context={"service_name": "ProtocolLogger"},
             )
-        # Logger protocol compliance is verified at usage time via hasattr in _log_error
+        # Verify protocol compliance via duck-typing (check required method exists)
+        if not callable(getattr(logger, "error", None)):
+            raise ModelOnexError(
+                message=(
+                    "Service 'ProtocolLogger' does not implement "
+                    "required 'error' method"
+                ),
+                error_code=EnumCoreErrorCode.CONFIGURATION_ERROR,
+                context={
+                    "service_name": "ProtocolLogger",
+                    "missing_method": "error",
+                },
+            )
         self.logger: object = logger
 
     async def handle(self, request: SupportRequest) -> SupportResponse:
@@ -267,24 +279,70 @@ class SupportAssistantHandler:
         Returns:
             Filtered context with PII fields removed.
         """
-        # Fields that commonly contain PII
+        # Fields that commonly contain PII - comprehensive list for robust filtering
         pii_fields = {
-            "email",
-            "phone",
-            "address",
-            "ssn",
-            "social_security",
-            "credit_card",
-            "password",
-            "api_key",
-            "token",
-            "secret",
-            "user_id",
-            "user_identifier",
+            # Names
             "name",
             "full_name",
             "first_name",
             "last_name",
+            "middle_name",
+            "maiden_name",
+            # Contact information
+            "email",
+            "email_address",
+            "phone",
+            "phone_number",
+            "mobile",
+            "address",
+            "street_address",
+            "mailing_address",
+            "zip_code",
+            "postal_code",
+            # Identity documents
+            "ssn",
+            "social_security",
+            "social_security_number",
+            "passport",
+            "passport_number",
+            "drivers_license",
+            "license_number",
+            "national_id",
+            "id_number",
+            "tax_id",
+            "ein",
+            # Financial information
+            "credit_card",
+            "card_number",
+            "bank_account",
+            "account_number",
+            "routing_number",
+            "iban",
+            # Credentials and secrets
+            "password",
+            "api_key",
+            "token",
+            "secret",
+            "access_key",
+            "private_key",
+            # User identifiers
+            "user_id",
+            "user_identifier",
+            "customer_id",
+            # Date of birth
+            "date_of_birth",
+            "dob",
+            "birthdate",
+            "birth_date",
+            # Network and device identifiers
+            "ip_address",
+            "ip",
+            "mac_address",
+            "device_id",
+            # Medical information
+            "medical_record",
+            "patient_id",
+            "health_id",
         }
         return {k: v for k, v in context.items() if k.lower() not in pii_fields}
 

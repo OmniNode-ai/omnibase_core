@@ -29,6 +29,9 @@ import os
 import httpx
 
 from examples.demo.handlers.support_assistant.model_config import ModelConfig
+from examples.demo.handlers.support_assistant.protocol_llm_client import (
+    ProtocolLLMClient,
+)
 from omnibase_core.errors import EnumCoreErrorCode, ModelOnexError
 
 # OpenAI API configuration
@@ -253,8 +256,30 @@ class OpenAILLMClient:
             return False
 
 
-# Note: Cannot verify protocol compliance at module level without API key
-# The check is done when the class is instantiated with valid credentials
+def _verify_protocol_compliance() -> None:
+    """Verify OpenAILLMClient implements ProtocolLLMClient.
+
+    This function is provided for test suites to verify protocol compliance
+    without import-time side effects. Tests should call this explicitly.
+
+    Note: Full isinstance() check requires a valid API key for instantiation.
+    We verify all protocol-required methods exist on the class.
+
+    Raises:
+        AssertionError: If OpenAILLMClient does not implement ProtocolLLMClient.
+    """
+    # Get required methods from the protocol
+    protocol_methods = {
+        name
+        for name in dir(ProtocolLLMClient)
+        if not name.startswith("_") and callable(getattr(ProtocolLLMClient, name))
+    }
+
+    # Verify all protocol methods exist on the client class
+    for method_name in protocol_methods:
+        assert hasattr(OpenAILLMClient, method_name), (
+            f"OpenAILLMClient must have '{method_name}' method per ProtocolLLMClient"
+        )
 
 
-__all__ = ["OpenAILLMClient"]
+__all__ = ["OpenAILLMClient", "_verify_protocol_compliance"]
