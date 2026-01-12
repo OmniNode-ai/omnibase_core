@@ -29,6 +29,7 @@ import os
 import httpx
 
 from examples.demo.handlers.support_assistant.model_config import ModelConfig
+from omnibase_core.errors import EnumCoreErrorCode, ModelOnexError
 
 # OpenAI API configuration
 OPENAI_API_URL = "https://api.openai.com/v1/chat/completions"
@@ -69,13 +70,15 @@ class OpenAILLMClient:
             timeout: Request timeout in seconds.
 
         Raises:
-            ValueError: If no API key is provided or found in environment.
+            ModelOnexError: If no API key is provided or found in environment.
         """
         self.api_key = api_key or os.getenv("OPENAI_API_KEY")
         if not self.api_key:
-            raise ValueError(
-                "OpenAI API key is required. Set OPENAI_API_KEY environment variable "
-                "or pass api_key parameter."
+            raise ModelOnexError(
+                message="OpenAI API key is required. Set OPENAI_API_KEY environment variable "
+                "or pass api_key parameter.",
+                error_code=EnumCoreErrorCode.MISSING_REQUIRED_PARAMETER,
+                parameter_name="api_key",
             )
 
         self.model_name = model_name
@@ -94,10 +97,15 @@ class OpenAILLMClient:
             Configured OpenAILLMClient instance.
 
         Raises:
-            ValueError: If config is not for OpenAI provider.
+            ModelOnexError: If config is not for OpenAI provider.
         """
         if config.provider != "openai":
-            raise ValueError(f"Expected openai provider, got {config.provider}")
+            raise ModelOnexError(
+                message=f"Expected openai provider, got {config.provider}",
+                error_code=EnumCoreErrorCode.INVALID_CONFIGURATION,
+                expected_provider="openai",
+                actual_provider=config.provider,
+            )
 
         api_key = os.getenv(config.api_key_env)
 
@@ -124,7 +132,7 @@ class OpenAILLMClient:
 
         Raises:
             httpx.HTTPError: If the HTTP request fails.
-            ValueError: If the response format is unexpected.
+            ModelOnexError: If the response format is unexpected.
         """
         messages = []
 
@@ -168,7 +176,11 @@ class OpenAILLMClient:
 
             choices = data.get("choices", [])
             if not choices:
-                raise ValueError("No choices in OpenAI response")
+                raise ModelOnexError(
+                    message="No choices in OpenAI response",
+                    error_code=EnumCoreErrorCode.PROCESSING_ERROR,
+                    model=self.model_name,
+                )
 
             message = choices[0].get("message", {})
             content = message.get("content", "")
@@ -195,9 +207,7 @@ class OpenAILLMClient:
                 )
                 return response.status_code == 200
 
-        except (
-            Exception
-        ):  # catch-all-ok: health check must not raise, returns False on any error
+        except Exception:  # catch-all-ok: health check must not raise, returns False on any error
             return False
 
 

@@ -29,11 +29,13 @@ import os
 import httpx
 
 from examples.demo.handlers.support_assistant.model_config import ModelConfig
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors import ModelOnexError
 
 # Anthropic API configuration
 ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages"
 ANTHROPIC_VERSION = "2023-06-01"
-DEFAULT_MODEL = "claude-3-5-sonnet-20241022"
+DEFAULT_MODEL = "claude-sonnet-4-20250514"
 DEFAULT_TIMEOUT = 60.0
 
 
@@ -45,7 +47,7 @@ class AnthropicLLMClient:
 
     Attributes:
         api_key: Anthropic API key.
-        model_name: Model identifier (e.g., "claude-3-5-sonnet-20241022").
+        model_name: Model identifier (e.g., "claude-sonnet-4-20250514").
         temperature: Sampling temperature for response generation.
         max_tokens: Maximum tokens to generate.
         timeout: Request timeout in seconds.
@@ -64,19 +66,23 @@ class AnthropicLLMClient:
         Args:
             api_key: Anthropic API key.
                 Defaults to ANTHROPIC_API_KEY environment variable.
-            model_name: Model identifier (e.g., "claude-3-5-sonnet-20241022").
+            model_name: Model identifier (e.g., "claude-sonnet-4-20250514").
             temperature: Sampling temperature (0.0 to 1.0 for Anthropic).
             max_tokens: Maximum tokens to generate.
             timeout: Request timeout in seconds.
 
         Raises:
-            ValueError: If no API key is provided or found in environment.
+            ModelOnexError: If no API key is provided or found in environment.
         """
         self.api_key = api_key or os.getenv("ANTHROPIC_API_KEY")
         if not self.api_key:
-            raise ValueError(
-                "Anthropic API key is required. Set ANTHROPIC_API_KEY environment "
-                "variable or pass api_key parameter."
+            raise ModelOnexError(
+                message=(
+                    "Anthropic API key is required. Set ANTHROPIC_API_KEY environment "
+                    "variable or pass api_key parameter."
+                ),
+                error_code=EnumCoreErrorCode.AUTHENTICATION_ERROR,
+                context={"provider": "anthropic", "env_var": "ANTHROPIC_API_KEY"},
             )
 
         self.model_name = model_name
@@ -96,10 +102,14 @@ class AnthropicLLMClient:
             Configured AnthropicLLMClient instance.
 
         Raises:
-            ValueError: If config is not for Anthropic provider.
+            ModelOnexError: If config is not for Anthropic provider.
         """
         if config.provider != "anthropic":
-            raise ValueError(f"Expected anthropic provider, got {config.provider}")
+            raise ModelOnexError(
+                message=f"Expected anthropic provider, got {config.provider}",
+                error_code=EnumCoreErrorCode.INVALID_CONFIGURATION,
+                context={"expected_provider": "anthropic", "actual_provider": config.provider},
+            )
 
         api_key = os.getenv(config.api_key_env)
 
@@ -128,7 +138,7 @@ class AnthropicLLMClient:
 
         Raises:
             httpx.HTTPError: If the HTTP request fails.
-            ValueError: If the response format is unexpected.
+            ModelOnexError: If the response format is unexpected.
         """
         messages = [{"role": "user", "content": prompt}]
 
@@ -163,7 +173,11 @@ class AnthropicLLMClient:
             # Anthropic response format differs from OpenAI
             content_blocks = data.get("content", [])
             if not content_blocks:
-                raise ValueError("No content in Anthropic response")
+                raise ModelOnexError(
+                    message="No content in Anthropic response",
+                    error_code=EnumCoreErrorCode.PROCESSING_ERROR,
+                    context={"provider": "anthropic", "model": self.model_name},
+                )
 
             # Extract text from content blocks
             text_parts = []

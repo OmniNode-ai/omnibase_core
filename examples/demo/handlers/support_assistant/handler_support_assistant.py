@@ -37,7 +37,7 @@ from __future__ import annotations
 
 import json
 import re
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Literal, cast
 
 from pydantic import ValidationError
 
@@ -250,7 +250,7 @@ class SupportAssistantHandler:
         try:
             data = json.loads(raw_response)
             if self._validate_json_structure(data):
-                return self._create_validated_response(data)
+                return cast(SupportResponse, self._create_validated_response(data))
         except json.JSONDecodeError:
             pass
 
@@ -262,7 +262,7 @@ class SupportAssistantHandler:
             try:
                 data = json.loads(json_match.group(1))
                 if self._validate_json_structure(data):
-                    return self._create_validated_response(data)
+                    return cast(SupportResponse, self._create_validated_response(data))
             except json.JSONDecodeError:
                 pass
 
@@ -272,7 +272,7 @@ class SupportAssistantHandler:
             try:
                 data = json.loads(json_object_match.group(0))
                 if self._validate_json_structure(data):
-                    return self._create_validated_response(data)
+                    return cast(SupportResponse, self._create_validated_response(data))
             except json.JSONDecodeError:
                 pass
 
@@ -314,7 +314,7 @@ class SupportAssistantHandler:
         }
         return bool(expected_fields & set(data.keys()))
 
-    @allow_dict_any(
+    @allow_dict_any(  # type: ignore[misc]
         reason="LLM JSON responses have arbitrary structure requiring dynamic type handling"
     )
     def _create_validated_response(self, data: dict[str, object]) -> SupportResponse:

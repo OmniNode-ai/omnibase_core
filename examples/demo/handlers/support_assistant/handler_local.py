@@ -187,6 +187,7 @@ class LocalLLMClient:
                         if response.status_code < 500:
                             return True
                     except httpx.HTTPError:
+                        # health-check-ok: network errors for one endpoint shouldn't stop trying others
                         continue
 
             return False

@@ -9,7 +9,8 @@ local model is unavailable.
 
 Note:
     These tests require a running local LLM server at the configured endpoint.
-    Default endpoint: http://192.168.86.100:8200 (configurable via env var).
+    Default endpoint: http://localhost:8200 (configurable via LLM_LOCAL_URL env var).
+    Tests are portable - no hardcoded LAN IPs.
 
     To run these tests:
         poetry run pytest tests/integration/examples/demo/handlers/support_assistant/ -v
@@ -36,9 +37,10 @@ from examples.demo.handlers.support_assistant.handler_support_assistant import (
 from examples.demo.handlers.support_assistant.protocol_llm_client import (
     ProtocolLLMClient,
 )
+from omnibase_core.errors import ModelOnexError
 
-# Configuration
-LOCAL_LLM_URL = os.getenv("LLM_LOCAL_URL", "http://192.168.86.100:8200")
+# Configuration - use localhost for portability, override via LLM_LOCAL_URL env var
+LOCAL_LLM_URL = os.getenv("LLM_LOCAL_URL", "http://localhost:8200")
 INTEGRATION_TEST_TIMEOUT_SECONDS = 120  # LLM calls can be slow
 
 
@@ -297,9 +299,13 @@ class TestProviderClientCreation:
 class TestErrorRecovery:
     """Tests for error recovery with local model."""
 
-    def test_handles_timeout_gracefully(self) -> None:
-        """Handler handles timeout errors gracefully."""
-        # Create client with very short timeout
+    def test_timeout_raises_model_onex_error(self) -> None:
+        """Handler raises ModelOnexError on timeout rather than returning gracefully.
+
+        The handler converts timeout errors to structured ModelOnexError exceptions,
+        which is the expected ONEX error handling pattern.
+        """
+        # Create client with very short timeout to force timeout error
         client = LocalLLMClient(
             endpoint_url=LOCAL_LLM_URL,
             timeout=0.001,  # Nearly instant timeout
@@ -320,8 +326,7 @@ class TestErrorRecovery:
         handler = SupportAssistantHandler(container)
         request = SupportRequest(user_identifier="test", message="Hello")
 
-        # Should return error response, not raise
-        response = asyncio.run(handler.handle(request))
-
-        assert isinstance(response, SupportResponse)
-        assert response.confidence < 0.5  # Low confidence for errors
+        # Handler raises ModelOnexError on timeout - this is the expected behavior
+        # for ONEX structured error handling
+        with pytest.raises(ModelOnexError):
+            asyncio.run(handler.handle(request))

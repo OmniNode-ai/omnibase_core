@@ -6,6 +6,7 @@
 #   - handler_kind: effect (external I/O - LLM API calls)
 #   - purity: side_effecting (makes network calls)
 #   - idempotent: false (LLM outputs vary even with identical inputs)
+#   - deterministic: false (LLM responses vary due to sampling/temperature)
 #   - nondeterministic_effect: true (LLM responses are inherently variable)
 #   - Has capability dependency on LLM provider
 #
@@ -22,6 +23,9 @@ descriptor:
   # LLM handlers cannot guarantee idempotency - same input may produce different
   # outputs due to model temperature, context window state, and API variations
   idempotent: false
+  # LLM outputs are inherently nondeterministic - identical prompts yield varying
+  # responses due to sampling, temperature settings, and model state
+  deterministic: false
   timeout_ms: 30000  # LLM calls can be slow
   retry_policy:
     enabled: true
