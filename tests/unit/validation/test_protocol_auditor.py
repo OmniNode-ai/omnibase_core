@@ -267,8 +267,17 @@ class TestProtocolAuditorLogging:
 class TestProtocolAuditorEdgeCases:
     """Test edge cases and error conditions."""
 
-    def test_audit_with_permission_denied(self):
-        """Test auditing handles permission errors gracefully."""
+    @patch(
+        "omnibase_core.services.service_protocol_auditor.extract_protocols_from_directory"
+    )
+    def test_audit_with_permission_denied(self, mock_extract):
+        """Test auditing handles permission errors gracefully.
+
+        Uses decorator-based patching to ensure mock is applied before any module
+        imports occur, avoiding module caching issues with pytest-xdist workers.
+        """
+        mock_extract.side_effect = PermissionError("Permission denied")
+
         with tempfile.TemporaryDirectory() as temp_dir:
             # Create src directory to avoid early return
             src_dir = Path(temp_dir) / "src"
@@ -276,24 +285,15 @@ class TestProtocolAuditorEdgeCases:
 
             auditor = ServiceProtocolAuditor(temp_dir)
 
-            # Mock extract_protocols_from_directory to raise a permission error
-            with patch(
-                "omnibase_core.services.service_protocol_auditor.extract_protocols_from_directory",
-            ) as mock_extract:
-                mock_extract.side_effect = PermissionError("Permission denied")
+            # Should raise wrapped PermissionError via @standard_error_handling
+            with pytest.raises(ModelOnexError) as exc_info:
+                auditor.check_current_repository()
 
-                # Should raise permission error - graceful handling not yet implemented
-                # Note: This test may behave differently when run in isolation vs full suite
-                # due to module caching. The behavior is correct in both cases.
-                try:
-                    result = auditor.check_current_repository()
-                    # If no exception, verify we got a valid result
-                    assert result is not None
-                    assert isinstance(result, ModelAuditResult)
-                except (ModelOnexError, PermissionError) as e:
-                    # Both raw PermissionError and wrapped ModelOnexError are acceptable
-                    # The @standard_error_handling decorator wraps PermissionError in ModelOnexError
-                    assert "Permission denied" in str(e)
+            # Verify the error contains the permission denied message
+            assert "Permission denied" in str(exc_info.value)
+
+            # Verify mock was actually called (ensures patch was applied correctly)
+            mock_extract.assert_called_once()
 
     def test_audit_with_malformed_repository_structure(self):
         """Test auditing repository with unusual structure."""

@@ -1189,6 +1189,9 @@ class TestShutdownIntegration:
 
         await service_orchestrator.stop_service_mode()
 
+        # Ensure background task completes before assertions
+        await task
+
         assert service_orchestrator._service_running is False
         assert len(service_orchestrator._active_invocations) == 0
 
