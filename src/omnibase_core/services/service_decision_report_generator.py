@@ -41,8 +41,12 @@ SEPARATOR_CHAR = "="
 SEPARATOR_LINE = SEPARATOR_CHAR * REPORT_WIDTH
 SUBSECTION_CHAR = "-"
 
-# Comparison display limits
+# Comparison display limits - prevent terminal overflow in verbose mode
+# while showing enough data for debugging
 COMPARISON_LIMIT_CLI_VERBOSE = 10
+
+# Markdown comparison limit - higher than CLI due to collapsible sections
+# allowing for more detail without overwhelming the reader
 COMPARISON_LIMIT_MARKDOWN = 50
 
 # JSON formatting
@@ -52,7 +56,8 @@ JSON_INDENT_SPACES = 2
 ELLIPSIS = "..."
 ELLIPSIS_LENGTH = len(ELLIPSIS)  # 3 characters for "..."
 
-# UUID display truncation (shows first N characters of UUID for brevity in tables)
+# UUID display truncation - shows first N characters for readability while
+# maintaining enough uniqueness for visual identification in tables
 UUID_DISPLAY_LENGTH = 8
 
 # Severity sort order for markdown tables (lower value = higher priority in display)
@@ -323,6 +328,24 @@ class ServiceDecisionReportGenerator:
                 },
             )
 
+    def _ensure_recommendation(
+        self,
+        summary: ModelEvidenceSummary,
+        recommendation: ModelDecisionRecommendation | None,
+    ) -> ModelDecisionRecommendation:
+        """Ensure a recommendation exists, generating one if needed.
+
+        Args:
+            summary: Evidence summary used to generate recommendation if needed.
+            recommendation: Pre-generated recommendation, or None to generate.
+
+        Returns:
+            The provided recommendation or a newly generated one.
+        """
+        if recommendation is None:
+            return self.generate_recommendation(summary)
+        return recommendation
+
     def generate_cli_report(
         self,
         summary: ModelEvidenceSummary,
@@ -351,7 +374,18 @@ class ServiceDecisionReportGenerator:
         Example:
             >>> report = generator.generate_cli_report(summary, [], "standard")
             >>> print(report)
+
+        Raises:
+            ModelOnexError: If comparisons is not a list.
         """
+        # Validate comparisons input
+        if not isinstance(comparisons, list):
+            raise ModelOnexError(
+                message="comparisons must be a list",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                context={"comparisons_type": type(comparisons).__name__},
+            )
+
         lines: list[str] = []
 
         if verbosity == "minimal":
@@ -448,8 +482,7 @@ class ServiceDecisionReportGenerator:
         lines.append("")
 
         # Recommendation section
-        if recommendation is None:
-            recommendation = self.generate_recommendation(summary)
+        recommendation = self._ensure_recommendation(summary, recommendation)
         action_upper = recommendation.action.upper()
         self._format_section_header(f"RECOMMENDATION: {action_upper}", lines)
         lines.append(f"Confidence: {recommendation.confidence:.0%}")
@@ -506,8 +539,7 @@ class ServiceDecisionReportGenerator:
         Returns:
             Minimal formatted report string.
         """
-        if recommendation is None:
-            recommendation = self.generate_recommendation(summary)
+        recommendation = self._ensure_recommendation(summary, recommendation)
         lines = [
             summary.headline,
             f"Recommendation: {recommendation.action.upper()} "
@@ -582,9 +614,19 @@ class ServiceDecisionReportGenerator:
         Example:
             >>> report = generator.generate_json_report(summary, comparisons)
             >>> json_str = json.dumps(report, sort_keys=True)
+
+        Raises:
+            ModelOnexError: If comparisons is not a list.
         """
-        if recommendation is None:
-            recommendation = self.generate_recommendation(summary)
+        # Validate comparisons input
+        if not isinstance(comparisons, list):
+            raise ModelOnexError(
+                message="comparisons must be a list",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                context={"comparisons_type": type(comparisons).__name__},
+            )
+
+        recommendation = self._ensure_recommendation(summary, recommendation)
 
         report: TypedDictDecisionReport = {
             "report_version": REPORT_VERSION,
@@ -708,9 +750,19 @@ class ServiceDecisionReportGenerator:
             >>> md_report = generator.generate_markdown_report(summary, comparisons)
             >>> with open("report.md", "w") as f:
             ...     f.write(md_report)
+
+        Raises:
+            ModelOnexError: If comparisons is not a list.
         """
-        if recommendation is None:
-            recommendation = self.generate_recommendation(summary)
+        # Validate comparisons input
+        if not isinstance(comparisons, list):
+            raise ModelOnexError(
+                message="comparisons must be a list",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                context={"comparisons_type": type(comparisons).__name__},
+            )
+
+        recommendation = self._ensure_recommendation(summary, recommendation)
         lines: list[str] = []
 
         # Header
@@ -1097,6 +1149,37 @@ class ServiceDecisionReportGenerator:
             rationale=rationale,
         )
 
+    def _validate_file_path(self, path: Path) -> None:
+        """Validate file path to prevent path traversal attacks.
+
+        Checks that the path does not contain traversal patterns like ".."
+        that could allow writing to arbitrary locations.
+
+        Args:
+            path: The path to validate.
+
+        Raises:
+            ModelOnexError: If path contains traversal patterns or is invalid.
+        """
+        # Check for path traversal in path components
+        path_str = str(path)
+        if ".." in path_str:
+            raise ModelOnexError(
+                message=f"Path traversal not allowed: {path}",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                context={"path": path_str, "reason": "path_traversal_detected"},
+            )
+
+        # Resolve the path and validate it's well-formed
+        try:
+            path.resolve(strict=False)
+        except (OSError, ValueError) as e:
+            raise ModelOnexError(
+                message=f"Invalid path: {e}",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                context={"path": path_str, "error": str(e)},
+            ) from e
+
     def save_to_file(
         self,
         summary: ModelEvidenceSummary,
@@ -1119,12 +1202,16 @@ class ServiceDecisionReportGenerator:
             recommendation: Pre-generated recommendation. If None, generates a new one.
 
         Raises:
-            ModelOnexError: If format is invalid or file cannot be written.
+            ModelOnexError: If format is invalid, path contains traversal attempts,
+                or file cannot be written.
 
         Example:
             >>> generator = ServiceDecisionReportGenerator()
             >>> generator.save_to_file(summary, comparisons, Path("report.md"))
         """
+        # Validate path - prevent path traversal attacks
+        self._validate_file_path(path)
+
         generators = {
             "cli": lambda: self.generate_cli_report(
                 summary,
@@ -1155,7 +1242,28 @@ class ServiceDecisionReportGenerator:
         content = generators[output_format]()
         try:
             path.write_text(content, encoding="utf-8")
+        except PermissionError as e:
+            raise ModelOnexError(
+                message=f"Permission denied writing to {path}",
+                error_code=EnumCoreErrorCode.FILE_WRITE_ERROR,
+                context={
+                    "path": str(path),
+                    "error": str(e),
+                    "error_type": "permission_denied",
+                },
+            ) from e
+        except FileNotFoundError as e:
+            raise ModelOnexError(
+                message=f"Parent directory does not exist for {path}",
+                error_code=EnumCoreErrorCode.FILE_WRITE_ERROR,
+                context={
+                    "path": str(path),
+                    "error": str(e),
+                    "error_type": "directory_not_found",
+                },
+            ) from e
         except OSError as e:
+            # fallback-ok: generic I/O error handler for disk full, etc.
             raise ModelOnexError(
                 message=f"Failed to write report to {path}: {e}",
                 error_code=EnumCoreErrorCode.FILE_WRITE_ERROR,
@@ -1170,8 +1278,31 @@ class ServiceDecisionReportGenerator:
 
         Returns:
             JSON string representation of the report.
+
+        Raises:
+            TypeError: If report contains unexpected non-serializable types.
         """
-        return json.dumps(report, indent=JSON_INDENT_SPACES, default=str)
+
+        def _json_serializer(obj: object) -> str:
+            """Convert known non-JSON types to strings.
+
+            Only handles datetime and UUID - raises TypeError for unknown types
+            to prevent silent data corruption.
+            """
+            # Import here to avoid circular imports and keep at function scope
+            from datetime import datetime
+            from uuid import UUID
+
+            if isinstance(obj, datetime):
+                return obj.isoformat()
+            if isinstance(obj, UUID):
+                return str(obj)
+            # error-ok: TypeError required by json.dumps default parameter contract
+            raise TypeError(
+                f"Object of type {type(obj).__name__} is not JSON serializable"
+            )
+
+        return json.dumps(report, indent=JSON_INDENT_SPACES, default=_json_serializer)
 
     def save_to_markdown(
         self,
@@ -1236,8 +1367,7 @@ class ServiceDecisionReportGenerator:
             ...     f.write(result["markdown"])
         """
         # Generate recommendation once and reuse across all formats
-        if recommendation is None:
-            recommendation = self.generate_recommendation(summary)
+        recommendation = self._ensure_recommendation(summary, recommendation)
 
         return {
             "cli": self.generate_cli_report(

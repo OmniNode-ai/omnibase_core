@@ -30,6 +30,7 @@ from uuid import uuid4
 
 import pytest
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_invariant_severity import EnumInvariantSeverity
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.evidence.model_cost_statistics import ModelCostStatistics
@@ -3564,12 +3565,9 @@ class TestExportFunctions:
         sample_comparisons: list[ModelExecutionComparison],
         tmp_path: Path,
     ) -> None:
-        """Test that OSError during file write is converted to ModelOnexError.
+        """Test that PermissionError during file write is converted to ModelOnexError.
 
-        This tests the error handling for common file write failures such as:
-        - Permission denied
-        - Disk full
-        - Invalid path
+        This tests the error handling for permission denied file write failures.
         """
         # Create a read-only directory to simulate permission denied
         readonly_dir = tmp_path / "readonly"
@@ -3580,7 +3578,7 @@ class TestExportFunctions:
         readonly_dir.chmod(0o444)
 
         try:
-            with pytest.raises(ModelOnexError, match="Failed to write report"):
+            with pytest.raises(ModelOnexError, match="Permission denied writing to"):
                 service.save_to_file(
                     sample_evidence_summary,
                     sample_comparisons,
@@ -3598,7 +3596,7 @@ class TestExportFunctions:
         sample_comparisons: list[ModelExecutionComparison],
         tmp_path: Path,
     ) -> None:
-        """Test that file write error includes path and format in context."""
+        """Test that file write error includes path and error_type in context."""
         # Create a read-only directory to simulate permission denied
         readonly_dir = tmp_path / "readonly_ctx"
         readonly_dir.mkdir()
@@ -3622,8 +3620,8 @@ class TestExportFunctions:
                 )
                 assert "path" in inner_context
                 assert str(output_path) in inner_context["path"]
-                assert "format" in inner_context
-                assert inner_context["format"] == "json"
+                assert "error_type" in inner_context
+                assert inner_context["error_type"] == "permission_denied"
         finally:
             # Restore permissions for cleanup
             readonly_dir.chmod(0o755)
@@ -3639,13 +3637,43 @@ class TestExportFunctions:
         # Path with non-existent parent directory
         output_path = tmp_path / "nonexistent" / "subdir" / "report.md"
 
-        with pytest.raises(ModelOnexError, match="Failed to write report"):
+        with pytest.raises(ModelOnexError, match="Parent directory does not exist"):
             service.save_to_file(
                 sample_evidence_summary,
                 sample_comparisons,
                 output_path,
                 output_format="markdown",
             )
+
+    def test_save_to_file_permission_error_specific_message(
+        self,
+        service: ServiceDecisionReportGenerator,
+        sample_evidence_summary: ModelEvidenceSummary,
+        tmp_path: Path,
+    ) -> None:
+        """Test that permission errors get specific error messages and error_type."""
+        readonly_dir = tmp_path / "readonly_specific"
+        readonly_dir.mkdir()
+        readonly_dir.chmod(0o444)
+
+        try:
+            with pytest.raises(ModelOnexError) as exc:
+                service.save_to_file(
+                    sample_evidence_summary,
+                    [],
+                    readonly_dir / "report.md",
+                )
+            # Check error code is FILE_WRITE_ERROR
+            assert exc.value.error_code == EnumCoreErrorCode.FILE_WRITE_ERROR
+
+            # Check that error_type is permission_denied in context
+            inner_context = exc.value.context.get("additional_context", {}).get(
+                "context", {}
+            )
+            assert "error_type" in inner_context
+            assert inner_context["error_type"] == "permission_denied"
+        finally:
+            readonly_dir.chmod(0o755)  # Restore for cleanup
 
 
 # =============================================================================
@@ -4326,3 +4354,196 @@ class TestIntegrationRoundTrip:
                 assert isinstance(comparison_id, str)
                 assert isinstance(output_match, bool)
                 assert isinstance(latency_delta, (int, float))
+
+
+# =============================================================================
+# Path Traversal Security Tests
+# =============================================================================
+
+
+@pytest.mark.unit
+class TestPathTraversalSecurity:
+    """Test path traversal protection in save_to_file()."""
+
+    def test_path_traversal_blocked_parent_directory(
+        self,
+        service: ServiceDecisionReportGenerator,
+        sample_evidence_summary: ModelEvidenceSummary,
+    ) -> None:
+        """Test that path traversal attempt to parent directory is blocked."""
+        with pytest.raises(ModelOnexError) as exc:
+            service.save_to_file(
+                sample_evidence_summary, [], Path("../../../etc/passwd")
+            )
+        assert exc.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert (
+            "path_traversal" in str(exc.value.context)
+            or "traversal" in exc.value.message.lower()
+        )
+
+    def test_path_traversal_blocked_relative_with_parent(
+        self,
+        service: ServiceDecisionReportGenerator,
+        sample_evidence_summary: ModelEvidenceSummary,
+    ) -> None:
+        """Test that path with embedded parent traversal is blocked."""
+        with pytest.raises(ModelOnexError) as exc:
+            service.save_to_file(
+                sample_evidence_summary, [], Path("reports/../../secrets/key.txt")
+            )
+        assert exc.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert (
+            "path_traversal" in str(exc.value.context)
+            or "traversal" in exc.value.message.lower()
+        )
+
+    def test_path_traversal_blocked_current_then_parent(
+        self,
+        service: ServiceDecisionReportGenerator,
+        sample_evidence_summary: ModelEvidenceSummary,
+    ) -> None:
+        """Test that path starting with ./ then traversing up is blocked."""
+        with pytest.raises(ModelOnexError) as exc:
+            service.save_to_file(
+                sample_evidence_summary, [], Path("./reports/../../../tmp/exploit")
+            )
+        assert exc.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert (
+            "path_traversal" in str(exc.value.context)
+            or "traversal" in exc.value.message.lower()
+        )
+
+    def test_path_traversal_error_includes_context(
+        self,
+        service: ServiceDecisionReportGenerator,
+        sample_evidence_summary: ModelEvidenceSummary,
+    ) -> None:
+        """Test that path traversal error includes path in context."""
+        traversal_path = Path("../../../etc/passwd")
+        with pytest.raises(ModelOnexError) as exc:
+            service.save_to_file(sample_evidence_summary, [], traversal_path)
+
+        # Check error code
+        assert exc.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+
+        # Check that context contains path information
+        inner_context = exc.value.context.get("additional_context", {}).get(
+            "context", {}
+        )
+        assert "path" in inner_context
+        assert "reason" in inner_context
+        assert inner_context["reason"] == "path_traversal_detected"
+
+
+# =============================================================================
+# Input Validation Tests
+# =============================================================================
+
+
+@pytest.mark.unit
+class TestInputValidation:
+    """Test input validation for report generation methods."""
+
+    def test_cli_report_rejects_none_comparisons(
+        self,
+        service: ServiceDecisionReportGenerator,
+        sample_evidence_summary: ModelEvidenceSummary,
+    ) -> None:
+        """Test that generate_cli_report rejects None as comparisons."""
+        with pytest.raises(ModelOnexError) as exc:
+            service.generate_cli_report(sample_evidence_summary, None)  # type: ignore[arg-type]
+        assert exc.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert "comparisons must be a list" in exc.value.message
+
+    def test_cli_report_rejects_string_comparisons(
+        self,
+        service: ServiceDecisionReportGenerator,
+        sample_evidence_summary: ModelEvidenceSummary,
+    ) -> None:
+        """Test that generate_cli_report rejects string as comparisons."""
+        with pytest.raises(ModelOnexError) as exc:
+            service.generate_cli_report(sample_evidence_summary, "not a list")  # type: ignore[arg-type]
+        assert exc.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert "comparisons must be a list" in exc.value.message
+
+    def test_cli_report_rejects_dict_comparisons(
+        self,
+        service: ServiceDecisionReportGenerator,
+        sample_evidence_summary: ModelEvidenceSummary,
+    ) -> None:
+        """Test that generate_cli_report rejects dict as comparisons."""
+        with pytest.raises(ModelOnexError) as exc:
+            service.generate_cli_report(sample_evidence_summary, {"key": "value"})  # type: ignore[arg-type]
+        assert exc.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert "comparisons must be a list" in exc.value.message
+
+    def test_cli_report_rejects_integer_comparisons(
+        self,
+        service: ServiceDecisionReportGenerator,
+        sample_evidence_summary: ModelEvidenceSummary,
+    ) -> None:
+        """Test that generate_cli_report rejects integer as comparisons."""
+        with pytest.raises(ModelOnexError) as exc:
+            service.generate_cli_report(sample_evidence_summary, 123)  # type: ignore[arg-type]
+        assert exc.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert "comparisons must be a list" in exc.value.message
+
+    def test_json_report_rejects_none_comparisons(
+        self,
+        service: ServiceDecisionReportGenerator,
+        sample_evidence_summary: ModelEvidenceSummary,
+    ) -> None:
+        """Test that generate_json_report rejects None as comparisons."""
+        with pytest.raises(ModelOnexError) as exc:
+            service.generate_json_report(sample_evidence_summary, None)  # type: ignore[arg-type]
+        assert exc.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert "comparisons must be a list" in exc.value.message
+
+    def test_json_report_rejects_non_list_comparisons(
+        self,
+        service: ServiceDecisionReportGenerator,
+        sample_evidence_summary: ModelEvidenceSummary,
+    ) -> None:
+        """Test that generate_json_report rejects string as comparisons."""
+        with pytest.raises(ModelOnexError) as exc:
+            service.generate_json_report(sample_evidence_summary, "invalid")  # type: ignore[arg-type]
+        assert exc.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert "comparisons must be a list" in exc.value.message
+
+    def test_markdown_report_rejects_none_comparisons(
+        self,
+        service: ServiceDecisionReportGenerator,
+        sample_evidence_summary: ModelEvidenceSummary,
+    ) -> None:
+        """Test that generate_markdown_report rejects None as comparisons."""
+        with pytest.raises(ModelOnexError) as exc:
+            service.generate_markdown_report(sample_evidence_summary, None)  # type: ignore[arg-type]
+        assert exc.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert "comparisons must be a list" in exc.value.message
+
+    def test_markdown_report_rejects_string_comparisons(
+        self,
+        service: ServiceDecisionReportGenerator,
+        sample_evidence_summary: ModelEvidenceSummary,
+    ) -> None:
+        """Test that generate_markdown_report rejects string as comparisons."""
+        with pytest.raises(ModelOnexError) as exc:
+            service.generate_markdown_report(sample_evidence_summary, "invalid")  # type: ignore[arg-type]
+        assert exc.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert "comparisons must be a list" in exc.value.message
+
+    def test_validation_error_includes_type_info(
+        self,
+        service: ServiceDecisionReportGenerator,
+        sample_evidence_summary: ModelEvidenceSummary,
+    ) -> None:
+        """Test that validation error includes the actual type in context."""
+        with pytest.raises(ModelOnexError) as exc:
+            service.generate_cli_report(sample_evidence_summary, {"a": 1})  # type: ignore[arg-type]
+
+        # Check context includes type information
+        inner_context = exc.value.context.get("additional_context", {}).get(
+            "context", {}
+        )
+        assert "comparisons_type" in inner_context
+        assert inner_context["comparisons_type"] == "dict"
