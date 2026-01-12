@@ -15,11 +15,15 @@ Thread Safety:
 """
 
 from datetime import UTC, datetime
-from typing import Literal
+from typing import Literal, NewType
 
+ReportVersion = NewType("ReportVersion", str)
+
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.comparison.model_execution_comparison import (
     ModelExecutionComparison,
 )
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.evidence.model_decision_recommendation import (
     ModelDecisionRecommendation,
 )
@@ -28,7 +32,7 @@ from omnibase_core.types.typed_dict_decision_report import TypedDictDecisionRepo
 
 # Report formatting constants
 REPORT_WIDTH = 80
-REPORT_VERSION = "1.0.0"
+REPORT_VERSION: ReportVersion = ReportVersion("1.0.0")
 SEPARATOR_CHAR = "="
 SEPARATOR_LINE = SEPARATOR_CHAR * REPORT_WIDTH
 SUBSECTION_CHAR = "-"
@@ -162,6 +166,56 @@ class ServiceDecisionReportGenerator:
             else self.COST_WARNING_PERCENT
         )
 
+        # Validate threshold ranges
+        if not (0.0 <= self.confidence_approve_threshold <= 1.0):
+            raise ModelOnexError(
+                message=f"confidence_approve_threshold must be between 0.0 and 1.0, "
+                f"got {self.confidence_approve_threshold}",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            )
+        if not (0.0 <= self.confidence_review_threshold <= 1.0):
+            raise ModelOnexError(
+                message=f"confidence_review_threshold must be between 0.0 and 1.0, "
+                f"got {self.confidence_review_threshold}",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            )
+        if not (0.0 <= self.pass_rate_optimal <= 1.0):
+            raise ModelOnexError(
+                message=f"pass_rate_optimal must be between 0.0 and 1.0, "
+                f"got {self.pass_rate_optimal}",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            )
+        if not (0.0 <= self.pass_rate_minimum <= 1.0):
+            raise ModelOnexError(
+                message=f"pass_rate_minimum must be between 0.0 and 1.0, "
+                f"got {self.pass_rate_minimum}",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            )
+        if self.latency_blocker_percent < 0:
+            raise ModelOnexError(
+                message=f"latency_blocker_percent must be >= 0, "
+                f"got {self.latency_blocker_percent}",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            )
+        if self.latency_warning_percent < 0:
+            raise ModelOnexError(
+                message=f"latency_warning_percent must be >= 0, "
+                f"got {self.latency_warning_percent}",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            )
+        if self.cost_blocker_percent < 0:
+            raise ModelOnexError(
+                message=f"cost_blocker_percent must be >= 0, "
+                f"got {self.cost_blocker_percent}",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            )
+        if self.cost_warning_percent < 0:
+            raise ModelOnexError(
+                message=f"cost_warning_percent must be >= 0, "
+                f"got {self.cost_warning_percent}",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            )
+
     def generate_cli_report(
         self,
         summary: ModelEvidenceSummary,
@@ -259,7 +313,7 @@ class ServiceDecisionReportGenerator:
 
         # Performance section
         lines.append("PERFORMANCE")
-        lines.append(SUBSECTION_CHAR * 11)
+        lines.append(SUBSECTION_CHAR * len("PERFORMANCE"))
 
         latency_delta = summary.latency_stats.delta_avg_percent
         latency_sign = "+" if latency_delta > 0 else ""
@@ -361,7 +415,7 @@ class ServiceDecisionReportGenerator:
         Returns:
             Centered text string, truncated with ellipsis if too long.
         """
-        if len(text) >= REPORT_WIDTH:
+        if len(text) > REPORT_WIDTH:
             return text[: REPORT_WIDTH - 3] + "..."
         return text.center(REPORT_WIDTH)
 
@@ -375,8 +429,9 @@ class ServiceDecisionReportGenerator:
     ) -> TypedDictDecisionReport:
         """Generate structured JSON report for machine consumption.
 
-        Creates a deterministic JSON-serializable dictionary with all evidence
-        data suitable for API responses, storage, or further processing.
+        Creates a JSON-serializable dictionary with all evidence data suitable
+        for API responses, storage, or further processing. Output is deterministic
+        when a fixed `generated_at` timestamp is provided.
 
         Args:
             summary: Aggregated evidence summary from corpus replay.

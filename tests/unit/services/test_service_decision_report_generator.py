@@ -36,6 +36,7 @@ from omnibase_core.models.comparison.model_execution_comparison import (
 from omnibase_core.models.comparison.model_invariant_comparison_summary import (
     ModelInvariantComparisonSummary,
 )
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.evidence.model_cost_statistics import ModelCostStatistics
 
 # =============================================================================
@@ -1204,6 +1205,74 @@ class TestServiceInstantiation:
 
 
 @pytest.mark.unit
+class TestThresholdValidation:
+    """Test threshold validation in ServiceDecisionReportGenerator."""
+
+    def test_valid_thresholds_accepted(self) -> None:
+        """Test that valid threshold values are accepted."""
+        # Should not raise
+        service = ServiceDecisionReportGenerator(
+            confidence_approve_threshold=0.95,
+            confidence_review_threshold=0.75,
+            pass_rate_optimal=0.90,
+            pass_rate_minimum=0.60,
+            latency_blocker_percent=40.0,
+            latency_warning_percent=15.0,
+            cost_blocker_percent=40.0,
+            cost_warning_percent=15.0,
+        )
+        assert service.confidence_approve_threshold == 0.95
+
+    def test_boundary_thresholds_accepted(self) -> None:
+        """Test that boundary values (0.0, 1.0) are accepted for rate thresholds."""
+        service = ServiceDecisionReportGenerator(
+            confidence_approve_threshold=1.0,
+            confidence_review_threshold=0.0,
+            pass_rate_optimal=1.0,
+            pass_rate_minimum=0.0,
+        )
+        assert service.confidence_approve_threshold == 1.0
+        assert service.confidence_review_threshold == 0.0
+
+    def test_invalid_confidence_approve_threshold_raises(self) -> None:
+        """Test that invalid confidence_approve_threshold raises ModelOnexError."""
+        with pytest.raises(ModelOnexError, match="confidence_approve_threshold"):
+            ServiceDecisionReportGenerator(confidence_approve_threshold=1.5)
+
+        with pytest.raises(ModelOnexError, match="confidence_approve_threshold"):
+            ServiceDecisionReportGenerator(confidence_approve_threshold=-0.1)
+
+    def test_invalid_confidence_review_threshold_raises(self) -> None:
+        """Test that invalid confidence_review_threshold raises ModelOnexError."""
+        with pytest.raises(ModelOnexError, match="confidence_review_threshold"):
+            ServiceDecisionReportGenerator(confidence_review_threshold=2.0)
+
+    def test_invalid_pass_rate_thresholds_raise(self) -> None:
+        """Test that invalid pass rate thresholds raise ModelOnexError."""
+        with pytest.raises(ModelOnexError, match="pass_rate_optimal"):
+            ServiceDecisionReportGenerator(pass_rate_optimal=1.1)
+
+        with pytest.raises(ModelOnexError, match="pass_rate_minimum"):
+            ServiceDecisionReportGenerator(pass_rate_minimum=-0.5)
+
+    def test_negative_latency_threshold_raises(self) -> None:
+        """Test that negative latency thresholds raise ModelOnexError."""
+        with pytest.raises(ModelOnexError, match="latency_blocker_percent"):
+            ServiceDecisionReportGenerator(latency_blocker_percent=-10.0)
+
+        with pytest.raises(ModelOnexError, match="latency_warning_percent"):
+            ServiceDecisionReportGenerator(latency_warning_percent=-5.0)
+
+    def test_negative_cost_threshold_raises(self) -> None:
+        """Test that negative cost thresholds raise ModelOnexError."""
+        with pytest.raises(ModelOnexError, match="cost_blocker_percent"):
+            ServiceDecisionReportGenerator(cost_blocker_percent=-20.0)
+
+        with pytest.raises(ModelOnexError, match="cost_warning_percent"):
+            ServiceDecisionReportGenerator(cost_warning_percent=-10.0)
+
+
+@pytest.mark.unit
 class TestEdgeCasesExtended:
     """Extended edge case tests for ServiceDecisionReportGenerator."""
 
@@ -1264,6 +1333,24 @@ class TestEdgeCasesExtended:
         assert len(report) > 0
         # The corpus_id should appear somewhere in the report
         assert "test-corpus-" in report
+
+    def test_center_text_exact_width_not_truncated(
+        self,
+        service: ServiceDecisionReportGenerator,
+    ) -> None:
+        """Test that text exactly REPORT_WIDTH chars is NOT truncated."""
+        from omnibase_core.services.service_decision_report_generator import (
+            REPORT_WIDTH,
+        )
+
+        # Create text exactly REPORT_WIDTH characters
+        exact_text = "X" * REPORT_WIDTH
+        centered = service._center_text(exact_text)
+
+        # Should NOT be truncated (no ellipsis)
+        assert len(centered) == REPORT_WIDTH
+        assert not centered.endswith("...")
+        assert centered == exact_text  # Should be unchanged
 
     def test_unicode_in_violation_messages(
         self,
@@ -1445,4 +1532,5 @@ __all__ = [
     "TestEdgeCases",
     "TestEdgeCasesExtended",
     "TestServiceInstantiation",
+    "TestThresholdValidation",
 ]
