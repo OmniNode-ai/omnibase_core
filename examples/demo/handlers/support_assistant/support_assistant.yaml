@@ -1,0 +1,81 @@
+---
+# Handler Contract: Support Assistant Demo Handler
+# This handler calls external LLM APIs to generate support responses.
+#
+# Key characteristics:
+#   - handler_kind: effect (external I/O - LLM API calls)
+#   - purity: side_effecting (makes network calls)
+#   - idempotent: true (same input produces same output, safe to retry)
+#   - Has capability dependency on LLM provider
+#
+# See: OMN-1201 - Demo Support Assistant Handler
+
+handler_id: effect.demo.support_assistant
+name: Support Assistant Demo Handler
+version:
+  major: 1
+  minor: 0
+  patch: 0
+description: AI support assistant that responds to user requests with structured output
+
+descriptor:
+  handler_kind: effect
+  purity: side_effecting
+  idempotent: true
+  timeout_ms: 30000  # LLM calls can be slow
+  retry_policy:
+    enabled: true
+    max_retries: 3
+    backoff_strategy: exponential
+    base_delay_ms: 500
+    max_delay_ms: 15000
+  circuit_breaker:
+    enabled: true
+    failure_threshold: 5
+    timeout_ms: 60000
+  concurrency_policy: parallel_ok  # Can handle multiple requests concurrently
+  isolation_policy: none
+  observability_level: standard
+
+capability_inputs:
+  - alias: llm
+    capability: ai.llm.chat
+    requirements:
+      must:
+        supports_structured_output: true
+      prefer:
+        max_latency_ms: 5000
+        supports_streaming: true
+    selection_policy: auto_if_unique
+    strict: true
+    description: LLM provider for generating support responses
+
+capability_outputs:
+  - support.response.generated
+  - support.escalation.flagged
+
+input_model: examples.demo.handlers.support_assistant.SupportRequest
+output_model: examples.demo.handlers.support_assistant.SupportResponse
+
+execution_constraints:
+  requires_before: []
+  requires_after: []
+  can_run_parallel: true
+  nondeterministic_effect: false  # LLM with same prompt produces consistent responses
+
+supports_lifecycle: true
+supports_health_check: true
+supports_provisioning: false
+
+tags:
+  - demo
+  - support
+  - llm
+  - effect
+  - ai
+
+metadata:
+  owner: demo-team
+  ticket: OMN-1201
+  sla_tier: demo
+  category: customer-support
