@@ -267,7 +267,7 @@ class ModelMetricsContext(BaseModel):
             return _validate_semver(value)
         except ModelOnexError as e:
             # error-ok: Pydantic field_validator requires ValueError
-            raise ValueError(str(e.message)) from e
+            raise ValueError(e.message) from e
 
     def is_sampled(self) -> bool:
         """Check if this context should be sampled for recording.

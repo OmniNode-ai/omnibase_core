@@ -108,6 +108,9 @@ def service_orchestrator(
     service._emit_shutdown_event = lambda: MixinNodeService._emit_shutdown_event(
         service
     )
+    service._try_get_event_bus_from_container = (
+        lambda: MixinNodeService._try_get_event_bus_from_container(service)
+    )
     service._health_monitor_loop = lambda: MixinNodeService._health_monitor_loop(
         service
     )
@@ -839,6 +842,8 @@ class TestShutdownEventEmission:
         - No exception raised
         """
         service_orchestrator.event_bus = None
+        # Also clear _get_event_bus so _try_get_event_bus_from_container returns None
+        service_orchestrator._get_event_bus = Mock(return_value=None)
 
         # Should not raise exception
         await service_orchestrator._emit_shutdown_event()
