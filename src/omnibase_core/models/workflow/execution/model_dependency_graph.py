@@ -17,7 +17,7 @@ Security Considerations:
 
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_workflow_execution import EnumWorkflowState
@@ -151,11 +151,11 @@ class ModelDependencyGraph(BaseModel):
 
         return any(node not in visited and dfs(node) for node in self.nodes)
 
-    model_config = {
-        "extra": "ignore",
-        "arbitrary_types_allowed": True,  # For WorkflowStepExecution
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        arbitrary_types_allowed=True,  # For WorkflowStepExecution
+        validate_assignment=True,
+    )
 
 
 # Import here to avoid circular dependency

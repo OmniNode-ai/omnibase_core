@@ -12,7 +12,7 @@ about example collections with enhanced structure.
 """
 
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_difficulty_level import EnumDifficultyLevel
@@ -54,11 +54,11 @@ class ModelExampleMetadata(BaseModel):
         description="Category this collection belongs to",
     )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 

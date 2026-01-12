@@ -7,7 +7,7 @@ Follows ONEX one-model-per-file architecture.
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -114,7 +114,7 @@ class ModelAnalyticsQualityMetrics(BaseModel):
         )
 
     def get_improvement_suggestions(self) -> list[str]:
-        """Get list[Any]of improvement suggestions based on metrics."""
+        """Get list of improvement suggestions based on metrics."""
         suggestions = []
 
         if self.health_score < 70.0:
@@ -160,11 +160,11 @@ class ModelAnalyticsQualityMetrics(BaseModel):
             documentation_coverage=0.45,
         )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 

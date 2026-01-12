@@ -14,7 +14,7 @@ with discriminated union patterns following ONEX strong typing standards.
 
 from typing import cast
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_validation_value_type import EnumValidationValueType
@@ -121,11 +121,11 @@ class ModelValidationValue(BaseModel):
             return "null"
         return str(self.raw_value)
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 

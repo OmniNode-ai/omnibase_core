@@ -12,7 +12,7 @@ This replaces manual YAML field validation with proper Pydantic validation.
 
 import warnings
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums import EnumNodeType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -44,11 +44,11 @@ class ModelYamlContract(BaseModel):
     Extra fields are ignored to maintain a clean contract structure.
     """
 
-    model_config = {
-        "extra": "ignore",  # Ignore extra fields to maintain clean contract structure
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",  # Ignore extra fields to maintain clean contract structure,
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Required fields for contract validation
     contract_version: ModelSemVer = Field(

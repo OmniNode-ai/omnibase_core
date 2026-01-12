@@ -8,7 +8,7 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 "\nStrongly-typed effect parameter value model.\n\nRepresents discriminated union for effect parameter values.\nFollows ONEX strong typing principles and one-model-per-file architecture.\n"
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.enums.enum_effect_parameter_type import EnumEffectParameterType
 
@@ -93,11 +93,11 @@ class ModelEffectParameterValue(BaseModel):
             )
         return v
 
-    model_config = {
-        "extra": "forbid",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="forbid",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
 
 __all__ = ["ModelEffectParameterValue"]

@@ -6,7 +6,7 @@ Model for node assignment in workflow execution for the ONEX workflow coordinati
 
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_node_type import EnumNodeType
 from omnibase_core.enums.enum_workflow_coordination import EnumAssignmentStatus
@@ -47,8 +47,8 @@ class ModelNodeAssignment(BaseModel):
         description="Strongly-typed resource usage metrics for this node",
     )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )

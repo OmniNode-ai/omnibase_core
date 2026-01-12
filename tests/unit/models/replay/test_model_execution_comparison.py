@@ -14,13 +14,13 @@ import pytest
 from pydantic import ValidationError
 
 from omnibase_core.enums.enum_severity import EnumSeverity
-from omnibase_core.models.comparison import (
+from omnibase_core.models.invariant import ModelInvariantResult
+from omnibase_core.models.replay import (
     ModelExecutionComparison,
     ModelInvariantComparisonSummary,
     ModelOutputDiff,
     ModelValueChange,
 )
-from omnibase_core.models.invariant import ModelInvariantResult
 
 # Import centralized test UUIDs from conftest
 from .conftest import (

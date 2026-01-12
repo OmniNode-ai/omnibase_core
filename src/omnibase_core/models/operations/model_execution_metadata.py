@@ -9,7 +9,7 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_environment import EnumEnvironment
@@ -85,11 +85,11 @@ class ModelExecutionMetadata(BaseModel):
         default=0, ge=0, description="Number of warnings encountered"
     )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Input validation for proper enum types
     @field_validator("status", mode="before")

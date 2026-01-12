@@ -40,6 +40,7 @@ from .util_validators import convert_dict_to_frozen_pairs, convert_list_to_tuple
 # - util_safe_yaml_loader
 # - util_field_converter
 # - util_security.UtilSecurity
+# - util_stability_calculator.calculate_stability, calculate_confidence
 # - util_streaming_window.UtilStreamingWindow
 # - util_contract_loader.UtilContractLoader (also available via lazy import below)
 

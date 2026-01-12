@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Self
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -42,12 +42,11 @@ class ModelConfigurationBase[T](BaseModel):
     - Nameable: Name management interface
     """
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-        # Removed arbitrary_types_allowed - handle arbitrary types explicitly with serializers
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     @field_serializer("config_data")
     def serialize_config_data(self, config_data: object) -> object:

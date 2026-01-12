@@ -10,7 +10,7 @@ Contract validation rules and constraint definitions providing:
 Strict typing is enforced: No Any types allowed in implementation.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelValidationRules(BaseModel):
@@ -46,8 +46,8 @@ class ModelValidationRules(BaseModel):
         description="Custom constraint definitions for validation",
     )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )

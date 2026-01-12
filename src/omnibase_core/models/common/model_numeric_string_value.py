@@ -49,7 +49,7 @@ from __future__ import annotations
 
 import math
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_numeric_value_type import EnumNumericValueType
@@ -662,8 +662,8 @@ class ModelNumericStringValue(BaseModel):
             f"value={self.get_value()!r})"
         )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )

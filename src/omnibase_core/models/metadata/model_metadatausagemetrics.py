@@ -1,6 +1,6 @@
 from datetime import UTC, datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.types.type_constraints import BasicValueType
 from omnibase_core.types.typed_dict_usage_metadata import TypedDictUsageMetadata
@@ -83,11 +83,11 @@ class ModelMetadataUsageMetrics(BaseModel):
 
         self.last_invocation = datetime.now(UTC)
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 

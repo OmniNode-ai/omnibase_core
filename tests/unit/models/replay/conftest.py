@@ -25,7 +25,7 @@ from uuid import UUID
 
 import pytest
 
-from omnibase_core.models.comparison import ModelOutputDiff, ModelValueChange
+from omnibase_core.models.replay import ModelOutputDiff, ModelValueChange
 
 # Sample UUIDs for testing - centralized constants for all comparison tests
 TEST_BASELINE_ID = UUID("11111111-1111-1111-1111-111111111111")

@@ -7,7 +7,7 @@ Follows ONEX one-model-per-file naming conventions.
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_numeric_value import ModelNumericValue
@@ -55,11 +55,11 @@ class ModelNodeConfigurationSummary(BaseModel):
         description="Whether configuration has custom settings",
     )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Export the model
 

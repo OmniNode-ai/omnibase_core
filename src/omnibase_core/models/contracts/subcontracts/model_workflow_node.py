@@ -6,7 +6,7 @@ Model for node definitions in workflow graphs for the ONEX workflow coordination
 
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_node_type import EnumNodeType
 from omnibase_core.models.primitives.model_semver import ModelSemVer
@@ -44,14 +44,10 @@ class ModelWorkflowNode(BaseModel):
         description="List of node IDs this node depends on",
     )
 
-    model_config = {
-        # v1.0.5 Fix 54: Reserved Fields Governance
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-        "frozen": True,
-        # from_attributes=True allows Pydantic to accept objects with matching
-        # attributes even when class identity differs (e.g., in pytest-xdist
-        # parallel execution where model classes are imported in separate workers)
-        "from_attributes": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+        frozen=True,
+        from_attributes=True,
+    )

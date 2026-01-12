@@ -14,7 +14,7 @@ for modular architecture compliance.
 """
 
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_fallback_strategy_type import EnumFallbackStrategyType
@@ -80,11 +80,11 @@ class ModelFallbackStrategy(BaseModel):
         """Check if retries are enabled for this strategy."""
         return self.retry_attempts > 0
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 

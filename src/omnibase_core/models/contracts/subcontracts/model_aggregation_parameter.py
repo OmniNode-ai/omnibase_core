@@ -7,7 +7,7 @@ Replaces dict[str, PrimitiveValueType] with proper type safety.
 Strict typing is enforced: No Any types allowed in implementation.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_parameter_type import EnumParameterType
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
@@ -59,8 +59,8 @@ class ModelAggregationParameter(BaseModel):
         description="Human-readable description of the parameter purpose",
     )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )

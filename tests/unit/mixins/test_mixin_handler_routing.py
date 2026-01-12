@@ -25,6 +25,7 @@ from pydantic import ValidationError
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_execution_shape import EnumMessageCategory
+from omnibase_core.enums.enum_handler_routing_strategy import EnumHandlerRoutingStrategy
 from omnibase_core.enums.enum_node_kind import EnumNodeKind
 from omnibase_core.mixins.mixin_handler_routing import MixinHandlerRouting
 from omnibase_core.models.contracts.subcontracts.model_handler_routing_entry import (
@@ -329,7 +330,7 @@ def sample_handler_routing() -> ModelHandlerRoutingSubcontract:
     """Create a sample handler routing subcontract with payload_type_match strategy."""
     return ModelHandlerRoutingSubcontract(
         version=ModelSemVer(major=1, minor=0, patch=0),
-        routing_strategy="payload_type_match",
+        routing_strategy=EnumHandlerRoutingStrategy.PAYLOAD_TYPE_MATCH,
         handlers=[
             ModelHandlerRoutingEntry(
                 routing_key="UserCreatedEvent",
@@ -351,7 +352,7 @@ def operation_match_routing() -> ModelHandlerRoutingSubcontract:
     """Create a handler routing subcontract with operation_match strategy."""
     return ModelHandlerRoutingSubcontract(
         version=ModelSemVer(major=1, minor=0, patch=0),
-        routing_strategy="operation_match",
+        routing_strategy=EnumHandlerRoutingStrategy.OPERATION_MATCH,
         handlers=[
             ModelHandlerRoutingEntry(
                 routing_key="create_user",
@@ -374,7 +375,7 @@ def topic_pattern_routing() -> ModelHandlerRoutingSubcontract:
     """Create a handler routing subcontract with topic_pattern strategy."""
     return ModelHandlerRoutingSubcontract(
         version=ModelSemVer(major=1, minor=0, patch=0),
-        routing_strategy="topic_pattern",
+        routing_strategy=EnumHandlerRoutingStrategy.TOPIC_PATTERN,
         handlers=[
             ModelHandlerRoutingEntry(
                 routing_key="events.user.*",
@@ -396,7 +397,7 @@ def empty_handlers_routing() -> ModelHandlerRoutingSubcontract:
     """Create a handler routing subcontract with empty handlers list."""
     return ModelHandlerRoutingSubcontract(
         version=ModelSemVer(major=1, minor=0, patch=0),
-        routing_strategy="payload_type_match",
+        routing_strategy=EnumHandlerRoutingStrategy.PAYLOAD_TYPE_MATCH,
         handlers=[],
         default_handler="handle_unknown",
     )
@@ -421,7 +422,7 @@ class TestMixinHandlerRoutingInitialization:
         node._init_handler_routing(sample_handler_routing, mock_registry)
 
         assert node.is_routing_initialized is True
-        assert node.routing_strategy == "payload_type_match"
+        assert node.routing_strategy == EnumHandlerRoutingStrategy.PAYLOAD_TYPE_MATCH
         assert node.default_handler_key == "handle_unknown"
 
         # Verify routing table contents
@@ -441,7 +442,7 @@ class TestMixinHandlerRoutingInitialization:
         node._init_handler_routing(empty_handlers_routing, mock_registry)
 
         assert node.is_routing_initialized is True
-        assert node.routing_strategy == "payload_type_match"
+        assert node.routing_strategy == EnumHandlerRoutingStrategy.PAYLOAD_TYPE_MATCH
         assert node.default_handler_key == "handle_unknown"
 
         # Routing table should be empty
@@ -457,7 +458,9 @@ class TestMixinHandlerRoutingInitialization:
         node._init_handler_routing(None, mock_registry)
 
         assert node.is_routing_initialized is True
-        assert node.routing_strategy == "payload_type_match"  # default
+        assert (
+            node.routing_strategy == EnumHandlerRoutingStrategy.PAYLOAD_TYPE_MATCH
+        )  # default
         assert node.default_handler_key is None
 
         # Routing table should be empty
@@ -482,7 +485,7 @@ class TestMixinHandlerRoutingInitialization:
 
         assert node._handler_routing_table == {}
         assert node._handler_registry is None
-        assert node._routing_strategy == "payload_type_match"
+        assert node._routing_strategy == EnumHandlerRoutingStrategy.PAYLOAD_TYPE_MATCH
         assert node._default_handler_key is None
         assert node._routing_initialized is False
 
@@ -524,7 +527,7 @@ class TestRoutingStrategies:
         node._init_handler_routing(operation_match_routing, mock_registry)
 
         # Verify strategy is operation_match
-        assert node.routing_strategy == "operation_match"
+        assert node.routing_strategy == EnumHandlerRoutingStrategy.OPERATION_MATCH
 
         # Route by operation string
         handlers = node.route_to_handlers(
@@ -545,7 +548,7 @@ class TestRoutingStrategies:
         node._init_handler_routing(topic_pattern_routing, mock_registry)
 
         # Verify strategy is topic_pattern
-        assert node.routing_strategy == "topic_pattern"
+        assert node.routing_strategy == EnumHandlerRoutingStrategy.TOPIC_PATTERN
 
         # Route by topic pattern (glob match)
         handlers = node.route_to_handlers(
@@ -637,7 +640,7 @@ class TestHandlerResolution:
         # Create routing without default_handler
         routing = ModelHandlerRoutingSubcontract(
             version=ModelSemVer(major=1, minor=0, patch=0),
-            routing_strategy="payload_type_match",
+            routing_strategy=EnumHandlerRoutingStrategy.PAYLOAD_TYPE_MATCH,
             handlers=[
                 ModelHandlerRoutingEntry(
                     routing_key="UserCreatedEvent",
@@ -746,7 +749,7 @@ class TestHandlerValidation:
         # Create routing with non-existent handler
         routing = ModelHandlerRoutingSubcontract(
             version=ModelSemVer(major=1, minor=0, patch=0),
-            routing_strategy="payload_type_match",
+            routing_strategy=EnumHandlerRoutingStrategy.PAYLOAD_TYPE_MATCH,
             handlers=[
                 ModelHandlerRoutingEntry(
                     routing_key="UserCreatedEvent",
@@ -773,7 +776,7 @@ class TestHandlerValidation:
         # Create routing with non-existent default handler
         routing = ModelHandlerRoutingSubcontract(
             version=ModelSemVer(major=1, minor=0, patch=0),
-            routing_strategy="payload_type_match",
+            routing_strategy=EnumHandlerRoutingStrategy.PAYLOAD_TYPE_MATCH,
             handlers=[
                 ModelHandlerRoutingEntry(
                     routing_key="UserCreatedEvent",
@@ -799,7 +802,7 @@ class TestHandlerValidation:
         # Create routing with multiple non-existent handlers
         routing = ModelHandlerRoutingSubcontract(
             version=ModelSemVer(major=1, minor=0, patch=0),
-            routing_strategy="payload_type_match",
+            routing_strategy=EnumHandlerRoutingStrategy.PAYLOAD_TYPE_MATCH,
             handlers=[
                 ModelHandlerRoutingEntry(
                     routing_key="Event1",
@@ -903,7 +906,7 @@ class TestRoutingDeterminism:
         # First contract version
         routing_v1 = ModelHandlerRoutingSubcontract(
             version=ModelSemVer(major=1, minor=0, patch=0),
-            routing_strategy="payload_type_match",
+            routing_strategy=EnumHandlerRoutingStrategy.PAYLOAD_TYPE_MATCH,
             handlers=[
                 ModelHandlerRoutingEntry(
                     routing_key="UserCreatedEvent",
@@ -925,7 +928,7 @@ class TestRoutingDeterminism:
         # Second contract version with different handler
         routing_v2 = ModelHandlerRoutingSubcontract(
             version=ModelSemVer(major=2, minor=0, patch=0),
-            routing_strategy="payload_type_match",
+            routing_strategy=EnumHandlerRoutingStrategy.PAYLOAD_TYPE_MATCH,
             handlers=[
                 ModelHandlerRoutingEntry(
                     routing_key="UserCreatedEvent",
@@ -1075,7 +1078,7 @@ class TestEdgeCases:
         with pytest.raises(ModelOnexError) as exc_info:
             ModelHandlerRoutingSubcontract(
                 version=ModelSemVer(major=1, minor=0, patch=0),
-                routing_strategy="payload_type_match",
+                routing_strategy=EnumHandlerRoutingStrategy.PAYLOAD_TYPE_MATCH,
                 handlers=[
                     ModelHandlerRoutingEntry(
                         routing_key="DuplicateKey",
@@ -1132,7 +1135,7 @@ class TestEdgeCases:
         # Input order: priority 10, 0, 5 (intentionally unsorted)
         routing = ModelHandlerRoutingSubcontract(
             version=ModelSemVer(major=1, minor=0, patch=0),
-            routing_strategy="payload_type_match",
+            routing_strategy=EnumHandlerRoutingStrategy.PAYLOAD_TYPE_MATCH,
             handlers=[
                 ModelHandlerRoutingEntry(
                     routing_key="EventA",
@@ -1215,7 +1218,7 @@ class TestEdgeCases:
         # events.user.* has lower priority (evaluated first)
         routing = ModelHandlerRoutingSubcontract(
             version=ModelSemVer(major=1, minor=0, patch=0),
-            routing_strategy="topic_pattern",
+            routing_strategy=EnumHandlerRoutingStrategy.TOPIC_PATTERN,
             handlers=[
                 ModelHandlerRoutingEntry(
                     routing_key="events.*",  # Broader pattern
@@ -1289,7 +1292,7 @@ class TestEdgeCases:
         """Test routing gracefully handles handler not in registry."""
         routing = ModelHandlerRoutingSubcontract(
             version=ModelSemVer(major=1, minor=0, patch=0),
-            routing_strategy="payload_type_match",
+            routing_strategy=EnumHandlerRoutingStrategy.PAYLOAD_TYPE_MATCH,
             handlers=[
                 ModelHandlerRoutingEntry(
                     routing_key="MissingHandler",
@@ -1328,19 +1331,19 @@ class TestProperties:
         node = TestNodeWithMixin()
 
         # Default before init
-        assert node.routing_strategy == "payload_type_match"
+        assert node.routing_strategy == EnumHandlerRoutingStrategy.PAYLOAD_TYPE_MATCH
 
         # After init with operation_match
         # Note: Empty handlers requires a default_handler per validation rules
         routing = ModelHandlerRoutingSubcontract(
             version=ModelSemVer(major=1, minor=0, patch=0),
-            routing_strategy="operation_match",
+            routing_strategy=EnumHandlerRoutingStrategy.OPERATION_MATCH,
             handlers=[],
             default_handler="fallback_handler",
         )
         node._init_handler_routing(routing, mock_registry)
 
-        assert node.routing_strategy == "operation_match"
+        assert node.routing_strategy == EnumHandlerRoutingStrategy.OPERATION_MATCH
 
     def test_default_handler_key_property(
         self,
@@ -1355,7 +1358,7 @@ class TestProperties:
         # After init with default handler
         routing = ModelHandlerRoutingSubcontract(
             version=ModelSemVer(major=1, minor=0, patch=0),
-            routing_strategy="payload_type_match",
+            routing_strategy=EnumHandlerRoutingStrategy.PAYLOAD_TYPE_MATCH,
             handlers=[],
             default_handler="my_default_handler",
         )
@@ -1377,7 +1380,7 @@ class TestProperties:
         # Note: Empty handlers requires a default_handler per validation rules
         routing = ModelHandlerRoutingSubcontract(
             version=ModelSemVer(major=1, minor=0, patch=0),
-            routing_strategy="payload_type_match",
+            routing_strategy=EnumHandlerRoutingStrategy.PAYLOAD_TYPE_MATCH,
             handlers=[],
             default_handler="fallback_handler",
         )
@@ -1485,7 +1488,7 @@ class TestTopicPatternPerformanceOptimization:
         node._init_handler_routing(sample_handler_routing, mock_registry)
 
         # payload_type_match strategy should not compile patterns
-        assert node.routing_strategy == "payload_type_match"
+        assert node.routing_strategy == EnumHandlerRoutingStrategy.PAYLOAD_TYPE_MATCH
         assert len(node._compiled_patterns) == 0
 
     def test_cached_result_is_not_mutable(

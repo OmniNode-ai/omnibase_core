@@ -14,7 +14,7 @@ typed property with validation in the environment property system.
 
 from typing import cast
 
-from pydantic import BaseModel, ValidationError, model_validator
+from pydantic import BaseModel, ConfigDict, ValidationError, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_property_type import EnumPropertyType
@@ -106,11 +106,11 @@ class ModelTypedProperty(BaseModel):
         """Get the raw value implementing the protocol."""
         return self.value.value
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 

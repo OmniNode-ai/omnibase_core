@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING, Any
 from pydantic import BaseModel, ConfigDict, Field, computed_field
 
 from omnibase_core.decorators.decorator_allow_dict_any import allow_dict_any
-from omnibase_core.models.comparison.model_value_change import ModelValueChange
+from omnibase_core.models.replay.model_value_change import ModelValueChange
 
 if TYPE_CHECKING:
     from deepdiff import DeepDiff

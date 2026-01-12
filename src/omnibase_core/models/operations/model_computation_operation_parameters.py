@@ -7,7 +7,7 @@ Follows ONEX strong typing principles and one-model-per-file architecture.
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelComputationOperationParameters(BaseModel):
@@ -43,11 +43,11 @@ class ModelComputationOperationParameters(BaseModel):
         description="Additional custom parameters",
     )
 
-    model_config = {
-        "extra": "forbid",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="forbid",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
 
 # Export for use

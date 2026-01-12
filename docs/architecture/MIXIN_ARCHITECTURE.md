@@ -290,7 +290,7 @@ def load_node_contract(contract_path: Path) -> ModelContractContent:
     contract_yaml = load_yaml(contract_path)
 
     # 2. Parse contract content
-    contract = ModelContractContent.parse_obj(contract_yaml)
+    contract = ModelContractContent.model_validate(contract_yaml)
 
     # 3. Resolve subcontract references
     for subcontract_ref in contract.subcontracts:

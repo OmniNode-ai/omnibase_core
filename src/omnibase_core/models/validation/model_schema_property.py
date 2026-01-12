@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.types.type_json import JsonType, PrimitiveValue
 
@@ -34,7 +34,7 @@ class ModelSchemaProperty(BaseModel):
     items: ModelSchemaProperty | None = None
     properties: ModelSchemaPropertiesModel | None = None
     required: ModelRequiredFieldsModel | None = None
-    model_config = {"arbitrary_types_allowed": True, "extra": "allow"}
+    model_config = ConfigDict(arbitrary_types_allowed=True, extra="allow")
 
 
 # Forward Reference Resolution

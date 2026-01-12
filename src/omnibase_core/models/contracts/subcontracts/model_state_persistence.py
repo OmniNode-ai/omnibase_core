@@ -7,7 +7,7 @@ Part of the State Management Subcontract Model family.
 Strict typing is enforced: No Any types allowed in implementation.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.constants import TIMEOUT_LONG_MS
 from omnibase_core.enums.enum_state_management import EnumStorageBackend
@@ -76,8 +76,8 @@ class ModelStatePersistence(BaseModel):
         description="Enable state compression",
     )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
