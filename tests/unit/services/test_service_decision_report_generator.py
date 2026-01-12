@@ -1523,8 +1523,143 @@ class TestEdgeCasesExtended:
         )
 
 
+@pytest.mark.unit
+class TestComparisonPagination:
+    """Test pagination boundary conditions for comparison display.
+
+    CLI verbose mode displays first 10 comparisons (with "... and N more" message).
+    Markdown details displays first 50 comparisons (with "... and N more" message).
+    These tests verify boundary conditions at exactly limit, limit+1, and limit-1.
+    """
+
+    # Constants for pagination limits (hardcoded until constants are exported)
+    CLI_VERBOSE_LIMIT = 10
+    MARKDOWN_LIMIT = 50
+
+    def test_cli_verbose_exactly_at_limit(
+        self,
+        service: ServiceDecisionReportGenerator,
+        sample_evidence_summary: ModelEvidenceSummary,
+    ) -> None:
+        """Test CLI verbose with exactly LIMIT comparisons shows all without ellipsis."""
+        # Create exactly 10 comparisons
+        comparisons = [
+            create_execution_comparison() for _ in range(self.CLI_VERBOSE_LIMIT)
+        ]
+
+        report = service.generate_cli_report(
+            sample_evidence_summary,
+            comparisons,
+            verbosity="verbose",
+        )
+
+        # Should NOT have "more comparisons" message
+        assert "more comparisons" not in report.lower()
+
+    def test_cli_verbose_one_over_limit(
+        self,
+        service: ServiceDecisionReportGenerator,
+        sample_evidence_summary: ModelEvidenceSummary,
+    ) -> None:
+        """Test CLI verbose with LIMIT+1 comparisons shows ellipsis."""
+        # Create 11 comparisons
+        comparisons = [
+            create_execution_comparison() for _ in range(self.CLI_VERBOSE_LIMIT + 1)
+        ]
+
+        report = service.generate_cli_report(
+            sample_evidence_summary,
+            comparisons,
+            verbosity="verbose",
+        )
+
+        # Should have "and 1 more comparisons" message
+        assert "1 more comparison" in report.lower() or "... and 1 more" in report
+
+    def test_cli_verbose_one_under_limit(
+        self,
+        service: ServiceDecisionReportGenerator,
+        sample_evidence_summary: ModelEvidenceSummary,
+    ) -> None:
+        """Test CLI verbose with LIMIT-1 comparisons shows all without ellipsis."""
+        # Create 9 comparisons
+        comparisons = [
+            create_execution_comparison() for _ in range(self.CLI_VERBOSE_LIMIT - 1)
+        ]
+
+        report = service.generate_cli_report(
+            sample_evidence_summary,
+            comparisons,
+            verbosity="verbose",
+        )
+
+        # Should NOT have "more comparisons" message
+        assert "more comparisons" not in report.lower()
+
+    def test_markdown_exactly_at_limit(
+        self,
+        service: ServiceDecisionReportGenerator,
+        sample_evidence_summary: ModelEvidenceSummary,
+    ) -> None:
+        """Test Markdown with exactly LIMIT comparisons shows all without ellipsis."""
+        # Create exactly 50 comparisons
+        comparisons = [
+            create_execution_comparison() for _ in range(self.MARKDOWN_LIMIT)
+        ]
+
+        report = service.generate_markdown_report(
+            sample_evidence_summary,
+            comparisons,
+            include_details=True,
+        )
+
+        # Should NOT have "more comparisons" message
+        assert "more comparisons" not in report.lower()
+
+    def test_markdown_one_over_limit(
+        self,
+        service: ServiceDecisionReportGenerator,
+        sample_evidence_summary: ModelEvidenceSummary,
+    ) -> None:
+        """Test Markdown with LIMIT+1 comparisons shows ellipsis."""
+        # Create 51 comparisons
+        comparisons = [
+            create_execution_comparison() for _ in range(self.MARKDOWN_LIMIT + 1)
+        ]
+
+        report = service.generate_markdown_report(
+            sample_evidence_summary,
+            comparisons,
+            include_details=True,
+        )
+
+        # Should have "and 1 more comparisons" message
+        assert "1 more comparison" in report.lower()
+
+    def test_markdown_one_under_limit(
+        self,
+        service: ServiceDecisionReportGenerator,
+        sample_evidence_summary: ModelEvidenceSummary,
+    ) -> None:
+        """Test Markdown with LIMIT-1 comparisons shows all without ellipsis."""
+        # Create 49 comparisons
+        comparisons = [
+            create_execution_comparison() for _ in range(self.MARKDOWN_LIMIT - 1)
+        ]
+
+        report = service.generate_markdown_report(
+            sample_evidence_summary,
+            comparisons,
+            include_details=True,
+        )
+
+        # Should NOT have "more comparisons" message
+        assert "more comparisons" not in report.lower()
+
+
 __all__ = [
     "TestCLIFormat",
+    "TestComparisonPagination",
     "TestJSONFormat",
     "TestMarkdownFormat",
     "TestReportStructure",

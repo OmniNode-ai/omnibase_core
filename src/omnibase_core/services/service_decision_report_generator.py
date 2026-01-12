@@ -15,9 +15,7 @@ Thread Safety:
 """
 
 from datetime import UTC, datetime
-from typing import Literal, NewType
-
-ReportVersion = NewType("ReportVersion", str)
+from typing import Literal
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.comparison.model_execution_comparison import (
@@ -32,10 +30,14 @@ from omnibase_core.types.typed_dict_decision_report import TypedDictDecisionRepo
 
 # Report formatting constants
 REPORT_WIDTH = 80
-REPORT_VERSION: ReportVersion = ReportVersion("1.0.0")
+REPORT_VERSION = "1.0.0"
 SEPARATOR_CHAR = "="
 SEPARATOR_LINE = SEPARATOR_CHAR * REPORT_WIDTH
 SUBSECTION_CHAR = "-"
+
+# Comparison display limits
+COMPARISON_LIMIT_CLI_VERBOSE = 10
+COMPARISON_LIMIT_MARKDOWN = 50
 
 # Cost data unavailability messages (consistent terminology across formats)
 COST_NA_CLI = "Cost:     N/A (incomplete cost data)"
@@ -369,14 +371,16 @@ class ServiceDecisionReportGenerator:
         if verbosity == "verbose" and comparisons:
             lines.append("COMPARISON DETAILS")
             lines.append(SUBSECTION_CHAR * len("COMPARISON DETAILS"))
-            for comparison in comparisons[:10]:  # Limit to first 10
+            for comparison in comparisons[:COMPARISON_LIMIT_CLI_VERBOSE]:
                 status = "PASS" if comparison.output_match else "FAIL"
                 lines.append(
                     f"[{status}] {comparison.comparison_id} | "
                     f"Latency: {comparison.latency_delta_percent:+.1f}%"
                 )
-            if len(comparisons) > 10:
-                lines.append(f"... and {len(comparisons) - 10} more comparisons")
+            if len(comparisons) > COMPARISON_LIMIT_CLI_VERBOSE:
+                lines.append(
+                    f"... and {len(comparisons) - COMPARISON_LIMIT_CLI_VERBOSE} more comparisons"
+                )
             lines.append("")
 
         lines.append(SEPARATOR_LINE)
@@ -763,7 +767,7 @@ class ServiceDecisionReportGenerator:
             lines.append("| Status | Comparison ID | Latency Delta | Output Match |")
             lines.append("|--------|---------------|---------------|--------------|")
 
-            for c in comparisons[:50]:  # Limit to 50 for readability
+            for c in comparisons[:COMPARISON_LIMIT_MARKDOWN]:
                 status = ":white_check_mark:" if c.output_match else ":x:"
                 lines.append(
                     f"| {status} | `{str(c.comparison_id)[:8]}...` | "
@@ -771,9 +775,11 @@ class ServiceDecisionReportGenerator:
                     f"{'Yes' if c.output_match else 'No'} |"
                 )
 
-            if len(comparisons) > 50:
+            if len(comparisons) > COMPARISON_LIMIT_MARKDOWN:
                 lines.append("")
-                lines.append(f"_... and {len(comparisons) - 50} more comparisons_")
+                lines.append(
+                    f"_... and {len(comparisons) - COMPARISON_LIMIT_MARKDOWN} more comparisons_"
+                )
 
             lines.append("")
             lines.append("</details>")
