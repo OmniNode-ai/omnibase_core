@@ -50,6 +50,7 @@ class ModelPropertyMetadata(BaseModel):
         extra="ignore",
         use_enum_values=False,
         validate_assignment=True,
+        from_attributes=True,
     )
 
     # Protocol method implementations

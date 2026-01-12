@@ -374,6 +374,7 @@ class ModelValueUnion(BaseModel):
     model_config = ConfigDict(
         extra="ignore",
         validate_assignment=True,
+        from_attributes=True,
     )
 
 

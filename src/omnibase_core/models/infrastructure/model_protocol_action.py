@@ -32,6 +32,7 @@ class ModelAction(BaseModel):
         extra="forbid",
         use_enum_values=False,
         validate_assignment=True,
+        from_attributes=True,
     )
 
     # ProtocolAction required methods

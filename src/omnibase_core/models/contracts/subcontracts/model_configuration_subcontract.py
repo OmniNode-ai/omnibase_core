@@ -64,6 +64,7 @@ class ModelConfigurationSubcontract(BaseModel):
         extra="ignore",
         use_enum_values=False,
         validate_assignment=True,
+        from_attributes=True,
     )
 
     # ONEX: Universal correlation ID for tracing

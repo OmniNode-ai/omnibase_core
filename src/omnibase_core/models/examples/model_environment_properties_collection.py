@@ -53,6 +53,7 @@ class ModelEnvironmentPropertiesCollection(BaseModel):
         extra="ignore",
         use_enum_values=False,
         validate_assignment=True,
+        from_attributes=True,
     )
 
     # Note: Removed to_dict() and from_dict() methods to comply with pure Pydantic architecture
