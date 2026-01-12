@@ -35,11 +35,12 @@ from pathlib import Path
 from typing import cast
 from uuid import UUID, uuid4
 
+from pydantic import ValidationError
+
 from omnibase_core.constants import TIMEOUT_DEFAULT_MS
 from omnibase_core.constants.constants_event_types import TOOL_INVOCATION
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
 from omnibase_core.logging.logging_structured import emit_log_event_sync
 from omnibase_core.models.core.model_log_context import ModelLogContext
 from omnibase_core.models.discovery.model_node_shutdown_event import (
@@ -424,7 +425,13 @@ class MixinNodeService:
                 container = self.container
                 if hasattr(container, "get_service"):
                     event_bus = container.get_service("event_bus")
-            except (*PYDANTIC_MODEL_ERRORS, RuntimeError):
+            except (
+                AttributeError,
+                RuntimeError,
+                TypeError,
+                ValidationError,
+                ValueError,
+            ):
                 # fallback-ok: service lookup failure continues to next strategy
                 pass
 
@@ -631,7 +638,13 @@ class MixinNodeService:
                 container = self.container
                 if hasattr(container, "get_service"):
                     event_bus = container.get_service("event_bus")
-            except (*PYDANTIC_MODEL_ERRORS, RuntimeError):
+            except (
+                AttributeError,
+                RuntimeError,
+                TypeError,
+                ValidationError,
+                ValueError,
+            ):
                 # fallback-ok: optional event bus for response
                 pass
 
@@ -666,7 +679,13 @@ class MixinNodeService:
                     container = self.container
                     if hasattr(container, "get_service"):
                         event_bus = container.get_service("event_bus")
-                except (*PYDANTIC_MODEL_ERRORS, RuntimeError):
+                except (
+                    AttributeError,
+                    RuntimeError,
+                    TypeError,
+                    ValidationError,
+                    ValueError,
+                ):
                     # fallback-ok: optional event bus for shutdown
                     pass
 
