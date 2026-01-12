@@ -112,7 +112,6 @@ class CollectorAST(ast.NodeVisitor):
         """
         self.file_path = file_path
         self.enums: dict[str, list[MemberInfo]] = {}
-        self._current_class: str | None = None
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
         """Visit a class definition to check if it's an enum.
@@ -138,7 +137,6 @@ class CollectorAST(ast.NodeVisitor):
                 break
 
         if is_enum:
-            self._current_class = node.name
             self.enums[node.name] = []
 
             # Process class body to find enum members
@@ -178,8 +176,6 @@ class CollectorAST(ast.NodeVisitor):
                                 line=item.lineno,
                             )
                         )
-
-            self._current_class = None
 
         self.generic_visit(node)
 

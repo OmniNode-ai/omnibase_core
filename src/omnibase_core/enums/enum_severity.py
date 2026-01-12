@@ -109,7 +109,7 @@ class EnumSeverity(str, Enum):
         for member in cls:
             if member.value == normalized:
                 return member
-        raise ValueError(  # error-ok: simple conversion
+        raise ValueError(  # error-ok: simple conversion at API boundary
             f"Unknown severity level: {value}"
         )
 

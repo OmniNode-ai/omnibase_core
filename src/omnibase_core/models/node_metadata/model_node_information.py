@@ -207,6 +207,19 @@ class ModelNodeInformation(BaseModel):
         from .model_node_configuration_summary import ModelNodeConfigurationSummary
         from .model_node_core_info_summary import ModelNodeCoreInfoSummary
 
+        # Map EnumRegistryStatus to EnumHealthStatus for summary
+        # Both enums share common values: HEALTHY, DEGRADED, UNAVAILABLE, INITIALIZING
+        registry_to_health_map: dict[EnumRegistryStatus, EnumHealthStatus] = {
+            EnumRegistryStatus.HEALTHY: EnumHealthStatus.HEALTHY,
+            EnumRegistryStatus.DEGRADED: EnumHealthStatus.DEGRADED,
+            EnumRegistryStatus.UNAVAILABLE: EnumHealthStatus.UNAVAILABLE,
+            EnumRegistryStatus.INITIALIZING: EnumHealthStatus.INITIALIZING,
+            EnumRegistryStatus.MAINTENANCE: EnumHealthStatus.UNAVAILABLE,
+        }
+        health_status = registry_to_health_map.get(
+            self.core_info.health, EnumHealthStatus.UNKNOWN
+        )
+
         # Create proper summary objects instead of dict[str, Any]s
         core_summary = ModelNodeCoreInfoSummary(
             node_id=self.core_info.node_id,
@@ -214,9 +227,9 @@ class ModelNodeInformation(BaseModel):
             node_type=self.core_info.node_type,
             node_version=self.core_info.node_version,
             status=EnumStatus.ACTIVE,  # Convert from metadata status
-            health=EnumHealthStatus.HEALTHY,  # Default value
+            health=health_status,
             is_active=(self.core_info.status == EnumMetadataNodeStatus.ACTIVE),
-            is_healthy=True,  # Default value
+            is_healthy=self.core_info.is_healthy(),
             has_description=self.core_info.has_description(),
             has_author=self.core_info.has_author(),
         )

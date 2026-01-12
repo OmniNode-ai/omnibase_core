@@ -140,7 +140,7 @@ from .enum_health_status import EnumHealthStatus
 from .enum_severity import EnumSeverity
 
 # EnumHealthStatusType is deprecated - use EnumHealthStatus instead (OMN-1310)
-EnumHealthStatusType = EnumHealthStatus
+EnumHealthStatusType: type[EnumHealthStatus] = EnumHealthStatus
 
 # Hub and coordination enums
 from .enum_hub_capability import EnumHubCapability
@@ -188,7 +188,7 @@ from .enum_namespace_strategy import EnumNamespaceStrategy
 from .enum_node_architecture_type import EnumNodeArchitectureType
 
 # EnumNodeHealthStatus is deprecated - use EnumHealthStatus instead (OMN-1310)
-EnumNodeHealthStatus = EnumHealthStatus
+EnumNodeHealthStatus: type[EnumHealthStatus] = EnumHealthStatus
 
 # Node-related enums
 from .enum_node_kind import EnumNodeKind
