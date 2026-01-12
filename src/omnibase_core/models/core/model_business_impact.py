@@ -24,7 +24,11 @@ from pydantic import BaseModel, ConfigDict, field_serializer
 class ModelBusinessImpact(BaseModel):
     """
     Business impact assessment with typed fields.
+
     Replaces dictionary for get_business_impact() returns.
+
+    This model is frozen (immutable) and hashable, suitable for use as dict keys
+    or in sets for tracking and comparison purposes.
     """
 
     # Impact assessment

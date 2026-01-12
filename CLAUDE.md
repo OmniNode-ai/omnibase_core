@@ -509,7 +509,7 @@ All Python files in `src/omnibase_core/` must follow directory-specific naming p
 
 ### Pydantic Model Configuration Standards
 
-Every Pydantic model MUST have an explicit `model_config`. Empty `ConfigDict()` is not allowed.
+Every Pydantic model MUST have an explicit `model_config`. Empty `ConfigDict()` is not allowed - it has ambiguous intent and provides no explicit policy for model behavior (extra fields, mutability, etc.). Models must declare their configuration explicitly.
 
 #### ConfigDict Requirements
 

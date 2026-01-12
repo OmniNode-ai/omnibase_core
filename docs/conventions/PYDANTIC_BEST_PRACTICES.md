@@ -45,6 +45,86 @@ class ModelExample(BaseModel):
 
 ## ConfigDict Policy Decision Matrix
 
+### Quick Decision Guide
+
+For a rapid ConfigDict selection, follow this simplified flowchart:
+
+```text
+Is the model immutable after creation?
+│
+├─ YES ──► frozen=True, from_attributes=True (REQUIRED combo)
+│          │
+│          └─ Does it accept external data (YAML, APIs)?
+│             │
+│             ├─ NO (internal value object) ──► extra="forbid"
+│             │
+│             └─ YES (contracts, configs)
+│                │
+│                ├─ Extension point? ──► extra="allow"
+│                │
+│                └─ Forward-compat? ──► extra="ignore"
+│
+└─ NO ──► No frozen=True
+          │
+          └─ Is it internal or external?
+             │
+             ├─ Internal domain model ──► extra="forbid"
+             │
+             └─ External data / Contract ──► extra="ignore"
+                │
+                └─ Extension point? ──► extra="allow"
+```
+
+### Detailed Decision Flowchart
+
+Use this flowchart to determine the appropriate ConfigDict settings for your model:
+
+```text
+                          ┌─────────────────────────────────┐
+                          │      New Pydantic Model         │
+                          └───────────────┬─────────────────┘
+                                          │
+                          ┌───────────────▼─────────────────┐
+                          │  Should it be immutable after   │
+                          │  creation? (fingerprints,       │
+                          │  envelopes, value objects)      │
+                          └───────────────┬─────────────────┘
+                                     Yes / \ No
+                     ┌──────────────────┘   └──────────────────┐
+                     │                                          │
+         ┌───────────▼───────────┐              ┌───────────────▼───────────────┐
+         │ frozen=True           │              │ Does it accept external data   │
+         │ from_attributes=True  │              │ (YAML, JSON, APIs)?            │
+         │ (REQUIRED combo)      │              └───────────────┬───────────────┘
+         └───────────┬───────────┘                         Yes / \ No
+                     │                          ┌──────────────┘   └──────────────┐
+         ┌───────────▼───────────┐              │                                  │
+         │ Should unknown fields │  ┌───────────▼───────────┐      ┌───────────────▼───────────────┐
+         │ be rejected?          │  │ Is it an extension    │      │ Internal domain model         │
+         └───────────┬───────────┘  │ point for plugins?    │      │ extra="forbid"                │
+                Yes / \ No          └───────────┬───────────┘      │ (catches bugs)                │
+        ┌──────────┘   └──────────┐        Yes / \ No              └───────────────────────────────┘
+        │                          │    ┌──────┘   └──────┐
+┌───────▼─────────┐      ┌─────────▼───────┐     ┌────────▼────────┐
+│ Value Object    │      │ Forward-compat  │     │ Extension Point │
+│ extra="forbid"  │      │ extra="ignore"  │     │ extra="allow"   │
+│ (security,      │      │ (contracts,     │     │ (plugins,       │
+│ results)        │      │ configs)        │     │ metadata)       │
+└─────────────────┘      └─────────────────┘     └─────────────────┘
+
+RESULT CONFIGURATIONS:
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Immutable Value Object:  ConfigDict(frozen=True, extra="forbid",            │
+│                                     from_attributes=True)                   │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Forward-Compatible:      ConfigDict(extra="ignore")                         │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Extension Point:         ConfigDict(extra="allow")                          │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Internal Domain Model:   ConfigDict(extra="forbid", from_attributes=True)   │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
 ### When to use `extra="forbid"` (strictest)
 
 Use for models where unknown fields indicate a bug:

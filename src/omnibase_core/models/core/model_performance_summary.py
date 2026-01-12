@@ -10,7 +10,11 @@ from pydantic import BaseModel, ConfigDict, Field, field_serializer
 class ModelPerformanceSummary(BaseModel):
     """
     Performance summary with typed fields.
+
     Replaces Dict[str, Any] for get_performance_summary() returns.
+
+    This model is frozen (immutable) and hashable, suitable for use as dict keys
+    or in sets for caching and comparison purposes.
     """
 
     total_execution_time_ms: float = Field(
