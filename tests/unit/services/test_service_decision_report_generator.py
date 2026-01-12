@@ -38,11 +38,6 @@ from omnibase_core.models.comparison.model_invariant_comparison_summary import (
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.evidence.model_cost_statistics import ModelCostStatistics
-
-# =============================================================================
-# Service and Model Imports (TDD - services don't exist yet)
-# =============================================================================
-# Import service and model (now implemented)
 from omnibase_core.models.evidence.model_evidence_summary import ModelEvidenceSummary
 from omnibase_core.models.evidence.model_invariant_violation_breakdown import (
     ModelInvariantViolationBreakdown,
@@ -52,6 +47,8 @@ from omnibase_core.models.evidence.model_latency_statistics import (
 )
 from omnibase_core.models.invariant.model_invariant_result import ModelInvariantResult
 from omnibase_core.services.service_decision_report_generator import (
+    COMPARISON_LIMIT_CLI_VERBOSE,
+    COMPARISON_LIMIT_MARKDOWN,
     ServiceDecisionReportGenerator,
 )
 
@@ -1374,8 +1371,6 @@ class TestEdgeCasesExtended:
         report = service.generate_json_report(summary, sample_comparisons)
 
         # Verify JSON report serializes correctly
-        import json
-
         json_str = json.dumps(report, default=str, ensure_ascii=False)
         assert isinstance(json_str, str)
         assert len(json_str) > 0
@@ -1532,10 +1527,6 @@ class TestComparisonPagination:
     These tests verify boundary conditions at exactly limit, limit+1, and limit-1.
     """
 
-    # Constants for pagination limits (hardcoded until constants are exported)
-    CLI_VERBOSE_LIMIT = 10
-    MARKDOWN_LIMIT = 50
-
     def test_cli_verbose_exactly_at_limit(
         self,
         service: ServiceDecisionReportGenerator,
@@ -1544,7 +1535,7 @@ class TestComparisonPagination:
         """Test CLI verbose with exactly LIMIT comparisons shows all without ellipsis."""
         # Create exactly 10 comparisons
         comparisons = [
-            create_execution_comparison() for _ in range(self.CLI_VERBOSE_LIMIT)
+            create_execution_comparison() for _ in range(COMPARISON_LIMIT_CLI_VERBOSE)
         ]
 
         report = service.generate_cli_report(
@@ -1564,7 +1555,8 @@ class TestComparisonPagination:
         """Test CLI verbose with LIMIT+1 comparisons shows ellipsis."""
         # Create 11 comparisons
         comparisons = [
-            create_execution_comparison() for _ in range(self.CLI_VERBOSE_LIMIT + 1)
+            create_execution_comparison()
+            for _ in range(COMPARISON_LIMIT_CLI_VERBOSE + 1)
         ]
 
         report = service.generate_cli_report(
@@ -1584,7 +1576,8 @@ class TestComparisonPagination:
         """Test CLI verbose with LIMIT-1 comparisons shows all without ellipsis."""
         # Create 9 comparisons
         comparisons = [
-            create_execution_comparison() for _ in range(self.CLI_VERBOSE_LIMIT - 1)
+            create_execution_comparison()
+            for _ in range(COMPARISON_LIMIT_CLI_VERBOSE - 1)
         ]
 
         report = service.generate_cli_report(
@@ -1604,7 +1597,7 @@ class TestComparisonPagination:
         """Test Markdown with exactly LIMIT comparisons shows all without ellipsis."""
         # Create exactly 50 comparisons
         comparisons = [
-            create_execution_comparison() for _ in range(self.MARKDOWN_LIMIT)
+            create_execution_comparison() for _ in range(COMPARISON_LIMIT_MARKDOWN)
         ]
 
         report = service.generate_markdown_report(
@@ -1624,7 +1617,7 @@ class TestComparisonPagination:
         """Test Markdown with LIMIT+1 comparisons shows ellipsis."""
         # Create 51 comparisons
         comparisons = [
-            create_execution_comparison() for _ in range(self.MARKDOWN_LIMIT + 1)
+            create_execution_comparison() for _ in range(COMPARISON_LIMIT_MARKDOWN + 1)
         ]
 
         report = service.generate_markdown_report(
@@ -1644,7 +1637,7 @@ class TestComparisonPagination:
         """Test Markdown with LIMIT-1 comparisons shows all without ellipsis."""
         # Create 49 comparisons
         comparisons = [
-            create_execution_comparison() for _ in range(self.MARKDOWN_LIMIT - 1)
+            create_execution_comparison() for _ in range(COMPARISON_LIMIT_MARKDOWN - 1)
         ]
 
         report = service.generate_markdown_report(

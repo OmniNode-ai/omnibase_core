@@ -218,6 +218,32 @@ class ServiceDecisionReportGenerator:
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
 
+        # Validate threshold relationships
+        if self.confidence_approve_threshold < self.confidence_review_threshold:
+            raise ModelOnexError(
+                message=f"confidence_approve_threshold ({self.confidence_approve_threshold}) "
+                f"must be >= confidence_review_threshold ({self.confidence_review_threshold})",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            )
+        if self.pass_rate_optimal < self.pass_rate_minimum:
+            raise ModelOnexError(
+                message=f"pass_rate_optimal ({self.pass_rate_optimal}) "
+                f"must be >= pass_rate_minimum ({self.pass_rate_minimum})",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            )
+        if self.latency_blocker_percent < self.latency_warning_percent:
+            raise ModelOnexError(
+                message=f"latency_blocker_percent ({self.latency_blocker_percent}) "
+                f"must be >= latency_warning_percent ({self.latency_warning_percent})",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            )
+        if self.cost_blocker_percent < self.cost_warning_percent:
+            raise ModelOnexError(
+                message=f"cost_blocker_percent ({self.cost_blocker_percent}) "
+                f"must be >= cost_warning_percent ({self.cost_warning_percent})",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            )
+
     def generate_cli_report(
         self,
         summary: ModelEvidenceSummary,
@@ -704,7 +730,9 @@ class ServiceDecisionReportGenerator:
         lines.append("")
         latency = summary.latency_stats
         latency_emoji = (
-            ":white_check_mark:" if latency.delta_avg_percent <= 0 else ":warning:"
+            ":white_check_mark:"
+            if latency.delta_avg_percent <= self.latency_warning_percent
+            else ":warning:"
         )
         lines.append(
             f"{latency_emoji} Average latency change: "
@@ -954,4 +982,8 @@ class ServiceDecisionReportGenerator:
         )
 
 
-__all__ = ["ServiceDecisionReportGenerator"]
+__all__ = [
+    "COMPARISON_LIMIT_CLI_VERBOSE",
+    "COMPARISON_LIMIT_MARKDOWN",
+    "ServiceDecisionReportGenerator",
+]
