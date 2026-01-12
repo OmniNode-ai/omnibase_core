@@ -40,11 +40,12 @@ Key Invariant:
 Strict typing is enforced: No Any types allowed in implementation.
 """
 
-from typing import ClassVar, Literal
+from typing import ClassVar
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums.enum_handler_routing_strategy import EnumHandlerRoutingStrategy
 from omnibase_core.models.contracts.subcontracts.model_handler_routing_entry import (
     ModelHandlerRoutingEntry,
 )
@@ -123,18 +124,9 @@ class ModelHandlerRoutingSubcontract(BaseModel):
         description="Model version (MUST be provided in YAML contract)",
     )
 
-    routing_strategy: Literal[
-        "payload_type_match",
-        "operation_match",
-        "topic_pattern",
-    ] = Field(
-        default="payload_type_match",
-        description=(
-            "Strategy for matching messages to handlers. "
-            "payload_type_match: Route by event model class name (orchestrators). "
-            "operation_match: Route by operation field (effects). "
-            "topic_pattern: Route by topic glob pattern matching (first-match-wins)"
-        ),
+    routing_strategy: EnumHandlerRoutingStrategy = Field(
+        default=EnumHandlerRoutingStrategy.PAYLOAD_TYPE_MATCH,
+        description="Strategy for routing events to handlers",
     )
 
     handlers: list[ModelHandlerRoutingEntry] = Field(
