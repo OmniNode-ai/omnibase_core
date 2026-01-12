@@ -30,10 +30,10 @@ from uuid import uuid4
 import pytest
 
 from omnibase_core.enums.enum_invariant_severity import EnumInvariantSeverity
-from omnibase_core.models.comparison.model_execution_comparison import (
+from omnibase_core.models.replay.model_execution_comparison import (
     ModelExecutionComparison,
 )
-from omnibase_core.models.comparison.model_invariant_comparison_summary import (
+from omnibase_core.models.replay.model_invariant_comparison_summary import (
     ModelInvariantComparisonSummary,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError

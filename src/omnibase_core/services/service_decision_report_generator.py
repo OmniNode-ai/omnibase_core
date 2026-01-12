@@ -18,14 +18,14 @@ from datetime import UTC, datetime
 from typing import Literal
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.comparison.model_execution_comparison import (
-    ModelExecutionComparison,
-)
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.evidence.model_decision_recommendation import (
     ModelDecisionRecommendation,
 )
 from omnibase_core.models.evidence.model_evidence_summary import ModelEvidenceSummary
+from omnibase_core.models.replay.model_execution_comparison import (
+    ModelExecutionComparison,
+)
 from omnibase_core.types.typed_dict_decision_report import TypedDictDecisionReport
 
 # Report formatting constants
