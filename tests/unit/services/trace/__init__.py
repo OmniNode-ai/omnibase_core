@@ -10,7 +10,7 @@ OMN-1209: ServiceTraceRecording for execution trace persistence and querying.
 
 Test Organization:
 - test_service_trace_recording.py: ServiceTraceRecording tests
-- test_store_trace_in_memory.py: StoreTraceInMemory tests
+- test_service_trace_in_memory_store.py: ServiceTraceInMemoryStore tests
 """
 
 # Mark this as a test namespace package

@@ -17,7 +17,7 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.enums.enum_item_type import EnumItemType
 from omnibase_core.types.type_serializable_value import SerializedDict
@@ -94,11 +94,11 @@ class ModelItemSummary(BaseModel):
             or self.boolean_properties,
         )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Export the model
 

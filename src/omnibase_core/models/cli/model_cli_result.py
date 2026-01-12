@@ -15,7 +15,7 @@ outcome of CLI command execution with proper typing.
 from datetime import UTC
 from uuid import uuid4
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.enums.enum_config_category import EnumConfigCategory
 from omnibase_core.models.cli.model_cli_performance_metrics import (
@@ -491,11 +491,11 @@ class ModelCliResult(BaseModel):
             trace_data=None,
         )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 

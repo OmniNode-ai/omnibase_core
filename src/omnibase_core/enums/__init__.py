@@ -121,6 +121,9 @@ from .enum_handler_execution_phase import EnumHandlerExecutionPhase
 # Handler role enums (OMN-1086)
 from .enum_handler_role import EnumHandlerRole
 
+# Handler routing strategy enums (OMN-1295)
+from .enum_handler_routing_strategy import EnumHandlerRoutingStrategy
+
 # Handler type enums (runtime handler registry)
 from .enum_handler_type import EnumHandlerType
 from .enum_handler_type_category import EnumHandlerTypeCategory
@@ -422,6 +425,8 @@ __all__ = [
     "EnumHandlerCommandType",
     # Handler execution phase domain (OMN-1108)
     "EnumHandlerExecutionPhase",
+    # Handler routing strategy domain (OMN-1295)
+    "EnumHandlerRoutingStrategy",
     # Handler role domain (OMN-1086)
     "EnumHandlerRole",
     # Handler type domain (runtime handler registry)

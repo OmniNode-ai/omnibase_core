@@ -4,7 +4,7 @@ Connection metrics model for network performance tracking.
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
@@ -61,11 +61,11 @@ class ModelConnectionMetrics(BaseModel):
         description="Number of connection timeouts",
     )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 

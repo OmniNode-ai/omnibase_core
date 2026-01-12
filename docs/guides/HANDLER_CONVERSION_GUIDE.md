@@ -28,11 +28,11 @@ For developers who want to get started quickly:
 ### 1. Create Your Handler
 
 ```python
-# src/omnibase_core/pipeline/handlers/model_capability_example.py
+# src/omnibase_core/pipeline/handlers/handler_capability_example.py
 from pydantic import BaseModel, ConfigDict, PrivateAttr
 
 
-class ModelCapabilityExample(BaseModel):
+class HandlerCapabilityExample(BaseModel):
     """Example capability handler."""
 
     model_config = ConfigDict(frozen=False, extra="forbid", from_attributes=True)
@@ -51,12 +51,12 @@ class ModelCapabilityExample(BaseModel):
 
 ```python
 # src/omnibase_core/pipeline/handlers/__init__.py
-from omnibase_core.pipeline.handlers.model_capability_example import (
-    ModelCapabilityExample,
+from omnibase_core.pipeline.handlers.handler_capability_example import (
+    HandlerCapabilityExample,
 )
 
 __all__ = [
-    "ModelCapabilityExample",
+    "HandlerCapabilityExample",
     # ... other handlers
 ]
 ```
@@ -66,15 +66,15 @@ __all__ = [
 ```python
 # tests/unit/pipeline/handlers/test_capability_example.py
 import pytest
-from omnibase_core.pipeline.handlers.model_capability_example import (
-    ModelCapabilityExample,
+from omnibase_core.pipeline.handlers.handler_capability_example import (
+    HandlerCapabilityExample,
 )
 
 
 @pytest.mark.unit
-class TestModelCapabilityExample:
+class TestHandlerCapabilityExample:
     def test_handler_works_standalone(self) -> None:
-        handler = ModelCapabilityExample()
+        handler = HandlerCapabilityExample()
         result = handler.do_something("test")
         assert result == "test"
 ```
@@ -83,7 +83,7 @@ class TestModelCapabilityExample:
 
 ```bash
 poetry run pytest tests/unit/pipeline/handlers/test_capability_example.py -v
-poetry run mypy src/omnibase_core/pipeline/handlers/model_capability_example.py
+poetry run mypy src/omnibase_core/pipeline/handlers/handler_capability_example.py
 ```
 
 ---
@@ -186,21 +186,21 @@ from omnibase_core.pipeline import (
     ModelPipelineHook,
     ModelPipelineContext,
 )
-from omnibase_core.pipeline.handlers.model_capability_metrics import (
-    ModelCapabilityMetrics,
+from omnibase_core.pipeline.handlers.handler_capability_metrics import (
+    HandlerCapabilityMetrics,
 )
-from omnibase_core.pipeline.handlers.model_capability_caching import (
-    ModelCapabilityCaching,
+from omnibase_core.pipeline.handlers.handler_capability_caching import (
+    HandlerCapabilityCaching,
 )
 
 
 # Handlers are standalone, configured independently
-metrics_handler = ModelCapabilityMetrics(
+metrics_handler = HandlerCapabilityMetrics(
     namespace="my_node",
     enabled=True,
 )
 
-caching_handler = ModelCapabilityCaching(
+caching_handler = HandlerCapabilityCaching(
     enabled=True,
     default_ttl_seconds=600,
 )
@@ -271,7 +271,7 @@ Handlers must NOT inherit from node classes. They are standalone units:
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 
 
-class ModelCapabilityMetrics(BaseModel):
+class HandlerCapabilityMetrics(BaseModel):
     """Metrics capability handler - standalone, no inheritance from nodes."""
 
     model_config = ConfigDict(frozen=False, extra="forbid", from_attributes=True)
@@ -302,7 +302,7 @@ All handlers must be Pydantic BaseModel subclasses:
 from pydantic import BaseModel, ConfigDict, Field
 
 
-class ModelCapabilityCaching(BaseModel):
+class HandlerCapabilityCaching(BaseModel):
     """Caching capability handler."""
 
     model_config = ConfigDict(
@@ -326,7 +326,7 @@ Use `PrivateAttr` for internal state that should not be serialized:
 from pydantic import BaseModel, PrivateAttr
 
 
-class ModelCapabilityCaching(BaseModel):
+class HandlerCapabilityCaching(BaseModel):
     """Caching handler with internal state."""
 
     # Public configuration
@@ -337,32 +337,32 @@ class ModelCapabilityCaching(BaseModel):
     _cache_data: dict[str, object] = PrivateAttr(default_factory=dict)
 ```
 
-### 4. "Model" Prefix for All Classes
+### 4. "Handler" Prefix for All Capability Classes
 
-All handler model classes MUST start with "Model" prefix:
+All handler capability classes MUST follow the `Handler<Type><Name>` naming pattern:
 
 ```python
 # CORRECT
-class ModelCapabilityMetrics(BaseModel): ...
-class ModelCapabilityCaching(BaseModel): ...
-class ModelCapabilityRetry(BaseModel): ...
+class HandlerCapabilityMetrics(BaseModel): ...
+class HandlerCapabilityCaching(BaseModel): ...
+class HandlerCapabilityRetry(BaseModel): ...
 
 # WRONG
-class MetricsHandler(BaseModel): ...    # Missing "Model" prefix
-class CachingCapability(BaseModel): ... # Missing "Model" prefix
+class MetricsHandler(BaseModel): ...    # Missing "Handler" prefix and wrong order
+class CachingCapability(BaseModel): ... # Missing "Handler" prefix pattern
 ```
 
 ### 5. File Naming Convention
 
-Handler files follow the pattern `model_capability_<name>.py`:
+Handler files follow the pattern `handler_capability_<name>.py`:
 
 ```text
 src/omnibase_core/pipeline/handlers/
-    model_capability_metrics.py      # ModelCapabilityMetrics
-    model_capability_caching.py      # ModelCapabilityCaching
+    handler_capability_metrics.py      # HandlerCapabilityMetrics
+    handler_capability_caching.py      # HandlerCapabilityCaching
     # Future:
-    # model_capability_retry.py        # ModelCapabilityRetry
-    # model_capability_circuit_breaker.py  # ModelCapabilityCircuitBreaker
+    # handler_capability_retry.py        # HandlerCapabilityRetry
+    # handler_capability_circuit_breaker.py  # HandlerCapabilityCircuitBreaker
 ```
 
 ---
@@ -408,7 +408,7 @@ from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 from typing import Any
 
 
-class ModelCapabilityMetrics(BaseModel):
+class HandlerCapabilityMetrics(BaseModel):
     """Metrics capability handler.
 
     Provides performance metrics collection capabilities.
@@ -457,17 +457,17 @@ Before implementing, write tests based on existing mixin tests:
 ```python
 # tests/unit/pipeline/handlers/test_capability_metrics.py
 import pytest
-from omnibase_core.pipeline.handlers.model_capability_metrics import (
-    ModelCapabilityMetrics,
+from omnibase_core.pipeline.handlers.handler_capability_metrics import (
+    HandlerCapabilityMetrics,
 )
 
 
-class TestModelCapabilityMetrics:
-    """Tests for ModelCapabilityMetrics handler."""
+class TestHandlerCapabilityMetrics:
+    """Tests for HandlerCapabilityMetrics handler."""
 
     def test_record_metric_stores_value(self) -> None:
         """Test that record_metric stores the metric value."""
-        handler = ModelCapabilityMetrics(enabled=True, namespace="test")
+        handler = HandlerCapabilityMetrics(enabled=True, namespace="test")
 
         handler.record_metric("test_metric", 42.0)
 
@@ -477,7 +477,7 @@ class TestModelCapabilityMetrics:
 
     def test_record_metric_with_tags(self) -> None:
         """Test that record_metric stores tags."""
-        handler = ModelCapabilityMetrics()
+        handler = HandlerCapabilityMetrics()
 
         handler.record_metric("tagged_metric", 1.0, tags={"env": "test"})
 
@@ -486,7 +486,7 @@ class TestModelCapabilityMetrics:
 
     def test_record_metric_disabled(self) -> None:
         """Test that metrics are not recorded when disabled."""
-        handler = ModelCapabilityMetrics(enabled=False)
+        handler = HandlerCapabilityMetrics(enabled=False)
 
         handler.record_metric("ignored_metric", 100.0)
 
@@ -494,7 +494,7 @@ class TestModelCapabilityMetrics:
 
     def test_increment_counter_increases_value(self) -> None:
         """Test that increment_counter increases the counter."""
-        handler = ModelCapabilityMetrics()
+        handler = HandlerCapabilityMetrics()
 
         handler.increment_counter("requests")
         handler.increment_counter("requests")
@@ -505,7 +505,7 @@ class TestModelCapabilityMetrics:
 
     def test_reset_metrics_clears_all(self) -> None:
         """Test that reset_metrics clears all stored metrics."""
-        handler = ModelCapabilityMetrics()
+        handler = HandlerCapabilityMetrics()
         handler.record_metric("metric1", 1.0)
         handler.record_metric("metric2", 2.0)
 
@@ -515,7 +515,7 @@ class TestModelCapabilityMetrics:
 
     def test_get_metrics_returns_copy(self) -> None:
         """Test that get_metrics returns a copy, not the original."""
-        handler = ModelCapabilityMetrics()
+        handler = HandlerCapabilityMetrics()
         handler.record_metric("test", 1.0)
 
         metrics = handler.get_metrics()
@@ -527,7 +527,7 @@ class TestModelCapabilityMetrics:
     def test_handler_is_standalone(self) -> None:
         """Test that handler works without any node context."""
         # This is the key difference from mixins - no node required
-        handler = ModelCapabilityMetrics(namespace="standalone")
+        handler = HandlerCapabilityMetrics(namespace="standalone")
 
         handler.record_metric("standalone_metric", 123.0)
 
@@ -557,14 +557,14 @@ Update the conversion checklist (see [HANDLER_CONVERSION_CHECKLIST.md](HANDLER_C
 ```markdown
 | Mixin | Handler | Status | Tests | Notes |
 |-------|---------|--------|-------|-------|
-| MixinMetrics | ModelCapabilityMetrics | Complete | 7/7 | Added namespace config |
+| MixinMetrics | HandlerCapabilityMetrics | Complete | 7/7 | Added namespace config |
 ```
 
 ---
 
 ## Example Conversions
 
-### Example 1: MixinMetrics to ModelCapabilityMetrics
+### Example 1: MixinMetrics to HandlerCapabilityMetrics
 
 **Original Mixin** (`mixin_metrics.py`):
 
@@ -582,13 +582,13 @@ class MixinMetrics:
             metrics_data[metric_name] = {"value": value, "tags": tags or {}}
 ```
 
-**Converted Handler** (`model_capability_metrics.py`):
+**Converted Handler** (`handler_capability_metrics.py`):
 
 ```python
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 
 
-class ModelCapabilityMetrics(BaseModel):
+class HandlerCapabilityMetrics(BaseModel):
     """Standalone metrics capability handler."""
 
     model_config = ConfigDict(frozen=False, extra="forbid", from_attributes=True)
@@ -614,7 +614,7 @@ class ModelCapabilityMetrics(BaseModel):
 - Internal state via `PrivateAttr`
 - Works standalone without node context
 
-### Example 2: MixinCaching to ModelCapabilityCaching
+### Example 2: MixinCaching to HandlerCapabilityCaching
 
 **Original Mixin** (`mixin_caching.py`):
 
@@ -635,7 +635,7 @@ class MixinCaching:
             self._cache_data[cache_key] = value
 ```
 
-**Converted Handler** (`model_capability_caching.py`):
+**Converted Handler** (`handler_capability_caching.py`):
 
 ```python
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
@@ -644,7 +644,7 @@ import hashlib
 import json
 
 
-class ModelCapabilityCaching(BaseModel):
+class HandlerCapabilityCaching(BaseModel):
     """Standalone caching capability handler."""
 
     model_config = ConfigDict(frozen=False, extra="forbid", from_attributes=True)
@@ -701,21 +701,21 @@ class ModelCapabilityCaching(BaseModel):
 
 ### Class Names
 
-All handler classes MUST follow the pattern `Model<Capability>`:
+All handler classes MUST follow the pattern `Handler<Capability>`:
 
 | Pattern | Example | Description |
 |---------|---------|-------------|
-| `ModelCapability<Name>` | `ModelCapabilityMetrics` | Capability handlers |
-| `ModelHandler<Name>` | `ModelHandlerKafka` | Integration handlers |
+| `HandlerCapability<Name>` | `HandlerCapabilityMetrics` | Capability handlers |
+| `HandlerIntegration<Name>` | `HandlerIntegrationKafka` | Integration handlers |
 
 ### File Names
 
-Files follow the pattern `model_<type>_<name>.py`:
+Files follow the pattern `handler_<type>_<name>.py`:
 
 | Type | File Pattern | Example |
 |------|--------------|---------|
-| Capability | `model_capability_<name>.py` | `model_capability_metrics.py` |
-| Handler | `model_handler_<name>.py` | `model_handler_kafka.py` |
+| Capability | `handler_capability_<name>.py` | `handler_capability_metrics.py` |
+| Integration | `handler_integration_<name>.py` | `handler_integration_kafka.py` |
 
 ### Directory Structure
 
@@ -723,11 +723,11 @@ Files follow the pattern `model_<type>_<name>.py`:
 src/omnibase_core/pipeline/
     handlers/
         __init__.py
-        model_capability_caching.py
-        model_capability_metrics.py
+        handler_capability_caching.py
+        handler_capability_metrics.py
         # Future handlers:
-        # model_capability_retry.py
-        # model_capability_circuit_breaker.py
+        # handler_capability_retry.py
+        # handler_capability_circuit_breaker.py
 ```
 
 ### Test File Names
@@ -766,14 +766,14 @@ Test handler in isolation:
 ```python
 def test_handler_configuration():
     """Test that handler accepts configuration."""
-    handler = ModelCapabilityMetrics(enabled=True, namespace="test")
+    handler = HandlerCapabilityMetrics(enabled=True, namespace="test")
     assert handler.enabled is True
     assert handler.namespace == "test"
 
 
 def test_handler_default_configuration():
     """Test that handler has sensible defaults."""
-    handler = ModelCapabilityMetrics()
+    handler = HandlerCapabilityMetrics()
     assert handler.enabled is True  # Default enabled
 ```
 
@@ -785,7 +785,7 @@ Verify handler works without any node context:
 def test_handler_works_standalone():
     """Test that handler functions without node context."""
     # No container, no node, no mixin inheritance
-    handler = ModelCapabilityMetrics()
+    handler = HandlerCapabilityMetrics()
 
     handler.record_metric("standalone_test", 42.0)
 
@@ -799,7 +799,7 @@ Test Pydantic serialization/deserialization:
 ```python
 def test_handler_serialization():
     """Test that handler configuration serializes correctly."""
-    handler = ModelCapabilityMetrics(enabled=True, namespace="prod")
+    handler = HandlerCapabilityMetrics(enabled=True, namespace="prod")
 
     # Serialize to dict
     data = handler.model_dump()
@@ -814,7 +814,7 @@ def test_handler_deserialization():
     """Test that handler can be created from dict."""
     data = {"enabled": False, "namespace": "test"}
 
-    handler = ModelCapabilityMetrics.model_validate(data)
+    handler = HandlerCapabilityMetrics.model_validate(data)
 
     assert handler.enabled is False
     assert handler.namespace == "test"
@@ -837,7 +837,7 @@ async def test_handler_in_pipeline():
     )
 
     # Setup handler
-    metrics = ModelCapabilityMetrics(namespace="pipeline_test")
+    metrics = HandlerCapabilityMetrics(namespace="pipeline_test")
 
     # Create hook that uses handler
     def metrics_hook(ctx: ModelPipelineContext) -> None:

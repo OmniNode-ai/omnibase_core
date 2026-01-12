@@ -6,7 +6,7 @@ Result of isolated step detection in workflow DAG validation.
 
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 __all__ = ["ModelIsolatedStepResult"]
 
@@ -14,7 +14,7 @@ __all__ = ["ModelIsolatedStepResult"]
 class ModelIsolatedStepResult(BaseModel):
     """Result of isolated step detection."""
 
-    model_config = {"frozen": True}
+    model_config = ConfigDict(frozen=True)
 
     isolated_steps: list[UUID] = Field(
         default_factory=list,

@@ -204,7 +204,8 @@ class MixinSensitiveFieldRedaction:
         else:
             # Fallback for non-Pydantic models
             data = {
-                field: getattr(self, field) for field in getattr(self, "__fields__", {})
+                field: getattr(self, field)
+                for field in getattr(self, "model_fields", {})
             }
 
         return self.redact_sensitive_fields(data, additional_sensitive_fields)

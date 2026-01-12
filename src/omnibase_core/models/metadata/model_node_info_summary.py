@@ -13,7 +13,7 @@ Composed model that combines focused node information components.
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.enums.enum_conceptual_complexity import EnumConceptualComplexity
 from omnibase_core.enums.enum_documentation_quality import EnumDocumentationQuality
@@ -517,11 +517,11 @@ class ModelNodeInfoSummary(BaseModel):
         timestamps = ModelNodeTimestamps.create_new()
         return cls(core=core, timestamps=timestamps)
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Export the model
 

@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -26,7 +26,7 @@ class ModelResultSummary(BaseModel):
 
     execution_id: UUID = Field(description="Execution identifier")
     command: str = Field(description="Command name")
-    target_node: str | None = Field(description="Target node name")
+    target_node: str | None = Field(default=None, description="Target node name")
     success: bool = Field(description="Whether execution succeeded")
     exit_code: int = Field(description="Exit code")
     duration_ms: float = Field(ge=0, description="Duration in milliseconds")
@@ -37,11 +37,11 @@ class ModelResultSummary(BaseModel):
     warning_count: int = Field(ge=0, description="Number of warnings")
     critical_error_count: int = Field(ge=0, description="Number of critical errors")
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 

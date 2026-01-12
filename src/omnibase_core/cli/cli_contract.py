@@ -1068,7 +1068,7 @@ def build(
         from omnibase_core.factories.factory_contract_profile import (
             ContractProfileFactory,
         )
-        from omnibase_core.validation.contract_validation_pipeline import (
+        from omnibase_core.validation.validator_contract_pipeline import (
             ContractValidationPipeline,
         )
 

@@ -267,7 +267,7 @@ class TemperatureConverterCompute(NodeCompute):
             processing_time = (time.time() - start_time) * 1000
 
             return {
-                **result.dict(),
+                **result.model_dump(),
                 "processing_time_ms": round(processing_time, 3)
             }
 

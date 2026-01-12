@@ -4,7 +4,7 @@ Workflow Metadata Model.
 Model for workflow metadata in the ONEX workflow coordination system.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.constants.constants_field_limits import MAX_TIMEOUT_MS
 from omnibase_core.models.primitives.model_semver import ModelSemVer
@@ -53,10 +53,10 @@ class ModelWorkflowDefinitionMetadata(BaseModel):
     # attributes even when class identity differs (e.g., in pytest-xdist
     # parallel execution where model classes are imported in separate workers).
     # See CLAUDE.md section "Pydantic from_attributes=True for Value Objects".
-    model_config = {
-        "extra": "forbid",
-        "use_enum_values": False,
-        "validate_assignment": True,
-        "from_attributes": True,
-        "frozen": True,
-    }
+    model_config = ConfigDict(
+        extra="forbid",
+        use_enum_values=False,
+        validate_assignment=True,
+        from_attributes=True,
+        frozen=True,
+    )

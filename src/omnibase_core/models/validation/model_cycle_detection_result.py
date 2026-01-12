@@ -6,7 +6,7 @@ Result of cycle detection in workflow DAG validation.
 
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 __all__ = ["ModelCycleDetectionResult"]
 
@@ -14,7 +14,7 @@ __all__ = ["ModelCycleDetectionResult"]
 class ModelCycleDetectionResult(BaseModel):
     """Result of cycle detection in workflow DAG."""
 
-    model_config = {"frozen": True}
+    model_config = ConfigDict(frozen=True)
 
     has_cycle: bool = Field(
         default=False,

@@ -40,7 +40,7 @@ how validation rules are processed. Four modes are supported:
 import warnings
 from typing import Literal
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums.enum_environment import EnumEnvironment
 from omnibase_core.models.primitives.model_semver import ModelSemVer
@@ -152,8 +152,8 @@ class ModelEnvironmentValidationRules(BaseModel):
 
         return self
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )

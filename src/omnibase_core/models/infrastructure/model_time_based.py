@@ -9,7 +9,14 @@ from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
 
-from pydantic import BaseModel, Field, ValidationInfo, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    ValidationInfo,
+    field_validator,
+    model_validator,
+)
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_runtime_category import EnumRuntimeCategory
@@ -367,11 +374,11 @@ class ModelTimeBased[T: (int, float)](BaseModel):
             metadata=metadata,
         )  # type: ignore[return-value]
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 

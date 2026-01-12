@@ -24,7 +24,7 @@ Example:
     ... )
 
 See Also:
-    - :class:`~omnibase_core.services.trace.protocol_trace_store.ProtocolTraceStore`:
+    - :class:`~omnibase_core.protocols.storage.protocol_trace_store.ProtocolTraceStore`:
       Protocol using this query model
     - :class:`~omnibase_core.enums.enum_execution_status.EnumExecutionStatus`:
       Status values for filtering

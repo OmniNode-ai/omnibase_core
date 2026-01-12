@@ -146,6 +146,10 @@ from .model_workflow_conditions import ModelWorkflowConditions
 from .model_workflow_config import ModelWorkflowConfig
 from .model_workflow_dependency import ModelWorkflowDependency
 from .model_workflow_step import ModelWorkflowStep
+from .subcontracts import (
+    ModelHandlerRoutingEntry,
+    ModelHandlerRoutingSubcontract,
+)
 
 __all__ = [
     # Mixins
@@ -229,4 +233,7 @@ __all__ = [
     "ModelWorkflowStep",
     # Subcontracts
     "subcontracts",
+    # Handler routing models (OMN-1295)
+    "ModelHandlerRoutingEntry",
+    "ModelHandlerRoutingSubcontract",
 ]

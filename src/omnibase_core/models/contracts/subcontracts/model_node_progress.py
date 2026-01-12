@@ -6,7 +6,7 @@ Model for progress information for individual nodes in the ONEX workflow coordin
 
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_node_type import EnumNodeType
 from omnibase_core.models.primitives.model_semver import ModelSemVer
@@ -37,8 +37,8 @@ class ModelNodeProgress(BaseModel):
 
     status: str = Field(default=..., description="Current status of the node")
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )

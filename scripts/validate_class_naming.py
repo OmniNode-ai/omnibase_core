@@ -122,7 +122,7 @@ ALLOWED_EXCEPTIONS: set[tuple[str, str]] = {
     ("protocol_", "T_co"),
     ("protocol_", "T"),
     # Base classes in infrastructure that don't follow strict naming
-    ("infrastructure_bases.py", "BaseNode"),
+    ("infra_bases.py", "BaseNode"),
     ("node_base.py", "BaseNode"),
     ("node_core_base.py", "BaseNode"),
     # Private holder classes in utils (start with underscore handled separately)
@@ -149,10 +149,10 @@ ALLOWED_EXCEPTIONS: set[tuple[str, str]] = {
     #
     # Validator classes in validation/ directory don't have a specific prefix
     # These are domain-specific validators, not protocol definitions
-    ("contract_validation_pipeline.py", "ContractValidationPipeline"),
-    ("expanded_validator.py", "ExpandedContractValidator"),
-    ("expanded_contract_graph_validator.py", "ExpandedContractGraphValidator"),
-    ("merge_validator.py", "MergeValidator"),
+    ("validator_contract_pipeline.py", "ContractValidationPipeline"),
+    ("validator_expanded_contract.py", "ExpandedContractValidator"),
+    ("validator_expanded_contract_graph.py", "ExpandedContractGraphValidator"),
+    ("validator_merge.py", "MergeValidator"),
 }
 
 

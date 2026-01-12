@@ -9,7 +9,7 @@ Strict typing is enforced: No Any types or dict[str, Any]patterns allowed.
 
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.constants import TIMEOUT_LONG_MS
 from omnibase_core.constants.constants_field_limits import MAX_IDENTIFIER_LENGTH
@@ -208,8 +208,8 @@ class ModelWorkflowConditions(BaseModel):
 
         return validated
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )

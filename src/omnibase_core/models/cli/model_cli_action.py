@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from omnibase_core.decorators import allow_dict_any
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -252,12 +252,12 @@ class ModelCliAction(BaseModel):  # Protocols removed temporarily for syntax val
         """Check if this action has the specified action ID."""
         return self.action_id == action_id
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-        "populate_by_name": True,  # Allow both field name and alias
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+        populate_by_name=True,  # Allow both field name and alias
+    )
 
     @allow_dict_any
     def model_dump(self, **kwargs: object) -> TypedDictCliActionSerialized:

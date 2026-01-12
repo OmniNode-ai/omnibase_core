@@ -10,19 +10,19 @@ pluggable backends while providing high-level convenience methods.
 
 Thread Safety:
     Thread safety depends on the underlying ProtocolDiffStore implementation.
-    When using StoreDiffInMemory, the service is NOT thread-safe.
-    See StoreDiffInMemory documentation for thread safety guidelines.
+    When using ServiceDiffInMemoryStore, the service is NOT thread-safe.
+    See ServiceDiffInMemoryStore documentation for thread safety guidelines.
 
 Example:
     >>> from omnibase_core.services.diff.service_diff_history import (
     ...     ServiceDiffHistory,
     ... )
-    >>> from omnibase_core.services.diff.store_diff_in_memory import StoreDiffInMemory
+    >>> from omnibase_core.services.diff.service_diff_in_memory_store import ServiceDiffInMemoryStore
     >>> from omnibase_core.models.contracts.diff import ModelContractDiff
     >>> from omnibase_core.enums.enum_output_format import EnumOutputFormat
     >>>
     >>> # Create service with in-memory backend
-    >>> store = StoreDiffInMemory()
+    >>> store = ServiceDiffInMemoryStore()
     >>> service = ServiceDiffHistory(store)
     >>>
     >>> # Record a diff
@@ -38,7 +38,7 @@ Example:
 See Also:
     - :class:`~omnibase_core.protocols.storage.protocol_diff_store.ProtocolDiffStore`:
       The storage backend protocol
-    - :class:`~omnibase_core.services.diff.store_diff_in_memory.StoreDiffInMemory`:
+    - :class:`~omnibase_core.services.diff.service_diff_in_memory_store.ServiceDiffInMemoryStore`:
       In-memory backend implementation
     - :class:`~omnibase_core.rendering.renderer_diff.RendererDiff`:
       Multi-format diff renderer
@@ -77,9 +77,9 @@ class ServiceDiffHistory:
         >>> from omnibase_core.services.diff.service_diff_history import (
         ...     ServiceDiffHistory,
         ... )
-        >>> from omnibase_core.services.diff.store_diff_in_memory import StoreDiffInMemory
+        >>> from omnibase_core.services.diff.service_diff_in_memory_store import ServiceDiffInMemoryStore
         >>>
-        >>> store = StoreDiffInMemory()
+        >>> store = ServiceDiffInMemoryStore()
         >>> service = ServiceDiffHistory(store)
         >>>
         >>> # Record diffs
@@ -104,10 +104,10 @@ class ServiceDiffHistory:
                 The service delegates all storage operations to this backend.
 
         Example:
-            >>> from omnibase_core.services.diff.store_diff_in_memory import (
-            ...     StoreDiffInMemory,
+            >>> from omnibase_core.services.diff.service_diff_in_memory_store import (
+            ...     ServiceDiffInMemoryStore,
             ... )
-            >>> store = StoreDiffInMemory()
+            >>> store = ServiceDiffInMemoryStore()
             >>> service = ServiceDiffHistory(store)
         """
         self._store = store

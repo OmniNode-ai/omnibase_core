@@ -10,7 +10,7 @@ Follows ONEX one-model-per-file architecture.
 """
 
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
 
@@ -96,11 +96,11 @@ class ModelNodeQualitySummary(BaseModel):
             improvement_suggestions=improvement_suggestions,
         )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 

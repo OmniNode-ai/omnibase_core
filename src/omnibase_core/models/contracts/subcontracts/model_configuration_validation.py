@@ -4,7 +4,7 @@ Configuration Validation Model.
 Model for configuration validation rules and constraints in the ONEX configuration management system.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
@@ -21,11 +21,11 @@ class ModelConfigurationValidation(BaseModel):
         description="Model version (MUST be provided in YAML contract)",
     )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     required_keys: list[str] = Field(
         default_factory=list,

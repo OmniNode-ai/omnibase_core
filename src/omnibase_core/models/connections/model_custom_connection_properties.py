@@ -10,7 +10,7 @@ from __future__ import annotations
 import logging
 from uuid import UUID
 
-from pydantic import BaseModel, Field, ValidationError, model_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
 # Module-level logger for coercion observability
 _logger = logging.getLogger(__name__)
@@ -672,11 +672,11 @@ class ModelCustomConnectionProperties(BaseModel):
         """Get service identifier for display purposes."""
         return self.cloud_service.get_service_identifier()
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 

@@ -67,7 +67,7 @@ from omnibase_core.services.service_contract_validation_event_emitter import (
 from omnibase_core.services.service_contract_validation_invariant_checker import (
     ServiceContractValidationInvariantChecker,
 )
-from omnibase_core.validation.contract_validation_pipeline import (
+from omnibase_core.validation.validator_contract_pipeline import (
     ContractValidationPipeline,
 )
 

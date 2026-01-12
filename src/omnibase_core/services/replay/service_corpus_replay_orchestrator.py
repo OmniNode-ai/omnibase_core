@@ -40,7 +40,7 @@ Usage:
         from omnibase_core.services.replay.service_corpus_replay_orchestrator import (
             ServiceCorpusReplayOrchestrator,
         )
-        from omnibase_core.pipeline.replay.executor_replay import ExecutorReplay
+        from omnibase_core.pipeline.replay.runner_replay_executor import ExecutorReplay
         from omnibase_core.models.replay import (
             ModelCorpusReplayConfig,
             ModelExecutionCorpus,
@@ -95,7 +95,7 @@ if TYPE_CHECKING:
         ModelExecutionManifest,
     )
     from omnibase_core.models.replay.model_execution_corpus import ModelExecutionCorpus
-    from omnibase_core.pipeline.replay.executor_replay import ExecutorReplay
+    from omnibase_core.pipeline.replay.runner_replay_executor import ExecutorReplay
     from omnibase_core.protocols.protocol_replay_progress_callback import (
         ProtocolReplayProgressCallback,
     )

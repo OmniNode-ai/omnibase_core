@@ -96,9 +96,14 @@ from .validator_contract_patch import ContractPatchValidator
 ContractValidationInvariantChecker = ServiceContractValidationInvariantChecker
 
 # Import contract validation pipeline (OMN-1128)
-from .contract_validation_pipeline import (
-    ContractValidationPipeline,
-    ModelExpandedContractResult,
+from .checker_visitor_any_type import (
+    EXEMPT_DECORATORS,
+    RULE_ANY_ANNOTATION,
+    RULE_ANY_IMPORT,
+    RULE_DICT_STR_ANY,
+    RULE_LIST_ANY,
+    RULE_UNION_WITH_ANY,
+    AnyTypeVisitor,
 )
 
 # Import Any type validator (OMN-1291)
@@ -112,22 +117,17 @@ from .validator_base import (
     SEVERITY_PRIORITY,
     ValidatorBase,
 )
-
-# Import Contract Linter validator (OMN-1291)
-from .validator_contract_linter import (
-    CONTRACT_MODELS,
-    NODE_TYPE_MAPPING,
-    RULE_FINGERPRINT_FORMAT,
-    RULE_FINGERPRINT_MATCH,
-    RULE_MODEL_PREFIX,
-    RULE_NAMING_CONVENTION,
-    RULE_RECOMMENDED_FIELDS,
-    RULE_REQUIRED_FIELDS,
-    RULE_SCHEMA_VALIDATION,
-    RULE_YAML_SYNTAX,
-    ValidatorContractLinter,
+from .validator_contract_pipeline import (
+    ContractValidationPipeline,
+    ModelExpandedContractResult,
 )
 
+# Contract Linter validator imports are lazy-loaded via __getattr__ to avoid
+# circular imports. validator_contract_linter.py imports from omnibase_core.contracts
+# which imports from models/contracts which imports from validation/__init__.py.
+# See __getattr__ below for: ValidatorContractLinter, CONTRACT_MODELS, NODE_TYPE_MAPPING,
+# RULE_FINGERPRINT_FORMAT, RULE_FINGERPRINT_MATCH, RULE_MODEL_PREFIX, RULE_NAMING_CONVENTION,
+# RULE_RECOMMENDED_FIELDS, RULE_REQUIRED_FIELDS, RULE_SCHEMA_VALIDATION, RULE_YAML_SYNTAX
 # Import Naming Convention validator (OMN-1291)
 from .validator_naming_convention import (
     RULE_CLASS_NAMING,
@@ -135,15 +135,6 @@ from .validator_naming_convention import (
     RULE_FUNCTION_NAMING,
     RULE_UNKNOWN_NAMING,
     ValidatorNamingConvention,
-)
-from .visitor_any_type import (
-    EXEMPT_DECORATORS,
-    RULE_ANY_ANNOTATION,
-    RULE_ANY_IMPORT,
-    RULE_DICT_STR_ANY,
-    RULE_LIST_ANY,
-    RULE_UNION_WITH_ANY,
-    AnyTypeVisitor,
 )
 
 # =============================================================================
@@ -183,11 +174,10 @@ from .visitor_any_type import (
 # =============================================================================
 
 
-# Lazy loading for service classes to avoid circular imports.
-# These service classes live in omnibase_core.services.* and have transitive
-# imports that eventually import from this validation module.
+# Lazy loading for service classes and contract linter to avoid circular imports.
+# These classes have transitive imports that eventually import from this validation module.
 def __getattr__(name: str) -> type:
-    """Lazy import for service classes to avoid circular imports."""
+    """Lazy import for service classes and contract linter to avoid circular imports."""
     if name == "ServiceProtocolAuditor":
         from omnibase_core.services.service_protocol_auditor import (
             ServiceProtocolAuditor,
@@ -208,6 +198,40 @@ def __getattr__(name: str) -> type:
         )
 
         return ServiceProtocolMigrator
+
+    # Contract Linter validator (lazy-loaded due to circular import with contracts module)
+    # validator_contract_linter.py imports from omnibase_core.contracts which imports
+    # from models/contracts which imports from validation/__init__.py.
+    if name == "ValidatorContractLinter":
+        from omnibase_core.validation.validator_contract_linter import (
+            ValidatorContractLinter,
+        )
+
+        return ValidatorContractLinter
+
+    if name == "CONTRACT_MODELS":
+        from omnibase_core.validation.validator_contract_linter import CONTRACT_MODELS
+
+        return CONTRACT_MODELS  # type: ignore[return-value]
+
+    if name == "NODE_TYPE_MAPPING":
+        from omnibase_core.validation.validator_contract_linter import NODE_TYPE_MAPPING
+
+        return NODE_TYPE_MAPPING  # type: ignore[return-value]
+
+    if name in (
+        "RULE_YAML_SYNTAX",
+        "RULE_REQUIRED_FIELDS",
+        "RULE_RECOMMENDED_FIELDS",
+        "RULE_NAMING_CONVENTION",
+        "RULE_MODEL_PREFIX",
+        "RULE_FINGERPRINT_FORMAT",
+        "RULE_FINGERPRINT_MATCH",
+        "RULE_SCHEMA_VALIDATION",
+    ):
+        import omnibase_core.validation.validator_contract_linter as vcl
+
+        return getattr(vcl, name)  # type: ignore[return-value]
 
     raise AttributeError(  # error-ok: required for __getattr__ protocol
         f"module {__name__!r} has no attribute {name!r}"

@@ -4,7 +4,7 @@ Unique Name Result Model.
 Result of unique step name validation in workflow DAG validation.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 __all__ = ["ModelUniqueNameResult"]
 
@@ -12,7 +12,7 @@ __all__ = ["ModelUniqueNameResult"]
 class ModelUniqueNameResult(BaseModel):
     """Result of unique step name validation."""
 
-    model_config = {"frozen": True}
+    model_config = ConfigDict(frozen=True)
 
     is_valid: bool = Field(
         default=True,

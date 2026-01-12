@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import TypeVar, cast
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.decorators import allow_dict_any
 from omnibase_core.enums.enum_color_scheme import EnumColorScheme
@@ -272,11 +272,11 @@ class ModelOutputFormatOptions(BaseModel):
 
         return cls(**kwargs_dict)
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 

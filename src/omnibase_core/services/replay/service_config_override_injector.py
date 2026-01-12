@@ -98,7 +98,7 @@ from omnibase_core.models.replay.model_config_override_set import (
 from omnibase_core.models.replay.model_config_override_validation import (
     ModelConfigOverrideValidation,
 )
-from omnibase_core.services.replay.sentinel_missing import MISSING
+from omnibase_core.services.replay.service_sentinel_missing import MISSING
 
 logger = logging.getLogger(__name__)
 

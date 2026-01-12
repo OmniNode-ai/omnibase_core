@@ -9,7 +9,7 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.enums.enum_config_category import EnumConfigCategory
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -615,11 +615,11 @@ class ModelNodeType(BaseModel):
             return self.type_name == other
         return False
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     def get_id(self) -> str:
         """

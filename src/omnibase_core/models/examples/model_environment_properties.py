@@ -15,7 +15,7 @@ Type-safe custom environment properties with access methods.
 from datetime import datetime
 from typing import cast, get_origin
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.types.type_serializable_value import SerializedDict
 
@@ -204,11 +204,11 @@ class ModelEnvironmentProperties(BaseModel):
         """Create empty properties instance."""
         return cls()
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Export the model
 

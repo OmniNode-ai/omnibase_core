@@ -10,7 +10,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from uuid import UUID
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_data_classification import EnumDataClassification
@@ -320,11 +320,11 @@ class ModelCliResultMetadata(BaseModel):
 
         return data
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": True,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=True,
+        validate_assignment=True,
+    )
 
     # Export the model
 

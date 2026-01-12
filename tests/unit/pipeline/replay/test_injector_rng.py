@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 """
-Tests for InjectorRNG - RNG injection for deterministic replay.
+Tests for ServiceRNGInjector - RNG injection for deterministic replay.
 
 This test module follows TDD approach - tests are written FIRST before implementation.
 
@@ -31,17 +31,17 @@ import pytest
 @pytest.fixture
 def seeded_rng():
     """Create an RNG with a known seed for deterministic tests."""
-    from omnibase_core.pipeline.replay import InjectorRNG
+    from omnibase_core.pipeline.replay import ServiceRNGInjector
 
-    return InjectorRNG(seed=42)
+    return ServiceRNGInjector(seed=42)
 
 
 @pytest.fixture
 def unseeded_rng():
     """Create an RNG without explicit seed (auto-generated)."""
-    from omnibase_core.pipeline.replay import InjectorRNG
+    from omnibase_core.pipeline.replay import ServiceRNGInjector
 
-    return InjectorRNG()
+    return ServiceRNGInjector()
 
 
 # =============================================================================
@@ -50,7 +50,7 @@ def unseeded_rng():
 
 
 @pytest.mark.unit
-class TestInjectorRNGBasicFunctionality:
+class TestServiceRNGInjectorBasicFunctionality:
     """Test basic RNG functionality."""
 
     def test_random_returns_float_in_range(self, seeded_rng):
@@ -106,7 +106,7 @@ class TestInjectorRNGBasicFunctionality:
 
 
 @pytest.mark.unit
-class TestInjectorRNGDeterminism:
+class TestServiceRNGInjectorDeterminism:
     """Test determinism invariant - CRITICAL for replay."""
 
     def test_same_seed_produces_same_sequence(self):
@@ -115,10 +115,10 @@ class TestInjectorRNGDeterminism:
 
         This is the key invariant for replay infrastructure.
         """
-        from omnibase_core.pipeline.replay import InjectorRNG
+        from omnibase_core.pipeline.replay import ServiceRNGInjector
 
-        rng1 = InjectorRNG(seed=42)
-        rng2 = InjectorRNG(seed=42)
+        rng1 = ServiceRNGInjector(seed=42)
+        rng2 = ServiceRNGInjector(seed=42)
 
         # Generate sequences
         seq1 = [rng1.random() for _ in range(100)]
@@ -128,10 +128,10 @@ class TestInjectorRNGDeterminism:
 
     def test_same_seed_produces_same_randint_sequence(self):
         """Verify same seed produces identical randint sequence."""
-        from omnibase_core.pipeline.replay import InjectorRNG
+        from omnibase_core.pipeline.replay import ServiceRNGInjector
 
-        rng1 = InjectorRNG(seed=42)
-        rng2 = InjectorRNG(seed=42)
+        rng1 = ServiceRNGInjector(seed=42)
+        rng2 = ServiceRNGInjector(seed=42)
 
         seq1 = [rng1.randint(0, 1000) for _ in range(100)]
         seq2 = [rng2.randint(0, 1000) for _ in range(100)]
@@ -140,10 +140,10 @@ class TestInjectorRNGDeterminism:
 
     def test_same_seed_produces_same_choice_sequence(self):
         """Verify same seed produces identical choice sequence."""
-        from omnibase_core.pipeline.replay import InjectorRNG
+        from omnibase_core.pipeline.replay import ServiceRNGInjector
 
-        rng1 = InjectorRNG(seed=42)
-        rng2 = InjectorRNG(seed=42)
+        rng1 = ServiceRNGInjector(seed=42)
+        rng2 = ServiceRNGInjector(seed=42)
 
         items = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"]
         seq1 = [rng1.choice(items) for _ in range(100)]
@@ -153,10 +153,10 @@ class TestInjectorRNGDeterminism:
 
     def test_different_seeds_produce_different_sequences(self):
         """Verify different seeds produce different sequences."""
-        from omnibase_core.pipeline.replay import InjectorRNG
+        from omnibase_core.pipeline.replay import ServiceRNGInjector
 
-        rng1 = InjectorRNG(seed=42)
-        rng2 = InjectorRNG(seed=123)
+        rng1 = ServiceRNGInjector(seed=42)
+        rng2 = ServiceRNGInjector(seed=123)
 
         seq1 = [rng1.random() for _ in range(100)]
         seq2 = [rng2.random() for _ in range(100)]
@@ -171,10 +171,10 @@ class TestInjectorRNGDeterminism:
         1. First execution: use RNG, record seed to manifest
         2. Replay: use recorded seed, get identical results
         """
-        from omnibase_core.pipeline.replay import InjectorRNG
+        from omnibase_core.pipeline.replay import ServiceRNGInjector
 
         # First execution - would be recorded to manifest
-        first_rng = InjectorRNG(seed=12345)
+        first_rng = ServiceRNGInjector(seed=12345)
         recorded_seed = first_rng.seed
 
         # Simulate operations during first execution
@@ -185,7 +185,7 @@ class TestInjectorRNGDeterminism:
         }
 
         # Replay using recorded seed
-        replay_rng = InjectorRNG(seed=recorded_seed)
+        replay_rng = ServiceRNGInjector(seed=recorded_seed)
         replay_results = {
             "random_values": [replay_rng.random() for _ in range(10)],
             "random_ints": [replay_rng.randint(1, 100) for _ in range(10)],
@@ -197,30 +197,30 @@ class TestInjectorRNGDeterminism:
 
 
 @pytest.mark.unit
-class TestInjectorRNGSeedManagement:
+class TestServiceRNGInjectorSeedManagement:
     """Test seed property and auto-generation."""
 
     def test_seed_property_returns_used_seed(self):
         """Verify seed property returns the seed used for initialization."""
-        from omnibase_core.pipeline.replay import InjectorRNG
+        from omnibase_core.pipeline.replay import ServiceRNGInjector
 
-        rng = InjectorRNG(seed=42)
+        rng = ServiceRNGInjector(seed=42)
         assert rng.seed == 42
 
     def test_seed_property_with_different_seeds(self):
         """Verify seed property works with various seed values."""
-        from omnibase_core.pipeline.replay import InjectorRNG
+        from omnibase_core.pipeline.replay import ServiceRNGInjector
 
         test_seeds = [0, 1, 42, 12345, 2**31 - 1, 2**32 - 1]
         for seed in test_seeds:
-            rng = InjectorRNG(seed=seed)
+            rng = ServiceRNGInjector(seed=seed)
             assert rng.seed == seed, f"Seed property should return {seed}"
 
     def test_auto_generates_seed_when_none_provided(self):
         """Verify auto-generation of seed in production mode."""
-        from omnibase_core.pipeline.replay import InjectorRNG
+        from omnibase_core.pipeline.replay import ServiceRNGInjector
 
-        rng = InjectorRNG()  # No seed provided
+        rng = ServiceRNGInjector()  # No seed provided
         seed = rng.seed
 
         # Seed should be a valid integer
@@ -229,10 +229,10 @@ class TestInjectorRNGSeedManagement:
 
     def test_auto_generated_seeds_are_different(self):
         """Verify auto-generated seeds are different (cryptographically random)."""
-        from omnibase_core.pipeline.replay import InjectorRNG
+        from omnibase_core.pipeline.replay import ServiceRNGInjector
 
         # Generate multiple RNGs without explicit seeds
-        seeds = [InjectorRNG().seed for _ in range(10)]
+        seeds = [ServiceRNGInjector().seed for _ in range(10)]
 
         # All seeds should be different (extremely unlikely to collide)
         unique_seeds = set(seeds)
@@ -240,9 +240,9 @@ class TestInjectorRNGSeedManagement:
 
     def test_seed_remains_constant_after_operations(self):
         """Verify seed property remains constant after using the RNG."""
-        from omnibase_core.pipeline.replay import InjectorRNG
+        from omnibase_core.pipeline.replay import ServiceRNGInjector
 
-        rng = InjectorRNG(seed=42)
+        rng = ServiceRNGInjector(seed=42)
 
         # Perform many operations
         for _ in range(1000):
@@ -255,15 +255,15 @@ class TestInjectorRNGSeedManagement:
 
 
 @pytest.mark.unit
-class TestInjectorRNGProtocolCompliance:
+class TestServiceRNGInjectorProtocolCompliance:
     """Test protocol compliance with ProtocolRNGService."""
 
     def test_implements_protocol(self):
-        """Verify InjectorRNG implements ProtocolRNGService."""
-        from omnibase_core.pipeline.replay import InjectorRNG
+        """Verify ServiceRNGInjector implements ProtocolRNGService."""
+        from omnibase_core.pipeline.replay import ServiceRNGInjector
         from omnibase_core.protocols.replay import ProtocolRNGService
 
-        rng = InjectorRNG(seed=42)
+        rng = ServiceRNGInjector(seed=42)
         assert isinstance(rng, ProtocolRNGService)
 
     def test_non_conforming_class_fails_isinstance(self):
@@ -295,9 +295,9 @@ class TestInjectorRNGProtocolCompliance:
 
     def test_protocol_methods_exist(self):
         """Verify protocol defines expected methods."""
-        from omnibase_core.pipeline.replay import InjectorRNG
+        from omnibase_core.pipeline.replay import ServiceRNGInjector
 
-        rng = InjectorRNG(seed=42)
+        rng = ServiceRNGInjector(seed=42)
 
         # Property
         assert hasattr(rng, "seed")
@@ -309,14 +309,14 @@ class TestInjectorRNGProtocolCompliance:
 
     def test_function_accepting_protocol(self):
         """Test function that accepts ProtocolRNGService."""
-        from omnibase_core.pipeline.replay import InjectorRNG
+        from omnibase_core.pipeline.replay import ServiceRNGInjector
         from omnibase_core.protocols.replay import ProtocolRNGService
 
         def use_rng(rng_service: ProtocolRNGService) -> float:
             """Function that accepts protocol type."""
             return rng_service.random()
 
-        rng: ProtocolRNGService = InjectorRNG(seed=42)
+        rng: ProtocolRNGService = ServiceRNGInjector(seed=42)
         result = use_rng(rng)
 
         assert isinstance(result, float)
@@ -324,20 +324,22 @@ class TestInjectorRNGProtocolCompliance:
 
 
 @pytest.mark.unit
-class TestInjectorRNGImports:
+class TestServiceRNGInjectorImports:
     """Test that imports work correctly."""
 
     def test_import_from_pipeline_replay_module(self):
         """Test import from omnibase_core.pipeline.replay."""
-        from omnibase_core.pipeline.replay import InjectorRNG
+        from omnibase_core.pipeline.replay import ServiceRNGInjector
 
-        assert InjectorRNG is not None
+        assert ServiceRNGInjector is not None
 
     def test_import_from_injector_file(self):
         """Test direct import from injector file."""
-        from omnibase_core.services.replay.injector_rng import InjectorRNG
+        from omnibase_core.services.replay.service_rng_injector import (
+            ServiceRNGInjector,
+        )
 
-        assert InjectorRNG is not None
+        assert ServiceRNGInjector is not None
 
     def test_import_protocol_from_protocols_replay(self):
         """Test import protocol from omnibase_core.protocols.replay."""
@@ -355,32 +357,32 @@ class TestInjectorRNGImports:
 
 
 @pytest.mark.unit
-class TestInjectorRNGEdgeCases:
+class TestServiceRNGInjectorEdgeCases:
     """Test edge cases and boundary conditions."""
 
     def test_randint_with_large_range(self):
         """Verify randint works with large ranges."""
-        from omnibase_core.pipeline.replay import InjectorRNG
+        from omnibase_core.pipeline.replay import ServiceRNGInjector
 
-        rng = InjectorRNG(seed=42)
+        rng = ServiceRNGInjector(seed=42)
         for _ in range(100):
             value = rng.randint(0, 2**31 - 1)
             assert 0 <= value <= 2**31 - 1
 
     def test_randint_with_negative_bounds(self):
         """Verify randint works with negative bounds."""
-        from omnibase_core.pipeline.replay import InjectorRNG
+        from omnibase_core.pipeline.replay import ServiceRNGInjector
 
-        rng = InjectorRNG(seed=42)
+        rng = ServiceRNGInjector(seed=42)
         for _ in range(100):
             value = rng.randint(-100, -1)
             assert -100 <= value <= -1
 
     def test_choice_with_list_of_integers(self):
         """Verify choice works with integer sequences."""
-        from omnibase_core.pipeline.replay import InjectorRNG
+        from omnibase_core.pipeline.replay import ServiceRNGInjector
 
-        rng = InjectorRNG(seed=42)
+        rng = ServiceRNGInjector(seed=42)
         seq = [1, 2, 3, 4, 5]
         value = rng.choice(seq)
         assert value in seq
@@ -388,18 +390,18 @@ class TestInjectorRNGEdgeCases:
 
     def test_choice_with_tuple(self):
         """Verify choice works with tuple sequences."""
-        from omnibase_core.pipeline.replay import InjectorRNG
+        from omnibase_core.pipeline.replay import ServiceRNGInjector
 
-        rng = InjectorRNG(seed=42)
+        rng = ServiceRNGInjector(seed=42)
         seq = ("a", "b", "c")
         value = rng.choice(seq)
         assert value in seq
 
     def test_choice_preserves_type(self):
         """Verify choice preserves element type."""
-        from omnibase_core.pipeline.replay import InjectorRNG
+        from omnibase_core.pipeline.replay import ServiceRNGInjector
 
-        rng = InjectorRNG(seed=42)
+        rng = ServiceRNGInjector(seed=42)
 
         # Test with different types
         int_seq = [1, 2, 3]
@@ -416,10 +418,10 @@ class TestInjectorRNGEdgeCases:
 
     def test_seed_zero_is_valid(self):
         """Verify seed=0 is valid and deterministic."""
-        from omnibase_core.pipeline.replay import InjectorRNG
+        from omnibase_core.pipeline.replay import ServiceRNGInjector
 
-        rng1 = InjectorRNG(seed=0)
-        rng2 = InjectorRNG(seed=0)
+        rng1 = ServiceRNGInjector(seed=0)
+        rng2 = ServiceRNGInjector(seed=0)
 
         assert rng1.seed == 0
         assert rng2.seed == 0
@@ -431,26 +433,26 @@ class TestInjectorRNGEdgeCases:
 
 
 @pytest.mark.unit
-class TestInjectorRNGThreadSafety:
+class TestServiceRNGInjectorThreadSafety:
     """Test thread safety properties.
 
-    Note: InjectorRNG uses isolated random.Random instances per injector,
+    Note: ServiceRNGInjector uses isolated random.Random instances per injector,
     so thread safety is achieved by using separate instances per thread.
     """
 
     def test_isolated_instances_are_independent(self):
         """Verify separate instances don't interfere with each other."""
-        from omnibase_core.pipeline.replay import InjectorRNG
+        from omnibase_core.pipeline.replay import ServiceRNGInjector
 
-        rng1 = InjectorRNG(seed=42)
-        rng2 = InjectorRNG(seed=42)
+        rng1 = ServiceRNGInjector(seed=42)
+        rng2 = ServiceRNGInjector(seed=42)
 
         # Use rng1 extensively
         for _ in range(1000):
             rng1.random()
 
         # rng2 should still produce same first values as rng1 would have initially
-        rng3 = InjectorRNG(seed=42)
+        rng3 = ServiceRNGInjector(seed=42)
 
         # rng2 and rng3 should produce same values since neither was used yet
         seq2 = [rng2.random() for _ in range(10)]

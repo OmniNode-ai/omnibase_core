@@ -42,8 +42,8 @@ from omnibase_core.models.validation.model_event_destination import (
 )
 from omnibase_core.services.service_contract_validation_event_emitter import (
     ServiceContractValidationEventEmitter,
-    SinkFile,
-    SinkMemory,
+    ServiceFileSink,
+    ServiceMemorySink,
 )
 
 # =============================================================================
@@ -52,13 +52,13 @@ from omnibase_core.services.service_contract_validation_event_emitter import (
 
 
 @pytest.mark.unit
-class TestSinkMemory:
+class TestServiceMemorySink:
     """Tests for the in-memory event sink."""
 
     @pytest.mark.asyncio
     async def test_write_stores_event(self) -> None:
         """Test that write stores event in memory."""
-        sink = SinkMemory(name="test-sink")
+        sink = ServiceMemorySink(name="test-sink")
         run_id = uuid4()
         event = ModelContractValidationStartedEvent(
             contract_name="test-contract",
@@ -76,7 +76,7 @@ class TestSinkMemory:
     @pytest.mark.asyncio
     async def test_write_multiple_events(self) -> None:
         """Test storing multiple events in sequence."""
-        sink = SinkMemory(name="multi-test")
+        sink = ServiceMemorySink(name="multi-test")
         run_id = uuid4()
 
         event1 = ModelContractValidationStartedEvent(
@@ -102,7 +102,7 @@ class TestSinkMemory:
     @pytest.mark.asyncio
     async def test_get_events_returns_copy(self) -> None:
         """Test that get_events returns a copy, not the internal list."""
-        sink = SinkMemory(name="copy-test")
+        sink = ServiceMemorySink(name="copy-test")
         run_id = uuid4()
         event = ModelContractValidationStartedEvent(
             contract_name="test",
@@ -123,7 +123,7 @@ class TestSinkMemory:
     @pytest.mark.asyncio
     async def test_clear_removes_all_events(self) -> None:
         """Test that clear removes all stored events."""
-        sink = SinkMemory(name="clear-test")
+        sink = ServiceMemorySink(name="clear-test")
         run_id = uuid4()
         event = ModelContractValidationStartedEvent(
             contract_name="test",
@@ -142,7 +142,7 @@ class TestSinkMemory:
     @pytest.mark.asyncio
     async def test_flush_is_noop(self) -> None:
         """Test that flush is a no-op for memory sink."""
-        sink = SinkMemory(name="flush-test")
+        sink = ServiceMemorySink(name="flush-test")
         run_id = uuid4()
         event = ModelContractValidationStartedEvent(
             contract_name="test",
@@ -159,7 +159,7 @@ class TestSinkMemory:
     @pytest.mark.asyncio
     async def test_close_prevents_further_writes(self) -> None:
         """Test that close prevents further writes."""
-        sink = SinkMemory(name="close-test")
+        sink = ServiceMemorySink(name="close-test")
         run_id = uuid4()
         event = ModelContractValidationStartedEvent(
             contract_name="test",
@@ -177,25 +177,25 @@ class TestSinkMemory:
 
     def test_sink_type_is_memory(self) -> None:
         """Test that sink_type returns correct value."""
-        sink = SinkMemory(name="type-test")
+        sink = ServiceMemorySink(name="type-test")
         assert sink.sink_type == EnumEventSinkType.MEMORY.value
 
     def test_is_ready_before_close(self) -> None:
         """Test that is_ready is True before close."""
-        sink = SinkMemory(name="ready-test")
+        sink = ServiceMemorySink(name="ready-test")
         assert sink.is_ready is True
 
     @pytest.mark.asyncio
     async def test_is_ready_after_close(self) -> None:
         """Test that is_ready is False after close."""
-        sink = SinkMemory(name="ready-close-test")
+        sink = ServiceMemorySink(name="ready-close-test")
         await sink.close()
         assert sink.is_ready is False
 
     @pytest.mark.asyncio
     async def test_event_count_increments(self) -> None:
         """Test that event_count tracks events correctly."""
-        sink = SinkMemory(name="count-test")
+        sink = ServiceMemorySink(name="count-test")
         assert sink.event_count == 0
 
         for i in range(5):
@@ -215,7 +215,7 @@ class TestSinkMemory:
 
 
 @pytest.mark.unit
-class TestSinkFile:
+class TestServiceFileSink:
     """Tests for the file-based event sink."""
 
     @pytest.mark.asyncio
@@ -223,7 +223,9 @@ class TestSinkFile:
         """Test that write and flush creates file with JSONL content."""
         with tempfile.TemporaryDirectory() as tmpdir:
             file_path = Path(tmpdir) / "events.jsonl"
-            sink = SinkFile(name="file-test", file_path=file_path, buffer_size=100)
+            sink = ServiceFileSink(
+                name="file-test", file_path=file_path, buffer_size=100
+            )
 
             run_id = uuid4()
             event = ModelContractValidationStartedEvent(
@@ -249,7 +251,9 @@ class TestSinkFile:
         """Test that multiple events produce JSONL format (one per line)."""
         with tempfile.TemporaryDirectory() as tmpdir:
             file_path = Path(tmpdir) / "multi.jsonl"
-            sink = SinkFile(name="jsonl-test", file_path=file_path, buffer_size=100)
+            sink = ServiceFileSink(
+                name="jsonl-test", file_path=file_path, buffer_size=100
+            )
 
             run_id = uuid4()
             events = [
@@ -283,7 +287,9 @@ class TestSinkFile:
         """Test that buffer is auto-flushed when full."""
         with tempfile.TemporaryDirectory() as tmpdir:
             file_path = Path(tmpdir) / "auto-flush.jsonl"
-            sink = SinkFile(name="buffer-test", file_path=file_path, buffer_size=3)
+            sink = ServiceFileSink(
+                name="buffer-test", file_path=file_path, buffer_size=3
+            )
 
             # Write 4 events (buffer_size=3, so should auto-flush after 3rd)
             for i in range(4):
@@ -309,7 +315,9 @@ class TestSinkFile:
         """Test that close flushes any buffered events."""
         with tempfile.TemporaryDirectory() as tmpdir:
             file_path = Path(tmpdir) / "close-flush.jsonl"
-            sink = SinkFile(name="close-test", file_path=file_path, buffer_size=100)
+            sink = ServiceFileSink(
+                name="close-test", file_path=file_path, buffer_size=100
+            )
 
             event = ModelContractValidationStartedEvent(
                 contract_name="test",
@@ -330,7 +338,7 @@ class TestSinkFile:
         """Test that close prevents further writes."""
         with tempfile.TemporaryDirectory() as tmpdir:
             file_path = Path(tmpdir) / "close-prevent.jsonl"
-            sink = SinkFile(name="prevent-test", file_path=file_path)
+            sink = ServiceFileSink(name="prevent-test", file_path=file_path)
 
             await sink.close()
 
@@ -348,7 +356,9 @@ class TestSinkFile:
     def test_sink_type_is_file(self) -> None:
         """Test that sink_type returns correct value."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            sink = SinkFile(name="type-test", file_path=Path(tmpdir) / "test.jsonl")
+            sink = ServiceFileSink(
+                name="type-test", file_path=Path(tmpdir) / "test.jsonl"
+            )
             assert sink.sink_type == EnumEventSinkType.FILE.value
 
     @pytest.mark.asyncio
@@ -356,7 +366,7 @@ class TestSinkFile:
         """Test that event_count tracks total events written."""
         with tempfile.TemporaryDirectory() as tmpdir:
             file_path = Path(tmpdir) / "count.jsonl"
-            sink = SinkFile(name="count-test", file_path=file_path)
+            sink = ServiceFileSink(name="count-test", file_path=file_path)
 
             for i in range(5):
                 event = ModelContractValidationStartedEvent(
@@ -373,7 +383,7 @@ class TestSinkFile:
         """Test that buffer_count tracks unflushed events."""
         with tempfile.TemporaryDirectory() as tmpdir:
             file_path = Path(tmpdir) / "buffer.jsonl"
-            sink = SinkFile(
+            sink = ServiceFileSink(
                 name="buffer-count-test", file_path=file_path, buffer_size=100
             )
 
@@ -398,7 +408,7 @@ class TestSinkFile:
         """Test that flush creates parent directories if needed."""
         with tempfile.TemporaryDirectory() as tmpdir:
             file_path = Path(tmpdir) / "nested" / "dir" / "events.jsonl"
-            sink = SinkFile(name="nested-test", file_path=file_path)
+            sink = ServiceFileSink(name="nested-test", file_path=file_path)
 
             event = ModelContractValidationStartedEvent(
                 contract_name="test",

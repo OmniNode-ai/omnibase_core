@@ -49,7 +49,7 @@ from __future__ import annotations
 import math
 from typing import ClassVar, Literal, cast
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -649,10 +649,10 @@ class ModelDictValueUnion(BaseModel):
             f"ModelDictValueUnion(value_type='{self.value_type}', value={self.value!r})"
         )
 
-    model_config = {
-        "extra": "ignore",
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        validate_assignment=True,
+    )
 
 
 __all__ = ["ModelDictValueUnion"]

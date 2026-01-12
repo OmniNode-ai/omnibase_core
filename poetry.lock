@@ -4153,6 +4153,18 @@ slack = ["slack-sdk"]
 telegram = ["requests"]
 
 [[package]]
+name = "types-psutil"
+version = "7.2.1.20251231"
+description = "Typing stubs for psutil"
+optional = false
+python-versions = ">=3.9"
+groups = ["dev"]
+files = [
+    {file = "types_psutil-7.2.1.20251231-py3-none-any.whl", hash = "sha256:40735ca2fc818aed9dcbff7acb3317a774896615e3f4a7bd356afa224b9178e3"},
+    {file = "types_psutil-7.2.1.20251231.tar.gz", hash = "sha256:dbf9df530b1130e131e4211ed8cea62c08007bfa69faf2883d296bd241d30e4a"},
+]
+
+[[package]]
 name = "types-pyyaml"
 version = "6.0.12.20250915"
 description = "Typing stubs for PyYAML"
@@ -4537,4 +4549,4 @@ metrics = ["prometheus-client"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "75500fdbf0ea764b39296f43043e851a79ab55850b6bc99b8a4b6ada74f126cf"
+content-hash = "b9dab8b85d3a37c4c30ebb6faf8e49aa2a2ca980b5e68fa08c141a90f912f099"

@@ -57,7 +57,7 @@ import logging
 import math
 from collections.abc import Callable
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_coercion_mode import EnumCoercionMode
@@ -482,10 +482,10 @@ class ModelOptionalInt(BaseModel):
             f"coercion_mode={self.coercion_mode.value!r})"
         )
 
-    model_config = {
-        "extra": "ignore",
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        validate_assignment=True,
+    )
 
 
 __all__ = ["ModelOptionalInt", "EnumCoercionMode"]

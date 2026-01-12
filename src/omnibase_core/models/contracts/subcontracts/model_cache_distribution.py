@@ -4,7 +4,7 @@ Cache Distribution Model.
 Model for distributed caching configuration in the ONEX caching system.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.constants import TIMEOUT_DEFAULT_MS
 from omnibase_core.models.primitives.model_semver import ModelSemVer
@@ -56,8 +56,8 @@ class ModelCacheDistribution(BaseModel):
         description="Conflict resolution strategy",
     )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
