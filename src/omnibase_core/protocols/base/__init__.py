@@ -22,7 +22,7 @@ Note on Literal Type Aliases:
     - LiteralHealthStatus -> EnumHealthStatus
     - LiteralOperationStatus -> EnumOperationStatus
     - LiteralValidationLevel -> EnumValidationLevel
-    - LiteralValidationSeverity -> EnumValidationSeverity
+    - LiteralValidationSeverity -> EnumSeverity
     - LiteralEventPriority -> EnumEventPriority
 
     Kept as Literals (no canonical enum equivalent):
@@ -46,13 +46,9 @@ from omnibase_core.enums.enum_health_status import EnumHealthStatus
 from omnibase_core.enums.enum_log_level import EnumLogLevel
 from omnibase_core.enums.enum_operation_status import EnumOperationStatus
 
-# EnumValidationSeverity is now an alias to EnumSeverity (OMN-1311)
-# New code should use EnumSeverity directly
+# Canonical severity enum (OMN-1311)
 from omnibase_core.enums.enum_severity import EnumSeverity
 from omnibase_core.enums.enum_validation_level import EnumValidationLevel
-
-# Deprecated alias (OMN-1311)
-EnumValidationSeverity = EnumSeverity
 
 # =============================================================================
 # Type Variables
@@ -74,7 +70,7 @@ LiteralLogLevel = EnumLogLevel
 LiteralHealthStatus = EnumHealthStatus
 LiteralOperationStatus = EnumOperationStatus
 LiteralValidationLevel = EnumValidationLevel
-LiteralValidationSeverity = EnumValidationSeverity
+LiteralValidationSeverity = EnumSeverity
 LiteralEventPriority = EnumEventPriority
 
 
@@ -148,7 +144,7 @@ __all__ = [
     "EnumHealthStatus",
     "EnumOperationStatus",
     "EnumValidationLevel",
-    "EnumValidationSeverity",
+    "EnumSeverity",
     "EnumEventPriority",
     # Backward-Compatible Type Aliases (point to enums above)
     "LiteralLogLevel",

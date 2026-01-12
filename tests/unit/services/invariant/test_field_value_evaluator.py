@@ -4,7 +4,8 @@
 
 import pytest
 
-from omnibase_core.enums import EnumInvariantSeverity, EnumInvariantType
+from omnibase_core.enums import EnumInvariantType
+from omnibase_core.enums.enum_severity import EnumSeverity
 from omnibase_core.models.invariant import ModelInvariant
 from omnibase_core.services.invariant.service_invariant_evaluator import (
     ServiceInvariantEvaluator,
@@ -22,7 +23,7 @@ class TestFieldValueEvaluator:
         invariant = ModelInvariant(
             name="Status Check",
             type=EnumInvariantType.FIELD_VALUE,
-            severity=EnumInvariantSeverity.CRITICAL,
+            severity=EnumSeverity.CRITICAL,
             config={
                 "field_path": "status",
                 "expected_value": "success",
@@ -45,7 +46,7 @@ class TestFieldValueEvaluator:
         invariant = ModelInvariant(
             name="UUID Format",
             type=EnumInvariantType.FIELD_VALUE,
-            severity=EnumInvariantSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             config={
                 "field_path": "id",
                 "pattern": r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
@@ -69,7 +70,7 @@ class TestFieldValueEvaluator:
         invariant = ModelInvariant(
             name="Code Check",
             type=EnumInvariantType.FIELD_VALUE,
-            severity=EnumInvariantSeverity.CRITICAL,
+            severity=EnumSeverity.CRITICAL,
             config={
                 "field_path": "response.code",
                 "expected_value": 200,
@@ -91,7 +92,7 @@ class TestFieldValueEvaluator:
         invariant = ModelInvariant(
             name="Count Check",
             type=EnumInvariantType.FIELD_VALUE,
-            severity=EnumInvariantSeverity.CRITICAL,
+            severity=EnumSeverity.CRITICAL,
             config={
                 "field_path": "count",
                 "expected_value": 42,
@@ -111,7 +112,7 @@ class TestFieldValueEvaluator:
         invariant = ModelInvariant(
             name="Active Check",
             type=EnumInvariantType.FIELD_VALUE,
-            severity=EnumInvariantSeverity.CRITICAL,
+            severity=EnumSeverity.CRITICAL,
             config={
                 "field_path": "is_active",
                 "expected_value": True,
@@ -131,7 +132,7 @@ class TestFieldValueEvaluator:
         invariant = ModelInvariant(
             name="Nested Status",
             type=EnumInvariantType.FIELD_VALUE,
-            severity=EnumInvariantSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             config={
                 "field_path": "response.status.code",
                 "expected_value": "OK",
@@ -153,7 +154,7 @@ class TestFieldValueEvaluator:
         invariant = ModelInvariant(
             name="Missing Field",
             type=EnumInvariantType.FIELD_VALUE,
-            severity=EnumInvariantSeverity.CRITICAL,
+            severity=EnumSeverity.CRITICAL,
             config={
                 "field_path": "nonexistent.path",
                 "expected_value": "value",
@@ -172,7 +173,7 @@ class TestFieldValueEvaluator:
         invariant = ModelInvariant(
             name="Contains Email",
             type=EnumInvariantType.FIELD_VALUE,
-            severity=EnumInvariantSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             config={
                 "field_path": "text",
                 "pattern": r"[a-z]+@[a-z]+\.[a-z]+",
@@ -192,7 +193,7 @@ class TestFieldValueEvaluator:
         invariant = ModelInvariant(
             name="Exact Format",
             type=EnumInvariantType.FIELD_VALUE,
-            severity=EnumInvariantSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             config={
                 "field_path": "code",
                 "pattern": r"^ERR-\d{4}$",
@@ -212,7 +213,7 @@ class TestFieldValueEvaluator:
         invariant = ModelInvariant(
             name="Null Check",
             type=EnumInvariantType.FIELD_VALUE,
-            severity=EnumInvariantSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             config={
                 "field_path": "optional_field",
                 "expected_value": None,
@@ -232,7 +233,7 @@ class TestFieldValueEvaluator:
         invariant = ModelInvariant(
             name="First Item Status",
             type=EnumInvariantType.FIELD_VALUE,
-            severity=EnumInvariantSeverity.CRITICAL,
+            severity=EnumSeverity.CRITICAL,
             config={
                 "field_path": "items.0.status",
                 "expected_value": "ready",
@@ -254,7 +255,7 @@ class TestFieldValueEvaluator:
         invariant = ModelInvariant(
             name="Numeric Pattern",
             type=EnumInvariantType.FIELD_VALUE,
-            severity=EnumInvariantSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             config={
                 "field_path": "code",
                 "pattern": r"^\d{3}$",
@@ -275,7 +276,7 @@ class TestFieldValueEvaluator:
         invariant = ModelInvariant(
             name="Empty Check",
             type=EnumInvariantType.FIELD_VALUE,
-            severity=EnumInvariantSeverity.INFO,
+            severity=EnumSeverity.INFO,
             config={
                 "field_path": "message",
                 "expected_value": "",
@@ -293,7 +294,7 @@ class TestFieldValueEvaluator:
         invariant = ModelInvariant(
             name="Tags Check",
             type=EnumInvariantType.FIELD_VALUE,
-            severity=EnumInvariantSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             config={
                 "field_path": "tags",
                 "expected_value": ["alpha", "beta"],
@@ -311,7 +312,7 @@ class TestFieldValueEvaluator:
         invariant = ModelInvariant(
             name="Config Check",
             type=EnumInvariantType.FIELD_VALUE,
-            severity=EnumInvariantSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             config={
                 "field_path": "settings",
                 "expected_value": {"mode": "fast", "enabled": True},
@@ -335,7 +336,7 @@ class TestFieldValueEvaluator:
         invariant = ModelInvariant(
             name="Invalid Config",
             type=EnumInvariantType.FIELD_VALUE,
-            severity=EnumInvariantSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             config={
                 "field_path": "status",
                 # No expected_value or pattern
@@ -354,7 +355,7 @@ class TestFieldValueEvaluator:
         invariant = ModelInvariant(
             name="Metadata Test",
             type=EnumInvariantType.FIELD_VALUE,
-            severity=EnumInvariantSeverity.CRITICAL,
+            severity=EnumSeverity.CRITICAL,
             config={
                 "field_path": "value",
                 "expected_value": "expected",
@@ -364,7 +365,7 @@ class TestFieldValueEvaluator:
         result = evaluator.evaluate(invariant, {"value": "actual"})
 
         assert result.invariant_name == "Metadata Test"
-        assert result.severity == EnumInvariantSeverity.CRITICAL
+        assert result.severity == EnumSeverity.CRITICAL
         assert result.actual_value == "actual"
         assert result.expected_value == "expected"
         assert result.evaluated_at is not None

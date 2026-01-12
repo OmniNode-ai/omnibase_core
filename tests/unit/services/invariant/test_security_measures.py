@@ -10,7 +10,8 @@ This module tests security protections including:
 
 import pytest
 
-from omnibase_core.enums import EnumInvariantSeverity, EnumInvariantType
+from omnibase_core.enums import EnumInvariantType
+from omnibase_core.enums.enum_severity import EnumSeverity
 from omnibase_core.models.invariant import ModelInvariant
 from omnibase_core.services.invariant.service_invariant_evaluator import (
     ServiceInvariantEvaluator,
@@ -286,7 +287,7 @@ class TestFieldPathDepthLimit:
         invariant = ModelInvariant(
             name="Deep Field Check",
             type=EnumInvariantType.FIELD_PRESENCE,
-            severity=EnumInvariantSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             config={"fields": [deep_path]},
         )
 
@@ -310,7 +311,7 @@ class TestSecurityIntegration:
         invariant = ModelInvariant(
             name="Security Test",
             type=EnumInvariantType.CUSTOM,
-            severity=EnumInvariantSeverity.CRITICAL,
+            severity=EnumSeverity.CRITICAL,
             config={
                 "callable_path": "tests.unit.services.invariant_malicious.evil_func"
             },
@@ -330,7 +331,7 @@ class TestSecurityIntegration:
         invariant = ModelInvariant(
             name="ReDoS Test",
             type=EnumInvariantType.FIELD_VALUE,
-            severity=EnumInvariantSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             config={
                 "field_path": "test_field",
                 "pattern": r"(a+)+$",  # Dangerous nested quantifier
@@ -425,7 +426,7 @@ class TestThreadSafetyForRegex:
         invariant = ModelInvariant(
             name="Thread Test",
             type=EnumInvariantType.FIELD_VALUE,
-            severity=EnumInvariantSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             config={
                 "field_path": "email",
                 "pattern": r"^[a-z]+@[a-z]+\.[a-z]+$",

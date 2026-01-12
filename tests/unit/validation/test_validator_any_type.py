@@ -20,7 +20,7 @@ from pathlib import Path
 
 import pytest
 
-from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
+from omnibase_core.enums.enum_severity import EnumSeverity
 from omnibase_core.models.contracts.subcontracts.model_validator_rule import (
     ModelValidatorRule,
 )
@@ -44,7 +44,7 @@ from omnibase_core.validation.visitor_any_type import (
 
 def create_test_contract(
     suppression_comments: list[str] | None = None,
-    severity_default: EnumValidationSeverity = EnumValidationSeverity.ERROR,
+    severity_default: EnumSeverity = EnumSeverity.ERROR,
     rules: list[ModelValidatorRule] | None = None,
 ) -> ModelValidatorSubcontract:
     """Create a test contract for ValidatorAnyType.
@@ -56,31 +56,31 @@ def create_test_contract(
         ModelValidatorRule(
             rule_id=RULE_ANY_IMPORT,
             description="Detects 'from typing import Any' statements",
-            severity=EnumValidationSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             enabled=True,
         ),
         ModelValidatorRule(
             rule_id=RULE_ANY_ANNOTATION,
             description="Detects Any in type annotations",
-            severity=EnumValidationSeverity.ERROR,
+            severity=EnumSeverity.ERROR,
             enabled=True,
         ),
         ModelValidatorRule(
             rule_id=RULE_DICT_STR_ANY,
             description="Detects dict[str, Any] usage",
-            severity=EnumValidationSeverity.ERROR,
+            severity=EnumSeverity.ERROR,
             enabled=True,
         ),
         ModelValidatorRule(
             rule_id=RULE_LIST_ANY,
             description="Detects list[Any] usage",
-            severity=EnumValidationSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             enabled=True,
         ),
         ModelValidatorRule(
             rule_id=RULE_UNION_WITH_ANY,
             description="Detects Union[..., Any] or ... | Any",
-            severity=EnumValidationSeverity.ERROR,
+            severity=EnumSeverity.ERROR,
             enabled=True,
         ),
     ]
@@ -696,8 +696,8 @@ class TestValidatorAnyTypeImports:
 
 
 def create_test_contract_with_rules(
-    rules: list[tuple[str, bool, EnumValidationSeverity]],
-    severity_default: EnumValidationSeverity = EnumValidationSeverity.ERROR,
+    rules: list[tuple[str, bool, EnumSeverity]],
+    severity_default: EnumSeverity = EnumSeverity.ERROR,
 ) -> ModelValidatorSubcontract:
     """Create a test contract with specific rule configurations.
 
@@ -754,7 +754,7 @@ class TestValidatorAnyTypePerRuleConfiguration:
         # Disable the any_import rule
         contract = create_test_contract_with_rules(
             rules=[
-                (RULE_ANY_IMPORT, False, EnumValidationSeverity.ERROR),
+                (RULE_ANY_IMPORT, False, EnumSeverity.ERROR),
             ]
         )
         validator = ValidatorAnyType(contract=contract)
@@ -777,7 +777,7 @@ class TestValidatorAnyTypePerRuleConfiguration:
         # Enable the any_import rule explicitly
         contract = create_test_contract_with_rules(
             rules=[
-                (RULE_ANY_IMPORT, True, EnumValidationSeverity.ERROR),
+                (RULE_ANY_IMPORT, True, EnumSeverity.ERROR),
             ]
         )
         validator = ValidatorAnyType(contract=contract)
@@ -800,9 +800,9 @@ class TestValidatorAnyTypePerRuleConfiguration:
         # Override severity to WARNING for any_import rule
         contract = create_test_contract_with_rules(
             rules=[
-                (RULE_ANY_IMPORT, True, EnumValidationSeverity.WARNING),
+                (RULE_ANY_IMPORT, True, EnumSeverity.WARNING),
             ],
-            severity_default=EnumValidationSeverity.ERROR,
+            severity_default=EnumSeverity.ERROR,
         )
         validator = ValidatorAnyType(contract=contract)
         result = validator.validate_file(file_path)
@@ -810,7 +810,7 @@ class TestValidatorAnyTypePerRuleConfiguration:
         # The import issue should have WARNING severity (overridden)
         any_import_issues = [i for i in result.issues if i.code == RULE_ANY_IMPORT]
         assert len(any_import_issues) == 1
-        assert any_import_issues[0].severity == EnumValidationSeverity.WARNING
+        assert any_import_issues[0].severity == EnumSeverity.WARNING
 
     def test_severity_override_to_critical(self, tmp_path: Path) -> None:
         """Test that severity can be overridden to CRITICAL."""
@@ -825,9 +825,9 @@ class TestValidatorAnyTypePerRuleConfiguration:
         # Override severity to CRITICAL for any_annotation rule
         contract = create_test_contract_with_rules(
             rules=[
-                (RULE_ANY_ANNOTATION, True, EnumValidationSeverity.CRITICAL),
+                (RULE_ANY_ANNOTATION, True, EnumSeverity.CRITICAL),
             ],
-            severity_default=EnumValidationSeverity.WARNING,
+            severity_default=EnumSeverity.WARNING,
         )
         validator = ValidatorAnyType(contract=contract)
         result = validator.validate_file(file_path)
@@ -835,7 +835,7 @@ class TestValidatorAnyTypePerRuleConfiguration:
         # The annotation issue should have CRITICAL severity (overridden)
         annotation_issues = [i for i in result.issues if i.code == RULE_ANY_ANNOTATION]
         assert len(annotation_issues) >= 1
-        assert annotation_issues[0].severity == EnumValidationSeverity.CRITICAL
+        assert annotation_issues[0].severity == EnumSeverity.CRITICAL
 
     def test_multiple_rules_with_different_configs(self, tmp_path: Path) -> None:
         """Test that multiple rules can have different configurations."""
@@ -850,11 +850,11 @@ class TestValidatorAnyTypePerRuleConfiguration:
         # Configure: any_import=disabled, any_annotation=warning, dict_str_any=error
         contract = create_test_contract_with_rules(
             rules=[
-                (RULE_ANY_IMPORT, False, EnumValidationSeverity.ERROR),  # Disabled
-                (RULE_ANY_ANNOTATION, True, EnumValidationSeverity.WARNING),  # Warning
-                (RULE_DICT_STR_ANY, True, EnumValidationSeverity.ERROR),  # Error
+                (RULE_ANY_IMPORT, False, EnumSeverity.ERROR),  # Disabled
+                (RULE_ANY_ANNOTATION, True, EnumSeverity.WARNING),  # Warning
+                (RULE_DICT_STR_ANY, True, EnumSeverity.ERROR),  # Error
             ],
-            severity_default=EnumValidationSeverity.INFO,
+            severity_default=EnumSeverity.INFO,
         )
         validator = ValidatorAnyType(contract=contract)
         result = validator.validate_file(file_path)
@@ -866,12 +866,12 @@ class TestValidatorAnyTypePerRuleConfiguration:
         # any_annotation should have WARNING severity
         annotation_issues = [i for i in result.issues if i.code == RULE_ANY_ANNOTATION]
         assert len(annotation_issues) >= 1
-        assert annotation_issues[0].severity == EnumValidationSeverity.WARNING
+        assert annotation_issues[0].severity == EnumSeverity.WARNING
 
         # dict_str_any should have ERROR severity
         dict_issues = [i for i in result.issues if i.code == RULE_DICT_STR_ANY]
         assert len(dict_issues) >= 1
-        assert dict_issues[0].severity == EnumValidationSeverity.ERROR
+        assert dict_issues[0].severity == EnumSeverity.ERROR
 
     def test_unconfigured_rule_is_disabled_by_default(self, tmp_path: Path) -> None:
         """Test that rules not in contract are disabled by default.
@@ -890,9 +890,9 @@ class TestValidatorAnyTypePerRuleConfiguration:
         # Only configure any_import, leave list_any unconfigured
         contract = create_test_contract_with_rules(
             rules=[
-                (RULE_ANY_IMPORT, True, EnumValidationSeverity.WARNING),
+                (RULE_ANY_IMPORT, True, EnumSeverity.WARNING),
             ],
-            severity_default=EnumValidationSeverity.CRITICAL,
+            severity_default=EnumSeverity.CRITICAL,
         )
         validator = ValidatorAnyType(contract=contract)
         result = validator.validate_file(file_path)
@@ -900,7 +900,7 @@ class TestValidatorAnyTypePerRuleConfiguration:
         # any_import should be detected (it's configured and enabled)
         import_issues = [i for i in result.issues if i.code == RULE_ANY_IMPORT]
         assert len(import_issues) >= 1
-        assert import_issues[0].severity == EnumValidationSeverity.WARNING
+        assert import_issues[0].severity == EnumSeverity.WARNING
 
         # list_any should NOT be detected (unconfigured = disabled by default)
         list_issues = [i for i in result.issues if i.code == RULE_LIST_ANY]
@@ -920,11 +920,11 @@ class TestValidatorAnyTypePerRuleConfiguration:
         # Disable all relevant rules
         contract = create_test_contract_with_rules(
             rules=[
-                (RULE_ANY_IMPORT, False, EnumValidationSeverity.ERROR),
-                (RULE_ANY_ANNOTATION, False, EnumValidationSeverity.ERROR),
-                (RULE_DICT_STR_ANY, False, EnumValidationSeverity.ERROR),
-                (RULE_LIST_ANY, False, EnumValidationSeverity.ERROR),
-                (RULE_UNION_WITH_ANY, False, EnumValidationSeverity.ERROR),
+                (RULE_ANY_IMPORT, False, EnumSeverity.ERROR),
+                (RULE_ANY_ANNOTATION, False, EnumSeverity.ERROR),
+                (RULE_DICT_STR_ANY, False, EnumSeverity.ERROR),
+                (RULE_LIST_ANY, False, EnumSeverity.ERROR),
+                (RULE_UNION_WITH_ANY, False, EnumSeverity.ERROR),
             ]
         )
         validator = ValidatorAnyType(contract=contract)
@@ -956,7 +956,7 @@ class TestValidatorAnyTypeRuleConfigCache:
 
         contract = create_test_contract_with_rules(
             rules=[
-                (RULE_ANY_IMPORT, True, EnumValidationSeverity.WARNING),
+                (RULE_ANY_IMPORT, True, EnumSeverity.WARNING),
             ]
         )
         validator = ValidatorAnyType(contract=contract)
@@ -972,7 +972,7 @@ class TestValidatorAnyTypeRuleConfigCache:
         assert RULE_ANY_IMPORT in validator._rule_config_cache
         assert validator._rule_config_cache[RULE_ANY_IMPORT] == (
             True,
-            EnumValidationSeverity.WARNING,
+            EnumSeverity.WARNING,
         )
 
     def test_rule_config_lookup_is_o1(self, tmp_path: Path) -> None:
@@ -986,9 +986,9 @@ class TestValidatorAnyTypeRuleConfigCache:
         file_path = write_python_file(tmp_path, source)
 
         # Create contract with many rules
-        rules = [(f"rule_{i}", True, EnumValidationSeverity.ERROR) for i in range(100)]
-        rules.append((RULE_ANY_IMPORT, True, EnumValidationSeverity.WARNING))
-        rules.append((RULE_ANY_ANNOTATION, True, EnumValidationSeverity.INFO))
+        rules = [(f"rule_{i}", True, EnumSeverity.ERROR) for i in range(100)]
+        rules.append((RULE_ANY_IMPORT, True, EnumSeverity.WARNING))
+        rules.append((RULE_ANY_ANNOTATION, True, EnumSeverity.INFO))
 
         contract = create_test_contract_with_rules(rules=rules)
         validator = ValidatorAnyType(contract=contract)
@@ -1004,8 +1004,8 @@ class TestValidatorAnyTypeRuleConfigCache:
         # Verify severity overrides were applied
         import_issues = [i for i in result.issues if i.code == RULE_ANY_IMPORT]
         assert len(import_issues) == 1
-        assert import_issues[0].severity == EnumValidationSeverity.WARNING
+        assert import_issues[0].severity == EnumSeverity.WARNING
 
         annotation_issues = [i for i in result.issues if i.code == RULE_ANY_ANNOTATION]
         assert len(annotation_issues) >= 1
-        assert annotation_issues[0].severity == EnumValidationSeverity.INFO
+        assert annotation_issues[0].severity == EnumSeverity.INFO

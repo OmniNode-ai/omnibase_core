@@ -15,10 +15,10 @@ DOCUMENTED EXCEPTIONS (per ADR-006):
 These exceptions exist because they serve specific domain requirements that cannot
 be satisfied by the general-purpose 6-level severity scale.
 
-Migration Notes (OMN-1311):
+Migration Notes (OMN-1311, OMN-1296):
 - EnumValidationSeverity -> EnumSeverity (INFO, WARNING, ERROR, CRITICAL map directly)
-- EnumInvariantSeverity -> EnumSeverity (subset: INFO, WARNING, CRITICAL)
-- EnumViolationSeverity -> EnumSeverity (subset: INFO, WARNING, CRITICAL)
+- EnumInvariantSeverity -> Removed (OMN-1296: use EnumSeverity directly)
+- EnumViolationSeverity -> Removed (OMN-1296: use EnumSeverity directly)
 - EnumErrorSeverity -> Removed (was unused, identical values)
 """
 

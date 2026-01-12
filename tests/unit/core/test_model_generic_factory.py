@@ -5,7 +5,7 @@ from typing import Any
 import pytest
 from pydantic import BaseModel
 
-from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
+from omnibase_core.enums.enum_severity import EnumSeverity
 from omnibase_core.models.core import (
     ModelCapabilityFactory,
     ModelGenericFactory,
@@ -39,7 +39,7 @@ class SampleValidationModel(BaseModel):
     """Test model for validation factory testing."""
 
     message: str
-    severity: EnumValidationSeverity
+    severity: EnumSeverity
     field_name: str | None = None
     error_code: str | None = None
 
@@ -260,7 +260,7 @@ class TestModelValidationErrorFactory:
         result = factory.build("error", message="Test error", field_name="test_field")
 
         assert result.message == "Test error"
-        assert result.severity == EnumValidationSeverity.ERROR
+        assert result.severity == EnumSeverity.ERROR
         assert result.field_name == "test_field"
 
     def test_build_warning(self):
@@ -269,7 +269,7 @@ class TestModelValidationErrorFactory:
         result = factory.build("warning", message="Test warning")
 
         assert result.message == "Test warning"
-        assert result.severity == EnumValidationSeverity.WARNING
+        assert result.severity == EnumSeverity.WARNING
 
     def test_build_critical(self):
         """Test building critical validation."""
@@ -277,7 +277,7 @@ class TestModelValidationErrorFactory:
         result = factory.build("critical", message="Critical error")
 
         assert result.message == "Critical error"
-        assert result.severity == EnumValidationSeverity.CRITICAL
+        assert result.severity == EnumSeverity.CRITICAL
 
     def test_build_info(self):
         """Test building info validation."""
@@ -285,4 +285,4 @@ class TestModelValidationErrorFactory:
         result = factory.build("info", message="Info message")
 
         assert result.message == "Info message"
-        assert result.severity == EnumValidationSeverity.INFO
+        assert result.severity == EnumSeverity.INFO

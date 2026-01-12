@@ -5,7 +5,8 @@
 
 import pytest
 
-from omnibase_core.enums import EnumInvariantSeverity, EnumInvariantType
+from omnibase_core.enums import EnumInvariantType
+from omnibase_core.enums.enum_severity import EnumSeverity
 from omnibase_core.models.invariant import ModelInvariant
 from omnibase_core.services.invariant.service_invariant_evaluator import (
     ServiceInvariantEvaluator,
@@ -23,7 +24,7 @@ class TestCostEvaluator:
         invariant = ModelInvariant(
             name="Request Cost",
             type=EnumInvariantType.COST,
-            severity=EnumInvariantSeverity.CRITICAL,
+            severity=EnumSeverity.CRITICAL,
             config={"max_cost": 0.10, "per": "request"},
         )
 
@@ -36,7 +37,7 @@ class TestCostEvaluator:
         invariant = ModelInvariant(
             name="Request Cost",
             type=EnumInvariantType.COST,
-            severity=EnumInvariantSeverity.CRITICAL,
+            severity=EnumSeverity.CRITICAL,
             config={"max_cost": 0.10, "per": "request"},
         )
 
@@ -53,7 +54,7 @@ class TestCostEvaluator:
         invariant = ModelInvariant(
             name="Token Cost",
             type=EnumInvariantType.COST,
-            severity=EnumInvariantSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             config={"max_cost": 0.10, "per": "request"},
         )
 
@@ -75,7 +76,7 @@ class TestCostEvaluator:
         invariant = ModelInvariant(
             name="Token Cost Exceeded",
             type=EnumInvariantType.COST,
-            severity=EnumInvariantSeverity.CRITICAL,
+            severity=EnumSeverity.CRITICAL,
             config={"max_cost": 0.05, "per": "request"},
         )
 
@@ -91,7 +92,7 @@ class TestCostEvaluator:
         invariant = ModelInvariant(
             name="Custom Rate",
             type=EnumInvariantType.COST,
-            severity=EnumInvariantSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             config={"max_cost": 0.10, "cost_per_token": 0.001},
         )
 
@@ -109,7 +110,7 @@ class TestCostEvaluator:
         invariant = ModelInvariant(
             name="Exact Budget",
             type=EnumInvariantType.COST,
-            severity=EnumInvariantSeverity.CRITICAL,
+            severity=EnumSeverity.CRITICAL,
             config={"max_cost": 0.10},
         )
 
@@ -121,7 +122,7 @@ class TestCostEvaluator:
         invariant = ModelInvariant(
             name="Zero Cost",
             type=EnumInvariantType.COST,
-            severity=EnumInvariantSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             config={"max_cost": 0.10},
         )
 
@@ -135,7 +136,7 @@ class TestCostEvaluator:
         invariant = ModelInvariant(
             name="Missing Cost",
             type=EnumInvariantType.COST,
-            severity=EnumInvariantSeverity.CRITICAL,
+            severity=EnumSeverity.CRITICAL,
             config={"max_cost": 0.10},
         )
 
@@ -151,7 +152,7 @@ class TestCostEvaluator:
         invariant = ModelInvariant(
             name="Preference Check",
             type=EnumInvariantType.COST,
-            severity=EnumInvariantSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             config={"max_cost": 0.10},
         )
 
@@ -167,7 +168,7 @@ class TestCostEvaluator:
         invariant = ModelInvariant(
             name="Small Cost",
             type=EnumInvariantType.COST,
-            severity=EnumInvariantSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             config={"max_cost": 0.001},
         )
 
@@ -180,7 +181,7 @@ class TestCostEvaluator:
         invariant = ModelInvariant(
             name="Large Budget",
             type=EnumInvariantType.COST,
-            severity=EnumInvariantSeverity.CRITICAL,
+            severity=EnumSeverity.CRITICAL,
             config={"max_cost": 100.0},
         )
 
@@ -197,7 +198,7 @@ class TestCostEvaluator:
         invariant = ModelInvariant(
             name="Non-Numeric",
             type=EnumInvariantType.COST,
-            severity=EnumInvariantSeverity.CRITICAL,
+            severity=EnumSeverity.CRITICAL,
             config={"max_cost": 0.10},
         )
 
@@ -213,7 +214,7 @@ class TestCostEvaluator:
         invariant = ModelInvariant(
             name="Message Check",
             type=EnumInvariantType.COST,
-            severity=EnumInvariantSeverity.CRITICAL,
+            severity=EnumSeverity.CRITICAL,
             config={"max_cost": 0.05},
         )
 
@@ -229,7 +230,7 @@ class TestCostEvaluator:
         invariant = ModelInvariant(
             name="Integer Tokens",
             type=EnumInvariantType.COST,
-            severity=EnumInvariantSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             config={"max_cost": 1.0},
         )
 
@@ -245,11 +246,11 @@ class TestCostEvaluator:
         invariant = ModelInvariant(
             name="Severity Check",
             type=EnumInvariantType.COST,
-            severity=EnumInvariantSeverity.INFO,
+            severity=EnumSeverity.INFO,
             config={"max_cost": 0.01},
         )
 
         result = evaluator.evaluate(invariant, {"cost": 0.50})
 
         assert result.passed is False
-        assert result.severity == EnumInvariantSeverity.INFO
+        assert result.severity == EnumSeverity.INFO

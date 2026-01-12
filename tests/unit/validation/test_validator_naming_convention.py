@@ -19,7 +19,7 @@ from pathlib import Path
 
 import pytest
 
-from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
+from omnibase_core.enums.enum_severity import EnumSeverity
 from omnibase_core.models.contracts.subcontracts.model_validator_rule import (
     ModelValidatorRule,
 )
@@ -42,7 +42,7 @@ from omnibase_core.validation.validator_naming_convention import (
 
 def create_test_contract(
     suppression_comments: list[str] | None = None,
-    severity_default: EnumValidationSeverity = EnumValidationSeverity.ERROR,
+    severity_default: EnumSeverity = EnumSeverity.ERROR,
     rules: list[ModelValidatorRule] | None = None,
 ) -> ModelValidatorSubcontract:
     """Create a test contract for ValidatorNamingConvention.
@@ -54,25 +54,25 @@ def create_test_contract(
         ModelValidatorRule(
             rule_id=RULE_FILE_NAMING,
             description="Validates file naming conventions",
-            severity=EnumValidationSeverity.ERROR,
+            severity=EnumSeverity.ERROR,
             enabled=True,
         ),
         ModelValidatorRule(
             rule_id=RULE_CLASS_NAMING,
             description="Validates class naming (PascalCase)",
-            severity=EnumValidationSeverity.ERROR,
+            severity=EnumSeverity.ERROR,
             enabled=True,
         ),
         ModelValidatorRule(
             rule_id=RULE_FUNCTION_NAMING,
             description="Validates function naming (snake_case)",
-            severity=EnumValidationSeverity.ERROR,
+            severity=EnumSeverity.ERROR,
             enabled=True,
         ),
         ModelValidatorRule(
             rule_id=RULE_UNKNOWN_NAMING,
             description="Catch-all for unknown naming issues",
-            severity=EnumValidationSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             enabled=True,
         ),
     ]
@@ -444,7 +444,7 @@ class TestValidatorNamingConventionSeverity:
                 rule_id=RULE_CLASS_NAMING,
                 description="Class naming",
                 enabled=True,
-                severity=EnumValidationSeverity.WARNING,
+                severity=EnumSeverity.WARNING,
             )
         ]
         contract = create_test_contract(rules=rules)
@@ -457,7 +457,7 @@ class TestValidatorNamingConventionSeverity:
             "Expected class naming issue for lowercase class name"
         )
         # Custom severity should be applied
-        assert class_naming_issues[0].severity == EnumValidationSeverity.WARNING
+        assert class_naming_issues[0].severity == EnumSeverity.WARNING
 
 
 # =============================================================================

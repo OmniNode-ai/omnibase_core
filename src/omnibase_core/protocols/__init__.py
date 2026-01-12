@@ -55,8 +55,8 @@ from omnibase_core.protocols.base import (  # Enums, Literal Types, Protocols, T
     EnumHealthStatus,
     EnumLogLevel,
     EnumOperationStatus,
+    EnumSeverity,
     EnumValidationLevel,
-    EnumValidationSeverity,
     # Backward-Compatible Type Aliases (point to enums above)
     LiteralEventPriority,
     LiteralHealthStatus,
@@ -335,8 +335,8 @@ __all__ = [
     "EnumLogLevel",
     "EnumHealthStatus",
     "EnumOperationStatus",
+    "EnumSeverity",
     "EnumValidationLevel",
-    "EnumValidationSeverity",
     "EnumEventPriority",
     # Backward-Compatible Type Aliases (point to enums above)
     "LiteralLogLevel",

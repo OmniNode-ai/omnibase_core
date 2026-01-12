@@ -152,7 +152,6 @@ from .enum_ignore_pattern_source import EnumIgnorePatternSource, EnumTraversalMo
 from .enum_import_status import EnumImportStatus
 
 # Invariant-related enums (OMN-1192)
-from .enum_invariant_severity import EnumInvariantSeverity
 from .enum_invariant_type import EnumInvariantType
 
 # Language and localization enums
@@ -303,9 +302,6 @@ from .enum_vector_filter_operator import EnumVectorFilterOperator
 
 # Version and contract enums
 from .enum_version_status import EnumVersionStatus
-
-# Violation severity enum (OMN-1195)
-from .enum_violation_severity import EnumViolationSeverity
 from .enum_widget_type import EnumWidgetType
 
 # Workflow-related enums
@@ -519,10 +515,7 @@ __all__ = [
     "EnumLikelihood",
     # Invariant domain (OMN-1192, OMN-1207)
     "EnumComparisonType",
-    "EnumInvariantSeverity",
     "EnumInvariantType",
-    # Violation severity domain (OMN-1195)
-    "EnumViolationSeverity",
     # Dashboard domain (OMN-1284)
     "EnumDashboardStatus",
     "EnumDashboardTheme",

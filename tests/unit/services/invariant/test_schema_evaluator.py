@@ -4,7 +4,8 @@
 
 import pytest
 
-from omnibase_core.enums import EnumInvariantSeverity, EnumInvariantType
+from omnibase_core.enums import EnumInvariantType
+from omnibase_core.enums.enum_severity import EnumSeverity
 from omnibase_core.models.invariant import ModelInvariant
 from omnibase_core.services.invariant.service_invariant_evaluator import (
     ServiceInvariantEvaluator,
@@ -22,7 +23,7 @@ class TestSchemaEvaluator:
         invariant = ModelInvariant(
             name="Valid Schema",
             type=EnumInvariantType.SCHEMA,
-            severity=EnumInvariantSeverity.CRITICAL,
+            severity=EnumSeverity.CRITICAL,
             config={
                 "json_schema": {
                     "type": "object",
@@ -48,7 +49,7 @@ class TestSchemaEvaluator:
         invariant = ModelInvariant(
             name="Required Field Check",
             type=EnumInvariantType.SCHEMA,
-            severity=EnumInvariantSeverity.CRITICAL,
+            severity=EnumSeverity.CRITICAL,
             config={
                 "json_schema": {
                     "type": "object",
@@ -77,7 +78,7 @@ class TestSchemaEvaluator:
         invariant = ModelInvariant(
             name="Type Check",
             type=EnumInvariantType.SCHEMA,
-            severity=EnumInvariantSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             config={
                 "json_schema": {
                     "type": "object",
@@ -101,7 +102,7 @@ class TestSchemaEvaluator:
         invariant = ModelInvariant(
             name="Nested Schema",
             type=EnumInvariantType.SCHEMA,
-            severity=EnumInvariantSeverity.CRITICAL,
+            severity=EnumSeverity.CRITICAL,
             config={
                 "json_schema": {
                     "type": "object",
@@ -142,7 +143,7 @@ class TestSchemaEvaluator:
         invariant = ModelInvariant(
             name="Array Schema",
             type=EnumInvariantType.SCHEMA,
-            severity=EnumInvariantSeverity.CRITICAL,
+            severity=EnumSeverity.CRITICAL,
             config={
                 "json_schema": {
                     "type": "object",
@@ -185,7 +186,7 @@ class TestSchemaEvaluator:
             ModelInvariant(
                 name="Invalid Config",
                 type=EnumInvariantType.SCHEMA,
-                severity=EnumInvariantSeverity.CRITICAL,
+                severity=EnumSeverity.CRITICAL,
                 config={},  # Missing json_schema
             )
 
@@ -198,7 +199,7 @@ class TestSchemaEvaluator:
         invariant = ModelInvariant(
             name="Invalid Config Type",
             type=EnumInvariantType.SCHEMA,
-            severity=EnumInvariantSeverity.CRITICAL,
+            severity=EnumSeverity.CRITICAL,
             config={"json_schema": "not a dict"},
         )
         output = {"any": "data"}
@@ -215,7 +216,7 @@ class TestSchemaEvaluator:
         invariant = ModelInvariant(
             name="No Additional Properties",
             type=EnumInvariantType.SCHEMA,
-            severity=EnumInvariantSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             config={
                 "json_schema": {
                     "type": "object",
@@ -244,7 +245,7 @@ class TestSchemaEvaluator:
         invariant = ModelInvariant(
             name="Email Pattern",
             type=EnumInvariantType.SCHEMA,
-            severity=EnumInvariantSeverity.CRITICAL,
+            severity=EnumSeverity.CRITICAL,
             config={
                 "json_schema": {
                     "type": "object",
@@ -273,7 +274,7 @@ class TestSchemaEvaluator:
         invariant = ModelInvariant(
             name="Status Enum",
             type=EnumInvariantType.SCHEMA,
-            severity=EnumInvariantSeverity.CRITICAL,
+            severity=EnumSeverity.CRITICAL,
             config={
                 "json_schema": {
                     "type": "object",
@@ -304,7 +305,7 @@ class TestSchemaEvaluator:
         invariant = ModelInvariant(
             name="Age Range",
             type=EnumInvariantType.SCHEMA,
-            severity=EnumInvariantSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             config={
                 "json_schema": {
                     "type": "object",
@@ -339,9 +340,9 @@ class TestSchemaEvaluator:
     ) -> None:
         """Result contains correct severity from invariant."""
         for severity in [
-            EnumInvariantSeverity.CRITICAL,
-            EnumInvariantSeverity.WARNING,
-            EnumInvariantSeverity.INFO,
+            EnumSeverity.CRITICAL,
+            EnumSeverity.WARNING,
+            EnumSeverity.INFO,
         ]:
             invariant = ModelInvariant(
                 name=f"Severity Test {severity.value}",
@@ -363,7 +364,7 @@ class TestSchemaEvaluator:
         invariant = ModelInvariant(
             name="ID Test",
             type=EnumInvariantType.SCHEMA,
-            severity=EnumInvariantSeverity.INFO,
+            severity=EnumSeverity.INFO,
             config={
                 "json_schema": {"type": "object"},
             },
@@ -378,7 +379,7 @@ class TestSchemaEvaluator:
         invariant = ModelInvariant(
             name="Timestamp Test",
             type=EnumInvariantType.SCHEMA,
-            severity=EnumInvariantSeverity.INFO,
+            severity=EnumSeverity.INFO,
             config={
                 "json_schema": {"type": "object"},
             },

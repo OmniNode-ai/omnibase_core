@@ -10,7 +10,7 @@ for corpus replay aggregation (OMN-1195).
 import pytest
 from pydantic import ValidationError
 
-from omnibase_core.enums import EnumViolationSeverity
+from omnibase_core.enums import EnumSeverity
 from omnibase_core.models.evidence.model_invariant_violation_breakdown import (
     ModelInvariantViolationBreakdown,
 )
@@ -26,8 +26,8 @@ class TestBreakdownCreation:
             total_violations=5,
             by_type={"output_equivalence": 3, "latency": 2},
             by_severity={
-                EnumViolationSeverity.CRITICAL.value: 2,
-                EnumViolationSeverity.WARNING.value: 3,
+                EnumSeverity.CRITICAL.value: 2,
+                EnumSeverity.WARNING.value: 3,
             },
             new_violations=2,
             new_critical_violations=1,
@@ -46,7 +46,7 @@ class TestBreakdownCreation:
         breakdown = ModelInvariantViolationBreakdown(
             total_violations=3,
             by_type={"test": 3},
-            by_severity={EnumViolationSeverity.WARNING.value: 3},
+            by_severity={EnumSeverity.WARNING.value: 3},
             new_violations=1,
             new_critical_violations=0,
             fixed_violations=0,
@@ -56,14 +56,14 @@ class TestBreakdownCreation:
             breakdown.total_violations = 10
 
     def test_by_severity_uses_enum_values(self) -> None:
-        """by_severity dict uses EnumViolationSeverity values."""
+        """by_severity dict uses EnumSeverity string values."""
         breakdown = ModelInvariantViolationBreakdown(
             total_violations=6,
             by_type={"cost": 6},
             by_severity={
-                EnumViolationSeverity.CRITICAL.value: 2,
-                EnumViolationSeverity.WARNING.value: 3,
-                EnumViolationSeverity.INFO.value: 1,
+                EnumSeverity.CRITICAL.value: 2,
+                EnumSeverity.WARNING.value: 3,
+                EnumSeverity.INFO.value: 1,
             },
             new_violations=3,
             new_critical_violations=1,
@@ -91,7 +91,7 @@ class TestViolationCounting:
         breakdown = ModelInvariantViolationBreakdown(
             total_violations=total,
             by_type=by_type,
-            by_severity={EnumViolationSeverity.WARNING.value: total},
+            by_severity={EnumSeverity.WARNING.value: total},
             new_violations=2,
             new_critical_violations=0,
             fixed_violations=1,
@@ -106,7 +106,7 @@ class TestViolationCounting:
         breakdown = ModelInvariantViolationBreakdown(
             total_violations=4,
             by_type={"type_a": 4},
-            by_severity={EnumViolationSeverity.CRITICAL.value: 4},
+            by_severity={EnumSeverity.CRITICAL.value: 4},
             new_violations=3,  # 3 new regressions
             new_critical_violations=2,  # 2 of them are critical
             fixed_violations=1,
@@ -122,7 +122,7 @@ class TestViolationCounting:
         breakdown = ModelInvariantViolationBreakdown(
             total_violations=2,
             by_type={"type_b": 2},
-            by_severity={EnumViolationSeverity.WARNING.value: 2},
+            by_severity={EnumSeverity.WARNING.value: 2},
             new_violations=0,
             new_critical_violations=0,
             fixed_violations=5,  # 5 things got fixed
@@ -141,19 +141,19 @@ class TestFromViolationDeltas:
         deltas = [
             {
                 "type": "output_equivalence",
-                "severity": EnumViolationSeverity.CRITICAL.value,
+                "severity": EnumSeverity.CRITICAL.value,
                 "baseline_passed": True,
                 "replay_passed": False,
             },
             {
                 "type": "output_equivalence",
-                "severity": EnumViolationSeverity.CRITICAL.value,
+                "severity": EnumSeverity.CRITICAL.value,
                 "baseline_passed": False,
                 "replay_passed": False,
             },
             {
                 "type": "latency",
-                "severity": EnumViolationSeverity.WARNING.value,
+                "severity": EnumSeverity.WARNING.value,
                 "baseline_passed": True,
                 "replay_passed": False,
             },
@@ -169,19 +169,19 @@ class TestFromViolationDeltas:
         deltas = [
             {
                 "type": "type_a",
-                "severity": EnumViolationSeverity.CRITICAL.value,
+                "severity": EnumSeverity.CRITICAL.value,
                 "baseline_passed": False,
                 "replay_passed": False,
             },
             {
                 "type": "type_b",
-                "severity": EnumViolationSeverity.WARNING.value,
+                "severity": EnumSeverity.WARNING.value,
                 "baseline_passed": False,
                 "replay_passed": False,
             },
             {
                 "type": "type_c",
-                "severity": EnumViolationSeverity.WARNING.value,
+                "severity": EnumSeverity.WARNING.value,
                 "baseline_passed": False,
                 "replay_passed": False,
             },
@@ -197,21 +197,21 @@ class TestFromViolationDeltas:
             # New violation: passed in baseline, failed in replay
             {
                 "type": "output",
-                "severity": EnumViolationSeverity.CRITICAL.value,
+                "severity": EnumSeverity.CRITICAL.value,
                 "baseline_passed": True,
                 "replay_passed": False,
             },
             # New violation: passed in baseline, failed in replay
             {
                 "type": "latency",
-                "severity": EnumViolationSeverity.WARNING.value,
+                "severity": EnumSeverity.WARNING.value,
                 "baseline_passed": True,
                 "replay_passed": False,
             },
             # Not new: failed in both
             {
                 "type": "cost",
-                "severity": EnumViolationSeverity.INFO.value,
+                "severity": EnumSeverity.INFO.value,
                 "baseline_passed": False,
                 "replay_passed": False,
             },
@@ -227,28 +227,28 @@ class TestFromViolationDeltas:
             # Fixed violation: failed in baseline, passed in replay
             {
                 "type": "output",
-                "severity": EnumViolationSeverity.CRITICAL.value,
+                "severity": EnumSeverity.CRITICAL.value,
                 "baseline_passed": False,
                 "replay_passed": True,
             },
             # Fixed violation: failed in baseline, passed in replay
             {
                 "type": "latency",
-                "severity": EnumViolationSeverity.WARNING.value,
+                "severity": EnumSeverity.WARNING.value,
                 "baseline_passed": False,
                 "replay_passed": True,
             },
             # Not fixed: failed in both
             {
                 "type": "cost",
-                "severity": EnumViolationSeverity.INFO.value,
+                "severity": EnumSeverity.INFO.value,
                 "baseline_passed": False,
                 "replay_passed": False,
             },
             # Not fixed: passed in both
             {
                 "type": "schema",
-                "severity": EnumViolationSeverity.INFO.value,
+                "severity": EnumSeverity.INFO.value,
                 "baseline_passed": True,
                 "replay_passed": True,
             },
@@ -273,13 +273,13 @@ class TestFromViolationDeltas:
         deltas = [
             {
                 "type": "output",
-                "severity": EnumViolationSeverity.CRITICAL.value,
+                "severity": EnumSeverity.CRITICAL.value,
                 "baseline_passed": True,
                 "replay_passed": True,
             },
             {
                 "type": "latency",
-                "severity": EnumViolationSeverity.WARNING.value,
+                "severity": EnumSeverity.WARNING.value,
                 "baseline_passed": True,
                 "replay_passed": True,
             },
@@ -307,7 +307,7 @@ class TestTotalViolationsConsistency:
         breakdown = ModelInvariantViolationBreakdown(
             total_violations=expected_total,
             by_type=by_type,
-            by_severity={EnumViolationSeverity.WARNING.value: 10},
+            by_severity={EnumSeverity.WARNING.value: 10},
             new_violations=4,
             new_critical_violations=0,
             fixed_violations=2,
@@ -319,9 +319,9 @@ class TestTotalViolationsConsistency:
     def test_total_equals_sum_by_severity(self) -> None:
         """total_violations == sum(by_severity.values())."""
         by_severity = {
-            EnumViolationSeverity.CRITICAL.value: 3,
-            EnumViolationSeverity.WARNING.value: 5,
-            EnumViolationSeverity.INFO.value: 2,
+            EnumSeverity.CRITICAL.value: 3,
+            EnumSeverity.WARNING.value: 5,
+            EnumSeverity.INFO.value: 2,
         }
         expected_total = 10
 
@@ -342,25 +342,25 @@ class TestTotalViolationsConsistency:
         deltas = [
             {
                 "type": "a",
-                "severity": EnumViolationSeverity.CRITICAL.value,
+                "severity": EnumSeverity.CRITICAL.value,
                 "baseline_passed": False,
                 "replay_passed": False,
             },
             {
                 "type": "a",
-                "severity": EnumViolationSeverity.WARNING.value,
+                "severity": EnumSeverity.WARNING.value,
                 "baseline_passed": False,
                 "replay_passed": False,
             },
             {
                 "type": "b",
-                "severity": EnumViolationSeverity.WARNING.value,
+                "severity": EnumSeverity.WARNING.value,
                 "baseline_passed": True,
                 "replay_passed": False,
             },
             {
                 "type": "c",
-                "severity": EnumViolationSeverity.INFO.value,
+                "severity": EnumSeverity.INFO.value,
                 "baseline_passed": True,
                 "replay_passed": False,
             },
@@ -383,7 +383,7 @@ class TestEdgeCases:
         breakdown = ModelInvariantViolationBreakdown(
             total_violations=1,
             by_type={"single": 1},
-            by_severity={EnumViolationSeverity.CRITICAL.value: 1},
+            by_severity={EnumSeverity.CRITICAL.value: 1},
             new_violations=1,
             new_critical_violations=1,
             fixed_violations=0,
@@ -399,7 +399,7 @@ class TestEdgeCases:
         deltas = [
             {
                 "type": "fixed_type",
-                "severity": EnumViolationSeverity.CRITICAL.value,
+                "severity": EnumSeverity.CRITICAL.value,
                 "baseline_passed": False,
                 "replay_passed": True,  # Fixed!
             },
@@ -417,7 +417,7 @@ class TestEdgeCases:
         deltas = [
             {
                 "type": "new_type",
-                "severity": EnumViolationSeverity.WARNING.value,
+                "severity": EnumSeverity.WARNING.value,
                 "baseline_passed": True,
                 "replay_passed": False,  # Regression!
             },
@@ -532,21 +532,21 @@ class TestNewCriticalViolations:
             # New critical violation (should count)
             {
                 "type": "output_equivalence",
-                "severity": EnumViolationSeverity.CRITICAL.value,
+                "severity": EnumSeverity.CRITICAL.value,
                 "baseline_passed": True,
                 "replay_passed": False,
             },
             # New warning violation (should NOT count)
             {
                 "type": "latency",
-                "severity": EnumViolationSeverity.WARNING.value,
+                "severity": EnumSeverity.WARNING.value,
                 "baseline_passed": True,
                 "replay_passed": False,
             },
             # Existing critical (not new, should NOT count)
             {
                 "type": "cost",
-                "severity": EnumViolationSeverity.CRITICAL.value,
+                "severity": EnumSeverity.CRITICAL.value,
                 "baseline_passed": False,
                 "replay_passed": False,
             },
@@ -563,7 +563,7 @@ class TestNewCriticalViolations:
         deltas = [
             {
                 "type": "output",
-                "severity": EnumViolationSeverity.CRITICAL.value,
+                "severity": EnumSeverity.CRITICAL.value,
                 "baseline_passed": False,  # Already existed
                 "replay_passed": False,
             },
@@ -595,35 +595,35 @@ class TestNewCriticalViolations:
             # New critical #1: was passing, now failing with critical severity
             {
                 "type": "output_equivalence",
-                "severity": EnumViolationSeverity.CRITICAL.value,
+                "severity": EnumSeverity.CRITICAL.value,
                 "baseline_passed": True,  # Was passing in baseline
                 "replay_passed": False,  # Now failing in current
             },
             # New critical #2: another new critical violation
             {
                 "type": "schema_validation",
-                "severity": EnumViolationSeverity.CRITICAL.value,
+                "severity": EnumSeverity.CRITICAL.value,
                 "baseline_passed": True,  # Was passing in baseline
                 "replay_passed": False,  # Now failing in current
             },
             # NOT new critical: existed in baseline (was already failing)
             {
                 "type": "data_integrity",
-                "severity": EnumViolationSeverity.CRITICAL.value,
+                "severity": EnumSeverity.CRITICAL.value,
                 "baseline_passed": False,  # Was already failing in baseline
                 "replay_passed": False,  # Still failing in current
             },
             # NOT new critical: passing in both (not a violation at all)
             {
                 "type": "performance",
-                "severity": EnumViolationSeverity.CRITICAL.value,
+                "severity": EnumSeverity.CRITICAL.value,
                 "baseline_passed": True,  # Passing in baseline
                 "replay_passed": True,  # Still passing in current
             },
             # NOT new critical: fixed (was failing, now passing)
             {
                 "type": "security",
-                "severity": EnumViolationSeverity.CRITICAL.value,
+                "severity": EnumSeverity.CRITICAL.value,
                 "baseline_passed": False,  # Was failing in baseline
                 "replay_passed": True,  # Now passing in current (fixed!)
             },
@@ -637,7 +637,7 @@ class TestNewCriticalViolations:
         assert breakdown.new_critical_violations == 2  # Only first two
 
         # Verify total critical violations (all that failed in replay)
-        assert breakdown.by_severity[EnumViolationSeverity.CRITICAL.value] == 3
+        assert breakdown.by_severity[EnumSeverity.CRITICAL.value] == 3
 
         # Verify new violations (any severity that passed in baseline, failed in replay)
         assert breakdown.new_violations == 2

@@ -15,7 +15,8 @@ Test Coverage:
 
 import pytest
 
-from omnibase_core.enums import EnumInvariantSeverity, EnumInvariantType
+from omnibase_core.enums import EnumInvariantType
+from omnibase_core.enums.enum_severity import EnumSeverity
 from omnibase_core.models.invariant import ModelInvariant
 from omnibase_core.services.invariant.service_invariant_evaluator import (
     ServiceInvariantEvaluator,
@@ -31,7 +32,7 @@ class TestCustomEvaluator:
         invariant = ModelInvariant(
             name="Custom Pass",
             type=EnumInvariantType.CUSTOM,
-            severity=EnumInvariantSeverity.CRITICAL,
+            severity=EnumSeverity.CRITICAL,
             config={
                 "callable_path": "tests.unit.services.invariant.custom_validators.always_pass"
             },
@@ -45,7 +46,7 @@ class TestCustomEvaluator:
         invariant = ModelInvariant(
             name="Custom Fail",
             type=EnumInvariantType.CUSTOM,
-            severity=EnumInvariantSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             config={
                 "callable_path": "tests.unit.services.invariant.custom_validators.always_fail"
             },
@@ -62,7 +63,7 @@ class TestCustomEvaluator:
         invariant = ModelInvariant(
             name="Missing Callable",
             type=EnumInvariantType.CUSTOM,
-            severity=EnumInvariantSeverity.CRITICAL,
+            severity=EnumSeverity.CRITICAL,
             config={"callable_path": "nonexistent.module.function"},
         )
 
@@ -80,7 +81,7 @@ class TestCustomEvaluator:
         invariant = ModelInvariant(
             name="Exception Callable",
             type=EnumInvariantType.CUSTOM,
-            severity=EnumInvariantSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             config={
                 "callable_path": "tests.unit.services.invariant.custom_validators.raise_exception"
             },
@@ -100,7 +101,7 @@ class TestCustomEvaluator:
         invariant = ModelInvariant(
             name="Blocked Callable",
             type=EnumInvariantType.CUSTOM,
-            severity=EnumInvariantSeverity.CRITICAL,
+            severity=EnumSeverity.CRITICAL,
             config={"callable_path": "os.system"},  # Not in allow-list
         )
 
@@ -121,7 +122,7 @@ class TestCustomEvaluator:
         invariant = ModelInvariant(
             name="Bool Return",
             type=EnumInvariantType.CUSTOM,
-            severity=EnumInvariantSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             config={
                 "callable_path": "tests.unit.services.invariant.custom_validators.return_bool_only"
             },
@@ -142,7 +143,7 @@ class TestCustomEvaluator:
         invariant = ModelInvariant(
             name="Data Check",
             type=EnumInvariantType.CUSTOM,
-            severity=EnumInvariantSeverity.CRITICAL,
+            severity=EnumSeverity.CRITICAL,
             config={
                 "callable_path": "tests.unit.services.invariant.custom_validators.check_has_data"
             },
@@ -165,7 +166,7 @@ class TestCustomEvaluator:
         invariant = ModelInvariant(
             name="Allowed Callable",
             type=EnumInvariantType.CUSTOM,
-            severity=EnumInvariantSeverity.CRITICAL,
+            severity=EnumSeverity.CRITICAL,
             config={
                 "callable_path": "tests.unit.services.invariant.custom_validators.always_pass"
             },
@@ -182,7 +183,7 @@ class TestCustomEvaluator:
         invariant = ModelInvariant(
             name="Invalid Path",
             type=EnumInvariantType.CUSTOM,
-            severity=EnumInvariantSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             config={"callable_path": "no_dots_or_colons"},
         )
 

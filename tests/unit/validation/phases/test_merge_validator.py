@@ -317,9 +317,9 @@ class TestMergeValidatorPlaceholderDetection(TestMergeValidatorFixtures):
             for msg in result.warnings
         ), f"Expected warning about placeholder in description, got: {result.warnings}"
         # Get detailed warning issues for code verification
-        from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
+        from omnibase_core.enums.enum_severity import EnumSeverity
 
-        warning_issues = result.get_issues_by_severity(EnumValidationSeverity.WARNING)
+        warning_issues = result.get_issues_by_severity(EnumSeverity.WARNING)
         warning_codes = [issue.code for issue in warning_issues if issue.code]
         assert any(
             EnumContractValidationErrorCode.CONTRACT_VALIDATION_MERGE_PLACEHOLDER_VALUE_REJECTED.value

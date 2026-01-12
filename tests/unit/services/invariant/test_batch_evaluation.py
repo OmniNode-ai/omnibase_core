@@ -17,7 +17,8 @@ Test Coverage:
 
 import pytest
 
-from omnibase_core.enums import EnumInvariantSeverity, EnumInvariantType
+from omnibase_core.enums import EnumInvariantType
+from omnibase_core.enums.enum_severity import EnumSeverity
 from omnibase_core.models.invariant import ModelInvariant, ModelInvariantSet
 from omnibase_core.services.invariant.service_invariant_evaluator import (
     ServiceInvariantEvaluator,
@@ -38,19 +39,19 @@ class TestBatchEvaluation:
                 ModelInvariant(
                     name="Field Check",
                     type=EnumInvariantType.FIELD_PRESENCE,
-                    severity=EnumInvariantSeverity.CRITICAL,
+                    severity=EnumSeverity.CRITICAL,
                     config={"fields": ["status"]},
                 ),
                 ModelInvariant(
                     name="Value Check",
                     type=EnumInvariantType.FIELD_VALUE,
-                    severity=EnumInvariantSeverity.WARNING,
+                    severity=EnumSeverity.WARNING,
                     config={"field_path": "status", "expected_value": "ok"},
                 ),
                 ModelInvariant(
                     name="Threshold Check",
                     type=EnumInvariantType.THRESHOLD,
-                    severity=EnumInvariantSeverity.CRITICAL,
+                    severity=EnumSeverity.CRITICAL,
                     config={"metric_name": "score", "min_value": 0.5},
                 ),
             ],
@@ -96,13 +97,13 @@ class TestBatchEvaluation:
                 ModelInvariant(
                     name="First Critical",
                     type=EnumInvariantType.FIELD_PRESENCE,
-                    severity=EnumInvariantSeverity.CRITICAL,
+                    severity=EnumSeverity.CRITICAL,
                     config={"fields": ["missing_field"]},  # Will fail
                 ),
                 ModelInvariant(
                     name="Second",
                     type=EnumInvariantType.FIELD_PRESENCE,
-                    severity=EnumInvariantSeverity.WARNING,
+                    severity=EnumSeverity.WARNING,
                     config={"fields": ["other"]},
                 ),
             ],
@@ -171,19 +172,19 @@ class TestBatchEvaluation:
                 ModelInvariant(
                     name="Critical Fail",
                     type=EnumInvariantType.FIELD_PRESENCE,
-                    severity=EnumInvariantSeverity.CRITICAL,
+                    severity=EnumSeverity.CRITICAL,
                     config={"fields": ["missing_critical"]},
                 ),
                 ModelInvariant(
                     name="Warning Fail",
                     type=EnumInvariantType.FIELD_PRESENCE,
-                    severity=EnumInvariantSeverity.WARNING,
+                    severity=EnumSeverity.WARNING,
                     config={"fields": ["missing_warning"]},
                 ),
                 ModelInvariant(
                     name="Info Fail",
                     type=EnumInvariantType.FIELD_PRESENCE,
-                    severity=EnumInvariantSeverity.INFO,
+                    severity=EnumSeverity.INFO,
                     config={"fields": ["missing_info"]},
                 ),
             ],
@@ -210,13 +211,13 @@ class TestBatchEvaluation:
                 ModelInvariant(
                     name="Warning Fail",
                     type=EnumInvariantType.FIELD_PRESENCE,
-                    severity=EnumInvariantSeverity.WARNING,
+                    severity=EnumSeverity.WARNING,
                     config={"fields": ["missing"]},
                 ),
                 ModelInvariant(
                     name="Pass",
                     type=EnumInvariantType.FIELD_PRESENCE,
-                    severity=EnumInvariantSeverity.CRITICAL,
+                    severity=EnumSeverity.CRITICAL,
                     config={"fields": ["present"]},
                 ),
             ],
@@ -240,14 +241,14 @@ class TestBatchEvaluation:
                 ModelInvariant(
                     name="Enabled",
                     type=EnumInvariantType.FIELD_PRESENCE,
-                    severity=EnumInvariantSeverity.WARNING,
+                    severity=EnumSeverity.WARNING,
                     config={"fields": ["field1"]},
                     enabled=True,
                 ),
                 ModelInvariant(
                     name="Disabled",
                     type=EnumInvariantType.FIELD_PRESENCE,
-                    severity=EnumInvariantSeverity.WARNING,
+                    severity=EnumSeverity.WARNING,
                     config={"fields": ["field2"]},
                     enabled=False,
                 ),
@@ -276,19 +277,19 @@ class TestBatchEvaluation:
                 ModelInvariant(
                     name="First Pass",
                     type=EnumInvariantType.FIELD_PRESENCE,
-                    severity=EnumInvariantSeverity.WARNING,
+                    severity=EnumSeverity.WARNING,
                     config={"fields": ["exists"]},
                 ),
                 ModelInvariant(
                     name="Second Critical Fail",
                     type=EnumInvariantType.FIELD_PRESENCE,
-                    severity=EnumInvariantSeverity.CRITICAL,
+                    severity=EnumSeverity.CRITICAL,
                     config={"fields": ["missing"]},
                 ),
                 ModelInvariant(
                     name="Third Never Evaluated",
                     type=EnumInvariantType.FIELD_PRESENCE,
-                    severity=EnumInvariantSeverity.WARNING,
+                    severity=EnumSeverity.WARNING,
                     config={"fields": ["exists"]},
                 ),
             ],

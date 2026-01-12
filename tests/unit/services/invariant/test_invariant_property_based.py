@@ -14,7 +14,8 @@ import pytest
 from hypothesis import assume, given, settings
 from hypothesis import strategies as st
 
-from omnibase_core.enums import EnumInvariantSeverity, EnumInvariantType
+from omnibase_core.enums import EnumInvariantType
+from omnibase_core.enums.enum_severity import EnumSeverity
 from omnibase_core.models.invariant import ModelInvariant, ModelInvariantResult
 from omnibase_core.services.invariant.service_invariant_evaluator import (
     ServiceInvariantEvaluator,
@@ -60,7 +61,7 @@ class TestInvariantPropertyBased:
         invariant = ModelInvariant(
             name="Threshold Property",
             type=EnumInvariantType.THRESHOLD,
-            severity=EnumInvariantSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             config={"metric_name": "value", "max_value": max_value},
         )
 
@@ -113,7 +114,7 @@ class TestInvariantPropertyBased:
         invariant = ModelInvariant(
             name="Threshold Min Property",
             type=EnumInvariantType.THRESHOLD,
-            severity=EnumInvariantSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             config={"metric_name": "value", "min_value": min_value},
         )
 
@@ -164,7 +165,7 @@ class TestInvariantPropertyBased:
         invariant = ModelInvariant(
             name="Latency Property",
             type=EnumInvariantType.LATENCY,
-            severity=EnumInvariantSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             config={"max_ms": max_ms},
         )
 
@@ -220,7 +221,7 @@ class TestInvariantPropertyBased:
         invariant = ModelInvariant(
             name="Cost Property",
             type=EnumInvariantType.COST,
-            severity=EnumInvariantSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             config={"max_cost": max_cost},
         )
 
@@ -282,7 +283,7 @@ class TestInvariantPropertyBased:
         invariant = ModelInvariant(
             name="Field Property",
             type=EnumInvariantType.FIELD_PRESENCE,
-            severity=EnumInvariantSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             config={"fields": [field_name]},
         )
 
@@ -315,7 +316,7 @@ class TestInvariantPropertyBased:
         invariant = ModelInvariant(
             name="Missing Field Property",
             type=EnumInvariantType.FIELD_PRESENCE,
-            severity=EnumInvariantSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             config={"fields": [field_name]},
         )
 
@@ -351,7 +352,7 @@ class TestInvariantPropertyBased:
         invariant = ModelInvariant(
             name="Crash Test",
             type=EnumInvariantType.FIELD_PRESENCE,
-            severity=EnumInvariantSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             config={"fields": ["some_field"]},
         )
 
@@ -386,7 +387,7 @@ class TestInvariantPropertyBased:
         invariant = ModelInvariant(
             name="Threshold Crash Test",
             type=EnumInvariantType.THRESHOLD,
-            severity=EnumInvariantSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             config={"metric_name": "arbitrary_metric", "max_value": 100},
         )
 
@@ -417,7 +418,7 @@ class TestInvariantPropertyBased:
         invariant = ModelInvariant(
             name="Latency Crash Test",
             type=EnumInvariantType.LATENCY,
-            severity=EnumInvariantSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             config={"max_ms": 1000},
         )
 
@@ -448,7 +449,7 @@ class TestInvariantPropertyBased:
         invariant = ModelInvariant(
             name="Cost Crash Test",
             type=EnumInvariantType.COST,
-            severity=EnumInvariantSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             config={"max_cost": 10.0},
         )
 
@@ -487,7 +488,7 @@ class TestInvariantPropertyBased:
         invariant = ModelInvariant(
             name="Both Bounds Property",
             type=EnumInvariantType.THRESHOLD,
-            severity=EnumInvariantSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             config={
                 "metric_name": "value",
                 "min_value": min_value,
@@ -514,10 +515,10 @@ class TestInvariantPropertyBased:
             )
 
     @given(
-        severity=st.sampled_from(list(EnumInvariantSeverity)),
+        severity=st.sampled_from(list(EnumSeverity)),
     )
     @settings(max_examples=20)
-    def test_result_preserves_severity(self, severity: EnumInvariantSeverity) -> None:
+    def test_result_preserves_severity(self, severity: EnumSeverity) -> None:
         """Result should preserve the severity from the invariant.
 
         Property: The severity level in the result must match the severity
@@ -563,7 +564,7 @@ class TestInvariantPropertyBased:
         invariant = ModelInvariant(
             name="Missing Metric Test",
             type=EnumInvariantType.THRESHOLD,
-            severity=EnumInvariantSeverity.CRITICAL,
+            severity=EnumSeverity.CRITICAL,
             config={"metric_name": metric_name, "max_value": 100.0},
         )
 
@@ -582,7 +583,7 @@ class TestInvariantPropertyBased:
         assert result.invariant_name == "Missing Metric Test", (
             f"Expected invariant_name preserved, got '{result.invariant_name}'"
         )
-        assert result.severity == EnumInvariantSeverity.CRITICAL, (
+        assert result.severity == EnumSeverity.CRITICAL, (
             f"Expected CRITICAL severity preserved, got {result.severity}"
         )
 
@@ -624,7 +625,7 @@ class TestInvariantPropertyBased:
         invariant = ModelInvariant(
             name="Non-Numeric Test",
             type=EnumInvariantType.THRESHOLD,
-            severity=EnumInvariantSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             config={"metric_name": "value", "max_value": 100.0},
         )
 
@@ -671,7 +672,7 @@ class TestInvariantPropertyBased:
         invariant = ModelInvariant(
             name="Missing Latency Test",
             type=EnumInvariantType.LATENCY,
-            severity=EnumInvariantSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             config={"max_ms": 1000.0},
         )
 
@@ -722,7 +723,7 @@ class TestInvariantPropertyBased:
         invariant = ModelInvariant(
             name="Missing Cost Test",
             type=EnumInvariantType.COST,
-            severity=EnumInvariantSeverity.CRITICAL,
+            severity=EnumSeverity.CRITICAL,
             config={"max_cost": 10.0},
         )
 
@@ -744,7 +745,7 @@ class TestInvariantPropertyBased:
             f"Expected expected_value to be max_cost (10.0), got {result.expected_value}"
         )
         # Severity should be preserved
-        assert result.severity == EnumInvariantSeverity.CRITICAL, (
+        assert result.severity == EnumSeverity.CRITICAL, (
             f"Expected CRITICAL severity, got {result.severity}"
         )
 
@@ -787,7 +788,7 @@ class TestInvariantPropertyBased:
         invariant = ModelInvariant(
             name="Non-Numeric Latency Test",
             type=EnumInvariantType.LATENCY,
-            severity=EnumInvariantSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             config={"max_ms": 1000.0},
         )
 
@@ -835,7 +836,7 @@ class TestInvariantPropertyBased:
         invariant = ModelInvariant(
             name="Non-Numeric Cost Test",
             type=EnumInvariantType.COST,
-            severity=EnumInvariantSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             config={"max_cost": 10.0},
         )
 
