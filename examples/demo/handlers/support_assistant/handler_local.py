@@ -41,7 +41,7 @@ from examples.demo.handlers.support_assistant.protocol_llm_client import (
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors import ModelOnexError
 
-# Default config - use localhost; override via LLM_LOCAL_URL or LLM_QWEN_14B_URL
+# Default config - use localhost; override via LLM_LOCAL_URL
 DEFAULT_ENDPOINT = "http://localhost:8000"
 DEFAULT_MODEL = "qwen2.5-14b"
 DEFAULT_TIMEOUT = 60.0
@@ -81,10 +81,7 @@ class LocalLLMClient:
             timeout: Request timeout in seconds.
         """
         self.endpoint_url = (
-            endpoint_url
-            or os.getenv("LLM_LOCAL_URL")
-            or os.getenv("LLM_QWEN_14B_URL")
-            or DEFAULT_ENDPOINT
+            endpoint_url or os.getenv("LLM_LOCAL_URL") or DEFAULT_ENDPOINT
         )
         self.model_name = model_name or os.getenv("LLM_LOCAL_MODEL") or DEFAULT_MODEL
 

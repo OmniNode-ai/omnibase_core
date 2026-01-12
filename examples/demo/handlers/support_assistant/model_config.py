@@ -28,16 +28,61 @@ Example:
 """
 
 import os
+from pathlib import Path
 from typing import Literal, Self
 
+import yaml
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 __all__ = [
     "ModelConfig",
+    "load_config_from_contract",
     "OPENAI_CONFIG",
     "ANTHROPIC_CONFIG",
     "LOCAL_CONFIG",
 ]
+
+
+# Pydantic models for contract provider_config validation
+class _CloudProviderConfig(BaseModel):
+    """Configuration for cloud LLM providers (OpenAI, Anthropic)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    model_name: str
+    temperature: float = 0.7
+    max_tokens: int = 500
+    api_key_env: str
+
+
+class _LocalProviderConfig(BaseModel):
+    """Configuration for local LLM providers."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    model_name: str
+    temperature: float = 0.7
+    max_tokens: int = 500
+    endpoint_env: str = "LOCAL_LLM_ENDPOINT"
+    default_endpoint: str = "http://localhost:8000"
+
+
+class _ProviderConfigSection(BaseModel):
+    """The provider_config section of the contract."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    openai: _CloudProviderConfig
+    anthropic: _CloudProviderConfig
+    local: _LocalProviderConfig
+
+
+class _ContractWithProviderConfig(BaseModel):
+    """Partial contract model for extracting provider_config."""
+
+    model_config = ConfigDict(extra="ignore")  # Ignore other contract fields
+
+    provider_config: _ProviderConfigSection
 
 
 class ModelConfig(BaseModel):
@@ -121,7 +166,72 @@ class ModelConfig(BaseModel):
         return self
 
 
-# Pre-defined configurations
+def load_config_from_contract(
+    provider: Literal["openai", "anthropic", "local"],
+    contract_path: Path | None = None,
+) -> ModelConfig:
+    """Load ModelConfig from contract's provider_config section.
+
+    This is the preferred way to get configuration - the contract is
+    the single source of truth for all configuration values.
+
+    Args:
+        provider: The provider to load ("openai", "anthropic", or "local").
+        contract_path: Path to contract YAML. Defaults to support_assistant.yaml
+            in the same directory as this module.
+
+    Returns:
+        ModelConfig loaded from the contract.
+
+    Raises:
+        FileNotFoundError: If contract file not found.
+        ValidationError: If contract structure is invalid.
+    """
+    if contract_path is None:
+        contract_path = Path(__file__).parent / "support_assistant.yaml"
+
+    # Parse YAML and validate with Pydantic model
+    # Note: yaml.safe_load is allowed here per .yaml-validation-allowlist.yaml
+    with open(contract_path) as f:
+        contract_data = yaml.safe_load(f)
+
+    contract = _ContractWithProviderConfig.model_validate(contract_data)
+
+    # Extract the provider config (Pydantic already validated it exists)
+    if provider == "local":
+        local_cfg = contract.provider_config.local
+        # Local provider uses endpoint_env and default_endpoint from contract
+        endpoint_url = os.getenv(local_cfg.endpoint_env, local_cfg.default_endpoint)
+        return ModelConfig(
+            provider=provider,
+            model_name=local_cfg.model_name,
+            endpoint_url=endpoint_url,
+            temperature=local_cfg.temperature,
+            max_tokens=local_cfg.max_tokens,
+        )
+    elif provider == "anthropic":
+        anthropic_cfg = contract.provider_config.anthropic
+        return ModelConfig(
+            provider=provider,
+            model_name=anthropic_cfg.model_name,
+            temperature=anthropic_cfg.temperature,
+            max_tokens=anthropic_cfg.max_tokens,
+            api_key_env=anthropic_cfg.api_key_env,
+        )
+    else:  # openai
+        openai_cfg = contract.provider_config.openai
+        return ModelConfig(
+            provider=provider,
+            model_name=openai_cfg.model_name,
+            temperature=openai_cfg.temperature,
+            max_tokens=openai_cfg.max_tokens,
+            api_key_env=openai_cfg.api_key_env,
+        )
+
+
+# Pre-defined configurations (for backwards compatibility)
+# NOTE: Prefer using load_config_from_contract() which reads from the contract.
+# These static configs should match the values in support_assistant.yaml.
 #
 # IMPORTANT: Model identifiers follow provider naming conventions and may need
 # periodic updates as providers release newer versions. Last verified: 2025-05.

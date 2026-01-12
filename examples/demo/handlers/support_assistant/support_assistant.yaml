@@ -88,3 +88,25 @@ metadata:
   ticket: OMN-1201
   sla_tier: demo
   category: customer-support
+
+# Provider-specific configuration
+# All LLM provider defaults are defined here - handlers read from this contract
+provider_config:
+  openai:
+    model_name: "gpt-4o"
+    temperature: 0.7
+    max_tokens: 500
+    api_key_env: "OPENAI_API_KEY"
+  anthropic:
+    model_name: "claude-sonnet-4-20250514"
+    temperature: 0.7
+    max_tokens: 500
+    api_key_env: "ANTHROPIC_API_KEY"
+  local:
+    model_name: "qwen2.5-coder-14b"
+    temperature: 0.7
+    max_tokens: 500
+    # Environment variable for local endpoint - NOT hardcoded LAN IPs
+    endpoint_env: "LOCAL_LLM_ENDPOINT"
+    # Default endpoint if env var not set (localhost for dev)
+    default_endpoint: "http://localhost:8000"
