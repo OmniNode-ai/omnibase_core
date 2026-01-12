@@ -14,7 +14,7 @@ individual example summary data following ONEX naming conventions.
 
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.types.type_serializable_value import SerializedDict
@@ -48,11 +48,11 @@ class ModelExampleSummary(BaseModel):
         default=None, description="Output data"
     )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Export the model
 

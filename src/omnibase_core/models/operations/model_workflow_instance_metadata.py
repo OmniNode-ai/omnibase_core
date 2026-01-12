@@ -16,7 +16,7 @@ Follows ONEX strong typing principles and one-model-per-file architecture.
 from datetime import datetime
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.types.type_serializable_value import SerializedDict
 
@@ -67,11 +67,11 @@ class ModelWorkflowInstanceMetadata(BaseModel):
     tags: dict[str, str] = Field(default_factory=dict, description="Workflow tags")
     labels: dict[str, str] = Field(default_factory=dict, description="Workflow labels")
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 

@@ -41,7 +41,7 @@ See Also:
     - omnibase_core.models.utils.model_yaml_value: YAML value wrapper
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -88,12 +88,12 @@ class ModelYamlDumpOptions(BaseModel):
     indent: int = 2
     width: int = 120
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-        "frozen": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+        frozen=True,
+    )
 
     # Export the model
 

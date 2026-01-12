@@ -1,6 +1,6 @@
 """Model for fail-fast error details."""
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelFailFastDetails(BaseModel):
@@ -34,4 +34,4 @@ class ModelFailFastDetails(BaseModel):
         description="Any additional structured information as string",
     )
 
-    model_config = {"extra": "allow"}
+    model_config = ConfigDict(extra="allow")

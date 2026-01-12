@@ -7,7 +7,7 @@ with factors, weights, and execution parameters for contract-driven behavior.
 Strict typing is enforced - no Any types allowed in implementation.
 """
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_error_context import ModelErrorContext
@@ -72,8 +72,8 @@ class ModelAlgorithmConfig(BaseModel):
             )
         return v
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )

@@ -10,7 +10,7 @@ with proper typing and validation.
 """
 
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.types.type_serializable_value import SerializedDict
 
@@ -29,11 +29,11 @@ class ModelPerformanceMetrics(BaseModel):
     io_operations: int = Field(default=0, description="Number of I/O operations")
     network_calls: int = Field(default=0, description="Number of network calls")
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 

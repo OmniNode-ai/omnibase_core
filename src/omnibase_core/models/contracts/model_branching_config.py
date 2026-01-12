@@ -7,7 +7,7 @@ strategies for dynamic workflow execution paths.
 Strict typing is enforced: No Any types allowed in implementation.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelBranchingConfig(BaseModel):
@@ -55,8 +55,8 @@ class ModelBranchingConfig(BaseModel):
         ge=1,
     )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )

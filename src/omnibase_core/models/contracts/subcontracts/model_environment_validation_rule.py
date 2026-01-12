@@ -7,7 +7,7 @@ Replaces dict[str, str] nested structures with proper type safety.
 Strict typing is enforced: No Any types allowed in implementation.
 """
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_environment_validation_rule_type import (
@@ -68,11 +68,11 @@ class ModelEnvironmentValidationRule(BaseModel):
         description="Regex pattern for format validation",
     )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     @model_validator(mode="after")
     def validate_rule_specific_fields(self) -> "ModelEnvironmentValidationRule":

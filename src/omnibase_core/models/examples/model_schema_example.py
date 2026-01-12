@@ -14,7 +14,7 @@ Type-safe model for extracting examples from YAML schema files,
 replacing dict[str, Any] return types with structured models.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_data_type import EnumDataType
@@ -267,11 +267,11 @@ class ModelSchemaExample(BaseModel):
         self.is_validated = True
         return True
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Export the model
 

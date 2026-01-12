@@ -29,7 +29,7 @@ CommandOptionValue = object
 # Runtime type validation should be done where values are consumed.
 ExecutionContextValue = object
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.enums.enum_execution_phase import EnumExecutionPhase
 from omnibase_core.enums.enum_execution_status_v2 import (
@@ -413,11 +413,11 @@ class ModelCliExecution(BaseModel):
             anomaly_threshold=None,
         )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 

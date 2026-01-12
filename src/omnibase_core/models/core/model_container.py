@@ -17,7 +17,7 @@ repetitive patterns while maintaining type safety.
 """
 
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_error_context import ModelErrorContext
@@ -284,11 +284,11 @@ class ModelContainer[T](BaseModel):
             ")"
         )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Note: Previously had factory functions (string_container, int_container, etc.)
     # These were removed to comply with ONEX strong typing standards.

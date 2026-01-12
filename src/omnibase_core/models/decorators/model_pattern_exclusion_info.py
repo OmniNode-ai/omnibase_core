@@ -1,6 +1,6 @@
 """Model for ONEX pattern exclusion information."""
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelPatternExclusionInfo(BaseModel):
@@ -35,4 +35,4 @@ class ModelPatternExclusionInfo(BaseModel):
         description="Optional code reviewer who approved the exclusion",
     )
 
-    model_config = {"frozen": True}
+    model_config = ConfigDict(frozen=True)

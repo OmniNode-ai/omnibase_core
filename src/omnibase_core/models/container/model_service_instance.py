@@ -3,7 +3,7 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.protocols import LiteralInjectionScope, LiteralServiceLifecycle
 from omnibase_core.types.type_serializable_value import SerializedDict
@@ -41,7 +41,7 @@ class ModelServiceInstance(BaseModel):
         ```
     """
 
-    model_config = {"arbitrary_types_allowed": True}
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     instance_id: UUID = Field(description="Unique instance identifier")
     service_registration_id: UUID = Field(description="Registration ID")

@@ -12,7 +12,7 @@ Follows ONEX one-model-per-file naming conventions.
 
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.enums.enum_config_type import EnumConfigType
 from omnibase_core.models.infrastructure.model_value import ModelValue
@@ -44,11 +44,11 @@ class ModelNestedConfiguration(BaseModel):
         description="Configuration settings with strongly-typed values",
     )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Export the model
 

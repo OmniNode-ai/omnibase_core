@@ -6,7 +6,7 @@ import enum
 from typing import Annotated, Any, ClassVar
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, StringConstraints, field_validator
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator
 
 from omnibase_core.enums import EnumLifecycle, EnumMetaType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -169,7 +169,7 @@ class ModelNodeMetadataBlock(BaseModel):
         },
     )
 
-    model_config = {"arbitrary_types_allowed": True}
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     # Canonicalization/canonicalizer policy (not Pydantic config)
     canonicalization_policy: ClassVar[ModelCanonicalizationPolicy] = (
