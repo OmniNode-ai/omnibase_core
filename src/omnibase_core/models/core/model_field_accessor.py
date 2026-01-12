@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel
 
+from omnibase_core.errors.exception_groups import ATTRIBUTE_ACCESS_ERRORS
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.infrastructure.model_result import ModelResult
 from omnibase_core.types.type_constraints import PrimitiveValueType
@@ -54,7 +55,7 @@ class ModelFieldAccessor(BaseModel):
             return ModelResult.err(
                 f"Field at '{path}' has unsupported type: {type(obj)}",
             )
-        except (AttributeError, KeyError, TypeError) as e:
+        except ATTRIBUTE_ACCESS_ERRORS as e:
             if default is not None:
                 return ModelResult.ok(default)
             return ModelResult.err(f"Error accessing field '{path}': {e!s}")
@@ -112,7 +113,7 @@ class ModelFieldAccessor(BaseModel):
                 return True
 
             return False
-        except (AttributeError, KeyError, TypeError):
+        except ATTRIBUTE_ACCESS_ERRORS:
             return False
 
     def has_field(self, path: str) -> bool:
@@ -131,7 +132,7 @@ class ModelFieldAccessor(BaseModel):
                 else:
                     return False
             return True
-        except (AttributeError, KeyError, TypeError):
+        except ATTRIBUTE_ACCESS_ERRORS:
             return False
 
     def remove_field(self, path: str) -> bool:
@@ -167,7 +168,7 @@ class ModelFieldAccessor(BaseModel):
                 return False
 
             return True
-        except (AttributeError, KeyError, TypeError):
+        except ATTRIBUTE_ACCESS_ERRORS:
             return False
 
     model_config = {

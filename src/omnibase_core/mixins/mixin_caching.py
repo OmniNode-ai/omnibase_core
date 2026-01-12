@@ -66,6 +66,7 @@ from typing import TYPE_CHECKING, Any
 
 from omnibase_core.decorators.decorator_allow_dict_any import allow_dict_any
 from omnibase_core.enums import EnumCoreErrorCode
+from omnibase_core.errors.exception_groups import VALIDATION_ERRORS
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.typed_dict_mixin_types import TypedDictCacheStats
 
@@ -213,8 +214,8 @@ class MixinCaching:
         try:
             json_str = json.dumps(data, sort_keys=True, default=str)
             return hashlib.sha256(json_str.encode()).hexdigest()
-        except (TypeError, ValueError):
-            # Fallback for non-serializable data
+        except VALIDATION_ERRORS:
+            # fallback-ok: use string representation for non-serializable data
             return hashlib.sha256(str(data).encode()).hexdigest()
 
     def _is_expired(self, expiry: float | None) -> bool:

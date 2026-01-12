@@ -54,6 +54,7 @@ from datetime import UTC, datetime
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors.exception_groups import VALIDATION_ERRORS
 from omnibase_core.models.contracts.model_contract_fingerprint import (
     ModelContractFingerprint,
 )
@@ -204,7 +205,7 @@ def normalize_contract(
         else:
             return json.dumps(normalized, sort_keys=True, indent=2)
 
-    except (TypeError, ValueError) as e:
+    except VALIDATION_ERRORS as e:
         raise ModelOnexError(
             message=f"Failed to normalize contract: {e}",
             error_code=EnumCoreErrorCode.VALIDATION_ERROR,

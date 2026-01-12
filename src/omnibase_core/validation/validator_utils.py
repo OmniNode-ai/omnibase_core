@@ -41,6 +41,7 @@ from pathlib import Path
 
 from omnibase_core.decorators.decorator_allow_dict_any import allow_dict_any
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors.exception_groups import ATTRIBUTE_ACCESS_ERRORS
 from omnibase_core.models.common.model_validation_result import ModelValidationResult
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.validation.model_duplication_info import ModelDuplicationInfo
@@ -657,7 +658,7 @@ def extract_protocol_signature(file_path: Path) -> ModelProtocolInfo | None:
         # Extremely large files may exhaust memory during AST parsing
         logger.warning(f"Memory exhausted parsing {file_path}. Skipping file.")
         return None
-    except (AttributeError, KeyError, TypeError) as e:
+    except ATTRIBUTE_ACCESS_ERRORS as e:
         # Handle AST processing errors: malformed tree structures, missing attributes,
         # or unexpected types from extractor operations
         logger.warning(f"Error processing AST in {file_path}: {e}. Skipping file.")

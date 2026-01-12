@@ -138,12 +138,14 @@ class ModelRoutingMetadata(BaseModel):
             ValueError: If the value is not a string or not a valid strategy.
         """
         if not isinstance(v, str):
+            # error-ok: Pydantic field_validator requires ValueError
             raise ValueError(
                 f"load_balance_strategy must be a string, got {type(v).__name__}"
             )
         normalized = v.lower().strip()
         if normalized not in VALID_LOAD_BALANCE_STRATEGIES:
             valid_strategies = ", ".join(sorted(VALID_LOAD_BALANCE_STRATEGIES))
+            # error-ok: Pydantic field_validator requires ValueError
             raise ValueError(
                 f"Invalid load_balance_strategy '{v}': must be one of {valid_strategies}"
             )

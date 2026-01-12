@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from omnibase_core.decorators.decorator_error_handling import standard_error_handling
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_validation_metadata import (
     ModelValidationMetadata,
@@ -82,6 +83,7 @@ class ServiceValidationSuite:
             },
         }
 
+    @standard_error_handling("Validation execution")
     def run_validation(
         self,
         validation_type: str,

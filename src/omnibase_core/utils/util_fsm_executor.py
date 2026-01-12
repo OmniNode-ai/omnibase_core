@@ -17,6 +17,7 @@ if TYPE_CHECKING:
     from typing import SupportsFloat
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors.exception_groups import VALIDATION_ERRORS
 from omnibase_core.models.contracts.subcontracts.model_fsm_state_definition import (
     ModelFSMStateDefinition,
 )
@@ -555,7 +556,7 @@ async def _evaluate_single_condition(
             return float(cast("SupportsFloat", field_value) or 0) > float(
                 expected_value or "0"
             )
-        except (TypeError, ValueError):
+        except VALIDATION_ERRORS:
             return False
     elif operator == "<":
         try:
@@ -563,7 +564,7 @@ async def _evaluate_single_condition(
             return float(cast("SupportsFloat", field_value) or 0) < float(
                 expected_value or "0"
             )
-        except (TypeError, ValueError):
+        except VALIDATION_ERRORS:
             return False
     elif operator == ">=":
         try:
@@ -571,7 +572,7 @@ async def _evaluate_single_condition(
             return float(cast("SupportsFloat", field_value) or 0) >= float(
                 expected_value or "0"
             )
-        except (TypeError, ValueError):
+        except VALIDATION_ERRORS:
             return False
     elif operator == "<=":
         try:
@@ -579,7 +580,7 @@ async def _evaluate_single_condition(
             return float(cast("SupportsFloat", field_value) or 0) <= float(
                 expected_value or "0"
             )
-        except (TypeError, ValueError):
+        except VALIDATION_ERRORS:
             return False
     elif operator == "in":
         # Check if field_value is in expected_value (comma-separated list or iterable)

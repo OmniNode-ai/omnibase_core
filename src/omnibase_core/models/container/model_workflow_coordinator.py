@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
+from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.type_serializable_value import SerializedDict
 
@@ -76,7 +77,7 @@ class ModelWorkflowCoordinator:
 
             return workflow_result
 
-        except (AttributeError, KeyError, RuntimeError, TypeError, ValueError) as e:
+        except PYDANTIC_MODEL_ERRORS as e:
             # Log workflow failure
             emit_log_event(
                 LogLevel.ERROR,
@@ -123,7 +124,7 @@ class ModelWorkflowCoordinator:
 
             return result
 
-        except (AttributeError, KeyError, RuntimeError, TypeError, ValueError) as e:
+        except PYDANTIC_MODEL_ERRORS as e:
             emit_log_event(
                 LogLevel.ERROR,
                 f"Workflow execution failed for type {workflow_type}: {e}",

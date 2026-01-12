@@ -149,15 +149,18 @@ class ModelDetectionMetadata(BaseModel):
                     or not isinstance(minor, int)
                     or not isinstance(patch, int)
                 ):
+                    # error-ok: Pydantic field_validator requires ValueError
                     raise ValueError(
                         "Invalid rule_version dict: major, minor, patch must be integers"
                     )
                 return ModelSemVer(major=major, minor=minor, patch=patch)
             except (TypeError, KeyError, ValueError) as e:
+                # error-ok: Pydantic field_validator requires ValueError
                 raise ValueError(
                     f"Invalid rule_version dict format: expected {{'major': int, "
                     f"'minor': int, 'patch': int}}, got {v}"
                 ) from e
+        # error-ok: Pydantic field_validator requires ValueError
         raise ValueError(f"Expected ModelSemVer, str, or dict, got {type(v).__name__}")
 
     @field_validator("false_positive_likelihood", mode="before")

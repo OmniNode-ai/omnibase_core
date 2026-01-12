@@ -12,6 +12,7 @@ import yaml
 from pydantic import TypeAdapter, ValidationError
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors.exception_groups import VALIDATION_ERRORS
 from omnibase_core.models.discovery.model_mixin_info import ModelMixinInfo
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.type_serializable_value import SerializedDict
@@ -167,7 +168,7 @@ class MixinDiscovery:
                 mixin_info = ModelMixinInfo.model_validate(mixin_data)
                 cache[mixin_info.name] = mixin_info
 
-            except (TypeError, ValidationError, ValueError) as e:
+            except VALIDATION_ERRORS as e:
                 raise ModelOnexError(
                     error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"Failed to parse metadata for mixin '{mixin_key}': {e}",

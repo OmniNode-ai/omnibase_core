@@ -39,6 +39,7 @@ from omnibase_core.constants import TIMEOUT_DEFAULT_MS
 from omnibase_core.constants.constants_event_types import TOOL_INVOCATION
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
+from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
 from omnibase_core.logging.logging_structured import emit_log_event_sync
 from omnibase_core.models.core.model_log_context import ModelLogContext
 from omnibase_core.models.discovery.model_node_shutdown_event import (
@@ -195,8 +196,8 @@ class MixinNodeService:
             for callback in self._shutdown_callbacks:
                 try:
                     callback()
-                # fallback-ok: user callbacks must not crash shutdown
                 except Exception as e:
+                    # fallback-ok: user callbacks must not crash shutdown
                     self._log_error(f"Shutdown callback failed: {e}")
 
             # Cleanup event handlers if available
@@ -206,8 +207,8 @@ class MixinNodeService:
             self._service_running = False
             self._log_info("Service stopped successfully")
 
-        # fallback-ok: shutdown must complete even if cleanup fails
         except Exception as e:
+            # cleanup-resilience-ok: shutdown must complete even if cleanup fails
             self._log_error(f"Error during service shutdown: {e}")
             self._service_running = False
 
@@ -423,7 +424,7 @@ class MixinNodeService:
                 container = self.container
                 if hasattr(container, "get_service"):
                     event_bus = container.get_service("event_bus")
-            except (AttributeError, KeyError, RuntimeError, TypeError, ValueError):
+            except (*PYDANTIC_MODEL_ERRORS, RuntimeError):
                 # fallback-ok: service lookup failure continues to next strategy
                 pass
 
@@ -630,7 +631,7 @@ class MixinNodeService:
                 container = self.container
                 if hasattr(container, "get_service"):
                     event_bus = container.get_service("event_bus")
-            except (AttributeError, KeyError, RuntimeError, TypeError, ValueError):
+            except (*PYDANTIC_MODEL_ERRORS, RuntimeError):
                 # fallback-ok: optional event bus for response
                 pass
 
@@ -665,7 +666,7 @@ class MixinNodeService:
                     container = self.container
                     if hasattr(container, "get_service"):
                         event_bus = container.get_service("event_bus")
-                except (AttributeError, KeyError, RuntimeError, TypeError, ValueError):
+                except (*PYDANTIC_MODEL_ERRORS, RuntimeError):
                     # fallback-ok: optional event bus for shutdown
                     pass
 

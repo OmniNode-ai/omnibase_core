@@ -168,6 +168,7 @@ class ModelMetricsContext(BaseModel):
         # Normalize to lowercase for comparison
         normalized = value.lower()
         if not _TRACE_ID_PATTERN.match(normalized):
+            # error-ok: Pydantic field_validator requires ValueError
             raise ValueError(
                 f"Invalid trace_id '{value}': must be 32 lowercase hex characters "
                 "(W3C Trace Context format)"
@@ -193,6 +194,7 @@ class ModelMetricsContext(BaseModel):
         # Normalize to lowercase for comparison
         normalized = value.lower()
         if not _SPAN_ID_PATTERN.match(normalized):
+            # error-ok: Pydantic field_validator requires ValueError
             raise ValueError(
                 f"Invalid span_id '{value}': must be 16 lowercase hex characters"
             )
@@ -215,6 +217,7 @@ class ModelMetricsContext(BaseModel):
         if value is None:
             return None
         if not 0.0 <= value <= 1.0:
+            # error-ok: Pydantic field_validator requires ValueError
             raise ValueError(
                 f"Invalid sampling_rate {value}: must be between 0.0 and 1.0 inclusive"
             )

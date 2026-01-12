@@ -105,6 +105,7 @@ from omnibase_core.enums.enum_workflow_execution import (
     EnumExecutionMode,
     EnumWorkflowState,
 )
+from omnibase_core.errors.exception_groups import VALIDATION_ERRORS
 from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
 from omnibase_core.models.contracts.subcontracts.model_workflow_definition import (
     ModelWorkflowDefinition,
@@ -846,12 +847,9 @@ async def _execute_sequential(
             # For other error actions (retry, compensate), continue for now
 
         except Exception as e:
-            # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
-            # Broad exception catch justified for workflow orchestration:
-            # - Workflow steps execute external code with unknown exception types
-            # - Production workflows require resilient error handling
-            # - All failures logged with full traceback for debugging
-            # - Failed steps tracked; execution continues per error_action config
+            # boundary-ok: workflow steps execute external code with unknown exception types
+            # Production workflows require resilient error handling - all failures logged
+            # with full traceback for debugging. Failed steps tracked per error_action config.
             failed_steps.append(str(step.step_id))
             logging.exception(
                 f"Workflow '{workflow_definition.workflow_metadata.workflow_name}' step '{step.step_name}' ({step.step_id}) failed with unexpected error: {e}"
@@ -1455,7 +1453,7 @@ def _validate_json_payload(
         else:
             # Use custom handler for UUID/datetime, reject all other non-JSON types
             json.dumps(payload, default=_json_default_for_workflow)
-    except (TypeError, ValueError) as e:
+    except VALIDATION_ERRORS as e:
         context_suffix = f" for step '{context}'" if context else ""
         raise ModelOnexError(
             error_code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -1552,7 +1550,7 @@ def _create_action_for_step(
         payload_json = json.dumps(
             typed_payload.model_dump(), default=_json_default_for_workflow
         )
-    except (TypeError, ValueError) as e:
+    except VALIDATION_ERRORS as e:
         raise ModelOnexError(
             error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=f"Payload is not JSON-serializable for step '{step.step_name}': {e}",

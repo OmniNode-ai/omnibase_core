@@ -141,6 +141,8 @@ import sys
 import warnings
 from typing import TYPE_CHECKING
 
+from omnibase_core.errors.exception_groups import VALIDATION_ERRORS
+
 if TYPE_CHECKING:
     from collections.abc import Callable
 
@@ -316,7 +318,7 @@ def rebuild_model_references(
                 "error_details": str(e),
             },
         ) from e
-    except (TypeError, ValueError) as e:
+    except VALIDATION_ERRORS as e:
         raise ModelOnexError(
             message=f"Failed to rebuild {model_name}: {e}",
             error_code=EnumCoreErrorCode.INITIALIZATION_FAILED,
@@ -473,7 +475,7 @@ def handle_subclass_forward_refs(
             subclass_name,
             e,
         )
-    except (TypeError, ValueError) as e:
+    except VALIDATION_ERRORS as e:
         # Type annotation issues during rebuild - likely configuration error
         msg = (
             f"{parent_name} subclass {subclass_name}: forward reference "

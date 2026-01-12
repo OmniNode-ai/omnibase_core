@@ -176,10 +176,12 @@ class ModelServiceDiscoveryMetadata(BaseModel):
             ValueError: If the value is not a string or not a valid protocol.
         """
         if not isinstance(v, str):
+            # error-ok: Pydantic field_validator requires ValueError
             raise ValueError(f"Protocol must be a string, got {type(v).__name__}")
         normalized = v.lower().strip()
         if normalized not in VALID_PROTOCOLS:
             valid_list = ", ".join(sorted(VALID_PROTOCOLS))
+            # error-ok: Pydantic field_validator requires ValueError
             raise ValueError(f"Invalid protocol '{v}': must be one of {valid_list}")
         # Cast to ServiceProtocol since we've validated it's a valid value
         return normalized  # type: ignore[return-value]
@@ -201,6 +203,7 @@ class ModelServiceDiscoveryMetadata(BaseModel):
         if v is None:
             return None
         if not isinstance(v, str):
+            # error-ok: Pydantic field_validator requires ValueError
             raise ValueError(
                 f"Health check URL must be a string, got {type(v).__name__}"
             )
@@ -212,12 +215,14 @@ class ModelServiceDiscoveryMetadata(BaseModel):
         parsed = urlparse(v)
         # Validate scheme
         if parsed.scheme not in ("http", "https"):
+            # error-ok: Pydantic field_validator requires ValueError
             raise ValueError(
                 f"Invalid health check URL '{v}': scheme must be 'http' or 'https', "
                 f"got '{parsed.scheme or '(empty)'}'"
             )
         # Validate netloc (host[:port])
         if not parsed.netloc:
+            # error-ok: Pydantic field_validator requires ValueError
             raise ValueError(f"Invalid health check URL '{v}': missing host")
         return v
 
@@ -245,10 +250,12 @@ class ModelServiceDiscoveryMetadata(BaseModel):
             try:
                 return UUID(v)
             except ValueError:
+                # error-ok: Pydantic field_validator requires ValueError
                 raise ValueError(
                     f"Invalid UUID string for service_instance_id: '{v}'. "
                     f"Must be a valid UUID format (e.g., '550e8400-e29b-41d4-a716-446655440000')"
                 ) from None
+        # error-ok: Pydantic field_validator requires ValueError
         raise ValueError(
             f"service_instance_id must be UUID or str, got {type(v).__name__}"
         )
@@ -303,13 +310,16 @@ class ModelServiceDiscoveryMetadata(BaseModel):
                     or not isinstance(minor, int)
                     or not isinstance(patch, int)
                 ):
+                    # error-ok: Pydantic field_validator requires ValueError
                     raise ValueError(
                         "Invalid service_version dict: major, minor, patch must be integers"
                     )
                 return ModelSemVer(major=major, minor=minor, patch=patch)
             except (TypeError, KeyError, ValueError) as e:
+                # error-ok: Pydantic field_validator requires ValueError
                 raise ValueError(
                     f"Invalid service_version dict format: expected {{'major': int, "
                     f"'minor': int, 'patch': int}}, got {v}"
                 ) from e
+        # error-ok: Pydantic field_validator requires ValueError
         raise ValueError(f"Expected ModelSemVer, str, or dict, got {type(v).__name__}")

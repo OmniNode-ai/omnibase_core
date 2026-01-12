@@ -187,7 +187,7 @@ class RunnerPipeline:
                     phase_errors = await self._execute_phase(phase, context)
                     errors.extend(phase_errors)
                 except Exception as e:
-                    # Fail-fast phase raised exception
+                    # catch-all-ok: fail-fast phase raised exception, captured for re-raise after finalize
                     exception_to_raise = e
                     break  # Stop executing phases, but finalize will still run
         finally:
@@ -241,7 +241,7 @@ class RunnerPipeline:
                     # Only clear hook_name after successful execution
                     current_hook_name = None
                 except Exception as e:
-                    # Capture error with proper hook_name context
+                    # catch-all-ok: finalize hooks must complete; errors captured for reporting
                     errors.append(
                         ModelHookError(
                             phase="finalize",
@@ -254,7 +254,7 @@ class RunnerPipeline:
                     current_hook_name = None
 
         except Exception as framework_exc:
-            # Framework-level error (e.g., plan access failure, hook retrieval error)
+            # catch-all-ok: framework-level error captured for error list, no exception escapes finalize
             # Include last known hook_name if available for debugging context
             hook_name_context = (
                 f"[framework:after:{current_hook_name}]"
@@ -314,6 +314,7 @@ class RunnerPipeline:
             try:
                 await self._execute_hook(hook, context)
             except Exception as e:
+                # catch-all-ok: hook execution errors captured for phase semantics
                 if fail_fast:
                     # Re-raise immediately for fail-fast phases
                     raise

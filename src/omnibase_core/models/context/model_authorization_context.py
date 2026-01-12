@@ -127,5 +127,6 @@ class ModelAuthorizationContext(BaseModel):
             # Python 3.11+ fromisoformat handles 'Z' suffix
             datetime.fromisoformat(value.replace("Z", "+00:00"))
         except ValueError as e:
+            # error-ok: Pydantic field_validator requires ValueError
             raise ValueError(f"Invalid ISO 8601 timestamp for expiry: {value}") from e
         return value

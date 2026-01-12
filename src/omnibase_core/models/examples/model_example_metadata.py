@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pydantic import Field
 
+from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 """
@@ -69,7 +70,7 @@ class ModelExampleMetadata(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except (AttributeError, ValueError, TypeError) as e:
+        except PYDANTIC_MODEL_ERRORS as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
@@ -85,7 +86,7 @@ class ModelExampleMetadata(BaseModel):
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except (AttributeError, ValueError, TypeError) as e:
+        except PYDANTIC_MODEL_ERRORS as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",

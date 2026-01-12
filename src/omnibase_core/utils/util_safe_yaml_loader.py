@@ -43,6 +43,7 @@ import yaml
 from pydantic import BaseModel, ValidationError
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
@@ -519,7 +520,7 @@ def extract_example_from_schema(
             ),
             cause=e,
         )
-    except (AttributeError, TypeError, KeyError, ValueError) as e:
+    except PYDANTIC_MODEL_ERRORS as e:
         # Catch dict access errors, type conversion errors, or data structure issues
         raise ModelOnexError(
             error_code=EnumCoreErrorCode.INTERNAL_ERROR,

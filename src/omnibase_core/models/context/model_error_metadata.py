@@ -197,6 +197,7 @@ class ModelErrorMetadata(BaseModel):
             ValueError: If retry_count is negative.
         """
         if value is not None and value < 0:
+            # error-ok: Pydantic field_validator requires ValueError
             raise ValueError(f"retry_count must be >= 0, got {value}")
         return value
 
@@ -229,8 +230,10 @@ class ModelErrorMetadata(BaseModel):
         if value is None:
             return None
         if not value:
+            # error-ok: Pydantic field_validator requires ValueError
             raise ValueError("Error code cannot be empty")
         if not ERROR_CODE_PATTERN.match(value):
+            # error-ok: Pydantic field_validator requires ValueError
             raise ValueError(
                 f"Invalid error_code format '{value}': expected CATEGORY_NNN "
                 f"pattern (e.g., AUTH_001, VALIDATION_123). "

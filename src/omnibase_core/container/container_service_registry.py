@@ -224,7 +224,7 @@ class ServiceRegistry:
             # Re-raise ONEX errors as-is
             raise
         except Exception as e:
-            # Catch all other exceptions from registration process
+            # boundary-ok: wrap registration failures in structured ONEX error
             self._failed_registrations += 1
             msg = (
                 f"Failed to register service '{interface.__name__ if hasattr(interface, '__name__') else str(interface)}'. "
@@ -320,7 +320,7 @@ class ServiceRegistry:
             # Re-raise ONEX errors as-is
             raise
         except Exception as e:
-            # Catch all other exceptions from instance registration
+            # boundary-ok: wrap instance registration failures in structured ONEX error
             self._failed_registrations += 1
             interface_name = (
                 interface.__name__ if hasattr(interface, "__name__") else str(interface)
@@ -506,7 +506,7 @@ class ServiceRegistry:
         except ModelOnexError:
             raise
         except Exception as e:
-            # Catch all other exceptions from service resolution
+            # boundary-ok: wrap service resolution failures in structured ONEX error
             interface_name = (
                 interface.__name__ if hasattr(interface, "__name__") else str(interface)
             )

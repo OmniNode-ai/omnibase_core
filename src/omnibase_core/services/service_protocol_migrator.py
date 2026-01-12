@@ -10,6 +10,7 @@ import shutil
 from pathlib import Path
 from typing import cast
 
+from omnibase_core.decorators.decorator_error_handling import standard_error_handling
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.validation.model_migration_conflict_union import (
     ModelMigrationConflictUnion,
@@ -71,6 +72,7 @@ class ServiceProtocolMigrator:
         self.spi_path = Path(spi_path).resolve()
         self.source_repository = determine_repository_name(self.source_path)
 
+    @standard_error_handling("Migration plan creation")
     def create_migration_plan(
         self,
         protocols: list[ModelProtocolInfo] | None = None,

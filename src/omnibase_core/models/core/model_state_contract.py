@@ -38,6 +38,7 @@ Schema Version: 1.0.0
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
 from omnibase_core.models.core.model_examples import ModelExample
 from omnibase_core.models.core.model_protocol_metadata import ModelGenericMetadata
 from omnibase_core.models.metadata.model_metadata_constants import (
@@ -268,7 +269,7 @@ class ModelStateContract(BaseModel):
 
             return cls.model_validate(mutable_data)
 
-        except (AttributeError, KeyError, TypeError, ValueError) as e:
+        except PYDANTIC_MODEL_ERRORS as e:
             raise ModelOnexError(
                 EnumCoreErrorCode.VALIDATION_ERROR,
                 f"Failed to parse state contract: {e}",
@@ -298,7 +299,7 @@ def load_state_contract_from_file(file_path: str) -> ModelStateContract:
 
         # Use centralized YAML loading with full Pydantic validation
         return load_and_validate_yaml_model(path, ModelStateContract)
-    except (AttributeError, KeyError, TypeError, ValueError) as e:
+    except PYDANTIC_MODEL_ERRORS as e:
         raise ModelOnexError(
             EnumCoreErrorCode.FILE_READ_ERROR,
             f"Failed to load contract from {file_path}: {e}",

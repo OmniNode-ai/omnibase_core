@@ -148,6 +148,7 @@ class ModelExecutionTraceStep(BaseModel):
     def validate_time_ordering(self) -> "ModelExecutionTraceStep":
         """Validate that end_ts is not before start_ts."""
         if self.end_ts < self.start_ts:
+            # error-ok: Pydantic model_validator requires ValueError
             raise ValueError(
                 f"end_ts ({self.end_ts}) cannot be before start_ts ({self.start_ts})"
             )

@@ -156,6 +156,7 @@ from omnibase_core.constants.constants_effect import (
 )
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_effect_types import EnumTransactionState
+from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
 from omnibase_core.models.configuration.model_circuit_breaker import ModelCircuitBreaker
 from omnibase_core.models.context import ModelEffectInputData
 from omnibase_core.models.contracts.subcontracts.model_effect_io_configs import (
@@ -1601,7 +1602,7 @@ class MixinEffectExecution:
 
             except ModelOnexError:
                 raise
-            except (AttributeError, IndexError, KeyError, TypeError, ValueError) as e:
+            except PYDANTIC_MODEL_ERRORS as e:
                 raise ModelOnexError(
                     message=f"Field extraction failed for {output_name}: {e!s}",
                     error_code=EnumCoreErrorCode.OPERATION_FAILED,

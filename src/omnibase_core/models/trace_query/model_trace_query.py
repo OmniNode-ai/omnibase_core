@@ -134,6 +134,7 @@ class ModelTraceQuery(BaseModel):
         """Validate that end_time is not before start_time."""
         if self.end_time is not None and self.start_time is not None:
             if self.end_time < self.start_time:
+                # error-ok: Pydantic model_validator requires ValueError
                 raise ValueError(
                     f"end_time ({self.end_time}) cannot be before "
                     f"start_time ({self.start_time})"

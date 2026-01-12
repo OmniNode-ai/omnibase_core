@@ -57,6 +57,7 @@ if TYPE_CHECKING:
     from omnibase_core.protocols.event_bus import ProtocolEventBusListener
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
+from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
 from omnibase_core.logging.logging_structured import (
     emit_log_event_sync as emit_log_event,
 )
@@ -468,7 +469,8 @@ class MixinEventListener[InputStateT, OutputStateT]:
                 {"node_name": self.get_node_name(), "total_loops": loop_count},
             )
 
-        except Exception as e:  # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
+        except Exception as e:
+            # boundary-ok: event listener loop must log errors but not crash; KeyboardInterrupt/SystemExit propagate
             emit_log_event(
                 LogLevel.ERROR,
                 f"❌ EVENT_LISTENER_LOOP: Critical error in event listener: {e}",
@@ -552,7 +554,8 @@ class MixinEventListener[InputStateT, OutputStateT]:
                         {"node_name": self.get_node_name(), "event_type": event_type},
                     )
                     return
-                except Exception as e:  # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
+                except Exception as e:
+                    # fallback-ok: specific handler failure falls through to generic processing
                     emit_log_event(
                         LogLevel.ERROR,
                         f"❌ EVENT_ROUTING: Specific handler {specific_handler_name} failed: {e}",
@@ -636,7 +639,8 @@ class MixinEventListener[InputStateT, OutputStateT]:
                     },
                 )
 
-            except Exception as e:  # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
+            except Exception as e:
+                # boundary-ok: event processing errors emit error event instead of crashing
                 emit_log_event(
                     LogLevel.ERROR,
                     "❌ EVENT_PROCESSING: Failed to process event",
@@ -774,7 +778,7 @@ class MixinEventListener[InputStateT, OutputStateT]:
                     {"node_name": self.get_node_name()},
                 )
                 return cast("InputStateT", result)
-            except (AttributeError, KeyError, TypeError, ValueError) as e:
+            except PYDANTIC_MODEL_ERRORS as e:
                 emit_log_event(
                     LogLevel.ERROR,
                     "❌ EVENT_TO_INPUT_STATE: Failed to create input state from event",

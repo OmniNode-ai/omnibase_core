@@ -44,6 +44,7 @@ class MixinTruncationValidation:
             ValueError: If truncated=False but display_size_bytes != original_size_bytes.
         """
         if self.display_size_bytes > self.original_size_bytes:
+            # error-ok: Pydantic model_validator requires ValueError
             raise ValueError(
                 f"display_size_bytes ({self.display_size_bytes}) cannot exceed "
                 f"original_size_bytes ({self.original_size_bytes})"
@@ -51,11 +52,13 @@ class MixinTruncationValidation:
 
         if self.truncated:
             if self.display_size_bytes >= self.original_size_bytes:
+                # error-ok: Pydantic model_validator requires ValueError
                 raise ValueError(
                     f"When truncated=True, display_size_bytes ({self.display_size_bytes}) "
                     f"must be less than original_size_bytes ({self.original_size_bytes})"
                 )
         elif self.display_size_bytes != self.original_size_bytes:
+            # error-ok: Pydantic model_validator requires ValueError
             raise ValueError(
                 f"When truncated=False, display_size_bytes ({self.display_size_bytes}) "
                 f"must equal original_size_bytes ({self.original_size_bytes})"

@@ -28,6 +28,7 @@ from typing import Any, ClassVar
 
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 
+from omnibase_core.errors.exception_groups import VALIDATION_ERRORS
 from omnibase_core.types.typed_dict_mixin_types import TypedDictCacheStats
 
 
@@ -96,7 +97,7 @@ class ModelCapabilityCaching(BaseModel):
         try:
             json_str = json.dumps(data, sort_keys=True, default=str)
             return hashlib.sha256(json_str.encode()).hexdigest()
-        except (TypeError, ValueError):
+        except VALIDATION_ERRORS:
             # fallback-ok: use string representation for non-serializable data
             return hashlib.sha256(str(data).encode()).hexdigest()
 
