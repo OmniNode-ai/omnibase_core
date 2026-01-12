@@ -45,6 +45,9 @@ SUBSECTION_CHAR = "-"
 COMPARISON_LIMIT_CLI_VERBOSE = 10
 COMPARISON_LIMIT_MARKDOWN = 50
 
+# JSON formatting
+JSON_INDENT_SPACES = 2
+
 # Text truncation constants
 ELLIPSIS = "..."
 ELLIPSIS_LENGTH = len(ELLIPSIS)  # 3 characters for "..."
@@ -361,8 +364,7 @@ class ServiceDecisionReportGenerator:
         lines.append("")
 
         # Summary section
-        lines.append("SUMMARY")
-        lines.append(SUBSECTION_CHAR * len("SUMMARY"))
+        self._format_section_header("SUMMARY", lines)
         lines.append(f"Corpus: {summary.corpus_id}")
         lines.append(
             f"Baseline: {summary.baseline_version} | Replay: {summary.replay_version}"
@@ -376,10 +378,7 @@ class ServiceDecisionReportGenerator:
 
         # Invariant violations section
         violation_count = summary.invariant_violations.total_violations
-        lines.append(f"INVARIANT VIOLATIONS ({violation_count})")
-        lines.append(
-            SUBSECTION_CHAR * (len(f"INVARIANT VIOLATIONS ({violation_count})"))
-        )
+        self._format_section_header(f"INVARIANT VIOLATIONS ({violation_count})", lines)
 
         if violation_count == 0:
             lines.append("No violations detected.")
@@ -391,9 +390,14 @@ class ServiceDecisionReportGenerator:
             # by_severity counts violations by severity level (critical/warning/info).
             # by_type counts violations by type (e.g., "schema_mismatch", "constraint_violation").
             # These cannot be correlated since we don't have per-violation severity-type pairs.
-            # Normalize severity keys to lowercase for case-insensitive lookup.
+            #
+            # FIX: Violation severity display logic (PR #368) - Normalize severity keys
+            # to lowercase for case-insensitive lookup. Input data may have severity keys
+            # in any case (e.g., "CRITICAL", "Warning", "info"), but we need consistent
+            # display. Each severity type gets its correct label by using lowercase keys.
             normalized_severity = {k.lower(): v for k, v in by_severity.items()}
             severity_parts = []
+            # Extract counts for each known severity level using normalized keys
             critical_count = normalized_severity.get("critical", 0)
             warning_count = normalized_severity.get("warning", 0)
             info_count = normalized_severity.get("info", 0)
@@ -418,8 +422,7 @@ class ServiceDecisionReportGenerator:
         lines.append("")
 
         # Performance section
-        lines.append("PERFORMANCE")
-        lines.append(SUBSECTION_CHAR * len("PERFORMANCE"))
+        self._format_section_header("PERFORMANCE", lines)
 
         latency_delta = summary.latency_stats.delta_avg_percent
         latency_sign = "+" if latency_delta > 0 else ""
@@ -448,8 +451,7 @@ class ServiceDecisionReportGenerator:
         if recommendation is None:
             recommendation = self.generate_recommendation(summary)
         action_upper = recommendation.action.upper()
-        lines.append(f"RECOMMENDATION: {action_upper}")
-        lines.append(SUBSECTION_CHAR * (len(f"RECOMMENDATION: {action_upper}")))
+        self._format_section_header(f"RECOMMENDATION: {action_upper}", lines)
         lines.append(f"Confidence: {recommendation.confidence:.0%}")
         lines.append("")
 
@@ -473,8 +475,7 @@ class ServiceDecisionReportGenerator:
 
         # Verbose: include comparison details
         if verbosity == "verbose" and comparisons:
-            lines.append("COMPARISON DETAILS")
-            lines.append(SUBSECTION_CHAR * len("COMPARISON DETAILS"))
+            self._format_section_header("COMPARISON DETAILS", lines)
             for comparison in comparisons[:COMPARISON_LIMIT_CLI_VERBOSE]:
                 status = "PASS" if comparison.output_match else "FAIL"
                 lines.append(
@@ -523,11 +524,33 @@ class ServiceDecisionReportGenerator:
         Returns:
             Centered text string, truncated with ellipsis if too long.
         """
+        # FIX: Off-by-one error (PR #368) - Use strict '>' comparison, not '>='.
+        # Text of EXACTLY REPORT_WIDTH chars should NOT be truncated, only text
+        # that is LONGER than REPORT_WIDTH. Using '>=' would incorrectly truncate
+        # text that fits perfectly within the report width.
         if len(text) > REPORT_WIDTH:
             return text[: REPORT_WIDTH - ELLIPSIS_LENGTH] + ELLIPSIS
+        # Text exactly REPORT_WIDTH chars - return as-is without centering
         if len(text) == REPORT_WIDTH:
             return text
         return text.center(REPORT_WIDTH)
+
+    def _format_section_header(self, header: str, lines: list[str]) -> None:
+        """Add a section header with matching underline to the lines list.
+
+        This helper ensures consistent formatting of section headers in CLI reports
+        and eliminates duplication of header text when calculating underline length.
+
+        Args:
+            header: The section header text.
+            lines: The list of lines to append to (modified in place).
+        """
+        lines.append(header)
+        # FIX: Underline length calculation (PR #368) - Use len(header) to ensure
+        # the underline matches the header text length EXACTLY. Previously there
+        # was a risk of inconsistency when the header string was duplicated in
+        # both the header line and underline length calculation.
+        lines.append(SUBSECTION_CHAR * len(header))
 
     def generate_json_report(
         self,
@@ -787,17 +810,21 @@ class ServiceDecisionReportGenerator:
                 lines.append("")
 
             # Violations by severity table
-            # Normalize severity keys to lowercase for consistent sorting and display.
+            # FIX: Violation severity display logic (PR #368) - Normalize severity keys
+            # to lowercase for case-insensitive sorting and consistent display.
+            # Input may have mixed case keys ("CRITICAL", "Warning", "info").
             if summary.invariant_violations.by_severity:
                 lines.append("### By Severity")
                 lines.append("")
                 lines.append("| Severity | Count |")
                 lines.append("|----------|-------|")
                 # Normalize keys to lowercase for sorting, capitalize for display
+                # This ensures "CRITICAL", "Critical", and "critical" all display as "Critical"
                 normalized_items = [
                     (severity.lower(), count)
                     for severity, count in summary.invariant_violations.by_severity.items()
                 ]
+                # Sort by priority: critical (0) > warning (1) > info (2) > unknown (99)
                 for severity, count in sorted(
                     normalized_items,
                     key=lambda x: SEVERITY_SORT_ORDER.get(
@@ -851,7 +878,9 @@ class ServiceDecisionReportGenerator:
         if summary.cost_stats is not None:
             cost = summary.cost_stats
             cost_emoji = (
-                ":white_check_mark:" if cost.delta_percent <= 0 else ":warning:"
+                ":white_check_mark:"
+                if cost.delta_percent <= self.cost_warning_percent
+                else ":warning:"
             )
             lines.append(
                 f"{cost_emoji} Total cost change: **{cost.delta_percent:+.1f}%**"
@@ -1142,7 +1171,7 @@ class ServiceDecisionReportGenerator:
         Returns:
             JSON string representation of the report.
         """
-        return json.dumps(report, indent=2, default=str)
+        return json.dumps(report, indent=JSON_INDENT_SPACES, default=str)
 
     def save_to_markdown(
         self,
@@ -1234,9 +1263,13 @@ __all__ = [
     "DEFAULT_FALLBACK_SORT_ORDER",
     "ELLIPSIS",
     "ELLIPSIS_LENGTH",
+    "JSON_INDENT_SPACES",
     "REPORT_VERSION",
     "REPORT_WIDTH",
+    "SEPARATOR_CHAR",
+    "SEPARATOR_LINE",
     "SEVERITY_SORT_ORDER",
     "ServiceDecisionReportGenerator",
+    "SUBSECTION_CHAR",
     "UUID_DISPLAY_LENGTH",
 ]

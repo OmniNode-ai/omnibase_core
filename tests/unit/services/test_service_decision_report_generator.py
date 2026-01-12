@@ -25,7 +25,7 @@ import json
 import re
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal, cast
 from uuid import uuid4
 
 import pytest
@@ -50,6 +50,7 @@ from omnibase_core.models.replay.model_invariant_comparison_summary import (
 from omnibase_core.services.service_decision_report_generator import (
     COMPARISON_LIMIT_CLI_VERBOSE,
     COMPARISON_LIMIT_MARKDOWN,
+    REPORT_WIDTH,
     ServiceDecisionReportGenerator,
 )
 
@@ -1413,10 +1414,6 @@ class TestEdgeCasesExtended:
         centered = service._center_text(long_text)
 
         # Verify truncation: text should be truncated to REPORT_WIDTH (80) with ellipsis
-        from omnibase_core.services.service_decision_report_generator import (
-            REPORT_WIDTH,
-        )
-
         assert len(centered) == REPORT_WIDTH, (
             f"Centered text should be exactly {REPORT_WIDTH} chars, got {len(centered)}"
         )
@@ -1444,10 +1441,6 @@ class TestEdgeCasesExtended:
         service: ServiceDecisionReportGenerator,
     ) -> None:
         """Test that text exactly REPORT_WIDTH chars is NOT truncated."""
-        from omnibase_core.services.service_decision_report_generator import (
-            REPORT_WIDTH,
-        )
-
         # Create text exactly REPORT_WIDTH characters
         exact_text = "X" * REPORT_WIDTH
         centered = service._center_text(exact_text)
@@ -2818,9 +2811,10 @@ class TestJSONSchemaValidation:
             "delta_p95_percent",
         ]
 
+        latency_dict = cast(dict[str, Any], latency)
         for field in float_fields:
-            assert isinstance(latency[field], (int, float)), (
-                f"latency[{field}] should be float, got {type(latency[field])}"
+            assert isinstance(latency_dict[field], (int, float)), (
+                f"latency[{field}] should be float, got {type(latency_dict[field])}"
             )
 
     def test_json_schema_performance_cost_keys_when_present(
@@ -2877,9 +2871,10 @@ class TestJSONSchemaValidation:
                 "replay_avg_per_execution",
             ]
 
+            cost_dict = cast(dict[str, Any], cost)
             for field in float_fields:
-                assert isinstance(cost[field], (int, float)), (
-                    f"cost[{field}] should be float, got {type(cost[field])}"
+                assert isinstance(cost_dict[field], (int, float)), (
+                    f"cost[{field}] should be float, got {type(cost_dict[field])}"
                 )
 
     def test_json_schema_performance_cost_null_when_missing(
@@ -3206,8 +3201,9 @@ class TestJSONSchemaValidation:
 
         # Test summary timestamps
         summary = report["summary"]
+        summary_dict = cast(dict[str, Any], summary)
         for field in ["started_at", "ended_at"]:
-            timestamp = summary[field]
+            timestamp = summary_dict[field]
             try:
                 datetime.fromisoformat(timestamp)
             except ValueError:
@@ -3561,6 +3557,96 @@ class TestExportFunctions:
         content = output_path.read_text()
         assert "# Corpus Replay Evidence Report" in content
 
+    def test_save_to_file_oserror_raises_model_onex_error(
+        self,
+        service: ServiceDecisionReportGenerator,
+        sample_evidence_summary: ModelEvidenceSummary,
+        sample_comparisons: list[ModelExecutionComparison],
+        tmp_path: Path,
+    ) -> None:
+        """Test that OSError during file write is converted to ModelOnexError.
+
+        This tests the error handling for common file write failures such as:
+        - Permission denied
+        - Disk full
+        - Invalid path
+        """
+        # Create a read-only directory to simulate permission denied
+        readonly_dir = tmp_path / "readonly"
+        readonly_dir.mkdir()
+        output_path = readonly_dir / "report.md"
+
+        # Make the directory read-only (no write permission)
+        readonly_dir.chmod(0o444)
+
+        try:
+            with pytest.raises(ModelOnexError, match="Failed to write report"):
+                service.save_to_file(
+                    sample_evidence_summary,
+                    sample_comparisons,
+                    output_path,
+                    output_format="markdown",
+                )
+        finally:
+            # Restore permissions for cleanup
+            readonly_dir.chmod(0o755)
+
+    def test_save_to_file_error_contains_path_in_context(
+        self,
+        service: ServiceDecisionReportGenerator,
+        sample_evidence_summary: ModelEvidenceSummary,
+        sample_comparisons: list[ModelExecutionComparison],
+        tmp_path: Path,
+    ) -> None:
+        """Test that file write error includes path and format in context."""
+        # Create a read-only directory to simulate permission denied
+        readonly_dir = tmp_path / "readonly_ctx"
+        readonly_dir.mkdir()
+        output_path = readonly_dir / "report.json"
+
+        # Make the directory read-only
+        readonly_dir.chmod(0o444)
+
+        try:
+            try:
+                service.save_to_file(
+                    sample_evidence_summary,
+                    sample_comparisons,
+                    output_path,
+                    output_format="json",
+                )
+            except ModelOnexError as e:
+                assert e.context is not None
+                inner_context = e.context.get("additional_context", {}).get(
+                    "context", {}
+                )
+                assert "path" in inner_context
+                assert str(output_path) in inner_context["path"]
+                assert "format" in inner_context
+                assert inner_context["format"] == "json"
+        finally:
+            # Restore permissions for cleanup
+            readonly_dir.chmod(0o755)
+
+    def test_save_to_file_nonexistent_parent_directory_raises(
+        self,
+        service: ServiceDecisionReportGenerator,
+        sample_evidence_summary: ModelEvidenceSummary,
+        sample_comparisons: list[ModelExecutionComparison],
+        tmp_path: Path,
+    ) -> None:
+        """Test that writing to a non-existent directory raises ModelOnexError."""
+        # Path with non-existent parent directory
+        output_path = tmp_path / "nonexistent" / "subdir" / "report.md"
+
+        with pytest.raises(ModelOnexError, match="Failed to write report"):
+            service.save_to_file(
+                sample_evidence_summary,
+                sample_comparisons,
+                output_path,
+                output_format="markdown",
+            )
+
 
 # =============================================================================
 # Generate All Formats Tests
@@ -3700,3 +3786,543 @@ class TestGenerateAllFormats:
         assert len(result["cli"]) > 0
         assert len(result["markdown"]) > 0
         assert len(result["json"]) > 0
+
+
+# =============================================================================
+# TypedDict Schema Compliance Tests (PR #368 Review Feedback)
+# =============================================================================
+
+
+@pytest.mark.unit
+class TestTypedDictSchemaCompliance:
+    """Test JSON output matches TypedDict schemas exactly using type hints.
+
+    These tests import the actual TypedDict definitions and use
+    typing.get_type_hints() to programmatically verify that the JSON
+    output contains all required keys with correct types. This ensures
+    the JSON structure stays in sync with the TypedDict contracts.
+    """
+
+    def test_typeddict_report_keys_match_exactly(
+        self,
+        service: ServiceDecisionReportGenerator,
+        sample_evidence_summary: ModelEvidenceSummary,
+        sample_comparisons: list[ModelExecutionComparison],
+    ) -> None:
+        """Verify JSON keys match TypedDictDecisionReport exactly."""
+        from typing import get_type_hints
+
+        from omnibase_core.types.typed_dict_decision_report import (
+            TypedDictDecisionReport,
+        )
+
+        report = service.generate_json_report(
+            sample_evidence_summary,
+            sample_comparisons,
+            include_details=True,
+        )
+
+        # Get required keys from TypedDict (excluding NotRequired)
+        type_hints = get_type_hints(TypedDictDecisionReport)
+        # TypedDictDecisionReport has: report_version, generated_at, summary,
+        # violations, performance, recommendation, details (NotRequired)
+        required_keys = {
+            k
+            for k in type_hints
+            if k != "details"  # details is NotRequired
+        }
+
+        actual_keys = set(report.keys())
+        # Remove optional 'details' for comparison
+        actual_required = actual_keys - {"details"}
+
+        assert required_keys == actual_required, (
+            f"Key mismatch. Expected: {required_keys}, Got: {actual_required}"
+        )
+
+    def test_typeddict_summary_keys_match_exactly(
+        self,
+        service: ServiceDecisionReportGenerator,
+        sample_evidence_summary: ModelEvidenceSummary,
+        sample_comparisons: list[ModelExecutionComparison],
+    ) -> None:
+        """Verify summary keys match TypedDictDecisionReportSummary exactly."""
+        from typing import get_type_hints
+
+        from omnibase_core.types.typed_dict_decision_report_summary import (
+            TypedDictDecisionReportSummary,
+        )
+
+        report = service.generate_json_report(
+            sample_evidence_summary,
+            sample_comparisons,
+        )
+
+        type_hints = get_type_hints(TypedDictDecisionReportSummary)
+        expected_keys = set(type_hints.keys())
+        actual_keys = set(report["summary"].keys())
+
+        assert expected_keys == actual_keys, (
+            f"Summary key mismatch. Expected: {expected_keys}, Got: {actual_keys}"
+        )
+
+    def test_typeddict_recommendation_keys_match_exactly(
+        self,
+        service: ServiceDecisionReportGenerator,
+        sample_evidence_summary: ModelEvidenceSummary,
+        sample_comparisons: list[ModelExecutionComparison],
+    ) -> None:
+        """Verify recommendation keys match TypedDictDecisionReportRecommendation."""
+        from typing import get_type_hints
+
+        from omnibase_core.types.typed_dict_decision_report_recommendation import (
+            TypedDictDecisionReportRecommendation,
+        )
+
+        report = service.generate_json_report(
+            sample_evidence_summary,
+            sample_comparisons,
+        )
+
+        type_hints = get_type_hints(TypedDictDecisionReportRecommendation)
+        expected_keys = set(type_hints.keys())
+        actual_keys = set(report["recommendation"].keys())
+
+        assert expected_keys == actual_keys, (
+            f"Recommendation key mismatch. Expected: {expected_keys}, Got: {actual_keys}"
+        )
+
+    def test_typeddict_violations_keys_match_exactly(
+        self,
+        service: ServiceDecisionReportGenerator,
+        sample_evidence_summary: ModelEvidenceSummary,
+        sample_comparisons: list[ModelExecutionComparison],
+    ) -> None:
+        """Verify violations keys match TypedDictDecisionReportViolations."""
+        from typing import get_type_hints
+
+        from omnibase_core.types.typed_dict_decision_report_violations import (
+            TypedDictDecisionReportViolations,
+        )
+
+        report = service.generate_json_report(
+            sample_evidence_summary,
+            sample_comparisons,
+        )
+
+        type_hints = get_type_hints(TypedDictDecisionReportViolations)
+        expected_keys = set(type_hints.keys())
+        actual_keys = set(report["violations"].keys())
+
+        assert expected_keys == actual_keys, (
+            f"Violations key mismatch. Expected: {expected_keys}, Got: {actual_keys}"
+        )
+
+    def test_typeddict_latency_keys_match_exactly(
+        self,
+        service: ServiceDecisionReportGenerator,
+        sample_evidence_summary: ModelEvidenceSummary,
+        sample_comparisons: list[ModelExecutionComparison],
+    ) -> None:
+        """Verify latency keys match TypedDictDecisionReportLatency."""
+        from typing import get_type_hints
+
+        from omnibase_core.types.typed_dict_decision_report_latency import (
+            TypedDictDecisionReportLatency,
+        )
+
+        report = service.generate_json_report(
+            sample_evidence_summary,
+            sample_comparisons,
+        )
+
+        type_hints = get_type_hints(TypedDictDecisionReportLatency)
+        expected_keys = set(type_hints.keys())
+        actual_keys = set(report["performance"]["latency"].keys())
+
+        assert expected_keys == actual_keys, (
+            f"Latency key mismatch. Expected: {expected_keys}, Got: {actual_keys}"
+        )
+
+    def test_typeddict_cost_keys_match_exactly_when_present(
+        self,
+        service: ServiceDecisionReportGenerator,
+        sample_comparisons: list[ModelExecutionComparison],
+    ) -> None:
+        """Verify cost keys match TypedDictDecisionReportCost when present."""
+        from typing import get_type_hints
+
+        from omnibase_core.types.typed_dict_decision_report_cost import (
+            TypedDictDecisionReportCost,
+        )
+
+        # Create summary with cost stats
+        summary = create_evidence_summary(
+            cost_stats=create_cost_stats(baseline_total=10.0, replay_total=8.0),
+        )
+
+        report = service.generate_json_report(summary, sample_comparisons)
+
+        cost_data = report["performance"]["cost"]
+        assert cost_data is not None, "Cost should be present for this summary"
+
+        type_hints = get_type_hints(TypedDictDecisionReportCost)
+        expected_keys = set(type_hints.keys())
+        actual_keys = set(cost_data.keys())
+
+        assert expected_keys == actual_keys, (
+            f"Cost key mismatch. Expected: {expected_keys}, Got: {actual_keys}"
+        )
+
+    def test_typeddict_detail_keys_match_exactly(
+        self,
+        service: ServiceDecisionReportGenerator,
+        sample_evidence_summary: ModelEvidenceSummary,
+        sample_comparisons: list[ModelExecutionComparison],
+    ) -> None:
+        """Verify detail keys match TypedDictDecisionReportDetail."""
+        from typing import get_type_hints
+
+        from omnibase_core.types.typed_dict_decision_report_detail import (
+            TypedDictDecisionReportDetail,
+        )
+
+        report = service.generate_json_report(
+            sample_evidence_summary,
+            sample_comparisons,
+            include_details=True,
+        )
+
+        assert "details" in report, (
+            "Details should be present with include_details=True"
+        )
+        assert len(report["details"]) > 0, "Should have at least one detail"
+
+        type_hints = get_type_hints(TypedDictDecisionReportDetail)
+        expected_keys = set(type_hints.keys())
+
+        for i, detail in enumerate(report["details"]):
+            actual_keys = set(detail.keys())
+            assert expected_keys == actual_keys, (
+                f"Detail[{i}] key mismatch. Expected: {expected_keys}, Got: {actual_keys}"
+            )
+
+
+# =============================================================================
+# REPORT_WIDTH Boundary Tests (PR #368 Review Feedback)
+# =============================================================================
+
+
+@pytest.mark.unit
+class TestReportWidthBoundary:
+    """Test REPORT_WIDTH boundary conditions for text formatting.
+
+    These tests verify edge cases for text centering and truncation
+    in the CLI report generator.
+    """
+
+    def test_center_text_empty_string(
+        self,
+        service: ServiceDecisionReportGenerator,
+    ) -> None:
+        """Test _center_text handles empty string correctly."""
+        centered = service._center_text("")
+
+        from omnibase_core.services.service_decision_report_generator import (
+            REPORT_WIDTH,
+        )
+
+        # Empty string should result in REPORT_WIDTH spaces
+        assert len(centered) == REPORT_WIDTH
+        assert centered.strip() == ""  # All whitespace
+
+    def test_center_text_single_character(
+        self,
+        service: ServiceDecisionReportGenerator,
+    ) -> None:
+        """Test _center_text handles single character correctly."""
+        centered = service._center_text("X")
+
+        from omnibase_core.services.service_decision_report_generator import (
+            REPORT_WIDTH,
+        )
+
+        # Single char should be centered in REPORT_WIDTH
+        assert len(centered) == REPORT_WIDTH
+        assert "X" in centered
+        # Should have padding on both sides
+        left_pad = centered.index("X")
+        right_pad = REPORT_WIDTH - left_pad - 1
+        # Centering should be roughly balanced (within 1 char)
+        assert abs(left_pad - right_pad) <= 1
+
+    def test_center_text_one_char_below_width(
+        self,
+        service: ServiceDecisionReportGenerator,
+    ) -> None:
+        """Test _center_text with text one character shorter than REPORT_WIDTH."""
+        from omnibase_core.services.service_decision_report_generator import (
+            REPORT_WIDTH,
+        )
+
+        text = "Y" * (REPORT_WIDTH - 1)
+        centered = service._center_text(text)
+
+        # Should NOT be truncated (no ellipsis)
+        assert len(centered) == REPORT_WIDTH
+        assert not centered.endswith("...")
+        # Should have minimal padding
+        assert "Y" * (REPORT_WIDTH - 1) in centered
+
+    def test_center_text_one_char_above_width(
+        self,
+        service: ServiceDecisionReportGenerator,
+    ) -> None:
+        """Test _center_text with text one character longer than REPORT_WIDTH."""
+        from omnibase_core.services.service_decision_report_generator import (
+            REPORT_WIDTH,
+        )
+
+        text = "Z" * (REPORT_WIDTH + 1)
+        centered = service._center_text(text)
+
+        # Should be truncated to exactly REPORT_WIDTH with ellipsis
+        assert len(centered) == REPORT_WIDTH
+        assert centered.endswith("...")
+
+    def test_center_text_whitespace_only(
+        self,
+        service: ServiceDecisionReportGenerator,
+    ) -> None:
+        """Test _center_text handles whitespace-only input correctly."""
+        from omnibase_core.services.service_decision_report_generator import (
+            REPORT_WIDTH,
+        )
+
+        # Various whitespace inputs
+        for whitespace in ["   ", "\t\t", "  \t  "]:
+            centered = service._center_text(whitespace)
+            assert len(centered) == REPORT_WIDTH
+
+    def test_cli_report_all_lines_within_width(
+        self,
+        service: ServiceDecisionReportGenerator,
+        sample_evidence_summary: ModelEvidenceSummary,
+        sample_comparisons: list[ModelExecutionComparison],
+    ) -> None:
+        """Comprehensive test that ALL CLI lines respect REPORT_WIDTH."""
+        from omnibase_core.services.service_decision_report_generator import (
+            REPORT_WIDTH,
+        )
+
+        # Test all verbosity levels
+        for verbosity in ["minimal", "standard", "verbose"]:
+            report = service.generate_cli_report(
+                sample_evidence_summary,
+                sample_comparisons,
+                verbosity=verbosity,  # type: ignore[arg-type]
+            )
+
+            for line_num, line in enumerate(report.split("\n"), 1):
+                assert len(line) <= REPORT_WIDTH, (
+                    f"Line {line_num} in {verbosity} mode exceeds {REPORT_WIDTH} chars: "
+                    f"{len(line)} chars. Content: '{line[:50]}...'"
+                )
+
+
+# =============================================================================
+# Integration Tests - Round Trip Serialization (PR #368 Review Feedback)
+# =============================================================================
+
+
+@pytest.mark.unit
+class TestIntegrationRoundTrip:
+    """Integration tests for complete Summary -> JSON -> deserialization flow.
+
+    These tests verify that data integrity is maintained through the entire
+    serialization and deserialization cycle, suitable for consumer validation.
+    """
+
+    def test_round_trip_summary_to_json_to_typed_dict(
+        self,
+        service: ServiceDecisionReportGenerator,
+        sample_evidence_summary: ModelEvidenceSummary,
+        sample_comparisons: list[ModelExecutionComparison],
+    ) -> None:
+        """Integration test: Summary -> JSON -> TypedDict-compatible dict.
+
+        This test demonstrates the complete flow from evidence summary to
+        JSON output and back to a dictionary that conforms to TypedDict.
+        """
+        from datetime import UTC, datetime
+        from typing import get_type_hints
+
+        from omnibase_core.types.typed_dict_decision_report import (
+            TypedDictDecisionReport,
+        )
+
+        # Step 1: Generate JSON report with fixed timestamp for determinism
+        fixed_timestamp = datetime(2025, 3, 15, 10, 30, 0, tzinfo=UTC)
+        json_dict = service.generate_json_report(
+            sample_evidence_summary,
+            sample_comparisons,
+            include_details=True,
+            generated_at=fixed_timestamp,
+        )
+
+        # Step 2: Serialize to JSON string (simulates transport/storage)
+        json_str = json.dumps(json_dict, default=str)
+
+        # Step 3: Deserialize back to dict
+        deserialized: dict = json.loads(json_str)
+
+        # Step 4: Verify deserialized data conforms to TypedDictDecisionReport
+        type_hints = get_type_hints(TypedDictDecisionReport)
+        required_fields = {k for k in type_hints if k != "details"}
+
+        # Verify all required fields present
+        for field in required_fields:
+            assert field in deserialized, f"Missing required field: {field}"
+
+        # Step 5: Verify data integrity - values match original
+        assert deserialized["summary"]["corpus_id"] == sample_evidence_summary.corpus_id
+        assert (
+            deserialized["summary"]["baseline_version"]
+            == sample_evidence_summary.baseline_version
+        )
+        assert (
+            deserialized["summary"]["total_executions"]
+            == sample_evidence_summary.total_executions
+        )
+        assert deserialized["summary"]["pass_rate"] == sample_evidence_summary.pass_rate
+
+        # Verify timestamp determinism
+        assert deserialized["generated_at"] == "2025-03-15T10:30:00+00:00"
+
+    def test_round_trip_preserves_all_numeric_precision(
+        self,
+        service: ServiceDecisionReportGenerator,
+        sample_comparisons: list[ModelExecutionComparison],
+    ) -> None:
+        """Integration test: verify numeric precision through round-trip."""
+        # Create summary with precise decimal values
+        precise_summary = create_evidence_summary(
+            pass_rate=0.123456789,
+            confidence_score=0.987654321,
+            latency_stats=create_latency_stats(
+                baseline_avg_ms=123.456789,
+                replay_avg_ms=98.7654321,
+            ),
+            cost_stats=create_cost_stats(
+                baseline_total=1234.567890,
+                replay_total=987.654321,
+            ),
+        )
+
+        # Round trip
+        json_dict = service.generate_json_report(precise_summary, sample_comparisons)
+        json_str = json.dumps(json_dict, default=str)
+        deserialized = json.loads(json_str)
+
+        # Verify precision preserved
+        assert deserialized["summary"]["pass_rate"] == 0.123456789
+        assert deserialized["summary"]["confidence_score"] == 0.987654321
+        assert deserialized["performance"]["latency"]["baseline_avg_ms"] == 123.456789
+        assert deserialized["performance"]["latency"]["replay_avg_ms"] == 98.7654321
+        assert deserialized["performance"]["cost"]["baseline_total"] == 1234.56789
+        assert deserialized["performance"]["cost"]["replay_total"] == 987.654321
+
+    def test_round_trip_with_all_recommendation_types(
+        self,
+        service: ServiceDecisionReportGenerator,
+        passing_evidence_summary: ModelEvidenceSummary,
+        mixed_evidence_summary: ModelEvidenceSummary,
+        failing_evidence_summary: ModelEvidenceSummary,
+        sample_comparisons: list[ModelExecutionComparison],
+    ) -> None:
+        """Integration test: round-trip for all recommendation action types."""
+        summaries = {
+            "approve": passing_evidence_summary,
+            "review": mixed_evidence_summary,
+            "reject": failing_evidence_summary,
+        }
+
+        for expected_action, summary in summaries.items():
+            # Round trip
+            json_dict = service.generate_json_report(summary, sample_comparisons)
+            json_str = json.dumps(json_dict, default=str)
+            deserialized = json.loads(json_str)
+
+            # Verify action preserved
+            actual_action = deserialized["recommendation"]["action"]
+            assert actual_action == expected_action, (
+                f"Action mismatch for {expected_action}. Got: {actual_action}"
+            )
+
+            # Verify recommendation structure complete
+            rec = deserialized["recommendation"]
+            assert "confidence" in rec
+            assert "blockers" in rec
+            assert "warnings" in rec
+            assert "next_steps" in rec
+            assert "rationale" in rec
+            assert isinstance(rec["blockers"], list)
+            assert isinstance(rec["warnings"], list)
+            assert isinstance(rec["next_steps"], list)
+
+    def test_round_trip_consumer_can_reconstruct_data(
+        self,
+        service: ServiceDecisionReportGenerator,
+        sample_evidence_summary: ModelEvidenceSummary,
+        sample_comparisons: list[ModelExecutionComparison],
+    ) -> None:
+        """Integration test: simulate consumer reconstructing data from JSON.
+
+        This test demonstrates that a consumer receiving the JSON report
+        can fully reconstruct and use the data without loss.
+        """
+        # Producer: generate report
+        json_dict = service.generate_json_report(
+            sample_evidence_summary,
+            sample_comparisons,
+            include_details=True,
+        )
+        json_str = json.dumps(json_dict, default=str)
+
+        # Consumer: receive and parse JSON
+        consumed_data = json.loads(json_str)
+
+        # Consumer: extract and use summary data
+        summary = consumed_data["summary"]
+        total = summary["total_executions"]
+        passed = summary["passed_count"]
+        failed = summary["failed_count"]
+        pass_rate = summary["pass_rate"]
+
+        # Verify derived values are consistent
+        assert passed + failed == total
+        assert abs(pass_rate - (passed / total)) < 0.001  # Float tolerance
+
+        # Consumer: make decisions based on recommendation
+        rec = consumed_data["recommendation"]
+        action = rec["action"]
+        confidence = rec["confidence"]
+        blockers = rec["blockers"]
+
+        # Verify recommendation is actionable
+        assert action in ("approve", "review", "reject")
+        assert 0.0 <= confidence <= 1.0
+        if action == "reject":
+            assert len(blockers) > 0 or confidence < 0.7  # Must have reason to reject
+
+        # Consumer: process details if present
+        if "details" in consumed_data:
+            for detail in consumed_data["details"]:
+                # Can access all detail fields
+                comparison_id = detail["comparison_id"]
+                output_match = detail["output_match"]
+                latency_delta = detail["latency_delta_percent"]
+
+                assert isinstance(comparison_id, str)
+                assert isinstance(output_match, bool)
+                assert isinstance(latency_delta, (int, float))
