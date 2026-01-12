@@ -39,20 +39,21 @@ import json
 import re
 from typing import TYPE_CHECKING, Literal
 
-from omnibase_core.decorators.decorator_allow_dict_any import allow_dict_any
+from pydantic import ValidationError
 
-from examples.demo.handlers.support_assistant.model_support_request import (
-    SupportRequest,
-)
-from examples.demo.handlers.support_assistant.model_support_response import (
-    SupportResponse,
-)
-from examples.demo.handlers.support_assistant.protocol_llm_client import (
-    ProtocolLLMClient,
-)
+from examples.demo.handlers.support_assistant.model_support_request import \
+    SupportRequest
+from examples.demo.handlers.support_assistant.model_support_response import \
+    SupportResponse
+from examples.demo.handlers.support_assistant.protocol_llm_client import \
+    ProtocolLLMClient
+from omnibase_core.decorators.decorator_allow_dict_any import allow_dict_any
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors import ModelOnexError
 
 if TYPE_CHECKING:
-    from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+    from omnibase_core.models.container.model_onex_container import \
+        ModelONEXContainer
 
 # System prompt for the LLM
 SYSTEM_PROMPT = """You are a helpful customer support assistant.
@@ -89,15 +90,36 @@ class SupportAssistantHandler:
         logger: The logger resolved from the container.
     """
 
-    def __init__(self, container: "ModelONEXContainer") -> None:
+    def __init__(self, container: ModelONEXContainer) -> None:
         """Initialize handler with DI container.
 
         Args:
             container: ONEX container for protocol-based service resolution.
+
+        Raises:
+            ModelOnexError: If required services are not registered in the container.
         """
         self.container = container
-        self.llm_client: ProtocolLLMClient = container.get_service("ProtocolLLMClient")
-        self.logger = container.get_service("ProtocolLogger")
+
+        # Fail-fast: Resolve LLM client with explicit type checking
+        llm_client = container.get_service("ProtocolLLMClient")
+        if llm_client is None:
+            raise ModelOnexError(
+                message="Required service ProtocolLLMClient not found in container",
+                error_code=EnumCoreErrorCode.INVALID_CONFIGURATION,
+                context={"service_name": "ProtocolLLMClient"},
+            )
+        self.llm_client: ProtocolLLMClient = llm_client
+
+        # Fail-fast: Resolve logger with explicit type checking
+        logger = container.get_service("ProtocolLogger")
+        if logger is None:
+            raise ModelOnexError(
+                message="Required service ProtocolLogger not found in container",
+                error_code=EnumCoreErrorCode.INVALID_CONFIGURATION,
+                context={"service_name": "ProtocolLogger"},
+            )
+        self.logger = logger
 
     async def handle(self, request: SupportRequest) -> SupportResponse:
         """Process support request and return structured response.
@@ -110,24 +132,45 @@ class SupportAssistantHandler:
             and metadata about the classification.
         """
         try:
-            # 1. Format prompt from request
+            # 1. Format prompt from request (sanitized, no PII in logs)
             prompt = self._format_prompt(request)
 
             # 2. Call LLM via protocol
             raw_response = await self.llm_client.complete(prompt, SYSTEM_PROMPT)
 
-            # 3. Parse response to structured output
+            # 3. Parse and validate response to structured output
             response = self._parse_response(raw_response)
 
             return response
 
+        except ModelOnexError:
+            # Re-raise ONEX errors as-is (already structured)
+            raise
+        except (json.JSONDecodeError, ValidationError) as e:
+            # Structured handling for parse/validation errors
+            # Log error type without exposing raw details
+            self._log_error(f"Response parsing failed: {type(e).__name__}")
+            raise ModelOnexError(
+                message="Failed to parse LLM response",
+                error_code=EnumCoreErrorCode.OPERATION_FAILED,
+                context={"error_type": type(e).__name__},
+            ) from e
         except Exception as e:
-            # Return error response on any failure
-            self._log_error(f"Error handling request: {e}")
-            return self._create_error_response(str(e))
+            # catch-all-ok: Handler boundary must not crash; structured error response
+            # Log error class without exposing raw message (may contain PII)
+            self._log_error(f"Request handling failed: {type(e).__name__}")
+            raise ModelOnexError(
+                message="An error occurred processing your request",
+                error_code=EnumCoreErrorCode.OPERATION_FAILED,
+                context={"error_type": type(e).__name__},
+            ) from e
 
     def _format_prompt(self, request: SupportRequest) -> str:
         """Format the user request into an LLM prompt.
+
+        Note: User identifiers and other PII are intentionally excluded from
+        the prompt to prevent PII leakage to the LLM. Only the message content
+        and non-PII metadata are included.
 
         Args:
             request: The support request to format.
@@ -137,21 +180,54 @@ class SupportAssistantHandler:
         """
         parts = []
 
-        # Add user message
+        # Add user message (content only, no identifiers)
         parts.append(f"User Message: {request.message}")
 
-        # Add user ID for context
-        parts.append(f"User ID: {request.user_identifier}")
+        # Note: User identifier intentionally excluded to minimize PII in prompts
+        # The identifier is tracked server-side for request correlation
 
-        # Add urgency level
+        # Add urgency level (non-PII metadata)
         parts.append(f"Urgency Level: {request.urgency}")
 
-        # Add context if provided
+        # Add context if provided, filtering out potential PII fields
         if request.context:
-            context_str = json.dumps(request.context, indent=2)
-            parts.append(f"Previous Context:\n{context_str}")
+            # Filter context to exclude common PII fields
+            safe_context = self._filter_pii_from_context(request.context)
+            if safe_context:
+                context_str = json.dumps(safe_context, indent=2)
+                parts.append(f"Previous Context:\n{context_str}")
 
         return "\n\n".join(parts)
+
+    def _filter_pii_from_context(self, context: dict[str, str]) -> dict[str, str]:
+        """Filter potential PII fields from context before sending to LLM.
+
+        Args:
+            context: The context dictionary to filter.
+
+        Returns:
+            Filtered context with PII fields removed.
+        """
+        # Fields that commonly contain PII
+        pii_fields = {
+            "email",
+            "phone",
+            "address",
+            "ssn",
+            "social_security",
+            "credit_card",
+            "password",
+            "api_key",
+            "token",
+            "secret",
+            "user_id",
+            "user_identifier",
+            "name",
+            "full_name",
+            "first_name",
+            "last_name",
+        }
+        return {k: v for k, v in context.items() if k.lower() not in pii_fields}
 
     def _parse_response(self, raw_response: str) -> SupportResponse:
         """Parse LLM response into SupportResponse.
@@ -165,12 +241,16 @@ class SupportAssistantHandler:
             raw_response: The raw response string from the LLM.
 
         Returns:
-            Parsed SupportResponse.
+            Parsed and validated SupportResponse.
+
+        Raises:
+            ValidationError: If parsed JSON fails Pydantic validation.
         """
         # Try to parse as pure JSON first
         try:
             data = json.loads(raw_response)
-            return self._create_response_from_dict(data)
+            if self._validate_json_structure(data):
+                return self._create_validated_response(data)
         except json.JSONDecodeError:
             pass
 
@@ -181,7 +261,8 @@ class SupportAssistantHandler:
         if json_match:
             try:
                 data = json.loads(json_match.group(1))
-                return self._create_response_from_dict(data)
+                if self._validate_json_structure(data):
+                    return self._create_validated_response(data)
             except json.JSONDecodeError:
                 pass
 
@@ -190,7 +271,8 @@ class SupportAssistantHandler:
         if json_object_match:
             try:
                 data = json.loads(json_object_match.group(0))
-                return self._create_response_from_dict(data)
+                if self._validate_json_structure(data):
+                    return self._create_validated_response(data)
             except json.JSONDecodeError:
                 pass
 
@@ -208,30 +290,65 @@ class SupportAssistantHandler:
             sentiment="neutral",
         )
 
+    def _validate_json_structure(self, data: object) -> bool:
+        """Validate that parsed JSON has the expected structure.
+
+        Args:
+            data: The parsed JSON object to validate.
+
+        Returns:
+            True if the structure is valid (dict with expected fields).
+        """
+        if not isinstance(data, dict):
+            return False
+
+        # Check that at least one expected field is present
+        # This helps distinguish valid responses from arbitrary JSON
+        expected_fields = {
+            "response_text",
+            "suggested_actions",
+            "confidence",
+            "requires_escalation",
+            "category",
+            "sentiment",
+        }
+        return bool(expected_fields & set(data.keys()))
+
     @allow_dict_any(
         reason="LLM JSON responses have arbitrary structure requiring dynamic type handling"
     )
-    def _create_response_from_dict(self, data: dict[str, object]) -> SupportResponse:
-        """Create SupportResponse from parsed dictionary.
+    def _create_validated_response(self, data: dict[str, object]) -> SupportResponse:
+        """Create and validate SupportResponse using Pydantic.
 
-        Handles missing fields and type coercion gracefully.
+        Uses Pydantic model_validate for proper type coercion and validation.
 
         Args:
             data: Dictionary parsed from LLM JSON response.
 
         Returns:
             Validated SupportResponse.
+
+        Raises:
+            ValidationError: If the data fails Pydantic validation.
         """
-        return SupportResponse(
-            response_text=str(data.get("response_text", "Thank you for your message.")),
-            suggested_actions=self._ensure_string_list(
-                data.get("suggested_actions", ["Please let me know if you need more help"])
+        # Normalize the data before validation
+        normalized = {
+            "response_text": str(
+                data.get("response_text", "Thank you for your message.")
             ),
-            confidence=self._ensure_confidence(data.get("confidence", 0.5)),
-            requires_escalation=bool(data.get("requires_escalation", False)),
-            category=self._ensure_category(data.get("category", "general")),
-            sentiment=self._ensure_sentiment(data.get("sentiment", "neutral")),
-        )
+            "suggested_actions": self._ensure_string_list(
+                data.get(
+                    "suggested_actions", ["Please let me know if you need more help"]
+                )
+            ),
+            "confidence": self._ensure_confidence(data.get("confidence", 0.5)),
+            "requires_escalation": bool(data.get("requires_escalation", False)),
+            "category": self._ensure_category(data.get("category", "general")),
+            "sentiment": self._ensure_sentiment(data.get("sentiment", "neutral")),
+        }
+
+        # Use Pydantic model_validate for strict validation
+        return SupportResponse.model_validate(normalized)
 
     def _ensure_string_list(self, value: object) -> list[str]:
         """Ensure value is a list of strings.
@@ -294,27 +411,6 @@ class SupportAssistantHandler:
         if str_value in valid:
             return str_value  # type: ignore[return-value]
         return "neutral"
-
-    def _create_error_response(self, error_msg: str) -> SupportResponse:
-        """Create an error response for failed requests.
-
-        Args:
-            error_msg: The error message to include.
-
-        Returns:
-            SupportResponse indicating an error occurred.
-        """
-        return SupportResponse(
-            response_text=f"I'm sorry, but I encountered an error processing your request. {error_msg}",
-            suggested_actions=[
-                "Please try again in a moment",
-                "Contact support if the issue persists",
-            ],
-            confidence=0.1,
-            requires_escalation=False,
-            category="general",
-            sentiment="neutral",
-        )
 
     def _log_error(self, message: str) -> None:
         """Log an error message if logger is available.

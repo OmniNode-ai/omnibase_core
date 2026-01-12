@@ -27,6 +27,7 @@ Example:
         )
 """
 
+import os
 from typing import Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -64,10 +65,12 @@ class ModelConfig(BaseModel):
     Example:
         Create a local provider config::
 
+            import os
+
             config = ModelConfig(
                 provider="local",
                 model_name="qwen2.5-14b",
-                endpoint_url="http://192.168.86.100:8200",
+                endpoint_url=os.getenv("LOCAL_LLM_ENDPOINT", "http://localhost:8000"),
             )
     """
 
@@ -135,5 +138,5 @@ ANTHROPIC_CONFIG = ModelConfig(
 LOCAL_CONFIG = ModelConfig(
     provider="local",
     model_name="qwen2.5-14b",
-    endpoint_url="http://192.168.86.100:8200",
+    endpoint_url=os.getenv("LOCAL_LLM_ENDPOINT", "http://localhost:8000"),
 )

@@ -126,10 +126,10 @@ class TestHandlerContract:
             f"got '{contract.descriptor.purity}'"
         )
 
-        # Effect handlers that call APIs should typically be idempotent
-        # for safe retries
-        assert contract.descriptor.idempotent is True, (
-            "Handler should be idempotent for safe retries"
+        # LLM handlers are NOT idempotent - same input can produce different outputs
+        # Retries are still useful for transient failures, but outputs may vary
+        assert contract.descriptor.idempotent is False, (
+            "LLM handlers cannot guarantee idempotency - same prompt may produce different responses"
         )
 
     def test_retry_policy_configured(self, contract: ModelHandlerContract) -> None:

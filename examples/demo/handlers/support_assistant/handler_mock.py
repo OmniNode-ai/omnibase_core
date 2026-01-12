@@ -33,9 +33,8 @@ from __future__ import annotations
 import json
 from typing import Literal
 
-from examples.demo.handlers.support_assistant.protocol_llm_client import (
-    ProtocolLLMClient,
-)
+from examples.demo.handlers.support_assistant.protocol_llm_client import \
+    ProtocolLLMClient
 
 
 class MockLLMClient:
@@ -188,7 +187,9 @@ class MockLLMClient:
             Category literal based on keywords.
         """
         prompt_lower = prompt.lower()
-        if any(word in prompt_lower for word in ["bill", "payment", "charge", "invoice"]):
+        if any(
+            word in prompt_lower for word in ["bill", "payment", "charge", "invoice"]
+        ):
             return "billing"
         if any(
             word in prompt_lower for word in ["error", "bug", "crash", "not working"]

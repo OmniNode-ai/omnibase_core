@@ -8,6 +8,8 @@ different LLM providers (OpenAI, Anthropic, Local) in the OMN-1201 demo
 support assistant handler.
 """
 
+import json
+
 import pytest
 from pydantic import ValidationError
 
@@ -259,12 +261,16 @@ class TestPredefinedConfigs:
         assert ANTHROPIC_CONFIG.api_key_env == "ANTHROPIC_API_KEY"
 
     def test_local_config_exists(self):
-        """LOCAL_CONFIG is defined and valid."""
+        """LOCAL_CONFIG is defined and valid.
+
+        Note: endpoint_url uses LOCAL_LLM_ENDPOINT env var with default http://localhost:8000.
+        """
         from examples.demo.handlers.support_assistant.model_config import LOCAL_CONFIG
 
         assert LOCAL_CONFIG.provider == "local"
         assert LOCAL_CONFIG.model_name == "qwen2.5-14b"
-        assert LOCAL_CONFIG.endpoint_url == "http://192.168.86.100:8200"
+        # endpoint_url uses env var LOCAL_LLM_ENDPOINT with default http://localhost:8000
+        assert LOCAL_CONFIG.endpoint_url is not None
 
 
 @pytest.mark.unit
@@ -315,5 +321,7 @@ class TestModelConfigSerialization:
         config = ModelConfig(provider="openai", model_name="gpt-4")
         json_str = config.model_dump_json()
 
-        assert '"provider":"openai"' in json_str
-        assert '"model_name":"gpt-4"' in json_str
+        # Parse JSON to avoid format-brittle string comparison
+        parsed = json.loads(json_str)
+        assert parsed["provider"] == "openai"
+        assert parsed["model_name"] == "gpt-4"

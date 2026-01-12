@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class SupportResponse(BaseModel):
@@ -26,12 +26,14 @@ class SupportResponse(BaseModel):
         sentiment: Detected sentiment of the user's message.
     """
 
+    model_config = ConfigDict(extra="forbid")
+
     response_text: str = Field(
         ...,
         description="The assistant's response message to the user",
     )
     suggested_actions: list[str] = Field(
-        ...,
+        default_factory=list,
         description="List of recommended next steps for the user",
     )
     confidence: float = Field(

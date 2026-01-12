@@ -10,10 +10,15 @@ Example:
     Using with local vLLM server::
 
         client = LocalLLMClient(
-            endpoint_url="http://192.168.86.100:8200",
+            endpoint_url="http://localhost:8000",
             model_name="qwen2.5-14b",
         )
         response = await client.complete("Hello, how are you?")
+
+    Using with environment variables::
+
+        # Set LLM_LOCAL_URL=http://your-server:8000
+        client = LocalLLMClient()  # Uses env var or defaults to localhost
 
     Using with Ollama::
 
@@ -30,12 +35,11 @@ import os
 import httpx
 
 from examples.demo.handlers.support_assistant.model_config import ModelConfig
-from examples.demo.handlers.support_assistant.protocol_llm_client import (
-    ProtocolLLMClient,
-)
+from examples.demo.handlers.support_assistant.protocol_llm_client import \
+    ProtocolLLMClient
 
-# Default configuration
-DEFAULT_ENDPOINT = "http://192.168.86.100:8200"
+# Default configuration - use localhost; override via LLM_LOCAL_URL or LLM_QWEN_14B_URL env vars
+DEFAULT_ENDPOINT = "http://localhost:8000"
 DEFAULT_MODEL = "qwen2.5-14b"
 DEFAULT_TIMEOUT = 60.0
 
@@ -79,15 +83,13 @@ class LocalLLMClient:
             or os.getenv("LLM_QWEN_14B_URL")
             or DEFAULT_ENDPOINT
         )
-        self.model_name = (
-            model_name or os.getenv("LLM_LOCAL_MODEL") or DEFAULT_MODEL
-        )
+        self.model_name = model_name or os.getenv("LLM_LOCAL_MODEL") or DEFAULT_MODEL
         self.temperature = temperature
         self.max_tokens = max_tokens
         self.timeout = timeout
 
     @classmethod
-    def from_config(cls, config: ModelConfig) -> "LocalLLMClient":
+    def from_config(cls, config: ModelConfig) -> LocalLLMClient:
         """Create client from ModelConfig.
 
         Args:
@@ -189,7 +191,8 @@ class LocalLLMClient:
 
             return False
 
-        except Exception:
+        except (OSError, httpx.HTTPError):
+            # boundary-ok: health check must return bool; network errors mean unhealthy
             return False
 
 

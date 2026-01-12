@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2025 OmniNode Team
+# SPDX-License-Identifier: Apache-2.0
 """Support assistant handler for OMN-1201 Demo.
 
 This module provides the complete AI support assistant implementation including:
@@ -32,40 +34,35 @@ Example:
 
         client = LocalLLMClient.from_config(LOCAL_CONFIG)
         # Register in container and use handler
+
+Note:
+    This module uses eager imports intentionally to provide a clean public API.
+    All exports are lightweight Pydantic models and handler classes with no
+    import-time side effects beyond module loading. The __all__ list defines
+    the complete public interface.
 """
 
-# Models
-from examples.demo.handlers.support_assistant.model_config import (
-    ANTHROPIC_CONFIG,
-    LOCAL_CONFIG,
-    OPENAI_CONFIG,
-    ModelConfig,
-)
-from examples.demo.handlers.support_assistant.model_support_request import (
-    SupportRequest,
-)
-from examples.demo.handlers.support_assistant.model_support_response import (
-    SupportResponse,
-)
-
-# Protocol
-from examples.demo.handlers.support_assistant.protocol_llm_client import (
-    ProtocolLLMClient,
-)
-
+# Provider implementations
+from examples.demo.handlers.support_assistant.handler_anthropic import \
+    AnthropicLLMClient
+from examples.demo.handlers.support_assistant.handler_local import \
+    LocalLLMClient
+from examples.demo.handlers.support_assistant.handler_mock import MockLLMClient
+from examples.demo.handlers.support_assistant.handler_openai import \
+    OpenAILLMClient
 # Handler
 from examples.demo.handlers.support_assistant.handler_support_assistant import (
-    SYSTEM_PROMPT,
-    SupportAssistantHandler,
-)
-
-# Provider implementations
-from examples.demo.handlers.support_assistant.handler_mock import MockLLMClient
-from examples.demo.handlers.support_assistant.handler_local import LocalLLMClient
-from examples.demo.handlers.support_assistant.handler_openai import OpenAILLMClient
-from examples.demo.handlers.support_assistant.handler_anthropic import (
-    AnthropicLLMClient,
-)
+    SYSTEM_PROMPT, SupportAssistantHandler)
+# Models
+from examples.demo.handlers.support_assistant.model_config import (
+    ANTHROPIC_CONFIG, LOCAL_CONFIG, OPENAI_CONFIG, ModelConfig)
+from examples.demo.handlers.support_assistant.model_support_request import \
+    SupportRequest
+from examples.demo.handlers.support_assistant.model_support_response import \
+    SupportResponse
+# Protocol
+from examples.demo.handlers.support_assistant.protocol_llm_client import \
+    ProtocolLLMClient
 
 __all__ = [
     # Models

@@ -29,9 +29,6 @@ import os
 import httpx
 
 from examples.demo.handlers.support_assistant.model_config import ModelConfig
-from examples.demo.handlers.support_assistant.protocol_llm_client import (
-    ProtocolLLMClient,
-)
 
 # OpenAI API configuration
 OPENAI_API_URL = "https://api.openai.com/v1/chat/completions"
@@ -87,7 +84,7 @@ class OpenAILLMClient:
         self.timeout = timeout
 
     @classmethod
-    def from_config(cls, config: ModelConfig) -> "OpenAILLMClient":
+    def from_config(cls, config: ModelConfig) -> OpenAILLMClient:
         """Create client from ModelConfig.
 
         Args:
@@ -131,8 +128,18 @@ class OpenAILLMClient:
         """
         messages = []
 
+        # OpenAI requires "JSON" to appear in system/user messages when using
+        # response_format: json_object. Ensure system prompt includes JSON instruction.
+        json_instruction = "You must respond with valid JSON."
+
         if system_prompt:
+            # Append JSON instruction if not already present
+            if "JSON" not in system_prompt and "json" not in system_prompt:
+                system_prompt = f"{system_prompt}\n\n{json_instruction}"
             messages.append({"role": "system", "content": system_prompt})
+        else:
+            # No system prompt provided - add minimal JSON instruction
+            messages.append({"role": "system", "content": json_instruction})
 
         messages.append({"role": "user", "content": prompt})
 
@@ -188,7 +195,9 @@ class OpenAILLMClient:
                 )
                 return response.status_code == 200
 
-        except Exception:
+        except (
+            Exception
+        ):  # catch-all-ok: health check must not raise, returns False on any error
             return False
 
 

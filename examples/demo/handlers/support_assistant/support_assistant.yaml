@@ -5,23 +5,23 @@
 # Key characteristics:
 #   - handler_kind: effect (external I/O - LLM API calls)
 #   - purity: side_effecting (makes network calls)
-#   - idempotent: true (same input produces same output, safe to retry)
+#   - idempotent: false (LLM outputs vary even with identical inputs)
+#   - nondeterministic_effect: true (LLM responses are inherently variable)
 #   - Has capability dependency on LLM provider
 #
 # See: OMN-1201 - Demo Support Assistant Handler
 
 handler_id: effect.demo.support_assistant
 name: Support Assistant Demo Handler
-version:
-  major: 1
-  minor: 0
-  patch: 0
+version: "1.0.0"
 description: AI support assistant that responds to user requests with structured output
 
 descriptor:
   handler_kind: effect
   purity: side_effecting
-  idempotent: true
+  # LLM handlers cannot guarantee idempotency - same input may produce different
+  # outputs due to model temperature, context window state, and API variations
+  idempotent: false
   timeout_ms: 30000  # LLM calls can be slow
   retry_policy:
     enabled: true
@@ -45,6 +45,9 @@ capability_inputs:
         supports_structured_output: true
       prefer:
         max_latency_ms: 5000
+        # Streaming is a nice-to-have for progress feedback; structured output
+        # takes precedence as it's in 'must'. Provider may disable streaming
+        # when structured output is active.
         supports_streaming: true
     selection_policy: auto_if_unique
     strict: true
@@ -61,7 +64,9 @@ execution_constraints:
   requires_before: []
   requires_after: []
   can_run_parallel: true
-  nondeterministic_effect: false  # LLM with same prompt produces consistent responses
+  # LLM outputs are inherently nondeterministic due to temperature, sampling,
+  # and model state - same prompt can yield different responses
+  nondeterministic_effect: true
 
 supports_lifecycle: true
 supports_health_check: true

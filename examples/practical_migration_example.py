@@ -11,9 +11,9 @@ from pydantic import BaseModel, Field
 
 # Import the new field accessor
 from omnibase_core.models.core import ModelResultAccessor
-
 # Import discriminated union models for proper type safety
-from omnibase_core.models.examples.model_property_value import ModelPropertyValue
+from omnibase_core.models.examples.model_property_value import \
+    ModelPropertyValue
 
 
 # ========== BEFORE: Current Implementation (with generic unions) ==========

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
+#
+# SPDX-License-Identifier: Apache-2.0
 """Tests for SupportRequest and SupportResponse Pydantic models.
 
 This module tests the input/output schemas for the OMN-1201 Demo Support Assistant.
@@ -17,6 +20,7 @@ from examples.demo.handlers.support_assistant.model_support_response import (
 )
 
 
+@pytest.mark.unit
 class TestSupportRequest:
     """Tests for SupportRequest input schema."""
 
@@ -113,6 +117,7 @@ class TestSupportRequest:
         assert request.urgency == "high"
 
 
+@pytest.mark.unit
 class TestSupportResponse:
     """Tests for SupportResponse output schema."""
 
@@ -148,19 +153,17 @@ class TestSupportResponse:
         errors = exc_info.value.errors()
         assert any(e["loc"] == ("response_text",) for e in errors)
 
-    def test_response_requires_suggested_actions(self) -> None:
-        """suggested_actions is required."""
-        with pytest.raises(ValidationError) as exc_info:
-            SupportResponse(
-                response_text="Answer",
-                confidence=0.5,
-                requires_escalation=False,
-                category="general",
-                sentiment="neutral",
-            )
+    def test_response_suggested_actions_defaults_to_empty_list(self) -> None:
+        """suggested_actions defaults to empty list when not provided."""
+        response = SupportResponse(
+            response_text="Answer",
+            confidence=0.5,
+            requires_escalation=False,
+            category="general",
+            sentiment="neutral",
+        )
 
-        errors = exc_info.value.errors()
-        assert any(e["loc"] == ("suggested_actions",) for e in errors)
+        assert response.suggested_actions == []
 
     def test_confidence_in_valid_range(self) -> None:
         """Confidence is between 0 and 1."""

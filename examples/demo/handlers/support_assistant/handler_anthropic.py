@@ -29,14 +29,11 @@ import os
 import httpx
 
 from examples.demo.handlers.support_assistant.model_config import ModelConfig
-from examples.demo.handlers.support_assistant.protocol_llm_client import (
-    ProtocolLLMClient,
-)
 
 # Anthropic API configuration
 ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages"
 ANTHROPIC_VERSION = "2023-06-01"
-DEFAULT_MODEL = "claude-3-5-sonnet-20240620"
+DEFAULT_MODEL = "claude-3-5-sonnet-20241022"
 DEFAULT_TIMEOUT = 60.0
 
 
@@ -48,7 +45,7 @@ class AnthropicLLMClient:
 
     Attributes:
         api_key: Anthropic API key.
-        model_name: Model identifier (e.g., "claude-3-5-sonnet-20240620").
+        model_name: Model identifier (e.g., "claude-3-5-sonnet-20241022").
         temperature: Sampling temperature for response generation.
         max_tokens: Maximum tokens to generate.
         timeout: Request timeout in seconds.
@@ -67,7 +64,7 @@ class AnthropicLLMClient:
         Args:
             api_key: Anthropic API key.
                 Defaults to ANTHROPIC_API_KEY environment variable.
-            model_name: Model identifier (e.g., "claude-3-5-sonnet-20240620").
+            model_name: Model identifier (e.g., "claude-3-5-sonnet-20241022").
             temperature: Sampling temperature (0.0 to 1.0 for Anthropic).
             max_tokens: Maximum tokens to generate.
             timeout: Request timeout in seconds.
@@ -89,7 +86,7 @@ class AnthropicLLMClient:
         self.timeout = timeout
 
     @classmethod
-    def from_config(cls, config: ModelConfig) -> "AnthropicLLMClient":
+    def from_config(cls, config: ModelConfig) -> AnthropicLLMClient:
         """Create client from ModelConfig.
 
         Args:
@@ -204,6 +201,7 @@ class AnthropicLLMClient:
                 return response.status_code in [200, 400, 401]
 
         except Exception:
+            # boundary-ok: health check must not crash, returns False on any error
             return False
 
 

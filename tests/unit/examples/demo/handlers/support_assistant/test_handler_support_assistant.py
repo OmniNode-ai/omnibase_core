@@ -109,6 +109,7 @@ def high_urgency_request() -> SupportRequest:
     )
 
 
+@pytest.mark.unit
 class TestHandlerContract:
     """Tests for handler contract and DI compliance."""
 
@@ -195,6 +196,7 @@ class TestHandlerContract:
         assert response.sentiment in ["positive", "neutral", "negative"]
 
 
+@pytest.mark.unit
 class TestResponseQuality:
     """Tests for response quality and content."""
 
@@ -282,13 +284,21 @@ class TestResponseQuality:
         assert response.sentiment in valid_sentiments
 
 
+@pytest.mark.unit
 class TestErrorHandling:
     """Tests for error handling and edge cases."""
 
     def test_handles_llm_api_error_gracefully(
         self, sample_request: SupportRequest
     ) -> None:
-        """Handler returns error response when LLM API fails."""
+        """Handler raises ModelOnexError when LLM API fails.
+
+        This ensures structured error handling with proper error codes
+        rather than silently returning error responses.
+        """
+        from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+        from omnibase_core.errors import ModelOnexError
+
         container = MagicMock()
         mock_llm = MockLLMClient(should_fail=True, error_message="API timeout")
         mock_logger = MagicMock()
@@ -304,16 +314,19 @@ class TestErrorHandling:
 
         handler = SupportAssistantHandler(container)
 
-        # Should not raise, should return error response
-        response = asyncio.run(handler.handle(sample_request))
+        # Should raise ModelOnexError with structured error info
+        with pytest.raises(ModelOnexError) as exc_info:
+            asyncio.run(handler.handle(sample_request))
 
-        # Should return a valid SupportResponse with error indication
-        assert isinstance(response, SupportResponse)
-        assert response.confidence < 0.5  # Low confidence for errors
-        assert (
-            "error" in response.response_text.lower()
-            or "sorry" in response.response_text.lower()
-        )
+        # Verify structured error properties
+        error = exc_info.value
+        assert error.error_code == EnumCoreErrorCode.OPERATION_FAILED
+        # Context may be nested; check error_type is captured somewhere in context
+        context_str = str(error.context)
+        assert "error_type" in context_str
+        assert "RuntimeError" in context_str
+        # Error message should not expose raw exception details (security)
+        assert "API timeout" not in error.message
 
     def test_handles_empty_message(self, mock_container: MagicMock) -> None:
         """Handler handles empty message gracefully."""
@@ -344,6 +357,7 @@ class TestErrorHandling:
         assert isinstance(response, SupportResponse)
 
 
+@pytest.mark.unit
 class TestJSONParsing:
     """Tests for JSON parsing of LLM responses."""
 
@@ -416,6 +430,7 @@ Let me know if you need anything else!"""
         assert response.confidence >= 0.5
 
 
+@pytest.mark.unit
 class TestContextHandling:
     """Tests for context handling in requests."""
 
@@ -453,6 +468,7 @@ class TestContextHandling:
         assert isinstance(response, SupportResponse)
 
 
+@pytest.mark.unit
 class TestUrgencyHandling:
     """Tests for urgency level handling."""
 
@@ -486,6 +502,7 @@ class TestUrgencyHandling:
         assert "high" in llm_client.last_prompt.lower()
 
 
+@pytest.mark.unit
 class TestProtocolCompliance:
     """Tests for ProtocolLLMClient compliance."""
 
