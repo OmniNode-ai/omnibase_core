@@ -32,7 +32,7 @@ import types
 from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
-from typing import cast
+from typing import Any, cast
 from uuid import UUID, uuid4
 
 from omnibase_core.constants import TIMEOUT_DEFAULT_MS
@@ -426,9 +426,17 @@ class MixinNodeService:
 
     # Private methods
 
-    async def _subscribe_to_tool_invocations(self) -> None:
-        """Subscribe to TOOL_INVOCATION events."""
-        # Try multiple strategies to get event bus (similar to MixinEventBus._get_event_bus)
+    def _try_get_event_bus_from_container(self) -> Any:
+        """
+        Try to get event bus from container using multiple strategies.
+
+        This helper consolidates the event bus lookup logic used across
+        subscription, response emission, and shutdown event methods.
+
+        Returns:
+            The event bus object if found, None otherwise. Return type is Any
+            to allow duck-typed access to subscribe/publish methods.
+        """
         event_bus = None
 
         # Strategy 1: Try _get_event_bus() method if available (from MixinEventBus)
@@ -446,8 +454,14 @@ class MixinNodeService:
                 if hasattr(container, "get_service"):
                     event_bus = container.get_service("event_bus")
             except _SERVICE_LOOKUP_ERRORS:
-                # fallback-ok: service lookup failure continues to next strategy
+                # fallback-ok: service lookup failure returns None
                 pass
+
+        return event_bus
+
+    async def _subscribe_to_tool_invocations(self) -> None:
+        """Subscribe to TOOL_INVOCATION events."""
+        event_bus = self._try_get_event_bus_from_container()
 
         # Raise error if no event bus found
         if not event_bus:
@@ -639,26 +653,7 @@ class MixinNodeService:
 
     async def _emit_tool_response(self, response_event: ModelToolResponseEvent) -> None:
         """Emit a tool response event."""
-        # Try multiple strategies to get event bus (similar to _subscribe_to_tool_invocations)
-        event_bus = None
-
-        # Strategy 1: Try _get_event_bus() method if available (from MixinEventBus)
-        if hasattr(self, "_get_event_bus"):
-            event_bus = self._get_event_bus()
-
-        # Strategy 2: Try direct event_bus attribute
-        if not event_bus:
-            event_bus = getattr(self, "event_bus", None)
-
-        # Strategy 3: Try container.get_service()
-        if not event_bus and hasattr(self, "container"):
-            try:
-                container = self.container
-                if hasattr(container, "get_service"):
-                    event_bus = container.get_service("event_bus")
-            except _SERVICE_LOOKUP_ERRORS:
-                # fallback-ok: optional event bus for response
-                pass
+        event_bus = self._try_get_event_bus_from_container()
 
         # Emit event if bus available
         if event_bus:
@@ -674,26 +669,7 @@ class MixinNodeService:
                 node_name=self._extract_node_name(),
             )
 
-            # Try multiple strategies to get event bus
-            event_bus = None
-
-            # Strategy 1: Try _get_event_bus() method if available (from MixinEventBus)
-            if hasattr(self, "_get_event_bus"):
-                event_bus = self._get_event_bus()
-
-            # Strategy 2: Try direct event_bus attribute
-            if not event_bus:
-                event_bus = getattr(self, "event_bus", None)
-
-            # Strategy 3: Try container.get_service()
-            if not event_bus and hasattr(self, "container"):
-                try:
-                    container = self.container
-                    if hasattr(container, "get_service"):
-                        event_bus = container.get_service("event_bus")
-                except _SERVICE_LOOKUP_ERRORS:
-                    # fallback-ok: optional event bus for shutdown
-                    pass
+            event_bus = self._try_get_event_bus_from_container()
 
             if event_bus:
                 await event_bus.publish(shutdown_event)
