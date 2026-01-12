@@ -10,11 +10,11 @@ class StrValueHelper:
     string serialization. The __str__ returns the enum's value directly.
 
     Example:
-        class EnumExample(StrValueHelper, str, Enum):
-            VALUE_A = "value_a"
-            VALUE_B = "value_b"
+        class EnumStatus(StrValueHelper, str, Enum):
+            PENDING = "pending"
+            RUNNING = "running"
 
-        str(EnumExample.VALUE_A)  # Returns: "value_a"
+        str(EnumStatus.PENDING)  # Returns: "pending"
     """
 
     value: str  # Type hint for enum value
