@@ -40,6 +40,8 @@ Security:
 
 from __future__ import annotations
 
+import asyncio
+import inspect
 import re
 import threading
 import time
@@ -884,9 +886,6 @@ class MixinEventListener[InputStateT, OutputStateT]:
         Args:
             envelope: Event envelope to publish
         """
-        import asyncio
-        import inspect
-
         if self.event_bus is None:
             return
 

@@ -29,6 +29,7 @@ class UtilUUID:
             UUID(uuid_string)
             return True
         except VALIDATION_ERRORS:
+            # fallback-ok: invalid UUID string returns False
             return False
 
     @staticmethod
@@ -37,6 +38,7 @@ class UtilUUID:
         try:
             return UUID(uuid_string)
         except VALIDATION_ERRORS:
+            # fallback-ok: invalid UUID string returns None
             return None
 
     @staticmethod
@@ -55,6 +57,7 @@ class UtilUUID:
             try:
                 return UUID(value)
             except VALIDATION_ERRORS:
+                # fallback-ok: invalid UUID string generates new UUID
                 return uuid4()
         return uuid4()  # type: ignore[unreachable]  # Defensive fallback
 

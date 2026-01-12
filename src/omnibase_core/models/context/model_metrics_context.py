@@ -19,7 +19,7 @@ See Also:
 
 import re
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors import ModelOnexError
@@ -180,11 +180,12 @@ class ModelMetricsContext(BaseModel):
 
     @field_validator("span_id", "parent_span_id", mode="before")
     @classmethod
-    def validate_span_id(cls, value: str | None) -> str | None:
+    def validate_span_id(cls, value: str | None, info: ValidationInfo) -> str | None:
         """Validate span_id/parent_span_id is 16 hex characters.
 
         Args:
             value: The span ID string to validate, or None.
+            info: Pydantic validation info containing the field name.
 
         Returns:
             The validated span ID string (lowercase), or None if input is None.
@@ -194,15 +195,18 @@ class ModelMetricsContext(BaseModel):
         """
         if value is None:
             return None
+        field_name = info.field_name
         if not isinstance(value, str):
             # error-ok: Pydantic field_validator requires ValueError
-            raise ValueError(f"span_id must be a string, got {type(value).__name__}")
+            raise ValueError(
+                f"{field_name} must be a string, got {type(value).__name__}"
+            )
         # Normalize to lowercase for comparison
         normalized = value.lower()
         if not _SPAN_ID_PATTERN.match(normalized):
             # error-ok: Pydantic field_validator requires ValueError
             raise ValueError(
-                f"Invalid span_id '{value}': must be 16 lowercase hex characters"
+                f"Invalid {field_name} '{value}': must be 16 lowercase hex characters"
             )
         return normalized
 

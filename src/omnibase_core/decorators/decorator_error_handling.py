@@ -1,8 +1,3 @@
-from collections.abc import Callable
-from typing import Any
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Standard error handling decorators for ONEX framework.
 
@@ -19,8 +14,11 @@ All decorators in this module follow the ONEX exception handling contract:
 
 import asyncio
 import functools
+from collections.abc import Callable
+from typing import Any
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 def standard_error_handling(

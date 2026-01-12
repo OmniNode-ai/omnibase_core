@@ -1,10 +1,9 @@
-from collections.abc import Callable
-
 """
 ONEX Pattern Exclusion Decorators.
 Provides fine-grained control over ONEX strict typing standards enforcement.
 """
 
+from collections.abc import Callable
 from typing import Any
 
 from omnibase_core.models.decorators.model_pattern_exclusion_info import (

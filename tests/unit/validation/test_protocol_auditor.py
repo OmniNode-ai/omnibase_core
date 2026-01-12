@@ -290,8 +290,9 @@ class TestProtocolAuditorEdgeCases:
                     # If no exception, verify we got a valid result
                     assert result is not None
                     assert isinstance(result, ModelAuditResult)
-                except PermissionError as e:
-                    # If exception is raised, verify it's the expected one
+                except (ModelOnexError, PermissionError) as e:
+                    # Both raw PermissionError and wrapped ModelOnexError are acceptable
+                    # The @standard_error_handling decorator wraps PermissionError in ModelOnexError
                     assert "Permission denied" in str(e)
 
     def test_audit_with_malformed_repository_structure(self):

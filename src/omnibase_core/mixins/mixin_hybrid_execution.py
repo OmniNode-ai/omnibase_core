@@ -5,7 +5,9 @@ Provides automatic selection between direct execution and workflow modes.
 Supports LlamaIndex workflow orchestration for complex operations.
 """
 
+import asyncio
 import json
+import time
 
 from omnibase_core.constants import constants_contract_fields as cf
 
@@ -208,9 +210,6 @@ class MixinHybridExecution[InputStateT, OutputStateT]:
             workflow = self.create_workflow(input_state)
 
             # Execute workflow
-            import asyncio
-            import time
-
             start_time = time.time()
 
             # Run workflow
@@ -250,7 +249,7 @@ class MixinHybridExecution[InputStateT, OutputStateT]:
 
             return cast("OutputStateT", result)
 
-        except Exception as e:  # catch-all-ok: workflow failure falls back to direct execution with logging
+        except Exception as e:  # fallback-ok: workflow failure falls back to direct execution with logging
             emit_log_event(
                 LogLevel.ERROR,
                 f"❌ WORKFLOW_EXECUTION: Workflow failed: {e}",

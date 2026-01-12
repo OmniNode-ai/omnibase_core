@@ -557,6 +557,7 @@ async def _evaluate_single_condition(
                 expected_value or "0"
             )
         except VALIDATION_ERRORS:
+            # fallback-ok: non-numeric values return False for numeric comparison
             return False
     elif operator == "<":
         try:
@@ -565,6 +566,7 @@ async def _evaluate_single_condition(
                 expected_value or "0"
             )
         except VALIDATION_ERRORS:
+            # fallback-ok: non-numeric values return False for numeric comparison
             return False
     elif operator == ">=":
         try:
@@ -573,6 +575,7 @@ async def _evaluate_single_condition(
                 expected_value or "0"
             )
         except VALIDATION_ERRORS:
+            # fallback-ok: non-numeric values return False for numeric comparison
             return False
     elif operator == "<=":
         try:
@@ -581,6 +584,7 @@ async def _evaluate_single_condition(
                 expected_value or "0"
             )
         except VALIDATION_ERRORS:
+            # fallback-ok: non-numeric values return False for numeric comparison
             return False
     elif operator == "in":
         # Check if field_value is in expected_value (comma-separated list or iterable)

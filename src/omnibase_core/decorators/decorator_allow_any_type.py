@@ -1,5 +1,3 @@
-from typing import Any, TypeVar
-
 """
 ONEX Decorator: Allow Any Type
 
@@ -7,7 +5,9 @@ Decorator to allow Any type usage in specific contexts where duck typing require
 Used sparingly and only for duck typing utility functions.
 """
 
+import functools
 from collections.abc import Callable
+from typing import Any, TypeVar
 
 F = TypeVar("F", bound=Callable[..., Any])
 
@@ -27,8 +27,12 @@ def allow_any_type(reason: str) -> Callable[[F], F]:
     """
 
     def decorator(func: F) -> F:
+        @functools.wraps(func)
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
+            return func(*args, **kwargs)
+
         # Add reason to function metadata for tracking
-        func.__allow_any_reason__ = reason  # type: ignore[attr-defined]
-        return func
+        wrapper.__allow_any_reason__ = reason  # type: ignore[attr-defined]
+        return wrapper  # type: ignore[return-value]
 
     return decorator
