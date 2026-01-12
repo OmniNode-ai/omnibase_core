@@ -470,7 +470,104 @@ class NodeMyServiceCompute(NodeCompute, MixinDiscoveryResponder):
         self.event_bus = container.get_service("ProtocolEventBus")
 ```
 
-**Available Mixins**: `MixinDiscoveryResponder`, `MixinEventHandler`, `MixinEventListener`, `MixinNodeExecutor`, `MixinNodeLifecycle`, `MixinRequestResponseIntrospection`, `MixinWorkflowExecution`
+**Available Mixins**: `MixinDiscoveryResponder`, `MixinEventHandler`, `MixinEventListener`, `MixinNodeExecutor`, `MixinNodeLifecycle`, `MixinRequestResponseIntrospection`, `MixinWorkflowExecution`, `StrValueMixin`
+
+### Docstring Guidelines
+
+Follow these guidelines to avoid "AI slop" - docstrings that add noise without value.
+
+#### Docstrings to AVOID (Tautological)
+
+Do NOT write docstrings that simply restate the method name:
+
+```python
+# BAD - These add no value
+def get_name(self):
+    """Get the name."""  # Just restates method name
+
+def set_status(self, value):
+    """Set the status."""  # Obvious from signature
+
+def validate_input(self):
+    """Validate input."""  # No new information
+
+def is_active(self) -> bool:
+    """Check if active."""  # Obvious from name and return type
+```
+
+#### Docstrings to WRITE (Valuable)
+
+Write docstrings that explain WHY, describe non-obvious behavior, or document edge cases:
+
+```python
+# GOOD - These add value
+def get_name(self) -> str:
+    """Return canonical name, falling back to id if name is None."""
+
+def set_status(self, value: str) -> None:
+    """Update status and emit StatusChanged event to all subscribers."""
+
+def validate_input(self) -> bool:
+    """
+    Validate against schema v2 rules.
+
+    Raises:
+        ValidationError: If required fields are missing or malformed.
+    """
+
+def is_active(self) -> bool:
+    """Check activation considering both enabled flag and expiry timestamp."""
+```
+
+#### When to Write Docstrings
+
+| Situation | Docstring Needed? | Example |
+|-----------|-------------------|---------|
+| Complex logic | ✅ Yes | Algorithms, state machines, multi-step processes |
+| Non-obvious behavior | ✅ Yes | Side effects, event emission, caching |
+| Public API | ✅ Yes | Module/class/function interfaces |
+| Edge cases | ✅ Yes | Error conditions, boundary values |
+| Simple getter/setter | ❌ No | `get_id()`, `set_name()` |
+| Obvious from signature | ❌ No | `def add(a: int, b: int) -> int` |
+| Private helpers | ❌ Usually no | `_parse_line()`, `_normalize()` |
+
+#### Module and Class Docstrings
+
+Keep module docstrings concise (3-6 lines max for simple modules):
+
+```python
+# GOOD - Concise module docstring
+"""Enumeration for node execution status.
+
+Defines lifecycle states for node execution from pending to completed.
+"""
+
+# BAD - Verbose module docstring (avoid)
+"""
+Enumeration for node execution status.
+
+This module provides a comprehensive enumeration of all possible
+execution states that a node can be in during its lifecycle...
+[18 more lines of obvious information]
+"""
+```
+
+#### Enum String Serialization
+
+All string-based enums should use `StrValueMixin` for consistent `__str__` behavior:
+
+```python
+from omnibase_core.utils.util_str_enum_base import StrValueMixin
+
+class EnumStatus(StrValueMixin, str, Enum):
+    """Status values for workflow execution."""
+    PENDING = "pending"
+    RUNNING = "running"
+    COMPLETED = "completed"
+
+# StrValueMixin provides __str__ that returns self.value
+str(EnumStatus.PENDING)  # Returns: "pending"
+```
 
 ### File Naming Conventions
 

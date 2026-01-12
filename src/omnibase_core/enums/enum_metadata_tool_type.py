@@ -9,9 +9,11 @@ Defines types of metadata tools available in the ONEX ecosystem.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueMixin
+
 
 @unique
-class EnumMetadataToolType(str, Enum):
+class EnumMetadataToolType(StrValueMixin, str, Enum):
     """
     Types of metadata tools.
 
@@ -26,10 +28,6 @@ class EnumMetadataToolType(str, Enum):
     ANALYZER = "analyzer"  # Analysis and inspection tool
     VALIDATOR = "validator"  # Validation and verification tool
     FORMATTER = "formatter"  # Formatting and transformation tool
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def is_generation_tool(cls, tool_type: EnumMetadataToolType) -> bool:

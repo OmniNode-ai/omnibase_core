@@ -10,9 +10,11 @@ Follows ONEX one-enum-per-file naming conventions.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueMixin
+
 
 @unique
-class EnumComplexity(str, Enum):
+class EnumComplexity(StrValueMixin, str, Enum):
     """
     Strongly typed complexity levels for operations.
 
@@ -24,10 +26,6 @@ class EnumComplexity(str, Enum):
     MODERATE = "moderate"
     COMPLEX = "complex"
     VERY_COMPLEX = "very_complex"
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def get_estimated_runtime_seconds(cls, complexity: EnumComplexity) -> float:

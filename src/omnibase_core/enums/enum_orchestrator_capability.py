@@ -11,40 +11,15 @@ from __future__ import annotations
 from enum import Enum, unique
 from typing import Never, NoReturn
 
+from omnibase_core.utils.util_str_enum_base import StrValueMixin
+
 
 @unique
-class EnumOrchestratorCapability(str, Enum):
-    """
-    Enumeration of supported orchestrator node capabilities.
-
-    SINGLE SOURCE OF TRUTH for orchestrator capability values.
-    Replaces magic strings in handler capability constants.
-
-    Using an enum instead of raw strings:
-    - Prevents typos ("workflow_resolver" vs "workflowResolver")
-    - Enables IDE autocompletion
-    - Provides exhaustiveness checking
-    - Centralizes capability definitions
-    - Preserves full type safety
-
-    Capabilities:
-        WORKFLOW_RESOLVER: Workflow resolution and coordination capability
-
-    Example:
-        >>> from omnibase_core.enums import EnumOrchestratorCapability
-        >>> cap = EnumOrchestratorCapability.WORKFLOW_RESOLVER
-        >>> str(cap)
-        'workflow_resolver'
-        >>> cap.value
-        'workflow_resolver'
-    """
+class EnumOrchestratorCapability(StrValueMixin, str, Enum):
+    """Orchestrator node capabilities (currently: WORKFLOW_RESOLVER for coordination)."""
 
     WORKFLOW_RESOLVER = "workflow_resolver"
     """Workflow resolution and coordination capability."""
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def values(cls) -> list[str]:

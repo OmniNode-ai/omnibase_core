@@ -9,9 +9,11 @@ Defines difficulty levels for examples and learning materials.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueMixin
+
 
 @unique
-class EnumDifficultyLevel(str, Enum):
+class EnumDifficultyLevel(StrValueMixin, str, Enum):
     """
     Enumeration of difficulty levels for examples and tutorials.
 
@@ -26,10 +28,6 @@ class EnumDifficultyLevel(str, Enum):
     # Additional granular levels
     NOVICE = "novice"
     EXPERT = "expert"
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def get_numeric_level(cls, difficulty: EnumDifficultyLevel) -> int:

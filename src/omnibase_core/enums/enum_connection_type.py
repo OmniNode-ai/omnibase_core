@@ -10,9 +10,11 @@ Follows ONEX one-enum-per-file naming conventions.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueMixin
+
 
 @unique
-class EnumConnectionType(str, Enum):
+class EnumConnectionType(StrValueMixin, str, Enum):
     """
     Strongly typed connection type for network operations.
 
@@ -28,10 +30,6 @@ class EnumConnectionType(str, Enum):
     GRPC = "grpc"
     UDP = "udp"
     UNIX_SOCKET = "unix_socket"
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def is_secure(cls, connection_type: EnumConnectionType) -> bool:

@@ -6,18 +6,16 @@ Canonical enum for debug verbosity levels used in execution contexts.
 
 from enum import Enum
 
+from omnibase_core.utils.util_str_enum_base import StrValueMixin
 
-class EnumDebugLevel(str, Enum):
+
+class EnumDebugLevel(StrValueMixin, str, Enum):
     """Debug verbosity levels for ONEX execution."""
 
     DEBUG = "debug"
     INFO = "info"
     WARN = "warn"
     ERROR = "error"
-
-    def __str__(self) -> str:
-        """Return the string value of the debug level."""
-        return self.value
 
     @classmethod
     def get_verbosity_order(cls) -> list["EnumDebugLevel"]:

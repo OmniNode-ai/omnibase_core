@@ -10,9 +10,11 @@ Replaces Literal["replace", "insert", "delete"] patterns.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueMixin
+
 
 @unique
-class EnumEditMode(str, Enum):
+class EnumEditMode(StrValueMixin, str, Enum):
     """
     Strongly typed edit mode discriminators.
 
@@ -25,10 +27,6 @@ class EnumEditMode(str, Enum):
     REPLACE = "replace"
     INSERT = "insert"
     DELETE = "delete"
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def is_destructive(cls, edit_mode: EnumEditMode) -> bool:

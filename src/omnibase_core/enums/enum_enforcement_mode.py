@@ -6,8 +6,10 @@ Enforcement strategy modes for resource limits and constraints.
 
 from enum import Enum
 
+from omnibase_core.utils.util_str_enum_base import StrValueMixin
 
-class EnumEnforcementMode(str, Enum):
+
+class EnumEnforcementMode(StrValueMixin, str, Enum):
     """
     Enforcement strategy modes for resource limits and constraints.
 
@@ -18,10 +20,6 @@ class EnumEnforcementMode(str, Enum):
     SOFT = "soft"
     ADVISORY = "advisory"
     DISABLED = "disabled"
-
-    def __str__(self) -> str:
-        """Return the string value of the enforcement mode."""
-        return self.value
 
     def is_blocking(self) -> bool:
         """Check if this mode blocks operations that exceed limits."""

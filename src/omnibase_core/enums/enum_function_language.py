@@ -9,9 +9,11 @@ Defines supported languages for function discovery and tool definitions.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueMixin
+
 
 @unique
-class EnumFunctionLanguage(str, Enum):
+class EnumFunctionLanguage(StrValueMixin, str, Enum):
     """
     Supported function discovery languages.
 
@@ -26,10 +28,6 @@ class EnumFunctionLanguage(str, Enum):
     SHELL = "shell"  # Generic shell scripts
     YAML = "yaml"  # YAML-based configuration
     JSON = "json"  # JSON-based configuration
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def is_scripting_language(cls, language: EnumFunctionLanguage) -> bool:

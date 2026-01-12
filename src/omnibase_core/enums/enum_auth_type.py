@@ -6,8 +6,10 @@ Authentication types for webhook notifications in ONEX infrastructure.
 
 from enum import Enum
 
+from omnibase_core.utils.util_str_enum_base import StrValueMixin
 
-class EnumAuthType(str, Enum):
+
+class EnumAuthType(StrValueMixin, str, Enum):
     """Enumeration for authentication types used in webhook communications."""
 
     # No authentication
@@ -23,10 +25,6 @@ class EnumAuthType(str, Enum):
     MTLS = "mtls"  # Mutual TLS certificate authentication
     DIGEST = "digest"  # Digest authentication
     CUSTOM = "custom"  # Custom authentication method
-
-    def __str__(self) -> str:
-        """Return the string value of the authentication type."""
-        return self.value
 
     @classmethod
     def requires_credentials(cls, auth_type: "EnumAuthType") -> bool:

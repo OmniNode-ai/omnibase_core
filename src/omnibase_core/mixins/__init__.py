@@ -6,6 +6,10 @@ Mixins follow the single responsibility principle and provide specific capabilit
 that can be composed into concrete node implementations.
 """
 
+# StrValueMixin is re-exported from utils for convenience. The actual class lives
+# in utils.util_str_enum_base to avoid circular imports with enums.
+from omnibase_core.utils.util_str_enum_base import StrValueMixin
+
 # Core mixins
 # Import protocols from omnibase_core (Core-native protocols)
 from omnibase_core.protocols import ProtocolEventBusRegistry
@@ -73,6 +77,8 @@ from omnibase_core.mixins.mixin_caching import MixinCaching
 from omnibase_core.mixins.mixin_truncation_validation import MixinTruncationValidation
 
 __all__ = [
+    # StrValueMixin - provides __str__ for enums, must be available early
+    "StrValueMixin",
     "MixinCanonicalYAMLSerializer",
     "MixinComputeExecution",
     "MixinEffectExecution",

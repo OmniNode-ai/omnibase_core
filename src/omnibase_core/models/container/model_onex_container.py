@@ -290,42 +290,34 @@ class ModelONEXContainer:
 
     @property
     def config(self) -> "Configuration":
-        """Access to configuration."""
         return self._base_container.config
 
     @property
     def enhanced_logger(self) -> "Factory[ModelEnhancedLogger]":
-        """Access to enhanced logger."""
         return self._base_container.enhanced_logger
 
     @property
     def workflow_factory(self) -> "Factory[ModelWorkflowFactory]":
-        """Access to workflow factory."""
         return self._base_container.workflow_factory
 
     @property
     def workflow_coordinator(self) -> "Singleton[ModelWorkflowCoordinator]":
-        """Access to workflow coordinator."""
         return self._base_container.workflow_coordinator
 
     @property
     def action_registry(self) -> "Singleton[ModelActionRegistry]":
-        """Access to action registry."""
         return self._base_container.action_registry
 
     @property
     def event_type_registry(self) -> "Singleton[ModelEventTypeRegistry]":
-        """Access to event type registry."""
         return self._base_container.event_type_registry
 
     @property
     def command_registry(self) -> "Singleton[ModelCliCommandRegistry]":
-        """Access to command registry."""
         return self._base_container.command_registry
 
     @property
     def secret_manager(self) -> "Singleton[ModelSecretManager]":
-        """Access to secret manager."""
         return self._base_container.secret_manager
 
     @property
@@ -637,8 +629,6 @@ class ModelONEXContainer:
         """
         # TODO: Ready to implement using ProtocolServiceResolver from omnibase_spi.protocols.container
         # Note: ProtocolServiceResolver available in omnibase_spi v0.2.0
-        # service_resolver = get_service_resolver()
-        # return await service_resolver.get_all_service_health()
         return {
             "status": "unavailable",
             "message": "External service health check not yet implemented - requires omnibase-spi integration",
@@ -652,20 +642,6 @@ class ModelONEXContainer:
         """
         # TODO: Ready to implement using ProtocolServiceResolver from omnibase_spi.protocols.container
         # Note: ProtocolServiceResolver available in omnibase_spi v0.2.0
-        # service_resolver = get_service_resolver()
-
-        # Refresh service discovery if cached
-        # try:
-        #     await service_resolver.refresh_service(ProtocolServiceDiscovery)
-        # except Exception:
-        #     pass  # Service may not be cached yet
-
-        # Refresh database if cached
-        # try:
-        #     await service_resolver.refresh_service(ProtocolDatabaseConnection)
-        # except Exception:
-        #     pass  # Service may not be cached yet
-
         emit_log_event(
             LogLevel.WARNING,
             "External service refresh not yet implemented - requires omnibase-spi integration",

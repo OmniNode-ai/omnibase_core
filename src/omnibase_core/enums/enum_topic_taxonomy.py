@@ -11,9 +11,11 @@ Thread Safety:
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueMixin
+
 
 @unique
-class EnumTopicType(str, Enum):
+class EnumTopicType(StrValueMixin, str, Enum):
     """
     Valid topic types per ONEX topic taxonomy.
 
@@ -29,13 +31,9 @@ class EnumTopicType(str, Enum):
     INTENTS = "intents"
     SNAPSHOTS = "snapshots"
 
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
-
 
 @unique
-class EnumCleanupPolicy(str, Enum):
+class EnumCleanupPolicy(StrValueMixin, str, Enum):
     """
     Kafka cleanup policies for topic log management.
 
@@ -47,10 +45,6 @@ class EnumCleanupPolicy(str, Enum):
     DELETE = "delete"
     COMPACT = "compact"
     COMPACT_DELETE = "compact,delete"
-
-    def __str__(self) -> str:
-        """Return the string value for Kafka configuration."""
-        return self.value
 
 
 __all__ = [

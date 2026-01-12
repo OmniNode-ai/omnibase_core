@@ -1,5 +1,7 @@
 from enum import Enum
 
+from omnibase_core.utils.util_str_enum_base import StrValueMixin
+
 # === OmniNode:Metadata ===
 # author: OmniNode Team
 # copyright: OmniNode.ai
@@ -24,13 +26,10 @@ from enum import Enum
 # === /OmniNode:Metadata ===
 
 
-class EnumFileType(str, Enum):
+class EnumFileType(StrValueMixin, str, Enum):
     PYTHON = "python"
     YAML = "yaml"
     MARKDOWN = "markdown"
     JSON = "json"
     IGNORE = "ignore"
     UNKNOWN = "unknown"
-
-    def __str__(self) -> str:
-        return self.value

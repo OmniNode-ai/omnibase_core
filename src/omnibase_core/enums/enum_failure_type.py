@@ -7,9 +7,11 @@ analysis of failure patterns across memory snapshots.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueMixin
+
 
 @unique
-class EnumFailureType(str, Enum):
+class EnumFailureType(StrValueMixin, str, Enum):
     """Failure type classification for omnimemory snapshots.
 
     Classifies failures recorded in memory snapshots to enable systematic
@@ -69,10 +71,6 @@ class EnumFailureType(str, Enum):
 
     UNKNOWN = "unknown"
     """Unclassified failure (escape hatch for unexpected failure modes)."""
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def is_valid(cls, value: str) -> bool:

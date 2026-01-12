@@ -6,8 +6,10 @@ Status values for ONEX execution lifecycle tracking.
 
 from enum import Enum
 
+from omnibase_core.utils.util_str_enum_base import StrValueMixin
 
-class EnumExecutionStatus(str, Enum):
+
+class EnumExecutionStatus(StrValueMixin, str, Enum):
     """Execution status values for ONEX lifecycle tracking."""
 
     PENDING = "pending"
@@ -19,10 +21,6 @@ class EnumExecutionStatus(str, Enum):
     CANCELLED = "cancelled"
     TIMEOUT = "timeout"
     PARTIAL = "partial"
-
-    def __str__(self) -> str:
-        """Return the string value of the execution status."""
-        return self.value
 
     @classmethod
     def is_terminal(cls, status: "EnumExecutionStatus") -> bool:

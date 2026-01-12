@@ -10,11 +10,13 @@ values with execution-specific states while eliminating conflicts with other dom
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueMixin
+
 from .enum_base_status import EnumBaseStatus
 
 
 @unique
-class EnumExecutionStatusV2(str, Enum):
+class EnumExecutionStatusV2(StrValueMixin, str, Enum):
     """
     Execution status enumeration extending base status hierarchy.
 
@@ -48,10 +50,6 @@ class EnumExecutionStatusV2(str, Enum):
     SKIPPED = "skipped"  # Execution was skipped
     CANCELLED = "cancelled"  # Execution was cancelled
     TIMEOUT = "timeout"  # Execution timed out
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     def to_base_status(self) -> EnumBaseStatus:
         """Convert to base status enum for universal operations."""

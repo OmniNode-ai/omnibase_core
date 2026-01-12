@@ -9,9 +9,11 @@ Defines categories for memory usage levels.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueMixin
+
 
 @unique
-class EnumMemoryUsage(str, Enum):
+class EnumMemoryUsage(StrValueMixin, str, Enum):
     """
     Memory usage enumeration.
 
@@ -37,10 +39,6 @@ class EnumMemoryUsage(str, Enum):
     EXTREME = "extreme"  # 8-16 GB
     MASSIVE = "massive"  # 16+ GB
     UNLIMITED = "unlimited"  # No specific limit
-
-    def __str__(self) -> str:
-        """Return string representation."""
-        return self.value
 
     @property
     def display_name(self) -> str:

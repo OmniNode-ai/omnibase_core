@@ -10,9 +10,11 @@ Follows ONEX one-enum-per-file naming conventions.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueMixin
+
 
 @unique
-class EnumFunctionStatus(str, Enum):
+class EnumFunctionStatus(StrValueMixin, str, Enum):
     """
     Strongly typed function status for node operations.
 
@@ -25,10 +27,6 @@ class EnumFunctionStatus(str, Enum):
     DISABLED = "disabled"
     EXPERIMENTAL = "experimental"
     MAINTENANCE = "maintenance"
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def is_available(cls, status: EnumFunctionStatus) -> bool:

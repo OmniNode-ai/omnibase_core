@@ -8,9 +8,11 @@ Strongly typed enumeration for migration conflict type discriminators.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueMixin
+
 
 @unique
-class EnumMigrationConflictType(str, Enum):
+class EnumMigrationConflictType(StrValueMixin, str, Enum):
     """Strongly typed migration conflict type discriminators.
 
     Used for discriminated union patterns in migration conflict handling.
@@ -22,10 +24,6 @@ class EnumMigrationConflictType(str, Enum):
 
     NAME_CONFLICT = "name_conflict"
     EXACT_DUPLICATE = "exact_duplicate"
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def is_name_conflict(cls, conflict_type: EnumMigrationConflictType) -> bool:

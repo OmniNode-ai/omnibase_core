@@ -8,9 +8,11 @@ Defines color schemes for CLI output formatting.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueMixin
+
 
 @unique
-class EnumColorScheme(str, Enum):
+class EnumColorScheme(StrValueMixin, str, Enum):
     """
     Enumeration of color schemes for CLI output.
 
@@ -42,10 +44,6 @@ class EnumColorScheme(str, Enum):
     # Accessibility schemes
     COLORBLIND_FRIENDLY = "colorblind_friendly"
     HIGH_VISIBILITY = "high_visibility"
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def get_accessible_schemes(cls) -> list[EnumColorScheme]:

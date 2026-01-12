@@ -6,8 +6,10 @@ Execution environment types for ONEX deployments.
 
 from enum import Enum
 
+from omnibase_core.utils.util_str_enum_base import StrValueMixin
 
-class EnumEnvironment(str, Enum):
+
+class EnumEnvironment(StrValueMixin, str, Enum):
     """Execution environment types for ONEX deployments."""
 
     DEVELOPMENT = "development"
@@ -18,10 +20,6 @@ class EnumEnvironment(str, Enum):
     INTEGRATION = "integration"
     PREVIEW = "preview"
     SANDBOX = "sandbox"
-
-    def __str__(self) -> str:
-        """Return the string value of the environment."""
-        return self.value
 
     @classmethod
     def is_production_like(cls, environment: "EnumEnvironment") -> bool:

@@ -10,9 +10,11 @@ across the ONEX architecture.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueMixin
+
 
 @unique
-class EnumConfigCategory(str, Enum):
+class EnumConfigCategory(StrValueMixin, str, Enum):
     """
     Strongly typed configuration categories.
 
@@ -37,10 +39,6 @@ class EnumConfigCategory(str, Enum):
     # Generic categories
     GENERAL = "general"
     UNKNOWN = "unknown"
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def get_system_categories(cls) -> list[EnumConfigCategory]:

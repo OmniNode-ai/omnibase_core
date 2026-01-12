@@ -9,9 +9,11 @@ Defines quality levels for documentation assessment.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueMixin
+
 
 @unique
-class EnumDocumentationQuality(str, Enum):
+class EnumDocumentationQuality(StrValueMixin, str, Enum):
     """
     Enumeration of documentation quality levels.
 
@@ -34,10 +36,6 @@ class EnumDocumentationQuality(str, Enum):
     INCOMPLETE = "incomplete"
     OUTDATED = "outdated"
     UNKNOWN = "unknown"
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def get_numeric_score(cls, quality: EnumDocumentationQuality) -> int:

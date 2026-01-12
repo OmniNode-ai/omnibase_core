@@ -4,8 +4,10 @@ Data classification enum for ONEX security policies.
 
 from enum import Enum
 
+from omnibase_core.utils.util_str_enum_base import StrValueMixin
 
-class EnumDataClassification(str, Enum):
+
+class EnumDataClassification(StrValueMixin, str, Enum):
     """Data classification levels for security and compliance."""
 
     PUBLIC = "public"
@@ -19,10 +21,6 @@ class EnumDataClassification(str, Enum):
     SENSITIVE = "sensitive"
     CLASSIFIED = "classified"
     UNCLASSIFIED = "unclassified"
-
-    def __str__(self) -> str:
-        """Return the string value of the classification."""
-        return self.value
 
     @classmethod
     def get_security_level(cls, classification: "EnumDataClassification") -> int:

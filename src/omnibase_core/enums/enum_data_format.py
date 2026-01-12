@@ -10,9 +10,11 @@ configurations, and data processing across the ONEX architecture.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueMixin
+
 
 @unique
-class EnumDataFormat(str, Enum):
+class EnumDataFormat(StrValueMixin, str, Enum):
     """
     Strongly typed data formats.
 
@@ -51,10 +53,6 @@ class EnumDataFormat(str, Enum):
     ZIP = "zip"
     TAR = "tar"
     GZIP = "gzip"
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def get_text_formats(cls) -> list[EnumDataFormat]:

@@ -10,9 +10,11 @@ Follows ONEX one-enum-per-file naming conventions.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueMixin
+
 
 @unique
-class EnumFieldType(str, Enum):
+class EnumFieldType(StrValueMixin, str, Enum):
     """
     Strongly typed field type for metadata field definitions.
 
@@ -53,10 +55,6 @@ class EnumFieldType(str, Enum):
     JSON = "json"
     BYTES = "bytes"
     ANY = "any"
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def from_string(cls, value: str) -> EnumFieldType:

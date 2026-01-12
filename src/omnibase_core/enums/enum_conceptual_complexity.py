@@ -10,9 +10,11 @@ Part of the unified complexity enum consolidation strategy.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueMixin
+
 
 @unique
-class EnumConceptualComplexity(str, Enum):
+class EnumConceptualComplexity(StrValueMixin, str, Enum):
     """
     Conceptual complexity levels for understanding and skill requirements.
 
@@ -26,10 +28,6 @@ class EnumConceptualComplexity(str, Enum):
     INTERMEDIATE = "intermediate"  # Moderate domain knowledge required
     ADVANCED = "advanced"  # Deep expertise required
     EXPERT = "expert"  # Expert-level knowledge required
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def get_numeric_value(cls, level: EnumConceptualComplexity) -> int:

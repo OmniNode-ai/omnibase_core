@@ -9,9 +9,11 @@ Used in ModelNumericValue for type-safe numeric union handling.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueMixin
+
 
 @unique
-class EnumNumericValueType(str, Enum):
+class EnumNumericValueType(StrValueMixin, str, Enum):
     """
     Strongly typed numeric value type discriminators.
 
@@ -25,10 +27,6 @@ class EnumNumericValueType(str, Enum):
     FLOAT = "float"
     INT = "int"
     STRING = "string"
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def is_numeric_type(cls, value_type: EnumNumericValueType) -> bool:

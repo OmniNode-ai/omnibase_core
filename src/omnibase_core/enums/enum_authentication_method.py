@@ -1,7 +1,9 @@
 from enum import Enum
 
+from omnibase_core.utils.util_str_enum_base import StrValueMixin
 
-class EnumAuthenticationMethod(str, Enum):
+
+class EnumAuthenticationMethod(StrValueMixin, str, Enum):
     """Authentication methods supported for session and identity contexts."""
 
     # No authentication
@@ -25,10 +27,6 @@ class EnumAuthenticationMethod(str, Enum):
 
     # Enhanced security methods
     MULTI_FACTOR = "multi_factor"  # Multi-factor authentication (MFA)
-
-    def __str__(self) -> str:
-        """Return the string value of the authentication method."""
-        return self.value
 
     @classmethod
     def is_federated(cls, method: "EnumAuthenticationMethod") -> bool:

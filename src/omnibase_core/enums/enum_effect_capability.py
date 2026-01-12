@@ -11,36 +11,12 @@ from __future__ import annotations
 from enum import Enum, unique
 from typing import Never, NoReturn
 
+from omnibase_core.utils.util_str_enum_base import StrValueMixin
+
 
 @unique
-class EnumEffectCapability(str, Enum):
-    """
-    Enumeration of supported effect node capabilities.
-
-    SINGLE SOURCE OF TRUTH for effect capability values.
-    Replaces magic strings in handler capability constants.
-
-    Using an enum instead of raw strings:
-    - Prevents typos ("filesystem" vs "file_system")
-    - Enables IDE autocompletion
-    - Provides exhaustiveness checking
-    - Centralizes capability definitions
-    - Preserves full type safety
-
-    Capabilities:
-        HTTP: HTTP/REST API interactions
-        DB: Database operations (SQL, NoSQL)
-        KAFKA: Apache Kafka message queue operations
-        FILESYSTEM: File system read/write operations
-
-    Example:
-        >>> from omnibase_core.enums import EnumEffectCapability
-        >>> cap = EnumEffectCapability.HTTP
-        >>> str(cap)
-        'http'
-        >>> cap.value
-        'http'
-    """
+class EnumEffectCapability(StrValueMixin, str, Enum):
+    """Effect node capabilities: HTTP, DB, KAFKA, FILESYSTEM for external I/O."""
 
     HTTP = "http"
     """HTTP/REST API interactions."""
@@ -53,10 +29,6 @@ class EnumEffectCapability(str, Enum):
 
     FILESYSTEM = "filesystem"
     """File system read/write operations."""
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def values(cls) -> list[str]:

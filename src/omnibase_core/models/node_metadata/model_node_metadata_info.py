@@ -61,52 +61,42 @@ class ModelNodeMetadataInfo(BaseModel):
     # Delegation properties
     @property
     def node_id(self) -> UUID:
-        """Node identifier (delegated to core)."""
         return self.core.node_id
 
     @node_id.setter
     def node_id(self, value: UUID) -> None:
-        """Set node identifier."""
         self.core.node_id = value
 
     @property
     def node_name(self) -> str:
-        """Node name (delegated to core)."""
         return self.core.node_name
 
     @node_name.setter
     def node_name(self, value: str) -> None:
-        """Set node name."""
         self.core.node_name = value
 
     @property
     def node_type(self) -> EnumMetadataNodeType:
-        """Node type (delegated to core)."""
         return self.core.node_type
 
     @node_type.setter
     def node_type(self, value: EnumMetadataNodeType) -> None:
-        """Set node type."""
         self.core.node_type = value
 
     @property
     def status(self) -> EnumMetadataNodeStatus:
-        """Node status (delegated to core)."""
         return self.core.status
 
     @status.setter
     def status(self, value: EnumMetadataNodeStatus) -> None:
-        """Set node status."""
         self.core.status = value
 
     @property
     def health(self) -> str:
-        """Node health as string."""
         return self.core.health.value
 
     @health.setter
     def health(self, value: str) -> None:
-        """Set node health from string."""
         try:
             self.core.health = EnumNodeHealthStatus(value)
         except ValueError as e:
@@ -117,77 +107,62 @@ class ModelNodeMetadataInfo(BaseModel):
 
     @property
     def version(self) -> ModelSemVer | None:
-        """Node version (delegated to core)."""
         return self.core.version
 
     @version.setter
     def version(self, value: ModelSemVer | None) -> None:
-        """Set node version."""
         self.core.version = value
 
     @property
     def description(self) -> str | None:
-        """Node description (delegated to organization)."""
         return self.organization.description
 
     @description.setter
     def description(self, value: str | None) -> None:
-        """Set node description."""
         self.organization.description = value
 
     @property
     def author(self) -> str | None:
-        """Node author (delegated to organization)."""
         return self.organization.author
 
     @author.setter
     def author(self, value: str | None) -> None:
-        """Set node author."""
         self.organization.author = value
 
     @property
     def capabilities(self) -> list[str]:
-        """Node capabilities (delegated to organization)."""
         return self.organization.capabilities
 
     @property
     def tags(self) -> list[str]:
-        """Node tags (delegated to organization)."""
         return self.organization.tags
 
     @property
     def categories(self) -> list[EnumCategory]:
-        """Node categories (delegated to organization)."""
         return self.organization.categories
 
     @property
     def dependencies(self) -> list[UUID]:
-        """Node dependencies (delegated to organization)."""
         return self.organization.dependencies
 
     @property
     def dependents(self) -> list[UUID]:
-        """Node dependents (delegated to organization)."""
         return self.organization.dependents
 
     @property
     def usage_count(self) -> int:
-        """Usage count (delegated to performance)."""
         return self.performance.usage_count
 
     @property
     def error_rate(self) -> float:
-        """Error rate (delegated to performance)."""
         return self.performance.error_rate
 
     @property
     def success_rate(self) -> float:
-        """Success rate (delegated to performance)."""
         return self.performance.success_rate
 
     @property
     def custom_metadata(self) -> dict[str, ModelMetadataValue]:
-        """Custom metadata."""
         # Convert from typed custom properties to ModelMetadataValue format
         result: dict[str, ModelMetadataValue] = {}
         if self.organization.custom_properties.custom_strings:
@@ -224,43 +199,33 @@ class ModelNodeMetadataInfo(BaseModel):
                 self.organization.custom_properties.custom_numbers[key] = python_val
 
     def is_active(self) -> bool:
-        """Check if node is active."""
         return self.core.is_active()
 
     def is_healthy(self) -> bool:
-        """Check if node is healthy."""
         return self.core.is_healthy()
 
     def has_errors(self) -> bool:
-        """Check if node has errors."""
         return self.performance.error_rate > 0.0
 
     def get_success_rate(self) -> float:
-        """Get success rate."""
         return self.performance.success_rate
 
     def is_high_usage(self) -> bool:
-        """Check if node has high usage (>100 uses)."""
         return self.performance.is_high_usage
 
     def add_tag(self, tag: str) -> None:
-        """Add a tag if not already present."""
         self.organization.add_tag(tag)
 
     def remove_tag(self, tag: str) -> None:
-        """Remove a tag if present."""
         self.organization.remove_tag(tag)
 
     def add_capability(self, capability: str) -> None:
-        """Add a capability if not already present."""
         self.organization.add_capability(capability)
 
     def has_capability(self, capability: str) -> bool:
-        """Check if node has a specific capability."""
         return self.organization.has_capability(capability)
 
     def add_category(self, category: EnumCategory) -> None:
-        """Add a category if not already present."""
         self.organization.add_category(category)
 
     def add_execution_sample(
@@ -277,7 +242,6 @@ class ModelNodeMetadataInfo(BaseModel):
         )
 
     def get_summary(self) -> TypedDictNodeMetadataSummary:
-        """Get node metadata summary."""
         # Get organization summary (core and performance data accessed via properties)
         org_summary = self.organization.get_organization_summary()
 
@@ -308,7 +272,6 @@ class ModelNodeMetadataInfo(BaseModel):
         node_name: str,
         node_type: EnumMetadataNodeType = EnumMetadataNodeType.FUNCTION,
     ) -> ModelNodeMetadataInfo:
-        """Create a simple node metadata info."""
         core = ModelNodeCoreMetadata(
             node_id=node_id,
             node_display_name=node_name,
@@ -324,7 +287,6 @@ class ModelNodeMetadataInfo(BaseModel):
     def from_node_info(
         cls, node_info: TypedDictSerializedModel
     ) -> ModelNodeMetadataInfo:
-        """Create from node info object."""
         # Extract basic information and distribute to sub-models
         core = ModelNodeCoreMetadata(
             node_id=getattr(node_info, "node_id", uuid4()),
