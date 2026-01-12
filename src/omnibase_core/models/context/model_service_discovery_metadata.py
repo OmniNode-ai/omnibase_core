@@ -26,7 +26,7 @@ See Also:
     - omnibase_core.models.context.model_http_request_metadata: HTTP request metadata
 """
 
-from typing import Literal
+from typing import Literal, cast
 from urllib.parse import urlparse
 from uuid import UUID
 
@@ -183,8 +183,8 @@ class ModelServiceDiscoveryMetadata(BaseModel):
             valid_list = ", ".join(sorted(VALID_PROTOCOLS))
             # error-ok: Pydantic field_validator requires ValueError
             raise ValueError(f"Invalid protocol '{v}': must be one of {valid_list}")
-        # Cast to ServiceProtocol since we've validated it's a valid value
-        return normalized  # type: ignore[return-value]
+        # Validated via set membership check above
+        return cast(ServiceProtocol, normalized)
 
     @field_validator("health_check_url", mode="before")
     @classmethod

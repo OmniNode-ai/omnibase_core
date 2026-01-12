@@ -139,8 +139,23 @@ class ModelExecutionTraceStep(BaseModel):
     @field_validator("error_summary", mode="before")
     @classmethod
     def truncate_error_summary(cls, v: str | None) -> str | None:
-        """Truncate error_summary to max 500 characters if needed."""
-        if v is not None and len(v) > 500:
+        """Truncate error_summary to max 500 characters if needed.
+
+        Args:
+            v: The error summary string or None.
+
+        Returns:
+            The (possibly truncated) error summary string, or None.
+
+        Raises:
+            ValueError: If the value is not a string.
+        """
+        if v is None:
+            return None
+        if not isinstance(v, str):
+            # error-ok: Pydantic field_validator requires ValueError
+            raise ValueError(f"error_summary must be a string, got {type(v).__name__}")
+        if len(v) > 500:
             return v[:497] + "..."
         return v
 

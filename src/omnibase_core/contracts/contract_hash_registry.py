@@ -188,6 +188,8 @@ def normalize_contract(
             raise ModelOnexError(
                 message="Contract must be a dictionary",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                actual_type=type(converted).__name__,
+                contract_type=type(contract).__name__,
             )
         normalized = converted
 
@@ -210,6 +212,8 @@ def normalize_contract(
             message=f"Failed to normalize contract: {e}",
             error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             original_error=str(e),
+            original_error_type=type(e).__name__,
+            contract_type=type(contract).__name__,
         ) from e
 
 
@@ -279,6 +283,8 @@ def compute_contract_fingerprint(
             message=f"Invalid version type in contract: {type(version_data).__name__}",
             error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             version_type=type(version_data).__name__,
+            contract_type=type(contract).__name__,
+            version_value=str(version_data)[:100],  # Truncate for safety
         )
 
     # Normalize the contract
@@ -362,6 +368,7 @@ class ContractHashRegistry:
             raise ModelOnexError(
                 message="Contract ID cannot be empty",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                provided_value=repr(contract_name),
             )
 
         if isinstance(fingerprint, str):

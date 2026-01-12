@@ -67,28 +67,58 @@ def standard_error_handling(
     """
 
     def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
-        @functools.wraps(func)
-        def wrapper(*args: Any, **kwargs: Any) -> Any:
-            try:
-                return func(*args, **kwargs)
-            except (GeneratorExit, KeyboardInterrupt, SystemExit):
-                # Never catch cancellation/exit signals - they must propagate
-                raise
-            except asyncio.CancelledError:
-                # Never suppress async cancellation - required for proper task cleanup
-                raise
-            except ModelOnexError:
-                # Always re-raise ModelOnexError as-is to preserve error context
-                raise
-            except Exception as e:
-                # boundary-ok: convert generic exceptions to ModelOnexError with proper chaining
-                msg = f"{operation_name} failed: {e!s}"
-                raise ModelOnexError(
-                    msg,
-                    EnumCoreErrorCode.OPERATION_FAILED,
-                ) from e
+        if asyncio.iscoroutinefunction(func):
 
-        return wrapper
+            @functools.wraps(func)
+            async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
+                try:
+                    return await func(*args, **kwargs)
+                except (GeneratorExit, KeyboardInterrupt, SystemExit):
+                    # Never catch cancellation/exit signals - they must propagate
+                    raise
+                except asyncio.CancelledError:
+                    # Never suppress async cancellation - required for proper task cleanup
+                    raise
+                except ModelOnexError:
+                    # Always re-raise ModelOnexError as-is to preserve error context
+                    raise
+                except Exception as e:
+                    # boundary-ok: convert generic exceptions to ModelOnexError with proper chaining
+                    msg = f"{operation_name} failed: {e!s}"
+                    raise ModelOnexError(
+                        msg,
+                        EnumCoreErrorCode.OPERATION_FAILED,
+                        original_error_type=type(e).__name__,
+                        operation=operation_name,
+                    ) from e
+
+            return async_wrapper
+        else:
+
+            @functools.wraps(func)
+            def wrapper(*args: Any, **kwargs: Any) -> Any:
+                try:
+                    return func(*args, **kwargs)
+                except (GeneratorExit, KeyboardInterrupt, SystemExit):
+                    # Never catch cancellation/exit signals - they must propagate
+                    raise
+                except asyncio.CancelledError:
+                    # Never suppress async cancellation - required for proper task cleanup
+                    raise
+                except ModelOnexError:
+                    # Always re-raise ModelOnexError as-is to preserve error context
+                    raise
+                except Exception as e:
+                    # boundary-ok: convert generic exceptions to ModelOnexError with proper chaining
+                    msg = f"{operation_name} failed: {e!s}"
+                    raise ModelOnexError(
+                        msg,
+                        EnumCoreErrorCode.OPERATION_FAILED,
+                        original_error_type=type(e).__name__,
+                        operation=operation_name,
+                    ) from e
+
+            return wrapper
 
     return decorator
 
@@ -121,36 +151,80 @@ def validation_error_handling(
     """
 
     def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
-        @functools.wraps(func)
-        def wrapper(*args: Any, **kwargs: Any) -> Any:
-            try:
-                return func(*args, **kwargs)
-            except (GeneratorExit, KeyboardInterrupt, SystemExit):
-                # Never catch cancellation/exit signals - they must propagate
-                raise
-            except asyncio.CancelledError:
-                # Never suppress async cancellation - required for proper task cleanup
-                raise
-            except ModelOnexError:
-                # Always re-raise ModelOnexError as-is
-                raise
-            except Exception as e:
-                # boundary-ok: convert exceptions to structured ONEX errors for validation ops
-                # Check if this is a validation error (duck typing)
-                if hasattr(e, "errors") or "validation" in str(e).lower():
+        if asyncio.iscoroutinefunction(func):
+
+            @functools.wraps(func)
+            async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
+                try:
+                    return await func(*args, **kwargs)
+                except (GeneratorExit, KeyboardInterrupt, SystemExit):
+                    # Never catch cancellation/exit signals - they must propagate
+                    raise
+                except asyncio.CancelledError:
+                    # Never suppress async cancellation - required for proper task cleanup
+                    raise
+                except ModelOnexError:
+                    # Always re-raise ModelOnexError as-is
+                    raise
+                except Exception as e:
+                    # boundary-ok: convert exceptions to structured ONEX errors for validation ops
+                    # Check if this is a validation error (duck typing)
+                    if hasattr(e, "errors") or "validation" in str(e).lower():
+                        msg = f"{operation_name} failed: {e!s}"
+                        raise ModelOnexError(
+                            msg,
+                            EnumCoreErrorCode.VALIDATION_ERROR,
+                            original_error_type=type(e).__name__,
+                            operation=operation_name,
+                            is_validation_error=True,
+                        ) from e
+                    # Generic operation failure
                     msg = f"{operation_name} failed: {e!s}"
                     raise ModelOnexError(
                         msg,
-                        EnumCoreErrorCode.VALIDATION_ERROR,
+                        EnumCoreErrorCode.OPERATION_FAILED,
+                        original_error_type=type(e).__name__,
+                        operation=operation_name,
                     ) from e
-                # Generic operation failure
-                msg = f"{operation_name} failed: {e!s}"
-                raise ModelOnexError(
-                    msg,
-                    EnumCoreErrorCode.OPERATION_FAILED,
-                ) from e
 
-        return wrapper
+            return async_wrapper
+        else:
+
+            @functools.wraps(func)
+            def wrapper(*args: Any, **kwargs: Any) -> Any:
+                try:
+                    return func(*args, **kwargs)
+                except (GeneratorExit, KeyboardInterrupt, SystemExit):
+                    # Never catch cancellation/exit signals - they must propagate
+                    raise
+                except asyncio.CancelledError:
+                    # Never suppress async cancellation - required for proper task cleanup
+                    raise
+                except ModelOnexError:
+                    # Always re-raise ModelOnexError as-is
+                    raise
+                except Exception as e:
+                    # boundary-ok: convert exceptions to structured ONEX errors for validation ops
+                    # Check if this is a validation error (duck typing)
+                    if hasattr(e, "errors") or "validation" in str(e).lower():
+                        msg = f"{operation_name} failed: {e!s}"
+                        raise ModelOnexError(
+                            msg,
+                            EnumCoreErrorCode.VALIDATION_ERROR,
+                            original_error_type=type(e).__name__,
+                            operation=operation_name,
+                            is_validation_error=True,
+                        ) from e
+                    # Generic operation failure
+                    msg = f"{operation_name} failed: {e!s}"
+                    raise ModelOnexError(
+                        msg,
+                        EnumCoreErrorCode.OPERATION_FAILED,
+                        original_error_type=type(e).__name__,
+                        operation=operation_name,
+                    ) from e
+
+            return wrapper
 
     return decorator
 
@@ -180,38 +254,85 @@ def io_error_handling(
     """
 
     def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
-        @functools.wraps(func)
-        def wrapper(*args: Any, **kwargs: Any) -> Any:
-            try:
-                return func(*args, **kwargs)
-            except (GeneratorExit, KeyboardInterrupt, SystemExit):
-                # Never catch cancellation/exit signals - they must propagate
-                raise
-            except asyncio.CancelledError:
-                # Never suppress async cancellation - required for proper task cleanup
-                raise
-            except ModelOnexError:
-                # Always re-raise ModelOnexError as-is
-                raise
-            except (FileNotFoundError, IsADirectoryError, PermissionError) as e:
-                # File system errors
-                msg = f"{operation_name} failed: {e!s}"
-                raise ModelOnexError(
-                    msg,
-                    (
-                        EnumCoreErrorCode.FILE_NOT_FOUND
-                        if isinstance(e, FileNotFoundError)
-                        else EnumCoreErrorCode.FILE_OPERATION_ERROR
-                    ),
-                ) from e
-            except Exception as e:
-                # boundary-ok: convert generic I/O failures to structured ONEX errors
-                msg = f"{operation_name} failed: {e!s}"
-                raise ModelOnexError(
-                    msg,
-                    EnumCoreErrorCode.OPERATION_FAILED,
-                ) from e
+        if asyncio.iscoroutinefunction(func):
 
-        return wrapper
+            @functools.wraps(func)
+            async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
+                try:
+                    return await func(*args, **kwargs)
+                except (GeneratorExit, KeyboardInterrupt, SystemExit):
+                    # Never catch cancellation/exit signals - they must propagate
+                    raise
+                except asyncio.CancelledError:
+                    # Never suppress async cancellation - required for proper task cleanup
+                    raise
+                except ModelOnexError:
+                    # Always re-raise ModelOnexError as-is
+                    raise
+                except (FileNotFoundError, IsADirectoryError, PermissionError) as e:
+                    # File system errors
+                    msg = f"{operation_name} failed: {e!s}"
+                    raise ModelOnexError(
+                        msg,
+                        (
+                            EnumCoreErrorCode.FILE_NOT_FOUND
+                            if isinstance(e, FileNotFoundError)
+                            else EnumCoreErrorCode.FILE_OPERATION_ERROR
+                        ),
+                        original_error_type=type(e).__name__,
+                        operation=operation_name,
+                        is_file_error=True,
+                    ) from e
+                except Exception as e:
+                    # boundary-ok: convert generic I/O failures to structured ONEX errors
+                    msg = f"{operation_name} failed: {e!s}"
+                    raise ModelOnexError(
+                        msg,
+                        EnumCoreErrorCode.OPERATION_FAILED,
+                        original_error_type=type(e).__name__,
+                        operation=operation_name,
+                    ) from e
+
+            return async_wrapper
+        else:
+
+            @functools.wraps(func)
+            def wrapper(*args: Any, **kwargs: Any) -> Any:
+                try:
+                    return func(*args, **kwargs)
+                except (GeneratorExit, KeyboardInterrupt, SystemExit):
+                    # Never catch cancellation/exit signals - they must propagate
+                    raise
+                except asyncio.CancelledError:
+                    # Never suppress async cancellation - required for proper task cleanup
+                    raise
+                except ModelOnexError:
+                    # Always re-raise ModelOnexError as-is
+                    raise
+                except (FileNotFoundError, IsADirectoryError, PermissionError) as e:
+                    # File system errors
+                    msg = f"{operation_name} failed: {e!s}"
+                    raise ModelOnexError(
+                        msg,
+                        (
+                            EnumCoreErrorCode.FILE_NOT_FOUND
+                            if isinstance(e, FileNotFoundError)
+                            else EnumCoreErrorCode.FILE_OPERATION_ERROR
+                        ),
+                        original_error_type=type(e).__name__,
+                        operation=operation_name,
+                        is_file_error=True,
+                    ) from e
+                except Exception as e:
+                    # boundary-ok: convert generic I/O failures to structured ONEX errors
+                    msg = f"{operation_name} failed: {e!s}"
+                    raise ModelOnexError(
+                        msg,
+                        EnumCoreErrorCode.OPERATION_FAILED,
+                        original_error_type=type(e).__name__,
+                        operation=operation_name,
+                    ) from e
+
+            return wrapper
 
     return decorator

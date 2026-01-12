@@ -194,13 +194,15 @@ class ModelFieldAccessor(BaseModel):
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except Exception:  # fallback-ok: Validatable protocol requires boolean return for graceful validation failure
-            return False
+        """Validate instance integrity (ProtocolValidatable protocol).
+
+        This base implementation always returns True. Subclasses should override
+        this method to perform custom validation and catch specific exceptions
+        (e.g., ValidationError, ValueError) when implementing validation logic.
+        """
+        # Basic validation - ensure required fields exist
+        # Override in specific models for custom validation
+        return True
 
     def get_name(self) -> str:
         """Get name (Nameable protocol)."""

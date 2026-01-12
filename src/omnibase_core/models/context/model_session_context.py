@@ -167,10 +167,13 @@ class ModelSessionContext(BaseModel):
             The validated IP address string, or None if input is None.
 
         Raises:
-            ValueError: If the value is not a valid IPv4 or IPv6 address.
+            ValueError: If the value is not a string or not a valid IPv4 or IPv6 address.
         """
         if v is None:
             return None
+        if not isinstance(v, str):
+            # error-ok: Pydantic field_validator requires ValueError
+            raise ValueError(f"client_ip must be a string, got {type(v).__name__}")
         try:
             # ipaddress.ip_address() handles both IPv4 and IPv6
             ip = ipaddress.ip_address(v)

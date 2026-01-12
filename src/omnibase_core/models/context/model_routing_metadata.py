@@ -17,7 +17,7 @@ See Also:
     - omnibase_core.models.context.model_http_request_metadata: HTTP request metadata
 """
 
-from typing import Literal
+from typing import Literal, cast
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -149,5 +149,5 @@ class ModelRoutingMetadata(BaseModel):
             raise ValueError(
                 f"Invalid load_balance_strategy '{v}': must be one of {valid_strategies}"
             )
-        # Cast to LoadBalanceStrategy since we've validated it's a valid value
-        return normalized  # type: ignore[return-value]
+        # Validated via set membership check above
+        return cast(LoadBalanceStrategy, normalized)

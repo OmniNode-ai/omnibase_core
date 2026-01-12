@@ -161,10 +161,13 @@ class ModelMetricsContext(BaseModel):
             The validated trace ID string (lowercase), or None if input is None.
 
         Raises:
-            ValueError: If the value is not a valid W3C trace ID format.
+            ValueError: If the value is not a string or not a valid W3C trace ID format.
         """
         if value is None:
             return None
+        if not isinstance(value, str):
+            # error-ok: Pydantic field_validator requires ValueError
+            raise ValueError(f"trace_id must be a string, got {type(value).__name__}")
         # Normalize to lowercase for comparison
         normalized = value.lower()
         if not _TRACE_ID_PATTERN.match(normalized):
@@ -187,10 +190,13 @@ class ModelMetricsContext(BaseModel):
             The validated span ID string (lowercase), or None if input is None.
 
         Raises:
-            ValueError: If the value is not a valid span ID format.
+            ValueError: If the value is not a string or not a valid span ID format.
         """
         if value is None:
             return None
+        if not isinstance(value, str):
+            # error-ok: Pydantic field_validator requires ValueError
+            raise ValueError(f"span_id must be a string, got {type(value).__name__}")
         # Normalize to lowercase for comparison
         normalized = value.lower()
         if not _SPAN_ID_PATTERN.match(normalized):
@@ -202,7 +208,7 @@ class ModelMetricsContext(BaseModel):
 
     @field_validator("sampling_rate", mode="before")
     @classmethod
-    def validate_sampling_rate(cls, value: float | None) -> float | None:
+    def validate_sampling_rate(cls, value: float | int | None) -> float | None:
         """Validate sampling_rate is between 0.0 and 1.0.
 
         Args:
@@ -212,16 +218,22 @@ class ModelMetricsContext(BaseModel):
             The validated sampling rate, or None if input is None.
 
         Raises:
-            ValueError: If the value is not between 0.0 and 1.0 inclusive.
+            ValueError: If the value is not numeric or not between 0.0 and 1.0 inclusive.
         """
         if value is None:
             return None
-        if not 0.0 <= value <= 1.0:
+        if isinstance(value, bool) or not isinstance(value, int | float):
+            # error-ok: Pydantic field_validator requires ValueError
+            raise ValueError(
+                f"sampling_rate must be a number, got {type(value).__name__}"
+            )
+        float_value = float(value)
+        if not 0.0 <= float_value <= 1.0:
             # error-ok: Pydantic field_validator requires ValueError
             raise ValueError(
                 f"Invalid sampling_rate {value}: must be between 0.0 and 1.0 inclusive"
             )
-        return value
+        return float_value
 
     @field_validator("service_version", mode="before")
     @classmethod
@@ -238,10 +250,15 @@ class ModelMetricsContext(BaseModel):
             The validated version string unchanged, or None if input is None.
 
         Raises:
-            ValueError: If the version doesn't match SemVer 2.0.0 format.
+            ValueError: If the value is not a string or doesn't match SemVer 2.0.0 format.
         """
         if value is None:
             return None
+        if not isinstance(value, str):
+            # error-ok: Pydantic field_validator requires ValueError
+            raise ValueError(
+                f"service_version must be a string, got {type(value).__name__}"
+            )
         return _validate_semver(value)
 
     def is_sampled(self) -> bool:

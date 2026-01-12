@@ -80,7 +80,7 @@ import re
 import threading
 import time
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 from uuid import UUID
 
 if TYPE_CHECKING:
@@ -1435,8 +1435,12 @@ class MixinEffectExecution:
             ) from exec_error
 
         # Handler returns Any, validate it matches expected return type
-        if isinstance(result, (str, int, float, bool, dict, list, type(None))):
-            return result  # type: ignore[return-value]  # Handler returns Any; validated via isinstance but type system cannot narrow union
+        if isinstance(result, (str, int, float, bool, dict, list)):
+            # Validated via isinstance check; cast to EffectResultType
+            return cast(EffectResultType, result)
+        if result is None:
+            # None not in EffectResultType, convert to empty dict
+            return {}
         # Convert other types to string representation
         return str(result)
 

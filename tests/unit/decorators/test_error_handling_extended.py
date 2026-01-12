@@ -515,3 +515,365 @@ class TestEdgeCases:
         # Should still wrap error even with empty operation name
         assert exc_info.value.error_code == EnumCoreErrorCode.OPERATION_FAILED
         assert " failed: Error" in exc_info.value.message
+
+
+@pytest.mark.unit
+class TestAsyncStandardErrorHandling:
+    """Test standard_error_handling decorator with async functions."""
+
+    @pytest.mark.asyncio
+    async def test_async_standard_error_handling_success(self):
+        """Test decorator allows successful async execution."""
+        import asyncio
+
+        @standard_error_handling("Async operation")
+        async def async_successful_function(value: int) -> int:
+            await asyncio.sleep(0.001)
+            return value * 2
+
+        result = await async_successful_function(5)
+        assert result == 10
+
+    @pytest.mark.asyncio
+    async def test_async_standard_error_handling_wraps_exception(self):
+        """Test that exceptions in async functions are wrapped."""
+        import asyncio
+
+        @standard_error_handling("Async data processing")
+        async def async_raises_error():
+            await asyncio.sleep(0.001)
+            raise ValueError("Async invalid data")
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            await async_raises_error()
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.OPERATION_FAILED
+        assert "Async data processing failed" in exc_info.value.message
+        assert "Async invalid data" in exc_info.value.message
+        assert isinstance(exc_info.value.__cause__, ValueError)
+
+    @pytest.mark.asyncio
+    async def test_async_standard_error_handling_propagates_onex_error(self):
+        """Test that ModelOnexError is re-raised without wrapping in async."""
+        import asyncio
+
+        @standard_error_handling("Async operation")
+        async def async_raises_onex_error():
+            await asyncio.sleep(0.001)
+            raise ModelOnexError(
+                "Original async ONEX error",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            )
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            await async_raises_onex_error()
+
+        assert exc_info.value.message == "Original async ONEX error"
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+
+    @pytest.mark.asyncio
+    async def test_async_standard_error_handling_propagates_cancelled_error(self):
+        """Test that CancelledError is always re-raised in async."""
+        import asyncio
+
+        @standard_error_handling("Async cancellation test")
+        async def async_raises_cancelled():
+            raise asyncio.CancelledError
+
+        with pytest.raises(asyncio.CancelledError):
+            await async_raises_cancelled()
+
+    @pytest.mark.asyncio
+    async def test_async_standard_error_handling_preserves_function_metadata(self):
+        """Test that decorator preserves async function name and docstring."""
+
+        @standard_error_handling("Test")
+        async def async_documented_function():
+            """This is an async test function."""
+            return "result"
+
+        assert async_documented_function.__name__ == "async_documented_function"
+        assert async_documented_function.__doc__ == "This is an async test function."
+
+    @pytest.mark.asyncio
+    async def test_async_wrapper_is_coroutine_function(self):
+        """Test that decorated async functions remain coroutine functions."""
+        import asyncio
+
+        @standard_error_handling("Async operation")
+        async def async_func():
+            return "result"
+
+        assert asyncio.iscoroutinefunction(async_func)
+
+
+@pytest.mark.unit
+class TestAsyncValidationErrorHandling:
+    """Test validation_error_handling decorator with async functions."""
+
+    @pytest.mark.asyncio
+    async def test_async_validation_error_handling_success(self):
+        """Test decorator allows successful async validation."""
+        import asyncio
+
+        @validation_error_handling("Async user validation")
+        async def async_validate_user(username: str) -> bool:
+            await asyncio.sleep(0.001)
+            return len(username) >= 3
+
+        result = await async_validate_user("john")
+        assert result is True
+
+    @pytest.mark.asyncio
+    async def test_async_validation_error_handling_wraps_validation_error(self):
+        """Test that validation errors get VALIDATION_ERROR code in async."""
+        import asyncio
+
+        class ValidationError(Exception):
+            def __init__(self, message: str):
+                super().__init__(message)
+                self.errors = [{"field": "email", "error": "invalid"}]
+
+        @validation_error_handling("Async email validation")
+        async def async_validate_with_errors():
+            await asyncio.sleep(0.001)
+            raise ValidationError("Email validation failed")
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            await async_validate_with_errors()
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert "Async email validation failed" in exc_info.value.message
+
+    @pytest.mark.asyncio
+    async def test_async_validation_error_handling_detects_validation_in_message(self):
+        """Test 'validation' in message triggers VALIDATION_ERROR code in async."""
+        import asyncio
+
+        @validation_error_handling("Async contract validation")
+        async def async_validate_contract():
+            await asyncio.sleep(0.001)
+            raise ValueError("Validation of async contract field failed")
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            await async_validate_contract()
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+
+    @pytest.mark.asyncio
+    async def test_async_validation_error_handling_propagates_cancelled_error(self):
+        """Test that CancelledError is always re-raised in async validation."""
+        import asyncio
+
+        @validation_error_handling("Async validation")
+        async def async_validation_cancelled():
+            raise asyncio.CancelledError
+
+        with pytest.raises(asyncio.CancelledError):
+            await async_validation_cancelled()
+
+
+@pytest.mark.unit
+class TestAsyncIOErrorHandling:
+    """Test io_error_handling decorator with async functions."""
+
+    @pytest.mark.asyncio
+    async def test_async_io_error_handling_success(self):
+        """Test decorator allows successful async I/O operation."""
+        import asyncio
+
+        @io_error_handling("Async file reading")
+        async def async_read_data(data: str) -> str:
+            await asyncio.sleep(0.001)
+            return data.upper()
+
+        result = await async_read_data("hello")
+        assert result == "HELLO"
+
+    @pytest.mark.asyncio
+    async def test_async_io_error_handling_file_not_found(self):
+        """Test async FileNotFoundError gets FILE_NOT_FOUND code."""
+        import asyncio
+
+        @io_error_handling("Async config file reading")
+        async def async_read_config():
+            await asyncio.sleep(0.001)
+            raise FileNotFoundError("async_config.yaml not found")
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            await async_read_config()
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.FILE_NOT_FOUND
+        assert "Async config file reading failed" in exc_info.value.message
+        assert isinstance(exc_info.value.__cause__, FileNotFoundError)
+
+    @pytest.mark.asyncio
+    async def test_async_io_error_handling_permission_error(self):
+        """Test async PermissionError gets FILE_OPERATION_ERROR code."""
+        import asyncio
+
+        @io_error_handling("Async log file writing")
+        async def async_write_log():
+            await asyncio.sleep(0.001)
+            raise PermissionError("Permission denied: /var/log/async_app.log")
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            await async_write_log()
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.FILE_OPERATION_ERROR
+        assert "Async log file writing failed" in exc_info.value.message
+        assert isinstance(exc_info.value.__cause__, PermissionError)
+
+    @pytest.mark.asyncio
+    async def test_async_io_error_handling_is_a_directory_error(self):
+        """Test async IsADirectoryError gets FILE_OPERATION_ERROR code."""
+        import asyncio
+
+        @io_error_handling("Async file reading")
+        async def async_read_file():
+            await asyncio.sleep(0.001)
+            raise IsADirectoryError("/path/to/async_directory")
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            await async_read_file()
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.FILE_OPERATION_ERROR
+        assert isinstance(exc_info.value.__cause__, IsADirectoryError)
+
+    @pytest.mark.asyncio
+    async def test_async_io_error_handling_generic_exception_fallback(self):
+        """Test async non-I/O exceptions get OPERATION_FAILED code."""
+        import asyncio
+
+        @io_error_handling("Async network request")
+        async def async_make_request():
+            await asyncio.sleep(0.001)
+            raise ValueError("Invalid async URL format")
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            await async_make_request()
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.OPERATION_FAILED
+
+    @pytest.mark.asyncio
+    async def test_async_io_error_handling_propagates_cancelled_error(self):
+        """Test that CancelledError is always re-raised in async I/O."""
+        import asyncio
+
+        @io_error_handling("Async file operation")
+        async def async_io_cancelled():
+            raise asyncio.CancelledError
+
+        with pytest.raises(asyncio.CancelledError):
+            await async_io_cancelled()
+
+    @pytest.mark.asyncio
+    async def test_async_io_error_handling_propagates_onex_error(self):
+        """Test that ModelOnexError is re-raised without wrapping in async I/O."""
+        import asyncio
+
+        @io_error_handling("Async database query")
+        async def async_query_database():
+            await asyncio.sleep(0.001)
+            raise ModelOnexError(
+                "Async query failed",
+                error_code=EnumCoreErrorCode.DATABASE_QUERY_ERROR,
+            )
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            await async_query_database()
+
+        assert exc_info.value.message == "Async query failed"
+        assert exc_info.value.error_code == EnumCoreErrorCode.DATABASE_QUERY_ERROR
+
+
+@pytest.mark.unit
+class TestAsyncDecoratorEdgeCases:
+    """Test edge cases for async decorator behavior."""
+
+    @pytest.mark.asyncio
+    async def test_sync_function_remains_sync(self):
+        """Test that sync functions decorated remain sync (not async)."""
+        import asyncio
+
+        @standard_error_handling("Sync operation")
+        def sync_func():
+            return "sync result"
+
+        # Should NOT be a coroutine function
+        assert not asyncio.iscoroutinefunction(sync_func)
+        result = sync_func()
+        assert result == "sync result"
+
+    @pytest.mark.asyncio
+    async def test_async_decorator_with_class_method(self):
+        """Test async decorators work with async class methods."""
+        import asyncio
+
+        class AsyncDataProcessor:
+            @standard_error_handling("Async process method")
+            async def process(self, value: int) -> int:
+                await asyncio.sleep(0.001)
+                if value < 0:
+                    raise ValueError("Negative values not allowed")
+                return value * 2
+
+        processor = AsyncDataProcessor()
+        assert await processor.process(5) == 10
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            await processor.process(-1)
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.OPERATION_FAILED
+
+    @pytest.mark.asyncio
+    async def test_async_decorator_stacking(self):
+        """Test stacking decorators with async functions."""
+
+        @standard_error_handling("Outer async")
+        @validation_error_handling("Inner async validation")
+        async def double_decorated_async():
+            raise ValueError("Async test error")
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            await double_decorated_async()
+
+        # Inner decorator wraps first
+        assert "Inner async validation failed" in exc_info.value.message
+
+    @pytest.mark.asyncio
+    async def test_async_propagates_keyboard_interrupt(self):
+        """Test that KeyboardInterrupt is always propagated in async."""
+        import asyncio
+
+        @standard_error_handling("Async keyboard test")
+        async def async_keyboard_interrupt():
+            await asyncio.sleep(0.001)
+            raise KeyboardInterrupt
+
+        with pytest.raises(KeyboardInterrupt):
+            await async_keyboard_interrupt()
+
+    @pytest.mark.asyncio
+    async def test_async_propagates_system_exit(self):
+        """Test that SystemExit is always propagated in async."""
+        import asyncio
+
+        @standard_error_handling("Async system exit test")
+        async def async_system_exit():
+            await asyncio.sleep(0.001)
+            raise SystemExit(1)
+
+        with pytest.raises(SystemExit):
+            await async_system_exit()
+
+    @pytest.mark.asyncio
+    async def test_async_propagates_generator_exit(self):
+        """Test that GeneratorExit is always propagated in async."""
+
+        @standard_error_handling("Async generator exit test")
+        async def async_generator_exit():
+            raise GeneratorExit
+
+        with pytest.raises(GeneratorExit):
+            await async_generator_exit()

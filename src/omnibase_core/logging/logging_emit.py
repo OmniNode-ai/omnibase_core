@@ -8,7 +8,7 @@ import inspect
 import os
 from collections.abc import Callable
 from datetime import UTC, datetime
-from typing import Any
+from typing import Any, cast
 from uuid import UUID, uuid4
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
@@ -287,7 +287,8 @@ def trace_function_lifecycle[F: Callable[..., Any]](func: F) -> F:
 
             raise
 
-    return wrapper  # type: ignore[return-value]
+    # Wrapper preserves original function signature via duck typing
+    return cast(F, wrapper)
 
 
 class LogCodeBlock:
@@ -423,7 +424,8 @@ def log_performance_metrics[F: Callable[..., Any]](
 
             return result
 
-        return wrapper  # type: ignore[return-value]
+        # Wrapper preserves original function signature via duck typing
+        return cast(F, wrapper)
 
     return decorator
 

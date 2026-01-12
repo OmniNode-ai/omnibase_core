@@ -35,12 +35,11 @@ from pathlib import Path
 from typing import cast
 from uuid import UUID, uuid4
 
-from pydantic import ValidationError
-
 from omnibase_core.constants import TIMEOUT_DEFAULT_MS
 from omnibase_core.constants.constants_event_types import TOOL_INVOCATION
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
+from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
 from omnibase_core.logging.logging_structured import emit_log_event_sync
 from omnibase_core.models.core.model_log_context import ModelLogContext
 from omnibase_core.models.discovery.model_node_shutdown_event import (
@@ -58,6 +57,13 @@ from omnibase_core.types.type_json import JsonType
 
 # Component identifier for logging
 _COMPONENT_NAME = Path(__file__).stem
+
+# Service lookup errors: combines PYDANTIC_MODEL_ERRORS with RuntimeError for service availability
+# Defined at module level to satisfy mypy (cannot use tuple unpacking in except clauses)
+_SERVICE_LOOKUP_ERRORS: tuple[type[Exception], ...] = (
+    *PYDANTIC_MODEL_ERRORS,
+    RuntimeError,
+)
 
 
 class MixinNodeService:
@@ -155,6 +161,10 @@ class MixinNodeService:
             # Main service event loop
             await self._service_event_loop()
 
+        except asyncio.CancelledError:
+            # CRITICAL: Re-raise CancelledError to honor task cancellation.
+            # Cleanup is handled by stop_service_mode() which caller should invoke.
+            raise
         # fallback-ok: service startup requires cleanup on any error
         except Exception as e:
             self._log_error(f"Failed to start service: {e}")
@@ -208,6 +218,11 @@ class MixinNodeService:
             self._service_running = False
             self._log_info("Service stopped successfully")
 
+        except asyncio.CancelledError:
+            # CRITICAL: Re-raise CancelledError to honor task cancellation.
+            # Set service as not running before propagating cancellation.
+            self._service_running = False
+            raise
         except Exception as e:
             # cleanup-resilience-ok: shutdown must complete even if cleanup fails
             self._log_error(f"Error during service shutdown: {e}")
@@ -334,6 +349,11 @@ class MixinNodeService:
             self._failed_invocations += 1
             self._log_error(f"Tool invocation failed: {e}")
 
+        except asyncio.CancelledError:
+            # CRITICAL: Re-raise CancelledError to honor task cancellation.
+            # The finally block will still clean up active_invocations.
+            raise
+
         # fallback-ok: service must emit error response for any failure
         # Fallback for truly unexpected exceptions not covered above.
         except Exception as e:
@@ -425,13 +445,7 @@ class MixinNodeService:
                 container = self.container
                 if hasattr(container, "get_service"):
                     event_bus = container.get_service("event_bus")
-            except (
-                AttributeError,
-                RuntimeError,
-                TypeError,
-                ValidationError,
-                ValueError,
-            ):
+            except _SERVICE_LOOKUP_ERRORS:
                 # fallback-ok: service lookup failure continues to next strategy
                 pass
 
@@ -440,6 +454,8 @@ class MixinNodeService:
             raise ModelOnexError(
                 message="Event bus not available for subscription",
                 error_code=EnumCoreErrorCode.SERVICE_UNAVAILABLE,
+                node_type=type(self).__name__,
+                subscription_topic=TOOL_INVOCATION,
             )
 
         # Subscribe to tool invocation events
@@ -603,6 +619,8 @@ class MixinNodeService:
             raise ModelOnexError(
                 message="Tool execution returned None - nodes must return a valid result",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                node_type=type(self).__name__,
+                node_name=self._extract_node_name(),
             )
 
         if hasattr(result, "model_dump"):
@@ -638,13 +656,7 @@ class MixinNodeService:
                 container = self.container
                 if hasattr(container, "get_service"):
                     event_bus = container.get_service("event_bus")
-            except (
-                AttributeError,
-                RuntimeError,
-                TypeError,
-                ValidationError,
-                ValueError,
-            ):
+            except _SERVICE_LOOKUP_ERRORS:
                 # fallback-ok: optional event bus for response
                 pass
 
@@ -679,13 +691,7 @@ class MixinNodeService:
                     container = self.container
                     if hasattr(container, "get_service"):
                         event_bus = container.get_service("event_bus")
-                except (
-                    AttributeError,
-                    RuntimeError,
-                    TypeError,
-                    ValidationError,
-                    ValueError,
-                ):
+                except _SERVICE_LOOKUP_ERRORS:
                     # fallback-ok: optional event bus for shutdown
                     pass
 

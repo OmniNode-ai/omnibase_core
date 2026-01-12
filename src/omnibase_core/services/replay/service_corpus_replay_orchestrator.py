@@ -523,6 +523,11 @@ class ServiceCorpusReplayOrchestrator:
                     retry_count=retry_count,
                 )
 
+            except asyncio.CancelledError:
+                # CRITICAL: Re-raise CancelledError to honor task cancellation.
+                # Cancellation should not be retried - it must propagate immediately.
+                raise
+
             except Exception as e:  # boundary-ok: retry logic must capture all exceptions to track attempts
                 last_error = e
                 retry_count += 1

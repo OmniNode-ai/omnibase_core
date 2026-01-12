@@ -173,12 +173,16 @@ class ModelStateContract(BaseModel):
             return v
         if isinstance(v, dict):
             return ModelSemVer(**v)
-        # v must be str since union type is exhaustive
-        from omnibase_core.models.primitives.model_semver import (
-            parse_semver_from_string,
-        )
+        if isinstance(v, str):
+            from omnibase_core.models.primitives.model_semver import (
+                parse_semver_from_string,
+            )
 
-        return parse_semver_from_string(v)
+            return parse_semver_from_string(v)
+        # error-ok: Pydantic field_validator requires ValueError
+        raise ValueError(
+            f"contract_version must be ModelSemVer, str, or dict, got {type(v).__name__}"
+        )
 
     @field_validator("node_version", mode="before")
     @classmethod
@@ -190,12 +194,16 @@ class ModelStateContract(BaseModel):
             return v
         if isinstance(v, dict):
             return ModelSemVer(**v)
-        # v must be str since union type is exhaustive
-        from omnibase_core.models.primitives.model_semver import (
-            parse_semver_from_string,
-        )
+        if isinstance(v, str):
+            from omnibase_core.models.primitives.model_semver import (
+                parse_semver_from_string,
+            )
 
-        return parse_semver_from_string(v)
+            return parse_semver_from_string(v)
+        # error-ok: Pydantic field_validator requires ValueError
+        raise ValueError(
+            f"node_version must be ModelSemVer, str, or dict, got {type(v).__name__}"
+        )
 
     @field_validator("node_name")
     @classmethod
