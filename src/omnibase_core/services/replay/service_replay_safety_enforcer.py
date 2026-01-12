@@ -189,10 +189,14 @@ class ServiceReplaySafetyEnforcer:
         uuid_injector: Optional UUID injector for UUID mocking.
         effect_recorder: Optional effect recorder for NETWORK/DATABASE replay.
         logger: Optional logger for warnings. Uses module logger if None.
+        max_audit_entries: Optional maximum audit trail entries to retain.
+            When exceeded, oldest entries are evicted (FIFO). None means
+            unlimited (default). For long-running services, set to 10000.
 
     Attributes:
         mode: The enforcement mode in effect.
         audit_count: Number of decisions in the audit trail.
+        max_audit_entries: Maximum audit entries limit, or None if unlimited.
 
     Example:
         >>> from omnibase_core.services.replay.service_replay_safety_enforcer import (
@@ -319,6 +323,17 @@ class ServiceReplaySafetyEnforcer:
                         "ProtocolReplaySafetyEnforcer"
                     )
 
+    Memory Characteristics:
+        Without ``max_audit_entries``: Grows unbounded (O(n) memory where n = decisions).
+        With ``max_audit_entries``: Bounded to O(max_audit_entries) memory.
+
+        Decision size: ~200-500 bytes per decision (varies with metadata).
+
+        Recommended limits:
+            - Long-running services: 10,000 entries (~2-5 MB)
+            - Memory-constrained: 1,000 entries (~0.2-0.5 MB)
+            - High-volume pipelines: Consider external audit storage
+
     Thread Safety:
         NOT thread-safe. Mutable state: ``_audit_trail`` list.
         Use separate instances per thread or synchronize access.
@@ -342,6 +357,7 @@ class ServiceReplaySafetyEnforcer:
         uuid_injector: InjectorUUID | None = None,
         effect_recorder: RecorderEffect | None = None,
         logger: ProtocolLoggerLike | None = None,
+        max_audit_entries: int | None = None,
     ) -> None:
         """
         Initialize the replay safety enforcer.
@@ -353,6 +369,9 @@ class ServiceReplaySafetyEnforcer:
             uuid_injector: UUID injector for mocking UUID effects.
             effect_recorder: Effect recorder for network/db replay.
             logger: Logger for warnings. Uses module logger if None.
+            max_audit_entries: Optional maximum audit trail entries to retain.
+                When exceeded, oldest entries are evicted (FIFO). None means
+                unlimited (default). For long-running services, set to 10000.
         """
         self._mode = mode
         self._time_injector = time_injector
@@ -360,6 +379,7 @@ class ServiceReplaySafetyEnforcer:
         self._uuid_injector = uuid_injector
         self._effect_recorder = effect_recorder
         self._logger = logger
+        self._max_audit_entries = max_audit_entries
         self._audit_trail: list[ModelEnforcementDecision] = []
 
     @property
@@ -376,6 +396,39 @@ class ServiceReplaySafetyEnforcer:
             <EnumEnforcementMode.WARN: 'warn'>
         """
         return self._mode
+
+    @property
+    def max_audit_entries(self) -> int | None:
+        """
+        Return the maximum audit entries limit, or None if unlimited.
+
+        Returns:
+            int | None: The maximum number of audit entries to retain, or None
+                if unlimited.
+
+        Example:
+            >>> enforcer = ServiceReplaySafetyEnforcer(max_audit_entries=1000)
+            >>> enforcer.max_audit_entries
+            1000
+            >>> enforcer_unlimited = ServiceReplaySafetyEnforcer()
+            >>> enforcer_unlimited.max_audit_entries is None
+            True
+        """
+        return self._max_audit_entries
+
+    def _enforce_audit_limit(self) -> None:
+        """
+        Enforce max_audit_entries limit with FIFO eviction.
+
+        Called after each decision is appended to the audit trail.
+        Evicts oldest entries when the limit is exceeded.
+        """
+        if (
+            self._max_audit_entries is not None
+            and len(self._audit_trail) > self._max_audit_entries
+        ):
+            evict_count = len(self._audit_trail) - self._max_audit_entries
+            self._audit_trail = self._audit_trail[evict_count:]
 
     def _log_warning(
         self, message: str, extra: dict[str, object] | None = None
@@ -475,6 +528,7 @@ class ServiceReplaySafetyEnforcer:
                 timestamp=timestamp,
             )
             self._audit_trail.append(decision)
+            self._enforce_audit_limit()
             return decision
 
         # Unknown effects - handle based on mode (treat as potentially non-deterministic)
@@ -506,6 +560,7 @@ class ServiceReplaySafetyEnforcer:
                 timestamp=timestamp,
             )
             self._audit_trail.append(decision)
+            self._enforce_audit_limit()
             raise ModelOnexError(
                 message=f"Unknown effect '{effect_type}' blocked in strict mode",
                 error_code=EnumCoreErrorCode.REPLAY_ENFORCEMENT_BLOCKED,
@@ -524,6 +579,7 @@ class ServiceReplaySafetyEnforcer:
                 timestamp=timestamp,
             )
             self._audit_trail.append(decision)
+            self._enforce_audit_limit()
             self._log_warning(
                 f"Unknown effect type '{effect_type}' - cannot verify determinism",
                 extra={"effect_type": effect_type},
@@ -541,6 +597,7 @@ class ServiceReplaySafetyEnforcer:
             timestamp=timestamp,
         )
         self._audit_trail.append(decision)
+        self._enforce_audit_limit()
         return decision
 
     def _handle_non_deterministic_effect(
@@ -569,6 +626,7 @@ class ServiceReplaySafetyEnforcer:
                 timestamp=timestamp,
             )
             self._audit_trail.append(decision)
+            self._enforce_audit_limit()
             raise ModelOnexError(
                 message=(
                     f"Non-deterministic effect '{effect_type}' ({source_desc}) "
@@ -591,6 +649,7 @@ class ServiceReplaySafetyEnforcer:
                 timestamp=timestamp,
             )
             self._audit_trail.append(decision)
+            self._enforce_audit_limit()
             self._log_warning(
                 f"Non-deterministic effect '{effect_type}' ({source_desc})",
                 extra={"effect_type": effect_type, "source": source_desc},
@@ -608,6 +667,7 @@ class ServiceReplaySafetyEnforcer:
                 timestamp=timestamp,
             )
             self._audit_trail.append(decision)
+            self._enforce_audit_limit()
             return decision
 
         # MOCKED mode - inject deterministic mock
@@ -624,6 +684,7 @@ class ServiceReplaySafetyEnforcer:
             mocked_value=mock_value,
         )
         self._audit_trail.append(decision)
+        self._enforce_audit_limit()
         return decision
 
     def get_mock_value(

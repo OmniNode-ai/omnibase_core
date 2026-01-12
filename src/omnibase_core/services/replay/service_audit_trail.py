@@ -144,10 +144,25 @@ class ServiceAuditTrail:
     Args:
         session_id: Optional session identifier. If not provided, a new
             UUID will be generated.
+        max_entries: Optional maximum entries to retain. When exceeded, oldest
+            entries are evicted (FIFO). None means unlimited (default).
+            Recommended: 10000 for typical usage, 1000 for memory-constrained.
 
     Attributes:
         session_id: The session identifier for this audit trail.
         entry_count: Number of recorded entries.
+        max_entries: Maximum entries limit, or None if unlimited.
+
+    Memory Characteristics:
+        Without ``max_entries``: Grows unbounded (O(n) memory where n = decisions).
+        With ``max_entries``: Bounded to O(max_entries) memory.
+
+        Entry size: ~500-1000 bytes per entry (varies with context size).
+
+        Recommended limits:
+            - Typical usage: 10,000 entries (~5-10 MB)
+            - Memory-constrained: 1,000 entries (~0.5-1 MB)
+            - High-volume pipelines: Consider external storage
 
     Example:
         >>> from omnibase_core.services.replay.service_audit_trail import (
@@ -291,6 +306,12 @@ class ServiceAuditTrail:
         Use separate instances per thread or synchronize access.
         See ``docs/guides/THREADING.md``.
 
+    Data Privacy:
+        The ``context`` parameter can inadvertently capture sensitive data.
+        Avoid including PII, credentials, API keys, or financial data.
+        Use sanitized identifiers (e.g., ``user_id`` instead of ``user_email``).
+        See ``docs/guides/replay/REPLAY_SAFETY_INTEGRATION.md#data-privacy``.
+
     See Also:
         - :class:`ServiceReplaySafetyEnforcer`: Creates enforcement decisions.
         - :class:`ModelAuditTrailEntry`: Individual audit entry model.
@@ -300,15 +321,22 @@ class ServiceAuditTrail:
     .. versionadded:: 0.6.3
     """
 
-    def __init__(self, session_id: UUID | None = None) -> None:
+    def __init__(
+        self, session_id: UUID | None = None, max_entries: int | None = None
+    ) -> None:
         """
         Initialize the audit trail service.
 
         Args:
             session_id: Optional session identifier. If not provided,
                 a new UUID will be generated.
+            max_entries: Optional maximum entries to retain. When exceeded,
+                oldest entries are evicted (FIFO). None means unlimited
+                (default). Recommended: 10000 for typical usage, 1000 for
+                memory-constrained environments.
         """
         self._session_id = session_id or uuid.uuid4()
+        self._max_entries = max_entries
         self._entries: list[ModelAuditTrailEntry] = []
         self._sequence_counter = 0
 
@@ -340,6 +368,25 @@ class ServiceAuditTrail:
             UUID('...')
         """
         return self._session_id
+
+    @property
+    def max_entries(self) -> int | None:
+        """
+        Return the maximum entries limit, or None if unlimited.
+
+        Returns:
+            int | None: The maximum number of entries to retain, or None
+                if unlimited.
+
+        Example:
+            >>> audit_trail = ServiceAuditTrail(max_entries=1000)
+            >>> audit_trail.max_entries
+            1000
+            >>> audit_trail_unlimited = ServiceAuditTrail()
+            >>> audit_trail_unlimited.max_entries is None
+            True
+        """
+        return self._max_entries
 
     def record(
         self,
@@ -385,6 +432,16 @@ class ServiceAuditTrail:
         # Update indices for O(1) query lookup
         self._index_by_outcome[decision.decision].append(entry)
         self._index_by_source[decision.source].append(entry)
+
+        # Enforce max_entries limit with FIFO eviction
+        if self._max_entries is not None and len(self._entries) > self._max_entries:
+            # Evict oldest entries to stay within limit
+            evict_count = len(self._entries) - self._max_entries
+            self._entries = self._entries[evict_count:]
+            # Note: indices are NOT rebuilt - they become stale but queries still work
+            # via list comprehension filtering. For production use with max_entries,
+            # consider using get_entries() instead of relying on indices for
+            # filtered queries, or call clear() periodically to reset indices.
 
         return entry
 

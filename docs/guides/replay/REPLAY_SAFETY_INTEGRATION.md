@@ -16,6 +16,7 @@ This guide explains how to integrate the `ServiceReplaySafetyEnforcer` into your
 6. [Pipeline Integration Patterns](#pipeline-integration-patterns)
 7. [Troubleshooting](#troubleshooting)
 8. [Best Practices](#best-practices)
+9. [Data Privacy](#data-privacy)
 
 ## System Architecture
 
@@ -587,6 +588,99 @@ class MyEffectNode(NodeEffect):
         - Requires seed in manifest for RNG (effect: random.choice)
     """
     pass
+```
+
+## Data Privacy
+
+When recording enforcement decisions in the audit trail, be mindful of data sensitivity. The `context` and `effect_metadata` dictionaries can inadvertently capture sensitive information.
+
+### Avoid Including in `context` or `effect_metadata`
+
+- **Passwords or Authentication Tokens**: Never log credentials
+- **Personal Identifiable Information (PII)**: Names, emails, phone numbers, addresses
+- **API Keys or Secrets**: Use masked values or omit entirely
+- **Financial Data**: Credit card numbers, bank accounts
+- **Health Information**: PHI/HIPAA protected data
+
+### Recommended Practices
+
+#### 1. Use Sanitized Identifiers
+
+```python
+# Wrong - exposes PII
+context={"user_email": "john.doe@example.com"}
+
+# Correct - use hashed/anonymized ID
+context={"user_id": "usr_abc123", "user_hash": hash_pii(email)}
+```
+
+#### 2. Mask Sensitive Values
+
+```python
+# Wrong - exposes API key
+effect_metadata={"api_key": "sk-1234567890abcdef"}
+
+# Correct - mask sensitive data
+effect_metadata={"api_key": "sk-****cdef"}
+```
+
+#### 3. Use Reference IDs Instead of Data
+
+```python
+# Wrong - logs actual request body with credentials
+context={"request_body": {"password": "secret123"}}
+
+# Correct - reference only
+context={"request_id": "req_xyz789", "request_type": "auth"}
+```
+
+#### 4. Consider Audit Trail Retention
+
+- Set `max_entries` to limit data retention
+- Implement periodic purging for compliance (GDPR, CCPA)
+- Export to secure, encrypted storage for long-term retention
+
+```python
+# Limit audit trail size
+audit_trail = ServiceAuditTrail(max_entries=10000)
+
+# Clear when no longer needed
+audit_trail.clear()
+```
+
+### Compliance Notes
+
+| Regulation | Requirement |
+|------------|-------------|
+| **GDPR** | Audit trails containing EU citizen data must comply with right-to-erasure |
+| **HIPAA** | Health-related effect metadata requires additional safeguards |
+| **SOC 2** | Audit trail access should be logged and monitored |
+| **CCPA** | California residents can request deletion of personal data |
+
+### Example: Safe Audit Trail Recording
+
+```python
+from omnibase_core.services.replay.service_audit_trail import ServiceAuditTrail
+
+def record_decision_safely(
+    audit_trail: ServiceAuditTrail,
+    decision,
+    user_id: str,
+    request_id: str,
+) -> None:
+    """Record decision with sanitized context - no PII exposure."""
+    audit_trail.record(
+        decision=decision,
+        context={
+            # Safe: Use opaque identifiers
+            "user_id": user_id,
+            "request_id": request_id,
+            # Safe: Include non-sensitive metadata
+            "handler": "payment_processor",
+            "step": "validate_card",
+            # Avoid: Never include actual card numbers, emails, names
+        },
+    )
 ```
 
 ## Related Documentation
