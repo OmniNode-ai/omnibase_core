@@ -72,6 +72,8 @@ class ModelRequestConfig(BaseModel):
     max_redirects: int = Field(default=10, description="Maximum number of redirects")
     stream: bool = Field(default=False, description="Stream response content")
 
+    # Note: @property methods below are compatible with frozen=True because they
+    # provide read-only computed access to data without modifying instance state.
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     @property
