@@ -21,7 +21,8 @@ Output Determinism:
 import json
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Literal
+from typing import Literal, NewType
+from uuid import UUID
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -34,9 +35,12 @@ from omnibase_core.models.replay.model_execution_comparison import (
 )
 from omnibase_core.types.typed_dict_decision_report import TypedDictDecisionReport
 
+# Type alias for report version strings (semantic versioning)
+ReportVersion = NewType("ReportVersion", str)
+
 # Report formatting constants
 REPORT_WIDTH = 80
-REPORT_VERSION = "1.0.0"
+REPORT_VERSION: ReportVersion = ReportVersion("1.0.0")
 SEPARATOR_CHAR = "="
 SEPARATOR_LINE = SEPARATOR_CHAR * REPORT_WIDTH
 SUBSECTION_CHAR = "-"
@@ -51,6 +55,9 @@ COMPARISON_LIMIT_MARKDOWN = 50
 
 # JSON formatting
 JSON_INDENT_SPACES = 2
+
+# Percentage conversion multiplier (ratio 0.0-1.0 to percent 0-100)
+PERCENTAGE_MULTIPLIER = 100
 
 # Text truncation constants
 ELLIPSIS = "..."
@@ -131,6 +138,22 @@ class ServiceDecisionReportGenerator:
     COST_BLOCKER_PERCENT: float = 50.0
     COST_WARNING_PERCENT: float = 20.0
 
+    @staticmethod
+    def _init_threshold(value: float | None, default: float) -> float:
+        """Initialize a threshold value with a default fallback.
+
+        This helper reduces boilerplate in __init__ by providing a consistent
+        pattern for initializing optional threshold parameters.
+
+        Args:
+            value: The user-provided value, or None to use the default.
+            default: The default value to use when value is None.
+
+        Returns:
+            The provided value if not None, otherwise the default.
+        """
+        return value if value is not None else default
+
     def __init__(
         self,
         confidence_approve_threshold: float | None = None,
@@ -187,45 +210,30 @@ class ServiceDecisionReportGenerator:
                 - cost_blocker_percent >= cost_warning_percent
                   (blockers triggered at higher regression than warnings)
         """
-        self.confidence_approve_threshold = (
-            confidence_approve_threshold
-            if confidence_approve_threshold is not None
-            else self.CONFIDENCE_APPROVE_THRESHOLD
+        # Initialize thresholds with defaults using helper
+        self.confidence_approve_threshold = self._init_threshold(
+            confidence_approve_threshold, self.CONFIDENCE_APPROVE_THRESHOLD
         )
-        self.confidence_review_threshold = (
-            confidence_review_threshold
-            if confidence_review_threshold is not None
-            else self.CONFIDENCE_REVIEW_THRESHOLD
+        self.confidence_review_threshold = self._init_threshold(
+            confidence_review_threshold, self.CONFIDENCE_REVIEW_THRESHOLD
         )
-        self.pass_rate_optimal = (
-            pass_rate_optimal
-            if pass_rate_optimal is not None
-            else self.PASS_RATE_OPTIMAL
+        self.pass_rate_optimal = self._init_threshold(
+            pass_rate_optimal, self.PASS_RATE_OPTIMAL
         )
-        self.pass_rate_minimum = (
-            pass_rate_minimum
-            if pass_rate_minimum is not None
-            else self.PASS_RATE_MINIMUM
+        self.pass_rate_minimum = self._init_threshold(
+            pass_rate_minimum, self.PASS_RATE_MINIMUM
         )
-        self.latency_blocker_percent = (
-            latency_blocker_percent
-            if latency_blocker_percent is not None
-            else self.LATENCY_BLOCKER_PERCENT
+        self.latency_blocker_percent = self._init_threshold(
+            latency_blocker_percent, self.LATENCY_BLOCKER_PERCENT
         )
-        self.latency_warning_percent = (
-            latency_warning_percent
-            if latency_warning_percent is not None
-            else self.LATENCY_WARNING_PERCENT
+        self.latency_warning_percent = self._init_threshold(
+            latency_warning_percent, self.LATENCY_WARNING_PERCENT
         )
-        self.cost_blocker_percent = (
-            cost_blocker_percent
-            if cost_blocker_percent is not None
-            else self.COST_BLOCKER_PERCENT
+        self.cost_blocker_percent = self._init_threshold(
+            cost_blocker_percent, self.COST_BLOCKER_PERCENT
         )
-        self.cost_warning_percent = (
-            cost_warning_percent
-            if cost_warning_percent is not None
-            else self.COST_WARNING_PERCENT
+        self.cost_warning_percent = self._init_threshold(
+            cost_warning_percent, self.COST_WARNING_PERCENT
         )
 
         # Validate threshold ranges
@@ -403,7 +411,7 @@ class ServiceDecisionReportGenerator:
         lines.append(
             f"Baseline: {summary.baseline_version} | Replay: {summary.replay_version}"
         )
-        pass_rate_pct = summary.pass_rate * 100
+        pass_rate_pct = summary.pass_rate * PERCENTAGE_MULTIPLIER
         lines.append(
             f"Executions: {summary.passed_count}/{summary.total_executions} "
             f"passed ({pass_rate_pct:.0f}%)"
@@ -1161,9 +1169,12 @@ class ServiceDecisionReportGenerator:
         Raises:
             ModelOnexError: If path contains traversal patterns or is invalid.
         """
-        # Check for path traversal in path components
+        # FIX (PR #368): Check for ".." as actual path *components* rather than
+        # substring matching. This prevents false positives for legitimate
+        # filenames containing ".." (e.g., "file..backup.md"). Only reject
+        # paths where ".." is a directory component used for traversal.
         path_str = str(path)
-        if ".." in path_str:
+        if ".." in path.parts:
             raise ModelOnexError(
                 message=f"Path traversal not allowed: {path}",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -1289,10 +1300,6 @@ class ServiceDecisionReportGenerator:
             Only handles datetime and UUID - raises TypeError for unknown types
             to prevent silent data corruption.
             """
-            # Import here to avoid circular imports and keep at function scope
-            from datetime import datetime
-            from uuid import UUID
-
             if isinstance(obj, datetime):
                 return obj.isoformat()
             if isinstance(obj, UUID):
@@ -1394,8 +1401,10 @@ __all__ = [
     "ELLIPSIS",
     "ELLIPSIS_LENGTH",
     "JSON_INDENT_SPACES",
+    "PERCENTAGE_MULTIPLIER",
     "REPORT_VERSION",
     "REPORT_WIDTH",
+    "ReportVersion",
     "SEPARATOR_CHAR",
     "SEPARATOR_LINE",
     "SEVERITY_SORT_ORDER",

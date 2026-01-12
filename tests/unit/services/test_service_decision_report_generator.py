@@ -4434,6 +4434,31 @@ class TestPathTraversalSecurity:
         assert "reason" in inner_context
         assert inner_context["reason"] == "path_traversal_detected"
 
+    def test_legitimate_filename_with_double_dots_allowed(
+        self,
+        service: ServiceDecisionReportGenerator,
+    ) -> None:
+        """Test that filenames containing '..' are allowed (not path traversal).
+
+        FIX (PR #368): Ensure legitimate filenames like 'file..backup.md' are
+        not incorrectly blocked by path traversal detection. The check should
+        only block '..' as a path component (directory traversal), not when
+        it appears within a filename.
+        """
+        # Test various legitimate filenames containing '..'
+        test_cases = [
+            Path("report..backup.md"),
+            Path("file...name.txt"),
+            Path("data..v2..final.json"),
+            Path("output/report..old.md"),
+        ]
+
+        for path in test_cases:
+            # Should not raise - the _validate_file_path method should allow these
+            # We call the internal method directly to test validation logic
+            # (save_to_file would fail on file I/O, which is not what we're testing)
+            service._validate_file_path(path)  # Should not raise
+
 
 # =============================================================================
 # Input Validation Tests
