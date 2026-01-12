@@ -77,12 +77,20 @@ class _ProviderConfigSection(BaseModel):
     local: _LocalProviderConfig
 
 
+class _ContractMetadata(BaseModel):
+    """Metadata section containing provider_config."""
+
+    model_config = ConfigDict(extra="ignore")  # Ignore other metadata fields
+
+    provider_config: _ProviderConfigSection
+
+
 class _ContractWithProviderConfig(BaseModel):
-    """Partial contract model for extracting provider_config."""
+    """Partial contract model for extracting provider_config from metadata."""
 
     model_config = ConfigDict(extra="ignore")  # Ignore other contract fields
 
-    provider_config: _ProviderConfigSection
+    metadata: _ContractMetadata
 
 
 class ModelConfig(BaseModel):
@@ -197,9 +205,10 @@ def load_config_from_contract(
 
     contract = _ContractWithProviderConfig.model_validate(contract_data)
 
-    # Extract the provider config (Pydantic already validated it exists)
+    # Extract the provider config from metadata (Pydantic already validated it exists)
+    provider_config = contract.metadata.provider_config
     if provider == "local":
-        local_cfg = contract.provider_config.local
+        local_cfg = provider_config.local
         # Local provider uses endpoint_env and default_endpoint from contract
         endpoint_url = os.getenv(local_cfg.endpoint_env, local_cfg.default_endpoint)
         return ModelConfig(
@@ -210,7 +219,7 @@ def load_config_from_contract(
             max_tokens=local_cfg.max_tokens,
         )
     elif provider == "anthropic":
-        anthropic_cfg = contract.provider_config.anthropic
+        anthropic_cfg = provider_config.anthropic
         return ModelConfig(
             provider=provider,
             model_name=anthropic_cfg.model_name,
@@ -219,7 +228,7 @@ def load_config_from_contract(
             api_key_env=anthropic_cfg.api_key_env,
         )
     else:  # openai
-        openai_cfg = contract.provider_config.openai
+        openai_cfg = provider_config.openai
         return ModelConfig(
             provider=provider,
             model_name=openai_cfg.model_name,
@@ -248,7 +257,7 @@ OPENAI_CONFIG = ModelConfig(
 
 ANTHROPIC_CONFIG = ModelConfig(
     provider="anthropic",
-    model_name="claude-sonnet-4-20250514",  # Claude 4 Sonnet, version 2025-05-14
+    model_name="claude-4-sonnet-20250514",  # Claude 4 Sonnet, version 2025-05-14
     temperature=0.7,
     api_key_env="ANTHROPIC_API_KEY",
 )
