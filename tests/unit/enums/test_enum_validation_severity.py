@@ -1,6 +1,9 @@
 """
 Unit tests for EnumValidationSeverity.
 
+EnumValidationSeverity is an alias for EnumSeverity with 6 levels:
+DEBUG, INFO, WARNING, ERROR, CRITICAL, FATAL
+
 Tests all aspects of the validation severity enum including:
 - Enum value validation
 - String representation
@@ -25,10 +28,12 @@ class TestEnumValidationSeverity:
     def test_enum_values(self):
         """Test that all expected enum values are present."""
         expected_values = {
+            "DEBUG": "debug",
             "INFO": "info",
             "WARNING": "warning",
             "ERROR": "error",
             "CRITICAL": "critical",
+            "FATAL": "fatal",
         }
 
         for name, value in expected_values.items():
@@ -45,10 +50,12 @@ class TestEnumValidationSeverity:
     def test_string_representation(self):
         """Test string representation of enum values."""
         # Enum inherits from str, so value is accessible as string
+        assert EnumValidationSeverity.DEBUG.value == "debug"
         assert EnumValidationSeverity.INFO.value == "info"
         assert EnumValidationSeverity.WARNING.value == "warning"
         assert EnumValidationSeverity.ERROR.value == "error"
         assert EnumValidationSeverity.CRITICAL.value == "critical"
+        assert EnumValidationSeverity.FATAL.value == "fatal"
 
     def test_enum_equality(self):
         """Test enum equality comparison."""
@@ -59,10 +66,12 @@ class TestEnumValidationSeverity:
     def test_enum_membership(self):
         """Test enum membership checking."""
         all_severities = [
+            EnumValidationSeverity.DEBUG,
             EnumValidationSeverity.INFO,
             EnumValidationSeverity.WARNING,
             EnumValidationSeverity.ERROR,
             EnumValidationSeverity.CRITICAL,
+            EnumValidationSeverity.FATAL,
         ]
 
         for severity in all_severities:
@@ -71,10 +80,10 @@ class TestEnumValidationSeverity:
     def test_enum_iteration(self):
         """Test iterating over enum values."""
         severities = list(EnumValidationSeverity)
-        assert len(severities) == 4
+        assert len(severities) == 6
 
         severity_values = [s.value for s in severities]
-        expected_values = ["info", "warning", "error", "critical"]
+        expected_values = ["debug", "info", "warning", "error", "critical", "fatal"]
 
         assert set(severity_values) == set(expected_values)
 
@@ -139,10 +148,12 @@ class TestEnumValidationSeverity:
         """Test that severity levels follow expected ordering."""
         # Define expected order from least to most severe
         expected_order = [
+            EnumValidationSeverity.DEBUG,
             EnumValidationSeverity.INFO,
             EnumValidationSeverity.WARNING,
             EnumValidationSeverity.ERROR,
             EnumValidationSeverity.CRITICAL,
+            EnumValidationSeverity.FATAL,
         ]
 
         # Verify order matches declaration order
@@ -151,6 +162,9 @@ class TestEnumValidationSeverity:
 
     def test_severity_semantics(self):
         """Test semantic meaning of severity levels."""
+        # DEBUG: debug-level messages
+        assert EnumValidationSeverity.DEBUG.value == "debug"
+
         # INFO: informational messages
         assert EnumValidationSeverity.INFO.value == "info"
 
@@ -162,6 +176,9 @@ class TestEnumValidationSeverity:
 
         # CRITICAL: severe validation failures
         assert EnumValidationSeverity.CRITICAL.value == "critical"
+
+        # FATAL: fatal/unrecoverable failures
+        assert EnumValidationSeverity.FATAL.value == "fatal"
 
     def test_all_values_unique(self):
         """Test that all enum values are unique."""
@@ -182,6 +199,7 @@ class TestEnumValidationSeverity:
         """Test classification of error severity levels."""
         # Non-blocking severities
         non_blocking = [
+            EnumValidationSeverity.DEBUG,
             EnumValidationSeverity.INFO,
             EnumValidationSeverity.WARNING,
         ]
@@ -192,6 +210,7 @@ class TestEnumValidationSeverity:
         blocking = [
             EnumValidationSeverity.ERROR,
             EnumValidationSeverity.CRITICAL,
+            EnumValidationSeverity.FATAL,
         ]
         for severity in blocking:
             assert severity in EnumValidationSeverity

@@ -5,7 +5,7 @@
 | Field | Value |
 |-------|-------|
 | **Document Type** | Architecture Decision Record (ADR) |
-| **Status** | 🟡 PROPOSED |
+| **Status** | 🟢 ACCEPTED |
 | **Created** | 2026-01-12 |
 | **Last Updated** | 2026-01-12 |
 | **Author** | ONEX Framework Team |
@@ -216,19 +216,20 @@ class EnumRegistryEntryStatus(str, Enum):
 
 #### Issue Severity (`EnumSeverity`) - Canonical
 
-**Purpose**: Classify the severity of violations, issues, and findings.
+**Purpose**: Classify the severity of violations, issues, and findings using a standard 6-level scale aligned with logging conventions.
 
 **Values**:
 ```python
 class EnumSeverity(str, Enum):
-    CRITICAL = "CRITICAL"  # Must be fixed immediately
-    HIGH = "HIGH"          # Should be fixed soon
-    MEDIUM = "MEDIUM"      # Should be addressed
-    LOW = "LOW"            # Minor issue
-    INFO = "INFO"          # Informational only
+    DEBUG = "debug"        # Detailed debugging information
+    INFO = "info"          # Informational messages, normal operation
+    WARNING = "warning"    # Potential issues that should be reviewed
+    ERROR = "error"        # Error conditions that need attention
+    CRITICAL = "critical"  # Must be addressed immediately
+    FATAL = "fatal"        # Fatal errors that cause system failure
 ```
 
-**When to Use**: Validation findings, code analysis, issue classification.
+**When to Use**: Validation findings, code analysis, issue classification, logging context.
 
 **Location**: `src/omnibase_core/enums/enum_severity.py`
 

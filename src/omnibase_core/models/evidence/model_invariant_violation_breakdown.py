@@ -21,12 +21,17 @@ class ModelInvariantViolationBreakdown(BaseModel):
 
     Aggregates violation data from corpus replay comparisons, providing
     counts by violation type (e.g., output_equivalence, latency, cost)
-    and by severity (critical, warning, info).
+    and by severity level (e.g., "critical", "warning", "info").
+
+    Note:
+        Severity values are string keys from violation delta records, not
+        EnumSeverity members. This allows flexibility for external data sources.
 
     Attributes:
         total_violations: Total number of violations (failures in replay).
         by_type: Count of violations grouped by type (e.g., {"output_equivalence": 3}).
-        by_severity: Count of violations grouped by severity level.
+        by_severity: Count of violations grouped by severity level as string keys
+            (e.g., {"critical": 2, "warning": 5}).
         new_violations: Violations that failed in replay but passed in baseline (regressions).
         fixed_violations: Violations that passed in replay but failed in baseline (improvements).
 

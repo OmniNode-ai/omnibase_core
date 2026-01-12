@@ -18,6 +18,7 @@ from typing import Any
 
 import pytest
 
+from omnibase_core.enums.enum_circuit_breaker_state import EnumCircuitBreakerState
 from omnibase_core.models.configuration.model_circuit_breaker import ModelCircuitBreaker
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.infrastructure.model_compute_cache import ModelComputeCache
@@ -276,7 +277,7 @@ class TestCircuitBreakerRaceConditions:
         for _ in range(breaker.failure_threshold):
             breaker.record_failure()
 
-        assert breaker.state == "open", "Breaker should be open"
+        assert breaker.state == EnumCircuitBreakerState.OPEN, "Breaker should be open"
 
         # Now concurrent threads try to record successes and failures
         # Since the circuit is open, record_success won't transition states
@@ -324,8 +325,8 @@ class TestCircuitBreakerRaceConditions:
         )
 
         # State should remain open (no timeout elapsed)
-        assert breaker.state == "open", (
-            f"State should be 'open' but was '{breaker.state}'"
+        assert breaker.state == EnumCircuitBreakerState.OPEN, (
+            f"State should be OPEN but was '{breaker.state}'"
         )
 
 
