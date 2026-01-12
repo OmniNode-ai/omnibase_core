@@ -223,7 +223,7 @@ grep -r "MixinCaching" src/omnibase_core/pipeline/handlers/
 
 ```bash
 # Verify handlers are exported
-grep -r "ModelCapability" src/omnibase_core/pipeline/handlers/__init__.py
+grep -r "HandlerCapability" src/omnibase_core/pipeline/handlers/__init__.py
 ```
 
 ### Full Validation Suite

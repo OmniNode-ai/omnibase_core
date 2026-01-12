@@ -337,9 +337,9 @@ class HandlerCapabilityCaching(BaseModel):
     _cache_data: dict[str, object] = PrivateAttr(default_factory=dict)
 ```
 
-### 4. "Model" Prefix for All Classes
+### 4. "Handler" Prefix for All Capability Classes
 
-All handler model classes MUST start with "Model" prefix:
+All handler capability classes MUST follow the `Handler<Type><Name>` naming pattern:
 
 ```python
 # CORRECT
@@ -348,8 +348,8 @@ class HandlerCapabilityCaching(BaseModel): ...
 class HandlerCapabilityRetry(BaseModel): ...
 
 # WRONG
-class MetricsHandler(BaseModel): ...    # Missing "Model" prefix
-class CachingCapability(BaseModel): ... # Missing "Model" prefix
+class MetricsHandler(BaseModel): ...    # Missing "Handler" prefix and wrong order
+class CachingCapability(BaseModel): ... # Missing "Handler" prefix pattern
 ```
 
 ### 5. File Naming Convention
