@@ -10,13 +10,13 @@ Currently supports:
 
 Example:
     >>> from omnibase_core.protocols.storage import ProtocolDiffStore
-    >>> from omnibase_core.services.diff.store_diff_in_memory import StoreDiffInMemory
+    >>> from omnibase_core.services.diff.service_diff_in_memory_store import ServiceDiffInMemoryStore
     >>>
-    >>> # StoreDiffInMemory implements ProtocolDiffStore
-    >>> store: ProtocolDiffStore = StoreDiffInMemory()
+    >>> # ServiceDiffInMemoryStore implements ProtocolDiffStore
+    >>> store: ProtocolDiffStore = ServiceDiffInMemoryStore()
 
 See Also:
-    - :class:`~omnibase_core.services.diff.store_diff_in_memory.StoreDiffInMemory`:
+    - :class:`~omnibase_core.services.diff.service_diff_in_memory_store.ServiceDiffInMemoryStore`:
       In-memory implementation
     - :class:`~omnibase_core.models.contracts.diff.ModelContractDiff`:
       The diff model being stored
@@ -26,5 +26,6 @@ See Also:
 """
 
 from omnibase_core.protocols.storage.protocol_diff_store import ProtocolDiffStore
+from omnibase_core.protocols.storage.protocol_trace_store import ProtocolTraceStore
 
-__all__ = ["ProtocolDiffStore"]
+__all__ = ["ProtocolDiffStore", "ProtocolTraceStore"]

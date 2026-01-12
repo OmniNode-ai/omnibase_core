@@ -38,7 +38,7 @@ Example:
 See Also:
     - :class:`~omnibase_core.protocols.storage.protocol_diff_store.ProtocolDiffStore`:
       Protocol using these models
-    - :class:`~omnibase_core.services.diff.store_diff_in_memory.StoreDiffInMemory`:
+    - :class:`~omnibase_core.services.diff.service_diff_in_memory_store.ServiceDiffInMemoryStore`:
       In-memory storage implementation
 
 .. versionadded:: 0.6.0

@@ -15,9 +15,9 @@ Design:
 
 Architecture:
     ExecutorReplay coordinates the three injector/recorder components:
-    - InjectorTime: Provides fixed or current time
-    - InjectorRNG: Provides seeded random numbers
-    - RecorderEffect: Records or replays effect results
+    - ServiceTimeInjector: Provides fixed or current time
+    - ServiceRNGInjector: Provides seeded random numbers
+    - ServiceEffectRecorder: Records or replays effect results
 
 Usage:
     .. code-block:: python
@@ -67,9 +67,9 @@ Thread Safety:
 Related:
     - OMN-1116: Implement Replay Executor for Replay Infrastructure
     - MIXINS_TO_HANDLERS_REFACTOR.md Section 7: Replay Infrastructure
-    - InjectorTime: Time injection
-    - InjectorRNG: RNG injection
-    - RecorderEffect: Effect recording and replay
+    - ServiceTimeInjector: Time injection
+    - ServiceRNGInjector: RNG injection
+    - ServiceEffectRecorder: Effect recording and replay
 
 .. versionadded:: 0.4.0
 """
@@ -91,10 +91,10 @@ from omnibase_core.enums.replay.enum_recorder_mode import EnumRecorderMode
 from omnibase_core.enums.replay.enum_replay_mode import EnumReplayMode
 from omnibase_core.models.replay.model_effect_record import ModelEffectRecord
 from omnibase_core.models.replay.model_replay_context import ModelReplayContext
-from omnibase_core.pipeline.replay.session_replay import ReplaySession
-from omnibase_core.services.replay.injector_rng import InjectorRNG
-from omnibase_core.services.replay.injector_time import InjectorTime
-from omnibase_core.services.replay.recorder_effect import RecorderEffect
+from omnibase_core.pipeline.replay.runner_replay_session import ReplaySession
+from omnibase_core.services.replay.service_effect_recorder import ServiceEffectRecorder
+from omnibase_core.services.replay.service_rng_injector import ServiceRNGInjector
+from omnibase_core.services.replay.service_time_injector import ServiceTimeInjector
 from omnibase_core.types.type_json import JsonType
 
 T = TypeVar("T")
@@ -160,9 +160,9 @@ class ExecutorReplay:
                 rng_seed=None,
                 original_execution_id=None,
             ),
-            time_service=InjectorTime(),
-            rng_service=InjectorRNG(),
-            effect_recorder=RecorderEffect(mode=EnumRecorderMode.PASS_THROUGH),
+            time_service=ServiceTimeInjector(),
+            rng_service=ServiceRNGInjector(),
+            effect_recorder=ServiceEffectRecorder(mode=EnumRecorderMode.PASS_THROUGH),
         )
 
     def create_recording_session(
@@ -190,8 +190,8 @@ class ExecutorReplay:
             >>> session.effect_recorder.is_recording
             True
         """
-        rng = InjectorRNG(seed=rng_seed)
-        time_svc = InjectorTime()
+        rng = ServiceRNGInjector(seed=rng_seed)
+        time_svc = ServiceTimeInjector()
         return ReplaySession(
             context=ModelReplayContext(
                 mode=EnumReplayMode.RECORDING,
@@ -201,7 +201,7 @@ class ExecutorReplay:
             ),
             time_service=time_svc,
             rng_service=rng,
-            effect_recorder=RecorderEffect(
+            effect_recorder=ServiceEffectRecorder(
                 mode=EnumRecorderMode.RECORDING,
                 time_service=time_svc,
             ),
@@ -246,9 +246,9 @@ class ExecutorReplay:
                 rng_seed=rng_seed,
                 original_execution_id=original_execution_id,
             ),
-            time_service=InjectorTime(fixed_time=time_frozen_at),
-            rng_service=InjectorRNG(seed=rng_seed),
-            effect_recorder=RecorderEffect(
+            time_service=ServiceTimeInjector(fixed_time=time_frozen_at),
+            rng_service=ServiceRNGInjector(seed=rng_seed),
+            effect_recorder=ServiceEffectRecorder(
                 mode=EnumRecorderMode.REPLAYING,
                 records=effect_records,
             ),

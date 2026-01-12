@@ -309,7 +309,7 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_effect_types import EnumEffectType
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.errors import ModelOnexError
-from omnibase_core.infrastructure.infrastructure_bases import ModelServiceEffect
+from omnibase_core.infrastructure.infra_bases import ModelServiceEffect
 from omnibase_core.logging.logging_structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.nodes import ModelEffectInput, ModelEffectOutput
@@ -1012,7 +1012,7 @@ from omnibase_core.nodes import (
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
 # Service wrapper for production use
-from omnibase_core.infrastructure.infrastructure_bases import ModelServiceEffect
+from omnibase_core.infrastructure.infra_bases import ModelServiceEffect
 
 # Error handling
 from omnibase_core.errors import ModelOnexError

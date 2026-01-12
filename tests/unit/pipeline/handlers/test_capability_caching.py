@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 """
-Tests for ModelCapabilityCaching handler.
+Tests for HandlerCapabilityCaching handler.
 
 TDD tests - written FIRST before implementation.
 
@@ -17,8 +17,8 @@ Coverage target: 60%+ (stub implementation with defensive attribute handling)
 
 import pytest
 
-from omnibase_core.pipeline.handlers.model_capability_caching import (
-    ModelCapabilityCaching,
+from omnibase_core.pipeline.handlers.handler_capability_caching import (
+    HandlerCapabilityCaching,
 )
 
 # =============================================================================
@@ -27,33 +27,33 @@ from omnibase_core.pipeline.handlers.model_capability_caching import (
 
 
 @pytest.fixture
-def caching_handler() -> ModelCapabilityCaching:
-    """Create a default ModelCapabilityCaching handler.
+def caching_handler() -> HandlerCapabilityCaching:
+    """Create a default HandlerCapabilityCaching handler.
 
     Returns:
-        ModelCapabilityCaching instance with default settings.
+        HandlerCapabilityCaching instance with default settings.
     """
-    return ModelCapabilityCaching()
+    return HandlerCapabilityCaching()
 
 
 @pytest.fixture
-def disabled_caching_handler() -> ModelCapabilityCaching:
-    """Create a disabled ModelCapabilityCaching handler.
+def disabled_caching_handler() -> HandlerCapabilityCaching:
+    """Create a disabled HandlerCapabilityCaching handler.
 
     Returns:
-        ModelCapabilityCaching instance with caching disabled.
+        HandlerCapabilityCaching instance with caching disabled.
     """
-    return ModelCapabilityCaching(enabled=False)
+    return HandlerCapabilityCaching(enabled=False)
 
 
 @pytest.fixture
-def custom_ttl_handler() -> ModelCapabilityCaching:
-    """Create a ModelCapabilityCaching handler with custom TTL.
+def custom_ttl_handler() -> HandlerCapabilityCaching:
+    """Create a HandlerCapabilityCaching handler with custom TTL.
 
     Returns:
-        ModelCapabilityCaching instance with 600s TTL.
+        HandlerCapabilityCaching instance with 600s TTL.
     """
-    return ModelCapabilityCaching(default_ttl_seconds=600)
+    return HandlerCapabilityCaching(default_ttl_seconds=600)
 
 
 # =============================================================================
@@ -62,49 +62,49 @@ def custom_ttl_handler() -> ModelCapabilityCaching:
 
 
 @pytest.mark.unit
-class TestModelCapabilityCachingInit:
-    """Test initialization of ModelCapabilityCaching."""
+class TestHandlerCapabilityCachingInit:
+    """Test initialization of HandlerCapabilityCaching."""
 
     def test_default_initialization(self) -> None:
         """Handler initializes with sensible defaults."""
-        from omnibase_core.pipeline.handlers.model_capability_caching import (
-            ModelCapabilityCaching,
+        from omnibase_core.pipeline.handlers.handler_capability_caching import (
+            HandlerCapabilityCaching,
         )
 
-        handler = ModelCapabilityCaching()
+        handler = HandlerCapabilityCaching()
 
         assert handler.enabled is True
         assert handler.default_ttl_seconds == 3600
 
     def test_initialization_with_custom_ttl(self) -> None:
         """Handler accepts custom TTL value."""
-        from omnibase_core.pipeline.handlers.model_capability_caching import (
-            ModelCapabilityCaching,
+        from omnibase_core.pipeline.handlers.handler_capability_caching import (
+            HandlerCapabilityCaching,
         )
 
-        handler = ModelCapabilityCaching(default_ttl_seconds=600)
+        handler = HandlerCapabilityCaching(default_ttl_seconds=600)
 
         assert handler.enabled is True
         assert handler.default_ttl_seconds == 600
 
     def test_initialization_disabled(self) -> None:
         """Handler can be initialized in disabled state."""
-        from omnibase_core.pipeline.handlers.model_capability_caching import (
-            ModelCapabilityCaching,
+        from omnibase_core.pipeline.handlers.handler_capability_caching import (
+            HandlerCapabilityCaching,
         )
 
-        handler = ModelCapabilityCaching(enabled=False)
+        handler = HandlerCapabilityCaching(enabled=False)
 
         assert handler.enabled is False
         assert handler.default_ttl_seconds == 3600
 
     def test_initialization_with_all_options(self) -> None:
         """Handler accepts all configuration options."""
-        from omnibase_core.pipeline.handlers.model_capability_caching import (
-            ModelCapabilityCaching,
+        from omnibase_core.pipeline.handlers.handler_capability_caching import (
+            HandlerCapabilityCaching,
         )
 
-        handler = ModelCapabilityCaching(enabled=False, default_ttl_seconds=120)
+        handler = HandlerCapabilityCaching(enabled=False, default_ttl_seconds=120)
 
         assert handler.enabled is False
         assert handler.default_ttl_seconds == 120
@@ -113,11 +113,11 @@ class TestModelCapabilityCachingInit:
         """Handler is a Pydantic BaseModel (not a mixin)."""
         from pydantic import BaseModel
 
-        from omnibase_core.pipeline.handlers.model_capability_caching import (
-            ModelCapabilityCaching,
+        from omnibase_core.pipeline.handlers.handler_capability_caching import (
+            HandlerCapabilityCaching,
         )
 
-        handler = ModelCapabilityCaching()
+        handler = HandlerCapabilityCaching()
 
         assert isinstance(handler, BaseModel)
 
@@ -132,7 +132,7 @@ class TestGenerateCacheKey:
     """Test generate_cache_key method."""
 
     def test_generate_cache_key_from_dict(
-        self, caching_handler: ModelCapabilityCaching
+        self, caching_handler: HandlerCapabilityCaching
     ) -> None:
         """Cache key is generated from dict data."""
         data = {"user_id": 123, "action": "process"}
@@ -143,7 +143,7 @@ class TestGenerateCacheKey:
         assert len(key) == 64  # SHA256 hex digest is 64 chars
 
     def test_generate_cache_key_from_string(
-        self, caching_handler: ModelCapabilityCaching
+        self, caching_handler: HandlerCapabilityCaching
     ) -> None:
         """Cache key is generated from string data."""
         data = "simple string input"
@@ -154,7 +154,7 @@ class TestGenerateCacheKey:
         assert len(key) == 64
 
     def test_generate_cache_key_consistency(
-        self, caching_handler: ModelCapabilityCaching
+        self, caching_handler: HandlerCapabilityCaching
     ) -> None:
         """Same data produces same cache key (deterministic)."""
         data = {"a": 1, "b": 2}
@@ -165,7 +165,7 @@ class TestGenerateCacheKey:
         assert key1 == key2
 
     def test_generate_cache_key_dict_order_independence(
-        self, caching_handler: ModelCapabilityCaching
+        self, caching_handler: HandlerCapabilityCaching
     ) -> None:
         """Dict key order does not affect cache key (uses sort_keys)."""
         data1 = {"b": 2, "a": 1}
@@ -177,7 +177,7 @@ class TestGenerateCacheKey:
         assert key1 == key2
 
     def test_generate_cache_key_different_data_different_keys(
-        self, caching_handler: ModelCapabilityCaching
+        self, caching_handler: HandlerCapabilityCaching
     ) -> None:
         """Different data produces different cache keys."""
         data1 = {"value": 1}
@@ -189,7 +189,7 @@ class TestGenerateCacheKey:
         assert key1 != key2
 
     def test_generate_cache_key_handles_non_serializable(
-        self, caching_handler: ModelCapabilityCaching
+        self, caching_handler: HandlerCapabilityCaching
     ) -> None:
         """Non-JSON-serializable data falls back to str() representation."""
 
@@ -206,7 +206,7 @@ class TestGenerateCacheKey:
         assert len(key) == 64
 
     def test_generate_cache_key_nested_dict(
-        self, caching_handler: ModelCapabilityCaching
+        self, caching_handler: HandlerCapabilityCaching
     ) -> None:
         """Cache key works with nested dictionaries."""
         data = {"outer": {"inner": {"deep": "value"}}, "list": [1, 2, 3]}
@@ -217,7 +217,7 @@ class TestGenerateCacheKey:
         assert len(key) == 64
 
     def test_generate_cache_key_with_none(
-        self, caching_handler: ModelCapabilityCaching
+        self, caching_handler: HandlerCapabilityCaching
     ) -> None:
         """Cache key handles None values."""
         data = {"key": None}
@@ -240,7 +240,7 @@ class TestGetCached:
     @pytest.mark.asyncio
     @pytest.mark.timeout(60)
     async def test_get_cached_returns_none_when_not_found(
-        self, caching_handler: ModelCapabilityCaching
+        self, caching_handler: HandlerCapabilityCaching
     ) -> None:
         """get_cached returns None for non-existent key."""
         result = await caching_handler.get_cached("nonexistent_key")
@@ -250,7 +250,7 @@ class TestGetCached:
     @pytest.mark.asyncio
     @pytest.mark.timeout(60)
     async def test_get_cached_returns_stored_value(
-        self, caching_handler: ModelCapabilityCaching
+        self, caching_handler: HandlerCapabilityCaching
     ) -> None:
         """get_cached returns previously stored value."""
         cache_key = "test_key"
@@ -264,7 +264,7 @@ class TestGetCached:
     @pytest.mark.asyncio
     @pytest.mark.timeout(60)
     async def test_get_cached_returns_none_when_disabled(
-        self, disabled_caching_handler: ModelCapabilityCaching
+        self, disabled_caching_handler: HandlerCapabilityCaching
     ) -> None:
         """get_cached returns None when caching is disabled."""
         # First store something (though it won't be stored due to disabled)
@@ -279,7 +279,7 @@ class TestGetCached:
     @pytest.mark.asyncio
     @pytest.mark.timeout(60)
     async def test_get_cached_various_value_types(
-        self, caching_handler: ModelCapabilityCaching
+        self, caching_handler: HandlerCapabilityCaching
     ) -> None:
         """get_cached works with various value types."""
         test_cases = [
@@ -310,7 +310,7 @@ class TestSetCached:
     @pytest.mark.asyncio
     @pytest.mark.timeout(60)
     async def test_set_cached_stores_value(
-        self, caching_handler: ModelCapabilityCaching
+        self, caching_handler: HandlerCapabilityCaching
     ) -> None:
         """set_cached stores value successfully."""
         cache_key = "store_key"
@@ -324,7 +324,7 @@ class TestSetCached:
     @pytest.mark.asyncio
     @pytest.mark.timeout(60)
     async def test_set_cached_respects_enabled_flag(
-        self, disabled_caching_handler: ModelCapabilityCaching
+        self, disabled_caching_handler: HandlerCapabilityCaching
     ) -> None:
         """set_cached does not store when disabled."""
         cache_key = "store_key"
@@ -339,7 +339,7 @@ class TestSetCached:
     @pytest.mark.asyncio
     @pytest.mark.timeout(60)
     async def test_set_cached_overwrites_existing(
-        self, caching_handler: ModelCapabilityCaching
+        self, caching_handler: HandlerCapabilityCaching
     ) -> None:
         """set_cached overwrites existing value for same key."""
         cache_key = "overwrite_key"
@@ -355,7 +355,7 @@ class TestSetCached:
     @pytest.mark.asyncio
     @pytest.mark.timeout(60)
     async def test_set_cached_with_custom_ttl(
-        self, caching_handler: ModelCapabilityCaching
+        self, caching_handler: HandlerCapabilityCaching
     ) -> None:
         """set_cached accepts custom TTL (stored for future backend use)."""
         cache_key = "ttl_key"
@@ -370,7 +370,7 @@ class TestSetCached:
     @pytest.mark.asyncio
     @pytest.mark.timeout(60)
     async def test_set_cached_multiple_keys(
-        self, caching_handler: ModelCapabilityCaching
+        self, caching_handler: HandlerCapabilityCaching
     ) -> None:
         """set_cached can store multiple different keys."""
         entries = [
@@ -399,7 +399,7 @@ class TestInvalidateCache:
     @pytest.mark.asyncio
     @pytest.mark.timeout(60)
     async def test_invalidate_cache_removes_key(
-        self, caching_handler: ModelCapabilityCaching
+        self, caching_handler: HandlerCapabilityCaching
     ) -> None:
         """invalidate_cache removes the specified key."""
         cache_key = "to_remove"
@@ -413,7 +413,7 @@ class TestInvalidateCache:
     @pytest.mark.asyncio
     @pytest.mark.timeout(60)
     async def test_invalidate_cache_handles_nonexistent_key(
-        self, caching_handler: ModelCapabilityCaching
+        self, caching_handler: HandlerCapabilityCaching
     ) -> None:
         """invalidate_cache does not raise for nonexistent key."""
         # Should not raise
@@ -426,7 +426,7 @@ class TestInvalidateCache:
     @pytest.mark.asyncio
     @pytest.mark.timeout(60)
     async def test_invalidate_cache_only_affects_specified_key(
-        self, caching_handler: ModelCapabilityCaching
+        self, caching_handler: HandlerCapabilityCaching
     ) -> None:
         """invalidate_cache only removes the specified key, not others."""
         await caching_handler.set_cached("keep_me", "value1")
@@ -450,7 +450,7 @@ class TestClearCache:
     @pytest.mark.asyncio
     @pytest.mark.timeout(60)
     async def test_clear_cache_removes_all_entries(
-        self, caching_handler: ModelCapabilityCaching
+        self, caching_handler: HandlerCapabilityCaching
     ) -> None:
         """clear_cache removes all cached entries."""
         # Store multiple entries
@@ -467,7 +467,7 @@ class TestClearCache:
     @pytest.mark.asyncio
     @pytest.mark.timeout(60)
     async def test_clear_cache_on_empty_cache(
-        self, caching_handler: ModelCapabilityCaching
+        self, caching_handler: HandlerCapabilityCaching
     ) -> None:
         """clear_cache works on empty cache without error."""
         # Should not raise
@@ -479,7 +479,7 @@ class TestClearCache:
     @pytest.mark.asyncio
     @pytest.mark.timeout(60)
     async def test_clear_cache_stats_reflect_cleared(
-        self, caching_handler: ModelCapabilityCaching
+        self, caching_handler: HandlerCapabilityCaching
     ) -> None:
         """Stats reflect cleared state after clear_cache."""
         await caching_handler.set_cached("key1", "value1")
@@ -505,7 +505,7 @@ class TestGetCacheStats:
     """Test get_cache_stats method."""
 
     def test_get_cache_stats_returns_typed_dict(
-        self, caching_handler: ModelCapabilityCaching
+        self, caching_handler: HandlerCapabilityCaching
     ) -> None:
         """get_cache_stats returns TypedDictCacheStats structure."""
         stats = caching_handler.get_cache_stats()
@@ -515,7 +515,7 @@ class TestGetCacheStats:
         assert "keys" in stats
 
     def test_get_cache_stats_initial_state(
-        self, caching_handler: ModelCapabilityCaching
+        self, caching_handler: HandlerCapabilityCaching
     ) -> None:
         """get_cache_stats shows correct initial state."""
         stats = caching_handler.get_cache_stats()
@@ -525,7 +525,7 @@ class TestGetCacheStats:
         assert stats["keys"] == []
 
     def test_get_cache_stats_disabled_handler(
-        self, disabled_caching_handler: ModelCapabilityCaching
+        self, disabled_caching_handler: HandlerCapabilityCaching
     ) -> None:
         """get_cache_stats shows disabled state."""
         stats = disabled_caching_handler.get_cache_stats()
@@ -536,7 +536,7 @@ class TestGetCacheStats:
     @pytest.mark.asyncio
     @pytest.mark.timeout(60)
     async def test_get_cache_stats_reflects_entries(
-        self, caching_handler: ModelCapabilityCaching
+        self, caching_handler: HandlerCapabilityCaching
     ) -> None:
         """get_cache_stats correctly counts entries."""
         await caching_handler.set_cached("key1", "value1")
@@ -550,7 +550,7 @@ class TestGetCacheStats:
     @pytest.mark.asyncio
     @pytest.mark.timeout(60)
     async def test_get_cache_stats_after_invalidation(
-        self, caching_handler: ModelCapabilityCaching
+        self, caching_handler: HandlerCapabilityCaching
     ) -> None:
         """get_cache_stats reflects invalidation."""
         await caching_handler.set_cached("key1", "value1")
@@ -576,12 +576,12 @@ class TestInstanceIsolation:
     @pytest.mark.timeout(60)
     async def test_cache_isolation_per_instance(self) -> None:
         """Each handler instance has its own isolated cache."""
-        from omnibase_core.pipeline.handlers.model_capability_caching import (
-            ModelCapabilityCaching,
+        from omnibase_core.pipeline.handlers.handler_capability_caching import (
+            HandlerCapabilityCaching,
         )
 
-        handler1 = ModelCapabilityCaching()
-        handler2 = ModelCapabilityCaching()
+        handler1 = HandlerCapabilityCaching()
+        handler2 = HandlerCapabilityCaching()
 
         await handler1.set_cached("shared_key", "handler1_value")
         await handler2.set_cached("shared_key", "handler2_value")
@@ -596,12 +596,12 @@ class TestInstanceIsolation:
     @pytest.mark.timeout(60)
     async def test_clear_cache_does_not_affect_other_instances(self) -> None:
         """Clearing one instance does not affect others."""
-        from omnibase_core.pipeline.handlers.model_capability_caching import (
-            ModelCapabilityCaching,
+        from omnibase_core.pipeline.handlers.handler_capability_caching import (
+            HandlerCapabilityCaching,
         )
 
-        handler1 = ModelCapabilityCaching()
-        handler2 = ModelCapabilityCaching()
+        handler1 = HandlerCapabilityCaching()
+        handler2 = HandlerCapabilityCaching()
 
         await handler1.set_cached("key", "value1")
         await handler2.set_cached("key", "value2")
@@ -623,12 +623,12 @@ class TestHandlerIndependence:
 
     def test_handler_works_standalone(self) -> None:
         """Handler can be used without inheriting from a mixin."""
-        from omnibase_core.pipeline.handlers.model_capability_caching import (
-            ModelCapabilityCaching,
+        from omnibase_core.pipeline.handlers.handler_capability_caching import (
+            HandlerCapabilityCaching,
         )
 
         # Handler should be usable as a standalone component
-        handler = ModelCapabilityCaching()
+        handler = HandlerCapabilityCaching()
 
         # Should have all expected methods
         assert hasattr(handler, "generate_cache_key")
@@ -642,11 +642,11 @@ class TestHandlerIndependence:
         """Handler is not designed as a mixin (Pydantic model instead)."""
         from pydantic import BaseModel
 
-        from omnibase_core.pipeline.handlers.model_capability_caching import (
-            ModelCapabilityCaching,
+        from omnibase_core.pipeline.handlers.handler_capability_caching import (
+            HandlerCapabilityCaching,
         )
 
-        handler = ModelCapabilityCaching()
+        handler = HandlerCapabilityCaching()
 
         # Should be a Pydantic model
         assert isinstance(handler, BaseModel)
@@ -660,14 +660,14 @@ class TestHandlerIndependence:
         """Handler supports composition pattern (embedding in other classes)."""
         from pydantic import BaseModel
 
-        from omnibase_core.pipeline.handlers.model_capability_caching import (
-            ModelCapabilityCaching,
+        from omnibase_core.pipeline.handlers.handler_capability_caching import (
+            HandlerCapabilityCaching,
         )
 
         class MyService(BaseModel):
             """Example service using caching via composition."""
 
-            cache: ModelCapabilityCaching = ModelCapabilityCaching()
+            cache: HandlerCapabilityCaching = HandlerCapabilityCaching()
 
             async def expensive_operation(self, key: str) -> str:
                 cache_key = self.cache.generate_cache_key({"key": key})
@@ -705,7 +705,7 @@ class TestEdgeCases:
     """Test edge cases and boundary conditions."""
 
     def test_generate_cache_key_empty_dict(
-        self, caching_handler: ModelCapabilityCaching
+        self, caching_handler: HandlerCapabilityCaching
     ) -> None:
         """Empty dict produces valid cache key."""
         key = caching_handler.generate_cache_key({})
@@ -714,7 +714,7 @@ class TestEdgeCases:
         assert len(key) == 64
 
     def test_generate_cache_key_empty_string(
-        self, caching_handler: ModelCapabilityCaching
+        self, caching_handler: HandlerCapabilityCaching
     ) -> None:
         """Empty string produces valid cache key."""
         key = caching_handler.generate_cache_key("")
@@ -723,7 +723,7 @@ class TestEdgeCases:
         assert len(key) == 64
 
     def test_generate_cache_key_empty_list(
-        self, caching_handler: ModelCapabilityCaching
+        self, caching_handler: HandlerCapabilityCaching
     ) -> None:
         """Empty list produces valid cache key."""
         key = caching_handler.generate_cache_key([])
@@ -734,7 +734,7 @@ class TestEdgeCases:
     @pytest.mark.asyncio
     @pytest.mark.timeout(60)
     async def test_set_cached_empty_string_key(
-        self, caching_handler: ModelCapabilityCaching
+        self, caching_handler: HandlerCapabilityCaching
     ) -> None:
         """Empty string key is valid."""
         await caching_handler.set_cached("", "empty_key_value")
@@ -745,7 +745,7 @@ class TestEdgeCases:
     @pytest.mark.asyncio
     @pytest.mark.timeout(60)
     async def test_set_cached_unicode_key(
-        self, caching_handler: ModelCapabilityCaching
+        self, caching_handler: HandlerCapabilityCaching
     ) -> None:
         """Unicode characters in key are handled."""
         unicode_key = "key_with_unicode_"
@@ -757,7 +757,7 @@ class TestEdgeCases:
     @pytest.mark.asyncio
     @pytest.mark.timeout(60)
     async def test_set_cached_large_value(
-        self, caching_handler: ModelCapabilityCaching
+        self, caching_handler: HandlerCapabilityCaching
     ) -> None:
         """Large values can be cached."""
         large_value = {"data": "x" * 10000}  # 10KB of data
@@ -767,7 +767,7 @@ class TestEdgeCases:
         assert result == large_value
 
     def test_generate_cache_key_circular_reference_fallback(
-        self, caching_handler: ModelCapabilityCaching
+        self, caching_handler: HandlerCapabilityCaching
     ) -> None:
         """Circular references fall back to str() representation."""
         circular: dict[str, object] = {}

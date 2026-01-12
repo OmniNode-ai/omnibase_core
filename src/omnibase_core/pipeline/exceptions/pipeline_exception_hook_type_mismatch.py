@@ -4,7 +4,7 @@
 """Hook type mismatch exception."""
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.pipeline.exceptions.exception_pipeline import PipelineError
+from omnibase_core.pipeline.exceptions.pipeline_exception import PipelineError
 
 
 class HookTypeMismatchError(PipelineError):

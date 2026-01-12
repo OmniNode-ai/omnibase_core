@@ -528,7 +528,7 @@ microservice_routing = ModelRoutingSubcontract(
 **Integration with EFFECT Nodes**:
 
 ```
-from omnibase_core.infrastructure.infrastructure_bases import ModelServiceEffect
+from omnibase_core.infrastructure.infra_bases import ModelServiceEffect
 
 class RoutingEffectService(ModelServiceEffect):
     """EFFECT node with routing subcontract support."""

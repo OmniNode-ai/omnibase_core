@@ -35,7 +35,7 @@ from omnibase_core.models.events.contract_validation import (
     ModelContractValidationStartedEvent,
 )
 from omnibase_core.models.primitives.model_semver import ModelSemVer
-from omnibase_core.validation.contract_validation_pipeline import (
+from omnibase_core.validation.validator_contract_pipeline import (
     ContractValidationPipeline,
 )
 

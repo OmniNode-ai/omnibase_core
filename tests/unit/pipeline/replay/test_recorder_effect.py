@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 """
-Unit tests for RecorderEffect - Effect Recorder for Replay Infrastructure.
+Unit tests for ServiceEffectRecorder - Effect Recorder for Replay Infrastructure.
 
 Tests cover:
 - Pass-through mode (production): no recording, no modification
@@ -31,7 +31,9 @@ import pytest
 if TYPE_CHECKING:
     from omnibase_core.models.replay.model_effect_record import ModelEffectRecord
     from omnibase_core.protocols.replay.protocol_time_service import ProtocolTimeService
-    from omnibase_core.services.replay.recorder_effect import RecorderEffect
+    from omnibase_core.services.replay.service_effect_recorder import (
+        ServiceEffectRecorder,
+    )
 
 
 @pytest.fixture
@@ -43,9 +45,9 @@ def fixed_time() -> datetime:
 @pytest.fixture
 def mock_time_service(fixed_time: datetime) -> ProtocolTimeService:
     """Create a mock time service that returns fixed time."""
-    from omnibase_core.services.replay.injector_time import InjectorTime
+    from omnibase_core.services.replay.service_time_injector import ServiceTimeInjector
 
-    return InjectorTime(fixed_time=fixed_time)
+    return ServiceTimeInjector(fixed_time=fixed_time)
 
 
 @pytest.fixture
@@ -68,23 +70,27 @@ def sample_result() -> dict[str, Any]:
 
 
 @pytest.fixture
-def pass_through_recorder() -> RecorderEffect:
+def pass_through_recorder() -> ServiceEffectRecorder:
     """Create a recorder in pass-through mode."""
     from omnibase_core.enums.replay import EnumRecorderMode
-    from omnibase_core.services.replay.recorder_effect import RecorderEffect
+    from omnibase_core.services.replay.service_effect_recorder import (
+        ServiceEffectRecorder,
+    )
 
-    return RecorderEffect(mode=EnumRecorderMode.PASS_THROUGH)
+    return ServiceEffectRecorder(mode=EnumRecorderMode.PASS_THROUGH)
 
 
 @pytest.fixture
 def recording_recorder(
     mock_time_service: ProtocolTimeService,
-) -> RecorderEffect:
+) -> ServiceEffectRecorder:
     """Create a recorder in recording mode."""
     from omnibase_core.enums.replay import EnumRecorderMode
-    from omnibase_core.services.replay.recorder_effect import RecorderEffect
+    from omnibase_core.services.replay.service_effect_recorder import (
+        ServiceEffectRecorder,
+    )
 
-    return RecorderEffect(
+    return ServiceEffectRecorder(
         mode=EnumRecorderMode.RECORDING,
         time_service=mock_time_service,
     )
@@ -114,24 +120,26 @@ def sample_records(fixed_time: datetime) -> list[ModelEffectRecord]:
 
 
 @pytest.fixture
-def replay_recorder(sample_records: list[ModelEffectRecord]) -> RecorderEffect:
+def replay_recorder(sample_records: list[ModelEffectRecord]) -> ServiceEffectRecorder:
     """Create a recorder in replay mode with pre-recorded data."""
     from omnibase_core.enums.replay import EnumRecorderMode
-    from omnibase_core.services.replay.recorder_effect import RecorderEffect
+    from omnibase_core.services.replay.service_effect_recorder import (
+        ServiceEffectRecorder,
+    )
 
-    return RecorderEffect(
+    return ServiceEffectRecorder(
         mode=EnumRecorderMode.REPLAYING,
         records=sample_records,
     )
 
 
 @pytest.mark.unit
-class TestRecorderEffectPassThroughMode:
-    """Test RecorderEffect in pass-through mode (production)."""
+class TestServiceEffectRecorderPassThroughMode:
+    """Test ServiceEffectRecorder in pass-through mode (production)."""
 
     def test_pass_through_mode_does_not_record(
         self,
-        pass_through_recorder: RecorderEffect,
+        pass_through_recorder: ServiceEffectRecorder,
         sample_intent: dict[str, Any],
         sample_result: dict[str, Any],
     ) -> None:
@@ -147,20 +155,20 @@ class TestRecorderEffectPassThroughMode:
         assert len(pass_through_recorder.get_all_records()) == 0
 
     def test_is_recording_false_in_pass_through(
-        self, pass_through_recorder: RecorderEffect
+        self, pass_through_recorder: ServiceEffectRecorder
     ) -> None:
         """Test that is_recording is False in pass-through mode."""
         assert pass_through_recorder.is_recording is False
 
     def test_is_replaying_false_in_pass_through(
-        self, pass_through_recorder: RecorderEffect
+        self, pass_through_recorder: ServiceEffectRecorder
     ) -> None:
         """Test that is_replaying is False in pass-through mode."""
         assert pass_through_recorder.is_replaying is False
 
     def test_get_replay_result_returns_none_in_pass_through(
         self,
-        pass_through_recorder: RecorderEffect,
+        pass_through_recorder: ServiceEffectRecorder,
         sample_intent: dict[str, Any],
     ) -> None:
         """Test that get_replay_result returns None in pass-through mode."""
@@ -172,12 +180,12 @@ class TestRecorderEffectPassThroughMode:
 
 
 @pytest.mark.unit
-class TestRecorderEffectRecordingMode:
-    """Test RecorderEffect in recording mode."""
+class TestServiceEffectRecorderRecordingMode:
+    """Test ServiceEffectRecorder in recording mode."""
 
     def test_recording_mode_captures_effects(
         self,
-        recording_recorder: RecorderEffect,
+        recording_recorder: ServiceEffectRecorder,
         sample_intent: dict[str, Any],
         sample_result: dict[str, Any],
     ) -> None:
@@ -194,20 +202,20 @@ class TestRecorderEffectRecordingMode:
         assert record.result == sample_result
 
     def test_is_recording_true_in_recording_mode(
-        self, recording_recorder: RecorderEffect
+        self, recording_recorder: ServiceEffectRecorder
     ) -> None:
         """Test that is_recording is True in recording mode."""
         assert recording_recorder.is_recording is True
 
     def test_is_replaying_false_in_recording_mode(
-        self, recording_recorder: RecorderEffect
+        self, recording_recorder: ServiceEffectRecorder
     ) -> None:
         """Test that is_replaying is False in recording mode."""
         assert recording_recorder.is_replaying is False
 
     def test_sequence_index_increments(
         self,
-        recording_recorder: RecorderEffect,
+        recording_recorder: ServiceEffectRecorder,
         sample_intent: dict[str, Any],
         sample_result: dict[str, Any],
     ) -> None:
@@ -234,7 +242,7 @@ class TestRecorderEffectRecordingMode:
 
     def test_captured_at_uses_time_service(
         self,
-        recording_recorder: RecorderEffect,
+        recording_recorder: ServiceEffectRecorder,
         fixed_time: datetime,
         sample_intent: dict[str, Any],
         sample_result: dict[str, Any],
@@ -250,7 +258,7 @@ class TestRecorderEffectRecordingMode:
 
     def test_get_all_records_returns_all_recorded(
         self,
-        recording_recorder: RecorderEffect,
+        recording_recorder: ServiceEffectRecorder,
         sample_intent: dict[str, Any],
         sample_result: dict[str, Any],
     ) -> None:
@@ -273,11 +281,11 @@ class TestRecorderEffectRecordingMode:
 
 
 @pytest.mark.unit
-class TestRecorderEffectReplayingMode:
-    """Test RecorderEffect in replaying mode."""
+class TestServiceEffectRecorderReplayingMode:
+    """Test ServiceEffectRecorder in replaying mode."""
 
     def test_replaying_mode_returns_recorded_results(
-        self, replay_recorder: RecorderEffect
+        self, replay_recorder: ServiceEffectRecorder
     ) -> None:
         """Test that replaying mode returns pre-recorded results."""
         result = replay_recorder.get_replay_result(
@@ -289,19 +297,19 @@ class TestRecorderEffectReplayingMode:
         assert result["status_code"] == 200
 
     def test_is_replaying_true_in_replay_mode(
-        self, replay_recorder: RecorderEffect
+        self, replay_recorder: ServiceEffectRecorder
     ) -> None:
         """Test that is_replaying is True in replay mode."""
         assert replay_recorder.is_replaying is True
 
     def test_is_recording_false_in_replay_mode(
-        self, replay_recorder: RecorderEffect
+        self, replay_recorder: ServiceEffectRecorder
     ) -> None:
         """Test that is_recording is False in replay mode."""
         assert replay_recorder.is_recording is False
 
     def test_replay_matches_recording_order(
-        self, replay_recorder: RecorderEffect
+        self, replay_recorder: ServiceEffectRecorder
     ) -> None:
         """Test that replay returns results in sequence order."""
         # First call should return first record's result
@@ -322,7 +330,7 @@ class TestRecorderEffectReplayingMode:
         assert "rows" in result2
 
     def test_replay_returns_none_for_unmatched_effect(
-        self, replay_recorder: RecorderEffect
+        self, replay_recorder: ServiceEffectRecorder
     ) -> None:
         """Test that replay returns None for effects not in recording."""
         result = replay_recorder.get_replay_result(
@@ -333,12 +341,12 @@ class TestRecorderEffectReplayingMode:
 
 
 @pytest.mark.unit
-class TestRecorderEffectImmutability:
-    """Test RecorderEffect record immutability."""
+class TestServiceEffectRecorderImmutability:
+    """Test ServiceEffectRecorder record immutability."""
 
     def test_records_are_immutable(
         self,
-        recording_recorder: RecorderEffect,
+        recording_recorder: ServiceEffectRecorder,
         sample_intent: dict[str, Any],
         sample_result: dict[str, Any],
     ) -> None:
@@ -357,7 +365,7 @@ class TestRecorderEffectImmutability:
 
     def test_get_all_records_returns_copy(
         self,
-        recording_recorder: RecorderEffect,
+        recording_recorder: ServiceEffectRecorder,
         sample_intent: dict[str, Any],
         sample_result: dict[str, Any],
     ) -> None:
@@ -379,23 +387,27 @@ class TestRecorderEffectImmutability:
 
 
 @pytest.mark.unit
-class TestRecorderEffectProtocolCompliance:
-    """Test that RecorderEffect implements ProtocolEffectRecorder correctly."""
+class TestServiceEffectRecorderProtocolCompliance:
+    """Test that ServiceEffectRecorder implements ProtocolEffectRecorder correctly."""
 
     def test_implements_protocol(self) -> None:
-        """Test that RecorderEffect implements ProtocolEffectRecorder."""
+        """Test that ServiceEffectRecorder implements ProtocolEffectRecorder."""
         from omnibase_core.protocols.replay.protocol_effect_recorder import (
             ProtocolEffectRecorder,
         )
-        from omnibase_core.services.replay.recorder_effect import RecorderEffect
+        from omnibase_core.services.replay.service_effect_recorder import (
+            ServiceEffectRecorder,
+        )
 
-        recorder = RecorderEffect()
+        recorder = ServiceEffectRecorder()
 
         # Protocol compliance check
         assert isinstance(recorder, ProtocolEffectRecorder)
 
-    def test_has_required_methods(self, pass_through_recorder: RecorderEffect) -> None:
-        """Test that RecorderEffect has all required protocol methods."""
+    def test_has_required_methods(
+        self, pass_through_recorder: ServiceEffectRecorder
+    ) -> None:
+        """Test that ServiceEffectRecorder has all required protocol methods."""
         assert hasattr(pass_through_recorder, "is_recording")
         assert hasattr(pass_through_recorder, "is_replaying")
         assert hasattr(pass_through_recorder, "record")
@@ -407,12 +419,12 @@ class TestRecorderEffectProtocolCompliance:
 
 
 @pytest.mark.unit
-class TestRecorderEffectErrorRecording:
-    """Test RecorderEffect error recording capabilities."""
+class TestServiceEffectRecorderErrorRecording:
+    """Test ServiceEffectRecorder error recording capabilities."""
 
     def test_error_recording(
         self,
-        recording_recorder: RecorderEffect,
+        recording_recorder: ServiceEffectRecorder,
         sample_intent: dict[str, Any],
     ) -> None:
         """Test that failed effects can be recorded."""
@@ -429,7 +441,7 @@ class TestRecorderEffectErrorRecording:
 
     def test_error_record_preserves_intent(
         self,
-        recording_recorder: RecorderEffect,
+        recording_recorder: ServiceEffectRecorder,
         sample_intent: dict[str, Any],
     ) -> None:
         """Test that error records preserve the original intent."""
@@ -445,14 +457,16 @@ class TestRecorderEffectErrorRecording:
 
 
 @pytest.mark.unit
-class TestRecorderEffectIntentMatching:
+class TestServiceEffectRecorderIntentMatching:
     """Test effect intent matching for replay."""
 
     def test_intent_matching_for_replay(self, fixed_time: datetime) -> None:
         """Test that replay correctly matches intents."""
         from omnibase_core.enums.replay import EnumRecorderMode
         from omnibase_core.models.replay.model_effect_record import ModelEffectRecord
-        from omnibase_core.services.replay.recorder_effect import RecorderEffect
+        from omnibase_core.services.replay.service_effect_recorder import (
+            ServiceEffectRecorder,
+        )
 
         records = [
             ModelEffectRecord(
@@ -471,7 +485,7 @@ class TestRecorderEffectIntentMatching:
             ),
         ]
 
-        recorder = RecorderEffect(
+        recorder = ServiceEffectRecorder(
             mode=EnumRecorderMode.REPLAYING,
             records=records,
         )
@@ -489,7 +503,9 @@ class TestRecorderEffectIntentMatching:
         """Test that intent matching is exact (not partial)."""
         from omnibase_core.enums.replay import EnumRecorderMode
         from omnibase_core.models.replay.model_effect_record import ModelEffectRecord
-        from omnibase_core.services.replay.recorder_effect import RecorderEffect
+        from omnibase_core.services.replay.service_effect_recorder import (
+            ServiceEffectRecorder,
+        )
 
         records = [
             ModelEffectRecord(
@@ -501,7 +517,7 @@ class TestRecorderEffectIntentMatching:
             ),
         ]
 
-        recorder = RecorderEffect(
+        recorder = ServiceEffectRecorder(
             mode=EnumRecorderMode.REPLAYING,
             records=records,
         )
@@ -516,7 +532,7 @@ class TestRecorderEffectIntentMatching:
 
 
 @pytest.mark.unit
-class TestRecorderEffectModeEnum:
+class TestServiceEffectRecorderModeEnum:
     """Test EnumRecorderMode enum values."""
 
     def test_mode_enum_values(self) -> None:
@@ -529,19 +545,21 @@ class TestRecorderEffectModeEnum:
 
     def test_default_mode_is_pass_through(self) -> None:
         """Test that default mode is PASS_THROUGH."""
-        from omnibase_core.services.replay.recorder_effect import RecorderEffect
+        from omnibase_core.services.replay.service_effect_recorder import (
+            ServiceEffectRecorder,
+        )
 
-        recorder = RecorderEffect()
+        recorder = ServiceEffectRecorder()
         assert recorder.is_recording is False
         assert recorder.is_replaying is False
 
 
 @pytest.mark.unit
-class TestRecorderEffectErrorHandling:
-    """Test improved error handling in RecorderEffect."""
+class TestServiceEffectRecorderErrorHandling:
+    """Test improved error handling in ServiceEffectRecorder."""
 
     def test_get_replay_result_raises_on_empty_effect_type(
-        self, replay_recorder: RecorderEffect
+        self, replay_recorder: ServiceEffectRecorder
     ) -> None:
         """Test that get_replay_result raises ModelOnexError for empty effect_type."""
         from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -557,7 +575,7 @@ class TestRecorderEffectErrorHandling:
         assert "effect_type must not be empty" in str(exc_info.value)
 
     def test_get_replay_result_raises_on_whitespace_effect_type(
-        self, replay_recorder: RecorderEffect
+        self, replay_recorder: ServiceEffectRecorder
     ) -> None:
         """Test that get_replay_result raises for whitespace-only effect_type."""
         from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -573,11 +591,11 @@ class TestRecorderEffectErrorHandling:
 
 
 @pytest.mark.unit
-class TestRecorderEffectRequireReplayResult:
+class TestServiceEffectRecorderRequireReplayResult:
     """Test require_replay_result() strict error handling."""
 
     def test_require_replay_result_returns_result(
-        self, replay_recorder: RecorderEffect
+        self, replay_recorder: ServiceEffectRecorder
     ) -> None:
         """Test that require_replay_result returns result when found."""
         result = replay_recorder.require_replay_result(
@@ -589,7 +607,7 @@ class TestRecorderEffectRequireReplayResult:
         assert result["status_code"] == 200
 
     def test_require_replay_result_raises_on_not_replay_mode(
-        self, pass_through_recorder: RecorderEffect
+        self, pass_through_recorder: ServiceEffectRecorder
     ) -> None:
         """Test that require_replay_result raises when not in replay mode."""
         from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -606,7 +624,7 @@ class TestRecorderEffectRequireReplayResult:
         assert "not REPLAYING mode" in str(error)
 
     def test_require_replay_result_raises_on_not_found(
-        self, replay_recorder: RecorderEffect
+        self, replay_recorder: ServiceEffectRecorder
     ) -> None:
         """Test that require_replay_result raises when record not found."""
         from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -623,7 +641,7 @@ class TestRecorderEffectRequireReplayResult:
         assert "No matching effect record found" in str(error)
 
     def test_require_replay_result_raises_on_empty_effect_type(
-        self, replay_recorder: RecorderEffect
+        self, replay_recorder: ServiceEffectRecorder
     ) -> None:
         """Test that require_replay_result raises on empty effect_type."""
         from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -638,7 +656,7 @@ class TestRecorderEffectRequireReplayResult:
         assert exc_info.value.error_code == EnumCoreErrorCode.REPLAY_INVALID_EFFECT_TYPE
 
     def test_require_replay_result_error_includes_context(
-        self, replay_recorder: RecorderEffect
+        self, replay_recorder: ServiceEffectRecorder
     ) -> None:
         """Test that require_replay_result error includes helpful context."""
         from omnibase_core.errors import ModelOnexError
@@ -655,7 +673,7 @@ class TestRecorderEffectRequireReplayResult:
         assert "effect_type" in context or "missing.effect" in str(exc_info.value)
 
     def test_require_replay_result_on_recording_mode(
-        self, recording_recorder: RecorderEffect
+        self, recording_recorder: ServiceEffectRecorder
     ) -> None:
         """Test that require_replay_result raises when in recording mode."""
         from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode

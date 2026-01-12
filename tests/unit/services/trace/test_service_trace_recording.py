@@ -30,10 +30,12 @@ from omnibase_core.models.trace import ModelExecutionTrace
 
 # Import models from models/ per ONEX file location rules
 from omnibase_core.models.trace_query import ModelTraceQuery
+from omnibase_core.services.trace.service_trace_in_memory_store import (
+    ServiceTraceInMemoryStore,
+)
 from omnibase_core.services.trace.service_trace_recording import (
     ServiceTraceRecording,
 )
-from omnibase_core.services.trace.store_trace_in_memory import StoreTraceInMemory
 
 # ============================================================================
 # Helper Functions
@@ -117,13 +119,13 @@ def create_traces_with_statuses(
 
 
 @pytest.fixture
-def in_memory_store() -> StoreTraceInMemory:
+def in_memory_store() -> ServiceTraceInMemoryStore:
     """Create a fresh in-memory trace store."""
-    return StoreTraceInMemory()
+    return ServiceTraceInMemoryStore()
 
 
 @pytest.fixture
-def trace_service(in_memory_store: StoreTraceInMemory) -> ServiceTraceRecording:
+def trace_service(in_memory_store: ServiceTraceInMemoryStore) -> ServiceTraceRecording:
     """Create a trace recording service with in-memory store."""
     return ServiceTraceRecording(store=in_memory_store)
 

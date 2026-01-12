@@ -82,8 +82,10 @@ from omnibase_core.protocols.validation.protocol_contract_validation_event_emitt
 from omnibase_core.protocols.validation.protocol_contract_validation_pipeline import (
     ProtocolContractValidationPipeline,
 )
-from omnibase_core.validation.phases.expanded_validator import ExpandedContractValidator
-from omnibase_core.validation.phases.merge_validator import MergeValidator
+from omnibase_core.validation.phases.validator_expanded_contract import (
+    ExpandedContractValidator,
+)
+from omnibase_core.validation.phases.validator_merge import MergeValidator
 from omnibase_core.validation.validator_contract_patch import ContractPatchValidator
 
 if TYPE_CHECKING:
