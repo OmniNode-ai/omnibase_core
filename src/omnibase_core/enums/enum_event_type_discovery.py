@@ -1,3 +1,5 @@
+"""Event types for ONEX discovery and integration operations."""
+
 from enum import Enum, unique
 
 

@@ -1,5 +1,4 @@
-# Enum for context types
-# DO NOT EDIT MANUALLY - regenerate using enum generation tools
+"""Context types for execution environment values."""
 
 from enum import Enum, unique
 

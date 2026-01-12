@@ -1,3 +1,5 @@
+"""Audit action types for logging and compliance tracking."""
+
 from enum import Enum, unique
 
 

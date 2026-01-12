@@ -1,3 +1,5 @@
+"""Compliance framework identifiers for regulatory requirements."""
+
 from enum import Enum, unique
 
 

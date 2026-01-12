@@ -1,3 +1,5 @@
+"""Contract compliance levels for validation results."""
+
 from enum import Enum, unique
 
 

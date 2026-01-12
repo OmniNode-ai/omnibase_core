@@ -1,3 +1,5 @@
+"""Discovery sources for node location in ONEX."""
+
 from enum import Enum, unique
 
 

@@ -1,3 +1,5 @@
+"""Detection types for sensitive information classification."""
+
 from enum import Enum, unique
 
 

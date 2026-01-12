@@ -1,3 +1,5 @@
+"""File processing modes for stamp operations."""
+
 from enum import Enum, unique
 
 

@@ -1,3 +1,5 @@
+"""File stamp status indicators for validation."""
+
 from enum import Enum, unique
 
 

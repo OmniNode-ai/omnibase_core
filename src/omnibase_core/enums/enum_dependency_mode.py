@@ -1,3 +1,5 @@
+"""Dependency injection modes for real vs mock services."""
+
 from enum import Enum, unique
 
 

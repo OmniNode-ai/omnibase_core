@@ -1,3 +1,5 @@
+"""Authentication method types for session and identity contexts."""
+
 from enum import Enum, unique
 
 from omnibase_core.utils.util_str_enum_base import StrValueHelper

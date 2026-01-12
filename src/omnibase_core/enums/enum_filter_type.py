@@ -1,11 +1,6 @@
+"""Filter type enumeration for strongly typed filtering."""
+
 from __future__ import annotations
-
-"""
-Filter Type Enum.
-
-Strongly typed filter type values.
-"""
-
 
 from enum import Enum, unique
 

@@ -1,3 +1,5 @@
+"""Discovery implementation phases for progressive rollout."""
+
 from enum import Enum, unique
 
 

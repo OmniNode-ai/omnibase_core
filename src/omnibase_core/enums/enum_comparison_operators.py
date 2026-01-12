@@ -1,5 +1,4 @@
-# Enum for comparison operators
-# DO NOT EDIT MANUALLY - regenerate using enum generation tools
+"""Comparison operators for conditional logic expressions."""
 
 from enum import Enum, unique
 

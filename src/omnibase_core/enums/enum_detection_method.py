@@ -1,3 +1,5 @@
+"""Detection methods for sensitive information scanning."""
+
 from enum import Enum, unique
 
 

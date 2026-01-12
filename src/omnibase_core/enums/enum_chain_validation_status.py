@@ -1,3 +1,5 @@
+"""Chain validation status for signature verification."""
+
 from enum import Enum, unique
 
 
