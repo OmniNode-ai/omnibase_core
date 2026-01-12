@@ -47,12 +47,15 @@ capability_inputs:
     capability: ai.llm.chat
     requirements:
       must:
+        # Note: Structured output (JSON mode) and streaming are mutually exclusive
+        # in most LLM providers. This handler requires complete JSON responses,
+        # so streaming is not used even if the provider supports it.
         supports_structured_output: true
       prefer:
         max_latency_ms: 5000
     selection_policy: auto_if_unique
     strict: true
-    description: LLM provider for generating structured JSON support responses
+    description: LLM provider for generating structured JSON support responses (non-streaming)
 
 capability_outputs:
   - support.response.generated

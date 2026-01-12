@@ -75,13 +75,24 @@ class OpenAILLMClient:
         self.api_key = api_key or os.getenv("OPENAI_API_KEY")
         if not self.api_key:
             raise ModelOnexError(
-                message="OpenAI API key is required. Set OPENAI_API_KEY environment variable "
-                "or pass api_key parameter.",
+                message=(
+                    "OpenAI API key is required. Set OPENAI_API_KEY "
+                    "environment variable or pass api_key parameter."
+                ),
                 error_code=EnumCoreErrorCode.MISSING_REQUIRED_PARAMETER,
                 parameter_name="api_key",
             )
 
         self.model_name = model_name
+
+        # Validate temperature range (OpenAI-compatible range is 0.0-2.0)
+        if not 0.0 <= temperature <= 2.0:
+            raise ModelOnexError(
+                message=f"Temperature must be between 0.0 and 2.0, got {temperature}",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                context={"temperature": temperature, "valid_range": "0.0-2.0"},
+            )
+
         self.temperature = temperature
         self.max_tokens = max_tokens
         self.timeout = timeout
@@ -238,7 +249,7 @@ class OpenAILLMClient:
             # boundary-ok: health check returns False on API/network errors
             return False
         except Exception:
-            # catch-all-ok: health check must not raise, returns False on unexpected errors
+            # catch-all-ok: health check must not raise on unexpected errors
             return False
 
 

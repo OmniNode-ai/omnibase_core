@@ -41,7 +41,7 @@ from examples.demo.handlers.support_assistant.protocol_llm_client import (
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors import ModelOnexError
 
-# Default configuration - use localhost; override via LLM_LOCAL_URL or LLM_QWEN_14B_URL env vars
+# Default config - use localhost; override via LLM_LOCAL_URL or LLM_QWEN_14B_URL
 DEFAULT_ENDPOINT = "http://localhost:8000"
 DEFAULT_MODEL = "qwen2.5-14b"
 DEFAULT_TIMEOUT = 60.0
@@ -187,7 +187,8 @@ class LocalLLMClient:
             message = choices[0].get("message", {})
             content = message.get("content", "")
 
-            return content
+            # Ensure we return a string (API may return None)
+            return str(content) if content else ""
 
     async def health_check(self) -> bool:
         """Check if the local LLM server is healthy.
@@ -211,7 +212,7 @@ class LocalLLMClient:
                         if response.status_code < 500:
                             return True
                     except httpx.HTTPError:
-                        # fallback-ok: network errors for one endpoint shouldn't stop trying others
+                        # fallback-ok: try next endpoint on network error
                         continue
 
             return False

@@ -134,9 +134,11 @@ class MockLLMClient:
         sentiment = self._detect_sentiment(prompt)
 
         if self.scenario == "escalation":
+            escalation_text = (
+                "I understand your frustration. I'm escalating this to a specialist."
+            )
             response = {
-                "response_text": self.response_text
-                or "I understand your frustration. I'm escalating this to a specialist.",
+                "response_text": self.response_text or escalation_text,
                 "suggested_actions": [
                     "A specialist will contact you within 24 hours",
                     "Check your email for case confirmation",

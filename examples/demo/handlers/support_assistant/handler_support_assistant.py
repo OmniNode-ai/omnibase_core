@@ -157,9 +157,15 @@ class SupportAssistantHandler:
         # Verify protocol compliance via duck-typing (check required method exists)
         if not callable(getattr(llm_client, "complete", None)):
             raise ModelOnexError(
-                message="Service 'ProtocolLLMClient' does not implement required 'complete' method",
+                message=(
+                    "Service 'ProtocolLLMClient' does not implement "
+                    "required 'complete' method"
+                ),
                 error_code=EnumCoreErrorCode.CONFIGURATION_ERROR,
-                context={"service_name": "ProtocolLLMClient", "missing_method": "complete"},
+                context={
+                    "service_name": "ProtocolLLMClient",
+                    "missing_method": "complete",
+                },
             )
         self.llm_client: ProtocolLLMClient = llm_client
 
@@ -336,8 +342,12 @@ class SupportAssistantHandler:
                 pass
 
         # Fallback: return error response with low confidence
+        fallback_text = (
+            "I apologize, but I had trouble processing your request. "
+            "Please try again."
+        )
         return SupportResponse(
-            response_text="I apologize, but I had trouble processing your request. Please try again.",
+            response_text=fallback_text,
             suggested_actions=[
                 "Please rephrase your question",
                 "Try providing more details",
@@ -413,7 +423,13 @@ class SupportAssistantHandler:
 
         # Required fields that MUST be present for a valid response
         # These correspond to SupportResponse fields with `...` (no default)
-        required_fields = {"response_text", "confidence", "requires_escalation", "category", "sentiment"}
+        required_fields = {
+            "response_text",
+            "confidence",
+            "requires_escalation",
+            "category",
+            "sentiment",
+        }
 
         # Check all required fields are present
         if not required_fields.issubset(set(data.keys())):
@@ -447,7 +463,7 @@ class SupportAssistantHandler:
         return True
 
     @allow_dict_any(  # type: ignore[untyped-decorator]
-        reason="LLM JSON responses have arbitrary structure requiring dynamic type handling"
+        reason="LLM JSON responses have arbitrary structure"
     )
     def _create_validated_response(self, data: dict[str, object]) -> SupportResponse:
         """Create and validate SupportResponse using Pydantic.

@@ -18,7 +18,9 @@ Example:
         )
 
         container = MagicMock()
-        container.get_service = lambda x: MockLLMClient() if x == "ProtocolLLMClient" else MagicMock()
+        container.get_service = lambda x: (
+            MockLLMClient() if x == "ProtocolLLMClient" else MagicMock()
+        )
 
         handler = SupportAssistantHandler(container)
         request = SupportRequest(user_identifier="123", message="Help!")

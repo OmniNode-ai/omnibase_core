@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class SupportRequest(BaseModel):
@@ -22,6 +22,8 @@ class SupportRequest(BaseModel):
         context: Optional dictionary containing previous conversation context.
         urgency: Priority level of the request (low, medium, or high).
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     user_identifier: str = Field(
         ...,

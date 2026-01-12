@@ -108,7 +108,10 @@ class AnthropicLLMClient:
             raise ModelOnexError(
                 message=f"Expected anthropic provider, got {config.provider}",
                 error_code=EnumCoreErrorCode.INVALID_CONFIGURATION,
-                context={"expected_provider": "anthropic", "actual_provider": config.provider},
+                context={
+                    "expected_provider": "anthropic",
+                    "actual_provider": config.provider,
+                },
             )
 
         api_key = os.getenv(config.api_key_env)
@@ -154,8 +157,9 @@ class AnthropicLLMClient:
             payload["system"] = system_prompt
 
         # api_key is guaranteed non-None after __init__ validation
+        assert self.api_key is not None, "api_key validated in __init__"
         headers: dict[str, str] = {
-            "x-api-key": self.api_key,  # type: ignore[dict-item]
+            "x-api-key": self.api_key,
             "anthropic-version": ANTHROPIC_VERSION,
             "Content-Type": "application/json",
         }
@@ -198,8 +202,9 @@ class AnthropicLLMClient:
         """
         try:
             # api_key is guaranteed non-None after __init__ validation
+            assert self.api_key is not None, "api_key validated in __init__"
             headers: dict[str, str] = {
-                "x-api-key": self.api_key,  # type: ignore[dict-item]
+                "x-api-key": self.api_key,
                 "anthropic-version": ANTHROPIC_VERSION,
             }
 
