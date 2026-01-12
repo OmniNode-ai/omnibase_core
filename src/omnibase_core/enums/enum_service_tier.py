@@ -6,9 +6,11 @@ Service tier classification for dependency ordering.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumServiceTier(str, Enum):
+class EnumServiceTier(StrValueHelper, str, Enum):
     """Service tier classification for dependency ordering."""
 
     INFRASTRUCTURE = "infrastructure"  # Event bus, databases, monitoring

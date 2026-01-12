@@ -7,9 +7,11 @@ import detection and module dependency analysis.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumImportStatus(Enum):
+class EnumImportStatus(StrValueHelper, str, Enum):
     """Status of a module import attempt."""
 
     SUCCESS = "success"

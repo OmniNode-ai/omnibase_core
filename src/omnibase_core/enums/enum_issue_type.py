@@ -1,8 +1,10 @@
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumIssueType(str, Enum):
+class EnumIssueType(StrValueHelper, str, Enum):
     """Template validation issue types for node generation"""
 
     TEMPLATE_ARTIFACT = "template_artifact"

@@ -24,9 +24,11 @@
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumTemplateType(str, Enum):
+class EnumTemplateType(StrValueHelper, str, Enum):
     """
     Canonical template types for metadata stamping and registry.
     """
