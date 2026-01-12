@@ -4,11 +4,12 @@ Priority Level Enum
 Priority levels for operations and requests across tools.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
+@unique
 class EnumPriorityLevel(StrValueHelper, str, Enum):
     """
     Priority levels for operations and requests across tools.

@@ -5,9 +5,10 @@ Provides strongly-typed error codes for generation-specific error handling
 with proper ONEX enum naming conventions.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumGenerationErrorCodes(str, Enum):
     """Error codes for tool generation operations."""
 

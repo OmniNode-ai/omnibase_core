@@ -4,11 +4,12 @@ Execution Status Enum.
 Status values for ONEX execution lifecycle tracking.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
+@unique
 class EnumExecutionStatus(StrValueHelper, str, Enum):
     """Execution status values for ONEX lifecycle tracking."""
 

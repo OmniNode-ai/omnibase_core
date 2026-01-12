@@ -1,7 +1,8 @@
 # Generated from contract: file_stamps_contract.yaml
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumFileProcessingMode(Enum):
     """File processing modes for stamp operations."""
 

@@ -2,11 +2,12 @@
 Data classification enum for ONEX security policies.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
+@unique
 class EnumDataClassification(StrValueHelper, str, Enum):
     """Data classification levels for security and compliance."""
 

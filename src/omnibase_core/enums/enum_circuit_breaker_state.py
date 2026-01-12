@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 from typing import Never, NoReturn
 
 __all__ = ["EnumCircuitBreakerState"]
 
 
+@unique
 class EnumCircuitBreakerState(Enum):
     """
     Circuit breaker state enumeration.

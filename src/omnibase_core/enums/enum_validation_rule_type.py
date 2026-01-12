@@ -5,9 +5,10 @@ Defines the types of validation rules that can be applied to
 configuration keys using various validation strategies.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumValidationRuleType(str, Enum):
     """Validation rule type enumeration."""
 

@@ -2,9 +2,10 @@
 Subscription status enumeration for ONEX event consumers.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumSubscriptionStatus(str, Enum):
     """Status states for event subscriptions."""
 

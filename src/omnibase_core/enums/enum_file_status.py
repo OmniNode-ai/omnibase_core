@@ -26,9 +26,10 @@
 Enum for file status values used in metadata blocks.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumFileStatus(str, Enum):
     empty = "empty"  # File has no content
     unvalidated = "unvalidated"  # Not schema-validated

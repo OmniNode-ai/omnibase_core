@@ -4,9 +4,10 @@
 ONEX-compatible enums for task types to replace string literals.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumTaskTypes(str, Enum):
     """[Any]type enumeration."""
 

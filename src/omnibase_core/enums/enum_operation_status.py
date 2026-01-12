@@ -4,9 +4,10 @@ Operation status enumeration for service operations.
 Provides standardized status values for service manager operations.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumOperationStatus(str, Enum):
     """Enumeration for operation status values."""
 

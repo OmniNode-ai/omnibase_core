@@ -5,9 +5,10 @@ ONEX-compatible enumeration for unified timeline dashboard event types.
 Supports user messages, tool executions, and Claude responses in chronological timeline.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumTimelineEventType(str, Enum):
     """
     Timeline event types for unified dashboard.

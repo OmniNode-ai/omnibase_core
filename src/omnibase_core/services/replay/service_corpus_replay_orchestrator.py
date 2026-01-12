@@ -508,8 +508,7 @@ class ServiceCorpusReplayOrchestrator:
                 # Execute replay
                 # TODO(OMN-1204): Wire up actual replay execution
                 # The actual execution function would be provided by the handler/node.
-                # For now we simulate success since we don't have the actual handler
-                # to call.
+                # For now we simulate success since we don't have the actual handler.
 
                 duration_ms = (time.perf_counter() - start_time) * 1000
 

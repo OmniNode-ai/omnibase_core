@@ -5,9 +5,10 @@ Provides enumeration of possible import validation outcomes for circular
 import detection and module dependency analysis.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumImportStatus(Enum):
     """Status of a module import attempt."""
 

@@ -5,9 +5,10 @@ Canonical enum for acknowledgment types used in discovery
 and registration processes.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumAcknowledgmentType(str, Enum):
     """Canonical acknowledgment types for ONEX discovery."""
 

@@ -5,9 +5,10 @@ Agent Status Type Enum.
 Strongly-typed enumeration for agent status types.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumAgentStatusType(str, Enum):
     """Agent status enumeration."""
 

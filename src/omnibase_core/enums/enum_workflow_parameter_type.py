@@ -4,9 +4,10 @@ Workflow parameter type enumeration.
 Defines types for discriminated union in workflow parameters.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumWorkflowParameterType(str, Enum):
     """Workflow parameter type enumeration for discriminated unions."""
 

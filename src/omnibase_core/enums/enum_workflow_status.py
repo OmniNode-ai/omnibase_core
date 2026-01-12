@@ -4,9 +4,10 @@ Workflow status enumeration.
 Enumeration of possible workflow execution status values for ONEX workflows.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumWorkflowStatus(str, Enum):
     """Workflow execution status enumeration."""
 

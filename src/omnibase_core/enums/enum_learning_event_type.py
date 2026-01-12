@@ -2,9 +2,10 @@
 Enum for learning event types that trigger rule generation or updates.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumLearningEventType(str, Enum):
     """Types of learning events that trigger rule generation or updates."""
 

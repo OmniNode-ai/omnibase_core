@@ -4,11 +4,12 @@ Environment Enum.
 Execution environment types for ONEX deployments.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
+@unique
 class EnumEnvironment(StrValueHelper, str, Enum):
     """Execution environment types for ONEX deployments."""
 

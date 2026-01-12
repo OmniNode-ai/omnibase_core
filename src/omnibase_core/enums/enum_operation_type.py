@@ -5,9 +5,10 @@ Defines standard operation types used in CLI commands
 to replace string literals with type-safe enums.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumOperationType(str, Enum):
     """
     Standard operation types for CLI operations.

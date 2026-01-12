@@ -26,9 +26,10 @@
 Enums for file traversal and ignore pattern handling.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumIgnorePatternSource(str, Enum):
     """
     Canonical sources for ignore patterns when traversing directories.
@@ -44,6 +45,7 @@ class EnumIgnorePatternSource(str, Enum):
     NONE = "none"  # No ignore patterns (process all files)
 
 
+@unique
 class EnumTraversalMode(str, Enum):
     """
     Canonical modes for directory traversal.

@@ -4,9 +4,10 @@ Health Check Type Enumeration
 Defines types of health checks that can be performed on services.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumHealthCheckType(str, Enum):
     """Types of health checks available."""
 

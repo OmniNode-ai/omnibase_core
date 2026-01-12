@@ -5,9 +5,10 @@ Defines all valid CLI tool discovery actions that can be processed
 by the CLI tool discovery system, replacing hardcoded string literals.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumCliDiscoveryAction(str, Enum):
     """
     Enumeration of valid CLI tool discovery actions.

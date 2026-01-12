@@ -5,9 +5,10 @@ Provides strongly-typed response formats for LLM inference
 with proper ONEX enum naming conventions.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumResponseFormat(str, Enum):
     """LLM response formats."""
 

@@ -1,8 +1,9 @@
 """Pipeline step types for contract-driven NodeCompute operations."""
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumComputeStepType(str, Enum):
     """Pipeline step types for compute operations.
 

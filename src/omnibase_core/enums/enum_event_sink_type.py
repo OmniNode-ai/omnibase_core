@@ -3,11 +3,12 @@
 # SPDX-License-Identifier: Apache-2.0
 """Event sink type enumeration for contract validation event destinations."""
 
-from enum import Enum
+from enum import Enum, unique
 
 __all__ = ["EnumEventSinkType"]
 
 
+@unique
 class EnumEventSinkType(str, Enum):
     """Event sink types for contract validation events.
 

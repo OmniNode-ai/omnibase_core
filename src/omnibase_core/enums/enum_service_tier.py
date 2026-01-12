@@ -4,9 +4,10 @@ Service Tier Enum.
 Service tier classification for dependency ordering.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumServiceTier(str, Enum):
     """Service tier classification for dependency ordering."""
 

@@ -5,9 +5,10 @@ Provides strongly-typed finish reasons for LLM completion status
 with proper ONEX enum naming conventions.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumFinishReason(str, Enum):
     """Completion finish reasons for LLM responses."""
 

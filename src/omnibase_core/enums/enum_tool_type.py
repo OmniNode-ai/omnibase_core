@@ -5,9 +5,10 @@ This provides type safety and a single source of truth for tool names,
 avoiding string-based lookups and potential typos.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumToolType(str, Enum):
     """Enumeration of all tool types available in node_manager."""
 

@@ -4,9 +4,10 @@ Contract data type enumeration.
 Defines types for discriminated union in contract data structures.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumContractDataType(str, Enum):
     """Contract data type enumeration for discriminated unions."""
 

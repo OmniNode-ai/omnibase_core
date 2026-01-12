@@ -1,6 +1,7 @@
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumEventTypeDiscovery(str, Enum):
     """Event types supported by the Event Registry.
 

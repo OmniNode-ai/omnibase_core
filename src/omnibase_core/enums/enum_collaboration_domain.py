@@ -5,9 +5,10 @@ Provides structured collaboration domain definitions for secure
 cross-instance collaboration in ONEX intelligence architecture.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumCollaborationDomain(str, Enum):
     """
     Enum for collaboration domains with security validation.

@@ -28,9 +28,10 @@ This enum defines the various GitHub Actions trigger events that can be used
 in workflow definitions.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumGithubActionEvent(str, Enum):
     """GitHub Actions trigger events."""
 

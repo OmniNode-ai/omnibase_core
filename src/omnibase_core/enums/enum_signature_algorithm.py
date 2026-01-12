@@ -2,9 +2,10 @@
 # SPDX-License-Identifier: Apache-2.0
 """Signature algorithm enumeration for JWT signing and artifact verification."""
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumSignatureAlgorithm(str, Enum):
     """Supported cryptographic signature algorithms.
 

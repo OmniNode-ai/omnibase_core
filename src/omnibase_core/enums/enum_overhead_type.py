@@ -4,9 +4,10 @@ EnumOverheadType: Enumeration of overhead types.
 This enum defines the overhead types for performance profiles.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumOverheadType(Enum):
     """Overhead types for performance profiles."""
 

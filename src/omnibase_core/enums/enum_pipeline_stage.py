@@ -5,9 +5,10 @@ Defines the stages in the metadata processing pipeline that integrates
 Postgres, Qdrant, file stamps, and LangExtract processing.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumPipelineStage(str, Enum):
     """Stages in the metadata processing pipeline."""
 

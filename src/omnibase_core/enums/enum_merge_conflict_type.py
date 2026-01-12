@@ -17,11 +17,12 @@ See Also:
     Added as part of Typed Contract Merge Engine (OMN-1127)
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
+@unique
 class EnumMergeConflictType(StrValueHelper, str, Enum):
     """
     Types of conflicts that can occur during contract merge.

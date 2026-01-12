@@ -1,6 +1,7 @@
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumIssueType(str, Enum):
     """Template validation issue types for node generation"""
 

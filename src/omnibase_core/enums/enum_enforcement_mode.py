@@ -4,11 +4,12 @@ Enforcement Mode Enum
 Enforcement strategy modes for resource limits and constraints.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
+@unique
 class EnumEnforcementMode(StrValueHelper, str, Enum):
     """
     Enforcement strategy modes for resource limits and constraints.

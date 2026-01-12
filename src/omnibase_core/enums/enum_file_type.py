@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import Enum, unique
 
 from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
@@ -26,6 +26,7 @@ from omnibase_core.utils.util_str_enum_base import StrValueHelper
 # === /OmniNode:Metadata ===
 
 
+@unique
 class EnumFileType(StrValueHelper, str, Enum):
     PYTHON = "python"
     YAML = "yaml"

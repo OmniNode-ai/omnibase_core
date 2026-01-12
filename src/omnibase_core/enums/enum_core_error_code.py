@@ -1,11 +1,13 @@
 """Core error codes that can be reused across all ONEX components."""
 
 import re
+from enum import unique
 
 from omnibase_core.enums.enum_cli_exit_code import EnumCLIExitCode
 from omnibase_core.enums.enum_onex_error_code import EnumOnexErrorCode
 
 
+@unique
 class EnumCoreErrorCode(EnumOnexErrorCode):
     """
     Core error codes that can be reused across all ONEX components.

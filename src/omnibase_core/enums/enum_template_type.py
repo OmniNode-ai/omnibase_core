@@ -22,9 +22,10 @@
 # === /OmniNode:Metadata ===
 
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumTemplateType(str, Enum):
     """
     Canonical template types for metadata stamping and registry.

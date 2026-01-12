@@ -4,9 +4,10 @@ Error categorization enum for task queue operations.
 Categorizes errors by type to enable appropriate retry and recovery strategies.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumErrorCategory(str, Enum):
     """Error categories for task queue operations."""
 

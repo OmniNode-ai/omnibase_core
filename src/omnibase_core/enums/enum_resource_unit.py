@@ -5,9 +5,10 @@ Defines the units of measurement for resource usage metrics
 (CPU, memory, disk, network, etc.).
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumResourceUnit(str, Enum):
     """Resource usage unit enumeration."""
 
