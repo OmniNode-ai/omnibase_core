@@ -15,15 +15,19 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.decorators import allow_dict_any
+from omnibase_core.mixins.mixin_truncation_validation import (
+    MixinTruncationValidation,
+)
 
 # Pattern for validating hash format: "algorithm:hexdigest"
 # - Algorithm: alphanumeric (allows uppercase for flexibility, e.g., "SHA256" or "sha256")
 # - Separator: colon
 # - Digest: hexadecimal characters (0-9, a-f, A-F)
 HASH_FORMAT_PATTERN = re.compile(r"^[a-zA-Z0-9]+:[a-fA-F0-9]+$")
-from omnibase_core.mixins.mixin_truncation_validation import (
-    MixinTruncationValidation,
-)
+
+# Maximum length for hash strings to prevent ReDoS attacks.
+# Covers SHA-512 (128 hex chars) + algorithm prefix (e.g., "sha512:") with margin.
+MAX_HASH_LENGTH = 256
 
 
 @allow_dict_any(
@@ -87,8 +91,14 @@ class ModelOutputSnapshot(MixinTruncationValidation, BaseModel):
             The validated hash string.
 
         Raises:
-            ValueError: If the hash format is invalid.
+            ValueError: If the hash format is invalid or too long.
         """
+        # Length check before regex to prevent ReDoS attacks
+        if len(v) > MAX_HASH_LENGTH:
+            raise ValueError(
+                f"Hash too long: {len(v)} characters (max {MAX_HASH_LENGTH}). "
+                "This may indicate malformed or malicious input."
+            )
         if not HASH_FORMAT_PATTERN.match(v):
             raise ValueError(
                 f"Invalid hash format: '{v}'. "
