@@ -131,8 +131,10 @@ class OpenAILLMClient:
             The LLM's response text.
 
         Raises:
-            httpx.HTTPError: If the HTTP request fails.
-            ModelOnexError: If the response format is unexpected.
+            ModelOnexError: If the HTTP request fails, times out, or response
+                format is unexpected. Wraps underlying httpx errors with
+                appropriate error codes (EXTERNAL_SERVICE_ERROR, TIMEOUT_ERROR,
+                PROCESSING_ERROR).
         """
         messages = []
 
@@ -164,28 +166,53 @@ class OpenAILLMClient:
             "Content-Type": "application/json",
         }
 
-        async with httpx.AsyncClient(timeout=self.timeout) as client:
-            response = await client.post(
-                OPENAI_API_URL,
-                json=payload,
-                headers=headers,
-            )
-            response.raise_for_status()
-
-            data = response.json()
-
-            choices = data.get("choices", [])
-            if not choices:
-                raise ModelOnexError(
-                    message="No choices in OpenAI response",
-                    error_code=EnumCoreErrorCode.PROCESSING_ERROR,
-                    model=self.model_name,
+        try:
+            async with httpx.AsyncClient(timeout=self.timeout) as client:
+                response = await client.post(
+                    OPENAI_API_URL,
+                    json=payload,
+                    headers=headers,
                 )
+                response.raise_for_status()
 
-            message = choices[0].get("message", {})
-            content = message.get("content", "")
+                data = response.json()
 
-            return content
+                choices = data.get("choices", [])
+                if not choices:
+                    raise ModelOnexError(
+                        message="No choices in OpenAI response",
+                        error_code=EnumCoreErrorCode.PROCESSING_ERROR,
+                        model=self.model_name,
+                    )
+
+                message = choices[0].get("message", {})
+                content = message.get("content", "")
+
+                return content
+
+        except httpx.HTTPStatusError as e:
+            # boundary-ok: wrap HTTP errors with structured error for API boundary
+            raise ModelOnexError(
+                message=f"OpenAI API request failed: {e.response.status_code}",
+                error_code=EnumCoreErrorCode.EXTERNAL_SERVICE_ERROR,
+                status_code=e.response.status_code,
+                model=self.model_name,
+            ) from e
+        except httpx.TimeoutException as e:
+            # boundary-ok: wrap timeout errors with structured error for API boundary
+            raise ModelOnexError(
+                message=f"OpenAI API request timed out after {self.timeout}s",
+                error_code=EnumCoreErrorCode.TIMEOUT_ERROR,
+                timeout=self.timeout,
+                model=self.model_name,
+            ) from e
+        except httpx.RequestError as e:
+            # boundary-ok: wrap network errors with structured error for API boundary
+            raise ModelOnexError(
+                message=f"OpenAI API request failed: {e!s}",
+                error_code=EnumCoreErrorCode.EXTERNAL_SERVICE_ERROR,
+                model=self.model_name,
+            ) from e
 
     async def health_check(self) -> bool:
         """Check if the OpenAI API is reachable.

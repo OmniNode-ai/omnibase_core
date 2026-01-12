@@ -5,7 +5,10 @@
 import pytest
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def example_fixture() -> str:
-    """Fixture for example tests."""
+    """Constant fixture for example tests.
+
+    Uses session scope since this returns an immutable constant value.
+    """
     return "example"

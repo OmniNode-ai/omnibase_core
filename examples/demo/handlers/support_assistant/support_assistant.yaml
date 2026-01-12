@@ -23,9 +23,9 @@ descriptor:
   # LLM handlers cannot guarantee idempotency - same input may produce different
   # outputs due to model temperature, context window state, and API variations
   idempotent: false
-  # LLM outputs are inherently nondeterministic - identical prompts yield varying
-  # responses due to sampling, temperature settings, and model state
-  deterministic: false
+  # Note: LLM outputs are inherently nondeterministic - identical prompts yield
+  # varying responses due to sampling, temperature settings, and model state.
+  # This is captured by nondeterministic_effect: true in execution_constraints.
   timeout_ms: 30000  # LLM calls can be slow
   retry_policy:
     enabled: true

@@ -57,11 +57,10 @@ def is_local_server_available() -> bool:
         host = parsed.hostname or "localhost"
         port = parsed.port or (443 if parsed.scheme == "https" else 80)
 
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(2)
-        result = sock.connect_ex((host, port))
-        sock.close()
-        return result == 0
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            sock.settimeout(2)
+            result = sock.connect_ex((host, port))
+            return result == 0
     except (OSError, ValueError):
         # boundary-ok: availability check must not crash pytest collection
         return False

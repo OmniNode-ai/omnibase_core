@@ -5,7 +5,10 @@
 import pytest
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def demo_integration_fixture() -> str:
-    """Fixture for demo integration tests."""
+    """Constant fixture for demo integration tests.
+
+    Uses session scope since this returns an immutable constant value.
+    """
     return "demo-integration"

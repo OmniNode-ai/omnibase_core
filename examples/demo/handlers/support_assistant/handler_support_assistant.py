@@ -64,17 +64,27 @@ Your responses should be:
 3. Actionable when possible
 
 Always categorize the request and assess if escalation is needed.
-Output must be valid JSON matching the SupportResponse schema:
+Output must be valid JSON matching the SupportResponse schema.
+
+Example response:
 {
-    "response_text": "Your response to the user",
-    "suggested_actions": ["action1", "action2"],
-    "confidence": 0.0 to 1.0,
-    "requires_escalation": true or false,
-    "category": "billing" | "technical" | "general" | "account",
-    "sentiment": "positive" | "neutral" | "negative"
+    "response_text": "I'd be happy to help you with that billing question.",
+    "suggested_actions": ["Check your invoice online", "Contact billing support"],
+    "confidence": 0.85,
+    "requires_escalation": false,
+    "category": "billing",
+    "sentiment": "neutral"
 }
 
-IMPORTANT: Return ONLY the JSON object, no other text."""
+Field requirements:
+- response_text: string (your helpful response to the user)
+- suggested_actions: array of strings (can be empty [])
+- confidence: number between 0.0 and 1.0
+- requires_escalation: boolean (true or false)
+- category: one of "billing", "technical", "general", "account"
+- sentiment: one of "positive", "neutral", "negative"
+
+IMPORTANT: Return ONLY a valid JSON object, no other text or markdown."""
 
 
 class SupportAssistantHandler:
@@ -105,8 +115,8 @@ class SupportAssistantHandler:
         llm_client = container.get_service("ProtocolLLMClient")
         if llm_client is None:
             raise ModelOnexError(
-                message="Required service ProtocolLLMClient not found in container",
-                error_code=EnumCoreErrorCode.INVALID_CONFIGURATION,
+                message="Required service 'ProtocolLLMClient' not found in container",
+                error_code=EnumCoreErrorCode.CONFIGURATION_ERROR,
                 context={"service_name": "ProtocolLLMClient"},
             )
         self.llm_client: ProtocolLLMClient = llm_client
@@ -115,8 +125,8 @@ class SupportAssistantHandler:
         logger = container.get_service("ProtocolLogger")
         if logger is None:
             raise ModelOnexError(
-                message="Required service ProtocolLogger not found in container",
-                error_code=EnumCoreErrorCode.INVALID_CONFIGURATION,
+                message="Required service 'ProtocolLogger' not found in container",
+                error_code=EnumCoreErrorCode.CONFIGURATION_ERROR,
                 context={"service_name": "ProtocolLogger"},
             )
         self.logger = logger
@@ -156,7 +166,7 @@ class SupportAssistantHandler:
                 context={"error_type": type(e).__name__},
             ) from e
         except Exception as e:
-            # catch-all-ok: Handler boundary must not crash; structured error response
+            # boundary-ok: handler entry point must not crash; structured error response
             # Log error class without exposing raw message (may contain PII)
             self._log_error(f"Request handling failed: {type(e).__name__}")
             raise ModelOnexError(
@@ -293,26 +303,55 @@ class SupportAssistantHandler:
     def _validate_json_structure(self, data: object) -> bool:
         """Validate that parsed JSON has the expected structure.
 
+        Performs strict validation to ensure the parsed JSON matches the
+        expected SupportResponse schema. Required fields must be present
+        and have valid types.
+
         Args:
             data: The parsed JSON object to validate.
 
         Returns:
-            True if the structure is valid (dict with expected fields).
+            True if the structure is valid (dict with required fields and valid types).
         """
         if not isinstance(data, dict):
             return False
 
-        # Check that at least one expected field is present
-        # This helps distinguish valid responses from arbitrary JSON
-        expected_fields = {
-            "response_text",
-            "suggested_actions",
-            "confidence",
-            "requires_escalation",
-            "category",
-            "sentiment",
-        }
-        return bool(expected_fields & set(data.keys()))
+        # Required fields that MUST be present for a valid response
+        # These correspond to SupportResponse fields with `...` (no default)
+        required_fields = {"response_text", "confidence", "requires_escalation", "category", "sentiment"}
+
+        # Check all required fields are present
+        if not required_fields.issubset(set(data.keys())):
+            return False
+
+        # Validate response_text is a non-empty string
+        response_text = data.get("response_text")
+        if not isinstance(response_text, str) or not response_text.strip():
+            return False
+
+        # Validate confidence is a number
+        confidence = data.get("confidence")
+        if not isinstance(confidence, (int, float)):
+            return False
+
+        # Validate requires_escalation is boolean
+        requires_escalation = data.get("requires_escalation")
+        if not isinstance(requires_escalation, bool):
+            return False
+
+        # Validate category is a valid string
+        category = data.get("category")
+        valid_categories = {"billing", "technical", "general", "account"}
+        if not isinstance(category, str) or category.lower() not in valid_categories:
+            return False
+
+        # Validate sentiment is a valid string
+        sentiment = data.get("sentiment")
+        valid_sentiments = {"positive", "neutral", "negative"}
+        if not isinstance(sentiment, str) or sentiment.lower() not in valid_sentiments:
+            return False
+
+        return True
 
     @allow_dict_any(  # type: ignore[misc]
         reason="LLM JSON responses have arbitrary structure requiring dynamic type handling"

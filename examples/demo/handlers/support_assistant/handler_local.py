@@ -35,8 +35,11 @@ import os
 import httpx
 
 from examples.demo.handlers.support_assistant.model_config import ModelConfig
-from examples.demo.handlers.support_assistant.protocol_llm_client import \
-    ProtocolLLMClient
+from examples.demo.handlers.support_assistant.protocol_llm_client import (
+    ProtocolLLMClient,
+)
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors import ModelOnexError
 
 # Default configuration - use localhost; override via LLM_LOCAL_URL or LLM_QWEN_14B_URL env vars
 DEFAULT_ENDPOINT = "http://localhost:8000"
@@ -99,12 +102,20 @@ class LocalLLMClient:
             Configured LocalLLMClient instance.
 
         Raises:
-            ValueError: If config is not for local provider.
+            ModelOnexError: If config is not for local provider.
         """
         if config.provider != "local":
-            raise ValueError(f"Expected local provider, got {config.provider}")
+            raise ModelOnexError(
+                message=f"Expected local provider, got {config.provider}",
+                error_code=EnumCoreErrorCode.CONFIGURATION_ERROR,
+                context={"provider": config.provider, "expected": "local"},
+            )
         if config.endpoint_url is None:
-            raise ValueError("endpoint_url is required for local provider")
+            raise ModelOnexError(
+                message="endpoint_url is required for local provider",
+                error_code=EnumCoreErrorCode.CONFIGURATION_ERROR,
+                context={"provider": config.provider},
+            )
 
         return cls(
             endpoint_url=config.endpoint_url,
@@ -131,7 +142,7 @@ class LocalLLMClient:
 
         Raises:
             httpx.HTTPError: If the HTTP request fails.
-            ValueError: If the response format is unexpected.
+            ModelOnexError: If the response format is unexpected.
         """
         messages = []
 
@@ -158,7 +169,11 @@ class LocalLLMClient:
             # Extract response from OpenAI-compatible format
             choices = data.get("choices", [])
             if not choices:
-                raise ValueError("No choices in response")
+                raise ModelOnexError(
+                    message="No choices in response",
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    context={"response_keys": list(data.keys())},
+                )
 
             message = choices[0].get("message", {})
             content = message.get("content", "")
@@ -192,8 +207,8 @@ class LocalLLMClient:
 
             return False
 
-        except (OSError, httpx.HTTPError):
-            # boundary-ok: health check must return bool; network errors mean unhealthy
+        except Exception:
+            # boundary-ok: health check must gracefully handle all errors
             return False
 
 
