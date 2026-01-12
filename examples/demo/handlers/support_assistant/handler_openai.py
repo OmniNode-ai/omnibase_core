@@ -234,7 +234,11 @@ class OpenAILLMClient:
                 )
                 return response.status_code == 200
 
-        except Exception:  # catch-all-ok: health check must not raise, returns False on any error
+        except (httpx.HTTPStatusError, httpx.RequestError):
+            # boundary-ok: health check returns False on API/network errors
+            return False
+        except Exception:
+            # catch-all-ok: health check must not raise, returns False on unexpected errors
             return False
 
 

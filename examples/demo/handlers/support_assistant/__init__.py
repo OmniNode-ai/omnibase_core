@@ -58,12 +58,20 @@ if TYPE_CHECKING:
     )
     from examples.demo.handlers.support_assistant.handler_support_assistant import (
         SYSTEM_PROMPT as SYSTEM_PROMPT,
+    )
+    from examples.demo.handlers.support_assistant.handler_support_assistant import (
         SupportAssistantHandler as SupportAssistantHandler,
     )
     from examples.demo.handlers.support_assistant.model_config import (
         ANTHROPIC_CONFIG as ANTHROPIC_CONFIG,
+    )
+    from examples.demo.handlers.support_assistant.model_config import (
         LOCAL_CONFIG as LOCAL_CONFIG,
+    )
+    from examples.demo.handlers.support_assistant.model_config import (
         OPENAI_CONFIG as OPENAI_CONFIG,
+    )
+    from examples.demo.handlers.support_assistant.model_config import (
         ModelConfig as ModelConfig,
     )
     from examples.demo.handlers.support_assistant.model_support_request import (

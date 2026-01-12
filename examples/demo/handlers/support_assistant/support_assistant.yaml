@@ -27,9 +27,6 @@ descriptor:
   # LLM handlers cannot guarantee idempotency - same input may produce different
   # outputs due to model temperature, context window state, and API variations
   idempotent: false
-  # LLM outputs are inherently nondeterministic - identical prompts yield varying
-  # responses due to sampling, temperature settings, and model state
-  deterministic: false
   timeout_ms: 30000  # LLM calls can be slow
   retry_policy:
     enabled: true
@@ -53,9 +50,6 @@ capability_inputs:
         supports_structured_output: true
       prefer:
         max_latency_ms: 5000
-        # Structured JSON output is required; streaming is typically disabled
-        # by providers when structured output is active to ensure valid JSON
-        supports_streaming: false
     selection_policy: auto_if_unique
     strict: true
     description: LLM provider for generating structured JSON support responses

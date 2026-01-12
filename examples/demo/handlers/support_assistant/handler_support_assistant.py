@@ -305,6 +305,7 @@ class SupportAssistantHandler:
             if self._validate_json_structure(data):
                 return cast(SupportResponse, self._create_validated_response(data))
         except json.JSONDecodeError:
+            # fallback-ok: try alternative parsing strategies below
             pass
 
         # Try to extract JSON from markdown code blocks.
@@ -320,6 +321,7 @@ class SupportAssistantHandler:
                 if self._validate_json_structure(data):
                     return cast(SupportResponse, self._create_validated_response(data))
             except json.JSONDecodeError:
+                # fallback-ok: try balanced brace extraction below
                 pass
 
         # Try to find any JSON object in the response using balanced brace matching
@@ -330,6 +332,7 @@ class SupportAssistantHandler:
                 if self._validate_json_structure(data):
                     return cast(SupportResponse, self._create_validated_response(data))
             except json.JSONDecodeError:
+                # fallback-ok: return safe fallback response below
                 pass
 
         # Fallback: return error response with low confidence
@@ -552,8 +555,12 @@ class SupportAssistantHandler:
         Args:
             message: The error message to log.
         """
-        if hasattr(self.logger, "error"):
-            self.logger.error(message)
+        try:
+            if hasattr(self.logger, "error"):
+                self.logger.error(message)
+        except Exception:
+            # cleanup-resilience-ok: logging must not prevent error propagation
+            pass
 
 
 __all__ = [
