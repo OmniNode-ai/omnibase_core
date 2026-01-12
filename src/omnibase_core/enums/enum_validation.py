@@ -1,27 +1,18 @@
 #!/usr/bin/env python3
+# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
+#
+# SPDX-License-Identifier: Apache-2.0
 """
 Validation-related enums for ONEX validation systems.
 
-Defines error severity levels, validation modes, and validation levels
-for ONEX validation and error handling systems.
+Defines validation levels for ONEX validation systems.
+
+Note (OMN-1311):
+    EnumErrorSeverity was removed in favor of the canonical EnumSeverity.
+    Import severity from: omnibase_core.enums.enum_severity import EnumSeverity
 """
 
 from enum import Enum
-
-
-class EnumErrorSeverity(Enum):
-    """
-    Severity levels for validation errors and system errors.
-
-    Used to categorize the impact and urgency of different types of errors.
-    """
-
-    DEBUG = "debug"
-    INFO = "info"
-    WARNING = "warning"
-    ERROR = "error"
-    CRITICAL = "critical"
-    FATAL = "fatal"
 
 
 class EnumValidationLevel(str, Enum):

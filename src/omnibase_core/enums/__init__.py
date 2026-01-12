@@ -134,7 +134,13 @@ from .enum_header_transformation_type import EnumHeaderTransformationType
 # Health and status enums
 from .enum_health_check_type import EnumHealthCheckType
 from .enum_health_detail_type import EnumHealthDetailType
-from .enum_health_status_type import EnumHealthStatusType
+from .enum_health_status import EnumHealthStatus
+
+# Severity enumeration (canonical - OMN-1311)
+from .enum_severity import EnumSeverity
+
+# EnumHealthStatusType is deprecated - use EnumHealthStatus instead (OMN-1310)
+EnumHealthStatusType = EnumHealthStatus
 
 # Hub and coordination enums
 from .enum_hub_capability import EnumHubCapability
@@ -181,7 +187,9 @@ from .enum_metadata_tool_type import EnumMetadataToolType
 # Namespace-related enums
 from .enum_namespace_strategy import EnumNamespaceStrategy
 from .enum_node_architecture_type import EnumNodeArchitectureType
-from .enum_node_health_status import EnumNodeHealthStatus
+
+# EnumNodeHealthStatus is deprecated - use EnumHealthStatus instead (OMN-1310)
+EnumNodeHealthStatus = EnumHealthStatus
 
 # Node-related enums
 from .enum_node_kind import EnumNodeKind
@@ -284,7 +292,7 @@ from .enum_unicode_form import EnumUnicodeForm
 
 # URI-related enums
 from .enum_uri_type import EnumUriType
-from .enum_validation import EnumErrorSeverity, EnumValidationLevel
+from .enum_validation import EnumValidationLevel
 from .enum_validation_mode import EnumValidationMode
 from .enum_validation_rule_type import EnumValidationRuleType
 from .enum_value_type import EnumValueType
@@ -336,9 +344,10 @@ __all__ = [
     "EnumSecurityProfile",
     "EnumAuthenticationMethod",
     "EnumSecurityRiskLevel",
+    # Severity domain (canonical - OMN-1311)
+    "EnumSeverity",
     # Validation domain
     "EnumEnvironmentValidationRuleType",
-    "EnumErrorSeverity",
     "EnumValidationRuleType",
     # Circuit breaker domain (standalone for cross-repo standardization)
     "EnumCircuitBreakerState",
@@ -356,8 +365,9 @@ __all__ = [
     # Health and status domain
     "EnumHealthCheckType",
     "EnumHealthDetailType",
-    "EnumHealthStatusType",
-    "EnumNodeHealthStatus",
+    "EnumHealthStatus",  # Canonical (OMN-1310)
+    "EnumHealthStatusType",  # Deprecated alias for EnumHealthStatus (OMN-1310)
+    "EnumNodeHealthStatus",  # Deprecated alias for EnumHealthStatus (OMN-1310)
     "EnumNodeStatus",
     # Node domain
     "EnumNodeArchitectureType",

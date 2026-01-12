@@ -3,11 +3,13 @@
 import asyncio
 import time
 from datetime import datetime
-from typing import Literal, TypeVar, cast
+from typing import TypeVar, cast
 from uuid import UUID, uuid4
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums.enum_health_status import EnumHealthStatus
 from omnibase_core.enums.enum_log_level import EnumLogLevel
+from omnibase_core.enums.enum_operation_status import EnumOperationStatus
 from omnibase_core.logging.logging_structured import (
     emit_log_event_sync as emit_log_event,
 )
@@ -39,10 +41,7 @@ from omnibase_core.protocols import (
 from omnibase_core.types.type_serializable_value import SerializedDict
 from omnibase_core.types.typed_dict_resolution_context import TypedDictResolutionContext
 
-# Define LiteralOperationStatus locally to avoid runtime import
-LiteralOperationStatus = Literal[
-    "success", "failed", "in_progress", "cancelled", "pending"
-]
+# EnumOperationStatus imported from omnibase_core.enums (per OMN-1308)
 
 T = TypeVar("T")
 TInterface = TypeVar("TInterface")
@@ -789,9 +788,7 @@ class ServiceRegistry:
         # Calculate distributions
         lifecycle_dist: dict[LiteralServiceLifecycle, int] = {}
         scope_dist: dict[LiteralInjectionScope, int] = {}
-        from omnibase_core.protocols import LiteralHealthStatus
-
-        health_dist: dict[LiteralHealthStatus, int] = {}
+        health_dist: dict[EnumHealthStatus, int] = {}
 
         for registration in self._registrations.values():
             # Lifecycle distribution
@@ -818,11 +815,11 @@ class ServiceRegistry:
 
         # Determine overall status
         # Map registry state to operation status
-        overall_status: LiteralOperationStatus = "success"
+        overall_status: EnumOperationStatus = EnumOperationStatus.SUCCESS
         if self._failed_registrations > 0:
-            overall_status = "failed"
+            overall_status = EnumOperationStatus.FAILED
         if not self._registrations:
-            overall_status = "pending"
+            overall_status = EnumOperationStatus.PENDING
 
         return ModelServiceRegistryStatus(
             registry_id=self._registry_id,

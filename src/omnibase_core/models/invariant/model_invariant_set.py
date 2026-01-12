@@ -14,7 +14,8 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, PydanticUndefinedAnnotation
 
-from omnibase_core.enums import EnumInvariantSeverity, EnumInvariantType
+from omnibase_core.enums import EnumInvariantType
+from omnibase_core.enums.enum_severity import EnumSeverity
 from omnibase_core.models.invariant.model_invariant import ModelInvariant
 
 
@@ -94,11 +95,7 @@ class ModelInvariantSet(BaseModel):
         Returns:
             List of invariants with CRITICAL severity level.
         """
-        return [
-            inv
-            for inv in self.invariants
-            if inv.severity == EnumInvariantSeverity.CRITICAL
-        ]
+        return [inv for inv in self.invariants if inv.severity == EnumSeverity.CRITICAL]
 
     @property
     def enabled_invariants(self) -> list[ModelInvariant]:
@@ -126,11 +123,7 @@ class ModelInvariantSet(BaseModel):
         Returns:
             List of invariants with WARNING severity level.
         """
-        return [
-            inv
-            for inv in self.invariants
-            if inv.severity == EnumInvariantSeverity.WARNING
-        ]
+        return [inv for inv in self.invariants if inv.severity == EnumSeverity.WARNING]
 
     @property
     def info_invariants(self) -> list[ModelInvariant]:
@@ -144,9 +137,7 @@ class ModelInvariantSet(BaseModel):
         Returns:
             List of invariants with INFO severity level.
         """
-        return [
-            inv for inv in self.invariants if inv.severity == EnumInvariantSeverity.INFO
-        ]
+        return [inv for inv in self.invariants if inv.severity == EnumSeverity.INFO]
 
     def get_invariants_by_type(
         self, invariant_type: EnumInvariantType | str

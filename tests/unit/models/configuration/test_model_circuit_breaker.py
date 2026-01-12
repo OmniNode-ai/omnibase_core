@@ -9,6 +9,7 @@ from unittest.mock import patch
 
 import pytest
 
+from omnibase_core.enums.enum_circuit_breaker_state import EnumCircuitBreakerState
 from omnibase_core.models.configuration.model_circuit_breaker import ModelCircuitBreaker
 
 
@@ -22,7 +23,7 @@ class TestModelCircuitBreakerInitialization:
         assert cb is not None
         assert isinstance(cb, ModelCircuitBreaker)
         assert cb.enabled is True
-        assert cb.state == "closed"
+        assert cb.state == EnumCircuitBreakerState.CLOSED
         assert cb.failure_count == 0
         assert cb.success_count == 0
 
@@ -101,10 +102,15 @@ class TestModelCircuitBreakerValidation:
 
     def test_state_pattern_validation(self):
         """Test state field pattern validation."""
-        # Valid states
-        for state in ["closed", "open", "half_open"]:
-            cb = ModelCircuitBreaker(state=state)
-            assert cb.state == state
+        # Valid states - strings are coerced to enum values
+        state_mapping = {
+            "closed": EnumCircuitBreakerState.CLOSED,
+            "open": EnumCircuitBreakerState.OPEN,
+            "half_open": EnumCircuitBreakerState.HALF_OPEN,
+        }
+        for state_str, expected_enum in state_mapping.items():
+            cb = ModelCircuitBreaker(state=state_str)
+            assert cb.state == expected_enum
 
         # Invalid state
         with pytest.raises(ValueError):
@@ -295,7 +301,7 @@ class TestModelCircuitBreakerStateTransitions:
             # Record enough failures to trigger open
             for _ in range(5):
                 cb.record_failure()
-            assert cb.state == "open"
+            assert cb.state == EnumCircuitBreakerState.OPEN
 
     def test_transition_to_half_open_after_timeout(self):
         """Test transition from open to half-open after timeout."""
@@ -325,7 +331,7 @@ class TestModelCircuitBreakerStateTransitions:
             mock_dt.now.return_value = datetime.now(UTC)
             for _ in range(3):
                 cb.record_success()
-            assert cb.state == "closed"
+            assert cb.state == EnumCircuitBreakerState.CLOSED
 
     def test_transition_back_to_open_on_half_open_failure(self):
         """Test transition back to open on failure in half-open state."""
@@ -335,7 +341,7 @@ class TestModelCircuitBreakerStateTransitions:
         ) as mock_dt:
             mock_dt.now.return_value = datetime.now(UTC)
             cb.record_failure()
-            assert cb.state == "open"
+            assert cb.state == EnumCircuitBreakerState.OPEN
 
 
 @pytest.mark.unit
@@ -350,7 +356,7 @@ class TestModelCircuitBreakerManualControl:
         ) as mock_dt:
             mock_dt.now.return_value = datetime.now(UTC)
             cb.force_open()
-            assert cb.state == "open"
+            assert cb.state == EnumCircuitBreakerState.OPEN
 
     def test_force_close(self):
         """Test forcing circuit breaker to closed state."""
@@ -360,7 +366,7 @@ class TestModelCircuitBreakerManualControl:
         ) as mock_dt:
             mock_dt.now.return_value = datetime.now(UTC)
             cb.force_close()
-            assert cb.state == "closed"
+            assert cb.state == EnumCircuitBreakerState.CLOSED
 
     def test_reset_state(self):
         """Test resetting circuit breaker to initial state."""
@@ -375,7 +381,7 @@ class TestModelCircuitBreakerManualControl:
         ) as mock_dt:
             mock_dt.now.return_value = datetime.now(UTC)
             cb.reset_state()
-            assert cb.state == "closed"
+            assert cb.state == EnumCircuitBreakerState.CLOSED
             assert cb.failure_count == 0
             assert cb.success_count == 0
             assert cb.total_requests == 0

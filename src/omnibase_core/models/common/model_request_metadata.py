@@ -6,7 +6,7 @@ This module provides strongly-typed metadata for request patterns.
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.protocols.base import LiteralEventPriority
+from omnibase_core.enums.enum_event_priority import EnumEventPriority
 
 
 class ModelRequestMetadata(BaseModel):
@@ -51,7 +51,7 @@ class ModelRequestMetadata(BaseModel):
         default=None,
         description="Deployment environment (dev, staging, prod)",
     )
-    priority: LiteralEventPriority | None = Field(
+    priority: EnumEventPriority | None = Field(
         default=None,
         description="Request priority level (low, normal, high, critical)",
     )

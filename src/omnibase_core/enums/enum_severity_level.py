@@ -1,12 +1,31 @@
+# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
+#
+# SPDX-License-Identifier: Apache-2.0
+"""
+Severity level enumeration for messages and notifications (RFC 5424 compliant).
+
+DOCUMENTED EXCEPTION per ADR-006 Status Taxonomy (OMN-1311):
+    This enum is intentionally NOT merged into the canonical EnumSeverity because:
+
+    1. **RFC 5424 Compliance**: This enum follows the RFC 5424 syslog severity levels
+       which define 11 distinct values (EMERGENCY through TRACE). The canonical
+       EnumSeverity has only 6 values (DEBUG through FATAL).
+
+    2. **Syslog Integration**: This enum is used for structured logging systems
+       that require RFC 5424 compliant severity levels for interoperability with
+       syslog, journald, and other logging infrastructure.
+
+    3. **Extended Level Support**: Includes levels not in the canonical enum:
+       EMERGENCY, ALERT, NOTICE, TRACE, WARN (alias)
+
+For general-purpose severity classification, use EnumSeverity instead:
+    from omnibase_core.enums.enum_severity import EnumSeverity
+
+This enum provides strongly typed severity levels for error messages, warnings,
+and logging. Follows ONEX one-enum-per-file naming conventions.
+"""
+
 from __future__ import annotations
-
-"""
-Severity level enumeration for messages and notifications.
-
-Provides strongly typed severity levels for error messages, warnings, and logging.
-Follows ONEX one-enum-per-file naming conventions.
-"""
-
 
 from enum import Enum, unique
 

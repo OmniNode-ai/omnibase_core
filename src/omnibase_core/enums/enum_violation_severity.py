@@ -2,29 +2,28 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 """
-Violation severity enumeration for corpus replay aggregation.
+Violation severity levels - DEPRECATED.
 
-Defines the severity levels for invariant violations detected during
-corpus replay, used by ModelEvidenceSummary for categorizing issues.
+.. deprecated:: 0.6.5
+    EnumViolationSeverity is deprecated. Use EnumSeverity from
+    omnibase_core.enums.enum_severity instead.
+
+    Migration (OMN-1311):
+        # Before
+        from omnibase_core.enums.enum_violation_severity import EnumViolationSeverity
+        severity = EnumViolationSeverity.WARNING
+
+        # After
+        from omnibase_core.enums.enum_severity import EnumSeverity
+        severity = EnumSeverity.WARNING
+
+    EnumViolationSeverity values (INFO, WARNING, CRITICAL) are a subset of
+    the canonical EnumSeverity values.
 """
 
-from __future__ import annotations
+from omnibase_core.enums.enum_severity import EnumSeverity
 
-from enum import Enum, unique
-
-
-@unique
-class EnumViolationSeverity(str, Enum):
-    """Severity levels for invariant violations."""
-
-    CRITICAL = "critical"
-    """Critical violations that must be addressed immediately."""
-
-    WARNING = "warning"
-    """Warning-level violations that should be reviewed."""
-
-    INFO = "info"
-    """Informational violations for awareness."""
-
+# Deprecated: use EnumSeverity directly (OMN-1311)
+EnumViolationSeverity = EnumSeverity
 
 __all__ = ["EnumViolationSeverity"]

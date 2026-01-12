@@ -4,7 +4,7 @@ from pathlib import Path
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 # Import the existing enum from enums module
-from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
+from omnibase_core.enums.enum_severity import EnumSeverity
 
 """
 Individual validation issue with proper typing.
@@ -30,7 +30,7 @@ class ModelValidationIssue(BaseModel):
         from_attributes=True,
     )
 
-    severity: EnumValidationSeverity = Field(
+    severity: EnumSeverity = Field(
         default=...,
         description="Severity level of the issue",
     )

@@ -10,12 +10,49 @@ Design Principles:
 - Use abc.ABC with @abstractmethod for runtime isinstance checks
 - Keep interfaces minimal - only what Core actually needs
 - Provide complete type hints for mypy strict mode compliance
+
+Note on Literal Type Aliases:
+    Several Literal type aliases have been replaced with canonical enums
+    (per OMN-1308 enum governance). The enum types are exported with their
+    original Literal* names as deprecated aliases. New code should import
+    the enum types directly from omnibase_core.enums.
+
+    Replaced:
+    - LiteralLogLevel -> EnumLogLevel
+    - LiteralHealthStatus -> EnumHealthStatus
+    - LiteralOperationStatus -> EnumOperationStatus
+    - LiteralValidationLevel -> EnumValidationLevel
+    - LiteralValidationSeverity -> EnumValidationSeverity
+    - LiteralEventPriority -> EnumEventPriority
+
+    Kept as Literals (no canonical enum equivalent):
+    - LiteralNodeType (UPPERCASE values, EnumNodeKind uses lowercase)
+    - LiteralServiceLifecycle
+    - LiteralInjectionScope
+    - LiteralServiceResolutionStatus
+    - LiteralValidationMode
 """
 
 from __future__ import annotations
 
 from datetime import datetime
 from typing import Literal, TypeVar
+
+# =============================================================================
+# Canonical Enum Imports (replacing Literal types per OMN-1308)
+# =============================================================================
+from omnibase_core.enums.enum_event_priority import EnumEventPriority
+from omnibase_core.enums.enum_health_status import EnumHealthStatus
+from omnibase_core.enums.enum_log_level import EnumLogLevel
+from omnibase_core.enums.enum_operation_status import EnumOperationStatus
+
+# EnumValidationSeverity is now an alias to EnumSeverity (OMN-1311)
+# New code should use EnumSeverity directly
+from omnibase_core.enums.enum_severity import EnumSeverity
+from omnibase_core.enums.enum_validation_level import EnumValidationLevel
+
+# Deprecated alias (OMN-1311)
+EnumValidationSeverity = EnumSeverity
 
 # =============================================================================
 # Type Variables
@@ -28,37 +65,27 @@ TImplementation = TypeVar("TImplementation")
 
 
 # =============================================================================
-# Core Literal Type Aliases (Core-native equivalents of SPI types)
+# Deprecated Type Aliases (Literal* names pointing to Enums)
 # =============================================================================
 
-# Logging levels
-LiteralLogLevel = Literal[
-    "TRACE", "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL", "FATAL"
-]
+# These deprecated aliases allow existing code importing LiteralXxx types
+# to continue working. New code should import enums directly.
+LiteralLogLevel = EnumLogLevel
+LiteralHealthStatus = EnumHealthStatus
+LiteralOperationStatus = EnumOperationStatus
+LiteralValidationLevel = EnumValidationLevel
+LiteralValidationSeverity = EnumValidationSeverity
+LiteralEventPriority = EnumEventPriority
+
+
+# =============================================================================
+# Literal Type Aliases (no canonical enum equivalent)
+# =============================================================================
 
 # Node types in ONEX 4-node architecture
+# Note: Uses UPPERCASE values; EnumNodeKind uses lowercase. Keep as Literal
+# until casing is unified in a future ticket.
 LiteralNodeType = Literal["COMPUTE", "EFFECT", "REDUCER", "ORCHESTRATOR"]
-
-# Health status indicators
-LiteralHealthStatus = Literal[
-    "healthy",
-    "degraded",
-    "unhealthy",
-    "critical",
-    "unknown",
-    "warning",
-    "unreachable",
-    "available",
-    "unavailable",
-    "initializing",
-    "disposing",
-    "error",
-]
-
-# Operation status
-LiteralOperationStatus = Literal[
-    "success", "failed", "in_progress", "cancelled", "pending"
-]
 
 # Service lifecycle patterns
 LiteralServiceLifecycle = Literal[
@@ -75,19 +102,10 @@ LiteralServiceResolutionStatus = Literal[
     "resolved", "failed", "circular_dependency", "missing_dependency", "type_mismatch"
 ]
 
-# Validation levels
-LiteralValidationLevel = Literal["BASIC", "STANDARD", "COMPREHENSIVE", "PARANOID"]
-
 # Validation modes
 LiteralValidationMode = Literal[
     "strict", "lenient", "smoke", "regression", "integration"
 ]
-
-# Validation severity
-LiteralValidationSeverity = Literal["error", "warning", "info"]
-
-# Event priority
-LiteralEventPriority = Literal["low", "normal", "high", "critical"]
 
 
 # =============================================================================
@@ -125,18 +143,26 @@ __all__ = [
     "T_co",
     "TInterface",
     "TImplementation",
-    # Literal Types
+    # Canonical Enums (preferred for new code)
+    "EnumLogLevel",
+    "EnumHealthStatus",
+    "EnumOperationStatus",
+    "EnumValidationLevel",
+    "EnumValidationSeverity",
+    "EnumEventPriority",
+    # Backward-Compatible Type Aliases (point to enums above)
     "LiteralLogLevel",
-    "LiteralNodeType",
     "LiteralHealthStatus",
     "LiteralOperationStatus",
+    "LiteralValidationLevel",
+    "LiteralValidationSeverity",
+    "LiteralEventPriority",
+    # Literal Types (no canonical enum equivalent)
+    "LiteralNodeType",
     "LiteralServiceLifecycle",
     "LiteralInjectionScope",
     "LiteralServiceResolutionStatus",
-    "LiteralValidationLevel",
     "LiteralValidationMode",
-    "LiteralValidationSeverity",
-    "LiteralEventPriority",
     # DateTime
     "ProtocolDateTime",
     # Protocols

@@ -17,9 +17,9 @@ from uuid import uuid4
 import pytest
 
 from omnibase_core.enums.enum_conceptual_complexity import EnumConceptualComplexity
+from omnibase_core.enums.enum_health_status import EnumHealthStatus
 from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
 from omnibase_core.enums.enum_metadata_node_type import EnumMetadataNodeType
-from omnibase_core.enums.enum_node_health_status import EnumNodeHealthStatus
 from omnibase_core.enums.enum_node_type import EnumNodeType
 from omnibase_core.enums.enum_status import EnumStatus
 from omnibase_core.models.metadata.analytics.model_analytics_core import (
@@ -51,7 +51,7 @@ class TestGetMetadataImplementations:
             node_type=EnumMetadataNodeType.FUNCTION,
             node_version=ModelSemVer(major=1, minor=0, patch=0),
             status=EnumStatus.ACTIVE,
-            health=EnumNodeHealthStatus.HEALTHY,
+            health=EnumHealthStatus.HEALTHY,
             is_active=True,
             is_healthy=True,
             has_description=True,
@@ -76,7 +76,7 @@ class TestGetMetadataImplementations:
             node_type=EnumMetadataNodeType.METHOD,
             node_version=ModelSemVer(major=2, minor=1, patch=0),
             status=EnumStatus.ACTIVE,
-            health=EnumNodeHealthStatus.HEALTHY,
+            health=EnumHealthStatus.HEALTHY,
             is_active=True,
             is_healthy=True,
             has_description=False,
@@ -96,7 +96,7 @@ class TestGetMetadataImplementations:
             node_type=EnumMetadataNodeType.CLASS,
             node_version=expected_version,
             status=EnumStatus.COMPLETED,
-            health=EnumNodeHealthStatus.DEGRADED,
+            health=EnumHealthStatus.DEGRADED,
             is_active=False,
             is_healthy=False,
             has_description=True,
@@ -120,7 +120,7 @@ class TestGetMetadataImplementations:
             node_type=EnumMetadataNodeType.MODULE,
             node_version=ModelSemVer(major=1, minor=0, patch=0),
             status=EnumStatus.PENDING,
-            health=EnumNodeHealthStatus.CRITICAL,
+            health=EnumHealthStatus.CRITICAL,
             is_active=False,
             is_healthy=False,
             has_description=True,
@@ -554,7 +554,7 @@ class TestGetMetadataTypeConsistency:
                 node_type=EnumMetadataNodeType.FUNCTION,
                 node_version=ModelSemVer(major=1, minor=0, patch=0),
                 status=EnumStatus.ACTIVE,
-                health=EnumNodeHealthStatus.HEALTHY,
+                health=EnumHealthStatus.HEALTHY,
                 is_active=True,
                 is_healthy=True,
                 has_description=True,
@@ -601,7 +601,7 @@ class TestGetMetadataTypeConsistency:
                 node_type=EnumMetadataNodeType.FUNCTION,
                 node_version=ModelSemVer(major=1, minor=0, patch=0),
                 status=EnumStatus.ACTIVE,
-                health=EnumNodeHealthStatus.HEALTHY,
+                health=EnumHealthStatus.HEALTHY,
                 is_active=True,
                 is_healthy=True,
                 has_description=True,
@@ -632,7 +632,7 @@ class TestGetMetadataTypeConsistency:
             node_type=EnumMetadataNodeType.FUNCTION,
             node_version=ModelSemVer(major=1, minor=0, patch=0),
             status=EnumStatus.ACTIVE,
-            health=EnumNodeHealthStatus.HEALTHY,
+            health=EnumHealthStatus.HEALTHY,
             is_active=True,
             is_healthy=True,
             has_description=True,
@@ -650,7 +650,7 @@ class TestGetMetadataTypeConsistency:
             assert not isinstance(value, EnumStatus), (
                 f"Inner metadata contains raw enum: {key}={value}"
             )
-            assert not isinstance(value, EnumNodeHealthStatus), (
+            assert not isinstance(value, EnumHealthStatus), (
                 f"Inner metadata contains raw enum: {key}={value}"
             )
 

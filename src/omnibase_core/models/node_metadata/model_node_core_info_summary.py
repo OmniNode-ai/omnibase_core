@@ -6,8 +6,8 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums.enum_health_status import EnumHealthStatus
 from omnibase_core.enums.enum_metadata_node_type import EnumMetadataNodeType
-from omnibase_core.enums.enum_node_health_status import EnumNodeHealthStatus
 from omnibase_core.enums.enum_status import EnumStatus
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
@@ -48,7 +48,7 @@ class ModelNodeCoreInfoSummary(BaseModel):
         description="Node version",
     )
     status: EnumStatus = Field(description="Node status value")
-    health: EnumNodeHealthStatus = Field(description="Node health status")
+    health: EnumHealthStatus = Field(description="Node health status")
     is_active: bool = Field(description="Whether node is active")
     is_healthy: bool = Field(description="Whether node is healthy")
     has_description: bool = Field(description="Whether node has description")
@@ -103,7 +103,7 @@ class ModelNodeCoreInfoSummary(BaseModel):
                 - "node_type": EnumMetadataNodeType value string
                   (e.g., "COMPUTE", "EFFECT", "REDUCER", "ORCHESTRATOR")
                 - "status": EnumStatus value string (e.g., "ACTIVE", "INACTIVE")
-                - "health": EnumNodeHealthStatus value string
+                - "health": EnumHealthStatus value string
                   (e.g., "HEALTHY", "DEGRADED", "UNHEALTHY")
                 - "is_active": Boolean indicating if node is currently active
                 - "is_healthy": Boolean indicating if node is in healthy state
@@ -118,7 +118,7 @@ class ModelNodeCoreInfoSummary(BaseModel):
             ...     node_type=EnumMetadataNodeType.COMPUTE,
             ...     node_version=ModelSemVer(major=1, minor=0, patch=0),
             ...     status=EnumStatus.ACTIVE,
-            ...     health=EnumNodeHealthStatus.HEALTHY,
+            ...     health=EnumHealthStatus.HEALTHY,
             ...     is_active=True,
             ...     is_healthy=True,
             ...     has_description=True,

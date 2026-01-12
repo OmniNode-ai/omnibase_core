@@ -356,7 +356,7 @@ repos:
         # - util_singleton_holders.py: Deprecated module with migration docs (no classes, just docstring)
         # - model_action_config_value.py: Action config value types
         # - model_node_config_value.py: Node config entry and schema types
-        exclude: ^(tests/|archived/|archive/|scripts/validation/|src/omnibase_core/utils/util_singleton_holders\.py$|src/omnibase_core/models/core/model_action_config_value\.py$|src/omnibase_core/models/configuration/model_node_config_value\.py$|src/omnibase_core/protocols/)
+        exclude: ^(tests/|archived/|archive/|scripts/validation/|src/omnibase_core/utils/util_singleton_holders\.py$|src/omnibase_core/models/core/model_action_config_value\.py$|src/omnibase_core/models/configuration/model_node_config_value\.py$|src/omnibase_core/protocols/|src/omnibase_core/validation/checker_enum_governance\.py$|src/omnibase_core/mixins/mixin_health_check\.py$)
         stages: [pre-commit]
 
       - id: validate-enum-model-imports
@@ -512,6 +512,33 @@ repos:
           - no:rerunfailures
           - -p
           - no:testmon
+        stages: [pre-push]
+
+      # Enum Governance Validation (OMN-1313)
+      # Enforces enum governance rules to prevent enum/status duplication:
+      # - E001: Enum members must use UPPER_SNAKE_CASE
+      # - E002: Literal types should not duplicate existing enum values
+      # PHASE 1: Warning mode (non-blocking) until existing violations are fixed
+      # The codebase has 13 existing Literal duplication violations.
+      # Once cleaned up, remove "|| true" to make this blocking.
+      - id: check-enum-governance
+        name: ONEX Enum Governance Validation (Warning Mode)
+        entry: bash -c 'poetry run python -m omnibase_core.validation.checker_enum_governance --enums-only
+          || true'
+        language: system
+        pass_filenames: false
+        always_run: true
+        files: ^src/omnibase_core/enums/.*\.py$
+        stages: [pre-commit]
+
+      # Enum Governance - Full Check (includes Literal duplication detection)
+      # Runs on pre-push as it scans entire codebase for Literal types
+      - id: check-enum-governance-full
+        name: ONEX Enum Governance Full Check (Warning Mode)
+        entry: bash -c 'poetry run python -m omnibase_core.validation.checker_enum_governance || true'
+        language: system
+        pass_filenames: false
+        always_run: true
         stages: [pre-push]
 
       # Node Purity Validation (OMN-203)

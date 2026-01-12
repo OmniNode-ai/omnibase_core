@@ -41,7 +41,7 @@ import re
 from omnibase_core.enums.enum_contract_validation_error_code import (
     EnumContractValidationErrorCode,
 )
-from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
+from omnibase_core.enums.enum_severity import EnumSeverity
 from omnibase_core.models.common.model_validation_result import ModelValidationResult
 from omnibase_core.models.contracts.model_handler_contract import ModelHandlerContract
 
@@ -321,7 +321,7 @@ class ExpandedContractValidator:  # naming-ok: validator class, not protocol
             logger.debug(f"Version format is non-standard: {version}")
             # This is a warning, not an error, as the model already validates format
             result.add_issue(
-                severity=EnumValidationSeverity.WARNING,
+                severity=EnumSeverity.WARNING,
                 message=(
                     f"Version '{version}' is not in strict semantic version format. "
                     "Expected: 'MAJOR.MINOR.PATCH' (e.g., '1.0.0', '1.2.3-beta.1')."
@@ -482,7 +482,7 @@ class ExpandedContractValidator:  # naming-ok: validator class, not protocol
                 f"Found {len(event_outputs)} event outputs - cannot verify consumers without registry"
             )
             result.add_issue(
-                severity=EnumValidationSeverity.INFO,
+                severity=EnumSeverity.INFO,
                 message=(
                     f"Handler declares {len(event_outputs)} event output(s): {event_outputs}. "
                     "Ensure consumers exist for these events in the runtime configuration."

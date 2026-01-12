@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import Protocol, runtime_checkable
 
-from omnibase_core.protocols.base import LiteralLogLevel
+from omnibase_core.enums.enum_log_level import EnumLogLevel
 
 
 @runtime_checkable
@@ -22,7 +22,7 @@ class ProtocolLogEmitter(Protocol):
 
     def emit_log_event(
         self,
-        level: LiteralLogLevel,
+        level: EnumLogLevel,
         message: str,
         data: object,
     ) -> None:

@@ -12,6 +12,7 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums.enum_general_status import EnumGeneralStatus
 from omnibase_core.models.core.model_core_performance_metrics import (
     ModelPerformanceMetrics,
 )
@@ -119,7 +120,9 @@ class ModelActionMetadata(BaseModel):
     )
 
     # Results and status
-    status: str = Field(default="created", description="Current action status")
+    status: EnumGeneralStatus = Field(
+        default=EnumGeneralStatus.CREATED, description="Current action status"
+    )
     result_data: SerializedDict | None = Field(
         default=None,
         description="Action result data as JSON-serializable data",
@@ -160,7 +163,7 @@ class ModelActionMetadata(BaseModel):
     def mark_started(self) -> None:
         """Mark the action as started."""
         self.started_at = datetime.now(UTC)
-        self.status = "running"
+        self.status = EnumGeneralStatus.RUNNING
 
     def mark_completed(
         self,
@@ -168,14 +171,14 @@ class ModelActionMetadata(BaseModel):
     ) -> None:
         """Mark the action as completed with optional result data."""
         self.completed_at = datetime.now(UTC)
-        self.status = "completed"
+        self.status = EnumGeneralStatus.COMPLETED
         if result_data:
             self.result_data = result_data
 
     def mark_failed(self, error_details: ModelErrorDetails[Any]) -> None:
         """Mark the action as failed with structured error details."""
         self.completed_at = datetime.now(UTC)
-        self.status = "failed"
+        self.status = EnumGeneralStatus.FAILED
         self.error_details = error_details
 
     def get_execution_duration(self) -> float | None:
@@ -236,5 +239,5 @@ class ModelActionMetadata(BaseModel):
         return (
             self.trust_score >= minimum_trust_score
             and not self.is_expired()
-            and self.status in ["created", "ready"]
+            and self.status in [EnumGeneralStatus.CREATED, "ready"]
         )

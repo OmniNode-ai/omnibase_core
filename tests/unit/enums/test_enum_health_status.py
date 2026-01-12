@@ -24,6 +24,8 @@ class TestEnumHealthStatus:
         assert EnumHealthStatus.UNREACHABLE == "unreachable"
         assert EnumHealthStatus.AVAILABLE == "available"
         assert EnumHealthStatus.UNAVAILABLE == "unavailable"
+        assert EnumHealthStatus.INITIALIZING == "initializing"
+        assert EnumHealthStatus.DISPOSING == "disposing"
         assert EnumHealthStatus.ERROR == "error"
 
     def test_enum_inheritance(self):
@@ -47,7 +49,7 @@ class TestEnumHealthStatus:
     def test_enum_iteration(self):
         """Test that we can iterate over enum values."""
         values = list(EnumHealthStatus)
-        assert len(values) == 10
+        assert len(values) == 12
         assert EnumHealthStatus.HEALTHY in values
         assert EnumHealthStatus.DEGRADED in values
         assert EnumHealthStatus.UNHEALTHY in values
@@ -57,6 +59,8 @@ class TestEnumHealthStatus:
         assert EnumHealthStatus.UNREACHABLE in values
         assert EnumHealthStatus.AVAILABLE in values
         assert EnumHealthStatus.UNAVAILABLE in values
+        assert EnumHealthStatus.INITIALIZING in values
+        assert EnumHealthStatus.DISPOSING in values
         assert EnumHealthStatus.ERROR in values
 
     def test_enum_membership(self):
@@ -130,6 +134,8 @@ class TestEnumHealthStatus:
             "unreachable",
             "available",
             "unavailable",
+            "initializing",
+            "disposing",
             "error",
         ]
         assert set(all_values) == set(expected_values)

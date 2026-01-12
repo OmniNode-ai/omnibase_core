@@ -6,8 +6,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.enums.enum_health_status import EnumHealthStatus
 from omnibase_core.protocols import (
-    LiteralHealthStatus,
     LiteralInjectionScope,
     LiteralServiceLifecycle,
 )
@@ -67,8 +67,8 @@ class ModelServiceRegistration(BaseModel):
         default="registered",
         description="Registration status",
     )
-    health_status: LiteralHealthStatus = Field(
-        default="healthy",
+    health_status: EnumHealthStatus = Field(
+        default=EnumHealthStatus.HEALTHY,
         description="Service health status",
     )
     registration_time: datetime = Field(

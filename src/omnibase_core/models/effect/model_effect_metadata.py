@@ -6,7 +6,7 @@ This module provides strongly-typed metadata for effect patterns.
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.protocols.base import LiteralEventPriority
+from omnibase_core.enums.enum_event_priority import EnumEventPriority
 
 
 class ModelEffectMetadata(BaseModel):
@@ -51,7 +51,7 @@ class ModelEffectMetadata(BaseModel):
         default_factory=list,
         description="Tags for categorization",
     )
-    priority: LiteralEventPriority | None = Field(
+    priority: EnumEventPriority | None = Field(
         default=None,
         description="Operation priority (low, normal, high, critical)",
     )

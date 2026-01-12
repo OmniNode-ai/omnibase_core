@@ -30,7 +30,7 @@ from typing import ClassVar
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
+from omnibase_core.enums.enum_severity import EnumSeverity
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.contracts.subcontracts.model_validator_rule import (
@@ -124,8 +124,8 @@ class ModelValidatorSubcontract(BaseModel):
     )
 
     # Behavior configuration
-    severity_default: EnumValidationSeverity = Field(
-        default=EnumValidationSeverity.ERROR,
+    severity_default: EnumSeverity = Field(
+        default=EnumSeverity.ERROR,
         description="Default severity for violations without explicit severity",
     )
 

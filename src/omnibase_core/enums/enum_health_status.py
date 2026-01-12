@@ -20,6 +20,8 @@ class EnumHealthStatus(str, Enum):
     UNREACHABLE = "unreachable"
     AVAILABLE = "available"
     UNAVAILABLE = "unavailable"
+    INITIALIZING = "initializing"
+    DISPOSING = "disposing"
     ERROR = "error"
 
     def __str__(self) -> str:

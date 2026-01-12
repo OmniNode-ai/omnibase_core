@@ -48,7 +48,7 @@ from pathlib import Path
 from typing import ClassVar
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
+from omnibase_core.enums.enum_severity import EnumSeverity
 from omnibase_core.errors.exception_groups import FILE_IO_ERRORS
 from omnibase_core.models.common.model_validation_issue import ModelValidationIssue
 from omnibase_core.models.common.model_validation_metadata import (
@@ -443,7 +443,7 @@ class ValidatorArchitecture(ValidatorBase):
         self,
         rule_id: str | None,
         contract: ModelValidatorSubcontract,
-    ) -> tuple[bool, EnumValidationSeverity]:
+    ) -> tuple[bool, EnumSeverity]:
         """Get rule enabled state and severity with contract-driven defaults.
 
         Overrides base class to ensure rules not explicitly defined in the

@@ -48,8 +48,16 @@ Migration from SPI:
 # Base Module Exports
 # =============================================================================
 
-from omnibase_core.protocols.base import (  # Literal Types; Protocols; Type Variables
+from omnibase_core.protocols.base import (  # Enums, Literal Types, Protocols, Type Variables
     ContextValue,
+    # Canonical Enums (preferred for new code)
+    EnumEventPriority,
+    EnumHealthStatus,
+    EnumLogLevel,
+    EnumOperationStatus,
+    EnumValidationLevel,
+    EnumValidationSeverity,
+    # Backward-Compatible Type Aliases (point to enums above)
     LiteralEventPriority,
     LiteralHealthStatus,
     LiteralInjectionScope,
@@ -323,18 +331,26 @@ __all__ = [
     "T_co",
     "TInterface",
     "TImplementation",
-    # Literal Types
+    # Canonical Enums (preferred for new code)
+    "EnumLogLevel",
+    "EnumHealthStatus",
+    "EnumOperationStatus",
+    "EnumValidationLevel",
+    "EnumValidationSeverity",
+    "EnumEventPriority",
+    # Backward-Compatible Type Aliases (point to enums above)
     "LiteralLogLevel",
-    "LiteralNodeType",
     "LiteralHealthStatus",
     "LiteralOperationStatus",
+    "LiteralValidationLevel",
+    "LiteralValidationSeverity",
+    "LiteralEventPriority",
+    # Literal Types (no canonical enum equivalent)
+    "LiteralNodeType",
     "LiteralServiceLifecycle",
     "LiteralInjectionScope",
     "LiteralServiceResolutionStatus",
-    "LiteralValidationLevel",
     "LiteralValidationMode",
-    "LiteralValidationSeverity",
-    "LiteralEventPriority",
     # Protocols
     "ProtocolDateTime",
     "ProtocolSemVer",

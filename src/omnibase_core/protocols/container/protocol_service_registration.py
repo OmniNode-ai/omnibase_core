@@ -11,8 +11,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Literal, Protocol, runtime_checkable
 from uuid import UUID
 
+from omnibase_core.enums.enum_health_status import EnumHealthStatus
 from omnibase_core.protocols.base import (
-    LiteralHealthStatus,
     LiteralInjectionScope,
     LiteralServiceLifecycle,
     ProtocolDateTime,
@@ -44,7 +44,7 @@ class ProtocolServiceRegistration(Protocol):
     registration_status: Literal[
         "registered", "unregistered", "failed", "pending", "conflict", "invalid"
     ]
-    health_status: LiteralHealthStatus
+    health_status: EnumHealthStatus
     registration_time: ProtocolDateTime
     last_access_time: ProtocolDateTime | None
     access_count: int

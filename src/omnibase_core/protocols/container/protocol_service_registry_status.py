@@ -11,10 +11,10 @@ from __future__ import annotations
 from typing import Protocol, runtime_checkable
 from uuid import UUID
 
+from omnibase_core.enums.enum_health_status import EnumHealthStatus
+from omnibase_core.enums.enum_operation_status import EnumOperationStatus
 from omnibase_core.protocols.base import (
-    LiteralHealthStatus,
     LiteralInjectionScope,
-    LiteralOperationStatus,
     LiteralServiceLifecycle,
     ProtocolDateTime,
 )
@@ -30,7 +30,7 @@ class ProtocolServiceRegistryStatus(Protocol):
     """
 
     registry_id: UUID
-    status: LiteralOperationStatus
+    status: EnumOperationStatus
     message: str
     total_registrations: int
     active_instances: int
@@ -38,7 +38,7 @@ class ProtocolServiceRegistryStatus(Protocol):
     circular_dependencies: int
     lifecycle_distribution: dict[LiteralServiceLifecycle, int]
     scope_distribution: dict[LiteralInjectionScope, int]
-    health_summary: dict[LiteralHealthStatus, int]
+    health_summary: dict[EnumHealthStatus, int]
     memory_usage_bytes: int | None
     average_resolution_time_ms: float | None
     last_updated: ProtocolDateTime

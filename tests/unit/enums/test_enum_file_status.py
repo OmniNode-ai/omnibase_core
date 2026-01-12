@@ -9,12 +9,12 @@ from omnibase_core.enums.enum_file_status import EnumFileStatus
 class TestEnumFileStatus:
     def test_enum_values(self):
         """Test that all enum values are defined correctly."""
-        assert EnumFileStatus.empty == "empty"
-        assert EnumFileStatus.unvalidated == "unvalidated"
-        assert EnumFileStatus.validated == "validated"
-        assert EnumFileStatus.deprecated == "deprecated"
-        assert EnumFileStatus.incomplete == "incomplete"
-        assert EnumFileStatus.synthetic == "synthetic"
+        assert EnumFileStatus.EMPTY == "empty"
+        assert EnumFileStatus.UNVALIDATED == "unvalidated"
+        assert EnumFileStatus.VALIDATED == "validated"
+        assert EnumFileStatus.DEPRECATED == "deprecated"
+        assert EnumFileStatus.INCOMPLETE == "incomplete"
+        assert EnumFileStatus.SYNTHETIC == "synthetic"
 
     def test_enum_inheritance(self):
         """Test that enum inherits from str and Enum."""
@@ -23,7 +23,7 @@ class TestEnumFileStatus:
 
     def test_enum_string_behavior(self):
         """Test string behavior of enum values."""
-        status = EnumFileStatus.validated
+        status = EnumFileStatus.VALIDATED
         assert isinstance(status, str)
         assert status == "validated"
         assert len(status) == 9
@@ -33,19 +33,19 @@ class TestEnumFileStatus:
         """Test that all enum values can be iterated."""
         values = list(EnumFileStatus)
         assert len(values) == 6
-        assert EnumFileStatus.empty in values
-        assert EnumFileStatus.synthetic in values
+        assert EnumFileStatus.EMPTY in values
+        assert EnumFileStatus.SYNTHETIC in values
 
     def test_enum_membership(self):
         """Test membership testing."""
-        assert EnumFileStatus.validated in EnumFileStatus
+        assert EnumFileStatus.VALIDATED in EnumFileStatus
         assert "validated" in [e.value for e in EnumFileStatus]
 
     def test_enum_comparison(self):
         """Test enum comparison."""
-        status1 = EnumFileStatus.validated
-        status2 = EnumFileStatus.validated
-        status3 = EnumFileStatus.empty
+        status1 = EnumFileStatus.VALIDATED
+        status2 = EnumFileStatus.VALIDATED
+        status3 = EnumFileStatus.EMPTY
 
         assert status1 == status2
         assert status1 != status3
@@ -53,7 +53,7 @@ class TestEnumFileStatus:
 
     def test_enum_serialization(self):
         """Test enum serialization."""
-        status = EnumFileStatus.deprecated
+        status = EnumFileStatus.DEPRECATED
         serialized = status.value
         assert serialized == "deprecated"
         import json
@@ -64,7 +64,7 @@ class TestEnumFileStatus:
     def test_enum_deserialization(self):
         """Test enum deserialization."""
         status = EnumFileStatus("incomplete")
-        assert status == EnumFileStatus.incomplete
+        assert status == EnumFileStatus.INCOMPLETE
 
     def test_enum_invalid_value(self):
         """Test that invalid values raise ValueError."""
@@ -96,20 +96,20 @@ class TestEnumFileStatus:
         """Test logical grouping of status values."""
         # Validation states
         validation_states = {
-            EnumFileStatus.unvalidated,
-            EnumFileStatus.validated,
+            EnumFileStatus.UNVALIDATED,
+            EnumFileStatus.VALIDATED,
         }
 
         # Content states
         content_states = {
-            EnumFileStatus.empty,
-            EnumFileStatus.incomplete,
+            EnumFileStatus.EMPTY,
+            EnumFileStatus.INCOMPLETE,
         }
 
         # Lifecycle states
         lifecycle_states = {
-            EnumFileStatus.deprecated,
-            EnumFileStatus.synthetic,
+            EnumFileStatus.DEPRECATED,
+            EnumFileStatus.SYNTHETIC,
         }
 
         # Test that all states are covered
@@ -125,9 +125,9 @@ class TestEnumFileStatus:
 
         # Test that we can represent common workflows
         workflow_states = [
-            EnumFileStatus.empty,
-            EnumFileStatus.unvalidated,
-            EnumFileStatus.validated,
+            EnumFileStatus.EMPTY,
+            EnumFileStatus.UNVALIDATED,
+            EnumFileStatus.VALIDATED,
         ]
 
         # All workflow states should be valid
