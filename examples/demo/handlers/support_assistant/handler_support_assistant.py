@@ -37,7 +37,7 @@ from __future__ import annotations
 
 import json
 import re
-from typing import TYPE_CHECKING, Literal, cast
+from typing import TYPE_CHECKING, Literal, cast, get_args, get_type_hints
 
 from pydantic import ValidationError
 
@@ -55,7 +55,31 @@ if TYPE_CHECKING:
     from omnibase_core.models.container.model_onex_container import \
         ModelONEXContainer
 
-# System prompt for the LLM
+
+def _extract_literal_values(model_class: type, field_name: str) -> frozenset[str]:
+    """Extract Literal values from a Pydantic model field annotation.
+
+    Args:
+        model_class: The Pydantic model class.
+        field_name: Name of the field to extract values from.
+
+    Returns:
+        Frozen set of valid string values for the Literal field.
+    """
+    hints = get_type_hints(model_class)
+    field_type = hints.get(field_name)
+    if field_type is None:
+        return frozenset()
+    args = get_args(field_type)
+    return frozenset(str(arg) for arg in args if isinstance(arg, str))
+
+
+# Extract valid values from SupportResponse model annotations (DRY principle)
+# This ensures handler validation stays in sync with model definitions
+VALID_CATEGORIES: frozenset[str] = _extract_literal_values(SupportResponse, "category")
+VALID_SENTIMENTS: frozenset[str] = _extract_literal_values(SupportResponse, "sentiment")
+
+# System prompt for the LLM - uses only valid JSON examples to avoid model confusion
 SYSTEM_PROMPT = """You are a helpful customer support assistant.
 
 Your responses should be:
@@ -64,9 +88,27 @@ Your responses should be:
 3. Actionable when possible
 
 Always categorize the request and assess if escalation is needed.
-Output must be valid JSON matching the SupportResponse schema.
+Return ONLY a valid JSON object with no additional text or markdown.
 
-Example response:
+Required JSON structure:
+{
+    "response_text": "Your helpful response to the user (required string)",
+    "suggested_actions": ["action1", "action2"],
+    "confidence": 0.85,
+    "requires_escalation": false,
+    "category": "billing",
+    "sentiment": "neutral"
+}
+
+Valid values:
+{
+    "category": ["billing", "technical", "general", "account"],
+    "sentiment": ["positive", "neutral", "negative"],
+    "confidence": "number from 0.0 to 1.0",
+    "requires_escalation": "true or false"
+}
+
+Example response for a billing question:
 {
     "response_text": "I'd be happy to help you with that billing question.",
     "suggested_actions": ["Check your invoice online", "Contact billing support"],
@@ -74,17 +116,7 @@ Example response:
     "requires_escalation": false,
     "category": "billing",
     "sentiment": "neutral"
-}
-
-Field requirements:
-- response_text: string (your helpful response to the user)
-- suggested_actions: array of strings (can be empty [])
-- confidence: number between 0.0 and 1.0
-- requires_escalation: boolean (true or false)
-- category: one of "billing", "technical", "general", "account"
-- sentiment: one of "positive", "neutral", "negative"
-
-IMPORTANT: Return ONLY a valid JSON object, no other text or markdown."""
+}"""
 
 
 class SupportAssistantHandler:
@@ -264,9 +296,9 @@ class SupportAssistantHandler:
         except json.JSONDecodeError:
             pass
 
-        # Try to extract JSON from code blocks
+        # Try to extract JSON from code blocks (handles nested objects)
         json_match = re.search(
-            r"```(?:json)?\s*(\{.*?\})\s*```", raw_response, re.DOTALL
+            r"```(?:json)?\s*(\{.*\})\s*```", raw_response, re.DOTALL
         )
         if json_match:
             try:
@@ -276,11 +308,11 @@ class SupportAssistantHandler:
             except json.JSONDecodeError:
                 pass
 
-        # Try to find any JSON object in the response
-        json_object_match = re.search(r"\{[^{}]*\}", raw_response, re.DOTALL)
-        if json_object_match:
+        # Try to find any JSON object in the response using balanced brace matching
+        extracted_json = self._extract_json_object(raw_response)
+        if extracted_json:
             try:
-                data = json.loads(json_object_match.group(0))
+                data = json.loads(extracted_json)
                 if self._validate_json_structure(data):
                     return cast(SupportResponse, self._create_validated_response(data))
             except json.JSONDecodeError:
@@ -300,12 +332,58 @@ class SupportAssistantHandler:
             sentiment="neutral",
         )
 
+    def _extract_json_object(self, text: str) -> str | None:
+        """Extract the first valid JSON object from text using balanced brace matching.
+
+        This method handles nested JSON objects that simple regex patterns miss.
+        It finds the first '{' and then tracks brace balance to find the matching '}'.
+
+        Args:
+            text: The text to search for a JSON object.
+
+        Returns:
+            The extracted JSON string, or None if no valid object found.
+        """
+        start_idx = text.find("{")
+        if start_idx == -1:
+            return None
+
+        brace_count = 0
+        in_string = False
+        escape_next = False
+
+        for i, char in enumerate(text[start_idx:], start=start_idx):
+            if escape_next:
+                escape_next = False
+                continue
+
+            if char == "\\":
+                escape_next = True
+                continue
+
+            if char == '"' and not escape_next:
+                in_string = not in_string
+                continue
+
+            if in_string:
+                continue
+
+            if char == "{":
+                brace_count += 1
+            elif char == "}":
+                brace_count -= 1
+                if brace_count == 0:
+                    return text[start_idx : i + 1]
+
+        return None
+
     def _validate_json_structure(self, data: object) -> bool:
         """Validate that parsed JSON has the expected structure.
 
         Performs strict validation to ensure the parsed JSON matches the
         expected SupportResponse schema. Required fields must be present
-        and have valid types.
+        and have valid types. Uses module-level constants extracted from
+        the model annotations for DRY compliance.
 
         Args:
             data: The parsed JSON object to validate.
@@ -339,21 +417,19 @@ class SupportAssistantHandler:
         if not isinstance(requires_escalation, bool):
             return False
 
-        # Validate category is a valid string
+        # Validate category using module-level constant extracted from model
         category = data.get("category")
-        valid_categories = {"billing", "technical", "general", "account"}
-        if not isinstance(category, str) or category.lower() not in valid_categories:
+        if not isinstance(category, str) or category.lower() not in VALID_CATEGORIES:
             return False
 
-        # Validate sentiment is a valid string
+        # Validate sentiment using module-level constant extracted from model
         sentiment = data.get("sentiment")
-        valid_sentiments = {"positive", "neutral", "negative"}
-        if not isinstance(sentiment, str) or sentiment.lower() not in valid_sentiments:
+        if not isinstance(sentiment, str) or sentiment.lower() not in VALID_SENTIMENTS:
             return False
 
         return True
 
-    @allow_dict_any(  # type: ignore[misc]
+    @allow_dict_any(  # type: ignore[untyped-decorator]
         reason="LLM JSON responses have arbitrary structure requiring dynamic type handling"
     )
     def _create_validated_response(self, data: dict[str, object]) -> SupportResponse:
@@ -422,15 +498,17 @@ class SupportAssistantHandler:
     ) -> Literal["billing", "technical", "general", "account"]:
         """Ensure category is a valid literal.
 
+        Uses module-level VALID_CATEGORIES constant extracted from model
+        annotations for DRY compliance.
+
         Args:
             value: The value to validate.
 
         Returns:
             Valid category literal.
         """
-        valid = {"billing", "technical", "general", "account"}
         str_value = str(value).lower()
-        if str_value in valid:
+        if str_value in VALID_CATEGORIES:
             return str_value  # type: ignore[return-value]
         return "general"
 
@@ -439,15 +517,17 @@ class SupportAssistantHandler:
     ) -> Literal["positive", "neutral", "negative"]:
         """Ensure sentiment is a valid literal.
 
+        Uses module-level VALID_SENTIMENTS constant extracted from model
+        annotations for DRY compliance.
+
         Args:
             value: The value to validate.
 
         Returns:
             Valid sentiment literal.
         """
-        valid = {"positive", "neutral", "negative"}
         str_value = str(value).lower()
-        if str_value in valid:
+        if str_value in VALID_SENTIMENTS:
             return str_value  # type: ignore[return-value]
         return "neutral"
 
@@ -461,4 +541,9 @@ class SupportAssistantHandler:
             self.logger.error(message)
 
 
-__all__ = ["SupportAssistantHandler", "SYSTEM_PROMPT"]
+__all__ = [
+    "SupportAssistantHandler",
+    "SYSTEM_PROMPT",
+    "VALID_CATEGORIES",
+    "VALID_SENTIMENTS",
+]

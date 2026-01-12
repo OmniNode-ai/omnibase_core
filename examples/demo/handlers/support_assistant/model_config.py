@@ -122,21 +122,25 @@ class ModelConfig(BaseModel):
 
 
 # Pre-defined configurations
+# Note: Model identifiers follow provider naming conventions.
+# Update these as newer models become available.
 OPENAI_CONFIG = ModelConfig(
     provider="openai",
-    model_name="gpt-4",
+    model_name="gpt-4o",  # Latest GPT-4 model with optimized performance
     temperature=0.7,
 )
 
 ANTHROPIC_CONFIG = ModelConfig(
     provider="anthropic",
-    model_name="claude-3-5-sonnet",
+    model_name="claude-sonnet-4-20250514",  # Latest Claude Sonnet model
     temperature=0.7,
     api_key_env="ANTHROPIC_API_KEY",
 )
 
+# Local provider configuration - uses localhost by default.
+# Set LOCAL_LLM_ENDPOINT environment variable to override.
 LOCAL_CONFIG = ModelConfig(
     provider="local",
-    model_name="qwen2.5-14b",
+    model_name="qwen2.5-coder-14b",  # Optimized for code/support tasks
     endpoint_url=os.getenv("LOCAL_LLM_ENDPOINT", "http://localhost:8000"),
 )

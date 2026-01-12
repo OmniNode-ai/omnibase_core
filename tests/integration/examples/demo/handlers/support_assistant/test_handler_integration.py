@@ -288,10 +288,10 @@ class TestProviderClientCreation:
         assert client.model_name == LOCAL_CONFIG.model_name
 
     def test_local_client_invalid_provider_raises(self) -> None:
-        """Creating LocalLLMClient with wrong provider raises ValueError."""
+        """Creating LocalLLMClient with wrong provider raises ModelOnexError."""
         from examples.demo.handlers.support_assistant.model_config import OPENAI_CONFIG
 
-        with pytest.raises(ValueError, match="Expected local provider"):
+        with pytest.raises(ModelOnexError, match="Expected local provider"):
             LocalLLMClient.from_config(OPENAI_CONFIG)
 
 

@@ -87,6 +87,15 @@ class LocalLLMClient:
             or DEFAULT_ENDPOINT
         )
         self.model_name = model_name or os.getenv("LLM_LOCAL_MODEL") or DEFAULT_MODEL
+
+        # Validate temperature range (OpenAI-compatible range is 0.0-2.0)
+        if not 0.0 <= temperature <= 2.0:
+            raise ModelOnexError(
+                message=f"Temperature must be between 0.0 and 2.0, got {temperature}",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                context={"temperature": temperature, "valid_range": "0.0-2.0"},
+            )
+
         self.temperature = temperature
         self.max_tokens = max_tokens
         self.timeout = timeout
@@ -202,7 +211,7 @@ class LocalLLMClient:
                         if response.status_code < 500:
                             return True
                     except httpx.HTTPError:
-                        # health-check-ok: network errors for one endpoint shouldn't stop trying others
+                        # fallback-ok: network errors for one endpoint shouldn't stop trying others
                         continue
 
             return False

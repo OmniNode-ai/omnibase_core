@@ -246,7 +246,7 @@ class TestPredefinedConfigs:
         from examples.demo.handlers.support_assistant.model_config import OPENAI_CONFIG
 
         assert OPENAI_CONFIG.provider == "openai"
-        assert OPENAI_CONFIG.model_name == "gpt-4"
+        assert OPENAI_CONFIG.model_name == "gpt-4o"
         assert OPENAI_CONFIG.temperature == 0.7
 
     def test_anthropic_config_exists(self):
@@ -256,7 +256,7 @@ class TestPredefinedConfigs:
         )
 
         assert ANTHROPIC_CONFIG.provider == "anthropic"
-        assert ANTHROPIC_CONFIG.model_name == "claude-3-5-sonnet"
+        assert ANTHROPIC_CONFIG.model_name == "claude-sonnet-4-20250514"
         assert ANTHROPIC_CONFIG.temperature == 0.7
         assert ANTHROPIC_CONFIG.api_key_env == "ANTHROPIC_API_KEY"
 
@@ -268,7 +268,7 @@ class TestPredefinedConfigs:
         from examples.demo.handlers.support_assistant.model_config import LOCAL_CONFIG
 
         assert LOCAL_CONFIG.provider == "local"
-        assert LOCAL_CONFIG.model_name == "qwen2.5-14b"
+        assert LOCAL_CONFIG.model_name == "qwen2.5-coder-14b"
         # endpoint_url uses env var LOCAL_LLM_ENDPOINT with default http://localhost:8000
         assert LOCAL_CONFIG.endpoint_url is not None
 
