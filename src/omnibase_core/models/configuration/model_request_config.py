@@ -72,8 +72,10 @@ class ModelRequestConfig(BaseModel):
     max_redirects: int = Field(default=10, description="Maximum number of redirects")
     stream: bool = Field(default=False, description="Stream response content")
 
-    # Note: @property methods below are compatible with frozen=True because they
-    # provide read-only computed access to data without modifying instance state.
+    # Note on @property methods: Properties are compatible with frozen=True because
+    # they don't mutate model state - they just compute and return derived values
+    # from the model's immutable fields. Pydantic's frozen setting only prevents
+    # field reassignment, not method calls or property access.
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     @property
