@@ -71,6 +71,15 @@ from omnibase_core.models.health.model_performance_metrics import (
 )
 from omnibase_core.types.typed_dict_system_config import TypedDictSystemConfig
 
+MAX_CORPUS_SIZE = 1_000_000_000
+"""Maximum allowed corpus size (1 billion samples).
+
+Rationale: This upper bound prevents memory exhaustion when processing
+corpus statistics. In practice, corpora rarely exceed millions of samples,
+and 1 billion provides a generous safety margin while preventing
+unreasonable values that could indicate data corruption or input errors.
+"""
+
 
 class ModelBaselineHealthReport(BaseModel):
     """Shows system health before proposing changes.
@@ -159,7 +168,7 @@ class ModelBaselineHealthReport(BaseModel):
     corpus_size: int = Field(
         ...,
         ge=0,
-        le=1_000_000_000,
+        le=MAX_CORPUS_SIZE,
         description="Number of samples in the execution corpus",
     )
     corpus_date_range: tuple[datetime, datetime] = Field(
