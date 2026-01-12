@@ -4,6 +4,10 @@ Tests for infra_bases module.
 Validates that infrastructure base imports are accessible and properly exposed.
 """
 
+import pytest
+
+pytestmark = pytest.mark.unit
+
 
 def test_can_import_infra_bases():
     """Test that infra_bases module imports successfully."""

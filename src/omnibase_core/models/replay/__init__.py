@@ -6,6 +6,8 @@ Replay infrastructure models.
 
 This module provides model definitions for deterministic replay infrastructure:
 
+- **ModelAuditTrailEntry**: Individual entry in enforcement decision audit trail (OMN-1150)
+- **ModelAuditTrailSummary**: Summary statistics for enforcement decisions (OMN-1150)
 - **ModelConfigOverride**: Single configuration override with key path and value
 - **ModelConfigOverrideSet**: Collection of configuration overrides for replay scenarios
 - **ModelConfigOverrideFieldPreview**: Preview of a single field change from override
@@ -13,6 +15,7 @@ This module provides model definitions for deterministic replay infrastructure:
 - **ModelConfigOverrideResult**: Result of applying configuration overrides
 - **ModelConfigOverrideValidation**: Validation result for configuration overrides
 - **ModelEffectRecord**: Captured effect intent and result pair for replay
+- **ModelEnforcementDecision**: Enforcement decision outcome for replay safety (OMN-1150)
 - **ModelReplayContext**: Determinism context bundling time, RNG seed, and effect records
 - **ModelReplayInput**: Input configuration for replay execution
 - **ModelExecutionCorpus**: Collection of execution manifests for replay testing
@@ -66,6 +69,9 @@ Usage:
 
 .. versionadded:: 0.4.0
     Added Execution Corpus Model (OMN-1202)
+
+.. versionadded:: 0.6.3
+    Added ModelEnforcementDecision (OMN-1150)
 """
 
 from omnibase_core.mixins.mixin_truncation_validation import (
@@ -75,6 +81,8 @@ from omnibase_core.models.manifest.model_execution_manifest import (
     ModelExecutionManifest,
 )
 from omnibase_core.models.replay.model_aggregate_metrics import ModelAggregateMetrics
+from omnibase_core.models.replay.model_audit_trail_entry import ModelAuditTrailEntry
+from omnibase_core.models.replay.model_audit_trail_summary import ModelAuditTrailSummary
 from omnibase_core.models.replay.model_config_override import ModelConfigOverride
 from omnibase_core.models.replay.model_config_override_field_preview import (
     ModelConfigOverrideFieldPreview,
@@ -107,6 +115,10 @@ from omnibase_core.models.replay.model_corpus_time_range import ModelCorpusTimeR
 # Execution detail view models
 from omnibase_core.models.replay.model_diff_line import ModelDiffLine
 from omnibase_core.models.replay.model_effect_record import ModelEffectRecord
+from omnibase_core.models.replay.model_enforcement_decision import (
+    EnforcementOutcome,
+    ModelEnforcementDecision,
+)
 
 # Comparison models (consolidated from models.comparison)
 from omnibase_core.models.replay.model_execution_comparison import (
@@ -143,6 +155,10 @@ from omnibase_core.models.replay.model_value_change import ModelValueChange
 ModelCorpusReplayConfig.model_rebuild()
 
 __all__ = [
+    # Audit trail models (OMN-1150)
+    "EnforcementOutcome",
+    "ModelAuditTrailEntry",
+    "ModelAuditTrailSummary",
     # Configuration override models
     "ModelConfigOverride",
     "ModelConfigOverrideFieldPreview",
@@ -163,6 +179,7 @@ __all__ = [
     "ModelSubsetFilter",
     # Replay models
     "ModelEffectRecord",
+    "ModelEnforcementDecision",
     "ModelExecutionCorpus",
     "ModelReplayContext",
     "ModelReplayInput",

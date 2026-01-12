@@ -10,6 +10,8 @@ import pytest
 
 from omnibase_core.infrastructure.infra_load_balancer import LoadBalancer
 
+pytestmark = pytest.mark.unit
+
 
 def test_load_balancer_initialization():
     """Test that LoadBalancer initializes with correct defaults."""
