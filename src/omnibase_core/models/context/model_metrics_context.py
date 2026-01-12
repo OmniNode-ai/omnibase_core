@@ -21,9 +21,6 @@ import re
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.errors import ModelOnexError
-
 __all__ = ["ModelMetricsContext"]
 
 # W3C Trace Context format patterns
@@ -49,6 +46,9 @@ _SEMVER_PATTERN = re.compile(
 def _validate_semver(value: str) -> str:
     """Validate SemVer 2.0.0 version string (local helper to avoid circular imports).
 
+    This helper is designed for use in Pydantic field validators, so it raises
+    ValueError directly (which Pydantic expects for validation failures).
+
     Args:
         value: Version string to validate
 
@@ -56,19 +56,15 @@ def _validate_semver(value: str) -> str:
         The validated version string (unchanged if valid)
 
     Raises:
-        ModelOnexError: If the format is invalid
+        ValueError: If the format is invalid or empty
     """
     if not value:
-        raise ModelOnexError(
-            message="Semantic version cannot be empty",
-            error_code=EnumCoreErrorCode.VALIDATION_FAILED,
-        )
+        # error-ok: Pydantic field_validator requires ValueError
+        raise ValueError("Semantic version cannot be empty")
 
     if not _SEMVER_PATTERN.match(value):
-        raise ModelOnexError(
-            message=f"Invalid semantic version format: '{value}'",
-            error_code=EnumCoreErrorCode.VALIDATION_FAILED,
-        )
+        # error-ok: Pydantic field_validator requires ValueError
+        raise ValueError(f"Invalid semantic version format: '{value}'")
 
     return value
 
@@ -180,12 +176,19 @@ class ModelMetricsContext(BaseModel):
 
     @field_validator("span_id", "parent_span_id", mode="before")
     @classmethod
-    def validate_span_id(cls, value: str | None, info: ValidationInfo) -> str | None:
-        """Validate span_id/parent_span_id is 16 hex characters.
+    def validate_span_format(
+        cls, value: str | None, info: ValidationInfo
+    ) -> str | None:
+        """Validate span_id or parent_span_id is 16 hex characters.
+
+        This validator handles both span_id and parent_span_id fields, using
+        the field_name from ValidationInfo to provide field-specific error messages.
+        Both fields must conform to W3C Trace Context format (16 lowercase hex chars).
 
         Args:
             value: The span ID string to validate, or None.
-            info: Pydantic validation info containing the field name.
+            info: Pydantic validation info containing the field name (either
+                'span_id' or 'parent_span_id').
 
         Returns:
             The validated span ID string (lowercase), or None if input is None.
@@ -263,11 +266,7 @@ class ModelMetricsContext(BaseModel):
             raise ValueError(
                 f"service_version must be a string, got {type(value).__name__}"
             )
-        try:
-            return _validate_semver(value)
-        except ModelOnexError as e:
-            # error-ok: Pydantic field_validator requires ValueError
-            raise ValueError(e.message) from e
+        return _validate_semver(value)
 
     def is_sampled(self) -> bool:
         """Check if this context should be sampled for recording.

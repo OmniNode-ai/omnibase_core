@@ -375,8 +375,9 @@ class TestDecoratorStacking:
         with pytest.raises(ModelOnexError) as exc_info:
             double_decorated()
 
-        # Inner decorator wraps first, outer re-raises ModelOnexError
-        assert exc_info.value.error_code == EnumCoreErrorCode.OPERATION_FAILED
+        # Inner decorator wraps first with VALIDATION_ERROR (ValueError is a validation error)
+        # Outer decorator re-raises ModelOnexError as-is, preserving the error code
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
         assert "Inner validation failed" in exc_info.value.message
 
     def test_multiple_standard_decorators(self):

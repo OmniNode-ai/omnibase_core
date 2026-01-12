@@ -568,7 +568,6 @@ class TestModelSemVerBackwardCompatibility:
 
         from omnibase_core.models.primitives.model_semver import default_model_version
 
-        @pytest.mark.unit
         class TestModel(BaseModel):
             version: ModelSemVer = Field(default_factory=default_model_version)
 

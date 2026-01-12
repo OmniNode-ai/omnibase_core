@@ -28,7 +28,6 @@ class TestMixinLazyEvaluationBasicBehavior:
     def test_mixin_initialization(self):
         """Test MixinLazyEvaluation initializes properly."""
 
-        @pytest.mark.unit
         class TestNode(MixinLazyEvaluation):
             pass
 
@@ -43,7 +42,6 @@ class TestMixinLazyEvaluationBasicBehavior:
         class BaseNode:
             pass
 
-        @pytest.mark.unit
         class TestNode(MixinLazyEvaluation, BaseNode):
             pass
 
@@ -59,7 +57,6 @@ class TestLazyProperty:
     def test_lazy_property_creation(self):
         """Test creating a lazy property."""
 
-        @pytest.mark.unit
         class TestNode(MixinLazyEvaluation):
             pass
 
@@ -76,7 +73,6 @@ class TestLazyProperty:
     def test_lazy_property_caching(self):
         """Test lazy property caching behavior."""
 
-        @pytest.mark.unit
         class TestNode(MixinLazyEvaluation):
             pass
 
@@ -101,7 +97,6 @@ class TestLazyProperty:
     def test_lazy_property_no_caching(self):
         """Test lazy property without caching."""
 
-        @pytest.mark.unit
         class TestNode(MixinLazyEvaluation):
             pass
 
@@ -124,7 +119,6 @@ class TestLazyProperty:
     def test_lazy_property_reuse(self):
         """Test reusing existing lazy property."""
 
-        @pytest.mark.unit
         class TestNode(MixinLazyEvaluation):
             pass
 
@@ -155,7 +149,6 @@ class TestLazyModelDump:
     def test_lazy_model_dump_basic(self):
         """Test lazy model dump with Pydantic model."""
 
-        @pytest.mark.unit
         class TestModel(MixinLazyEvaluation, BaseModel):
             name: str = "test"
             value: int = 42
@@ -173,7 +166,6 @@ class TestLazyModelDump:
     def test_lazy_model_dump_with_exclude(self):
         """Test lazy model dump with field exclusion."""
 
-        @pytest.mark.unit
         class TestModel(MixinLazyEvaluation, BaseModel):
             name: str = "test"
             secret: str = "hidden"
@@ -191,7 +183,6 @@ class TestLazyModelDump:
     def test_lazy_model_dump_with_alias(self):
         """Test lazy model dump with field aliases."""
 
-        @pytest.mark.unit
         class TestModel(MixinLazyEvaluation, BaseModel):
             internal_name: str = "test"
 
@@ -207,7 +198,6 @@ class TestLazyModelDump:
     def test_lazy_model_dump_non_basemodel_raises_error(self):
         """Test lazy model dump raises error for non-BaseModel."""
 
-        @pytest.mark.unit
         class TestNode(MixinLazyEvaluation):
             pass
 
@@ -230,7 +220,6 @@ class TestLazySerializeNested:
         class NestedModel(BaseModel):
             nested_value: str = "nested"
 
-        @pytest.mark.unit
         class TestNode(MixinLazyEvaluation):
             pass
 
@@ -246,7 +235,6 @@ class TestLazySerializeNested:
     def test_lazy_serialize_nested_with_none(self):
         """Test lazy serialization with None object."""
 
-        @pytest.mark.unit
         class TestNode(MixinLazyEvaluation):
             pass
 
@@ -264,11 +252,9 @@ class TestLazyStringConversion:
     def test_lazy_string_conversion_with_basemodel(self):
         """Test lazy string conversion with BaseModel."""
 
-        @pytest.mark.unit
         class TestModel(BaseModel):
             name: str = "test"
 
-        @pytest.mark.unit
         class TestNode(MixinLazyEvaluation):
             pass
 
@@ -284,7 +270,6 @@ class TestLazyStringConversion:
     def test_lazy_string_conversion_with_none(self):
         """Test lazy string conversion with None."""
 
-        @pytest.mark.unit
         class TestNode(MixinLazyEvaluation):
             pass
 
@@ -301,7 +286,6 @@ class TestLazyStringConversion:
             def __str__(self):
                 return "simple_object"
 
-        @pytest.mark.unit
         class TestNode(MixinLazyEvaluation):
             pass
 
@@ -321,7 +305,6 @@ class TestCacheInvalidation:
     def test_invalidate_all_cache(self):
         """Test invalidating entire lazy cache."""
 
-        @pytest.mark.unit
         class TestNode(MixinLazyEvaluation):
             pass
 
@@ -344,7 +327,6 @@ class TestCacheInvalidation:
     def test_invalidate_cache_by_pattern(self):
         """Test invalidating cache by pattern."""
 
-        @pytest.mark.unit
         class TestNode(MixinLazyEvaluation):
             pass
 
@@ -374,7 +356,6 @@ class TestCacheStatistics:
     def test_get_cache_stats_empty(self):
         """Test cache stats with empty cache."""
 
-        @pytest.mark.unit
         class TestNode(MixinLazyEvaluation):
             pass
 
@@ -389,7 +370,6 @@ class TestCacheStatistics:
     def test_get_cache_stats_partial(self):
         """Test cache stats with partially computed cache."""
 
-        @pytest.mark.unit
         class TestNode(MixinLazyEvaluation):
             pass
 
@@ -411,7 +391,6 @@ class TestCacheStatistics:
     def test_get_cache_stats_all_computed(self):
         """Test cache stats with all entries computed."""
 
-        @pytest.mark.unit
         class TestNode(MixinLazyEvaluation):
             pass
 
@@ -436,7 +415,6 @@ class TestLazyCachedDecorator:
     def test_lazy_cached_decorator_basic(self):
         """Test lazy_cached decorator on method."""
 
-        @pytest.mark.unit
         class TestNode(MixinLazyEvaluation):
             @lazy_cached()
             def expensive_operation(self):
@@ -451,7 +429,6 @@ class TestLazyCachedDecorator:
     def test_lazy_cached_decorator_with_custom_key(self):
         """Test lazy_cached decorator with custom cache key."""
 
-        @pytest.mark.unit
         class TestNode(MixinLazyEvaluation):
             @lazy_cached(cache_key="custom_key")
             def operation(self):
@@ -466,7 +443,6 @@ class TestLazyCachedDecorator:
     def test_lazy_cached_decorator_with_arguments(self):
         """Test lazy_cached decorator on method with arguments."""
 
-        @pytest.mark.unit
         class TestNode(MixinLazyEvaluation):
             @lazy_cached()
             def operation_with_args(self, x, y):
@@ -488,7 +464,6 @@ class TestMemoryEfficiency:
     def test_lazy_evaluation_defers_computation(self):
         """Test that lazy evaluation doesn't compute until accessed."""
 
-        @pytest.mark.unit
         class TestNode(MixinLazyEvaluation):
             pass
 
@@ -517,7 +492,6 @@ class TestMemoryEfficiency:
     def test_memory_efficiency_reporting(self):
         """Test memory efficiency calculation in stats."""
 
-        @pytest.mark.unit
         class TestNode(MixinLazyEvaluation):
             pass
 

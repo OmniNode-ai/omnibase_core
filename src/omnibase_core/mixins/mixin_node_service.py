@@ -35,12 +35,11 @@ from pathlib import Path
 from typing import Any, cast
 from uuid import UUID, uuid4
 
-from pydantic import ValidationError
-
 from omnibase_core.constants import TIMEOUT_DEFAULT_MS
 from omnibase_core.constants.constants_event_types import TOOL_INVOCATION
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
+from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
 from omnibase_core.logging.logging_structured import emit_log_event_sync
 from omnibase_core.models.core.model_log_context import ModelLogContext
 from omnibase_core.models.discovery.model_node_shutdown_event import (
@@ -60,19 +59,15 @@ from omnibase_core.types.type_json import JsonType
 _COMPONENT_NAME = Path(__file__).stem
 
 # Service lookup errors for container.get_service() calls.
-# Extends PYDANTIC_MODEL_ERRORS (AttributeError, TypeError, ValidationError, ValueError)
-# with RuntimeError for service availability issues.
-# Defined at module level with explicit types (alphabetically ordered) to satisfy mypy
+# Uses centralized PYDANTIC_MODEL_ERRORS (AttributeError, TypeError, ValidationError, ValueError)
+# plus RuntimeError for service availability issues.
+# Defined at module level with explicit tuple concatenation to satisfy mypy
 # (mypy cannot handle tuple unpacking in except clauses).
 #
 # RuntimeError covers: service not registered, container not initialized, circular
 # dependencies, or other container-level service resolution failures.
-_SERVICE_LOOKUP_ERRORS: tuple[type[Exception], ...] = (
-    AttributeError,  # Model attribute access failure
+_SERVICE_LOOKUP_ERRORS: tuple[type[Exception], ...] = PYDANTIC_MODEL_ERRORS + (
     RuntimeError,  # Service not available or container issues
-    TypeError,  # Type conversion failure
-    ValidationError,  # Pydantic validation failure
-    ValueError,  # Value validation failure
 )
 
 

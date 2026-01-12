@@ -18,7 +18,59 @@ from collections.abc import Callable
 from typing import Any
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors.exception_groups import VALIDATION_ERRORS
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+
+
+def _is_validation_error(exc: Exception) -> bool:
+    """Determine if an exception represents a validation error.
+
+    This function uses a multi-tier detection strategy, ordered from most
+    reliable to least reliable:
+
+    1. Type checking against VALIDATION_ERRORS tuple (TypeError, ValidationError,
+       ValueError) - most reliable, covers standard Python and Pydantic errors.
+    2. Duck typing for Pydantic ValidationError: checks for `errors` method
+       (Pydantic v2) which returns structured error details.
+    3. Duck typing for validation-like exceptions: checks for `errors` attribute
+       as a list (common pattern in validation libraries).
+    4. Exception class name check: if class name contains "Validation" or
+       "validation", treat as validation error (more reliable than message check).
+
+    Args:
+        exc: The exception to check.
+
+    Returns:
+        True if the exception appears to be a validation error, False otherwise.
+    """
+    # Tier 1: Direct type check against known validation error types
+    # This is the most reliable check and covers:
+    # - TypeError: type coercion failures
+    # - ValidationError: Pydantic validation failures
+    # - ValueError: value constraint violations
+    if isinstance(exc, VALIDATION_ERRORS):
+        return True
+
+    # Tier 2: Duck typing for Pydantic-style ValidationError
+    # Pydantic v2 ValidationError has an `errors()` method that returns
+    # a list of error dictionaries with 'loc', 'msg', 'type' keys.
+    errors_attr = getattr(exc, "errors", None)
+    if callable(errors_attr):
+        return True
+
+    # Tier 3: Duck typing for validation-like exceptions with errors list
+    # Some validation libraries expose errors as a list attribute rather than method
+    if isinstance(errors_attr, list) and errors_attr:
+        return True
+
+    # Tier 4: Exception class name heuristic
+    # Check if exception class name indicates validation (more reliable than message)
+    # e.g., ValidationError, SchemaValidationError, InputValidationException
+    exc_class_name = type(exc).__name__
+    if "validation" in exc_class_name.lower():
+        return True
+
+    return False
 
 
 def standard_error_handling(
@@ -166,8 +218,9 @@ def validation_error_handling(
                     raise
                 except Exception as e:
                     # boundary-ok: convert exceptions to structured ONEX errors for validation ops
-                    # Check if this is a validation error (duck typing)
-                    if hasattr(e, "errors") or "validation" in str(e).lower():
+                    # Use robust validation error detection (type check + duck typing)
+                    # See _is_validation_error() docstring for detection strategy
+                    if _is_validation_error(e):
                         msg = f"{operation_name} failed: {e!s}"
                         raise ModelOnexError(
                             msg,
@@ -176,7 +229,7 @@ def validation_error_handling(
                             operation=operation_name,
                             is_validation_error=True,
                         ) from e
-                    # Generic operation failure
+                    # Generic operation failure (non-validation error)
                     msg = f"{operation_name} failed: {e!s}"
                     raise ModelOnexError(
                         msg,
@@ -203,8 +256,9 @@ def validation_error_handling(
                     raise
                 except Exception as e:
                     # boundary-ok: convert exceptions to structured ONEX errors for validation ops
-                    # Check if this is a validation error (duck typing)
-                    if hasattr(e, "errors") or "validation" in str(e).lower():
+                    # Use robust validation error detection (type check + duck typing)
+                    # See _is_validation_error() docstring for detection strategy
+                    if _is_validation_error(e):
                         msg = f"{operation_name} failed: {e!s}"
                         raise ModelOnexError(
                             msg,
@@ -213,7 +267,7 @@ def validation_error_handling(
                             operation=operation_name,
                             is_validation_error=True,
                         ) from e
-                    # Generic operation failure
+                    # Generic operation failure (non-validation error)
                     msg = f"{operation_name} failed: {e!s}"
                     raise ModelOnexError(
                         msg,

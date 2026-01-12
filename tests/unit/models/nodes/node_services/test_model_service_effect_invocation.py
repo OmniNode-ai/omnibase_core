@@ -423,7 +423,6 @@ class TestModelServiceEffectToolInvocation:
         - Dict returned
         """
 
-        @pytest.mark.unit
         class TestResult(BaseModel):
             status: str
             data: str
