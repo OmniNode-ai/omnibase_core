@@ -20,7 +20,7 @@ Example:
 
         config = ModelConfig(
             provider="anthropic",
-            model_name="claude-4-sonnet-20250514",
+            model_name="claude-sonnet-4-20250514",
             temperature=0.5,
             max_tokens=1000,
             api_key_env="ANTHROPIC_API_KEY",
@@ -102,7 +102,7 @@ class ModelConfig(BaseModel):  # type: ignore[explicit-any]  # Pydantic BaseMode
 
     Attributes:
         provider: The LLM provider type ("openai", "anthropic", or "local").
-        model_name: The name of the model to use (e.g., "gpt-4o", "claude-4-sonnet").
+        model_name: The name of the model to use (e.g., "gpt-4o", "claude-sonnet-4").
         endpoint_url: Custom endpoint URL for local/custom providers. Required for
             "local" provider, optional for cloud providers.
         temperature: Sampling temperature (0.0 to 2.0). Higher values make output
@@ -245,8 +245,8 @@ def load_config_from_contract(
 # IMPORTANT: Model identifiers follow provider naming conventions and may need
 # periodic updates as providers release newer versions. Last verified: 2025-05.
 #
-# - OpenAI: Uses short model names (e.g., "gpt-4o", "gpt-4-turbo")
-# - Anthropic: Uses versioned names with dates (e.g., "claude-4-sonnet-20250514")
+# - OpenAI: Uses short model names (e.g., "gpt-4o", "gpt-4o-mini")
+# - Anthropic: Uses versioned names with dates (e.g., "claude-sonnet-4-20250514")
 # - Local: Uses model family names (e.g., "qwen2.5-coder-14b")
 
 OPENAI_CONFIG = ModelConfig(
@@ -257,7 +257,7 @@ OPENAI_CONFIG = ModelConfig(
 
 ANTHROPIC_CONFIG = ModelConfig(
     provider="anthropic",
-    model_name="claude-4-sonnet-20250514",  # Claude 4 Sonnet, version 2025-05-14
+    model_name="claude-sonnet-4-20250514",  # Claude Sonnet 4, version 2025-05-14
     temperature=0.7,
     api_key_env="ANTHROPIC_API_KEY",
 )
