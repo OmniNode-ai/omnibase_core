@@ -47,7 +47,7 @@ class EnumColorScheme(StrValueHelper, str, Enum):
 
     @classmethod
     def get_accessible_schemes(cls) -> list[EnumColorScheme]:
-        """Get list[Any]of accessibility-friendly color schemes."""
+        """Get list of accessibility-friendly color schemes."""
         return [
             cls.COLORBLIND_FRIENDLY,
             cls.HIGH_VISIBILITY,
@@ -57,7 +57,7 @@ class EnumColorScheme(StrValueHelper, str, Enum):
 
     @classmethod
     def get_dark_schemes(cls) -> list[EnumColorScheme]:
-        """Get list[Any]of dark color schemes."""
+        """Get list of dark color schemes."""
         return [
             cls.DARK,
             cls.HIGH_CONTRAST,
@@ -66,7 +66,7 @@ class EnumColorScheme(StrValueHelper, str, Enum):
 
     @classmethod
     def get_light_schemes(cls) -> list[EnumColorScheme]:
-        """Get list[Any]of light color schemes."""
+        """Get list of light color schemes."""
         return [
             cls.LIGHT,
             cls.BRIGHT,

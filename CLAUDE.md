@@ -470,7 +470,7 @@ class NodeMyServiceCompute(NodeCompute, MixinDiscoveryResponder):
         self.event_bus = container.get_service("ProtocolEventBus")
 ```
 
-**Available Mixins**: `MixinDiscoveryResponder`, `MixinEventHandler`, `MixinEventListener`, `MixinNodeExecutor`, `MixinNodeLifecycle`, `MixinRequestResponseIntrospection`, `MixinWorkflowExecution`, `StrValueHelper`
+**Available Mixins**: `MixinDiscoveryResponder`, `MixinEventHandler`, `MixinEventListener`, `MixinNodeExecutor`, `MixinNodeLifecycle`, `MixinRequestResponseIntrospection`, `MixinWorkflowExecution`
 
 ### Docstring Guidelines
 
@@ -552,7 +552,7 @@ execution states that a node can be in during its lifecycle...
 """
 ```
 
-#### Enum String Serialization
+### Enum String Serialization
 
 All string-based enums should use `StrValueHelper` for consistent `__str__` behavior:
 

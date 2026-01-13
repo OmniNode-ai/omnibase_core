@@ -7,9 +7,11 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumValidationPhase(str, Enum):
+class EnumValidationPhase(StrValueHelper, str, Enum):
     """Contract validation pipeline phases.
 
     Phases: PATCH (validate patches), MERGE (validate merge), EXPANDED (validate resolved contract).

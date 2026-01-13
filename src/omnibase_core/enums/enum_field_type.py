@@ -89,7 +89,7 @@ class EnumFieldType(StrValueHelper, str, Enum):
     @property
     def is_optional(self) -> bool:
         """Check if this is an optional field type."""
-        return "| None" in self.value or "None |" in self.value
+        return "| none" in self.value or "none |" in self.value
 
     @property
     def base_type(self) -> EnumFieldType:
