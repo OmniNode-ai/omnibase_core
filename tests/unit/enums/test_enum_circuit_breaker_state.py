@@ -62,8 +62,17 @@ class TestEnumCircuitBreakerState:
         assert "invalid" not in [e.value for e in EnumCircuitBreakerState]
 
     def test_enum_string_representation(self) -> None:
-        """Test string representation."""
-        assert str(EnumCircuitBreakerState.OPEN) == "EnumCircuitBreakerState.OPEN"
+        """Test string representation.
+
+        NOTE(OMN-1309): With StrEnum, str() returns the value directly (e.g., 'open')
+        instead of the enum member name. This is the intentional behavior for JSON
+        serialization compatibility.
+        """
+        # StrEnum: str() returns the value
+        assert str(EnumCircuitBreakerState.OPEN) == "open"
+        assert str(EnumCircuitBreakerState.CLOSED) == "closed"
+        assert str(EnumCircuitBreakerState.HALF_OPEN) == "half_open"
+        # repr() still includes full enum info
         assert (
             repr(EnumCircuitBreakerState.HALF_OPEN)
             == "<EnumCircuitBreakerState.HALF_OPEN: 'half_open'>"

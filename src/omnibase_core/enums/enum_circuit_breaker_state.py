@@ -5,15 +5,62 @@ from __future__ import annotations
 from enum import Enum, unique
 from typing import Never, NoReturn
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 __all__ = ["EnumCircuitBreakerState"]
 
 
 @unique
-class EnumCircuitBreakerState(Enum):
+class EnumCircuitBreakerState(StrValueHelper, str, Enum):
     """
     Circuit breaker state enumeration.
 
-    CLOSED: Normal operation. OPEN: Requests rejected. HALF_OPEN: Testing recovery.
+    The circuit breaker pattern prevents cascading failures by tracking the
+    health of external dependencies and temporarily blocking requests when
+    failures exceed a threshold.
+
+    Inherits from ``str`` to ensure proper JSON serialization - enum values
+    serialize directly to their lowercase string values (e.g., "closed", "open").
+
+    States:
+        CLOSED: Normal operation, requests pass through. The circuit monitors
+            for failures and transitions to OPEN if the failure threshold is exceeded.
+        OPEN: Circuit tripped, requests are rejected immediately without attempting
+            the operation. After a timeout period, transitions to HALF_OPEN.
+        HALF_OPEN: Testing recovery, limited requests allowed through to probe
+            whether the service has recovered. Success returns to CLOSED,
+            failure returns to OPEN.
+
+    State Transitions::
+
+        CLOSED --[failure threshold exceeded]--> OPEN
+        OPEN --[timeout elapsed]--> HALF_OPEN
+        HALF_OPEN --[probe succeeds]--> CLOSED
+        HALF_OPEN --[probe fails]--> OPEN
+
+    Example:
+        .. code-block:: python
+
+            from omnibase_core.enums import EnumCircuitBreakerState
+
+            state = EnumCircuitBreakerState.CLOSED
+            if state == EnumCircuitBreakerState.OPEN:
+                raise CircuitOpenError("Circuit is open")
+
+            # Using in match statement with exhaustive checking
+            match state:
+                case EnumCircuitBreakerState.CLOSED:
+                    result = execute_request()
+                case EnumCircuitBreakerState.OPEN:
+                    raise CircuitOpenError("Circuit is open")
+                case EnumCircuitBreakerState.HALF_OPEN:
+                    result = execute_probe_request()
+                case _ as unreachable:
+                    EnumCircuitBreakerState.assert_exhaustive(unreachable)
+
+    .. versionadded:: 0.4.0
+    .. versionchanged:: 0.6.5
+        Now inherits from ``str`` for proper JSON serialization (OMN-1309).
     """
 
     CLOSED = "closed"
