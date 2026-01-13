@@ -1,14 +1,25 @@
 """
 Operation status enumeration for service operations.
 
-Provides standardized status values for service manager operations.
+Provides standardized status values for operation results and API responses.
+This is the canonical operation status enum (OMN-1310).
+
+Use For:
+- Operation results
+- API responses
+- Service manager operations
 """
 
 from enum import Enum
 
 
 class EnumOperationStatus(str, Enum):
-    """Enumeration for operation status values."""
+    """
+    Enumeration for operation status values.
+
+    Canonical enum for tracking the status of operations,
+    API responses, and service manager operations.
+    """
 
     SUCCESS = "success"
     FAILED = "failed"
@@ -36,3 +47,6 @@ class EnumOperationStatus(str, Enum):
     def is_successful(self) -> bool:
         """Check if this status represents a successful operation."""
         return self == EnumOperationStatus.SUCCESS
+
+
+__all__ = ["EnumOperationStatus"]

@@ -2,20 +2,12 @@
 Enums for NodeOrchestrator workflow coordination.
 
 Extracted from archived NodeOrchestrator for ONEX compliance.
+
+Note: EnumWorkflowState has been consolidated into EnumWorkflowStatus
+in enum_workflow_status.py per OMN-1310.
 """
 
 from enum import Enum
-
-
-class EnumWorkflowState(Enum):
-    """Workflow execution states."""
-
-    PENDING = "pending"
-    RUNNING = "running"
-    PAUSED = "paused"  # RESERVED - v1.1
-    COMPLETED = "completed"
-    FAILED = "failed"
-    CANCELLED = "cancelled"
 
 
 class EnumExecutionMode(Enum):

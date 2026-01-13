@@ -200,7 +200,6 @@ from omnibase_core.enums import (
     EnumNodeKind,              # Architectural classification (EFFECT, COMPUTE, REDUCER, ORCHESTRATOR)
     EnumNodeType,              # Implementation type (TRANSFORMER, AGGREGATOR, etc.)
     EnumNodeStatus,
-    EnumNodeHealthStatus,
 
     # Effect domain
     EnumCircuitBreakerState,
@@ -231,8 +230,8 @@ from omnibase_core.enums import (
     # Health and status domain
     EnumHealthCheckType,
     EnumHealthDetailType,
-    EnumHealthStatusType,
-    EnumOperationStatus,
+    EnumHealthStatus,     # Canonical health status (OMN-1310)
+    EnumExecutionStatus,  # Canonical execution status (OMN-1310)
 
     # Many more...
 )

@@ -430,35 +430,47 @@ health_status = EnumHealthStatus.HEALTHY
 - `is_operational()` - Returns True if status is HEALTHY or DEGRADED
 - `requires_attention()` - Returns True if status is UNHEALTHY or CRITICAL
 
-### Operation Status
+### Execution Status
 
-#### EnumOperationStatus
+#### EnumExecutionStatus
 
-**Location**: `omnibase_core.enums.enum_operation_status`
+**Location**: `omnibase_core.enums.enum_execution_status`
 
-**Purpose**: Operation execution status.
+**Purpose**: Canonical execution status for ONEX lifecycle tracking.
+
+**Updated**: v0.6.4 (OMN-1310) - Consolidated from multiple status enums.
 
 ```python
-from omnibase_core.enums.enum_operation_status import EnumOperationStatus
+from omnibase_core.enums.enum_execution_status import EnumExecutionStatus
 
-status = EnumOperationStatus.SUCCESS
+status = EnumExecutionStatus.SUCCESS
 ```
 
 #### Available Statuses
 
 **Note**: All values are lowercase strings.
 
-- `SUCCESS` = "success" - Operation completed successfully
-- `FAILED` = "failed" - Operation failed
-- `IN_PROGRESS` = "in_progress" - Operation is in progress
-- `CANCELLED` = "cancelled" - Operation was cancelled
-- `PENDING` = "pending" - Operation is pending
-- `TIMEOUT` = "timeout" - Operation timed out
+- `PENDING` = "pending" - Execution is queued but not yet started
+- `RUNNING` = "running" - Execution is in progress
+- `COMPLETED` = "completed" - Execution finished (generic completion)
+- `SUCCESS` = "success" - Execution completed successfully
+- `FAILED` = "failed" - Execution failed with an error
+- `SKIPPED` = "skipped" - Execution was skipped
+- `CANCELLED` = "cancelled" - Execution was cancelled by user or system
+- `TIMEOUT` = "timeout" - Execution exceeded time limit
+- `PARTIAL` = "partial" - Execution partially completed (some steps succeeded)
 
 **Helper Methods**:
-- `is_terminal()` - Returns True if status is SUCCESS, FAILED, CANCELLED, or TIMEOUT
-- `is_active()` - Returns True if status is IN_PROGRESS or PENDING
-- `is_successful()` - Returns True if status is SUCCESS
+- `is_terminal(status)` - Returns True if execution has finished
+- `is_active(status)` - Returns True if status is RUNNING or PENDING
+- `is_successful(status)` - Returns True if status is SUCCESS or COMPLETED
+- `is_failure(status)` - Returns True if status is FAILED or TIMEOUT
+- `is_running(status)` - Returns True if status is RUNNING
+- `is_cancelled(status)` - Returns True if status is CANCELLED
+- `is_skipped(status)` - Returns True if status is SKIPPED
+- `is_partial(status)` - Returns True if status is PARTIAL
+- `to_base_status()` - Convert to EnumBaseStatus for universal operations
+- `from_base_status(base_status)` - Create from EnumBaseStatus
 
 ### Message Roles
 
@@ -580,19 +592,19 @@ print(f"Available actions: {available_actions}")
 ### Enum Mapping
 
 ```python
-from omnibase_core.enums.enum_operation_status import EnumOperationStatus
+from omnibase_core.enums.enum_execution_status import EnumExecutionStatus
 
 # Map status to HTTP status codes
 STATUS_TO_HTTP = {
-    EnumOperationStatus.SUCCESS: 200,
-    EnumOperationStatus.FAILURE: 500,
-    EnumOperationStatus.TIMEOUT: 408,
-    EnumOperationStatus.CANCELLED: 499,
-    EnumOperationStatus.IN_PROGRESS: 202,
-    EnumOperationStatus.PENDING: 202
+    EnumExecutionStatus.SUCCESS: 200,
+    EnumExecutionStatus.FAILURE: 500,
+    EnumExecutionStatus.TIMEOUT: 408,
+    EnumExecutionStatus.CANCELLED: 499,
+    EnumExecutionStatus.IN_PROGRESS: 202,
+    EnumExecutionStatus.PENDING: 202
 }
 
-def get_http_status(operation_status: EnumOperationStatus) -> int:
+def get_http_status(operation_status: EnumExecutionStatus) -> int:
     """Get HTTP status code for operation status."""
     return STATUS_TO_HTTP.get(operation_status, 500)
 ```
@@ -633,15 +645,15 @@ class EnumCustomStatus(str, Enum):
 ### Enum Error Conversion
 
 ```python
-from omnibase_core.enums.enum_operation_status import EnumOperationStatus
+from omnibase_core.enums.enum_execution_status import EnumExecutionStatus
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
-def convert_status_to_error_code(status: EnumOperationStatus) -> EnumCoreErrorCode:
+def convert_status_to_error_code(status: EnumExecutionStatus) -> EnumCoreErrorCode:
     """Convert operation status to error code."""
     status_to_error = {
-        EnumOperationStatus.FAILURE: EnumCoreErrorCode.PROCESSING_ERROR,
-        EnumOperationStatus.TIMEOUT: EnumCoreErrorCode.TIMEOUT_ERROR,
-        EnumOperationStatus.CANCELLED: EnumCoreErrorCode.PROCESSING_ERROR
+        EnumExecutionStatus.FAILURE: EnumCoreErrorCode.PROCESSING_ERROR,
+        EnumExecutionStatus.TIMEOUT: EnumCoreErrorCode.TIMEOUT_ERROR,
+        EnumExecutionStatus.CANCELLED: EnumCoreErrorCode.PROCESSING_ERROR
     }
     return status_to_error.get(status, EnumCoreErrorCode.PROCESSING_ERROR)
 ```

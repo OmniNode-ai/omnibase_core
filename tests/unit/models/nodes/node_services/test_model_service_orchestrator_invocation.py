@@ -12,7 +12,7 @@ from uuid import uuid4
 
 import pytest
 
-from omnibase_core.enums.enum_orchestrator_types import EnumWorkflowState
+from omnibase_core.enums.enum_workflow_status import EnumWorkflowStatus
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.discovery.model_tool_invocation_event import (
     ModelToolInvocationEvent,
@@ -75,7 +75,7 @@ class TestModelServiceOrchestratorToolInvocation:
             workflow_id = uuid4()
             # Simulate workflow coordination
             node.active_workflows[workflow_id] = input_state
-            node.workflow_states[workflow_id] = EnumWorkflowState.RUNNING
+            node.workflow_states[workflow_id] = EnumWorkflowStatus.RUNNING
 
             # Get action safely
             action_value = getattr(input_state, "action", "default_action")
@@ -90,7 +90,7 @@ class TestModelServiceOrchestratorToolInvocation:
             }
 
             # Complete workflow
-            node.workflow_states[workflow_id] = EnumWorkflowState.COMPLETED
+            node.workflow_states[workflow_id] = EnumWorkflowStatus.COMPLETED
             del node.active_workflows[workflow_id]
 
             return result
@@ -509,13 +509,13 @@ class TestModelServiceOrchestratorToolInvocation:
 
             # Create workflow
             service_node.active_workflows[workflow_id] = input_state
-            service_node.workflow_states[workflow_id] = EnumWorkflowState.RUNNING
+            service_node.workflow_states[workflow_id] = EnumWorkflowStatus.RUNNING
             workflow_created = True
 
             await asyncio.sleep(0.01)
 
             # Complete workflow
-            service_node.workflow_states[workflow_id] = EnumWorkflowState.COMPLETED
+            service_node.workflow_states[workflow_id] = EnumWorkflowStatus.COMPLETED
             del service_node.active_workflows[workflow_id]
             workflow_completed = True
 
@@ -609,9 +609,9 @@ class TestModelServiceOrchestratorEdgeCases:
             """Simulate workflow failure."""
             workflow_id = uuid4()
             node.active_workflows[workflow_id] = input_state
-            node.workflow_states[workflow_id] = EnumWorkflowState.RUNNING
+            node.workflow_states[workflow_id] = EnumWorkflowStatus.RUNNING
             # Simulate failure
-            node.workflow_states[workflow_id] = EnumWorkflowState.FAILED
+            node.workflow_states[workflow_id] = EnumWorkflowStatus.FAILED
             raise ValueError("Workflow step failed")
 
         node.run = AsyncMock(side_effect=failing_run)
@@ -696,7 +696,7 @@ class TestModelServiceOrchestratorEdgeCases:
             """Simulate workflow execution with tracking."""
             workflow_id = uuid4()
             node.active_workflows[workflow_id] = input_state
-            node.workflow_states[workflow_id] = EnumWorkflowState.RUNNING
+            node.workflow_states[workflow_id] = EnumWorkflowStatus.RUNNING
             node.max_active_workflows = max(
                 node.max_active_workflows, len(node.active_workflows)
             )
@@ -704,7 +704,7 @@ class TestModelServiceOrchestratorEdgeCases:
             # Simulate work
             await asyncio.sleep(0.01)
 
-            node.workflow_states[workflow_id] = EnumWorkflowState.COMPLETED
+            node.workflow_states[workflow_id] = EnumWorkflowStatus.COMPLETED
             del node.active_workflows[workflow_id]
 
             return {"status": "success", "workflow_id": str(workflow_id)}

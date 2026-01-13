@@ -18,8 +18,8 @@ from omnibase_core.constants.constants_field_limits import MAX_NAME_LENGTH
 from omnibase_core.enums.enum_workflow_execution import (
     EnumBranchCondition,
     EnumExecutionMode,
-    EnumWorkflowState,
 )
+from omnibase_core.enums.enum_workflow_status import EnumWorkflowStatus
 from omnibase_core.models.orchestrator.model_action import ModelAction
 
 __all__ = ["ModelWorkflowStepExecution"]
@@ -97,8 +97,8 @@ class ModelWorkflowStepExecution(BaseModel):
     )
 
     # Runtime state tracking
-    state: EnumWorkflowState = Field(
-        default=EnumWorkflowState.PENDING,
+    state: EnumWorkflowStatus = Field(
+        default=EnumWorkflowStatus.PENDING,
         description="Current execution state",
     )
 

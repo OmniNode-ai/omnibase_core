@@ -23,7 +23,7 @@ from uuid import UUID, uuid4
 
 import pytest
 
-from omnibase_core.enums.enum_orchestrator_types import EnumWorkflowState
+from omnibase_core.enums.enum_workflow_status import EnumWorkflowStatus
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.discovery.model_node_shutdown_event import (
     ModelNodeShutdownEvent,
@@ -139,17 +139,17 @@ def service_orchestrator(
                 "running": sum(
                     1
                     for state in service.workflow_states.values()
-                    if state == EnumWorkflowState.RUNNING
+                    if state == EnumWorkflowStatus.RUNNING
                 ),
                 "completed": sum(
                     1
                     for state in service.workflow_states.values()
-                    if state == EnumWorkflowState.COMPLETED
+                    if state == EnumWorkflowStatus.COMPLETED
                 ),
                 "failed": sum(
                     1
                     for state in service.workflow_states.values()
-                    if state == EnumWorkflowState.FAILED
+                    if state == EnumWorkflowStatus.FAILED
                 ),
             },
             "total_thunks_emitted": sum(
@@ -1314,9 +1314,9 @@ class TestSubnodeHealthAggregation:
 
         service_orchestrator.active_workflows[workflow_id_1] = Mock()
         service_orchestrator.active_workflows[workflow_id_2] = Mock()
-        service_orchestrator.workflow_states[workflow_id_1] = EnumWorkflowState.RUNNING
+        service_orchestrator.workflow_states[workflow_id_1] = EnumWorkflowStatus.RUNNING
         service_orchestrator.workflow_states[workflow_id_2] = (
-            EnumWorkflowState.COMPLETED
+            EnumWorkflowStatus.COMPLETED
         )
 
         state_health = service_orchestrator.get_workflow_state_health()

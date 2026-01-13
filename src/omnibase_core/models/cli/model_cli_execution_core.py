@@ -17,9 +17,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from omnibase_core.decorators import allow_dict_any
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_execution_phase import EnumExecutionPhase
-from omnibase_core.enums.enum_execution_status_v2 import (
-    EnumExecutionStatusV2 as EnumExecutionStatus,
-)
+from omnibase_core.enums.enum_execution_status import EnumExecutionStatus
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.typed_dict_cli_execution_core_serialized import (
     TypedDictCliExecutionCoreSerialized,

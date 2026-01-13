@@ -2,13 +2,37 @@
 Execution Status Enum.
 
 Status values for ONEX execution lifecycle tracking.
+This is the canonical enum for execution status - all execution-related
+status tracking should use this enum.
 """
 
+from __future__ import annotations
+
 from enum import Enum
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from omnibase_core.enums.enum_base_status import EnumBaseStatus
 
 
 class EnumExecutionStatus(str, Enum):
-    """Execution status values for ONEX lifecycle tracking."""
+    """
+    Execution status values for ONEX lifecycle tracking.
+
+    This is the canonical execution status enum. Use this for all
+    execution-related status tracking.
+
+    Values:
+        PENDING: Execution is queued but not yet started
+        RUNNING: Execution is in progress
+        COMPLETED: Execution finished (generic completion)
+        SUCCESS: Execution completed successfully
+        FAILED: Execution failed with an error
+        SKIPPED: Execution was skipped
+        CANCELLED: Execution was cancelled by user or system
+        TIMEOUT: Execution exceeded time limit
+        PARTIAL: Execution partially completed (some steps succeeded)
+    """
 
     PENDING = "pending"
     RUNNING = "running"
@@ -24,8 +48,79 @@ class EnumExecutionStatus(str, Enum):
         """Return the string value of the execution status."""
         return self.value
 
+    def to_base_status(self) -> EnumBaseStatus:
+        """
+        Convert execution status to base status for universal operations.
+
+        Maps execution-specific values to their base status equivalents:
+        - SUCCESS -> COMPLETED
+        - SKIPPED -> INACTIVE
+        - CANCELLED -> INACTIVE
+        - TIMEOUT -> FAILED
+        - PARTIAL -> COMPLETED (with partial success)
+
+        Returns:
+            The corresponding EnumBaseStatus value
+        """
+        from omnibase_core.enums.enum_base_status import EnumBaseStatus
+
+        # Direct mappings for values that exist in base
+        direct_mappings = {
+            self.PENDING: EnumBaseStatus.PENDING,
+            self.RUNNING: EnumBaseStatus.RUNNING,
+            self.COMPLETED: EnumBaseStatus.COMPLETED,
+            self.FAILED: EnumBaseStatus.FAILED,
+        }
+
+        if self in direct_mappings:
+            return direct_mappings[self]
+
+        # Execution-specific mappings
+        execution_mappings = {
+            self.SUCCESS: EnumBaseStatus.COMPLETED,
+            self.SKIPPED: EnumBaseStatus.INACTIVE,
+            self.CANCELLED: EnumBaseStatus.INACTIVE,
+            self.TIMEOUT: EnumBaseStatus.FAILED,
+            self.PARTIAL: EnumBaseStatus.COMPLETED,
+        }
+
+        return execution_mappings.get(self, EnumBaseStatus.UNKNOWN)
+
     @classmethod
-    def is_terminal(cls, status: "EnumExecutionStatus") -> bool:
+    def from_base_status(cls, base_status: EnumBaseStatus) -> EnumExecutionStatus:
+        """
+        Create execution status from base status.
+
+        Args:
+            base_status: The base status to convert
+
+        Returns:
+            The corresponding EnumExecutionStatus value
+
+        Raises:
+            ValueError: If base_status cannot be mapped to execution status
+        """
+        from omnibase_core.enums.enum_base_status import EnumBaseStatus
+
+        mapping = {
+            EnumBaseStatus.PENDING: cls.PENDING,
+            EnumBaseStatus.RUNNING: cls.RUNNING,
+            EnumBaseStatus.COMPLETED: cls.COMPLETED,
+            EnumBaseStatus.FAILED: cls.FAILED,
+            EnumBaseStatus.INACTIVE: cls.CANCELLED,
+            EnumBaseStatus.ACTIVE: cls.RUNNING,
+            EnumBaseStatus.UNKNOWN: cls.PENDING,
+        }
+
+        if base_status in mapping:
+            return mapping[base_status]
+
+        raise ValueError(  # error-ok: standard enum conversion error pattern
+            f"Cannot convert {base_status} to EnumExecutionStatus"
+        )
+
+    @classmethod
+    def is_terminal(cls, status: EnumExecutionStatus) -> bool:
         """
         Check if the status is terminal (execution has finished).
 
@@ -47,7 +142,7 @@ class EnumExecutionStatus(str, Enum):
         return status in terminal_statuses
 
     @classmethod
-    def is_active(cls, status: "EnumExecutionStatus") -> bool:
+    def is_active(cls, status: EnumExecutionStatus) -> bool:
         """
         Check if the status is active (execution is in progress).
 
@@ -61,7 +156,7 @@ class EnumExecutionStatus(str, Enum):
         return status in active_statuses
 
     @classmethod
-    def is_successful(cls, status: "EnumExecutionStatus") -> bool:
+    def is_successful(cls, status: EnumExecutionStatus) -> bool:
         """
         Check if the status indicates successful completion.
 
@@ -75,7 +170,7 @@ class EnumExecutionStatus(str, Enum):
         return status in successful_statuses
 
     @classmethod
-    def is_failure(cls, status: "EnumExecutionStatus") -> bool:
+    def is_failure(cls, status: EnumExecutionStatus) -> bool:
         """
         Check if the status indicates failure.
 
@@ -93,7 +188,7 @@ class EnumExecutionStatus(str, Enum):
         return status in failure_statuses
 
     @classmethod
-    def is_skipped(cls, status: "EnumExecutionStatus") -> bool:
+    def is_skipped(cls, status: EnumExecutionStatus) -> bool:
         """
         Check if the status indicates the execution was skipped.
 
@@ -106,7 +201,7 @@ class EnumExecutionStatus(str, Enum):
         return status == cls.SKIPPED
 
     @classmethod
-    def is_running(cls, status: "EnumExecutionStatus") -> bool:
+    def is_running(cls, status: EnumExecutionStatus) -> bool:
         """
         Check if the status indicates the execution is currently running.
 
@@ -123,7 +218,7 @@ class EnumExecutionStatus(str, Enum):
         return status == cls.RUNNING
 
     @classmethod
-    def is_cancelled(cls, status: "EnumExecutionStatus") -> bool:
+    def is_cancelled(cls, status: EnumExecutionStatus) -> bool:
         """
         Check if the status indicates the execution was cancelled.
 
@@ -139,7 +234,7 @@ class EnumExecutionStatus(str, Enum):
         return status == cls.CANCELLED
 
     @classmethod
-    def is_partial(cls, status: "EnumExecutionStatus") -> bool:
+    def is_partial(cls, status: EnumExecutionStatus) -> bool:
         """
         Check if the status indicates partial completion.
 

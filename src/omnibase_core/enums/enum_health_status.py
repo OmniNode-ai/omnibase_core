@@ -9,7 +9,16 @@ from enum import Enum
 
 
 class EnumHealthStatus(str, Enum):
-    """Health status for LLM provider health checks and system components."""
+    """Canonical health status for all system components.
+
+    This is the single source of truth for health status values across:
+    - LLM providers
+    - Nodes
+    - Services
+    - Tools
+    - Registries
+    - All other system components
+    """
 
     HEALTHY = "healthy"
     DEGRADED = "degraded"
@@ -21,6 +30,8 @@ class EnumHealthStatus(str, Enum):
     AVAILABLE = "available"
     UNAVAILABLE = "unavailable"
     ERROR = "error"
+    INITIALIZING = "initializing"
+    DISPOSING = "disposing"
 
     def __str__(self) -> str:
         """Return the string value of the health status."""
@@ -28,8 +39,12 @@ class EnumHealthStatus(str, Enum):
 
     def is_operational(self) -> bool:
         """Check if the service is operational despite potential issues."""
-        return self in [self.HEALTHY, self.DEGRADED]
+        return self in [self.HEALTHY, self.DEGRADED, self.AVAILABLE, self.WARNING]
 
     def requires_attention(self) -> bool:
         """Check if this status requires immediate attention."""
-        return self in [self.UNHEALTHY, self.CRITICAL]
+        return self in [self.UNHEALTHY, self.CRITICAL, self.ERROR, self.UNREACHABLE]
+
+    def is_transitional(self) -> bool:
+        """Check if this status indicates a transitional state."""
+        return self in [self.INITIALIZING, self.DISPOSING]

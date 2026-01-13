@@ -13,9 +13,9 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_category import EnumCategory
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums.enum_health_status import EnumHealthStatus
 from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
 from omnibase_core.enums.enum_metadata_node_type import EnumMetadataNodeType
-from omnibase_core.enums.enum_node_health_status import EnumNodeHealthStatus
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
 from omnibase_core.models.metadata.node_info import ModelNodePerformanceMetrics
@@ -108,7 +108,7 @@ class ModelNodeMetadataInfo(BaseModel):
     def health(self, value: str) -> None:
         """Set node health from string."""
         try:
-            self.core.health = EnumNodeHealthStatus(value)
+            self.core.health = EnumHealthStatus(value)
         except ValueError as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -337,7 +337,7 @@ class ModelNodeMetadataInfo(BaseModel):
         # Handle health with enum conversion
         health_str = getattr(node_info, "health", "healthy")
         try:
-            core.health = EnumNodeHealthStatus(health_str)
+            core.health = EnumHealthStatus(health_str)
         except ValueError as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,

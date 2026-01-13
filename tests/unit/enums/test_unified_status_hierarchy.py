@@ -8,10 +8,7 @@ proper migration paths from old conflicting enums.
 import pytest
 
 from omnibase_core.enums.enum_base_status import EnumBaseStatus
-from omnibase_core.enums.enum_execution_status_v2 import (
-    EnumExecutionStatus,
-    EnumExecutionStatusV2,
-)
+from omnibase_core.enums.enum_execution_status import EnumExecutionStatus
 from omnibase_core.enums.enum_function_lifecycle_status import (
     EnumFunctionLifecycleStatus,
     EnumFunctionStatus,
@@ -72,67 +69,110 @@ class TestBaseStatus:
 
 
 @pytest.mark.unit
-class TestExecutionStatusV2:
-    """Test execution status v2 functionality."""
+class TestExecutionStatus:
+    """Test canonical execution status functionality (OMN-1310)."""
 
-    def test_execution_status_inheritance(self):
-        """Test execution status includes base values."""
-        # Should include all base values
-        assert EnumExecutionStatusV2.ACTIVE.value == EnumBaseStatus.ACTIVE.value
-        assert EnumExecutionStatusV2.PENDING.value == EnumBaseStatus.PENDING.value
-        assert EnumExecutionStatusV2.RUNNING.value == EnumBaseStatus.RUNNING.value
-        assert EnumExecutionStatusV2.COMPLETED.value == EnumBaseStatus.COMPLETED.value
-        assert EnumExecutionStatusV2.FAILED.value == EnumBaseStatus.FAILED.value
+    def test_execution_status_values(self):
+        """Test execution status contains all required values."""
+        expected_values = {
+            "pending",
+            "running",
+            "completed",
+            "success",
+            "failed",
+            "skipped",
+            "cancelled",
+            "timeout",
+            "partial",
+        }
+        actual_values = {status.value for status in EnumExecutionStatus}
+        assert actual_values == expected_values
+
+    def test_execution_status_base_overlap(self):
+        """Test execution status shares common values with base status."""
+        # These values should match base status
+        assert EnumExecutionStatus.PENDING.value == EnumBaseStatus.PENDING.value
+        assert EnumExecutionStatus.RUNNING.value == EnumBaseStatus.RUNNING.value
+        assert EnumExecutionStatus.COMPLETED.value == EnumBaseStatus.COMPLETED.value
+        assert EnumExecutionStatus.FAILED.value == EnumBaseStatus.FAILED.value
 
     def test_execution_specific_values(self):
         """Test execution-specific status values."""
         execution_specific = {
-            EnumExecutionStatusV2.SUCCESS,
-            EnumExecutionStatusV2.SKIPPED,
-            EnumExecutionStatusV2.CANCELLED,
-            EnumExecutionStatusV2.TIMEOUT,
+            EnumExecutionStatus.SUCCESS,
+            EnumExecutionStatus.SKIPPED,
+            EnumExecutionStatus.CANCELLED,
+            EnumExecutionStatus.TIMEOUT,
+            EnumExecutionStatus.PARTIAL,
         }
         for status in execution_specific:
-            assert status.value in ["success", "skipped", "cancelled", "timeout"]
+            assert status.value in [
+                "success",
+                "skipped",
+                "cancelled",
+                "timeout",
+                "partial",
+            ]
 
     def test_base_status_conversion(self):
         """Test conversion to base status."""
         # Direct base values should map directly
-        assert EnumExecutionStatusV2.ACTIVE.to_base_status() == EnumBaseStatus.ACTIVE
-        assert EnumExecutionStatusV2.FAILED.to_base_status() == EnumBaseStatus.FAILED
+        assert EnumExecutionStatus.PENDING.to_base_status() == EnumBaseStatus.PENDING
+        assert EnumExecutionStatus.RUNNING.to_base_status() == EnumBaseStatus.RUNNING
+        assert (
+            EnumExecutionStatus.COMPLETED.to_base_status() == EnumBaseStatus.COMPLETED
+        )
+        assert EnumExecutionStatus.FAILED.to_base_status() == EnumBaseStatus.FAILED
 
         # Execution-specific values should map to appropriate base
-        assert (
-            EnumExecutionStatusV2.SUCCESS.to_base_status() == EnumBaseStatus.COMPLETED
-        )
-        assert EnumExecutionStatusV2.TIMEOUT.to_base_status() == EnumBaseStatus.FAILED
-        assert (
-            EnumExecutionStatusV2.CANCELLED.to_base_status() == EnumBaseStatus.INACTIVE
-        )
+        assert EnumExecutionStatus.SUCCESS.to_base_status() == EnumBaseStatus.COMPLETED
+        assert EnumExecutionStatus.TIMEOUT.to_base_status() == EnumBaseStatus.FAILED
+        assert EnumExecutionStatus.CANCELLED.to_base_status() == EnumBaseStatus.INACTIVE
+        assert EnumExecutionStatus.SKIPPED.to_base_status() == EnumBaseStatus.INACTIVE
+        assert EnumExecutionStatus.PARTIAL.to_base_status() == EnumBaseStatus.COMPLETED
 
     def test_execution_status_methods(self):
         """Test execution status utility methods."""
         # Test terminal states
-        assert EnumExecutionStatusV2.is_terminal(EnumExecutionStatusV2.SUCCESS)
-        assert EnumExecutionStatusV2.is_terminal(EnumExecutionStatusV2.FAILED)
-        assert EnumExecutionStatusV2.is_terminal(EnumExecutionStatusV2.TIMEOUT)
-        assert not EnumExecutionStatusV2.is_terminal(EnumExecutionStatusV2.RUNNING)
+        assert EnumExecutionStatus.is_terminal(EnumExecutionStatus.SUCCESS)
+        assert EnumExecutionStatus.is_terminal(EnumExecutionStatus.FAILED)
+        assert EnumExecutionStatus.is_terminal(EnumExecutionStatus.TIMEOUT)
+        assert EnumExecutionStatus.is_terminal(EnumExecutionStatus.PARTIAL)
+        assert not EnumExecutionStatus.is_terminal(EnumExecutionStatus.RUNNING)
+        assert not EnumExecutionStatus.is_terminal(EnumExecutionStatus.PENDING)
 
         # Test active states
-        assert EnumExecutionStatusV2.is_active(EnumExecutionStatusV2.RUNNING)
-        assert EnumExecutionStatusV2.is_active(EnumExecutionStatusV2.PENDING)
-        assert not EnumExecutionStatusV2.is_active(EnumExecutionStatusV2.COMPLETED)
+        assert EnumExecutionStatus.is_active(EnumExecutionStatus.RUNNING)
+        assert EnumExecutionStatus.is_active(EnumExecutionStatus.PENDING)
+        assert not EnumExecutionStatus.is_active(EnumExecutionStatus.COMPLETED)
+        assert not EnumExecutionStatus.is_active(EnumExecutionStatus.FAILED)
 
         # Test successful states
-        assert EnumExecutionStatusV2.is_successful(EnumExecutionStatusV2.SUCCESS)
-        assert EnumExecutionStatusV2.is_successful(EnumExecutionStatusV2.COMPLETED)
-        assert not EnumExecutionStatusV2.is_successful(EnumExecutionStatusV2.FAILED)
+        assert EnumExecutionStatus.is_successful(EnumExecutionStatus.SUCCESS)
+        assert EnumExecutionStatus.is_successful(EnumExecutionStatus.COMPLETED)
+        assert not EnumExecutionStatus.is_successful(EnumExecutionStatus.FAILED)
 
-    def test_backward_compatibility(self):
-        """Test backward compatibility alias."""
-        # EnumExecutionStatus should be an alias for EnumExecutionStatusV2
-        assert EnumExecutionStatus.SUCCESS == EnumExecutionStatusV2.SUCCESS
-        assert EnumExecutionStatus.PENDING == EnumExecutionStatusV2.PENDING
+        # Test failure states
+        assert EnumExecutionStatus.is_failure(EnumExecutionStatus.FAILED)
+        assert EnumExecutionStatus.is_failure(EnumExecutionStatus.TIMEOUT)
+        assert not EnumExecutionStatus.is_failure(EnumExecutionStatus.SUCCESS)
+        assert not EnumExecutionStatus.is_failure(EnumExecutionStatus.CANCELLED)
+
+        # Test running state
+        assert EnumExecutionStatus.is_running(EnumExecutionStatus.RUNNING)
+        assert not EnumExecutionStatus.is_running(EnumExecutionStatus.PENDING)
+
+        # Test cancelled state
+        assert EnumExecutionStatus.is_cancelled(EnumExecutionStatus.CANCELLED)
+        assert not EnumExecutionStatus.is_cancelled(EnumExecutionStatus.FAILED)
+
+        # Test partial state
+        assert EnumExecutionStatus.is_partial(EnumExecutionStatus.PARTIAL)
+        assert not EnumExecutionStatus.is_partial(EnumExecutionStatus.SUCCESS)
+
+        # Test skipped state
+        assert EnumExecutionStatus.is_skipped(EnumExecutionStatus.SKIPPED)
+        assert not EnumExecutionStatus.is_skipped(EnumExecutionStatus.SUCCESS)
 
 
 @pytest.mark.unit
@@ -283,8 +323,7 @@ class TestStatusMigration:
         # Test valid migrations
         assert migrator.migrate_general_status("active") == EnumGeneralStatus.ACTIVE
         assert (
-            migrator.migrate_execution_status("pending")
-            == EnumExecutionStatusV2.PENDING
+            migrator.migrate_execution_status("pending") == EnumExecutionStatus.PENDING
         )
         assert (
             migrator.migrate_function_status("deprecated")
@@ -338,7 +377,7 @@ class TestCrossEnumCompatibility:
     def test_base_status_universal_operations(self):
         """Test base status can be used for universal operations."""
         # All domain enums should convert to base status
-        execution_status = EnumExecutionStatusV2.SUCCESS
+        execution_status = EnumExecutionStatus.SUCCESS
         function_status = EnumFunctionLifecycleStatus.ACTIVE
         general_status = EnumGeneralStatus.APPROVED
 
@@ -354,7 +393,7 @@ class TestCrossEnumCompatibility:
     def test_cross_domain_status_comparison(self):
         """Test cross-domain status comparisons via base status."""
         # Different domain statuses that should map to same base
-        execution_success = EnumExecutionStatusV2.SUCCESS
+        execution_success = EnumExecutionStatus.SUCCESS
         general_completed = EnumGeneralStatus.COMPLETED
 
         # Should both map to COMPLETED base status
@@ -368,7 +407,7 @@ class TestCrossEnumCompatibility:
         """Test that the unified hierarchy eliminates value conflicts."""
         # Get all values from each enum
         base_values = {s.value for s in EnumBaseStatus}
-        execution_values = {s.value for s in EnumExecutionStatusV2}
+        execution_values = {s.value for s in EnumExecutionStatus}
         function_values = {s.value for s in EnumFunctionLifecycleStatus}
         general_values = {s.value for s in EnumGeneralStatus}
 

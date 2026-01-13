@@ -2,21 +2,14 @@
 Workflow Coordination Enums.
 
 Comprehensive enum definitions for workflow coordination functionality including
-workflow status, assignment status, execution patterns, and failure recovery
-strategies for ORCHESTRATOR nodes.
+assignment status, execution patterns, and failure recovery strategies
+for ORCHESTRATOR nodes.
+
+Note: EnumWorkflowStatus has been consolidated into the canonical version
+in enum_workflow_status.py per OMN-1310.
 """
 
 from enum import Enum
-
-
-class EnumWorkflowStatus(str, Enum):
-    """Workflow execution status."""
-
-    CREATED = "CREATED"
-    RUNNING = "RUNNING"
-    COMPLETED = "COMPLETED"
-    FAILED = "FAILED"
-    CANCELLED = "CANCELLED"
 
 
 class EnumAssignmentStatus(str, Enum):

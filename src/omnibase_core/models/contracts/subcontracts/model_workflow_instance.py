@@ -9,7 +9,7 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.enums.enum_workflow_coordination import EnumWorkflowStatus
+from omnibase_core.enums.enum_workflow_status import EnumWorkflowStatus
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 # Type aliases for structured data - Strict typing is enforced for Any types
