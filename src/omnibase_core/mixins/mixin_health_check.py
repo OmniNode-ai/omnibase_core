@@ -257,10 +257,10 @@ class MixinHealthCheck:
                 check_results.append(result)
 
                 # Update overall status (degraded if any check fails)
-                if result.status == "unhealthy":
+                if result.status == EnumHealthStatus.UNHEALTHY.value:
                     overall_status = EnumHealthStatus.UNHEALTHY
                 elif (
-                    result.status == "degraded"
+                    result.status == EnumHealthStatus.DEGRADED.value
                     and overall_status != EnumHealthStatus.UNHEALTHY
                 ):
                     overall_status = EnumHealthStatus.DEGRADED
@@ -445,10 +445,10 @@ class MixinHealthCheck:
                 check_results.append(result)
 
                 # Update overall status
-                if result.status == "unhealthy":
+                if result.status == EnumHealthStatus.UNHEALTHY.value:
                     overall_status = EnumHealthStatus.UNHEALTHY
                 elif (
-                    result.status == "degraded"
+                    result.status == EnumHealthStatus.DEGRADED.value
                     and overall_status != EnumHealthStatus.UNHEALTHY
                 ):
                     overall_status = EnumHealthStatus.DEGRADED
@@ -527,7 +527,7 @@ class MixinHealthCheck:
         # Convert to typed dictionary format
         return TypedDictHealthCheckStatus(
             node_id=node_id_str,
-            is_healthy=health.status == "healthy",
+            is_healthy=health.status == EnumHealthStatus.HEALTHY.value,
             status=health.status,
             health_score=health.health_score,
             issues=[issue.message for issue in health.issues],

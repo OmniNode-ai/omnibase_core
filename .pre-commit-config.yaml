@@ -357,7 +357,7 @@ repos:
         # - model_action_config_value.py: Action config value types
         # - model_node_config_value.py: Node config entry and schema types
         # - mixin_event_bus.py: Duck-typed Protocol defined alongside mixin that uses it
-        # - mixin_health_check.py: Duck-typed Protocols for connection pools/clients alongside mixin
+        # - mixin_health_check.py: Duck-typed Protocols (connection pools, clients) alongside health check mixin
         exclude: ^(tests/|archived/|archive/|scripts/validation/|src/omnibase_core/utils/util_singleton_holders\.py$|src/omnibase_core/models/core/model_action_config_value\.py$|src/omnibase_core/models/configuration/model_node_config_value\.py$|src/omnibase_core/mixins/mixin_event_bus\.py$|src/omnibase_core/mixins/mixin_health_check\.py$|src/omnibase_core/protocols/)
         stages: [pre-commit]
 

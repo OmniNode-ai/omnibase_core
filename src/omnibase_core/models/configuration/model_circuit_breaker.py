@@ -47,7 +47,9 @@ from datetime import UTC, datetime, timedelta
 from typing import Any, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
+from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, field_validator
+
+from omnibase_core.enums.enum_circuit_breaker_state import EnumCircuitBreakerState
 
 from .model_circuit_breaker_metadata import ModelCircuitBreakerMetadata
 
@@ -296,8 +298,24 @@ class ModelCircuitBreaker(BaseModel):
     state: str = Field(
         default="closed",
         description="Current circuit breaker state",
-        pattern="^(closed|open|half_open)$",
     )
+
+    @field_validator("state", mode="before")
+    @classmethod
+    def _normalize_state(cls, v: str | EnumCircuitBreakerState) -> str:
+        """Accept both string and enum, normalize to string for serialization."""
+        if isinstance(v, EnumCircuitBreakerState):
+            return v.value
+        valid_states = {
+            EnumCircuitBreakerState.CLOSED.value,
+            EnumCircuitBreakerState.OPEN.value,
+            EnumCircuitBreakerState.HALF_OPEN.value,
+        }
+        if isinstance(v, str) and v in valid_states:
+            return v
+        raise ValueError(
+            f"Invalid circuit breaker state: {v!r}. Valid states: {sorted(valid_states)}"
+        )
 
     last_failure_time: datetime | None = Field(
         default=None,
@@ -362,7 +380,7 @@ class ModelCircuitBreaker(BaseModel):
             - state: Underlying state field
             - get_current_state(): State with automatic transitions
         """
-        return self.state == "open"
+        return self.state == EnumCircuitBreakerState.OPEN.value
 
     def should_allow_request(self) -> bool:
         """Check if a request should be allowed through the circuit breaker"""
@@ -375,15 +393,15 @@ class ModelCircuitBreaker(BaseModel):
             # Clean up old data outside window
             self._cleanup_old_data_unlocked(current_time)
 
-            if self.state == "closed":
+            if self.state == EnumCircuitBreakerState.CLOSED.value:
                 return True
-            if self.state == "open":
+            if self.state == EnumCircuitBreakerState.OPEN.value:
                 # Check if timeout has elapsed to transition to half-open
                 if self._should_transition_to_half_open(current_time):
                     self._transition_to_half_open_unlocked()
                     return True
                 return False
-            if self.state == "half_open":
+            if self.state == EnumCircuitBreakerState.HALF_OPEN.value:
                 # Allow limited requests in half-open state
                 if self.half_open_requests < self.half_open_max_requests:
                     self.half_open_requests += 1
@@ -401,7 +419,7 @@ class ModelCircuitBreaker(BaseModel):
             current_time = datetime.now(UTC)
             self.total_requests += 1
 
-            if self.state == "half_open":
+            if self.state == EnumCircuitBreakerState.HALF_OPEN.value:
                 self.success_count += 1
                 if self.success_count >= self.success_threshold:
                     self._transition_to_closed_unlocked()
@@ -434,10 +452,10 @@ class ModelCircuitBreaker(BaseModel):
             self.total_requests += 1
             self.last_failure_time = current_time
 
-            if self.state == "half_open":
+            if self.state == EnumCircuitBreakerState.HALF_OPEN.value:
                 # Any failure in half-open transitions back to open
                 self._transition_to_open_unlocked()
-            elif self.state == "closed":
+            elif self.state == EnumCircuitBreakerState.CLOSED.value:
                 # Check if we should open the circuit
                 if self._should_open_circuit():
                     self._transition_to_open_unlocked()
@@ -461,8 +479,9 @@ class ModelCircuitBreaker(BaseModel):
         with self._lock:
             current_time = datetime.now(UTC)
 
-            if self.state == "open" and self._should_transition_to_half_open(
-                current_time
+            if (
+                self.state == EnumCircuitBreakerState.OPEN.value
+                and self._should_transition_to_half_open(current_time)
             ):
                 self._transition_to_half_open_unlocked()
 
@@ -496,7 +515,7 @@ class ModelCircuitBreaker(BaseModel):
 
     def _reset_state_unlocked(self) -> None:
         """Reset circuit breaker to initial state (internal, no lock)."""
-        self.state = "closed"
+        self.state = EnumCircuitBreakerState.CLOSED.value
         self.failure_count = 0
         self.success_count = 0
         self.total_requests = 0
@@ -565,7 +584,7 @@ class ModelCircuitBreaker(BaseModel):
 
     def _transition_to_open_unlocked(self) -> None:
         """Transition circuit breaker to open state (internal, no lock)."""
-        self.state = "open"
+        self.state = EnumCircuitBreakerState.OPEN.value
         self.last_state_change = datetime.now(UTC)
         self.half_open_requests = 0
         self.success_count = 0
@@ -577,7 +596,7 @@ class ModelCircuitBreaker(BaseModel):
 
     def _transition_to_half_open_unlocked(self) -> None:
         """Transition circuit breaker to half-open state (internal, no lock)."""
-        self.state = "half_open"
+        self.state = EnumCircuitBreakerState.HALF_OPEN.value
         self.last_state_change = datetime.now(UTC)
         self.half_open_requests = 0
         self.success_count = 0
@@ -589,7 +608,7 @@ class ModelCircuitBreaker(BaseModel):
 
     def _transition_to_closed_unlocked(self) -> None:
         """Transition circuit breaker to closed state (internal, no lock)."""
-        self.state = "closed"
+        self.state = EnumCircuitBreakerState.CLOSED.value
         self.last_state_change = datetime.now(UTC)
         self.failure_count = 0
         self.success_count = 0
