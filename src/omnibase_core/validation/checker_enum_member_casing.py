@@ -65,9 +65,13 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 # Pattern for valid UPPER_SNAKE_CASE enum member names
-# Allows: EMPTY, HTTP_2, V1_BETA, SHA256
-# Rejects: empty, Unvalidated, validated_okay
-UPPER_SNAKE_CASE_PATTERN = re.compile(r"^[A-Z][A-Z0-9_]*$")
+# Pattern breakdown: ^[A-Z][A-Z0-9]*(_[A-Z0-9]+)*$
+#   - Must start with uppercase letter
+#   - Followed by zero or more uppercase letters or digits
+#   - Optionally followed by underscore + one or more uppercase letters/digits (repeatable)
+# Allows: EMPTY, HTTP_2, V1_BETA, SHA256, SOME_LONG_NAME
+# Rejects: empty, Unvalidated, validated_okay, HTTP_, STATUS__, _LEADING
+UPPER_SNAKE_CASE_PATTERN = re.compile(r"^[A-Z][A-Z0-9]*(_[A-Z0-9]+)*$")
 
 # Known Enum base classes and mixins
 # When a class inherits from any of these (directly or indirectly),
@@ -82,6 +86,59 @@ ENUM_BASE_NAMES = frozenset(
         "auto",
     }
 )
+
+
+def suggest_upper_snake_case(name: str) -> str:
+    """Convert a name to UPPER_SNAKE_CASE format.
+
+    Handles various input formats:
+    - lowercase: "active" -> "ACTIVE"
+    - camelCase: "someValue" -> "SOME_VALUE"
+    - PascalCase: "SomeValue" -> "SOME_VALUE"
+    - mixed_case: "some_Value" -> "SOME_VALUE"
+    - Already UPPER_SNAKE_CASE: "SOME_VALUE" -> "SOME_VALUE"
+
+    Args:
+        name: The original name to convert.
+
+    Returns:
+        The name converted to UPPER_SNAKE_CASE format.
+
+    Example:
+        >>> suggest_upper_snake_case("active")
+        'ACTIVE'
+        >>> suggest_upper_snake_case("someValue")
+        'SOME_VALUE'
+        >>> suggest_upper_snake_case("HTTPResponse")
+        'HTTP_RESPONSE'
+    """
+    if not name:
+        return name
+
+    # Insert underscore before uppercase letters that follow lowercase letters
+    # or before uppercase letters followed by lowercase (for acronyms like HTTP)
+    result: list[str] = []
+    prev_char = ""
+
+    for i, char in enumerate(name):
+        if char.isupper():
+            # Add underscore before uppercase if:
+            # 1. Previous char was lowercase (camelCase boundary)
+            # 2. Previous char was uppercase AND next char is lowercase (acronym end)
+            if prev_char.islower() or (
+                prev_char.isupper() and i + 1 < len(name) and name[i + 1].islower()
+            ):
+                result.append("_")
+        result.append(char.upper())
+        prev_char = char
+
+    suggested = "".join(result)
+
+    # Clean up: replace multiple underscores with single, strip leading/trailing
+    suggested = re.sub(r"_+", "_", suggested)
+    suggested = suggested.strip("_")
+
+    return suggested
 
 
 class CheckerEnumMemberCasing(ast.NodeVisitor):
@@ -111,7 +168,7 @@ class CheckerEnumMemberCasing(ast.NodeVisitor):
         >>> checker.visit(tree)
         >>> for issue in checker.issues:
         ...     print(issue)
-        example.py:5: Status.active violates UPPER_SNAKE_CASE: active
+        example.py:5: Status.active violates UPPER_SNAKE_CASE, suggested: ACTIVE
     """
 
     def __init__(self, file_path: str) -> None:
@@ -249,9 +306,10 @@ class CheckerEnumMemberCasing(ast.NodeVisitor):
 
             if is_member and member_name is not None:
                 if not UPPER_SNAKE_CASE_PATTERN.match(member_name):
+                    suggested = suggest_upper_snake_case(member_name)
                     self.issues.append(
                         f"{self.file_path}:{line_no}: {class_name}.{member_name} "
-                        f"violates UPPER_SNAKE_CASE: {member_name}"
+                        f"violates UPPER_SNAKE_CASE, suggested: {suggested}"
                     )
 
         # Continue visiting nested classes
