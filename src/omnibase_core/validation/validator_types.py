@@ -10,8 +10,8 @@ The validator uses AST analysis to find:
 - Mixed primitive/complex type unions
 - Primitive overload unions (str | int | bool | float)
 - Overly broad "everything" unions
-- Legacy Optional[T] syntax (should use T | None)
-- Legacy Union[T, None] syntax (should use T | None)
+- Optional[T] syntax (should use T | None per PEP 604)
+- Union[T, None] syntax (should use T | None per PEP 604)
 
 Usage Examples:
     Programmatic usage::
@@ -29,7 +29,7 @@ Usage Examples:
 
         python -m omnibase_core.validation.validator_types src/
 
-    Legacy function usage::
+    Standalone function usage::
 
         from omnibase_core.validation.validator_types import validate_union_usage_file
 
@@ -82,8 +82,8 @@ class ValidatorUnionUsage(ValidatorBase):
     - Mixed primitive/complex type unions
     - Primitive overload (4+ primitive types in union)
     - Overly broad "everything" unions
-    - Legacy Optional[T] syntax (prefer T | None)
-    - Legacy Union[T, None] syntax (prefer T | None)
+    - Optional[T] syntax (prefer T | None per PEP 604)
+    - Union[T, None] syntax (prefer T | None per PEP 604)
 
     The validator respects exemptions via:
     - Inline suppression comments from contract configuration
@@ -252,7 +252,7 @@ class ValidatorUnionUsage(ValidatorBase):
 
 
 # =============================================================================
-# Legacy API Functions
+# Standalone API Functions
 # =============================================================================
 
 
@@ -261,10 +261,11 @@ def validate_union_usage_file(
 ) -> tuple[int, list[str], list[ModelUnionPattern]]:
     """Validate Union usage in a Python file.
 
-    Note: For new code, consider using ValidatorUnionUsage.validate_file() instead.
-
     Returns a tuple of (union_count, issues, patterns).
     Errors are returned as issues in the list, not raised.
+
+    See Also:
+        ValidatorUnionUsage.validate_file(): Class-based validation with contracts.
     """
     try:
         with open(file_path, encoding="utf-8") as f:
@@ -294,7 +295,8 @@ def validate_union_usage_directory(
 ) -> ModelValidationResult[None]:
     """Validate Union usage in a directory.
 
-    Note: For new code, consider using ValidatorUnionUsage.validate() instead.
+    See Also:
+        ValidatorUnionUsage.validate(): Class-based validation with contracts.
     """
     python_files = []
     for py_file in directory.rglob("*.py"):
@@ -356,7 +358,7 @@ def validate_union_usage_directory(
 def validate_union_usage_cli() -> int:
     """CLI interface for union usage validation.
 
-    Note: For new code, consider running the module directly:
+    See Also:
         python -m omnibase_core.validation.validator_types src/
     """
     parser = argparse.ArgumentParser(
@@ -440,9 +442,9 @@ if __name__ == "__main__":
 
 
 __all__ = [
-    # New ValidatorBase-based class
+    # ValidatorBase-based class
     "ValidatorUnionUsage",
-    # Legacy API exports
+    # Standalone function exports
     "validate_union_usage_cli",
     "validate_union_usage_directory",
     "validate_union_usage_file",

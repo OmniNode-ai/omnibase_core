@@ -139,12 +139,6 @@ from .enum_health_check_type import EnumHealthCheckType
 from .enum_health_detail_type import EnumHealthDetailType
 from .enum_health_status import EnumHealthStatus
 
-# Severity enumeration (canonical - OMN-1311)
-from .enum_severity import EnumSeverity
-
-# EnumHealthStatusType is deprecated - use EnumHealthStatus instead (OMN-1310)
-EnumHealthStatusType: type[EnumHealthStatus] = EnumHealthStatus
-
 # Hub and coordination enums
 from .enum_hub_capability import EnumHubCapability
 
@@ -189,9 +183,6 @@ from .enum_metadata_tool_type import EnumMetadataToolType
 # Namespace-related enums
 from .enum_namespace_strategy import EnumNamespaceStrategy
 from .enum_node_architecture_type import EnumNodeArchitectureType
-
-# EnumNodeHealthStatus is deprecated - use EnumHealthStatus instead (OMN-1310)
-EnumNodeHealthStatus: type[EnumHealthStatus] = EnumHealthStatus
 
 # Node-related enums
 from .enum_node_kind import EnumNodeKind
@@ -258,6 +249,9 @@ from .enum_service_status import EnumServiceStatus
 # Service architecture enums
 from .enum_service_tier import EnumServiceTier
 from .enum_service_type_category import EnumServiceTypeCategory
+
+# Severity enumeration (canonical - OMN-1311)
+from .enum_severity import EnumSeverity
 from .enum_state_update_operation import EnumStateUpdateOperation
 
 # Subject type enums (OMN-1237)
@@ -364,9 +358,7 @@ __all__ = [
     # Health and status domain
     "EnumHealthCheckType",
     "EnumHealthDetailType",
-    "EnumHealthStatus",  # Canonical (OMN-1310)
-    "EnumHealthStatusType",  # Deprecated alias for EnumHealthStatus (OMN-1310)
-    "EnumNodeHealthStatus",  # Deprecated alias for EnumHealthStatus (OMN-1310)
+    "EnumHealthStatus",
     "EnumNodeStatus",
     # Node domain
     "EnumNodeArchitectureType",

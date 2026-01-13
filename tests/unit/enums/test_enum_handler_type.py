@@ -13,8 +13,8 @@ from omnibase_core.enums.enum_handler_type import EnumHandlerType
 class TestEnumHandlerType:
     """Test cases for EnumHandlerType enum."""
 
-    def test_legacy_enum_values(self):
-        """Test that legacy/abstract enum values are correct (backwards compatibility)."""
+    def test_abstract_handler_type_values(self):
+        """Test that abstract handler type enum values are correct."""
         assert EnumHandlerType.EXTENSION == "extension"
         assert EnumHandlerType.SPECIAL == "special"
         assert EnumHandlerType.NAMED == "named"
@@ -55,7 +55,7 @@ class TestEnumHandlerType:
         values = list(EnumHandlerType)
         # 3 legacy + 9 concrete + 1 dev/test = 13 total
         assert len(values) == 13
-        # Legacy types
+        # Abstract types
         assert EnumHandlerType.EXTENSION in values
         assert EnumHandlerType.SPECIAL in values
         assert EnumHandlerType.NAMED in values
@@ -74,7 +74,7 @@ class TestEnumHandlerType:
 
     def test_enum_membership(self):
         """Test membership testing."""
-        # Legacy types
+        # Abstract types
         assert "extension" in EnumHandlerType
         assert "special" in EnumHandlerType
         assert "named" in EnumHandlerType
@@ -104,7 +104,7 @@ class TestEnumHandlerType:
 
     def test_enum_serialization(self):
         """Test enum serialization."""
-        # Legacy types
+        # Abstract types
         assert EnumHandlerType.EXTENSION.value == "extension"
         assert EnumHandlerType.SPECIAL.value == "special"
         assert EnumHandlerType.NAMED.value == "named"
@@ -123,7 +123,7 @@ class TestEnumHandlerType:
 
     def test_enum_deserialization(self):
         """Test enum deserialization."""
-        # Legacy types
+        # Abstract types
         assert EnumHandlerType("extension") == EnumHandlerType.EXTENSION
         assert EnumHandlerType("special") == EnumHandlerType.SPECIAL
         assert EnumHandlerType("named") == EnumHandlerType.NAMED
@@ -149,7 +149,7 @@ class TestEnumHandlerType:
         """Test that all enum values are accessible."""
         all_values = [handler_type.value for handler_type in EnumHandlerType]
         expected_values = [
-            # Legacy types
+            # Abstract types
             "extension",
             "special",
             "named",
@@ -180,7 +180,7 @@ class TestEnumHandlerType:
 
     def test_handler_type_categories(self):
         """Test that handler types represent different categories."""
-        # Legacy/abstract types
+        # Abstract types
         assert EnumHandlerType.EXTENSION in EnumHandlerType
         assert EnumHandlerType.SPECIAL in EnumHandlerType
         assert EnumHandlerType.NAMED in EnumHandlerType
@@ -246,9 +246,9 @@ class TestEnumHandlerTypeConcreteCategories:
         assert "dev/test" in EnumHandlerType.LOCAL.__doc__.lower()
         assert "not for production" in EnumHandlerType.LOCAL.__doc__.lower()
 
-    def test_backwards_compatibility(self):
-        """Test that legacy enum values still work for backwards compatibility."""
-        # These values must remain stable for existing code
+    def test_enum_string_construction(self):
+        """Test that enum values can be constructed from strings."""
+        # Test abstract handler types can be constructed from strings
         assert EnumHandlerType.EXTENSION.value == "extension"
         assert EnumHandlerType.SPECIAL.value == "special"
         assert EnumHandlerType.NAMED.value == "named"

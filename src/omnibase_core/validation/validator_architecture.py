@@ -595,19 +595,20 @@ class ValidatorArchitecture(ValidatorBase):
         return tuple(issues)
 
 
-# Legacy API functions
+# Standalone API functions
 
 
 def validate_one_model_per_file(file_path: Path) -> list[str]:
     """Validate a single Python file for one-model-per-file compliance.
-
-    Note: For new code, consider using ValidatorArchitecture.validate_file() instead.
 
     Args:
         file_path: Path to the Python file to validate.
 
     Returns:
         List of error message strings (empty if valid).
+
+    See Also:
+        ValidatorArchitecture.validate_file(): Class-based validation with contracts.
     """
     errors: list[str] = []
 
@@ -732,14 +733,15 @@ def validate_architecture_directory(
 ) -> ModelValidationResult[None]:
     """Validate ONEX architecture for a directory.
 
-    Note: For new code, consider using ValidatorArchitecture.validate() instead.
-
     Args:
         directory: Directory to validate.
         max_violations: Maximum allowed violations (default: 0).
 
     Returns:
         ModelValidationResult with validation outcome.
+
+    See Also:
+        ValidatorArchitecture.validate(): Class-based validation with contracts.
     """
     python_files = []
 
@@ -790,10 +792,11 @@ def validate_architecture_directory(
 def validate_architecture_cli() -> int:
     """CLI interface for architecture validation.
 
-    Note: For new code, consider using ValidatorArchitecture.main() instead.
-
     Returns:
         Exit code (0 for success, 1 for failure).
+
+    See Also:
+        ValidatorArchitecture.main(): Class-based entry point.
     """
     # Delegate to the new ValidatorArchitecture.main() implementation
     return ValidatorArchitecture.main()

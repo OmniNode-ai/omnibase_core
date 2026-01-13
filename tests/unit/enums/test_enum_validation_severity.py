@@ -1,8 +1,8 @@
 """
 Unit tests for EnumSeverity.
 
-EnumSeverity provides 6 severity levels:
-DEBUG, INFO, WARNING, ERROR, CRITICAL, FATAL
+EnumSeverity provides 5 severity levels:
+DEBUG, INFO, WARNING, ERROR, CRITICAL
 
 Tests all aspects of the severity enum including:
 - Enum value validation
@@ -18,7 +18,7 @@ import json
 import pytest
 from pydantic import BaseModel, ValidationError
 
-from omnibase_core.enums.enum_severity import EnumSeverity
+from omnibase_core.enums import EnumSeverity
 
 
 @pytest.mark.unit
@@ -33,7 +33,6 @@ class TestEnumSeverity:
             "WARNING": "warning",
             "ERROR": "error",
             "CRITICAL": "critical",
-            "FATAL": "fatal",
         }
 
         for name, value in expected_values.items():
@@ -55,7 +54,6 @@ class TestEnumSeverity:
         assert EnumSeverity.WARNING.value == "warning"
         assert EnumSeverity.ERROR.value == "error"
         assert EnumSeverity.CRITICAL.value == "critical"
-        assert EnumSeverity.FATAL.value == "fatal"
 
     def test_enum_equality(self):
         """Test enum equality comparison."""
@@ -71,7 +69,6 @@ class TestEnumSeverity:
             EnumSeverity.WARNING,
             EnumSeverity.ERROR,
             EnumSeverity.CRITICAL,
-            EnumSeverity.FATAL,
         ]
 
         for severity in all_severities:
@@ -80,10 +77,10 @@ class TestEnumSeverity:
     def test_enum_iteration(self):
         """Test iterating over enum values."""
         severities = list(EnumSeverity)
-        assert len(severities) == 6
+        assert len(severities) == 5
 
         severity_values = [s.value for s in severities]
-        expected_values = ["debug", "info", "warning", "error", "critical", "fatal"]
+        expected_values = ["debug", "info", "warning", "error", "critical"]
 
         assert set(severity_values) == set(expected_values)
 
@@ -141,7 +138,7 @@ class TestEnumSeverity:
         assert EnumSeverity.ERROR.value != "Error"
 
         # Test that we can't create invalid enum values
-        with pytest.raises((ValueError, AttributeError)):
+        with pytest.raises((AttributeError, ValueError)):
             _ = EnumSeverity("invalid_value")
 
     def test_severity_ordering(self):
@@ -153,7 +150,6 @@ class TestEnumSeverity:
             EnumSeverity.WARNING,
             EnumSeverity.ERROR,
             EnumSeverity.CRITICAL,
-            EnumSeverity.FATAL,
         ]
 
         # Verify order matches declaration order
@@ -174,11 +170,8 @@ class TestEnumSeverity:
         # ERROR: validation failures
         assert EnumSeverity.ERROR.value == "error"
 
-        # CRITICAL: severe validation failures
+        # CRITICAL: severe/unrecoverable failures
         assert EnumSeverity.CRITICAL.value == "critical"
-
-        # FATAL: fatal/unrecoverable failures
-        assert EnumSeverity.FATAL.value == "fatal"
 
     def test_all_values_unique(self):
         """Test that all enum values are unique."""
@@ -210,11 +203,6 @@ class TestEnumSeverity:
         blocking = [
             EnumSeverity.ERROR,
             EnumSeverity.CRITICAL,
-            EnumSeverity.FATAL,
         ]
         for severity in blocking:
             assert severity in EnumSeverity
-
-
-if __name__ == "__main__":
-    pytest.main([__file__, "-v"])

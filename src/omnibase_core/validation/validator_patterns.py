@@ -390,20 +390,21 @@ class ValidatorPatterns(ValidatorBase):
 
 
 # =============================================================================
-# Legacy API Functions
+# Standalone API Functions
 # =============================================================================
 
 
 def validate_patterns_file(file_path: Path) -> list[str]:
     """Validate patterns in a Python file.
 
-    Note: For new code, consider using ValidatorPatterns.validate_file() instead.
-
     Args:
         file_path: Path to the Python file to validate.
 
     Returns:
         List of issue strings in format "Line N: message".
+
+    See Also:
+        ValidatorPatterns.validate_file(): Class-based validation with contracts.
     """
     all_issues: list[str] = []
 
@@ -442,14 +443,15 @@ def validate_patterns_directory(
 ) -> ModelValidationResult[None]:
     """Validate patterns in a directory.
 
-    Note: For new code, consider using ValidatorPatterns.validate() instead.
-
     Args:
         directory: Directory to validate.
         strict: If True, validation fails on any issue found.
 
     Returns:
         ModelValidationResult with validation outcome.
+
+    See Also:
+        ValidatorPatterns.validate(): Class-based validation with contracts.
     """
     python_files: list[Path] = []
 

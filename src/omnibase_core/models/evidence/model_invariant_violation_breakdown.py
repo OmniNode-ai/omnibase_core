@@ -15,6 +15,8 @@ from collections import Counter
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.enums.enum_severity import EnumSeverity
+
 
 class ModelInvariantViolationBreakdown(BaseModel):
     """Breakdown of invariant violations by type and severity.
@@ -86,7 +88,8 @@ class ModelInvariantViolationBreakdown(BaseModel):
         Args:
             deltas: List of violation delta dictionaries. Each dict should contain:
                 - type: str - The violation type (e.g., "output_equivalence", "latency")
-                - severity: str - The severity level as a string (e.g., "critical", "warning", "info")
+                - severity: str - The severity level as an EnumSeverity value string
+                  (e.g., EnumSeverity.CRITICAL.value, EnumSeverity.WARNING.value)
                 - baseline_passed: bool - Whether the invariant passed in baseline
                 - replay_passed: bool - Whether the invariant passed in replay
 
@@ -125,7 +128,7 @@ class ModelInvariantViolationBreakdown(BaseModel):
                 if baseline_passed:
                     new_count += 1
                     # Track new critical violations specifically
-                    if severity == "critical":
+                    if severity == EnumSeverity.CRITICAL.value:
                         new_critical_count += 1
 
             # Fixed violation: failed in baseline but passed in replay (improvement)

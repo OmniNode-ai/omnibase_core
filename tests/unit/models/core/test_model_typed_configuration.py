@@ -35,8 +35,6 @@ class TestModelTypedConfiguration:
 
     def test_initialization_with_values(self):
         """Test initialization with custom values."""
-        from omnibase_core.models.primitives.model_semver import ModelSemVer
-
         config_data = {"key": "value", "setting": True}
 
         config = ModelTypedConfiguration[dict[str, Any]](
@@ -53,8 +51,6 @@ class TestModelTypedConfiguration:
 
     def test_merge_configuration_basic(self):
         """Test basic configuration merging."""
-        from omnibase_core.models.primitives.model_semver import ModelSemVer
-
         config1 = ModelTypedConfiguration[dict[str, Any]](
             name="config1",
             description="First config",
@@ -101,8 +97,6 @@ class TestModelTypedConfiguration:
 
     def test_merge_configuration_none_values(self):
         """Test merging with None values doesn't overwrite."""
-        from omnibase_core.models.primitives.model_semver import ModelSemVer
-
         config1 = ModelTypedConfiguration[dict[str, Any]](
             name="config1",
             description="First config",
@@ -188,8 +182,6 @@ class TestModelTypedConfiguration:
 
     def test_configure_protocol(self):
         """Test Configurable protocol implementation."""
-        from omnibase_core.models.primitives.model_semver import ModelSemVer
-
         config = ModelTypedConfiguration[dict[str, Any]](name="test")
 
         result = config.configure(
@@ -205,8 +197,6 @@ class TestModelTypedConfiguration:
 
     def test_serialize_protocol(self):
         """Test Serializable protocol implementation."""
-        from omnibase_core.models.primitives.model_semver import ModelSemVer
-
         config = ModelTypedConfiguration[dict[str, Any]](
             name="test",
             description="Test config",
@@ -428,8 +418,6 @@ class TestModelTypedConfigurationBranchCoverage:
 
     def test_merge_configuration_none_version_branch(self):
         """Test merge when other.version is None (False branch)."""
-        from omnibase_core.models.primitives.model_semver import ModelSemVer
-
         config1 = ModelTypedConfiguration[dict[str, Any]](
             version=ModelSemVer(major=1, minor=0, patch=0)
         )
@@ -442,8 +430,6 @@ class TestModelTypedConfigurationBranchCoverage:
 
     def test_merge_configuration_non_none_version_branch(self):
         """Test merge when other.version is not None (True branch)."""
-        from omnibase_core.models.primitives.model_semver import ModelSemVer
-
         config1 = ModelTypedConfiguration[dict[str, Any]](
             version=ModelSemVer(major=1, minor=0, patch=0)
         )

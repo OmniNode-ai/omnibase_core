@@ -13,13 +13,14 @@ DOCUMENTED EXCEPTIONS (per ADR-006):
 - EnumImpactSeverity: Business impact domain (critical, high, medium, low, minimal)
 
 These exceptions exist because they serve specific domain requirements that cannot
-be satisfied by the general-purpose 6-level severity scale.
+be satisfied by the general-purpose 5-level severity scale.
 
 Migration Notes (OMN-1311, OMN-1296):
 - EnumValidationSeverity -> EnumSeverity (INFO, WARNING, ERROR, CRITICAL map directly)
 - EnumInvariantSeverity -> Removed (OMN-1296: use EnumSeverity directly)
 - EnumViolationSeverity -> Removed (OMN-1296: use EnumSeverity directly)
 - EnumErrorSeverity -> Removed (was unused, identical values)
+- FATAL removed (OMN-1296: use CRITICAL for fatal conditions)
 """
 
 from __future__ import annotations
@@ -27,7 +28,7 @@ from __future__ import annotations
 from enum import Enum, unique
 
 # Module-level constant for numeric severity levels (avoids per-call dict allocation)
-# Scale is compatible with Python logging levels (10, 20, 30, 40, 50, 60)
+# Scale is compatible with Python logging levels (10, 20, 30, 40, 50)
 # Note: This is defined outside the enum class to avoid being treated as an enum member
 _SEVERITY_LEVEL_MAP: dict[str, int] = {
     "debug": 10,
@@ -35,7 +36,6 @@ _SEVERITY_LEVEL_MAP: dict[str, int] = {
     "warning": 30,
     "error": 40,
     "critical": 50,
-    "fatal": 60,
 }
 
 
@@ -44,13 +44,12 @@ class EnumSeverity(str, Enum):
     """
     Canonical severity levels for ONEX systems.
 
-    Standard 6-level severity scale aligned with logging conventions:
+    Standard 5-level severity scale aligned with logging conventions:
     - DEBUG: Detailed debugging information
     - INFO: Informational messages, normal operation
     - WARNING: Potential issues that should be reviewed
     - ERROR: Error conditions that need attention
     - CRITICAL: Critical conditions that must be addressed immediately
-    - FATAL: Fatal errors that cause system failure
 
     Values are lowercase strings for consistency with logging standards.
     """
@@ -70,9 +69,6 @@ class EnumSeverity(str, Enum):
     CRITICAL = "critical"
     """Critical conditions that must be addressed immediately."""
 
-    FATAL = "fatal"
-    """Fatal errors that cause system failure or shutdown."""
-
     def __str__(self) -> str:
         """Return the string value for serialization."""
         return self.value
@@ -83,7 +79,7 @@ class EnumSeverity(str, Enum):
         Get numeric representation for severity comparison.
 
         Higher numbers indicate more severe conditions.
-        Scale is compatible with Python logging levels (10, 20, 30, 40, 50, 60).
+        Scale is compatible with Python logging levels (10, 20, 30, 40, 50).
 
         Example:
             >>> EnumSeverity.ERROR.numeric_level
@@ -117,7 +113,7 @@ class EnumSeverity(str, Enum):
         for member in cls:
             if member.value == normalized:
                 return member
-        # error-ok: ValueError is standard for string conversion at API boundaries
+        # error-ok: standard enum pattern for from_string
         raise ValueError(f"Unknown severity level: {value}")
 
 

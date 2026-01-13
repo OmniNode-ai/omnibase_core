@@ -361,11 +361,11 @@ class MixinEffectExecution:
                 input_data.operation_data["effect_subcontract"] = effect_subcontract
                 result = await self.execute_effect(input_data)
 
-            2. **operations key** (LEGACY): Direct operations list in
+            2. **operations key** (ALTERNATIVE): Direct operations list in
                operation_data["operations"]. Use when manual control over
                operation serialization is needed.
 
-                # Legacy pattern - manual operation list:
+                # Alternative pattern - manual operation list:
                 input_data.operation_data["operations"] = [
                     {
                         "io_config": op.io_config.model_dump(),
@@ -410,7 +410,7 @@ class MixinEffectExecution:
         Args:
             input_data: Effect input containing operation configuration. Operations
                 can be provided via operation_data["effect_subcontract"] (preferred)
-                or operation_data["operations"] (legacy). Also includes retry policies,
+                or operation_data["operations"] (alternative). Also includes retry policies,
                 circuit breaker settings, and transaction configuration.
 
         Returns:
@@ -444,7 +444,7 @@ class MixinEffectExecution:
         # Extract operation configuration from input_data.operation_data
         # Priority order for operations:
         # 1. "effect_subcontract" key - if present, extract operations from subcontract
-        # 2. "operations" key - direct operations list (legacy/alternative pattern)
+        # 2. "operations" key - direct operations list (alternative pattern)
         #
         # The subcontract pattern is preferred when the caller provides the full
         # subcontract object, allowing this mixin to extract operations directly.
@@ -842,7 +842,7 @@ class MixinEffectExecution:
             #
             # Content sources (checked in priority order for write operations):
             # 1. "file_content" key in operation_data (preferred, for explicit content)
-            # 2. "content" key in operation_data (fallback, legacy compatibility)
+            # 2. "content" key in operation_data (alternative key)
             # 3. "content_template" key in operation_data (for templated content)
             # 4. None - content may be provided by handler (e.g., from stream/file)
             #

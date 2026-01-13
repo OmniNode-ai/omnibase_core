@@ -1,7 +1,4 @@
-from __future__ import annotations
-
-"""
-Unified CLI interface for all omnibase_core validation tools.
+"""Unified CLI interface for all omnibase_core validation tools.
 
 This module provides a single entry point for all validation tools,
 making it easy for other repositories to use validation functionality.
@@ -13,10 +10,11 @@ Usage:
     python -m omnibase_core.validation.cli all
 """
 
+from __future__ import annotations
+
 import argparse
 import sys
 from pathlib import Path
-from typing import Any
 
 # Import ServiceValidationSuite DIRECTLY from the module file (not from services/__init__.py)
 # to avoid circular imports. The services package imports from models which imports from
@@ -25,31 +23,6 @@ from typing import Any
 from omnibase_core.services.service_validation_suite import ServiceValidationSuite
 
 from .validator_utils import ModelValidationResult
-
-
-def __getattr__(name: str) -> Any:
-    """
-    Lazy loading for deprecated aliases per OMN-1071 renaming.
-
-    Deprecated Aliases:
-    -------------------
-    All deprecated aliases emit DeprecationWarning when accessed:
-    - ModelValidationSuite -> ServiceValidationSuite
-    """
-    import warnings
-
-    if name == "ModelValidationSuite":
-        warnings.warn(
-            "'ModelValidationSuite' is deprecated, use 'ServiceValidationSuite' "
-            "from 'omnibase_core.services.service_validation_suite' instead",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return ServiceValidationSuite
-
-    raise AttributeError(  # error-ok: required for __getattr__ protocol
-        f"module {__name__!r} has no attribute {name!r}"
-    )
 
 
 def create_parser() -> argparse.ArgumentParser:
