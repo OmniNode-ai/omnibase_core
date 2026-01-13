@@ -24,7 +24,7 @@ __all__ = ["support_assistant"]
 def __getattr__(name: str) -> object:
     """Lazy import submodules on first access."""
     if name == "support_assistant":
-        from examples.demo.handlers import support_assistant
+        import importlib
 
-        return support_assistant
+        return importlib.import_module("examples.demo.handlers.support_assistant")
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
