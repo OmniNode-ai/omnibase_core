@@ -56,6 +56,7 @@ class ModelFieldAccessor(BaseModel):
                 f"Field at '{path}' has unsupported type: {type(obj)}",
             )
         except ATTRIBUTE_ACCESS_ERRORS as e:
+            # fallback-ok: return default or error result when dot-notation path access fails
             if default is not None:
                 return ModelResult.ok(default)
             return ModelResult.err(f"Error accessing field '{path}': {e!s}")
@@ -80,6 +81,7 @@ class ModelFieldAccessor(BaseModel):
                             setattr(obj, part, {})
                             next_obj = getattr(obj, part)
                         except (AttributeError, TypeError):
+                            # fallback-ok: return False if initializing nested dict fails
                             return False
                     obj = next_obj
                 elif hasattr(obj, "__getitem__") and hasattr(obj, "__setitem__"):
@@ -106,6 +108,7 @@ class ModelFieldAccessor(BaseModel):
                     setattr(obj, final_key, raw_value)
                     return True
                 except (AttributeError, TypeError):
+                    # fallback-ok: try dict-style access if attribute setting fails
                     pass
             # Fall back to dict[str, Any]-like access
             if hasattr(obj, "__setitem__"):
@@ -114,6 +117,7 @@ class ModelFieldAccessor(BaseModel):
 
             return False
         except ATTRIBUTE_ACCESS_ERRORS:
+            # fallback-ok: return False on any attribute access failure in set operation
             return False
 
     def has_field(self, path: str) -> bool:
@@ -133,6 +137,7 @@ class ModelFieldAccessor(BaseModel):
                     return False
             return True
         except ATTRIBUTE_ACCESS_ERRORS:
+            # fallback-ok: return False on any attribute access failure in existence check
             return False
 
     def remove_field(self, path: str) -> bool:
@@ -169,6 +174,7 @@ class ModelFieldAccessor(BaseModel):
 
             return True
         except ATTRIBUTE_ACCESS_ERRORS:
+            # fallback-ok: return False on any attribute access failure in removal operation
             return False
 
     model_config = ConfigDict(

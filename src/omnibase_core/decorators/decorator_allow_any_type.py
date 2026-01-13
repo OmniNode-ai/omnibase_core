@@ -7,7 +7,7 @@ Used sparingly and only for duck typing utility functions.
 
 import functools
 from collections.abc import Callable
-from typing import Any, TypeVar
+from typing import Any, TypeVar, cast
 
 F = TypeVar("F", bound=Callable[..., Any])
 
@@ -33,6 +33,7 @@ def allow_any_type(reason: str) -> Callable[[F], F]:
 
         # Add reason to function metadata for tracking
         wrapper.__allow_any_reason__ = reason  # type: ignore[attr-defined]
-        return wrapper  # type: ignore[return-value]
+        # Cast wrapper to F since functools.wraps preserves signature
+        return cast(F, wrapper)
 
     return decorator

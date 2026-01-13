@@ -35,6 +35,8 @@ from pathlib import Path
 from typing import Any, cast
 from uuid import UUID, uuid4
 
+from pydantic import ValidationError
+
 from omnibase_core.constants import TIMEOUT_DEFAULT_MS
 from omnibase_core.constants.constants_event_types import TOOL_INVOCATION
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -323,15 +325,17 @@ class MixinNodeService:
             RuntimeError,
             TimeoutError,
             TypeError,
+            ValidationError,
             ValueError,
         ) as e:
             # Specific expected exceptions from tool invocation:
-            # - ValueError/TypeError: validation and type conversion errors
-            # - RuntimeError: execution environment errors
             # - AttributeError/KeyError: state/parameter access errors
-            # - OSError: I/O and connection errors (includes ConnectionError)
-            # - TimeoutError: async operation timeouts
             # - ModelOnexError: ONEX framework errors
+            # - OSError: I/O and connection errors (includes ConnectionError)
+            # - RuntimeError: execution environment errors
+            # - TimeoutError: async operation timeouts
+            # - TypeError/ValueError: type and value validation errors
+            # - ValidationError: Pydantic model validation errors
             execution_time_ms = int((time.time() - start_time) * 1000)
             response_event = ModelToolResponseEvent.create_error_response(
                 correlation_id=correlation_id,

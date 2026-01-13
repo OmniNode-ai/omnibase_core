@@ -120,7 +120,7 @@ class ServiceValidationSuite:
                 result = self.run_validation(validation_type, directory, **kwargs)
                 results[validation_type] = result
             except ModelOnexError as e:
-                # ONEX framework validation errors
+                # fallback-ok: capture ONEX framework errors as validation failures
                 results[validation_type] = ModelValidationResult(
                     is_valid=False,
                     errors=[f"Validation error: {e.message}"],
@@ -130,7 +130,7 @@ class ServiceValidationSuite:
                     ),
                 )
             except OSError as e:
-                # File system errors (FileNotFoundError, PermissionError, etc.)
+                # fallback-ok: capture file system errors as validation failures
                 results[validation_type] = ModelValidationResult(
                     is_valid=False,
                     errors=[f"File system error: {e}"],
@@ -139,8 +139,8 @@ class ServiceValidationSuite:
                         files_processed=0,
                     ),
                 )
-            except (ValueError, TypeError) as e:
-                # Data validation errors
+            except (TypeError, ValueError) as e:
+                # fallback-ok: capture data validation errors as validation failures
                 results[validation_type] = ModelValidationResult(
                     is_valid=False,
                     errors=[f"Validation failed: {e}"],
