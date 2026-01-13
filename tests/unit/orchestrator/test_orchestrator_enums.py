@@ -93,7 +93,7 @@ def all_assignment_status_values() -> list[str]:
 @pytest.mark.timeout(5)
 @pytest.mark.unit
 class TestEnumWorkflowStatus:
-    """Tests for EnumWorkflowStatus from enum_orchestrator_types."""
+    """Tests for EnumWorkflowStatus lifecycle states and transitions."""
 
     def test_enum_inherits_from_enum(self) -> None:
         """Test that EnumWorkflowStatus inherits from Enum."""
@@ -916,14 +916,14 @@ class TestOrchestratorEnumsIntegration:
         assert config.action_type == EnumActionType.COMPUTE
         assert config.recovery_strategy == EnumFailureRecoveryStrategy.RETRY
 
-        # Test serialization - non-str enums retain enum type in model_dump
+        # Test serialization - model_dump() returns enum members by default
         # (use mode='json' for string serialization)
         data = config.model_dump()
-        # EnumWorkflowStatus is pure Enum (not str, Enum), keeps enum in model_dump
+        # EnumWorkflowStatus is (str, Enum), value equals string in comparisons
         assert data["workflow_state"] == EnumWorkflowStatus.RUNNING
-        # EnumActionType is pure Enum (not str, Enum), keeps enum in model_dump
+        # EnumActionType is Enum (not str,Enum), returns enum member in model_dump
         assert data["action_type"] == EnumActionType.COMPUTE
-        # EnumFailureRecoveryStrategy is str, Enum - value is the string
+        # EnumFailureRecoveryStrategy is (str, Enum) - value is the string
         assert data["recovery_strategy"] == "RETRY"
 
         # Test JSON serialization mode (converts all to primitives)
@@ -992,7 +992,3 @@ class TestOrchestratorEnumsIntegration:
             EnumFailureRecoveryStrategy.COMPENSATE,
         }
         assert v1_recovery_strategies.intersection(v2_reserved_strategies) == set()
-
-
-if __name__ == "__main__":
-    pytest.main([__file__, "-v"])

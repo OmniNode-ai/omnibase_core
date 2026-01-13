@@ -30,9 +30,11 @@ EnumLogLevel: For validation and generation result classification
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumLogLevel(str, Enum):
+class EnumLogLevel(StrValueHelper, str, Enum):
     """Log levels enum based on SPI LogLevel Literal type and severity levels for validation."""
 
     TRACE = "trace"
@@ -44,3 +46,6 @@ class EnumLogLevel(str, Enum):
     FATAL = "fatal"
     SUCCESS = "success"
     UNKNOWN = "unknown"
+
+
+__all__ = ["EnumLogLevel"]

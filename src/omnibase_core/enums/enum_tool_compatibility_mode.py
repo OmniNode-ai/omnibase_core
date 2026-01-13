@@ -2,9 +2,11 @@
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumToolCompatibilityMode(str, Enum):
+class EnumToolCompatibilityMode(StrValueHelper, str, Enum):
     """
     Tool compatibility mode classification.
 
@@ -16,3 +18,6 @@ class EnumToolCompatibilityMode(str, Enum):
     INCOMPATIBLE = "incompatible"
     DEPRECATED = "deprecated"
     EXPERIMENTAL = "experimental"
+
+
+__all__ = ["EnumToolCompatibilityMode"]

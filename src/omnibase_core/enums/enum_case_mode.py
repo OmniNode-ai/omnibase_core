@@ -6,9 +6,11 @@ This module defines the case modes available for CASE_CONVERSION transformations
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumCaseMode(str, Enum):
+class EnumCaseMode(StrValueHelper, str, Enum):
     """
     Case transformation modes.
 
@@ -21,3 +23,6 @@ class EnumCaseMode(str, Enum):
     UPPER = "uppercase"
     LOWER = "lowercase"
     TITLE = "titlecase"
+
+
+__all__ = ["EnumCaseMode"]

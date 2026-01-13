@@ -6,9 +6,11 @@ Defines the types of events that can be triggered by Consul KV watchers.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumWatchEventType(str, Enum):
+class EnumWatchEventType(StrValueHelper, str, Enum):
     """
     Watch event types for Consul KV monitoring.
 
@@ -25,3 +27,6 @@ class EnumWatchEventType(str, Enum):
     WATCH_ERROR = "watch_error"
     WATCH_TIMEOUT = "watch_timeout"
     WATCH_RECONNECTED = "watch_reconnected"
+
+
+__all__ = ["EnumWatchEventType"]

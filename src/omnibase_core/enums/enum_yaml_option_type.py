@@ -33,7 +33,13 @@ class EnumYamlOptionType(StrValueHelper, str, Enum):
 
     @classmethod
     def is_primitive_type(cls, option_type: EnumYamlOptionType) -> bool:
-        """Check if the option type represents a primitive value."""
+        """Check if the option type represents a primitive value.
+
+        Note: This method returns True for ALL current enum values since
+        YAML options are inherently primitive types (boolean, integer, string).
+        The method exists for API consistency with other value type enums
+        and to support future extension if complex types are added.
+        """
         return option_type in {cls.BOOLEAN, cls.INTEGER, cls.STRING}
 
     @classmethod

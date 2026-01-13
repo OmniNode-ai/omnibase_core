@@ -502,6 +502,122 @@ if EnumExecutionStatus.is_cancelled(status):
     log.info("Execution was cancelled by user/system")
 ```
 
+### Workflow Status
+
+#### EnumWorkflowStatus
+
+**Location**: `omnibase_core.enums.enum_workflow_status`
+
+**Purpose**: Canonical workflow status for ONEX workflow lifecycle.
+
+**Updated**: v0.6.4 (OMN-1310) - Consolidated from EnumWorkflowState and enum_workflow_coordination.EnumWorkflowStatus.
+
+```python
+from omnibase_core.enums.enum_workflow_status import EnumWorkflowStatus
+
+status = EnumWorkflowStatus.RUNNING
+```
+
+#### Available Statuses
+
+**Note**: All values are lowercase strings.
+
+- `PENDING` = "pending" - Workflow is queued but not yet started
+- `RUNNING` = "running" - Workflow is actively executing
+- `COMPLETED` = "completed" - Workflow finished successfully
+- `FAILED` = "failed" - Workflow terminated due to an error
+- `CANCELLED` = "cancelled" - Workflow was manually or programmatically cancelled
+- `PAUSED` = "paused" - Workflow execution is temporarily suspended
+
+**Helper Methods**:
+- `is_terminal(status)` - Returns True if workflow has finished (COMPLETED, FAILED, CANCELLED)
+- `is_active(status)` - Returns True if workflow is in progress (PENDING, RUNNING, PAUSED)
+- `is_successful(status)` - Returns True if status is COMPLETED
+- `is_error_state(status)` - Returns True if status is FAILED
+
+**CANCELLED State Semantics**:
+
+The `CANCELLED` status in workflows follows the same semantics as execution status:
+
+- **Terminal**: CANCELLED is a terminal state - the workflow has finished and will not continue
+- **Not a success**: `is_successful()` returns False - the workflow did not complete its intended work
+- **Not a failure**: `is_error_state()` returns False - no error occurred; cancellation was intentional
+- **Intentional termination**: Represents user or system-initiated cancellation, not an error condition
+
+```python
+# Correct handling of CANCELLED workflow state
+status = EnumWorkflowStatus.CANCELLED
+
+# Terminal check includes CANCELLED
+assert EnumWorkflowStatus.is_terminal(status)  # True
+
+# Success/error checks exclude CANCELLED
+assert not EnumWorkflowStatus.is_successful(status)   # Not a success
+assert not EnumWorkflowStatus.is_error_state(status)  # Not an error
+
+# CANCELLED is a clean termination, not a failure
+```
+
+---
+
+### Operation Status
+
+#### EnumOperationStatus
+
+**Location**: `omnibase_core.enums.enum_operation_status`
+
+**Purpose**: Canonical operation status for API and service operations.
+
+**Updated**: v0.6.4 (OMN-1310) - Consolidated from enum_execution.EnumOperationStatus.
+
+```python
+from omnibase_core.enums.enum_operation_status import EnumOperationStatus
+
+status = EnumOperationStatus.SUCCESS
+```
+
+#### Available Statuses
+
+**Note**: All values are lowercase strings.
+
+- `SUCCESS` = "success" - Operation completed successfully
+- `FAILED` = "failed" - Operation failed with an error
+- `IN_PROGRESS` = "in_progress" - Operation is currently executing
+- `CANCELLED` = "cancelled" - Operation was cancelled
+- `PENDING` = "pending" - Operation is queued but not started
+- `TIMEOUT` = "timeout" - Operation exceeded time limit
+
+**Helper Methods** (instance methods):
+- `is_terminal()` - Returns True if operation has finished (SUCCESS, FAILED, CANCELLED, TIMEOUT)
+- `is_active()` - Returns True if operation is in progress (IN_PROGRESS, PENDING)
+- `is_successful()` - Returns True if status is SUCCESS
+- `to_base_status()` - Convert to EnumBaseStatus for universal operations
+- `from_base_status(base_status)` - Create from EnumBaseStatus (class method)
+
+**CANCELLED State Semantics**:
+
+The `CANCELLED` status in operations follows the same semantics as other status enums:
+
+- **Terminal**: CANCELLED is a terminal state - the operation has finished
+- **Not a success**: `is_successful()` returns False
+- **Distinct from failure**: CANCELLED represents intentional termination, not an error
+
+```python
+# Correct handling of CANCELLED operation state
+status = EnumOperationStatus.CANCELLED
+
+# Terminal check includes CANCELLED
+assert status.is_terminal()  # True
+
+# Success check excludes CANCELLED
+assert not status.is_successful()  # Not a success
+
+# CANCELLED is distinct from FAILED
+assert status != EnumOperationStatus.FAILED
+```
+
+---
+
 ### Message Roles
 
 #### EnumMessageRole
@@ -759,3 +875,37 @@ This classification hierarchy enables:
 2. **Behavior-based optimization**: Apply caching/retry based on category
 3. **Capability-based selection**: Choose handlers that support required features
 4. **Type-safe dispatching**: Use typed commands instead of magic strings
+
+### Status Enum Relationships (OMN-1310)
+
+Status enums are organized by semantic category:
+
+```text
+EnumBaseStatus           --> Universal status primitives
+    |                        (PENDING, RUNNING, COMPLETED, FAILED, etc.)
+    |
+    +-> EnumExecutionStatus    --> Task/job/step completion states
+    |       includes: PENDING, RUNNING, SUCCESS, FAILED, CANCELLED,
+    |                 TIMEOUT, SKIPPED, PARTIAL, COMPLETED
+    |
+    +-> EnumWorkflowStatus     --> Workflow lifecycle states
+    |       includes: PENDING, RUNNING, COMPLETED, FAILED,
+    |                 CANCELLED, PAUSED
+    |
+    +-> EnumOperationStatus    --> API/service operation outcomes
+    |       includes: SUCCESS, FAILED, IN_PROGRESS, CANCELLED,
+    |                 PENDING, TIMEOUT
+    |
+    +-> EnumHealthStatus       --> System/component health states
+            includes: HEALTHY, DEGRADED, UNHEALTHY, CRITICAL,
+                      UNKNOWN, WARNING, UNREACHABLE, etc.
+```
+
+**Key Semantic Rules**:
+1. **CANCELLED is neither success nor failure** - Intentional termination, not an error
+2. **All status enums use lowercase string values** - e.g., "running", not "RUNNING"
+3. **Helper methods provide consistent classification** - `is_terminal()`, `is_successful()`, etc.
+4. **Base status conversion available** - `to_base_status()` and `from_base_status()` methods
+
+**Breaking Change Notice (v0.6.4)**: These enums consolidate and replace multiple
+previous enum definitions. See module docstrings for migration guidance.

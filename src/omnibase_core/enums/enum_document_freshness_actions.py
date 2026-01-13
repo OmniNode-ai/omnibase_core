@@ -7,9 +7,11 @@ for document freshness monitoring actions.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumDocumentFreshnessActions(str, Enum):
+class EnumDocumentFreshnessActions(StrValueHelper, str, Enum):
     """
     Canonical enumeration of all document freshness monitoring actions.
 
@@ -27,7 +29,7 @@ class EnumDocumentFreshnessActions(str, Enum):
 
 
 @unique
-class EnumDocumentFreshnessRiskLevel(str, Enum):
+class EnumDocumentFreshnessRiskLevel(StrValueHelper, str, Enum):
     """Risk levels for document freshness assessment."""
 
     LOW = "low"
@@ -37,7 +39,7 @@ class EnumDocumentFreshnessRiskLevel(str, Enum):
 
 
 @unique
-class EnumDocumentFreshnessStatus(str, Enum):
+class EnumDocumentFreshnessStatus(StrValueHelper, str, Enum):
     """Overall freshness status values."""
 
     FRESH = "fresh"
@@ -47,7 +49,7 @@ class EnumDocumentFreshnessStatus(str, Enum):
 
 
 @unique
-class EnumDocumentType(str, Enum):
+class EnumDocumentType(StrValueHelper, str, Enum):
     """Document type classifications."""
 
     DOCUMENT = "document"
@@ -57,7 +59,7 @@ class EnumDocumentType(str, Enum):
 
 
 @unique
-class EnumRecommendationType(str, Enum):
+class EnumRecommendationType(StrValueHelper, str, Enum):
     """Recommendation types for document improvements."""
 
     UPDATE_REQUIRED = "update_required"
@@ -67,7 +69,7 @@ class EnumRecommendationType(str, Enum):
 
 
 @unique
-class EnumRecommendationPriority(str, Enum):
+class EnumRecommendationPriority(StrValueHelper, str, Enum):
     """Priority levels for recommendations."""
 
     LOW = "low"
@@ -77,7 +79,7 @@ class EnumRecommendationPriority(str, Enum):
 
 
 @unique
-class EnumEstimatedEffort(str, Enum):
+class EnumEstimatedEffort(StrValueHelper, str, Enum):
     """Estimated effort levels for implementing recommendations."""
 
     MINUTES = "minutes"
@@ -87,7 +89,7 @@ class EnumEstimatedEffort(str, Enum):
 
 
 @unique
-class EnumDependencyRelationship(str, Enum):
+class EnumDependencyRelationship(StrValueHelper, str, Enum):
     """Types of dependency relationships between documents."""
 
     IMPORTS = "imports"
@@ -97,9 +99,12 @@ class EnumDependencyRelationship(str, Enum):
 
 
 @unique
-class EnumOutputFormat(str, Enum):
+class EnumOutputFormat(StrValueHelper, str, Enum):
     """Output format options for analysis results."""
 
     JSON = "json"
     MARKDOWN = "markdown"
     HTML = "html"
+
+
+__all__ = ["EnumDocumentFreshnessActions"]

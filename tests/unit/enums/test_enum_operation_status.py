@@ -436,7 +436,3 @@ class TestEnumOperationStatus:
         for base_status, expected in valid_mappings.items():
             result = EnumOperationStatus.from_base_status(base_status)
             assert result == expected
-
-
-if __name__ == "__main__":
-    pytest.main([__file__, "-v"])

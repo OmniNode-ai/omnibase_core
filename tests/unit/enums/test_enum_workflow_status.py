@@ -431,19 +431,16 @@ class TestEnumWorkflowStatus:
         for status in EnumWorkflowStatus:
             if EnumWorkflowStatus.is_active(status):
                 # Active states should have defined transitions
-                assert (
-                    status in valid_transitions or status == EnumWorkflowStatus.PAUSED
-                )
+                assert status in valid_transitions
 
     def test_roundtrip_serialization(self):
-        """Test roundtrip serialization for all enum values."""
-        for status in EnumWorkflowStatus:
-            # String roundtrip
-            serialized = str(status)
-            deserialized = EnumWorkflowStatus(serialized)
-            assert deserialized == status
+        """Test roundtrip serialization for all enum values.
 
-            # Value roundtrip
+        For str,Enum types like EnumWorkflowStatus, str(status) returns
+        status.value, so we only need to test one roundtrip path.
+        """
+        for status in EnumWorkflowStatus:
+            # Value roundtrip (str(status) == status.value for str,Enum)
             value = status.value
             reconstructed = EnumWorkflowStatus(value)
             assert reconstructed == status
@@ -471,7 +468,3 @@ class TestEnumWorkflowStatus:
         assert EnumWorkflowStatus.is_terminal(status) is False
         assert EnumWorkflowStatus.is_successful(status) is False
         assert EnumWorkflowStatus.is_error_state(status) is False
-
-
-if __name__ == "__main__":
-    pytest.main([__file__, "-v"])

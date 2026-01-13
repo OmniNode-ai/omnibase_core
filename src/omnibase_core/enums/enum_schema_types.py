@@ -6,9 +6,11 @@ Provides standardized mapping between JSON schema types and Python types.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumSchemaTypes(str, Enum):
+class EnumSchemaTypes(StrValueHelper, str, Enum):
     """Schema type enumeration for type-safe AST generation."""
 
     STRING = "string"
@@ -19,7 +21,7 @@ class EnumSchemaTypes(str, Enum):
     OBJECT = "object"
 
 
-class EnumPythonTypes(str, Enum):
+class EnumPythonTypes(StrValueHelper, str, Enum):
     """Python type enumeration for code generation."""
 
     # Primitive types
@@ -90,3 +92,6 @@ class EnumPythonTypes(str, Enum):
 
     # Complex object placeholder (will be replaced by specific types)
     MODEL_COMPLEX_OBJECT = MODEL_OBJECT_DATA  # Explicit alias
+
+
+__all__ = ["EnumSchemaTypes"]

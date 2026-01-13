@@ -19,11 +19,13 @@ Example:
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 __all__ = ("EnumDashboardTheme",)
 
 
 @unique
-class EnumDashboardTheme(str, Enum):
+class EnumDashboardTheme(StrValueHelper, str, Enum):
     """Dashboard visual theme enumeration.
 
     Defines the available theme options for dashboard display. Themes

@@ -1,5 +1,7 @@
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 # === OmniNode:Metadata ===
 # author: OmniNode Team
 # copyright: OmniNode.ai
@@ -25,7 +27,7 @@ from enum import Enum, unique
 
 
 @unique
-class EnumLifecycle(str, Enum):
+class EnumLifecycle(StrValueHelper, str, Enum):
     DRAFT = "draft"
     ACTIVE = "active"
     DEPRECATED = "deprecated"
@@ -33,7 +35,7 @@ class EnumLifecycle(str, Enum):
 
 
 @unique
-class EnumEntrypointType(str, Enum):
+class EnumEntrypointType(StrValueHelper, str, Enum):
     PYTHON = "python"
     CLI = "cli"
     DOCKER = "docker"
@@ -46,7 +48,7 @@ class EnumEntrypointType(str, Enum):
 
 
 @unique
-class EnumMetaType(str, Enum):
+class EnumMetaType(StrValueHelper, str, Enum):
     TOOL = "tool"
     VALIDATOR = "validator"
     AGENT = "agent"
@@ -60,14 +62,14 @@ class EnumMetaType(str, Enum):
 
 
 @unique
-class EnumProtocolVersion(str, Enum):
+class EnumProtocolVersion(StrValueHelper, str, Enum):
     V0_1_0 = "0.1.0"
     V1_0_0 = "1.0.0"
     # Add more as needed
 
 
 @unique
-class EnumRuntimeLanguage(str, Enum):
+class EnumRuntimeLanguage(StrValueHelper, str, Enum):
     PYTHON = "python"
     JAVASCRIPT = "javascript"
     TYPESCRIPT = "typescript"
@@ -190,7 +192,7 @@ class EnumNodeMetadataField(Enum):
 
 
 @unique
-class EnumUriType(str, Enum):
+class EnumUriType(StrValueHelper, str, Enum):
     TOOL = "tool"
     VALIDATOR = "validator"
     AGENT = "agent"
@@ -208,12 +210,15 @@ SCHEMA_REF = "schema_ref"
 
 
 @unique
-class EnumToolType(str, Enum):
+class EnumToolType(StrValueHelper, str, Enum):
     FUNCTION = "function"
     # Add more tool types as needed (e.g., SCRIPT, PIPELINE, etc.)
 
 
 @unique
-class EnumToolRegistryMode(str, Enum):
+class EnumToolRegistryMode(StrValueHelper, str, Enum):
     REAL = "real"
     MOCK = "mock"
+
+
+__all__ = ["EnumLifecycle"]

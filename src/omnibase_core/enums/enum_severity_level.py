@@ -48,10 +48,9 @@ class EnumSeverityLevel(StrValueHelper, str, Enum):
             if level.value == normalized:
                 return level
 
-        # Common aliases
+        # Common aliases (note: "warn" is handled by WARN member, not as alias)
         aliases = {
             "err": cls.ERROR,
-            "warn": cls.WARNING,
             "information": cls.INFO,
             "informational": cls.INFO,
             "verbose": cls.DEBUG,

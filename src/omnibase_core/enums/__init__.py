@@ -208,10 +208,7 @@ from .enum_operation_status import EnumOperationStatus
 
 # Orchestrator-related enums (from nodes)
 from .enum_orchestrator_capability import EnumOrchestratorCapability
-from .enum_orchestrator_types import (
-    EnumActionType,
-    EnumBranchCondition,
-)
+from .enum_orchestrator_types import EnumActionType, EnumBranchCondition
 
 # Parameter and return type enums
 from .enum_parameter_type import EnumParameterType

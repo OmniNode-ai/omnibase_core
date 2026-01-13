@@ -385,7 +385,3 @@ class TestEnumDispatchStatus:
                 f"requires_retry() mismatch for {status}: "
                 f"expected={expected}, actual={status.requires_retry()}"
             )
-
-
-if __name__ == "__main__":
-    pytest.main([__file__, "-v"])

@@ -444,8 +444,8 @@ mixin_health_check:
   # Dependencies
   requires:
     - "omnibase_core.enums.enum_health_status"
-    - "omnibase_core.models.core.model_health_status"
-    - "omnibase_core.logging.structured"
+    - "omnibase_core.models.health.model_health_status"
+    - "omnibase_core.logging.logging_structured"
     - "omnibase_core.enums.enum_log_level"
     - "asyncio"
     - "datetime"
