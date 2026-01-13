@@ -48,19 +48,8 @@ Migration from SPI:
 # Base Module Exports
 # =============================================================================
 
-from omnibase_core.protocols.base import (  # Literal Types; Protocols; Type Variables
+from omnibase_core.protocols.base import (  # Protocols; Type Variables
     ContextValue,
-    LiteralEventPriority,
-    LiteralHealthStatus,
-    LiteralInjectionScope,
-    LiteralLogLevel,
-    LiteralNodeType,
-    LiteralOperationStatus,
-    LiteralServiceLifecycle,
-    LiteralServiceResolutionStatus,
-    LiteralValidationLevel,
-    LiteralValidationMode,
-    LiteralValidationSeverity,
     ProtocolContextValue,
     ProtocolDateTime,
     ProtocolHasModelDump,
@@ -323,18 +312,6 @@ __all__ = [
     "T_co",
     "TInterface",
     "TImplementation",
-    # Literal Types
-    "LiteralLogLevel",
-    "LiteralNodeType",
-    "LiteralHealthStatus",
-    "LiteralOperationStatus",
-    "LiteralServiceLifecycle",
-    "LiteralInjectionScope",
-    "LiteralServiceResolutionStatus",
-    "LiteralValidationLevel",
-    "LiteralValidationMode",
-    "LiteralValidationSeverity",
-    "LiteralEventPriority",
     # Protocols
     "ProtocolDateTime",
     "ProtocolSemVer",

@@ -17,10 +17,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.protocols import (
-    LiteralInjectionScope,
-    LiteralServiceResolutionStatus,
-)
+from omnibase_core.enums import EnumInjectionScope, EnumServiceResolutionStatus
 from omnibase_core.types.type_serializable_value import SerializableValue
 
 
@@ -68,8 +65,8 @@ class ModelInjectionContext(BaseModel):
 
     context_id: UUID = Field(description="Unique identifier for this injection context")
     target_service_id: UUID = Field(description="ID of the service being resolved")
-    scope: LiteralInjectionScope = Field(
-        default="global",
+    scope: EnumInjectionScope = Field(
+        default=EnumInjectionScope.GLOBAL,
         description="Injection scope",
     )
     resolved_dependencies: dict[str, SerializableValue] = Field(
@@ -80,7 +77,7 @@ class ModelInjectionContext(BaseModel):
         default_factory=lambda: datetime.now(UTC),
         description="When the injection was initiated",
     )
-    resolution_status: LiteralServiceResolutionStatus = Field(
+    resolution_status: EnumServiceResolutionStatus = Field(
         description="Current status of resolution",
     )
     error_details: str | None = Field(
@@ -99,46 +96,49 @@ class ModelInjectionContext(BaseModel):
     @property
     def is_resolved(self) -> bool:
         """Check if the service was successfully resolved."""
-        return self.resolution_status == "resolved"
+        return self.resolution_status == EnumServiceResolutionStatus.RESOLVED
 
     @property
     def has_error(self) -> bool:
         """Check if resolution encountered an error."""
-        return self.resolution_status == "failed" or self.error_details is not None
+        return (
+            self.resolution_status == EnumServiceResolutionStatus.FAILED
+            or self.error_details is not None
+        )
 
     @property
     def has_circular_dependency(self) -> bool:
         """Check if resolution failed due to circular dependency."""
-        return self.resolution_status == "circular_dependency"
+        return self.resolution_status == EnumServiceResolutionStatus.CIRCULAR_DEPENDENCY
 
     @property
     def has_missing_dependency(self) -> bool:
         """Check if resolution failed due to missing dependency."""
-        return self.resolution_status == "missing_dependency"
+        return self.resolution_status == EnumServiceResolutionStatus.MISSING_DEPENDENCY
 
     def mark_resolved(self) -> None:
         """Mark the injection as successfully resolved."""
-        self.resolution_status = "resolved"
+        self.resolution_status = EnumServiceResolutionStatus.RESOLVED
         self.error_details = None
 
     def mark_failed(self, error_message: str) -> None:
         """Mark the injection as failed with an error."""
-        self.resolution_status = "failed"
+        self.resolution_status = EnumServiceResolutionStatus.FAILED
         self.error_details = error_message
 
     def mark_circular_dependency(self, error_message: str) -> None:
         """Mark the injection as failed due to circular dependency."""
-        self.resolution_status = "circular_dependency"
+        self.resolution_status = EnumServiceResolutionStatus.CIRCULAR_DEPENDENCY
         self.error_details = error_message
 
     def mark_missing_dependency(self, error_message: str) -> None:
         """Mark the injection as failed due to missing dependency."""
-        self.resolution_status = "missing_dependency"
+        self.resolution_status = EnumServiceResolutionStatus.MISSING_DEPENDENCY
         self.error_details = error_message
 
     def mark_type_mismatch(self, error_message: str) -> None:
         """Mark the injection as failed due to type mismatch."""
-        self.resolution_status = "type_mismatch"
+        self.resolution_status = EnumServiceResolutionStatus.TYPE_MISMATCH
         self.error_details = error_message
 
     def add_to_path(self, service_id: UUID) -> bool:

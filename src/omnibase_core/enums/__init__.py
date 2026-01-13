@@ -90,6 +90,9 @@ from .enum_effect_types import EnumEffectType, EnumTransactionState
 # Validation-related enums
 from .enum_environment_validation_rule_type import EnumEnvironmentValidationRuleType
 
+# Event priority enum (OMN-1308)
+from .enum_event_priority import EnumEventPriority
+
 # Event sink type enum (OMN-1151)
 from .enum_event_sink_type import EnumEventSinkType
 
@@ -137,6 +140,7 @@ from .enum_header_transformation_type import EnumHeaderTransformationType
 # Health and status enums
 from .enum_health_check_type import EnumHealthCheckType
 from .enum_health_detail_type import EnumHealthDetailType
+from .enum_health_status import EnumHealthStatus
 from .enum_health_status_type import EnumHealthStatusType
 
 # Hub and coordination enums
@@ -147,6 +151,9 @@ from .enum_ignore_pattern_source import EnumIgnorePatternSource, EnumTraversalMo
 
 # Import status enum
 from .enum_import_status import EnumImportStatus
+
+# Injection scope enum (DI container scoping)
+from .enum_injection_scope import EnumInjectionScope
 
 # Invariant-related enums (OMN-1192)
 from .enum_invariant_severity import EnumInvariantSeverity
@@ -212,6 +219,9 @@ from .enum_parameter_type import EnumParameterType
 
 # Patch validation error codes (OMN-1126)
 from .enum_patch_validation_error_code import EnumPatchValidationErrorCode
+
+# Pipeline validation mode enum (pipeline processing OMN-1308)
+from .enum_pipeline_validation_mode import EnumPipelineValidationMode
 from .enum_query_parameter_transformation_type import (
     EnumQueryParameterTransformationType,
 )
@@ -226,6 +236,9 @@ from .enum_reducer_types import (
 
 # Regex flag enums (contract-driven NodeCompute v1.0)
 from .enum_regex_flag import EnumRegexFlag
+
+# Registration status enum (DI container registration)
+from .enum_registration_status import EnumRegistrationStatus
 from .enum_registry_error_code import EnumRegistryErrorCode
 
 # Registry-related enums
@@ -245,13 +258,18 @@ from .enum_security_risk_level import EnumSecurityRiskLevel
 
 # Service-related enums
 from .enum_service_health_status import EnumServiceHealthStatus
+from .enum_service_lifecycle import EnumServiceLifecycle
 from .enum_service_mode import EnumServiceMode
+from .enum_service_resolution_status import EnumServiceResolutionStatus
 from .enum_service_status import EnumServiceStatus
 
 # Service architecture enums
 from .enum_service_tier import EnumServiceTier
 from .enum_service_type_category import EnumServiceTypeCategory
 from .enum_state_update_operation import EnumStateUpdateOperation
+
+# Step type enum (workflow step types)
+from .enum_step_type import EnumStepType
 
 # Subject type enums (OMN-1237)
 from .enum_subject_type import EnumSubjectType
@@ -290,6 +308,7 @@ from .enum_uri_type import EnumUriType
 from .enum_validation import EnumErrorSeverity, EnumValidationLevel
 from .enum_validation_mode import EnumValidationMode
 from .enum_validation_rule_type import EnumValidationRuleType
+from .enum_validation_severity import EnumValidationSeverity
 from .enum_value_type import EnumValueType
 
 # Vector store enums
@@ -343,6 +362,7 @@ __all__ = [
     "EnumEnvironmentValidationRuleType",
     "EnumErrorSeverity",
     "EnumValidationRuleType",
+    "EnumValidationSeverity",
     # Circuit breaker domain (standalone for cross-repo standardization)
     "EnumCircuitBreakerState",
     # Effect domain (from nodes)
@@ -359,6 +379,7 @@ __all__ = [
     # Health and status domain
     "EnumHealthCheckType",
     "EnumHealthDetailType",
+    "EnumHealthStatus",
     "EnumHealthStatusType",
     "EnumNodeHealthStatus",
     "EnumNodeStatus",
@@ -480,12 +501,17 @@ __all__ = [
     "EnumDispatchStatus",
     # Function-related domain
     "EnumFunctionLanguage",
+    # Registration status domain (DI container OMN-1308)
+    "EnumRegistrationStatus",
     # Registry-related domain
     "EnumRegistryHealthStatus",
     "EnumRegistryType",
-    # Service-related domain
+    # Service-related domain (includes DI container OMN-1308)
+    "EnumInjectionScope",
     "EnumServiceHealthStatus",
+    "EnumServiceLifecycle",
     "EnumServiceMode",
+    "EnumServiceResolutionStatus",
     "EnumServiceStatus",
     "EnumServiceTypeCategory",
     # Tool-related domain
@@ -522,12 +548,18 @@ __all__ = [
     "EnumDashboardStatus",
     "EnumDashboardTheme",
     "EnumWidgetType",
+    # Event priority domain (OMN-1308)
+    "EnumEventPriority",
     # Event sink type domain (OMN-1151)
     "EnumEventSinkType",
     # Omnimemory domain (OMN-1235, OMN-1236, OMN-1237)
     "EnumDecisionType",
     "EnumFailureType",
     "EnumSubjectType",
+    # Step type domain (workflow steps OMN-1308)
+    "EnumStepType",
+    # Pipeline validation mode domain (OMN-1308)
+    "EnumPipelineValidationMode",
     # NOTE: Removed from __all__ due to missing module files or circular imports:
     # - "EnumRegistryType" (module doesn't exist)
     # - "ModelServiceModeEnum" (replaced with correct "EnumServiceMode")

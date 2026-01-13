@@ -5,7 +5,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.protocols import LiteralInjectionScope, LiteralServiceLifecycle
+from omnibase_core.enums import EnumInjectionScope, EnumServiceLifecycle
 from omnibase_core.types.type_serializable_value import SerializedDict
 
 
@@ -46,8 +46,8 @@ class ModelServiceInstance(BaseModel):
     instance_id: UUID = Field(description="Unique instance identifier")
     service_registration_id: UUID = Field(description="Registration ID")
     instance: object | None = Field(default=None, description="Actual service instance")
-    lifecycle: LiteralServiceLifecycle = Field(description="Lifecycle pattern")
-    scope: LiteralInjectionScope = Field(description="Injection scope")
+    lifecycle: EnumServiceLifecycle = Field(description="Lifecycle pattern")
+    scope: EnumInjectionScope = Field(description="Injection scope")
     created_at: datetime = Field(
         default_factory=datetime.now,
         description="Creation timestamp",

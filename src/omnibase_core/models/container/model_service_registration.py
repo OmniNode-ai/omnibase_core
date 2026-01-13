@@ -1,23 +1,18 @@
 """Service registration model - implements ProtocolServiceRegistration."""
 
 from datetime import datetime
-from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.protocols import (
-    LiteralHealthStatus,
-    LiteralInjectionScope,
-    LiteralServiceLifecycle,
+from omnibase_core.enums import (
+    EnumHealthStatus,
+    EnumInjectionScope,
+    EnumRegistrationStatus,
+    EnumServiceLifecycle,
 )
 
 from .model_service_metadata import ModelServiceMetadata
-
-# Type alias for registration status
-LiteralRegistrationStatus = Literal[
-    "registered", "unregistered", "failed", "pending", "conflict", "invalid"
-]
 
 
 class ModelServiceRegistration(BaseModel):
@@ -57,18 +52,18 @@ class ModelServiceRegistration(BaseModel):
 
     registration_id: UUID = Field(description="Unique registration ID")
     service_metadata: ModelServiceMetadata = Field(description="Service metadata")
-    lifecycle: LiteralServiceLifecycle = Field(description="Lifecycle pattern")
-    scope: LiteralInjectionScope = Field(description="Injection scope")
+    lifecycle: EnumServiceLifecycle = Field(description="Lifecycle pattern")
+    scope: EnumInjectionScope = Field(description="Injection scope")
     dependencies: list[str] = Field(
         default_factory=list,
         description="Service dependency names (simplified for v1.0)",
     )
-    registration_status: LiteralRegistrationStatus = Field(
-        default="registered",
+    registration_status: EnumRegistrationStatus = Field(
+        default=EnumRegistrationStatus.REGISTERED,
         description="Registration status",
     )
-    health_status: LiteralHealthStatus = Field(
-        default="healthy",
+    health_status: EnumHealthStatus = Field(
+        default=EnumHealthStatus.HEALTHY,
         description="Service health status",
     )
     registration_time: datetime = Field(
@@ -94,8 +89,8 @@ class ModelServiceRegistration(BaseModel):
             True if registration is valid
         """
         return (
-            self.registration_status == "registered"
-            and self.health_status != "unhealthy"
+            self.registration_status == EnumRegistrationStatus.REGISTERED
+            and self.health_status != EnumHealthStatus.UNHEALTHY
             and self.service_metadata is not None
         )
 
@@ -107,7 +102,8 @@ class ModelServiceRegistration(BaseModel):
             True if registration is active and healthy
         """
         return (
-            self.registration_status == "registered" and self.health_status == "healthy"
+            self.registration_status == EnumRegistrationStatus.REGISTERED
+            and self.health_status == EnumHealthStatus.HEALTHY
         )
 
     def mark_accessed(self) -> None:

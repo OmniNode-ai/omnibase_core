@@ -54,7 +54,7 @@ from uuid import UUID
 
 from omnibase_core.constants import TIMEOUT_DEFAULT_MS
 from omnibase_core.constants.constants_field_limits import MAX_BFS_ITERATIONS
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums import EnumCoreErrorCode, EnumStepType
 from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
 from omnibase_core.models.contracts.subcontracts.model_workflow_definition import (
     ModelWorkflowDefinition,
@@ -62,18 +62,6 @@ from omnibase_core.models.contracts.subcontracts.model_workflow_definition impor
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.validation.model_lint_statistics import ModelLintStatistics
 from omnibase_core.models.validation.model_lint_warning import ModelLintWarning
-
-# Type alias for valid step types (placed after imports per PEP 8)
-# v1.0.4 Fix 41: "conditional" is NOT a valid step type in v1.0. Removed.
-#
-# Canonical source: validator_workflow_constants.VALID_STEP_TYPES
-# Valid values: compute, effect, reducer, orchestrator, parallel, custom
-#
-# v1.1+ Roadmap: "conditional" step type will be added in v1.1 to support
-# conditional workflow execution. See LINEAR ticket OMN-656 for tracking.
-StepTypeLiteral = Literal[
-    "compute", "effect", "reducer", "orchestrator", "parallel", "custom"
-]
 
 __all__ = [
     "WorkflowLinter",
@@ -87,29 +75,29 @@ DEFAULT_MAX_WARNINGS_PER_CODE = 10
 # MAX_BFS_ITERATIONS is imported from omnibase_core.constants.constants_field_limits
 # Re-exported here for API consistency.
 
-# Step type mapping from EnumNodeType values to StepTypeLiteral values
+# Step type mapping from EnumNodeType values to EnumStepType values
 # Extracted to module level to avoid recreating dict for each node during extraction
-# Maps node_type.value.lower() strings to valid StepTypeLiteral values
-STEP_TYPE_MAPPING: dict[str, StepTypeLiteral] = {
-    "compute_generic": "compute",
-    "effect_generic": "effect",
-    "reducer_generic": "reducer",
-    "orchestrator_generic": "orchestrator",
-    "transformer": "compute",
-    "aggregator": "compute",
-    "function": "compute",
-    "model": "compute",
-    "tool": "effect",
-    "agent": "effect",
-    "gateway": "orchestrator",
-    "validator": "orchestrator",
-    "workflow": "orchestrator",
-    "runtime_host_generic": "custom",
-    "plugin": "custom",
-    "schema": "custom",
-    "node": "custom",
-    "service": "custom",
-    "unknown": "custom",
+# Maps node_type.value.lower() strings to valid EnumStepType values
+STEP_TYPE_MAPPING: dict[str, EnumStepType] = {
+    "compute_generic": EnumStepType.COMPUTE,
+    "effect_generic": EnumStepType.EFFECT,
+    "reducer_generic": EnumStepType.REDUCER,
+    "orchestrator_generic": EnumStepType.ORCHESTRATOR,
+    "transformer": EnumStepType.COMPUTE,
+    "aggregator": EnumStepType.COMPUTE,
+    "function": EnumStepType.COMPUTE,
+    "model": EnumStepType.COMPUTE,
+    "tool": EnumStepType.EFFECT,
+    "agent": EnumStepType.EFFECT,
+    "gateway": EnumStepType.ORCHESTRATOR,
+    "validator": EnumStepType.ORCHESTRATOR,
+    "workflow": EnumStepType.ORCHESTRATOR,
+    "runtime_host_generic": EnumStepType.CUSTOM,
+    "plugin": EnumStepType.CUSTOM,
+    "schema": EnumStepType.CUSTOM,
+    "node": EnumStepType.CUSTOM,
+    "service": EnumStepType.CUSTOM,
+    "unknown": EnumStepType.CUSTOM,
 }
 
 
@@ -344,8 +332,8 @@ class WorkflowLinter:
             node_type_value = (
                 node.node_type.value.lower() if node.node_type else "custom"
             )
-            step_type: StepTypeLiteral = STEP_TYPE_MAPPING.get(
-                node_type_value, "custom"
+            step_type: EnumStepType = STEP_TYPE_MAPPING.get(
+                node_type_value, EnumStepType.CUSTOM
             )
 
             # Extract optional fields from node_requirements
@@ -362,10 +350,11 @@ class WorkflowLinter:
 
             # Create ModelWorkflowStep from node data
             # Pydantic will validate and clamp priority values as needed
+            # Use step_type.value to pass string to Literal-typed field
             step = ModelWorkflowStep(
                 step_id=node.node_id,
                 step_name=step_name,
-                step_type=step_type,
+                step_type=step_type.value,
                 depends_on=list(node.dependencies),
                 priority=priority,
                 parallel_group=parallel_group,

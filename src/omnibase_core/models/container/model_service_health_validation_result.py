@@ -12,7 +12,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.protocols import LiteralHealthStatus
+from omnibase_core.enums import EnumHealthStatus
 from omnibase_core.types.type_serializable_value import SerializedDict
 
 
@@ -60,8 +60,8 @@ class ModelServiceHealthValidationResult(BaseModel):
         default=True,
         description="Overall health status",
     )
-    health_status: LiteralHealthStatus = Field(
-        default="healthy",
+    health_status: EnumHealthStatus = Field(
+        default=EnumHealthStatus.HEALTHY,
         description="Detailed health status",
     )
     validation_time: datetime = Field(
@@ -112,7 +112,7 @@ class ModelServiceHealthValidationResult(BaseModel):
         """Set the error message and mark as unhealthy."""
         self.error_message = error
         self.is_healthy = False
-        self.health_status = "unhealthy"
+        self.health_status = EnumHealthStatus.UNHEALTHY
 
     def add_diagnostic(self, key: str, value: str | int | float | bool | None) -> None:
         """Add diagnostic information."""
@@ -129,7 +129,7 @@ class ModelServiceHealthValidationResult(BaseModel):
         return cls(
             registration_id=registration_id,
             is_healthy=True,
-            health_status="healthy",
+            health_status=EnumHealthStatus.HEALTHY,
             instance_count=instance_count,
             response_time_ms=response_time_ms,
         )
@@ -145,7 +145,7 @@ class ModelServiceHealthValidationResult(BaseModel):
         return cls(
             registration_id=registration_id,
             is_healthy=False,
-            health_status="unhealthy",
+            health_status=EnumHealthStatus.UNHEALTHY,
             error_message=error_message,
             diagnostics=diagnostics or {},
         )
@@ -161,7 +161,7 @@ class ModelServiceHealthValidationResult(BaseModel):
         return cls(
             registration_id=registration_id,
             is_healthy=True,
-            health_status="degraded",
+            health_status=EnumHealthStatus.DEGRADED,
             instance_count=instance_count,
             warnings=warnings,
         )

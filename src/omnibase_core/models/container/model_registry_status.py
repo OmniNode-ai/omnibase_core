@@ -5,11 +5,11 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.protocols import (
-    LiteralHealthStatus,
-    LiteralInjectionScope,
-    LiteralOperationStatus,
-    LiteralServiceLifecycle,
+from omnibase_core.enums import (
+    EnumHealthStatus,
+    EnumInjectionScope,
+    EnumOperationStatus,
+    EnumServiceLifecycle,
 )
 
 
@@ -46,7 +46,7 @@ class ModelServiceRegistryStatus(BaseModel):
     """
 
     registry_id: UUID = Field(description="Unique registry identifier")
-    status: LiteralOperationStatus = Field(description="Operational status")
+    status: EnumOperationStatus = Field(description="Operational status")
     message: str = Field(description="Status description")
     total_registrations: int = Field(
         default=0,
@@ -64,15 +64,15 @@ class ModelServiceRegistryStatus(BaseModel):
         default=0,
         description="Circular dependencies detected",
     )
-    lifecycle_distribution: dict[LiteralServiceLifecycle, int] = Field(
+    lifecycle_distribution: dict[EnumServiceLifecycle, int] = Field(
         default_factory=dict,
         description="Services by lifecycle type",
     )
-    scope_distribution: dict[LiteralInjectionScope, int] = Field(
+    scope_distribution: dict[EnumInjectionScope, int] = Field(
         default_factory=dict,
         description="Services by injection scope",
     )
-    health_summary: dict[LiteralHealthStatus, int] = Field(
+    health_summary: dict[EnumHealthStatus, int] = Field(
         default_factory=dict,
         description="Health status distribution",
     )
@@ -97,7 +97,7 @@ class ModelServiceRegistryStatus(BaseModel):
             True if status is success and no critical issues
         """
         return (
-            self.status == "success"
+            self.status == EnumOperationStatus.SUCCESS
             and self.circular_dependencies == 0
             and self.failed_registrations == 0
         )
@@ -112,5 +112,5 @@ class ModelServiceRegistryStatus(BaseModel):
         if self.total_registrations == 0:
             return 100.0
 
-        healthy_count = self.health_summary.get("healthy", 0)
+        healthy_count = self.health_summary.get(EnumHealthStatus.HEALTHY, 0)
         return (healthy_count / self.total_registrations) * 100.0

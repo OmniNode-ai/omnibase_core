@@ -3,11 +3,17 @@
 import asyncio
 import time
 from datetime import datetime
-from typing import Literal, TypeVar, cast
+from typing import TypeVar, cast
 from uuid import UUID, uuid4
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.enums.enum_log_level import EnumLogLevel
+from omnibase_core.enums import (
+    EnumCoreErrorCode,
+    EnumHealthStatus,
+    EnumInjectionScope,
+    EnumLogLevel,
+    EnumOperationStatus,
+    EnumServiceLifecycle,
+)
 from omnibase_core.logging.logging_structured import (
     emit_log_event_sync as emit_log_event,
 )
@@ -31,18 +37,11 @@ from omnibase_core.models.container.model_service_registration import (
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.protocols import (
-    LiteralInjectionScope,
-    LiteralServiceLifecycle,
     ProtocolServiceFactory,
     ProtocolServiceValidator,
 )
 from omnibase_core.types.type_serializable_value import SerializedDict
 from omnibase_core.types.typed_dict_resolution_context import TypedDictResolutionContext
-
-# Define LiteralOperationStatus locally to avoid runtime import
-LiteralOperationStatus = Literal[
-    "success", "failed", "in_progress", "cancelled", "pending"
-]
 
 T = TypeVar("T")
 TInterface = TypeVar("TInterface")
@@ -132,8 +131,8 @@ class ServiceRegistry:
         self,
         interface: type[TInterface],
         implementation: type[TImplementation],
-        lifecycle: LiteralServiceLifecycle,
-        scope: LiteralInjectionScope,
+        lifecycle: EnumServiceLifecycle,
+        scope: EnumInjectionScope,
         configuration: SerializedDict | None = None,
     ) -> UUID:
         """
@@ -182,7 +181,6 @@ class ServiceRegistry:
                 service_metadata=metadata,
                 lifecycle=lifecycle,
                 scope=scope,
-                registration_status="registered",
             )
 
             # Store registration
@@ -197,7 +195,10 @@ class ServiceRegistry:
             self._name_map[impl_name] = registration_id
 
             # For lazy loading, don't create instance yet
-            if not self._config.lazy_loading_enabled and lifecycle == "singleton":
+            if (
+                not self._config.lazy_loading_enabled
+                and lifecycle == EnumServiceLifecycle.SINGLETON
+            ):
                 # Create singleton instance immediately
                 instance = implementation()
                 await self._store_instance(registration_id, instance, lifecycle, scope)
@@ -241,7 +242,7 @@ class ServiceRegistry:
         self,
         interface: type[TInterface],
         instance: TInterface,
-        scope: LiteralInjectionScope = "global",
+        scope: EnumInjectionScope = EnumInjectionScope.GLOBAL,
         metadata: SerializedDict | None = None,
     ) -> UUID:
         """
@@ -283,9 +284,8 @@ class ServiceRegistry:
             registration = ModelServiceRegistration(
                 registration_id=registration_id,
                 service_metadata=service_metadata,
-                lifecycle="singleton",
+                lifecycle=EnumServiceLifecycle.SINGLETON,
                 scope=scope,
-                registration_status="registered",
             )
 
             # Store registration
@@ -300,7 +300,9 @@ class ServiceRegistry:
             self._name_map[instance_type] = registration_id
 
             # Store instance
-            await self._store_instance(registration_id, instance, "singleton", scope)
+            await self._store_instance(
+                registration_id, instance, EnumServiceLifecycle.SINGLETON, scope
+            )
 
             emit_log_event(
                 EnumLogLevel.INFO,
@@ -349,8 +351,8 @@ class ServiceRegistry:
         self,
         interface: type[TInterface],
         factory: ProtocolServiceFactory,
-        lifecycle: LiteralServiceLifecycle = "transient",
-        scope: LiteralInjectionScope = "global",
+        lifecycle: EnumServiceLifecycle = EnumServiceLifecycle.TRANSIENT,
+        scope: EnumInjectionScope = EnumInjectionScope.GLOBAL,
     ) -> UUID:
         """
         Register service factory (not fully implemented in v1.0).
@@ -419,7 +421,7 @@ class ServiceRegistry:
     async def resolve_service(
         self,
         interface: type[TInterface],
-        scope: LiteralInjectionScope | None = None,
+        scope: EnumInjectionScope | None = None,
         context: TypedDictResolutionContext | None = None,
     ) -> TInterface:
         """
@@ -524,7 +526,7 @@ class ServiceRegistry:
         self,
         interface: type[TInterface],
         name: str,
-        scope: LiteralInjectionScope | None = None,
+        scope: EnumInjectionScope | None = None,
     ) -> TInterface:
         """
         Resolve service by name.
@@ -564,7 +566,7 @@ class ServiceRegistry:
     async def resolve_all_services(
         self,
         interface: type[TInterface],
-        scope: LiteralInjectionScope | None = None,
+        scope: EnumInjectionScope | None = None,
     ) -> list[TInterface]:
         """
         Resolve all services implementing interface.
@@ -598,7 +600,7 @@ class ServiceRegistry:
     async def try_resolve_service(
         self,
         interface: type[TInterface],
-        scope: LiteralInjectionScope | None = None,
+        scope: EnumInjectionScope | None = None,
     ) -> TInterface | None:
         """
         Try to resolve service without raising exception.
@@ -686,7 +688,7 @@ class ServiceRegistry:
         return all_instances
 
     async def dispose_instances(
-        self, registration_id: UUID, scope: LiteralInjectionScope | None = None
+        self, registration_id: UUID, scope: EnumInjectionScope | None = None
     ) -> int:
         """
         Dispose service instances.
@@ -787,11 +789,9 @@ class ServiceRegistry:
             Registry status information
         """
         # Calculate distributions
-        lifecycle_dist: dict[LiteralServiceLifecycle, int] = {}
-        scope_dist: dict[LiteralInjectionScope, int] = {}
-        from omnibase_core.protocols import LiteralHealthStatus
-
-        health_dist: dict[LiteralHealthStatus, int] = {}
+        lifecycle_dist: dict[EnumServiceLifecycle, int] = {}
+        scope_dist: dict[EnumInjectionScope, int] = {}
+        health_dist: dict[EnumHealthStatus, int] = {}
 
         for registration in self._registrations.values():
             # Lifecycle distribution
@@ -818,11 +818,11 @@ class ServiceRegistry:
 
         # Determine overall status
         # Map registry state to operation status
-        overall_status: LiteralOperationStatus = "success"
+        overall_status: EnumOperationStatus = EnumOperationStatus.SUCCESS
         if self._failed_registrations > 0:
-            overall_status = "failed"
+            overall_status = EnumOperationStatus.FAILED
         if not self._registrations:
-            overall_status = "pending"
+            overall_status = EnumOperationStatus.PENDING
 
         return ModelServiceRegistryStatus(
             registry_id=self._registry_id,
@@ -877,7 +877,10 @@ class ServiceRegistry:
         # Check for issues
         warnings: list[str] = []
 
-        if not active_instances and registration.lifecycle == "singleton":
+        if (
+            not active_instances
+            and registration.lifecycle == EnumServiceLifecycle.SINGLETON
+        ):
             # Singleton with no instances might indicate a problem
             warnings.append("Singleton service has no active instances")
 
@@ -887,7 +890,7 @@ class ServiceRegistry:
             last_access = max(inst.last_accessed for inst in active_instances)
 
         # Determine health status
-        if registration.health_status == "unhealthy":
+        if registration.health_status == EnumHealthStatus.UNHEALTHY:
             return ModelServiceHealthValidationResult.unhealthy(
                 registration_id=registration_id,
                 error_message="Service marked as unhealthy",
@@ -1003,8 +1006,8 @@ class ServiceRegistry:
         self,
         registration_id: UUID,
         instance: object,
-        lifecycle: LiteralServiceLifecycle,
-        scope: LiteralInjectionScope,
+        lifecycle: EnumServiceLifecycle,
+        scope: EnumInjectionScope,
     ) -> ModelServiceInstance:
         """Store service instance."""
         instance_id = uuid4()
@@ -1032,13 +1035,13 @@ class ServiceRegistry:
         self,
         registration_id: UUID,
         registration: ModelServiceRegistration,
-        scope: LiteralInjectionScope,
+        scope: EnumInjectionScope,
         context: TypedDictResolutionContext | None,
     ) -> object:
         """Resolve service based on lifecycle pattern."""
         lifecycle = registration.lifecycle
 
-        if lifecycle == "singleton":
+        if lifecycle == EnumServiceLifecycle.SINGLETON:
             # Return existing instance or create new one
             existing_instances = self._instances.get(registration_id, [])
             if existing_instances:
@@ -1059,7 +1062,7 @@ class ServiceRegistry:
                 error_code=EnumCoreErrorCode.REGISTRY_RESOLUTION_FAILED,
             )
 
-        if lifecycle == "transient":
+        if lifecycle == EnumServiceLifecycle.TRANSIENT:
             # Always create new instance
             # In v1.0, we don't have factory support, so this is not implemented
             msg = (
@@ -1071,7 +1074,10 @@ class ServiceRegistry:
                 error_code=EnumCoreErrorCode.METHOD_NOT_IMPLEMENTED,
             )
 
-        supported_lifecycles = ["singleton", "transient"]
+        supported_lifecycles = [
+            EnumServiceLifecycle.SINGLETON.value,
+            EnumServiceLifecycle.TRANSIENT.value,
+        ]
         msg = (
             f"Unsupported lifecycle: '{lifecycle}'. "
             f"Supported lifecycles: {', '.join(supported_lifecycles)}. "
