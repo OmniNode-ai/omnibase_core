@@ -193,9 +193,9 @@ def validate(
 
     try:
         # Import validation suite lazily to avoid circular imports
-        from omnibase_core.validation.validator_cli import ModelValidationSuite
+        from omnibase_core.validation.validator_cli import ServiceValidationSuite
 
-        suite = ModelValidationSuite()
+        suite = ServiceValidationSuite()
         overall_success = True
 
         for directory in directories:
@@ -486,9 +486,9 @@ def _check_validation_system() -> tuple[bool, str]:
         Tuple of (is_healthy, message).
     """
     try:
-        from omnibase_core.validation.validator_cli import ModelValidationSuite
+        from omnibase_core.validation.validator_cli import ServiceValidationSuite
 
-        suite = ModelValidationSuite()
+        suite = ServiceValidationSuite()
         validator_count = len(suite.validators)
         return True, f"Validation suite loaded with {validator_count} validators"
     except ImportError as e:

@@ -9,7 +9,7 @@ DOCUMENTED EXCEPTION per ADR-006 Status Taxonomy (OMN-1311):
 
     1. **RFC 5424 Compliance**: This enum follows the RFC 5424 syslog severity levels
        which define 11 distinct values (EMERGENCY through TRACE). The canonical
-       EnumSeverity has only 6 values (DEBUG through FATAL).
+       EnumSeverity has only 5 values (DEBUG through CRITICAL).
 
     2. **Syslog Integration**: This enum is used for structured logging systems
        that require RFC 5424 compliant severity levels for interoperability with

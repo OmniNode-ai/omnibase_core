@@ -53,7 +53,7 @@ class TestEnumHandlerType:
     def test_enum_iteration(self):
         """Test that we can iterate over enum values."""
         values = list(EnumHandlerType)
-        # 3 legacy + 9 concrete + 1 dev/test = 13 total
+        # 3 abstract + 9 concrete + 1 dev/test = 13 total
         assert len(values) == 13
         # Abstract types
         assert EnumHandlerType.EXTENSION in values

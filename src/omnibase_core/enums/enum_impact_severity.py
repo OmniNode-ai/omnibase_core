@@ -12,8 +12,8 @@ DOCUMENTED EXCEPTION per ADR-006 Status Taxonomy (OMN-1311):
        business criticality rather than logging/error severity.
 
     2. **Different Scale**: Uses a 5-level business impact scale (CRITICAL,
-       HIGH, MEDIUM, LOW, MINIMAL) that doesn't map directly to the 6-level
-       technical severity scale (DEBUG through FATAL).
+       HIGH, MEDIUM, LOW, MINIMAL) that doesn't map directly to the 5-level
+       technical severity scale (DEBUG through CRITICAL).
 
     3. **Semantic Difference**: "HIGH impact" is semantically different from
        "ERROR severity". A HIGH business impact issue might only be a WARNING
