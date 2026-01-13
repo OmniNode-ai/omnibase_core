@@ -257,10 +257,10 @@ class MixinHealthCheck:
                 check_results.append(result)
 
                 # Update overall status (degraded if any check fails)
-                if result.status == "unhealthy":
+                if result.status == EnumNodeHealthStatus.UNHEALTHY.value:
                     overall_status = EnumNodeHealthStatus.UNHEALTHY
                 elif (
-                    result.status == "degraded"
+                    result.status == EnumNodeHealthStatus.DEGRADED.value
                     and overall_status != EnumNodeHealthStatus.UNHEALTHY
                 ):
                     overall_status = EnumNodeHealthStatus.DEGRADED
@@ -445,10 +445,10 @@ class MixinHealthCheck:
                 check_results.append(result)
 
                 # Update overall status
-                if result.status == "unhealthy":
+                if result.status == EnumNodeHealthStatus.UNHEALTHY.value:
                     overall_status = EnumNodeHealthStatus.UNHEALTHY
                 elif (
-                    result.status == "degraded"
+                    result.status == EnumNodeHealthStatus.DEGRADED.value
                     and overall_status != EnumNodeHealthStatus.UNHEALTHY
                 ):
                     overall_status = EnumNodeHealthStatus.DEGRADED
@@ -527,7 +527,7 @@ class MixinHealthCheck:
         # Convert to typed dictionary format
         return TypedDictHealthCheckStatus(
             node_id=node_id_str,
-            is_healthy=health.status == "healthy",
+            is_healthy=health.status == EnumNodeHealthStatus.HEALTHY.value,
             status=health.status,
             health_score=health.health_score,
             issues=[issue.message for issue in health.issues],
@@ -568,8 +568,7 @@ class MixinHealthCheck:
                     ],
                 )
 
-        # fallback-ok: health check should return UNHEALTHY status, not crash
-        except Exception as e:
+        except Exception as e:  # fallback-ok: health check returns UNHEALTHY, not crash
             from omnibase_core.models.health.model_health_issue import ModelHealthIssue
 
             return ModelHealthStatus.create_unhealthy(
@@ -648,8 +647,7 @@ async def check_postgresql_health(
             ],
         )
 
-    # fallback-ok: health check should return UNHEALTHY status, not crash
-    except Exception as e:
+    except Exception as e:  # fallback-ok: health check returns UNHEALTHY, not crash
         emit_log_event(
             LogLevel.ERROR,
             "PostgreSQL health check failed",
@@ -753,8 +751,7 @@ async def check_kafka_health(
             ],
         )
 
-    # fallback-ok: health check should return DEGRADED status, not crash
-    except Exception as e:
+    except Exception as e:  # fallback-ok: health check returns DEGRADED, not crash
         emit_log_event(
             LogLevel.ERROR,
             "Kafka health check failed",
@@ -847,8 +844,7 @@ async def check_redis_health(
             ],
         )
 
-    # fallback-ok: health check should return UNHEALTHY status, not crash
-    except Exception as e:
+    except Exception as e:  # fallback-ok: health check returns UNHEALTHY, not crash
         emit_log_event(
             LogLevel.ERROR,
             "Redis health check failed",
@@ -1043,8 +1039,7 @@ async def check_http_service_health(
             ],
         )
 
-    # fallback-ok: health check should return UNHEALTHY status, not crash
-    except Exception as e:
+    except Exception as e:  # fallback-ok: health check returns UNHEALTHY, not crash
         emit_log_event(
             LogLevel.ERROR,
             "HTTP service health check failed",

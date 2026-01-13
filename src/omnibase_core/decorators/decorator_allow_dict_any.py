@@ -18,14 +18,30 @@ Usage:
 """
 
 from collections.abc import Callable
-from typing import Any
+from typing import ParamSpec, TypeVar, overload
+
+# Type variables for preserving function signatures
+_P = ParamSpec("_P")
+_R = TypeVar("_R")
 
 
+@overload
+def allow_dict_any(func: Callable[_P, _R]) -> Callable[_P, _R]: ...  # noqa: UP047
+
+
+@overload
 def allow_dict_any(
-    func: Callable[..., Any] | None = None,
+    func: None = None,
     *,
     reason: str | None = None,
-) -> Callable[..., Any]:
+) -> Callable[[Callable[_P, _R]], Callable[_P, _R]]: ...
+
+
+def allow_dict_any(  # noqa: UP047
+    func: Callable[_P, _R] | None = None,
+    *,
+    reason: str | None = None,
+) -> Callable[_P, _R] | Callable[[Callable[_P, _R]], Callable[_P, _R]]:
     """
     Decorator to allow dict[str, Any] usage in specific functions.
 
@@ -53,7 +69,7 @@ def allow_dict_any(
             return {"key": "value"}
     """
 
-    def decorator(f: Callable[..., Any]) -> Callable[..., Any]:
+    def decorator(f: Callable[_P, _R]) -> Callable[_P, _R]:
         """Apply the decorator to a function."""
         # NOTE(OMN-1302): Dynamic attributes for decorator metadata tracking. Safe because read via getattr.
         f._allow_dict_any = True  # type: ignore[attr-defined]

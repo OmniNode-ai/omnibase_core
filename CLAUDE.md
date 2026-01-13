@@ -805,6 +805,12 @@ value = some_call()  # type: ignore[arg-type]
 5. [REDUCER Node Tutorial](docs/guides/node-building/05_REDUCER_NODE_TUTORIAL.md)
 6. [ORCHESTRATOR Node Tutorial](docs/guides/node-building/06_ORCHESTRATOR_NODE_TUTORIAL.md)
 
+### Architecture Decision Records
+
+| ADR | Summary |
+|-----|---------|
+| [ADR-013](docs/architecture/adr/ADR-013-status-taxonomy.md) | Status Taxonomy: canonical status enums for 6 categories (Execution, Operation, Workflow, Health, Lifecycle, Registration) |
+
 📚 **Complete Index**: [docs/INDEX.md](docs/INDEX.md)
 
 ---

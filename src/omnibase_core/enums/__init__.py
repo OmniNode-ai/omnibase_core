@@ -7,6 +7,9 @@ Domain-grouped enums used across multiple ONEX packages (omnibase_core, omnibase
 organized by functional domains for better maintainability.
 """
 
+# Action status enum (OMN-1309)
+from .enum_action_status import EnumActionStatus
+
 # Architecture and system enums
 from .enum_architecture import EnumArchitecture
 
@@ -393,6 +396,7 @@ __all__ = [
     "EnumValueType",
     "EnumNumericValueType",
     # Orchestrator domain (from nodes)
+    "EnumActionStatus",
     "EnumActionType",
     "EnumBranchCondition",
     "EnumWorkflowState",
