@@ -104,6 +104,8 @@ def convert_list_to_tuple(v: list[T] | tuple[T, ...] | object) -> tuple[T, ...]:
     """
     if isinstance(v, list):
         return tuple(v)
+    # NOTE(OMN-1302): Passthrough for already-valid tuple or Pydantic to reject invalid types.
+    # Safe because Pydantic validates final field type after validator runs.
     return v  # type: ignore[return-value]
 
 
@@ -162,4 +164,6 @@ def convert_dict_to_frozen_pairs(
         if sort_keys:
             return tuple(sorted(items))
         return tuple(items)
+    # NOTE(OMN-1302): Passthrough for already-valid tuple or Pydantic to reject invalid types.
+    # Safe because Pydantic validates final field type after validator runs.
     return v  # type: ignore[return-value]

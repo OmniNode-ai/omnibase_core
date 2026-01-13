@@ -6,6 +6,8 @@ Mixins follow the single responsibility principle and provide specific capabilit
 that can be composed into concrete node implementations.
 """
 
+# NOTE(OMN-1302): I001 (import order) disabled - intentional ordering to avoid circular dependencies.
+
 # Core mixins
 # Import protocols from omnibase_core (Core-native protocols)
 from omnibase_core.protocols import ProtocolEventBusRegistry

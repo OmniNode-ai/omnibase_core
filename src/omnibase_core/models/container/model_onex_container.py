@@ -32,6 +32,8 @@ See Also:
     - ModelWorkflowCoordinator: Workflow orchestration
 """
 
+# NOTE(OMN-1302): I001 (import order) disabled - Dual-Import Pattern for DI container (see OMN-1261).
+
 from typing import TYPE_CHECKING, TypeVar, cast
 
 from omnibase_core.decorators.decorator_allow_dict_any import allow_dict_any
@@ -635,7 +637,7 @@ class ModelONEXContainer:
             Dictionary with service health information. Currently returns
             unavailable status as this requires omnibase-spi integration.
         """
-        # TODO: Ready to implement using ProtocolServiceResolver from omnibase_spi.protocols.container
+        # TODO(OMN-TBD): Implement using ProtocolServiceResolver from omnibase_spi.protocols.container  [NEEDS TICKET]
         # Note: ProtocolServiceResolver available in omnibase_spi v0.2.0
         # service_resolver = get_service_resolver()
         # return await service_resolver.get_all_service_health()
@@ -650,7 +652,7 @@ class ModelONEXContainer:
         Clears cached service instances and re-establishes connections.
         Currently logs a warning as this requires omnibase-spi integration.
         """
-        # TODO: Ready to implement using ProtocolServiceResolver from omnibase_spi.protocols.container
+        # TODO(OMN-TBD): Implement using ProtocolServiceResolver from omnibase_spi.protocols.container  [NEEDS TICKET]
         # Note: ProtocolServiceResolver available in omnibase_spi v0.2.0
         # service_resolver = get_service_resolver()
 

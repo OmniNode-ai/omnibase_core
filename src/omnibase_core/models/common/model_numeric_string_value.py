@@ -340,11 +340,14 @@ class ModelNumericStringValue(BaseModel):
             3.14
         """
         if self.value_type == EnumNumericValueType.FLOAT:
+            # NOTE(OMN-1302): Value guaranteed non-None by value_type discriminator check and model validator.
             return self.float_value  # type: ignore[return-value]
         if self.value_type == EnumNumericValueType.INT:
+            # NOTE(OMN-1302): Value guaranteed non-None by value_type discriminator check and model validator.
             return float(self.int_value)  # type: ignore[arg-type]
         if self.value_type == EnumNumericValueType.STRING:
             try:
+                # NOTE(OMN-1302): Value guaranteed non-None by value_type discriminator check and model validator.
                 return float(self.str_value)  # type: ignore[arg-type]
             except (ValueError, TypeError) as e:
                 raise ModelOnexError(
@@ -390,6 +393,7 @@ class ModelNumericStringValue(BaseModel):
             123
         """
         if self.value_type == EnumNumericValueType.INT:
+            # NOTE(OMN-1302): Value guaranteed non-None by value_type discriminator check and model validator.
             return self.int_value  # type: ignore[return-value]
 
         if self.value_type == EnumNumericValueType.FLOAT:
@@ -436,10 +440,12 @@ class ModelNumericStringValue(BaseModel):
         if self.value_type == EnumNumericValueType.STRING:
             try:
                 # Try direct int conversion first
+                # NOTE(OMN-1302): Value guaranteed non-None by value_type discriminator check and model validator.
                 return int(self.str_value)  # type: ignore[arg-type]
             except (ValueError, TypeError):
                 # Try parsing as float first, then convert to int
                 try:
+                    # NOTE(OMN-1302): Value guaranteed non-None by value_type discriminator check and model validator.
                     float_val = float(self.str_value)  # type: ignore[arg-type]
                     # Apply coercion mode to the parsed float
                     if coercion_mode == EnumCoercionMode.STRICT:
@@ -494,6 +500,7 @@ class ModelNumericStringValue(BaseModel):
             '3.14'
         """
         if self.value_type == EnumNumericValueType.STRING:
+            # NOTE(OMN-1302): Value guaranteed non-None by value_type discriminator check and model validator.
             return self.str_value  # type: ignore[return-value]
         if self.value_type == EnumNumericValueType.INT:
             return str(self.int_value)
@@ -521,10 +528,13 @@ class ModelNumericStringValue(BaseModel):
             42
         """
         if self.value_type == EnumNumericValueType.FLOAT:
+            # NOTE(OMN-1302): Value guaranteed non-None by value_type discriminator check and model validator.
             return self.float_value  # type: ignore[return-value]
         if self.value_type == EnumNumericValueType.INT:
+            # NOTE(OMN-1302): Value guaranteed non-None by value_type discriminator check and model validator.
             return self.int_value  # type: ignore[return-value]
         if self.value_type == EnumNumericValueType.STRING:
+            # NOTE(OMN-1302): Value guaranteed non-None by value_type discriminator check and model validator.
             return self.str_value  # type: ignore[return-value]
 
         raise ModelOnexError(

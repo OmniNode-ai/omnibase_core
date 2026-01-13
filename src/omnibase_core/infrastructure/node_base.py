@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+# NOTE(OMN-1302): I001 (import order) disabled - intentional ordering to avoid circular dependencies.
+
 from typing import Any, ClassVar, TYPE_CHECKING
 
 from omnibase_core.models.errors.model_onex_error import ModelOnexError

@@ -975,11 +975,11 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
             )
 
             # Publish via event bus - fail fast if no publish method
-            # TODO(v1.0): Standardize event bus protocol to require publish_async().
+            # TODO(OMN-TBD): [v1.0] Standardize event bus protocol to require publish_async().
             # Currently hasattr checks support legacy event bus implementations with
             # non-standard interfaces. Once all implementations conform to
             # ProtocolEventBus, these checks can be replaced with direct calls.
-            # Cast to Any for duck-typed method calls.
+            # Cast to Any for duck-typed method calls.  [NEEDS TICKET]
             if hasattr(bus, "publish_async"):
                 # Wrap in envelope for async publishing
                 from omnibase_core.models.events.model_event_envelope import (
@@ -989,9 +989,9 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
                 envelope: ModelEventEnvelope[ModelOnexEvent] = ModelEventEnvelope(
                     payload=event
                 )
-                # TODO(v1.0): Add topic validation when topic-based publishing is implemented.
+                # TODO(OMN-TBD): [v1.0] Add topic validation when topic-based publishing is implemented.
                 # When the event bus supports explicit topic routing, validate alignment
-                # between message category and topic name using _validate_topic_alignment().
+                # between message category and topic name using _validate_topic_alignment().  [NEEDS TICKET]
                 await cast(ProtocolEventBusDuckTyped, bus).publish_async(envelope)
             elif hasattr(bus, "publish"):
                 cast(ProtocolEventBusDuckTyped, bus).publish(
@@ -1048,12 +1048,12 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
         try:
             event = self._build_event(event_type, data)
             # Use synchronous publish method only (this is a sync method) - fail fast if missing
-            # TODO(v1.0): Add topic validation when topic-based publishing is implemented.
+            # TODO(OMN-TBD): [v1.0] Add topic validation when topic-based publishing is implemented.
             # Sync publish doesn't use envelope, so validation would need to wrap the event
-            # in ModelEventEnvelope first before calling _validate_topic_alignment().
-            # TODO(v1.0): Standardize event bus protocol to require publish().
+            # in ModelEventEnvelope first before calling _validate_topic_alignment().  [NEEDS TICKET]
+            # TODO(OMN-TBD): [v1.0] Standardize event bus protocol to require publish().
             # Currently hasattr check supports legacy event bus with non-standard interface.
-            # Once all implementations conform to ProtocolEventBus, this check can be removed.
+            # Once all implementations conform to ProtocolEventBus, this check can be removed.  [NEEDS TICKET]
             if hasattr(bus, "publish"):
                 cast(ProtocolEventBusDuckTyped, bus).publish(event)
             else:
@@ -1097,11 +1097,11 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
             event = self._build_event(event_type, data)
 
             # Prefer async publishing if available - fail fast if no publish method
-            # TODO(v1.0): Standardize event bus protocol to require publish_async().
+            # TODO(OMN-TBD): [v1.0] Standardize event bus protocol to require publish_async().
             # Currently hasattr checks support legacy event bus implementations with
             # non-standard interfaces. Once all implementations conform to
             # ProtocolEventBus, these checks can be replaced with direct calls.
-            # Cast to Any for duck-typed method calls.
+            # Cast to Any for duck-typed method calls.  [NEEDS TICKET]
             if hasattr(bus, "publish_async"):
                 # Wrap event in envelope for async publishing
                 from omnibase_core.models.events.model_event_envelope import (
@@ -1111,9 +1111,9 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
                 envelope: ModelEventEnvelope[ModelOnexEvent] = ModelEventEnvelope(
                     payload=event
                 )
-                # TODO(v1.0): Add topic validation when topic-based publishing is implemented.
+                # TODO(OMN-TBD): [v1.0] Add topic validation when topic-based publishing is implemented.
                 # When the event bus supports explicit topic routing, validate alignment
-                # between message category and topic name using _validate_topic_alignment().
+                # between message category and topic name using _validate_topic_alignment().  [NEEDS TICKET]
                 await cast(ProtocolEventBusDuckTyped, bus).publish_async(envelope)
             # Fallback to sync method
             elif hasattr(bus, "publish"):
@@ -1439,8 +1439,8 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
 
         # Unsubscribe from all events - fail fast if bus doesn't support unsubscribe
         # but still call target.stop() to prevent resource leaks
-        # TODO(v1.0): Standardize event bus protocol to require unsubscribe().
-        # Currently hasattr check supports legacy event bus implementations.
+        # TODO(OMN-TBD): [v1.0] Standardize event bus protocol to require unsubscribe().
+        # Currently hasattr check supports legacy event bus implementations.  [NEEDS TICKET]
         if bus and subscriptions_copy:
             if not hasattr(bus, "unsubscribe"):
                 # Capture error but continue to stop the listener thread
@@ -1662,8 +1662,8 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
                     context={"node_name": self.get_node_name()},
                 )
 
-            # TODO(v1.0): Standardize event bus protocol to require subscribe().
-            # Currently hasattr check supports legacy event bus implementations.
+            # TODO(OMN-TBD): [v1.0] Standardize event bus protocol to require subscribe().
+            # Currently hasattr check supports legacy event bus implementations.  [NEEDS TICKET]
             if not hasattr(bus, "subscribe"):
                 raise ModelOnexError(
                     message="Event bus does not support 'subscribe' method",
@@ -1858,10 +1858,10 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
 
             # Fallback: check for from_event via getattr for classes that don't
             # match the Protocol (e.g., due to signature differences)
-            # TODO(v1.0): Remove this fallback after migration to ProtocolFromEvent.
+            # TODO(OMN-TBD): [v1.0] Remove this fallback after migration to ProtocolFromEvent.
             # This supports legacy input state classes that have from_event but don't
             # conform to the ProtocolFromEvent signature. Once all consumers have
-            # migrated to the protocol-based pattern, this can be removed.
+            # migrated to the protocol-based pattern, this can be removed.  [NEEDS TICKET]
             from_event_method = getattr(input_state_class, "from_event", None)
             if from_event_method is not None and callable(from_event_method):
                 result = cast(InputStateT, from_event_method(event))

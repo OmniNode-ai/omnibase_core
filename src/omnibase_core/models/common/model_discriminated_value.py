@@ -419,16 +419,22 @@ class ModelDiscriminatedValue(BaseModel):
             42
         """
         if self.value_type == EnumDiscriminatedValueType.BOOL:
+            # NOTE(OMN-1302): Value guaranteed non-None by value_type discriminator check and model validator.
             return self.bool_value  # type: ignore[return-value]
         if self.value_type == EnumDiscriminatedValueType.FLOAT:
+            # NOTE(OMN-1302): Value guaranteed non-None by value_type discriminator check and model validator.
             return self.float_value  # type: ignore[return-value]
         if self.value_type == EnumDiscriminatedValueType.INT:
+            # NOTE(OMN-1302): Value guaranteed non-None by value_type discriminator check and model validator.
             return self.int_value  # type: ignore[return-value]
         if self.value_type == EnumDiscriminatedValueType.STR:
+            # NOTE(OMN-1302): Value guaranteed non-None by value_type discriminator check and model validator.
             return self.str_value  # type: ignore[return-value]
         if self.value_type == EnumDiscriminatedValueType.DICT:
+            # NOTE(OMN-1302): Value guaranteed non-None by value_type discriminator check and model validator.
             return self.dict_value  # type: ignore[return-value]
         if self.value_type == EnumDiscriminatedValueType.LIST:
+            # NOTE(OMN-1302): Value guaranteed non-None by value_type discriminator check and model validator.
             return self.list_value  # type: ignore[return-value]
 
         raise ModelOnexError(
@@ -554,6 +560,7 @@ class ModelDiscriminatedValue(BaseModel):
 
     model_config = ConfigDict(
         extra="ignore",
+        frozen=False,
         use_enum_values=False,
         validate_assignment=True,
     )
