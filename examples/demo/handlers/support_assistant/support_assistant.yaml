@@ -2,12 +2,28 @@
 # Handler Contract: Support Assistant Demo Handler
 # This handler calls external LLM APIs to generate support responses.
 #
-# Key characteristics:
-#   - handler_kind: effect (external I/O - LLM API calls)
-#   - purity: side_effecting (makes network calls)
-#   - idempotent: false (LLM outputs vary even with identical inputs)
-#   - nondeterministic_effect: true (LLM responses are inherently variable)
-#   - Has capability dependency on LLM provider
+# IMPORTANT: LLM Behavioral Characteristics
+# -----------------------------------------
+# LLM-based handlers have specific behavioral properties that affect runtime:
+#
+#   - DETERMINISM: FALSE
+#     LLM outputs are inherently non-deterministic. The same input prompt may
+#     produce different responses due to model temperature, sampling strategies,
+#     context window state, and provider-side variations. This handler declares
+#     nondeterministic_effect: true to signal this behavior to the runtime.
+#
+#   - IDEMPOTENCY: FALSE
+#     This handler is NOT idempotent. Multiple invocations with identical inputs
+#     may produce different outputs (different response text, sentiment, etc.).
+#     The descriptor.idempotent: false setting reflects this.
+#
+#   - SIDE EFFECTS: YES (handler_kind: effect)
+#     Makes external network calls to LLM provider APIs.
+#
+# Retry Policy Note:
+#   Retries are enabled for TRANSIENT FAILURES ONLY (network timeouts, 5xx errors).
+#   The runtime should NOT retry on successful API calls that return unexpected content.
+#   Since idempotent=false, retries should use idempotency keys where supported.
 #
 # See: OMN-1201 - Demo Support Assistant Handler
 
@@ -23,11 +39,16 @@ description: AI support assistant that responds to user requests with structured
 descriptor:
   handler_kind: effect
   purity: side_effecting
-  # LLM handlers cannot guarantee idempotency - same input may produce different
-  # outputs due to model temperature, sampling, context window state, and API
-  # variations. Use nondeterministic_effect: true in execution_constraints.
+  # CRITICAL: LLM handlers are NOT idempotent - same input produces different
+  # outputs due to model temperature, sampling, and context window state.
+  # This is fundamental to how LLMs work and cannot be changed.
   idempotent: false
   timeout_ms: 30000  # LLM calls can be slow
+  # RETRY POLICY: For transient failures only (network errors, rate limits).
+  # Since idempotent=false, the runtime should:
+  #   1. Only retry on connection/timeout errors (before API processing)
+  #   2. NOT retry on 4xx errors (client errors, may have been processed)
+  #   3. Use idempotency keys if the provider supports them (e.g., OpenAI)
   retry_policy:
     enabled: true
     max_retries: 3
@@ -70,8 +91,11 @@ execution_constraints:
   requires_before: []
   requires_after: []
   can_run_parallel: true
-  # LLM outputs are inherently nondeterministic due to temperature, sampling,
-  # and model state - same prompt can yield different responses
+  # CRITICAL: nondeterministic_effect=true signals to the runtime that:
+  #   1. Results cannot be cached based on input alone
+  #   2. Replay/audit logs must capture actual outputs, not recompute them
+  #   3. Testing requires mocking or snapshot-based validation
+  # This is inherent to LLM APIs due to temperature, sampling, and model state.
   nondeterministic_effect: true
 
 supports_lifecycle: true

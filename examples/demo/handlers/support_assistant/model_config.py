@@ -47,7 +47,7 @@ __all__ = [
 class _CloudProviderConfig(BaseModel):  # type: ignore[explicit-any]  # Pydantic BaseModel uses Any internally
     """Configuration for cloud LLM providers (OpenAI, Anthropic)."""
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
 
     model_name: str
     temperature: float = 0.7
@@ -58,7 +58,7 @@ class _CloudProviderConfig(BaseModel):  # type: ignore[explicit-any]  # Pydantic
 class _LocalProviderConfig(BaseModel):  # type: ignore[explicit-any]  # Pydantic BaseModel uses Any internally
     """Configuration for local LLM providers."""
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
 
     model_name: str
     temperature: float = 0.7
@@ -70,7 +70,7 @@ class _LocalProviderConfig(BaseModel):  # type: ignore[explicit-any]  # Pydantic
 class _ProviderConfigSection(BaseModel):  # type: ignore[explicit-any]  # Pydantic BaseModel uses Any internally
     """The provider_config section of the contract."""
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
 
     openai: _CloudProviderConfig
     anthropic: _CloudProviderConfig
@@ -80,7 +80,7 @@ class _ProviderConfigSection(BaseModel):  # type: ignore[explicit-any]  # Pydant
 class _ContractMetadata(BaseModel):  # type: ignore[explicit-any]  # Pydantic BaseModel uses Any internally
     """Metadata section containing provider_config."""
 
-    model_config = ConfigDict(extra="ignore")  # Ignore other metadata fields
+    model_config = ConfigDict(extra="ignore", from_attributes=True)  # Ignore other metadata fields
 
     provider_config: _ProviderConfigSection
 
@@ -88,7 +88,7 @@ class _ContractMetadata(BaseModel):  # type: ignore[explicit-any]  # Pydantic Ba
 class _ContractWithProviderConfig(BaseModel):  # type: ignore[explicit-any]  # Pydantic BaseModel uses Any internally
     """Partial contract model for extracting provider_config from metadata."""
 
-    model_config = ConfigDict(extra="ignore")  # Ignore other contract fields
+    model_config = ConfigDict(extra="ignore", from_attributes=True)  # Ignore other contract fields
 
     metadata: _ContractMetadata
 

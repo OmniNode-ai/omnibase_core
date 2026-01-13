@@ -27,7 +27,7 @@ class SupportRequest(BaseModel):  # type: ignore[explicit-any]
         urgency: Priority level of the request (low, medium, or high).
     """
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
 
     user_identifier: str = Field(
         ...,

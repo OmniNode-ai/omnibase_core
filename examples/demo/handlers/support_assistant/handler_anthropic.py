@@ -24,6 +24,7 @@ Example:
 
 from __future__ import annotations
 
+import logging
 import os
 
 import httpx
@@ -34,6 +35,9 @@ from examples.demo.handlers.support_assistant.protocol_llm_client import (
 )
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors import ModelOnexError
+
+# Module logger for temperature clamping warnings
+logger = logging.getLogger(__name__)
 
 # Anthropic API configuration
 ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages"
@@ -129,7 +133,15 @@ class AnthropicLLMClient:
 
         # Clamp temperature to Anthropic's valid range (0.0-1.0)
         # ModelConfig may allow higher values for other providers
-        temperature = min(max(config.temperature, 0.0), 1.0)
+        original_temperature = config.temperature
+        temperature = min(max(original_temperature, 0.0), 1.0)
+
+        if temperature != original_temperature:
+            logger.warning(
+                "Temperature %.2f clamped to %.2f for Anthropic API (valid range: 0.0-1.0)",
+                original_temperature,
+                temperature,
+            )
 
         return cls(
             api_key=api_key,

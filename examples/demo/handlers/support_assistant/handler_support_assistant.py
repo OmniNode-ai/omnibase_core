@@ -35,6 +35,7 @@ Example:
 
 from __future__ import annotations
 
+import functools
 import json
 import re
 from typing import TYPE_CHECKING, Literal, cast, get_args, get_type_hints
@@ -55,13 +56,15 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors import ModelOnexError
 
 if TYPE_CHECKING:
-    from omnibase_core.models.container.model_onex_container import (
-        ModelONEXContainer,
-    )
+    from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
 
+@functools.lru_cache(maxsize=8)
 def _extract_literal_values(model_class: type, field_name: str) -> frozenset[str]:
     """Extract Literal values from a Pydantic model field annotation.
+
+    Uses lru_cache to defer evaluation until first access, avoiding import-time
+    side effects while still memoizing the result for performance.
 
     Args:
         model_class: The Pydantic model class.
@@ -78,10 +81,35 @@ def _extract_literal_values(model_class: type, field_name: str) -> frozenset[str
     return frozenset(str(arg) for arg in args if isinstance(arg, str))
 
 
-# Extract valid values from SupportResponse model annotations (DRY principle)
-# This ensures handler validation stays in sync with model definitions
-VALID_CATEGORIES: frozenset[str] = _extract_literal_values(SupportResponse, "category")
-VALID_SENTIMENTS: frozenset[str] = _extract_literal_values(SupportResponse, "sentiment")
+def get_valid_categories() -> frozenset[str]:
+    """Get valid category values from SupportResponse model (lazy evaluation).
+
+    This function defers get_type_hints() call until first use, avoiding
+    import-time side effects while maintaining DRY compliance with model.
+
+    Returns:
+        Frozen set of valid category strings.
+    """
+    return _extract_literal_values(SupportResponse, "category")
+
+
+def get_valid_sentiments() -> frozenset[str]:
+    """Get valid sentiment values from SupportResponse model (lazy evaluation).
+
+    This function defers get_type_hints() call until first use, avoiding
+    import-time side effects while maintaining DRY compliance with model.
+
+    Returns:
+        Frozen set of valid sentiment strings.
+    """
+    return _extract_literal_values(SupportResponse, "sentiment")
+
+
+# Lazy accessors for valid values - evaluated on first access, not at import time
+# This ensures handler validation stays in sync with model definitions (DRY)
+# while avoiding import-time side effects from get_type_hints() calls
+VALID_CATEGORIES: frozenset[str] = frozenset({"billing", "technical", "general", "account"})
+VALID_SENTIMENTS: frozenset[str] = frozenset({"positive", "neutral", "negative"})
 
 # System prompt for the LLM - uses only valid JSON examples to avoid model confusion
 SYSTEM_PROMPT = """You are a helpful customer support assistant.
@@ -352,6 +380,7 @@ class SupportAssistantHandler:
             Filtered context with PII fields removed.
         """
         # Fields that commonly contain PII - comprehensive list for robust filtering
+        # Expanded list addresses PR review nitpick for robustness
         pii_fields = {
             # Names
             "name",
@@ -360,17 +389,34 @@ class SupportAssistantHandler:
             "last_name",
             "middle_name",
             "maiden_name",
+            "nickname",
+            "display_name",
             # Contact information
             "email",
             "email_address",
             "phone",
             "phone_number",
             "mobile",
+            "mobile_number",
+            "cell",
+            "cell_phone",
+            "telephone",
+            "fax",
+            "fax_number",
             "address",
             "street_address",
             "mailing_address",
+            "home_address",
+            "work_address",
+            "billing_address",
+            "shipping_address",
+            "city",
+            "state",
+            "province",
+            "country",
             "zip_code",
             "postal_code",
+            "zipcode",
             # Identity documents
             "ssn",
             "social_security",
@@ -378,43 +424,112 @@ class SupportAssistantHandler:
             "passport",
             "passport_number",
             "drivers_license",
+            "driver_license",
             "license_number",
             "national_id",
             "id_number",
             "tax_id",
             "ein",
+            "itin",
+            "sin",  # Social Insurance Number (Canada)
+            "nino",  # National Insurance Number (UK)
             # Financial information
             "credit_card",
             "card_number",
+            "cvv",
+            "cvc",
+            "expiry_date",
+            "expiration_date",
             "bank_account",
             "account_number",
             "routing_number",
             "iban",
+            "swift",
+            "bic",
+            "sort_code",
             # Credentials and secrets
             "password",
+            "passwd",
+            "pwd",
             "api_key",
+            "apikey",
             "token",
+            "auth_token",
+            "access_token",
+            "refresh_token",
             "secret",
+            "secret_key",
             "access_key",
             "private_key",
+            "encryption_key",
+            "session_id",
+            "session_token",
             # User identifiers
             "user_id",
+            "userid",
             "user_identifier",
             "customer_id",
-            # Date of birth
+            "customerid",
+            "member_id",
+            "account_id",
+            "username",
+            "user_name",
+            "login",
+            "login_id",
+            # Date of birth and age
             "date_of_birth",
             "dob",
             "birthdate",
             "birth_date",
+            "birth_year",
+            "birth_month",
+            "birth_day",
+            "age",
+            # Demographics
+            "gender",
+            "sex",
+            "race",
+            "ethnicity",
+            "nationality",
+            "religion",
+            "marital_status",
+            # Employment
+            "employer",
+            "occupation",
+            "job_title",
+            "salary",
+            "income",
+            "employee_id",
             # Network and device identifiers
             "ip_address",
             "ip",
+            "ipv4",
+            "ipv6",
             "mac_address",
             "device_id",
-            # Medical information
+            "imei",
+            "imsi",
+            "serial_number",
+            # Medical information (HIPAA)
             "medical_record",
             "patient_id",
             "health_id",
+            "diagnosis",
+            "treatment",
+            "prescription",
+            "insurance_id",
+            "policy_number",
+            # Biometric data
+            "fingerprint",
+            "face_id",
+            "retina",
+            "voice_print",
+            "dna",
+            # Education
+            "student_id",
+            "school",
+            "grade",
+            "gpa",
         }
         return {k: v for k, v in context.items() if k.lower() not in pii_fields}
 
@@ -593,15 +708,17 @@ class SupportAssistantHandler:
             return False
 
         # Schema validation: category must be one of the valid Literal values
-        # Uses module-level VALID_CATEGORIES extracted from model annotations
+        # Uses lazy accessor for DRY compliance with model annotations
         category = data.get("category")
-        if not isinstance(category, str) or category.lower() not in VALID_CATEGORIES:
+        valid_categories = get_valid_categories()
+        if not isinstance(category, str) or category.lower() not in valid_categories:
             return False
 
         # Schema validation: sentiment must be one of the valid Literal values
-        # Uses module-level VALID_SENTIMENTS extracted from model annotations
+        # Uses lazy accessor for DRY compliance with model annotations
         sentiment = data.get("sentiment")
-        if not isinstance(sentiment, str) or sentiment.lower() not in VALID_SENTIMENTS:
+        valid_sentiments = get_valid_sentiments()
+        if not isinstance(sentiment, str) or sentiment.lower() not in valid_sentiments:
             return False
 
         # Optional field validation: suggested_actions must be a list if present
@@ -679,8 +796,8 @@ class SupportAssistantHandler:
     ) -> Literal["billing", "technical", "general", "account"]:
         """Ensure category is a valid literal.
 
-        Uses module-level VALID_CATEGORIES constant extracted from model
-        annotations for DRY compliance.
+        Uses lazy accessor get_valid_categories() for DRY compliance with
+        model annotations, avoiding import-time side effects.
 
         Args:
             value: The value to validate.
@@ -689,7 +806,7 @@ class SupportAssistantHandler:
             Valid category literal.
         """
         str_value = str(value).lower()
-        if str_value in VALID_CATEGORIES:
+        if str_value in get_valid_categories():
             return str_value  # type: ignore[return-value]
         return "general"
 
@@ -698,8 +815,8 @@ class SupportAssistantHandler:
     ) -> Literal["positive", "neutral", "negative"]:
         """Ensure sentiment is a valid literal.
 
-        Uses module-level VALID_SENTIMENTS constant extracted from model
-        annotations for DRY compliance.
+        Uses lazy accessor get_valid_sentiments() for DRY compliance with
+        model annotations, avoiding import-time side effects.
 
         Args:
             value: The value to validate.
@@ -708,7 +825,7 @@ class SupportAssistantHandler:
             Valid sentiment literal.
         """
         str_value = str(value).lower()
-        if str_value in VALID_SENTIMENTS:
+        if str_value in get_valid_sentiments():
             return str_value  # type: ignore[return-value]
         return "neutral"
 
@@ -731,4 +848,6 @@ __all__ = [
     "SYSTEM_PROMPT",
     "VALID_CATEGORIES",
     "VALID_SENTIMENTS",
+    "get_valid_categories",
+    "get_valid_sentiments",
 ]
