@@ -7,12 +7,34 @@ compatibility is provided.
 **Consolidated enums**:
 - EnumExecutionStatusV2 (deleted from enum_execution_status_v2.py)
 
-**Usage**: Import directly from omnibase_core.enums::
+**Migration Guide**:
 
-    from omnibase_core.enums import EnumExecutionStatus
+1. **Update imports** - Replace old imports with the canonical import::
 
-**Migration**: Replace all imports of EnumExecutionStatusV2 with
-EnumExecutionStatus. The value set is a superset of the deleted enum.
+       # Before (will cause ImportError)
+       from omnibase_core.enums.enum_execution_status_v2 import EnumExecutionStatusV2
+
+       # After
+       from omnibase_core.enums import EnumExecutionStatus
+
+2. **Update type annotations** - Replace type references::
+
+       # Before
+       def process(status: EnumExecutionStatusV2) -> None: ...
+
+       # After
+       def process(status: EnumExecutionStatus) -> None: ...
+
+3. **Value compatibility** - All values from the deleted enum exist in this
+   enum with identical string representations. No runtime value changes needed.
+
+**Rationale**: This consolidation eliminates enum proliferation and provides
+a single source of truth for execution status values. The unified enum
+includes helper methods (is_terminal, is_active, etc.) for consistent
+status classification across the codebase.
+
+**Deprecation Timeline**: The old enum files were deleted in v0.6.4.
+No deprecation period was provided due to internal-only usage.
 """
 
 from __future__ import annotations

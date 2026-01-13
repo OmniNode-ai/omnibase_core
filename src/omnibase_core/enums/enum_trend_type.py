@@ -7,9 +7,11 @@ Trend type enumeration for trend data models.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumTrendType(str, Enum):
+class EnumTrendType(StrValueHelper, str, Enum):
     """
     Enumeration for trend types.
 
@@ -24,10 +26,6 @@ class EnumTrendType(str, Enum):
     LATENCY = "latency"
     RESOURCE = "resource"
     CUSTOM = "custom"
-
-    def __str__(self) -> str:
-        """Return string representation."""
-        return self.value
 
 
 # Export for use

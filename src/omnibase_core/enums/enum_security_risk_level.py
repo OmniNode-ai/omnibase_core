@@ -6,9 +6,11 @@ Strongly typed enumeration for security risk assessment levels.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumSecurityRiskLevel(str, Enum):
+class EnumSecurityRiskLevel(StrValueHelper, str, Enum):
     """
     Security risk level classifications for security assessments.
 
@@ -22,10 +24,6 @@ class EnumSecurityRiskLevel(str, Enum):
     HIGH = "high"
     CRITICAL = "critical"
     UNKNOWN = "unknown"
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def is_actionable(cls, risk_level: "EnumSecurityRiskLevel") -> bool:

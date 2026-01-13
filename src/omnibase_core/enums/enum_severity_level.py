@@ -10,9 +10,11 @@ Follows ONEX one-enum-per-file naming conventions.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumSeverityLevel(str, Enum):
+class EnumSeverityLevel(StrValueHelper, str, Enum):
     """
     Strongly typed severity level for messages and logging.
 
@@ -34,10 +36,6 @@ class EnumSeverityLevel(str, Enum):
     TRACE = "trace"  # Very detailed debug information
     FATAL = "fatal"  # Fatal error (alias for EMERGENCY)
     WARN = "warn"  # Short form of WARNING
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def from_string(cls, value: str) -> EnumSeverityLevel:

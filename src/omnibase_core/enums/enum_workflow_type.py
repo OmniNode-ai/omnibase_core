@@ -10,9 +10,11 @@ Replaces string literals for workflow type discrimination.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumWorkflowType(str, Enum):
+class EnumWorkflowType(StrValueHelper, str, Enum):
     """
     Strongly typed workflow execution patterns.
 
@@ -25,10 +27,6 @@ class EnumWorkflowType(str, Enum):
     PARALLEL = "parallel"
     CONDITIONAL = "conditional"
     LOOP = "loop"
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def requires_branching(cls, workflow_type: EnumWorkflowType) -> bool:

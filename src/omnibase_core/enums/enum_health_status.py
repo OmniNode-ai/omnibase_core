@@ -20,9 +20,11 @@ EnumNodeHealthStatus with EnumHealthStatus from omnibase_core.enums.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumHealthStatus(str, Enum):
+class EnumHealthStatus(StrValueHelper, str, Enum):
     """Canonical health status enum for all ONEX system components.
 
     This is the single source of truth for health status values across
@@ -76,18 +78,14 @@ class EnumHealthStatus(str, Enum):
     INITIALIZING = "initializing"
     DISPOSING = "disposing"
 
-    def __str__(self) -> str:
-        """Return the string value of the health status."""
-        return self.value
-
     def is_operational(self) -> bool:
         """Check if the service is operational despite potential issues."""
-        return self in [self.HEALTHY, self.DEGRADED, self.AVAILABLE, self.WARNING]
+        return self in {self.HEALTHY, self.DEGRADED, self.AVAILABLE, self.WARNING}
 
     def requires_attention(self) -> bool:
         """Check if this status requires immediate attention."""
-        return self in [self.UNHEALTHY, self.CRITICAL, self.ERROR, self.UNREACHABLE]
+        return self in {self.UNHEALTHY, self.CRITICAL, self.ERROR, self.UNREACHABLE}
 
     def is_transitional(self) -> bool:
         """Check if this status indicates a transitional state."""
-        return self in [self.INITIALIZING, self.DISPOSING]
+        return self in {self.INITIALIZING, self.DISPOSING}

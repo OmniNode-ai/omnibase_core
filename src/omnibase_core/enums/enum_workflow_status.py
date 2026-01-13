@@ -8,22 +8,52 @@ compatibility is provided.
 - EnumWorkflowState (deleted from enum_workflow_execution.py and enum_orchestrator_types.py)
 - EnumWorkflowStatus (deleted from enum_workflow_coordination.py)
 
-**Usage**: Import directly from omnibase_core.enums::
-
-    from omnibase_core.enums import EnumWorkflowStatus
-
 **Semantic Category**: Workflows (workflow lifecycle states)
 
-**Migration**: Replace all imports of EnumWorkflowState or the old
-EnumWorkflowStatus from enum_workflow_coordination.py with imports
-from omnibase_core.enums.
+**Migration Guide**:
+
+1. **Update imports** - Replace old imports with the canonical import::
+
+       # Before (will cause ImportError)
+       from omnibase_core.enums.enum_workflow_execution import EnumWorkflowState
+       from omnibase_core.enums.enum_workflow_coordination import EnumWorkflowStatus
+
+       # After
+       from omnibase_core.enums import EnumWorkflowStatus
+
+2. **Rename references** - If using EnumWorkflowState, update to EnumWorkflowStatus::
+
+       # Before
+       state: EnumWorkflowState = EnumWorkflowState.RUNNING
+
+       # After
+       status: EnumWorkflowStatus = EnumWorkflowStatus.RUNNING
+
+3. **Value changes** - String values are now lowercase (e.g., "running" not "RUNNING").
+   Update any string comparisons or serialized data accordingly.
+
+4. **Helper methods** - The canonical enum provides classification methods::
+
+       status = EnumWorkflowStatus.COMPLETED
+       EnumWorkflowStatus.is_terminal(status)   # True
+       EnumWorkflowStatus.is_active(status)     # False
+       EnumWorkflowStatus.is_successful(status) # True
+
+**Rationale**: Multiple workflow-related enums with overlapping semantics
+caused confusion. This consolidation provides a single source of truth
+with consistent lowercase value serialization.
+
+**Deprecation Timeline**: The old enum files were deleted in v0.6.4.
+No deprecation period was provided due to internal-only usage.
 """
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumWorkflowStatus(str, Enum):
+class EnumWorkflowStatus(StrValueHelper, str, Enum):
     """Canonical workflow status enum for ONEX workflow lifecycle.
 
     This is the single source of truth for workflow status values across
@@ -57,10 +87,6 @@ class EnumWorkflowStatus(str, Enum):
     FAILED = "failed"
     CANCELLED = "cancelled"
     PAUSED = "paused"
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def is_terminal(cls, status: "EnumWorkflowStatus") -> bool:

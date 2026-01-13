@@ -300,6 +300,58 @@ class TestEnumOperationStatus:
         loaded_data = yaml.safe_load(yaml_str)
         assert loaded_data["status"] == "timeout"
 
+    def test_is_terminal_edge_cases(self):
+        """Test is_terminal with edge cases and boundary conditions.
+
+        Verifies nuanced terminal state semantics for operation status:
+        - TIMEOUT is terminal (forced termination from time limit)
+        - CANCELLED is terminal (intentional termination)
+        - IN_PROGRESS is NOT terminal (operation still executing)
+        """
+        # TIMEOUT is terminal (error condition)
+        assert EnumOperationStatus.TIMEOUT.is_terminal() is True
+        assert EnumOperationStatus.TIMEOUT.is_successful() is False
+
+        # CANCELLED is terminal but neither success nor standard failure
+        assert EnumOperationStatus.CANCELLED.is_terminal() is True
+        assert EnumOperationStatus.CANCELLED.is_successful() is False
+
+        # IN_PROGRESS must not be terminal
+        assert EnumOperationStatus.IN_PROGRESS.is_terminal() is False
+        assert EnumOperationStatus.IN_PROGRESS.is_active() is True
+
+    def test_is_terminal_mutual_exclusivity(self):
+        """Test that terminal and active states are mutually exclusive.
+
+        Every operation status must be either terminal or active, never both.
+        This is a fundamental invariant of operation lifecycle semantics.
+        """
+        for status in EnumOperationStatus:
+            is_terminal = status.is_terminal()
+            is_active = status.is_active()
+
+            # XOR: exactly one must be true
+            assert is_terminal != is_active, (
+                f"{status} violates mutual exclusivity: "
+                f"is_terminal={is_terminal}, is_active={is_active}"
+            )
+
+    def test_is_terminal_completeness(self):
+        """Test that all status values are categorized by is_terminal.
+
+        Every status must be either terminal or non-terminal (active).
+        This ensures no status values are left uncategorized.
+        """
+        terminal_count = sum(1 for s in EnumOperationStatus if s.is_terminal())
+        active_count = sum(1 for s in EnumOperationStatus if s.is_active())
+
+        # All statuses should be accounted for
+        assert terminal_count + active_count == len(EnumOperationStatus)
+
+        # Expected counts based on the enum definition
+        assert terminal_count == 4  # SUCCESS, FAILED, CANCELLED, TIMEOUT
+        assert active_count == 2  # IN_PROGRESS, PENDING
+
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

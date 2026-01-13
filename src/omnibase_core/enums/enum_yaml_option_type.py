@@ -9,9 +9,11 @@ Strongly typed enumeration for YAML dumper option value types.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumYamlOptionType(str, Enum):
+class EnumYamlOptionType(StrValueHelper, str, Enum):
     """
     Strongly typed YAML dumper option value types.
 
@@ -23,10 +25,6 @@ class EnumYamlOptionType(str, Enum):
     BOOLEAN = "boolean"
     INTEGER = "integer"
     STRING = "string"
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def is_numeric_type(cls, option_type: EnumYamlOptionType) -> bool:

@@ -472,6 +472,36 @@ status = EnumExecutionStatus.SUCCESS
 - `to_base_status()` - Convert to EnumBaseStatus for universal operations
 - `from_base_status(base_status)` - Create from EnumBaseStatus
 
+**CANCELLED State Semantics**:
+
+The `CANCELLED` status has special semantics that distinguish it from both success and failure states:
+
+- **Terminal**: CANCELLED is a terminal state (`is_terminal()` returns True) - execution has finished and will not continue
+- **Not a success**: `is_successful()` returns False - the execution did not complete its intended work
+- **Not a failure**: `is_failure()` returns False - no error occurred; cancellation was intentional
+- **Intentional termination**: Represents user or system-initiated cancellation, not an error condition
+
+This distinction is important for:
+1. **Metrics/reporting**: CANCELLED executions should not count as failures in error rates
+2. **Retry logic**: CANCELLED tasks should not automatically retry (unlike FAILED or TIMEOUT)
+3. **Billing/quotas**: CANCELLED work may warrant different accounting than completed or failed work
+
+```python
+# Correct handling of CANCELLED state
+status = EnumExecutionStatus.CANCELLED
+
+# Terminal check includes CANCELLED
+assert EnumExecutionStatus.is_terminal(status)  # True
+
+# Success/failure checks exclude CANCELLED
+assert not EnumExecutionStatus.is_successful(status)  # Not a success
+assert not EnumExecutionStatus.is_failure(status)     # Not a failure
+
+# Use is_cancelled for explicit cancellation handling
+if EnumExecutionStatus.is_cancelled(status):
+    log.info("Execution was cancelled by user/system")
+```
+
 ### Message Roles
 
 #### EnumMessageRole
@@ -600,7 +630,7 @@ STATUS_TO_HTTP = {
     EnumExecutionStatus.FAILED: 500,
     EnumExecutionStatus.TIMEOUT: 408,
     EnumExecutionStatus.CANCELLED: 499,
-    EnumExecutionStatus.IN_PROGRESS: 202,
+    EnumExecutionStatus.RUNNING: 202,
     EnumExecutionStatus.PENDING: 202
 }
 

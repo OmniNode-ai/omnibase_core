@@ -7,10 +7,6 @@ compatibility is provided.
 **Consolidated enums**:
 - EnumOperationStatus (deleted from enum_execution.py)
 
-**Usage**: Import directly from omnibase_core.enums::
-
-    from omnibase_core.enums import EnumOperationStatus
-
 **Semantic Category**: Operations (API/service operation outcomes)
 
 **Use For**:
@@ -18,8 +14,32 @@ compatibility is provided.
 - API responses
 - Service manager operations
 
-**Migration**: Replace all imports of EnumOperationStatus from
-enum_execution.py with imports from omnibase_core.enums.
+**Migration Guide**:
+
+1. **Update imports** - Replace old imports with the canonical import::
+
+       # Before (will cause ImportError)
+       from omnibase_core.enums.enum_execution import EnumOperationStatus
+
+       # After
+       from omnibase_core.enums import EnumOperationStatus
+
+2. **Value compatibility** - All values are preserved with identical
+   string representations. No runtime value changes needed.
+
+3. **New helper methods** - The canonical enum provides additional
+   classification methods::
+
+       status = EnumOperationStatus.SUCCESS
+       status.is_terminal()    # True - execution has finished
+       status.is_active()      # False - not in progress
+       status.is_successful()  # True - completed successfully
+
+**Rationale**: This consolidation eliminates duplicate EnumOperationStatus
+definitions across multiple modules, providing a single authoritative source.
+
+**Deprecation Timeline**: The old enum location was deleted in v0.6.4.
+No deprecation period was provided due to internal-only usage.
 """
 
 from __future__ import annotations
@@ -27,12 +47,14 @@ from __future__ import annotations
 from enum import Enum, unique
 from typing import TYPE_CHECKING
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 if TYPE_CHECKING:
     from omnibase_core.enums.enum_base_status import EnumBaseStatus
 
 
 @unique
-class EnumOperationStatus(str, Enum):
+class EnumOperationStatus(StrValueHelper, str, Enum):
     """Canonical operation status enum for API and service operations.
 
     This is the single source of truth for operation status values across
@@ -69,19 +91,19 @@ class EnumOperationStatus(str, Enum):
 
     def is_terminal(self) -> bool:
         """Check if this status represents a terminal state."""
-        return self in (
+        return self in {
             EnumOperationStatus.SUCCESS,
             EnumOperationStatus.FAILED,
             EnumOperationStatus.CANCELLED,
             EnumOperationStatus.TIMEOUT,
-        )
+        }
 
     def is_active(self) -> bool:
         """Check if this status represents an active operation."""
-        return self in (
+        return self in {
             EnumOperationStatus.IN_PROGRESS,
             EnumOperationStatus.PENDING,
-        )
+        }
 
     def is_successful(self) -> bool:
         """Check if this status represents a successful operation."""

@@ -507,6 +507,66 @@ class TestEnumExecutionStatus:
                 f"got {back_to_base} via {exec_status}"
             )
 
+    def test_is_terminal_edge_cases(self):
+        """Test is_terminal with edge cases and boundary conditions.
+
+        Verifies nuanced terminal state semantics for execution status:
+        - PARTIAL is terminal even though it's neither full success nor failure
+        - CANCELLED is terminal (intentional termination)
+        - TIMEOUT is terminal (forced termination)
+        """
+        # PARTIAL is terminal despite being neither success nor failure
+        assert EnumExecutionStatus.is_terminal(EnumExecutionStatus.PARTIAL) is True
+        assert EnumExecutionStatus.is_successful(EnumExecutionStatus.PARTIAL) is False
+        assert EnumExecutionStatus.is_failure(EnumExecutionStatus.PARTIAL) is False
+
+        # CANCELLED is terminal but not classified as success or failure
+        assert EnumExecutionStatus.is_terminal(EnumExecutionStatus.CANCELLED) is True
+        assert EnumExecutionStatus.is_successful(EnumExecutionStatus.CANCELLED) is False
+        assert EnumExecutionStatus.is_failure(EnumExecutionStatus.CANCELLED) is False
+
+        # TIMEOUT is terminal and IS a failure (error condition)
+        assert EnumExecutionStatus.is_terminal(EnumExecutionStatus.TIMEOUT) is True
+        assert EnumExecutionStatus.is_failure(EnumExecutionStatus.TIMEOUT) is True
+
+    def test_is_terminal_mutual_exclusivity(self):
+        """Test that terminal and active states are mutually exclusive.
+
+        Every execution status must be either terminal or active, never both.
+        This is a fundamental invariant of execution lifecycle semantics.
+        """
+        for status in EnumExecutionStatus:
+            is_terminal = EnumExecutionStatus.is_terminal(status)
+            is_active = EnumExecutionStatus.is_active(status)
+
+            # XOR: exactly one must be true
+            assert is_terminal != is_active, (
+                f"{status} violates mutual exclusivity: "
+                f"is_terminal={is_terminal}, is_active={is_active}"
+            )
+
+    def test_is_terminal_completeness(self):
+        """Test that all status values are categorized by is_terminal.
+
+        Every status must be either terminal or non-terminal (active).
+        This ensures no status values are left uncategorized.
+        """
+        terminal_count = sum(
+            1 for s in EnumExecutionStatus if EnumExecutionStatus.is_terminal(s)
+        )
+        active_count = sum(
+            1 for s in EnumExecutionStatus if EnumExecutionStatus.is_active(s)
+        )
+
+        # All statuses should be accounted for
+        assert terminal_count + active_count == len(EnumExecutionStatus)
+
+        # Expected counts based on the enum definition
+        assert (
+            terminal_count == 7
+        )  # COMPLETED, SUCCESS, FAILED, SKIPPED, CANCELLED, TIMEOUT, PARTIAL
+        assert active_count == 2  # PENDING, RUNNING
+
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
