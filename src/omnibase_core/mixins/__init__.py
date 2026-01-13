@@ -6,6 +6,8 @@ Mixins follow the single responsibility principle and provide specific capabilit
 that can be composed into concrete node implementations.
 """
 
+# NOTE(OMN-1302): I001 (import order) disabled - intentional ordering to avoid circular dependencies.
+
 # StrValueHelper is re-exported from utils for convenience. The actual class lives
 # in utils.util_str_enum_base to avoid circular imports with enums.
 from omnibase_core.utils.util_str_enum_base import StrValueHelper
