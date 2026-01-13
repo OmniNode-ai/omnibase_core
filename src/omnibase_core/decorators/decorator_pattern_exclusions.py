@@ -41,7 +41,8 @@ class ONEXPatternExclusion:
 
     def __call__(self, target: Callable[..., Any] | type) -> Callable[..., Any] | type:
         """Apply the exclusion to the target function or class."""
-        # Mark the target with exclusion metadata (type ignore for dynamic attributes)
+        # NOTE(OMN-1302): Dynamic attributes for exclusion metadata on decoratee.
+        # Safe because attributes read via hasattr/getattr at runtime.
         if not hasattr(target, "_onex_pattern_exclusions"):
             target._onex_pattern_exclusions = set()  # type: ignore[attr-defined]
 

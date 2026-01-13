@@ -398,7 +398,8 @@ class MixinWorkflowExecution:
         workflow_steps: list[ModelWorkflowStep] = []
 
         for step_config in steps_config:
-            # TypedDict is compatible with ** unpacking
+            # NOTE(OMN-1302): TypedDict compatible with ** unpacking but mypy cannot verify at call site.
+            # Safe because ModelWorkflowStep validates fields.
             step = ModelWorkflowStep(**step_config)  # type: ignore[arg-type]
             workflow_steps.append(step)
 

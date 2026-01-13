@@ -1,10 +1,3 @@
-from collections.abc import Callable
-from typing import TypeVar
-from uuid import UUID
-
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Container Service Resolver
 
@@ -13,13 +6,41 @@ Handles the get_service method functionality that gets lost during
 dependency-injector DynamicContainer transformation.
 """
 
-from uuid import NAMESPACE_DNS, uuid5
+from collections.abc import Callable
+from typing import Any, TypeVar
+from uuid import NAMESPACE_DNS, UUID, uuid5
 
-# DELETED: not needed import create_hybrid_event_bus
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.container.model_service import ModelService
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 T = TypeVar("T")
+
+
+def _get_container_callable(
+    container: ModelONEXContainer, attr_name: str
+) -> Callable[[], Any] | None:
+    """
+    Get callable attribute from container with proper typing.
+
+    Dependency-injector dynamically adds callable attributes to containers.
+    This helper wraps getattr with runtime validation and proper typing.
+
+    Args:
+        container: The ONEX container instance
+        attr_name: Name of the attribute to retrieve
+
+    Returns:
+        The callable if found and valid, None otherwise
+    """
+    value = getattr(container, attr_name, None)
+    if value is None:
+        return None
+    if not callable(value):
+        return None
+    # NOTE(OMN-1302): getattr() returns Any; validated callable at runtime above.
+    return value  # type: ignore[return-value]
 
 
 def _generate_service_uuid(service_name: str) -> UUID:
@@ -151,80 +172,66 @@ def create_get_service_method(
 
 def _build_registry_map(
     container: ModelONEXContainer,
-) -> dict[str, Callable[[], ModelService]]:
-    """Build registry mapping for service resolution."""
-    # Note: These attributes are dynamically added by dependency-injector
-    return {
+) -> dict[str, Callable[[], Any]]:
+    """
+    Build registry mapping for service resolution.
+
+    Note: These attributes are dynamically added by dependency-injector.
+    Uses _get_container_callable to safely retrieve and validate callables,
+    filtering out None values to ensure all dict values are callable.
+
+    Args:
+        container: The ONEX container instance
+
+    Returns:
+        Dictionary mapping service names to their callable resolvers.
+        Only includes services that have valid callables registered.
+    """
+    # List of all registry/service names to resolve
+    registry_names = [
         # Generation tool registries
-        "contract_validator_registry": getattr(
-            container, "contract_validator_registry", None
-        ),  # type: ignore[dict-item]
-        "model_regenerator_registry": getattr(
-            container, "model_regenerator_registry", None
-        ),  # type: ignore[dict-item]
-        "contract_driven_generator_registry": getattr(
-            container, "contract_driven_generator_registry", None
-        ),  # type: ignore[dict-item]
-        "workflow_generator_registry": getattr(
-            container, "workflow_generator_registry", None
-        ),  # type: ignore[dict-item]
-        "ast_generator_registry": getattr(container, "ast_generator_registry", None),  # type: ignore[dict-item]
-        "file_writer_registry": getattr(container, "file_writer_registry", None),  # type: ignore[dict-item]
-        "introspection_generator_registry": getattr(
-            container, "introspection_generator_registry", None
-        ),  # type: ignore[dict-item]
-        "protocol_generator_registry": getattr(
-            container, "protocol_generator_registry", None
-        ),  # type: ignore[dict-item]
-        "node_stub_generator_registry": getattr(
-            container, "node_stub_generator_registry", None
-        ),  # type: ignore[dict-item]
-        "ast_renderer_registry": getattr(container, "ast_renderer_registry", None),  # type: ignore[dict-item]
-        "reference_resolver_registry": getattr(
-            container, "reference_resolver_registry", None
-        ),  # type: ignore[dict-item]
-        "type_import_registry_registry": getattr(
-            container, "type_import_registry_registry", None
-        ),  # type: ignore[dict-item]
-        "python_class_builder_registry": getattr(
-            container, "python_class_builder_registry", None
-        ),  # type: ignore[dict-item]
-        "subcontract_loader_registry": getattr(
-            container, "subcontract_loader_registry", None
-        ),  # type: ignore[dict-item]
-        "import_builder_registry": getattr(container, "import_builder_registry", None),  # type: ignore[dict-item]
+        "contract_validator_registry",
+        "model_regenerator_registry",
+        "contract_driven_generator_registry",
+        "workflow_generator_registry",
+        "ast_generator_registry",
+        "file_writer_registry",
+        "introspection_generator_registry",
+        "protocol_generator_registry",
+        "node_stub_generator_registry",
+        "ast_renderer_registry",
+        "reference_resolver_registry",
+        "type_import_registry_registry",
+        "python_class_builder_registry",
+        "subcontract_loader_registry",
+        "import_builder_registry",
         # Logging tool registries
-        "smart_log_formatter_registry": getattr(
-            container, "smart_log_formatter_registry", None
-        ),  # type: ignore[dict-item]
-        "logger_engine_registry": getattr(container, "logger_engine_registry", None),  # type: ignore[dict-item]
+        "smart_log_formatter_registry",
+        "logger_engine_registry",
         # File processing registries
-        "onextree_processor_registry": getattr(
-            container, "onextree_processor_registry", None
-        ),  # type: ignore[dict-item]
-        "onexignore_processor_registry": getattr(
-            container, "onexignore_processor_registry", None
-        ),  # type: ignore[dict-item]
-        "unified_file_processor_tool_registry": getattr(
-            container, "unified_file_processor_tool_registry", None
-        ),  # type: ignore[dict-item]
+        "onextree_processor_registry",
+        "onexignore_processor_registry",
+        "unified_file_processor_tool_registry",
         # File processing services
-        "rsd_cache_manager": getattr(container, "rsd_cache_manager", None),  # type: ignore[dict-item]
-        "rsd_rate_limiter": getattr(container, "rsd_rate_limiter", None),  # type: ignore[dict-item]
-        "rsd_metrics_collector": getattr(container, "rsd_metrics_collector", None),  # type: ignore[dict-item]
-        "tree_sitter_analyzer": getattr(container, "tree_sitter_analyzer", None),  # type: ignore[dict-item]
-        "unified_file_processor": getattr(container, "unified_file_processor", None),  # type: ignore[dict-item]
-        "onextree_regeneration_service": getattr(
-            container, "onextree_regeneration_service", None
-        ),  # type: ignore[dict-item]
+        "rsd_cache_manager",
+        "rsd_rate_limiter",
+        "rsd_metrics_collector",
+        "tree_sitter_analyzer",
+        "unified_file_processor",
+        "onextree_regeneration_service",
         # AI Orchestrator services
-        "ai_orchestrator_cli_adapter": getattr(
-            container, "ai_orchestrator_cli_adapter", None
-        ),  # type: ignore[dict-item]
-        "ai_orchestrator_node": getattr(container, "ai_orchestrator_node", None),  # type: ignore[dict-item]
-        "ai_orchestrator_tool": getattr(container, "ai_orchestrator_tool", None),  # type: ignore[dict-item]
+        "ai_orchestrator_cli_adapter",
+        "ai_orchestrator_node",
+        "ai_orchestrator_tool",
         # Infrastructure CLI tool
-        "infrastructure_cli": getattr(container, "infrastructure_cli", None),  # type: ignore[dict-item]
+        "infrastructure_cli",
+    ]
+
+    # Build dict with only valid callables (filter out None)
+    return {
+        name: callable_
+        for name in registry_names
+        if (callable_ := _get_container_callable(container, name)) is not None
     }
 
 
@@ -238,4 +245,5 @@ def bind_get_service_method(container: ModelONEXContainer) -> None:
     import types
 
     get_service = create_get_service_method(container)
+    # NOTE(OMN-1302): Dynamic method binding required for DynamicContainer restoration.
     container.get_service = types.MethodType(get_service, container)  # type: ignore[method-assign]

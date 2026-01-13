@@ -631,6 +631,7 @@ class BackendMetricsPrometheus:
         if self._default_buckets:
             kwargs["buckets"] = self._default_buckets
 
+        # NOTE(OMN-1302): Prometheus Histogram accepts typed kwargs. Safe because kwargs validated above.
         histogram = Histogram(**kwargs)  # type: ignore[arg-type]
         self._cache_metric(
             name, label_names, histogram, self._histograms, self._histogram_labels

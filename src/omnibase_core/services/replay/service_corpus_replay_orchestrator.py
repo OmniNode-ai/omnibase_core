@@ -434,6 +434,7 @@ class ServiceCorpusReplayOrchestrator:
                 # concurrent coroutines modifying fail_fast_triggered)
                 should_skip = self._cancelled or fail_fast_triggered
                 if should_skip:
+                    # NOTE(OMN-1302): Defensive early return for race condition. Safe because checks state after lock.
                     return  # type: ignore[unreachable]
 
                 result = await self._replay_single(manifest, config)

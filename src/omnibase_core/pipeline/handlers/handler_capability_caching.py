@@ -58,7 +58,7 @@ class HandlerCapabilityCaching(BaseModel):
         Added as part of Mixin-to-Handler conversion (OMN-1112)
     """
 
-    # TODO(OMN-XXXX): Implement production-ready cache backend
+    # TODO(OMN-TBD): Implement production-ready cache backend  [NEEDS TICKET]
     # Current stub implementation stores in-memory dict without TTL enforcement.
     # Production implementation should use Redis/Memcached with proper TTL,
     # LRU eviction, and distributed cache support.

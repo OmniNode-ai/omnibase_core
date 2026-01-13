@@ -8,7 +8,7 @@ import inspect
 import os
 from collections.abc import Callable
 from datetime import UTC, datetime
-from typing import Any, cast
+from typing import Any
 from uuid import UUID, uuid4
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
@@ -49,6 +49,7 @@ def _validate_node_id(node_id: LogNodeIdentifier | None) -> UUID | None:
         except ValueError:
             # String is not a valid UUID (e.g., module name, "unknown")
             return None
+    # NOTE(OMN-1302): Defensive fallback for exhaustive type handling. Safe because all known types handled above.
     return None  # type: ignore[unreachable]
 
 
@@ -223,6 +224,7 @@ def trace_function_lifecycle[F: Callable[..., Any]](func: F) -> F:
             return result
     """
 
+    @wraps(func)
     def wrapper(*args: Any, **kwargs: Any) -> Any:
         function_name = func.__name__
         module_name = func.__module__
@@ -287,8 +289,9 @@ def trace_function_lifecycle[F: Callable[..., Any]](func: F) -> F:
 
             raise
 
-    # Wrapper preserves original function signature via duck typing
-    return cast(F, wrapper)
+    # NOTE(OMN-1302): Wrapper matches original signature but mypy cannot verify Callable compatibility.
+    # Safe because functools.wraps preserves signature.
+    return wrapper  # type: ignore[return-value]
 
 
 class LogCodeBlock:
@@ -385,6 +388,7 @@ def log_performance_metrics[F: Callable[..., Any]](
     """
 
     def decorator(func: F) -> F:
+        @wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             function_name = func.__name__
             correlation_id = uuid4()
@@ -424,8 +428,9 @@ def log_performance_metrics[F: Callable[..., Any]](
 
             return result
 
-        # Wrapper preserves original function signature via duck typing
-        return cast(F, wrapper)
+        # NOTE(OMN-1302): Wrapper matches original signature but mypy cannot verify Callable compatibility.
+        # Safe because functools.wraps preserves signature.
+        return wrapper  # type: ignore[return-value]
 
     return decorator
 
@@ -437,7 +442,7 @@ import re
 
 # Global cache for protocol services to reduce lookup overhead
 import time
-from functools import lru_cache
+from functools import lru_cache, wraps
 
 from omnibase_core.constants import DEFAULT_CACHE_TTL_SECONDS
 
@@ -548,6 +553,9 @@ def _sanitize_sensitive_data(text: str) -> str:
     """
     # Defensive check for runtime safety - unreachable with proper typing
     if not isinstance(text, str):
+        # NOTE(OMN-1302): Defensive conversion indicates upstream validation gap.
+        # Cannot log warning here due to circular dependency with logging infrastructure.
+        # Safe because guards runtime type violations.
         return text  # type: ignore[unreachable]
 
     sanitized = text
@@ -574,6 +582,9 @@ def _sanitize_data_dict(
     """
     # Defensive check for runtime safety - unreachable with proper typing
     if not isinstance(data, dict):
+        # NOTE(OMN-1302): Defensive conversion indicates upstream validation gap.
+        # Cannot log warning here due to circular dependency with logging infrastructure.
+        # Safe because guards runtime type violations.
         return data  # type: ignore[unreachable]
 
     sanitized: dict[str, Any | None] = {}
@@ -646,6 +657,9 @@ def _detect_node_id_from_context() -> LogNodeIdentifier:
                 try:
                     node_id = obj.node_id
                     # Type narrowing: ensure UUID | str return
+                    # NOTE(OMN-1302): str() conversion for non-UUID/str types indicates
+                    # upstream validation gap. Cannot log warning here due to circular
+                    # dependency with logging infrastructure.
                     return (
                         str(node_id)
                         if not isinstance(node_id, (UUID, str))

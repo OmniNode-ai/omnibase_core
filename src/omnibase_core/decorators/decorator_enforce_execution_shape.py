@@ -17,7 +17,7 @@ See Also:
 import asyncio
 import functools
 from collections.abc import Callable
-from typing import ParamSpec, TypeVar, cast
+from typing import ParamSpec, TypeVar
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_execution_shape import EnumMessageCategory
@@ -137,8 +137,9 @@ def enforce_execution_shape(
                 result: T = await func(*args, **kwargs)
                 return result
 
-            # Cast to Callable[P, T] since functools.wraps preserves signature
-            return cast(Callable[P, T], async_wrapper)
+            # NOTE(OMN-1302): Wrapper matches original signature but mypy cannot verify Callable compatibility.
+            # Safe because functools.wraps preserves signature.
+            return async_wrapper  # type: ignore[return-value]
 
         @functools.wraps(func)
         def sync_wrapper(*args: P.args, **kwargs: P.kwargs) -> T:

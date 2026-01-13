@@ -6,6 +6,8 @@ Mixins follow the single responsibility principle and provide specific capabilit
 that can be composed into concrete node implementations.
 """
 
+# NOTE(OMN-1302): I001 (import order) disabled - intentional ordering to avoid circular dependencies.
+
 # Core mixins
 # Import protocols from omnibase_core (Core-native protocols)
 from omnibase_core.protocols import ProtocolEventBusRegistry
@@ -41,7 +43,6 @@ from omnibase_core.mixins.mixin_health_check import (
     check_postgresql_health,
     check_redis_health,
 )
-from omnibase_core.mixins.mixin_hybrid_execution import MixinHybridExecution
 from omnibase_core.mixins.mixin_intent_publisher import MixinIntentPublisher
 from omnibase_core.mixins.mixin_introspect_from_contract import (
     MixinIntrospectFromContract,
@@ -89,7 +90,6 @@ __all__ = [
     "MixinFSMExecution",
     "MixinHandlerRouting",
     "MixinHealthCheck",
-    "MixinHybridExecution",
     "MixinIntrospectFromContract",
     "MixinIntrospectionPublisher",
     "MixinLazyEvaluation",
