@@ -490,7 +490,7 @@ class ContractValidationPipeline:  # naming-ok: validator class, not protocol
         logger.debug("Applying duck-typed constraint validator")
 
         try:
-            # Call the duck-typed validator (type: ignore for duck typing seam)
+            # NOTE(OMN-1302): Duck-typed validator interface. Safe because validate() checked at init.
             constraint_result = self._constraint_validator.validate(  # type: ignore[attr-defined]
                 base, patch, merged
             )

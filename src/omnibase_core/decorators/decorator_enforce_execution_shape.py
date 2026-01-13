@@ -137,6 +137,8 @@ def enforce_execution_shape(
                 result: T = await func(*args, **kwargs)
                 return result
 
+            # NOTE(OMN-1302): Wrapper matches original signature but mypy cannot verify Callable compatibility.
+            # Safe because functools.wraps preserves signature.
             return async_wrapper  # type: ignore[return-value]
 
         @functools.wraps(func)

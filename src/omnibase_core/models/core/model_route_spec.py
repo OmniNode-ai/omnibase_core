@@ -170,6 +170,7 @@ class ModelRouteSpec(BaseModel):
         cls, destination: str, **kwargs: object
     ) -> "ModelRouteSpec":
         """Create a direct route to destination with dynamic routing."""
+        # NOTE(OMN-1302): kwargs forwarded to Pydantic model constructor, types verified by Pydantic validation.
         return cls(final_destination=destination, routing_strategy="dynamic", **kwargs)  # type: ignore[arg-type]
 
     @classmethod
@@ -180,6 +181,7 @@ class ModelRouteSpec(BaseModel):
         **kwargs: object,
     ) -> "ModelRouteSpec":
         """Create an explicit route through specified hops."""
+        # NOTE(OMN-1302): kwargs forwarded to Pydantic model constructor, types verified by Pydantic validation.
         return cls(
             final_destination=destination,
             remaining_hops=hops.copy(),
@@ -192,6 +194,7 @@ class ModelRouteSpec(BaseModel):
         cls, service_pattern: str, **kwargs: object
     ) -> "ModelRouteSpec":
         """Create anycast route to any instance of a service."""
+        # NOTE(OMN-1302): kwargs forwarded to Pydantic model constructor, types verified by Pydantic validation.
         return cls(
             final_destination=service_pattern,
             routing_strategy="anycast",
@@ -201,6 +204,7 @@ class ModelRouteSpec(BaseModel):
     @classmethod
     def create_broadcast_route(cls, **kwargs: object) -> "ModelRouteSpec":
         """Create broadcast route to all nodes."""
+        # NOTE(OMN-1302): kwargs forwarded to Pydantic model constructor, types verified by Pydantic validation.
         return cls(
             final_destination="broadcast://all",
             routing_strategy="broadcast",

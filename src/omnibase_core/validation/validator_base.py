@@ -552,6 +552,7 @@ class ValidatorBase(ABC):
             # Note: severity has a default in ModelValidatorRule, but this is defensive
             # for future model changes or external data sources
             if rule.severity is None:
+                # NOTE(OMN-1302): Defensive logging for impossible case. Safe because guards external data.
                 logger.debug(  # type: ignore[unreachable]
                     "Rule %s missing severity, using default: %s",
                     rule.rule_id,

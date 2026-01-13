@@ -49,6 +49,7 @@ def _validate_node_id(node_id: LogNodeIdentifier | None) -> UUID | None:
         except ValueError:
             # String is not a valid UUID (e.g., module name, "unknown")
             return None
+    # NOTE(OMN-1302): Defensive fallback for exhaustive type handling. Safe because all known types handled above.
     return None  # type: ignore[unreachable]
 
 
@@ -287,6 +288,8 @@ def trace_function_lifecycle[F: Callable[..., Any]](func: F) -> F:
 
             raise
 
+    # NOTE(OMN-1302): Wrapper matches original signature but mypy cannot verify Callable compatibility.
+    # Safe because functools.wraps preserves signature.
     return wrapper  # type: ignore[return-value]
 
 
@@ -423,6 +426,8 @@ def log_performance_metrics[F: Callable[..., Any]](
 
             return result
 
+        # NOTE(OMN-1302): Wrapper matches original signature but mypy cannot verify Callable compatibility.
+        # Safe because functools.wraps preserves signature.
         return wrapper  # type: ignore[return-value]
 
     return decorator
@@ -546,6 +551,7 @@ def _sanitize_sensitive_data(text: str) -> str:
     """
     # Defensive check for runtime safety - unreachable with proper typing
     if not isinstance(text, str):
+        # NOTE(OMN-1302): Defensive return for invalid input. Safe because guards runtime type violations.
         return text  # type: ignore[unreachable]
 
     sanitized = text
@@ -572,6 +578,7 @@ def _sanitize_data_dict(
     """
     # Defensive check for runtime safety - unreachable with proper typing
     if not isinstance(data, dict):
+        # NOTE(OMN-1302): Defensive return for invalid input. Safe because guards runtime type violations.
         return data  # type: ignore[unreachable]
 
     sanitized: dict[str, Any | None] = {}

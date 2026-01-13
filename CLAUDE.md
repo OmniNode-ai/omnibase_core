@@ -15,9 +15,10 @@
 7. [CI Performance Benchmarks](#ci-performance-benchmarks)
 8. [Code Quality](#code-quality)
 9. [Key Patterns & Conventions](#key-patterns--conventions)
-10. [Thread Safety](#thread-safety)
-11. [Documentation](#documentation)
-12. [Common Pitfalls](#common-pitfalls)
+10. [Code Hygiene Policies](#code-hygiene-policies)
+11. [Thread Safety](#thread-safety)
+12. [Documentation](#documentation)
+13. [Common Pitfalls](#common-pitfalls)
 
 ---
 
@@ -554,6 +555,89 @@ items: list[str] = []  # Dangerous!
 **See**: [Pydantic Best Practices](docs/conventions/PYDANTIC_BEST_PRACTICES.md) for comprehensive guidelines.
 
 To find models using this pattern: `grep -r "from_attributes.*True" src/omnibase_core/models/`
+
+---
+
+## Code Hygiene Policies
+
+### Import Policy
+
+**Convention**: Absolute imports across packages, relative imports within tight module clusters.
+
+- **Default**: Absolute imports for stability + readability
+- **Allowed**: Relative imports within same subpackage to avoid long paths
+- **Forbidden**: Relative imports that cross package boundaries
+
+**Examples**:
+```python
+# Preferred across package/subsystem boundaries
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
+# Allowed within a tight subpackage cluster
+from .model_widget_definition import ModelWidgetDefinition
+```
+
+**Import Order** (enforced by ruff I001/I002):
+1. Standard library imports
+2. Third-party imports
+3. First-party (`omnibase_core`) imports
+4. Local/relative imports
+
+**`__init__.py` Patterns**:
+
+| Pattern | Purpose | Example |
+|---------|---------|---------|
+| **Barrel exports** | Public API boundary | `from .model_semver import ModelSemVer` |
+| **Selective re-exports** | Controlled internal API | `from .internal import _helper` (underscore prefix) |
+| **Empty** | Namespace package marker | Just `# empty` comment |
+
+**Excluded Files**: Files excluded from import checks have inline comments:
+```python
+# NOTE(OMN-1302): This module is excluded from <TOOL> because <REASON>.
+```
+
+### TODO Policy
+
+**Format**: All TODOs must reference a Linear ticket:
+```python
+# TODO(OMN-XXX): Description of work needed
+```
+
+**Rules**:
+- `# TODO(OMN-1302): Add validation for edge case` - Correct
+- `# TODO: Fix this later` - Missing ticket reference (forbidden)
+- `# TODO(): Something` - Empty parentheses (forbidden)
+
+**For new TODOs**: Create a Linear ticket first, then add the TODO with the ticket ID.
+
+**Temporary marker** (during triage only):
+```python
+# TODO(OMN-TBD): <action>  [NEEDS TICKET]
+```
+
+### Type Ignore Policy
+
+**Format**: All type ignores must have specific codes and explanations:
+```python
+# NOTE(OMN-XXXX): mypy false-positive due to <reason>. Safe because <invariant>.
+value = some_call()  # type: ignore[arg-type]
+```
+
+**Rules**:
+- Specific codes required (e.g., `[arg-type]`, `[return-value]`)
+- Explanation comment on line above
+- Generic `# type: ignore` without code (forbidden)
+- No explanation of why ignore is safe (forbidden)
+
+**When to use type ignores**:
+- Third-party library typing is broken
+- Unavoidable dynamic behavior (DI, duck typing)
+- mypy false-positive that cannot be fixed
+
+**When NOT to use type ignores**:
+- Wrong types on Field defaults (fix the type)
+- Optional vs non-Optional mismatch (fix the annotation)
+- Any leaking from dicts (use TypedDict)
 
 ---
 
