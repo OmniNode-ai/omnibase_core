@@ -7,6 +7,8 @@ Tests all aspects of orchestrator enumeration types including:
 - EnumActionType - Types of actions for orchestrated execution
 - EnumFailureRecoveryStrategy - Failure recovery strategies
 - EnumBranchCondition - Conditional branching types
+- EnumExecutionPattern - Execution patterns for workflow coordination
+- EnumAssignmentStatus - Task assignment lifecycle states
 
 Each enum is tested for:
 - Value existence and correctness
@@ -779,7 +781,7 @@ class TestEnumAssignmentStatus:
 
 
 # ============================================================================
-# EnumWorkflowStatus Tests (from workflow_coordination)
+# EnumWorkflowStatus Coordination Tests
 # ============================================================================
 
 

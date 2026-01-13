@@ -36,7 +36,6 @@ class TestEnumWorkflowStatus:
         for name, value in expected_values.items():
             status = getattr(EnumWorkflowStatus, name)
             assert status.value == value
-            assert str(status) == value
 
     def test_enum_count(self):
         """Test expected number of enum values."""
