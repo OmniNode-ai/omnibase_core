@@ -46,7 +46,7 @@ Error Handling Overview:
     1. **Fail-Fast Errors** (raise immediately):
        - PydanticSchemaGenerationError: Invalid type annotations or schema issues
        - PydanticUserError: Invalid Pydantic model configuration
-       - TypeError/ValueError: Type annotation problems during rebuild
+       - VALIDATION_ERRORS (TypeError, ValidationError, ValueError): Type annotation problems
        - RuntimeError: Critical failures during module manipulation
 
     2. **Deferred Errors** (log warning, allow retry later):
@@ -62,8 +62,9 @@ Error Categories Quick Reference:
     | Error Type                    | Function Behavior                    | User Action                           |
     |-------------------------------|--------------------------------------|---------------------------------------|
     | ImportError                   | Deferred (logged as debug/warning)   | Call _rebuild_model() after deps load |
-    | TypeError                     | Fail-fast (raised immediately)       | Fix type annotations                  |
-    | ValueError                    | Fail-fast (raised immediately)       | Fix model configuration               |
+    | TypeError                     | Fail-fast (wrapped in ModelOnexError)| Fix type annotations                  |
+    | ValidationError               | Fail-fast (wrapped in ModelOnexError)| Fix Pydantic model validation         |
+    | ValueError                    | Fail-fast (wrapped in ModelOnexError)| Fix model configuration               |
     | PydanticSchemaGenerationError | Fail-fast (wrapped in ModelOnexError)| Fix schema definitions                |
     | PydanticUserError             | Fail-fast (wrapped in ModelOnexError)| Fix Pydantic model config             |
     | AttributeError                | Fail-fast (wrapped in ModelOnexError)| Check type_mappings completeness      |
@@ -209,12 +210,13 @@ def rebuild_model_references(
             - Conflicting field definitions
             - Invalid discriminator setup
 
-        **TypeError/ValueError**:
+        **VALIDATION_ERRORS (TypeError, ValidationError, ValueError)**:
             Occurs during the rebuild process.
             Common causes:
             - Type annotation syntax errors
             - Invalid default values for typed fields
             - Incompatible type constraints
+            - Pydantic validation failures
 
         **AttributeError**:
             Occurs during module injection.

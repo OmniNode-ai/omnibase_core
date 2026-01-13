@@ -9,7 +9,10 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict
 
-from omnibase_core.errors.exception_groups import ATTRIBUTE_ACCESS_ERRORS
+from omnibase_core.errors.exception_groups import (
+    ATTRIBUTE_ACCESS_ERRORS,
+    PYDANTIC_MODEL_ERRORS,
+)
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.infrastructure.model_result import ModelResult
 from omnibase_core.types.type_constraints import PrimitiveValueType
@@ -192,8 +195,9 @@ class ModelFieldAccessor(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception:
+        except PYDANTIC_MODEL_ERRORS:
             # fallback-ok: Configurable protocol requires boolean return for graceful config failure
+            # setattr on Pydantic models can raise AttributeError, TypeError, ValidationError, ValueError
             return False
 
     def serialize(self) -> dict[str, object]:

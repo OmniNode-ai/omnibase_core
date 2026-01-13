@@ -10,7 +10,7 @@
 
 handler_id: reducer.registration.user
 name: User Registration Reducer
-version: {major: 1, minor: 2, patch: 0}
+version: "1.2.0"
 description: Manages user registration lifecycle using FSM
 
 descriptor:

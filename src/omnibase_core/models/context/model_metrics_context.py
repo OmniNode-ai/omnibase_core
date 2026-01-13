@@ -59,11 +59,11 @@ def _validate_semver(value: str) -> str:
         ValueError: If the format is invalid or empty
     """
     if not value:
-        # error-ok: Pydantic validator helper requires ValueError
+        # error-ok: Pydantic validator requires ValueError
         raise ValueError("Semantic version cannot be empty")
 
     if not _SEMVER_PATTERN.match(value):
-        # error-ok: Pydantic validator helper requires ValueError
+        # error-ok: Pydantic validator requires ValueError
         raise ValueError(f"Invalid semantic version format: '{value}'")
 
     return value
