@@ -148,7 +148,7 @@ class SupportAssistantHandler:
 
         # Fail-fast DI resolution: Missing services fail immediately with typed error
         llm_client: ProtocolLLMClient | None = container.get_service(
-            "ProtocolLLMClient"  # type: ignore[arg-type]
+            "ProtocolLLMClient"
         )
         if llm_client is None:
             raise ModelOnexError(
@@ -174,7 +174,7 @@ class SupportAssistantHandler:
 
         # Fail-fast DI resolution: Missing logger fails immediately with typed error
         logger: object | None = container.get_service(
-            "ProtocolLogger"  # type: ignore[arg-type]
+            "ProtocolLogger"
         )
         if logger is None:
             raise ModelOnexError(

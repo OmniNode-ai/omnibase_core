@@ -207,7 +207,18 @@ class AnthropicLLMClient:
                     if block.get("type") == "text":
                         text_parts.append(block.get("text", ""))
 
-                return "".join(text_parts)
+                result = "".join(text_parts)
+
+                # Handle edge case: content blocks exist but contain no text
+                if not result.strip():
+                    raise ModelOnexError(
+                        message="Anthropic response contains no text content",
+                        error_code=EnumCoreErrorCode.PROCESSING_ERROR,
+                        model=self.model_name,
+                        context={"content_blocks_count": len(content_blocks)},
+                    )
+
+                return result
 
         except httpx.HTTPStatusError as e:
             # boundary-ok: wrap HTTP errors with structured error for API boundary
