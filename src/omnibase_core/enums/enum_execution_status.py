@@ -8,14 +8,17 @@ status tracking should use this enum.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 from typing import TYPE_CHECKING
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 if TYPE_CHECKING:
     from omnibase_core.enums.enum_base_status import EnumBaseStatus
 
 
-class EnumExecutionStatus(str, Enum):
+@unique
+class EnumExecutionStatus(StrValueHelper, str, Enum):
     """
     Execution status values for ONEX lifecycle tracking.
 
@@ -43,10 +46,6 @@ class EnumExecutionStatus(str, Enum):
     CANCELLED = "cancelled"
     TIMEOUT = "timeout"
     PARTIAL = "partial"
-
-    def __str__(self) -> str:
-        """Return the string value of the execution status."""
-        return self.value
 
     def to_base_status(self) -> EnumBaseStatus:
         """

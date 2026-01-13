@@ -1,8 +1,9 @@
 """Effect type enumeration for side effect operations."""
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumEffectType(Enum):
     """Types of side effects that can be managed."""
 

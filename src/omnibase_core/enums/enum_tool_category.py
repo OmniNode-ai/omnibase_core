@@ -1,8 +1,9 @@
 """Tool category enumeration."""
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumToolCategory(str, Enum):
     """
     Tool category classification.

@@ -4,9 +4,10 @@ Tool Status Enums.
 Tool lifecycle status values.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumToolStatus(str, Enum):
     """Tool lifecycle status values."""
 

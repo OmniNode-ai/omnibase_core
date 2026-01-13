@@ -4,9 +4,10 @@ ONEX Reply Enums.
 Standard ONEX reply status values.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumOnexReplyStatus(str, Enum):
     """Standard ONEX reply status values."""
 

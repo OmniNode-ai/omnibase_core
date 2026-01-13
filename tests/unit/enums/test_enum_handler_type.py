@@ -42,13 +42,17 @@ class TestEnumHandlerType:
         assert issubclass(EnumHandlerType, Enum)
 
     def test_enum_string_behavior(self):
-        """Test string behavior of enum values."""
-        assert str(EnumHandlerType.EXTENSION) == "EnumHandlerType.EXTENSION"
-        assert str(EnumHandlerType.SPECIAL) == "EnumHandlerType.SPECIAL"
-        assert str(EnumHandlerType.NAMED) == "EnumHandlerType.NAMED"
-        assert str(EnumHandlerType.HTTP) == "EnumHandlerType.HTTP"
-        assert str(EnumHandlerType.DATABASE) == "EnumHandlerType.DATABASE"
-        assert str(EnumHandlerType.LOCAL) == "EnumHandlerType.LOCAL"
+        """Test string behavior of enum values.
+
+        With StrValueHelper mixin, str(enum_member) returns the value string,
+        not the full enum name. This enables cleaner serialization.
+        """
+        assert str(EnumHandlerType.EXTENSION) == "extension"
+        assert str(EnumHandlerType.SPECIAL) == "special"
+        assert str(EnumHandlerType.NAMED) == "named"
+        assert str(EnumHandlerType.HTTP) == "http"
+        assert str(EnumHandlerType.DATABASE) == "database"
+        assert str(EnumHandlerType.LOCAL) == "local"
 
     def test_enum_iteration(self):
         """Test that we can iterate over enum values."""

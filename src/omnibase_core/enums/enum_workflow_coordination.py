@@ -9,9 +9,10 @@ Note: EnumWorkflowStatus has been consolidated into the canonical version
 in enum_workflow_status.py per OMN-1310.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumAssignmentStatus(str, Enum):
     """Node assignment status."""
 
@@ -21,6 +22,7 @@ class EnumAssignmentStatus(str, Enum):
     FAILED = "FAILED"
 
 
+@unique
 class EnumExecutionPattern(str, Enum):
     """Workflow execution patterns."""
 
@@ -30,6 +32,7 @@ class EnumExecutionPattern(str, Enum):
     SCATTER_GATHER = "scatter_gather"
 
 
+@unique
 class EnumFailureRecoveryStrategy(str, Enum):
     """Failure recovery strategies."""
 

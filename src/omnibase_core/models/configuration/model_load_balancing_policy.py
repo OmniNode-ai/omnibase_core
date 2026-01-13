@@ -120,7 +120,6 @@ class ModelLoadBalancingPolicy(BaseModel):
         return node_id in self.excluded_nodes
 
     def is_node_preferred(self, node_id: UUID) -> bool:
-        """Check if a node is in the preferred list"""
         return node_id in self.preferred_nodes
 
     def get_effective_nodes(self, available_nodes: list[UUID]) -> list[UUID]:
@@ -168,52 +167,9 @@ class ModelLoadBalancingPolicy(BaseModel):
         return self.circuit_breaker.enabled
 
     def get_node_weight(self, node_id: UUID) -> float:
-        """Get weight for a specific node"""
         if not self.should_use_weights() or self.node_weights is None:
             return 1.0
         return self.node_weights.get_weight(node_id)
-
-    def calculate_policy_score(
-        self, performance_metrics: SerializedDict | None = None
-    ) -> float:
-        """Calculate overall policy performance score"""
-        score = 0.0
-        factors = 0
-
-        # Algorithm efficiency factor
-        if self.algorithm.algorithm_name in ["round_robin", "least_connections"]:
-            score += 0.9
-        elif self.algorithm.algorithm_name in [
-            "weighted_round_robin",
-            "resource_based",
-        ]:
-            score += 0.8
-        else:
-            score += 0.7
-        factors += 1
-
-        # Health check factor
-        if self.health_check.enabled:
-            score += 0.8
-        else:
-            score += 0.4
-        factors += 1
-
-        # Circuit breaker factor
-        if self.should_use_circuit_breaker():
-            score += 0.9
-        else:
-            score += 0.6
-        factors += 1
-
-        # Session affinity factor (neutral - depends on use case)
-        if self.should_use_session_affinity():
-            score += 0.7
-        else:
-            score += 0.7
-        factors += 1
-
-        return score / factors if factors > 0 else 0.0
 
     def validate_configuration(self) -> list[str]:
         """Validate policy configuration and return any issues"""

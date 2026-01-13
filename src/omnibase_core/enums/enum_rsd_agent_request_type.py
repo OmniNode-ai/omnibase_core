@@ -4,9 +4,10 @@ RSD Agent Request Type Enumeration.
 Defines agent request types for RSD (Rapid Service Development) system.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumRsdAgentRequestType(str, Enum):
     """Enumeration of RSD agent request types."""
 

@@ -2,9 +2,10 @@
 Event type enumeration for ONEX protocol-based event publishing.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumProtocolEventType(str, Enum):
     """Standard event types for protocol-based event publishing."""
 

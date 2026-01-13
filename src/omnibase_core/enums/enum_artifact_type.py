@@ -1,8 +1,9 @@
 """Artifact type enumeration for ONEX core."""
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumArtifactType(str, Enum):
     """Artifact types for ONEX ecosystem."""
 

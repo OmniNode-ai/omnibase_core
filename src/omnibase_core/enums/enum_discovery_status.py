@@ -1,8 +1,9 @@
 """Discovery status enumeration for ONEX tool discovery operations."""
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumDiscoveryStatus(str, Enum):
     """Discovery status values for tool discovery operations."""
 

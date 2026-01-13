@@ -18,7 +18,6 @@ module loading.
 
 from typing import Any
 
-from .util_conflict_resolver import UtilConflictResolver
 from .util_decorators import allow_any_type, allow_dict_str_any
 from .util_enum_normalizer import create_enum_normalizer
 from .util_hash import (
@@ -64,7 +63,7 @@ __all__ = [
 
 
 # =============================================================================
-# Deprecated aliases: Lazy-load with warnings per OMN-1071 renaming.
+# Lazy loading: Utilities with heavy model dependencies
 # =============================================================================
 def __getattr__(name: str) -> Any:
     """
@@ -72,6 +71,12 @@ def __getattr__(name: str) -> Any:
 
     This avoids circular imports during module initialization while still
     allowing `from omnibase_core.utils import UtilContractLoader`.
+
+    Lazy-loaded utilities:
+    ----------------------
+    - UtilConflictResolver: Has ModelOnexError dependency (circular via error_codes)
+    - UtilContractLoader: Has heavy model dependencies
+    - parse_datetime: Avoids circular imports with types/
 
     Deprecated Aliases (OMN-1071):
     ------------------------------
@@ -87,6 +92,16 @@ def __getattr__(name: str) -> Any:
         from .util_datetime_parser import parse_datetime
 
         return parse_datetime
+
+    # -------------------------------------------------------------------------
+    # UtilConflictResolver: lazy-loaded to avoid circular imports
+    # The resolver imports ModelOnexError which imports error_codes, which
+    # would cause circular dependencies if loaded at module initialization.
+    # -------------------------------------------------------------------------
+    if name == "UtilConflictResolver":
+        from .util_conflict_resolver import UtilConflictResolver
+
+        return UtilConflictResolver
 
     # -------------------------------------------------------------------------
     # Consolidated imports: UtilContractLoader and its deprecated alias

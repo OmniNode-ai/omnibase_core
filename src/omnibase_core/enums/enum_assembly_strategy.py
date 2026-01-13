@@ -5,9 +5,10 @@ Provides strongly-typed assembly strategies for LLM result combination
 with proper ONEX enum naming conventions.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumAssemblyStrategy(str, Enum):
     """LLM result assembly strategies."""
 

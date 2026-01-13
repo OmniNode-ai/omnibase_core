@@ -1,6 +1,7 @@
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumNodeArg(str, Enum):
     """
     Canonical enum for node argument types.

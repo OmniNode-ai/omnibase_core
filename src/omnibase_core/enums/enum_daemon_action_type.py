@@ -4,10 +4,13 @@ Daemon Action Type Enum
 Action types for daemon management operations.
 """
 
-from enum import Enum
+from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumDaemonActionType(str, Enum):
+@unique
+class EnumDaemonActionType(StrValueHelper, str, Enum):
     """
     Action types for daemon management operations.
 
@@ -20,10 +23,6 @@ class EnumDaemonActionType(str, Enum):
     CONFIGURATION = "configuration"
     SERVICE_MANAGEMENT = "service_management"
     MONITORING = "monitoring"
-
-    def __str__(self) -> str:
-        """Return the string value of the action type."""
-        return self.value
 
     def is_destructive(self) -> bool:
         """Check if this action type typically involves destructive operations."""

@@ -3,9 +3,10 @@ Enum for pre-commit tool names.
 Single responsibility: Centralized pre-commit tool name definitions.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumPrecommitToolNames(str, Enum):
     """Pre-commit tool names following ONEX enum-backed naming standards."""
 

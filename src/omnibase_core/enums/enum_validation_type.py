@@ -1,6 +1,7 @@
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumValidationType(str, Enum):
     CLI_NODE_PARITY = "cli_node_parity"
     SCHEMA_CONFORMANCE = "schema_conformance"

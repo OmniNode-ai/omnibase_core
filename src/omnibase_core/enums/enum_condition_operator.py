@@ -4,9 +4,10 @@ Condition Operator Enum.
 Allowed operators for workflow condition evaluation.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumConditionOperator(str, Enum):
     """Allowed operators for workflow condition evaluation."""
 

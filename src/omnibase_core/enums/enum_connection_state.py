@@ -10,9 +10,11 @@ Follows ONEX one-enum-per-file naming conventions.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumConnectionState(str, Enum):
+class EnumConnectionState(StrValueHelper, str, Enum):
     """
     Strongly typed connection state for lifecycle tracking.
 
@@ -27,10 +29,6 @@ class EnumConnectionState(str, Enum):
     ERROR = "error"
     TIMEOUT = "timeout"
     CLOSING = "closing"
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def is_stable(cls, state: EnumConnectionState) -> bool:

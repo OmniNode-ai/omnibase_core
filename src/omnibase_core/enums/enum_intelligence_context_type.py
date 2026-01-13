@@ -5,9 +5,10 @@ Provides structured, validated context type definitions for secure
 cross-instance intelligence sharing in ONEX architecture.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumIntelligenceContextType(str, Enum):
     """
     Enum for intelligence context types with security validation.

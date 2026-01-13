@@ -13,9 +13,11 @@ Thread Safety:
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumDispatchStatus(str, Enum):
+class EnumDispatchStatus(StrValueHelper, str, Enum):
     """
     Status values for dispatch operations.
 
@@ -65,10 +67,6 @@ class EnumDispatchStatus(str, Enum):
 
     SKIPPED = "skipped"
     """Message was intentionally skipped (e.g., filtered, deduplicated)."""
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     def is_terminal(self) -> bool:
         """

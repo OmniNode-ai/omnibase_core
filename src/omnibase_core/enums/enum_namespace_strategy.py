@@ -4,9 +4,10 @@ Namespace strategy enumeration for ONEX framework.
 Defines the available strategies for namespace handling in ONEX components.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumNamespaceStrategy(str, Enum):
     """Enumeration of namespace strategies."""
 

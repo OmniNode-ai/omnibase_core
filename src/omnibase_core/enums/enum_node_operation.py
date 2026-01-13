@@ -1,6 +1,7 @@
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumNodeOperation(str, Enum):
     """Types of operations a node can perform on an envelope."""
 

@@ -5,9 +5,10 @@ Provides strongly-typed provider types for routing and privacy decisions
 with proper ONEX enum naming conventions.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumProviderType(str, Enum):
     """LLM provider types for routing and privacy."""
 

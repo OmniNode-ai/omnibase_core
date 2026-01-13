@@ -5,9 +5,10 @@ Provides strongly-typed privacy levels for model selection and routing
 with proper ONEX enum naming conventions.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumPrivacyLevel(str, Enum):
     """Privacy levels for LLM model selection."""
 

@@ -10,9 +10,10 @@ Use For:
 - Service manager operations
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumOperationStatus(str, Enum):
     """
     Enumeration for operation status values.

@@ -8,9 +8,10 @@ should use this enum.
 Consolidates: EnumWorkflowState, enum_workflow_coordination.EnumWorkflowStatus
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumWorkflowStatus(str, Enum):
     """
     Canonical workflow execution status enumeration.

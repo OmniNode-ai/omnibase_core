@@ -5,9 +5,10 @@ Defines the types of queries for intelligent model routing and
 specialized processing in conversational RAG systems.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumQueryType(str, Enum):
     """
     Query type enumeration for LLM model selection and routing.
