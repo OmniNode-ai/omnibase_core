@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from pydantic_core.core_schema import ValidationInfo
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -48,6 +48,8 @@ class ModelJsonField(BaseModel):
 
     Uses discriminated union pattern for type safety without factory methods.
     """
+
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
 
     field_type: EnumJsonValueType = Field(
         default=...,

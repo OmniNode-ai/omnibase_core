@@ -1,10 +1,10 @@
-from __future__ import annotations
-
 """
 Node Kind Enum.
 
 Types of ONEX nodes in the four-node architecture.
 """
+
+from __future__ import annotations
 
 from enum import Enum, unique
 

@@ -1,7 +1,7 @@
 import os
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, SecretStr
+from pydantic import BaseModel, ConfigDict, Field, SecretStr
 
 
 class ModelEventBusConfig(BaseModel):
@@ -10,6 +10,8 @@ class ModelEventBusConfig(BaseModel):
     Defines all required connection, topic, and security options for ONEX event bus nodes.
     Sensitive fields (e.g., sasl_password, ssl_keyfile) should be injected via environment variables or a secrets manager, not hardcoded in config files or code.
     """
+
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
 
     bootstrap_servers: list[str] = Field(
         default=..., description="List of event bus bootstrap servers (host:port)"

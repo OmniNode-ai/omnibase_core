@@ -155,14 +155,13 @@ repos:
       # The codebase has 71 existing violations that need incremental migration.
       # Once all files are renamed, change || true to make this blocking.
       # See: src/omnibase_core/validation/checker_naming_convention.py (Migration Plan)
+      # NOTE: always_run=true means files: pattern is ignored - script does its own discovery
       - id: validate-file-naming-conventions
         name: ONEX File Naming Convention Validation (Warning Mode)
         entry: bash -c 'poetry run python -m omnibase_core.validation.checker_naming_convention || true'
         language: system
         pass_filenames: false
         always_run: true
-        files: ^src/omnibase_core/.*\.py$
-        exclude: ^(tests/|archived/|archive/).*\.py$
         stages: [pre-push]  # Full directory scan, warning mode until Phase 4
 
       - id: validate-file-locations
@@ -485,25 +484,25 @@ repos:
       # Protocol @runtime_checkable Validation
       # Ensures all Protocol classes have @runtime_checkable decorator
       # Required for isinstance() checks and duck typing at runtime
+      # NOTE: always_run=true means files: pattern is ignored - script does its own discovery
       - id: check-protocol-runtime-checkable
         name: ONEX Protocol @runtime_checkable Validation
         entry: poetry run python scripts/validation/check_protocol_runtime_checkable.py
         language: system
         pass_filenames: false
         always_run: true
-        files: ^src/omnibase_core/protocols/.*\.py$
         stages: [pre-commit]
 
       # Protocol __all__ Exports Validation
       # Validates that protocol files have correct __all__ exports matching
       # their Protocol class definitions
+      # NOTE: always_run=true means files: pattern is ignored - script does its own discovery
       - id: check-protocol-exports
         name: ONEX Protocol __all__ Exports Validation
         entry: poetry run python scripts/check_protocol_exports.py
         language: system
         pass_filenames: false
         always_run: true
-        files: ^src/omnibase_core/protocols/.*\.py$
         stages: [pre-commit]
 
       # Protocol UUID Enforcement (pre-push only)
@@ -537,6 +536,7 @@ repos:
       # PHASE 1: Warning mode (non-blocking) until existing violations are fixed
       # The codebase has 13 existing Literal duplication violations.
       # Once cleaned up, remove "|| true" to make this blocking.
+      # NOTE: always_run=true means files: pattern is ignored - script does its own discovery
       - id: check-enum-governance
         name: ONEX Enum Governance Validation (Warning Mode)
         entry: bash -c 'poetry run python -m omnibase_core.validation.checker_enum_governance --enums-only
@@ -544,7 +544,6 @@ repos:
         language: system
         pass_filenames: false
         always_run: true
-        files: ^src/omnibase_core/enums/.*\.py$
         stages: [pre-commit]
 
       # Enum Governance - Full Check (includes Literal duplication detection)

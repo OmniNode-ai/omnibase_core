@@ -23,7 +23,7 @@ See Also:
     - GitHub Actions documentation on workflow_dispatch
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelWorkflowInput(BaseModel):
@@ -55,6 +55,8 @@ class ModelWorkflowInput(BaseModel):
                 default=False
             )
     """
+
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
 
     description: str = Field(default=..., description="Input description")
     required: bool = Field(default=False, description="Whether input is required")

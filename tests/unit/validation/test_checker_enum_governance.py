@@ -143,13 +143,15 @@ class TestCollectorAST:
     def test_collects_basic_enum(self, tmp_path: Path) -> None:
         """Test collecting a basic enum class."""
         enum_file = tmp_path / "enum_test.py"
-        enum_file.write_text("""
+        enum_file.write_text(
+            """
 from enum import Enum
 
 class EnumStatus(Enum):
     ACTIVE = "active"
     INACTIVE = "inactive"
-""")
+"""
+        )
         enums = collect_enums_from_file(enum_file)
         assert "EnumStatus" in enums
         assert len(enums["EnumStatus"]) == 2
@@ -157,13 +159,15 @@ class EnumStatus(Enum):
     def test_collects_str_enum(self, tmp_path: Path) -> None:
         """Test collecting a str, Enum class."""
         enum_file = tmp_path / "enum_test.py"
-        enum_file.write_text("""
+        enum_file.write_text(
+            """
 from enum import Enum
 
 class EnumNodeKind(str, Enum):
     EFFECT = "effect"
     COMPUTE = "compute"
-""")
+"""
+        )
         enums = collect_enums_from_file(enum_file)
         assert "EnumNodeKind" in enums
         assert len(enums["EnumNodeKind"]) == 2
@@ -171,13 +175,15 @@ class EnumNodeKind(str, Enum):
     def test_extracts_member_values(self, tmp_path: Path) -> None:
         """Test that member values are correctly extracted."""
         enum_file = tmp_path / "enum_test.py"
-        enum_file.write_text("""
+        enum_file.write_text(
+            """
 from enum import Enum
 
 class EnumTest(Enum):
     VALUE_ONE = "value_one"
     VALUE_TWO = "value_two"
-""")
+"""
+        )
         enums = collect_enums_from_file(enum_file)
         values = {m.member_value for m in enums["EnumTest"]}
         assert values == {"value_one", "value_two"}
@@ -185,13 +191,15 @@ class EnumTest(Enum):
     def test_handles_auto_values(self, tmp_path: Path) -> None:
         """Test that auto() values are handled."""
         enum_file = tmp_path / "enum_test.py"
-        enum_file.write_text("""
+        enum_file.write_text(
+            """
 from enum import Enum, auto
 
 class EnumAuto(Enum):
     FIRST = auto()
     SECOND = auto()
-""")
+"""
+        )
         enums = collect_enums_from_file(enum_file)
         assert "EnumAuto" in enums
         # auto() values should result in None member_value
@@ -201,7 +209,8 @@ class EnumAuto(Enum):
     def test_skips_non_enum_classes(self, tmp_path: Path) -> None:
         """Test that non-enum classes are not collected."""
         enum_file = tmp_path / "enum_test.py"
-        enum_file.write_text("""
+        enum_file.write_text(
+            """
 from enum import Enum
 
 class NotAnEnum:
@@ -209,7 +218,8 @@ class NotAnEnum:
 
 class EnumReal(Enum):
     VALUE = "value"
-""")
+"""
+        )
         enums = collect_enums_from_file(enum_file)
         assert "NotAnEnum" not in enums
         assert "EnumReal" in enums
@@ -234,11 +244,13 @@ class TestLiteralCollector:
     def test_collects_literal_type(self, tmp_path: Path) -> None:
         """Test collecting Literal type definitions."""
         model_file = tmp_path / "model_test.py"
-        model_file.write_text("""
+        model_file.write_text(
+            """
 from typing import Literal
 
 StatusType = Literal["active", "inactive"]
-""")
+"""
+        )
         literals = collect_literals_from_file(model_file)
         assert len(literals) == 1
         _, values = literals[0]
@@ -247,23 +259,27 @@ StatusType = Literal["active", "inactive"]
     def test_collects_multiple_literals(self, tmp_path: Path) -> None:
         """Test collecting multiple Literal type definitions."""
         model_file = tmp_path / "model_test.py"
-        model_file.write_text("""
+        model_file.write_text(
+            """
 from typing import Literal
 
 Status = Literal["a", "b"]
 Mode = Literal["x", "y", "z"]
-""")
+"""
+        )
         literals = collect_literals_from_file(model_file)
         assert len(literals) == 2
 
     def test_collects_single_value_literal(self, tmp_path: Path) -> None:
         """Test collecting Literal with single value."""
         model_file = tmp_path / "model_test.py"
-        model_file.write_text("""
+        model_file.write_text(
+            """
 from typing import Literal
 
 SingleValue = Literal["only"]
-""")
+"""
+        )
         literals = collect_literals_from_file(model_file)
         assert len(literals) == 1
         _, values = literals[0]
@@ -272,11 +288,13 @@ SingleValue = Literal["only"]
     def test_handles_typing_literal(self, tmp_path: Path) -> None:
         """Test handling of typing.Literal form."""
         model_file = tmp_path / "model_test.py"
-        model_file.write_text("""
+        model_file.write_text(
+            """
 import typing
 
 Status = typing.Literal["a", "b"]
-""")
+"""
+        )
         literals = collect_literals_from_file(model_file)
         assert len(literals) == 1
 
@@ -433,6 +451,48 @@ class TestCheckLiteralDuplication:
         violations = check_literal_duplication(enum_index, literals)
         assert len(violations) == 0
 
+    def test_deduplication_only_first_exact_match(self) -> None:
+        """Test only first exact match is reported when Literal matches multiple enums."""
+        # Two enums with same values (rare but possible)
+        enum_index = {
+            "EnumStatusA": {"active", "inactive"},
+            "EnumStatusB": {"active", "inactive"},
+        }
+        literals = [(Path("test.py"), 10, {"active", "inactive"})]
+        violations = check_literal_duplication(enum_index, literals)
+        # Should only report ONE violation, not two
+        assert len(violations) == 1
+        assert violations[0].severity == "ERROR"
+        assert "duplicates values from enum" in violations[0].message
+
+    def test_deduplication_exact_match_suppresses_subset(self) -> None:
+        """Test exact match prevents subset warning for same Literal."""
+        enum_index = {
+            "EnumSmall": {"active", "inactive"},
+            "EnumLarge": {"active", "inactive", "pending", "deleted"},
+        }
+        literals = [(Path("test.py"), 10, {"active", "inactive"})]
+        violations = check_literal_duplication(enum_index, literals)
+        # Should report exact match, NOT subset warning
+        assert len(violations) == 1
+        assert violations[0].severity == "ERROR"
+        assert "duplicates values from enum" in violations[0].message
+        assert "EnumSmall" in violations[0].message
+
+    def test_deduplication_only_first_subset_match(self) -> None:
+        """Test only first subset match is reported when no exact match exists."""
+        enum_index = {
+            "EnumLargeA": {"active", "inactive", "pending"},
+            "EnumLargeB": {"active", "inactive", "deleted"},
+        }
+        # Literal is subset of both enums
+        literals = [(Path("test.py"), 10, {"active", "inactive"})]
+        violations = check_literal_duplication(enum_index, literals)
+        # Should only report ONE warning, not two
+        assert len(violations) == 1
+        assert violations[0].severity == "WARNING"
+        assert "subset of enum" in violations[0].message
+
 
 # =============================================================================
 # Tests for validate_enum_directory
@@ -446,13 +506,15 @@ class TestValidateEnumDirectory:
     def test_valid_enums_pass(self, temp_enums_dir: Path) -> None:
         """Test valid enum files pass validation."""
         enum_file = temp_enums_dir / "enum_status.py"
-        enum_file.write_text("""
+        enum_file.write_text(
+            """
 from enum import Enum
 
 class EnumStatus(Enum):
     ACTIVE = "active"
     INACTIVE = "inactive"
-""")
+"""
+        )
         violations, enum_index = validate_enum_directory(temp_enums_dir)
         assert len(violations) == 0
         assert "EnumStatus" in enum_index
@@ -460,13 +522,15 @@ class EnumStatus(Enum):
     def test_invalid_casing_detected(self, temp_enums_dir: Path) -> None:
         """Test invalid casing is detected."""
         enum_file = temp_enums_dir / "enum_bad.py"
-        enum_file.write_text("""
+        enum_file.write_text(
+            """
 from enum import Enum
 
 class EnumBad(Enum):
     active = "active"  # lowercase - violation
     INACTIVE = "inactive"  # valid
-""")
+"""
+        )
         violations, _ = validate_enum_directory(temp_enums_dir)
         assert len(violations) == 1
         assert violations[0].rule_code == "E001"
@@ -493,11 +557,13 @@ class TestValidateLiteralUsage:
         models_dir = temp_omnibase_dir / "models"
         models_dir.mkdir()
         model_file = models_dir / "model_test.py"
-        model_file.write_text("""
+        model_file.write_text(
+            """
 from typing import Literal
 
 StatusType = Literal["active", "inactive"]
-""")
+"""
+        )
         enum_index = {"EnumStatus": {"active", "inactive"}}
         violations = validate_literal_usage(temp_omnibase_dir, enum_index)
         assert len(violations) == 1
@@ -508,11 +574,13 @@ StatusType = Literal["active", "inactive"]
         models_dir = temp_omnibase_dir / "models"
         models_dir.mkdir()
         model_file = models_dir / "model_test.py"
-        model_file.write_text("""
+        model_file.write_text(
+            """
 from typing import Literal
 
 StatusType = Literal["active", "inactive"]
-""")
+"""
+        )
         enum_index: dict[str, set[str]] = {}
         violations = validate_literal_usage(temp_omnibase_dir, enum_index)
         assert len(violations) == 0
@@ -532,21 +600,25 @@ class TestValidateDirectory:
         enums_dir = temp_omnibase_dir / "enums"
         enums_dir.mkdir()
         enum_file = enums_dir / "enum_status.py"
-        enum_file.write_text("""
+        enum_file.write_text(
+            """
 from enum import Enum
 
 class EnumStatus(Enum):
     ACTIVE = "active"
     INACTIVE = "inactive"
-""")
+"""
+        )
         models_dir = temp_omnibase_dir / "models"
         models_dir.mkdir()
         model_file = models_dir / "model_test.py"
-        model_file.write_text("""
+        model_file.write_text(
+            """
 from typing import Literal
 
 DifferentType = Literal["running", "stopped"]
-""")
+"""
+        )
         violations = validate_directory(temp_omnibase_dir)
         assert len(violations) == 0
 
@@ -555,13 +627,15 @@ DifferentType = Literal["running", "stopped"]
         enums_dir = temp_omnibase_dir / "enums"
         enums_dir.mkdir()
         enum_file = enums_dir / "enum_status.py"
-        enum_file.write_text("""
+        enum_file.write_text(
+            """
 from enum import Enum
 
 class EnumStatus(Enum):
     active = "active"  # E001: lowercase
     INACTIVE = "inactive"
-""")
+"""
+        )
         violations = validate_directory(temp_omnibase_dir)
         assert len(violations) == 1
         assert violations[0].rule_code == "E001"
@@ -581,13 +655,15 @@ class TestMainFunction:
         enums_dir = temp_omnibase_dir / "enums"
         enums_dir.mkdir()
         enum_file = enums_dir / "enum_status.py"
-        enum_file.write_text("""
+        enum_file.write_text(
+            """
 from enum import Enum
 
 class EnumStatus(Enum):
     ACTIVE = "active"
     INACTIVE = "inactive"
-""")
+"""
+        )
         with patch.object(
             sys, "argv", ["checker", str(temp_omnibase_dir), "--enums-only"]
         ):
@@ -599,12 +675,14 @@ class EnumStatus(Enum):
         enums_dir = temp_omnibase_dir / "enums"
         enums_dir.mkdir()
         enum_file = enums_dir / "enum_bad.py"
-        enum_file.write_text("""
+        enum_file.write_text(
+            """
 from enum import Enum
 
 class EnumBad(Enum):
     lowercase = "bad"  # Violation
-""")
+"""
+        )
         with patch.object(
             sys, "argv", ["checker", str(temp_omnibase_dir), "--enums-only"]
         ):
@@ -622,12 +700,14 @@ class EnumBad(Enum):
         enums_dir = temp_omnibase_dir / "enums"
         enums_dir.mkdir()
         enum_file = enums_dir / "enum_status.py"
-        enum_file.write_text("""
+        enum_file.write_text(
+            """
 from enum import Enum
 
 class EnumStatus(Enum):
     ACTIVE = "active"
-""")
+"""
+        )
         with patch.object(
             sys, "argv", ["checker", str(temp_omnibase_dir), "--enums-only", "-v"]
         ):
@@ -639,21 +719,25 @@ class EnumStatus(Enum):
         enums_dir = temp_omnibase_dir / "enums"
         enums_dir.mkdir()
         enum_file = enums_dir / "enum_status.py"
-        enum_file.write_text("""
+        enum_file.write_text(
+            """
 from enum import Enum
 
 class EnumStatus(Enum):
     ACTIVE = "active"
-""")
+"""
+        )
         # Create a Literal that would be a violation
         models_dir = temp_omnibase_dir / "models"
         models_dir.mkdir()
         model_file = models_dir / "model_test.py"
-        model_file.write_text("""
+        model_file.write_text(
+            """
 from typing import Literal
 
 StatusType = Literal["active"]  # Would be duplicate
-""")
+"""
+        )
         # With --enums-only, the Literal duplication should not be checked
         with patch.object(
             sys, "argv", ["checker", str(temp_omnibase_dir), "--enums-only"]
@@ -674,12 +758,14 @@ class TestEdgeCases:
     def test_empty_enum(self, tmp_path: Path) -> None:
         """Test enum with no members."""
         enum_file = tmp_path / "enum_empty.py"
-        enum_file.write_text("""
+        enum_file.write_text(
+            """
 from enum import Enum
 
 class EnumEmpty(Enum):
     pass
-""")
+"""
+        )
         enums = collect_enums_from_file(enum_file)
         assert "EnumEmpty" in enums
         assert len(enums["EnumEmpty"]) == 0
@@ -687,7 +773,8 @@ class EnumEmpty(Enum):
     def test_enum_with_methods(self, tmp_path: Path) -> None:
         """Test enum with methods (not just values)."""
         enum_file = tmp_path / "enum_methods.py"
-        enum_file.write_text("""
+        enum_file.write_text(
+            """
 from enum import Enum
 
 class EnumWithMethods(Enum):
@@ -695,7 +782,8 @@ class EnumWithMethods(Enum):
 
     def is_active(self) -> bool:
         return self == EnumWithMethods.ACTIVE
-""")
+"""
+        )
         enums = collect_enums_from_file(enum_file)
         assert "EnumWithMethods" in enums
         assert len(enums["EnumWithMethods"]) == 1
@@ -719,13 +807,15 @@ class EnumUnicode(Enum):
     def test_nested_enum_class(self, tmp_path: Path) -> None:
         """Test nested enum class inside another class."""
         enum_file = tmp_path / "enum_nested.py"
-        enum_file.write_text("""
+        enum_file.write_text(
+            """
 from enum import Enum
 
 class Outer:
     class EnumInner(Enum):
         NESTED = "nested"
-""")
+"""
+        )
         enums = collect_enums_from_file(enum_file)
         # Nested enums should also be collected
         assert "EnumInner" in enums

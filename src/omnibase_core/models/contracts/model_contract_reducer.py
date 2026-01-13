@@ -537,11 +537,12 @@ class ModelContractReducer(MixinNodeTypeValidator, ModelContractBase):
     # loading from YAML, supporting legacy contracts using state_transitions.
     model_config = ConfigDict(
         extra="forbid",  # Strict validation - reject unknown fields
+        from_attributes=True,  # Required for pytest-xdist compatibility
         frozen=True,  # Thread safety and immutability - instances cannot be modified
-        use_enum_values=False,  # Keep enum objects, don't convert to strings
-        str_strip_whitespace=True,  # Clean string inputs
-        validate_default=True,  # Validate default values at model definition time
         populate_by_name=True,  # Allow both field name and alias for YAML flexibility
+        str_strip_whitespace=True,  # Clean string inputs
+        use_enum_values=False,  # Keep enum objects, don't convert to strings
+        validate_default=True,  # Validate default values at model definition time
     )
 
     def to_yaml(self) -> str:

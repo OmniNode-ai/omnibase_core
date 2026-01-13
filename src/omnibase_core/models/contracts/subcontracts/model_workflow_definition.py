@@ -31,9 +31,10 @@ class ModelWorkflowDefinition(BaseModel):
 
     model_config = ConfigDict(
         extra="ignore",
+        from_attributes=True,
+        frozen=True,
         use_enum_values=False,
         validate_assignment=True,
-        frozen=True,
     )
 
     # Model version for instance tracking

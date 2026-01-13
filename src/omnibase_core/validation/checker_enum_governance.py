@@ -333,6 +333,9 @@ def check_literal_duplication(
     values as an existing enum. This indicates the Literal should be replaced
     with the enum for better type safety and maintainability.
 
+    Deduplication: Reports only the first matching enum per Literal to avoid
+    duplicate violations. Exact matches take precedence over subset matches.
+
     Args:
         enum_index: Dictionary mapping enum names to their value sets
         literals: List of (file_path, line, values_set) for each Literal found
@@ -346,9 +349,11 @@ def check_literal_duplication(
         if not literal_values:
             continue
 
-        # Check if this Literal's values match any enum's values
+        # First pass: check for exact matches (report only first match)
+        exact_match_enum: str | None = None
         for enum_name, enum_values in enum_index.items():
             if literal_values == enum_values:
+                exact_match_enum = enum_name
                 violations.append(
                     GovernanceViolation(
                         file_path=file_path,
@@ -360,20 +365,25 @@ def check_literal_duplication(
                         ),
                     )
                 )
-            elif literal_values.issubset(enum_values) and len(literal_values) > 1:
-                # Warn if Literal is a subset of enum values (likely should use enum)
-                violations.append(
-                    GovernanceViolation(
-                        file_path=file_path,
-                        line=line,
-                        rule_code="E002",
-                        message=(
-                            f"Literal type values are a subset of enum '{enum_name}'. "
-                            f"Consider using {enum_name} for type safety"
-                        ),
-                        severity="WARNING",
+                break  # Only report first exact match to avoid duplicate violations
+
+        # Second pass: check for subset matches only if no exact match found
+        if exact_match_enum is None:
+            for enum_name, enum_values in enum_index.items():
+                if literal_values.issubset(enum_values) and len(literal_values) > 1:
+                    violations.append(
+                        GovernanceViolation(
+                            file_path=file_path,
+                            line=line,
+                            rule_code="E002",
+                            message=(
+                                f"Literal type values are a subset of enum '{enum_name}'. "
+                                f"Consider using {enum_name} for type safety"
+                            ),
+                            severity="WARNING",
+                        )
                     )
-                )
+                    break  # Only report first subset match to avoid duplicate warnings
 
     return violations
 

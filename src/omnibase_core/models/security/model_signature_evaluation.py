@@ -31,6 +31,7 @@ class ModelSignatureEvaluation(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
         frozen=True,
+        from_attributes=True,
         validate_assignment=True,
     )
 

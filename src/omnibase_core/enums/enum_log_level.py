@@ -22,10 +22,10 @@
 # === /OmniNode:Metadata ===
 
 """
-Log levels and severity levels for ONEX.
+Log levels for ONEX.
 
-EnumLogLevel: Based on SPI LogLevel Literal type for consistency
-EnumLogLevel: For validation and generation result classification
+EnumLogLevel provides log level values compatible with SPI LogLevel Literal type.
+Used for structured logging and log level configuration.
 """
 
 from enum import Enum, unique
@@ -44,3 +44,6 @@ class EnumLogLevel(str, Enum):
     FATAL = "fatal"
     SUCCESS = "success"
     UNKNOWN = "unknown"
+
+
+__all__ = ["EnumLogLevel"]
