@@ -377,10 +377,6 @@ class ModelMetadataNodeAnalytics(BaseModel):
 
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except (AttributeError, KeyError, TypeError, ValueError):
-            # fallback-ok: validation failure in monitoring analytics defaults to invalid state
-            return False
+        # Basic validation - base implementation always returns True.
+        # Subclasses should override with actual validation logic.
+        return True

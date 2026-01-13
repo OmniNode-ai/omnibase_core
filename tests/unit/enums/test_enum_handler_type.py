@@ -57,7 +57,7 @@ class TestEnumHandlerType:
     def test_enum_iteration(self):
         """Test that we can iterate over enum values."""
         values = list(EnumHandlerType)
-        # 3 abstract + 9 concrete + 1 dev/test = 13 total
+        # 3 abstract + 9 concrete + 1 development/testing = 13 total
         assert len(values) == 13
         # Abstract types
         assert EnumHandlerType.EXTENSION in values
@@ -73,7 +73,7 @@ class TestEnumHandlerType:
         assert EnumHandlerType.GRAPH_DATABASE in values
         assert EnumHandlerType.REDIS in values
         assert EnumHandlerType.EVENT_BUS in values
-        # Dev/test types
+        # Development/Testing types
         assert EnumHandlerType.LOCAL in values
 
     def test_enum_membership(self):
@@ -92,7 +92,7 @@ class TestEnumHandlerType:
         assert "graph_database" in EnumHandlerType
         assert "redis" in EnumHandlerType
         assert "event_bus" in EnumHandlerType
-        # Dev/test types
+        # Development/Testing types
         assert "local" in EnumHandlerType
         # Invalid
         assert "invalid" not in EnumHandlerType
@@ -122,7 +122,7 @@ class TestEnumHandlerType:
         assert EnumHandlerType.GRAPH_DATABASE.value == "graph_database"
         assert EnumHandlerType.REDIS.value == "redis"
         assert EnumHandlerType.EVENT_BUS.value == "event_bus"
-        # Dev/test types
+        # Development/Testing types
         assert EnumHandlerType.LOCAL.value == "local"
 
     def test_enum_deserialization(self):
@@ -141,7 +141,7 @@ class TestEnumHandlerType:
         assert EnumHandlerType("graph_database") == EnumHandlerType.GRAPH_DATABASE
         assert EnumHandlerType("redis") == EnumHandlerType.REDIS
         assert EnumHandlerType("event_bus") == EnumHandlerType.EVENT_BUS
-        # Dev/test types
+        # Development/Testing types
         assert EnumHandlerType("local") == EnumHandlerType.LOCAL
 
     def test_enum_invalid_values(self):
@@ -167,7 +167,7 @@ class TestEnumHandlerType:
             "graph_database",
             "redis",
             "event_bus",
-            # Dev/test types
+            # Development/Testing types
             "local",
         ]
         assert set(all_values) == set(expected_values)
@@ -198,7 +198,7 @@ class TestEnumHandlerType:
         assert EnumHandlerType.GRAPH_DATABASE in EnumHandlerType
         assert EnumHandlerType.REDIS in EnumHandlerType
         assert EnumHandlerType.EVENT_BUS in EnumHandlerType
-        # Dev/test handler types
+        # Development/Testing handler types
         assert EnumHandlerType.LOCAL in EnumHandlerType
 
 

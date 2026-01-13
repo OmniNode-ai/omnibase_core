@@ -16,11 +16,11 @@ These exceptions exist because they serve specific domain requirements that cann
 be satisfied by the general-purpose 5-level severity scale.
 
 Migration Notes (OMN-1311, OMN-1296):
-- EnumValidationSeverity -> EnumSeverity (INFO, WARNING, ERROR, CRITICAL map directly)
-- EnumInvariantSeverity -> Removed (OMN-1296: use EnumSeverity directly)
-- EnumViolationSeverity -> Removed (OMN-1296: use EnumSeverity directly)
-- EnumErrorSeverity -> Removed (was unused, identical values)
-- FATAL removed (OMN-1296: use CRITICAL for fatal conditions)
+- EnumValidationSeverity: REMOVED - use EnumSeverity directly
+- EnumInvariantSeverity: REMOVED - use EnumSeverity directly
+- EnumViolationSeverity: REMOVED - use EnumSeverity directly
+- EnumErrorSeverity: REMOVED (was unused, identical values)
+- FATAL: REMOVED - use CRITICAL for fatal conditions
 """
 
 from __future__ import annotations
@@ -113,7 +113,7 @@ class EnumSeverity(str, Enum):
         for member in cls:
             if member.value == normalized:
                 return member
-        # error-ok: ValueError is standard Python enum from_string convention
+        # error-ok: ValueError is the standard Python convention for invalid enum values
         raise ValueError(f"Unknown severity level: {value}")
 
 

@@ -206,3 +206,75 @@ class TestEnumSeverity:
         ]
         for severity in blocking:
             assert severity in EnumSeverity
+
+    def test_numeric_level(self):
+        """Test numeric level property for severity comparison."""
+        # Verify levels are compatible with Python logging (10, 20, 30, 40, 50)
+        assert EnumSeverity.DEBUG.numeric_level == 10
+        assert EnumSeverity.INFO.numeric_level == 20
+        assert EnumSeverity.WARNING.numeric_level == 30
+        assert EnumSeverity.ERROR.numeric_level == 40
+        assert EnumSeverity.CRITICAL.numeric_level == 50
+
+        # Verify ordering
+        assert EnumSeverity.DEBUG.numeric_level < EnumSeverity.INFO.numeric_level
+        assert EnumSeverity.INFO.numeric_level < EnumSeverity.WARNING.numeric_level
+        assert EnumSeverity.WARNING.numeric_level < EnumSeverity.ERROR.numeric_level
+        assert EnumSeverity.ERROR.numeric_level < EnumSeverity.CRITICAL.numeric_level
+
+    def test_is_error_or_above(self):
+        """Test is_error_or_above() helper method."""
+        # Below error level
+        assert not EnumSeverity.DEBUG.is_error_or_above()
+        assert not EnumSeverity.INFO.is_error_or_above()
+        assert not EnumSeverity.WARNING.is_error_or_above()
+
+        # Error level and above
+        assert EnumSeverity.ERROR.is_error_or_above()
+        assert EnumSeverity.CRITICAL.is_error_or_above()
+
+    def test_is_warning_or_above(self):
+        """Test is_warning_or_above() helper method."""
+        # Below warning level
+        assert not EnumSeverity.DEBUG.is_warning_or_above()
+        assert not EnumSeverity.INFO.is_warning_or_above()
+
+        # Warning level and above
+        assert EnumSeverity.WARNING.is_warning_or_above()
+        assert EnumSeverity.ERROR.is_warning_or_above()
+        assert EnumSeverity.CRITICAL.is_warning_or_above()
+
+    def test_from_string(self):
+        """Test from_string() class method for case-insensitive conversion."""
+        # Test lowercase (exact match)
+        assert EnumSeverity.from_string("debug") == EnumSeverity.DEBUG
+        assert EnumSeverity.from_string("info") == EnumSeverity.INFO
+        assert EnumSeverity.from_string("warning") == EnumSeverity.WARNING
+        assert EnumSeverity.from_string("error") == EnumSeverity.ERROR
+        assert EnumSeverity.from_string("critical") == EnumSeverity.CRITICAL
+
+        # Test uppercase (case-insensitive)
+        assert EnumSeverity.from_string("DEBUG") == EnumSeverity.DEBUG
+        assert EnumSeverity.from_string("INFO") == EnumSeverity.INFO
+        assert EnumSeverity.from_string("WARNING") == EnumSeverity.WARNING
+        assert EnumSeverity.from_string("ERROR") == EnumSeverity.ERROR
+        assert EnumSeverity.from_string("CRITICAL") == EnumSeverity.CRITICAL
+
+        # Test mixed case
+        assert EnumSeverity.from_string("Warning") == EnumSeverity.WARNING
+        assert EnumSeverity.from_string("Error") == EnumSeverity.ERROR
+
+        # Test with whitespace
+        assert EnumSeverity.from_string("  error  ") == EnumSeverity.ERROR
+        assert EnumSeverity.from_string("\twarning\n") == EnumSeverity.WARNING
+
+    def test_from_string_invalid(self):
+        """Test from_string() raises ValueError for invalid input."""
+        with pytest.raises(ValueError, match="Unknown severity level"):
+            EnumSeverity.from_string("invalid")
+
+        with pytest.raises(ValueError, match="Unknown severity level"):
+            EnumSeverity.from_string("fatal")  # Not a valid EnumSeverity value
+
+        with pytest.raises(ValueError, match="Unknown severity level"):
+            EnumSeverity.from_string("")
