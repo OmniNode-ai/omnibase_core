@@ -4,9 +4,10 @@ Enum for LLM provider types.
 Defines supported LLM providers for agent system.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumLlmProvider(str, Enum):
     """Supported LLM providers for agents."""
 

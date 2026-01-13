@@ -11,40 +11,15 @@ from __future__ import annotations
 from enum import Enum, unique
 from typing import Never, NoReturn
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumReducerCapability(str, Enum):
-    """
-    Enumeration of supported reducer node capabilities.
-
-    SINGLE SOURCE OF TRUTH for reducer capability values.
-    Replaces magic strings in handler capability constants.
-
-    Using an enum instead of raw strings:
-    - Prevents typos ("fsm_interpreter" vs "fsmInterpreter")
-    - Enables IDE autocompletion
-    - Provides exhaustiveness checking
-    - Centralizes capability definitions
-    - Preserves full type safety
-
-    Capabilities:
-        FSM_INTERPRETER: Finite State Machine interpreter capability
-
-    Example:
-        >>> from omnibase_core.enums import EnumReducerCapability
-        >>> cap = EnumReducerCapability.FSM_INTERPRETER
-        >>> str(cap)
-        'fsm_interpreter'
-        >>> cap.value
-        'fsm_interpreter'
-    """
+class EnumReducerCapability(StrValueHelper, str, Enum):
+    """Reducer node capabilities (currently: FSM_INTERPRETER for state management)."""
 
     FSM_INTERPRETER = "fsm_interpreter"
     """Finite State Machine interpreter capability for state management."""
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def values(cls) -> list[str]:

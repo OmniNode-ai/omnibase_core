@@ -186,6 +186,7 @@ class RunnerPipeline:
                 try:
                     phase_errors = await self._execute_phase(phase, context)
                     errors.extend(phase_errors)
+                # boundary-ok: captures phase exceptions for controlled shutdown; finalize phase still runs
                 except Exception as e:
                     # Fail-fast phase raised exception
                     exception_to_raise = e
@@ -240,6 +241,7 @@ class RunnerPipeline:
                     await self._execute_hook(hook, context)
                     # Only clear hook_name after successful execution
                     current_hook_name = None
+                # cleanup-resilience-ok: finalize hooks must all execute; errors captured, not raised
                 except Exception as e:
                     # Capture error with proper hook_name context
                     errors.append(
@@ -253,6 +255,7 @@ class RunnerPipeline:
                     # Clear after capturing - hook processing complete
                     current_hook_name = None
 
+        # boundary-ok: framework-level errors during finalize become ModelHookError, never raised
         except Exception as framework_exc:
             # Framework-level error (e.g., plan access failure, hook retrieval error)
             # Include last known hook_name if available for debugging context
@@ -313,6 +316,7 @@ class RunnerPipeline:
         for hook in hooks:
             try:
                 await self._execute_hook(hook, context)
+            # boundary-ok: hook exceptions captured; re-raised for fail-fast phases, collected otherwise
             except Exception as e:
                 if fail_fast:
                     # Re-raise immediately for fail-fast phases

@@ -370,6 +370,19 @@ repos:
         exclude: ^(tests/|archived/|archive/).*\.py$
         stages: [pre-commit]
 
+      # Enum Member Casing Validation (OMN-1307)
+      # Enforces UPPER_SNAKE_CASE for all enum member names
+      # Detects: active, Active, someValue (lowercase or mixed case)
+      # Allows: ACTIVE, HTTP_2, V1_BETA, SHA256 (UPPER_SNAKE_CASE)
+      - id: check-enum-member-casing
+        name: ONEX Enum Member Casing Validation
+        entry: poetry run python -m omnibase_core.validation.checker_enum_member_casing
+        language: system
+        pass_filenames: true
+        files: ^src/.*\.py$
+        exclude: ^(tests/|archived/|archive/).*\.py$
+        stages: [pre-commit]
+
       - id: validate-typeddict-patterns
         name: ONEX TypedDict Pattern Validation
         entry: poetry run python scripts/validation/validate-typeddict-patterns.py

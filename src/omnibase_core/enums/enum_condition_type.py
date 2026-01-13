@@ -4,9 +4,10 @@ Condition Type Enum.
 Type of condition evaluation for workflow conditions.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumConditionType(str, Enum):
     """Type of condition evaluation."""
 

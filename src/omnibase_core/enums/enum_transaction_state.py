@@ -1,8 +1,9 @@
 """Transaction state enumeration for tracking transaction lifecycle."""
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumTransactionState(Enum):
     """Transaction state tracking."""
 

@@ -4,9 +4,10 @@ Action Category Enum
 Categories for organizing different types of actions across tools.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumActionCategory(str, Enum):
     """
     Categories for organizing different types of actions across tools.

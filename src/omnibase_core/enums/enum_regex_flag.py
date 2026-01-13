@@ -4,9 +4,10 @@ Supported regex flags for contract-driven NodeCompute.
 This module defines the regex flags available for REGEX transformations.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumRegexFlag(str, Enum):
     """
     Supported regex flags.

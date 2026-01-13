@@ -9,9 +9,11 @@ Defines complexity levels for functions and operations.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumComplexityLevel(str, Enum):
+class EnumComplexityLevel(StrValueHelper, str, Enum):
     """Complexity levels for functions and operations."""
 
     SIMPLE = "simple"
@@ -25,10 +27,6 @@ class EnumComplexityLevel(str, Enum):
     EXPERT = "expert"
     CRITICAL = "critical"
     UNKNOWN = "unknown"
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def get_numeric_value(cls, level: EnumComplexityLevel) -> int:

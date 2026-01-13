@@ -3,10 +3,11 @@ Enum for checkpoint types.
 Single responsibility: Centralized checkpoint type definitions.
 """
 
-from enum import Enum
+from enum import Enum, unique
 from functools import cache
 
 
+@unique
 class EnumCheckpointType(str, Enum):
     """Types of workflow checkpoints for state persistence and recovery."""
 

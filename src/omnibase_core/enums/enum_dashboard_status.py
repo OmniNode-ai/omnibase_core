@@ -19,11 +19,12 @@ Example:
                 refresh_widgets()
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 __all__ = ("EnumDashboardStatus",)
 
 
+@unique
 class EnumDashboardStatus(str, Enum):
     """Dashboard connection and lifecycle status enumeration.
 

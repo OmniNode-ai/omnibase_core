@@ -5,9 +5,10 @@ Cache eviction policy enumeration for ONEX caching systems.
 Defines eviction strategies for cache management.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumCacheEvictionPolicy(str, Enum):
     """
     Cache eviction policy enumeration for ONEX caching systems.

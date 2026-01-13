@@ -5,7 +5,7 @@ Defines types of side effects and transaction states for managing
 external interactions and resilience patterns.
 """
 
-from enum import Enum
+from enum import Enum, unique
 from typing import Never, NoReturn
 
 __all__ = [
@@ -14,6 +14,7 @@ __all__ = [
 ]
 
 
+@unique
 class EnumEffectType(Enum):
     """Types of side effects that can be managed."""
 
@@ -62,6 +63,7 @@ class EnumEffectType(Enum):
         raise AssertionError(f"Unhandled enum value: {value}")
 
 
+@unique
 class EnumTransactionState(Enum):
     """Transaction state tracking."""
 

@@ -1,9 +1,9 @@
-# Enum for comparison operators
-# DO NOT EDIT MANUALLY - regenerate using enum generation tools
+"""Comparison operators for conditional logic expressions."""
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumComparisonOperators(str, Enum):
     """Enum for comparison operators used in conditional logic."""
 

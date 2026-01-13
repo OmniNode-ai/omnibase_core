@@ -4,9 +4,10 @@ Enum for CLI argument types.
 Defines the available types for CLI command arguments.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumArgumentType(str, Enum):
     """
     Enumeration of CLI argument types.

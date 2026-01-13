@@ -278,7 +278,7 @@ class UtilSecurity:
             issues.append("No special characters")
 
         # Common patterns
-        if value.lower() in ["password", "123456", "admin", "root"]:
+        if value.lower() in {"password", "123456", "admin", "root"}:
             issues.append("Common weak password")
             score = 0
 
@@ -382,10 +382,10 @@ class UtilSecurity:
                             strength = UtilSecurity.assess_credential_strength(
                                 value,
                             )
-                            if strength.strength in [
+                            if strength.strength in {
                                 EnumCredentialStrength.WEAK,
                                 EnumCredentialStrength.VERY_WEAK,
-                            ]:
+                            }:
                                 audit_report.security_issues.append(
                                     f"Weak credential at {current_path}: {strength.strength.value}",
                                 )

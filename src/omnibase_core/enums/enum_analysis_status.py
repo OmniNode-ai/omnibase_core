@@ -4,9 +4,10 @@ Analysis status enumeration for document analysis operations.
 ONEX-compatible enum for standardized analysis status values.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumAnalysisStatus(str, Enum):
     """Enumeration for analysis status values."""
 

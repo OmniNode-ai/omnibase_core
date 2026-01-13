@@ -10,9 +10,11 @@ Replaces Literal["reverse", "forward", "parallel"] patterns.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumExecutionOrder(str, Enum):
+class EnumExecutionOrder(StrValueHelper, str, Enum):
     """
     Strongly typed execution order discriminators.
 
@@ -27,10 +29,6 @@ class EnumExecutionOrder(str, Enum):
     PARALLEL = "parallel"
 
     # Classification constants moved outside enum definition to avoid MyPy errors
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def is_sequential(cls, order: EnumExecutionOrder) -> bool:

@@ -1,25 +1,17 @@
-"""
-EnumCircuitBreakerState - Circuit breaker state enumeration.
-
-Defines the standard states for circuit breaker implementations.
-Used by ProtocolCircuitBreaker implementations for type-safe state checking.
-
-Related:
-    - OMN-861: Define ProtocolCircuitBreaker interface
-    - ProtocolCircuitBreaker: Protocol that uses these states
-
-.. versionadded:: 0.4.0
-"""
+"""Circuit breaker state enumeration (CLOSED, OPEN, HALF_OPEN)."""
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 from typing import Never, NoReturn
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 __all__ = ["EnumCircuitBreakerState"]
 
 
-class EnumCircuitBreakerState(str, Enum):
+@unique
+class EnumCircuitBreakerState(StrValueHelper, str, Enum):
     """
     Circuit breaker state enumeration.
 
@@ -79,10 +71,6 @@ class EnumCircuitBreakerState(str, Enum):
 
     HALF_OPEN = "half_open"
     """Testing recovery, limited requests allowed."""
-
-    def __str__(self) -> str:
-        """Return the string value of the circuit breaker state."""
-        return self.value
 
     @staticmethod
     def assert_exhaustive(value: Never) -> NoReturn:

@@ -5,9 +5,10 @@ Provides strongly-typed error types for Ollama LLM inference
 with proper ONEX enum naming conventions.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumOllamaErrorType(str, Enum):
     """Ollama-specific error types."""
 

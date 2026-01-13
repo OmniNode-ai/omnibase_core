@@ -5,9 +5,10 @@ Defines device types for distributed agent orchestration
 and deployment strategies.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumDeviceType(str, Enum):
     """Device type enumeration for distributed systems."""
 
@@ -23,6 +24,7 @@ class EnumDeviceType(str, Enum):
     UNKNOWN = "unknown"
 
 
+@unique
 class EnumDeviceLocation(str, Enum):
     """Device location enumeration for network routing."""
 
@@ -34,6 +36,7 @@ class EnumDeviceLocation(str, Enum):
     UNKNOWN = "unknown"
 
 
+@unique
 class EnumDeviceStatus(str, Enum):
     """Device status enumeration for health monitoring."""
 
@@ -44,6 +47,7 @@ class EnumDeviceStatus(str, Enum):
     UNKNOWN = "unknown"
 
 
+@unique
 class EnumAgentHealth(str, Enum):
     """Agent health status enumeration."""
 
@@ -57,6 +61,7 @@ class EnumAgentHealth(str, Enum):
     UNKNOWN = "unknown"
 
 
+@unique
 class EnumPriority(str, Enum):
     """[Any]priority enumeration for agent orchestration."""
 
@@ -67,6 +72,7 @@ class EnumPriority(str, Enum):
     BACKGROUND = "background"
 
 
+@unique
 class EnumRoutingStrategy(str, Enum):
     """Routing strategy enumeration for agent selection."""
 

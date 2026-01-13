@@ -2,9 +2,10 @@
 Enum for node capabilities.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumNodeCapability(str, Enum):
     """Standard node capabilities that can be declared via introspection."""
 

@@ -6,9 +6,10 @@ workflow status, assignment status, execution patterns, and failure recovery
 strategies for ORCHESTRATOR nodes.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumWorkflowStatus(str, Enum):
     """Workflow execution status."""
 
@@ -19,6 +20,7 @@ class EnumWorkflowStatus(str, Enum):
     CANCELLED = "CANCELLED"
 
 
+@unique
 class EnumAssignmentStatus(str, Enum):
     """Node assignment status."""
 
@@ -28,6 +30,7 @@ class EnumAssignmentStatus(str, Enum):
     FAILED = "FAILED"
 
 
+@unique
 class EnumExecutionPattern(str, Enum):
     """Workflow execution patterns."""
 
@@ -37,6 +40,7 @@ class EnumExecutionPattern(str, Enum):
     SCATTER_GATHER = "scatter_gather"
 
 
+@unique
 class EnumFailureRecoveryStrategy(str, Enum):
     """Failure recovery strategies."""
 

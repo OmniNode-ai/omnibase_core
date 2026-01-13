@@ -1,8 +1,9 @@
 """API endpoint patterns for proxy."""
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumProxyEndpoint(str, Enum):
     """API endpoint patterns for proxy."""
 

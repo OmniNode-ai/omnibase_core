@@ -1,8 +1,10 @@
-# Generated from contract: file_stamps_contract.yaml
-from enum import Enum
+from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumStampValidationType(Enum):
+@unique
+class EnumStampValidationType(StrValueHelper, str, Enum):
     """Types of stamp validation operations."""
 
     CONTENT_INTEGRITY = "CONTENT_INTEGRITY"

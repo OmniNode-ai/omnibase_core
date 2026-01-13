@@ -4,9 +4,10 @@ Enum for node status values.
 Defines the possible status values for ONEX nodes.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumNodeStatus(str, Enum):
     """
     Enumeration of node status values.

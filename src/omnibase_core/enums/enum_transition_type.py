@@ -5,9 +5,10 @@ Transition Type Enum.
 Enumeration for state transition types in contract-driven state management.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumTransitionType(str, Enum):
     """Types of state transitions."""
 

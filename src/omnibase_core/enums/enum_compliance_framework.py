@@ -1,6 +1,9 @@
-from enum import Enum
+"""Compliance framework identifiers for regulatory requirements."""
+
+from enum import Enum, unique
 
 
+@unique
 class EnumComplianceFramework(str, Enum):
     """Supported compliance frameworks."""
 

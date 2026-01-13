@@ -17,11 +17,12 @@ Example:
             print("This widget needs a data source")
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 __all__ = ("EnumWidgetType",)
 
 
+@unique
 class EnumWidgetType(str, Enum):
     """Dashboard widget type enumeration.
 

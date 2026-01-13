@@ -9,6 +9,8 @@ Provides shared node_type validation logic for contract models:
 This implementation does not use Any types.
 """
 
+from __future__ import annotations
+
 from typing import ClassVar
 
 from pydantic import field_validator
@@ -16,9 +18,6 @@ from pydantic import field_validator
 from omnibase_core.enums import EnumNodeType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_node_architecture_type import EnumNodeArchitectureType
-from omnibase_core.models.common.model_error_context import ModelErrorContext
-from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 class MixinNodeTypeValidator:
@@ -81,6 +80,11 @@ class MixinNodeTypeValidator:
             >>> validate_node_type_architecture(EnumNodeType.COMPUTE_GENERIC)
             EnumNodeType.COMPUTE_GENERIC
         """
+        # Runtime imports to avoid circular import
+        from omnibase_core.models.common.model_error_context import ModelErrorContext
+        from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
+
         # Handle EnumNodeArchitectureType - return contract-specific default
         if isinstance(v, EnumNodeArchitectureType):
             return cls._DEFAULT_NODE_TYPE

@@ -10,9 +10,11 @@ Replaces Literal["orchestrator", "compute", "reducer", "effect"] patterns.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumNodeArchitectureType(str, Enum):
+class EnumNodeArchitectureType(StrValueHelper, str, Enum):
     """
     Strongly typed 4-node architecture type discriminators.
 
@@ -25,10 +27,6 @@ class EnumNodeArchitectureType(str, Enum):
     COMPUTE = "compute"
     REDUCER = "reducer"
     EFFECT = "effect"
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def is_processing_node(cls, node_type: EnumNodeArchitectureType) -> bool:

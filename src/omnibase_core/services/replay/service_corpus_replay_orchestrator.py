@@ -149,12 +149,10 @@ class ServiceCorpusReplayOrchestrator:
 
     @property
     def executor(self) -> ExecutorReplay:
-        """Get the underlying executor."""
         return self._executor
 
     @property
     def last_progress(self) -> ModelCorpusReplayProgress | None:
-        """Get the most recent progress update."""
         return self._last_progress
 
     @property
@@ -511,9 +509,7 @@ class ServiceCorpusReplayOrchestrator:
                 # Execute replay
                 # TODO(OMN-1204): Wire up actual replay execution
                 # The actual execution function would be provided by the handler/node.
-                # For now we simulate success since we don't have the actual handler
-                # to call. In production, this would call:
-                # await self._executor.execute_async(session, handler.handle, envelope)
+                # For now we simulate success since we don't have the actual handler.
 
                 duration_ms = (time.perf_counter() - start_time) * 1000
 

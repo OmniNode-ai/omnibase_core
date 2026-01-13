@@ -5,9 +5,10 @@ Defines the validation levels for pipeline data integrity checking
 in the metadata processing pipeline.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumValidationLevel(str, Enum):
     """Validation levels for pipeline data integrity."""
 

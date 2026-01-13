@@ -4,9 +4,10 @@ Tool Health Status Enums.
 Health status values for tool monitoring.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumToolHealthStatus(str, Enum):
     """Tool health status values for monitoring and reporting."""
 

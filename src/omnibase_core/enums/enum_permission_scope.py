@@ -2,9 +2,10 @@
 Enum for permission scopes.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumPermissionScope(str, Enum):
     """Permission scope levels."""
 

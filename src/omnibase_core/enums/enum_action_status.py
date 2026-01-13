@@ -19,9 +19,11 @@ State Machine:
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumActionStatus(str, Enum):
+class EnumActionStatus(StrValueHelper, str, Enum):
     """
     Action status values for action metadata tracking.
 
@@ -53,10 +55,6 @@ class EnumActionStatus(str, Enum):
     RUNNING = "running"
     COMPLETED = "completed"
     FAILED = "failed"
-
-    def __str__(self) -> str:
-        """Return the string value of the action status."""
-        return self.value
 
     def is_terminal(self) -> bool:
         """
@@ -168,17 +166,18 @@ class EnumActionStatus(str, Enum):
             >>> EnumActionStatus.RUNNING.can_transition_to(EnumActionStatus.COMPLETED)
             True
         """
-        valid_transitions: dict[EnumActionStatus, set[EnumActionStatus]] = {
-            EnumActionStatus.CREATED: {EnumActionStatus.READY, EnumActionStatus.FAILED},
-            EnumActionStatus.READY: {EnumActionStatus.RUNNING, EnumActionStatus.FAILED},
-            EnumActionStatus.RUNNING: {
-                EnumActionStatus.COMPLETED,
-                EnumActionStatus.FAILED,
-            },
-            EnumActionStatus.COMPLETED: set(),
-            EnumActionStatus.FAILED: set(),
-        }
-        return target in valid_transitions.get(self, set())
+        return target in _VALID_TRANSITIONS.get(self, set())
+
+
+# Class-level constant for valid state transitions.
+# Defined after the enum class to allow self-referential enum values.
+_VALID_TRANSITIONS: dict[EnumActionStatus, set[EnumActionStatus]] = {
+    EnumActionStatus.CREATED: {EnumActionStatus.READY, EnumActionStatus.FAILED},
+    EnumActionStatus.READY: {EnumActionStatus.RUNNING, EnumActionStatus.FAILED},
+    EnumActionStatus.RUNNING: {EnumActionStatus.COMPLETED, EnumActionStatus.FAILED},
+    EnumActionStatus.COMPLETED: set(),
+    EnumActionStatus.FAILED: set(),
+}
 
 
 __all__ = ["EnumActionStatus"]

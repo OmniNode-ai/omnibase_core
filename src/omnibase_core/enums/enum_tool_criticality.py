@@ -1,8 +1,9 @@
 """Tool criticality enumeration."""
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumToolCriticality(str, Enum):
     """
     Tool criticality levels for business impact assessment.

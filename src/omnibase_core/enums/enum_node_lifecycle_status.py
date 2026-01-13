@@ -11,9 +11,11 @@ initialization and cleanup phases.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumNodeLifecycleStatus(str, Enum):
+class EnumNodeLifecycleStatus(StrValueHelper, str, Enum):
     """
     Node lifecycle status values.
 
@@ -56,10 +58,6 @@ class EnumNodeLifecycleStatus(str, Enum):
 
     CLEANUP_FAILED = "cleanup_failed"
     """Node cleanup failed (logged but not raised)."""
-
-    def __str__(self) -> str:
-        """Return the string value of the lifecycle status."""
-        return self.value
 
     def is_terminal(self) -> bool:
         """Check if this is a terminal state (no further transitions expected)."""

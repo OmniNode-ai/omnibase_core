@@ -1,8 +1,9 @@
 """Tool compatibility mode enumeration."""
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumToolCompatibilityMode(str, Enum):
     """
     Tool compatibility mode classification.

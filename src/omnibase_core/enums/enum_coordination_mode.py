@@ -5,9 +5,10 @@ Coordination Mode Enum.
 Strongly-typed enum for hub coordination modes.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumCoordinationMode(str, Enum):
     """Hub coordination modes."""
 

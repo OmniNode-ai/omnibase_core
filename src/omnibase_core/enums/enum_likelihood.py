@@ -7,16 +7,17 @@ Used by context models to express probability or confidence levels.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 from functools import cache
-from typing import cast
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 __all__ = ["EnumLikelihood"]
 
 
-class EnumLikelihood(str, Enum):
+@unique
+class EnumLikelihood(StrValueHelper, str, Enum):
     """
     Enumeration for likelihood or probability levels.
 
@@ -70,15 +71,6 @@ class EnumLikelihood(str, Enum):
     UNKNOWN = "unknown"  # Probability cannot be determined
     CERTAIN = "certain"  # {1.0} - Will definitely occur (exactly 100%)
     IMPOSSIBLE = "impossible"  # {0.0} - Will never occur (exactly 0%)
-
-    def __str__(self) -> str:
-        """Return the string value of the likelihood level.
-
-        Note: Although this class inherits from str, the default Enum.__str__
-        returns 'EnumLikelihood.MEMBER_NAME' format. This override ensures
-        str(EnumLikelihood.LOW) returns 'low' for consistent string representation.
-        """
-        return cast(str, self.value)
 
     @classmethod
     @cache

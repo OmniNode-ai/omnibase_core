@@ -38,8 +38,6 @@ from typing import TYPE_CHECKING, Any
 from uuid import UUID, uuid4
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-
-# Removed: EnumCoreErrorCode doesn't exist in enums module
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_node_health_status import EnumNodeHealthStatus
 from omnibase_core.enums.enum_node_lifecycle_status import EnumNodeLifecycleStatus
@@ -367,19 +365,15 @@ class NodeCoreBase(ABC):
         }
 
     def get_node_id(self) -> UUID:
-        """Get unique node identifier."""
         return self.node_id
 
     def get_node_type(self) -> str:
-        """Get node type classification."""
         return self.__class__.__name__
 
     def get_version(self) -> ModelSemVer:
-        """Get node version."""
         return self.version
 
     def get_state(self) -> dict[str, str]:
-        """Get current node state."""
         return dict(self.state)
 
     async def _load_contract(self) -> None:
