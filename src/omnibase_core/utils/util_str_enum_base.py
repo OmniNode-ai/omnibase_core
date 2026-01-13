@@ -1,4 +1,4 @@
-"""Mixin providing standard __str__ implementation for string enums."""
+"""StrValueHelper mixin providing standard __str__ for string enums."""
 
 from __future__ import annotations
 
