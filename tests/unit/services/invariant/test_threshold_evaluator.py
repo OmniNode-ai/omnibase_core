@@ -5,7 +5,7 @@
 
 import pytest
 
-from omnibase_core.enums import EnumInvariantSeverity, EnumInvariantType
+from omnibase_core.enums import EnumInvariantType, EnumSeverity
 from omnibase_core.models.invariant import ModelInvariant
 from omnibase_core.services.invariant.service_invariant_evaluator import (
     ServiceInvariantEvaluator,
@@ -23,7 +23,7 @@ class TestThresholdEvaluator:
         invariant = ModelInvariant(
             name="Confidence Check",
             type=EnumInvariantType.THRESHOLD,
-            severity=EnumInvariantSeverity.CRITICAL,
+            severity=EnumSeverity.CRITICAL,
             config={
                 "metric_name": "confidence",
                 "min_value": 0.7,
@@ -41,7 +41,7 @@ class TestThresholdEvaluator:
         invariant = ModelInvariant(
             name="Confidence Check",
             type=EnumInvariantType.THRESHOLD,
-            severity=EnumInvariantSeverity.CRITICAL,
+            severity=EnumSeverity.CRITICAL,
             config={
                 "metric_name": "confidence",
                 "min_value": 0.7,
@@ -62,7 +62,7 @@ class TestThresholdEvaluator:
         invariant = ModelInvariant(
             name="Token Limit",
             type=EnumInvariantType.THRESHOLD,
-            severity=EnumInvariantSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             config={
                 "metric_name": "token_count",
                 "min_value": 0,
@@ -81,7 +81,7 @@ class TestThresholdEvaluator:
         invariant = ModelInvariant(
             name="Min Score",
             type=EnumInvariantType.THRESHOLD,
-            severity=EnumInvariantSeverity.CRITICAL,
+            severity=EnumSeverity.CRITICAL,
             config={
                 "metric_name": "score",
                 "min_value": 0.5,
@@ -101,7 +101,7 @@ class TestThresholdEvaluator:
         invariant = ModelInvariant(
             name="Max Tokens",
             type=EnumInvariantType.THRESHOLD,
-            severity=EnumInvariantSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             config={
                 "metric_name": "tokens",
                 "max_value": 100,
@@ -123,7 +123,7 @@ class TestThresholdEvaluator:
         invariant = ModelInvariant(
             name="Boundary Check",
             type=EnumInvariantType.THRESHOLD,
-            severity=EnumInvariantSeverity.CRITICAL,
+            severity=EnumSeverity.CRITICAL,
             config={
                 "metric_name": "value",
                 "min_value": 0.0,
@@ -146,7 +146,7 @@ class TestThresholdEvaluator:
         invariant = ModelInvariant(
             name="Missing Metric",
             type=EnumInvariantType.THRESHOLD,
-            severity=EnumInvariantSeverity.CRITICAL,
+            severity=EnumSeverity.CRITICAL,
             config={
                 "metric_name": "nonexistent",
                 "min_value": 0.5,
@@ -165,7 +165,7 @@ class TestThresholdEvaluator:
         invariant = ModelInvariant(
             name="Numeric Check",
             type=EnumInvariantType.THRESHOLD,
-            severity=EnumInvariantSeverity.CRITICAL,
+            severity=EnumSeverity.CRITICAL,
             config={
                 "metric_name": "value",
                 "min_value": 0.5,
@@ -184,7 +184,7 @@ class TestThresholdEvaluator:
         invariant = ModelInvariant(
             name="Nested Metric",
             type=EnumInvariantType.THRESHOLD,
-            severity=EnumInvariantSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             config={
                 "metric_name": "metrics.accuracy",
                 "min_value": 0.9,
@@ -204,7 +204,7 @@ class TestThresholdEvaluator:
         invariant = ModelInvariant(
             name="Integer Check",
             type=EnumInvariantType.THRESHOLD,
-            severity=EnumInvariantSeverity.CRITICAL,
+            severity=EnumSeverity.CRITICAL,
             config={
                 "metric_name": "count",
                 "min_value": 10,
@@ -225,7 +225,7 @@ class TestThresholdEvaluator:
         invariant = ModelInvariant(
             name="Temperature Check",
             type=EnumInvariantType.THRESHOLD,
-            severity=EnumInvariantSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             config={
                 "metric_name": "temperature",
                 "min_value": -10.0,

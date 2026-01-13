@@ -60,7 +60,7 @@ from omnibase_core.contracts import (
     ModelContractFingerprint,
     compute_contract_fingerprint,
 )
-from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
+from omnibase_core.enums import EnumSeverity
 from omnibase_core.errors.exception_groups import FILE_IO_ERRORS, VALIDATION_ERRORS
 from omnibase_core.models.common.model_validation_issue import ModelValidationIssue
 from omnibase_core.models.contracts.model_contract_compute import ModelContractCompute
@@ -296,7 +296,7 @@ class ValidatorContractLinter(ValidatorBase):
         rule: ModelValidatorRule | None,
         contract: ModelValidatorSubcontract,
         rule_id: str | None = None,
-    ) -> EnumValidationSeverity:
+    ) -> EnumSeverity:
         """Get severity for a rule, falling back to default.
 
         Args:
@@ -341,7 +341,7 @@ class ValidatorContractLinter(ValidatorBase):
             if data is None:
                 issues.append(
                     ModelValidationIssue(
-                        severity=EnumValidationSeverity.ERROR,
+                        severity=EnumSeverity.ERROR,
                         message="Empty YAML content",
                         code=RULE_YAML_SYNTAX,
                         file_path=path,
@@ -355,7 +355,7 @@ class ValidatorContractLinter(ValidatorBase):
             if not isinstance(data, dict):
                 issues.append(
                     ModelValidationIssue(
-                        severity=EnumValidationSeverity.ERROR,
+                        severity=EnumSeverity.ERROR,
                         message=f"Expected YAML dict, got {type(data).__name__}",
                         code=RULE_YAML_SYNTAX,
                         file_path=path,
@@ -375,7 +375,7 @@ class ValidatorContractLinter(ValidatorBase):
 
             issues.append(
                 ModelValidationIssue(
-                    severity=EnumValidationSeverity.ERROR,
+                    severity=EnumSeverity.ERROR,
                     message=f"YAML syntax error: {e}",
                     code=RULE_YAML_SYNTAX,
                     file_path=path,

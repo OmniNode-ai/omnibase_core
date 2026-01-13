@@ -13,7 +13,7 @@ from uuid import UUID
 import pytest
 from pydantic import ValidationError
 
-from omnibase_core.enums.enum_invariant_severity import EnumInvariantSeverity
+from omnibase_core.enums.enum_severity import EnumSeverity
 from omnibase_core.models.invariant import ModelInvariantResult
 from omnibase_core.models.replay import (
     ModelExecutionComparison,
@@ -43,7 +43,7 @@ def sample_invariant_result_passed() -> ModelInvariantResult:
         invariant_id=TEST_INVARIANT_ID_1,
         invariant_name="latency_check",
         passed=True,
-        severity=EnumInvariantSeverity.WARNING,
+        severity=EnumSeverity.WARNING,
         actual_value=150.0,
         expected_value=500.0,
         message="Latency within acceptable range",
@@ -57,7 +57,7 @@ def sample_invariant_result_failed() -> ModelInvariantResult:
         invariant_id=TEST_INVARIANT_ID_2,
         invariant_name="cost_check",
         passed=False,
-        severity=EnumInvariantSeverity.CRITICAL,
+        severity=EnumSeverity.CRITICAL,
         actual_value=0.15,
         expected_value=0.10,
         message="Cost exceeded maximum threshold",

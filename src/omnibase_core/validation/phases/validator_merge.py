@@ -39,10 +39,10 @@ import logging
 import re
 from collections.abc import Sequence
 
+from omnibase_core.enums import EnumSeverity
 from omnibase_core.enums.enum_contract_validation_error_code import (
     EnumContractValidationErrorCode,
 )
-from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
 from omnibase_core.models.common.model_validation_result import ModelValidationResult
 from omnibase_core.models.contracts.model_contract_patch import ModelContractPatch
 from omnibase_core.models.contracts.model_handler_contract import ModelHandlerContract
@@ -444,7 +444,7 @@ class MergeValidator:
             if handler_ref is not None and handler_ref not in known_handlers:
                 logger.debug(f"Potential unresolved dependency reference: {dep.name}")
                 result.add_issue(
-                    severity=EnumValidationSeverity.WARNING,
+                    severity=EnumSeverity.WARNING,
                     message=(
                         f"Dependency '{dep.name}' references a handler that "
                         "may not exist in this contract. Verify the handler "

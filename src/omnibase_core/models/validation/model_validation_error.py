@@ -17,8 +17,8 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from omnibase_core.constants import MAX_DESCRIPTION_LENGTH, MAX_NAME_LENGTH
+from omnibase_core.enums import EnumSeverity
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
 from omnibase_core.types.typed_dict_validation_error_serialized import (
     TypedDictValidationErrorSerialized,
 )
@@ -39,8 +39,8 @@ class ModelValidationError(BaseModel):
         min_length=1,
         max_length=MAX_DESCRIPTION_LENGTH,
     )
-    severity: EnumValidationSeverity = Field(
-        default=EnumValidationSeverity.ERROR,
+    severity: EnumSeverity = Field(
+        default=EnumSeverity.ERROR,
         description="Error severity level",
     )
     field_id: UUID | None = Field(
@@ -80,25 +80,25 @@ class ModelValidationError(BaseModel):
 
     def is_critical(self) -> bool:
         """Check if this is a critical error."""
-        return bool(self.severity == EnumValidationSeverity.CRITICAL)
+        return bool(self.severity == EnumSeverity.CRITICAL)
 
     def is_error(self) -> bool:
         """Check if this is an error (error or critical)."""
         return bool(
             self.severity
             in [
-                EnumValidationSeverity.ERROR,
-                EnumValidationSeverity.CRITICAL,
+                EnumSeverity.ERROR,
+                EnumSeverity.CRITICAL,
             ],
         )
 
     def is_warning(self) -> bool:
         """Check if this is a warning."""
-        return bool(self.severity == EnumValidationSeverity.WARNING)
+        return bool(self.severity == EnumSeverity.WARNING)
 
     def is_info(self) -> bool:
         """Check if this is an info message."""
-        return bool(self.severity == EnumValidationSeverity.INFO)
+        return bool(self.severity == EnumSeverity.INFO)
 
     @classmethod
     def create_error(
@@ -119,7 +119,7 @@ class ModelValidationError(BaseModel):
 
         return cls(
             message=message,
-            severity=EnumValidationSeverity.ERROR,
+            severity=EnumSeverity.ERROR,
             field_id=field_id,
             field_display_name=field_name,
             error_code=error_code,
@@ -142,7 +142,7 @@ class ModelValidationError(BaseModel):
 
         return cls(
             message=message,
-            severity=EnumValidationSeverity.CRITICAL,
+            severity=EnumSeverity.CRITICAL,
             field_id=field_id,
             field_display_name=field_name,
             error_code=error_code,
@@ -165,7 +165,7 @@ class ModelValidationError(BaseModel):
 
         return cls(
             message=message,
-            severity=EnumValidationSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             field_id=field_id,
             field_display_name=field_name,
             error_code=error_code,

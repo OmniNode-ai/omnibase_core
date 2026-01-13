@@ -149,7 +149,6 @@ from .enum_ignore_pattern_source import EnumIgnorePatternSource, EnumTraversalMo
 from .enum_import_status import EnumImportStatus
 
 # Invariant-related enums (OMN-1192)
-from .enum_invariant_severity import EnumInvariantSeverity
 from .enum_invariant_type import EnumInvariantType
 
 # Language and localization enums
@@ -251,6 +250,9 @@ from .enum_service_status import EnumServiceStatus
 # Service architecture enums
 from .enum_service_tier import EnumServiceTier
 from .enum_service_type_category import EnumServiceTypeCategory
+
+# Severity enum (canonical - replaces EnumViolationSeverity, OMN-1311)
+from .enum_severity import EnumSeverity
 from .enum_state_update_operation import EnumStateUpdateOperation
 
 # Subject type enums (OMN-1237)
@@ -287,7 +289,7 @@ from .enum_unicode_form import EnumUnicodeForm
 
 # URI-related enums
 from .enum_uri_type import EnumUriType
-from .enum_validation import EnumErrorSeverity, EnumValidationLevel
+from .enum_validation import EnumValidationLevel
 from .enum_validation_mode import EnumValidationMode
 from .enum_validation_rule_type import EnumValidationRuleType
 from .enum_value_type import EnumValueType
@@ -298,9 +300,6 @@ from .enum_vector_filter_operator import EnumVectorFilterOperator
 
 # Version and contract enums
 from .enum_version_status import EnumVersionStatus
-
-# Violation severity enum (OMN-1195)
-from .enum_violation_severity import EnumViolationSeverity
 from .enum_widget_type import EnumWidgetType
 
 # Workflow-related enums
@@ -341,7 +340,6 @@ __all__ = [
     "EnumSecurityRiskLevel",
     # Validation domain
     "EnumEnvironmentValidationRuleType",
-    "EnumErrorSeverity",
     "EnumValidationRuleType",
     # Circuit breaker domain (standalone for cross-repo standardization)
     "EnumCircuitBreakerState",
@@ -514,10 +512,9 @@ __all__ = [
     "EnumLikelihood",
     # Invariant domain (OMN-1192, OMN-1207)
     "EnumComparisonType",
-    "EnumInvariantSeverity",
     "EnumInvariantType",
-    # Violation severity domain (OMN-1195)
-    "EnumViolationSeverity",
+    # Severity domain (OMN-1311 - canonical, replaces EnumViolationSeverity)
+    "EnumSeverity",
     # Dashboard domain (OMN-1284)
     "EnumDashboardStatus",
     "EnumDashboardTheme",

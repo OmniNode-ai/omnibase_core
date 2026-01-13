@@ -71,8 +71,8 @@ from typing import ClassVar
 
 import yaml
 
+from omnibase_core.enums import EnumSeverity
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
 from omnibase_core.errors.exception_groups import (
     FILE_IO_ERRORS,
     PYDANTIC_MODEL_ERRORS,
@@ -97,11 +97,11 @@ EXIT_ERRORS = 1
 EXIT_WARNINGS = 2
 
 # Severity priority for deterministic ordering (lower = higher priority)
-SEVERITY_PRIORITY: dict[EnumValidationSeverity, int] = {
-    EnumValidationSeverity.CRITICAL: 0,
-    EnumValidationSeverity.ERROR: 1,
-    EnumValidationSeverity.WARNING: 2,
-    EnumValidationSeverity.INFO: 3,
+SEVERITY_PRIORITY: dict[EnumSeverity, int] = {
+    EnumSeverity.CRITICAL: 0,
+    EnumSeverity.ERROR: 1,
+    EnumSeverity.WARNING: 2,
+    EnumSeverity.INFO: 3,
 }
 
 
@@ -171,9 +171,7 @@ class ValidatorBase(ABC):
         # from multiple threads could cause redundant computation. For thread-safe
         # usage, create separate validator instances per thread/worker.
         # See docs/guides/THREADING.md for details.
-        self._rule_config_cache: (
-            dict[str, tuple[bool, EnumValidationSeverity]] | None
-        ) = None
+        self._rule_config_cache: dict[str, tuple[bool, EnumSeverity]] | None = None
 
     @property
     def contract(self) -> ModelValidatorSubcontract:
@@ -527,7 +525,7 @@ class ValidatorBase(ABC):
     def _build_rule_config_cache(
         self,
         contract: ModelValidatorSubcontract,
-    ) -> dict[str, tuple[bool, EnumValidationSeverity]]:
+    ) -> dict[str, tuple[bool, EnumSeverity]]:
         """Build precomputed cache of rule configurations for O(1) lookups.
 
         Creates a dictionary mapping rule_id to (enabled, severity) tuple.
@@ -546,7 +544,7 @@ class ValidatorBase(ABC):
         Returns:
             Dictionary mapping rule_id to (enabled, severity) tuple.
         """
-        cache: dict[str, tuple[bool, EnumValidationSeverity]] = {}
+        cache: dict[str, tuple[bool, EnumSeverity]] = {}
         for rule in contract.rules:
             # Guard against None severity - use contract default if None
             # Note: severity has a default in ModelValidatorRule, but this is defensive
@@ -570,7 +568,7 @@ class ValidatorBase(ABC):
         self,
         rule_id: str | None,
         contract: ModelValidatorSubcontract,
-    ) -> tuple[bool, EnumValidationSeverity]:
+    ) -> tuple[bool, EnumSeverity]:
         """Get rule enabled state and severity from precomputed cache.
 
         Uses O(1) dictionary lookup instead of iterating through all rules.
@@ -754,14 +752,12 @@ class ValidatorBase(ABC):
         )
 
         # Count by severity
-        error_count = sum(
-            1 for i in sorted_issues if i.severity == EnumValidationSeverity.ERROR
-        )
+        error_count = sum(1 for i in sorted_issues if i.severity == EnumSeverity.ERROR)
         warning_count = sum(
-            1 for i in sorted_issues if i.severity == EnumValidationSeverity.WARNING
+            1 for i in sorted_issues if i.severity == EnumSeverity.WARNING
         )
         critical_count = sum(
-            1 for i in sorted_issues if i.severity == EnumValidationSeverity.CRITICAL
+            1 for i in sorted_issues if i.severity == EnumSeverity.CRITICAL
         )
 
         # Determine validity based on contract settings

@@ -16,8 +16,8 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_comparison_type import EnumComparisonType
-from omnibase_core.enums.enum_invariant_severity import EnumInvariantSeverity
 from omnibase_core.enums.enum_invariant_type import EnumInvariantType
+from omnibase_core.enums.enum_severity import EnumSeverity
 from omnibase_core.models.invariant.model_invariant_definition import (
     InvariantConfigUnion,
 )
@@ -39,9 +39,7 @@ class ModelInvariantViolationDetail(BaseModel):
     invariant_type: EnumInvariantType = Field(
         ..., description="Type of invariant validation"
     )
-    severity: EnumInvariantSeverity = Field(
-        ..., description="Severity level of the violation"
-    )
+    severity: EnumSeverity = Field(..., description="Severity level of the violation")
 
     # What Failed
     field_path: str | None = Field(

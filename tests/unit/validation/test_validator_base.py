@@ -18,8 +18,8 @@ from typing import ClassVar
 
 import pytest
 
+from omnibase_core.enums import EnumSeverity
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
 from omnibase_core.models.common.model_validation_issue import ModelValidationIssue
 from omnibase_core.models.contracts.subcontracts.model_validator_subcontract import (
     ModelValidatorSubcontract,
@@ -70,7 +70,7 @@ def create_test_contract(
     fail_on_error: bool = True,
     fail_on_warning: bool = False,
     max_violations: int = 0,
-    severity_default: EnumValidationSeverity = EnumValidationSeverity.ERROR,
+    severity_default: EnumSeverity = EnumSeverity.ERROR,
 ) -> ModelValidatorSubcontract:
     """Create a test contract with specified configuration."""
     return ModelValidatorSubcontract(
@@ -321,7 +321,7 @@ class TestValidatorBaseValidation:
 
         contract = create_test_contract()
         issue = ModelValidationIssue(
-            severity=EnumValidationSeverity.ERROR,
+            severity=EnumSeverity.ERROR,
             message="Test issue",
             code="test_error",
             file_path=test_file,
@@ -344,7 +344,7 @@ class TestValidatorBaseValidation:
 
         contract = create_test_contract()
         issue = ModelValidationIssue(
-            severity=EnumValidationSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             message="Warning",
             code="test_warning",
         )
@@ -363,7 +363,7 @@ class TestValidatorBaseValidation:
 
         contract = create_test_contract(max_violations=2)
         issue = ModelValidationIssue(
-            severity=EnumValidationSeverity.ERROR,
+            severity=EnumSeverity.ERROR,
             message="Error",
             code="test_error",
         )
@@ -403,17 +403,17 @@ class TestValidatorBaseResultBuilding:
 
         issues = [
             ModelValidationIssue(
-                severity=EnumValidationSeverity.WARNING,
+                severity=EnumSeverity.WARNING,
                 message="Warning",
                 code="warn",
             ),
             ModelValidationIssue(
-                severity=EnumValidationSeverity.ERROR,
+                severity=EnumSeverity.ERROR,
                 message="Error",
                 code="error",
             ),
             ModelValidationIssue(
-                severity=EnumValidationSeverity.CRITICAL,
+                severity=EnumSeverity.CRITICAL,
                 message="Critical",
                 code="critical",
             ),
@@ -425,9 +425,9 @@ class TestValidatorBaseResultBuilding:
         result = validator.validate_file(test_file)
 
         # Should be sorted: CRITICAL, ERROR, WARNING
-        assert result.issues[0].severity == EnumValidationSeverity.CRITICAL
-        assert result.issues[1].severity == EnumValidationSeverity.ERROR
-        assert result.issues[2].severity == EnumValidationSeverity.WARNING
+        assert result.issues[0].severity == EnumSeverity.CRITICAL
+        assert result.issues[1].severity == EnumSeverity.ERROR
+        assert result.issues[2].severity == EnumSeverity.WARNING
 
     def test_build_result_sorts_by_file_then_line(self, tmp_path: Path) -> None:
         """Test that issues are sorted by file path then line number."""
@@ -438,21 +438,21 @@ class TestValidatorBaseResultBuilding:
 
         issues = [
             ModelValidationIssue(
-                severity=EnumValidationSeverity.ERROR,
+                severity=EnumSeverity.ERROR,
                 message="B:10",
                 code="err",
                 file_path=file_b,
                 line_number=10,
             ),
             ModelValidationIssue(
-                severity=EnumValidationSeverity.ERROR,
+                severity=EnumSeverity.ERROR,
                 message="A:5",
                 code="err",
                 file_path=file_a,
                 line_number=5,
             ),
             ModelValidationIssue(
-                severity=EnumValidationSeverity.ERROR,
+                severity=EnumSeverity.ERROR,
                 message="A:1",
                 code="err",
                 file_path=file_a,
@@ -479,7 +479,7 @@ class TestValidatorBaseResultBuilding:
         # Only warnings
         issues = [
             ModelValidationIssue(
-                severity=EnumValidationSeverity.WARNING,
+                severity=EnumSeverity.WARNING,
                 message="Warning",
                 code="warn",
             ),
@@ -500,7 +500,7 @@ class TestValidatorBaseResultBuilding:
 
         issues = [
             ModelValidationIssue(
-                severity=EnumValidationSeverity.ERROR,
+                severity=EnumSeverity.ERROR,
                 message="Error",
                 code="err",
             ),
@@ -520,7 +520,7 @@ class TestValidatorBaseResultBuilding:
 
         issues = [
             ModelValidationIssue(
-                severity=EnumValidationSeverity.WARNING,
+                severity=EnumSeverity.WARNING,
                 message="Warning",
                 code="warn",
             ),
@@ -563,7 +563,7 @@ class TestValidatorBaseExitCodes:
 
         issues = [
             ModelValidationIssue(
-                severity=EnumValidationSeverity.ERROR,
+                severity=EnumSeverity.ERROR,
                 message="Error",
                 code="err",
             ),
@@ -584,7 +584,7 @@ class TestValidatorBaseExitCodes:
 
         issues = [
             ModelValidationIssue(
-                severity=EnumValidationSeverity.WARNING,
+                severity=EnumSeverity.WARNING,
                 message="Warning",
                 code="warn",
             ),
@@ -617,18 +617,18 @@ class TestValidatorBaseConstants:
     def test_severity_priority_ordering(self) -> None:
         """Test that severity priority ordering is correct."""
         # Lower number = higher priority
-        assert SEVERITY_PRIORITY[EnumValidationSeverity.CRITICAL] == 0
-        assert SEVERITY_PRIORITY[EnumValidationSeverity.ERROR] == 1
-        assert SEVERITY_PRIORITY[EnumValidationSeverity.WARNING] == 2
-        assert SEVERITY_PRIORITY[EnumValidationSeverity.INFO] == 3
+        assert SEVERITY_PRIORITY[EnumSeverity.CRITICAL] == 0
+        assert SEVERITY_PRIORITY[EnumSeverity.ERROR] == 1
+        assert SEVERITY_PRIORITY[EnumSeverity.WARNING] == 2
+        assert SEVERITY_PRIORITY[EnumSeverity.INFO] == 3
 
     def test_severity_priority_all_severities_covered(self) -> None:
         """Test that all severities are covered in priority map."""
         expected_severities = {
-            EnumValidationSeverity.CRITICAL,
-            EnumValidationSeverity.ERROR,
-            EnumValidationSeverity.WARNING,
-            EnumValidationSeverity.INFO,
+            EnumSeverity.CRITICAL,
+            EnumSeverity.ERROR,
+            EnumSeverity.WARNING,
+            EnumSeverity.INFO,
         }
         assert set(SEVERITY_PRIORITY.keys()) == expected_severities
 

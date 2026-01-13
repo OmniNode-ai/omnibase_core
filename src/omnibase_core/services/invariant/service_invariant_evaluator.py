@@ -13,13 +13,13 @@ Example:
     ...     ServiceInvariantEvaluator,
     ... )
     >>> from omnibase_core.models.invariant import ModelInvariant, ModelInvariantSet
-    >>> from omnibase_core.enums import EnumInvariantType, EnumInvariantSeverity
+    >>> from omnibase_core.enums import EnumInvariantType, EnumSeverity
     >>>
     >>> evaluator = ServiceInvariantEvaluator()
     >>> invariant = ModelInvariant(
     ...     name="latency_check",
     ...     type=EnumInvariantType.LATENCY,
-    ...     severity=EnumInvariantSeverity.CRITICAL,
+    ...     severity=EnumSeverity.CRITICAL,
     ...     config={"max_ms": 500},
     ... )
     >>> result = evaluator.evaluate(invariant, {"latency_ms": 250})
@@ -44,7 +44,7 @@ from typing import Any
 import jsonschema
 from jsonschema.protocols import Validator
 
-from omnibase_core.enums import EnumInvariantSeverity, EnumInvariantType
+from omnibase_core.enums import EnumInvariantType, EnumSeverity
 from omnibase_core.errors.error_regex_timeout import RegexTimeoutError
 from omnibase_core.models.invariant import (
     ModelEvaluationSummary,
@@ -639,7 +639,7 @@ class ServiceInvariantEvaluator:
             if (
                 fail_fast
                 and not result.passed
-                and result.severity == EnumInvariantSeverity.CRITICAL
+                and result.severity == EnumSeverity.CRITICAL
             ):
                 break
 
@@ -654,11 +654,11 @@ class ServiceInvariantEvaluator:
         for r in results:
             if r.passed:
                 passed_count += 1
-            elif r.severity == EnumInvariantSeverity.CRITICAL:
+            elif r.severity == EnumSeverity.CRITICAL:
                 critical_failures += 1
-            elif r.severity == EnumInvariantSeverity.WARNING:
+            elif r.severity == EnumSeverity.WARNING:
                 warning_failures += 1
-            elif r.severity == EnumInvariantSeverity.INFO:
+            elif r.severity == EnumSeverity.INFO:
                 info_failures += 1
 
         failed_count = len(results) - passed_count
@@ -1208,7 +1208,7 @@ class ServiceInvariantEvaluator:
                 invariant = ModelInvariant(
                     name="status_check",
                     type=EnumInvariantType.CUSTOM,
-                    severity=EnumInvariantSeverity.CRITICAL,
+                    severity=EnumSeverity.CRITICAL,
                     config={"callable_path": "myapp.validators.has_valid_status"},
                 )
 

@@ -147,13 +147,13 @@ def validate_api_response(
 ### 2. Configure the Invariant
 
 ```python
-from omnibase_core.enums import EnumInvariantSeverity, EnumInvariantType
+from omnibase_core.enums import EnumSeverity, EnumInvariantType
 from omnibase_core.models.invariant import ModelInvariant
 
 invariant = ModelInvariant(
     name="api_response_check",
     type=EnumInvariantType.CUSTOM,
-    severity=EnumInvariantSeverity.CRITICAL,
+    severity=EnumSeverity.CRITICAL,
     config={
         "callable_path": "myapp.validators.api_validators:validate_api_response",
         "require_pagination": True,

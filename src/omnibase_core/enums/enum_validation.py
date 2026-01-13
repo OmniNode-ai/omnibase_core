@@ -2,27 +2,10 @@
 """
 Validation-related enums for ONEX validation systems.
 
-Defines error severity levels, validation modes, and validation levels
-for ONEX validation and error handling systems.
+Defines validation levels for ONEX validation and error handling systems.
 """
 
 from enum import Enum, unique
-
-
-@unique
-class EnumErrorSeverity(Enum):
-    """
-    Severity levels for validation errors and system errors.
-
-    Used to categorize the impact and urgency of different types of errors.
-    """
-
-    DEBUG = "debug"
-    INFO = "info"
-    WARNING = "warning"
-    ERROR = "error"
-    CRITICAL = "critical"
-    FATAL = "fatal"
 
 
 @unique

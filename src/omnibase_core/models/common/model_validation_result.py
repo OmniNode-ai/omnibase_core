@@ -2,7 +2,7 @@ from pathlib import Path
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
+from omnibase_core.enums import EnumSeverity
 from omnibase_core.models.common.model_validation_issue import ModelValidationIssue
 from omnibase_core.models.common.model_validation_metadata import (
     ModelValidationMetadata,
@@ -93,17 +93,17 @@ class ModelValidationResult[T: object](BaseModel):
     @property
     def error_count(self) -> int:
         """Number of error-level issues."""
-        return len(self.get_issues_by_severity(EnumValidationSeverity.ERROR))
+        return len(self.get_issues_by_severity(EnumSeverity.ERROR))
 
     @property
     def warning_count(self) -> int:
         """Number of warning-level issues."""
-        return len(self.get_issues_by_severity(EnumValidationSeverity.WARNING))
+        return len(self.get_issues_by_severity(EnumSeverity.WARNING))
 
     @property
     def critical_count(self) -> int:
         """Number of critical-level issues."""
-        return len(self.get_issues_by_severity(EnumValidationSeverity.CRITICAL))
+        return len(self.get_issues_by_severity(EnumSeverity.CRITICAL))
 
     # Factory methods for common patterns
     @classmethod
@@ -136,7 +136,7 @@ class ModelValidationResult[T: object](BaseModel):
             for error_msg in errors:
                 final_issues.append(
                     ModelValidationIssue(
-                        severity=EnumValidationSeverity.ERROR,
+                        severity=EnumSeverity.ERROR,
                         message=error_msg,
                     )
                 )
@@ -171,7 +171,7 @@ class ModelValidationResult[T: object](BaseModel):
     # Helper methods
     def add_issue(
         self,
-        severity: EnumValidationSeverity,
+        severity: EnumSeverity,
         message: str,
         code: str | None = None,
         file_path: Path | None = None,
@@ -196,13 +196,13 @@ class ModelValidationResult[T: object](BaseModel):
         self.issues.append(issue)
 
         # Update validity based on severity
-        if severity in [EnumValidationSeverity.ERROR, EnumValidationSeverity.CRITICAL]:
+        if severity in [EnumSeverity.ERROR, EnumSeverity.CRITICAL]:
             self.is_valid = False
 
         # Update legacy fields for current standards
-        if severity == EnumValidationSeverity.ERROR:
+        if severity == EnumSeverity.ERROR:
             self.errors.append(message)
-        elif severity == EnumValidationSeverity.WARNING:
+        elif severity == EnumSeverity.WARNING:
             self.warnings.append(message)
 
         if suggestion:
@@ -218,7 +218,7 @@ class ModelValidationResult[T: object](BaseModel):
     ) -> None:
         """Add an error to the validation result (current standards)."""
         self.add_issue(
-            EnumValidationSeverity.ERROR,
+            EnumSeverity.ERROR,
             error,
             code=code,
             file_path=file_path,
@@ -236,7 +236,7 @@ class ModelValidationResult[T: object](BaseModel):
     ) -> None:
         """Add a warning to the validation result (current standards)."""
         self.add_issue(
-            EnumValidationSeverity.WARNING,
+            EnumSeverity.WARNING,
             warning,
             code=code,
             file_path=file_path,
@@ -250,25 +250,19 @@ class ModelValidationResult[T: object](BaseModel):
 
     def has_critical_issues(self) -> bool:
         """Check if there are any critical issues."""
-        return any(
-            issue.severity == EnumValidationSeverity.CRITICAL for issue in self.issues
-        )
+        return any(issue.severity == EnumSeverity.CRITICAL for issue in self.issues)
 
     def has_errors(self) -> bool:
         """Check if there are any error-level issues."""
-        return any(
-            issue.severity == EnumValidationSeverity.ERROR for issue in self.issues
-        )
+        return any(issue.severity == EnumSeverity.ERROR for issue in self.issues)
 
     def has_warnings(self) -> bool:
         """Check if there are any warning-level issues."""
-        return any(
-            issue.severity == EnumValidationSeverity.WARNING for issue in self.issues
-        )
+        return any(issue.severity == EnumSeverity.WARNING for issue in self.issues)
 
     def get_issues_by_severity(
         self,
-        severity: EnumValidationSeverity,
+        severity: EnumSeverity,
     ) -> list[ModelValidationIssue]:
         """Get all issues of a specific severity level."""
         return [issue for issue in self.issues if issue.severity == severity]
