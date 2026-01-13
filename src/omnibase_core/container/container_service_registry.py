@@ -2,7 +2,7 @@
 
 import asyncio
 import time
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import TypeVar, cast
 from uuid import UUID, uuid4
 
@@ -823,7 +823,7 @@ class ServiceRegistry:
         overall_status: EnumOperationStatus = EnumOperationStatus.SUCCESS
         if self._failed_registrations > 0:
             overall_status = EnumOperationStatus.FAILED
-        if not self._registrations:
+        elif not self._registrations:
             overall_status = EnumOperationStatus.PENDING
 
         return ModelServiceRegistryStatus(
@@ -838,7 +838,7 @@ class ServiceRegistry:
             scope_distribution=scope_dist,
             health_summary=health_dist,
             average_resolution_time_ms=avg_resolution_time,
-            last_updated=datetime.now(),
+            last_updated=datetime.now(UTC),
         )
 
     async def validate_service_health(

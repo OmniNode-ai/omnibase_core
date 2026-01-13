@@ -99,7 +99,7 @@ class ModelArgumentMap(BaseModel):
                         return value.lower() in ("true", "1", "yes", "on")  # type: ignore[return-value]
                     # NOTE(OMN-1302): TypeVar T cannot be narrowed by expected_type check. Safe because bool() always returns bool.
                     return bool(value)  # type: ignore[return-value]
-            except (ValueError, TypeError):
+            except (TypeError, ValueError):
                 pass
         return default
 
@@ -197,7 +197,7 @@ class ModelArgumentMap(BaseModel):
                         return value.lower() in ("true", "1", "yes", "on")  # type: ignore[return-value]
                     # NOTE(OMN-1302): TypeVar T cannot be narrowed by expected_type check. Safe because bool() always returns bool.
                     return bool(value)  # type: ignore[return-value]
-            except (ValueError, TypeError):
+            except (TypeError, ValueError):
                 pass
         return default
 

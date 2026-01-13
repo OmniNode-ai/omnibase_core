@@ -9,7 +9,7 @@ Design Principles:
 - Use typing.Protocol with @runtime_checkable for duck typing support
 - Keep interfaces minimal - only define what Core actually needs
 - Provide complete type hints for mypy strict mode compliance
-- Use Literal types for enumerated values
+- Use canonical Enum types for enumerated values (from omnibase_core.enums)
 - Use forward references where needed to avoid circular imports
 
 Module Organization:

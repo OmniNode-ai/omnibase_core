@@ -1913,7 +1913,7 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
                     cls: type | None = base.__args__[0]
                     return cls
             return None
-        except (AttributeError, TypeError, IndexError) as e:
+        except (AttributeError, IndexError, TypeError) as e:
             # Fail fast on unexpected errors during type introspection
             raise ModelOnexError(
                 message=f"Failed to extract input state class from generic type parameters: {e!s}",

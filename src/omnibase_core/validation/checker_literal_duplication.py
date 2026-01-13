@@ -73,6 +73,8 @@ KNOWN_ENUM_NAMES: frozenset[str] = frozenset(
         "validationseverity",
         "validationtype",
         "validationresult",
+        # Pipeline enums
+        "pipelinevalidationmode",
         # Node enums
         "nodekind",
         "nodetype",
@@ -337,6 +339,7 @@ def _to_pascal_case(name: str) -> str:
         "validationseverity": "ValidationSeverity",
         "validationtype": "ValidationType",
         "validationresult": "ValidationResult",
+        "pipelinevalidationmode": "PipelineValidationMode",
         "healthstatus": "HealthStatus",
         "operationstatus": "OperationStatus",
         "servicestatus": "ServiceStatus",
