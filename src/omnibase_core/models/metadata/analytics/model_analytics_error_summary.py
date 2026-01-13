@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.enums import EnumSeverity
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
@@ -43,7 +44,7 @@ class ModelAnalyticsErrorSummary(BaseModel):
     )
 
     # Status indicators
-    severity_level: str = Field(description="Overall severity level")
+    severity_level: EnumSeverity = Field(description="Overall severity level")
     has_critical_issues: bool = Field(description="Whether there are critical issues")
     has_fatal_issues: bool = Field(
         default=False, description="Whether there are fatal issues"
@@ -103,7 +104,7 @@ class ModelAnalyticsErrorSummary(BaseModel):
         critical_error_count: int,
         error_rate_percentage: float,
         critical_error_rate_percentage: float,
-        severity_level: str,
+        severity_level: EnumSeverity,
         has_critical_issues: bool,
         fatal_error_count: int = 0,
         fatal_error_rate_percentage: float = 0.0,
@@ -146,7 +147,7 @@ class ModelAnalyticsErrorSummary(BaseModel):
             "error_rate_percentage": self.error_rate_percentage,
             "critical_error_rate_percentage": self.critical_error_rate_percentage,
             "fatal_error_rate_percentage": self.fatal_error_rate_percentage,
-            "severity_level": self.severity_level,
+            "severity_level": str(self.severity_level),
             "has_critical_issues": self.has_critical_issues,
             "has_fatal_issues": self.has_fatal_issues,
         }

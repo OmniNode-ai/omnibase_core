@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.enums import EnumSeverity
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
@@ -74,21 +75,31 @@ class ModelAnalyticsErrorTracking(BaseModel):
         """Check if there are any issues at all."""
         return self.total_issues > 0
 
-    def get_error_severity_level(self) -> str:
-        """Get descriptive error severity level."""
+    def get_error_severity_level(self) -> EnumSeverity:
+        """Get error severity level as EnumSeverity.
+
+        Mapping:
+        - Fatal errors present → FATAL
+        - Critical errors present → CRITICAL
+        - >10 errors → ERROR (high severity)
+        - >5 errors → WARNING (medium severity)
+        - >0 errors → INFO (low severity)
+        - Warnings only → WARNING
+        - Clean (no issues) → DEBUG
+        """
         if self.fatal_error_count > 0:
-            return "Fatal"
+            return EnumSeverity.FATAL
         if self.critical_error_count > 0:
-            return "Critical"
+            return EnumSeverity.CRITICAL
         if self.error_count > 10:
-            return "High"
+            return EnumSeverity.ERROR
         if self.error_count > 5:
-            return "Medium"
+            return EnumSeverity.WARNING
         if self.error_count > 0:
-            return "Low"
+            return EnumSeverity.INFO
         if self.warning_count > 0:
-            return "Warnings Only"
-        return "Clean"
+            return EnumSeverity.WARNING
+        return EnumSeverity.DEBUG
 
     def calculate_error_rate(self, total_invocations: int) -> float:
         """Calculate error rate percentage."""
@@ -242,7 +253,7 @@ class ModelAnalyticsErrorTracking(BaseModel):
             "critical_error_count": self.critical_error_count,
             "fatal_error_count": self.fatal_error_count,
             "total_issues": self.total_issues,
-            "severity_level": self.get_error_severity_level(),
+            "severity_level": str(self.get_error_severity_level()),
         }
         return result
 
