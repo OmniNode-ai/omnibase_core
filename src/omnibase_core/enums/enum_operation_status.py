@@ -1,25 +1,63 @@
-"""
-Operation status enumeration for service operations.
+"""Canonical operation status enum for ONEX framework.
 
-Provides standardized status values for operation results and API responses.
-This is the canonical operation status enum (OMN-1310).
+**BREAKING CHANGE** (OMN-1310): This enum consolidates multiple previous
+operation status enums into a single canonical source. No backwards
+compatibility is provided.
 
-Use For:
+**Consolidated enums**:
+- EnumOperationStatus (deleted from enum_execution.py)
+
+**Usage**: Import directly from omnibase_core.enums::
+
+    from omnibase_core.enums import EnumOperationStatus
+
+**Semantic Category**: Operations (API/service operation outcomes)
+
+**Use For**:
 - Operation results
 - API responses
 - Service manager operations
+
+**Migration**: Replace all imports of EnumOperationStatus from
+enum_execution.py with imports from omnibase_core.enums.
 """
 
+from __future__ import annotations
+
 from enum import Enum, unique
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from omnibase_core.enums.enum_base_status import EnumBaseStatus
 
 
 @unique
 class EnumOperationStatus(str, Enum):
-    """
-    Enumeration for operation status values.
+    """Canonical operation status enum for API and service operations.
 
-    Canonical enum for tracking the status of operations,
-    API responses, and service manager operations.
+    This is the single source of truth for operation status values across
+    the ONEX framework. Use for tracking operation outcomes, API responses,
+    and service manager operations.
+
+    **Semantic Category**: Operations (API/service outcomes)
+
+    Values:
+        SUCCESS: Operation completed successfully
+        FAILED: Operation failed with an error
+        IN_PROGRESS: Operation is currently executing
+        CANCELLED: Operation was cancelled
+        PENDING: Operation is queued but not started
+        TIMEOUT: Operation exceeded time limit
+
+    Helper Methods:
+        - :meth:`is_terminal`: Check if operation has finished
+        - :meth:`is_active`: Check if operation is in progress
+        - :meth:`is_successful`: Check if operation succeeded
+        - :meth:`to_base_status`: Convert to base status
+        - :meth:`from_base_status`: Create from base status (class method)
+
+    .. versionchanged:: 0.6.4
+        Consolidated into canonical enum (OMN-1310)
     """
 
     SUCCESS = "success"
@@ -48,6 +86,65 @@ class EnumOperationStatus(str, Enum):
     def is_successful(self) -> bool:
         """Check if this status represents a successful operation."""
         return self == EnumOperationStatus.SUCCESS
+
+    def to_base_status(self) -> EnumBaseStatus:
+        """Convert operation status to base status for universal operations.
+
+        Maps operation-specific values to their base status equivalents:
+        - SUCCESS -> COMPLETED
+        - FAILED -> FAILED
+        - IN_PROGRESS -> RUNNING
+        - CANCELLED -> INACTIVE
+        - PENDING -> PENDING
+        - TIMEOUT -> FAILED
+
+        Returns:
+            The corresponding EnumBaseStatus value
+        """
+        from omnibase_core.enums.enum_base_status import EnumBaseStatus
+
+        mapping = {
+            self.SUCCESS: EnumBaseStatus.COMPLETED,
+            self.FAILED: EnumBaseStatus.FAILED,
+            self.IN_PROGRESS: EnumBaseStatus.RUNNING,
+            self.CANCELLED: EnumBaseStatus.INACTIVE,
+            self.PENDING: EnumBaseStatus.PENDING,
+            self.TIMEOUT: EnumBaseStatus.FAILED,
+        }
+
+        return mapping.get(self, EnumBaseStatus.UNKNOWN)
+
+    @classmethod
+    def from_base_status(cls, base_status: EnumBaseStatus) -> EnumOperationStatus:
+        """Create operation status from base status.
+
+        Args:
+            base_status: The base status to convert
+
+        Returns:
+            The corresponding EnumOperationStatus value
+
+        Raises:
+            ValueError: If base_status cannot be mapped to operation status
+        """
+        from omnibase_core.enums.enum_base_status import EnumBaseStatus
+
+        mapping = {
+            EnumBaseStatus.COMPLETED: cls.SUCCESS,
+            EnumBaseStatus.FAILED: cls.FAILED,
+            EnumBaseStatus.RUNNING: cls.IN_PROGRESS,
+            EnumBaseStatus.INACTIVE: cls.CANCELLED,
+            EnumBaseStatus.PENDING: cls.PENDING,
+            EnumBaseStatus.ACTIVE: cls.IN_PROGRESS,
+            EnumBaseStatus.UNKNOWN: cls.PENDING,
+        }
+
+        if base_status in mapping:
+            return mapping[base_status]
+
+        raise ValueError(  # error-ok: standard enum conversion error pattern
+            f"Cannot convert {base_status} to EnumOperationStatus"
+        )
 
 
 __all__ = ["EnumOperationStatus"]

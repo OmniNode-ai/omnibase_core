@@ -15,11 +15,11 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.constants import TIMEOUT_DEFAULT_MS, TIMEOUT_LONG_MS
 from omnibase_core.constants.constants_field_limits import MAX_NAME_LENGTH
+from omnibase_core.enums.enum_execution_status import EnumExecutionStatus
 from omnibase_core.enums.enum_workflow_execution import (
     EnumBranchCondition,
     EnumExecutionMode,
 )
-from omnibase_core.enums.enum_workflow_status import EnumWorkflowStatus
 from omnibase_core.models.orchestrator.model_action import ModelAction
 
 __all__ = ["ModelWorkflowStepExecution"]
@@ -97,8 +97,8 @@ class ModelWorkflowStepExecution(BaseModel):
     )
 
     # Runtime state tracking
-    state: EnumWorkflowStatus = Field(
-        default=EnumWorkflowStatus.PENDING,
+    state: EnumExecutionStatus = Field(
+        default=EnumExecutionStatus.PENDING,
         description="Current execution state",
     )
 

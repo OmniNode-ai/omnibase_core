@@ -1,9 +1,18 @@
-"""
-Execution Status Enum.
+"""Canonical execution status enum for ONEX framework.
 
-Status values for ONEX execution lifecycle tracking.
-This is the canonical enum for execution status - all execution-related
-status tracking should use this enum.
+**BREAKING CHANGE** (OMN-1310): This enum consolidates multiple previous
+execution status enums into a single canonical source. No backwards
+compatibility is provided.
+
+**Consolidated enums**:
+- EnumExecutionStatusV2 (deleted from enum_execution_status_v2.py)
+
+**Usage**: Import directly from omnibase_core.enums::
+
+    from omnibase_core.enums import EnumExecutionStatus
+
+**Migration**: Replace all imports of EnumExecutionStatusV2 with
+EnumExecutionStatus. The value set is a superset of the deleted enum.
 """
 
 from __future__ import annotations
@@ -19,11 +28,13 @@ if TYPE_CHECKING:
 
 @unique
 class EnumExecutionStatus(StrValueHelper, str, Enum):
-    """
-    Execution status values for ONEX lifecycle tracking.
+    """Canonical execution status enum for ONEX lifecycle tracking.
 
-    This is the canonical execution status enum. Use this for all
-    execution-related status tracking.
+    This is the single source of truth for execution status values across
+    the ONEX framework. All execution-related status tracking should use
+    this enum.
+
+    **Semantic Category**: Execution (task/job/step completion states)
 
     Values:
         PENDING: Execution is queued but not yet started
@@ -35,6 +46,17 @@ class EnumExecutionStatus(StrValueHelper, str, Enum):
         CANCELLED: Execution was cancelled by user or system
         TIMEOUT: Execution exceeded time limit
         PARTIAL: Execution partially completed (some steps succeeded)
+
+    Helper Methods:
+        - :meth:`is_terminal`: Check if execution has finished
+        - :meth:`is_active`: Check if execution is in progress
+        - :meth:`is_successful`: Check if execution succeeded
+        - :meth:`is_failure`: Check if execution failed
+        - :meth:`to_base_status`: Convert to EnumBaseStatus
+        - :meth:`from_base_status`: Create from EnumBaseStatus
+
+    .. versionchanged:: 0.6.4
+        Consolidated EnumExecutionStatusV2 into this enum (OMN-1310)
     """
 
     PENDING = "pending"

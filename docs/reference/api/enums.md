@@ -597,7 +597,7 @@ from omnibase_core.enums.enum_execution_status import EnumExecutionStatus
 # Map status to HTTP status codes
 STATUS_TO_HTTP = {
     EnumExecutionStatus.SUCCESS: 200,
-    EnumExecutionStatus.FAILURE: 500,
+    EnumExecutionStatus.FAILED: 500,
     EnumExecutionStatus.TIMEOUT: 408,
     EnumExecutionStatus.CANCELLED: 499,
     EnumExecutionStatus.IN_PROGRESS: 202,
@@ -651,7 +651,7 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 def convert_status_to_error_code(status: EnumExecutionStatus) -> EnumCoreErrorCode:
     """Convert operation status to error code."""
     status_to_error = {
-        EnumExecutionStatus.FAILURE: EnumCoreErrorCode.PROCESSING_ERROR,
+        EnumExecutionStatus.FAILED: EnumCoreErrorCode.PROCESSING_ERROR,
         EnumExecutionStatus.TIMEOUT: EnumCoreErrorCode.TIMEOUT_ERROR,
         EnumExecutionStatus.CANCELLED: EnumCoreErrorCode.PROCESSING_ERROR
     }

@@ -423,6 +423,90 @@ class TestEnumExecutionStatus:
             # This is just a logical test - the enum doesn't enforce this
             assert EnumExecutionStatus.is_terminal(status) is True
 
+    def test_to_base_status(self):
+        """Test to_base_status conversion method."""
+        from omnibase_core.enums.enum_base_status import EnumBaseStatus
+
+        # Direct mappings
+        assert EnumExecutionStatus.PENDING.to_base_status() == EnumBaseStatus.PENDING
+        assert EnumExecutionStatus.RUNNING.to_base_status() == EnumBaseStatus.RUNNING
+        assert (
+            EnumExecutionStatus.COMPLETED.to_base_status() == EnumBaseStatus.COMPLETED
+        )
+        assert EnumExecutionStatus.FAILED.to_base_status() == EnumBaseStatus.FAILED
+
+        # Execution-specific mappings
+        assert EnumExecutionStatus.SUCCESS.to_base_status() == EnumBaseStatus.COMPLETED
+        assert EnumExecutionStatus.SKIPPED.to_base_status() == EnumBaseStatus.INACTIVE
+        assert EnumExecutionStatus.CANCELLED.to_base_status() == EnumBaseStatus.INACTIVE
+        assert EnumExecutionStatus.TIMEOUT.to_base_status() == EnumBaseStatus.FAILED
+        assert EnumExecutionStatus.PARTIAL.to_base_status() == EnumBaseStatus.COMPLETED
+
+    def test_from_base_status(self):
+        """Test from_base_status class method."""
+        from omnibase_core.enums.enum_base_status import EnumBaseStatus
+
+        # Test valid conversions
+        assert (
+            EnumExecutionStatus.from_base_status(EnumBaseStatus.PENDING)
+            == EnumExecutionStatus.PENDING
+        )
+        assert (
+            EnumExecutionStatus.from_base_status(EnumBaseStatus.RUNNING)
+            == EnumExecutionStatus.RUNNING
+        )
+        assert (
+            EnumExecutionStatus.from_base_status(EnumBaseStatus.COMPLETED)
+            == EnumExecutionStatus.COMPLETED
+        )
+        assert (
+            EnumExecutionStatus.from_base_status(EnumBaseStatus.FAILED)
+            == EnumExecutionStatus.FAILED
+        )
+        assert (
+            EnumExecutionStatus.from_base_status(EnumBaseStatus.INACTIVE)
+            == EnumExecutionStatus.CANCELLED
+        )
+        assert (
+            EnumExecutionStatus.from_base_status(EnumBaseStatus.ACTIVE)
+            == EnumExecutionStatus.RUNNING
+        )
+        assert (
+            EnumExecutionStatus.from_base_status(EnumBaseStatus.UNKNOWN)
+            == EnumExecutionStatus.PENDING
+        )
+
+    def test_from_base_status_invalid(self):
+        """Test from_base_status raises ValueError for unmapped values."""
+        from omnibase_core.enums.enum_base_status import EnumBaseStatus
+
+        # VALID and INVALID don't have mappings, should raise ValueError
+        with pytest.raises(ValueError):
+            EnumExecutionStatus.from_base_status(EnumBaseStatus.VALID)
+
+        with pytest.raises(ValueError):
+            EnumExecutionStatus.from_base_status(EnumBaseStatus.INVALID)
+
+    def test_base_status_roundtrip(self):
+        """Test roundtrip conversion base -> execution -> base."""
+        from omnibase_core.enums.enum_base_status import EnumBaseStatus
+
+        # These base statuses should roundtrip
+        roundtrip_statuses = [
+            EnumBaseStatus.PENDING,
+            EnumBaseStatus.RUNNING,
+            EnumBaseStatus.COMPLETED,
+            EnumBaseStatus.FAILED,
+        ]
+
+        for base_status in roundtrip_statuses:
+            exec_status = EnumExecutionStatus.from_base_status(base_status)
+            back_to_base = exec_status.to_base_status()
+            assert back_to_base == base_status, (
+                f"Roundtrip failed for {base_status}: "
+                f"got {back_to_base} via {exec_status}"
+            )
+
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
