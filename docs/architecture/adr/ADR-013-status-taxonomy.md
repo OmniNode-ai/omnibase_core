@@ -37,6 +37,7 @@
 - Enables future consolidation of ad-hoc status values
 
 **Categories**:
+
 | Category | Canonical Enum | Purpose |
 |----------|---------------|---------|
 | Execution | `EnumExecutionStatus` | Task/job lifecycle |
@@ -99,25 +100,32 @@ Each canonical enum serves as the authoritative source for its domain. Domain-sp
 **Location**: `src/omnibase_core/enums/enum_execution_status.py`
 
 **Values**:
+
 | Value | Description |
 |-------|-------------|
 | `PENDING` | Task queued, not yet started |
 | `RUNNING` | Task actively executing |
-| `COMPLETED` | Task finished (success or failure - see SUCCESS/FAILED) |
-| `SUCCESS` | Task completed successfully |
+| `COMPLETED` | Task finished successfully (generic success) |
+| `SUCCESS` | Task completed successfully (explicit success) |
 | `FAILED` | Task completed with failure |
 | `SKIPPED` | Task intentionally not executed |
 | `CANCELLED` | Task terminated by user/system |
 | `TIMEOUT` | Task exceeded time limit |
-| `PARTIAL` | Task partially completed |
+| `PARTIAL` | Some steps succeeded, others failed (terminal state) |
+
+**COMPLETED vs SUCCESS/FAILED Relationship**:
+- `COMPLETED` and `SUCCESS` are both successful outcomes (`is_successful()` returns True for both)
+- Use `COMPLETED` for generic "task finished successfully" scenarios
+- Use `SUCCESS` when you need explicit success/failure distinction alongside `FAILED`
+- `FAILED` indicates task completed with an error (mutually exclusive with COMPLETED/SUCCESS)
 
 **Helper Methods**:
-- `is_terminal()` - Returns True for COMPLETED, SUCCESS, FAILED, SKIPPED, CANCELLED, TIMEOUT
-- `is_active()` - Returns True for RUNNING
-- `is_successful()` - Returns True for SUCCESS
+- `is_terminal()` - Returns True for COMPLETED, SUCCESS, FAILED, SKIPPED, CANCELLED, TIMEOUT, PARTIAL
+- `is_active()` - Returns True for PENDING, RUNNING
+- `is_successful()` - Returns True for COMPLETED, SUCCESS
 - `is_failure()` - Returns True for FAILED, TIMEOUT
 - `is_skipped()` - Returns True for SKIPPED
-- `is_running()` - Returns True for RUNNING
+- `is_running()` - Returns True for RUNNING (subset of is_active)
 - `is_cancelled()` - Returns True for CANCELLED
 - `is_partial()` - Returns True for PARTIAL
 
@@ -137,6 +145,7 @@ Each canonical enum serves as the authoritative source for its domain. Domain-sp
 **Location**: `src/omnibase_core/enums/enum_operation_status.py`
 
 **Values**:
+
 | Value | Description |
 |-------|-------------|
 | `SUCCESS` | Operation completed successfully |
@@ -172,6 +181,7 @@ Each canonical enum serves as the authoritative source for its domain. Domain-sp
 **Exports**: `omnibase_core.nodes`, `omnibase_core.enums`
 
 **Values**:
+
 | Value | Description |
 |-------|-------------|
 | `PENDING` | Workflow not started |
@@ -199,6 +209,7 @@ Each canonical enum serves as the authoritative source for its domain. Domain-sp
 **Location**: `src/omnibase_core/enums/enum_node_health_status.py`
 
 **Values**:
+
 | Value | Description |
 |-------|-------------|
 | `HEALTHY` | Component operating normally |
@@ -208,6 +219,7 @@ Each canonical enum serves as the authoritative source for its domain. Domain-sp
 | `UNKNOWN` | Health status cannot be determined |
 
 **Domain-Specific Variants**:
+
 | Variant | Purpose |
 |---------|---------|
 | `EnumServiceHealthStatus` | External service health |
@@ -233,6 +245,7 @@ Each canonical enum serves as the authoritative source for its domain. Domain-sp
 **Location**: `src/omnibase_core/enums/enum_node_lifecycle_status.py`
 
 **Values**:
+
 | Value | Description |
 |-------|-------------|
 | `INITIALIZING` | Component starting up |
@@ -244,8 +257,8 @@ Each canonical enum serves as the authoritative source for its domain. Domain-sp
 | `CLEANUP_FAILED` | Cleanup encountered errors |
 
 **Helper Methods**:
-- `is_terminal()` - Returns True for READY, FAILED, CLEANED_UP, CLEANUP_FAILED
-- `is_active()` - Returns True for INITIALIZING, CLEANING_UP
+- `is_terminal()` - Returns True for CLEANED_UP, CLEANUP_FAILED, FAILED
+- `is_active()` - Returns True for INITIALIZING, READY, CLEANING_UP
 - `is_error()` - Returns True for FAILED, CLEANUP_FAILED
 
 **Use Cases**:
@@ -255,7 +268,8 @@ Each canonical enum serves as the authoritative source for its domain. Domain-sp
 - Dependency injection lifecycle
 
 **State Flow**:
-```
+
+```text
 INITIALIZING -> INITIALIZED -> READY -> CLEANING_UP -> CLEANED_UP
                     |                        |
                     v                        v
@@ -272,6 +286,7 @@ INITIALIZING -> INITIALIZED -> READY -> CLEANING_UP -> CLEANED_UP
 **Location**: `src/omnibase_core/enums/enum_tool_registration_status.py`
 
 **Values**:
+
 | Value | Description |
 |-------|-------------|
 | `REGISTERED` | Successfully registered and active |
