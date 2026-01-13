@@ -761,6 +761,7 @@ def validate_workflow_definition(
         step = ModelWorkflowStep(
             step_id=node.node_id,
             step_name=f"node_{node.node_id}",  # Generate name from node_id
+            # NOTE(OMN-1302): Step type from dict lookup with fallback. Safe because validated by model.
             step_type=step_type,  # type: ignore[arg-type]
             depends_on=node.dependencies,
             enabled=True,  # ModelWorkflowNode doesn't have enabled field

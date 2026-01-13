@@ -550,8 +550,8 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase, MixinHandlerRouting):
            Uses protocol injection for infrastructure services.
         """
         # Try to resolve infrastructure services from container first
-        # Note: type-abstract errors are expected - Protocols are abstract by design
-        # but runtime_checkable protocols work correctly at runtime
+        # NOTE(OMN-1302): Protocols are abstract by design but runtime_checkable works at runtime.
+        # Safe because get_service_optional returns None if not registered.
         self._cache = self.container.get_service_optional(
             ProtocolComputeCache  # type: ignore[type-abstract]
         )

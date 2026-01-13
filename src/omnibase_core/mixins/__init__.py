@@ -12,6 +12,7 @@ that can be composed into concrete node implementations.
 # in utils.util_str_enum_base to avoid circular imports with enums.
 from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
+
 # Core mixins
 # Import protocols from omnibase_core (Core-native protocols)
 from omnibase_core.protocols import ProtocolEventBusRegistry

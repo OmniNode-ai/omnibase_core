@@ -55,7 +55,7 @@ def allow_dict_any(
 
     def decorator(f: Callable[..., Any]) -> Callable[..., Any]:
         """Apply the decorator to a function."""
-        # Mark the function with metadata for validation scripts
+        # NOTE(OMN-1302): Dynamic attributes for decorator metadata tracking. Safe because read via getattr.
         f._allow_dict_any = True  # type: ignore[attr-defined]
         if reason:
             f._dict_any_reason = reason  # type: ignore[attr-defined]

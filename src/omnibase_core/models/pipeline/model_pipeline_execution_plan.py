@@ -26,9 +26,9 @@ class ModelPipelineExecutionPlan(BaseModel):
     execution plan can be used by multiple ``RunnerPipeline`` instances.
     """
 
-    # TODO(pydantic-v3): Re-evaluate from_attributes=True when Pydantic v3 is released.
+    # TODO(OMN-TBD): [pydantic-v3] Re-evaluate from_attributes=True when Pydantic v3 is released.
     # Workaround for pytest-xdist class identity issues. See model_pipeline_hook.py
-    # module docstring for detailed explanation.
+    # module docstring for detailed explanation.  [NEEDS TICKET]
     model_config = ConfigDict(
         frozen=True,
         extra="forbid",

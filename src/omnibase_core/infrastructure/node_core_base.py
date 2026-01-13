@@ -383,6 +383,7 @@ class NodeCoreBase(ABC):
             # Try to get contract service from container
             contract_service: Any = None
             try:
+                # NOTE(OMN-1302): String-based DI lookup returns Protocol. Safe because validated at registration.
                 contract_service = self.container.get_service("contract_service")  # type: ignore[arg-type]
             except (
                 Exception
@@ -501,6 +502,7 @@ class NodeCoreBase(ABC):
             # Try to get event bus from container
             event_bus: Any = None
             try:
+                # NOTE(OMN-1302): String-based DI lookup returns Protocol. Safe because validated at registration.
                 event_bus = self.container.get_service("event_bus")  # type: ignore[arg-type]
             except Exception:  # fallback-ok: event bus is optional for node operation
                 event_bus = None
