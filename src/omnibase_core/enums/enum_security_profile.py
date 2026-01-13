@@ -1,6 +1,7 @@
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumSecurityProfile(str, Enum):
     """Security profile levels for progressive security implementation."""
 

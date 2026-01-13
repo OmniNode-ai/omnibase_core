@@ -6,9 +6,10 @@ storage backends, consistency levels, conflict resolution, versioning,
 scoping, lifecycle, locking, isolation, and encryption options.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumStorageBackend(str, Enum):
     """Storage backend options for state persistence."""
 
@@ -18,6 +19,7 @@ class EnumStorageBackend(str, Enum):
     FILE_SYSTEM = "file_system"
 
 
+@unique
 class EnumConsistencyLevel(str, Enum):
     """Consistency levels for distributed state management."""
 
@@ -27,6 +29,7 @@ class EnumConsistencyLevel(str, Enum):
     CAUSAL = "causal"
 
 
+@unique
 class EnumConflictResolution(str, Enum):
     """Conflict resolution strategies."""
 
@@ -36,6 +39,7 @@ class EnumConflictResolution(str, Enum):
     MERGE_STRATEGY = "merge_strategy"
 
 
+@unique
 class EnumVersionScheme(str, Enum):
     """State versioning schemes."""
 
@@ -45,6 +49,7 @@ class EnumVersionScheme(str, Enum):
     UUID_BASED = "uuid_based"
 
 
+@unique
 class EnumStateScope(str, Enum):
     """State management scope options."""
 
@@ -53,6 +58,7 @@ class EnumStateScope(str, Enum):
     GLOBAL_DISTRIBUTED = "global_distributed"
 
 
+@unique
 class EnumStateLifecycle(str, Enum):
     """State lifecycle management strategies."""
 
@@ -62,6 +68,7 @@ class EnumStateLifecycle(str, Enum):
     TTL_MANAGED = "ttl_managed"
 
 
+@unique
 class EnumLockingStrategy(str, Enum):
     """Locking strategies for state access."""
 
@@ -71,6 +78,7 @@ class EnumLockingStrategy(str, Enum):
     NONE = "none"
 
 
+@unique
 class EnumIsolationLevel(str, Enum):
     """Transaction isolation levels."""
 
@@ -80,6 +88,7 @@ class EnumIsolationLevel(str, Enum):
     SERIALIZABLE = "serializable"
 
 
+@unique
 class EnumEncryptionAlgorithm(str, Enum):
     """Encryption algorithms for state data."""
 

@@ -69,157 +69,126 @@ class ModelMetadataAnalyticsSummary(BaseModel):
     # Properties for direct access
     @property
     def collection_id(self) -> UUID:
-        """Get collection ID."""
         return self.core.collection_id
 
     @collection_id.setter
     def collection_id(self, value: UUID) -> None:
-        """Set collection ID."""
         self.core.collection_id = value
 
     @property
     def collection_display_name(self) -> str | None:
-        """Get collection display name."""
         return self.core.collection_display_name
 
     @collection_display_name.setter
     def collection_display_name(self, value: str | None) -> None:
-        """Set collection display name."""
         self.core.collection_display_name = value
 
     @property
     def collection_name(self) -> str | None:
-        """Get collection name with fallback."""
         return self.core.collection_name
 
     @property
     def total_nodes(self) -> int:
-        """Get total nodes."""
         return self.core.total_nodes
 
     @total_nodes.setter
     def total_nodes(self, value: int) -> None:
-        """Set total nodes."""
         self.core.total_nodes = value
 
     @property
     def active_nodes(self) -> int:
-        """Get active nodes."""
         return self.core.active_nodes
 
     @active_nodes.setter
     def active_nodes(self, value: int) -> None:
-        """Set active nodes."""
         self.core.active_nodes = value
 
     @property
     def deprecated_nodes(self) -> int:
-        """Get deprecated nodes."""
         return self.core.deprecated_nodes
 
     @deprecated_nodes.setter
     def deprecated_nodes(self, value: int) -> None:
-        """Set deprecated nodes."""
         self.core.deprecated_nodes = value
 
     @property
     def disabled_nodes(self) -> int:
-        """Get disabled nodes."""
         return self.core.disabled_nodes
 
     @disabled_nodes.setter
     def disabled_nodes(self, value: int) -> None:
-        """Set disabled nodes."""
         self.core.disabled_nodes = value
 
     @property
     def health_score(self) -> float:
-        """Get health score."""
         return self.quality.health_score
 
     @health_score.setter
     def health_score(self, value: float) -> None:
-        """Set health score."""
         self.quality.health_score = value
 
     @property
     def success_rate(self) -> float:
-        """Get success rate."""
         return self.quality.success_rate
 
     @success_rate.setter
     def success_rate(self, value: float) -> None:
-        """Set success rate."""
         self.quality.success_rate = value
 
     @property
     def documentation_coverage(self) -> float:
-        """Get documentation coverage."""
         return self.quality.documentation_coverage
 
     @documentation_coverage.setter
     def documentation_coverage(self, value: float) -> None:
-        """Set documentation coverage."""
         self.quality.documentation_coverage = value
 
     @property
     def error_count(self) -> int:
-        """Get error count."""
         return self.errors.error_count
 
     @error_count.setter
     def error_count(self, value: int) -> None:
-        """Set error count."""
         self.errors.error_count = value
 
     @property
     def warning_count(self) -> int:
-        """Get warning count."""
         return self.errors.warning_count
 
     @warning_count.setter
     def warning_count(self, value: int) -> None:
-        """Set warning count."""
         self.errors.warning_count = value
 
     @property
     def critical_error_count(self) -> int:
-        """Get critical error count."""
         return self.errors.critical_error_count
 
     @critical_error_count.setter
     def critical_error_count(self, value: int) -> None:
-        """Set critical error count."""
         self.errors.critical_error_count = value
 
     @property
     def average_execution_time_ms(self) -> float:
-        """Get average execution time."""
         return self.performance.average_execution_time_ms
 
     @average_execution_time_ms.setter
     def average_execution_time_ms(self, value: float) -> None:
-        """Set average execution time."""
         self.performance.average_execution_time_ms = value
 
     @property
     def peak_memory_usage_mb(self) -> float:
-        """Get peak memory usage."""
         return self.performance.peak_memory_usage_mb
 
     @peak_memory_usage_mb.setter
     def peak_memory_usage_mb(self, value: float) -> None:
-        """Set peak memory usage."""
         self.performance.peak_memory_usage_mb = value
 
     @property
     def total_invocations(self) -> int:
-        """Get total invocations."""
         return self.performance.total_invocations
 
     @total_invocations.setter
     def total_invocations(self, value: int) -> None:
-        """Set total invocations."""
         self.performance.total_invocations = value
 
     # Composite methods

@@ -22,9 +22,9 @@ class ModelValidationWarning(BaseModel):
     (frozen=True) and can be safely shared across threads.
     """
 
-    # TODO(pydantic-v3): Re-evaluate from_attributes=True when Pydantic v3 is released.
+    # TODO(OMN-TBD): [pydantic-v3] Re-evaluate from_attributes=True when Pydantic v3 is released.
     # Workaround for pytest-xdist class identity issues. See model_pipeline_hook.py
-    # module docstring for detailed explanation.
+    # module docstring for detailed explanation.  [NEEDS TICKET]
     model_config = ConfigDict(
         frozen=True,
         extra="forbid",

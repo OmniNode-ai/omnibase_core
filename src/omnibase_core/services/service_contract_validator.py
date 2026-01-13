@@ -210,7 +210,7 @@ class ServiceContractValidator:
             )
 
         try:
-            # Validate using Pydantic model
+            # NOTE(OMN-1302): Duck-typed Pydantic model from registry. Safe because models validated at registration.
             contract_instance = contract_model.model_validate(yaml_data)  # type: ignore[attr-defined]
 
             # Step 3: Check ONEX compliance

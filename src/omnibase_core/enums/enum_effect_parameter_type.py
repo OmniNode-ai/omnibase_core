@@ -4,9 +4,10 @@ Effect parameter type enumeration.
 Defines types for discriminated union in effect parameters.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumEffectParameterType(str, Enum):
     """Effect parameter type enumeration for discriminated unions."""
 

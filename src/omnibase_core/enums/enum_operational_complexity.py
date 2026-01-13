@@ -10,9 +10,11 @@ Part of the unified complexity enum consolidation strategy.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumOperationalComplexity(str, Enum):
+class EnumOperationalComplexity(StrValueHelper, str, Enum):
     """
     Operational complexity levels for runtime and execution characteristics.
 
@@ -26,10 +28,6 @@ class EnumOperationalComplexity(str, Enum):
     STANDARD = "standard"  # < 10s, moderate resources
     INTENSIVE = "intensive"  # < 60s, high resources
     HEAVY = "heavy"  # > 60s, very high resources
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def get_estimated_runtime_seconds(

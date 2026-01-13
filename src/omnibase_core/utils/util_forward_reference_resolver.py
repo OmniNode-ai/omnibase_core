@@ -278,7 +278,8 @@ def rebuild_model_references(
     try:
         from pydantic import PydanticSchemaGenerationError, PydanticUserError
     except ImportError:
-        # Fallback for older Pydantic versions
+        # NOTE(OMN-1302): Fallback exception types for older Pydantic versions.
+        # Safe because only used in except clauses where parent types work.
         PydanticSchemaGenerationError = TypeError  # type: ignore[misc, assignment]
         PydanticUserError = ValueError  # type: ignore[misc, assignment]
 

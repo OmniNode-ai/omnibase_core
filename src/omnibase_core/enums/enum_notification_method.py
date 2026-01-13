@@ -4,9 +4,10 @@ Notification Method Enumeration.
 HTTP methods for webhook notifications in ONEX infrastructure.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumNotificationMethod(str, Enum):
     """Enumeration for HTTP notification methods used in webhook communications."""
 

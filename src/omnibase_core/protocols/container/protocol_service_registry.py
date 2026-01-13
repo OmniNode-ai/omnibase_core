@@ -63,19 +63,13 @@ class ProtocolServiceRegistry(Protocol):
     """
 
     @property
-    def config(self) -> ProtocolServiceRegistryConfig:
-        """Get registry configuration."""
-        ...
+    def config(self) -> ProtocolServiceRegistryConfig: ...
 
     @property
-    def validator(self) -> ProtocolServiceValidator | None:
-        """Get optional service validator."""
-        ...
+    def validator(self) -> ProtocolServiceValidator | None: ...
 
     @property
-    def factory(self) -> ProtocolServiceFactory | None:
-        """Get optional service factory."""
-        ...
+    def factory(self) -> ProtocolServiceFactory | None: ...
 
     async def register_service(
         self,
@@ -84,9 +78,7 @@ class ProtocolServiceRegistry(Protocol):
         lifecycle: LiteralServiceLifecycle,
         scope: LiteralInjectionScope,
         configuration: dict[str, ContextValue] | None = None,
-    ) -> UUID:
-        """Register a service implementation."""
-        ...
+    ) -> UUID: ...
 
     async def register_instance(
         self,
@@ -94,9 +86,7 @@ class ProtocolServiceRegistry(Protocol):
         instance: TInterface,
         scope: LiteralInjectionScope = "global",
         metadata: dict[str, ContextValue] | None = None,
-    ) -> UUID:
-        """Register an existing instance."""
-        ...
+    ) -> UUID: ...
 
     async def register_factory(
         self,
@@ -104,121 +94,81 @@ class ProtocolServiceRegistry(Protocol):
         factory: ProtocolServiceFactory,
         lifecycle: LiteralServiceLifecycle = "transient",
         scope: LiteralInjectionScope = "global",
-    ) -> UUID:
-        """Register a service factory."""
-        ...
+    ) -> UUID: ...
 
-    async def unregister_service(self, registration_id: UUID) -> bool:
-        """Unregister a service."""
-        ...
+    async def unregister_service(self, registration_id: UUID) -> bool: ...
 
     async def resolve_service(
         self,
         interface: type[TInterface],
         scope: LiteralInjectionScope | None = None,
         context: dict[str, ContextValue] | None = None,
-    ) -> TInterface:
-        """Resolve a service by interface."""
-        ...
+    ) -> TInterface: ...
 
     async def resolve_named_service(
         self,
         interface: type[TInterface],
         name: str,
         scope: LiteralInjectionScope | None = None,
-    ) -> TInterface:
-        """Resolve a named service."""
-        ...
+    ) -> TInterface: ...
 
     async def resolve_all_services(
         self, interface: type[TInterface], scope: LiteralInjectionScope | None = None
-    ) -> list[TInterface]:
-        """Resolve all services matching interface."""
-        ...
+    ) -> list[TInterface]: ...
 
     async def try_resolve_service(
         self, interface: type[TInterface], scope: LiteralInjectionScope | None = None
-    ) -> TInterface | None:
-        """Try to resolve a service, returning None if not found."""
-        ...
+    ) -> TInterface | None: ...
 
     async def get_registration(
         self, registration_id: UUID
-    ) -> ProtocolServiceRegistration | None:
-        """Get registration by ID."""
-        ...
+    ) -> ProtocolServiceRegistration | None: ...
 
     async def get_registrations_by_interface(
         self, interface: type[T]
-    ) -> list[ProtocolServiceRegistration]:
-        """Get all registrations for an interface."""
-        ...
+    ) -> list[ProtocolServiceRegistration]: ...
 
-    async def get_all_registrations(self) -> list[ProtocolServiceRegistration]:
-        """Get all registrations."""
-        ...
+    async def get_all_registrations(self) -> list[ProtocolServiceRegistration]: ...
 
     async def get_active_instances(
         self, registration_id: UUID | None = None
-    ) -> list[ProtocolManagedServiceInstance]:
-        """Get active instances."""
-        ...
+    ) -> list[ProtocolManagedServiceInstance]: ...
 
     async def dispose_instances(
         self, registration_id: UUID, scope: LiteralInjectionScope | None = None
-    ) -> int:
-        """Dispose instances for a registration."""
-        ...
+    ) -> int: ...
 
     async def validate_registration(
         self, registration: ProtocolServiceRegistration
-    ) -> bool:
-        """Validate a registration."""
-        ...
+    ) -> bool: ...
 
     async def detect_circular_dependencies(
         self, registration: ProtocolServiceRegistration
-    ) -> list[UUID]:
-        """Detect circular dependencies."""
-        ...
+    ) -> list[UUID]: ...
 
     async def get_dependency_graph(
         self, service_id: UUID
-    ) -> ProtocolDependencyGraph | None:
-        """Get dependency graph for a service."""
-        ...
+    ) -> ProtocolDependencyGraph | None: ...
 
-    async def get_registry_status(self) -> ProtocolServiceRegistryStatus:
-        """Get registry status."""
-        ...
+    async def get_registry_status(self) -> ProtocolServiceRegistryStatus: ...
 
     async def validate_service_health(
         self, registration_id: UUID
-    ) -> ProtocolValidationResult:
-        """Validate service health."""
-        ...
+    ) -> ProtocolValidationResult: ...
 
     async def update_service_configuration(
         self, registration_id: UUID, configuration: dict[str, ContextValue]
-    ) -> bool:
-        """Update service configuration."""
-        ...
+    ) -> bool: ...
 
     async def create_injection_scope(
         self, scope_name: str, parent_scope: UUID | None = None
-    ) -> UUID:
-        """Create a new injection scope."""
-        ...
+    ) -> UUID: ...
 
-    async def dispose_injection_scope(self, scope_id: UUID) -> int:
-        """Dispose an injection scope."""
-        ...
+    async def dispose_injection_scope(self, scope_id: UUID) -> int: ...
 
     async def get_injection_context(
         self, context_id: UUID
-    ) -> ProtocolInjectionContext | None:
-        """Get injection context."""
-        ...
+    ) -> ProtocolInjectionContext | None: ...
 
 
 __all__ = ["ProtocolServiceRegistry"]

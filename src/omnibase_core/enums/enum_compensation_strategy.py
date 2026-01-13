@@ -11,9 +11,11 @@ Replaces Literal["rollback", "forward_recovery", "mixed"] patterns.
 from enum import Enum, unique
 from typing import Literal, assert_never
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumCompensationStrategy(str, Enum):
+class EnumCompensationStrategy(StrValueHelper, str, Enum):
     """
     Strongly typed compensation strategy discriminators.
 
@@ -26,10 +28,6 @@ class EnumCompensationStrategy(str, Enum):
     ROLLBACK = "rollback"
     FORWARD_RECOVERY = "forward_recovery"
     MIXED = "mixed"
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def is_backward_looking(cls, strategy: EnumCompensationStrategy) -> bool:

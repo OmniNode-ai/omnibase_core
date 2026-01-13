@@ -4,9 +4,10 @@ Enum for event delivery modes.
 Defines the available modes for event delivery in the ONEX system.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumDeliveryMode(str, Enum):
     """
     Enumeration of event delivery modes.

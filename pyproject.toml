@@ -34,16 +34,10 @@ classifiers = [
 ]
 dependencies = [
     "pydantic>=2.11.7,<3.0.0",
-    "llama-index>=0.14.0,<0.15.0",
-    "pypdf>=6.1.0,<7.0.0",
-    "fastapi>=0.120.1,<0.121.0",
-    "starlette>=0.49.1,<0.50.0",
-    "uvicorn>=0.32.0,<0.33.0",
     "pyyaml>=6.0.2,<7.0.0",
     "dependency-injector>=4.48.1,<5.0.0",
     "deepdiff>=8.0.0,<9.0.0",
     "click>=8.1.0,<9.0.0",
-    "rich>=13.7.0,<14.0.0",
     "cryptography>=46.0.3,<47.0.0",
     "jsonschema>=4.25.1,<5.0.0"
 ]
@@ -81,18 +75,11 @@ include = [
 python = "^3.12"
 # NOTE: omnibase-spi removed in v0.3.6 - SPI now depends on Core (dependency inversion)
 pydantic = "^2.12.5"
-llama-index = "^0.14.10"  # Updated for pypdf 6.0+ security fix (CVE-2025-55197)
-pypdf = "^6.5.0"  # Security fix for CVE-2025-55197
-fastapi = "^0.120.1"  # Updated to 0.120.1+ for starlette 0.49.x compatibility
-starlette = "^0.49.1"  # Security fix for CVE-2025-62727 (O(n^2) DoS via Range header)
-uvicorn = "^0.32.0"
 pyyaml = "^6.0.2"
 dependency-injector = "^4.48.3"
-deepdiff = "^8.0.0"
 
 # CLI Dependencies
 click = "^8.3.1"
-rich = "^13.7.0"
 
 # Optional CLI Dependencies
 psutil = {version = "^7.2.1", optional = true}
@@ -112,7 +99,6 @@ ruff = "^0.14.7"
 types-pyyaml = "^6.0.12.20250822"
 pre-commit = "^4.5.1"
 types-requests = "^2.32.4.20250913"
-memory-profiler = "^0.61.0"
 pyyaml = "^6.0.3"
 pytest-cov = "^7.0.0"
 pytest-xdist = "^3.8.0"

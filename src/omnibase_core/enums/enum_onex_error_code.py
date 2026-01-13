@@ -1,8 +1,9 @@
 """Base class for ONEX error codes."""
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumOnexErrorCode(str, Enum):
     """
     Base class for ONEX error codes.

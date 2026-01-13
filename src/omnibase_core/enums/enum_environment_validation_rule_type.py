@@ -5,9 +5,10 @@ Defines the types of validation rules that can be applied to
 environment-specific configuration values.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumEnvironmentValidationRuleType(str, Enum):
     """Environment validation rule type enumeration."""
 

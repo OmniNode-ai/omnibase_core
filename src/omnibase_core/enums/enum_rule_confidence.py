@@ -2,9 +2,10 @@
 Enum for confidence levels for learned rules.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumRuleConfidence(str, Enum):
     """Confidence levels for learned rules."""
 

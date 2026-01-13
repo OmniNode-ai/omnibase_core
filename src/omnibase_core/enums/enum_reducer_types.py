@@ -5,9 +5,10 @@ Defines enums for reduction operations, conflict resolution strategies,
 and streaming processing modes.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumReductionType(Enum):
     """Types of reduction operations supported."""
 
@@ -23,6 +24,7 @@ class EnumReductionType(Enum):
     TRANSFORM = "transform"  # Data transformation
 
 
+@unique
 class EnumConflictResolution(Enum):
     """Strategies for resolving conflicts during reduction."""
 
@@ -33,6 +35,7 @@ class EnumConflictResolution(Enum):
     CUSTOM = "custom"  # Use custom resolution function
 
 
+@unique
 class EnumStreamingMode(Enum):
     """Streaming processing modes."""
 

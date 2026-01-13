@@ -1,8 +1,9 @@
 """File Event Type enumeration generated from contract."""
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumFileEventType(Enum):
     """Types of filesystem events that can be monitored."""
 

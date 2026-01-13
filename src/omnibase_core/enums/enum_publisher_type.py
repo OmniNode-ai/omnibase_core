@@ -2,9 +2,10 @@
 Publisher type enumeration for event publishing selection.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumPublisherType(str, Enum):
     """Types of event publishers available."""
 

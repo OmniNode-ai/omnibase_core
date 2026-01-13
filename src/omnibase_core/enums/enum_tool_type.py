@@ -5,10 +5,13 @@ This provides type safety and a single source of truth for tool names,
 avoiding string-based lookups and potential typos.
 """
 
-from enum import Enum
+from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumToolType(str, Enum):
+@unique
+class EnumToolType(StrValueHelper, str, Enum):
     """Enumeration of all tool types available in node_manager."""
 
     # Core generation tools

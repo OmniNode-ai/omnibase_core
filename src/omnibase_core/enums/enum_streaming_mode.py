@@ -1,8 +1,9 @@
 """Streaming mode enumeration for data processing strategies."""
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumStreamingMode(Enum):
     """Streaming processing modes."""
 

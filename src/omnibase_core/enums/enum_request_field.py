@@ -1,8 +1,9 @@
 """Request field names in Claude API."""
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumRequestField(str, Enum):
     """Request field names in Claude API."""
 

@@ -28,9 +28,10 @@ EnumLogLevel: Based on SPI LogLevel Literal type for consistency
 EnumLogLevel: For validation and generation result classification
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumLogLevel(str, Enum):
     """Log levels enum based on SPI LogLevel Literal type and severity levels for validation."""
 

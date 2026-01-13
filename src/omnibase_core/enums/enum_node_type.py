@@ -10,6 +10,8 @@ Strongly typed node type values for ONEX architecture node classification.
 from enum import Enum, unique
 from typing import TYPE_CHECKING
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 if TYPE_CHECKING:
     from omnibase_core.enums.enum_node_kind import EnumNodeKind
 
@@ -93,7 +95,7 @@ def _populate_kind_map() -> None:
 
 
 @unique
-class EnumNodeType(str, Enum):
+class EnumNodeType(StrValueHelper, str, Enum):
     """
     Specific node implementation types for ONEX architecture.
 
@@ -147,10 +149,6 @@ class EnumNodeType(str, Enum):
     WORKFLOW = "WORKFLOW"
     SERVICE = "SERVICE"
     UNKNOWN = "UNKNOWN"
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def is_processing_node(cls, node_type: EnumNodeType) -> bool:

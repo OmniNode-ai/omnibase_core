@@ -6,9 +6,11 @@ Strongly typed enumeration for generic value type discriminators.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumValueType(str, Enum):
+class EnumValueType(StrValueHelper, str, Enum):
     """
     Strongly typed value type discriminators for ModelGenericValue.
 
@@ -25,10 +27,6 @@ class EnumValueType(str, Enum):
     LIST_INTEGER = "list_integer"
     DICT = "dict"
     NULL = "null"
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def is_primitive_type(cls, value_type: "EnumValueType") -> bool:

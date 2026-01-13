@@ -4,9 +4,10 @@ Enum for case style types supported by ONEX.
 Defines all supported case styles for string conversion operations.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumCaseStyle(str, Enum):
     """Enum for case style types."""
 

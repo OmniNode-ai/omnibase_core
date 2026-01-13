@@ -4,9 +4,10 @@ RSD Edge Type Enumeration.
 Defines edge types for RSD (Rapid Service Development) ticket relationships.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumRsdEdgeType(str, Enum):
     """Enumeration of RSD edge types for ticket relationships."""
 

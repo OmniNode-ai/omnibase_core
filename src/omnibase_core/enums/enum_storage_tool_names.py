@@ -3,9 +3,10 @@ Enum for storage tool names.
 Single responsibility: Centralized storage tool name definitions.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumStorageToolNames(str, Enum):
     """Storage tool names following ONEX enum-backed naming standards."""
 

@@ -103,7 +103,7 @@ class ModelExternalServiceConfig(BaseModel):
                 and callable(connection_config.get)
                 and connection_config  # Check if not empty
             ):
-                if service_type in ["database", "db", "postgresql", "mysql"]:
+                if service_type in {"database", "db", "postgresql", "mysql"}:
                     try:
                         values["connection_config"] = ModelDatabaseConnectionConfig(
                             **connection_config,
@@ -120,7 +120,7 @@ class ModelExternalServiceConfig(BaseModel):
                             msg,
                             error_code=EnumCoreErrorCode.OPERATION_FAILED,
                         ) from e
-                elif service_type in ["rest_api", "api", "http", "https"]:
+                elif service_type in {"rest_api", "api", "http", "https"}:
                     try:
                         values["connection_config"] = ModelRestApiConnectionConfig(
                             **connection_config,

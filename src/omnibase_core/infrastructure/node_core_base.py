@@ -362,19 +362,15 @@ class NodeCoreBase(ABC):
         }
 
     def get_node_id(self) -> UUID:
-        """Get unique node identifier."""
         return self.node_id
 
     def get_node_type(self) -> str:
-        """Get node type classification."""
         return self.__class__.__name__
 
     def get_version(self) -> ModelSemVer:
-        """Get node version."""
         return self.version
 
     def get_state(self) -> dict[str, str]:
-        """Get current node state."""
         return dict(self.state)
 
     async def _load_contract(self) -> None:
@@ -388,6 +384,7 @@ class NodeCoreBase(ABC):
             # Try to get contract service from container
             contract_service: Any = None
             try:
+                # NOTE(OMN-1302): String-based DI lookup returns Protocol. Safe because validated at registration.
                 contract_service = self.container.get_service("contract_service")  # type: ignore[arg-type]
             except (
                 Exception
@@ -506,6 +503,7 @@ class NodeCoreBase(ABC):
             # Try to get event bus from container
             event_bus: Any = None
             try:
+                # NOTE(OMN-1302): String-based DI lookup returns Protocol. Safe because validated at registration.
                 event_bus = self.container.get_service("event_bus")  # type: ignore[arg-type]
             except Exception:  # fallback-ok: event bus is optional for node operation
                 event_bus = None

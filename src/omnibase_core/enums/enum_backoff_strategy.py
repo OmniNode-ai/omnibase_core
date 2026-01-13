@@ -4,9 +4,10 @@ Backoff Strategy Enumeration.
 Retry backoff strategies for infrastructure resilience in ONEX systems.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumBackoffStrategy(str, Enum):
     """Enumeration for retry backoff strategies used in infrastructure components."""
 

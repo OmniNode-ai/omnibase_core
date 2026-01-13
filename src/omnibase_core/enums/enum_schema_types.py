@@ -4,9 +4,10 @@ Schema type enumeration for AST generation.
 Provides standardized mapping between JSON schema types and Python types.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumSchemaTypes(str, Enum):
     """Schema type enumeration for type-safe AST generation."""
 

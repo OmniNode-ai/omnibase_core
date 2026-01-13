@@ -85,19 +85,19 @@ class ModelArgumentMap(BaseModel):
             # guarded by an if-check ensuring the return type matches T.
             try:
                 if expected_type == str:
-                    # safe: str() always returns str when expected_type == str
+                    # NOTE(OMN-1302): TypeVar T cannot be narrowed by expected_type check. Safe because str() always returns str.
                     return str(value)  # type: ignore[return-value]
                 if expected_type == int:
-                    # safe: int() returns int; arg-type ignored for Any input
+                    # NOTE(OMN-1302): TypeVar T cannot be narrowed by expected_type check. Safe because int() returns int; arg-type ignored for Any input.
                     return int(value)  # type: ignore[return-value,arg-type]
                 if expected_type == float:
-                    # safe: float() returns float; arg-type ignored for Any input
+                    # NOTE(OMN-1302): TypeVar T cannot be narrowed by expected_type check. Safe because float() returns float; arg-type ignored for Any input.
                     return float(value)  # type: ignore[return-value,arg-type]
                 if expected_type == bool:
                     if isinstance(value, str):
-                        # safe: bool comparison returns bool when expected_type == bool
+                        # NOTE(OMN-1302): TypeVar T cannot be narrowed by expected_type check. Safe because bool comparison returns bool.
                         return value.lower() in ("true", "1", "yes", "on")  # type: ignore[return-value]
-                    # safe: bool() always returns bool when expected_type == bool
+                    # NOTE(OMN-1302): TypeVar T cannot be narrowed by expected_type check. Safe because bool() always returns bool.
                     return bool(value)  # type: ignore[return-value]
             except (TypeError, ValueError):
                 pass
@@ -183,19 +183,19 @@ class ModelArgumentMap(BaseModel):
             # guarded by an if-check ensuring the return type matches T.
             try:
                 if expected_type == str:
-                    # safe: str() always returns str when expected_type == str
+                    # NOTE(OMN-1302): TypeVar T cannot be narrowed by expected_type check. Safe because str() always returns str.
                     return str(value)  # type: ignore[return-value]
                 if expected_type == int:
-                    # safe: int() returns int; arg-type ignored for Any input
+                    # NOTE(OMN-1302): TypeVar T cannot be narrowed by expected_type check. Safe because int() returns int; arg-type ignored for Any input.
                     return int(value)  # type: ignore[return-value,arg-type]
                 if expected_type == float:
-                    # safe: float() returns float; arg-type ignored for Any input
+                    # NOTE(OMN-1302): TypeVar T cannot be narrowed by expected_type check. Safe because float() returns float; arg-type ignored for Any input.
                     return float(value)  # type: ignore[return-value,arg-type]
                 if expected_type == bool:
                     if isinstance(value, str):
-                        # safe: bool comparison returns bool when expected_type == bool
+                        # NOTE(OMN-1302): TypeVar T cannot be narrowed by expected_type check. Safe because bool comparison returns bool.
                         return value.lower() in ("true", "1", "yes", "on")  # type: ignore[return-value]
-                    # safe: bool() always returns bool when expected_type == bool
+                    # NOTE(OMN-1302): TypeVar T cannot be narrowed by expected_type check. Safe because bool() always returns bool.
                     return bool(value)  # type: ignore[return-value]
             except (TypeError, ValueError):
                 pass

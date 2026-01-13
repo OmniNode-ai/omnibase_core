@@ -57,7 +57,7 @@ class ModelEnvironmentAccessor(ModelFieldAccessor):
                 if isinstance(raw_value, str):
                     return cast(
                         "T",
-                        raw_value.lower() in ["true", "yes", "1", "on", "enabled"],
+                        raw_value.lower() in {"true", "yes", "1", "on", "enabled"},
                     )
                 if isinstance(raw_value, (int, float)):
                     return cast("T", bool(raw_value))

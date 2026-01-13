@@ -7,9 +7,11 @@ during semantic diffing operations.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumContractDiffChangeType(str, Enum):
+class EnumContractDiffChangeType(StrValueHelper, str, Enum):
     """
     Types of changes detected during contract diff operations.
 
@@ -50,10 +52,6 @@ class EnumContractDiffChangeType(str, Enum):
 
     UNCHANGED = "unchanged"
     """The field or element has the same value in both versions."""
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @property
     def is_change(self) -> bool:

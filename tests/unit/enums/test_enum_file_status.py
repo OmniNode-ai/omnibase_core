@@ -84,6 +84,49 @@ class TestEnumFileStatus:
         actual_values = {e.value for e in EnumFileStatus}
         assert actual_values == expected_values
 
+    def test_enum_member_names_are_upper_snake_case(self):
+        """Verify EnumFileStatus member names follow UPPER_SNAKE_CASE convention.
+
+        This test ensures naming convention compliance and catches regressions
+        if someone adds a lowercase or mixed-case member name.
+        See: OMN-1307
+        """
+        import re
+
+        # Expected members with their lowercase string values
+        expected_members = {
+            "EMPTY": "empty",
+            "UNVALIDATED": "unvalidated",
+            "VALIDATED": "validated",
+            "DEPRECATED": "deprecated",
+            "INCOMPLETE": "incomplete",
+            "SYNTHETIC": "synthetic",
+        }
+
+        # Verify all expected members exist with correct values
+        for member_name, expected_value in expected_members.items():
+            assert hasattr(EnumFileStatus, member_name), (
+                f"Missing expected member: {member_name}"
+            )
+            member = getattr(EnumFileStatus, member_name)
+            assert member.value == expected_value, (
+                f"Wrong value for {member_name}: expected '{expected_value}', got '{member.value}'"
+            )
+
+        # Verify all members follow UPPER_SNAKE_CASE pattern
+        upper_snake_case_pattern = re.compile(r"^[A-Z][A-Z0-9]*(_[A-Z0-9]+)*$")
+        for member in EnumFileStatus:
+            assert upper_snake_case_pattern.match(member.name), (
+                f"Member '{member.name}' does not follow UPPER_SNAKE_CASE convention"
+            )
+
+        # Verify no unexpected members were added
+        actual_member_names = {member.name for member in EnumFileStatus}
+        expected_member_names = set(expected_members.keys())
+        assert actual_member_names == expected_member_names, (
+            f"Unexpected members found: {actual_member_names - expected_member_names}"
+        )
+
     def test_enum_docstring(self):
         """Test that enum has proper docstring."""
         # The enum doesn't have a docstring, so we'll test the module docstring instead

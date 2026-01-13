@@ -5,9 +5,10 @@ Hub Capability Enum.
 Strongly-typed enum for hub capability types for different domains.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumHubCapability(str, Enum):
     """Hub capability types for different domains."""
 

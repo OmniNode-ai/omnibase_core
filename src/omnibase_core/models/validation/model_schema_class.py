@@ -27,7 +27,6 @@ class ModelSchema(BaseModel):
     type: str | None = None
     properties: ModelSchemaPropertiesModel | None = None
     required: ModelRequiredFieldsModel | None = None
-    # TODO: Add more fields and validation logic in M1+
 
 
 # Compatibility aliases

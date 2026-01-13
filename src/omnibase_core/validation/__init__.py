@@ -212,11 +212,13 @@ def __getattr__(name: str) -> type:
     if name == "CONTRACT_MODELS":
         from omnibase_core.validation.validator_contract_linter import CONTRACT_MODELS
 
+        # NOTE(OMN-1302): Lazy import returns module-level dict. Safe because attribute known to exist.
         return CONTRACT_MODELS  # type: ignore[return-value]
 
     if name == "NODE_TYPE_MAPPING":
         from omnibase_core.validation.validator_contract_linter import NODE_TYPE_MAPPING
 
+        # NOTE(OMN-1302): Lazy import returns module-level dict. Safe because attribute known to exist.
         return NODE_TYPE_MAPPING  # type: ignore[return-value]
 
     if name in (
@@ -231,6 +233,7 @@ def __getattr__(name: str) -> type:
     ):
         import omnibase_core.validation.validator_contract_linter as vcl
 
+        # NOTE(OMN-1302): Lazy import returns module constant. Safe because name checked in conditional.
         return getattr(vcl, name)  # type: ignore[return-value]
 
     raise AttributeError(  # error-ok: required for __getattr__ protocol

@@ -4,10 +4,11 @@ Effect Handler Type Enumeration.
 Eliminates raw string handler types to prevent typo bugs and enable IDE completion.
 """
 
-from enum import Enum
+from enum import Enum, unique
 from typing import Never, NoReturn
 
 
+@unique
 class EnumEffectHandlerType(str, Enum):
     """
     Enumeration of supported effect handler types.

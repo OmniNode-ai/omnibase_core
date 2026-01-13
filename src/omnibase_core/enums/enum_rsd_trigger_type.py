@@ -4,9 +4,10 @@ RSD Trigger Type Enumeration.
 Defines trigger types for RSD (Rapid Service Development) algorithm.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumRsdTriggerType(str, Enum):
     """Enumeration of RSD trigger types."""
 

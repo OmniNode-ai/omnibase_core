@@ -5,9 +5,10 @@ Provides strongly-typed error types for LLM-specific error handling
 with proper ONEX enum naming conventions.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumErrorType(str, Enum):
     """LLM-specific error types."""
 

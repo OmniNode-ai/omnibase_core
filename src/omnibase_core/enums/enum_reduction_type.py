@@ -1,8 +1,9 @@
 """Reduction type enumeration for data aggregation operations."""
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumReductionType(Enum):
     """Types of reduction operations supported."""
 

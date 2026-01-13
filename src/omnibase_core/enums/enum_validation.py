@@ -12,9 +12,10 @@ Note (OMN-1311):
     Import severity from: omnibase_core.enums.enum_severity import EnumSeverity
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumValidationLevel(str, Enum):
     """
     Validation levels for pipeline data integrity.

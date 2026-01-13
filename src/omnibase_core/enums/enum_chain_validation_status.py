@@ -1,6 +1,9 @@
-from enum import Enum
+"""Chain validation status for signature verification."""
+
+from enum import Enum, unique
 
 
+@unique
 class EnumChainValidationStatus(str, Enum):
     """Status of signature chain validation."""
 

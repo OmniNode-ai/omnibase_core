@@ -5,9 +5,10 @@ Provides strongly-typed health status values for provider health checks
 and monitoring with proper ONEX enum naming conventions.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumHealthStatus(str, Enum):
     """Health status for LLM provider health checks and system components."""
 
