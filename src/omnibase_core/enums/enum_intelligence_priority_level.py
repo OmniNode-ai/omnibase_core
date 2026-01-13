@@ -5,9 +5,10 @@ Provides structured priority level definitions for intelligence
 context sharing and processing prioritization.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumIntelligencePriorityLevel(str, Enum):
     """
     Enum for intelligence priority levels with validation.

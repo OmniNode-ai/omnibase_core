@@ -1,6 +1,7 @@
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumWorkflowCondition(Enum):
     """Enumeration of Workflow node execution conditions."""
 

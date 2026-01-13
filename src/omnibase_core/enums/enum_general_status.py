@@ -11,11 +11,13 @@ base status values while adding commonly needed general status concepts.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 from .enum_base_status import EnumBaseStatus
 
 
 @unique
-class EnumGeneralStatus(str, Enum):
+class EnumGeneralStatus(StrValueHelper, str, Enum):
     """
     General purpose status enumeration extending base status hierarchy.
 
@@ -75,10 +77,6 @@ class EnumGeneralStatus(str, Enum):
 
     # Processing states (specific to general status)
     PROCESSING = "processing"
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     def to_base_status(self) -> EnumBaseStatus:
         """Convert to base status enum for universal operations."""

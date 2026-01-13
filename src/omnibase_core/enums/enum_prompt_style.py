@@ -5,9 +5,10 @@ Provides strongly-typed formatting styles for prompt construction
 with proper ONEX enum naming conventions.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumPromptStyle(str, Enum):
     """Prompt formatting styles."""
 

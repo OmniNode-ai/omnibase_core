@@ -178,7 +178,7 @@ class ModelEventBusInputState(BaseModel):
             with contextlib.suppress(ValueError):
                 updates["timeout_seconds"] = int(timeout)
         if priority := os.getenv(f"{env_prefix}PRIORITY"):
-            if priority.lower() in ["low", "normal", "high", "critical"]:
+            if priority.lower() in {"low", "normal", "high", "critical"}:
                 updates["priority"] = priority.lower()
         if retry_count := os.getenv(f"{env_prefix}RETRY_COUNT"):
             with contextlib.suppress(ValueError):

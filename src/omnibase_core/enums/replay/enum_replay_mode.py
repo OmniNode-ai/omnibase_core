@@ -9,9 +9,10 @@ enabling deterministic execution recording and playback.
 .. versionadded:: 0.4.0
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumReplayMode(str, Enum):
     """Mode for replay infrastructure.
 

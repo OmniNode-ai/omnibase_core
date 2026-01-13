@@ -5,9 +5,10 @@ Defines the valid types for ONEX URIs as referenced in
 node contracts and structural conventions.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumUriType(str, Enum):
     """Valid types for ONEX URIs."""
 

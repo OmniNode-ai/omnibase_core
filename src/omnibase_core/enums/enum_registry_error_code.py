@@ -4,11 +4,13 @@ Canonical error codes for ONEX tool/handler registries.
 """
 
 import re
+from enum import unique
 
 from omnibase_core.enums.enum_cli_exit_code import EnumCLIExitCode
 from omnibase_core.enums.enum_onex_error_code import EnumOnexErrorCode
 
 
+@unique
 class EnumRegistryErrorCode(EnumOnexErrorCode):
     """
     Canonical error codes for ONEX tool/handler registries.

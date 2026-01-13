@@ -17,11 +17,12 @@ Example:
         # config = ModelDashboardConfig(..., theme=theme)
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 __all__ = ("EnumDashboardTheme",)
 
 
+@unique
 class EnumDashboardTheme(str, Enum):
     """Dashboard visual theme enumeration.
 

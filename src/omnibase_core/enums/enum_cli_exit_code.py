@@ -3,9 +3,10 @@
 Standard CLI exit codes for ONEX operations.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumCLIExitCode(int, Enum):
     """Standard CLI exit codes for ONEX operations.
 

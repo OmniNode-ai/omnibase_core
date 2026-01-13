@@ -2,9 +2,10 @@
 Enum for role levels.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumRoleLevel(str, Enum):
     """Role levels for users."""
 

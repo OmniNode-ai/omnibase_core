@@ -1,6 +1,9 @@
-from enum import Enum
+"""Dependency injection modes for real vs mock services."""
+
+from enum import Enum, unique
 
 
+@unique
 class EnumDependencyMode(str, Enum):
     """
     Canonical enum for scenario dependency injection modes.

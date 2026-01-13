@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import Enum, unique
 
 # === OmniNode:Metadata ===
 # author: OmniNode Team
@@ -24,6 +24,7 @@ from enum import Enum
 # === /OmniNode:Metadata ===
 
 
+@unique
 class EnumLifecycle(str, Enum):
     DRAFT = "draft"
     ACTIVE = "active"
@@ -31,6 +32,7 @@ class EnumLifecycle(str, Enum):
     ARCHIVED = "archived"
 
 
+@unique
 class EnumEntrypointType(str, Enum):
     PYTHON = "python"
     CLI = "cli"
@@ -43,6 +45,7 @@ class EnumEntrypointType(str, Enum):
     HTML = "html"
 
 
+@unique
 class EnumMetaType(str, Enum):
     TOOL = "tool"
     VALIDATOR = "validator"
@@ -56,12 +59,14 @@ class EnumMetaType(str, Enum):
     UNKNOWN = "unknown"
 
 
+@unique
 class EnumProtocolVersion(str, Enum):
     V0_1_0 = "0.1.0"
     V1_0_0 = "1.0.0"
     # Add more as needed
 
 
+@unique
 class EnumRuntimeLanguage(str, Enum):
     PYTHON = "python"
     JAVASCRIPT = "javascript"
@@ -71,6 +76,7 @@ class EnumRuntimeLanguage(str, Enum):
     UNKNOWN = "unknown"
 
 
+@unique
 class EnumNodeMetadataField(Enum):
     """
     Canonical Enum for all NodeMetadataBlock field names.
@@ -183,6 +189,7 @@ class EnumNodeMetadataField(Enum):
         return (cls.HASH, cls.LAST_MODIFIED_AT)
 
 
+@unique
 class EnumUriType(str, Enum):
     TOOL = "tool"
     VALIDATOR = "validator"
@@ -200,11 +207,13 @@ SCHEMA_REF = "schema_ref"
 # Add more as needed
 
 
+@unique
 class EnumToolType(str, Enum):
     FUNCTION = "function"
     # Add more tool types as needed (e.g., SCRIPT, PIPELINE, etc.)
 
 
+@unique
 class EnumToolRegistryMode(str, Enum):
     REAL = "real"
     MOCK = "mock"

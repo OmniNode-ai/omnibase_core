@@ -11,9 +11,11 @@ from __future__ import annotations
 from enum import Enum, unique
 from typing import Never, NoReturn
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumComputeCapability(str, Enum):
+class EnumComputeCapability(StrValueHelper, str, Enum):
     """
     Enumeration of supported compute node capabilities.
 
@@ -45,10 +47,6 @@ class EnumComputeCapability(str, Enum):
 
     VALIDATE = "validate"
     """Data validation operations."""
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def values(cls) -> list[str]:

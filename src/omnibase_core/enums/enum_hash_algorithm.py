@@ -22,13 +22,14 @@ Example:
 """
 
 import re
-from enum import Enum
+from enum import Enum, unique
 
 # Compiled regex pattern for SHA256 validation (64 lowercase hex characters)
 # Using regex instead of string membership check for O(n) vs O(n*m) performance
 _SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
 
 
+@unique
 class EnumHashAlgorithm(str, Enum):
     """
     Supported cryptographic hash algorithms for integrity verification.

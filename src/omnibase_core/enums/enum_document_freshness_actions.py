@@ -5,9 +5,10 @@ This enum provides compile-time safety and eliminates magic strings
 for document freshness monitoring actions.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumDocumentFreshnessActions(str, Enum):
     """
     Canonical enumeration of all document freshness monitoring actions.
@@ -25,6 +26,7 @@ class EnumDocumentFreshnessActions(str, Enum):
     CONNECTION_POOL_METRICS = "connection_pool_metrics"
 
 
+@unique
 class EnumDocumentFreshnessRiskLevel(str, Enum):
     """Risk levels for document freshness assessment."""
 
@@ -34,6 +36,7 @@ class EnumDocumentFreshnessRiskLevel(str, Enum):
     CRITICAL = "critical"
 
 
+@unique
 class EnumDocumentFreshnessStatus(str, Enum):
     """Overall freshness status values."""
 
@@ -43,6 +46,7 @@ class EnumDocumentFreshnessStatus(str, Enum):
     UNKNOWN = "unknown"
 
 
+@unique
 class EnumDocumentType(str, Enum):
     """Document type classifications."""
 
@@ -52,6 +56,7 @@ class EnumDocumentType(str, Enum):
     DATA = "data"
 
 
+@unique
 class EnumRecommendationType(str, Enum):
     """Recommendation types for document improvements."""
 
@@ -61,6 +66,7 @@ class EnumRecommendationType(str, Enum):
     OPTIMIZATION = "optimization"
 
 
+@unique
 class EnumRecommendationPriority(str, Enum):
     """Priority levels for recommendations."""
 
@@ -70,6 +76,7 @@ class EnumRecommendationPriority(str, Enum):
     CRITICAL = "critical"
 
 
+@unique
 class EnumEstimatedEffort(str, Enum):
     """Estimated effort levels for implementing recommendations."""
 
@@ -79,6 +86,7 @@ class EnumEstimatedEffort(str, Enum):
     WEEKS = "weeks"
 
 
+@unique
 class EnumDependencyRelationship(str, Enum):
     """Types of dependency relationships between documents."""
 
@@ -88,6 +96,7 @@ class EnumDependencyRelationship(str, Enum):
     DEPENDS_ON = "depends_on"
 
 
+@unique
 class EnumOutputFormat(str, Enum):
     """Output format options for analysis results."""
 

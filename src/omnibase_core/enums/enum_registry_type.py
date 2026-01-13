@@ -6,9 +6,11 @@ Strongly typed enumeration for registry type classifications.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumRegistryType(str, Enum):
+class EnumRegistryType(StrValueHelper, str, Enum):
     """
     Registry type classifications for ONEX registries.
 
@@ -27,10 +29,6 @@ class EnumRegistryType(str, Enum):
     GLOBAL = "global"
     LOCAL = "local"
     UNKNOWN = "unknown"
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def is_component_registry(cls, registry_type: "EnumRegistryType") -> bool:

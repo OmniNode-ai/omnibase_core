@@ -4,9 +4,10 @@ Version Status Enums.
 Version lifecycle status values.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumVersionStatus(str, Enum):
     """Version lifecycle status values."""
 
