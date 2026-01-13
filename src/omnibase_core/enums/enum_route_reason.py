@@ -5,9 +5,10 @@ Provides strongly-typed route reasons for provider selection decisions
 with proper ONEX enum naming conventions.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumRouteReason(str, Enum):
     """Reasons for LLM provider selection."""
 

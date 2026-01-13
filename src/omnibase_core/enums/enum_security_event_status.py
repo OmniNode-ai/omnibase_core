@@ -4,9 +4,10 @@ Security Event Status Enumeration.
 Strongly typed enumeration for security event statuses.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumSecurityEventStatus(str, Enum):
     """Enumeration for security event statuses."""
 

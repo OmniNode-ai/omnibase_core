@@ -4,9 +4,10 @@ Computation Type Enums.
 Types of computation operations for output data models.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumComputationType(str, Enum):
     """Types of computation operations."""
 

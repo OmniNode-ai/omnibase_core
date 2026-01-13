@@ -5,9 +5,10 @@ Provides strongly-typed position values for context section injection
 with proper ONEX enum naming conventions.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumContextPosition(str, Enum):
     """Context section positions."""
 

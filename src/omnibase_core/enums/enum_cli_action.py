@@ -5,9 +5,10 @@ Defines all valid CLI actions that can be processed
 by node_cli, replacing hardcoded string literals.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumCliAction(Enum):
     """
     Enumeration of valid CLI actions.

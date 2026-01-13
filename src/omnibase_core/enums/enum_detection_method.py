@@ -1,6 +1,9 @@
-from enum import Enum
+"""Detection methods for sensitive information scanning."""
+
+from enum import Enum, unique
 
 
+@unique
 class EnumDetectionMethod(str, Enum):
     """Methods used for detection."""
 

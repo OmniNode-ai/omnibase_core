@@ -1,6 +1,7 @@
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumHandlerSource(str, Enum):
     """
     Canonical source types for file type handlers in ONEX/OmniBase.

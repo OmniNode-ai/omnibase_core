@@ -1,8 +1,9 @@
 """Conflict resolution strategy enumeration for data reduction."""
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumConflictResolution(Enum):
     """Strategies for resolving conflicts during reduction."""
 

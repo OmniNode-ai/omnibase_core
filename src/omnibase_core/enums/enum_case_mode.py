@@ -4,9 +4,10 @@ Case transformation modes for contract-driven NodeCompute.
 This module defines the case modes available for CASE_CONVERSION transformations.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumCaseMode(str, Enum):
     """
     Case transformation modes.

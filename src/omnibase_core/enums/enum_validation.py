@@ -6,9 +6,10 @@ Defines error severity levels, validation modes, and validation levels
 for ONEX validation and error handling systems.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumErrorSeverity(Enum):
     """
     Severity levels for validation errors and system errors.
@@ -24,6 +25,7 @@ class EnumErrorSeverity(Enum):
     FATAL = "fatal"
 
 
+@unique
 class EnumValidationLevel(str, Enum):
     """
     Validation levels for pipeline data integrity.

@@ -2,9 +2,10 @@
 Enum for operational modes for context rules.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumRuleMode(str, Enum):
     """Operational modes for context rules."""
 

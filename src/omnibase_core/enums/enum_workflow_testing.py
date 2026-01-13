@@ -6,9 +6,10 @@ This module provides all enumerations for the ONEX workflow testing system,
 supporting flexible dependency accommodation and comprehensive test workflows.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumAccommodationLevel(str, Enum):
     """Enumeration of dependency accommodation levels"""
 
@@ -19,6 +20,7 @@ class EnumAccommodationLevel(str, Enum):
     PROGRESSIVE = "progressive"
 
 
+@unique
 class EnumAccommodationStrategy(str, Enum):
     """Enumeration of accommodation strategies"""
 
@@ -29,6 +31,7 @@ class EnumAccommodationStrategy(str, Enum):
     PERFORMANCE_REALISTIC = "performance_realistic"
 
 
+@unique
 class EnumAccommodationType(str, Enum):
     """Enumeration of accommodation types"""
 
@@ -38,6 +41,7 @@ class EnumAccommodationType(str, Enum):
     REAL_WITH_MONITORING = "real_with_monitoring"
 
 
+@unique
 class EnumFallbackStrategy(str, Enum):
     """Enumeration of fallback strategies"""
 
@@ -47,6 +51,7 @@ class EnumFallbackStrategy(str, Enum):
     MOCK_FOR_DETERMINISTIC_TESTS = "mock_for_deterministic_tests"
 
 
+@unique
 class EnumTestExecutionStatus(str, Enum):
     """Enumeration of test execution statuses"""
 
@@ -57,6 +62,7 @@ class EnumTestExecutionStatus(str, Enum):
     ACCOMMODATION_FAILED = "accommodation_failed"
 
 
+@unique
 class EnumTestWorkflowPriority(str, Enum):
     """Enumeration of test workflow priorities"""
 
@@ -66,6 +72,7 @@ class EnumTestWorkflowPriority(str, Enum):
     LOW = "low"
 
 
+@unique
 class EnumTestContext(str, Enum):
     """Enumeration of test execution contexts"""
 
@@ -76,6 +83,7 @@ class EnumTestContext(str, Enum):
     PRODUCTION_VALIDATION = "production_validation"
 
 
+@unique
 class EnumDependencyType(str, Enum):
     """Enumeration of dependency types"""
 
@@ -88,6 +96,7 @@ class EnumDependencyType(str, Enum):
     FILE_SYSTEM = "file_system"
 
 
+@unique
 class EnumMockBehaviorType(str, Enum):
     """Enumeration of mock behavior types"""
 
@@ -99,6 +108,7 @@ class EnumMockBehaviorType(str, Enum):
     DETERMINISTIC_RESPONSE = "deterministic_response"
 
 
+@unique
 class EnumValidationRule(str, Enum):
     """Enumeration of validation rules for test assertions"""
 

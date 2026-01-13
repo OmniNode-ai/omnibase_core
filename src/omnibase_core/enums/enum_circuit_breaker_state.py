@@ -1,69 +1,19 @@
-"""
-EnumCircuitBreakerState - Circuit breaker state enumeration.
-
-Defines the standard states for circuit breaker implementations.
-Used by ProtocolCircuitBreaker implementations for type-safe state checking.
-
-Related:
-    - OMN-861: Define ProtocolCircuitBreaker interface
-    - ProtocolCircuitBreaker: Protocol that uses these states
-
-.. versionadded:: 0.4.0
-"""
+"""Circuit breaker state enumeration (CLOSED, OPEN, HALF_OPEN)."""
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, unique
 from typing import Never, NoReturn
 
 __all__ = ["EnumCircuitBreakerState"]
 
 
+@unique
 class EnumCircuitBreakerState(Enum):
     """
     Circuit breaker state enumeration.
 
-    The circuit breaker pattern prevents cascading failures by tracking the
-    health of external dependencies and temporarily blocking requests when
-    failures exceed a threshold.
-
-    States:
-        CLOSED: Normal operation, requests pass through. The circuit monitors
-            for failures and transitions to OPEN if the failure threshold is exceeded.
-        OPEN: Circuit tripped, requests are rejected immediately without attempting
-            the operation. After a timeout period, transitions to HALF_OPEN.
-        HALF_OPEN: Testing recovery, limited requests allowed through to probe
-            whether the service has recovered. Success returns to CLOSED,
-            failure returns to OPEN.
-
-    State Transitions::
-
-        CLOSED --[failure threshold exceeded]--> OPEN
-        OPEN --[timeout elapsed]--> HALF_OPEN
-        HALF_OPEN --[probe succeeds]--> CLOSED
-        HALF_OPEN --[probe fails]--> OPEN
-
-    Example:
-        .. code-block:: python
-
-            from omnibase_core.enums import EnumCircuitBreakerState
-
-            state = EnumCircuitBreakerState.CLOSED
-            if state == EnumCircuitBreakerState.OPEN:
-                raise CircuitOpenError("Circuit is open")
-
-            # Using in match statement with exhaustive checking
-            match state:
-                case EnumCircuitBreakerState.CLOSED:
-                    result = execute_request()
-                case EnumCircuitBreakerState.OPEN:
-                    raise CircuitOpenError("Circuit is open")
-                case EnumCircuitBreakerState.HALF_OPEN:
-                    result = execute_probe_request()
-                case _ as unreachable:
-                    EnumCircuitBreakerState.assert_exhaustive(unreachable)
-
-    .. versionadded:: 0.4.0
+    CLOSED: Normal operation. OPEN: Requests rejected. HALF_OPEN: Testing recovery.
     """
 
     CLOSED = "closed"

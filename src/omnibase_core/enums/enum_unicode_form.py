@@ -4,9 +4,10 @@ Unicode normalization forms for contract-driven NodeCompute.
 This module defines the unicode normalization forms available for NORMALIZE_UNICODE transformations.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumUnicodeForm(str, Enum):
     """
     Unicode normalization forms.

@@ -321,6 +321,7 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase, MixinHandlerRouting):
         except ModelOnexError:
             # Re-raise ONEX errors as-is to preserve error context
             raise
+        # boundary-ok: wraps user computation exceptions into structured error response with metrics
         except Exception as e:
             # boundary-ok: wrap user computation exceptions in structured ONEX error
             # Calculate processing time for error reporting

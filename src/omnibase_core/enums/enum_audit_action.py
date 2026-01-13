@@ -1,6 +1,9 @@
-from enum import Enum
+"""Audit action types for logging and compliance tracking."""
+
+from enum import Enum, unique
 
 
+@unique
 class EnumAuditAction(str, Enum):
     """Common audit actions."""
 

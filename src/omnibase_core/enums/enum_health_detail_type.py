@@ -4,9 +4,10 @@ Health Detail Type Enum.
 Canonical enum for health detail types used in component health monitoring.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumHealthDetailType(str, Enum):
     """Canonical health detail types for component monitoring."""
 

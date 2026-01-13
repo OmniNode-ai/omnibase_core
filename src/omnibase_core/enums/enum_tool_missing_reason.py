@@ -1,8 +1,9 @@
 """Tool missing reason enumeration."""
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumToolMissingReason(str, Enum):
     """
     Categorized reasons for missing tools.

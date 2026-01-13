@@ -22,9 +22,10 @@ Related:
 .. versionadded:: 0.4.0
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumPatchValidationErrorCode(str, Enum):
     """Error codes for contract patch validation.
 

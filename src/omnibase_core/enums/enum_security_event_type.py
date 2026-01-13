@@ -4,9 +4,10 @@ Security Event Type Enumeration.
 Strongly typed enumeration for security event types.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumSecurityEventType(str, Enum):
     """Enumeration for security event types."""
 
