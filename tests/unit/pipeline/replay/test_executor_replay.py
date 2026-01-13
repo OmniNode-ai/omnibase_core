@@ -31,8 +31,8 @@ from uuid import UUID, uuid4
 import pytest
 
 if TYPE_CHECKING:
-    from omnibase_core.pipeline.replay.executor_replay import ExecutorReplay
-    from omnibase_core.pipeline.replay.session_replay import ReplaySession
+    from omnibase_core.pipeline.replay.runner_replay_executor import ExecutorReplay
+    from omnibase_core.pipeline.replay.runner_replay_session import ReplaySession
 
 
 @pytest.fixture
@@ -44,7 +44,7 @@ def fixed_time() -> datetime:
 @pytest.fixture
 def executor() -> ExecutorReplay:
     """Create an ExecutorReplay instance."""
-    from omnibase_core.pipeline.replay.executor_replay import ExecutorReplay
+    from omnibase_core.pipeline.replay.runner_replay_executor import ExecutorReplay
 
     return ExecutorReplay()
 

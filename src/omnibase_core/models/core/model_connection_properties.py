@@ -72,7 +72,7 @@ class ModelConnectionProperties(BaseModel):
         description="Additional options",
     )
 
-    model_config = ConfigDict()
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     @classmethod
     def from_dict(cls, data: "SerializedDict") -> "ModelConnectionProperties":
@@ -185,14 +185,14 @@ class ModelConnectionProperties(BaseModel):
         default=..., description="Measurement duration"
     )
 
-    def calculate_success_rate(self) -> float:
-        """Calculate success rate percentage."""
+    def get_success_rate(self) -> float:
+        """Get success rate percentage."""
         if self.total_requests == 0:
             return 0.0
         return (self.successful_requests / self.total_requests) * 100
 
-    def calculate_average_response_time(self) -> float | None:
-        """Calculate average response time if not already set."""
+    def get_average_response_time(self) -> float | None:
+        """Get average response time if not already set."""
         if self.average_response_time_ms is not None:
             return self.average_response_time_ms
 

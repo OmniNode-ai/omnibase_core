@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 """
-Comprehensive unit tests for StoreDiffInMemory.
+Comprehensive unit tests for ServiceDiffInMemoryStore.
 
 Tests cover:
 - Put and get operations
@@ -11,7 +11,7 @@ Tests cover:
 - Memory management and cleanup
 - Pagination
 
-OMN-1149: TDD tests for StoreDiffInMemory implementation.
+OMN-1149: TDD tests for ServiceDiffInMemoryStore implementation.
 
 .. versionadded:: 0.6.0
     Added as part of Diff Storage Infrastructure (OMN-1149)
@@ -32,7 +32,9 @@ from omnibase_core.models.contracts.diff import (
 )
 from omnibase_core.models.diff.model_diff_query import ModelDiffQuery
 from omnibase_core.protocols.storage.protocol_diff_store import ProtocolDiffStore
-from omnibase_core.services.diff.store_diff_in_memory import StoreDiffInMemory
+from omnibase_core.services.diff.service_diff_in_memory_store import (
+    ServiceDiffInMemoryStore,
+)
 
 from .conftest import create_test_diff
 
@@ -45,9 +47,9 @@ pytestmark = [pytest.mark.unit, pytest.mark.asyncio]
 
 
 @pytest.fixture
-def store() -> StoreDiffInMemory:
+def store() -> ServiceDiffInMemoryStore:
     """Create a fresh in-memory diff store."""
-    return StoreDiffInMemory()
+    return ServiceDiffInMemoryStore()
 
 
 # ============================================================================
@@ -56,39 +58,39 @@ def store() -> StoreDiffInMemory:
 
 
 class TestProtocolCompliance:
-    """Test that StoreDiffInMemory implements ProtocolDiffStore."""
+    """Test that ServiceDiffInMemoryStore implements ProtocolDiffStore."""
 
     def test_implements_protocol(self) -> None:
-        """StoreDiffInMemory implements ProtocolDiffStore interface."""
-        store = StoreDiffInMemory()
+        """ServiceDiffInMemoryStore implements ProtocolDiffStore interface."""
+        store = ServiceDiffInMemoryStore()
         assert isinstance(store, ProtocolDiffStore)
 
-    def test_has_put_method(self, store: StoreDiffInMemory) -> None:
+    def test_has_put_method(self, store: ServiceDiffInMemoryStore) -> None:
         """Store has async put method."""
         assert hasattr(store, "put")
         assert callable(store.put)
 
-    def test_has_get_method(self, store: StoreDiffInMemory) -> None:
+    def test_has_get_method(self, store: ServiceDiffInMemoryStore) -> None:
         """Store has async get method."""
         assert hasattr(store, "get")
         assert callable(store.get)
 
-    def test_has_query_method(self, store: StoreDiffInMemory) -> None:
+    def test_has_query_method(self, store: ServiceDiffInMemoryStore) -> None:
         """Store has async query method."""
         assert hasattr(store, "query")
         assert callable(store.query)
 
-    def test_has_delete_method(self, store: StoreDiffInMemory) -> None:
+    def test_has_delete_method(self, store: ServiceDiffInMemoryStore) -> None:
         """Store has async delete method."""
         assert hasattr(store, "delete")
         assert callable(store.delete)
 
-    def test_has_exists_method(self, store: StoreDiffInMemory) -> None:
+    def test_has_exists_method(self, store: ServiceDiffInMemoryStore) -> None:
         """Store has async exists method."""
         assert hasattr(store, "exists")
         assert callable(store.exists)
 
-    def test_has_count_method(self, store: StoreDiffInMemory) -> None:
+    def test_has_count_method(self, store: ServiceDiffInMemoryStore) -> None:
         """Store has async count method."""
         assert hasattr(store, "count")
         assert callable(store.count)
@@ -103,7 +105,7 @@ class TestStorePutAndGet:
     """Test cases for put and get operations."""
 
     async def test_put_and_get(
-        self, store: StoreDiffInMemory, sample_diff: ModelContractDiff
+        self, store: ServiceDiffInMemoryStore, sample_diff: ModelContractDiff
     ) -> None:
         """Store correctly puts and gets diffs."""
         await store.put(sample_diff)
@@ -115,7 +117,9 @@ class TestStorePutAndGet:
         assert retrieved.before_contract_name == sample_diff.before_contract_name
         assert retrieved.after_contract_name == sample_diff.after_contract_name
 
-    async def test_get_nonexistent_returns_none(self, store: StoreDiffInMemory) -> None:
+    async def test_get_nonexistent_returns_none(
+        self, store: ServiceDiffInMemoryStore
+    ) -> None:
         """Store returns None for nonexistent diff ID."""
         nonexistent_id = uuid4()
 
@@ -123,7 +127,7 @@ class TestStorePutAndGet:
 
         assert retrieved is None
 
-    async def test_put_multiple_diffs(self, store: StoreDiffInMemory) -> None:
+    async def test_put_multiple_diffs(self, store: ServiceDiffInMemoryStore) -> None:
         """Store can hold multiple diffs."""
         diffs = [create_test_diff() for _ in range(5)]
 
@@ -136,7 +140,9 @@ class TestStorePutAndGet:
             assert retrieved is not None
             assert retrieved.diff_id == diff.diff_id
 
-    async def test_put_overwrites_existing(self, store: StoreDiffInMemory) -> None:
+    async def test_put_overwrites_existing(
+        self, store: ServiceDiffInMemoryStore
+    ) -> None:
         """Store overwrites diff with same ID (upsert semantics)."""
         diff_id = uuid4()
 
@@ -164,7 +170,7 @@ class TestStorePutAndGet:
         assert retrieved.before_contract_name == "ContractB"
 
     async def test_put_preserves_diff_integrity(
-        self, store: StoreDiffInMemory, sample_diff: ModelContractDiff
+        self, store: ServiceDiffInMemoryStore, sample_diff: ModelContractDiff
     ) -> None:
         """Store preserves all diff fields."""
         await store.put(sample_diff)
@@ -189,7 +195,7 @@ class TestStoreQuery:
     """Test cases for query operations."""
 
     async def test_query_empty_filters(
-        self, store: StoreDiffInMemory, sample_diffs: list[ModelContractDiff]
+        self, store: ServiceDiffInMemoryStore, sample_diffs: list[ModelContractDiff]
     ) -> None:
         """Store query with no filters returns all diffs."""
         for diff in sample_diffs:
@@ -200,7 +206,7 @@ class TestStoreQuery:
 
         assert len(results) == len(sample_diffs)
 
-    async def test_query_empty_store(self, store: StoreDiffInMemory) -> None:
+    async def test_query_empty_store(self, store: ServiceDiffInMemoryStore) -> None:
         """Store query returns empty list when store is empty."""
         query = ModelDiffQuery()
         results = await store.query(query)
@@ -209,7 +215,7 @@ class TestStoreQuery:
 
     async def test_query_by_contract_name(
         self,
-        store: StoreDiffInMemory,
+        store: ServiceDiffInMemoryStore,
         sample_diffs_multiple_contracts: list[ModelContractDiff],
     ) -> None:
         """Store query filters by contract name correctly."""
@@ -228,7 +234,7 @@ class TestStoreQuery:
 
     async def test_query_by_before_contract_name(
         self,
-        store: StoreDiffInMemory,
+        store: ServiceDiffInMemoryStore,
         sample_diffs_multiple_contracts: list[ModelContractDiff],
     ) -> None:
         """Store query filters by before_contract_name correctly."""
@@ -243,7 +249,7 @@ class TestStoreQuery:
 
     async def test_query_by_after_contract_name(
         self,
-        store: StoreDiffInMemory,
+        store: ServiceDiffInMemoryStore,
         sample_diffs_multiple_contracts: list[ModelContractDiff],
     ) -> None:
         """Store query filters by after_contract_name correctly."""
@@ -256,7 +262,7 @@ class TestStoreQuery:
         assert len(results) == 1
         assert results[0].after_contract_name == "ContractC"
 
-    async def test_query_by_time_range(self, store: StoreDiffInMemory) -> None:
+    async def test_query_by_time_range(self, store: ServiceDiffInMemoryStore) -> None:
         """Store query filters by time range correctly."""
         base_time = datetime(2025, 1, 1, 12, 0, 0, tzinfo=UTC)
 
@@ -277,7 +283,7 @@ class TestStoreQuery:
         assert len(results) == 1
         assert results[0].diff_id == middle_diff.diff_id
 
-    async def test_query_by_has_changes(self, store: StoreDiffInMemory) -> None:
+    async def test_query_by_has_changes(self, store: ServiceDiffInMemoryStore) -> None:
         """Store query filters by has_changes correctly."""
         diff_with_changes = create_test_diff(with_changes=True)
         diff_without_changes = create_test_diff(with_changes=False)
@@ -292,7 +298,7 @@ class TestStoreQuery:
         assert results[0].has_changes is True
 
     async def test_query_pagination_limit(
-        self, store: StoreDiffInMemory, sample_diffs: list[ModelContractDiff]
+        self, store: ServiceDiffInMemoryStore, sample_diffs: list[ModelContractDiff]
     ) -> None:
         """Store query respects limit parameter."""
         for diff in sample_diffs:
@@ -304,7 +310,7 @@ class TestStoreQuery:
         assert len(results) == 2
 
     async def test_query_pagination_offset(
-        self, store: StoreDiffInMemory, sample_diffs: list[ModelContractDiff]
+        self, store: ServiceDiffInMemoryStore, sample_diffs: list[ModelContractDiff]
     ) -> None:
         """Store query respects offset parameter."""
         for diff in sample_diffs:
@@ -316,7 +322,7 @@ class TestStoreQuery:
         assert len(results) == 2  # 5 total - 3 offset = 2
 
     async def test_query_pagination_limit_and_offset(
-        self, store: StoreDiffInMemory, sample_diffs: list[ModelContractDiff]
+        self, store: ServiceDiffInMemoryStore, sample_diffs: list[ModelContractDiff]
     ) -> None:
         """Store query correctly combines limit and offset."""
         for diff in sample_diffs:
@@ -328,7 +334,7 @@ class TestStoreQuery:
         assert len(results) == 2
 
     async def test_query_orders_by_computed_at_descending(
-        self, store: StoreDiffInMemory
+        self, store: ServiceDiffInMemoryStore
     ) -> None:
         """Store query orders results by computed_at descending."""
         base_time = datetime(2025, 1, 1, 12, 0, 0, tzinfo=UTC)
@@ -360,7 +366,7 @@ class TestStoreDelete:
     """Test cases for delete operations."""
 
     async def test_delete_existing(
-        self, store: StoreDiffInMemory, sample_diff: ModelContractDiff
+        self, store: ServiceDiffInMemoryStore, sample_diff: ModelContractDiff
     ) -> None:
         """Store deletes an existing diff."""
         await store.put(sample_diff)
@@ -370,7 +376,7 @@ class TestStoreDelete:
         assert result is True
         assert await store.get(sample_diff.diff_id) is None
 
-    async def test_delete_nonexistent(self, store: StoreDiffInMemory) -> None:
+    async def test_delete_nonexistent(self, store: ServiceDiffInMemoryStore) -> None:
         """Store returns False when deleting nonexistent diff."""
         nonexistent_id = uuid4()
 
@@ -379,7 +385,7 @@ class TestStoreDelete:
         assert result is False
 
     async def test_delete_does_not_affect_others(
-        self, store: StoreDiffInMemory
+        self, store: ServiceDiffInMemoryStore
     ) -> None:
         """Deleting one diff does not affect other diffs."""
         diff1 = create_test_diff()
@@ -403,7 +409,7 @@ class TestStoreExists:
     """Test cases for exists operations."""
 
     async def test_exists_returns_true_for_existing(
-        self, store: StoreDiffInMemory, sample_diff: ModelContractDiff
+        self, store: ServiceDiffInMemoryStore, sample_diff: ModelContractDiff
     ) -> None:
         """Store exists returns True for existing diff."""
         await store.put(sample_diff)
@@ -413,7 +419,7 @@ class TestStoreExists:
         assert result is True
 
     async def test_exists_returns_false_for_nonexistent(
-        self, store: StoreDiffInMemory
+        self, store: ServiceDiffInMemoryStore
     ) -> None:
         """Store exists returns False for nonexistent diff."""
         nonexistent_id = uuid4()
@@ -431,14 +437,14 @@ class TestStoreExists:
 class TestStoreCount:
     """Test cases for count operations."""
 
-    async def test_count_empty_store(self, store: StoreDiffInMemory) -> None:
+    async def test_count_empty_store(self, store: ServiceDiffInMemoryStore) -> None:
         """Store count returns 0 for empty store."""
         count = await store.count()
 
         assert count == 0
 
     async def test_count_all_diffs(
-        self, store: StoreDiffInMemory, sample_diffs: list[ModelContractDiff]
+        self, store: ServiceDiffInMemoryStore, sample_diffs: list[ModelContractDiff]
     ) -> None:
         """Store count returns correct number of diffs."""
         for diff in sample_diffs:
@@ -450,7 +456,7 @@ class TestStoreCount:
 
     async def test_count_with_filters(
         self,
-        store: StoreDiffInMemory,
+        store: ServiceDiffInMemoryStore,
         sample_diffs_multiple_contracts: list[ModelContractDiff],
     ) -> None:
         """Store count with filters returns correct number."""
@@ -463,7 +469,7 @@ class TestStoreCount:
         assert count == 2
 
     async def test_count_ignores_pagination(
-        self, store: StoreDiffInMemory, sample_diffs: list[ModelContractDiff]
+        self, store: ServiceDiffInMemoryStore, sample_diffs: list[ModelContractDiff]
     ) -> None:
         """Store count ignores limit and offset in filters."""
         for diff in sample_diffs:
@@ -484,7 +490,7 @@ class TestStoreClear:
     """Test cases for clear operations."""
 
     async def test_clear_removes_all_diffs(
-        self, store: StoreDiffInMemory, sample_diffs: list[ModelContractDiff]
+        self, store: ServiceDiffInMemoryStore, sample_diffs: list[ModelContractDiff]
     ) -> None:
         """Store clear removes all diffs."""
         for diff in sample_diffs:
@@ -505,14 +511,14 @@ class TestStoreClear:
 class TestStoreGetAll:
     """Test cases for get_all operations."""
 
-    async def test_get_all_empty_store(self, store: StoreDiffInMemory) -> None:
+    async def test_get_all_empty_store(self, store: ServiceDiffInMemoryStore) -> None:
         """Store get_all returns empty list for empty store."""
         results = await store.get_all()
 
         assert results == []
 
     async def test_get_all_returns_all_diffs(
-        self, store: StoreDiffInMemory, sample_diffs: list[ModelContractDiff]
+        self, store: ServiceDiffInMemoryStore, sample_diffs: list[ModelContractDiff]
     ) -> None:
         """Store get_all returns all stored diffs."""
         for diff in sample_diffs:
@@ -523,7 +529,7 @@ class TestStoreGetAll:
         assert len(results) == len(sample_diffs)
 
     async def test_get_all_orders_by_computed_at_descending(
-        self, store: StoreDiffInMemory
+        self, store: ServiceDiffInMemoryStore
     ) -> None:
         """Store get_all orders results by computed_at descending."""
         base_time = datetime(2025, 1, 1, 12, 0, 0, tzinfo=UTC)
@@ -548,12 +554,12 @@ class TestStoreGetAll:
 class TestStoreLen:
     """Test cases for __len__ operations."""
 
-    def test_len_empty_store(self, store: StoreDiffInMemory) -> None:
+    def test_len_empty_store(self, store: ServiceDiffInMemoryStore) -> None:
         """Store len returns 0 for empty store."""
         assert len(store) == 0
 
     async def test_len_after_put(
-        self, store: StoreDiffInMemory, sample_diff: ModelContractDiff
+        self, store: ServiceDiffInMemoryStore, sample_diff: ModelContractDiff
     ) -> None:
         """Store len returns correct count after put."""
         await store.put(sample_diff)
@@ -561,7 +567,7 @@ class TestStoreLen:
         assert len(store) == 1
 
     async def test_len_after_delete(
-        self, store: StoreDiffInMemory, sample_diff: ModelContractDiff
+        self, store: ServiceDiffInMemoryStore, sample_diff: ModelContractDiff
     ) -> None:
         """Store len returns correct count after delete."""
         await store.put(sample_diff)
@@ -579,7 +585,7 @@ class TestStoreEdgeCases:
     """Test edge cases for the store."""
 
     async def test_query_offset_beyond_total(
-        self, store: StoreDiffInMemory, sample_diffs: list[ModelContractDiff]
+        self, store: ServiceDiffInMemoryStore, sample_diffs: list[ModelContractDiff]
     ) -> None:
         """Query with offset beyond total returns empty list."""
         for diff in sample_diffs:
@@ -590,7 +596,7 @@ class TestStoreEdgeCases:
 
         assert results == []
 
-    async def test_concurrent_operations(self, store: StoreDiffInMemory) -> None:
+    async def test_concurrent_operations(self, store: ServiceDiffInMemoryStore) -> None:
         """Store handles concurrent put operations."""
         import asyncio
 
@@ -606,7 +612,7 @@ class TestStoreEdgeCases:
         # All should be stored
         assert len(set(diff_ids)) == 10
 
-    async def test_query_by_change_types(self, store: StoreDiffInMemory) -> None:
+    async def test_query_by_change_types(self, store: ServiceDiffInMemoryStore) -> None:
         """Store query filters by change types correctly."""
         # Create diff with ADDED change
         diff_added = ModelContractDiff(

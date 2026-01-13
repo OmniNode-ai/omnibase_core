@@ -233,6 +233,8 @@ class EnumCoreErrorCode(EnumOnexErrorCode):
     REPLAY_RECORD_NOT_FOUND = "ONEX_CORE_331_REPLAY_RECORD_NOT_FOUND"
     REPLAY_NOT_IN_REPLAY_MODE = "ONEX_CORE_332_REPLAY_NOT_IN_REPLAY_MODE"
     REPLAY_INVALID_EFFECT_TYPE = "ONEX_CORE_333_REPLAY_INVALID_EFFECT_TYPE"
+    REPLAY_SEQUENCE_EXHAUSTED = "ONEX_CORE_334_REPLAY_SEQUENCE_EXHAUSTED"
+    REPLAY_ENFORCEMENT_BLOCKED = "ONEX_CORE_335_REPLAY_ENFORCEMENT_BLOCKED"
 
     def get_component(self) -> str:
         """Get the component identifier for this error code."""
@@ -383,6 +385,8 @@ CORE_ERROR_CODE_TO_EXIT_CODE: dict[EnumCoreErrorCode, EnumCLIExitCode] = {
     EnumCoreErrorCode.REPLAY_RECORD_NOT_FOUND: EnumCLIExitCode.ERROR,
     EnumCoreErrorCode.REPLAY_NOT_IN_REPLAY_MODE: EnumCLIExitCode.ERROR,
     EnumCoreErrorCode.REPLAY_INVALID_EFFECT_TYPE: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.REPLAY_SEQUENCE_EXHAUSTED: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.REPLAY_ENFORCEMENT_BLOCKED: EnumCLIExitCode.ERROR,
 }
 
 
@@ -534,5 +538,7 @@ def get_core_error_description(error_code: EnumCoreErrorCode) -> str:
         EnumCoreErrorCode.REPLAY_RECORD_NOT_FOUND: "Replay: no matching effect record found",
         EnumCoreErrorCode.REPLAY_NOT_IN_REPLAY_MODE: "Replay: recorder is not in replay mode",
         EnumCoreErrorCode.REPLAY_INVALID_EFFECT_TYPE: "Replay: effect_type must not be empty",
+        EnumCoreErrorCode.REPLAY_SEQUENCE_EXHAUSTED: "Replay: UUID/value sequence exhausted during replay",
+        EnumCoreErrorCode.REPLAY_ENFORCEMENT_BLOCKED: "Replay: non-deterministic effect blocked in strict mode",
     }
     return descriptions.get(error_code, "Unknown error")

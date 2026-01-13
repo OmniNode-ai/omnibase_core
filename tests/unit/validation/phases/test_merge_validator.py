@@ -36,7 +36,7 @@ from omnibase_core.models.contracts.model_handler_spec import ModelHandlerSpec
 from omnibase_core.models.contracts.model_profile_reference import ModelProfileReference
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.models.runtime.model_handler_behavior import ModelHandlerBehavior
-from omnibase_core.validation.phases.merge_validator import (
+from omnibase_core.validation.phases.validator_merge import (
     MergeValidator,
     _is_placeholder_value,
 )

@@ -20,15 +20,15 @@ This test file follows TDD - tests are written BEFORE implementation.
 
 from __future__ import annotations
 
+import json
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Any
+from typing import Any
 from uuid import UUID
 
 import pytest
 from pydantic import ValidationError
 
-if TYPE_CHECKING:
-    from omnibase_core.models.replay.model_effect_record import ModelEffectRecord
+from omnibase_core.models.replay.model_effect_record import ModelEffectRecord
 
 
 @pytest.fixture
@@ -64,8 +64,6 @@ def effect_record(
     sample_timestamp: datetime,
 ) -> ModelEffectRecord:
     """Create a sample effect record."""
-    from omnibase_core.models.replay.model_effect_record import ModelEffectRecord
-
     return ModelEffectRecord(
         effect_type="http.get",
         intent=sample_intent,
@@ -113,8 +111,6 @@ class TestModelEffectRecordDefaults:
         sample_timestamp: datetime,
     ) -> None:
         """Test that record_id is auto-generated as UUID."""
-        from omnibase_core.models.replay.model_effect_record import ModelEffectRecord
-
         record = ModelEffectRecord(
             effect_type="db.query",
             intent=sample_intent,
@@ -133,8 +129,6 @@ class TestModelEffectRecordDefaults:
         sample_timestamp: datetime,
     ) -> None:
         """Test that each instance gets a unique record_id."""
-        from omnibase_core.models.replay.model_effect_record import ModelEffectRecord
-
         record1 = ModelEffectRecord(
             effect_type="db.query",
             intent=sample_intent,
@@ -159,8 +153,6 @@ class TestModelEffectRecordDefaults:
         sample_timestamp: datetime,
     ) -> None:
         """Test that success defaults to True."""
-        from omnibase_core.models.replay.model_effect_record import ModelEffectRecord
-
         record = ModelEffectRecord(
             effect_type="db.query",
             intent=sample_intent,
@@ -178,8 +170,6 @@ class TestModelEffectRecordDefaults:
         sample_timestamp: datetime,
     ) -> None:
         """Test that error_message defaults to None."""
-        from omnibase_core.models.replay.model_effect_record import ModelEffectRecord
-
         record = ModelEffectRecord(
             effect_type="db.query",
             intent=sample_intent,
@@ -201,8 +191,6 @@ class TestModelEffectRecordValidation:
         sample_timestamp: datetime,
     ) -> None:
         """Test that effect_type is required."""
-        from omnibase_core.models.replay.model_effect_record import ModelEffectRecord
-
         with pytest.raises(ValidationError) as exc_info:
             ModelEffectRecord(
                 intent={"key": "value"},
@@ -219,8 +207,6 @@ class TestModelEffectRecordValidation:
         sample_timestamp: datetime,
     ) -> None:
         """Test that intent is required."""
-        from omnibase_core.models.replay.model_effect_record import ModelEffectRecord
-
         with pytest.raises(ValidationError) as exc_info:
             ModelEffectRecord(
                 effect_type="http.get",
@@ -237,8 +223,6 @@ class TestModelEffectRecordValidation:
         sample_timestamp: datetime,
     ) -> None:
         """Test that result is required."""
-        from omnibase_core.models.replay.model_effect_record import ModelEffectRecord
-
         with pytest.raises(ValidationError) as exc_info:
             ModelEffectRecord(
                 effect_type="http.get",
@@ -255,8 +239,6 @@ class TestModelEffectRecordValidation:
         sample_result: dict[str, Any],
     ) -> None:
         """Test that captured_at is required."""
-        from omnibase_core.models.replay.model_effect_record import ModelEffectRecord
-
         with pytest.raises(ValidationError) as exc_info:
             ModelEffectRecord(
                 effect_type="http.get",
@@ -274,8 +256,6 @@ class TestModelEffectRecordValidation:
         sample_timestamp: datetime,
     ) -> None:
         """Test that sequence_index is required."""
-        from omnibase_core.models.replay.model_effect_record import ModelEffectRecord
-
         with pytest.raises(ValidationError) as exc_info:
             ModelEffectRecord(
                 effect_type="http.get",
@@ -293,8 +273,6 @@ class TestModelEffectRecordValidation:
         sample_timestamp: datetime,
     ) -> None:
         """Test that extra fields are forbidden."""
-        from omnibase_core.models.replay.model_effect_record import ModelEffectRecord
-
         with pytest.raises(ValidationError) as exc_info:
             ModelEffectRecord(
                 effect_type="http.get",
@@ -316,8 +294,6 @@ class TestModelEffectRecordSerialization:
 
     def test_serialization_roundtrip(self, effect_record: ModelEffectRecord) -> None:
         """Test that model can be serialized and deserialized."""
-        from omnibase_core.models.replay.model_effect_record import ModelEffectRecord
-
         # Serialize to dict
         data = effect_record.model_dump()
 
@@ -335,8 +311,6 @@ class TestModelEffectRecordSerialization:
         self, effect_record: ModelEffectRecord
     ) -> None:
         """Test that model can be serialized to JSON and back."""
-        from omnibase_core.models.replay.model_effect_record import ModelEffectRecord
-
         # Serialize to JSON
         json_str = effect_record.model_dump_json()
 
@@ -351,8 +325,6 @@ class TestModelEffectRecordSerialization:
         self, effect_record: ModelEffectRecord
     ) -> None:
         """Test that record_id serializes to string in JSON."""
-        import json
-
         json_str = effect_record.model_dump_json()
         data = json.loads(json_str)
 
@@ -362,8 +334,6 @@ class TestModelEffectRecordSerialization:
         self, effect_record: ModelEffectRecord
     ) -> None:
         """Test that captured_at serializes to ISO format."""
-        import json
-
         json_str = effect_record.model_dump_json()
         data = json.loads(json_str)
 
@@ -383,8 +353,6 @@ class TestModelEffectRecordErrorCase:
         sample_timestamp: datetime,
     ) -> None:
         """Test that failed effects can be recorded."""
-        from omnibase_core.models.replay.model_effect_record import ModelEffectRecord
-
         record = ModelEffectRecord(
             effect_type="http.get",
             intent=sample_intent,
@@ -405,8 +373,6 @@ class TestModelEffectRecordErrorCase:
         sample_timestamp: datetime,
     ) -> None:
         """Test that error_message can be set even with success=True (for warnings)."""
-        from omnibase_core.models.replay.model_effect_record import ModelEffectRecord
-
         record = ModelEffectRecord(
             effect_type="http.get",
             intent=sample_intent,

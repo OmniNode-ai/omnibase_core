@@ -41,7 +41,6 @@ from omnibase_core.mixins.mixin_health_check import (
     check_postgresql_health,
     check_redis_health,
 )
-from omnibase_core.mixins.mixin_hybrid_execution import MixinHybridExecution
 from omnibase_core.mixins.mixin_intent_publisher import MixinIntentPublisher
 from omnibase_core.mixins.mixin_introspect_from_contract import (
     MixinIntrospectFromContract,
@@ -70,6 +69,7 @@ from omnibase_core.mixins.mixin_tool_execution import MixinToolExecution
 from omnibase_core.mixins.mixin_workflow_execution import MixinWorkflowExecution
 from omnibase_core.mixins.mixin_yaml_serialization import MixinYAMLSerialization
 from omnibase_core.mixins.mixin_caching import MixinCaching
+from omnibase_core.mixins.mixin_truncation_validation import MixinTruncationValidation
 
 __all__ = [
     "MixinCanonicalYAMLSerializer",
@@ -88,7 +88,6 @@ __all__ = [
     "MixinFSMExecution",
     "MixinHandlerRouting",
     "MixinHealthCheck",
-    "MixinHybridExecution",
     "MixinIntrospectFromContract",
     "MixinIntrospectionPublisher",
     "MixinLazyEvaluation",
@@ -119,4 +118,6 @@ __all__ = [
     "check_http_service_health",
     # Caching mixin
     "MixinCaching",
+    # Truncation validation mixin
+    "MixinTruncationValidation",
 ]

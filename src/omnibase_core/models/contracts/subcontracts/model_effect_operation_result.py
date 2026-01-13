@@ -28,5 +28,5 @@ class ModelEffectOperationResult(BaseModel):
     retries: int = Field(default=0, ge=0)
     duration_ms: float = Field(ge=0)
     extracted_fields: dict[str, ModelSchemaValue] = Field(default_factory=dict)
-    error_message: str | None = Field(default=None)
-    error_code: str | None = Field(default=None)
+    error_message: str | None = None
+    error_code: str | None = None

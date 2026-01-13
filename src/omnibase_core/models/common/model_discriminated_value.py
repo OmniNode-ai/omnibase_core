@@ -45,7 +45,7 @@ from __future__ import annotations
 import json
 
 # no typing imports needed
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_discriminated_value_type import EnumDiscriminatedValueType
@@ -552,11 +552,11 @@ class ModelDiscriminatedValue(BaseModel):
             f"value={self.get_value()!r})"
         )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
 
 # Export for use

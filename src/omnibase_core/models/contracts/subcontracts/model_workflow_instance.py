@@ -7,7 +7,7 @@ Model for workflow execution instances in the ONEX workflow coordination system.
 from datetime import datetime
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_workflow_coordination import EnumWorkflowStatus
 from omnibase_core.models.primitives.model_semver import ModelSemVer
@@ -60,8 +60,8 @@ class ModelWorkflowInstance(BaseModel):
         description="Execution context for the workflow",
     )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )

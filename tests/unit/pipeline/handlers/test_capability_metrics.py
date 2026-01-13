@@ -3,10 +3,10 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """
-Tests for ModelCapabilityMetrics handler.
+Tests for HandlerCapabilityMetrics handler.
 
 TDD tests - written FIRST before implementation.
-These tests define the expected behavior for the ModelCapabilityMetrics handler,
+These tests define the expected behavior for the HandlerCapabilityMetrics handler,
 which provides performance metrics collection as a standalone handler (no mixin inheritance).
 
 Ticket: OMN-1112 - Convert MixinMetrics to handler pattern.
@@ -16,38 +16,38 @@ Coverage target: 60%+ (stub implementation with defensive attribute handling)
 
 import pytest
 
-from omnibase_core.pipeline.handlers.model_capability_metrics import (
-    ModelCapabilityMetrics,
+from omnibase_core.pipeline.handlers.handler_capability_metrics import (
+    HandlerCapabilityMetrics,
 )
 
 
 @pytest.mark.unit
-class TestModelCapabilityMetricsInit:
-    """Test suite for ModelCapabilityMetrics initialization."""
+class TestHandlerCapabilityMetricsInit:
+    """Test suite for HandlerCapabilityMetrics initialization."""
 
     def test_init_with_default_values(self) -> None:
         """Test initialization with default values."""
-        handler = ModelCapabilityMetrics()
+        handler = HandlerCapabilityMetrics()
 
         assert handler.namespace == "onex"
         assert handler.enabled is True
 
     def test_init_with_custom_namespace(self) -> None:
         """Test initialization with custom namespace."""
-        handler = ModelCapabilityMetrics(namespace="custom_app")
+        handler = HandlerCapabilityMetrics(namespace="custom_app")
 
         assert handler.namespace == "custom_app"
         assert handler.enabled is True
 
     def test_init_with_disabled_metrics(self) -> None:
         """Test initialization with metrics disabled."""
-        handler = ModelCapabilityMetrics(enabled=False)
+        handler = HandlerCapabilityMetrics(enabled=False)
 
         assert handler.enabled is False
 
     def test_init_with_all_custom_values(self) -> None:
         """Test initialization with all custom values."""
-        handler = ModelCapabilityMetrics(
+        handler = HandlerCapabilityMetrics(
             namespace="my_service",
             enabled=True,
         )
@@ -57,7 +57,7 @@ class TestModelCapabilityMetricsInit:
 
     def test_init_creates_empty_metrics_data(self) -> None:
         """Test that initialization creates empty metrics data."""
-        handler = ModelCapabilityMetrics()
+        handler = HandlerCapabilityMetrics()
 
         metrics = handler.get_metrics()
         assert metrics == {}
@@ -70,7 +70,7 @@ class TestRecordMetric:
 
     def test_record_metric_basic(self) -> None:
         """Test basic metric recording."""
-        handler = ModelCapabilityMetrics()
+        handler = HandlerCapabilityMetrics()
 
         handler.record_metric("test_metric", 42.5)
 
@@ -81,7 +81,7 @@ class TestRecordMetric:
 
     def test_record_metric_with_tags(self) -> None:
         """Test metric recording with tags."""
-        handler = ModelCapabilityMetrics()
+        handler = HandlerCapabilityMetrics()
         tags = {"env": "test", "service": "api"}
 
         handler.record_metric("request_time", 123.45, tags=tags)
@@ -92,7 +92,7 @@ class TestRecordMetric:
 
     def test_record_metric_overwrites_existing(self) -> None:
         """Test that recording a metric overwrites existing value."""
-        handler = ModelCapabilityMetrics()
+        handler = HandlerCapabilityMetrics()
 
         handler.record_metric("metric1", 10.0)
         handler.record_metric("metric1", 20.0)
@@ -102,7 +102,7 @@ class TestRecordMetric:
 
     def test_record_metric_multiple_metrics(self) -> None:
         """Test recording multiple different metrics."""
-        handler = ModelCapabilityMetrics()
+        handler = HandlerCapabilityMetrics()
 
         handler.record_metric("metric_a", 1.0)
         handler.record_metric("metric_b", 2.0)
@@ -116,7 +116,7 @@ class TestRecordMetric:
 
     def test_record_metric_with_empty_tags(self) -> None:
         """Test recording metric with explicitly empty tags."""
-        handler = ModelCapabilityMetrics()
+        handler = HandlerCapabilityMetrics()
 
         handler.record_metric("metric1", 100.0, tags={})
 
@@ -125,7 +125,7 @@ class TestRecordMetric:
 
     def test_record_metric_with_negative_value(self) -> None:
         """Test recording metric with negative value."""
-        handler = ModelCapabilityMetrics()
+        handler = HandlerCapabilityMetrics()
 
         handler.record_metric("temperature", -15.5)
 
@@ -134,7 +134,7 @@ class TestRecordMetric:
 
     def test_record_metric_with_zero_value(self) -> None:
         """Test recording metric with zero value."""
-        handler = ModelCapabilityMetrics()
+        handler = HandlerCapabilityMetrics()
 
         handler.record_metric("error_count", 0.0)
 
@@ -143,7 +143,7 @@ class TestRecordMetric:
 
     def test_record_metric_when_disabled(self) -> None:
         """Test that record_metric does nothing when disabled."""
-        handler = ModelCapabilityMetrics(enabled=False)
+        handler = HandlerCapabilityMetrics(enabled=False)
 
         handler.record_metric("test_metric", 42.5)
 
@@ -157,7 +157,7 @@ class TestIncrementCounter:
 
     def test_increment_counter_default_increment(self) -> None:
         """Test counter increment with default value (1)."""
-        handler = ModelCapabilityMetrics()
+        handler = HandlerCapabilityMetrics()
 
         handler.increment_counter("requests")
 
@@ -166,7 +166,7 @@ class TestIncrementCounter:
 
     def test_increment_counter_custom_increment(self) -> None:
         """Test counter increment with custom value."""
-        handler = ModelCapabilityMetrics()
+        handler = HandlerCapabilityMetrics()
 
         handler.increment_counter("bytes_sent", value=1024)
 
@@ -175,7 +175,7 @@ class TestIncrementCounter:
 
     def test_increment_counter_multiple_times(self) -> None:
         """Test incrementing counter multiple times."""
-        handler = ModelCapabilityMetrics()
+        handler = HandlerCapabilityMetrics()
 
         handler.increment_counter("api_calls")
         handler.increment_counter("api_calls")
@@ -186,7 +186,7 @@ class TestIncrementCounter:
 
     def test_increment_counter_with_custom_values(self) -> None:
         """Test incrementing counter with varying custom values."""
-        handler = ModelCapabilityMetrics()
+        handler = HandlerCapabilityMetrics()
 
         handler.increment_counter("total_bytes", value=100)
         handler.increment_counter("total_bytes", value=200)
@@ -197,7 +197,7 @@ class TestIncrementCounter:
 
     def test_increment_counter_from_zero(self) -> None:
         """Test that counter starts from zero."""
-        handler = ModelCapabilityMetrics()
+        handler = HandlerCapabilityMetrics()
 
         # First increment should start from 0
         handler.increment_counter("new_counter", value=5)
@@ -207,7 +207,7 @@ class TestIncrementCounter:
 
     def test_increment_counter_negative_value(self) -> None:
         """Test incrementing counter with negative value (decrement)."""
-        handler = ModelCapabilityMetrics()
+        handler = HandlerCapabilityMetrics()
 
         handler.increment_counter("balance", value=100)
         handler.increment_counter("balance", value=-30)
@@ -217,7 +217,7 @@ class TestIncrementCounter:
 
     def test_increment_counter_when_disabled(self) -> None:
         """Test that increment_counter does nothing when disabled."""
-        handler = ModelCapabilityMetrics(enabled=False)
+        handler = HandlerCapabilityMetrics(enabled=False)
 
         handler.increment_counter("test_counter", value=10)
 
@@ -231,7 +231,7 @@ class TestGetMetrics:
 
     def test_get_metrics_empty(self) -> None:
         """Test get_metrics on empty metrics data."""
-        handler = ModelCapabilityMetrics()
+        handler = HandlerCapabilityMetrics()
 
         metrics = handler.get_metrics()
 
@@ -240,7 +240,7 @@ class TestGetMetrics:
 
     def test_get_metrics_returns_copy(self) -> None:
         """Test that get_metrics returns a copy, not reference."""
-        handler = ModelCapabilityMetrics()
+        handler = HandlerCapabilityMetrics()
 
         handler.record_metric("metric1", 100.0)
 
@@ -253,7 +253,7 @@ class TestGetMetrics:
 
     def test_get_metrics_modification_does_not_affect_internal(self) -> None:
         """Test that modifying returned dict does not affect internal state."""
-        handler = ModelCapabilityMetrics()
+        handler = HandlerCapabilityMetrics()
 
         handler.record_metric("metric1", 100.0)
 
@@ -266,7 +266,7 @@ class TestGetMetrics:
 
     def test_get_metrics_after_recording(self) -> None:
         """Test get_metrics returns all recorded metrics."""
-        handler = ModelCapabilityMetrics()
+        handler = HandlerCapabilityMetrics()
 
         handler.record_metric("metric_a", 1.0, tags={"tag1": "value1"})
         handler.increment_counter("counter_b", value=5)
@@ -280,7 +280,7 @@ class TestGetMetrics:
 
     def test_get_metrics_with_multiple_metrics(self) -> None:
         """Test get_metrics with various metric types."""
-        handler = ModelCapabilityMetrics()
+        handler = HandlerCapabilityMetrics()
 
         handler.record_metric("response_time", 45.2, tags={"endpoint": "/api/users"})
         handler.increment_counter("requests_total")
@@ -301,7 +301,7 @@ class TestResetMetrics:
 
     def test_reset_metrics_clears_all_data(self) -> None:
         """Test that reset_metrics clears all metrics data."""
-        handler = ModelCapabilityMetrics()
+        handler = HandlerCapabilityMetrics()
 
         # Record some metrics
         handler.record_metric("metric1", 10.0)
@@ -322,7 +322,7 @@ class TestResetMetrics:
 
     def test_reset_metrics_on_empty(self) -> None:
         """Test reset_metrics on already empty metrics."""
-        handler = ModelCapabilityMetrics()
+        handler = HandlerCapabilityMetrics()
 
         # Should not raise error
         handler.reset_metrics()
@@ -332,7 +332,7 @@ class TestResetMetrics:
 
     def test_reset_metrics_allows_new_recording(self) -> None:
         """Test that new metrics can be recorded after reset."""
-        handler = ModelCapabilityMetrics()
+        handler = HandlerCapabilityMetrics()
 
         # Record and reset
         handler.record_metric("old_metric", 100.0)
@@ -352,8 +352,8 @@ class TestMetricsIsolation:
 
     def test_metrics_isolated_per_instance(self) -> None:
         """Test that metrics are isolated between handler instances."""
-        handler1 = ModelCapabilityMetrics()
-        handler2 = ModelCapabilityMetrics()
+        handler1 = HandlerCapabilityMetrics()
+        handler2 = HandlerCapabilityMetrics()
 
         handler1.record_metric("metric1", 100.0)
         handler2.record_metric("metric2", 200.0)
@@ -369,8 +369,8 @@ class TestMetricsIsolation:
 
     def test_counters_isolated_per_instance(self) -> None:
         """Test that counters are isolated between handler instances."""
-        handler1 = ModelCapabilityMetrics()
-        handler2 = ModelCapabilityMetrics()
+        handler1 = HandlerCapabilityMetrics()
+        handler2 = HandlerCapabilityMetrics()
 
         handler1.increment_counter("counter", value=10)
         handler2.increment_counter("counter", value=5)
@@ -383,8 +383,8 @@ class TestMetricsIsolation:
 
     def test_reset_does_not_affect_other_instances(self) -> None:
         """Test that resetting one handler doesn't affect others."""
-        handler1 = ModelCapabilityMetrics()
-        handler2 = ModelCapabilityMetrics()
+        handler1 = HandlerCapabilityMetrics()
+        handler2 = HandlerCapabilityMetrics()
 
         handler1.record_metric("metric", 100.0)
         handler2.record_metric("metric", 200.0)
@@ -405,7 +405,7 @@ class TestStandaloneHandler:
     def test_handler_works_without_inheritance(self) -> None:
         """Test that handler works as standalone class (no mixin required)."""
         # Create handler directly - no need for mock node or inheritance
-        handler = ModelCapabilityMetrics()
+        handler = HandlerCapabilityMetrics()
 
         # Should work without any base class
         handler.record_metric("standalone_metric", 42.0)
@@ -417,11 +417,11 @@ class TestStandaloneHandler:
 
     def test_handler_can_be_composed(self) -> None:
         """Test that handler can be composed with other objects."""
-        handler = ModelCapabilityMetrics()
+        handler = HandlerCapabilityMetrics()
 
         # Simulate composition pattern
         class MyPipelineStep:
-            def __init__(self, metrics_handler: ModelCapabilityMetrics) -> None:
+            def __init__(self, metrics_handler: HandlerCapabilityMetrics) -> None:
                 self.metrics = metrics_handler
 
             def execute(self) -> None:
@@ -437,8 +437,8 @@ class TestStandaloneHandler:
 
     def test_handler_multiple_namespaces(self) -> None:
         """Test handlers with different namespaces for different components."""
-        api_metrics = ModelCapabilityMetrics(namespace="api")
-        db_metrics = ModelCapabilityMetrics(namespace="database")
+        api_metrics = HandlerCapabilityMetrics(namespace="api")
+        db_metrics = HandlerCapabilityMetrics(namespace="database")
 
         api_metrics.increment_counter("requests")
         db_metrics.increment_counter("queries")
@@ -458,11 +458,11 @@ class TestStandaloneHandler:
 
 @pytest.mark.unit
 class TestMetricsIntegration:
-    """Integration tests for ModelCapabilityMetrics workflow."""
+    """Integration tests for HandlerCapabilityMetrics workflow."""
 
     def test_full_metrics_workflow(self) -> None:
         """Test complete metrics workflow: record, increment, get, reset."""
-        handler = ModelCapabilityMetrics()
+        handler = HandlerCapabilityMetrics()
 
         # Record various metrics
         handler.record_metric("latency_ms", 250.5, tags={"service": "api"})
@@ -490,7 +490,7 @@ class TestMetricsIntegration:
 
     def test_counter_and_metric_coexistence(self) -> None:
         """Test that counters and regular metrics work together."""
-        handler = ModelCapabilityMetrics()
+        handler = HandlerCapabilityMetrics()
 
         # Mix of counters and regular metrics
         handler.increment_counter("request_count", value=10)
@@ -508,7 +508,7 @@ class TestMetricsIntegration:
 
     def test_metric_overwrite_behavior(self) -> None:
         """Test how metrics behave when overwritten."""
-        handler = ModelCapabilityMetrics()
+        handler = HandlerCapabilityMetrics()
 
         # Record initial value
         handler.record_metric("temperature", 20.0, tags={"unit": "celsius"})
@@ -531,7 +531,7 @@ class TestMetricsIntegration:
 
     def test_large_number_of_metrics(self) -> None:
         """Test handling of many metrics."""
-        handler = ModelCapabilityMetrics()
+        handler = HandlerCapabilityMetrics()
 
         # Record many metrics
         for i in range(100):
@@ -547,7 +547,7 @@ class TestMetricsIntegration:
 
     def test_metrics_with_special_characters_in_names(self) -> None:
         """Test metrics with special characters in names."""
-        handler = ModelCapabilityMetrics()
+        handler = HandlerCapabilityMetrics()
 
         handler.record_metric("api.requests.total", 100.0)
         handler.record_metric("cache:hit_rate", 0.85)
@@ -561,7 +561,7 @@ class TestMetricsIntegration:
 
     def test_metrics_with_unicode_tag_values(self) -> None:
         """Test metrics with unicode characters in tag values."""
-        handler = ModelCapabilityMetrics()
+        handler = HandlerCapabilityMetrics()
 
         handler.record_metric(
             "request_time",

@@ -101,7 +101,7 @@ class ModelMonitoringMetrics(BaseModel):
         description="When metrics were collected",
     )
 
-    model_config = ConfigDict()
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     @classmethod
     def from_dict(cls, data: SerializedDict) -> "ModelMonitoringMetrics":

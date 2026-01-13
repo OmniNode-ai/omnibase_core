@@ -4,7 +4,7 @@ Signature Evaluation Model.
 Signature evaluation result model for security and compliance validation.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.security.model_security_summaries import (
     ModelSignatureEvaluationSummary,
@@ -28,11 +28,11 @@ class ModelSignatureEvaluation(BaseModel):
         description="Whether signature meets requirements",
     )
 
-    model_config = {
-        "extra": "forbid",
-        "frozen": True,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="forbid",
+        frozen=True,
+        validate_assignment=True,
+    )
 
     def add_violation(self, violation: str) -> "ModelSignatureEvaluation":
         """Add a violation to the evaluation."""

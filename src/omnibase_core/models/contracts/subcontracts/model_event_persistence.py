@@ -4,7 +4,7 @@ Event Persistence Model.
 Model for event persistence configuration in the ONEX event-driven architecture system.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.constants import TIMEOUT_LONG_MS
 from omnibase_core.models.primitives.model_semver import ModelSemVer
@@ -66,8 +66,9 @@ class ModelEventPersistence(BaseModel):
         description="Enable encryption for stored events",
     )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+        from_attributes=True,
+    )

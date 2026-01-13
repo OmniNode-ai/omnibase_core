@@ -22,7 +22,7 @@
 # === /OmniNode:Metadata ===
 
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.models.core.model_examples import ModelCustomSettings
 
@@ -34,4 +34,4 @@ class ModelMetadataConfig(BaseModel):
     enable_cache: bool | None = None
     custom_settings: ModelCustomSettings | None = None  # Arbitrary settings, extensible
     # Arbitrary extra fields allowed for extensibility
-    model_config = {"extra": "allow"}
+    model_config = ConfigDict(extra="allow")

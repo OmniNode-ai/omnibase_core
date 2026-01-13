@@ -7,7 +7,7 @@ Follows ONEX one-model-per-file naming conventions.
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.decorators import allow_dict_any
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -303,11 +303,11 @@ class ModelCliAdvancedParams(BaseModel):
                 message=f"Operation failed: {e}",
             ) from e
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": True,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=True,
+        validate_assignment=True,
+    )
 
 
 __all__ = ["ModelCliAdvancedParams"]

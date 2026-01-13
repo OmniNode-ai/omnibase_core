@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.6] - 2026-01-12
+
+### Added
+
+- **EnumHandlerRoutingStrategy** (OMN-1295): Added enum for handler routing strategies replacing Literal type, improving type safety and IDE support
+- **Replay Safety Enforcement** (OMN-1150): Implemented replay safety enforcement for non-deterministic effects with audit trail and UUID injection services
+- **Baseline Health Report Models** (OMN-1198): Added baseline health report models, performance metrics, and stability calculator utilities
+- **Execution Detail View Models** (OMN-1197): Added execution detail view models and consolidated comparison models into replay module
+
+### Changed
+
+- **MixinHandlerRouting**: Updated to use EnumHandlerRoutingStrategy enum with proper type annotations
+- **ModelHandlerRoutingSubcontract**: Optimized duplicate routing_key validation to use set instead of list
+
+## [0.6.5] - 2026-01-12
+
+### Changed
+
+- Version bump from 0.6.4 to 0.6.5 for release tagging
+
 ## [0.6.4] - 2026-01-11
 
 ### Added

@@ -66,6 +66,7 @@ if TYPE_CHECKING:
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_execution_shape import EnumMessageCategory
+from omnibase_core.enums.enum_handler_routing_strategy import EnumHandlerRoutingStrategy
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.logging.logging_structured import (
     emit_log_event_sync as emit_log_event,
@@ -127,7 +128,7 @@ class MixinHandlerRouting:
     # Type annotations for mixin attributes
     _handler_routing_table: dict[str, list[str]]
     _handler_registry: ProtocolHandlerRegistry | None
-    _routing_strategy: str
+    _routing_strategy: EnumHandlerRoutingStrategy
     _default_handler_key: str | None
     _routing_initialized: bool
     _compiled_patterns: list[tuple[Pattern[str], list[str]]]
@@ -145,7 +146,7 @@ class MixinHandlerRouting:
         # Initialize routing state
         self._handler_routing_table = {}
         self._handler_registry = None
-        self._routing_strategy = "payload_type_match"
+        self._routing_strategy = EnumHandlerRoutingStrategy.PAYLOAD_TYPE_MATCH
         self._default_handler_key = None
         self._routing_initialized = False
         self._compiled_patterns = []
@@ -190,7 +191,7 @@ class MixinHandlerRouting:
         if handler_routing is None:
             # No routing configuration - empty table, rely on default handler
             self._handler_routing_table = {}
-            self._routing_strategy = "payload_type_match"
+            self._routing_strategy = EnumHandlerRoutingStrategy.PAYLOAD_TYPE_MATCH
             self._default_handler_key = None
             self._compiled_patterns = []
             self._routing_initialized = True
@@ -207,7 +208,7 @@ class MixinHandlerRouting:
         # This converts glob patterns to compiled regex at init time instead of
         # re-translating patterns on every routing call.
         self._compiled_patterns = []
-        if self._routing_strategy == "topic_pattern":
+        if self._routing_strategy == EnumHandlerRoutingStrategy.TOPIC_PATTERN:
             for pattern, handler_keys in self._handler_routing_table.items():
                 # fnmatch.translate converts glob pattern to regex pattern
                 regex_pattern = fnmatch.translate(pattern)
@@ -318,7 +319,7 @@ class MixinHandlerRouting:
                 {
                     "routing_key": routing_key,
                     "category": category.value,
-                    "routing_strategy": self._routing_strategy,
+                    "routing_strategy": self._routing_strategy.value,
                     "has_default_handler": self._default_handler_key is not None,
                 },
             )
@@ -348,14 +349,17 @@ class MixinHandlerRouting:
             - topic_pattern: O(n) with pre-compiled regex, results cached (FIFO 128)
         """
         # Direct lookup for payload_type_match and operation_match
-        if self._routing_strategy in ("payload_type_match", "operation_match"):
+        if self._routing_strategy in (
+            EnumHandlerRoutingStrategy.PAYLOAD_TYPE_MATCH,
+            EnumHandlerRoutingStrategy.OPERATION_MATCH,
+        ):
             handler_keys = self._handler_routing_table.get(routing_key)
             if handler_keys:
                 # Return copy to prevent mutation of internal state
                 return list(handler_keys)
 
         # Glob pattern matching for topic_pattern (uses compiled patterns + cache)
-        elif self._routing_strategy == "topic_pattern":
+        elif self._routing_strategy == EnumHandlerRoutingStrategy.TOPIC_PATTERN:
             # Use cached lookup - returns tuple of handler keys or None
             cached_result = self._get_handler_keys_for_topic_pattern(routing_key)
             if cached_result is not None:
@@ -508,12 +512,12 @@ class MixinHandlerRouting:
         return {k: list(v) for k, v in self._handler_routing_table.items()}
 
     @property
-    def routing_strategy(self) -> str:
+    def routing_strategy(self) -> EnumHandlerRoutingStrategy:
         """
         Get the configured routing strategy.
 
         Returns:
-            str: The routing strategy (payload_type_match, operation_match, topic_pattern).
+            EnumHandlerRoutingStrategy: The routing strategy.
         """
         return self._routing_strategy
 

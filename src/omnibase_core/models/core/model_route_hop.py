@@ -69,7 +69,7 @@ class ModelRouteHop(BaseModel):
         description="Load factor (0.0-1.0) at this hop",
     )
 
-    model_config = ConfigDict()
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
 
     @field_serializer("timestamp")
     def serialize_timestamp(self, value: datetime) -> str:

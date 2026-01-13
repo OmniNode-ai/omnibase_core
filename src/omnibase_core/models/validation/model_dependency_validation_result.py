@@ -6,7 +6,7 @@ Result of dependency validation in workflow DAG validation.
 
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 __all__ = ["ModelDependencyValidationResult"]
 
@@ -14,7 +14,7 @@ __all__ = ["ModelDependencyValidationResult"]
 class ModelDependencyValidationResult(BaseModel):
     """Result of dependency validation in workflow."""
 
-    model_config = {"frozen": True}
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     is_valid: bool = Field(
         default=True,

@@ -10,7 +10,14 @@ from __future__ import annotations
 import hashlib
 from uuid import UUID
 
-from pydantic import BaseModel, Field, SecretStr, ValidationError, field_serializer
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    SecretStr,
+    ValidationError,
+    field_serializer,
+)
 
 from omnibase_core.constants.constants_field_limits import MAX_NAME_LENGTH
 from omnibase_core.enums.enum_auth_type import EnumAuthType
@@ -193,11 +200,11 @@ class ModelConnectionAuth(BaseModel):
             token=None,
         )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # Protocol method implementations
 

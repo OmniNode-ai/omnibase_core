@@ -171,9 +171,9 @@ class MixinToolExecution:
         # Try to create typed input state
         try:
             # Add any required fields that might be missing
-            if hasattr(input_state_class, "__fields__"):
-                for field_name, field_info in input_state_class.__fields__.items():
-                    if field_name not in param_dict and field_info.is_required():
+            if hasattr(input_state_class, "model_fields"):
+                for field_name, field_info in input_state_class.model_fields.items():
+                    if field_name not in param_dict and field_info.is_required:
                         # Set reasonable defaults for common fields
                         if field_name == "action":
                             param_dict["action"] = "execute"

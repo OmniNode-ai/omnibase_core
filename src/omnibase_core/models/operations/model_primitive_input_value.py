@@ -7,7 +7,7 @@ Follows ONEX strong typing principles and one-model-per-file architecture.
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_input_data_type import EnumInputDataType
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
@@ -39,11 +39,11 @@ class ModelPrimitiveInputValue(BaseModel):
         description="Additional metadata for primitive input",
     )
 
-    model_config = {
-        "extra": "forbid",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="forbid",
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
 
 # Export for use

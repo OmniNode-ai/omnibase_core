@@ -8,7 +8,7 @@ for efficient data consolidation.
 Part of the "one model per file" convention for clean architecture.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelReductionConfig(BaseModel):
@@ -62,8 +62,8 @@ class ModelReductionConfig(BaseModel):
         description="Cache intermediate reduction results",
     )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )

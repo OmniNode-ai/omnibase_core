@@ -8,7 +8,9 @@ import uuid
 
 import pytest
 
-from omnibase_core.infrastructure.load_balancer import LoadBalancer
+from omnibase_core.infrastructure.infra_load_balancer import LoadBalancer
+
+pytestmark = pytest.mark.unit
 
 
 def test_load_balancer_initialization():

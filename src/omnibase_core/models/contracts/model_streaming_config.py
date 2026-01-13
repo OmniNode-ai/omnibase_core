@@ -8,7 +8,7 @@ for large data volumes.
 Part of the "one model per file" convention for clean architecture.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelStreamingConfig(BaseModel):
@@ -44,8 +44,8 @@ class ModelStreamingConfig(BaseModel):
         description="Enable backpressure handling for streaming",
     )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+    )

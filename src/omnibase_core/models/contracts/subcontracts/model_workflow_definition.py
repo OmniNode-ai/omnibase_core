@@ -9,7 +9,7 @@ from __future__ import annotations
 import hashlib
 import json
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
@@ -29,16 +29,12 @@ class ModelWorkflowDefinition(BaseModel):
         influence any runtime decision in v1.0.
     """
 
-    model_config = {
-        # v1.0.5 Fix 54: Reserved Fields Governance
-        # Use "ignore" instead of "forbid" to preserve reserved fields during
-        # round-trip serialization. Reserved fields exist for forward compatibility
-        # and must not be rejected or validated in v1.0.
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-        "frozen": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+        frozen=True,
+    )
 
     # Model version for instance tracking
     version: ModelSemVer = Field(
