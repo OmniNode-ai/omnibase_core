@@ -639,7 +639,7 @@ class ServiceInvariantEvaluator:
             if (
                 fail_fast
                 and not result.passed
-                and result.severity == EnumSeverity.CRITICAL
+                and result.severity in (EnumSeverity.CRITICAL, EnumSeverity.FATAL)
             ):
                 break
 

@@ -30,16 +30,24 @@ class ModelAnalyticsErrorSummary(BaseModel):
     error_count: int = Field(description="Number of errors")
     warning_count: int = Field(description="Number of warnings")
     critical_error_count: int = Field(description="Number of critical errors")
+    fatal_error_count: int = Field(default=0, description="Number of fatal errors")
 
     # Rate metrics (percentages)
     error_rate_percentage: float = Field(description="Error rate as percentage")
     critical_error_rate_percentage: float = Field(
         description="Critical error rate as percentage",
     )
+    fatal_error_rate_percentage: float = Field(
+        default=0.0,
+        description="Fatal error rate as percentage",
+    )
 
     # Status indicators
     severity_level: str = Field(description="Overall severity level")
     has_critical_issues: bool = Field(description="Whether there are critical issues")
+    has_fatal_issues: bool = Field(
+        default=False, description="Whether there are fatal issues"
+    )
 
     @property
     def has_any_issues(self) -> bool:
@@ -49,7 +57,11 @@ class ModelAnalyticsErrorSummary(BaseModel):
     @property
     def is_error_free(self) -> bool:
         """Check if there are no errors (only warnings allowed)."""
-        return self.error_count == 0 and self.critical_error_count == 0
+        return (
+            self.error_count == 0
+            and self.critical_error_count == 0
+            and self.fatal_error_count == 0
+        )
 
     @property
     def has_warnings_only(self) -> bool:
@@ -58,10 +70,13 @@ class ModelAnalyticsErrorSummary(BaseModel):
             self.warning_count > 0
             and self.error_count == 0
             and self.critical_error_count == 0
+            and self.fatal_error_count == 0
         )
 
     def get_overall_health_status(self) -> str:
         """Get overall health status based on error counts."""
+        if self.fatal_error_count > 0:
+            return "Fatal"
         if self.critical_error_count > 0:
             return "Critical"
         if self.error_count > 0:
@@ -73,6 +88,7 @@ class ModelAnalyticsErrorSummary(BaseModel):
     def get_issue_breakdown(self) -> dict[str, int]:
         """Get breakdown of issue counts by type."""
         return {
+            "fatal": self.fatal_error_count,
             "critical": self.critical_error_count,
             "errors": self.error_count,
             "warnings": self.warning_count,
@@ -89,6 +105,9 @@ class ModelAnalyticsErrorSummary(BaseModel):
         critical_error_rate_percentage: float,
         severity_level: str,
         has_critical_issues: bool,
+        fatal_error_count: int = 0,
+        fatal_error_rate_percentage: float = 0.0,
+        has_fatal_issues: bool = False,
     ) -> ModelAnalyticsErrorSummary:
         """Create an error summary with all required data."""
         return cls(
@@ -96,10 +115,13 @@ class ModelAnalyticsErrorSummary(BaseModel):
             error_count=error_count,
             warning_count=warning_count,
             critical_error_count=critical_error_count,
+            fatal_error_count=fatal_error_count,
             error_rate_percentage=error_rate_percentage,
             critical_error_rate_percentage=critical_error_rate_percentage,
+            fatal_error_rate_percentage=fatal_error_rate_percentage,
             severity_level=severity_level,
             has_critical_issues=has_critical_issues,
+            has_fatal_issues=has_fatal_issues,
         )
 
     model_config = ConfigDict(
@@ -120,10 +142,13 @@ class ModelAnalyticsErrorSummary(BaseModel):
             "error_count": self.error_count,
             "warning_count": self.warning_count,
             "critical_error_count": self.critical_error_count,
+            "fatal_error_count": self.fatal_error_count,
             "error_rate_percentage": self.error_rate_percentage,
             "critical_error_rate_percentage": self.critical_error_rate_percentage,
+            "fatal_error_rate_percentage": self.fatal_error_rate_percentage,
             "severity_level": self.severity_level,
             "has_critical_issues": self.has_critical_issues,
+            "has_fatal_issues": self.has_fatal_issues,
         }
         return result
 

@@ -109,6 +109,11 @@ class ModelValidationResult[T: object](BaseModel):
         """Number of critical-level issues."""
         return len(self.get_issues_by_severity(EnumSeverity.CRITICAL))
 
+    @property
+    def fatal_count(self) -> int:
+        """Number of fatal-level issues."""
+        return len(self.get_issues_by_severity(EnumSeverity.FATAL))
+
     # Factory methods for common patterns
     @classmethod
     def create_valid(
@@ -200,7 +205,8 @@ class ModelValidationResult[T: object](BaseModel):
         self.issues.append(issue)
 
         # Update validity based on severity
-        if severity in [EnumSeverity.ERROR, EnumSeverity.CRITICAL]:
+        # FATAL, CRITICAL, and ERROR all invalidate the result
+        if severity in [EnumSeverity.FATAL, EnumSeverity.CRITICAL, EnumSeverity.ERROR]:
             self.is_valid = False
 
         # Update legacy fields for current standards
@@ -255,6 +261,10 @@ class ModelValidationResult[T: object](BaseModel):
     def has_critical_issues(self) -> bool:
         """Check if there are any critical issues."""
         return any(issue.severity == EnumSeverity.CRITICAL for issue in self.issues)
+
+    def has_fatal_issues(self) -> bool:
+        """Check if there are any fatal issues."""
+        return any(issue.severity == EnumSeverity.FATAL for issue in self.issues)
 
     def has_errors(self) -> bool:
         """Check if there are any error-level issues."""

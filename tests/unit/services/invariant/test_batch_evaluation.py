@@ -116,6 +116,38 @@ class TestBatchEvaluation:
         # May have fewer results than invariants due to fail_fast
         assert len(summary.results) <= 2
 
+    def test_evaluate_batch_fail_fast_stops_on_fatal(
+        self, evaluator: ServiceInvariantEvaluator
+    ) -> None:
+        """fail_fast=True stops on first FATAL failure (same as CRITICAL)."""
+        invariant_set = ModelInvariantSet(
+            name="Fail Fast Fatal Test",
+            target="test",
+            invariants=[
+                ModelInvariant(
+                    name="First Fatal",
+                    type=EnumInvariantType.FIELD_PRESENCE,
+                    severity=EnumSeverity.FATAL,
+                    config={"fields": ["missing_field"]},  # Will fail
+                ),
+                ModelInvariant(
+                    name="Second",
+                    type=EnumInvariantType.FIELD_PRESENCE,
+                    severity=EnumSeverity.WARNING,
+                    config={"fields": ["other"]},
+                ),
+            ],
+        )
+
+        summary = evaluator.evaluate_all(invariant_set, {}, fail_fast=True)
+
+        # Should stop after first FATAL failure (FATAL counted with critical_failures)
+        assert summary.overall_passed is False
+        assert summary.critical_failures >= 1  # FATAL counted as critical
+        # Should have only 1 result due to fail_fast stopping on FATAL
+        assert len(summary.results) == 1
+        assert summary.results[0].severity == EnumSeverity.FATAL
+
     def test_evaluate_batch_continues_on_failure(
         self,
         evaluator: ServiceInvariantEvaluator,
@@ -197,6 +229,66 @@ class TestBatchEvaluation:
         assert summary.failed_count == 3
         assert summary.passed_count == 0
         # overall_passed is False because of critical failures
+        assert summary.overall_passed is False
+
+    def test_evaluate_all_counts_all_severity_levels(
+        self, evaluator: ServiceInvariantEvaluator
+    ) -> None:
+        """evaluate_all correctly counts all severity levels including FATAL, ERROR, DEBUG."""
+        invariant_set = ModelInvariantSet(
+            name="All Severities Test",
+            target="test",
+            invariants=[
+                ModelInvariant(
+                    name="Fatal Fail",
+                    type=EnumInvariantType.FIELD_PRESENCE,
+                    severity=EnumSeverity.FATAL,
+                    config={"fields": ["missing_fatal"]},
+                ),
+                ModelInvariant(
+                    name="Critical Fail",
+                    type=EnumInvariantType.FIELD_PRESENCE,
+                    severity=EnumSeverity.CRITICAL,
+                    config={"fields": ["missing_critical"]},
+                ),
+                ModelInvariant(
+                    name="Error Fail",
+                    type=EnumInvariantType.FIELD_PRESENCE,
+                    severity=EnumSeverity.ERROR,
+                    config={"fields": ["missing_error"]},
+                ),
+                ModelInvariant(
+                    name="Warning Fail",
+                    type=EnumInvariantType.FIELD_PRESENCE,
+                    severity=EnumSeverity.WARNING,
+                    config={"fields": ["missing_warning"]},
+                ),
+                ModelInvariant(
+                    name="Info Fail",
+                    type=EnumInvariantType.FIELD_PRESENCE,
+                    severity=EnumSeverity.INFO,
+                    config={"fields": ["missing_info"]},
+                ),
+                ModelInvariant(
+                    name="Debug Fail",
+                    type=EnumInvariantType.FIELD_PRESENCE,
+                    severity=EnumSeverity.DEBUG,
+                    config={"fields": ["missing_debug"]},
+                ),
+            ],
+        )
+
+        summary = evaluator.evaluate_all(invariant_set, {})
+
+        # FATAL and CRITICAL are counted together in critical_failures
+        assert summary.critical_failures == 2  # 1 FATAL + 1 CRITICAL
+        assert summary.error_failures == 1
+        assert summary.warning_failures == 1
+        # INFO and DEBUG are counted together in info_failures
+        assert summary.info_failures == 2  # 1 INFO + 1 DEBUG
+        assert summary.failed_count == 6
+        assert summary.passed_count == 0
+        # overall_passed is False because of critical/fatal failures
         assert summary.overall_passed is False
 
     def test_evaluate_all_overall_passed_without_critical_failures(

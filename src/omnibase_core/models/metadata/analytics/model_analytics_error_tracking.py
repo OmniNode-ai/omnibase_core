@@ -34,11 +34,20 @@ class ModelAnalyticsErrorTracking(BaseModel):
         default=0,
         description="Number of critical errors",
     )
+    fatal_error_count: int = Field(
+        default=0,
+        description="Number of fatal errors",
+    )
 
     @property
     def total_issues(self) -> int:
         """Get total count of all issues."""
-        return self.error_count + self.warning_count + self.critical_error_count
+        return (
+            self.error_count
+            + self.warning_count
+            + self.critical_error_count
+            + self.fatal_error_count
+        )
 
     @property
     def has_errors(self) -> bool:
@@ -56,12 +65,19 @@ class ModelAnalyticsErrorTracking(BaseModel):
         return self.critical_error_count > 0
 
     @property
+    def has_fatal_errors(self) -> bool:
+        """Check if there are any fatal errors."""
+        return self.fatal_error_count > 0
+
+    @property
     def has_any_issues(self) -> bool:
         """Check if there are any issues at all."""
         return self.total_issues > 0
 
     def get_error_severity_level(self) -> str:
         """Get descriptive error severity level."""
+        if self.fatal_error_count > 0:
+            return "Fatal"
         if self.critical_error_count > 0:
             return "Critical"
         if self.error_count > 10:
@@ -86,6 +102,12 @@ class ModelAnalyticsErrorTracking(BaseModel):
             return 0.0
         return (self.critical_error_count / total_invocations) * 100.0
 
+    def calculate_fatal_error_rate(self, total_invocations: int) -> float:
+        """Calculate fatal error rate percentage."""
+        if total_invocations == 0:
+            return 0.0
+        return (self.fatal_error_count / total_invocations) * 100.0
+
     def is_error_rate_acceptable(
         self,
         total_invocations: int,
@@ -99,22 +121,26 @@ class ModelAnalyticsErrorTracking(BaseModel):
         errors: int,
         warnings: int,
         critical_errors: int,
+        fatal_errors: int = 0,
     ) -> None:
         """Update all error counts."""
         self.error_count = max(0, errors)
         self.warning_count = max(0, warnings)
         self.critical_error_count = max(0, critical_errors)
+        self.fatal_error_count = max(0, fatal_errors)
 
     def add_errors(
         self,
         errors: int = 0,
         warnings: int = 0,
         critical_errors: int = 0,
+        fatal_errors: int = 0,
     ) -> None:
         """Add to existing error counts."""
         self.error_count += max(0, errors)
         self.warning_count += max(0, warnings)
         self.critical_error_count += max(0, critical_errors)
+        self.fatal_error_count += max(0, fatal_errors)
 
     def increment_error(self) -> None:
         """Increment error count by 1."""
@@ -128,11 +154,16 @@ class ModelAnalyticsErrorTracking(BaseModel):
         """Increment critical error count by 1."""
         self.critical_error_count += 1
 
+    def increment_fatal_error(self) -> None:
+        """Increment fatal error count by 1."""
+        self.fatal_error_count += 1
+
     def clear_all_errors(self) -> None:
         """Clear all error and warning counts."""
         self.error_count = 0
         self.warning_count = 0
         self.critical_error_count = 0
+        self.fatal_error_count = 0
 
     def get_error_distribution(self) -> dict[str, int]:
         """Get error distribution."""
@@ -140,6 +171,7 @@ class ModelAnalyticsErrorTracking(BaseModel):
             "errors": self.error_count,
             "warnings": self.warning_count,
             "critical_errors": self.critical_error_count,
+            "fatal_errors": self.fatal_error_count,
         }
 
     def get_error_summary(
@@ -152,12 +184,17 @@ class ModelAnalyticsErrorTracking(BaseModel):
             error_count=self.error_count,
             warning_count=self.warning_count,
             critical_error_count=self.critical_error_count,
+            fatal_error_count=self.fatal_error_count,
             error_rate_percentage=self.calculate_error_rate(total_invocations),
             critical_error_rate_percentage=self.calculate_critical_error_rate(
                 total_invocations,
             ),
+            fatal_error_rate_percentage=self.calculate_fatal_error_rate(
+                total_invocations,
+            ),
             severity_level=self.get_error_severity_level(),
             has_critical_issues=self.has_critical_errors,
+            has_fatal_issues=self.has_fatal_errors,
         )
 
     @classmethod
@@ -176,12 +213,14 @@ class ModelAnalyticsErrorTracking(BaseModel):
         error_count: int,
         warning_count: int = 0,
         critical_error_count: int = 0,
+        fatal_error_count: int = 0,
     ) -> ModelAnalyticsErrorTracking:
         """Create error tracking with specified error counts."""
         return cls(
             error_count=error_count,
             warning_count=warning_count,
             critical_error_count=critical_error_count,
+            fatal_error_count=fatal_error_count,
         )
 
     model_config = ConfigDict(
@@ -201,6 +240,7 @@ class ModelAnalyticsErrorTracking(BaseModel):
             "error_count": self.error_count,
             "warning_count": self.warning_count,
             "critical_error_count": self.critical_error_count,
+            "fatal_error_count": self.fatal_error_count,
             "total_issues": self.total_issues,
             "severity_level": self.get_error_severity_level(),
         }

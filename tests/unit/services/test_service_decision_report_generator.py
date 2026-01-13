@@ -30,8 +30,7 @@ from uuid import uuid4
 
 import pytest
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.enums.enum_severity import EnumSeverity
+from omnibase_core.enums import EnumCoreErrorCode, EnumSeverity
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.evidence.model_cost_statistics import ModelCostStatistics
 from omnibase_core.models.evidence.model_evidence_summary import ModelEvidenceSummary

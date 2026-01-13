@@ -13,7 +13,7 @@ from uuid import UUID
 import pytest
 from pydantic import ValidationError
 
-from omnibase_core.enums.enum_severity import EnumSeverity
+from omnibase_core.enums import EnumSeverity
 from omnibase_core.models.invariant import ModelInvariantResult
 from omnibase_core.models.replay import (
     ModelExecutionComparison,
