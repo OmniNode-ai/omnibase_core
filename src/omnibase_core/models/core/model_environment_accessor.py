@@ -73,7 +73,7 @@ class ModelEnvironmentAccessor(ModelFieldAccessor):
                     )
             elif isinstance(raw_value, expected_type):
                 return raw_value
-        except (ValueError, TypeError):
+        except (TypeError, ValueError):
             pass
 
         return default

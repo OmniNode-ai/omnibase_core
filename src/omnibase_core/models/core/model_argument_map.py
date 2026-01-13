@@ -99,7 +99,7 @@ class ModelArgumentMap(BaseModel):
                         return value.lower() in ("true", "1", "yes", "on")  # type: ignore[return-value]
                     # safe: bool() always returns bool when expected_type == bool
                     return bool(value)  # type: ignore[return-value]
-            except (ValueError, TypeError):
+            except (TypeError, ValueError):
                 pass
         return default
 
@@ -197,7 +197,7 @@ class ModelArgumentMap(BaseModel):
                         return value.lower() in ("true", "1", "yes", "on")  # type: ignore[return-value]
                     # safe: bool() always returns bool when expected_type == bool
                     return bool(value)  # type: ignore[return-value]
-            except (ValueError, TypeError):
+            except (TypeError, ValueError):
                 pass
         return default
 

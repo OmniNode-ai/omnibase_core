@@ -1,3 +1,10 @@
+"""
+Node core information summary model.
+
+Clean, strongly-typed replacement for node core info dict[str, Any] return types.
+Follows ONEX one-model-per-file naming conventions.
+"""
+
 from __future__ import annotations
 
 from typing import cast
@@ -12,13 +19,6 @@ from omnibase_core.enums.enum_status import EnumStatus
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
-
-"""
-Node core information summary model.
-
-Clean, strongly-typed replacement for node core info dict[str, Any]return types.
-Follows ONEX one-model-per-file naming conventions.
-"""
 
 
 class ModelNodeCoreInfoSummary(BaseModel):

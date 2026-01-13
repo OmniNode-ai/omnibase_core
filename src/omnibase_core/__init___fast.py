@@ -1,7 +1,5 @@
-from collections.abc import Callable
-
 """
-Omnibase Core - ONEX Four-Node ModelArchitecture Implementation (OPTIMIZED)
+Omnibase Core - ONEX Four-Node ModelArchitecture Implementation (OPTIMIZED).
 
 PERFORMANCE FIX: This version removes package-level imports that cause
 453ms+ import penalty.
@@ -40,9 +38,10 @@ PERFORMANCE OPTIMIZATION: Validation tools are now lazy-loaded to prevent
 import-time penalties. This reduces package import time from 453ms to <5ms.
 """
 
+from collections.abc import Callable
+
 # NO PACKAGE-LEVEL IMPORTS - This is the key fix!
 # All validation imports moved to lazy functions to eliminate import cascade
-
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:

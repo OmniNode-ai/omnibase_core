@@ -433,7 +433,7 @@ class NodeCoreBase(ABC):
                                             f"Invalid version format: {version_value}",
                                             {"node_id": self.node_id},
                                         )
-                                except (ValueError, IndexError) as e:
+                                except (IndexError, ValueError) as e:
                                     # Parsing failed, keep default
                                     emit_log_event(
                                         LogLevel.WARNING,

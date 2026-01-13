@@ -137,7 +137,7 @@ class ServiceValidationSuite:
                         files_processed=0,
                     ),
                 )
-            except (ValueError, TypeError) as e:
+            except (TypeError, ValueError) as e:
                 # Data validation errors
                 results[validation_type] = ModelValidationResult(
                     is_valid=False,

@@ -666,7 +666,7 @@ def auto_rebuild_on_module_load(  # stub-ok: fully implemented with extensive do
                 error_msg=rebuild_error.message or str(rebuild_error),
                 error_type="ModelOnexError",
             )
-        except (TypeError, ValueError, AttributeError):
+        except (AttributeError, TypeError, ValueError):
             # These specific exceptions indicate configuration problems
             # Re-raise to fail fast
             raise

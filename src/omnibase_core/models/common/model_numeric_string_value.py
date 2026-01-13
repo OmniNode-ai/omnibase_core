@@ -346,7 +346,7 @@ class ModelNumericStringValue(BaseModel):
         if self.value_type == EnumNumericValueType.STRING:
             try:
                 return float(self.str_value)  # type: ignore[arg-type]
-            except (ValueError, TypeError) as e:
+            except (TypeError, ValueError) as e:
                 raise ModelOnexError(
                     error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"Cannot convert string '{self.str_value}' to float",
@@ -437,7 +437,7 @@ class ModelNumericStringValue(BaseModel):
             try:
                 # Try direct int conversion first
                 return int(self.str_value)  # type: ignore[arg-type]
-            except (ValueError, TypeError):
+            except (TypeError, ValueError):
                 # Try parsing as float first, then convert to int
                 try:
                     float_val = float(self.str_value)  # type: ignore[arg-type]
@@ -460,7 +460,7 @@ class ModelNumericStringValue(BaseModel):
                         return math.ceil(float_val)
                     elif coercion_mode == EnumCoercionMode.ROUND:
                         return round(float_val)
-                except (ValueError, TypeError, OverflowError) as e:
+                except (OverflowError, TypeError, ValueError) as e:
                     raise ModelOnexError(
                         error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                         message=f"Cannot convert string '{self.str_value}' to int",

@@ -26,7 +26,7 @@ class UtilUUID:
         try:
             UUID(uuid_string)
             return True
-        except (ValueError, TypeError):
+        except (TypeError, ValueError):
             return False
 
     @staticmethod
@@ -34,7 +34,7 @@ class UtilUUID:
         """Parse a UUID string, return None if invalid."""
         try:
             return UUID(uuid_string)
-        except (ValueError, TypeError):
+        except (TypeError, ValueError):
             return None
 
     @staticmethod
@@ -52,7 +52,7 @@ class UtilUUID:
         if isinstance(value, str):
             try:
                 return UUID(value)
-            except (ValueError, TypeError):
+            except (TypeError, ValueError):
                 return uuid4()
         return uuid4()  # type: ignore[unreachable]  # Defensive fallback
 

@@ -126,7 +126,7 @@ class ModelConfigurationBase[T](BaseModel):
             if self.name is not None and len(self.name.strip()) == 0:
                 return False
             return base_valid
-        except (AttributeError, ValueError, TypeError, KeyError) as e:
+        except (AttributeError, KeyError, TypeError, ValueError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
@@ -180,7 +180,7 @@ class ModelConfigurationBase[T](BaseModel):
                     self.config_data = value
             self.update_timestamp()
             return True
-        except (AttributeError, ValueError, TypeError, KeyError) as e:
+        except (AttributeError, KeyError, TypeError, ValueError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",

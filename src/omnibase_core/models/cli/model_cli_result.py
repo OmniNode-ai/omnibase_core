@@ -283,12 +283,12 @@ class ModelCliResult(BaseModel):
             if isinstance(default, int):
                 try:
                     return int(value_str)
-                except (ValueError, TypeError):
+                except (TypeError, ValueError):
                     return default
             if isinstance(default, float):
                 try:
                     return float(value_str)
-                except (ValueError, TypeError):
+                except (TypeError, ValueError):
                     return default
             return value_str
 
@@ -325,12 +325,12 @@ class ModelCliResult(BaseModel):
             if isinstance(default, int):
                 try:
                     return int(value)
-                except (ValueError, TypeError):
+                except (TypeError, ValueError):
                     return default
             if isinstance(default, float):
                 try:
                     return float(value)
-                except (ValueError, TypeError):
+                except (TypeError, ValueError):
                     return default
             return value
         return default

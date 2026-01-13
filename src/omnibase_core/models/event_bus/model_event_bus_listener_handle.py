@@ -191,9 +191,9 @@ class ModelEventBusListenerHandle(BaseModel):
         # threading objects which cannot be deep copied
         try:
             copied_subscriptions = copy.deepcopy(self.subscriptions, memo)
-        except (TypeError, RuntimeError) as e:
-            # TypeError: Can't pickle lock objects
+        except (RuntimeError, TypeError) as e:
             # RuntimeError: Can't deep copy threading objects
+            # TypeError: Can't pickle lock objects
             emit_log_event(
                 LogLevel.DEBUG,
                 f"DEEPCOPY: Cannot deep copy subscriptions (callbacks may contain locks or closures), "

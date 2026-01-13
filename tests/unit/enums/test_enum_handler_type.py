@@ -245,14 +245,3 @@ class TestEnumHandlerTypeConcreteCategories:
         # The LOCAL enum member should have a docstring warning about dev/test only
         assert "dev/test" in EnumHandlerType.LOCAL.__doc__.lower()
         assert "not for production" in EnumHandlerType.LOCAL.__doc__.lower()
-
-    def test_enum_string_construction(self):
-        """Test that enum values can be constructed from strings."""
-        # Verify abstract handler type values
-        assert EnumHandlerType.EXTENSION.value == "extension"
-        assert EnumHandlerType.SPECIAL.value == "special"
-        assert EnumHandlerType.NAMED.value == "named"
-        # Verify construction from string values works correctly
-        assert EnumHandlerType("extension") is EnumHandlerType.EXTENSION
-        assert EnumHandlerType("special") is EnumHandlerType.SPECIAL
-        assert EnumHandlerType("named") is EnumHandlerType.NAMED

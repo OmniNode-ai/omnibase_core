@@ -147,7 +147,7 @@ class ModelValueContainer(BaseModel):
             metadata_errors = self._get_metadata_errors()
             errors.extend(metadata_errors)
 
-        except (AttributeError, ValueError, TypeError, KeyError, RuntimeError) as e:
+        except (AttributeError, KeyError, RuntimeError, TypeError, ValueError) as e:
             errors.append(f"Validation error: {e!s}")
 
         return errors
@@ -279,7 +279,7 @@ class ModelValueContainer(BaseModel):
                         f"Metadata value for key '{key}' exceeds maximum length of 1000 characters"
                     )
 
-        except (AttributeError, ValueError, TypeError, KeyError, RuntimeError) as e:
+        except (AttributeError, KeyError, RuntimeError, TypeError, ValueError) as e:
             errors.append(f"Metadata validation error: {e!s}")
 
         return errors
