@@ -114,6 +114,7 @@ class NamingConventionValidator:
     # Exception patterns - classes that don't need to follow strict naming
     EXCEPTION_PATTERNS = [
         r"^_.*",  # Private classes
+        r"^Checker.*",  # Checker/validator utility classes (e.g., CheckerEnumMemberCasing)
         r".*Test$",  # Test classes
         r".*TestCase$",  # Test case classes
         r"^Test.*",  # Test classes

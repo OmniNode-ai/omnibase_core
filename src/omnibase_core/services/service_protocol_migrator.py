@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Protocol migrator for safe migration of protocols to omnibase_spi.
 """
@@ -12,6 +10,7 @@ from typing import cast
 
 from omnibase_core.decorators.decorator_error_handling import standard_error_handling
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.validation.model_migration_conflict_union import (
     ModelMigrationConflictUnion,
 )
