@@ -98,6 +98,14 @@ allowed_files:
     added: "2026-01-05"
     review: "2026-06-13"
 
+  - file: "examples/demo/handlers/support_assistant/model_config.py"
+    reason: >-
+      Loads handler contract YAML to extract provider_config section - uses yaml.safe_load followed by
+      Pydantic model_validate() for proper validation. Cannot use util_safe_yaml_loader due to circular
+      import from examples directory.
+    added: "2026-01-12"
+    review: "2026-06-13"
+
 # Specific filenames that are allowed (matched by basename)
 # Allows the same utility to be used across different module paths (e.g., copied utilities)
 allowed_filenames:
