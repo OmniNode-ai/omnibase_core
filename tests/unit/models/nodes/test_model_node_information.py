@@ -15,6 +15,7 @@ from uuid import uuid4
 
 import pytest
 
+from omnibase_core.enums.enum_health_status import EnumHealthStatus
 from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
 from omnibase_core.enums.enum_metadata_node_type import EnumMetadataNodeType
 from omnibase_core.enums.enum_registry_status import EnumRegistryStatus
@@ -274,7 +275,7 @@ class TestModelNodeInformation:
         assert info.core_info.status == EnumMetadataNodeStatus.ACTIVE
 
     def test_health_property_get(self):
-        """Test health property delegation."""
+        """Test health property returns EnumHealthStatus (mapped from core_info)."""
         core_info = ModelNodeCoreInfo.create_streamlined(
             node_name="test_node",
             node_type=EnumMetadataNodeType.FUNCTION,
@@ -282,10 +283,11 @@ class TestModelNodeInformation:
         )
         info = ModelNodeInformation(core_info=core_info)
 
-        assert isinstance(info.health, EnumRegistryStatus)
+        # health property now returns EnumHealthStatus (mapped from EnumRegistryStatus)
+        assert isinstance(info.health, EnumHealthStatus)
 
     def test_health_property_set(self):
-        """Test health property setter."""
+        """Test health property setter accepts EnumHealthStatus."""
         core_info = ModelNodeCoreInfo.create_streamlined(
             node_name="test_node",
             node_type=EnumMetadataNodeType.FUNCTION,
@@ -293,8 +295,10 @@ class TestModelNodeInformation:
         )
         info = ModelNodeInformation(core_info=core_info)
 
-        info.health = EnumRegistryStatus.HEALTHY
+        # health setter accepts EnumHealthStatus and reverse-maps to EnumRegistryStatus
+        info.health = EnumHealthStatus.HEALTHY
         assert info.core_info.health == EnumRegistryStatus.HEALTHY
+        assert info.health == EnumHealthStatus.HEALTHY
 
     def test_supported_operations_property(self):
         """Test supported_operations property delegation."""
@@ -366,7 +370,7 @@ class TestModelNodeInformation:
             node_version=ModelSemVer(major=1, minor=0, patch=0),
         )
         info = ModelNodeInformation(core_info=core_info)
-        info.health = EnumRegistryStatus.HEALTHY
+        info.health = EnumHealthStatus.HEALTHY
 
         assert info.is_healthy() is True
 

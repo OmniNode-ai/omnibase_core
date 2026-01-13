@@ -196,9 +196,8 @@ class CollectorAST(ast.NodeVisitor):
             # Handle generic types like Enum[str]
             if isinstance(base.value, ast.Name):
                 return base.value.id
-        # Handle tuple bases like (str, Enum)
-        # Note: This appears in source as "class Foo(str, Enum)" which
-        # AST represents as multiple bases, not a tuple
+        # Note: Tuple syntax like "class Foo(str, Enum)" doesn't create a tuple
+        # in AST - each base is represented separately, so "Enum" is checked above.
         return ""
 
     def _extract_value(self, node: ast.expr | None) -> str | None:

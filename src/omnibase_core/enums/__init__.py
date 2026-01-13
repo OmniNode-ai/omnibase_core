@@ -252,6 +252,15 @@ from .enum_service_type_category import EnumServiceTypeCategory
 
 # Severity enumeration (canonical - OMN-1311)
 from .enum_severity import EnumSeverity
+
+# Deprecated severity enum aliases (OMN-1296 - use EnumSeverity directly)
+# Explicit type annotations required for mypy strict mode compliance
+EnumInvariantSeverity: type[EnumSeverity] = EnumSeverity  # Deprecated: use EnumSeverity
+EnumValidationSeverity: type[EnumSeverity] = (
+    EnumSeverity  # Deprecated: use EnumSeverity
+)
+EnumViolationSeverity: type[EnumSeverity] = EnumSeverity  # Deprecated: use EnumSeverity
+
 from .enum_state_update_operation import EnumStateUpdateOperation
 
 # Subject type enums (OMN-1237)
@@ -339,6 +348,10 @@ __all__ = [
     "EnumSecurityRiskLevel",
     # Severity domain (canonical - OMN-1311)
     "EnumSeverity",
+    # Deprecated severity aliases (OMN-1296 - use EnumSeverity directly)
+    "EnumInvariantSeverity",
+    "EnumValidationSeverity",
+    "EnumViolationSeverity",
     # Validation domain
     "EnumEnvironmentValidationRuleType",
     "EnumValidationRuleType",

@@ -113,7 +113,7 @@ class EnumSeverity(str, Enum):
         for member in cls:
             if member.value == normalized:
                 return member
-        # error-ok: ValueError is standard for enum from_string pattern per Python conventions
+        # error-ok: standard Python enum from_string convention
         raise ValueError(f"Unknown severity level: {value}")
 
 

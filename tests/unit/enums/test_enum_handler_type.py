@@ -14,7 +14,7 @@ class TestEnumHandlerType:
     """Test cases for EnumHandlerType enum."""
 
     def test_abstract_handler_type_values(self):
-        """Test that abstract handler type enum values are correct."""
+        """Test that abstract handler type values are correct."""
         assert EnumHandlerType.EXTENSION == "extension"
         assert EnumHandlerType.SPECIAL == "special"
         assert EnumHandlerType.NAMED == "named"
@@ -248,11 +248,11 @@ class TestEnumHandlerTypeConcreteCategories:
 
     def test_enum_string_construction(self):
         """Test that enum values can be constructed from strings."""
-        # Test abstract handler types can be constructed from strings
+        # Verify abstract handler type values
         assert EnumHandlerType.EXTENSION.value == "extension"
         assert EnumHandlerType.SPECIAL.value == "special"
         assert EnumHandlerType.NAMED.value == "named"
-        # Ensure they can be constructed from strings
+        # Verify construction from string values works correctly
         assert EnumHandlerType("extension") is EnumHandlerType.EXTENSION
         assert EnumHandlerType("special") is EnumHandlerType.SPECIAL
         assert EnumHandlerType("named") is EnumHandlerType.NAMED

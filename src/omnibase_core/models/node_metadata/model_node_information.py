@@ -147,21 +147,61 @@ class ModelNodeInformation(BaseModel):
         """Set node status."""
         self.core_info.status = value
 
+    # Mapping from EnumRegistryStatus to EnumHealthStatus for consistent API
+    _REGISTRY_TO_HEALTH_MAP: dict[EnumRegistryStatus, EnumHealthStatus] = {
+        EnumRegistryStatus.HEALTHY: EnumHealthStatus.HEALTHY,
+        EnumRegistryStatus.DEGRADED: EnumHealthStatus.DEGRADED,
+        EnumRegistryStatus.UNAVAILABLE: EnumHealthStatus.UNAVAILABLE,
+        EnumRegistryStatus.INITIALIZING: EnumHealthStatus.INITIALIZING,
+        EnumRegistryStatus.MAINTENANCE: EnumHealthStatus.UNAVAILABLE,
+    }
+
+    # Reverse mapping from EnumHealthStatus to EnumRegistryStatus for setter
+    _HEALTH_TO_REGISTRY_MAP: dict[EnumHealthStatus, EnumRegistryStatus] = {
+        EnumHealthStatus.HEALTHY: EnumRegistryStatus.HEALTHY,
+        EnumHealthStatus.DEGRADED: EnumRegistryStatus.DEGRADED,
+        EnumHealthStatus.UNAVAILABLE: EnumRegistryStatus.UNAVAILABLE,
+        EnumHealthStatus.INITIALIZING: EnumRegistryStatus.INITIALIZING,
+        # Other health statuses map to UNAVAILABLE as closest match
+        EnumHealthStatus.UNHEALTHY: EnumRegistryStatus.UNAVAILABLE,
+        EnumHealthStatus.CRITICAL: EnumRegistryStatus.UNAVAILABLE,
+        EnumHealthStatus.UNKNOWN: EnumRegistryStatus.UNAVAILABLE,
+        EnumHealthStatus.WARNING: EnumRegistryStatus.DEGRADED,
+        EnumHealthStatus.UNREACHABLE: EnumRegistryStatus.UNAVAILABLE,
+        EnumHealthStatus.AVAILABLE: EnumRegistryStatus.HEALTHY,
+        EnumHealthStatus.DISPOSING: EnumRegistryStatus.MAINTENANCE,
+        EnumHealthStatus.ERROR: EnumRegistryStatus.UNAVAILABLE,
+    }
+
     @property
-    def health(self) -> EnumRegistryStatus:
-        """Node health as registry status (delegated to core_info).
+    def health(self) -> EnumHealthStatus:
+        """Node health status (delegated to core_info with type mapping).
+
+        Returns:
+            EnumHealthStatus: The health status mapped from the underlying
+            EnumRegistryStatus stored in core_info. This provides a consistent
+            API with ModelNodeCoreInfoSummary.health.
 
         Note:
-            Returns EnumRegistryStatus from core_info. When creating summaries
-            via get_information_summary(), this is mapped to EnumHealthStatus
-            to match the ModelNodeCoreInfoSummary.health field type.
+            The underlying core_info.health stores EnumRegistryStatus, which
+            is mapped to EnumHealthStatus for API consistency. Unknown registry
+            statuses map to EnumHealthStatus.UNKNOWN.
         """
-        return self.core_info.health
+        return self._REGISTRY_TO_HEALTH_MAP.get(
+            self.core_info.health, EnumHealthStatus.UNKNOWN
+        )
 
     @health.setter
-    def health(self, value: EnumRegistryStatus) -> None:
-        """Set node health."""
-        self.core_info.health = value
+    def health(self, value: EnumHealthStatus) -> None:
+        """Set node health status.
+
+        Args:
+            value: EnumHealthStatus to set. This is reverse-mapped to
+                EnumRegistryStatus for storage in core_info.
+        """
+        self.core_info.health = self._HEALTH_TO_REGISTRY_MAP.get(
+            value, EnumRegistryStatus.UNAVAILABLE
+        )
 
     @property
     def supported_operations(self) -> list[str]:
@@ -213,27 +253,15 @@ class ModelNodeInformation(BaseModel):
         from .model_node_configuration_summary import ModelNodeConfigurationSummary
         from .model_node_core_info_summary import ModelNodeCoreInfoSummary
 
-        # Map EnumRegistryStatus to EnumHealthStatus for summary
-        # Both enums share common values: HEALTHY, DEGRADED, UNAVAILABLE, INITIALIZING
-        registry_to_health_map: dict[EnumRegistryStatus, EnumHealthStatus] = {
-            EnumRegistryStatus.HEALTHY: EnumHealthStatus.HEALTHY,
-            EnumRegistryStatus.DEGRADED: EnumHealthStatus.DEGRADED,
-            EnumRegistryStatus.UNAVAILABLE: EnumHealthStatus.UNAVAILABLE,
-            EnumRegistryStatus.INITIALIZING: EnumHealthStatus.INITIALIZING,
-            EnumRegistryStatus.MAINTENANCE: EnumHealthStatus.UNAVAILABLE,
-        }
-        health_status = registry_to_health_map.get(
-            self.core_info.health, EnumHealthStatus.UNKNOWN
-        )
-
         # Create proper summary objects instead of dict[str, Any]s
+        # Use self.health property which handles EnumRegistryStatus -> EnumHealthStatus mapping
         core_summary = ModelNodeCoreInfoSummary(
             node_id=self.core_info.node_id,
             node_name=self.core_info.node_name,
             node_type=self.core_info.node_type,
             node_version=self.core_info.node_version,
             status=EnumStatus.ACTIVE,  # Convert from metadata status
-            health=health_status,
+            health=self.health,
             is_active=(self.core_info.status == EnumMetadataNodeStatus.ACTIVE),
             is_healthy=self.core_info.is_healthy(),
             has_description=self.core_info.has_description(),
