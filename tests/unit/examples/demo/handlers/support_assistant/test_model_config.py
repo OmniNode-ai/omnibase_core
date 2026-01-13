@@ -140,10 +140,10 @@ class TestModelConfigLocalProvider:
         config = ModelConfig(
             provider="local",
             model_name="qwen2.5-14b",
-            endpoint_url="http://192.168.86.100:8200",
+            endpoint_url="http://localhost:8200",
         )
         assert config.provider == "local"
-        assert config.endpoint_url == "http://192.168.86.100:8200"
+        assert config.endpoint_url == "http://localhost:8200"
 
     def test_cloud_provider_without_endpoint_url(self):
         """Cloud providers (openai, anthropic) work without endpoint_url."""
@@ -199,11 +199,11 @@ class TestModelProviderInjection:
         config = ModelConfig(
             provider="local",
             model_name="qwen2.5-14b",
-            endpoint_url="http://192.168.86.100:8200",
+            endpoint_url="http://localhost:8200",
         )
         assert config.provider == "local"
         assert config.model_name == "qwen2.5-14b"
-        assert config.endpoint_url == "http://192.168.86.100:8200"
+        assert config.endpoint_url == "http://localhost:8200"
 
     def test_config_swap_changes_behavior(self):
         """Different config = different provider."""

@@ -728,6 +728,8 @@ class SupportAssistantHandler:
 
         return True
 
+    # NOTE(OMN-1201): allow_dict_any decorator is untyped; safe because it only
+    # suppresses dict[str, Any] type checking for LLM response parsing.
     @allow_dict_any(reason="LLM JSON responses have arbitrary structure")  # type: ignore[untyped-decorator]
     def _create_validated_response(self, data: dict[str, object]) -> SupportResponse:
         """Create and validate SupportResponse using Pydantic.
@@ -785,6 +787,8 @@ class SupportAssistantHandler:
             Float between 0.0 and 1.0.
         """
         try:
+            # NOTE(OMN-1201): value is typed as object but float() handles any type
+            # at runtime, raising TypeError/ValueError on invalid input (caught below).
             conf = float(value)  # type: ignore[arg-type]
             return max(0.0, min(1.0, conf))
         except (TypeError, ValueError):
@@ -807,6 +811,8 @@ class SupportAssistantHandler:
         """
         str_value = str(value).lower()
         if str_value in get_valid_categories():
+            # NOTE(OMN-1201): str_value is validated against Literal values above;
+            # mypy can't narrow str to Literal from set membership check.
             return str_value  # type: ignore[return-value]
         return "general"
 
@@ -826,6 +832,8 @@ class SupportAssistantHandler:
         """
         str_value = str(value).lower()
         if str_value in get_valid_sentiments():
+            # NOTE(OMN-1201): str_value is validated against Literal values above;
+            # mypy can't narrow str to Literal from set membership check.
             return str_value  # type: ignore[return-value]
         return "neutral"
 
