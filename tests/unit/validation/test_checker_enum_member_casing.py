@@ -169,7 +169,7 @@ class TestEnumBaseNames:
 
     def test_contains_expected_bases(self) -> None:
         """Test all expected enum bases are included."""
-        expected = {"Enum", "IntEnum", "StrEnum", "Flag", "IntFlag", "auto"}
+        expected = {"Enum", "IntEnum", "StrEnum", "Flag", "IntFlag"}
         assert expected == ENUM_BASE_NAMES
 
     def test_is_frozen_set(self) -> None:
@@ -1322,12 +1322,11 @@ Counter.VALID += 1  # This is outside the class
         # Only the enum class should be checked
         assert len(checker.issues) == 0
 
-    def test_annotated_assignment(self) -> None:
-        """Test annotated assignment is not detected as member.
+    def test_annotated_assignment_invalid_detected(self) -> None:
+        """Test annotated assignment with invalid casing is detected.
 
-        Note: AnnAssign (x: int = 1) is different from Assign (x = 1).
-        The _is_enum_member method only checks ast.Assign nodes, so annotated
-        assignments are not detected as enum members.
+        AnnAssign (x: int = 1) with a value should be checked for
+        UPPER_SNAKE_CASE compliance just like regular assignments.
         """
         source = """
 from enum import Enum
@@ -1338,9 +1337,76 @@ class Status(Enum):
         tree = ast.parse(source)
         checker = CheckerEnumMemberCasing("test.py")
         checker.visit(tree)
-        # AnnAssign is not ast.Assign, so it's not detected as a member
-        # This is actually correct behavior for the current implementation
+        # Annotated assignments with values should be detected as members
+        assert len(checker.issues) == 1
+        assert "invalid" in checker.issues[0]
+        assert "UPPER_SNAKE_CASE" in checker.issues[0]
+
+    def test_annotated_assignment_valid_passes(self) -> None:
+        """Test annotated assignment with valid UPPER_SNAKE_CASE passes."""
+        source = """
+from enum import Enum
+
+class Status(Enum):
+    ACTIVE: str = "active"
+    HTTP_CODE: int = 200
+"""
+        tree = ast.parse(source)
+        checker = CheckerEnumMemberCasing("test.py")
+        checker.visit(tree)
+        # Valid UPPER_SNAKE_CASE annotated assignments should pass
         assert len(checker.issues) == 0
+
+    def test_annotated_assignment_private_ignored(self) -> None:
+        """Test annotated assignment with private name is ignored."""
+        source = """
+from enum import Enum
+
+class Status(Enum):
+    _private: str = "private"
+    VALID: str = "valid"
+"""
+        tree = ast.parse(source)
+        checker = CheckerEnumMemberCasing("test.py")
+        checker.visit(tree)
+        # Private annotated assignments should be ignored
+        assert len(checker.issues) == 0
+
+    def test_annotated_assignment_dunder_ignored(self) -> None:
+        """Test annotated assignment with dunder name is ignored."""
+        source = """
+from enum import Enum
+
+class Status(Enum):
+    __dunder__: str = "dunder"
+    VALID: str = "valid"
+"""
+        tree = ast.parse(source)
+        checker = CheckerEnumMemberCasing("test.py")
+        checker.visit(tree)
+        # Dunder annotated assignments should be ignored
+        assert len(checker.issues) == 0
+
+    def test_annotated_assignment_multiple_violations(self) -> None:
+        """Test multiple annotated assignments with violations."""
+        source = """
+from enum import Enum
+
+class Status(Enum):
+    first: str = "first"
+    VALID: str = "valid"
+    second: int = 2
+    camelCase: str = "camel"
+"""
+        tree = ast.parse(source)
+        checker = CheckerEnumMemberCasing("test.py")
+        checker.visit(tree)
+        # Should detect 3 violations: first, second, camelCase
+        assert len(checker.issues) == 3
+        issue_text = " ".join(checker.issues)
+        assert "first" in issue_text
+        assert "second" in issue_text
+        assert "camelCase" in issue_text
 
 
 if __name__ == "__main__":

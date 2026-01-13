@@ -83,7 +83,6 @@ ENUM_BASE_NAMES = frozenset(
         "StrEnum",
         "Flag",
         "IntFlag",
-        "auto",
     }
 )
 
@@ -241,6 +240,8 @@ class CheckerEnumMemberCasing(ast.NodeVisitor):
 
         Enum members are detected by looking for simple assignments in
         the class body that assign to a simple name (not a tuple/list unpack).
+        This includes both regular assignments (x = 1) and annotated assignments
+        with values (x: int = 1).
 
         Args:
             node: AST statement node to check.
@@ -260,30 +261,52 @@ class CheckerEnumMemberCasing(ast.NodeVisitor):
             - Private names (_name)
             - Tuple/list unpacking assignments
         """
-        # Skip non-assignment nodes
-        if not isinstance(node, ast.Assign):
-            return False, None, 0
+        # Handle regular assignments (MEMBER = "value")
+        if isinstance(node, ast.Assign):
+            # Get the first target (handles simple assignment)
+            targets = node.targets
+            if len(targets) != 1:
+                return False, None, 0
 
-        # Get the first target (handles simple assignment)
-        targets = node.targets
-        if len(targets) != 1:
-            return False, None, 0
+            target = targets[0]
+            if not isinstance(target, ast.Name):
+                return False, None, 0
 
-        target = targets[0]
-        if not isinstance(target, ast.Name):
-            return False, None, 0
+            name = target.id
 
-        name = target.id
+            # Skip dunder names (__init__, __str__, etc.)
+            if name.startswith("__") and name.endswith("__"):
+                return False, None, 0
 
-        # Skip dunder names (__init__, __str__, etc.)
-        if name.startswith("__") and name.endswith("__"):
-            return False, None, 0
+            # Skip private names (_private)
+            if name.startswith("_"):
+                return False, None, 0
 
-        # Skip private names (_private)
-        if name.startswith("_"):
-            return False, None, 0
+            return True, name, node.lineno
 
-        return True, name, node.lineno
+        # Handle annotated assignments (member: str = "value")
+        if isinstance(node, ast.AnnAssign):
+            # Only check if there's a value (member: str = "value", not just member: str)
+            if node.value is None:
+                return False, None, 0
+
+            target = node.target
+            if not isinstance(target, ast.Name):
+                return False, None, 0
+
+            name = target.id
+
+            # Skip dunder names (__init__, __str__, etc.)
+            if name.startswith("__") and name.endswith("__"):
+                return False, None, 0
+
+            # Skip private names (_private)
+            if name.startswith("_"):
+                return False, None, 0
+
+            return True, name, node.lineno
+
+        return False, None, 0
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
         """Check enum member naming conventions for a class definition node.
