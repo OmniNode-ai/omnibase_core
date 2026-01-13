@@ -48,7 +48,7 @@ from omnibase_core.enums.enum_operation_status import EnumOperationStatus
 
 # Canonical severity enum (OMN-1311)
 from omnibase_core.enums.enum_severity import EnumSeverity
-from omnibase_core.enums.enum_validation_level import EnumValidationLevel
+from omnibase_core.enums.enum_validation import EnumValidationLevel
 
 # =============================================================================
 # Type Variables

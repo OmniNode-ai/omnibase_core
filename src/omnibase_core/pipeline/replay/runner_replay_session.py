@@ -9,9 +9,9 @@ services needed for deterministic replay execution.
 
 Design:
     ReplaySession coordinates the three determinism components:
-    - InjectorTime: Provides fixed or current time
-    - InjectorRNG: Provides seeded random numbers
-    - RecorderEffect: Records or replays effect results
+    - ServiceTimeInjector: Provides fixed or current time
+    - ServiceRNGInjector: Provides seeded random numbers
+    - ServiceEffectRecorder: Records or replays effect results
 
 Architecture:
     Each session is configured for a specific mode (production/recording/replaying)
@@ -63,9 +63,11 @@ from omnibase_core.enums.replay.enum_replay_mode import EnumReplayMode
 from omnibase_core.models.replay.model_replay_context import ModelReplayContext
 
 if TYPE_CHECKING:
-    from omnibase_core.services.replay.injector_rng import InjectorRNG
-    from omnibase_core.services.replay.injector_time import InjectorTime
-    from omnibase_core.services.replay.recorder_effect import RecorderEffect
+    from omnibase_core.services.replay.service_effect_recorder import (
+        ServiceEffectRecorder,
+    )
+    from omnibase_core.services.replay.service_rng_injector import ServiceRNGInjector
+    from omnibase_core.services.replay.service_time_injector import ServiceTimeInjector
 
 
 @dataclass
@@ -79,9 +81,9 @@ class ReplaySession:
     Attributes:
         session_id: Unique identifier for this session.
         context: ModelReplayContext with mode and determinism data.
-        time_service: InjectorTime for time queries.
-        rng_service: InjectorRNG for random number generation.
-        effect_recorder: RecorderEffect for effect recording/replay.
+        time_service: ServiceTimeInjector for time queries.
+        rng_service: ServiceRNGInjector for random number generation.
+        effect_recorder: ServiceEffectRecorder for effect recording/replay.
 
     Thread Safety:
         ReplaySession instances are NOT thread-safe. Create separate sessions
@@ -108,9 +110,13 @@ class ReplaySession:
             original_execution_id=None,
         )
     )
-    time_service: InjectorTime = field(default_factory=lambda: _default_time_service())
-    rng_service: InjectorRNG = field(default_factory=lambda: _default_rng_service())
-    effect_recorder: RecorderEffect = field(
+    time_service: ServiceTimeInjector = field(
+        default_factory=lambda: _default_time_service()
+    )
+    rng_service: ServiceRNGInjector = field(
+        default_factory=lambda: _default_rng_service()
+    )
+    effect_recorder: ServiceEffectRecorder = field(
         default_factory=lambda: _default_effect_recorder()
     )
 
@@ -129,22 +135,24 @@ class ReplaySession:
         return self.context.mode
 
 
-def _default_time_service() -> InjectorTime:
+def _default_time_service() -> ServiceTimeInjector:
     """Create default time service (deferred import to avoid circular deps)."""
-    from omnibase_core.services.replay.injector_time import InjectorTime
+    from omnibase_core.services.replay.service_time_injector import ServiceTimeInjector
 
-    return InjectorTime()
+    return ServiceTimeInjector()
 
 
-def _default_rng_service() -> InjectorRNG:
+def _default_rng_service() -> ServiceRNGInjector:
     """Create default RNG service (deferred import to avoid circular deps)."""
-    from omnibase_core.services.replay.injector_rng import InjectorRNG
+    from omnibase_core.services.replay.service_rng_injector import ServiceRNGInjector
 
-    return InjectorRNG()
+    return ServiceRNGInjector()
 
 
-def _default_effect_recorder() -> RecorderEffect:
+def _default_effect_recorder() -> ServiceEffectRecorder:
     """Create default effect recorder (deferred import to avoid circular deps)."""
-    from omnibase_core.services.replay.recorder_effect import RecorderEffect
+    from omnibase_core.services.replay.service_effect_recorder import (
+        ServiceEffectRecorder,
+    )
 
-    return RecorderEffect()
+    return ServiceEffectRecorder()

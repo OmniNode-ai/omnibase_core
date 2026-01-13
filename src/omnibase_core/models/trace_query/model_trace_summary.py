@@ -29,7 +29,7 @@ Example:
     Success rate: 85.0%
 
 See Also:
-    - :class:`~omnibase_core.services.trace.protocol_trace_store.ProtocolTraceStore`:
+    - :class:`~omnibase_core.protocols.storage.protocol_trace_store.ProtocolTraceStore`:
       Protocol that returns this summary model
     - :class:`~omnibase_core.models.trace_query.model_trace_query.ModelTraceQuery`:
       Query filters for scoping the summary

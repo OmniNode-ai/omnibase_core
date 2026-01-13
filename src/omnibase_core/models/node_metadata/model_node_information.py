@@ -149,7 +149,13 @@ class ModelNodeInformation(BaseModel):
 
     @property
     def health(self) -> EnumRegistryStatus:
-        """Node health (delegated to core_info)."""
+        """Node health as registry status (delegated to core_info).
+
+        Note:
+            Returns EnumRegistryStatus from core_info. When creating summaries
+            via get_information_summary(), this is mapped to EnumHealthStatus
+            to match the ModelNodeCoreInfoSummary.health field type.
+        """
         return self.core_info.health
 
     @health.setter

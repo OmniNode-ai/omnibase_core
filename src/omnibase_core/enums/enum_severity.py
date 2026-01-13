@@ -26,6 +26,18 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
+# Module-level constant for numeric severity levels (avoids per-call dict allocation)
+# Scale is compatible with Python logging levels (10, 20, 30, 40, 50, 60)
+# Note: This is defined outside the enum class to avoid being treated as an enum member
+_SEVERITY_LEVEL_MAP: dict[str, int] = {
+    "debug": 10,
+    "info": 20,
+    "warning": 30,
+    "error": 40,
+    "critical": 50,
+    "fatal": 60,
+}
+
 
 @unique
 class EnumSeverity(str, Enum):
@@ -72,16 +84,12 @@ class EnumSeverity(str, Enum):
 
         Higher numbers indicate more severe conditions.
         Scale is compatible with Python logging levels (10, 20, 30, 40, 50, 60).
+
+        Example:
+            >>> EnumSeverity.ERROR.numeric_level
+            40
         """
-        levels = {
-            EnumSeverity.DEBUG: 10,
-            EnumSeverity.INFO: 20,
-            EnumSeverity.WARNING: 30,
-            EnumSeverity.ERROR: 40,
-            EnumSeverity.CRITICAL: 50,
-            EnumSeverity.FATAL: 60,
-        }
-        return levels[self]
+        return _SEVERITY_LEVEL_MAP[self.value]
 
     def is_error_or_above(self) -> bool:
         """Check if this is an error-level severity or higher."""
@@ -109,9 +117,8 @@ class EnumSeverity(str, Enum):
         for member in cls:
             if member.value == normalized:
                 return member
-        raise ValueError(  # error-ok: simple conversion at API boundary
-            f"Unknown severity level: {value}"
-        )
+        # error-ok: ValueError is standard for string conversion at API boundaries
+        raise ValueError(f"Unknown severity level: {value}")
 
 
 __all__ = ["EnumSeverity"]

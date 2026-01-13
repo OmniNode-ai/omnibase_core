@@ -21,7 +21,7 @@ from pathlib import Path
 import pytest
 
 from omnibase_core.enums.enum_severity import EnumSeverity
-from omnibase_core.validation.visitor_any_type import (
+from omnibase_core.validation.checker_visitor_any_type import (
     EXEMPT_DECORATORS,
     RULE_ANY_ANNOTATION,
     RULE_ANY_IMPORT,
@@ -756,13 +756,13 @@ class TestAnyTypeVisitorImports:
 
     def test_import_visitor(self) -> None:
         """Test that AnyTypeVisitor can be imported."""
-        from omnibase_core.validation.visitor_any_type import AnyTypeVisitor
+        from omnibase_core.validation.checker_visitor_any_type import AnyTypeVisitor
 
         assert AnyTypeVisitor is not None
 
     def test_import_all_exports(self) -> None:
         """Test that all exported symbols can be imported."""
-        from omnibase_core.validation.visitor_any_type import (
+        from omnibase_core.validation.checker_visitor_any_type import (
             EXEMPT_DECORATORS,
             RULE_ANY_ANNOTATION,
             RULE_ANY_IMPORT,

@@ -17,7 +17,7 @@ For direct access to the plugin class, import DictAnyCheckerPlugin.
 
 from mypy.plugin import Plugin
 
-from omnibase_core.tools.mypy_plugins.dict_any_checker import DictAnyCheckerPlugin
+from omnibase_core.tools.mypy_plugins.tool_dict_any_checker import DictAnyCheckerPlugin
 
 
 def plugin(version: str) -> type[Plugin]:

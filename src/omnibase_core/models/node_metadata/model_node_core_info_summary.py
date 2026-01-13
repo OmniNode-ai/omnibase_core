@@ -101,10 +101,10 @@ class ModelNodeCoreInfoSummary(BaseModel):
             - "metadata": Dict containing:
                 - "node_id": String representation of the node UUID
                 - "node_type": EnumMetadataNodeType value string
-                  (e.g., "COMPUTE", "EFFECT", "REDUCER", "ORCHESTRATOR")
-                - "status": EnumStatus value string (e.g., "ACTIVE", "INACTIVE")
+                  (e.g., "function", "method", "class", "module")
+                - "status": EnumStatus value string (e.g., "active", "inactive")
                 - "health": EnumHealthStatus value string
-                  (e.g., "HEALTHY", "DEGRADED", "UNHEALTHY")
+                  (e.g., "healthy", "degraded", "unhealthy")
                 - "is_active": Boolean indicating if node is currently active
                 - "is_healthy": Boolean indicating if node is in healthy state
                 - "has_description": Boolean indicating if description is set
@@ -115,7 +115,7 @@ class ModelNodeCoreInfoSummary(BaseModel):
             >>> summary = ModelNodeCoreInfoSummary(
             ...     node_id=uuid4(),
             ...     node_name="DataProcessor",
-            ...     node_type=EnumMetadataNodeType.COMPUTE,
+            ...     node_type=EnumMetadataNodeType.CLASS,
             ...     node_version=ModelSemVer(major=1, minor=0, patch=0),
             ...     status=EnumStatus.ACTIVE,
             ...     health=EnumHealthStatus.HEALTHY,

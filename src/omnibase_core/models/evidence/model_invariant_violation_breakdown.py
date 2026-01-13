@@ -25,7 +25,8 @@ class ModelInvariantViolationBreakdown(BaseModel):
 
     Note:
         Severity values are string keys from violation delta records, not
-        EnumSeverity members. This allows flexibility for external data sources.
+        enum members. This allows flexibility for external data sources that
+        may provide severity as arbitrary strings (e.g., "critical", "warning", "info").
 
     Attributes:
         total_violations: Total number of violations (failures in replay).

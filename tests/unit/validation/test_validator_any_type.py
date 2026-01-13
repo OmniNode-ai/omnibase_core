@@ -28,14 +28,14 @@ from omnibase_core.models.contracts.subcontracts.model_validator_subcontract imp
     ModelValidatorSubcontract,
 )
 from omnibase_core.models.primitives.model_semver import ModelSemVer
-from omnibase_core.validation.validator_any_type import ValidatorAnyType
-from omnibase_core.validation.visitor_any_type import (
+from omnibase_core.validation.checker_visitor_any_type import (
     RULE_ANY_ANNOTATION,
     RULE_ANY_IMPORT,
     RULE_DICT_STR_ANY,
     RULE_LIST_ANY,
     RULE_UNION_WITH_ANY,
 )
+from omnibase_core.validation.validator_any_type import ValidatorAnyType
 
 # =============================================================================
 # Test Helpers

@@ -15,7 +15,7 @@ Coverage Requirements:
 import pytest
 from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.contracts.diff_computer import (
+from omnibase_core.contracts.contract_diff_computer import (
     ContractDiffComputer,
     compute_contract_diff,
     render_diff_table,

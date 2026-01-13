@@ -10,7 +10,7 @@ Service Wrappers (Standard Production-Ready Compositions):
     - ModelServiceCompute: Compute + HealthCheck + Caching + Metrics
 
 Usage Examples:
-    from omnibase_core.infrastructure.infrastructure_bases import (
+    from omnibase_core.infrastructure.infra_bases import (
         ModelServiceEffect,
         ModelServiceCompute,
     )

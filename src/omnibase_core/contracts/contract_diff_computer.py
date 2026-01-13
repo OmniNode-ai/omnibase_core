@@ -14,7 +14,7 @@ Features:
 Example:
     Basic usage::
 
-        from omnibase_core.contracts.diff_computer import (
+        from omnibase_core.contracts.contract_diff_computer import (
             ContractDiffComputer,
             compute_contract_diff,
         )

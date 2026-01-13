@@ -403,7 +403,7 @@ class TestInfrastructureReexportConsistency:
         from omnibase_core.infrastructure import (
             create_execution_plan as reexported_func,
         )
-        from omnibase_core.infrastructure.execution.phase_sequencer import (
+        from omnibase_core.infrastructure.execution.infra_phase_sequencer import (
             create_execution_plan as original_func,
         )
 

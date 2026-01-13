@@ -162,20 +162,25 @@ class NamingConventionValidator:
             "ContractHashRegistry",  # Registry service for contract hash management
             "ContractDiffComputer",  # Utility class for computing contract diffs (OMN-1148)
         ],
-        # REPLAY INFRASTRUCTURE: Effect recorder for deterministic replay
+        # REPLAY INFRASTRUCTURE: Replay executor and session for deterministic replay
         # Location: pipeline/replay/ - Replay infrastructure utilities
-        # Rationale: RecorderEffect is a utility class that records/replays effects,
-        #            not a Node implementation. The "Effect" suffix indicates the domain
-        #            (effect handling), not that it's a Node type (OMN-1116)
+        # Rationale: ExecutorReplay and ReplaySession are replay infrastructure classes.
+        #            They coordinate replay execution, not Node implementations.
+        #            Note: ServiceEffectRecorder is now in services/replay/ (OMN-1298)
         "pipeline/replay/": [
-            "RecorderEffect",  # Utility class for effect recording/replay
+            # ExecutorReplay, ReplaySession - no exemptions needed (correct naming)
         ],
-        # HANDLER INFRASTRUCTURE: Handler implementations for ONEX runtime
-        # Location: runtime/handlers/ - Handler implementations for EnvelopeRouter
+        # HANDLER INFRASTRUCTURE: Handler implementations for ONEX runtime and pipeline
+        # Location: runtime/handlers/ and pipeline/handlers/ - Handler implementations
         # Rationale: Handlers implement ProtocolHandler and use Handler* prefix (e.g., HandlerLocal, HandlerHttp)
         #            They are not "Services" in the ONEX architecture but runtime execution units.
+        #            Pipeline handlers (HandlerCapabilityCaching, HandlerCapabilityMetrics) provide
+        #            reusable pipeline capabilities following the same Handler* naming pattern.
         "runtime/handlers/": [
             "Handler*",  # All Handler* classes in handlers/ directory
+        ],
+        "pipeline/handlers/": [
+            "Handler*",  # All Handler* classes (HandlerCapabilityCaching, HandlerCapabilityMetrics)
         ],
         # UTILITY CLASSES: Utility/helper classes in utils/
         # Location: utils/ - Utility functions and helper classes
@@ -229,25 +234,14 @@ class NamingConventionValidator:
         # REPLAY INFRASTRUCTURE: Deterministic replay utilities for testing and debugging
         # Location: services/replay/ - Replay infrastructure services (injectors/recorders)
         # Rationale: These classes provide deterministic replay capabilities (OMN-1116, OMN-1205).
-        #            RecorderEffect, InjectorTime, InjectorRNG are passive observers and injection
-        #            mechanisms - NOT nodes. The heuristic flags "effect" as a Node indicator, but
-        #            RecorderEffect RECORDS effects, it doesn't PERFORM them as a node would.
-        #            Nodes are addressable graph vertices with contracts and dispatch semantics.
-        #            Recorders and injectors are lifecycle-bound utilities for side-effect capture.
+        #            ServiceEffectRecorder, ServiceTimeInjector, ServiceRNGInjector follow the
+        #            Service* prefix convention and no longer require exemptions.
+        #            Note: Empty list kept for documentation purposes.
         "services/replay/": [
-            "RecorderEffect",  # Effect recording for deterministic replay (OMN-1116)
-            "InjectorTime",  # Time injection for deterministic replay (OMN-1116)
-            "InjectorRNG",  # RNG injection for deterministic replay (OMN-1116)
+            # No exemptions needed - all classes now use Service* prefix (OMN-1298)
         ],
-        # REPLAY INFRASTRUCTURE: Effect replay execution for deterministic testing
-        # Location: pipeline/replay/ - Replay execution and session management
-        # Rationale: ExecutorReplay and SessionReplay handle replay execution and session state.
-        #            The heuristic flags "effect" as a Node indicator, but these are replay
-        #            infrastructure classes that EXECUTE replays, not node implementations.
-        "pipeline/replay/": [
-            "ExecutorReplay",  # Replay executor for effect playback (OMN-1116)
-            "SessionReplay",  # Replay session manager (OMN-1116)
-        ],
+        # Note: Duplicate "pipeline/replay/" entry removed - consolidated above (OMN-1298)
+        # ExecutorReplay and ReplaySession follow correct naming patterns and don't need exemptions.
     }
 
     @staticmethod

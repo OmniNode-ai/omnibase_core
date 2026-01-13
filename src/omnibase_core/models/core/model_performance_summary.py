@@ -10,7 +10,17 @@ from pydantic import BaseModel, ConfigDict, Field, field_serializer
 class ModelPerformanceSummary(BaseModel):
     """
     Performance summary with typed fields.
+
     Replaces Dict[str, Any] for get_performance_summary() returns.
+
+    This model is frozen (immutable) and hashable, suitable for use as dict keys
+    or in sets for caching and comparison purposes.
+
+    Note on Methods:
+        The `get_*` methods on this class are pure computed properties that derive
+        values from existing fields without mutating state. This pattern is fully
+        compatible with `frozen=True` - frozen models prevent field reassignment,
+        but read-only methods that compute and return values are allowed.
     """
 
     total_execution_time_ms: float = Field(
@@ -71,16 +81,32 @@ class ModelPerformanceSummary(BaseModel):
     measurement_duration_seconds: float = Field(
         default=..., description="Measurement duration"
     )
-    model_config = ConfigDict()
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
-    def calculate_success_rate(self) -> float:
-        """Calculate success rate percentage."""
+    def get_success_rate(self) -> float:
+        """
+        Get success rate percentage.
+
+        Pure computed property - derives value from existing fields without mutation.
+        Compatible with frozen=True.
+
+        Returns:
+            Success rate as a percentage (0.0-100.0).
+        """
         if self.total_requests == 0:
             return 0.0
         return self.successful_requests / self.total_requests * 100
 
-    def calculate_average_response_time(self) -> float | None:
-        """Calculate average response time if not already set."""
+    def get_average_response_time(self) -> float | None:
+        """
+        Get average response time, computing from totals if not explicitly set.
+
+        Pure computed property - derives value from existing fields without mutation.
+        Compatible with frozen=True.
+
+        Returns:
+            Average response time in milliseconds, or None if not calculable.
+        """
         if self.average_response_time_ms is not None:
             return self.average_response_time_ms
         if self.total_requests > 0 and self.total_execution_time_ms > 0:

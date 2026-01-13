@@ -2,13 +2,13 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 """
-ModelCapabilityMetrics - Performance Metrics Collection Handler
+HandlerCapabilityMetrics - Performance Metrics Collection Handler
 
 Provides performance metrics collection capabilities for ONEX pipeline.
 This is a pure handler replacement for MixinMetrics with no inheritance.
 
 Usage:
-    metrics = ModelCapabilityMetrics(namespace="my_service")
+    metrics = HandlerCapabilityMetrics(namespace="my_service")
     metrics.record_metric("latency_ms", 250.5, tags={"endpoint": "/api"})
     metrics.increment_counter("requests_total")
     current_metrics = metrics.get_metrics()
@@ -24,7 +24,7 @@ from pydantic import BaseModel, ConfigDict, PrivateAttr
 from omnibase_core.types.typed_dict_mixin_types import TypedDictMetricEntry
 
 
-class ModelCapabilityMetrics(BaseModel):
+class HandlerCapabilityMetrics(BaseModel):
     """
     Handler providing performance metrics collection capabilities.
 
@@ -107,4 +107,4 @@ class ModelCapabilityMetrics(BaseModel):
         self._metrics_data.clear()
 
 
-__all__ = ["ModelCapabilityMetrics"]
+__all__ = ["HandlerCapabilityMetrics"]

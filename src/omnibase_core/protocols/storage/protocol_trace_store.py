@@ -9,15 +9,15 @@ must satisfy. This enables pluggable backends (in-memory, PostgreSQL, etc.)
 while maintaining a consistent API.
 
 Example:
-    >>> from omnibase_core.services.trace.protocol_trace_store import ProtocolTraceStore
-    >>> from omnibase_core.services.trace.store_trace_in_memory import StoreTraceInMemory
+    >>> from omnibase_core.protocols.storage.protocol_trace_store import ProtocolTraceStore
+    >>> from omnibase_core.services.trace.service_trace_in_memory_store import ServiceTraceInMemoryStore
     >>>
-    >>> # StoreTraceInMemory implements ProtocolTraceStore
-    >>> store: ProtocolTraceStore = StoreTraceInMemory()
+    >>> # ServiceTraceInMemoryStore implements ProtocolTraceStore
+    >>> store: ProtocolTraceStore = ServiceTraceInMemoryStore()
     >>> # Now use store.put(), store.get(), etc.
 
 See Also:
-    - :class:`~omnibase_core.services.trace.store_trace_in_memory.StoreTraceInMemory`:
+    - :class:`~omnibase_core.services.trace.service_trace_in_memory_store.ServiceTraceInMemoryStore`:
       In-memory implementation
     - :class:`~omnibase_core.models.trace.ModelExecutionTrace`:
       The trace model being stored

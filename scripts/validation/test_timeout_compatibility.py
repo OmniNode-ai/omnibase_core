@@ -12,14 +12,16 @@ from pathlib import Path
 # Add validation directory to path to import timeout_utils
 sys.path.insert(0, str(Path(__file__).parent))
 
-from timeout_utils import DEFAULT_TIMEOUTS, TIMEOUT_ERROR_MESSAGES, CrossPlatformTimeout
-from timeout_utils import TimeoutError as CustomTimeoutError
 from timeout_utils import (
+    DEFAULT_TIMEOUTS,
+    TIMEOUT_ERROR_MESSAGES,
+    CrossPlatformTimeout,
     UnixSignalTimeout,
     get_platform_info,
     timeout_context,
     with_timeout,
 )
+from timeout_utils import TimeoutError as CustomTimeoutError
 
 
 def test_cross_platform_timeout():

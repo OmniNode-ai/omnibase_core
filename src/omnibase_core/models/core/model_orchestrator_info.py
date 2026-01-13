@@ -116,7 +116,7 @@ class ModelOrchestratorInfo(BaseModel):
         description="Custom orchestrator-specific data",
     )
 
-    model_config = ConfigDict()
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     @field_validator("orchestrator_version", mode="before")
     @classmethod

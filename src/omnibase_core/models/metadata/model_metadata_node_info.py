@@ -1,12 +1,3 @@
-from __future__ import annotations
-
-import hashlib
-from datetime import datetime
-
-from pydantic import Field
-
-from omnibase_core.models.primitives.model_semver import ModelSemVer
-
 """
 Metadata Node Info Model.
 
@@ -14,22 +5,25 @@ Enhanced node information specifically for metadata collections
 with usage metrics and performance tracking.
 """
 
+from __future__ import annotations
 
-from datetime import UTC
+import hashlib
+from datetime import UTC, datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_conceptual_complexity import EnumConceptualComplexity
 from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
 from omnibase_core.enums.enum_metadata_node_type import EnumMetadataNodeType
 from omnibase_core.enums.enum_standard_category import EnumStandardCategory
 from omnibase_core.enums.enum_standard_tag import EnumStandardTag
-from omnibase_core.enums.enum_validation_level import EnumValidationLevel
+from omnibase_core.enums.enum_validation import EnumValidationLevel
 from omnibase_core.models.infrastructure.model_value import ModelValue
 from omnibase_core.models.metadata.model_metadata_usage_metrics import (
     ModelMetadataUsageMetrics,
 )
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
 
 from .model_metadata_value import ModelMetadataValue

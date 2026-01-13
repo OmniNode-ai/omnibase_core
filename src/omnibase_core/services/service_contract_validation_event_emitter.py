@@ -61,7 +61,7 @@ from omnibase_core.errors import ModelOnexError
 from omnibase_core.models.validation.model_event_destination import (
     ModelEventDestination,
 )
-from omnibase_core.services.sinks import SinkFile, SinkMemory
+from omnibase_core.services.sinks import ServiceFileSink, ServiceMemorySink
 
 if TYPE_CHECKING:
     from omnibase_core.models.events.contract_validation import (
@@ -70,6 +70,8 @@ if TYPE_CHECKING:
 
 __all__ = [
     "ServiceContractValidationEventEmitter",
+    "ServiceFileSink",
+    "ServiceMemorySink",
 ]
 
 
@@ -137,7 +139,7 @@ class ServiceContractValidationEventEmitter:
                 Will be propagated to all emitted events.
         """
         self._correlation_id = correlation_id
-        self._sinks: dict[str, SinkMemory | SinkFile] = {}
+        self._sinks: dict[str, ServiceMemorySink | ServiceFileSink] = {}
         self._destinations = destinations or [ModelEventDestination.create_memory()]
         self._emit_count = 0
         self._last_emit_time: datetime | None = None
@@ -159,7 +161,9 @@ class ServiceContractValidationEventEmitter:
             ModelOnexError: If sink creation fails or type is unsupported.
         """
         if dest.destination_type == EnumEventSinkType.MEMORY:
-            self._sinks[dest.destination_name] = SinkMemory(name=dest.destination_name)
+            self._sinks[dest.destination_name] = ServiceMemorySink(
+                name=dest.destination_name
+            )
 
         elif dest.destination_type == EnumEventSinkType.FILE:
             if not dest.file_path:
@@ -168,7 +172,7 @@ class ServiceContractValidationEventEmitter:
                     error_code=EnumCoreErrorCode.CONFIGURATION_ERROR,
                     destination_name=dest.destination_name,
                 )
-            self._sinks[dest.destination_name] = SinkFile(
+            self._sinks[dest.destination_name] = ServiceFileSink(
                 name=dest.destination_name,
                 file_path=Path(dest.file_path),
                 buffer_size=dest.buffer_size,
@@ -359,7 +363,7 @@ class ServiceContractValidationEventEmitter:
                 available_sinks=list(self._sinks.keys()),
             )
 
-        if not isinstance(sink, SinkMemory):
+        if not isinstance(sink, ServiceMemorySink):
             raise ModelOnexError(
                 message=f"Sink '{sink_name}' is not a memory sink",
                 error_code=EnumCoreErrorCode.INVALID_OPERATION,
@@ -387,7 +391,7 @@ class ServiceContractValidationEventEmitter:
                 sink_name=sink_name,
             )
 
-        if not isinstance(sink, SinkMemory):
+        if not isinstance(sink, ServiceMemorySink):
             raise ModelOnexError(
                 message=f"Sink '{sink_name}' is not a memory sink",
                 error_code=EnumCoreErrorCode.INVALID_OPERATION,
@@ -415,7 +419,7 @@ class ServiceContractValidationEventEmitter:
                 "ready": sink.is_ready,
                 "event_count": sink.event_count,
             }
-            if isinstance(sink, SinkFile):
+            if isinstance(sink, ServiceFileSink):
                 sink_stats["buffer_count"] = sink.buffer_count
             stats[sink_name] = sink_stats
         return stats

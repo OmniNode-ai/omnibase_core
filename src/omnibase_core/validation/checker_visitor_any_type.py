@@ -12,7 +12,7 @@ that may violate ONEX type safety standards.
 Usage Example:
     >>> import ast
     >>> from pathlib import Path
-    >>> from omnibase_core.validation.visitor_any_type import AnyTypeVisitor
+    >>> from omnibase_core.validation.checker_visitor_any_type import AnyTypeVisitor
     >>> from omnibase_core.enums.enum_severity import EnumSeverity
     >>>
     >>> source = "from typing import Any\\ndef foo(x: Any) -> Any: pass"
@@ -171,8 +171,7 @@ class AnyTypeVisitor(ast.NodeVisitor):
     def _add_issue(
         self,
         lineno: int,
-        # ONEX_EXCLUDE: string_id - rule identifier for categorization
-        rule_id: str,
+        rule_code: str,
         message: str,
         suggestion: str | None = None,
     ) -> None:
@@ -180,7 +179,7 @@ class AnyTypeVisitor(ast.NodeVisitor):
 
         Args:
             lineno: Line number of the violation.
-            rule_id: Rule ID for the violation type.
+            rule_code: Rule code for the violation type.
             message: Human-readable description of the issue.
             suggestion: Optional suggestion for fixing the issue.
         """
@@ -194,10 +193,10 @@ class AnyTypeVisitor(ast.NodeVisitor):
             ModelValidationIssue(
                 severity=self.severity,
                 message=message,
-                code=rule_id,
+                code=rule_code,
                 file_path=self.file_path,
                 line_number=lineno,
-                rule_name=rule_id,
+                rule_name=rule_code,
                 suggestion=suggestion,
             )
         )
@@ -214,7 +213,7 @@ class AnyTypeVisitor(ast.NodeVisitor):
                     self._any_imported = True
                     self._add_issue(
                         lineno=node.lineno,
-                        rule_id=RULE_ANY_IMPORT,
+                        rule_code=RULE_ANY_IMPORT,
                         message="Import of 'Any' from typing module",
                         suggestion="Consider using a more specific type or creating a Protocol",
                     )
@@ -338,7 +337,7 @@ class AnyTypeVisitor(ast.NodeVisitor):
         if isinstance(annotation, ast.Name) and annotation.id == "Any":
             self._add_issue(
                 lineno=annotation.lineno,
-                rule_id=RULE_ANY_ANNOTATION,
+                rule_code=RULE_ANY_ANNOTATION,
                 message=f"Use of 'Any' type in {context}",
                 suggestion="Consider using a more specific type, TypeVar, or Protocol",
             )
@@ -350,7 +349,7 @@ class AnyTypeVisitor(ast.NodeVisitor):
                 if annotation.value.id == "typing":
                     self._add_issue(
                         lineno=annotation.lineno,
-                        rule_id=RULE_ANY_ANNOTATION,
+                        rule_code=RULE_ANY_ANNOTATION,
                         message=f"Use of 'typing.Any' in {context}",
                         suggestion="Consider using a more specific type, TypeVar, or Protocol",
                     )
@@ -389,7 +388,7 @@ class AnyTypeVisitor(ast.NodeVisitor):
                 if self._is_any_type(value_type):
                     self._add_issue(
                         lineno=node.lineno,
-                        rule_id=RULE_DICT_STR_ANY,
+                        rule_code=RULE_DICT_STR_ANY,
                         message=f"Use of 'dict[str, Any]' in {context}",
                         suggestion="Consider using a TypedDict or Pydantic model",
                     )
@@ -400,7 +399,7 @@ class AnyTypeVisitor(ast.NodeVisitor):
             if self._is_any_type(node.slice):
                 self._add_issue(
                     lineno=node.lineno,
-                    rule_id=RULE_LIST_ANY,
+                    rule_code=RULE_LIST_ANY,
                     message=f"Use of 'list[Any]' in {context}",
                     suggestion="Consider using a more specific element type",
                 )
@@ -413,7 +412,7 @@ class AnyTypeVisitor(ast.NodeVisitor):
                     if self._is_any_type(elt):
                         self._add_issue(
                             lineno=node.lineno,
-                            rule_id=RULE_UNION_WITH_ANY,
+                            rule_code=RULE_UNION_WITH_ANY,
                             message=f"Use of 'Union[..., Any]' in {context}",
                             suggestion="Consider using a more specific type",
                         )
@@ -421,7 +420,7 @@ class AnyTypeVisitor(ast.NodeVisitor):
             elif self._is_any_type(node.slice):
                 self._add_issue(
                     lineno=node.lineno,
-                    rule_id=RULE_UNION_WITH_ANY,
+                    rule_code=RULE_UNION_WITH_ANY,
                     message=f"Use of 'Union[Any]' in {context}",
                     suggestion="Consider using a more specific type",
                 )
@@ -432,7 +431,7 @@ class AnyTypeVisitor(ast.NodeVisitor):
             if self._is_any_type(node.slice):
                 self._add_issue(
                     lineno=node.lineno,
-                    rule_id=RULE_UNION_WITH_ANY,
+                    rule_code=RULE_UNION_WITH_ANY,
                     message=f"Use of 'Optional[Any]' in {context}",
                     suggestion="Consider using a more specific type or 'T | None'",
                 )
@@ -465,7 +464,7 @@ class AnyTypeVisitor(ast.NodeVisitor):
             if self._is_any_type(type_node):
                 self._add_issue(
                     lineno=node.lineno,
-                    rule_id=RULE_UNION_WITH_ANY,
+                    rule_code=RULE_UNION_WITH_ANY,
                     message=f"Use of 'Any' in union type in {context}",
                     suggestion="Consider using a more specific type",
                 )
