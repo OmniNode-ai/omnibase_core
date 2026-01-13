@@ -192,7 +192,8 @@ class ModelFieldAccessor(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception:  # fallback-ok: Configurable protocol requires boolean return for graceful config failure
+        except Exception:
+            # fallback-ok: Configurable protocol requires boolean return for graceful config failure
             return False
 
     def serialize(self) -> dict[str, object]:

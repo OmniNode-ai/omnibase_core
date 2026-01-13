@@ -878,3 +878,260 @@ class TestAsyncDecoratorEdgeCases:
 
         with pytest.raises(GeneratorExit):
             await async_generator_exit()
+
+
+@pytest.mark.unit
+class TestValidationErrorDetection:
+    """Test the validation error detection heuristics."""
+
+    def test_pydantic_style_error_with_error_count_detected(self):
+        """Test that exceptions with Pydantic-style error_count() are detected."""
+
+        class PydanticStyleError(Exception):
+            """Mock Pydantic-style error with error_count method."""
+
+            def __init__(self, message: str):
+                super().__init__(message)
+                self._errors = [
+                    {"loc": ("field",), "msg": "error", "type": "value_error"}
+                ]
+
+            def errors(self):
+                return self._errors
+
+            def error_count(self):
+                return len(self._errors)
+
+        @validation_error_handling("Pydantic-style validation")
+        def raises_pydantic_style():
+            raise PydanticStyleError("Validation failed")
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            raises_pydantic_style()
+
+        # Should be detected as validation error via error_count() method
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+
+    def test_error_with_only_error_count_detected(self):
+        """Test that exceptions with only error_count() are detected."""
+
+        class ErrorCountOnlyError(Exception):
+            """Error with error_count but no errors method."""
+
+            def error_count(self):
+                return 1
+
+        @validation_error_handling("Error count validation")
+        def raises_error_count_only():
+            raise ErrorCountOnlyError("Has error count")
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            raises_error_count_only()
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+
+    def test_validation_timeout_error_not_detected_as_validation(self):
+        """Test that ValidationTimeoutError is NOT detected as validation error."""
+
+        class ValidationTimeoutError(Exception):
+            """Timeout during validation - NOT a validation error."""
+
+        @validation_error_handling("Validation with timeout")
+        def raises_validation_timeout():
+            raise ValidationTimeoutError("Validation timed out")
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            raises_validation_timeout()
+
+        # Should NOT be detected as validation error (denylist)
+        assert exc_info.value.error_code == EnumCoreErrorCode.OPERATION_FAILED
+
+    def test_validation_cancelled_error_not_detected_as_validation(self):
+        """Test that ValidationCancelledError is NOT detected as validation error."""
+
+        class ValidationCancelledError(Exception):
+            """Validation was cancelled - NOT a validation error."""
+
+        @validation_error_handling("Cancelled validation")
+        def raises_validation_cancelled():
+            raise ValidationCancelledError("Validation was cancelled")
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            raises_validation_cancelled()
+
+        # Should NOT be detected as validation error (denylist)
+        assert exc_info.value.error_code == EnumCoreErrorCode.OPERATION_FAILED
+
+    def test_schema_validation_error_detected(self):
+        """Test that SchemaValidationError IS detected (not in denylist)."""
+
+        class SchemaValidationError(Exception):
+            """Schema validation failed - IS a validation error."""
+
+        @validation_error_handling("Schema validation")
+        def raises_schema_validation():
+            raise SchemaValidationError("Schema invalid")
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            raises_schema_validation()
+
+        # Should be detected as validation error (not in denylist)
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+
+    def test_input_validation_exception_detected(self):
+        """Test that InputValidationException IS detected (not in denylist)."""
+
+        class InputValidationException(Exception):
+            """Input validation failed - IS a validation error."""
+
+        @validation_error_handling("Input validation")
+        def raises_input_validation():
+            raise InputValidationException("Invalid input")
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            raises_input_validation()
+
+        # Should be detected as validation error (not in denylist)
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+
+    def test_error_with_non_callable_error_count_not_detected(self):
+        """Test that non-callable error_count attribute doesn't trigger detection."""
+
+        class BadErrorCount(Exception):
+            """Error with error_count as non-callable attribute."""
+
+            def __init__(self, message: str):
+                super().__init__(message)
+                self.error_count = 5  # Not callable
+
+        @validation_error_handling("Bad error count")
+        def raises_bad_error_count():
+            raise BadErrorCount("Has error_count attribute")
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            raises_bad_error_count()
+
+        # Should NOT be detected as validation error (error_count not callable)
+        assert exc_info.value.error_code == EnumCoreErrorCode.OPERATION_FAILED
+
+    def test_error_with_error_count_returning_non_int_not_detected(self):
+        """Test that error_count() returning non-int doesn't trigger detection."""
+
+        class WeirdErrorCount(Exception):
+            """Error with error_count returning wrong type."""
+
+            def error_count(self):
+                return "many"  # Not an int
+
+        @validation_error_handling("Weird error count")
+        def raises_weird_error_count():
+            raise WeirdErrorCount("Has weird error_count")
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            raises_weird_error_count()
+
+        # Should NOT be detected as validation error (error_count returns string)
+        assert exc_info.value.error_code == EnumCoreErrorCode.OPERATION_FAILED
+
+    def test_error_with_throwing_error_count_not_detected(self):
+        """Test that error_count() that throws doesn't trigger detection."""
+
+        class ThrowingErrorCount(Exception):
+            """Error with error_count that throws."""
+
+            def error_count(self):
+                raise RuntimeError("Cannot count errors")
+
+        @validation_error_handling("Throwing error count")
+        def raises_throwing_error_count():
+            raise ThrowingErrorCount("Has throwing error_count")
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            raises_throwing_error_count()
+
+        # Should NOT be detected as validation error (error_count throws)
+        assert exc_info.value.error_code == EnumCoreErrorCode.OPERATION_FAILED
+
+    def test_pydantic_errors_structure_with_input_key(self):
+        """Test that errors() with Pydantic v2 structure including 'input' key works."""
+
+        class PydanticV2StyleError(Exception):
+            """Mock Pydantic v2 error with full error structure."""
+
+            def errors(self):
+                return [
+                    {
+                        "type": "string_type",
+                        "loc": ("name",),
+                        "msg": "Input should be a valid string",
+                        "input": 123,
+                        "url": "https://errors.pydantic.dev/2.12/v/string_type",
+                    }
+                ]
+
+        @validation_error_handling("Pydantic v2 style")
+        def raises_pydantic_v2():
+            raise PydanticV2StyleError("Full Pydantic v2 structure")
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            raises_pydantic_v2()
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+
+    def test_errors_returning_empty_list_detected(self):
+        """Test that errors() returning empty list is detected as validation error."""
+
+        class EmptyErrorsError(Exception):
+            """Error with errors() returning empty list."""
+
+            def errors(self):
+                return []
+
+        @validation_error_handling("Empty errors")
+        def raises_empty_errors():
+            raise EmptyErrorsError("No errors yet")
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            raises_empty_errors()
+
+        # Empty errors list is valid Pydantic structure
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+
+    def test_errors_returning_non_list_not_detected(self):
+        """Test that errors() returning non-list doesn't trigger detection."""
+
+        class NonListErrors(Exception):
+            """Error with errors() returning dict."""
+
+            def errors(self):
+                return {"field": "error"}
+
+        @validation_error_handling("Non-list errors")
+        def raises_non_list_errors():
+            raise NonListErrors("Has non-list errors")
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            raises_non_list_errors()
+
+        # Dict is not valid Pydantic structure
+        assert exc_info.value.error_code == EnumCoreErrorCode.OPERATION_FAILED
+
+    def test_errors_with_missing_required_keys_not_detected(self):
+        """Test that errors() with missing required keys doesn't trigger detection."""
+
+        class PartialErrors(Exception):
+            """Error with errors() missing required Pydantic keys."""
+
+            def errors(self):
+                # Missing 'type' key
+                return [{"loc": ("field",), "msg": "error"}]
+
+        @validation_error_handling("Partial errors")
+        def raises_partial_errors():
+            raise PartialErrors("Has partial errors")
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            raises_partial_errors()
+
+        # Missing 'type' key means not Pydantic structure
+        assert exc_info.value.error_code == EnumCoreErrorCode.OPERATION_FAILED

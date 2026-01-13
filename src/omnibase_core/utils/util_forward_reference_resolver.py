@@ -141,7 +141,10 @@ import sys
 import warnings
 from typing import TYPE_CHECKING
 
-from omnibase_core.errors.exception_groups import VALIDATION_ERRORS
+from omnibase_core.errors.exception_groups import (
+    PYDANTIC_MODEL_ERRORS,
+    VALIDATION_ERRORS,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -377,7 +380,7 @@ def handle_subclass_forward_refs(
             - Circular import resolution is in progress
             - The model will be rebuilt later when dependencies are available
 
-        **TypeError/ValueError** (warned):
+        **VALIDATION_ERRORS (TypeError, ValidationError, ValueError)** (warned):
             When rebuild_func raises these errors, it indicates a configuration
             or type annotation problem that needs attention.
 
@@ -390,6 +393,7 @@ def handle_subclass_forward_refs(
             - Invalid type annotations in the parent model
             - Missing types in type_mappings
             - Pydantic configuration issues
+            - ValidationError from Pydantic model validation
 
     Edge Cases:
         **Called during early module loading**:
@@ -517,9 +521,8 @@ def auto_rebuild_on_module_load(  # stub-ok: fully implemented with extensive do
 
             - ModelOnexError with CONFIGURATION_ERROR code
             - ModelOnexError with INITIALIZATION_FAILED code
-            - TypeError (type annotation problems)
-            - ValueError (invalid configuration values)
-            - AttributeError (missing attributes)
+            - PYDANTIC_MODEL_ERRORS (AttributeError, TypeError, ValidationError, ValueError):
+              These indicate type annotation, configuration, or attribute problems
             - RuntimeError (critical module manipulation failure)
 
             These errors will crash the import, which is intentional - they
@@ -669,9 +672,9 @@ def auto_rebuild_on_module_load(  # stub-ok: fully implemented with extensive do
                 error_msg=rebuild_error.message or str(rebuild_error),
                 error_type="ModelOnexError",
             )
-        except (TypeError, ValueError, AttributeError):
-            # These specific exceptions indicate configuration problems
-            # Re-raise to fail fast
+        except PYDANTIC_MODEL_ERRORS:
+            # PYDANTIC_MODEL_ERRORS (AttributeError, TypeError, ValidationError, ValueError)
+            # indicate configuration problems - re-raise to fail fast
             raise
         except RuntimeError:
             # RuntimeError during module manipulation is a critical failure

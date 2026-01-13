@@ -35,8 +35,6 @@ from pathlib import Path
 from typing import Any, cast
 from uuid import UUID, uuid4
 
-from pydantic import ValidationError
-
 from omnibase_core.constants import TIMEOUT_DEFAULT_MS
 from omnibase_core.constants.constants_event_types import TOOL_INVOCATION
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -69,7 +67,26 @@ _COMPONENT_NAME = Path(__file__).stem
 # RuntimeError covers: service not registered, container not initialized, circular
 # dependencies, or other container-level service resolution failures.
 _SERVICE_LOOKUP_ERRORS: tuple[type[Exception], ...] = PYDANTIC_MODEL_ERRORS + (
-    RuntimeError,  # Service not available or container issues
+    RuntimeError,  # init-errors-ok: service not available or container issues
+)
+
+# Tool execution errors for handle_tool_invocation().
+# Uses centralized PYDANTIC_MODEL_ERRORS plus additional exceptions specific to tool execution.
+# Defined at module level with explicit tuple concatenation to satisfy mypy
+# (mypy cannot handle tuple unpacking in except clauses).
+#
+# Additional exceptions beyond PYDANTIC_MODEL_ERRORS:
+# - KeyError: state/parameter access errors (dict key lookup failures)
+# - ModelOnexError: ONEX framework errors (structured domain errors)
+# - OSError: I/O and connection errors (includes ConnectionError)
+# - RuntimeError: execution environment errors (async context, resource limits)
+# - TimeoutError: async operation timeouts (task cancellation due to timeout)
+_TOOL_EXECUTION_ERRORS: tuple[type[Exception], ...] = PYDANTIC_MODEL_ERRORS + (
+    KeyError,
+    ModelOnexError,
+    OSError,
+    RuntimeError,
+    TimeoutError,
 )
 
 
@@ -317,25 +334,9 @@ class MixinNodeService:
                 f"Tool invocation completed successfully in {execution_time_ms}ms",
             )
 
-        except (
-            AttributeError,
-            KeyError,
-            ModelOnexError,
-            OSError,
-            RuntimeError,
-            TimeoutError,
-            TypeError,
-            ValidationError,
-            ValueError,
-        ) as e:
-            # Specific expected exceptions from tool invocation:
-            # - AttributeError/KeyError: state/parameter access errors
-            # - ModelOnexError: ONEX framework errors
-            # - OSError: I/O and connection errors (includes ConnectionError)
-            # - RuntimeError: execution environment errors
-            # - TimeoutError: async operation timeouts
-            # - TypeError/ValueError: type and value validation errors
-            # - ValidationError: Pydantic model validation errors
+        except _TOOL_EXECUTION_ERRORS as e:
+            # boundary-ok: tool invocation boundary must return error response, not crash.
+            # Uses centralized _TOOL_EXECUTION_ERRORS (see module-level definition).
             execution_time_ms = int((time.time() - start_time) * 1000)
             response_event = ModelToolResponseEvent.create_error_response(
                 correlation_id=correlation_id,
