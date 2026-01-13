@@ -122,7 +122,7 @@ class ModelConfig(BaseModel):  # type: ignore[explicit-any]  # Pydantic BaseMode
 
             config = ModelConfig(
                 provider="local",
-                model_name="qwen2.5-14b",
+                model_name="qwen2.5-coder-14b",
                 endpoint_url=os.getenv("LOCAL_LLM_ENDPOINT", "http://localhost:8000"),
             )
     """
