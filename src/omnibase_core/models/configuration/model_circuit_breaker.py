@@ -47,7 +47,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Any, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
+from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, field_validator
 
 from omnibase_core.enums.enum_circuit_breaker_state import EnumCircuitBreakerState
 
@@ -299,6 +299,23 @@ class ModelCircuitBreaker(BaseModel):
         default=EnumCircuitBreakerState.CLOSED,
         description="Current circuit breaker state",
     )
+
+    @field_validator("state", mode="before")
+    @classmethod
+    def _normalize_state(cls, v: str | EnumCircuitBreakerState) -> str:
+        """Accept both string and enum, normalize to string for serialization."""
+        if isinstance(v, EnumCircuitBreakerState):
+            return v.value
+        valid_states = {
+            EnumCircuitBreakerState.CLOSED.value,
+            EnumCircuitBreakerState.OPEN.value,
+            EnumCircuitBreakerState.HALF_OPEN.value,
+        }
+        if isinstance(v, str) and v in valid_states:
+            return v
+        raise ValueError(
+            f"Invalid circuit breaker state: {v!r}. Valid states: {sorted(valid_states)}"
+        )
 
     last_failure_time: datetime | None = Field(
         default=None,

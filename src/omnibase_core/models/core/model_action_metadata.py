@@ -239,5 +239,5 @@ class ModelActionMetadata(BaseModel):
         return (
             self.trust_score >= minimum_trust_score
             and not self.is_expired()
-            and self.status in [EnumGeneralStatus.CREATED, "ready"]
+            and self.status in {EnumGeneralStatus.CREATED, EnumGeneralStatus.READY}
         )

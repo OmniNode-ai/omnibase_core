@@ -568,7 +568,7 @@ class MixinHealthCheck:
                     ],
                 )
 
-        except Exception as e:  # fallback-ok: health check returns UNHEALTHY status
+        except Exception as e:  # fallback-ok: health check returns UNHEALTHY, not crash
             from omnibase_core.models.health.model_health_issue import ModelHealthIssue
 
             return ModelHealthStatus.create_unhealthy(
@@ -647,7 +647,7 @@ async def check_postgresql_health(
             ],
         )
 
-    except Exception as e:  # fallback-ok: health check returns UNHEALTHY status
+    except Exception as e:  # fallback-ok: health check returns UNHEALTHY, not crash
         emit_log_event(
             LogLevel.ERROR,
             "PostgreSQL health check failed",
@@ -751,7 +751,7 @@ async def check_kafka_health(
             ],
         )
 
-    except Exception as e:  # fallback-ok: health check returns DEGRADED status
+    except Exception as e:  # fallback-ok: health check returns DEGRADED, not crash
         emit_log_event(
             LogLevel.ERROR,
             "Kafka health check failed",
@@ -844,7 +844,7 @@ async def check_redis_health(
             ],
         )
 
-    except Exception as e:  # fallback-ok: health check returns UNHEALTHY status
+    except Exception as e:  # fallback-ok: health check returns UNHEALTHY, not crash
         emit_log_event(
             LogLevel.ERROR,
             "Redis health check failed",
@@ -1039,7 +1039,7 @@ async def check_http_service_health(
             ],
         )
 
-    except Exception as e:  # fallback-ok: health check returns UNHEALTHY status
+    except Exception as e:  # fallback-ok: health check returns UNHEALTHY, not crash
         emit_log_event(
             LogLevel.ERROR,
             "HTTP service health check failed",
