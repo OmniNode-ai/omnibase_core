@@ -28,8 +28,8 @@ class EnumEnforcementMode(StrValueHelper, str, Enum):
 
     def allows_overrun(self) -> bool:
         """Check if this mode allows temporary limit overruns."""
-        return self in [self.SOFT, self.ADVISORY]
+        return self in {self.SOFT, self.ADVISORY}
 
     def provides_warnings(self) -> bool:
         """Check if this mode provides warning when limits are approached."""
-        return self in [self.SOFT, self.ADVISORY]
+        return self in {self.SOFT, self.ADVISORY}

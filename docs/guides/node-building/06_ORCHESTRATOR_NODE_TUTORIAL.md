@@ -102,7 +102,7 @@ from omnibase_core.nodes import (
     ModelOrchestratorOutput,
     EnumActionType,
     EnumExecutionMode,
-    EnumWorkflowState,
+    EnumWorkflowStatus,
     EnumBranchCondition,
 )
 
@@ -470,7 +470,7 @@ from omnibase_core.nodes import (
     ModelOrchestratorOutput,
     EnumActionType,
     EnumExecutionMode,
-    EnumWorkflowState,
+    EnumWorkflowStatus,
 )
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.orchestrator.model_action import ModelAction
@@ -942,7 +942,7 @@ result = await orchestrator.process_pipeline(input_data)
 Add robust error handling with compensation logic:
 
 ```python
-from omnibase_core.nodes import EnumWorkflowState
+from omnibase_core.nodes import EnumWorkflowStatus
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 

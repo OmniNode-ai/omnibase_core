@@ -567,6 +567,98 @@ class TestEnumExecutionStatus:
         )  # COMPLETED, SUCCESS, FAILED, SKIPPED, CANCELLED, TIMEOUT, PARTIAL
         assert active_count == 2  # PENDING, RUNNING
 
+    def test_roundtrip_serialization_all_values(self):
+        """Test roundtrip serialization for all enum values.
+
+        Ensures str(enum) -> Enum(str) works for every value.
+        """
+        for status in EnumExecutionStatus:
+            # String roundtrip
+            serialized = str(status)
+            deserialized = EnumExecutionStatus(serialized)
+            assert deserialized == status, (
+                f"String roundtrip failed for {status}: "
+                f"serialized={serialized}, deserialized={deserialized}"
+            )
+
+            # Value roundtrip
+            value = status.value
+            reconstructed = EnumExecutionStatus(value)
+            assert reconstructed == status, (
+                f"Value roundtrip failed for {status}: "
+                f"value={value}, reconstructed={reconstructed}"
+            )
+
+    def test_inactive_mapping_via_base_status(self):
+        """Test that INACTIVE base status maps correctly to CANCELLED.
+
+        EnumBaseStatus.INACTIVE represents intentional deactivation,
+        which maps to CANCELLED in execution context (intentional termination).
+        """
+        from omnibase_core.enums.enum_base_status import EnumBaseStatus
+
+        # INACTIVE -> CANCELLED
+        result = EnumExecutionStatus.from_base_status(EnumBaseStatus.INACTIVE)
+        assert result == EnumExecutionStatus.CANCELLED
+
+        # And CANCELLED -> INACTIVE roundtrip
+        back_to_base = result.to_base_status()
+        assert back_to_base == EnumBaseStatus.INACTIVE
+
+    def test_all_base_status_mappings(self):
+        """Test all valid base status to execution status mappings.
+
+        Ensures complete coverage of from_base_status method.
+        """
+        from omnibase_core.enums.enum_base_status import EnumBaseStatus
+
+        # All valid mappings
+        valid_mappings = {
+            EnumBaseStatus.PENDING: EnumExecutionStatus.PENDING,
+            EnumBaseStatus.RUNNING: EnumExecutionStatus.RUNNING,
+            EnumBaseStatus.COMPLETED: EnumExecutionStatus.COMPLETED,
+            EnumBaseStatus.FAILED: EnumExecutionStatus.FAILED,
+            EnumBaseStatus.INACTIVE: EnumExecutionStatus.CANCELLED,
+            EnumBaseStatus.ACTIVE: EnumExecutionStatus.RUNNING,
+            EnumBaseStatus.UNKNOWN: EnumExecutionStatus.PENDING,
+        }
+
+        for base_status, expected in valid_mappings.items():
+            result = EnumExecutionStatus.from_base_status(base_status)
+            assert result == expected, (
+                f"Mapping failed for {base_status}: "
+                f"expected={expected}, actual={result}"
+            )
+
+    def test_is_failure_method(self):
+        """Test the is_failure class method exhaustively.
+
+        Verifies that is_failure correctly identifies failure states.
+        """
+        failure_statuses = {
+            EnumExecutionStatus.FAILED,
+            EnumExecutionStatus.TIMEOUT,
+        }
+
+        for status in EnumExecutionStatus:
+            expected = status in failure_statuses
+            assert EnumExecutionStatus.is_failure(status) == expected, (
+                f"is_failure() mismatch for {status}: "
+                f"expected={expected}, actual={EnumExecutionStatus.is_failure(status)}"
+            )
+
+    def test_is_partial_method(self):
+        """Test the is_partial class method.
+
+        Verifies that only PARTIAL returns True.
+        """
+        for status in EnumExecutionStatus:
+            expected = status == EnumExecutionStatus.PARTIAL
+            assert EnumExecutionStatus.is_partial(status) == expected, (
+                f"is_partial() mismatch for {status}: "
+                f"expected={expected}, actual={EnumExecutionStatus.is_partial(status)}"
+            )
+
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

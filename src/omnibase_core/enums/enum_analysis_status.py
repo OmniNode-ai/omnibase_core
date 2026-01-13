@@ -6,9 +6,11 @@ ONEX-compatible enum for standardized analysis status values.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumAnalysisStatus(str, Enum):
+class EnumAnalysisStatus(StrValueHelper, str, Enum):
     """Enumeration for analysis status values."""
 
     PENDING = "pending"

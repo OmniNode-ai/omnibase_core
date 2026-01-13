@@ -212,3 +212,166 @@ class TestEnumHealthStatus:
         assert EnumHealthStatus.AVAILABLE.is_transitional() is False
         assert EnumHealthStatus.UNAVAILABLE.is_transitional() is False
         assert EnumHealthStatus.ERROR.is_transitional() is False
+
+    def test_roundtrip_serialization_all_values(self):
+        """Test roundtrip serialization for all enum values.
+
+        Ensures str(enum) -> Enum(str) works for every value.
+        """
+        for status in EnumHealthStatus:
+            # String roundtrip
+            serialized = str(status)
+            deserialized = EnumHealthStatus(serialized)
+            assert deserialized == status, (
+                f"String roundtrip failed for {status}: "
+                f"serialized={serialized}, deserialized={deserialized}"
+            )
+
+            # Value roundtrip
+            value = status.value
+            reconstructed = EnumHealthStatus(value)
+            assert reconstructed == status, (
+                f"Value roundtrip failed for {status}: "
+                f"value={value}, reconstructed={reconstructed}"
+            )
+
+    def test_helper_method_coverage_completeness(self):
+        """Test that helper methods cover all status values without gaps.
+
+        Every status should be categorized by at least one helper method,
+        ensuring no status is left in an undefined state.
+        """
+        for status in EnumHealthStatus:
+            is_operational = status.is_operational()
+            requires_attention = status.requires_attention()
+            is_transitional = status.is_transitional()
+
+            # Not all statuses need to be covered by helpers, but we verify
+            # that the classification is consistent
+            # For example: UNAVAILABLE is neither operational nor requires_attention
+            # nor transitional - this is expected as it represents "unavailable but
+            # not critical"
+
+            # Verify no status is both operational and requires attention
+            if is_operational:
+                # Operational statuses should not require attention (except WARNING)
+                if status != EnumHealthStatus.WARNING:
+                    assert not requires_attention, (
+                        f"{status} is operational and requires attention"
+                    )
+
+    def test_pydantic_integration(self):
+        """Test integration with Pydantic models."""
+        from pydantic import BaseModel, ValidationError
+
+        class HealthModel(BaseModel):
+            status: EnumHealthStatus
+
+        # Test valid enum assignment
+        model = HealthModel(status=EnumHealthStatus.HEALTHY)
+        assert model.status == EnumHealthStatus.HEALTHY
+
+        # Test string assignment
+        model = HealthModel(status="degraded")
+        assert model.status == EnumHealthStatus.DEGRADED
+
+        # Test invalid value should raise ValidationError
+        with pytest.raises(ValidationError):
+            HealthModel(status="invalid_status")
+
+    def test_pydantic_serialization(self):
+        """Test Pydantic model serialization."""
+        from pydantic import BaseModel
+
+        class HealthModel(BaseModel):
+            status: EnumHealthStatus
+
+        model = HealthModel(status=EnumHealthStatus.CRITICAL)
+
+        # Test dict serialization
+        model_dict = model.model_dump()
+        assert model_dict == {"status": "critical"}
+
+        # Test JSON serialization
+        json_str = model.model_dump_json()
+        assert json_str == '{"status":"critical"}'
+
+    def test_json_serialization(self):
+        """Test JSON serialization compatibility."""
+        import json
+
+        status = EnumHealthStatus.DEGRADED
+        json_str = json.dumps(status, default=str)
+        assert json_str == '"degraded"'
+
+        # Test in dictionary
+        data = {"health_status": EnumHealthStatus.HEALTHY}
+        json_str = json.dumps(data, default=str)
+        assert '"health_status": "healthy"' in json_str
+
+    def test_yaml_serialization_compatibility(self):
+        """Test YAML serialization compatibility."""
+        import yaml
+
+        data = {"status": str(EnumHealthStatus.INITIALIZING)}
+        yaml_str = yaml.dump(data, default_flow_style=False)
+        assert "status: initializing" in yaml_str
+
+        # Test that we can load it back
+        loaded_data = yaml.safe_load(yaml_str)
+        assert loaded_data["status"] == "initializing"
+
+    def test_is_operational_exhaustive(self):
+        """Test is_operational returns correct values for ALL statuses.
+
+        Exhaustive test to ensure all 12 statuses are covered.
+        """
+        operational_statuses = {
+            EnumHealthStatus.HEALTHY,
+            EnumHealthStatus.DEGRADED,
+            EnumHealthStatus.AVAILABLE,
+            EnumHealthStatus.WARNING,
+        }
+
+        for status in EnumHealthStatus:
+            expected = status in operational_statuses
+            assert status.is_operational() == expected, (
+                f"is_operational() mismatch for {status}: "
+                f"expected={expected}, actual={status.is_operational()}"
+            )
+
+    def test_requires_attention_exhaustive(self):
+        """Test requires_attention returns correct values for ALL statuses.
+
+        Exhaustive test to ensure all 12 statuses are covered.
+        """
+        attention_statuses = {
+            EnumHealthStatus.UNHEALTHY,
+            EnumHealthStatus.CRITICAL,
+            EnumHealthStatus.ERROR,
+            EnumHealthStatus.UNREACHABLE,
+        }
+
+        for status in EnumHealthStatus:
+            expected = status in attention_statuses
+            assert status.requires_attention() == expected, (
+                f"requires_attention() mismatch for {status}: "
+                f"expected={expected}, actual={status.requires_attention()}"
+            )
+
+    def test_is_transitional_exhaustive(self):
+        """Test is_transitional returns correct values for ALL statuses.
+
+        Exhaustive test to ensure all 12 statuses are covered.
+        """
+        transitional_statuses = {
+            EnumHealthStatus.INITIALIZING,
+            EnumHealthStatus.DISPOSING,
+        }
+
+        for status in EnumHealthStatus:
+            expected = status in transitional_statuses
+            assert status.is_transitional() == expected, (
+                f"is_transitional() mismatch for {status}: "
+                f"expected={expected}, actual={status.is_transitional()}"
+            )

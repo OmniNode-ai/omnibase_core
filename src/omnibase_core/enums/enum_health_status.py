@@ -1,21 +1,36 @@
 """Canonical health status enum for ONEX framework.
 
-**BREAKING CHANGE** (OMN-1310): This enum consolidates multiple previous
-health status enums into a single canonical source. No backwards
-compatibility is provided.
+**BREAKING CHANGE** (OMN-1310): This enum consolidates and replaces:
 
-**Consolidated enums**:
-- EnumHealthStatusType (deleted from enum_health_status_type.py)
-- EnumNodeHealthStatus (deleted from enum_node_health_status.py)
+- ``EnumHealthStatusType`` (deleted from ``enum_health_status_type.py``)
+- ``EnumNodeHealthStatus`` (deleted from ``enum_node_health_status.py``)
 
-**Usage**: Import directly from omnibase_core.enums::
+**What breaks**:
+
+- Import paths ``from omnibase_core.enums import EnumHealthStatusType`` and
+  ``from omnibase_core.enums import EnumNodeHealthStatus`` no longer exist.
+- The old enum files have been deleted; there are no aliases or deprecation
+  warnings.
+
+**Why no backwards compatibility**:
+
+- Maintaining multiple enums with overlapping semantics (HEALTHY, UNHEALTHY,
+  etc.) caused confusion and inconsistent usage across the codebase.
+- A clean break ensures all code converges on a single canonical enum,
+  eliminating ambiguity about which enum to use for health status.
+
+**Migration**:
+
+1. Find all imports of ``EnumHealthStatusType`` or ``EnumNodeHealthStatus``.
+2. Replace with ``from omnibase_core.enums import EnumHealthStatus``.
+3. Update any value references (e.g., ``EnumHealthStatusType.HEALTHY`` becomes
+   ``EnumHealthStatus.HEALTHY``).
+
+**Usage**::
 
     from omnibase_core.enums import EnumHealthStatus
 
 **Semantic Category**: Health (system/component health states)
-
-**Migration**: Replace all imports of EnumHealthStatusType or
-EnumNodeHealthStatus with EnumHealthStatus from omnibase_core.enums.
 """
 
 from enum import Enum, unique
@@ -89,3 +104,6 @@ class EnumHealthStatus(StrValueHelper, str, Enum):
     def is_transitional(self) -> bool:
         """Check if this status indicates a transitional state."""
         return self in {self.INITIALIZING, self.DISPOSING}
+
+
+__all__ = ["EnumHealthStatus"]

@@ -1160,11 +1160,11 @@ class EnumActionType(str, Enum):
 
 class EnumActionStatus(str, Enum):
     """Action execution status."""
-    PENDING = "pending"
-    IN_PROGRESS = "in_progress"
+    CREATED = "created"
+    READY = "ready"
+    RUNNING = "running"
     COMPLETED = "completed"
     FAILED = "failed"
-    CANCELLED = "cancelled"
 
 class ModelAction(BaseModel):
     """
@@ -1203,7 +1203,7 @@ class ModelAction(BaseModel):
         description="Action expiration for timeout enforcement"
     )
     status: EnumActionStatus = Field(
-        default=EnumActionStatus.PENDING,
+        default=EnumActionStatus.CREATED,
         description="Current action execution status"
     )
     parent_action_id: Optional[UUID] = Field(

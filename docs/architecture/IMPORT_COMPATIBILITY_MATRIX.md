@@ -100,7 +100,7 @@ from omnibase_core.nodes import (
     EnumActionType,
     EnumBranchCondition,
     EnumExecutionMode,
-    EnumWorkflowState,
+    EnumWorkflowStatus,
     EnumConflictResolution,
     EnumReductionType,
     EnumStreamingMode,
@@ -127,7 +127,7 @@ from omnibase_core.nodes import (
 | `EnumActionType` | Enum | STABLE | Orchestrator Enum | Action types for orchestrator |
 | `EnumBranchCondition` | Enum | STABLE | Orchestrator Enum | Branch conditions |
 | `EnumExecutionMode` | Enum | STABLE | Orchestrator Enum | Execution modes |
-| `EnumWorkflowState` | Enum | STABLE | Orchestrator Enum | Workflow states |
+| `EnumWorkflowStatus` | Enum | STABLE | Orchestrator Enum | Workflow states |
 | `EnumConflictResolution` | Enum | STABLE | Reducer Enum | Conflict resolution strategies |
 | `EnumReductionType` | Enum | STABLE | Reducer Enum | Reduction types |
 | `EnumStreamingMode` | Enum | STABLE | Reducer Enum | Streaming modes |
@@ -210,7 +210,7 @@ from omnibase_core.enums import (
     # Orchestrator domain
     EnumActionType,
     EnumBranchCondition,
-    EnumWorkflowState,
+    EnumWorkflowStatus,
 
     # Reducer domain
     EnumConflictResolution,
@@ -244,7 +244,7 @@ from omnibase_core.enums import (
 | Error Codes | `EnumCoreErrorCode`, `EnumOnexErrorCode`, `EnumCLIExitCode` | Structured error handling |
 | Node Classification | `EnumNodeKind`, `EnumNodeType`, `EnumNodeStatus` | Node architecture |
 | Effect Types | `EnumEffectType`, `EnumCircuitBreakerState`, `EnumTransactionState` | Effect node configuration |
-| Orchestrator Types | `EnumActionType`, `EnumBranchCondition`, `EnumWorkflowState` | Workflow orchestration |
+| Orchestrator Types | `EnumActionType`, `EnumBranchCondition`, `EnumWorkflowStatus` | Workflow orchestration |
 | Reducer Types | `EnumConflictResolution`, `EnumReductionType`, `EnumStreamingMode` | FSM state management |
 
 ---

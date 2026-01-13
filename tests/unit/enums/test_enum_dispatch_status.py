@@ -181,11 +181,7 @@ class TestEnumDispatchStatus:
     def test_enum_equality(self):
         """Test enum equality comparison."""
         assert EnumDispatchStatus.SUCCESS == EnumDispatchStatus.SUCCESS
-        assert (
-            EnumDispatchStatus.SUCCESS != EnumDispatchStatus.FAILED
-            if hasattr(EnumDispatchStatus, "FAILED")
-            else True
-        )
+        assert EnumDispatchStatus.SUCCESS != EnumDispatchStatus.HANDLER_ERROR
         assert EnumDispatchStatus.TIMEOUT == EnumDispatchStatus.TIMEOUT
 
     def test_enum_membership(self):
@@ -280,6 +276,115 @@ class TestEnumDispatchStatus:
 
         loaded_data = yaml.safe_load(yaml_str)
         assert loaded_data["status"] == "timeout"
+
+    def test_roundtrip_serialization_all_values(self):
+        """Test roundtrip serialization for all enum values.
+
+        Ensures str(enum) -> Enum(str) works for every value.
+        """
+        for status in EnumDispatchStatus:
+            # String roundtrip
+            serialized = str(status)
+            deserialized = EnumDispatchStatus(serialized)
+            assert deserialized == status, (
+                f"String roundtrip failed for {status}: "
+                f"serialized={serialized}, deserialized={deserialized}"
+            )
+
+            # Value roundtrip
+            value = status.value
+            reconstructed = EnumDispatchStatus(value)
+            assert reconstructed == status, (
+                f"Value roundtrip failed for {status}: "
+                f"value={value}, reconstructed={reconstructed}"
+            )
+
+    def test_is_terminal_exhaustive(self):
+        """Test is_terminal returns correct values for ALL statuses.
+
+        Exhaustive test to ensure all 8 statuses are covered.
+        """
+        terminal_statuses = {
+            EnumDispatchStatus.SUCCESS,
+            EnumDispatchStatus.NO_HANDLER,
+            EnumDispatchStatus.HANDLER_ERROR,
+            EnumDispatchStatus.TIMEOUT,
+            EnumDispatchStatus.INVALID_MESSAGE,
+            EnumDispatchStatus.PUBLISH_FAILED,
+            EnumDispatchStatus.SKIPPED,
+        }
+
+        for status in EnumDispatchStatus:
+            expected = status in terminal_statuses
+            assert status.is_terminal() == expected, (
+                f"is_terminal() mismatch for {status}: "
+                f"expected={expected}, actual={status.is_terminal()}"
+            )
+
+    def test_is_terminal_completeness(self):
+        """Test that all status values are categorized by is_terminal.
+
+        Every status must be either terminal or non-terminal.
+        This ensures no status values are left uncategorized.
+        """
+        terminal_count = sum(1 for s in EnumDispatchStatus if s.is_terminal())
+        non_terminal_count = len(EnumDispatchStatus) - terminal_count
+
+        # All statuses should be accounted for
+        assert terminal_count + non_terminal_count == len(EnumDispatchStatus)
+
+        # Expected counts based on the enum definition
+        assert terminal_count == 7  # All except ROUTED
+        assert non_terminal_count == 1  # Only ROUTED
+
+    def test_is_successful_exhaustive(self):
+        """Test is_successful returns correct values for ALL statuses.
+
+        Exhaustive test to ensure all 8 statuses are covered.
+        """
+        for status in EnumDispatchStatus:
+            expected = status == EnumDispatchStatus.SUCCESS
+            assert status.is_successful() == expected, (
+                f"is_successful() mismatch for {status}: "
+                f"expected={expected}, actual={status.is_successful()}"
+            )
+
+    def test_is_error_exhaustive(self):
+        """Test is_error returns correct values for ALL statuses.
+
+        Exhaustive test to ensure all 8 statuses are covered.
+        """
+        error_statuses = {
+            EnumDispatchStatus.NO_HANDLER,
+            EnumDispatchStatus.HANDLER_ERROR,
+            EnumDispatchStatus.TIMEOUT,
+            EnumDispatchStatus.INVALID_MESSAGE,
+            EnumDispatchStatus.PUBLISH_FAILED,
+        }
+
+        for status in EnumDispatchStatus:
+            expected = status in error_statuses
+            assert status.is_error() == expected, (
+                f"is_error() mismatch for {status}: "
+                f"expected={expected}, actual={status.is_error()}"
+            )
+
+    def test_requires_retry_exhaustive(self):
+        """Test requires_retry returns correct values for ALL statuses.
+
+        Exhaustive test to ensure all 8 statuses are covered.
+        """
+        retry_statuses = {
+            EnumDispatchStatus.TIMEOUT,
+            EnumDispatchStatus.PUBLISH_FAILED,
+        }
+
+        for status in EnumDispatchStatus:
+            expected = status in retry_statuses
+            assert status.requires_retry() == expected, (
+                f"requires_retry() mismatch for {status}: "
+                f"expected={expected}, actual={status.requires_retry()}"
+            )
 
 
 if __name__ == "__main__":

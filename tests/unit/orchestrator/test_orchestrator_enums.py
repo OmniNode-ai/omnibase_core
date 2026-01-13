@@ -786,7 +786,11 @@ class TestEnumAssignmentStatus:
 @pytest.mark.timeout(5)
 @pytest.mark.unit
 class TestEnumWorkflowStatusCoordination:
-    """Tests for EnumWorkflowStatus from enum_workflow_coordination."""
+    """Tests for canonical EnumWorkflowStatus.
+
+    Note: This tests the canonical EnumWorkflowStatus which has lowercase
+    values (pending, running, etc.) and includes PAUSED state.
+    """
 
     def test_enum_inherits_from_str_and_enum(self) -> None:
         """Test that EnumWorkflowStatus inherits from str and Enum."""
@@ -795,24 +799,26 @@ class TestEnumWorkflowStatusCoordination:
 
     def test_values_exist(self) -> None:
         """Test all expected values exist."""
-        assert EnumWorkflowStatus.CREATED.value == "CREATED"
-        assert EnumWorkflowStatus.RUNNING.value == "RUNNING"
-        assert EnumWorkflowStatus.COMPLETED.value == "COMPLETED"
-        assert EnumWorkflowStatus.FAILED.value == "FAILED"
-        assert EnumWorkflowStatus.CANCELLED.value == "CANCELLED"
+        assert EnumWorkflowStatus.PENDING.value == "pending"
+        assert EnumWorkflowStatus.RUNNING.value == "running"
+        assert EnumWorkflowStatus.COMPLETED.value == "completed"
+        assert EnumWorkflowStatus.FAILED.value == "failed"
+        assert EnumWorkflowStatus.CANCELLED.value == "cancelled"
+        assert EnumWorkflowStatus.PAUSED.value == "paused"
 
     def test_member_count(self) -> None:
-        """Test correct number of members (5 statuses)."""
-        assert len(EnumWorkflowStatus) == 5
+        """Test correct number of members (6 statuses)."""
+        assert len(EnumWorkflowStatus) == 6
 
     def test_string_values(self) -> None:
         """Test string representations match expected values."""
         expected_mappings = {
-            EnumWorkflowStatus.CREATED: "CREATED",
-            EnumWorkflowStatus.RUNNING: "RUNNING",
-            EnumWorkflowStatus.COMPLETED: "COMPLETED",
-            EnumWorkflowStatus.FAILED: "FAILED",
-            EnumWorkflowStatus.CANCELLED: "CANCELLED",
+            EnumWorkflowStatus.PENDING: "pending",
+            EnumWorkflowStatus.RUNNING: "running",
+            EnumWorkflowStatus.COMPLETED: "completed",
+            EnumWorkflowStatus.FAILED: "failed",
+            EnumWorkflowStatus.CANCELLED: "cancelled",
+            EnumWorkflowStatus.PAUSED: "paused",
         }
         for member, expected_value in expected_mappings.items():
             assert member.value == expected_value
@@ -820,7 +826,14 @@ class TestEnumWorkflowStatusCoordination:
 
     def test_iteration(self) -> None:
         """Test enum iteration returns all values."""
-        expected_values = {"CREATED", "RUNNING", "COMPLETED", "FAILED", "CANCELLED"}
+        expected_values = {
+            "pending",
+            "running",
+            "completed",
+            "failed",
+            "cancelled",
+            "paused",
+        }
         actual_values = {member.value for member in EnumWorkflowStatus}
         assert actual_values == expected_values
 
@@ -933,7 +946,6 @@ class TestOrchestratorEnumsIntegration:
             EnumBranchCondition,
             EnumExecutionPattern,
             EnumAssignmentStatus,
-            EnumWorkflowStatus,
         ]
 
         for enum_class in all_enums:

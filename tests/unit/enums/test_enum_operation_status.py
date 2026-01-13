@@ -352,6 +352,91 @@ class TestEnumOperationStatus:
         assert terminal_count == 4  # SUCCESS, FAILED, CANCELLED, TIMEOUT
         assert active_count == 2  # IN_PROGRESS, PENDING
 
+    def test_roundtrip_serialization_all_values(self):
+        """Test roundtrip serialization for all enum values.
+
+        Ensures str(enum) -> Enum(str) works for every value.
+        """
+        for status in EnumOperationStatus:
+            # String roundtrip
+            serialized = str(status)
+            deserialized = EnumOperationStatus(serialized)
+            assert deserialized == status, (
+                f"String roundtrip failed for {status}: "
+                f"serialized={serialized}, deserialized={deserialized}"
+            )
+
+            # Value roundtrip
+            value = status.value
+            reconstructed = EnumOperationStatus(value)
+            assert reconstructed == status, (
+                f"Value roundtrip failed for {status}: "
+                f"value={value}, reconstructed={reconstructed}"
+            )
+
+    def test_inactive_mapping_via_base_status(self):
+        """Test that INACTIVE base status maps correctly to CANCELLED.
+
+        EnumBaseStatus.INACTIVE represents intentional deactivation,
+        which maps to CANCELLED in operation context (intentional termination).
+        """
+        from omnibase_core.enums.enum_base_status import EnumBaseStatus
+
+        # INACTIVE -> CANCELLED
+        result = EnumOperationStatus.from_base_status(EnumBaseStatus.INACTIVE)
+        assert result == EnumOperationStatus.CANCELLED
+
+        # And CANCELLED -> INACTIVE roundtrip
+        back_to_base = result.to_base_status()
+        assert back_to_base == EnumBaseStatus.INACTIVE
+
+    def test_base_status_roundtrip_extended(self):
+        """Test extended roundtrip conversions including INACTIVE.
+
+        Verifies that base status conversions are consistent and
+        that INACTIVE (a key lifecycle state) roundtrips correctly.
+        """
+        from omnibase_core.enums.enum_base_status import EnumBaseStatus
+
+        # Extended roundtrip tests including all mapped base statuses
+        roundtrip_statuses = [
+            (EnumBaseStatus.PENDING, EnumOperationStatus.PENDING),
+            (EnumBaseStatus.RUNNING, EnumOperationStatus.IN_PROGRESS),
+            (EnumBaseStatus.FAILED, EnumOperationStatus.FAILED),
+            (EnumBaseStatus.INACTIVE, EnumOperationStatus.CANCELLED),
+            (EnumBaseStatus.ACTIVE, EnumOperationStatus.IN_PROGRESS),
+            (EnumBaseStatus.UNKNOWN, EnumOperationStatus.PENDING),
+        ]
+
+        for base_status, expected_op_status in roundtrip_statuses:
+            op_status = EnumOperationStatus.from_base_status(base_status)
+            assert op_status == expected_op_status, (
+                f"Mapping failed for {base_status}: "
+                f"expected={expected_op_status}, actual={op_status}"
+            )
+
+    def test_all_base_status_mappings(self):
+        """Test all valid base status to operation status mappings.
+
+        Ensures complete coverage of from_base_status method.
+        """
+        from omnibase_core.enums.enum_base_status import EnumBaseStatus
+
+        # All valid mappings
+        valid_mappings = {
+            EnumBaseStatus.COMPLETED: EnumOperationStatus.SUCCESS,
+            EnumBaseStatus.FAILED: EnumOperationStatus.FAILED,
+            EnumBaseStatus.RUNNING: EnumOperationStatus.IN_PROGRESS,
+            EnumBaseStatus.INACTIVE: EnumOperationStatus.CANCELLED,
+            EnumBaseStatus.PENDING: EnumOperationStatus.PENDING,
+            EnumBaseStatus.ACTIVE: EnumOperationStatus.IN_PROGRESS,
+            EnumBaseStatus.UNKNOWN: EnumOperationStatus.PENDING,
+        }
+
+        for base_status, expected in valid_mappings.items():
+            result = EnumOperationStatus.from_base_status(base_status)
+            assert result == expected
+
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

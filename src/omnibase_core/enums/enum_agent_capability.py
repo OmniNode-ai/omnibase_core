@@ -51,9 +51,9 @@ class EnumAgentCapability(str, Enum):
 
     def requires_large_model(self) -> bool:
         """Check if this capability typically requires a larger model."""
-        return self in [
+        return self in {
             self.COMPLEX_ANALYSIS,
             self.ARCHITECTURE_DESIGN,
             self.LONG_CONTEXT,
             self.REASONING,
-        ]
+        }
