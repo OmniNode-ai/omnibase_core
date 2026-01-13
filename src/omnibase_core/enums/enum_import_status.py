@@ -5,10 +5,13 @@ Provides enumeration of possible import validation outcomes for circular
 import detection and module dependency analysis.
 """
 
-from enum import Enum
+from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumImportStatus(Enum):
+@unique
+class EnumImportStatus(StrValueHelper, str, Enum):
     """Status of a module import attempt."""
 
     SUCCESS = "success"

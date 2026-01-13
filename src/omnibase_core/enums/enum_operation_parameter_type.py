@@ -4,9 +4,10 @@ Operation parameter type enumeration.
 Defines types for discriminated union in operation parameters.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumOperationParameterType(str, Enum):
     """Operation parameter type enumeration for discriminated unions."""
 

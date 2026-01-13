@@ -5,10 +5,11 @@ Trigger events for workflow and checkpoint automation in ONEX infrastructure.
 Used by context models to specify what event triggered an action or checkpoint.
 """
 
-from enum import Enum
+from enum import Enum, unique
 from functools import cache
 
 
+@unique
 class EnumTriggerEvent(str, Enum):
     """Enumeration for events that can trigger workflow actions or checkpoints."""
 

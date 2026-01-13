@@ -1,6 +1,7 @@
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumServiceTypeCategory(str, Enum):
     """Core service type categories."""
 

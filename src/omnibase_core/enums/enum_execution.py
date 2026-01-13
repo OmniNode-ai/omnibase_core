@@ -6,9 +6,10 @@ Defines execution modes and operation status values for
 ONEX system operations and workflow management.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumExecutionMode(Enum):
     """
     Execution modes for CLI commands and node operations.
@@ -20,6 +21,7 @@ class EnumExecutionMode(Enum):
     INMEMORY = "inmemory"
 
 
+@unique
 class EnumOperationStatus(str, Enum):
     """
     Operation status values for service operations.

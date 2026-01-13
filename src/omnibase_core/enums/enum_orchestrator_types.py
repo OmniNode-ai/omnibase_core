@@ -4,9 +4,10 @@ Enums for NodeOrchestrator workflow coordination.
 Extracted from archived NodeOrchestrator for ONEX compliance.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumWorkflowState(Enum):
     """Workflow execution states."""
 
@@ -18,6 +19,7 @@ class EnumWorkflowState(Enum):
     CANCELLED = "cancelled"
 
 
+@unique
 class EnumExecutionMode(Enum):
     """Execution modes for workflow steps."""
 
@@ -28,6 +30,7 @@ class EnumExecutionMode(Enum):
     STREAMING = "streaming"  # RESERVED - v1.2
 
 
+@unique
 class EnumActionType(Enum):
     """Types of Actions for orchestrated execution."""
 
@@ -38,6 +41,7 @@ class EnumActionType(Enum):
     CUSTOM = "custom"
 
 
+@unique
 class EnumBranchCondition(Enum):
     """Conditional branching types."""
 

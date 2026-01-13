@@ -26,9 +26,10 @@
 Enums for output formats of CLI tools.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumOutputFormat(str, Enum):
     """
     Canonical output formats for CLI tools.

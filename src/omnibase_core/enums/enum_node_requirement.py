@@ -11,9 +11,11 @@ from __future__ import annotations
 from enum import Enum, unique
 from typing import Never, NoReturn
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumNodeRequirement(str, Enum):
+class EnumNodeRequirement(StrValueHelper, str, Enum):
     """
     Enumeration of node handler requirements.
 
@@ -56,10 +58,6 @@ class EnumNodeRequirement(str, Enum):
 
     WORKFLOW_RESOLVER = "workflow_resolver"
     """Required workflow resolver capability for ORCHESTRATOR nodes."""
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def values(cls) -> list[str]:

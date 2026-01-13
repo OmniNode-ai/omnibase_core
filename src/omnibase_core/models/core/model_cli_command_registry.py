@@ -9,7 +9,7 @@ import logging
 from collections.abc import Mapping
 from pathlib import Path
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors import ModelOnexError
@@ -31,6 +31,8 @@ class ModelCliCommandRegistry(BaseModel):
     This registry scans node contracts to discover available CLI commands,
     enabling third-party nodes to automatically expose their functionality.
     """
+
+    model_config = ConfigDict(extra="ignore", frozen=False)
 
     commands: dict[str, ModelCliCommandDefinition] = Field(
         default_factory=dict,
@@ -175,10 +177,10 @@ class ModelCliCommandRegistry(BaseModel):
                         commands_discovered += 1
                 except (
                     AttributeError,
-                    ValueError,
-                    TypeError,
                     KeyError,
                     RuntimeError,
+                    TypeError,
+                    ValueError,
                 ) as e:
                     # Log error but continue processing other commands
                     logger.debug(
@@ -250,7 +252,7 @@ class ModelCliCommandRegistry(BaseModel):
 
             # Parse arguments (simplified for now)
             # Note: Converting to empty lists of ModelArgumentDescription
-            # TODO: Extract actual argument descriptions from command metadata
+            # TODO(OMN-TBD): Extract actual argument descriptions from command metadata  [NEEDS TICKET]
             from omnibase_core.models.core.model_argument_description import (
                 ModelArgumentDescription,
             )

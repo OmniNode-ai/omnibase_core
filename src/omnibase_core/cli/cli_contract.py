@@ -404,7 +404,7 @@ def _generate_patch_template(
     # Add name and version fields unless override_only mode
     if not override_only:
         contract_name = name if name else "my_contract_name"
-        name_comment = "" if name else "  # TODO: Change this"
+        name_comment = "" if name else "  # TODO(OMN-TBD): Change this  [NEEDS TICKET]"
         lines.extend(
             [
                 "# Required for new contracts:",

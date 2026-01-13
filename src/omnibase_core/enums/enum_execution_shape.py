@@ -7,9 +7,11 @@ Used for validating that execution patterns conform to architectural standards.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumMessageCategory(str, Enum):
+class EnumMessageCategory(StrValueHelper, str, Enum):
     """
     Categories of messages in ONEX for routing and topic mapping.
 
@@ -59,10 +61,6 @@ class EnumMessageCategory(str, Enum):
 
     INTENT = "intent"
     """A desire to achieve an outcome - goal-oriented."""
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @property
     def topic_suffix(self) -> str:
@@ -272,7 +270,7 @@ class EnumMessageCategory(str, Enum):
 
 
 @unique
-class EnumExecutionShape(str, Enum):
+class EnumExecutionShape(StrValueHelper, str, Enum):
     """
     Canonical execution shapes in ONEX.
 
@@ -319,10 +317,6 @@ class EnumExecutionShape(str, Enum):
 
     COMMAND_TO_EFFECT = "command_to_effect"
     """Commands routed to effects for direct execution."""
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def get_source_category(cls, shape: "EnumExecutionShape") -> EnumMessageCategory:

@@ -10,9 +10,10 @@ This is a CLOSED vocabulary - new injection points require explicit addition.
     Added Configuration Override Injection (OMN-1205)
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumOverrideInjectionPoint(str, Enum):
     """Injection points for configuration overrides during replay.
 

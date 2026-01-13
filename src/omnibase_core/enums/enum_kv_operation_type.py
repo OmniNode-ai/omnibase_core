@@ -5,9 +5,10 @@ Canonical enum for key-value store operations used throughout ONEX
 Consul integration and distributed storage systems.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumKvOperationType(str, Enum):
     """Canonical KV operation types for ONEX distributed storage."""
 

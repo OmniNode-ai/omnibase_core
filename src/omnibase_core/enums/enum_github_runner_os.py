@@ -28,9 +28,10 @@ This enum defines the various GitHub Actions runner operating systems that can b
 in workflow definitions.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumGithubRunnerOs(str, Enum):
     """GitHub Actions runner operating systems."""
 

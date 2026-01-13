@@ -121,6 +121,7 @@ def _get_cached_logger() -> Any:
                 container = get_model_onex_container_sync()
                 # Try to get logger from container registry
                 try:
+                    # NOTE(OMN-1302): String-based DI lookup returns Protocol. Safe because validated at registration.
                     _cached_logger = container.get_service("ProtocolLogger")  # type: ignore[arg-type]
                 except Exception:  # fallback-ok: logger init must never fail
                     _cached_logger = _SimpleFallbackLogger()

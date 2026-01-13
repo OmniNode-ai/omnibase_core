@@ -18,7 +18,6 @@ Usage:
 """
 
 from collections.abc import Callable
-from functools import wraps
 from typing import ParamSpec, TypeVar, overload
 
 # Type variables for preserving function signatures
@@ -72,16 +71,11 @@ def allow_dict_any(  # noqa: UP047
 
     def decorator(f: Callable[_P, _R]) -> Callable[_P, _R]:
         """Apply the decorator to a function."""
-
-        @wraps(f)
-        def wrapper(*args: _P.args, **kwargs: _P.kwargs) -> _R:
-            return f(*args, **kwargs)
-
-        # Mark the function with metadata for validation scripts
-        wrapper._allow_dict_any = True  # type: ignore[attr-defined]
+        # NOTE(OMN-1302): Dynamic attributes for decorator metadata tracking. Safe because read via getattr.
+        f._allow_dict_any = True  # type: ignore[attr-defined]
         if reason:
-            wrapper._dict_any_reason = reason  # type: ignore[attr-defined]
-        return wrapper
+            f._dict_any_reason = reason  # type: ignore[attr-defined]
+        return f
 
     # Handle both @allow_dict_any and @allow_dict_any(reason="...")
     if func is not None:

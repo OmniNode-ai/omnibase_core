@@ -4,9 +4,10 @@ Canonical enum for Consul KV watch event types.
 Defines the types of events that can be triggered by Consul KV watchers.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumWatchEventType(str, Enum):
     """
     Watch event types for Consul KV monitoring.

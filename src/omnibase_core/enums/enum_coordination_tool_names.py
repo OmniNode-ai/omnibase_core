@@ -3,9 +3,10 @@ Enum for coordination tool names.
 Single responsibility: Centralized coordination tool name definitions.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumCoordinationToolNames(str, Enum):
     """Coordination tool names following ONEX enum-backed naming standards."""
 

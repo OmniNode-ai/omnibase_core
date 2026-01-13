@@ -80,6 +80,7 @@ def standard_error_handling(
             except ModelOnexError:
                 # Always re-raise ModelOnexError as-is to preserve error context
                 raise
+            # boundary-ok: converts unhandled exceptions to structured ModelOnexError at function boundary
             except Exception as e:
                 # Convert generic exceptions to ModelOnexError with proper chaining
                 msg = f"{operation_name} failed: {e!s}"

@@ -5,9 +5,10 @@ Standardized error codes for document freshness monitoring operations.
 Provides type-safe error handling throughout the system.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumDocumentFreshnessErrors(str, Enum):
     """
     Standardized error codes for document freshness monitoring.

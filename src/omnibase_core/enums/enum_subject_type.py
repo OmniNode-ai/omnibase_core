@@ -7,9 +7,11 @@ enabling filtering and scoping of memory beyond just agents.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumSubjectType(str, Enum):
+class EnumSubjectType(StrValueHelper, str, Enum):
     """Memory subject type classification for omnimemory snapshots.
 
     Classifies the ownership and scope of memory subjects in the omnimemory system,
@@ -89,10 +91,6 @@ class EnumSubjectType(str, Enum):
     logic to handle CUSTOM subject types appropriately. However, is_persistent()
     returns True by default (only SESSION is non-persistent).
     """
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def is_valid(cls, value: str) -> bool:

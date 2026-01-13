@@ -55,63 +55,51 @@ class ModelNodeInformation(BaseModel):
     # Delegation properties
     @property
     def node_id(self) -> UUID:
-        """Node identifier (delegated to core_info)."""
         return self.core_info.node_id
 
     @node_id.setter
     def node_id(self, value: UUID) -> None:
-        """Set node identifier."""
         self.core_info.node_id = value
 
     @property
     def node_name(self) -> str:
-        """Node name (delegated to core_info)."""
         return self.core_info.node_name
 
     @node_name.setter
     def node_name(self, value: str) -> None:
-        """Set node name."""
         # Update the underlying node_display_name instead
         self.core_info = self.core_info.model_copy(update={"node_display_name": value})
 
     @property
     def node_type(self) -> EnumMetadataNodeType:
-        """Node type (delegated to core_info)."""
         return self.core_info.node_type
 
     @node_type.setter
     def node_type(self, value: EnumMetadataNodeType) -> None:
-        """Set node type."""
         self.core_info.node_type = value
 
     @property
     def node_version(self) -> ModelSemVer:
-        """Node version (delegated to core_info)."""
         return self.core_info.node_version
 
     @node_version.setter
     def node_version(self, value: ModelSemVer) -> None:
-        """Set node version."""
         self.core_info.node_version = value
 
     @property
     def description(self) -> str | None:
-        """Node description (delegated to core_info)."""
         return self.core_info.description
 
     @description.setter
     def description(self, value: str | None) -> None:
-        """Set node description."""
         self.core_info.description = value
 
     @property
     def author(self) -> str | None:
-        """Node author (delegated to core_info)."""
         return self.core_info.author
 
     @author.setter
     def author(self, value: str | None) -> None:
-        """Set node author."""
         # Update the underlying author_display_name instead
         self.core_info = self.core_info.model_copy(
             update={"author_display_name": value},
@@ -119,86 +107,68 @@ class ModelNodeInformation(BaseModel):
 
     @property
     def created_at(self) -> datetime | None:
-        """Creation timestamp (delegated to core_info)."""
         return self.core_info.created_at
 
     @created_at.setter
     def created_at(self, value: datetime | None) -> None:
-        """Set creation timestamp."""
         self.core_info.created_at = value
 
     @property
     def updated_at(self) -> datetime | None:
-        """Update timestamp (delegated to core_info)."""
         return self.core_info.updated_at
 
     @updated_at.setter
     def updated_at(self, value: datetime | None) -> None:
-        """Set update timestamp."""
         self.core_info.updated_at = value
 
     @property
     def status(self) -> EnumMetadataNodeStatus:
-        """Node status (delegated to core_info)."""
         return self.core_info.status
 
     @status.setter
     def status(self, value: EnumMetadataNodeStatus) -> None:
-        """Set node status."""
         self.core_info.status = value
 
     @property
     def health(self) -> EnumRegistryStatus:
-        """Node health (delegated to core_info)."""
         return self.core_info.health
 
     @health.setter
     def health(self, value: EnumRegistryStatus) -> None:
-        """Set node health."""
         self.core_info.health = value
 
     @property
     def supported_operations(self) -> list[str]:
-        """Supported operations (delegated to capabilities)."""
         return self.capabilities.supported_operations
 
     @property
     def dependencies(self) -> list[UUID]:
-        """Node dependencies (delegated to capabilities)."""
         return self.capabilities.dependencies
 
     @property
     def performance_metrics(self) -> dict[str, float] | None:
-        """Performance metrics (delegated to capabilities)."""
         return self.capabilities.performance_metrics
 
     @performance_metrics.setter
     def performance_metrics(self, value: dict[str, float] | None) -> None:
-        """Set performance metrics."""
         self.capabilities.performance_metrics = value
 
     def is_active(self) -> bool:
-        """Check if node is active."""
         return self.core_info.is_active()
 
     def is_healthy(self) -> bool:
-        """Check if node is healthy."""
         return self.core_info.is_healthy()
 
     def has_capabilities(self) -> bool:
-        """Check if node has capabilities."""
         return self.capabilities.has_capabilities()
 
     def add_capability(self, capability: str) -> None:
-        """Add a capability."""
         self.capabilities.add_capability(capability)
 
     def add_operation(self, operation: str) -> None:
-        """Add a supported operation."""
         self.capabilities.add_operation(operation)
 
     def add_dependency(self, dependency: UUID) -> None:
-        """Add a dependency."""
         self.capabilities.add_dependency(dependency)
 
     def get_information_summary(self) -> ModelNodeInformationSummary:

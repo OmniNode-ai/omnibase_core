@@ -1,8 +1,9 @@
 """Severity levels for violations and issues."""
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumSeverity(str, Enum):
     """Severity levels for violations."""
 

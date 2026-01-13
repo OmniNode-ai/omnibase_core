@@ -4,9 +4,10 @@ Retry strategy enum for error recovery operations.
 Defines different retry approaches based on error type and context.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumRetryStrategy(str, Enum):
     """Retry strategies for error recovery."""
 

@@ -5,9 +5,10 @@ This module defines the transformation types available in v1.0 compute pipelines
 Only 6 types are supported in v1.0 - collection operations are deferred to v1.1+.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumTransformationType(str, Enum):
     """
     v1.0 Transformation types.

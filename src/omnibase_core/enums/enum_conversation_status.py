@@ -5,9 +5,10 @@ Defines the status states for conversational RAG sessions
 and conversation lifecycle management.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumConversationStatus(str, Enum):
     """
     Conversation status enumeration for session state management.

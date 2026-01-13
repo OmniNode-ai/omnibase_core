@@ -17,10 +17,13 @@ See Also:
     Added as part of Typed Contract Merge Engine (OMN-1127)
 """
 
-from enum import Enum
+from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumMergeConflictType(str, Enum):
+@unique
+class EnumMergeConflictType(StrValueHelper, str, Enum):
     """
     Types of conflicts that can occur during contract merge.
 
@@ -80,10 +83,6 @@ class EnumMergeConflictType(str, Enum):
 
     CONSTRAINT_CONFLICT = "constraint_conflict"
     """Constraints from base and patch are contradictory."""
-
-    def __str__(self) -> str:
-        """Return the string value of the enum."""
-        return self.value
 
     def __repr__(self) -> str:
         """Return a detailed representation for debugging."""

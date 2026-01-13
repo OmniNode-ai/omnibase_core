@@ -79,7 +79,6 @@ class ModelCapability(BaseModel):
     tags: list[str] = Field(default_factory=list, description="Capability tags")
 
     def get_qualified_name(self) -> str:
-        """Get fully qualified capability name."""
         return f"{self.namespace}:{self.name}"
 
     def matches(self, other: "ModelCapability") -> bool:
@@ -122,7 +121,6 @@ class ModelCapability(BaseModel):
         return True
 
     def is_expired(self) -> bool:
-        """Check if capability has expired."""
         if self.expires_at is None:
             return False
         return datetime.now(UTC) > self.expires_at
@@ -163,7 +161,6 @@ class ModelCapability(BaseModel):
     # Common capability factories
     @classmethod
     def cli_interface(cls) -> "ModelCapability":
-        """CLI interface capability."""
         return cls.create_onex_capability(
             "cli_interface",
             "Provides CLI interface for command execution",
@@ -171,12 +168,10 @@ class ModelCapability(BaseModel):
 
     @classmethod
     def event_bus(cls) -> "ModelCapability":
-        """Event bus capability."""
         return cls.create_onex_capability("event_bus", "Provides event bus integration")
 
     @classmethod
     def introspection(cls) -> "ModelCapability":
-        """Introspection capability."""
         return cls.create_onex_capability(
             "introspection",
             "Provides node introspection capabilities",
@@ -184,7 +179,6 @@ class ModelCapability(BaseModel):
 
     @classmethod
     def health_check(cls) -> "ModelCapability":
-        """Health check capability."""
         return cls.create_onex_capability(
             "health_check",
             "Provides health check endpoints",
@@ -192,12 +186,10 @@ class ModelCapability(BaseModel):
 
     @classmethod
     def logging(cls) -> "ModelCapability":
-        """Logging capability."""
         return cls.create_onex_capability("logging", "Provides structured logging")
 
     @classmethod
     def monitoring(cls) -> "ModelCapability":
-        """Monitoring capability."""
         return cls.create_onex_capability(
             "monitoring",
             "Provides monitoring and metrics",
@@ -205,17 +197,14 @@ class ModelCapability(BaseModel):
 
     @classmethod
     def caching(cls) -> "ModelCapability":
-        """Caching capability."""
         return cls.create_onex_capability("caching", "Provides caching functionality")
 
     @classmethod
     def persistence(cls) -> "ModelCapability":
-        """Persistence capability."""
         return cls.create_onex_capability("persistence", "Provides data persistence")
 
     @classmethod
     def networking(cls) -> "ModelCapability":
-        """Networking capability."""
         return cls.create_onex_capability(
             "networking",
             "Provides network communication",
@@ -223,17 +212,14 @@ class ModelCapability(BaseModel):
 
     @classmethod
     def security(cls) -> "ModelCapability":
-        """Security capability."""
         return cls.create_onex_capability("security", "Provides security features")
 
     @classmethod
     def validation(cls) -> "ModelCapability":
-        """Validation capability."""
         return cls.create_onex_capability("validation", "Provides data validation")
 
     @classmethod
     def transformation(cls) -> "ModelCapability":
-        """Transformation capability."""
         return cls.create_onex_capability(
             "transformation",
             "Provides data transformation",
@@ -241,22 +227,18 @@ class ModelCapability(BaseModel):
 
     @classmethod
     def aggregation(cls) -> "ModelCapability":
-        """Aggregation capability."""
         return cls.create_onex_capability("aggregation", "Provides data aggregation")
 
     @classmethod
     def routing(cls) -> "ModelCapability":
-        """Routing capability."""
         return cls.create_onex_capability("routing", "Provides request routing")
 
     @classmethod
     def load_balancing(cls) -> "ModelCapability":
-        """Load balancing capability."""
         return cls.create_onex_capability("load_balancing", "Provides load balancing")
 
     @classmethod
     def create_execution_capability(cls) -> "ModelCapability":
-        """Execution capability for comprehensive testing."""
         return cls.create_onex_capability(
             "execution",
             "Provides node execution capabilities",

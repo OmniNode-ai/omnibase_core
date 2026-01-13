@@ -4,9 +4,10 @@ EnumSecurityLevel: Enumeration of security levels.
 This enum defines the security levels for secret backends.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumSecurityLevel(Enum):
     """Security levels for secret backends."""
 
