@@ -49,7 +49,7 @@ Example:
 from __future__ import annotations
 
 from collections import Counter, deque
-from typing import Literal
+from typing import Literal, cast
 from uuid import UUID
 
 from omnibase_core.constants import TIMEOUT_DEFAULT_MS
@@ -350,11 +350,19 @@ class WorkflowLinter:
 
             # Create ModelWorkflowStep from node data
             # Pydantic will validate and clamp priority values as needed
-            # Use step_type.value to pass string to Literal-typed field
+            # Cast step_type.value to Literal type expected by ModelWorkflowStep
+            step_type_literal: Literal[
+                "compute", "effect", "reducer", "orchestrator", "parallel", "custom"
+            ] = cast(
+                Literal[
+                    "compute", "effect", "reducer", "orchestrator", "parallel", "custom"
+                ],
+                step_type.value,
+            )
             step = ModelWorkflowStep(
                 step_id=node.node_id,
                 step_name=step_name,
-                step_type=step_type.value,
+                step_type=step_type_literal,
                 depends_on=list(node.dependencies),
                 priority=priority,
                 parallel_group=parallel_group,

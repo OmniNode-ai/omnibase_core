@@ -820,16 +820,27 @@ class ServiceRegistry:
 
         # Determine overall status
         # Map registry state to operation status
+        # Priority: FAILED (any failures) > PENDING (no registrations) > SUCCESS
         overall_status: EnumOperationStatus = EnumOperationStatus.SUCCESS
+        status_message: str
         if self._failed_registrations > 0:
             overall_status = EnumOperationStatus.FAILED
+            status_message = (
+                f"Registry has {self._failed_registrations} failed registration(s) "
+                f"and {len(self._registrations)} active service(s)"
+            )
         elif not self._registrations:
             overall_status = EnumOperationStatus.PENDING
+            status_message = "Registry initialized, no services registered yet"
+        else:
+            status_message = (
+                f"Registry operational with {len(self._registrations)} services"
+            )
 
         return ModelServiceRegistryStatus(
             registry_id=self._registry_id,
             status=overall_status,
-            message=f"Registry operational with {len(self._registrations)} services",
+            message=status_message,
             total_registrations=len(self._registrations),
             active_instances=total_instances,
             failed_registrations=self._failed_registrations,

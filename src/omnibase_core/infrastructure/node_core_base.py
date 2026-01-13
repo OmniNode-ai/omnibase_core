@@ -232,10 +232,10 @@ class NodeCoreBase(ABC):
 
         except (
             AttributeError,
-            ValueError,
-            TypeError,
-            RuntimeError,
             ModelOnexError,
+            RuntimeError,
+            TypeError,
+            ValueError,
         ) as e:
             self.state["status"] = EnumNodeLifecycleStatus.FAILED.value
             self._increment_metric("error_count")

@@ -487,14 +487,21 @@ def _should_exclude(file_path: Path, exclude_patterns: list[str]) -> bool:
     # paths containing "contest" or "testing"
     path_parts = resolved_path.parts
     for pattern in exclude_patterns:
+        # Strip trailing path separators to handle patterns like "tests/" or "src/"
+        # This ensures "tests/" matches the "tests" path component correctly
+        normalized_pattern = pattern.rstrip("/\\")
         # Check if pattern matches any path component exactly
-        if pattern in path_parts:
+        if normalized_pattern in path_parts:
             return True
         # Also support fnmatch-style glob patterns for flexibility
         # e.g., "test_*" to match "test_utils", "test_helpers", etc.
-        if "*" in pattern or "?" in pattern or "[" in pattern:
+        if (
+            "*" in normalized_pattern
+            or "?" in normalized_pattern
+            or "[" in normalized_pattern
+        ):
             for part in path_parts:
-                if fnmatch.fnmatch(part, pattern):
+                if fnmatch.fnmatch(part, normalized_pattern):
                     return True
 
     return False
