@@ -294,6 +294,7 @@ class ModelStructuredDisplayName(BaseModel):
                     setattr(self, key, value)
             return True
         except (AttributeError, KeyError, TypeError, ValueError) as e:
+            # boundary-ok: transform dynamic attribute access errors to typed domain errors
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
