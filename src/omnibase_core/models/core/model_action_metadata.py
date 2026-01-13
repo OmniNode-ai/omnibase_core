@@ -9,8 +9,9 @@ from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from omnibase_core.enums.enum_action_status import EnumActionStatus
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.core.model_core_performance_metrics import (
     ModelPerformanceMetrics,
@@ -119,7 +120,27 @@ class ModelActionMetadata(BaseModel):
     )
 
     # Results and status
-    status: str = Field(default="created", description="Current action status")
+    status: str = Field(
+        default=EnumActionStatus.CREATED.value,
+        description="Current action status",
+    )
+
+    @field_validator("status", mode="before")
+    @classmethod
+    def _normalize_status(cls, v: str | EnumActionStatus) -> str:
+        """Accept both string and enum, normalize to string for serialization."""
+        if isinstance(v, EnumActionStatus):
+            return v.value
+        if isinstance(v, str):
+            # Validate against known status values
+            valid_statuses = {s.value for s in EnumActionStatus}
+            if v in valid_statuses:
+                return v
+            raise ValueError(
+                f"Invalid action status: {v!r}. Valid statuses: {sorted(valid_statuses)}"
+            )
+        raise ValueError(f"Invalid action status type: {type(v).__name__}")
+
     result_data: SerializedDict | None = Field(
         default=None,
         description="Action result data as JSON-serializable data",
@@ -160,7 +181,7 @@ class ModelActionMetadata(BaseModel):
     def mark_started(self) -> None:
         """Mark the action as started."""
         self.started_at = datetime.now(UTC)
-        self.status = "running"
+        self.status = EnumActionStatus.RUNNING.value
 
     def mark_completed(
         self,
@@ -168,14 +189,14 @@ class ModelActionMetadata(BaseModel):
     ) -> None:
         """Mark the action as completed with optional result data."""
         self.completed_at = datetime.now(UTC)
-        self.status = "completed"
+        self.status = EnumActionStatus.COMPLETED.value
         if result_data:
             self.result_data = result_data
 
     def mark_failed(self, error_details: ModelErrorDetails[Any]) -> None:
         """Mark the action as failed with structured error details."""
         self.completed_at = datetime.now(UTC)
-        self.status = "failed"
+        self.status = EnumActionStatus.FAILED.value
         self.error_details = error_details
 
     def get_execution_duration(self) -> float | None:
@@ -236,5 +257,6 @@ class ModelActionMetadata(BaseModel):
         return (
             self.trust_score >= minimum_trust_score
             and not self.is_expired()
-            and self.status in ["created", "ready"]
+            and self.status
+            in [EnumActionStatus.CREATED.value, EnumActionStatus.READY.value]
         )

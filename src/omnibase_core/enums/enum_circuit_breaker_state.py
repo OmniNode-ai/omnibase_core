@@ -19,13 +19,16 @@ from typing import Never, NoReturn
 __all__ = ["EnumCircuitBreakerState"]
 
 
-class EnumCircuitBreakerState(Enum):
+class EnumCircuitBreakerState(str, Enum):
     """
     Circuit breaker state enumeration.
 
     The circuit breaker pattern prevents cascading failures by tracking the
     health of external dependencies and temporarily blocking requests when
     failures exceed a threshold.
+
+    Inherits from ``str`` to ensure proper JSON serialization - enum values
+    serialize directly to their lowercase string values (e.g., "closed", "open").
 
     States:
         CLOSED: Normal operation, requests pass through. The circuit monitors
@@ -64,6 +67,8 @@ class EnumCircuitBreakerState(Enum):
                     EnumCircuitBreakerState.assert_exhaustive(unreachable)
 
     .. versionadded:: 0.4.0
+    .. versionchanged:: 0.6.5
+        Now inherits from ``str`` for proper JSON serialization (OMN-1309).
     """
 
     CLOSED = "closed"
@@ -74,6 +79,10 @@ class EnumCircuitBreakerState(Enum):
 
     HALF_OPEN = "half_open"
     """Testing recovery, limited requests allowed."""
+
+    def __str__(self) -> str:
+        """Return the string value of the circuit breaker state."""
+        return self.value
 
     @staticmethod
     def assert_exhaustive(value: Never) -> NoReturn:
