@@ -30,7 +30,7 @@ class SupportResponse(BaseModel):  # type: ignore[explicit-any]
         sentiment: Detected sentiment of the user's message.
     """
 
-    model_config = ConfigDict(extra="forbid", frozen=True)
+    model_config = ConfigDict(extra="forbid", frozen=True, from_attributes=True)
 
     response_text: str = Field(
         ...,

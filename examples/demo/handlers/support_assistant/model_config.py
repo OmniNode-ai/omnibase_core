@@ -102,7 +102,7 @@ class ModelConfig(BaseModel):  # type: ignore[explicit-any]  # Pydantic BaseMode
 
     Attributes:
         provider: The LLM provider type ("openai", "anthropic", or "local").
-        model_name: The name of the model to use (e.g., "gpt-4o", "claude-sonnet-4").
+        model_name: The name of the model to use (e.g., "gpt-4o", "claude-sonnet-4-20250514").
         endpoint_url: Custom endpoint URL for local/custom providers. Required for
             "local" provider, optional for cloud providers.
         temperature: Sampling temperature (0.0 to 2.0). Higher values make output
@@ -127,7 +127,7 @@ class ModelConfig(BaseModel):  # type: ignore[explicit-any]  # Pydantic BaseMode
             )
     """
 
-    model_config = ConfigDict(extra="forbid", frozen=True)
+    model_config = ConfigDict(extra="forbid", frozen=True, from_attributes=True)
 
     provider: Literal["openai", "anthropic", "local"] = Field(
         description="The LLM provider type"

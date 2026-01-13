@@ -1,5 +1,7 @@
-"""
-Practical example showing migration of ModelCliOutputData to use ModelResultAccessor.
+# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
+#
+# SPDX-License-Identifier: Apache-2.0
+"""Practical example showing migration of ModelCliOutputData to use ModelResultAccessor.
 
 This demonstrates a real migration from the existing pattern to the new
 field accessor pattern with discriminated unions for proper type safety.

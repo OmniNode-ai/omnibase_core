@@ -6,7 +6,6 @@
 #   - handler_kind: effect (external I/O - LLM API calls)
 #   - purity: side_effecting (makes network calls)
 #   - idempotent: false (LLM outputs vary even with identical inputs)
-#   - deterministic: false (LLM responses vary due to sampling/temperature)
 #   - nondeterministic_effect: true (LLM responses are inherently variable)
 #   - Has capability dependency on LLM provider
 #
@@ -54,6 +53,8 @@ capability_inputs:
         supports_structured_output: true
       prefer:
         max_latency_ms: 5000
+        # Streaming disabled - incompatible with structured JSON output mode
+        prefer_streaming: false
     selection_policy: auto_if_unique
     strict: true
     description: LLM provider for generating structured JSON support responses (non-streaming)

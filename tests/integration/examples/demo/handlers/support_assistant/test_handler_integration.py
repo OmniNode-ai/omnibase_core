@@ -10,7 +10,6 @@ local model is unavailable.
 Note:
     These tests require a running local LLM server at the configured endpoint.
     Default endpoint: http://localhost:8200 (configurable via LLM_LOCAL_URL env var).
-    Tests are portable - no hardcoded LAN IPs.
 
     To run these tests:
         poetry run pytest tests/integration/examples/demo/handlers/support_assistant/ -v

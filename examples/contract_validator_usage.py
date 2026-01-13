@@ -1,5 +1,7 @@
-"""
-Contract Validator Usage Examples.
+# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
+#
+# SPDX-License-Identifier: Apache-2.0
+"""Contract Validator Usage Examples.
 
 Demonstrates how to use the ContractValidator API for contract validation.
 """

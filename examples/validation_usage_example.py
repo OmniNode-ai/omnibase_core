@@ -1,6 +1,7 @@
-#!/usr/bin/env python3
-"""
-Example: Using omnibase_core validation tools in other repositories
+# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
+#
+# SPDX-License-Identifier: Apache-2.0
+"""Example: Using omnibase_core validation tools in other repositories
 
 This example demonstrates how other repositories can integrate and use
 the validation tools provided by omnibase_core for ONEX compliance.

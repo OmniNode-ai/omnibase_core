@@ -17,7 +17,7 @@ Example:
 
     Using with environment variables::
 
-        # Set LLM_LOCAL_URL=http://your-server:8000
+        # Set LOCAL_LLM_ENDPOINT=http://your-server:8000
         client = LocalLLMClient()  # Uses env var or defaults to localhost
 
     Using with Ollama::
@@ -41,7 +41,7 @@ from examples.demo.handlers.support_assistant.protocol_llm_client import (
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors import ModelOnexError
 
-# Default config - use localhost; override via LLM_LOCAL_URL
+# Default config - use localhost; override via LOCAL_LLM_ENDPOINT
 DEFAULT_ENDPOINT = "http://localhost:8000"
 DEFAULT_MODEL = "qwen2.5-14b"
 DEFAULT_TIMEOUT = 60.0
@@ -73,17 +73,17 @@ class LocalLLMClient:
 
         Args:
             endpoint_url: Base URL of the LLM server.
-                Defaults to environment variable LLM_LOCAL_URL or DEFAULT_ENDPOINT.
+                Defaults to environment variable LOCAL_LLM_ENDPOINT or DEFAULT_ENDPOINT.
             model_name: Model identifier.
-                Defaults to environment variable LLM_LOCAL_MODEL or DEFAULT_MODEL.
+                Defaults to environment variable LOCAL_LLM_MODEL or DEFAULT_MODEL.
             temperature: Sampling temperature (0.0 to 2.0).
             max_tokens: Maximum tokens to generate.
             timeout: Request timeout in seconds.
         """
         self.endpoint_url = (
-            endpoint_url or os.getenv("LLM_LOCAL_URL") or DEFAULT_ENDPOINT
+            endpoint_url or os.getenv("LOCAL_LLM_ENDPOINT") or DEFAULT_ENDPOINT
         )
-        self.model_name = model_name or os.getenv("LLM_LOCAL_MODEL") or DEFAULT_MODEL
+        self.model_name = model_name or os.getenv("LOCAL_LLM_MODEL") or DEFAULT_MODEL
 
         # Validate temperature range (OpenAI-compatible range is 0.0-2.0)
         if not 0.0 <= temperature <= 2.0:

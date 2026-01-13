@@ -1,5 +1,7 @@
-"""
-Examples showing how to migrate from dict-like interfaces to ModelFieldAccessor pattern.
+# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
+#
+# SPDX-License-Identifier: Apache-2.0
+"""Examples showing how to migrate from dict-like interfaces to ModelFieldAccessor pattern.
 
 This demonstrates the replacement of custom field access methods across CLI, Config,
 and Data domains with the unified ModelFieldAccessor pattern.

@@ -325,3 +325,211 @@ class TestModelConfigSerialization:
         parsed = json.loads(json_str)
         assert parsed["provider"] == "openai"
         assert parsed["model_name"] == "gpt-4"
+
+
+@pytest.mark.unit
+class TestLoadConfigFromContract:
+    """Tests for load_config_from_contract function.
+
+    This function loads ModelConfig from the contract's provider_config section,
+    making the contract the single source of truth for configuration values.
+    """
+
+    def test_load_openai_config_from_contract(self, tmp_path):
+        """Load OpenAI config from contract YAML."""
+        from examples.demo.handlers.support_assistant.model_config import (
+            load_config_from_contract,
+        )
+
+        # Create a minimal contract YAML
+        contract_content = """
+metadata:
+  provider_config:
+    openai:
+      model_name: "gpt-4o-test"
+      temperature: 0.8
+      max_tokens: 600
+      api_key_env: "TEST_OPENAI_KEY"
+    anthropic:
+      model_name: "claude-test"
+      temperature: 0.5
+      max_tokens: 400
+      api_key_env: "TEST_ANTHROPIC_KEY"
+    local:
+      model_name: "local-test"
+      temperature: 0.6
+      max_tokens: 300
+      endpoint_env: "TEST_LOCAL_ENDPOINT"
+      default_endpoint: "http://localhost:9999"
+"""
+        contract_path = tmp_path / "test_contract.yaml"
+        contract_path.write_text(contract_content)
+
+        config = load_config_from_contract("openai", contract_path=contract_path)
+
+        assert config.provider == "openai"
+        assert config.model_name == "gpt-4o-test"
+        assert config.temperature == 0.8
+        assert config.max_tokens == 600
+        assert config.api_key_env == "TEST_OPENAI_KEY"
+
+    def test_load_anthropic_config_from_contract(self, tmp_path):
+        """Load Anthropic config from contract YAML."""
+        from examples.demo.handlers.support_assistant.model_config import (
+            load_config_from_contract,
+        )
+
+        contract_content = """
+metadata:
+  provider_config:
+    openai:
+      model_name: "gpt-4o"
+      temperature: 0.7
+      max_tokens: 500
+      api_key_env: "OPENAI_API_KEY"
+    anthropic:
+      model_name: "claude-sonnet-test"
+      temperature: 0.9
+      max_tokens: 750
+      api_key_env: "MY_ANTHROPIC_KEY"
+    local:
+      model_name: "local-model"
+      temperature: 0.5
+      max_tokens: 400
+      endpoint_env: "LOCAL_ENDPOINT"
+      default_endpoint: "http://localhost:8000"
+"""
+        contract_path = tmp_path / "test_contract.yaml"
+        contract_path.write_text(contract_content)
+
+        config = load_config_from_contract("anthropic", contract_path=contract_path)
+
+        assert config.provider == "anthropic"
+        assert config.model_name == "claude-sonnet-test"
+        assert config.temperature == 0.9
+        assert config.max_tokens == 750
+        assert config.api_key_env == "MY_ANTHROPIC_KEY"
+
+    def test_load_local_config_from_contract(self, tmp_path, monkeypatch):
+        """Load local config from contract with endpoint from env var."""
+        from examples.demo.handlers.support_assistant.model_config import (
+            load_config_from_contract,
+        )
+
+        # Clear the env var so default is used
+        monkeypatch.delenv("TEST_LOCAL_VAR", raising=False)
+
+        contract_content = """
+metadata:
+  provider_config:
+    openai:
+      model_name: "gpt-4o"
+      temperature: 0.7
+      max_tokens: 500
+      api_key_env: "OPENAI_API_KEY"
+    anthropic:
+      model_name: "claude"
+      temperature: 0.7
+      max_tokens: 500
+      api_key_env: "ANTHROPIC_API_KEY"
+    local:
+      model_name: "qwen-test-model"
+      temperature: 0.3
+      max_tokens: 250
+      endpoint_env: "TEST_LOCAL_VAR"
+      default_endpoint: "http://127.0.0.1:7777"
+"""
+        contract_path = tmp_path / "test_contract.yaml"
+        contract_path.write_text(contract_content)
+
+        config = load_config_from_contract("local", contract_path=contract_path)
+
+        assert config.provider == "local"
+        assert config.model_name == "qwen-test-model"
+        assert config.temperature == 0.3
+        assert config.max_tokens == 250
+        # Should use default_endpoint since env var is not set
+        assert config.endpoint_url == "http://127.0.0.1:7777"
+
+    def test_load_local_config_uses_env_var(self, tmp_path, monkeypatch):
+        """Local config uses endpoint from environment variable when set."""
+        from examples.demo.handlers.support_assistant.model_config import (
+            load_config_from_contract,
+        )
+
+        # Set the env var
+        monkeypatch.setenv("CUSTOM_LOCAL_ENDPOINT", "http://192.168.1.100:8080")
+
+        contract_content = """
+metadata:
+  provider_config:
+    openai:
+      model_name: "gpt-4o"
+      temperature: 0.7
+      max_tokens: 500
+      api_key_env: "OPENAI_API_KEY"
+    anthropic:
+      model_name: "claude"
+      temperature: 0.7
+      max_tokens: 500
+      api_key_env: "ANTHROPIC_API_KEY"
+    local:
+      model_name: "local-model"
+      temperature: 0.5
+      max_tokens: 400
+      endpoint_env: "CUSTOM_LOCAL_ENDPOINT"
+      default_endpoint: "http://localhost:8000"
+"""
+        contract_path = tmp_path / "test_contract.yaml"
+        contract_path.write_text(contract_content)
+
+        config = load_config_from_contract("local", contract_path=contract_path)
+
+        # Should use env var value, not default
+        assert config.endpoint_url == "http://192.168.1.100:8080"
+
+    def test_load_config_file_not_found(self, tmp_path):
+        """FileNotFoundError raised when contract file not found."""
+        from examples.demo.handlers.support_assistant.model_config import (
+            load_config_from_contract,
+        )
+
+        nonexistent_path = tmp_path / "nonexistent.yaml"
+
+        with pytest.raises(FileNotFoundError):
+            load_config_from_contract("openai", contract_path=nonexistent_path)
+
+    def test_load_config_invalid_contract_structure(self, tmp_path):
+        """ValidationError raised when contract structure is invalid."""
+        from examples.demo.handlers.support_assistant.model_config import (
+            load_config_from_contract,
+        )
+
+        # Contract missing required provider_config section
+        contract_content = """
+metadata:
+  owner: test-team
+"""
+        contract_path = tmp_path / "invalid_contract.yaml"
+        contract_path.write_text(contract_content)
+
+        with pytest.raises(ValidationError):
+            load_config_from_contract("openai", contract_path=contract_path)
+
+    def test_load_config_default_contract_path(self):
+        """Uses default contract path when not specified.
+
+        This test uses the actual support_assistant.yaml contract file.
+        """
+        from examples.demo.handlers.support_assistant.model_config import (
+            load_config_from_contract,
+        )
+
+        # Should work without specifying contract_path (uses default)
+        config = load_config_from_contract("openai")
+
+        # Verify it loaded valid config from the actual contract
+        assert config.provider == "openai"
+        assert config.model_name is not None
+        assert config.temperature >= 0.0
+        assert config.temperature <= 2.0

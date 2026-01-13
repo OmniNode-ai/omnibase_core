@@ -26,9 +26,12 @@ from omnibase_core.utils.util_safe_yaml_loader import load_and_validate_yaml_mod
 class TestHandlerContract:
     """Tests for the Support Assistant Demo Handler Contract."""
 
-    @pytest.fixture
+    @pytest.fixture(scope="module")
     def contract_path(self) -> Path:
-        """Return the path to the support_assistant.yaml contract file."""
+        """Return the path to the support_assistant.yaml contract file.
+
+        Uses module scope since the contract file path is constant.
+        """
         # Navigate from tests/unit/examples/demo/handlers/support_assistant/
         # to examples/demo/handlers/support_assistant/
         return (
@@ -40,7 +43,7 @@ class TestHandlerContract:
             / "support_assistant.yaml"
         )
 
-    @pytest.fixture
+    @pytest.fixture(scope="module")
     def contract(self, contract_path: Path) -> ModelHandlerContract:
         """Load and return the contract for tests that need it."""
         return load_and_validate_yaml_model(contract_path, ModelHandlerContract)
