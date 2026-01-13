@@ -44,6 +44,7 @@ class ModelServiceInstance(BaseModel):
 
     model_config = ConfigDict(
         extra="forbid",
+        frozen=False,
         from_attributes=True,
         arbitrary_types_allowed=True,
     )

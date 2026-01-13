@@ -333,6 +333,7 @@ def _to_pascal_case(name: str) -> str:
         PascalCase version of the name.
     """
     # Known word boundaries for common enum names
+    # NOTE: Keep in sync with KNOWN_ENUM_NAMES frozenset above
     word_boundaries = {
         "validationlevel": "ValidationLevel",
         "validationmode": "ValidationMode",
@@ -356,6 +357,12 @@ def _to_pascal_case(name: str) -> str:
         "injectionscope": "InjectionScope",
         "steptype": "StepType",
         "computesteptype": "ComputeStepType",
+        # Single-word enum names (PascalCase is just capitalized)
+        "environment": "Environment",
+        "priority": "Priority",
+        "severity": "Severity",
+        "status": "Status",
+        "category": "Category",
     }
 
     if name in word_boundaries:
@@ -439,17 +446,12 @@ def _should_exclude(file_path: Path, exclude_patterns: list[str]) -> bool:
     Returns:
         True if the file should be excluded, False otherwise.
     """
-    path_str = str(file_path)
-
-    # Always exclude test files
-    # Handle absolute paths or deeply nested paths containing /tests/ or \tests\
-    if "/tests/" in path_str or "\\tests\\" in path_str:
-        return True
-    # Handle relative paths starting with tests/ (e.g., tests/unit/test_foo.py)
-    if path_str.startswith(("tests/", "tests\\")):
-        return True
-    # Handle relative paths with explicit ./ prefix (e.g., ./tests/unit/test_foo.py)
-    if path_str.startswith(("./tests/", ".\\tests\\")):
+    # Always exclude test files using Path.parts for robust path component matching
+    # This correctly handles both absolute and relative paths across all operating systems:
+    # - tests/unit/foo.py -> parts = ('tests', 'unit', 'foo.py')
+    # - ./tests/unit/foo.py -> parts = ('.', 'tests', 'unit', 'foo.py')
+    # - /abs/path/tests/bar.py -> parts = ('/', 'abs', 'path', 'tests', 'bar.py')
+    if "tests" in file_path.parts:
         return True
 
     # Exclude the checker itself
@@ -457,6 +459,7 @@ def _should_exclude(file_path: Path, exclude_patterns: list[str]) -> bool:
         return True
 
     # Check custom exclude patterns
+    path_str = str(file_path)
     for pattern in exclude_patterns:
         if pattern in path_str:
             return True

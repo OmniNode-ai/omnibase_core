@@ -18,7 +18,7 @@ class EnumStepType(str, Enum):
 
     Categorizes workflow steps by their execution semantics.
     The core four types (COMPUTE, EFFECT, REDUCER, ORCHESTRATOR) align
-    with the ONEX four-node architecture, while PARALLEL and CUSTOM
+    with the ONEX node architecture, while PARALLEL and CUSTOM
     provide additional workflow flexibility.
 
     Values:
