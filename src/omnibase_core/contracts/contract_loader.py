@@ -264,7 +264,7 @@ def _include_constructor(loader: IncludeLoader, node: yaml.Node) -> object:
             current_depth=loader.current_depth + 1,
         )
         result = nested_loader.get_single_data()
-        # NOTE(OMN-1302): YAML SafeLoader.dispose() is untyped in ruamel.yaml stubs. Safe because method exists.
+        # NOTE(OMN-1302): YAML SafeLoader.dispose() is untyped in PyYAML stubs. Safe because method exists.
         nested_loader.dispose()  # type: ignore[no-untyped-call]
         return result
     except YAML_PARSING_ERRORS as e:
@@ -399,7 +399,7 @@ def load_contract(
             current_depth=0,
         )
         result = loader.get_single_data()
-        # NOTE(OMN-1302): YAML SafeLoader.dispose() is untyped in ruamel.yaml stubs. Safe because method exists.
+        # NOTE(OMN-1302): YAML SafeLoader.dispose() is untyped in PyYAML stubs. Safe because method exists.
         loader.dispose()  # type: ignore[no-untyped-call]
 
         if result is None:

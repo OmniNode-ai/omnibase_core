@@ -560,6 +560,7 @@ class ModelDiscriminatedValue(BaseModel):
 
     model_config = ConfigDict(
         extra="ignore",
+        frozen=False,
         use_enum_values=False,
         validate_assignment=True,
     )

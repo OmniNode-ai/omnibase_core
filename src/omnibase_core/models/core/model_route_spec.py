@@ -8,7 +8,7 @@ anycast, and constraint-based routing.
 
 import re
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
@@ -23,6 +23,8 @@ class ModelRouteSpec(BaseModel):
     Defines destination, routing path, strategy, and constraints
     for multi-hop event routing in distributed systems.
     """
+
+    model_config = ConfigDict(extra="forbid", frozen=False)
 
     # Core routing information
     final_destination: str = Field(

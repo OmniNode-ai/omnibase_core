@@ -224,6 +224,7 @@ def trace_function_lifecycle[F: Callable[..., Any]](func: F) -> F:
             return result
     """
 
+    @wraps(func)
     def wrapper(*args: Any, **kwargs: Any) -> Any:
         function_name = func.__name__
         module_name = func.__module__
@@ -387,6 +388,7 @@ def log_performance_metrics[F: Callable[..., Any]](
     """
 
     def decorator(func: F) -> F:
+        @wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             function_name = func.__name__
             correlation_id = uuid4()
@@ -440,7 +442,7 @@ import re
 
 # Global cache for protocol services to reduce lookup overhead
 import time
-from functools import lru_cache
+from functools import lru_cache, wraps
 
 from omnibase_core.constants import DEFAULT_CACHE_TTL_SECONDS
 
