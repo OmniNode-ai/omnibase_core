@@ -8,7 +8,7 @@ with flexible, third-party extensible capabilities.
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
@@ -20,6 +20,8 @@ class ModelCapability(BaseModel):
     This model allows nodes to define and register custom capabilities
     beyond hardcoded enums, enabling third-party extensibility.
     """
+
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
 
     capability_id: UUID = Field(
         default_factory=uuid4,

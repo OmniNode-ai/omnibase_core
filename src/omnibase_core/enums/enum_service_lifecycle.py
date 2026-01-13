@@ -10,10 +10,12 @@ Defines service lifecycle patterns for dependency injection containers.
 
 from enum import Enum
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 __all__ = ["EnumServiceLifecycle"]
 
 
-class EnumServiceLifecycle(str, Enum):
+class EnumServiceLifecycle(StrValueHelper, str, Enum):
     """Service lifecycle patterns for DI container.
 
     Controls how service instances are created, cached, and disposed

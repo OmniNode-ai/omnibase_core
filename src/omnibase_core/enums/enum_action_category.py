@@ -6,9 +6,11 @@ Categories for organizing different types of actions across tools.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumActionCategory(str, Enum):
+class EnumActionCategory(StrValueHelper, str, Enum):
     """
     Categories for organizing different types of actions across tools.
 
@@ -23,10 +25,6 @@ class EnumActionCategory(str, Enum):
     REGISTRY = "registry"
     WORKFLOW = "workflow"
     SYSTEM = "system"
-
-    def __str__(self) -> str:
-        """Return the string value of the category."""
-        return self.value
 
     def is_management_category(self) -> bool:
         """

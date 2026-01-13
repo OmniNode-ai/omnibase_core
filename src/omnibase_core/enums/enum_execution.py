@@ -8,6 +8,8 @@ ONEX system operations and workflow management.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
 class EnumExecutionMode(Enum):
@@ -22,7 +24,7 @@ class EnumExecutionMode(Enum):
 
 
 @unique
-class EnumOperationStatus(str, Enum):
+class EnumOperationStatus(StrValueHelper, str, Enum):
     """
     Operation status values for service operations.
 

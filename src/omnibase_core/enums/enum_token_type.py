@@ -7,9 +7,11 @@ Used by context models to specify the type of authentication token.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumTokenType(str, Enum):
+class EnumTokenType(StrValueHelper, str, Enum):
     """Enumeration for token types used in authentication contexts."""
 
     # Standard token types
@@ -23,10 +25,6 @@ class EnumTokenType(str, Enum):
     REFRESH = "refresh"  # Refresh token for obtaining new access tokens
     ACCESS = "access"  # Access token for resource authorization
     ID_TOKEN = "id_token"  # OpenID Connect ID token
-
-    def __str__(self) -> str:
-        """Return the string value of the token type."""
-        return self.value
 
     @classmethod
     def is_refreshable(cls, token_type: "EnumTokenType") -> bool:

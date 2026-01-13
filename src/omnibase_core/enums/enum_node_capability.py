@@ -4,9 +4,11 @@ Enum for node capabilities.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumNodeCapability(str, Enum):
+class EnumNodeCapability(StrValueHelper, str, Enum):
     """Standard node capabilities that can be declared via introspection."""
 
     SUPPORTS_DRY_RUN = "supports_dry_run"

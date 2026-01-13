@@ -10,10 +10,12 @@ Defines injection scope patterns for dependency injection containers.
 
 from enum import Enum
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 __all__ = ["EnumInjectionScope"]
 
 
-class EnumInjectionScope(str, Enum):
+class EnumInjectionScope(StrValueHelper, str, Enum):
     """Injection scope patterns for DI container.
 
     Defines the scope boundaries within which service instances

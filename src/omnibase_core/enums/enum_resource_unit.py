@@ -7,9 +7,11 @@ Defines the units of measurement for resource usage metrics
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumResourceUnit(str, Enum):
+class EnumResourceUnit(StrValueHelper, str, Enum):
     """Resource usage unit enumeration."""
 
     PERCENTAGE = "percentage"

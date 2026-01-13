@@ -6,9 +6,11 @@ Defines the types of events that can be triggered by Consul KV watchers.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumWatchEventType(str, Enum):
+class EnumWatchEventType(StrValueHelper, str, Enum):
     """
     Watch event types for Consul KV monitoring.
 

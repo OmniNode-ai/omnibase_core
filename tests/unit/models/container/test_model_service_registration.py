@@ -1,6 +1,6 @@
 """Tests for ModelServiceRegistration."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 from uuid import uuid4
 
 import pytest
@@ -67,8 +67,8 @@ class TestModelServiceRegistration:
     def test_initialization_with_all_fields(self, sample_metadata):
         """Test registration initialization with all fields."""
         reg_id = uuid4()
-        reg_time = datetime.now()
-        last_access = datetime.now()
+        reg_time = datetime.now(UTC)
+        last_access = datetime.now(UTC)
 
         registration = ModelServiceRegistration(
             registration_id=reg_id,
@@ -144,7 +144,7 @@ class TestModelServiceRegistration:
         assert sample_registration.last_access_time is None
         assert sample_registration.access_count == 0
 
-        initial_time = datetime.now()
+        initial_time = datetime.now(UTC)
         sample_registration.mark_accessed()
 
         assert sample_registration.last_access_time is not None

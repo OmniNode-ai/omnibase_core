@@ -2,9 +2,11 @@
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumDetectionType(str, Enum):
+class EnumDetectionType(StrValueHelper, str, Enum):
     """Types of sensitive information detection."""
 
     PII = "pii"

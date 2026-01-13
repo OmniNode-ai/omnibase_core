@@ -2,9 +2,11 @@
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumContentType(str, Enum):
+class EnumContentType(StrValueHelper, str, Enum):
     """Content types in messages."""
 
     TEXT = "text"

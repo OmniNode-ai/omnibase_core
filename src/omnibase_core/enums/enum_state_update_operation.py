@@ -6,9 +6,11 @@ Operations that can be performed on state fields.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumStateUpdateOperation(str, Enum):
+class EnumStateUpdateOperation(StrValueHelper, str, Enum):
     """Operations that can be performed on state fields."""
 
     SET = "set"  # Replace field value

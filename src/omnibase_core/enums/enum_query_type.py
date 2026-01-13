@@ -7,9 +7,11 @@ specialized processing in conversational RAG systems.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumQueryType(str, Enum):
+class EnumQueryType(StrValueHelper, str, Enum):
     """
     Query type enumeration for LLM model selection and routing.
 

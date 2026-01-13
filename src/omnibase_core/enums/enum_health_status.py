@@ -7,9 +7,11 @@ and monitoring with proper ONEX enum naming conventions.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumHealthStatus(str, Enum):
+class EnumHealthStatus(StrValueHelper, str, Enum):
     """Health status for LLM provider health checks and system components."""
 
     HEALTHY = "healthy"
@@ -24,10 +26,6 @@ class EnumHealthStatus(str, Enum):
     INITIALIZING = "initializing"
     DISPOSING = "disposing"
     ERROR = "error"
-
-    def __str__(self) -> str:
-        """Return the string value of the health status."""
-        return self.value
 
     def is_operational(self) -> bool:
         """Check if the service is operational despite potential issues."""

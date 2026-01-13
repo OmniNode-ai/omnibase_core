@@ -2,9 +2,11 @@
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumEventTypeDiscovery(str, Enum):
+class EnumEventTypeDiscovery(StrValueHelper, str, Enum):
     """Event types supported by the Event Registry.
 
     These event types define the different kinds of operations that can be performed

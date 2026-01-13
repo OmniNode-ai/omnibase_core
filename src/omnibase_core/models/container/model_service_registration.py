@@ -1,6 +1,6 @@
 """Service registration model - implements ProtocolServiceRegistration."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -115,7 +115,7 @@ class ModelServiceRegistration(BaseModel):
 
     def mark_accessed(self) -> None:
         """Update access tracking."""
-        self.last_access_time = datetime.now()
+        self.last_access_time = datetime.now(UTC)
         self.access_count += 1
 
     def increment_instance_count(self) -> None:

@@ -2,9 +2,11 @@
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumToolCategory(str, Enum):
+class EnumToolCategory(StrValueHelper, str, Enum):
     """
     Tool category classification.
 

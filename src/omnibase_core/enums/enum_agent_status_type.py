@@ -7,9 +7,11 @@ Strongly-typed enumeration for agent status types.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumAgentStatusType(str, Enum):
+class EnumAgentStatusType(StrValueHelper, str, Enum):
     """Agent status enumeration."""
 
     IDLE = "idle"

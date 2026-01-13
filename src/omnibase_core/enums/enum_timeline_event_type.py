@@ -7,9 +7,11 @@ Supports user messages, tool executions, and Claude responses in chronological t
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumTimelineEventType(str, Enum):
+class EnumTimelineEventType(StrValueHelper, str, Enum):
     """
     Timeline event types for unified dashboard.
 

@@ -2,9 +2,11 @@
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumBusinessLogicPattern(str, Enum):
+class EnumBusinessLogicPattern(StrValueHelper, str, Enum):
     """Business logic pattern classifications."""
 
     STATELESS = "stateless"

@@ -6,9 +6,11 @@ Provides standardized status values for service manager operations.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumOperationStatus(str, Enum):
+class EnumOperationStatus(StrValueHelper, str, Enum):
     """Enumeration for operation status values."""
 
     SUCCESS = "success"

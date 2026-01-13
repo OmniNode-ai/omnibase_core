@@ -7,9 +7,11 @@ Postgres, Qdrant, file stamps, and LangExtract processing.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumPipelineStage(str, Enum):
+class EnumPipelineStage(StrValueHelper, str, Enum):
     """Stages in the metadata processing pipeline."""
 
     FILE_DISCOVERY = "FILE_DISCOVERY"

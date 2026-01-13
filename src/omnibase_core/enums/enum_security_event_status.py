@@ -6,9 +6,11 @@ Strongly typed enumeration for security event statuses.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumSecurityEventStatus(str, Enum):
+class EnumSecurityEventStatus(StrValueHelper, str, Enum):
     """Enumeration for security event statuses."""
 
     # Success statuses

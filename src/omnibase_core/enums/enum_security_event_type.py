@@ -6,9 +6,11 @@ Strongly typed enumeration for security event types.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumSecurityEventType(str, Enum):
+class EnumSecurityEventType(StrValueHelper, str, Enum):
     """Enumeration for security event types."""
 
     # Authentication events

@@ -1,8 +1,10 @@
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumNodeArg(str, Enum):
+class EnumNodeArg(StrValueHelper, str, Enum):
     """
     Canonical enum for node argument types.
     """

@@ -7,9 +7,11 @@ Eliminates raw string handler types to prevent typo bugs and enable IDE completi
 from enum import Enum, unique
 from typing import Never, NoReturn
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumEffectHandlerType(str, Enum):
+class EnumEffectHandlerType(StrValueHelper, str, Enum):
     """
     Enumeration of supported effect handler types.
 

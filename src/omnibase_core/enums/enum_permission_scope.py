@@ -4,9 +4,11 @@ Enum for permission scopes.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumPermissionScope(str, Enum):
+class EnumPermissionScope(StrValueHelper, str, Enum):
     """Permission scope levels."""
 
     GLOBAL = "global"

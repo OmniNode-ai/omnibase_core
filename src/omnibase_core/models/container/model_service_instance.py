@@ -1,6 +1,6 @@
 """Service instance model - implements ProtocolManagedServiceInstance."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -55,11 +55,11 @@ class ModelServiceInstance(BaseModel):
     lifecycle: EnumServiceLifecycle = Field(description="Lifecycle pattern")
     scope: EnumInjectionScope = Field(description="Injection scope")
     created_at: datetime = Field(
-        default_factory=datetime.now,
+        default_factory=lambda: datetime.now(UTC),
         description="Creation timestamp",
     )
     last_accessed: datetime = Field(
-        default_factory=datetime.now,
+        default_factory=lambda: datetime.now(UTC),
         description="Last access timestamp",
     )
     access_count: int = Field(default=0, description="Access count")
@@ -89,7 +89,7 @@ class ModelServiceInstance(BaseModel):
 
     def mark_accessed(self) -> None:
         """Update access tracking."""
-        self.last_accessed = datetime.now()
+        self.last_accessed = datetime.now(UTC)
         self.access_count += 1
 
     def dispose(self) -> None:

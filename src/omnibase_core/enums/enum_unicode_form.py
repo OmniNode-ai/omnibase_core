@@ -6,9 +6,11 @@ This module defines the unicode normalization forms available for NORMALIZE_UNIC
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumUnicodeForm(str, Enum):
+class EnumUnicodeForm(StrValueHelper, str, Enum):
     """
     Unicode normalization forms.
 

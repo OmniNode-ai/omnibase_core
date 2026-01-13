@@ -935,7 +935,7 @@ class ServiceRegistry:
 
         registration = self._registrations[registration_id]
         registration.service_metadata.configuration.update(configuration)
-        registration.service_metadata.last_modified_at = datetime.now()
+        registration.service_metadata.last_modified_at = datetime.now(UTC)
 
         return True
 

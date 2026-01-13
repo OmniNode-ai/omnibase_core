@@ -2,9 +2,11 @@
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumContractCompliance(str, Enum):
+class EnumContractCompliance(StrValueHelper, str, Enum):
     """Contract compliance levels."""
 
     FULLY_COMPLIANT = "fully_compliant"

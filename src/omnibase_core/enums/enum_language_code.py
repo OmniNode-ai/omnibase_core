@@ -6,9 +6,11 @@ Supported language codes for detection patterns.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumLanguageCode(str, Enum):
+class EnumLanguageCode(StrValueHelper, str, Enum):
     """Supported language codes for detection."""
 
     ENGLISH = "en"

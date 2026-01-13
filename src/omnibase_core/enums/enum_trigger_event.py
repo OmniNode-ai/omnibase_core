@@ -8,9 +8,11 @@ Used by context models to specify what event triggered an action or checkpoint.
 from enum import Enum, unique
 from functools import cache
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumTriggerEvent(str, Enum):
+class EnumTriggerEvent(StrValueHelper, str, Enum):
     """Enumeration for events that can trigger workflow actions or checkpoints."""
 
     # Workflow progress triggers

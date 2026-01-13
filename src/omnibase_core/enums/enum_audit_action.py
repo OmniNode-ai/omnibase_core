@@ -2,9 +2,11 @@
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumAuditAction(str, Enum):
+class EnumAuditAction(StrValueHelper, str, Enum):
     """Common audit actions."""
 
     CREATE = "create"

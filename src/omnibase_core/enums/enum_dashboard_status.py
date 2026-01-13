@@ -21,11 +21,13 @@ Example:
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 __all__ = ("EnumDashboardStatus",)
 
 
 @unique
-class EnumDashboardStatus(str, Enum):
+class EnumDashboardStatus(StrValueHelper, str, Enum):
     """Dashboard connection and lifecycle status enumeration.
 
     Tracks the operational state of a dashboard instance through its

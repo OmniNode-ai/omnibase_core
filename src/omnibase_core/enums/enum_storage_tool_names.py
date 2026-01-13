@@ -5,9 +5,11 @@ Single responsibility: Centralized storage tool name definitions.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumStorageToolNames(str, Enum):
+class EnumStorageToolNames(StrValueHelper, str, Enum):
     """Storage tool names following ONEX enum-backed naming standards."""
 
     TOOL_FILESYSTEM_STORAGE = "tool_filesystem_storage"

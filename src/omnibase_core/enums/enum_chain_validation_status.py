@@ -2,9 +2,11 @@
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumChainValidationStatus(str, Enum):
+class EnumChainValidationStatus(StrValueHelper, str, Enum):
     """Status of signature chain validation."""
 
     VALID = "valid"  # All signatures valid and chain complete

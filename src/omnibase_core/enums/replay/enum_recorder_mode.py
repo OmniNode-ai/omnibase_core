@@ -41,9 +41,11 @@ __all__ = ["EnumRecorderMode"]
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumRecorderMode(str, Enum):
+class EnumRecorderMode(StrValueHelper, str, Enum):
     """
     Recorder operating mode.
 

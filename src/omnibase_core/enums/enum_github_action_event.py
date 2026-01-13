@@ -30,9 +30,11 @@ in workflow definitions.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumGithubActionEvent(str, Enum):
+class EnumGithubActionEvent(StrValueHelper, str, Enum):
     """GitHub Actions trigger events."""
 
     PUSH = "push"

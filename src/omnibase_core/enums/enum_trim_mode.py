@@ -6,9 +6,11 @@ This module defines the trim modes available for TRIM transformations.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumTrimMode(str, Enum):
+class EnumTrimMode(StrValueHelper, str, Enum):
     """
     Whitespace trim modes.
 

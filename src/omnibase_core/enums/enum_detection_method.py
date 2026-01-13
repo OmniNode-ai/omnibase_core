@@ -2,9 +2,11 @@
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumDetectionMethod(str, Enum):
+class EnumDetectionMethod(StrValueHelper, str, Enum):
     """Methods used for detection."""
 
     REGEX = "regex"

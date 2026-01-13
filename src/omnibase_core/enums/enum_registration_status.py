@@ -10,10 +10,12 @@ Defines status values for service registration operations in DI containers.
 
 from enum import Enum
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 __all__ = ["EnumRegistrationStatus"]
 
 
-class EnumRegistrationStatus(str, Enum):
+class EnumRegistrationStatus(StrValueHelper, str, Enum):
     """Service registration status values.
 
     Indicates the outcome of attempting to register a service

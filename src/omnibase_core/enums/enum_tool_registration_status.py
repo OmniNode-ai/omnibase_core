@@ -1,8 +1,10 @@
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumToolRegistrationStatus(str, Enum):
+class EnumToolRegistrationStatus(StrValueHelper, str, Enum):
     """Status of tool registration."""
 
     REGISTERED = "registered"

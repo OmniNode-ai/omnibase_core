@@ -1008,7 +1008,7 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
 
         except ModelOnexError:
             raise  # Re-raise structured errors without wrapping
-        except (RuntimeError, ValueError, TypeError) as e:
+        except (RuntimeError, TypeError, ValueError) as e:
             self._log_error(
                 f"Failed to publish event: {e!r}",
                 "publish_event",
@@ -1065,7 +1065,7 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
             self._log_info(f"Published completion event: {event_type}", event_type)
         except ModelOnexError:
             raise  # Re-raise structured errors without wrapping
-        except (RuntimeError, ValueError, TypeError) as e:
+        except (RuntimeError, TypeError, ValueError) as e:
             self._log_error(
                 f"Failed to publish completion event: {e!r}",
                 "publish_completion",
@@ -1131,7 +1131,7 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
 
         except ModelOnexError:
             raise  # Re-raise structured errors without wrapping
-        except (RuntimeError, ValueError, TypeError) as e:
+        except (RuntimeError, TypeError, ValueError) as e:
             self._log_error(
                 f"Failed to publish completion event: {e!r}",
                 "publish_completion",

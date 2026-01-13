@@ -32,6 +32,7 @@ Note:
 
 import argparse
 import ast
+import fnmatch
 import logging
 import re
 import sys
@@ -200,7 +201,7 @@ def _is_literal_alias_name(name: str) -> bool:
 
     Matches patterns like:
     - LiteralFoo (starts with Literal, followed by capital letter)
-    - FooLiteral (ends with Literal, preceded by PascalCase prefix)
+    - FooLiteral (ends with Literal, preceded by PascalCase prefix of 2+ chars)
 
     Args:
         name: The alias name to check.
@@ -209,22 +210,28 @@ def _is_literal_alias_name(name: str) -> bool:
         True if the name matches a Literal alias pattern, False otherwise.
 
     Note:
-        The FooLiteral pattern requires the prefix to start with an uppercase
-        letter (PascalCase convention) to avoid false positives on names like
-        'literalLiteral' or '_somethingLiteral'.
+        The FooLiteral pattern requires the prefix to:
+        1. Start with an uppercase letter (PascalCase convention)
+        2. Be at least 2 characters long (to avoid false positives like 'XLiteral')
+
+        This prevents false positives on names like 'literalLiteral', '_somethingLiteral',
+        or single-letter prefixes that are unlikely to be real type aliases.
     """
-    # Pattern: LiteralFoo where Foo starts with uppercase
+    # Pattern: LiteralFoo where Foo starts with uppercase and is at least 1 char
     if name.startswith("Literal") and len(name) > 7:
         suffix = name[7:]
         if suffix and suffix[0].isupper():
             return True
 
     # Pattern: FooLiteral where Foo follows PascalCase (starts with uppercase)
+    # and is at least 2 characters long for meaningful prefix
     if name.endswith("Literal") and len(name) > 7:
         prefix = name[:-7]
-        # Require prefix to start with uppercase for proper type alias convention
-        # This prevents false positives like 'literalLiteral' or '_fooLiteral'
-        if prefix and prefix[0].isupper():
+        # Require prefix to:
+        # 1. Start with uppercase for proper type alias convention
+        # 2. Be at least 2 chars to avoid single-letter prefixes like 'XLiteral'
+        # This prevents false positives like 'literalLiteral', '_fooLiteral', or 'ALiteral'
+        if len(prefix) >= 2 and prefix[0].isupper():
             return True
 
     return False
@@ -234,14 +241,17 @@ def normalize_literal_name(alias_name: str) -> str:
     """Normalize a Literal alias name for comparison with enum names.
 
     Removes "Literal" prefix/suffix and converts to lowercase. Handles edge
-    cases where "Literal" appears multiple times in the name.
+    cases where "Literal" appears multiple times in the name by stripping
+    iteratively until no more can be stripped.
 
     Examples:
         LiteralValidationLevel -> validationlevel
         StepTypeLiteral -> steptype
         LiteralHealthStatus -> healthstatus
-        LiteralLiteral -> literal (edge case: only strip once)
+        LiteralLiteral -> literal (edge case: strip prefix only to preserve meaning)
         LiteralFooLiteral -> foo (both prefix and suffix removed)
+        FooLiteralLiteral -> foo (multiple suffixes stripped)
+        LiteralLiteralFoo -> literalfoo (prefix stripped, remaining "LiteralFoo")
 
     Args:
         alias_name: The Literal alias name to normalize.
@@ -252,35 +262,37 @@ def normalize_literal_name(alias_name: str) -> str:
         would result in an empty string.
 
     Note:
-        Edge case handling: If stripping both prefix AND suffix would result
-        in an empty string (e.g., "LiteralLiteral"), we only strip the prefix
-        to preserve a meaningful name for comparison.
+        Edge case handling:
+        1. If stripping would result in empty string (e.g., "LiteralLiteral"),
+           we only strip the prefix to preserve a meaningful name.
+        2. Multiple "Literal" suffixes are stripped iteratively to handle
+           cases like "FooLiteralLiteral" -> "Foo" -> "foo".
     """
     normalized = alias_name
 
-    # Check for edge case: name is exactly "LiteralLiteral" or similar
-    # where stripping both would leave nothing meaningful
-    has_prefix = normalized.startswith("Literal") and len(normalized) > 7
-    has_suffix = normalized.endswith("Literal") and len(normalized) > 7
-
-    if has_prefix and has_suffix:
-        # Check if stripping both would result in empty string
-        # "LiteralLiteral" -> prefix strip -> "Literal" -> suffix strip -> ""
+    # First, handle prefix stripping (only once - "Literal" at start)
+    if normalized.startswith("Literal") and len(normalized) > 7:
         after_prefix = normalized[7:]
+        # Edge case: "LiteralLiteral" - only strip prefix to preserve meaning
         if after_prefix == "Literal":
-            # Only strip prefix, keep "Literal" as the normalized name
             return "literal"
-        # Otherwise strip both (e.g., "LiteralFooLiteral" -> "Foo" -> "foo")
-        normalized = (
-            after_prefix[:-7] if after_prefix.endswith("Literal") else after_prefix
-        )
-        return normalized.lower()
+        normalized = after_prefix
 
-    # Standard case: strip prefix OR suffix (not both needed)
-    if has_prefix:
-        normalized = normalized[7:]
-    elif has_suffix:
+    # Then, iteratively strip suffix "Literal" to handle cases like "FooLiteralLiteral"
+    # Use a max iterations guard to prevent infinite loops on malformed input
+    max_iterations = 10
+    iterations = 0
+    while (
+        normalized.endswith("Literal")
+        and len(normalized) > 7
+        and iterations < max_iterations
+    ):
         normalized = normalized[:-7]
+        iterations += 1
+
+    # Safety check: if we somehow stripped everything, return original lowercased
+    if not normalized:
+        return alias_name.lower()
 
     return normalized.lower()
 
@@ -441,28 +453,49 @@ def _should_exclude(file_path: Path, exclude_patterns: list[str]) -> bool:
 
     Args:
         file_path: Path to check.
-        exclude_patterns: List of patterns to match against.
+        exclude_patterns: List of patterns to match against. Patterns are matched
+            as exact path components, not as substrings. For example, "test" will
+            only exclude paths containing a directory named exactly "test", not
+            paths containing "mytest" or "testing".
 
     Returns:
         True if the file should be excluded, False otherwise.
     """
+    # Resolve the path to handle cases like "src/../tests/foo.py"
+    # This normalizes away ".." and "." components for reliable matching
+    try:
+        resolved_path = file_path.resolve()
+    except OSError:
+        # fallback-ok: if resolution fails, use original path
+        resolved_path = file_path
+
     # Always exclude test files using Path.parts for robust path component matching
     # This correctly handles both absolute and relative paths across all operating systems:
     # - tests/unit/foo.py -> parts = ('tests', 'unit', 'foo.py')
-    # - ./tests/unit/foo.py -> parts = ('.', 'tests', 'unit', 'foo.py')
+    # - ./tests/unit/foo.py -> resolved -> parts without '.'
     # - /abs/path/tests/bar.py -> parts = ('/', 'abs', 'path', 'tests', 'bar.py')
-    if "tests" in file_path.parts:
+    # - src/../tests/foo.py -> resolved -> parts = (..., 'tests', 'foo.py')
+    if "tests" in resolved_path.parts:
         return True
 
     # Exclude the checker itself
-    if file_path.name == "checker_literal_duplication.py":
+    if resolved_path.name == "checker_literal_duplication.py":
         return True
 
-    # Check custom exclude patterns
-    path_str = str(file_path)
+    # Check custom exclude patterns using exact path component matching
+    # This prevents false positives where a pattern like "test" would match
+    # paths containing "contest" or "testing"
+    path_parts = resolved_path.parts
     for pattern in exclude_patterns:
-        if pattern in path_str:
+        # Check if pattern matches any path component exactly
+        if pattern in path_parts:
             return True
+        # Also support fnmatch-style glob patterns for flexibility
+        # e.g., "test_*" to match "test_utils", "test_helpers", etc.
+        if "*" in pattern or "?" in pattern or "[" in pattern:
+            for part in path_parts:
+                if fnmatch.fnmatch(part, pattern):
+                    return True
 
     return False
 

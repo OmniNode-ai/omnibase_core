@@ -7,9 +7,11 @@ with proper ONEX enum naming conventions.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumMessageRole(str, Enum):
+class EnumMessageRole(StrValueHelper, str, Enum):
     """Message roles for LLM chat conversations."""
 
     USER = "user"

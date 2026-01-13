@@ -28,9 +28,11 @@ Enum for file status values used in metadata blocks.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumFileStatus(str, Enum):
+class EnumFileStatus(StrValueHelper, str, Enum):
     EMPTY = "empty"  # File has no content
     UNVALIDATED = "unvalidated"  # Not schema-validated
     VALIDATED = "validated"  # Schema-validated

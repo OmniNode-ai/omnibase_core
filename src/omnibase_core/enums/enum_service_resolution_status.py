@@ -10,10 +10,12 @@ Defines status values for service resolution operations in DI containers.
 
 from enum import Enum
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 __all__ = ["EnumServiceResolutionStatus"]
 
 
-class EnumServiceResolutionStatus(str, Enum):
+class EnumServiceResolutionStatus(StrValueHelper, str, Enum):
     """Service resolution status values.
 
     Indicates the outcome of attempting to resolve a service

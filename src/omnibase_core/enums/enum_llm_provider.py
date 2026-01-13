@@ -6,9 +6,11 @@ Defines supported LLM providers for agent system.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumLlmProvider(str, Enum):
+class EnumLlmProvider(StrValueHelper, str, Enum):
     """Supported LLM providers for agents."""
 
     CLAUDE = "claude"
