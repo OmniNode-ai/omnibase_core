@@ -79,27 +79,6 @@ def allow_any_type(reason: str, reviewer: str | None = None) -> ONEXPatternExclu
     )
 
 
-def allow_dict_any[F: Callable[..., object]](func: F) -> F:
-    """
-    Simple decorator to allow dict[str, Any] usage in specific functions.
-
-    This decorator is recognized by the validation script and should only be used when:
-    1. Serialization methods that must return dict[str, Any] for Pydantic compatibility
-    2. Validator methods that accept raw untyped data before conversion
-    3. Legacy integration where gradual typing is being applied
-
-    This is a simple pass-through decorator that doesn't require reason
-    arguments, making it suitable for common serialization patterns
-    where the justification is implicit.
-
-    Example:
-        @allow_dict_any
-        def serialize(self) -> dict[str, Any]:
-            return self.model_dump()
-    """
-    return func
-
-
 def allow_mixed_types(reason: str, reviewer: str | None = None) -> ONEXPatternExclusion:
     """
     Allow usage of both Any and Dict[str, Any] patterns.

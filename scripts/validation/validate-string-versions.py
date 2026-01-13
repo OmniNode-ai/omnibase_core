@@ -79,7 +79,7 @@ EXCLUDE_PATTERNS = [
     "archive",  # Exclude archived code
     "archived",  # Exclude archived code (alternative naming)
     "tests",  # Exclude test files
-    "examples_validation_container_usage.py",  # Exclude specific example files
+    "examples",  # Exclude examples - ModelHandlerContract uses str for version field
     "protocols",  # Exclude Protocol classes (see rationale above)
 ]
 
