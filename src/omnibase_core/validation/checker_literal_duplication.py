@@ -146,7 +146,7 @@ def extract_literal_aliases(file_path: Path) -> list[tuple[str, int]]:
     try:
         source = file_path.read_text(encoding="utf-8")
         tree = ast.parse(source, filename=str(file_path))
-    except (SyntaxError, UnicodeDecodeError, OSError) as e:
+    except (OSError, SyntaxError, UnicodeDecodeError) as e:
         # fallback-ok: skip files that cannot be parsed
         logger.debug("Skipping %s: %s", file_path, e)
         return []
@@ -439,7 +439,14 @@ def _should_exclude(file_path: Path, exclude_patterns: list[str]) -> bool:
     path_str = str(file_path)
 
     # Always exclude test files
+    # Handle absolute paths or deeply nested paths containing /tests/ or \tests\
     if "/tests/" in path_str or "\\tests\\" in path_str:
+        return True
+    # Handle relative paths starting with tests/ (e.g., tests/unit/test_foo.py)
+    if path_str.startswith(("tests/", "tests\\")):
+        return True
+    # Handle relative paths with explicit ./ prefix (e.g., ./tests/unit/test_foo.py)
+    if path_str.startswith(("./tests/", ".\\tests\\")):
         return True
 
     # Exclude the checker itself

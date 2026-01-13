@@ -34,7 +34,6 @@ def sample_registration(sample_metadata):
         service_metadata=sample_metadata,
         lifecycle="singleton",
         scope="global",
-        version=ModelSemVer(major=1, minor=0, patch=0),
     )
 
 
@@ -50,7 +49,6 @@ class TestModelServiceRegistration:
             service_metadata=sample_metadata,
             lifecycle="singleton",
             scope="global",
-            version=ModelSemVer(major=1, minor=0, patch=0),
         )
 
         assert registration.registration_id == reg_id
@@ -85,7 +83,6 @@ class TestModelServiceRegistration:
             access_count=5,
             instance_count=2,
             max_instances=10,
-            version=ModelSemVer(major=1, minor=0, patch=0),
         )
 
         assert registration.registration_id == reg_id
@@ -197,7 +194,6 @@ class TestModelServiceRegistration:
                 service_metadata=sample_metadata,
                 lifecycle=lifecycle,  # type: ignore[arg-type]
                 scope="global",
-                version=ModelSemVer(major=1, minor=0, patch=0),
             )
             assert registration.lifecycle == lifecycle
 
@@ -209,7 +205,6 @@ class TestModelServiceRegistration:
                 service_metadata=sample_metadata,
                 lifecycle="singleton",
                 scope=scope,  # type: ignore[arg-type]
-                version=ModelSemVer(major=1, minor=0, patch=0),
             )
             assert registration.scope == scope
 
@@ -229,7 +224,6 @@ class TestModelServiceRegistration:
                 lifecycle="singleton",
                 scope="global",
                 registration_status=status,  # type: ignore[arg-type]
-                version=ModelSemVer(major=1, minor=0, patch=0),
             )
             assert registration.registration_status == status
 
@@ -242,7 +236,6 @@ class TestModelServiceRegistration:
                 lifecycle="singleton",
                 scope="global",
                 health_status=health,  # type: ignore[arg-type]
-                version=ModelSemVer(major=1, minor=0, patch=0),
             )
             assert registration.health_status == health
 
@@ -254,7 +247,6 @@ class TestModelServiceRegistration:
             lifecycle="pooled",
             scope="global",
             max_instances=5,
-            version=ModelSemVer(major=1, minor=0, patch=0),
         )
 
         assert registration.max_instances == 5
@@ -269,7 +261,6 @@ class TestModelServiceRegistration:
             lifecycle="singleton",
             scope="global",
             dependencies=dependencies,
-            version=ModelSemVer(major=1, minor=0, patch=0),
         )
 
         assert registration.dependencies == dependencies

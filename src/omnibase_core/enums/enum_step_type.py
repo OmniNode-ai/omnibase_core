@@ -16,8 +16,10 @@ __all__ = ["EnumStepType"]
 class EnumStepType(str, Enum):
     """Step types for workflow definitions.
 
-    Categorizes workflow steps by their execution semantics
-    within the ONEX four-node architecture.
+    Categorizes workflow steps by their execution semantics.
+    The core four types (COMPUTE, EFFECT, REDUCER, ORCHESTRATOR) align
+    with the ONEX four-node architecture, while PARALLEL and CUSTOM
+    provide additional workflow flexibility.
 
     Values:
         COMPUTE: Pure computation step with no side effects.

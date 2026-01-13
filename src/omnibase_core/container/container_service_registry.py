@@ -65,6 +65,8 @@ class ServiceRegistry:
 
     Example:
         ```python
+        from omnibase_core.enums import EnumInjectionScope
+
         # Create registry
         config = create_default_registry_config()
         registry = ServiceRegistry(config)
@@ -73,7 +75,7 @@ class ServiceRegistry:
         reg_id = await registry.register_instance(
             interface=ProtocolLogger,
             instance=logger,
-            scope="global"
+            scope=EnumInjectionScope.GLOBAL,
         )
 
         # Resolve service
