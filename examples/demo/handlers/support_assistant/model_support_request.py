@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
+#
+# SPDX-License-Identifier: Apache-2.0
+
 """SupportRequest model for OMN-1201 Demo Support Assistant.
 
 This module defines the input schema for the support assistant handler.
@@ -41,3 +45,6 @@ class SupportRequest(BaseModel):
         default="medium",
         description="Priority level of the request",
     )
+
+
+__all__ = ["SupportRequest"]

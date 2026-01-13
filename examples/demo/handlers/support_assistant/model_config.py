@@ -200,7 +200,7 @@ def load_config_from_contract(
 
     # Parse YAML and validate with Pydantic model
     # Note: yaml.safe_load is allowed here per .yaml-validation-allowlist.yaml
-    with open(contract_path) as f:
+    with open(contract_path, encoding="utf-8") as f:
         contract_data = yaml.safe_load(f)
 
     contract = _ContractWithProviderConfig.model_validate(contract_data)

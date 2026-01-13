@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
+#
+# SPDX-License-Identifier: Apache-2.0
+
 """SupportResponse model for OMN-1201 Demo Support Assistant.
 
 This module defines the output schema for the support assistant handler.
@@ -54,3 +58,6 @@ class SupportResponse(BaseModel):
         ...,
         description="Detected sentiment of the user's message",
     )
+
+
+__all__ = ["SupportResponse"]
