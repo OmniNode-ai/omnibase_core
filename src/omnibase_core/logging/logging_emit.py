@@ -553,7 +553,9 @@ def _sanitize_sensitive_data(text: str) -> str:
     """
     # Defensive check for runtime safety - unreachable with proper typing
     if not isinstance(text, str):
-        # NOTE(OMN-1302): Defensive return for invalid input. Safe because guards runtime type violations.
+        # NOTE(OMN-1302): Defensive conversion indicates upstream validation gap.
+        # Cannot log warning here due to circular dependency with logging infrastructure.
+        # Safe because guards runtime type violations.
         return text  # type: ignore[unreachable]
 
     sanitized = text
@@ -580,7 +582,9 @@ def _sanitize_data_dict(
     """
     # Defensive check for runtime safety - unreachable with proper typing
     if not isinstance(data, dict):
-        # NOTE(OMN-1302): Defensive return for invalid input. Safe because guards runtime type violations.
+        # NOTE(OMN-1302): Defensive conversion indicates upstream validation gap.
+        # Cannot log warning here due to circular dependency with logging infrastructure.
+        # Safe because guards runtime type violations.
         return data  # type: ignore[unreachable]
 
     sanitized: dict[str, Any | None] = {}
@@ -653,6 +657,9 @@ def _detect_node_id_from_context() -> LogNodeIdentifier:
                 try:
                     node_id = obj.node_id
                     # Type narrowing: ensure UUID | str return
+                    # NOTE(OMN-1302): str() conversion for non-UUID/str types indicates
+                    # upstream validation gap. Cannot log warning here due to circular
+                    # dependency with logging infrastructure.
                     return (
                         str(node_id)
                         if not isinstance(node_id, (UUID, str))

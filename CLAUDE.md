@@ -508,6 +508,16 @@ All Python files in `src/omnibase_core/` must follow directory-specific naming p
 
 **Validation**: Run `poetry run python -m omnibase_core.validation.checker_naming_convention` to check compliance.
 
+### Architectural Exceptions
+
+Some files are excluded from single-class-per-file validation due to architectural patterns:
+
+| File | Reason |
+|------|--------|
+| `mixins/mixin_event_bus.py` | Duck-typed Protocol defined alongside the mixin that uses it. The protocol and implementation are tightly coupled for duck-typing support of legacy event bus implementations. |
+
+These exclusions are documented in `.pre-commit-config.yaml` under `validate-single-class-per-file`.
+
 ### Pydantic Model Configuration Standards
 
 Every Pydantic model MUST have an explicit `model_config`. Empty `ConfigDict()` is not allowed - it has ambiguous intent and provides no explicit policy for model behavior (extra fields, mutability, etc.). Models must declare their configuration explicitly.
@@ -614,6 +624,21 @@ from .model_widget_definition import ModelWidgetDefinition
 ```python
 # TODO(OMN-TBD): <action>  [NEEDS TICKET]
 ```
+
+**Multi-line TODOs**: For multi-line TODOs, always place `[NEEDS TICKET]` on the first line (same line as `TODO(OMN-TBD):`) for grep-ability:
+```python
+# Correct - [NEEDS TICKET] on first line (findable with grep)
+# TODO(OMN-TBD): Add topic validation when topic-based publishing is implemented. [NEEDS TICKET]
+# When the event bus supports explicit topic routing, validate alignment
+# between message category and topic name using _validate_topic_alignment().
+
+# Wrong - [NEEDS TICKET] on last line (not findable with single grep)
+# TODO(OMN-TBD): Add topic validation when topic-based publishing is implemented.
+# When the event bus supports explicit topic routing, validate alignment
+# between message category and topic name using _validate_topic_alignment().  [NEEDS TICKET]
+```
+
+**Why first line?** Running `grep -r "TODO(OMN-TBD).*\[NEEDS TICKET\]"` finds all TODOs needing tickets only when the marker is on the first line.
 
 ### Type Ignore Policy
 
