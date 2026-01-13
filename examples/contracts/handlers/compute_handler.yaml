@@ -1,3 +1,4 @@
+---
 # Handler Contract Example: COMPUTE Handler
 # This handler performs pure data transformation with no side effects.
 #
@@ -9,7 +10,7 @@
 
 handler_id: compute.schema.validator
 name: Schema Validator
-version: 1.0.0
+version: {major: 1, minor: 0, patch: 0}
 description: Validates input data against JSON schemas
 
 descriptor:
