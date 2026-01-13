@@ -616,21 +616,18 @@ class TestValidatorBaseConstants:
 
     def test_severity_priority_ordering(self) -> None:
         """Test that severity priority ordering is correct."""
-        # Lower number = higher priority
-        assert SEVERITY_PRIORITY[EnumSeverity.CRITICAL] == 0
-        assert SEVERITY_PRIORITY[EnumSeverity.ERROR] == 1
-        assert SEVERITY_PRIORITY[EnumSeverity.WARNING] == 2
-        assert SEVERITY_PRIORITY[EnumSeverity.INFO] == 3
+        # Lower number = higher priority (most severe first)
+        assert SEVERITY_PRIORITY[EnumSeverity.FATAL] == 0
+        assert SEVERITY_PRIORITY[EnumSeverity.CRITICAL] == 1
+        assert SEVERITY_PRIORITY[EnumSeverity.ERROR] == 2
+        assert SEVERITY_PRIORITY[EnumSeverity.WARNING] == 3
+        assert SEVERITY_PRIORITY[EnumSeverity.INFO] == 4
+        assert SEVERITY_PRIORITY[EnumSeverity.DEBUG] == 5
 
     def test_severity_priority_all_severities_covered(self) -> None:
         """Test that all severities are covered in priority map."""
-        expected_severities = {
-            EnumSeverity.CRITICAL,
-            EnumSeverity.ERROR,
-            EnumSeverity.WARNING,
-            EnumSeverity.INFO,
-        }
-        assert set(SEVERITY_PRIORITY.keys()) == expected_severities
+        # Validate against all EnumSeverity members for completeness
+        assert set(SEVERITY_PRIORITY.keys()) == set(EnumSeverity)
 
 
 # =============================================================================

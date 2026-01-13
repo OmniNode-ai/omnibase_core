@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums import EnumSeverity
 from omnibase_core.models.common.model_validation_issue import ModelValidationIssue
@@ -39,6 +39,10 @@ class ModelValidationResult[T: object](BaseModel):
     - Helper methods for common validation patterns
     - Current standards with all previous implementations
     """
+
+    # Mutable model: allows add_issue(), merge() mutations. Uses extra="forbid" for
+    # internal consistency. from_attributes=True for pytest-xdist compatibility.
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
 
     # Core validation result
     is_valid: bool = Field(default=False, description="Overall validation result")

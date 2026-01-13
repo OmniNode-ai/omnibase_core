@@ -98,10 +98,12 @@ EXIT_WARNINGS = 2
 
 # Severity priority for deterministic ordering (lower = higher priority)
 SEVERITY_PRIORITY: dict[EnumSeverity, int] = {
-    EnumSeverity.CRITICAL: 0,
-    EnumSeverity.ERROR: 1,
-    EnumSeverity.WARNING: 2,
-    EnumSeverity.INFO: 3,
+    EnumSeverity.FATAL: 0,
+    EnumSeverity.CRITICAL: 1,
+    EnumSeverity.ERROR: 2,
+    EnumSeverity.WARNING: 3,
+    EnumSeverity.INFO: 4,
+    EnumSeverity.DEBUG: 5,
 }
 
 

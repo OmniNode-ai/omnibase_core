@@ -19,3 +19,6 @@ class EnumSeverity(StrValueHelper, str, Enum):
     ERROR = "error"
     CRITICAL = "critical"
     FATAL = "fatal"
+
+
+__all__ = ["EnumSeverity"]

@@ -15,9 +15,9 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.enums import EnumSeverity
 from omnibase_core.enums.enum_comparison_type import EnumComparisonType
 from omnibase_core.enums.enum_invariant_type import EnumInvariantType
-from omnibase_core.enums.enum_severity import EnumSeverity
 from omnibase_core.models.invariant.model_invariant_definition import (
     InvariantConfigUnion,
 )
