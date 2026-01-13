@@ -277,9 +277,9 @@ def _verify_protocol_compliance() -> None:
 
     # Verify all protocol methods exist on the client class
     for method_name in protocol_methods:
-        assert hasattr(OpenAILLMClient, method_name), (
-            f"OpenAILLMClient must have '{method_name}' method per ProtocolLLMClient"
-        )
+        assert hasattr(
+            OpenAILLMClient, method_name
+        ), f"OpenAILLMClient must have '{method_name}' method per ProtocolLLMClient"
 
 
 __all__ = ["OpenAILLMClient", "_verify_protocol_compliance"]

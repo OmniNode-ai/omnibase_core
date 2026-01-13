@@ -286,18 +286,24 @@ def _verify_protocol_compliance() -> None:
     This function is provided for test suites to verify protocol compliance
     without import-time side effects. Tests should call this explicitly.
 
-    Note: Cannot verify at module level without API key - the class requires
-    valid credentials in __init__.
+    Note: Full isinstance() check requires a valid API key for instantiation.
+    We verify all protocol-required methods exist on the class.
 
     Raises:
         AssertionError: If AnthropicLLMClient does not implement ProtocolLLMClient.
     """
-    # Create a mock instance for protocol checking by bypassing __init__
-    # This is safe because we're only checking protocol method signatures
-    instance = object.__new__(AnthropicLLMClient)
-    assert isinstance(
-        instance, ProtocolLLMClient
-    ), "AnthropicLLMClient must implement ProtocolLLMClient"
+    # Get required methods from the protocol
+    protocol_methods = {
+        name
+        for name in dir(ProtocolLLMClient)
+        if not name.startswith("_") and callable(getattr(ProtocolLLMClient, name))
+    }
+
+    # Verify all protocol methods exist on the client class
+    for method_name in protocol_methods:
+        assert hasattr(
+            AnthropicLLMClient, method_name
+        ), f"AnthropicLLMClient must have '{method_name}' method per ProtocolLLMClient"
 
 
 __all__ = ["AnthropicLLMClient", "_verify_protocol_compliance"]

@@ -235,12 +235,24 @@ def _verify_protocol_compliance() -> None:
     This function is provided for test suites to verify protocol compliance
     without import-time side effects. Tests should call this explicitly.
 
+    Note: We verify all protocol-required methods exist on the class rather
+    than instantiating, for consistency with other LLM client implementations.
+
     Raises:
         AssertionError: If MockLLMClient does not implement ProtocolLLMClient.
     """
-    assert isinstance(
-        MockLLMClient(), ProtocolLLMClient
-    ), "MockLLMClient must implement ProtocolLLMClient"
+    # Get required methods from the protocol
+    protocol_methods = {
+        name
+        for name in dir(ProtocolLLMClient)
+        if not name.startswith("_") and callable(getattr(ProtocolLLMClient, name))
+    }
+
+    # Verify all protocol methods exist on the client class
+    for method_name in protocol_methods:
+        assert hasattr(
+            MockLLMClient, method_name
+        ), f"MockLLMClient must have '{method_name}' method per ProtocolLLMClient"
 
 
 __all__ = ["MockLLMClient", "_verify_protocol_compliance"]

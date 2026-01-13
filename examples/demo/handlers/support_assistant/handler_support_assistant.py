@@ -173,9 +173,7 @@ class SupportAssistantHandler:
         self.llm_client: ProtocolLLMClient = llm_client
 
         # Fail-fast DI resolution: Missing logger fails immediately with typed error
-        logger: object | None = container.get_service(
-            "ProtocolLogger"
-        )
+        logger: object | None = container.get_service("ProtocolLogger")
         if logger is None:
             raise ModelOnexError(
                 message="Required service 'ProtocolLogger' not found in container",
@@ -237,7 +235,10 @@ class SupportAssistantHandler:
             raise ModelOnexError(
                 message="LLM response failed schema validation",
                 error_code=EnumCoreErrorCode.VALIDATION_FAILED,
-                context={"error_type": "ValidationError", "error_count": e.error_count()},
+                context={
+                    "error_type": "ValidationError",
+                    "error_count": e.error_count(),
+                },
             ) from e
         except (AttributeError, KeyError, TypeError) as e:
             # catch-all-ok: common runtime errors during response processing
@@ -610,7 +611,7 @@ class SupportAssistantHandler:
 
         return True
 
-    @allow_dict_any(reason="LLM JSON responses have arbitrary structure")
+    @allow_dict_any(reason="LLM JSON responses have arbitrary structure")  # type: ignore[untyped-decorator]
     def _create_validated_response(self, data: dict[str, object]) -> SupportResponse:
         """Create and validate SupportResponse using Pydantic.
 
