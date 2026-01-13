@@ -77,7 +77,7 @@ class ModelWorkflowCoordinator:
 
             return workflow_result
 
-        except PYDANTIC_MODEL_ERRORS as e:
+        except PYDANTIC_MODEL_ERRORS as e:  # boundary-ok: normalize model/validation failures into ModelOnexError at workflow boundary
             # Log workflow failure
             emit_log_event(
                 LogLevel.ERROR,
@@ -124,7 +124,7 @@ class ModelWorkflowCoordinator:
 
             return result
 
-        except PYDANTIC_MODEL_ERRORS as e:
+        except PYDANTIC_MODEL_ERRORS as e:  # boundary-ok: log and propagate model/validation failures at workflow execution boundary
             emit_log_event(
                 LogLevel.ERROR,
                 f"Workflow execution failed for type {workflow_type}: {e}",

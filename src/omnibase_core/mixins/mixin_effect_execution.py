@@ -1611,6 +1611,13 @@ class MixinEffectExecution:
                     message=f"Field extraction failed for {output_name}: {e!s}",
                     error_code=EnumCoreErrorCode.OPERATION_FAILED,
                 ) from e
+            except (
+                Exception
+            ) as e:  # catch-all-ok: extraction utility must not leak raw exceptions
+                raise ModelOnexError(
+                    message=f"Field extraction failed for {output_name}: {e!s}",
+                    error_code=EnumCoreErrorCode.OPERATION_FAILED,
+                ) from e
 
         return extracted
 

@@ -648,19 +648,51 @@ All Python files in `src/omnibase_core/` must follow directory-specific naming p
 
 **Validation**: Run `poetry run python -m omnibase_core.validation.checker_naming_convention` to check compliance.
 
-### Pydantic `from_attributes=True` for Value Objects
+### Pydantic Model Configuration Standards
 
-Add `from_attributes=True` to `ConfigDict` for immutable value objects nested in other Pydantic models used with pytest-xdist parallel execution.
+Every Pydantic model MUST have an explicit `model_config`. Empty `ConfigDict()` is not allowed - it has ambiguous intent and provides no explicit policy for model behavior (extra fields, mutability, etc.). Models must declare their configuration explicitly.
 
-**Why**: pytest-xdist workers import classes independently. Without `from_attributes=True`, Pydantic rejects valid instances due to class identity differences.
+#### ConfigDict Requirements
+
+| Model Type | Required ConfigDict | Example |
+|------------|---------------------|---------|
+| **Immutable value object** | `ConfigDict(frozen=True, extra="forbid", from_attributes=True)` | ModelSemVer, ModelAuditEntry |
+| **Mutable internal model** | `ConfigDict(extra="forbid", from_attributes=True)` | ModelRouteHop, ModelFilterCriteria |
+| **Contract/external data** | `ConfigDict(extra="ignore", ...)` | YAML contracts |
+| **Extension point** | `ConfigDict(extra="allow", ...)` | ModelNodeExtensions |
+
+#### Key Rules
+
+1. **frozen=True** - Model is immutable, MUST also have `from_attributes=True`
+2. **Mutable models** - NO `frozen=True`, but still use `extra="forbid"` for internal models
+3. **Contracts** - MUST explicitly declare `extra=` policy (no implicit defaults)
+4. **`from_attributes=True`** - Required on ALL frozen models for pytest-xdist compatibility
+
+**Why `from_attributes=True`?** pytest-xdist workers import classes independently. Without it, Pydantic rejects valid instances due to class identity differences.
+
+#### Field Definition Patterns
 
 ```python
-class ModelSemVer(BaseModel):
-    model_config = ConfigDict(frozen=True, extra="ignore", from_attributes=True)
-    major: int
-    minor: int
-    patch: int
+# Simple default - no Field() needed
+field_name: str | None = None
+
+# Using Field() for metadata - Field() justified
+field_name: str | None = Field(default=None, description="Helpful description")
+field_name: int | None = Field(default=None, ge=0, le=100)
+field_name: str | None = Field(default=None, alias="fieldName")
+
+# WRONG - Field() without metadata (use = None instead)
+field_name: str | None = Field(default=None)  # Unnecessary wrapper
+
+# Mutable defaults - ALWAYS use default_factory
+items: list[str] = Field(default_factory=list)
+mapping: dict[str, Any] = Field(default_factory=dict)
+
+# WRONG - Mutable default values cause shared state bugs
+items: list[str] = []  # Dangerous!
 ```
+
+**See**: [Pydantic Best Practices](docs/conventions/PYDANTIC_BEST_PRACTICES.md) for comprehensive guidelines.
 
 To find models using this pattern: `grep -r "from_attributes.*True" src/omnibase_core/models/`
 

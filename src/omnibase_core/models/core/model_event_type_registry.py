@@ -162,7 +162,7 @@ class ModelEventTypeRegistry:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.INTERNAL_ERROR,
                 message=msg,
-            )
+            ) from e
 
         return events_discovered
 
@@ -229,7 +229,7 @@ def get_event_type_registry() -> ModelEventTypeRegistry:
             registry.bootstrap_core_event_types()
 
         return registry
-    except (ModelOnexError, AttributeError, RuntimeError) as e:
+    except (AttributeError, ModelOnexError, RuntimeError) as e:
         raise ModelOnexError(
             message="DI container not initialized - cannot get event type registry. "
             "Initialize the container first.",

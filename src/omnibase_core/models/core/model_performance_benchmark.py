@@ -35,7 +35,7 @@ class ModelPerformanceBenchmark(BaseModel):
     )
     sample_count: int = Field(default=..., description="Number of samples", ge=1)
 
-    model_config = ConfigDict()
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
 
 # Alias

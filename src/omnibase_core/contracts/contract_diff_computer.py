@@ -179,10 +179,10 @@ class ContractDiffComputer:
             after_fingerprint = compute_contract_fingerprint(after)
         except (
             AttributeError,
+            ModelOnexError,
             TypeError,
             ValidationError,
             ValueError,
-            ModelOnexError,
         ) as e:
             # fallback-ok: fingerprint computation is optional for non-contract models
             logger.debug(

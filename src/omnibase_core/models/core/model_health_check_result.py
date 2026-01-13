@@ -63,7 +63,7 @@ class ModelHealthCheckResult(BaseModel):
     checks_passed: int = Field(default=0, description="Number of checks passed")
     checks_failed: int = Field(default=0, description="Number of checks failed")
     warnings: list[str] = Field(default_factory=list, description="Warning messages")
-    model_config = ConfigDict()
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     @classmethod
     def from_dict(cls, data: SerializedDict) -> "ModelHealthCheckResult":

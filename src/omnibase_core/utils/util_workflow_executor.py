@@ -91,6 +91,7 @@ Security Considerations:
         (https://owasp.org/www-community/attacks/Denial_of_Service)
 """
 
+import asyncio
 import heapq
 import json
 import logging
@@ -846,6 +847,11 @@ async def _execute_sequential(
                 continue
             # For other error actions (retry, compensate), continue for now
 
+        except asyncio.CancelledError:
+            # Cancellation must propagate - do not convert to failed step
+            # This prevents shutdown/timeout hangs caused by swallowing cancellation
+            raise
+
         except Exception as e:
             # boundary-ok: workflow steps execute external code with unknown exception types
             # Production workflows require resilient error handling - all failures logged
@@ -1039,6 +1045,10 @@ async def _execute_parallel(
             # redundant JSON serialization - OMN-670: Performance optimization)
             action, payload_size = _create_action_for_step(step, workflow_id)
             return (step, action, payload_size, None)
+        except asyncio.CancelledError:
+            # Cancellation must propagate - do not convert to failed step
+            # This prevents shutdown/timeout hangs caused by swallowing cancellation
+            raise
         except Exception as e:  # fallback-ok: parallel execution returns error in tuple for caller handling
             # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
             return (step, None, 0, e)

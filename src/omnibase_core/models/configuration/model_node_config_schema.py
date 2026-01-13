@@ -28,7 +28,9 @@ class ModelNodeConfigSchema(BaseModel):
     )
     default: ConfigValue = Field(..., description="Default value")
 
-    model_config = ConfigDict(frozen=True, populate_by_name=True)
+    model_config = ConfigDict(
+        frozen=True, extra="forbid", populate_by_name=True, from_attributes=True
+    )
 
     @model_validator(mode="after")
     def validate_default_type(self) -> "ModelNodeConfigSchema":
