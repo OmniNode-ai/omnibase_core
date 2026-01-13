@@ -552,6 +552,77 @@ def read_config(self, file_path):
         return yaml.safe_load(f)
 ```
 
+#### Async Error Handling
+
+All three decorators **automatically detect async functions** and handle them correctly. No special configuration needed:
+
+```python
+from omnibase_core.decorators.decorator_error_handling import (
+    standard_error_handling,
+    io_error_handling,
+)
+
+# Decorators auto-detect async and wrap appropriately
+@standard_error_handling("Async data fetch")
+async def fetch_data(self, url: str) -> dict:
+    async with httpx.AsyncClient() as client:
+        response = await client.get(url)
+        return response.json()
+
+@io_error_handling("Async file operation")
+async def read_config_async(self, file_path: Path) -> dict:
+    async with aiofiles.open(file_path) as f:
+        content = await f.read()
+        return yaml.safe_load(content)
+```
+
+**Async-Specific Behavior**:
+
+1. **`asyncio.CancelledError` always propagates** - Never caught or wrapped by decorators
+2. **Async context preserved** - Stack traces and error context work correctly
+3. **Same error codes** - Async functions get the same `EnumCoreErrorCode` mapping as sync
+
+**Handling `asyncio.CancelledError` explicitly**:
+
+```python
+import asyncio
+from omnibase_core.errors.exception_groups import ASYNC_ERRORS
+
+async def process_with_cleanup(self, data: dict) -> dict:
+    try:
+        return await self._do_processing(data)
+    except asyncio.CancelledError:
+        # Perform cleanup before re-raising
+        await self._cleanup_resources()
+        raise  # ALWAYS re-raise CancelledError
+    except ASYNC_ERRORS as e:
+        # Handle other async errors (TimeoutError, RuntimeError)
+        return {"error": str(e), "status": "failed"}
+```
+
+**Async exception groups with decorators**:
+
+```python
+from omnibase_core.decorators.decorator_error_handling import io_error_handling
+from omnibase_core.errors.exception_groups import NETWORK_ERRORS
+
+@io_error_handling("API batch fetch")
+async def fetch_batch(self, urls: list[str]) -> list[dict]:
+    async with httpx.AsyncClient() as client:
+        tasks = [client.get(url) for url in urls]
+        responses = await asyncio.gather(*tasks, return_exceptions=True)
+
+        results = []
+        for resp in responses:
+            if isinstance(resp, NETWORK_ERRORS):
+                # Individual failures logged, continue with others
+                self.logger.warning(f"Fetch failed: {resp}")
+                results.append({"error": str(resp)})
+            else:
+                results.append(resp.json())
+        return results
+```
+
 #### Exception Handling Comment Markers
 
 When using catch-all or broad exception handlers, document the intent with these standardized markers:

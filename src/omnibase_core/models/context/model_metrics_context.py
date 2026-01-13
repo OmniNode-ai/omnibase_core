@@ -165,10 +165,12 @@ class ModelMetricsContext(BaseModel):
         if value is None:
             return None
         if not isinstance(value, str):
+            # error-ok: Pydantic field_validator requires ValueError
             raise ValueError(f"trace_id must be a string, got {type(value).__name__}")
         # Normalize to lowercase for comparison
         normalized = value.lower()
         if not _TRACE_ID_PATTERN.match(normalized):
+            # error-ok: Pydantic field_validator requires ValueError
             raise ValueError(
                 f"Invalid trace_id '{value}': must be 32 lowercase hex characters "
                 "(W3C Trace Context format)"
@@ -202,12 +204,14 @@ class ModelMetricsContext(BaseModel):
             return None
         field_name = info.field_name
         if not isinstance(value, str):
+            # error-ok: Pydantic field_validator requires ValueError
             raise ValueError(
                 f"{field_name} must be a string, got {type(value).__name__}"
             )
         # Normalize to lowercase for comparison
         normalized = value.lower()
         if not _SPAN_ID_PATTERN.match(normalized):
+            # error-ok: Pydantic field_validator requires ValueError
             raise ValueError(
                 f"Invalid {field_name} '{value}': must be 16 lowercase hex characters"
             )
@@ -233,11 +237,13 @@ class ModelMetricsContext(BaseModel):
         if value is None:
             return None
         if isinstance(value, bool) or not isinstance(value, int | float):
+            # error-ok: Pydantic field_validator requires ValueError
             raise ValueError(
                 f"sampling_rate must be a number, got {type(value).__name__}"
             )
         float_value = float(value)
         if not 0.0 <= float_value <= 1.0:
+            # error-ok: Pydantic field_validator requires ValueError
             raise ValueError(
                 f"Invalid sampling_rate {value}: must be between 0.0 and 1.0 inclusive"
             )
@@ -266,6 +272,7 @@ class ModelMetricsContext(BaseModel):
         if value is None:
             return None
         if not isinstance(value, str):
+            # error-ok: Pydantic field_validator requires ValueError
             raise ValueError(
                 f"service_version must be a string, got {type(value).__name__}"
             )

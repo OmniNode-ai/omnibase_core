@@ -46,7 +46,10 @@ Error Handling Overview:
     1. **Fail-Fast Errors** (raise immediately):
        - PydanticSchemaGenerationError: Invalid type annotations or schema issues
        - PydanticUserError: Invalid Pydantic model configuration
-       - VALIDATION_ERRORS (TypeError, ValidationError, ValueError): Type annotation problems
+       - VALIDATION_ERRORS (TypeError, ValidationError, ValueError): Used by
+         rebuild_model_references() and handle_subclass_forward_refs()
+       - PYDANTIC_MODEL_ERRORS (AttributeError, TypeError, ValidationError, ValueError):
+         Used by auto_rebuild_on_module_load() for broader attribute error coverage
        - RuntimeError: Critical failures during module manipulation
 
     2. **Deferred Errors** (log warning, allow retry later):
@@ -57,7 +60,10 @@ Error Handling Overview:
        - All Pydantic-specific errors are wrapped with structured context
        - Error codes: INITIALIZATION_FAILED, CONFIGURATION_ERROR, IMPORT_ERROR
 
-Error Categories Quick Reference:
+Error Categories Quick Reference (rebuild_model_references behavior):
+
+    Note: handle_subclass_forward_refs() logs warnings instead of wrapping errors.
+    auto_rebuild_on_module_load() re-raises PYDANTIC_MODEL_ERRORS without wrapping.
 
     | Error Type                    | Function Behavior                    | User Action                           |
     |-------------------------------|--------------------------------------|---------------------------------------|

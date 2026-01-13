@@ -220,7 +220,7 @@ def standard_error_handling(
     Pattern Applied:
         try:
             return original_function(*args, **kwargs)
-        except (SystemExit, KeyboardInterrupt, GeneratorExit):
+        except (GeneratorExit, KeyboardInterrupt, SystemExit):
             raise  # Never catch cancellation/exit signals
         except asyncio.CancelledError:
             raise  # Never suppress async cancellation
