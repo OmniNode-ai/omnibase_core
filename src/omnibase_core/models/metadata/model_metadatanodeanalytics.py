@@ -39,6 +39,7 @@ from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
 from omnibase_core.enums.enum_metadata_node_type import EnumMetadataNodeType
 
 # Safe runtime imports
+from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
 from omnibase_core.models.infrastructure.model_metrics_data import ModelMetricsData
 from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
 from omnibase_core.types.typed_dict_metadata_dict import TypedDictMetadataDict
@@ -367,7 +368,7 @@ class ModelMetadataNodeAnalytics(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except (AttributeError, KeyError, TypeError, ValueError):
+        except PYDANTIC_MODEL_ERRORS:
             # fallback-ok: metadata update failure in analytics does not impact core functionality
             return False
 

@@ -32,7 +32,7 @@ class TestEnumHandlerType:
         assert EnumHandlerType.EVENT_BUS.value == "event_bus"
 
     def test_local_handler_type_value(self):
-        """Test that LOCAL handler type value is correct (v0.4.0+)."""
+        """Test that LOCAL handler type value is correct (Development/Testing, v0.4.0+)."""
         assert EnumHandlerType.LOCAL.value == "local"
 
     def test_enum_inheritance(self):
@@ -56,7 +56,7 @@ class TestEnumHandlerType:
     def test_enum_iteration(self):
         """Test that we can iterate over enum values."""
         values = list(EnumHandlerType)
-        # 3 abstract + 9 concrete + 1 development/testing = 13 total
+        # 3 Abstract + 9 Concrete + 1 Development/Testing = 13 total
         assert len(values) == 13
         # Abstract types
         assert EnumHandlerType.EXTENSION in values

@@ -459,7 +459,7 @@ class TestUnsupportedCapabilityError:
             "Capability not supported",
             error_code=EnumCoreErrorCode.UNSUPPORTED_CAPABILITY_ERROR,
             capability="streaming",
-            node_type="COMPUTE",
+            node_type="COMPUTE_GENERIC",
             correlation_id=corr_id,
             required_by="workflow-abc",
             available_capabilities=["sync", "batch"],
@@ -467,7 +467,7 @@ class TestUnsupportedCapabilityError:
 
         assert error.correlation_id == corr_id
         assert error.capability == "streaming"
-        assert error.node_type == "COMPUTE"
+        assert error.node_type == "COMPUTE_GENERIC"
 
     def test_model_dump_serialization(self) -> None:
         """Test UnsupportedCapabilityError.model_dump() returns correct dict structure."""
@@ -476,7 +476,7 @@ class TestUnsupportedCapabilityError:
         error = UnsupportedCapabilityError(
             "Capability missing",
             capability="distributed_execution",
-            node_type="ORCHESTRATOR",
+            node_type="ORCHESTRATOR_GENERIC",
             suggested_alternative="local_execution",
         )
 
@@ -486,7 +486,7 @@ class TestUnsupportedCapabilityError:
         assert "correlation_id" in error_dict
         assert "context" in error_dict
         assert error_dict["context"].get("capability") == "distributed_execution"
-        assert error_dict["context"].get("node_type") == "ORCHESTRATOR"
+        assert error_dict["context"].get("node_type") == "ORCHESTRATOR_GENERIC"
         assert error_dict["context"].get("suggested_alternative") == "local_execution"
 
     def test_model_dump_json_serialization(self) -> None:
@@ -496,7 +496,7 @@ class TestUnsupportedCapabilityError:
         error = UnsupportedCapabilityError(
             "JSON capability test",
             capability="real_time_processing",
-            node_type="EFFECT",
+            node_type="EFFECT_GENERIC",
         )
 
         json_str = error.model_dump_json()
@@ -506,7 +506,7 @@ class TestUnsupportedCapabilityError:
         assert parsed["message"] == "JSON capability test"
         assert "context" in parsed
         assert parsed["context"]["capability"] == "real_time_processing"
-        assert parsed["context"]["node_type"] == "EFFECT"
+        assert parsed["context"]["node_type"] == "EFFECT_GENERIC"
 
     def test_default_error_code(self) -> None:
         """Test UnsupportedCapabilityError defaults to UNSUPPORTED_CAPABILITY_ERROR code."""
@@ -848,7 +848,7 @@ class TestDeclarativeErrorContextKwargs:
         error = UnsupportedCapabilityError(
             "Capability not supported",
             capability="streaming",
-            node_type="COMPUTE",
+            node_type="COMPUTE_GENERIC",
             available_modes=["batch", "sync"],
             requested_by="workflow-abc",
             fallback_suggestion="Use EFFECT node instead",

@@ -27,6 +27,9 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 # Module-level constant for numeric severity levels (avoids per-call dict allocation)
 # Scale is compatible with Python logging levels (10, 20, 30, 40, 50)
 # Note: This is defined outside the enum class to avoid being treated as an enum member
@@ -40,7 +43,7 @@ _SEVERITY_LEVEL_MAP: dict[str, int] = {
 
 
 @unique
-class EnumSeverity(str, Enum):
+class EnumSeverity(StrValueHelper, str, Enum):
     """
     Canonical severity levels for ONEX systems.
 
@@ -68,10 +71,6 @@ class EnumSeverity(str, Enum):
 
     CRITICAL = "critical"
     """Critical conditions that must be addressed immediately."""
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @property
     def numeric_level(self) -> int:
@@ -107,14 +106,21 @@ class EnumSeverity(str, Enum):
             Matching EnumSeverity value
 
         Raises:
-            ValueError: If no matching severity found
+            ModelOnexError: If no matching severity found
         """
         normalized = value.lower().strip()
         for member in cls:
             if member.value == normalized:
                 return member
-        # error-ok: standard Python pattern for enum string conversion
-        raise ValueError(f"Unknown severity level: {value}")
+        # Lazy import to avoid circular dependency and maintain import chain
+        from omnibase_core.errors import ModelOnexError
+
+        raise ModelOnexError(
+            message=f"Unknown severity level: {value}",
+            error_code=EnumCoreErrorCode.INVALID_INPUT,
+            value=value,
+            valid_values=[m.value for m in cls],
+        )
 
 
 __all__ = ["EnumSeverity"]

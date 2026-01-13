@@ -82,11 +82,13 @@ class TestActionMetadataSerialization:
         assert string_model.status == enum_model.status
         assert string_model.model_dump()["status"] == enum_model.model_dump()["status"]
 
-    @pytest.mark.parametrize(
-        "status", ["created", "ready", "running", "completed", "failed"]
-    )
+    @pytest.mark.parametrize("status", ["created", "running", "completed", "failed"])
     def test_roundtrip_preserves_value(self, status: str) -> None:
-        """JSON roundtrip preserves exact status value."""
+        """JSON roundtrip preserves exact status value.
+
+        Note: ModelActionMetadata uses EnumGeneralStatus (not EnumActionStatus),
+        which does not include "ready" as a valid value.
+        """
         model = ModelActionMetadata(status=status)
         json_str = model.model_dump_json()
         restored = ModelActionMetadata.model_validate_json(json_str)

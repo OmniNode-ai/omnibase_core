@@ -1055,7 +1055,7 @@ contract_version:
   major: 1
   minor: 0
   patch: 0
-node_type: EFFECT
+node_type: EFFECT_GENERIC
 operations: []
 """,
         )

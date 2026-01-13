@@ -135,7 +135,7 @@ contract_version:
   major: 1
   minor: 0
   patch: 0
-node_type: COMPUTE
+node_type: COMPUTE_GENERIC
 event_subscriptions:
   - event_pattern: "test.event.type"
     handler_function: "handle_test_event"

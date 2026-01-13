@@ -55,7 +55,7 @@ class TestModelActionHardening:
         """Verify ModelAction is immutable after creation."""
         action = ModelAction(
             action_type=EnumActionType.COMPUTE,
-            target_node_type="COMPUTE",
+            target_node_type="COMPUTE_GENERIC",
             lease_id=uuid4(),
             epoch=1,
             payload=_create_test_payload(),
@@ -68,7 +68,7 @@ class TestModelActionHardening:
         with pytest.raises(ValidationError) as exc_info:
             ModelAction(
                 action_type=EnumActionType.COMPUTE,
-                target_node_type="COMPUTE",
+                target_node_type="COMPUTE_GENERIC",
                 lease_id=uuid4(),
                 epoch=1,
                 payload=_create_test_payload(),
@@ -84,7 +84,7 @@ class TestModelActionHardening:
         # Valid priority
         valid = ModelAction(
             action_type=EnumActionType.COMPUTE,
-            target_node_type="COMPUTE",
+            target_node_type="COMPUTE_GENERIC",
             lease_id=uuid4(),
             epoch=1,
             priority=5,
@@ -96,7 +96,7 @@ class TestModelActionHardening:
         with pytest.raises(ValidationError):
             ModelAction(
                 action_type=EnumActionType.COMPUTE,
-                target_node_type="COMPUTE",
+                target_node_type="COMPUTE_GENERIC",
                 lease_id=uuid4(),
                 epoch=1,
                 priority=0,
@@ -107,7 +107,7 @@ class TestModelActionHardening:
         with pytest.raises(ValidationError):
             ModelAction(
                 action_type=EnumActionType.COMPUTE,
-                target_node_type="COMPUTE",
+                target_node_type="COMPUTE_GENERIC",
                 lease_id=uuid4(),
                 epoch=1,
                 priority=11,
@@ -119,7 +119,7 @@ class TestModelActionHardening:
         # Valid timeout
         valid = ModelAction(
             action_type=EnumActionType.COMPUTE,
-            target_node_type="COMPUTE",
+            target_node_type="COMPUTE_GENERIC",
             lease_id=uuid4(),
             epoch=1,
             timeout_ms=60000,
@@ -131,7 +131,7 @@ class TestModelActionHardening:
         with pytest.raises(ValidationError):
             ModelAction(
                 action_type=EnumActionType.COMPUTE,
-                target_node_type="COMPUTE",
+                target_node_type="COMPUTE_GENERIC",
                 lease_id=uuid4(),
                 epoch=1,
                 timeout_ms=99,
@@ -142,7 +142,7 @@ class TestModelActionHardening:
         with pytest.raises(ValidationError):
             ModelAction(
                 action_type=EnumActionType.COMPUTE,
-                target_node_type="COMPUTE",
+                target_node_type="COMPUTE_GENERIC",
                 lease_id=uuid4(),
                 epoch=1,
                 timeout_ms=300001,
@@ -154,7 +154,7 @@ class TestModelActionHardening:
         # Valid retry count
         valid = ModelAction(
             action_type=EnumActionType.COMPUTE,
-            target_node_type="COMPUTE",
+            target_node_type="COMPUTE_GENERIC",
             lease_id=uuid4(),
             epoch=1,
             retry_count=5,
@@ -166,7 +166,7 @@ class TestModelActionHardening:
         with pytest.raises(ValidationError):
             ModelAction(
                 action_type=EnumActionType.COMPUTE,
-                target_node_type="COMPUTE",
+                target_node_type="COMPUTE_GENERIC",
                 lease_id=uuid4(),
                 epoch=1,
                 retry_count=-1,
@@ -177,7 +177,7 @@ class TestModelActionHardening:
         with pytest.raises(ValidationError):
             ModelAction(
                 action_type=EnumActionType.COMPUTE,
-                target_node_type="COMPUTE",
+                target_node_type="COMPUTE_GENERIC",
                 lease_id=uuid4(),
                 epoch=1,
                 retry_count=11,
@@ -189,7 +189,7 @@ class TestModelActionHardening:
         # Valid epoch (0 is allowed)
         valid = ModelAction(
             action_type=EnumActionType.COMPUTE,
-            target_node_type="COMPUTE",
+            target_node_type="COMPUTE_GENERIC",
             lease_id=uuid4(),
             epoch=0,
             payload=_create_test_payload(),
@@ -200,7 +200,7 @@ class TestModelActionHardening:
         with pytest.raises(ValidationError):
             ModelAction(
                 action_type=EnumActionType.COMPUTE,
-                target_node_type="COMPUTE",
+                target_node_type="COMPUTE_GENERIC",
                 lease_id=uuid4(),
                 epoch=-1,
                 payload=_create_test_payload(),
@@ -211,12 +211,12 @@ class TestModelActionHardening:
         # Valid target_node_type
         valid = ModelAction(
             action_type=EnumActionType.COMPUTE,
-            target_node_type="COMPUTE",
+            target_node_type="COMPUTE_GENERIC",
             lease_id=uuid4(),
             epoch=1,
             payload=_create_test_payload(),
         )
-        assert valid.target_node_type == "COMPUTE"
+        assert valid.target_node_type == "COMPUTE_GENERIC"
 
         # Too short (must be >= 1)
         with pytest.raises(ValidationError):
@@ -252,7 +252,7 @@ class TestModelActionHardening:
         """Verify model_copy can be used to create modified copies."""
         original = ModelAction(
             action_type=EnumActionType.COMPUTE,
-            target_node_type="COMPUTE",
+            target_node_type="COMPUTE_GENERIC",
             lease_id=uuid4(),
             epoch=1,
             priority=5,

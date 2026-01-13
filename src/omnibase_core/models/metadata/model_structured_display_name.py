@@ -7,6 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_standard_category import EnumStandardCategory
 from omnibase_core.enums.enum_standard_tag import EnumStandardTag
+from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
@@ -293,7 +294,7 @@ class ModelStructuredDisplayName(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except (AttributeError, KeyError, TypeError, ValueError) as e:
+        except PYDANTIC_MODEL_ERRORS as e:
             # boundary-ok: transform dynamic attribute access errors to typed domain errors
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,

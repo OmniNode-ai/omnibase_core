@@ -55,7 +55,7 @@ class ModelTestContract(BaseModel):
         default_factory=lambda: ModelContractVersion(major=1, minor=0, patch=0)
     )
     description: str | None = Field(default=None)
-    node_type: str = Field(default="COMPUTE")
+    node_type: str = Field(default="COMPUTE_GENERIC")
     input_model: str = Field(default="omnibase_core.models.ModelInput")
     output_model: str = Field(default="omnibase_core.models.ModelOutput")
     optional_field: str | None = Field(default=None)
@@ -87,7 +87,7 @@ def sample_contract() -> ModelTestContract:
         name="test_contract",
         version="1.2.3",
         description="A test contract",
-        node_type="COMPUTE",
+        node_type="COMPUTE_GENERIC",
         input_model="omnibase_core.models.ModelInput",
         output_model="omnibase_core.models.ModelOutput",
     )
@@ -1134,7 +1134,7 @@ class TestMigrationScenarios:
             version="1.0.0",
             description="Service contract",
             optional_field=None,
-            node_type="COMPUTE",
+            node_type="COMPUTE_GENERIC",
         )
 
         # Simulate loading from Python definition (no null fields explicitly set)
@@ -1142,7 +1142,7 @@ class TestMigrationScenarios:
             name="my_service",
             version="1.0.0",
             description="Service contract",
-            node_type="COMPUTE",
+            node_type="COMPUTE_GENERIC",
         )
 
         fp_yaml = compute_contract_fingerprint(yaml_loaded)
