@@ -77,7 +77,7 @@ class ModelFilterCriteria(BaseModel):
         description="Custom filter extensions",
     )
 
-    model_config = ConfigDict()
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
 
     def to_dict(self) -> SerializedDict:
         """Convert to dictionary for current standards."""

@@ -99,7 +99,7 @@ class ModelIntrospectionData(BaseModel):
         description="Extension points",
     )
 
-    model_config = ConfigDict()
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     @field_serializer("last_updated")
     def serialize_datetime(self, value: datetime | None) -> str | None:

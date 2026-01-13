@@ -7,10 +7,12 @@ This document covers Pydantic configuration patterns, safety considerations, and
 ## Table of Contents
 
 1. [Model Configuration](#model-configuration)
-2. [from_attributes Safety](#from_attributes-safety)
-3. [Frozen Models](#frozen-models)
-4. [Validation Patterns](#validation-patterns)
-5. [Error Handling](#error-handling)
+2. [ConfigDict Policy Decision Matrix](#configdict-policy-decision-matrix)
+3. [from_attributes Safety](#from_attributes-safety)
+4. [Frozen Models](#frozen-models)
+5. [Field Definition Best Practices](#field-definition-best-practices)
+6. [Validation Patterns](#validation-patterns)
+7. [Error Handling](#error-handling)
 
 ---
 
@@ -38,6 +40,154 @@ class ModelExample(BaseModel):
 | `extra="forbid"` | Strict validation | Contracts, security models |
 | `extra="ignore"` | Flexible input | YAML contracts, external data |
 | `validate_assignment=True` | Re-validate on set | Mutable models with constraints |
+
+---
+
+## ConfigDict Policy Decision Matrix
+
+### Quick Decision Guide
+
+For a rapid ConfigDict selection, follow this simplified flowchart:
+
+```text
+Is the model immutable after creation?
+│
+├─ YES ──► frozen=True, from_attributes=True (REQUIRED combo)
+│          │
+│          └─ Does it accept external data (YAML, APIs)?
+│             │
+│             ├─ NO (internal value object) ──► extra="forbid"
+│             │
+│             └─ YES (contracts, configs)
+│                │
+│                ├─ Extension point? ──► extra="allow"
+│                │
+│                └─ Forward-compat? ──► extra="ignore"
+│
+└─ NO ──► No frozen=True
+          │
+          └─ Is it internal or external?
+             │
+             ├─ Internal domain model ──► extra="forbid"
+             │
+             └─ External data / Contract ──► extra="ignore"
+                │
+                └─ Extension point? ──► extra="allow"
+```
+
+### Detailed Decision Flowchart
+
+Use this flowchart to determine the appropriate ConfigDict settings for your model:
+
+```text
+                          ┌─────────────────────────────────┐
+                          │      New Pydantic Model         │
+                          └───────────────┬─────────────────┘
+                                          │
+                          ┌───────────────▼─────────────────┐
+                          │  Should it be immutable after   │
+                          │  creation? (fingerprints,       │
+                          │  envelopes, value objects)      │
+                          └───────────────┬─────────────────┘
+                                     Yes / \ No
+                     ┌──────────────────┘   └──────────────────┐
+                     │                                          │
+         ┌───────────▼───────────┐              ┌───────────────▼───────────────┐
+         │ frozen=True           │              │ Does it accept external data   │
+         │ from_attributes=True  │              │ (YAML, JSON, APIs)?            │
+         │ (REQUIRED combo)      │              └───────────────┬───────────────┘
+         └───────────┬───────────┘                         Yes / \ No
+                     │                          ┌──────────────┘   └──────────────┐
+         ┌───────────▼───────────┐              │                                  │
+         │ Should unknown fields │  ┌───────────▼───────────┐      ┌───────────────▼───────────────┐
+         │ be rejected?          │  │ Is it an extension    │      │ Internal domain model         │
+         └───────────┬───────────┘  │ point for plugins?    │      │ extra="forbid"                │
+                Yes / \ No          └───────────┬───────────┘      │ (catches bugs)                │
+        ┌──────────┘   └──────────┐        Yes / \ No              └───────────────────────────────┘
+        │                          │    ┌──────┘   └──────┐
+┌───────▼─────────┐      ┌─────────▼───────┐     ┌────────▼────────┐
+│ Value Object    │      │ Forward-compat  │     │ Extension Point │
+│ extra="forbid"  │      │ extra="ignore"  │     │ extra="allow"   │
+│ (security,      │      │ (contracts,     │     │ (plugins,       │
+│ results)        │      │ configs)        │     │ metadata)       │
+└─────────────────┘      └─────────────────┘     └─────────────────┘
+
+RESULT CONFIGURATIONS:
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Immutable Value Object:  ConfigDict(frozen=True, extra="forbid",            │
+│                                     from_attributes=True)                   │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Forward-Compatible:      ConfigDict(extra="ignore")                         │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Extension Point:         ConfigDict(extra="allow")                          │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Internal Domain Model:   ConfigDict(extra="forbid", from_attributes=True)   │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### When to use `extra="forbid"` (strictest)
+
+Use for models where unknown fields indicate a bug:
+
+- Security-critical models (signatures, assessments)
+- Immutable value objects (results, metrics)
+- Internal domain models
+- Any model where extra fields should fail loudly
+
+```python
+class ModelSecurityAssessment(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
+    risk_level: str
+    confidence: float
+```
+
+### When to use `extra="ignore"` (permissive)
+
+Use for forward-compatibility with external data:
+
+- YAML/JSON contract parsing from external sources
+- Forward-compatibility with newer schema versions
+- Infrastructure configuration models
+- External API response models
+
+```python
+class ModelExternalConfig(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    version: str
+    settings: dict[str, Any]
+```
+
+### When to use `extra="allow"` (extensible)
+
+Use ONLY when arbitrary additional fields are intentional:
+
+- Extension point models (ModelNodeExtensions)
+- Metadata passthrough containers
+- Plugin/vendor extensibility points
+
+```python
+class ModelNodeExtensions(BaseModel):
+    model_config = ConfigDict(extra="allow")
+    # Allows arbitrary vendor-specific fields
+```
+
+### When to use `frozen=True`
+
+Use for models that should never change after creation:
+
+- Value objects that must be immutable
+- Results, metrics, assessments, audit entries
+- Nested models that may be used in parallel test contexts
+- **ALWAYS pair with `from_attributes=True`** for pytest-xdist compatibility
+
+### When NOT to use `frozen=True`
+
+Avoid for models that need mutation:
+
+- Models with mutating methods (`add_*`, `mark_*`, `set_*`)
+- Builder-pattern models
+- Models used as accumulators
+- Configuration objects that get modified at runtime
 
 ---
 
@@ -114,6 +264,48 @@ config_obj = MutableConfigObject()
 | NamedTuple | Safe | Use freely |
 | Regular class (mutable) | Risky | Add synchronization |
 | Dict-like objects | Safe | Pydantic handles dict input |
+
+### pytest-xdist Compatibility
+
+#### The Problem
+
+pytest-xdist runs tests in parallel workers. Each worker imports model classes independently, creating different class objects with the same name. Without `from_attributes=True`, Pydantic rejects valid instances due to class identity differences.
+
+**Example failure scenario:**
+```python
+# Worker 1 imports ModelSemVer as class object A
+# Worker 2 imports ModelSemVer as class object B
+# When a test passes ModelSemVer instance from Worker 1 context to Worker 2:
+# Pydantic says "Expected ModelSemVer (class B), got ModelSemVer (class A)"
+```
+
+#### The Solution
+
+Add `from_attributes=True` to ALL frozen models:
+
+```python
+model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
+```
+
+This tells Pydantic: "Accept any object with matching attributes, not just exact class matches."
+
+#### Reference Example (ModelSemVer)
+
+```python
+class ModelSemVer(BaseModel):
+    """Semantic version value object.
+
+    Thread Safety:
+        from_attributes=True allows Pydantic to accept objects with matching
+        attributes even when class identity differs (e.g., in pytest-xdist
+        parallel execution where model classes are imported in separate workers).
+    """
+    model_config = ConfigDict(frozen=True, extra="ignore", from_attributes=True)
+
+    major: int
+    minor: int
+    patch: int
+```
 
 ### Recommended Pattern
 
@@ -219,6 +411,106 @@ class ModelGoodDefault(BaseModel):
     model_config = ConfigDict(frozen=True)
     items: list[str] = Field(default_factory=list)
 ```
+
+---
+
+## Field Definition Best Practices
+
+### Rule: Use `Field()` only when adding metadata
+
+`Field()` is a wrapper that should only be used when you need to add metadata, validation constraints, or aliases. For simple optional fields, use `= None` directly.
+
+```python
+# Simple optional field - no Field() needed
+name: str | None = None
+
+# Field with description - Field() justified
+name: str | None = Field(default=None, description="The user's display name")
+
+# Field with validation - Field() justified
+age: int | None = Field(default=None, ge=0, le=150)
+
+# Field with alias - Field() justified
+created_at: datetime | None = Field(default=None, alias="createdAt")
+
+# Field with multiple metadata - Field() justified
+priority: int = Field(default=0, ge=0, le=100, description="Task priority")
+```
+
+### Anti-pattern: Unnecessary Field() wrapper
+
+```python
+# WRONG - Field(default=None) with no other arguments
+field: str | None = Field(default=None)
+
+# CORRECT - Simplified
+field: str | None = None
+```
+
+**Why this matters:**
+- `Field(default=None)` adds no value over `= None`
+- Extra code means more to read and maintain
+- Implies there's metadata when there isn't
+
+### Mutable Defaults
+
+Always use `default_factory` for mutable types to avoid shared state bugs:
+
+```python
+# CORRECT - Each instance gets its own list/dict
+items: list[str] = Field(default_factory=list)
+config: dict[str, Any] = Field(default_factory=dict)
+tags: set[str] = Field(default_factory=set)
+
+# WRONG - Creates shared mutable state across all instances!
+items: list[str] = []
+config: dict[str, Any] = {}
+tags: set[str] = set()
+```
+
+**The bug with mutable defaults:**
+```python
+class BadModel(BaseModel):
+    items: list[str] = []  # Shared across ALL instances!
+
+m1 = BadModel()
+m2 = BadModel()
+m1.items.append("hello")
+print(m2.items)  # ["hello"] - SURPRISE! m2 was affected!
+```
+
+### Required vs Optional Fields
+
+```python
+class ModelExample(BaseModel):
+    # Required - must be provided
+    id: str
+
+    # Required with validation
+    name: str = Field(..., min_length=1)
+
+    # Optional - defaults to None
+    description: str | None = None
+
+    # Optional with default value
+    priority: int = 0
+
+    # Optional with default_factory for mutable types
+    tags: list[str] = Field(default_factory=list)
+```
+
+### Field Naming Conventions
+
+Follow these naming patterns for consistency:
+
+| Pattern | When to Use | Example |
+|---------|-------------|---------|
+| `*_id` | Identifier fields | `user_id`, `session_id` |
+| `*_at` | Timestamp fields | `created_at`, `updated_at` |
+| `*_count` | Counter fields | `retry_count`, `error_count` |
+| `is_*` | Boolean flags | `is_active`, `is_deleted` |
+| `has_*` | Boolean existence | `has_errors`, `has_children` |
+| `*_config` | Configuration objects | `retry_config`, `auth_config` |
 
 ---
 
@@ -330,14 +622,15 @@ def validate_configuration(self) -> "ModelConfig":
 
 | Model Type | frozen | extra | from_attributes | validate_assignment |
 |------------|--------|-------|-----------------|---------------------|
-| Fingerprint | `True` | `"forbid"` | Optional | `True` |
-| Envelope | `True` | `"forbid"` | Optional | `True` |
-| Contract | `False` | `"ignore"` | No | `True` |
-| Config | `False` | `"forbid"` | Optional | `True` |
-| Metadata | `False` | (default) | `True` (ORM) | (default) |
+| Fingerprint | `True` | `"forbid"` | `True` (required) | `True` |
+| Envelope | `True` | `"forbid"` | `True` (required) | `True` |
+| Value Object | `True` | `"forbid"` | `True` (required) | `True` |
+| Contract | `False` | `"ignore"` | Optional | `True` |
+| Internal Model | `False` | `"forbid"` | `True` | Optional |
+| Metadata | `False` | `"forbid"` | `True` (ORM) | Optional |
 
-**Note**: Metadata models use `from_attributes=True` for ORM compatibility. Other options
-use Pydantic defaults unless specific validation behavior is required.
+**Note**: All frozen models MUST have `from_attributes=True` for pytest-xdist compatibility.
+Internal models use `extra="forbid"` to catch unexpected fields during development.
 
 ### Safety Decision Tree
 
@@ -360,5 +653,5 @@ Need from_attributes?
 
 ---
 
-**Last Updated**: 2025-12-14
-**Project**: omnibase_core v0.3.6
+**Last Updated**: 2026-01-12
+**Project**: omnibase_core v0.6.6

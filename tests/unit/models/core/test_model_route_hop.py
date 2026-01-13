@@ -9,10 +9,6 @@ import pytest
 
 from omnibase_core.models.core.model_route_hop import ModelRouteHop
 from omnibase_core.models.core.model_route_hop_metadata import ModelRouteHopMetadata
-from omnibase_core.models.primitives.model_semver import ModelSemVer
-
-# Default version for test instances - required field after removing default_factory
-DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
 
 
 @pytest.mark.unit
@@ -25,7 +21,6 @@ class TestModelRouteHop:
         node_id = uuid4()
 
         hop = ModelRouteHop(
-            version=DEFAULT_VERSION,
             hop_id=hop_id,
             node_id=node_id,
             hop_type="source",
@@ -52,7 +47,6 @@ class TestModelRouteHop:
         )
 
         hop = ModelRouteHop(
-            version=DEFAULT_VERSION,
             hop_id=hop_id,
             node_id=node_id,
             service_name="test_service",
@@ -80,7 +74,6 @@ class TestModelRouteHop:
         node_id = uuid4()
 
         hop = ModelRouteHop(
-            version=DEFAULT_VERSION,
             hop_id=hop_id,
             node_id=node_id,
             hop_type="destination",
@@ -101,7 +94,6 @@ class TestModelRouteHop:
 
         for hop_type in hop_types:
             hop = ModelRouteHop(
-                version=DEFAULT_VERSION,
                 hop_id=hop_id,
                 node_id=node_id,
                 hop_type=hop_type,
@@ -122,7 +114,6 @@ class TestModelRouteHop:
 
         for service_name in service_names:
             hop = ModelRouteHop(
-                version=DEFAULT_VERSION,
                 hop_id=hop_id,
                 node_id=node_id,
                 hop_type="router",
@@ -139,7 +130,6 @@ class TestModelRouteHop:
 
         for duration in durations:
             hop = ModelRouteHop(
-                version=DEFAULT_VERSION,
                 hop_id=hop_id,
                 node_id=node_id,
                 hop_type="router",
@@ -162,7 +152,6 @@ class TestModelRouteHop:
 
         for decision in decisions:
             hop = ModelRouteHop(
-                version=DEFAULT_VERSION,
                 hop_id=hop_id,
                 node_id=node_id,
                 hop_type="router",
@@ -185,7 +174,6 @@ class TestModelRouteHop:
 
         for error_message in error_messages:
             hop = ModelRouteHop(
-                version=DEFAULT_VERSION,
                 hop_id=hop_id,
                 node_id=node_id,
                 hop_type="destination",
@@ -211,7 +199,6 @@ class TestModelRouteHop:
         )
 
         hop = ModelRouteHop(
-            version=DEFAULT_VERSION,
             hop_id=hop_id,
             node_id=node_id,
             hop_type="router",
@@ -234,7 +221,6 @@ class TestModelRouteHop:
         node_id = uuid4()
 
         hop = ModelRouteHop(
-            version=DEFAULT_VERSION,
             hop_id=hop_id,
             node_id=node_id,
             hop_type="source",
@@ -268,7 +254,6 @@ class TestModelRouteHop:
         )
 
         hop = ModelRouteHop(
-            version=DEFAULT_VERSION,
             hop_id=hop_id,
             node_id=node_id,
             hop_type="router",
@@ -289,7 +274,6 @@ class TestModelRouteHop:
         # Test with specific datetime
         specific_time = datetime(2024, 12, 25, 15, 30, 45)
         hop = ModelRouteHop(
-            version=DEFAULT_VERSION,
             hop_id=hop_id,
             node_id=node_id,
             hop_type="source",
@@ -299,7 +283,6 @@ class TestModelRouteHop:
 
         # Test with current time (default)
         hop = ModelRouteHop(
-            version=DEFAULT_VERSION,
             hop_id=hop_id,
             node_id=node_id,
             hop_type="source",
@@ -309,7 +292,6 @@ class TestModelRouteHop:
         # Test with minimum datetime
         min_time = datetime.min
         hop = ModelRouteHop(
-            version=DEFAULT_VERSION,
             hop_id=hop_id,
             node_id=node_id,
             hop_type="source",
@@ -328,7 +310,6 @@ class TestModelRouteHop:
         )
 
         hop = ModelRouteHop(
-            version=DEFAULT_VERSION,
             hop_id=hop_id,
             node_id=node_id,
             service_name="test_service",
@@ -422,7 +403,6 @@ class TestModelRouteHop:
 
         # Test valid data
         hop = ModelRouteHop(
-            version=DEFAULT_VERSION,
             hop_id=hop_id,
             node_id=node_id,
             hop_type="source",
@@ -437,7 +417,6 @@ class TestModelRouteHop:
         node_id = uuid4()
 
         hop = ModelRouteHop(
-            version=DEFAULT_VERSION,
             hop_id=hop_id,
             node_id=node_id,
             hop_type="source",
@@ -458,14 +437,12 @@ class TestModelRouteHop:
         timestamp = datetime(2024, 1, 15, 10, 30, 45)
 
         hop1 = ModelRouteHop(
-            version=DEFAULT_VERSION,
             hop_id=hop_id,
             node_id=node_id,
             hop_type="source",
             timestamp=timestamp,
         )
         hop2 = ModelRouteHop(
-            version=DEFAULT_VERSION,
             hop_id=hop_id,
             node_id=node_id,
             hop_type="source",
@@ -476,7 +453,6 @@ class TestModelRouteHop:
 
         # Test with different hop_id
         hop3 = ModelRouteHop(
-            version=DEFAULT_VERSION,
             hop_id=uuid4(),
             node_id=node_id,
             hop_type="source",
@@ -486,7 +462,6 @@ class TestModelRouteHop:
 
         # Test with different hop_type
         hop4 = ModelRouteHop(
-            version=DEFAULT_VERSION,
             hop_id=hop_id,
             node_id=node_id,
             hop_type="router",
@@ -500,7 +475,6 @@ class TestModelRouteHop:
         node_id = uuid4()
 
         hop = ModelRouteHop(
-            version=DEFAULT_VERSION,
             hop_id=hop_id,
             node_id=node_id,
             hop_type="source",
@@ -515,7 +489,6 @@ class TestModelRouteHop:
         node_id = uuid4()
 
         hop = ModelRouteHop(
-            version=DEFAULT_VERSION,
             hop_id=hop_id,
             node_id=node_id,
             hop_type="source",
@@ -566,13 +539,11 @@ class TestModelRouteHop:
 
         # Test that metadata defaults to empty ModelRouteHopMetadata
         hop1 = ModelRouteHop(
-            version=DEFAULT_VERSION,
             hop_id=hop_id,
             node_id=node_id,
             hop_type="source",
         )
         hop2 = ModelRouteHop(
-            version=DEFAULT_VERSION,
             hop_id=hop_id,
             node_id=node_id,
             hop_type="source",
@@ -596,7 +567,6 @@ class TestModelRouteHop:
 
         # Test that timestamp defaults to current UTC time
         hop = ModelRouteHop(
-            version=DEFAULT_VERSION,
             hop_id=hop_id,
             node_id=node_id,
             hop_type="source",
@@ -613,7 +583,6 @@ class TestModelRouteHop:
         # Test with very large custom_fields in metadata
         large_custom_fields = {f"key_{i}": f"value_{i}" for i in range(1000)}
         hop = ModelRouteHop(
-            version=DEFAULT_VERSION,
             hop_id=hop_id,
             node_id=node_id,
             hop_type="router",
@@ -631,7 +600,6 @@ class TestModelRouteHop:
             "special": "exclamation_at_hash",
         }
         hop = ModelRouteHop(
-            version=DEFAULT_VERSION,
             hop_id=hop_id,
             node_id=node_id,
             hop_type="destination",
@@ -644,7 +612,6 @@ class TestModelRouteHop:
 
         # Test with very large processing duration
         hop = ModelRouteHop(
-            version=DEFAULT_VERSION,
             hop_id=hop_id,
             node_id=node_id,
             hop_type="router",
@@ -654,7 +621,6 @@ class TestModelRouteHop:
 
         # Test with negative processing duration
         hop = ModelRouteHop(
-            version=DEFAULT_VERSION,
             hop_id=hop_id,
             node_id=node_id,
             hop_type="router",
