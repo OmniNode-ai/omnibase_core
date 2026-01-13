@@ -39,4 +39,4 @@ class ModelLoadBalancerStats(BaseModel):
         description="Total number of operations processed",
     )
 
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)

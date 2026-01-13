@@ -14,7 +14,7 @@ __all__ = ["ModelWorkflowValidationResult"]
 class ModelWorkflowValidationResult(BaseModel):
     """Complete result of workflow validation."""
 
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     is_valid: bool = Field(
         default=False,

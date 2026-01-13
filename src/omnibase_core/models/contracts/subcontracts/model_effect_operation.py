@@ -72,8 +72,8 @@ class ModelEffectOperation(BaseModel):
     )
 
     # Resilience (can be overridden per-operation)
-    retry_policy: ModelEffectRetryPolicy | None = Field(default=None)
-    circuit_breaker: ModelEffectCircuitBreaker | None = Field(default=None)
+    retry_policy: ModelEffectRetryPolicy | None = None
+    circuit_breaker: ModelEffectCircuitBreaker | None = None
 
     # Correlation
     correlation_id: UUID = Field(default_factory=uuid4)
