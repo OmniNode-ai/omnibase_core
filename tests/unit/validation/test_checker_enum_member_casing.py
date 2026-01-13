@@ -25,6 +25,7 @@ from omnibase_core.validation.checker_enum_member_casing import (
     UPPER_SNAKE_CASE_PATTERN,
     CheckerEnumMemberCasing,
     main,
+    suggest_upper_snake_case,
     validate_directory,
     validate_file,
 )
@@ -175,6 +176,328 @@ class TestEnumBaseNames:
     def test_is_frozen_set(self) -> None:
         """Test ENUM_BASE_NAMES is a frozenset."""
         assert isinstance(ENUM_BASE_NAMES, frozenset)
+
+
+# =============================================================================
+# Tests for suggest_upper_snake_case function
+# =============================================================================
+
+
+@pytest.mark.unit
+class TestSuggestUpperSnakeCase:
+    """Tests for the suggest_upper_snake_case conversion function.
+
+    This function converts various naming conventions to UPPER_SNAKE_CASE
+    and is used in error messages to suggest corrections.
+    """
+
+    # -------------------------------------------------------------------------
+    # Docstring examples (must pass as documented)
+    # -------------------------------------------------------------------------
+
+    @pytest.mark.parametrize(
+        ("input_name", "expected"),
+        [
+            ("active", "ACTIVE"),
+            ("someValue", "SOME_VALUE"),
+            ("HTTPResponse", "HTTP_RESPONSE"),
+        ],
+    )
+    def test_docstring_examples(self, input_name: str, expected: str) -> None:
+        """Test examples from the function docstring."""
+        assert suggest_upper_snake_case(input_name) == expected
+
+    # -------------------------------------------------------------------------
+    # Simple lowercase conversion
+    # -------------------------------------------------------------------------
+
+    @pytest.mark.parametrize(
+        ("input_name", "expected"),
+        [
+            ("active", "ACTIVE"),
+            ("status", "STATUS"),
+            ("pending", "PENDING"),
+            ("value", "VALUE"),
+        ],
+    )
+    def test_simple_lowercase(self, input_name: str, expected: str) -> None:
+        """Test conversion of simple lowercase names."""
+        assert suggest_upper_snake_case(input_name) == expected
+
+    # -------------------------------------------------------------------------
+    # camelCase conversion
+    # -------------------------------------------------------------------------
+
+    @pytest.mark.parametrize(
+        ("input_name", "expected"),
+        [
+            ("someValue", "SOME_VALUE"),
+            ("camelCase", "CAMEL_CASE"),
+            ("myLongVariableName", "MY_LONG_VARIABLE_NAME"),
+            ("getValue", "GET_VALUE"),
+            ("isActive", "IS_ACTIVE"),
+        ],
+    )
+    def test_camel_case(self, input_name: str, expected: str) -> None:
+        """Test conversion of camelCase names."""
+        assert suggest_upper_snake_case(input_name) == expected
+
+    # -------------------------------------------------------------------------
+    # PascalCase conversion
+    # -------------------------------------------------------------------------
+
+    @pytest.mark.parametrize(
+        ("input_name", "expected"),
+        [
+            ("SomeValue", "SOME_VALUE"),
+            ("PascalCase", "PASCAL_CASE"),
+            ("MyClassName", "MY_CLASS_NAME"),
+            ("Status", "STATUS"),
+        ],
+    )
+    def test_pascal_case(self, input_name: str, expected: str) -> None:
+        """Test conversion of PascalCase names."""
+        assert suggest_upper_snake_case(input_name) == expected
+
+    # -------------------------------------------------------------------------
+    # Acronym handling
+    # -------------------------------------------------------------------------
+
+    @pytest.mark.parametrize(
+        ("input_name", "expected"),
+        [
+            ("HTTPResponse", "HTTP_RESPONSE"),
+            ("XMLParser", "XML_PARSER"),
+            ("URLConnection", "URL_CONNECTION"),
+            ("SSLContext", "SSL_CONTEXT"),
+            ("IOError", "IO_ERROR"),
+            ("HTMLElement", "HTML_ELEMENT"),
+            ("JSONData", "JSON_DATA"),
+        ],
+    )
+    def test_acronym_handling(self, input_name: str, expected: str) -> None:
+        """Test conversion of names containing acronyms.
+
+        The function detects acronym boundaries by finding uppercase letters
+        followed by lowercase letters after a sequence of uppercase letters.
+        """
+        assert suggest_upper_snake_case(input_name) == expected
+
+    # -------------------------------------------------------------------------
+    # Already correct (UPPER_SNAKE_CASE passthrough)
+    # -------------------------------------------------------------------------
+
+    @pytest.mark.parametrize(
+        "name",
+        [
+            "ALREADY_CORRECT",
+            "UPPER_SNAKE_CASE",
+            "HTTP_RESPONSE",
+            "SOME_VALUE",
+            "A",
+            "AB",
+            "ABC",
+            "STATUS",
+            "HTTP_2",
+            "V1",
+        ],
+    )
+    def test_already_upper_snake_case(self, name: str) -> None:
+        """Test that already correct UPPER_SNAKE_CASE names pass through unchanged."""
+        assert suggest_upper_snake_case(name) == name
+
+    # -------------------------------------------------------------------------
+    # Empty string edge case
+    # -------------------------------------------------------------------------
+
+    def test_empty_string(self) -> None:
+        """Test that empty string returns empty string."""
+        assert suggest_upper_snake_case("") == ""
+
+    # -------------------------------------------------------------------------
+    # Single character edge cases
+    # -------------------------------------------------------------------------
+
+    @pytest.mark.parametrize(
+        ("input_name", "expected"),
+        [
+            ("a", "A"),
+            ("A", "A"),
+            ("z", "Z"),
+            ("Z", "Z"),
+        ],
+    )
+    def test_single_letter(self, input_name: str, expected: str) -> None:
+        """Test conversion of single letters."""
+        assert suggest_upper_snake_case(input_name) == expected
+
+    # -------------------------------------------------------------------------
+    # Numbers in names
+    # -------------------------------------------------------------------------
+
+    @pytest.mark.parametrize(
+        ("input_name", "expected"),
+        [
+            ("HTTP2", "HTTP2"),
+            ("http2", "HTTP2"),
+            ("SHA256", "SHA256"),
+            ("sha256", "SHA256"),
+            ("V1", "V1"),
+            ("v1", "V1"),
+            ("status200", "STATUS200"),
+            ("error404", "ERROR404"),
+        ],
+    )
+    def test_numbers_in_names(self, input_name: str, expected: str) -> None:
+        """Test conversion of names containing numbers.
+
+        Numbers do not trigger underscore insertion because they are neither
+        uppercase nor lowercase (isupper/islower both return False).
+        """
+        assert suggest_upper_snake_case(input_name) == expected
+
+    @pytest.mark.parametrize(
+        ("input_name", "expected"),
+        [
+            # Numbers do not trigger underscore insertion - digits are neither
+            # isupper() nor islower(), so they don't satisfy the conditions for
+            # inserting an underscore before the following uppercase letter.
+            ("V1Beta", "V1BETA"),
+            ("HTTP2Response", "HTTP2RESPONSE"),
+            ("SHA256Hash", "SHA256HASH"),
+        ],
+    )
+    def test_numbers_followed_by_pascal_case(
+        self, input_name: str, expected: str
+    ) -> None:
+        """Test names with numbers followed by PascalCase word.
+
+        Note: The function does NOT insert underscores after digits because
+        digits are neither uppercase nor lowercase (isupper/islower return
+        False), so the underscore insertion conditions are not met.
+        """
+        assert suggest_upper_snake_case(input_name) == expected
+
+    # -------------------------------------------------------------------------
+    # Leading underscore handling
+    # -------------------------------------------------------------------------
+
+    @pytest.mark.parametrize(
+        ("input_name", "expected"),
+        [
+            ("_private", "PRIVATE"),
+            ("_value", "VALUE"),
+            ("_someValue", "SOME_VALUE"),
+        ],
+    )
+    def test_leading_underscore_stripped(self, input_name: str, expected: str) -> None:
+        """Test that leading underscores are stripped from the result."""
+        assert suggest_upper_snake_case(input_name) == expected
+
+    # -------------------------------------------------------------------------
+    # Trailing underscore handling
+    # -------------------------------------------------------------------------
+
+    @pytest.mark.parametrize(
+        ("input_name", "expected"),
+        [
+            ("value_", "VALUE"),
+            ("status_", "STATUS"),
+            ("someValue_", "SOME_VALUE"),
+        ],
+    )
+    def test_trailing_underscore_stripped(self, input_name: str, expected: str) -> None:
+        """Test that trailing underscores are stripped from the result."""
+        assert suggest_upper_snake_case(input_name) == expected
+
+    # -------------------------------------------------------------------------
+    # Dunder name handling
+    # -------------------------------------------------------------------------
+
+    @pytest.mark.parametrize(
+        ("input_name", "expected"),
+        [
+            ("__dunder__", "DUNDER"),
+            ("__init__", "INIT"),
+            ("__name__", "NAME"),
+        ],
+    )
+    def test_dunder_names(self, input_name: str, expected: str) -> None:
+        """Test that dunder names have leading/trailing underscores stripped."""
+        assert suggest_upper_snake_case(input_name) == expected
+
+    # -------------------------------------------------------------------------
+    # Multiple underscore cleanup
+    # -------------------------------------------------------------------------
+
+    @pytest.mark.parametrize(
+        ("input_name", "expected"),
+        [
+            ("some__value", "SOME_VALUE"),
+            ("a___b", "A_B"),
+            ("ALREADY__DOUBLE", "ALREADY_DOUBLE"),
+            ("multi____underscore", "MULTI_UNDERSCORE"),
+        ],
+    )
+    def test_multiple_underscores_collapsed(
+        self, input_name: str, expected: str
+    ) -> None:
+        """Test that multiple consecutive underscores are collapsed to single."""
+        assert suggest_upper_snake_case(input_name) == expected
+
+    # -------------------------------------------------------------------------
+    # Mixed case with underscores
+    # -------------------------------------------------------------------------
+
+    @pytest.mark.parametrize(
+        ("input_name", "expected"),
+        [
+            ("some_Value", "SOME_VALUE"),
+            ("Some_value", "SOME_VALUE"),
+            ("SOME_value", "SOME_VALUE"),
+            ("some_VALUE", "SOME_VALUE"),
+        ],
+    )
+    def test_mixed_case_with_underscores(self, input_name: str, expected: str) -> None:
+        """Test conversion of mixed case names that already contain underscores."""
+        assert suggest_upper_snake_case(input_name) == expected
+
+    # -------------------------------------------------------------------------
+    # Complex mixed patterns
+    # -------------------------------------------------------------------------
+
+    @pytest.mark.parametrize(
+        ("input_name", "expected"),
+        [
+            ("getHTTPResponseCode", "GET_HTTP_RESPONSE_CODE"),
+            ("parseXMLDocument", "PARSE_XML_DOCUMENT"),
+            ("loadURLFromAPI", "LOAD_URL_FROM_API"),
+            ("handleIOException", "HANDLE_IO_EXCEPTION"),
+        ],
+    )
+    def test_complex_mixed_patterns(self, input_name: str, expected: str) -> None:
+        """Test conversion of complex patterns mixing camelCase and acronyms."""
+        assert suggest_upper_snake_case(input_name) == expected
+
+    # -------------------------------------------------------------------------
+    # All uppercase input
+    # -------------------------------------------------------------------------
+
+    @pytest.mark.parametrize(
+        "name",
+        [
+            "HTTP",
+            "URL",
+            "API",
+            "XML",
+            "JSON",
+            "HTML",
+            "CSS",
+        ],
+    )
+    def test_all_uppercase_no_change(self, name: str) -> None:
+        """Test that all-uppercase acronyms remain unchanged."""
+        assert suggest_upper_snake_case(name) == name
 
 
 # =============================================================================
