@@ -40,7 +40,7 @@ ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages"
 # API version is pinned for stability - Anthropic recommends using a fixed version
 # to ensure consistent behavior. Update when new features are needed.
 ANTHROPIC_VERSION = "2023-06-01"
-DEFAULT_MODEL = "claude-4-sonnet-20250514"
+DEFAULT_MODEL = "claude-sonnet-4-20250514"
 DEFAULT_TIMEOUT = 60.0
 
 
@@ -52,7 +52,7 @@ class AnthropicLLMClient:
 
     Attributes:
         api_key: Anthropic API key.
-        model_name: Model identifier (e.g., "claude-4-sonnet-20250514").
+        model_name: Model identifier (e.g., "claude-sonnet-4-20250514").
         temperature: Sampling temperature for response generation.
         max_tokens: Maximum tokens to generate.
         timeout: Request timeout in seconds.
@@ -71,7 +71,7 @@ class AnthropicLLMClient:
         Args:
             api_key: Anthropic API key.
                 Defaults to ANTHROPIC_API_KEY environment variable.
-            model_name: Model identifier (e.g., "claude-4-sonnet-20250514").
+            model_name: Model identifier (e.g., "claude-sonnet-4-20250514").
             temperature: Sampling temperature (0.0 to 1.0 for Anthropic).
             max_tokens: Maximum tokens to generate.
             timeout: Request timeout in seconds.
@@ -127,10 +127,14 @@ class AnthropicLLMClient:
 
         api_key = os.getenv(config.api_key_env)
 
+        # Clamp temperature to Anthropic's valid range (0.0-1.0)
+        # ModelConfig may allow higher values for other providers
+        temperature = min(max(config.temperature, 0.0), 1.0)
+
         return cls(
             api_key=api_key,
             model_name=config.model_name,
-            temperature=config.temperature,
+            temperature=temperature,
             max_tokens=config.max_tokens,
         )
 
@@ -153,8 +157,8 @@ class AnthropicLLMClient:
         Raises:
             ModelOnexError: If the HTTP request fails, times out, or response
                 format is unexpected. Wraps underlying httpx errors with
-                appropriate error codes (EXTERNAL_SERVICE_ERROR, TIMEOUT_ERROR,
-                PROCESSING_ERROR).
+                appropriate error codes (SERVICE_UNAVAILABLE, NETWORK_ERROR,
+                TIMEOUT_ERROR, PROCESSING_ERROR).
         """
         messages = [{"role": "user", "content": prompt}]
 
@@ -209,7 +213,7 @@ class AnthropicLLMClient:
             # boundary-ok: wrap HTTP errors with structured error for API boundary
             raise ModelOnexError(
                 message=f"Anthropic API request failed: {e.response.status_code}",
-                error_code=EnumCoreErrorCode.EXTERNAL_SERVICE_ERROR,
+                error_code=EnumCoreErrorCode.SERVICE_UNAVAILABLE,
                 status_code=e.response.status_code,
                 model=self.model_name,
             ) from e
@@ -225,7 +229,7 @@ class AnthropicLLMClient:
             # boundary-ok: wrap network errors with structured error for API boundary
             raise ModelOnexError(
                 message=f"Anthropic API request failed: {e!s}",
-                error_code=EnumCoreErrorCode.EXTERNAL_SERVICE_ERROR,
+                error_code=EnumCoreErrorCode.NETWORK_ERROR,
                 model=self.model_name,
             ) from e
 

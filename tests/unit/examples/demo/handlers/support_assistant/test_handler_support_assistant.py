@@ -326,7 +326,7 @@ class TestErrorHandling:
 
         # Verify structured error properties
         error = exc_info.value
-        assert error.error_code == EnumCoreErrorCode.OPERATION_FAILED
+        assert error.error_code == EnumCoreErrorCode.HANDLER_EXECUTION_ERROR
         # Context may be nested; check error_type is captured somewhere in context
         context_str = str(error.context)
         assert "error_type" in context_str

@@ -14,7 +14,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 
-class SupportResponse(BaseModel):
+class SupportResponse(BaseModel):  # type: ignore[explicit-any]
     """Output schema for support assistant.
 
     This model represents the AI assistant's response to a support request,

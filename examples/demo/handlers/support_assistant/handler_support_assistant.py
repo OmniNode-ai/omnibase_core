@@ -146,12 +146,14 @@ class SupportAssistantHandler:
         """
         self.container = container
 
-        # Fail-fast: Resolve LLM client with explicit type and protocol checking
-        llm_client = container.get_service("ProtocolLLMClient")
+        # Fail-fast DI resolution: Missing services fail immediately with typed error
+        llm_client: ProtocolLLMClient | None = container.get_service(
+            "ProtocolLLMClient"  # type: ignore[arg-type]
+        )
         if llm_client is None:
             raise ModelOnexError(
                 message="Required service 'ProtocolLLMClient' not found in container",
-                error_code=EnumCoreErrorCode.CONFIGURATION_ERROR,
+                error_code=EnumCoreErrorCode.SERVICE_UNAVAILABLE,
                 context={"service_name": "ProtocolLLMClient"},
             )
         # Verify protocol compliance via duck-typing (check required method exists)
@@ -161,20 +163,23 @@ class SupportAssistantHandler:
                     "Service 'ProtocolLLMClient' does not implement "
                     "required 'complete' method"
                 ),
-                error_code=EnumCoreErrorCode.CONFIGURATION_ERROR,
+                error_code=EnumCoreErrorCode.CONTRACT_VIOLATION,
                 context={
                     "service_name": "ProtocolLLMClient",
                     "missing_method": "complete",
+                    "protocol": "ProtocolLLMClient",
                 },
             )
         self.llm_client: ProtocolLLMClient = llm_client
 
-        # Fail-fast: Resolve logger with explicit type checking
-        logger = container.get_service("ProtocolLogger")
+        # Fail-fast DI resolution: Missing logger fails immediately with typed error
+        logger: object | None = container.get_service(
+            "ProtocolLogger"  # type: ignore[arg-type]
+        )
         if logger is None:
             raise ModelOnexError(
                 message="Required service 'ProtocolLogger' not found in container",
-                error_code=EnumCoreErrorCode.CONFIGURATION_ERROR,
+                error_code=EnumCoreErrorCode.SERVICE_UNAVAILABLE,
                 context={"service_name": "ProtocolLogger"},
             )
         # Verify protocol compliance via duck-typing (check required method exists)
@@ -184,10 +189,11 @@ class SupportAssistantHandler:
                     "Service 'ProtocolLogger' does not implement "
                     "required 'error' method"
                 ),
-                error_code=EnumCoreErrorCode.CONFIGURATION_ERROR,
+                error_code=EnumCoreErrorCode.CONTRACT_VIOLATION,
                 context={
                     "service_name": "ProtocolLogger",
                     "missing_method": "error",
+                    "protocol": "ProtocolLogger",
                 },
             )
         self.logger: object = logger
@@ -217,13 +223,29 @@ class SupportAssistantHandler:
         except ModelOnexError:
             # Re-raise ONEX errors as-is (already structured)
             raise
-        except (json.JSONDecodeError, ValidationError) as e:
-            # Structured handling for parse/validation errors
-            # Log error type without exposing raw details
+        except json.JSONDecodeError as e:
+            # Structured handling for JSON parse errors - no raw details in message
             self._log_error(f"Response parsing failed: {type(e).__name__}")
             raise ModelOnexError(
-                message="Failed to parse LLM response",
-                error_code=EnumCoreErrorCode.OPERATION_FAILED,
+                message="Failed to parse LLM response as JSON",
+                error_code=EnumCoreErrorCode.PARSING_ERROR,
+                context={"error_type": "JSONDecodeError"},
+            ) from e
+        except ValidationError as e:
+            # Structured handling for Pydantic validation errors - no raw details
+            self._log_error(f"Response validation failed: {type(e).__name__}")
+            raise ModelOnexError(
+                message="LLM response failed schema validation",
+                error_code=EnumCoreErrorCode.VALIDATION_FAILED,
+                context={"error_type": "ValidationError", "error_count": e.error_count()},
+            ) from e
+        except (AttributeError, KeyError, TypeError) as e:
+            # catch-all-ok: common runtime errors during response processing
+            # Log error class without exposing raw message (may contain PII)
+            self._log_error(f"Response processing failed: {type(e).__name__}")
+            raise ModelOnexError(
+                message="Failed to process LLM response",
+                error_code=EnumCoreErrorCode.PROCESSING_ERROR,
                 context={"error_type": type(e).__name__},
             ) from e
         except Exception as e:
@@ -232,7 +254,7 @@ class SupportAssistantHandler:
             self._log_error(f"Request handling failed: {type(e).__name__}")
             raise ModelOnexError(
                 message="An error occurred processing your request",
-                error_code=EnumCoreErrorCode.OPERATION_FAILED,
+                error_code=EnumCoreErrorCode.HANDLER_EXECUTION_ERROR,
                 context={"error_type": type(e).__name__},
             ) from e
 
@@ -242,6 +264,11 @@ class SupportAssistantHandler:
         Note: User identifiers and other PII are intentionally excluded from
         the prompt to prevent PII leakage to the LLM. Only the message content
         and non-PII metadata are included.
+
+        PII Validation:
+            - User identifier is NEVER included in prompts
+            - Context fields are filtered via _filter_pii_from_context()
+            - Validation asserts PII fields are removed before LLM call
 
         Args:
             request: The support request to format.
@@ -254,7 +281,7 @@ class SupportAssistantHandler:
         # Add user message (content only, no identifiers)
         parts.append(f"User Message: {request.message}")
 
-        # Note: User identifier intentionally excluded to minimize PII in prompts
+        # SECURITY: User identifier intentionally excluded to minimize PII in prompts
         # The identifier is tracked server-side for request correlation
 
         # Add urgency level (non-PII metadata)
@@ -264,11 +291,55 @@ class SupportAssistantHandler:
         if request.context:
             # Filter context to exclude common PII fields
             safe_context = self._filter_pii_from_context(request.context)
+
+            # PII Validation: Assert that known PII fields were filtered out
+            self._validate_pii_filtered(request.context, safe_context)
+
             if safe_context:
                 context_str = json.dumps(safe_context, indent=2)
                 parts.append(f"Previous Context:\n{context_str}")
 
         return "\n\n".join(parts)
+
+    def _validate_pii_filtered(
+        self, original: dict[str, str], filtered: dict[str, str]
+    ) -> None:
+        """Validate that PII fields were properly filtered from context.
+
+        This is a defense-in-depth check to ensure PII filtering is working
+        correctly before sending data to the LLM.
+
+        Args:
+            original: The original context dictionary.
+            filtered: The filtered context dictionary.
+
+        Raises:
+            ModelOnexError: If PII fields are detected in the filtered output.
+        """
+        # Critical PII fields that MUST be filtered
+        critical_pii_fields = {
+            "email",
+            "phone",
+            "ssn",
+            "social_security",
+            "credit_card",
+            "password",
+            "api_key",
+            "user_id",
+            "user_identifier",
+        }
+
+        # Check that no critical PII fields exist in filtered output
+        leaked_fields = critical_pii_fields & set(filtered.keys())
+        if leaked_fields:
+            raise ModelOnexError(
+                message="PII filtering failed: critical fields detected in output",
+                error_code=EnumCoreErrorCode.SECURITY_VIOLATION,
+                context={
+                    "leaked_field_count": len(leaked_fields),
+                    # Don't log actual field names to avoid PII in logs
+                },
+            )
 
     def _filter_pii_from_context(self, context: dict[str, str]) -> dict[str, str]:
         """Filter potential PII fields from context before sending to LLM.
@@ -463,12 +534,24 @@ class SupportAssistantHandler:
         return None
 
     def _validate_json_structure(self, data: object) -> bool:
-        """Validate that parsed JSON has the expected structure.
+        """Validate that parsed JSON has the expected SupportResponse schema shape.
 
-        Performs strict validation to ensure the parsed JSON matches the
-        expected SupportResponse schema. Required fields must be present
-        and have valid types. Uses module-level constants extracted from
-        the model annotations for DRY compliance.
+        JSON Schema Validation:
+            This method performs structural validation BEFORE creating the Pydantic
+            model. This two-phase validation (shape check then Pydantic) provides:
+            1. Early rejection of malformed LLM responses
+            2. Clear separation between parsing errors and validation errors
+            3. Defense against injection attacks via unexpected field types
+
+        Expected Schema Shape:
+            {
+                "response_text": str (non-empty, required),
+                "suggested_actions": list[str] (optional),
+                "confidence": float (0.0-1.0, required),
+                "requires_escalation": bool (required),
+                "category": Literal["billing", "technical", "general", "account"],
+                "sentiment": Literal["positive", "neutral", "negative"]
+            }
 
         Args:
             data: The parsed JSON object to validate.
@@ -489,40 +572,45 @@ class SupportAssistantHandler:
             "sentiment",
         }
 
-        # Check all required fields are present
+        # Schema validation: Check all required fields are present
         if not required_fields.issubset(set(data.keys())):
             return False
 
-        # Validate response_text is a non-empty string
+        # Schema validation: response_text must be a non-empty string
         response_text = data.get("response_text")
         if not isinstance(response_text, str) or not response_text.strip():
             return False
 
-        # Validate confidence is a number
+        # Schema validation: confidence must be a number (int or float)
         confidence = data.get("confidence")
         if not isinstance(confidence, (int, float)):
             return False
 
-        # Validate requires_escalation is boolean
+        # Schema validation: requires_escalation must be boolean
         requires_escalation = data.get("requires_escalation")
         if not isinstance(requires_escalation, bool):
             return False
 
-        # Validate category using module-level constant extracted from model
+        # Schema validation: category must be one of the valid Literal values
+        # Uses module-level VALID_CATEGORIES extracted from model annotations
         category = data.get("category")
         if not isinstance(category, str) or category.lower() not in VALID_CATEGORIES:
             return False
 
-        # Validate sentiment using module-level constant extracted from model
+        # Schema validation: sentiment must be one of the valid Literal values
+        # Uses module-level VALID_SENTIMENTS extracted from model annotations
         sentiment = data.get("sentiment")
         if not isinstance(sentiment, str) or sentiment.lower() not in VALID_SENTIMENTS:
             return False
 
+        # Optional field validation: suggested_actions must be a list if present
+        suggested_actions = data.get("suggested_actions")
+        if suggested_actions is not None and not isinstance(suggested_actions, list):
+            return False
+
         return True
 
-    @allow_dict_any(  # type: ignore[untyped-decorator]
-        reason="LLM JSON responses have arbitrary structure"
-    )
+    @allow_dict_any(reason="LLM JSON responses have arbitrary structure")
     def _create_validated_response(self, data: dict[str, object]) -> SupportResponse:
         """Create and validate SupportResponse using Pydantic.
 

@@ -25,7 +25,8 @@ descriptor:
   handler_kind: effect
   purity: side_effecting
   # LLM handlers cannot guarantee idempotency - same input may produce different
-  # outputs due to model temperature, context window state, and API variations
+  # outputs due to model temperature, sampling, context window state, and API
+  # variations. Use nondeterministic_effect: true in execution_constraints.
   idempotent: false
   timeout_ms: 30000  # LLM calls can be slow
   retry_policy:

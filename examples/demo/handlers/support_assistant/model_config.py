@@ -20,7 +20,7 @@ Example:
 
         config = ModelConfig(
             provider="anthropic",
-            model_name="claude-sonnet-4-20250514",
+            model_name="claude-4-sonnet-20250514",
             temperature=0.5,
             max_tokens=1000,
             api_key_env="ANTHROPIC_API_KEY",
@@ -44,7 +44,7 @@ __all__ = [
 
 
 # Pydantic models for contract provider_config validation
-class _CloudProviderConfig(BaseModel):
+class _CloudProviderConfig(BaseModel):  # type: ignore[explicit-any]  # Pydantic BaseModel uses Any internally
     """Configuration for cloud LLM providers (OpenAI, Anthropic)."""
 
     model_config = ConfigDict(extra="forbid")
@@ -55,7 +55,7 @@ class _CloudProviderConfig(BaseModel):
     api_key_env: str
 
 
-class _LocalProviderConfig(BaseModel):
+class _LocalProviderConfig(BaseModel):  # type: ignore[explicit-any]  # Pydantic BaseModel uses Any internally
     """Configuration for local LLM providers."""
 
     model_config = ConfigDict(extra="forbid")
@@ -67,7 +67,7 @@ class _LocalProviderConfig(BaseModel):
     default_endpoint: str = "http://localhost:8000"
 
 
-class _ProviderConfigSection(BaseModel):
+class _ProviderConfigSection(BaseModel):  # type: ignore[explicit-any]  # Pydantic BaseModel uses Any internally
     """The provider_config section of the contract."""
 
     model_config = ConfigDict(extra="forbid")
@@ -77,7 +77,7 @@ class _ProviderConfigSection(BaseModel):
     local: _LocalProviderConfig
 
 
-class _ContractMetadata(BaseModel):
+class _ContractMetadata(BaseModel):  # type: ignore[explicit-any]  # Pydantic BaseModel uses Any internally
     """Metadata section containing provider_config."""
 
     model_config = ConfigDict(extra="ignore")  # Ignore other metadata fields
@@ -85,7 +85,7 @@ class _ContractMetadata(BaseModel):
     provider_config: _ProviderConfigSection
 
 
-class _ContractWithProviderConfig(BaseModel):
+class _ContractWithProviderConfig(BaseModel):  # type: ignore[explicit-any]  # Pydantic BaseModel uses Any internally
     """Partial contract model for extracting provider_config from metadata."""
 
     model_config = ConfigDict(extra="ignore")  # Ignore other contract fields
@@ -93,7 +93,7 @@ class _ContractWithProviderConfig(BaseModel):
     metadata: _ContractMetadata
 
 
-class ModelConfig(BaseModel):
+class ModelConfig(BaseModel):  # type: ignore[explicit-any]  # Pydantic BaseModel uses Any internally
     """Configuration for the LLM provider.
 
     This model allows swapping between different LLM providers (OpenAI, Anthropic,
@@ -102,7 +102,7 @@ class ModelConfig(BaseModel):
 
     Attributes:
         provider: The LLM provider type ("openai", "anthropic", or "local").
-        model_name: The name of the model to use (e.g., "gpt-4o", "claude-sonnet-4").
+        model_name: The name of the model to use (e.g., "gpt-4o", "claude-4-sonnet").
         endpoint_url: Custom endpoint URL for local/custom providers. Required for
             "local" provider, optional for cloud providers.
         temperature: Sampling temperature (0.0 to 2.0). Higher values make output
@@ -246,7 +246,7 @@ def load_config_from_contract(
 # periodic updates as providers release newer versions. Last verified: 2025-05.
 #
 # - OpenAI: Uses short model names (e.g., "gpt-4o", "gpt-4-turbo")
-# - Anthropic: Uses versioned names with dates (e.g., "claude-sonnet-4-20250514")
+# - Anthropic: Uses versioned names with dates (e.g., "claude-4-sonnet-20250514")
 # - Local: Uses model family names (e.g., "qwen2.5-coder-14b")
 
 OPENAI_CONFIG = ModelConfig(

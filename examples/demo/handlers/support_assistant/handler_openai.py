@@ -147,8 +147,8 @@ class OpenAILLMClient:
         Raises:
             ModelOnexError: If the HTTP request fails, times out, or response
                 format is unexpected. Wraps underlying httpx errors with
-                appropriate error codes (EXTERNAL_SERVICE_ERROR, TIMEOUT_ERROR,
-                PROCESSING_ERROR).
+                appropriate error codes (SERVICE_UNAVAILABLE, NETWORK_ERROR,
+                TIMEOUT_ERROR, PROCESSING_ERROR).
         """
         messages = []
 
@@ -200,7 +200,7 @@ class OpenAILLMClient:
                     )
 
                 message = choices[0].get("message", {})
-                content = message.get("content", "")
+                content: str = str(message.get("content", ""))
 
                 return content
 
@@ -208,7 +208,7 @@ class OpenAILLMClient:
             # boundary-ok: wrap HTTP errors with structured error for API boundary
             raise ModelOnexError(
                 message=f"OpenAI API request failed: {e.response.status_code}",
-                error_code=EnumCoreErrorCode.EXTERNAL_SERVICE_ERROR,
+                error_code=EnumCoreErrorCode.SERVICE_UNAVAILABLE,
                 status_code=e.response.status_code,
                 model=self.model_name,
             ) from e
@@ -224,7 +224,7 @@ class OpenAILLMClient:
             # boundary-ok: wrap network errors with structured error for API boundary
             raise ModelOnexError(
                 message=f"OpenAI API request failed: {e!s}",
-                error_code=EnumCoreErrorCode.EXTERNAL_SERVICE_ERROR,
+                error_code=EnumCoreErrorCode.NETWORK_ERROR,
                 model=self.model_name,
             ) from e
 
