@@ -53,7 +53,7 @@ class ModelEffectMetadata(BaseModel):
     )
     priority: EnumEventPriority | None = Field(
         default=None,
-        description="Operation priority (low, normal, high, critical)",
+        description="Operation priority (see EnumEventPriority: LOW, NORMAL, HIGH, CRITICAL, DEFERRED)",
     )
     retry_count: int | None = Field(
         default=None,

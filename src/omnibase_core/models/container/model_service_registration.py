@@ -3,7 +3,7 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums import (
     EnumHealthStatus,
@@ -40,15 +40,22 @@ class ModelServiceRegistration(BaseModel):
     Example:
         ```python
         from uuid import UUID
+        from omnibase_core.enums import (
+            EnumServiceLifecycle,
+            EnumInjectionScope,
+            EnumRegistrationStatus,
+        )
         registration = ModelServiceRegistration(
             registration_id=UUID("12345678-1234-5678-1234-567812345678"),
             service_metadata=metadata,
-            lifecycle="singleton",
-            scope="global",
-            registration_status="registered",
+            lifecycle=EnumServiceLifecycle.SINGLETON,
+            scope=EnumInjectionScope.GLOBAL,
+            registration_status=EnumRegistrationStatus.REGISTERED,
         )
         ```
     """
+
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
 
     registration_id: UUID = Field(description="Unique registration ID")
     service_metadata: ModelServiceMetadata = Field(description="Service metadata")

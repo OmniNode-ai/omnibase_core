@@ -53,7 +53,7 @@ class ModelRequestMetadata(BaseModel):
     )
     priority: EnumEventPriority | None = Field(
         default=None,
-        description="Request priority level (low, normal, high, critical)",
+        description="Request priority level (see EnumEventPriority: LOW, NORMAL, HIGH, CRITICAL, DEFERRED)",
     )
     tags: list[str] = Field(
         default_factory=list,

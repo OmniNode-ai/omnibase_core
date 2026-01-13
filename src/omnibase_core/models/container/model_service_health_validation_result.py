@@ -37,10 +37,12 @@ class ModelServiceHealthValidationResult(BaseModel):
 
     Example:
         ```python
+        from uuid import UUID
+        from omnibase_core.enums import EnumHealthStatus
         result = ModelServiceHealthValidationResult(
             registration_id=UUID("12345678-..."),
             is_healthy=True,
-            health_status="healthy",
+            health_status=EnumHealthStatus.HEALTHY,
             response_time_ms=5.2,
             instance_count=1,
         )

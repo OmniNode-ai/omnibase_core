@@ -24,6 +24,8 @@ class TestEnumHealthStatus:
         assert EnumHealthStatus.UNREACHABLE == "unreachable"
         assert EnumHealthStatus.AVAILABLE == "available"
         assert EnumHealthStatus.UNAVAILABLE == "unavailable"
+        assert EnumHealthStatus.INITIALIZING == "initializing"
+        assert EnumHealthStatus.DISPOSING == "disposing"
         assert EnumHealthStatus.ERROR == "error"
 
     def test_enum_inheritance(self):
@@ -42,12 +44,14 @@ class TestEnumHealthStatus:
         assert str(EnumHealthStatus.UNREACHABLE) == "unreachable"
         assert str(EnumHealthStatus.AVAILABLE) == "available"
         assert str(EnumHealthStatus.UNAVAILABLE) == "unavailable"
+        assert str(EnumHealthStatus.INITIALIZING) == "initializing"
+        assert str(EnumHealthStatus.DISPOSING) == "disposing"
         assert str(EnumHealthStatus.ERROR) == "error"
 
     def test_enum_iteration(self):
         """Test that we can iterate over enum values."""
         values = list(EnumHealthStatus)
-        assert len(values) == 10
+        assert len(values) == 12
         assert EnumHealthStatus.HEALTHY in values
         assert EnumHealthStatus.DEGRADED in values
         assert EnumHealthStatus.UNHEALTHY in values
@@ -57,6 +61,8 @@ class TestEnumHealthStatus:
         assert EnumHealthStatus.UNREACHABLE in values
         assert EnumHealthStatus.AVAILABLE in values
         assert EnumHealthStatus.UNAVAILABLE in values
+        assert EnumHealthStatus.INITIALIZING in values
+        assert EnumHealthStatus.DISPOSING in values
         assert EnumHealthStatus.ERROR in values
 
     def test_enum_membership(self):
@@ -70,6 +76,8 @@ class TestEnumHealthStatus:
         assert "unreachable" in EnumHealthStatus
         assert "available" in EnumHealthStatus
         assert "unavailable" in EnumHealthStatus
+        assert "initializing" in EnumHealthStatus
+        assert "disposing" in EnumHealthStatus
         assert "error" in EnumHealthStatus
         assert "invalid" not in EnumHealthStatus
 
@@ -84,6 +92,8 @@ class TestEnumHealthStatus:
         assert EnumHealthStatus.UNREACHABLE == "unreachable"
         assert EnumHealthStatus.AVAILABLE == "available"
         assert EnumHealthStatus.UNAVAILABLE == "unavailable"
+        assert EnumHealthStatus.INITIALIZING == "initializing"
+        assert EnumHealthStatus.DISPOSING == "disposing"
         assert EnumHealthStatus.ERROR == "error"
 
     def test_enum_serialization(self):
@@ -97,6 +107,8 @@ class TestEnumHealthStatus:
         assert EnumHealthStatus.UNREACHABLE.value == "unreachable"
         assert EnumHealthStatus.AVAILABLE.value == "available"
         assert EnumHealthStatus.UNAVAILABLE.value == "unavailable"
+        assert EnumHealthStatus.INITIALIZING.value == "initializing"
+        assert EnumHealthStatus.DISPOSING.value == "disposing"
         assert EnumHealthStatus.ERROR.value == "error"
 
     def test_enum_deserialization(self):
@@ -110,6 +122,8 @@ class TestEnumHealthStatus:
         assert EnumHealthStatus("unreachable") == EnumHealthStatus.UNREACHABLE
         assert EnumHealthStatus("available") == EnumHealthStatus.AVAILABLE
         assert EnumHealthStatus("unavailable") == EnumHealthStatus.UNAVAILABLE
+        assert EnumHealthStatus("initializing") == EnumHealthStatus.INITIALIZING
+        assert EnumHealthStatus("disposing") == EnumHealthStatus.DISPOSING
         assert EnumHealthStatus("error") == EnumHealthStatus.ERROR
 
     def test_enum_invalid_values(self):
@@ -130,6 +144,8 @@ class TestEnumHealthStatus:
             "unreachable",
             "available",
             "unavailable",
+            "initializing",
+            "disposing",
             "error",
         ]
         assert set(all_values) == set(expected_values)
@@ -151,6 +167,8 @@ class TestEnumHealthStatus:
         assert EnumHealthStatus.UNREACHABLE.is_operational() is False
         assert EnumHealthStatus.AVAILABLE.is_operational() is False
         assert EnumHealthStatus.UNAVAILABLE.is_operational() is False
+        assert EnumHealthStatus.INITIALIZING.is_operational() is False
+        assert EnumHealthStatus.DISPOSING.is_operational() is False
         assert EnumHealthStatus.ERROR.is_operational() is False
 
     def test_requires_attention_method(self):
@@ -164,4 +182,6 @@ class TestEnumHealthStatus:
         assert EnumHealthStatus.UNREACHABLE.requires_attention() is False
         assert EnumHealthStatus.AVAILABLE.requires_attention() is False
         assert EnumHealthStatus.UNAVAILABLE.requires_attention() is False
+        assert EnumHealthStatus.INITIALIZING.requires_attention() is False
+        assert EnumHealthStatus.DISPOSING.requires_attention() is False
         assert EnumHealthStatus.ERROR.requires_attention() is False

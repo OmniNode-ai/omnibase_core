@@ -73,7 +73,7 @@ class TestModelEffectMetadataValidation:
             correlation_id="corr-789",
             environment="production",
             tags=["tag1", "tag2"],
-            priority="high",
+            priority="HIGH",
             retry_count=3,
         )
 
@@ -83,7 +83,7 @@ class TestModelEffectMetadataValidation:
         assert metadata.correlation_id == "corr-789"
         assert metadata.environment == "production"
         assert metadata.tags == ["tag1", "tag2"]
-        assert metadata.priority == "high"
+        assert metadata.priority == "HIGH"
         assert metadata.retry_count == 3
 
     def test_rejects_dict_unpacking_with_extra_keys(self) -> None:

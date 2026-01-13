@@ -42,11 +42,13 @@ class ModelInjectionContext(BaseModel):
 
     Example:
         ```python
+        from uuid import uuid4, UUID
+        from omnibase_core.enums import EnumInjectionScope, EnumServiceResolutionStatus
         context = ModelInjectionContext(
             context_id=uuid4(),
             target_service_id=UUID("12345678-..."),
-            scope="global",
-            resolution_status="resolved",
+            scope=EnumInjectionScope.GLOBAL,
+            resolution_status=EnumServiceResolutionStatus.RESOLVED,
         )
         ```
 

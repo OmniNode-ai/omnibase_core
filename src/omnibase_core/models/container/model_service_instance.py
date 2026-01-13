@@ -31,17 +31,22 @@ class ModelServiceInstance(BaseModel):
     Example:
         ```python
         from uuid import UUID
+        from omnibase_core.enums import EnumServiceLifecycle, EnumInjectionScope
         instance = ModelServiceInstance(
             instance_id=UUID("12345678-1234-5678-1234-567812345678"),
             service_registration_id=UUID("87654321-4321-8765-4321-876543218765"),
             instance=logger_instance,
-            lifecycle="singleton",
-            scope="global",
+            lifecycle=EnumServiceLifecycle.SINGLETON,
+            scope=EnumInjectionScope.GLOBAL,
         )
         ```
     """
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    model_config = ConfigDict(
+        extra="forbid",
+        from_attributes=True,
+        arbitrary_types_allowed=True,
+    )
 
     instance_id: UUID = Field(description="Unique instance identifier")
     service_registration_id: UUID = Field(description="Registration ID")

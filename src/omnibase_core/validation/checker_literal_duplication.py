@@ -198,13 +198,18 @@ def _is_literal_alias_name(name: str) -> bool:
 
     Matches patterns like:
     - LiteralFoo (starts with Literal, followed by capital letter)
-    - FooLiteral (ends with Literal, preceded by capital letter)
+    - FooLiteral (ends with Literal, preceded by PascalCase prefix)
 
     Args:
         name: The alias name to check.
 
     Returns:
         True if the name matches a Literal alias pattern, False otherwise.
+
+    Note:
+        The FooLiteral pattern requires the prefix to start with an uppercase
+        letter (PascalCase convention) to avoid false positives on names like
+        'literalLiteral' or '_somethingLiteral'.
     """
     # Pattern: LiteralFoo where Foo starts with uppercase
     if name.startswith("Literal") and len(name) > 7:
@@ -212,10 +217,12 @@ def _is_literal_alias_name(name: str) -> bool:
         if suffix and suffix[0].isupper():
             return True
 
-    # Pattern: FooLiteral where Foo ends with lowercase
+    # Pattern: FooLiteral where Foo follows PascalCase (starts with uppercase)
     if name.endswith("Literal") and len(name) > 7:
         prefix = name[:-7]
-        if prefix:
+        # Require prefix to start with uppercase for proper type alias convention
+        # This prevents false positives like 'literalLiteral' or '_fooLiteral'
+        if prefix and prefix[0].isupper():
             return True
 
     return False
@@ -224,27 +231,53 @@ def _is_literal_alias_name(name: str) -> bool:
 def normalize_literal_name(alias_name: str) -> str:
     """Normalize a Literal alias name for comparison with enum names.
 
-    Removes "Literal" prefix/suffix and converts to lowercase.
+    Removes "Literal" prefix/suffix and converts to lowercase. Handles edge
+    cases where "Literal" appears multiple times in the name.
 
     Examples:
         LiteralValidationLevel -> validationlevel
         StepTypeLiteral -> steptype
         LiteralHealthStatus -> healthstatus
+        LiteralLiteral -> literal (edge case: only strip once)
+        LiteralFooLiteral -> foo (both prefix and suffix removed)
 
     Args:
         alias_name: The Literal alias name to normalize.
 
     Returns:
         Lowercase normalized name without "Literal" prefix/suffix.
+        Returns at least the original name (lowercased) if stripping
+        would result in an empty string.
+
+    Note:
+        Edge case handling: If stripping both prefix AND suffix would result
+        in an empty string (e.g., "LiteralLiteral"), we only strip the prefix
+        to preserve a meaningful name for comparison.
     """
     normalized = alias_name
 
-    # Remove Literal prefix (case-sensitive)
-    if normalized.startswith("Literal"):
-        normalized = normalized[7:]
+    # Check for edge case: name is exactly "LiteralLiteral" or similar
+    # where stripping both would leave nothing meaningful
+    has_prefix = normalized.startswith("Literal") and len(normalized) > 7
+    has_suffix = normalized.endswith("Literal") and len(normalized) > 7
 
-    # Remove Literal suffix (case-sensitive)
-    if normalized.endswith("Literal"):
+    if has_prefix and has_suffix:
+        # Check if stripping both would result in empty string
+        # "LiteralLiteral" -> prefix strip -> "Literal" -> suffix strip -> ""
+        after_prefix = normalized[7:]
+        if after_prefix == "Literal":
+            # Only strip prefix, keep "Literal" as the normalized name
+            return "literal"
+        # Otherwise strip both (e.g., "LiteralFooLiteral" -> "Foo" -> "foo")
+        normalized = (
+            after_prefix[:-7] if after_prefix.endswith("Literal") else after_prefix
+        )
+        return normalized.lower()
+
+    # Standard case: strip prefix OR suffix (not both needed)
+    if has_prefix:
+        normalized = normalized[7:]
+    elif has_suffix:
         normalized = normalized[:-7]
 
     return normalized.lower()

@@ -3,7 +3,7 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums import (
     EnumHealthStatus,
@@ -44,6 +44,8 @@ class ModelServiceRegistryStatus(BaseModel):
         print(f"Active instances: {status.active_instances}")
         ```
     """
+
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
 
     registry_id: UUID = Field(description="Unique registry identifier")
     status: EnumOperationStatus = Field(description="Operational status")
