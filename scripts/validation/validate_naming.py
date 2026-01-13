@@ -221,6 +221,7 @@ class NamingConventionValidator:
             "MergeValidator",  # Merge phase validator (OMN-1128)
             "Validator*",  # All Validator* classes (ValidatorAnyType, ValidatorContractLinter, etc.) (OMN-1291)
             "*Visitor",  # All *Visitor classes (AnyTypeVisitor, etc.) for AST analysis (OMN-1291)
+            "Checker*",  # All Checker* classes (CheckerEnumMemberCasing, etc.) for AST analysis (OMN-1308)
         ],
         # MERGE INFRASTRUCTURE: Contract merge engine for typed contract merging
         # Location: merge/ - Contract merge framework implementations
