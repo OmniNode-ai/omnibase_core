@@ -618,7 +618,7 @@ class MixinServiceRegistry:
                     self.auto_cleanup_interval,
                     self._cleanup_and_reschedule,
                 )
-            except (RuntimeError, ValueError, AttributeError) as e:
+            except (AttributeError, RuntimeError, ValueError) as e:
                 logger.debug(f"Could not schedule cleanup task: {e}")
 
     def _cleanup_and_reschedule(self) -> None:

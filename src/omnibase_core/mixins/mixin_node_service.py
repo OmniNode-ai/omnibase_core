@@ -509,6 +509,10 @@ class MixinNodeService:
             # Re-raise immediately without any I/O operations
             raise
         except (OSError, RuntimeError, ValueError) as e:
+            # boundary-ok: event loop must log and propagate non-fatal errors
+            # OSError: I/O errors during event processing
+            # RuntimeError: async context errors (e.g., loop closed)
+            # ValueError: invalid state during event processing
             self._log_error(f"Service event loop error: {e}")
             raise
 
@@ -546,6 +550,10 @@ class MixinNodeService:
                 # Re-raise immediately without any I/O operations
                 raise
             except (OSError, RuntimeError, ValueError) as e:
+                # boundary-ok: health monitor must log errors and exit gracefully
+                # OSError: I/O errors during health check
+                # RuntimeError: async context errors (e.g., loop closed)
+                # ValueError: invalid state during health monitoring
                 self._log_error(f"Health monitor error: {e}")
                 break  # Exit loop on exception
 
@@ -685,6 +693,10 @@ class MixinNodeService:
                 await event_bus.publish(shutdown_event)
 
         except (ModelOnexError, RuntimeError, ValueError) as e:
+            # cleanup-resilience-ok: shutdown event emission failure must not crash shutdown
+            # ModelOnexError: ONEX framework errors during event creation/emission
+            # RuntimeError: event bus or async context issues
+            # ValueError: invalid event data
             self._log_error(f"Failed to emit shutdown event: {e}")
 
     async def _cleanup_health_task(self) -> None:
@@ -711,7 +723,9 @@ class MixinNodeService:
             if not health_task.done():
                 health_task.cancel()
         except RuntimeError:
-            # Task is already being cancelled or event loop is closed
+            # cleanup-resilience-ok: task cancellation race condition or event loop closed
+            # RuntimeError can occur if task is already being cancelled concurrently
+            # or if the event loop has been closed during shutdown
             pass
 
         # Always await to ensure proper cleanup
@@ -780,6 +794,10 @@ class MixinNodeService:
             signal.signal(signal.SIGINT, signal_handler)
 
         except (OSError, RuntimeError, ValueError) as e:
+            # fallback-ok: signal handler registration is optional (may fail in threads)
+            # OSError: signal registration not allowed (e.g., not main thread)
+            # RuntimeError: event loop issues during handler setup
+            # ValueError: invalid signal number
             self._log_warning(f"Could not register signal handlers: {e}")
 
     def _extract_node_name(self) -> str:
@@ -806,7 +824,9 @@ class MixinNodeService:
                         method(self)
                         break
         except (AttributeError, TypeError):
-            # No introspection available, that's okay
+            # fallback-ok: introspection publishing is optional
+            # AttributeError: mixin method not available in MRO
+            # TypeError: method not callable or wrong signature
             pass
 
     def _log_info(self, message: str) -> None:

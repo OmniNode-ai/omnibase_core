@@ -177,8 +177,8 @@ def rebuild_model_references(
 
             - **INITIALIZATION_FAILED** (ONEX_CORE_087):
               - PydanticSchemaGenerationError: Invalid annotations or schema
-              - TypeError: Type mismatch during rebuild
-              - ValueError: Invalid values in model configuration
+              - VALIDATION_ERRORS (TypeError, ValidationError, ValueError):
+                Type mismatch, Pydantic validation failure, or invalid configuration
               - AttributeError: Missing attribute during module injection
 
             - **CONFIGURATION_ERROR** (ONEX_CORE_044):
@@ -416,9 +416,10 @@ def handle_subclass_forward_refs(
             succeed (as more modules load). This is handled gracefully.
 
         **rebuild_func raises other exceptions**:
-            Any exception other than ImportError, TypeError, or ValueError
-            will propagate normally (not caught by this function). This
-            includes RuntimeError, which indicates a critical failure.
+            Any exception other than ImportError or VALIDATION_ERRORS
+            (TypeError, ValidationError, ValueError) will propagate normally
+            (not caught by this function). This includes RuntimeError,
+            which indicates a critical failure.
 
     Examples:
         Standard usage in __init_subclass__:

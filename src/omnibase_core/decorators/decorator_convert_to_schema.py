@@ -221,7 +221,7 @@ def _parse_version_component(version_str: str, index: int) -> int:
         if not numeric_chars:
             return 0
         return int("".join(numeric_chars))
-    except (ValueError, IndexError):
+    except (IndexError, ValueError):
         return 0
 
 
