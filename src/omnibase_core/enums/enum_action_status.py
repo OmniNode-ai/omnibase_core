@@ -9,9 +9,9 @@ Actions progress through states from creation to completion or failure.
 
 State Machine:
     CREATED -> READY -> RUNNING -> COMPLETED
-                   |         |
-                   v         v
-                FAILED    FAILED
+       |         |         |
+       v         v         v
+     FAILED   FAILED    FAILED
 
 .. versionadded:: 0.6.5
     Added as part of OMN-1309 to replace hardcoded status strings with enum references.

@@ -258,5 +258,5 @@ class ModelActionMetadata(BaseModel):
             self.trust_score >= minimum_trust_score
             and not self.is_expired()
             and self.status
-            in [EnumActionStatus.CREATED.value, EnumActionStatus.READY.value]
+            in {EnumActionStatus.CREATED.value, EnumActionStatus.READY.value}
         )

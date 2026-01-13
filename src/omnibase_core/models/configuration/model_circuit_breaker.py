@@ -306,13 +306,16 @@ class ModelCircuitBreaker(BaseModel):
         """Accept both string and enum, normalize to string for serialization."""
         if isinstance(v, EnumCircuitBreakerState):
             return v.value
-        if isinstance(v, str) and v in {
+        valid_states = {
             EnumCircuitBreakerState.CLOSED.value,
             EnumCircuitBreakerState.OPEN.value,
             EnumCircuitBreakerState.HALF_OPEN.value,
-        }:
+        }
+        if isinstance(v, str) and v in valid_states:
             return v
-        raise ValueError(f"Invalid circuit breaker state: {v}")
+        raise ValueError(
+            f"Invalid circuit breaker state: {v!r}. Valid states: {sorted(valid_states)}"
+        )
 
     last_failure_time: datetime | None = Field(
         default=None,
