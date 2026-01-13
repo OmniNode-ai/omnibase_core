@@ -5,9 +5,10 @@ Token types for authentication and authorization in ONEX infrastructure.
 Used by context models to specify the type of authentication token.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumTokenType(str, Enum):
     """Enumeration for token types used in authentication contexts."""
 

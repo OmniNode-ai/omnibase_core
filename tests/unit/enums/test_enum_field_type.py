@@ -179,16 +179,21 @@ class TestEnumFieldType:
 
     def test_is_optional_property(self):
         """Test is_optional property."""
+        # Non-optional types return False
         assert EnumFieldType.STRING.is_optional is False
         assert EnumFieldType.INTEGER.is_optional is False
-        # The is_optional property looks for "| None" or "None |" but the values use "| none"
-        # So these will be False until the implementation is fixed
-        assert EnumFieldType.OPTIONAL_STRING.is_optional is False
-        assert EnumFieldType.OPTIONAL_INTEGER.is_optional is False
-        assert EnumFieldType.OPTIONAL_FLOAT.is_optional is False
-        assert EnumFieldType.OPTIONAL_BOOLEAN.is_optional is False
-        assert EnumFieldType.OPTIONAL_DATETIME.is_optional is False
-        assert EnumFieldType.OPTIONAL_UUID.is_optional is False
+        assert EnumFieldType.FLOAT.is_optional is False
+        assert EnumFieldType.BOOLEAN.is_optional is False
+        assert EnumFieldType.DATETIME.is_optional is False
+        assert EnumFieldType.UUID.is_optional is False
+
+        # Optional types return True (values contain "| none")
+        assert EnumFieldType.OPTIONAL_STRING.is_optional is True
+        assert EnumFieldType.OPTIONAL_INTEGER.is_optional is True
+        assert EnumFieldType.OPTIONAL_FLOAT.is_optional is True
+        assert EnumFieldType.OPTIONAL_BOOLEAN.is_optional is True
+        assert EnumFieldType.OPTIONAL_DATETIME.is_optional is True
+        assert EnumFieldType.OPTIONAL_UUID.is_optional is True
 
     def test_base_type_property(self):
         """Test base_type property."""
@@ -200,20 +205,13 @@ class TestEnumFieldType:
         assert EnumFieldType.DATETIME.base_type == EnumFieldType.DATETIME
         assert EnumFieldType.UUID.base_type == EnumFieldType.UUID
 
-        # Since is_optional returns False for all types (due to case mismatch),
-        # all types return themselves as their base type
-        assert EnumFieldType.OPTIONAL_STRING.base_type == EnumFieldType.OPTIONAL_STRING
-        assert (
-            EnumFieldType.OPTIONAL_INTEGER.base_type == EnumFieldType.OPTIONAL_INTEGER
-        )
-        assert EnumFieldType.OPTIONAL_FLOAT.base_type == EnumFieldType.OPTIONAL_FLOAT
-        assert (
-            EnumFieldType.OPTIONAL_BOOLEAN.base_type == EnumFieldType.OPTIONAL_BOOLEAN
-        )
-        assert (
-            EnumFieldType.OPTIONAL_DATETIME.base_type == EnumFieldType.OPTIONAL_DATETIME
-        )
-        assert EnumFieldType.OPTIONAL_UUID.base_type == EnumFieldType.OPTIONAL_UUID
+        # Optional types return their non-optional base type
+        assert EnumFieldType.OPTIONAL_STRING.base_type == EnumFieldType.STRING
+        assert EnumFieldType.OPTIONAL_INTEGER.base_type == EnumFieldType.INTEGER
+        assert EnumFieldType.OPTIONAL_FLOAT.base_type == EnumFieldType.FLOAT
+        assert EnumFieldType.OPTIONAL_BOOLEAN.base_type == EnumFieldType.BOOLEAN
+        assert EnumFieldType.OPTIONAL_DATETIME.base_type == EnumFieldType.DATETIME
+        assert EnumFieldType.OPTIONAL_UUID.base_type == EnumFieldType.UUID
 
     def test_field_type_categories(self):
         """Test field type categories."""

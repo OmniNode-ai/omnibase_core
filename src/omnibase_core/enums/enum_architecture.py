@@ -7,6 +7,7 @@ Defines supported CPU architectures for ONEX nodes.
 import enum
 
 
+@enum.unique
 class EnumArchitecture(enum.StrEnum):
     """Supported CPU architectures."""
 

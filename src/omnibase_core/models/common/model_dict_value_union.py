@@ -418,6 +418,7 @@ class ModelDictValueUnion(BaseModel):
                 message=f"Value is not bool, is {self.value_type}",
                 context={"value_type": self.value_type},
             )
+        # NOTE(OMN-1302): Return type narrowed by is_bool() check above. Safe because value_type discriminator verified.
         return self.value  # type: ignore[return-value]
 
     def get_as_dict(self) -> dict[str, object]:
@@ -446,6 +447,7 @@ class ModelDictValueUnion(BaseModel):
             >>> assert value.get_as_dict() == {}  # Safe fallback, not an error
         """
         if self.is_dict():
+            # NOTE(OMN-1302): Return type narrowed by is_dict() check above. Safe because value_type discriminator verified.
             return self.value  # type: ignore[return-value]
         return {}
 
@@ -469,6 +471,7 @@ class ModelDictValueUnion(BaseModel):
                 message=f"Value is not float, is {self.value_type}",
                 context={"value_type": self.value_type},
             )
+        # NOTE(OMN-1302): Return type narrowed by is_float() check above. Safe because value_type discriminator verified.
         return self.value  # type: ignore[return-value]
 
     def get_as_int(self) -> int:
@@ -491,6 +494,7 @@ class ModelDictValueUnion(BaseModel):
                 message=f"Value is not int, is {self.value_type}",
                 context={"value_type": self.value_type},
             )
+        # NOTE(OMN-1302): Return type narrowed by is_int() check above. Safe because value_type discriminator verified.
         return self.value  # type: ignore[return-value]
 
     def get_as_list(self) -> list[object]:
@@ -513,6 +517,7 @@ class ModelDictValueUnion(BaseModel):
                 message=f"Value is not list, is {self.value_type}",
                 context={"value_type": self.value_type},
             )
+        # NOTE(OMN-1302): Return type narrowed by is_list() check above. Safe because value_type discriminator verified.
         return self.value  # type: ignore[return-value]
 
     def get_as_str(self) -> str:
@@ -535,6 +540,7 @@ class ModelDictValueUnion(BaseModel):
                 message=f"Value is not str, is {self.value_type}",
                 context={"value_type": self.value_type},
             )
+        # NOTE(OMN-1302): Return type narrowed by is_string() check above. Safe because value_type discriminator verified.
         return self.value  # type: ignore[return-value]
 
     # === Dict-Specific Helper Methods ===
@@ -561,6 +567,7 @@ class ModelDictValueUnion(BaseModel):
         if not self.is_dict():
             return False
         # Direct access to self.value since we already verified is_dict()
+        # NOTE(OMN-1302): Membership operator valid because is_dict() check verifies dict type above.
         return key in self.value  # type: ignore[operator]
 
     def get_dict_value(self, key: str, default: object = None) -> object:
@@ -586,6 +593,7 @@ class ModelDictValueUnion(BaseModel):
         if not self.is_dict():
             return default
         # Direct access since we verified is_dict()
+        # NOTE(OMN-1302): Dict.get() access valid because is_dict() check verifies dict type above.
         return self.value.get(key, default)  # type: ignore[union-attr]
 
     # === Collection Helpers ===

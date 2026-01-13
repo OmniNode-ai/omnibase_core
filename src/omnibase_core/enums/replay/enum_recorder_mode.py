@@ -39,9 +39,10 @@ from __future__ import annotations
 
 __all__ = ["EnumRecorderMode"]
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumRecorderMode(str, Enum):
     """
     Recorder operating mode.

@@ -5,9 +5,10 @@ Defines the types of data sources that can be processed through
 the metadata pipeline integration.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumDataSourceType(str, Enum):
     """Types of data sources in the pipeline."""
 

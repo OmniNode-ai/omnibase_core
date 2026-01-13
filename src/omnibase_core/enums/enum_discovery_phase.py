@@ -1,6 +1,9 @@
-from enum import Enum
+"""Discovery implementation phases for progressive rollout."""
+
+from enum import Enum, unique
 
 
+@unique
 class EnumDiscoveryPhase(str, Enum):
     """Discovery implementation phases."""
 

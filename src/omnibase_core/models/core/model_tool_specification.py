@@ -18,8 +18,3 @@ class ModelToolSpecification(BaseModel):
         default=...,
         description="Main tool class name for instantiation",
     )
-    # TODO: Re-enable when enum is available
-    # business_logic_pattern: ModelEnumBusinessLogicPattern = Field(
-    #     default=ModelEnumBusinessLogicPattern.COMPUTE,
-    #     description="Business logic pattern type",
-    # )

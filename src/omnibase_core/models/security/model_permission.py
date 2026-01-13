@@ -318,7 +318,6 @@ class ModelPermission(BaseModel):
     @field_validator("resource_hierarchy")
     @classmethod
     def validate_resource_hierarchy(cls, v: list[str]) -> list[str]:
-        """Validate resource hierarchy."""
         if len(v) > 10:
             raise ModelOnexError(
                 message="Resource hierarchy cannot exceed 10 levels",
@@ -329,7 +328,6 @@ class ModelPermission(BaseModel):
     @field_validator("resource_patterns")
     @classmethod
     def validate_resource_patterns(cls, v: list[str]) -> list[str]:
-        """Validate resource patterns."""
         if len(v) > 20:
             raise ModelOnexError(
                 message="Maximum 20 resource patterns allowed",
@@ -340,7 +338,6 @@ class ModelPermission(BaseModel):
     @field_validator("conditions")
     @classmethod
     def validate_conditions(cls, v: list[str]) -> list[str]:
-        """Validate conditions."""
         if len(v) > 50:
             raise ModelOnexError(
                 message="Maximum 50 conditions allowed",
@@ -351,7 +348,6 @@ class ModelPermission(BaseModel):
     @field_validator("tags")
     @classmethod
     def validate_tags(cls, v: list[str]) -> list[str]:
-        """Validate tags."""
         if len(v) > 20:
             raise ModelOnexError(
                 message="Maximum 20 tags allowed",
@@ -368,7 +364,6 @@ class ModelPermission(BaseModel):
     @field_validator("approval_types")
     @classmethod
     def validate_approval_types(cls, v: list[str]) -> list[str]:
-        """Validate approval types."""
         if len(v) > 10:
             raise ModelOnexError(
                 message="Maximum 10 approval types allowed",
@@ -379,7 +374,6 @@ class ModelPermission(BaseModel):
     @field_validator("allowed_countries")
     @classmethod
     def validate_allowed_countries(cls, v: list[str]) -> list[str]:
-        """Validate allowed countries."""
         if len(v) > 50:
             raise ModelOnexError(
                 message="Maximum 50 countries allowed",
@@ -390,7 +384,6 @@ class ModelPermission(BaseModel):
     @field_validator("allowed_ip_ranges")
     @classmethod
     def validate_allowed_ip_ranges(cls, v: list[str]) -> list[str]:
-        """Validate allowed IP ranges."""
         if len(v) > 20:
             raise ModelOnexError(
                 message="Maximum 20 IP ranges allowed",
@@ -401,7 +394,6 @@ class ModelPermission(BaseModel):
     # === Resource Matching Methods ===
 
     def matches_resource(self, resource_path: str) -> bool:
-        """Check if permission matches a resource path."""
         import fnmatch
 
         # Direct match
@@ -442,7 +434,6 @@ class ModelPermission(BaseModel):
     # === Temporal Validation Methods ===
 
     def is_temporally_valid(self, current_time: datetime | None = None) -> bool:
-        """Check if permission is temporally valid."""
         if not self.temporal_constraints_enabled:
             return True
 
@@ -466,13 +457,11 @@ class ModelPermission(BaseModel):
         return current_day in self.days_of_week
 
     def is_expired(self) -> bool:
-        """Check if permission has expired."""
         if not self.valid_until:
             return False
         return datetime.now(UTC) > self.valid_until
 
     def is_active(self) -> bool:
-        """Check if permission is currently active."""
         if not self.valid_from:
             return True
         return datetime.now(UTC) >= self.valid_from
@@ -484,7 +473,6 @@ class ModelPermission(BaseModel):
         country_code: str | None = None,
         ip_address: str | None = None,
     ) -> bool:
-        """Check if permission is geographically valid."""
         if not self.geographic_constraints_enabled:
             return True
 
@@ -507,7 +495,6 @@ class ModelPermission(BaseModel):
     # === Condition Evaluation Methods ===
 
     def evaluate_conditions(self, context: ModelPermissionEvaluationContext) -> bool:
-        """Evaluate conditional expressions."""
         if not self.conditions:
             return True
 
@@ -524,7 +511,6 @@ class ModelPermission(BaseModel):
     # === Usage Management Methods ===
 
     def is_usage_allowed(self, current_usage: dict[str, int]) -> bool:
-        """Check if usage limits allow access."""
         if not self.usage_limits_enabled:
             return True
 

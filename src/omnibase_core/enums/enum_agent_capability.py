@@ -4,9 +4,10 @@ Enum for agent capabilities.
 Defines capabilities that agents can have for task routing and selection.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumAgentCapability(str, Enum):
     """Agent capabilities for intelligent task routing."""
 

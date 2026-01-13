@@ -1,6 +1,7 @@
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumServiceHealthStatus(str, Enum):
     """Standard service health status values."""
 

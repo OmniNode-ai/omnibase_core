@@ -925,6 +925,7 @@ class ServiceInvariantEvaluator:
             )
 
         try:
+            # NOTE(OMN-1302): Runtime conversion from unknown dict value. Safe because ValueError caught below.
             actual_num = float(actual_value)  # type: ignore[arg-type]
         except (
             TypeError,
@@ -946,6 +947,7 @@ class ServiceInvariantEvaluator:
 
         if min_value is not None:
             try:
+                # NOTE(OMN-1302): Config value from dict lookup. Safe because ValueError caught below.
                 min_num = float(min_value)  # type: ignore[arg-type]
                 if actual_num < min_num:
                     return (
@@ -967,6 +969,7 @@ class ServiceInvariantEvaluator:
 
         if max_value is not None:
             try:
+                # NOTE(OMN-1302): Config value from dict lookup. Safe because ValueError caught below.
                 max_num = float(max_value)  # type: ignore[arg-type]
                 if actual_num > max_num:
                     return (
@@ -1007,6 +1010,7 @@ class ServiceInvariantEvaluator:
             return (False, "Invalid config: max_ms is required", None, None)
 
         try:
+            # NOTE(OMN-1302): Config value from dict lookup. Safe because ValueError caught below.
             max_ms_num = float(max_ms)  # type: ignore[arg-type]
         except (TypeError, ValueError):  # fallback-ok: invalid config fails validation
             return (False, f"Invalid max_ms value: {max_ms!r}", None, None)
@@ -1017,6 +1021,7 @@ class ServiceInvariantEvaluator:
             found, value = self._resolve_field_path(output, field_name)
             if found:
                 try:
+                    # NOTE(OMN-1302): Runtime conversion from resolved field. Safe because ValueError caught below.
                     actual_ms = float(value)  # type: ignore[arg-type]
                     break
                 except (
@@ -1067,6 +1072,7 @@ class ServiceInvariantEvaluator:
             return (False, "Invalid config: max_cost is required", None, None)
 
         try:
+            # NOTE(OMN-1302): Config value from dict lookup. Safe because ValueError caught below.
             max_cost_num = float(max_cost)  # type: ignore[arg-type]
         except (TypeError, ValueError):  # fallback-ok: invalid config fails validation
             return (False, f"Invalid max_cost value: {max_cost!r}", None, None)
@@ -1075,6 +1081,7 @@ class ServiceInvariantEvaluator:
         found, cost_value = self._resolve_field_path(output, "cost")
         if found:
             try:
+                # NOTE(OMN-1302): Runtime conversion from resolved field. Safe because ValueError caught below.
                 actual_cost = float(cost_value)  # type: ignore[arg-type]
             except (
                 TypeError,
@@ -1091,9 +1098,11 @@ class ServiceInvariantEvaluator:
             found, tokens = self._resolve_field_path(output, "usage.total_tokens")
             if found:
                 try:
+                    # NOTE(OMN-1302): Runtime conversion from resolved field. Safe because ValueError caught below.
                     token_count = float(tokens)  # type: ignore[arg-type]
                     # Default cost rate per token (can be customized via config)
                     cost_per_token = config.get("cost_per_token", 0.0001)
+                    # NOTE(OMN-1302): Config value from dict lookup. Safe because ValueError caught below.
                     actual_cost = token_count * float(cost_per_token)  # type: ignore[arg-type]
                 except (
                     TypeError,

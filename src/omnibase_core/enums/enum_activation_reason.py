@@ -14,9 +14,11 @@ explainability for activation decisions.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumActivationReason(str, Enum):
+class EnumActivationReason(StrValueHelper, str, Enum):
     """
     Reason for capability activation or skip.
 
@@ -97,10 +99,6 @@ class EnumActivationReason(str, Enum):
 
     TIMEOUT_EXCEEDED = "timeout_exceeded"
     """Activation window expired before capability could be activated."""
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     def is_activation_reason(self) -> bool:
         """

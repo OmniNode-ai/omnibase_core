@@ -1,6 +1,9 @@
-from enum import Enum
+"""Contract compliance levels for validation results."""
+
+from enum import Enum, unique
 
 
+@unique
 class EnumContractCompliance(str, Enum):
     """Contract compliance levels."""
 

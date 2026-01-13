@@ -22,9 +22,10 @@
 # === /OmniNode:Metadata ===
 
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumOnexStatus(str, Enum):
     SUCCESS = "success"
     WARNING = "warning"

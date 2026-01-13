@@ -14,7 +14,7 @@ from omnibase_core.enums.enum_authentication_method import EnumAuthenticationMet
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_data_classification import EnumDataClassification
 from omnibase_core.enums.enum_security_profile import EnumSecurityProfile
-from omnibase_core.models.core.model_onex_audit_event import ModelOnexAuditEvent
+from omnibase_core.models.core.model_audit_event import ModelAuditEvent
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
@@ -79,7 +79,7 @@ class ModelOnexSecurityContext(BaseModel):
     )
 
     # === AUDIT TRAIL ===
-    audit_events: list[ModelOnexAuditEvent] = Field(
+    audit_events: list[ModelAuditEvent] = Field(
         default_factory=list,
         description="Security audit events",
     )
@@ -230,7 +230,7 @@ class ModelOnexSecurityContext(BaseModel):
         if not self.audit_enabled:
             return self
 
-        audit_event = ModelOnexAuditEvent(
+        audit_event = ModelAuditEvent(
             event_type=event_type,
             actor=str(self.user_id) if self.user_id else None,
             resource=resource,

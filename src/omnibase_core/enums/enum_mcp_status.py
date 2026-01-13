@@ -2,9 +2,10 @@
 Enum for MCP operation status values.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumMcpStatus(str, Enum):
     """Status values for MCP operations."""
 

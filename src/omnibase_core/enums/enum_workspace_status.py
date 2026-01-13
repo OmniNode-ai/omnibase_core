@@ -5,9 +5,10 @@ Enum for Workspace Status.
 Defines the valid states in the workspace lifecycle.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumWorkspaceStatus(str, Enum):
     """Workspace lifecycle states."""
 

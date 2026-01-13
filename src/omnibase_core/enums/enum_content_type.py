@@ -1,8 +1,9 @@
 """Content types in messages."""
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumContentType(str, Enum):
     """Content types in messages."""
 

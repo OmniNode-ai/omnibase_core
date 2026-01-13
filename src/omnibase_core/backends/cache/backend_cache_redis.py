@@ -140,6 +140,7 @@ def _get_connection_pool_class() -> type:
         RuntimeError: If redis package is not installed.
     """
     connection_module = importlib.import_module("redis.asyncio.connection")
+    # NOTE(OMN-1302): Dynamic import returns `redis.asyncio.connection.ConnectionPool`. Safe because redis package installed.
     return connection_module.ConnectionPool  # type: ignore[no-any-return]
 
 
@@ -162,6 +163,7 @@ def _get_redis_error_class() -> type[Exception]:
         RedisError class if redis is available, otherwise Exception.
     """
     if REDIS_AVAILABLE:
+        # NOTE(OMN-1302): Dynamic import returns `redis.exceptions.RedisError`. Safe because redis package installed.
         return _get_redis_exceptions().RedisError  # type: ignore[no-any-return]
     return Exception
 

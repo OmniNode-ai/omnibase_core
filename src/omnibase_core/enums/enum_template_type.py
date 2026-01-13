@@ -22,10 +22,13 @@
 # === /OmniNode:Metadata ===
 
 
-from enum import Enum
+from enum import Enum, unique
+
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-class EnumTemplateType(str, Enum):
+@unique
+class EnumTemplateType(StrValueHelper, str, Enum):
     """
     Canonical template types for metadata stamping and registry.
     """

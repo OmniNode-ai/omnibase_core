@@ -4,9 +4,10 @@ Workflow Priority Enumeration
 Defines valid priority levels for AI workflow execution
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumWorkflowPriority(str, Enum):
     """Priority levels for workflow execution"""
 

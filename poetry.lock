@@ -1692,4 +1692,4 @@ metrics = ["prometheus-client"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "e3a72af31bca1b63398a2a8081da83791cad42cd83b9133697aef5c858e06bf3"
+content-hash = "f0746d6b48478986575a2dacb6dad6e74b6e8214948956ff62344b2f1b1f5860"

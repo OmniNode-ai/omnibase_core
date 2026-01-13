@@ -6,6 +6,13 @@ Mixins follow the single responsibility principle and provide specific capabilit
 that can be composed into concrete node implementations.
 """
 
+# NOTE(OMN-1302): I001 (import order) disabled - intentional ordering to avoid circular dependencies.
+
+# StrValueHelper is re-exported from utils for convenience. The actual class lives
+# in utils.util_str_enum_base to avoid circular imports with enums.
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
+
 # Core mixins
 # Import protocols from omnibase_core (Core-native protocols)
 from omnibase_core.protocols import ProtocolEventBusRegistry
@@ -72,6 +79,8 @@ from omnibase_core.mixins.mixin_caching import MixinCaching
 from omnibase_core.mixins.mixin_truncation_validation import MixinTruncationValidation
 
 __all__ = [
+    # StrValueHelper - provides __str__ for enums, must be available early
+    "StrValueHelper",
     "MixinCanonicalYAMLSerializer",
     "MixinComputeExecution",
     "MixinEffectExecution",

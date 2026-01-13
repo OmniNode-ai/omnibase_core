@@ -4,9 +4,10 @@ Language Code Enum.
 Supported language codes for detection patterns.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumLanguageCode(str, Enum):
     """Supported language codes for detection."""
 

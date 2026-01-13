@@ -4,9 +4,10 @@ State Update Operation Enum.
 Operations that can be performed on state fields.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumStateUpdateOperation(str, Enum):
     """Operations that can be performed on state fields."""
 

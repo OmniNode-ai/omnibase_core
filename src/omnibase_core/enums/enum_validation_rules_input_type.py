@@ -4,9 +4,10 @@ Validation rules input type enumeration.
 Defines types for discriminated union in validation rules input structures.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumValidationRulesInputType(str, Enum):
     """Validation rules input type enumeration for discriminated unions."""
 

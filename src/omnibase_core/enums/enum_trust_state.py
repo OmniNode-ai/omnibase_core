@@ -1,6 +1,7 @@
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class EnumTrustState(str, Enum):
     UNTRUSTED = "untrusted"
     TRUSTED = "trusted"
