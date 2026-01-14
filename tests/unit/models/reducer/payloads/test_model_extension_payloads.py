@@ -78,6 +78,7 @@ class TestModelPayloadExtensionTypeValidation:
     def test_extension_type_required(self) -> None:
         """Test that extension_type is required."""
         with pytest.raises(ValidationError) as exc_info:
+            # NOTE(OMN-1266): Intentionally missing required arg to test validation.
             ModelPayloadExtension(plugin_name="test")  # type: ignore[call-arg]
         assert "extension_type" in str(exc_info.value)
 
@@ -120,6 +121,7 @@ class TestModelPayloadExtensionPluginNameValidation:
     def test_plugin_name_required(self) -> None:
         """Test that plugin_name is required."""
         with pytest.raises(ValidationError) as exc_info:
+            # NOTE(OMN-1266): Intentionally missing required arg to test validation.
             ModelPayloadExtension(extension_type="plugin.test")  # type: ignore[call-arg]
         assert "plugin_name" in str(exc_info.value)
 
@@ -168,6 +170,15 @@ class TestModelPayloadExtensionDefaultValues:
             extension_type="plugin.test", plugin_name="test"
         )
         assert payload.timeout_seconds is None
+
+    def test_accepts_explicit_empty_config(self) -> None:
+        """Test that explicitly passing empty config dict works."""
+        payload = ModelPayloadExtension(
+            extension_type="plugin.test",
+            plugin_name="test",
+            config={},
+        )
+        assert payload.config == {}
 
 
 @pytest.mark.unit
@@ -297,6 +308,7 @@ class TestModelPayloadExtensionExtraFieldsRejected:
             ModelPayloadExtension(
                 extension_type="plugin.test",
                 plugin_name="test",
+                # NOTE(OMN-1266): Intentionally passing unknown field to test extra=forbid.
                 unknown_field="value",  # type: ignore[call-arg]
             )
         assert "extra_forbidden" in str(exc_info.value)
@@ -694,6 +706,41 @@ class TestModelPayloadExtensionJsonValidationRejection:
         error_str = str(exc_info.value)
         assert "complex_num" in error_str
         assert "complex" in error_str
+
+    def test_rejects_infinity(self) -> None:
+        """Test that infinity values are rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelPayloadExtension(
+                extension_type="plugin.test",
+                plugin_name="test",
+                data={"value": float("inf")},
+            )
+        error_str = str(exc_info.value)
+        assert "value" in error_str
+        assert "inf" in error_str.lower() or "finite" in error_str.lower()
+
+    def test_rejects_negative_infinity(self) -> None:
+        """Test that negative infinity values are rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelPayloadExtension(
+                extension_type="plugin.test",
+                plugin_name="test",
+                data={"value": float("-inf")},
+            )
+        error_str = str(exc_info.value)
+        assert "value" in error_str
+
+    def test_rejects_nan(self) -> None:
+        """Test that NaN values are rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelPayloadExtension(
+                extension_type="plugin.test",
+                plugin_name="test",
+                data={"value": float("nan")},
+            )
+        error_str = str(exc_info.value)
+        assert "value" in error_str
+        assert "nan" in error_str.lower() or "finite" in error_str.lower()
 
 
 @pytest.mark.unit

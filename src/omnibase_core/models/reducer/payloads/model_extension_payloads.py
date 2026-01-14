@@ -59,6 +59,7 @@ See Also:
     omnibase_core.models.reducer.model_intent: Extension intent model
 """
 
+import math
 from typing import Any, Literal
 
 from pydantic import Field, field_validator
@@ -66,7 +67,7 @@ from pydantic import Field, field_validator
 from omnibase_core.models.reducer.payloads.model_intent_payload_base import (
     ModelIntentPayloadBase,
 )
-from omnibase_core.types import JsonType
+from omnibase_core.types import StrictJsonType
 
 # Public API - listed immediately after imports per Python convention
 __all__ = ["ModelPayloadExtension"]
@@ -93,6 +94,7 @@ _NON_JSON_TYPE_HINTS: dict[str, str] = {
     "bytearray": "Use bytes(ba).decode('utf-8') or base64 encoding to convert",
     "set": "Use list(set_value) to convert to list",
     "frozenset": "Use list(frozenset_value) to convert to list",
+    "tuple": "Use list(tuple_value) to convert to list",
 }
 
 
@@ -116,15 +118,30 @@ def _find_non_json_serializable_path(
         Tuple of (path, type_name, hint) if non-serializable value found,
         None otherwise. The hint provides actionable conversion advice.
     """
-    # JSON-serializable primitives: str, int, float, bool, None
-    if value is None or isinstance(value, (str, int, float, bool)):
+    # NOTE: This validates STRICT JSON serializability (RFC 8259).
+    # Unlike JsonPrimitive (which includes UUID/datetime for Pydantic compatibility),
+    # this validator only accepts: str, int, float, bool, None, list, dict.
+    if value is None or isinstance(value, (str, int, bool)):
+        return None
+
+    # Check floats separately to reject non-finite values (inf, -inf, nan)
+    # RFC 8259 JSON does not support Infinity or NaN - these must be converted
+    if isinstance(value, float):
+        if math.isnan(value) or math.isinf(value):
+            return (
+                path or "root",
+                "non-finite float",
+                "Use a finite number or None for undefined values",
+            )
         return None
 
     # Check dict recursively (JSON objects must have string keys)
     if isinstance(value, dict):
         for key, val in value.items():
             if not isinstance(key, str):
-                key_path = f"{path}.{key}" if path else str(key)
+                # Format non-string keys with brackets to distinguish from string keys
+                key_repr = f"[{key!r}]"
+                key_path = f"{path}{key_repr}" if path else key_repr
                 return (
                     key_path,
                     f"non-string key ({type(key).__name__})",
@@ -228,7 +245,11 @@ class ModelPayloadExtension(ModelIntentPayloadBase):
         max_length=32,
     )
 
-    data: dict[str, JsonType] = Field(
+    # NOTE(OMN-1266): StrictJsonType is used instead of JsonType because runtime
+    # validation rejects UUID/datetime - this ensures static type matches runtime behavior.
+    # JsonType includes UUID/datetime for Pydantic model_dump() compatibility, but this
+    # field requires strict RFC 8259 JSON compliance for cross-service serialization.
+    data: dict[str, StrictJsonType] = Field(
         default_factory=dict,
         description=(
             "Arbitrary extension-specific data. Schema is defined by the extension. "
@@ -257,14 +278,15 @@ class ModelPayloadExtension(ModelIntentPayloadBase):
 
     @field_validator("data", mode="before")
     @classmethod
-    def validate_data_json_serializable(cls, v: object) -> dict[str, JsonType]:
+    def validate_data_json_serializable(cls, v: object) -> dict[str, StrictJsonType]:
         """Validate that data values are strictly JSON-serializable.
 
         Enforces strict JSON serializability - only primitive JSON types are allowed:
-        str, int, float, bool, None, list (of JSON values), dict (with str keys).
+        str, int, float (finite only), bool, None, list (of JSON values), dict (with str keys).
 
         Non-JSON types like datetime, UUID, Path, or custom objects are REJECTED
         with actionable error messages that include the key-path and conversion hints.
+        Non-finite floats (inf, -inf, nan) are also rejected per RFC 8259.
 
         No auto-coercion is performed - callers must explicitly convert types.
 
@@ -272,7 +294,7 @@ class ModelPayloadExtension(ModelIntentPayloadBase):
             v: The dict to validate.
 
         Returns:
-            The validated dict (unchanged if valid), typed as dict[str, JsonType].
+            The validated dict (unchanged if valid), typed as dict[str, StrictJsonType].
 
         Raises:
             ValueError: If any value is not JSON-serializable, with key-path and hint.
@@ -286,9 +308,10 @@ class ModelPayloadExtension(ModelIntentPayloadBase):
             raise ValueError(
                 f"Non-JSON-serializable value at 'data.{path}': {type_name}. {hint}."
             )
-        # NOTE(OMN-1266): Type narrowing - validation confirms all values are JsonType.
-        # Safe because _find_non_json_serializable_path validates recursively.
-        return v  # type: ignore[return-value]
+        # NOTE(OMN-1266): Type narrowing - validator confirms all values are StrictJsonType
+        # primitives. Mypy accepts this return because the isinstance(v, dict) check above
+        # narrows the type sufficiently for the dict[str, JsonType] return annotation.
+        return v
 
     @field_validator("config", mode="before")
     @classmethod
