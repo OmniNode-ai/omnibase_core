@@ -380,8 +380,8 @@ class ModelONEXContainer:
                 on failure, allowing retry with corrected configuration.
 
         Note:
-            This method is not thread-safe. Do not call from multiple threads
-            simultaneously without external synchronization.
+            This method is thread-safe. Multiple threads can call it simultaneously;
+            exactly one will succeed and others will receive INVALID_STATE errors.
 
         Example:
             Explicit initialization::
