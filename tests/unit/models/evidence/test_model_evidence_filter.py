@@ -192,12 +192,14 @@ class TestModelEvidenceFilterInvariantIdsValidation:
     """Tests for ModelEvidenceFilter invariant_ids validation."""
 
     def test_invariant_ids_rejects_empty_tuple(self) -> None:
-        """Empty tuple for invariant_ids should raise ValueError."""
+        """Empty tuple for invariant_ids should raise ValidationError."""
+        from pydantic import ValidationError
+
         from omnibase_core.models.evidence.model_evidence_filter import (
             ModelEvidenceFilter,
         )
 
-        with pytest.raises(ValueError, match="non-empty"):
+        with pytest.raises(ValidationError, match="non-empty"):
             ModelEvidenceFilter(invariant_ids=())
 
     def test_invariant_ids_accepts_non_empty_tuple(self) -> None:

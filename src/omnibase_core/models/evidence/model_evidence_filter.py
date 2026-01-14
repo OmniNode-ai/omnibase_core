@@ -10,7 +10,7 @@ Thread Safety:
     This model is immutable (frozen=True) and thread-safe.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -62,6 +62,22 @@ class ModelEvidenceFilter(BaseModel):
         description="Filter to evidence before this date",
     )
 
+    @staticmethod
+    def _normalize_datetime(dt: datetime) -> datetime:
+        """Normalize datetime to UTC timezone.
+
+        Naive datetimes are assumed to be UTC.
+
+        Args:
+            dt: The datetime to normalize.
+
+        Returns:
+            Timezone-aware datetime in UTC.
+        """
+        if dt.tzinfo is None:
+            return dt.replace(tzinfo=UTC)
+        return dt
+
     @model_validator(mode="after")
     def validate_date_range(self) -> "ModelEvidenceFilter":
         """Ensure start_date is before end_date if both provided.
@@ -73,7 +89,10 @@ class ModelEvidenceFilter(BaseModel):
             ValueError: If start_date is after end_date.
         """
         if self.start_date and self.end_date:
-            if self.start_date > self.end_date:
+            # Normalize to UTC for safe comparison
+            start = self._normalize_datetime(self.start_date)
+            end = self._normalize_datetime(self.end_date)
+            if start > end:
                 msg = "start_date must be before end_date"
                 raise ValueError(msg)
         return self
@@ -133,16 +152,24 @@ class ModelEvidenceFilter(BaseModel):
     def matches_date(self, date: datetime) -> bool:
         """Check if a date passes the filter.
 
+        Handles both timezone-aware and naive datetimes safely by
+        normalizing to UTC before comparison.
+
         Args:
             date: The date to check.
 
         Returns:
             True if date is within the start_date/end_date range.
         """
-        if self.start_date and date < self.start_date:
-            return False
-        if self.end_date and date > self.end_date:
-            return False
+        normalized_date = self._normalize_datetime(date)
+        if self.start_date:
+            normalized_start = self._normalize_datetime(self.start_date)
+            if normalized_date < normalized_start:
+                return False
+        if self.end_date:
+            normalized_end = self._normalize_datetime(self.end_date)
+            if normalized_date > normalized_end:
+                return False
         return True
 
 
