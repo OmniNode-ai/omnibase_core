@@ -40,7 +40,7 @@ from omnibase_core.types.type_serializable_value import SerializedDict
 from omnibase_core.types.typed_dict_resolution_context import TypedDictResolutionContext
 
 # Define LiteralOperationStatus locally to avoid runtime import
-LiteralOperationStatus = Literal[
+LiteralOperationStatus = Literal[  # enum-ok: protocol type hint
     "success", "failed", "in_progress", "cancelled", "pending"
 ]
 
