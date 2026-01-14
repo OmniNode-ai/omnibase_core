@@ -624,7 +624,7 @@ class ServiceInvariantEvaluator:
         Args:
             invariant_set: The set of invariants to evaluate.
             output: The output dictionary to validate against.
-            fail_fast: If True, stop on first CRITICAL failure.
+            fail_fast: If True, stop on first CRITICAL or FATAL failure.
 
         Returns:
             ModelEvaluationSummary with aggregate statistics and all results.
