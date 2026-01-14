@@ -156,9 +156,7 @@ class TestEffectBoundaryDecorator:
         assert boundary.default_policy == EnumEffectPolicyLevel.MOCKED
 
         # Verify async function still works
-        result = asyncio.get_event_loop().run_until_complete(
-            async_fetch("https://api.example.com")
-        )
+        result = asyncio.run(async_fetch("https://api.example.com"))
         assert result["url"] == "https://api.example.com"
 
     def test_determinism_marker_default_true(self) -> None:
@@ -409,6 +407,11 @@ class TestEffectBoundaryDecorator:
         # Function works
         assert multi_decorated() == "result"
 
-        # Note: The order matters - effect_boundary metadata is on the inner
-        # wrapper, but logging_decorator wraps it. get_effect_boundary may
-        # not find it depending on implementation.
+        # The order matters - effect_boundary metadata is on the inner wrapper,
+        # but logging_decorator wraps it without preserving the attribute.
+        # get_effect_boundary cannot find the metadata through the outer wrapper.
+        boundary = get_effect_boundary(multi_decorated)
+        assert boundary is None, (
+            "Outer decorator does not preserve effect boundary attribute, "
+            "so get_effect_boundary should return None"
+        )

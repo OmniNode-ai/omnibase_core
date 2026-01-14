@@ -254,8 +254,15 @@ class TestServiceEffectMockRegistry:
         assert retrieved is not None
         assert retrieved() == "mocked_result"
 
-    def test_lambda_with_closure(self) -> None:
-        """Test lambda with closure captures expected values."""
+    def test_stateful_mock_preserves_state_across_calls(self) -> None:
+        """Test that registry preserves mock identity, allowing stateful mocks to work.
+
+        This test verifies that the registry stores and returns the exact same
+        mock reference (identity), enabling stateful mocks to maintain their
+        state across multiple get_mock() retrievals. The incrementing counter
+        demonstrates that the mock maintains state across calls because the
+        same function object is returned each time.
+        """
         registry = ServiceEffectMockRegistry()
 
         captured_value = {"count": 0}
@@ -308,4 +315,31 @@ class TestServiceEffectMockRegistry:
         # Should not raise
         registry.clear()
 
+        assert registry.mock_count == 0
+
+    def test_whitespace_padded_keys_are_normalized(self) -> None:
+        """Test that keys with leading/trailing whitespace are normalized."""
+        registry = ServiceEffectMockRegistry()
+
+        # Register with padded key
+        registry.register_mock("  network.http  ", lambda: "response")
+
+        # Should be accessible with normalized key
+        assert registry.has_mock("network.http") is True
+        assert registry.get_mock("network.http") is not None
+
+        # Should also work with padded lookup
+        assert registry.has_mock("  network.http  ") is True
+        assert registry.get_mock("  network.http  ") is not None
+
+        # Count should be 1 (not duplicate)
+        assert registry.mock_count == 1
+
+        # list_registered_effects should show normalized key
+        effects = registry.list_registered_effects()
+        assert effects == ["network.http"]
+
+        # Unregister with padded key should work
+        result = registry.unregister_mock("  network.http  ")
+        assert result is True
         assert registry.mock_count == 0

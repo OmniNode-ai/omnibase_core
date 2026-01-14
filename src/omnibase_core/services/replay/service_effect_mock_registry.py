@@ -137,6 +137,8 @@ class ServiceEffectMockRegistry:
                 f"mock_callable must be callable, got {type(mock_callable).__name__}"
             )
 
+        # Normalize key by stripping whitespace for consistent lookup
+        effect_key = effect_key.strip()
         self._mocks[effect_key] = mock_callable
         logger.debug("Registered mock for effect '%s'", effect_key)
 
@@ -159,7 +161,8 @@ class ServiceEffectMockRegistry:
             >>> registry.get_mock("nonexistent") is None
             True
         """
-        return self._mocks.get(effect_key)
+        # Normalize key by stripping whitespace for consistent lookup
+        return self._mocks.get(effect_key.strip())
 
     def has_mock(self, effect_key: str) -> bool:
         """
@@ -179,7 +182,8 @@ class ServiceEffectMockRegistry:
             >>> registry.has_mock("network.http_get")
             True
         """
-        return effect_key in self._mocks
+        # Normalize key by stripping whitespace for consistent lookup
+        return effect_key.strip() in self._mocks
 
     def unregister_mock(self, effect_key: str) -> bool:
         """
@@ -200,6 +204,8 @@ class ServiceEffectMockRegistry:
             >>> registry.unregister_mock("rng.random")
             False
         """
+        # Normalize key by stripping whitespace for consistent lookup
+        effect_key = effect_key.strip()
         if effect_key in self._mocks:
             del self._mocks[effect_key]
             logger.debug("Unregistered mock for effect '%s'", effect_key)
