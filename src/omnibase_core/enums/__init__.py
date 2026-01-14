@@ -87,7 +87,11 @@ from .enum_dispatch_status import EnumDispatchStatus
 
 # Effect-related enums (from nodes)
 from .enum_effect_capability import EnumEffectCapability
+
+# Effect classification enums (OMN-1147)
+from .enum_effect_category import EnumEffectCategory
 from .enum_effect_handler_type import EnumEffectHandlerType
+from .enum_effect_policy_level import EnumEffectPolicyLevel
 from .enum_effect_types import EnumEffectType, EnumTransactionState
 
 # Validation-related enums
@@ -354,6 +358,9 @@ __all__ = [
     "EnumEffectHandlerType",
     "EnumEffectType",
     "EnumTransactionState",
+    # Effect classification domain (OMN-1147)
+    "EnumEffectCategory",
+    "EnumEffectPolicyLevel",
     # Execution domain
     "EnumExecutionMode",
     "EnumExecutionShape",
