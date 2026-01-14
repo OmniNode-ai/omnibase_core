@@ -20,7 +20,7 @@ from pathlib import Path
 
 import pytest
 
-from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
+from omnibase_core.enums import EnumSeverity
 from omnibase_core.models.contracts.subcontracts.model_validator_rule import (
     ModelValidatorRule,
 )
@@ -45,7 +45,7 @@ from omnibase_core.validation.validator_pydantic_conventions import (
 
 def create_test_contract(
     suppression_comments: list[str] | None = None,
-    severity_default: EnumValidationSeverity = EnumValidationSeverity.ERROR,
+    severity_default: EnumSeverity = EnumSeverity.ERROR,
     rules: list[ModelValidatorRule] | None = None,
 ) -> ModelValidatorSubcontract:
     """Create a test contract for ValidatorPydanticConventions.
@@ -57,31 +57,31 @@ def create_test_contract(
         ModelValidatorRule(
             rule_id=RULE_MISSING_CONFIG,
             description="Detects models without model_config",
-            severity=EnumValidationSeverity.ERROR,
+            severity=EnumSeverity.ERROR,
             enabled=True,
         ),
         ModelValidatorRule(
             rule_id=RULE_EMPTY_CONFIG,
             description="Detects empty ConfigDict()",
-            severity=EnumValidationSeverity.ERROR,
+            severity=EnumSeverity.ERROR,
             enabled=True,
         ),
         ModelValidatorRule(
             rule_id=RULE_FROZEN_WITHOUT_FROM_ATTRIBUTES,
             description="Detects frozen=True without from_attributes=True",
-            severity=EnumValidationSeverity.ERROR,
+            severity=EnumSeverity.ERROR,
             enabled=True,
         ),
         ModelValidatorRule(
             rule_id=RULE_CONTRACT_MISSING_EXTRA,
             description="Detects contract models missing extra= policy",
-            severity=EnumValidationSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             enabled=True,
         ),
         ModelValidatorRule(
             rule_id=RULE_UNNECESSARY_FIELD_DEFAULT_NONE,
             description="Detects unnecessary Field(default=None)",
-            severity=EnumValidationSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             enabled=True,
         ),
     ]
@@ -941,31 +941,31 @@ class TestValidatorPydanticConventionsIntegration:
             ModelValidatorRule(
                 rule_id=RULE_MISSING_CONFIG,
                 description="Detects models without model_config",
-                severity=EnumValidationSeverity.ERROR,
+                severity=EnumSeverity.ERROR,
                 enabled=False,  # Disable error rules
             ),
             ModelValidatorRule(
                 rule_id=RULE_EMPTY_CONFIG,
                 description="Detects empty ConfigDict()",
-                severity=EnumValidationSeverity.ERROR,
+                severity=EnumSeverity.ERROR,
                 enabled=False,  # Disable error rules
             ),
             ModelValidatorRule(
                 rule_id=RULE_FROZEN_WITHOUT_FROM_ATTRIBUTES,
                 description="Detects frozen=True without from_attributes=True",
-                severity=EnumValidationSeverity.ERROR,
+                severity=EnumSeverity.ERROR,
                 enabled=False,  # Disable error rules
             ),
             ModelValidatorRule(
                 rule_id=RULE_CONTRACT_MISSING_EXTRA,
                 description="Detects contract models missing extra= policy",
-                severity=EnumValidationSeverity.WARNING,
+                severity=EnumSeverity.WARNING,
                 enabled=True,  # Enable warning rule
             ),
             ModelValidatorRule(
                 rule_id=RULE_UNNECESSARY_FIELD_DEFAULT_NONE,
                 description="Detects unnecessary Field(default=None)",
-                severity=EnumValidationSeverity.WARNING,
+                severity=EnumSeverity.WARNING,
                 enabled=False,
             ),
         ]
@@ -979,7 +979,7 @@ class TestValidatorPydanticConventionsIntegration:
             suppression_comments=["# noqa:"],
             fail_on_error=True,
             fail_on_warning=True,  # Fail on warnings
-            severity_default=EnumValidationSeverity.WARNING,
+            severity_default=EnumSeverity.WARNING,
             rules=rules,
         )
         validator = ValidatorPydanticConventions(contract=contract)
@@ -1206,7 +1206,7 @@ class TestValidatorPydanticConventionsRuleEnablement:
                 rule_id=RULE_MISSING_CONFIG,
                 description="Missing config",
                 enabled=True,
-                severity=EnumValidationSeverity.WARNING,
+                severity=EnumSeverity.WARNING,
             )
         ]
         contract = create_test_contract(rules=rules)
@@ -1217,7 +1217,7 @@ class TestValidatorPydanticConventionsRuleEnablement:
             i for i in result.issues if i.code == RULE_MISSING_CONFIG
         ]
         assert len(missing_config_issues) == 1
-        assert missing_config_issues[0].severity == EnumValidationSeverity.WARNING
+        assert missing_config_issues[0].severity == EnumSeverity.WARNING
 
 
 # =============================================================================

@@ -50,7 +50,7 @@ import logging
 from pathlib import Path
 from typing import ClassVar
 
-from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
+from omnibase_core.enums import EnumSeverity
 from omnibase_core.models.common.model_validation_issue import ModelValidationIssue
 from omnibase_core.models.contracts.subcontracts.model_validator_subcontract import (
     ModelValidatorSubcontract,
@@ -187,7 +187,7 @@ class ValidatorPydanticConventions(ValidatorBase):
         issues: list[ModelValidationIssue] = []
 
         # Get rule configurations from precomputed cache (O(1) lookups)
-        default_severity = contract.severity_default or EnumValidationSeverity.WARNING
+        default_severity = contract.severity_default or EnumSeverity.WARNING
 
         missing_config_enabled, missing_config_severity = self._get_rule_config(
             RULE_MISSING_CONFIG, contract
