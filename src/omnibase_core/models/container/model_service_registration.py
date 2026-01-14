@@ -74,7 +74,7 @@ class ModelServiceRegistration(BaseModel):
         description="Service health status",
     )
     registration_time: datetime = Field(
-        default_factory=datetime.now,
+        default_factory=lambda: datetime.now(UTC),
         description="Registration timestamp",
     )
     last_access_time: datetime | None = Field(
