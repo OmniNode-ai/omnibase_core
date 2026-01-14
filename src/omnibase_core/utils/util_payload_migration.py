@@ -25,6 +25,7 @@ See Also:
 from uuid import UUID
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
 
 # Type alias for legacy dict payloads - accepts object values for migration
 # This migration utility handles untyped dict input from legacy code
@@ -229,7 +230,7 @@ def convert_dict_to_typed_payload(
     # Attempt the conversion
     try:
         return payload_class.model_validate(converted_data)
-    except (AttributeError, TypeError, KeyError, ValueError) as e:
+    except PYDANTIC_MODEL_ERRORS as e:
         # Catch Pydantic validation errors, dict access errors, or type conversion issues
         raise ModelOnexError(
             message=(

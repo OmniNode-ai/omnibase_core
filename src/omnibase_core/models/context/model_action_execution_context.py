@@ -22,7 +22,7 @@ See Also:
     - omnibase_core.models.core.model_execution_context: CLI execution context
 """
 
-from typing import Literal
+from typing import Literal, cast
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -153,12 +153,14 @@ class ModelActionExecutionContext(BaseModel):
             ValueError: If the value is not a string or not a valid environment.
         """
         if not isinstance(v, str):
+            # error-ok: Pydantic field_validator requires ValueError
             raise ValueError(f"environment must be a string, got {type(v).__name__}")
         normalized = v.lower().strip()
         allowed = {"development", "staging", "production"}
         if normalized not in allowed:
+            # error-ok: Pydantic field_validator requires ValueError
             raise ValueError(
                 f"Invalid environment '{v}': must be one of {sorted(allowed)}"
             )
-        # Cast to Literal since we've validated it's a valid value
-        return normalized  # type: ignore[return-value]
+        # Validated via set membership check above
+        return cast(Literal["development", "staging", "production"], normalized)

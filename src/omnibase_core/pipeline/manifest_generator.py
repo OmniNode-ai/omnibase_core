@@ -19,6 +19,7 @@ from datetime import UTC, datetime
 from typing import Literal
 from uuid import UUID, uuid4
 
+from omnibase_core.decorators.decorator_error_handling import standard_error_handling
 from omnibase_core.enums.enum_activation_reason import EnumActivationReason
 from omnibase_core.enums.enum_execution_status import EnumExecutionStatus
 from omnibase_core.enums.enum_handler_execution_phase import EnumHandlerExecutionPhase
@@ -205,6 +206,7 @@ class ManifestGenerator:
 
     # === Activation Recording ===
 
+    @standard_error_handling("Capability activation recording")
     def record_capability_activation(
         self,
         capability_name: str,
@@ -247,6 +249,7 @@ class ManifestGenerator:
 
     # === Ordering Recording ===
 
+    @standard_error_handling("Execution ordering recording")
     def record_ordering(
         self,
         phases: list[str],
@@ -271,6 +274,7 @@ class ManifestGenerator:
         self._ordering_policy = ordering_policy
         self._ordering_rationale = ordering_rationale
 
+    @standard_error_handling("Dependency edge addition")
     def add_dependency_edge(
         self,
         from_handler_id: str,  # string-id-ok: user-facing handler identifier
@@ -297,6 +301,7 @@ class ManifestGenerator:
 
     # === Hook Execution Recording ===
 
+    @standard_error_handling("Hook execution start")
     def start_hook(
         self,
         hook_id: str,  # string-id-ok: user-facing hook identifier
@@ -324,6 +329,7 @@ class ManifestGenerator:
         )
         self._pending_hooks[hook_id] = trace
 
+    @standard_error_handling("Hook execution completion")
     def complete_hook(
         self,
         hook_id: str,  # string-id-ok: user-facing hook identifier
@@ -399,6 +405,7 @@ class ManifestGenerator:
 
     # === Emission Recording ===
 
+    @standard_error_handling("Emission recording")
     def record_emission(
         self,
         emission_type: Literal["event", "intent", "projection", "action"],
@@ -439,6 +446,7 @@ class ManifestGenerator:
 
     # === Failure Recording ===
 
+    @standard_error_handling("Failure recording")
     def record_failure(
         self,
         error_code: str,
@@ -472,6 +480,7 @@ class ManifestGenerator:
 
     # === Metrics Recording ===
 
+    @standard_error_handling("Phase duration recording")
     def record_phase_duration(self, phase: str, duration_ms: float) -> None:
         """
         Record duration for a phase.

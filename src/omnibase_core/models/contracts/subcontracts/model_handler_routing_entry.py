@@ -135,5 +135,6 @@ class ModelHandlerRoutingEntry(BaseModel):
             return v  # Let Pydantic handle type validation
         stripped = v.strip()
         if not stripped:
+            # error-ok: Pydantic field_validator requires ValueError
             raise ValueError("Value cannot be empty or whitespace-only")
         return stripped

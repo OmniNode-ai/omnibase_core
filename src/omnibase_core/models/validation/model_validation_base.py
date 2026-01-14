@@ -14,6 +14,7 @@ from typing import cast
 
 from pydantic import BaseModel, ConfigDict
 
+from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
 from omnibase_core.types.typed_dict_validation_base_serialized import (
     TypedDictValidationBaseSerialized,
 )
@@ -135,7 +136,7 @@ class ModelValidationBase(BaseModel):
                                 field=field_name,
                                 error_code=validation_error_code,
                             )
-            except (AttributeError, TypeError, ValueError) as field_error:
+            except PYDANTIC_MODEL_ERRORS as field_error:
                 self.add_validation_error(
                     message=f"Failed to access model fields: {field_error!s}",
                     field="model_structure",

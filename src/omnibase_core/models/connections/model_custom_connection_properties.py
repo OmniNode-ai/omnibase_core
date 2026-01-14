@@ -17,6 +17,7 @@ _logger = logging.getLogger(__name__)
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_instance_type import EnumInstanceType
+from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types import SerializedDict
@@ -692,7 +693,8 @@ class ModelCustomConnectionProperties(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except (AttributeError, TypeError, ValidationError, ValueError) as e:
+        except PYDANTIC_MODEL_ERRORS as e:
+            # PYDANTIC_MODEL_ERRORS: ValidationError, ValueError, TypeError, AttributeError
             # ValidationError: Pydantic validation failure (validate_assignment=True)
             # ValueError: Custom validator rejection or invalid value
             # TypeError: Type coercion failure

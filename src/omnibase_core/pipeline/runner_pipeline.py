@@ -188,7 +188,7 @@ class RunnerPipeline:
                     errors.extend(phase_errors)
                 # boundary-ok: captures phase exceptions for controlled shutdown; finalize phase still runs
                 except Exception as e:
-                    # Fail-fast phase raised exception
+                    # catch-all-ok: fail-fast phase raised exception, captured for re-raise after finalize
                     exception_to_raise = e
                     break  # Stop executing phases, but finalize will still run
         finally:
@@ -243,7 +243,7 @@ class RunnerPipeline:
                     current_hook_name = None
                 # cleanup-resilience-ok: finalize hooks must all execute; errors captured, not raised
                 except Exception as e:
-                    # Capture error with proper hook_name context
+                    # catch-all-ok: finalize hooks must complete; errors captured for reporting
                     errors.append(
                         ModelHookError(
                             phase="finalize",
@@ -257,7 +257,7 @@ class RunnerPipeline:
 
         # boundary-ok: framework-level errors during finalize become ModelHookError, never raised
         except Exception as framework_exc:
-            # Framework-level error (e.g., plan access failure, hook retrieval error)
+            # catch-all-ok: framework-level error captured for error list, no exception escapes finalize
             # Include last known hook_name if available for debugging context
             hook_name_context = (
                 f"[framework:after:{current_hook_name}]"
@@ -318,6 +318,7 @@ class RunnerPipeline:
                 await self._execute_hook(hook, context)
             # boundary-ok: hook exceptions captured; re-raised for fail-fast phases, collected otherwise
             except Exception as e:
+                # catch-all-ok: hook execution errors captured for phase semantics
                 if fail_fast:
                     # Re-raise immediately for fail-fast phases
                     raise

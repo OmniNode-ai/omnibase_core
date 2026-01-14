@@ -18,6 +18,7 @@ Usage:
     ... )
 """
 
+from omnibase_core.decorators.decorator_error_handling import standard_error_handling
 from omnibase_core.enums import EnumNodeKind, EnumNodeType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors import OnexError
@@ -90,6 +91,16 @@ def get_default_contract_profile(
         ...     profile="orchestrator_safe",
         ... )
     """
+    return _get_default_contract_profile_impl(node_type, profile, version)
+
+
+@standard_error_handling("Contract profile resolution")
+def _get_default_contract_profile_impl(
+    node_type: EnumNodeType,
+    profile: str,
+    version: str = "1.0.0",
+) -> ModelContractBase:
+    """Internal implementation of get_default_contract_profile."""
     # Import profile modules lazily to avoid circular imports
     from omnibase_core.factories.profiles import (
         COMPUTE_PROFILES,
@@ -173,6 +184,15 @@ def get_default_orchestrator_profile(
     Example:
         >>> contract = get_default_orchestrator_profile("orchestrator_safe")
     """
+    return _get_default_orchestrator_profile_impl(profile, version)
+
+
+@standard_error_handling("Orchestrator profile resolution")
+def _get_default_orchestrator_profile_impl(
+    profile: str,
+    version: str = "1.0.0",
+) -> ModelContractOrchestrator:
+    """Internal implementation of get_default_orchestrator_profile."""
     from omnibase_core.factories.profiles import ORCHESTRATOR_PROFILES
 
     if profile not in ORCHESTRATOR_PROFILES:
@@ -207,6 +227,15 @@ def get_default_reducer_profile(
     Example:
         >>> contract = get_default_reducer_profile("reducer_fsm_basic")
     """
+    return _get_default_reducer_profile_impl(profile, version)
+
+
+@standard_error_handling("Reducer profile resolution")
+def _get_default_reducer_profile_impl(
+    profile: str,
+    version: str = "1.0.0",
+) -> ModelContractReducer:
+    """Internal implementation of get_default_reducer_profile."""
     from omnibase_core.factories.profiles import REDUCER_PROFILES
 
     if profile not in REDUCER_PROFILES:
@@ -241,6 +270,15 @@ def get_default_effect_profile(
     Example:
         >>> contract = get_default_effect_profile("effect_idempotent")
     """
+    return _get_default_effect_profile_impl(profile, version)
+
+
+@standard_error_handling("Effect profile resolution")
+def _get_default_effect_profile_impl(
+    profile: str,
+    version: str = "1.0.0",
+) -> ModelContractEffect:
+    """Internal implementation of get_default_effect_profile."""
     from omnibase_core.factories.profiles import EFFECT_PROFILES
 
     if profile not in EFFECT_PROFILES:
@@ -275,6 +313,15 @@ def get_default_compute_profile(
     Example:
         >>> contract = get_default_compute_profile("compute_pure")
     """
+    return _get_default_compute_profile_impl(profile, version)
+
+
+@standard_error_handling("Compute profile resolution")
+def _get_default_compute_profile_impl(
+    profile: str,
+    version: str = "1.0.0",
+) -> ModelContractCompute:
+    """Internal implementation of get_default_compute_profile."""
     from omnibase_core.factories.profiles import COMPUTE_PROFILES
 
     if profile not in COMPUTE_PROFILES:

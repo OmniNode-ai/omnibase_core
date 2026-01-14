@@ -18,6 +18,7 @@ from uuid import uuid4
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.errors import ModelOnexError
+from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
 from omnibase_core.logging.logging_structured import (
     emit_log_event_sync as emit_log_event,
 )
@@ -312,7 +313,7 @@ class MixinServiceRegistry:
                 # Update existing entry
                 self.service_registry[node_id_str].update_last_seen()
 
-        except (AttributeError, KeyError, TypeError, ValueError) as e:
+        except PYDANTIC_MODEL_ERRORS as e:
             logger.exception(f"❌ Error handling node start event: {e}")
 
     def _handle_node_stop(self, envelope: "ModelEventEnvelope[object]") -> None:
@@ -344,7 +345,7 @@ class MixinServiceRegistry:
                             # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
                             logger.exception(f"Discovery callback error: {e}")
 
-        except (AttributeError, KeyError, TypeError, ValueError) as e:
+        except PYDANTIC_MODEL_ERRORS as e:
             logger.exception(f"❌ Error handling node stop event: {e}")
 
     def _handle_node_failure(self, envelope: "ModelEventEnvelope[object]") -> None:
@@ -455,7 +456,7 @@ class MixinServiceRegistry:
                         },
                     )
 
-        except (AttributeError, KeyError, TypeError, ValueError) as e:
+        except PYDANTIC_MODEL_ERRORS as e:
             logger.exception(f"❌ Error handling introspection response: {e}")
 
     def _handle_discovery_request(self, envelope: "ModelEventEnvelope[object]") -> None:
@@ -617,7 +618,7 @@ class MixinServiceRegistry:
                     self.auto_cleanup_interval,
                     self._cleanup_and_reschedule,
                 )
-            except (RuntimeError, ValueError, AttributeError) as e:
+            except (AttributeError, RuntimeError, ValueError) as e:
                 logger.debug(f"Could not schedule cleanup task: {e}")
 
     def _cleanup_and_reschedule(self) -> None:

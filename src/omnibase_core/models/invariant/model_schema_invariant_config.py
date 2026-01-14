@@ -54,6 +54,7 @@ class ModelSchemaInvariantConfig(BaseModel):
             ValueError: If json_schema is empty.
         """
         if not self.json_schema:
+            # error-ok: Pydantic model_validator requires ValueError
             raise ValueError(
                 "json_schema cannot be empty. "
                 "A valid JSON Schema must contain at least one validation rule "

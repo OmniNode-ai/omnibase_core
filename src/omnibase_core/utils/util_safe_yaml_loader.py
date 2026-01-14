@@ -43,6 +43,7 @@ import yaml
 from pydantic import BaseModel, ValidationError
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
@@ -129,7 +130,7 @@ def load_and_validate_yaml_model[T: BaseModel](path: Path, model_cls: type[T]) -
             ),
             cause=e,
         )
-    except (OSError, RuntimeError, AttributeError, TypeError) as e:
+    except (AttributeError, OSError, RuntimeError, TypeError) as e:
         # Catch I/O errors, Pydantic validation runtime errors, and model attribute errors
         raise ModelOnexError(
             error_code=EnumCoreErrorCode.INTERNAL_ERROR,
@@ -198,7 +199,7 @@ def load_yaml_content_as_model[T: BaseModel](content: str, model_cls: type[T]) -
             ),
             cause=e,
         )
-    except (RuntimeError, AttributeError, TypeError, ValueError) as e:
+    except (AttributeError, RuntimeError, TypeError, ValueError) as e:
         # Catch Pydantic validation runtime errors or type conversion errors
         raise ModelOnexError(
             error_code=EnumCoreErrorCode.INTERNAL_ERROR,
@@ -331,7 +332,7 @@ def serialize_pydantic_model_to_yaml(
             )
 
         return yaml_str
-    except (RuntimeError, AttributeError, TypeError, yaml.YAMLError) as e:
+    except (AttributeError, RuntimeError, TypeError, yaml.YAMLError) as e:
         # Catch runtime errors, model attribute errors, type conversion errors, or YAML serialization errors
         raise ModelOnexError(
             error_code=EnumCoreErrorCode.INTERNAL_ERROR,
@@ -379,7 +380,7 @@ def serialize_data_to_yaml(
             )
 
         return yaml_str
-    except (RuntimeError, AttributeError, TypeError, yaml.YAMLError) as e:
+    except (AttributeError, RuntimeError, TypeError, yaml.YAMLError) as e:
         # Catch runtime errors, attribute errors, type conversion errors, or YAML serialization errors
         raise ModelOnexError(
             error_code=EnumCoreErrorCode.INTERNAL_ERROR,
@@ -519,7 +520,7 @@ def extract_example_from_schema(
             ),
             cause=e,
         )
-    except (AttributeError, TypeError, KeyError, ValueError) as e:
+    except PYDANTIC_MODEL_ERRORS as e:
         # Catch dict access errors, type conversion errors, or data structure issues
         raise ModelOnexError(
             error_code=EnumCoreErrorCode.INTERNAL_ERROR,

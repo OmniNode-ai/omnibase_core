@@ -136,9 +136,11 @@ class ModelActionMetadata(BaseModel):
             valid_statuses = {s.value for s in EnumActionStatus}
             if v in valid_statuses:
                 return v
+            # error-ok: Pydantic field_validator requires ValueError
             raise ValueError(
                 f"Invalid action status: {v!r}. Valid statuses: {sorted(valid_statuses)}"
             )
+        # error-ok: Pydantic field_validator requires ValueError
         raise ValueError(f"Invalid action status type: {type(v).__name__}")
 
     result_data: SerializedDict | None = Field(

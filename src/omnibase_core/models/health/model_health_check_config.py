@@ -240,7 +240,7 @@ def _resolve_forward_references() -> None:
         # the resolved types from ModelHealthCheckMetadata
         ModelHealthCheckConfig.model_rebuild()
     except Exception:
-        # error-ok: model_rebuild may fail during circular import resolution
+        # init-errors-ok: model_rebuild may fail during circular import resolution
         pass
 
 
