@@ -16,7 +16,7 @@ This is a pure data model with no side effects.
 
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums.enum_subject_type import EnumSubjectType
 
@@ -86,6 +86,28 @@ class ModelSubjectRef(BaseModel):
         default=None,
         description="Human-readable key for the subject",
     )
+
+    # === Validators ===
+
+    @field_validator("subject_id")
+    @classmethod
+    def validate_subject_id_not_empty(cls, v: UUID | str) -> UUID | str:
+        """Ensure string subject_id is not empty.
+
+        Args:
+            v: The subject_id value to validate.
+
+        Returns:
+            The validated subject_id.
+
+        Raises:
+            ValueError: If the subject_id is an empty string.
+        """
+        if isinstance(v, str) and len(v) == 0:
+            raise ValueError(
+                "subject_id cannot be an empty string. Provide a non-empty identifier."
+            )
+        return v
 
     # === Utility Methods ===
 

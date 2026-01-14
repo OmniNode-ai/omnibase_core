@@ -299,16 +299,12 @@ class ModelMemorySnapshot(BaseModel):
         Returns:
             A new ModelMemorySnapshot instance with updates applied.
         """
-        # Merge current values with updates
-        data = self.model_dump()
-        data.update(kwargs)
-        # Create snapshot without hash first to compute it
-        data["content_hash"] = ""
-        new_snapshot = ModelMemorySnapshot(**data)
+        # Use model_copy with update for efficiency (avoids full serialization)
+        # First create without hash to compute it
+        intermediate = self.model_copy(update={**kwargs, "content_hash": ""})
         # Compute hash and create final snapshot
-        new_hash = new_snapshot.compute_content_hash()
-        data["content_hash"] = new_hash
-        return ModelMemorySnapshot(**data)
+        new_hash = intermediate.compute_content_hash()
+        return intermediate.model_copy(update={"content_hash": new_hash})
 
     # === Utility Properties ===
 

@@ -15,6 +15,7 @@ Tests comprehensive snapshot functionality including:
 """
 
 from datetime import UTC, datetime
+from typing import Any
 from uuid import UUID, uuid4
 
 import pytest
@@ -99,7 +100,7 @@ def sample_cost_entry() -> ModelCostEntry:
 def minimal_snapshot_data(
     sample_subject: ModelSubjectRef,
     sample_cost_ledger: ModelCostLedger,
-) -> dict:
+) -> dict[str, Any]:
     """Minimal required data for creating a snapshot."""
     return {
         "subject": sample_subject,
@@ -113,7 +114,7 @@ def full_snapshot_data(
     sample_cost_ledger: ModelCostLedger,
     sample_decision: ModelDecisionRecord,
     sample_failure: ModelFailureRecord,
-) -> dict:
+) -> dict[str, Any]:
     """Complete data including all optional fields."""
     return {
         "snapshot_id": uuid4(),
@@ -334,15 +335,26 @@ class TestModelMemorySnapshotWithDecision:
         assert new_snapshot.decisions[-1] == sample_decision
 
     def test_multiple_decisions_accumulate(
-        self, minimal_snapshot_data: dict, sample_decision: ModelDecisionRecord
+        self, minimal_snapshot_data: dict[str, Any]
     ) -> None:
         """Test that multiple decisions accumulate correctly."""
         snapshot = ModelMemorySnapshot(**minimal_snapshot_data)
 
-        for _ in range(3):
-            snapshot = snapshot.with_decision(sample_decision)
+        for i in range(3):
+            decision = ModelDecisionRecord(
+                decision_type=EnumDecisionType.MODEL_SELECTION,
+                timestamp=datetime.now(UTC),
+                options_considered=(f"option{i}",),
+                chosen_option=f"option{i}",
+                confidence=0.9 - i * 0.1,
+                input_hash=f"hash{i}",
+            )
+            snapshot = snapshot.with_decision(decision)
 
         assert len(snapshot.decisions) == 3
+        # Verify unique decision_ids
+        decision_ids = [d.decision_id for d in snapshot.decisions]
+        assert len(set(decision_ids)) == 3
 
     def test_with_decision_preserves_snapshot_id(
         self, minimal_snapshot_data: dict, sample_decision: ModelDecisionRecord
@@ -406,15 +418,25 @@ class TestModelMemorySnapshotWithFailure:
         assert new_snapshot.failures[-1] == sample_failure
 
     def test_multiple_failures_accumulate(
-        self, minimal_snapshot_data: dict, sample_failure: ModelFailureRecord
+        self, minimal_snapshot_data: dict[str, Any]
     ) -> None:
         """Test that multiple failures accumulate correctly."""
         snapshot = ModelMemorySnapshot(**minimal_snapshot_data)
 
-        for _ in range(3):
-            snapshot = snapshot.with_failure(sample_failure)
+        for i in range(3):
+            failure = ModelFailureRecord(
+                timestamp=datetime.now(UTC),
+                failure_type=EnumFailureType.TIMEOUT,
+                step_context=f"step_{i}",
+                error_code=f"ERR_{i:03d}",
+                error_message=f"Error message {i}",
+            )
+            snapshot = snapshot.with_failure(failure)
 
         assert len(snapshot.failures) == 3
+        # Verify unique failure_ids
+        failure_ids = [f.failure_id for f in snapshot.failures]
+        assert len(set(failure_ids)) == 3
 
     def test_with_failure_preserves_snapshot_id(
         self, minimal_snapshot_data: dict, sample_failure: ModelFailureRecord

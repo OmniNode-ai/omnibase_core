@@ -131,6 +131,7 @@ class TestModelSubjectRefInstantiation:
 
     def test_subject_type_from_string(self) -> None:
         """Test that subject_type can be provided as string."""
+        # NOTE: Intentionally testing Pydantic coercion - mypy correctly flags string where enum expected
         ref = ModelSubjectRef(
             subject_type="agent",  # type: ignore[arg-type]
             subject_id="test-id",
@@ -151,6 +152,7 @@ class TestModelSubjectRefImmutability:
         ref = ModelSubjectRef(**minimal_ref_data_uuid)
 
         with pytest.raises(ValidationError):
+            # NOTE: Intentionally testing frozen model mutation - mypy correctly flags assignment to frozen attr
             ref.subject_type = EnumSubjectType.USER  # type: ignore[misc]
 
     def test_cannot_modify_subject_id(self, minimal_ref_data_uuid: dict) -> None:
@@ -158,6 +160,7 @@ class TestModelSubjectRefImmutability:
         ref = ModelSubjectRef(**minimal_ref_data_uuid)
 
         with pytest.raises(ValidationError):
+            # NOTE: Intentionally testing frozen model mutation - mypy correctly flags assignment to frozen attr
             ref.subject_id = uuid4()  # type: ignore[misc]
 
     def test_cannot_modify_namespace(self, full_ref_data: dict) -> None:
@@ -165,6 +168,7 @@ class TestModelSubjectRefImmutability:
         ref = ModelSubjectRef(**full_ref_data)
 
         with pytest.raises(ValidationError):
+            # NOTE: Intentionally testing frozen model mutation - mypy correctly flags assignment to frozen attr
             ref.namespace = "different-namespace"  # type: ignore[misc]
 
     def test_cannot_modify_subject_key(self, full_ref_data: dict) -> None:
@@ -172,6 +176,7 @@ class TestModelSubjectRefImmutability:
         ref = ModelSubjectRef(**full_ref_data)
 
         with pytest.raises(ValidationError):
+            # NOTE: Intentionally testing frozen model mutation - mypy correctly flags assignment to frozen attr
             ref.subject_key = "different-key"  # type: ignore[misc]
 
 
@@ -186,6 +191,7 @@ class TestModelSubjectRefValidation:
     def test_missing_required_field_subject_type(self) -> None:
         """Test that missing subject_type raises ValidationError."""
         with pytest.raises(ValidationError) as exc_info:
+            # NOTE: Intentionally testing Pydantic validation - mypy correctly flags missing required arg
             ModelSubjectRef(subject_id="test-id")  # type: ignore[call-arg]
 
         assert "subject_type" in str(exc_info.value)
@@ -193,6 +199,7 @@ class TestModelSubjectRefValidation:
     def test_missing_required_field_subject_id(self) -> None:
         """Test that missing subject_id raises ValidationError."""
         with pytest.raises(ValidationError) as exc_info:
+            # NOTE: Intentionally testing Pydantic validation - mypy correctly flags missing required arg
             ModelSubjectRef(subject_type=EnumSubjectType.AGENT)  # type: ignore[call-arg]
 
         assert "subject_id" in str(exc_info.value)
@@ -200,6 +207,7 @@ class TestModelSubjectRefValidation:
     def test_invalid_subject_type_rejected(self) -> None:
         """Test that invalid subject_type is rejected."""
         with pytest.raises(ValidationError) as exc_info:
+            # NOTE: Intentionally testing Pydantic validation - mypy correctly flags wrong type
             ModelSubjectRef(
                 subject_type="invalid_type",  # type: ignore[arg-type]
                 subject_id="test-id",
@@ -399,13 +407,14 @@ class TestModelSubjectRefSerialization:
 class TestModelSubjectRefEdgeCases:
     """Tests for edge cases and boundary conditions."""
 
-    def test_empty_string_id_accepted(self) -> None:
-        """Test that empty string ID is accepted (no min_length constraint)."""
-        ref = ModelSubjectRef(
-            subject_type=EnumSubjectType.AGENT,
-            subject_id="",
-        )
-        assert ref.subject_id == ""
+    def test_empty_string_id_rejected(self) -> None:
+        """Test that empty string ID is rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelSubjectRef(
+                subject_type=EnumSubjectType.AGENT,
+                subject_id="",
+            )
+        assert "subject_id" in str(exc_info.value)
 
     def test_empty_namespace_string(self, minimal_ref_data_uuid: dict) -> None:
         """Test that empty string namespace is accepted."""

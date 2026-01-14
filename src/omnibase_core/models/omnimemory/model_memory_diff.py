@@ -153,7 +153,7 @@ class ModelMemoryDiff(BaseModel):
             self.decisions_added
             or self.decisions_removed
             or self.failures_added
-            or self.cost_delta != 0.0
+            or abs(self.cost_delta) > 1e-9
         )
 
     @property
@@ -188,7 +188,7 @@ class ModelMemoryDiff(BaseModel):
             changes.append(f"-{len(self.decisions_removed)} decisions")
         if self.failures_added:
             changes.append(f"+{len(self.failures_added)} failures")
-        if self.cost_delta != 0.0:
+        if abs(self.cost_delta) > 1e-9:
             if self.cost_delta > 0:
                 changes.append(f"+${self.cost_delta:.4f} cost")
             else:

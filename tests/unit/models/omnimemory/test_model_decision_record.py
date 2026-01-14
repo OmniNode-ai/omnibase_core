@@ -151,6 +151,7 @@ class TestModelDecisionRecordImmutability:
         record = ModelDecisionRecord(**minimal_record_data)
 
         with pytest.raises(ValidationError):
+            # NOTE: Intentionally testing frozen model mutation - mypy correctly flags assignment to frozen attr
             record.confidence = 0.99  # type: ignore[misc]
 
     def test_cannot_modify_chosen_option(self, minimal_record_data: dict) -> None:
@@ -158,6 +159,7 @@ class TestModelDecisionRecordImmutability:
         record = ModelDecisionRecord(**minimal_record_data)
 
         with pytest.raises(ValidationError):
+            # NOTE: Intentionally testing frozen model mutation - mypy correctly flags assignment to frozen attr
             record.chosen_option = "different-model"  # type: ignore[misc]
 
     def test_cannot_modify_decision_type(self, minimal_record_data: dict) -> None:
@@ -165,6 +167,7 @@ class TestModelDecisionRecordImmutability:
         record = ModelDecisionRecord(**minimal_record_data)
 
         with pytest.raises(ValidationError):
+            # NOTE: Intentionally testing frozen model mutation - mypy correctly flags assignment to frozen attr
             record.decision_type = EnumDecisionType.ESCALATION  # type: ignore[misc]
 
     def test_cannot_modify_decision_id(self, minimal_record_data: dict) -> None:
@@ -172,6 +175,7 @@ class TestModelDecisionRecordImmutability:
         record = ModelDecisionRecord(**minimal_record_data)
 
         with pytest.raises(ValidationError):
+            # NOTE: Intentionally testing frozen model mutation - mypy correctly flags assignment to frozen attr
             record.decision_id = uuid4()  # type: ignore[misc]
 
     def test_cannot_modify_outcome(self, full_record_data: dict) -> None:
@@ -179,6 +183,7 @@ class TestModelDecisionRecordImmutability:
         record = ModelDecisionRecord(**full_record_data)
 
         with pytest.raises(ValidationError):
+            # NOTE: Intentionally testing frozen model mutation - mypy correctly flags assignment to frozen attr
             record.outcome = "failure"  # type: ignore[misc]
 
     def test_cannot_modify_options_considered(self, minimal_record_data: dict) -> None:
@@ -186,6 +191,7 @@ class TestModelDecisionRecordImmutability:
         record = ModelDecisionRecord(**minimal_record_data)
 
         with pytest.raises(ValidationError):
+            # NOTE: Intentionally testing frozen model mutation - mypy correctly flags assignment to frozen attr
             record.options_considered = ("new", "options")  # type: ignore[misc]
 
 
@@ -600,6 +606,7 @@ class TestModelDecisionRecordEdgeCases:
         minimal_record_data["rationale"] = "Decision made with confidence: 85%"
 
         record = ModelDecisionRecord(**minimal_record_data)
+        # NOTE: Safe assertion - rationale is non-None since we set it above
         assert "85%" in record.rationale  # type: ignore[operator]
 
     def test_long_rationale(self, minimal_record_data: dict) -> None:
@@ -608,6 +615,7 @@ class TestModelDecisionRecordEdgeCases:
         minimal_record_data["rationale"] = long_rationale
 
         record = ModelDecisionRecord(**minimal_record_data)
+        # NOTE: Safe assertion - rationale is non-None since we set it above
         assert len(record.rationale) == 10000  # type: ignore[arg-type]
 
     def test_model_equality(self, minimal_record_data: dict) -> None:

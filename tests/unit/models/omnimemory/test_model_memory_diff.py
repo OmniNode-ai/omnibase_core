@@ -369,6 +369,7 @@ class TestModelMemoryDiffValidation:
     def test_missing_required_field_base_snapshot_id(self) -> None:
         """Test that missing base_snapshot_id raises ValidationError."""
         with pytest.raises(ValidationError) as exc_info:
+            # NOTE: Intentionally testing Pydantic validation - mypy correctly flags missing required arg
             ModelMemoryDiff(target_snapshot_id=uuid4())  # type: ignore[call-arg]
 
         assert "base_snapshot_id" in str(exc_info.value)
@@ -376,6 +377,7 @@ class TestModelMemoryDiffValidation:
     def test_missing_required_field_target_snapshot_id(self) -> None:
         """Test that missing target_snapshot_id raises ValidationError."""
         with pytest.raises(ValidationError) as exc_info:
+            # NOTE: Intentionally testing Pydantic validation - mypy correctly flags missing required arg
             ModelMemoryDiff(base_snapshot_id=uuid4())  # type: ignore[call-arg]
 
         assert "target_snapshot_id" in str(exc_info.value)

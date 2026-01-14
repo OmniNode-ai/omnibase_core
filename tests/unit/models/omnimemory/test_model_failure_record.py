@@ -145,6 +145,7 @@ class TestModelFailureRecordImmutability:
         record = ModelFailureRecord(**minimal_record_data)
 
         with pytest.raises(ValidationError):
+            # NOTE: Intentionally testing frozen model mutation - mypy correctly flags assignment to frozen attr
             record.error_code = "DIFFERENT_001"  # type: ignore[misc]
 
     def test_cannot_modify_failure_id(self, minimal_record_data: dict) -> None:
@@ -152,6 +153,7 @@ class TestModelFailureRecordImmutability:
         record = ModelFailureRecord(**minimal_record_data)
 
         with pytest.raises(ValidationError):
+            # NOTE: Intentionally testing frozen model mutation - mypy correctly flags assignment to frozen attr
             record.failure_id = uuid4()  # type: ignore[misc]
 
     def test_cannot_modify_failure_type(self, minimal_record_data: dict) -> None:
@@ -159,6 +161,7 @@ class TestModelFailureRecordImmutability:
         record = ModelFailureRecord(**minimal_record_data)
 
         with pytest.raises(ValidationError):
+            # NOTE: Intentionally testing frozen model mutation - mypy correctly flags assignment to frozen attr
             record.failure_type = EnumFailureType.RATE_LIMIT  # type: ignore[misc]
 
     def test_cannot_modify_step_context(self, minimal_record_data: dict) -> None:
@@ -166,6 +169,7 @@ class TestModelFailureRecordImmutability:
         record = ModelFailureRecord(**minimal_record_data)
 
         with pytest.raises(ValidationError):
+            # NOTE: Intentionally testing frozen model mutation - mypy correctly flags assignment to frozen attr
             record.step_context = "modified_context"  # type: ignore[misc]
 
     def test_cannot_modify_error_message(self, minimal_record_data: dict) -> None:
@@ -173,6 +177,7 @@ class TestModelFailureRecordImmutability:
         record = ModelFailureRecord(**minimal_record_data)
 
         with pytest.raises(ValidationError):
+            # NOTE: Intentionally testing frozen model mutation - mypy correctly flags assignment to frozen attr
             record.error_message = "Modified message"  # type: ignore[misc]
 
     def test_cannot_modify_retry_attempt(self, minimal_record_data: dict) -> None:
@@ -180,6 +185,7 @@ class TestModelFailureRecordImmutability:
         record = ModelFailureRecord(**minimal_record_data)
 
         with pytest.raises(ValidationError):
+            # NOTE: Intentionally testing frozen model mutation - mypy correctly flags assignment to frozen attr
             record.retry_attempt = 99  # type: ignore[misc]
 
     def test_cannot_modify_should_remember(self, minimal_record_data: dict) -> None:
@@ -187,6 +193,7 @@ class TestModelFailureRecordImmutability:
         record = ModelFailureRecord(**minimal_record_data)
 
         with pytest.raises(ValidationError):
+            # NOTE: Intentionally testing frozen model mutation - mypy correctly flags assignment to frozen attr
             record.should_remember = False  # type: ignore[misc]
 
 

@@ -135,6 +135,13 @@ class ModelDecisionRecord(BaseModel):
     def validate_timestamp_has_timezone(cls, v: datetime) -> datetime:
         """Ensure timestamp is timezone-aware.
 
+        Rejects both naive datetimes (tzinfo=None) and effectively naive
+        datetimes (tzinfo that returns None for utcoffset).
+
+        Note:
+            This validator is intentionally duplicated in ModelFailureRecord
+            to avoid cross-model imports between frozen Pydantic models.
+
         Args:
             v: The timestamp value to validate.
 
@@ -142,12 +149,12 @@ class ModelDecisionRecord(BaseModel):
             The validated timestamp.
 
         Raises:
-            ValueError: If the timestamp has no timezone info.
+            ValueError: If the timestamp has no valid timezone info.
         """
-        if v.tzinfo is None:
+        if v.tzinfo is None or v.tzinfo.utcoffset(v) is None:
             raise ValueError(
                 "timestamp must be timezone-aware (use datetime.now(UTC) or include tzinfo). "
-                f"Got naive datetime: {v}"
+                f"Got naive or effectively naive datetime: {v}"
             )
         return v
 
