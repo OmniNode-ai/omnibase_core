@@ -269,7 +269,7 @@ repos:
         language: system
         types: [python]
         files: ^src/omnibase_core/
-        pass_filenames: false
+        pass_filenames: true
         stages: [pre-commit]
 
       # UNION VALIDATION THRESHOLD:

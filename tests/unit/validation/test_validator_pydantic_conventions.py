@@ -202,7 +202,7 @@ class TestValidatorPydanticConventionsMissingConfig:
         """Test that models inheriting from known base models are not flagged."""
         # ModelOnexEvent is in KNOWN_BASE_MODELS
         source = """
-        from pydantic import BaseModel
+        from pydantic import BaseModel, ConfigDict
 
         class ModelOnexEvent(BaseModel):
             model_config = ConfigDict(extra="forbid")
@@ -1288,7 +1288,7 @@ class TestValidatorPydanticConventionsKnownBaseModels:
     def test_subclass_of_known_base_not_flagged(self, tmp_path: Path) -> None:
         """Test that subclasses of known bases are not flagged."""
         source = """
-        from pydantic import BaseModel
+        from pydantic import BaseModel, ConfigDict
 
         # Simulating a known base model
         class ModelContractBase(BaseModel):

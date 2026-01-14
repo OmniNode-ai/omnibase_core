@@ -66,10 +66,6 @@ validation:
         must be intentional (forbid, ignore, or allow).
       severity: warning
       enabled: true
-      parameters:
-        contract_paths:
-          - "**/models/contracts/**"
-          - "**/contracts/**"
 
     - rule_id: unnecessary-field-default-none
       description: |
