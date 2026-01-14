@@ -1,27 +1,55 @@
-"""
-Invariant severity enumeration for user-defined validation rules.
+# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
+#
+# SPDX-License-Identifier: Apache-2.0
+"""Enumeration for invariant violation severity levels."""
 
-Defines the severity levels for invariant validation failures,
-determining how the system responds to failed checks.
-"""
+from enum import Enum
 
-from __future__ import annotations
-
-from enum import Enum, unique
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
-@unique
-class EnumInvariantSeverity(str, Enum):
-    """Severity levels for invariant validation failures."""
+class EnumInvariantSeverity(StrValueHelper, str, Enum):
+    """Severity levels for invariant violations.
 
-    CRITICAL = "critical"
-    """Must pass or deployment fails."""
-
-    WARNING = "warning"
-    """Should pass, logged if fails."""
+    Ordered from least to most severe for threshold comparisons.
+    Use numeric comparison via severity_order property.
+    """
 
     INFO = "info"
-    """Informational, always logged."""
+    WARNING = "warning"
+    CRITICAL = "critical"
 
+    @property
+    def severity_order(self) -> int:
+        """Numeric order for severity comparisons. Higher = more severe."""
+        return _SEVERITY_ORDER[self]
+
+    def __ge__(self, other: object) -> bool:
+        if not isinstance(other, EnumInvariantSeverity):
+            return NotImplemented
+        return self.severity_order >= other.severity_order
+
+    def __gt__(self, other: object) -> bool:
+        if not isinstance(other, EnumInvariantSeverity):
+            return NotImplemented
+        return self.severity_order > other.severity_order
+
+    def __le__(self, other: object) -> bool:
+        if not isinstance(other, EnumInvariantSeverity):
+            return NotImplemented
+        return self.severity_order <= other.severity_order
+
+    def __lt__(self, other: object) -> bool:
+        if not isinstance(other, EnumInvariantSeverity):
+            return NotImplemented
+        return self.severity_order < other.severity_order
+
+
+# Module-level severity ordering map (cached, not recreated on each property access)
+_SEVERITY_ORDER: dict["EnumInvariantSeverity", int] = {
+    EnumInvariantSeverity.INFO: 0,
+    EnumInvariantSeverity.WARNING: 1,
+    EnumInvariantSeverity.CRITICAL: 2,
+}
 
 __all__ = ["EnumInvariantSeverity"]
