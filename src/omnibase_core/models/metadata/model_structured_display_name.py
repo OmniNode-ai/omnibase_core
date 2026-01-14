@@ -1,3 +1,10 @@
+"""
+Structured Display Name Model.
+
+Provides consistent naming patterns across metadata models.
+Reduces reliance on free-form display name strings.
+"""
+
 from __future__ import annotations
 
 from uuid import UUID
@@ -12,13 +19,6 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
 from omnibase_core.utils.util_uuid_utilities import uuid_from_string
-
-"""
-Structured Display Name Model.
-
-Provides consistent naming patterns across metadata models.
-Reduces reliance on free-form display name strings.
-"""
 
 
 class ModelStructuredDisplayName(BaseModel):
