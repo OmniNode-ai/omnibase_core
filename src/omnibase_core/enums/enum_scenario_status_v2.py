@@ -119,7 +119,7 @@ class EnumScenarioStatusV2(StrValueHelper, str, Enum):
 
 # Deprecated: use EnumScenarioStatusV2 directly
 # Note: Python enums cannot extend other enums, so we use module-level alias
-EnumScenarioStatus = EnumScenarioStatusV2
+EnumScenarioStatus: type[EnumScenarioStatusV2] = EnumScenarioStatusV2
 
 
 # Export for use

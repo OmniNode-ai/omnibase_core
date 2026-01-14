@@ -2,21 +2,21 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 """
-Severity level enumeration for messages and notifications (RFC 5424 compliant).
+Severity level enumeration for messages and notifications (RFC 5424 based).
 
 DOCUMENTED EXCEPTION per ADR-006 Status Taxonomy (OMN-1311):
     This enum is intentionally NOT merged into the canonical EnumSeverity because:
 
-    1. **RFC 5424 Compliance**: This enum follows the RFC 5424 syslog severity levels
-       which define 11 distinct values (EMERGENCY through TRACE). The canonical
-       EnumSeverity has only 5 values (DEBUG through CRITICAL).
+    1. **RFC 5424 Base**: This enum includes the 8 RFC 5424 syslog severity levels
+       (EMERGENCY through DEBUG) plus common extensions (TRACE, FATAL, WARN).
+       The canonical EnumSeverity has only 5 values (DEBUG through CRITICAL).
 
     2. **Syslog Integration**: This enum is used for structured logging systems
-       that require RFC 5424 compliant severity levels for interoperability with
+       that require RFC 5424 severity levels for interoperability with
        syslog, journald, and other logging infrastructure.
 
     3. **Extended Level Support**: Includes levels not in the canonical enum:
-       EMERGENCY, ALERT, NOTICE, TRACE, WARN (alias)
+       EMERGENCY, ALERT, NOTICE (RFC 5424), plus TRACE, FATAL, WARN (extensions)
 
 For general-purpose severity classification, use EnumSeverity instead:
     from omnibase_core.enums.enum_severity import EnumSeverity

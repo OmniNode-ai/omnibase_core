@@ -49,6 +49,6 @@ class EnumGithubRunnerOs(StrValueHelper, str, Enum):
 
 
 # Deprecated: use EnumGithubRunnerOs directly
-GitHubRunnerOS = EnumGithubRunnerOs
+GitHubRunnerOS: type[EnumGithubRunnerOs] = EnumGithubRunnerOs
 
 __all__ = ["EnumGithubRunnerOs", "GitHubRunnerOS"]

@@ -116,10 +116,9 @@ class EnumSeverity(StrValueHelper, str, Enum):
         from omnibase_core.errors import ModelOnexError
 
         raise ModelOnexError(
-            message=f"Unknown severity level: {value}",
-            error_code=EnumCoreErrorCode.INVALID_INPUT,
-            value=value,
-            valid_values=[m.value for m in cls],
+            message=f"Invalid severity value: {value}",
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            context={"value": value, "valid_values": [e.value for e in cls]},
         )
 
 

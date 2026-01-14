@@ -47,6 +47,6 @@ class EnumGithubActionEvent(StrValueHelper, str, Enum):
 
 
 # Deprecated: use EnumGithubActionEvent directly
-GitHubActionEvent = EnumGithubActionEvent
+GitHubActionEvent: type[EnumGithubActionEvent] = EnumGithubActionEvent
 
 __all__ = ["EnumGithubActionEvent", "GitHubActionEvent"]

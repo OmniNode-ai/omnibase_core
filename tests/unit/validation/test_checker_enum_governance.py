@@ -125,27 +125,6 @@ def create_test_contract(
 
 
 # =============================================================================
-# Fixtures
-# =============================================================================
-
-
-@pytest.fixture
-def temp_omnibase_dir(tmp_path: Path) -> Path:
-    """Create a temporary directory structure mimicking omnibase_core."""
-    omnibase_dir = tmp_path / "src" / "omnibase_core"
-    omnibase_dir.mkdir(parents=True)
-    return omnibase_dir
-
-
-@pytest.fixture
-def temp_enums_dir(temp_omnibase_dir: Path) -> Path:
-    """Create a temporary enums directory."""
-    enums_dir = temp_omnibase_dir / "enums"
-    enums_dir.mkdir(parents=True)
-    return enums_dir
-
-
-# =============================================================================
 # Tests for UPPER_SNAKE_CASE_PATTERN
 # =============================================================================
 

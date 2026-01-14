@@ -231,7 +231,7 @@ class EnumGeneralStatus(StrValueHelper, str, Enum):
 
 # Deprecated: use EnumGeneralStatus directly
 # Note: Python enums cannot extend other enums, so we use module-level alias
-EnumStatus = EnumGeneralStatus
+EnumStatus: type[EnumGeneralStatus] = EnumGeneralStatus
 
 
 # Export for use

@@ -554,22 +554,11 @@ repos:
       # NOTE: always_run=true means files: pattern is ignored - script does its own discovery
       - id: check-enum-governance
         name: ONEX Enum Governance Validation (Warning Mode)
-        entry: bash -c 'poetry run python -m omnibase_core.validation.checker_enum_governance --enums-only
-          || true'
-        language: system
-        pass_filenames: false
-        always_run: true
-        stages: [pre-commit]
-
-      # Enum Governance - Full Check (includes Literal duplication detection)
-      # Runs on pre-push as it scans entire codebase for Literal types
-      - id: check-enum-governance-full
-        name: ONEX Enum Governance Full Check (Warning Mode)
         entry: bash -c 'poetry run python -m omnibase_core.validation.checker_enum_governance || true'
         language: system
         pass_filenames: false
         always_run: true
-        stages: [pre-push]
+        stages: [pre-commit, pre-push]
 
       # Node Purity Validation (OMN-203)
       # Ensures declarative nodes (COMPUTE, REDUCER) maintain purity guarantees:
