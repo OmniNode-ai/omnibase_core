@@ -393,25 +393,54 @@ class TestServiceEffectMockRegistry:
                 }
             )
 
-    def test_register_mocks_partial_registration_on_error(self) -> None:
-        """Test that mocks registered before error remain registered."""
+    def test_register_mocks_atomic_on_validation_failure(self) -> None:
+        """Verify register_mocks is atomic - no partial registration on failure."""
         registry = ServiceEffectMockRegistry()
 
-        # Python dicts maintain insertion order, so we can predict which gets registered
-        # before the error. Use an ordered approach.
-        try:
+        # Register one mock first to verify it's not affected
+        registry.register_mock("existing.mock", lambda: "existing")
+        assert registry.mock_count == 1
+
+        # Try to register batch with invalid mock in middle
+        with pytest.raises(ValueError, match="must be callable"):
             registry.register_mocks(
                 {
-                    "first.key": lambda: 1,
-                    "": lambda: 2,  # This will fail
-                    "third.key": lambda: 3,
+                    "valid.first": lambda: 1,
+                    "invalid.second": "not callable",  # type: ignore[dict-item]
+                    "valid.third": lambda: 3,
                 }
             )
-        except ValueError:
-            pass
 
-        # First key should be registered before the error
-        # Note: actual behavior depends on dict iteration order (guaranteed in Python 3.7+)
-        # The first key should be registered
-        assert registry.mock_count >= 1
-        assert registry.has_mock("first.key") is True
+        # Verify no new mocks were registered (atomic failure)
+        assert registry.mock_count == 1
+        assert registry.has_mock("existing.mock")
+        assert not registry.has_mock(
+            "valid.first"
+        )  # Not registered due to atomic failure
+        assert not registry.has_mock("valid.third")
+
+    def test_register_mocks_atomic_on_empty_key_failure(self) -> None:
+        """Verify register_mocks is atomic when empty key validation fails."""
+        registry = ServiceEffectMockRegistry()
+
+        # Register one mock first to verify it's not affected
+        registry.register_mock("existing.mock", lambda: "existing")
+        assert registry.mock_count == 1
+
+        # Try to register batch with empty key
+        with pytest.raises(ValueError, match="empty"):
+            registry.register_mocks(
+                {
+                    "valid.first": lambda: 1,
+                    "": lambda: 2,  # This will fail validation
+                    "valid.third": lambda: 3,
+                }
+            )
+
+        # Verify no new mocks were registered (atomic failure)
+        assert registry.mock_count == 1
+        assert registry.has_mock("existing.mock")
+        assert not registry.has_mock(
+            "valid.first"
+        )  # Not registered due to atomic failure
+        assert not registry.has_mock("valid.third")

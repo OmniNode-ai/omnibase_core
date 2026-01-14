@@ -444,6 +444,55 @@ class TestModelEffectPolicySpec:
         assert "safe.effect" in policy.allowlist_effect_ids
         assert "dangerous.effect" in policy.denylist_effect_ids
 
+    def test_validation_rejects_blocked_and_require_mocks_conflict(self) -> None:
+        """Test that a category cannot be both blocked and require mocking."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelEffectPolicySpec(
+                policy_level=EnumEffectPolicyLevel.WARN,
+                blocked_categories=(EnumEffectCategory.TIME,),
+                require_mocks_for_categories=(EnumEffectCategory.TIME,),
+            )
+
+        error_msg = str(exc_info.value)
+        assert "cannot be both blocked and require mocking" in error_msg
+        assert "time" in error_msg
+        assert "Blocked categories are rejected before mock lookup occurs" in error_msg
+
+    def test_validation_rejects_multiple_blocked_and_require_mocks_conflicts(
+        self,
+    ) -> None:
+        """Test that multiple blocked + require_mocks conflicts are all reported."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelEffectPolicySpec(
+                policy_level=EnumEffectPolicyLevel.WARN,
+                blocked_categories=(
+                    EnumEffectCategory.TIME,
+                    EnumEffectCategory.RANDOM,
+                ),
+                require_mocks_for_categories=(
+                    EnumEffectCategory.TIME,
+                    EnumEffectCategory.RANDOM,
+                ),
+            )
+
+        error_msg = str(exc_info.value)
+        assert "cannot be both blocked and require mocking" in error_msg
+        # Both conflicting categories should be mentioned
+        assert "time" in error_msg
+        assert "random" in error_msg
+
+    def test_validation_allows_non_overlapping_blocked_and_require_mocks(self) -> None:
+        """Test that non-overlapping blocked and require_mocks categories are valid."""
+        policy = ModelEffectPolicySpec(
+            policy_level=EnumEffectPolicyLevel.WARN,
+            blocked_categories=(EnumEffectCategory.NETWORK,),
+            require_mocks_for_categories=(EnumEffectCategory.TIME,),
+        )
+
+        # Should create successfully
+        assert EnumEffectCategory.NETWORK in policy.blocked_categories
+        assert EnumEffectCategory.TIME in policy.require_mocks_for_categories
+
     def test_validation_checks_categories_before_effect_ids(self) -> None:
         """Test that category conflicts are detected first when both exist."""
         with pytest.raises(ValidationError) as exc_info:

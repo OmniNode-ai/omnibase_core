@@ -78,6 +78,15 @@ class ModelEffectPolicySpec(BaseModel):
                 f"{sorted(id_conflicts)}"
             )
 
+        # Check for blocked categories also in require_mocks
+        blocked_mocked = blocked_set & set(self.require_mocks_for_categories)
+        if blocked_mocked:
+            conflict_names = sorted(c.value for c in blocked_mocked)
+            raise ValueError(
+                f"Categories cannot be both blocked and require mocking: {conflict_names}. "
+                f"Blocked categories are rejected before mock lookup occurs."
+            )
+
         return self
 
     def is_category_allowed(self, category: EnumEffectCategory) -> bool:

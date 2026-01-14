@@ -159,15 +159,15 @@ class ServiceEffectMockRegistry:
         Register multiple mocks at once.
 
         Convenience method for registering multiple mocks in a single call,
-        useful for test setup.
+        useful for test setup. Registration is atomic - if any validation
+        fails, no mocks are registered.
 
         Args:
             mocks: Dictionary mapping effect keys to mock callables.
 
         Raises:
             ValueError: If any key is empty/whitespace-only or any value
-                is not callable. Note: If validation fails partway through,
-                previously registered mocks in this call remain registered.
+                is not callable. No mocks are registered if validation fails.
 
         Example:
             >>> registry = ServiceEffectMockRegistry()
@@ -179,8 +179,22 @@ class ServiceEffectMockRegistry:
             >>> registry.mock_count
             3
         """
+        # Validate all mocks first (atomic - fail before any registration)
         for effect_key, mock_callable in mocks.items():
-            self.register_mock(effect_key, mock_callable)
+            if not effect_key or not effect_key.strip():
+                # error-ok: ValueError for public API input validation per project conventions
+                raise ValueError("effect_key must not be empty or whitespace-only")
+            if not callable(mock_callable):
+                # error-ok: ValueError for public API input validation per project conventions
+                raise ValueError(
+                    f"mock_callable must be callable, got {type(mock_callable).__name__}"
+                )
+
+        # All validated - now register atomically
+        for effect_key, mock_callable in mocks.items():
+            effect_key = effect_key.strip()
+            self._mocks[effect_key] = mock_callable
+            logger.debug("Registered mock for effect '%s'", effect_key)
 
     def get_mock(self, effect_key: str) -> Callable[..., Any] | None:
         """
