@@ -1,8 +1,8 @@
+"""Metadata-related factory parameters."""
+
 from __future__ import annotations
 
 from typing import TypedDict
-
-"""Metadata-related factory parameters."""
 
 
 class TypedDictMetadataParams(TypedDict, total=False):

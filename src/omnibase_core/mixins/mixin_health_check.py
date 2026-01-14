@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Health Check Mixin for ONEX Tool Nodes.
 
@@ -7,7 +5,6 @@ Provides standardized health check implementation for tool nodes with comprehens
 error handling, async support, and business intelligence capabilities.
 
 IMPORT ORDER CONSTRAINTS (Critical - Do Not Break):
-===============================================
 This module is part of a carefully managed import chain to avoid circular dependencies.
 
 Safe Runtime Imports (what this module actually imports):
@@ -24,6 +21,8 @@ This module is a leaf node in the import graph - it imports from stable,
 foundational modules (enums, logging, models, protocols, types) that have
 no dependencies on mixins. This ensures no circular import risk.
 """
+
+from __future__ import annotations
 
 import asyncio
 from collections.abc import Callable

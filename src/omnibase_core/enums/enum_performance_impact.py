@@ -1,11 +1,10 @@
-from __future__ import annotations
-
 """
 Performance impact enumeration for node capabilities and operations.
 
 Strongly typed enumeration for performance impact levels replacing magic strings.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 

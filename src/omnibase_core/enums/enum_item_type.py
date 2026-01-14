@@ -1,11 +1,10 @@
-from __future__ import annotations
-
 """
 Item type enumeration for collection items.
 
 Provides standardized item type values for item classification and filtering.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 

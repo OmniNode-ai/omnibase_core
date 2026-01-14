@@ -1,9 +1,8 @@
-from __future__ import annotations
-
 """
 Log data model for structured logging in event bus operations.
 """
 
+from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict
 

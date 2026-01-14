@@ -43,7 +43,6 @@ Usage Examples:
         issues = validate_directory(Path("src/omnibase_core/"), verbose=True)
 
 IMPORT ORDER CONSTRAINTS (Critical - Do Not Break):
-===================================================
 This module is part of a carefully managed import chain to avoid circular
 dependencies.
 

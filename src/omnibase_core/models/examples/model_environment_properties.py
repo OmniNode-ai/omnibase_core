@@ -1,22 +1,17 @@
-from __future__ import annotations
-
-from typing import TypeVar
-
-from pydantic import Field
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Environment Properties Model
 
 Type-safe custom environment properties with access methods.
 """
 
+from __future__ import annotations
+
 from datetime import datetime
-from typing import cast, get_origin
+from typing import TypeVar, cast, get_origin
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.type_serializable_value import SerializedDict
 
 # Type variable for generic property handling

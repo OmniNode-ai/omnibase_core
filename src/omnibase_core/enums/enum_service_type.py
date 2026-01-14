@@ -1,11 +1,11 @@
-from __future__ import annotations
-
 """
 Service type enum.
 
 This module provides the EnumServiceType enum for defining
 infrastructure service types in the ONEX Configuration-Driven Registry System.
 """
+
+from __future__ import annotations
 
 from enum import Enum, unique
 

@@ -1,8 +1,8 @@
-from __future__ import annotations
-
 """
 Legacy health input structure for converter functions.
 """
+
+from __future__ import annotations
 
 from datetime import datetime
 from typing import TypedDict

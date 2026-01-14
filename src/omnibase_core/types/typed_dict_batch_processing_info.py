@@ -1,9 +1,8 @@
-from __future__ import annotations
-
 """
 TypedDict for batch processing information.
 """
 
+from __future__ import annotations
 
 from datetime import datetime
 from typing import NotRequired, TypedDict

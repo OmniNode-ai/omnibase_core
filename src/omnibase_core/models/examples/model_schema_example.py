@@ -1,12 +1,3 @@
-from __future__ import annotations
-
-from typing import TypeVar
-
-from pydantic import Field
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.primitives.model_semver import ModelSemVer
-
 """
 Schema example model.
 
@@ -14,12 +5,18 @@ Type-safe model for extracting examples from YAML schema files,
 replacing dict[str, Any] return types with structured models.
 """
 
-from pydantic import BaseModel, ConfigDict
+from __future__ import annotations
+
+from typing import TypeVar
+
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_data_type import EnumDataType
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.types.type_serializable_value import SerializedDict
 
 # Note: Using ModelSchemaValue instead of complex union types for type safety

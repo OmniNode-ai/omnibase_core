@@ -1,3 +1,11 @@
+"""
+Generic container pattern for single-value models with metadata.
+
+This module provides a reusable generic container that can replace
+specialized single-value containers across the codebase, reducing
+repetitive patterns while maintaining type safety.
+"""
+
 from __future__ import annotations
 
 from collections.abc import Callable
@@ -7,15 +15,6 @@ from pydantic import Field
 
 if TYPE_CHECKING:
     from omnibase_core.types.type_serializable_value import SerializedDict
-
-"""
-Generic container pattern for single-value models with metadata.
-
-This module provides a reusable generic container that can replace
-specialized single-value containers across the codebase, reducing
-repetitive patterns while maintaining type safety.
-"""
-
 
 from pydantic import BaseModel, ConfigDict
 

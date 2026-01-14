@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Result category enumeration for CLI operations.
 
@@ -7,6 +5,7 @@ Defines the different categories of CLI result data.
 Follows ONEX one-enum-per-file naming conventions.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 

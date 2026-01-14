@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Shared utilities for protocol validation across omni* ecosystem.
 
@@ -31,6 +29,7 @@ Logging Conventions
 - ERROR: Failures that will raise exceptions
 """
 
+from __future__ import annotations
 
 import ast
 import hashlib

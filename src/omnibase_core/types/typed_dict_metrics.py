@@ -1,8 +1,8 @@
-from __future__ import annotations
-
 """
 TypedDict for general metrics.
 """
+
+from __future__ import annotations
 
 from datetime import datetime
 from typing import TypedDict

@@ -1,11 +1,10 @@
-from __future__ import annotations
-
 """
 Input/Output Type Enum.
 
 Strongly typed input/output type values for configuration.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 

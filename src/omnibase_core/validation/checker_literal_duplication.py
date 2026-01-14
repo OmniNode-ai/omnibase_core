@@ -18,7 +18,6 @@ Exit codes:
     1: Duplications detected (with actionable error messages)
 
 IMPORT ORDER CONSTRAINTS (Critical - Do Not Break):
-===================================================
 This module is part of a carefully managed import chain to avoid circular
 dependencies.
 

@@ -1,11 +1,10 @@
-from __future__ import annotations
-
 """
 Execution Trigger Enum.
 
 Strongly typed execution trigger values for configuration - defines WHEN/HOW execution is initiated.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 

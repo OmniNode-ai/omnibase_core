@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Field type enumeration for metadata field information.
 
@@ -7,6 +5,7 @@ Provides strongly typed field types for metadata fields.
 Follows ONEX one-enum-per-file naming conventions.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 

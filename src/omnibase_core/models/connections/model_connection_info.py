@@ -1,7 +1,3 @@
-from __future__ import annotations
-
-from pydantic import Field
-
 """
 Connection info model to replace Dict[str, Any] usage for connection_info fields.
 
@@ -9,11 +5,13 @@ Restructured to use composition of focused sub-models instead of
 excessive string fields in a single large model.
 """
 
+from __future__ import annotations
+
 import uuid
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, field_serializer
+from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
 from omnibase_core.enums.enum_connection_state import EnumConnectionState
 from omnibase_core.models.connections.model_connection_auth import ModelConnectionAuth

@@ -1,10 +1,10 @@
-from __future__ import annotations
-
-from typing import TypedDict
-
 """
 Typed structure for performance data updates.
 """
+
+from __future__ import annotations
+
+from typing import TypedDict
 
 
 class TypedDictPerformanceUpdateData(TypedDict, total=False):

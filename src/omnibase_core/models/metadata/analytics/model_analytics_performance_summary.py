@@ -1,7 +1,3 @@
-from __future__ import annotations
-
-from pydantic import Field
-
 """
 Analytics Performance Summary Model.
 
@@ -9,8 +5,9 @@ Structured performance summary data for analytics.
 Follows ONEX one-model-per-file architecture.
 """
 
+from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
 

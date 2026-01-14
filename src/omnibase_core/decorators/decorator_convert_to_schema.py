@@ -6,12 +6,10 @@ that convert list[Any] or dict[str, Any] fields to their type-safe ModelSchemaVa
 equivalents.
 
 IMPORT ORDER CONSTRAINTS (Critical - Do Not Break):
-===============================================
 This module uses deferred imports to avoid circular dependencies.
 ModelSchemaValue is imported inside functions, not at module level.
 
 PYDANTIC INTERNAL API USAGE (Documented Limitation):
-=====================================================
 TECH_DEBT: This module uses Pydantic internal APIs because there is no public API
 for dynamically adding model validators to an existing class post-creation.
 When Pydantic 3.x is released, audit this module for breaking changes.

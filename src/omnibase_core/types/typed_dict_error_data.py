@@ -1,8 +1,8 @@
-from __future__ import annotations
-
 """
 TypedDict for error count statistics.
 """
+
+from __future__ import annotations
 
 from typing import TypedDict
 

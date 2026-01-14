@@ -1,13 +1,13 @@
-from __future__ import annotations
-
-from typing import TypedDict
-
 """
 TypedDict for ModelValidationValue.serialize() return type.
 
 This module defines the structure returned by ModelValidationValue's serialize method,
 providing type-safe dictionary representation for validation values.
 """
+
+from __future__ import annotations
+
+from typing import TypedDict
 
 
 class TypedDictValidationValueSerialized(TypedDict):

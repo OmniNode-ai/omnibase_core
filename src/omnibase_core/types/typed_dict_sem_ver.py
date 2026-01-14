@@ -1,8 +1,8 @@
-from __future__ import annotations
-
 """
 TypedDict for semantic version structure following SemVer specification.
 """
+
+from __future__ import annotations
 
 from typing import TypedDict
 

@@ -1,8 +1,8 @@
-from __future__ import annotations
-
 """
 TypedDict for resource usage metrics.
 """
+
+from __future__ import annotations
 
 from typing import TypedDict
 

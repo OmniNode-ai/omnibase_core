@@ -1,9 +1,8 @@
-from __future__ import annotations
-
 """
 TypedDict for dependency information.
 """
 
+from __future__ import annotations
 
 from datetime import datetime
 from typing import NotRequired, TypedDict

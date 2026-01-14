@@ -1,9 +1,8 @@
-from __future__ import annotations
-
 """
 TypedDict for operation results.
 """
 
+from __future__ import annotations
 
 from datetime import datetime
 from typing import NotRequired, TypedDict

@@ -1,11 +1,10 @@
-from __future__ import annotations
-
 """
 Metadata tool status enumeration.
 
 Defines lifecycle status for metadata tools.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 

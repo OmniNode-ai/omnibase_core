@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Node ModelArchitecture Type Enum.
 
@@ -7,6 +5,7 @@ Strongly typed enumeration for ONEX 4-node architecture classifications.
 Replaces Literal["orchestrator", "compute", "reducer", "effect"] patterns.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 

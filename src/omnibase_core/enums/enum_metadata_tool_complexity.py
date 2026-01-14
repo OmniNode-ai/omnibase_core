@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Metadata tool complexity enumeration.
 
@@ -7,6 +5,7 @@ Defines complexity levels for metadata tools to help categorize their operationa
 and implementation complexity.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 

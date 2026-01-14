@@ -1,11 +1,10 @@
-from __future__ import annotations
-
 """
 Collection format enumeration.
 
 Defines format types for data collections and exports.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 

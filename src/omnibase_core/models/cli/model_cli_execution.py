@@ -1,11 +1,3 @@
-from __future__ import annotations
-
-from datetime import datetime
-
-from pydantic import Field
-
-from omnibase_core.types.type_serializable_value import SerializedDict
-
 """
 CLI Execution Model.
 
@@ -13,11 +5,16 @@ Represents CLI command execution context with timing, configuration,
 and state tracking for comprehensive command execution management.
 """
 
+from __future__ import annotations
 
-from datetime import UTC
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
+
+from pydantic import Field
+
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 # Use object type for CLI command option values.
 # Avoids primitive soup union anti-pattern while maintaining flexibility.

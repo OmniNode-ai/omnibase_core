@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Connection type enumeration for network operations.
 
@@ -7,6 +5,7 @@ Provides strongly typed connection type values for network configurations.
 Follows ONEX one-enum-per-file naming conventions.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 

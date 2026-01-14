@@ -1,9 +1,3 @@
-from __future__ import annotations
-
-from datetime import datetime
-
-from pydantic import Field
-
 """
 CLI Result Model.
 
@@ -11,11 +5,12 @@ Universal CLI execution result model that captures the complete
 outcome of CLI command execution with proper typing.
 """
 
+from __future__ import annotations
 
-from datetime import UTC
+from datetime import UTC, datetime
 from uuid import uuid4
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_config_category import EnumConfigCategory
 from omnibase_core.models.cli.model_cli_performance_metrics import (

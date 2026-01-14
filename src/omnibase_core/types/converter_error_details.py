@@ -1,8 +1,8 @@
-from __future__ import annotations
-
 """
 Convert legacy error dict[str, Any] to TypedDict.
 """
+
+from __future__ import annotations
 
 from .typed_dict_error_details import TypedDictErrorDetails
 from .typed_dict_legacy_error import TypedDictLegacyError

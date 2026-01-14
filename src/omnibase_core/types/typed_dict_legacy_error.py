@@ -1,8 +1,8 @@
-from __future__ import annotations
-
 """
 Legacy error input structure for converter functions.
 """
+
+from __future__ import annotations
 
 from typing import TypedDict
 

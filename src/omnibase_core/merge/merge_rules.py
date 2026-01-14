@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Merge rules for contract patching system.
 
@@ -37,6 +35,8 @@ Example:
         ... )
         ['feature_b', 'feature_c']
 """
+
+from __future__ import annotations
 
 from collections.abc import Callable
 from typing import TypeVar, cast

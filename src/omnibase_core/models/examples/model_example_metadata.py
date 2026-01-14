@@ -1,10 +1,3 @@
-from __future__ import annotations
-
-from pydantic import Field
-
-from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Example metadata model for examples collection.
 
@@ -12,12 +5,15 @@ This module provides the ModelExampleMetadata class for metadata
 about example collections with enhanced structure.
 """
 
+from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_difficulty_level import EnumDifficultyLevel
 from omnibase_core.enums.enum_example_category import EnumExampleCategory
+from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.type_serializable_value import SerializedDict
 
 

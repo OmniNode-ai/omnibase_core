@@ -1,9 +1,8 @@
-from __future__ import annotations
-
 """
 TypedDict for service information.
 """
 
+from __future__ import annotations
 
 from typing import NotRequired, TypedDict
 

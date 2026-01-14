@@ -1,11 +1,11 @@
-from __future__ import annotations
-
 """
 State model for reducer pattern.
 
 Implements ProtocolState from omnibase_spi for proper protocol compliance.
 Follows ONEX strong typing principles and one-model-per-file architecture.
 """
+
+from __future__ import annotations
 
 from datetime import datetime
 

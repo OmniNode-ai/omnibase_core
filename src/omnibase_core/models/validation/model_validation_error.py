@@ -1,24 +1,19 @@
-from __future__ import annotations
-
-import hashlib
-
-from pydantic import ConfigDict, Field
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Validation error model for tracking validation failures.
 """
 
+from __future__ import annotations
 
+import hashlib
 from typing import cast
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.constants import MAX_DESCRIPTION_LENGTH, MAX_NAME_LENGTH
 from omnibase_core.enums import EnumSeverity
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.typed_dict_validation_error_serialized import (
     TypedDictValidationErrorSerialized,
 )

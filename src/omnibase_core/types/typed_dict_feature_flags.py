@@ -1,9 +1,8 @@
-from __future__ import annotations
-
 """
 TypedDict for feature flags.
 """
 
+from __future__ import annotations
 
 from datetime import datetime
 from typing import NotRequired, TypedDict
