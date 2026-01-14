@@ -196,7 +196,7 @@ class TestEnumHandlerType:
         assert EnumHandlerType.GRAPH_DATABASE in EnumHandlerType
         assert EnumHandlerType.REDIS in EnumHandlerType
         assert EnumHandlerType.EVENT_BUS in EnumHandlerType
-        # Development/Testing handler types
+        # Development/Testing types
         assert EnumHandlerType.LOCAL in EnumHandlerType
 
 

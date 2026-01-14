@@ -67,6 +67,8 @@ Additionally, we establish **three severity categories**:
 | **Log Severity** | RFC 5424 logging levels | `EnumSeverityLevel` | Keep Separate |
 | **Business Impact** | Business impact classification | `EnumImpactSeverity` | Keep Separate |
 
+> **Note on Severity Enums**: `EnumSeverity` is for classifying issues, violations, and findings (e.g., validation errors, code analysis results). For actual logging operations with RFC 5424 compliance and numeric level ordering, use `EnumSeverityLevel` instead.
+
 ---
 
 ### Category Definitions
@@ -229,7 +231,7 @@ class EnumSeverity(str, Enum):
     FATAL = "fatal"        # Unrecoverable error, system must terminate
 ```
 
-**When to Use**: Validation findings, code analysis, issue classification, logging context.
+**When to Use**: Validation findings, code analysis results, issue classification, diagnostic messages. For actual log level selection (e.g., `logger.warning()`), use `EnumSeverityLevel` instead.
 
 **Location**: `src/omnibase_core/enums/enum_severity.py`
 
@@ -347,7 +349,7 @@ This ADR explicitly **does not** cover:
 
 ### Negative
 
-- **No Enforcement**: Taxonomy is advisory until consolidation is complete
+- **Partial Enforcement**: Enum governance checker (`checker_enum_governance.py`) is implemented and runs in pre-commit, but currently in warning mode (`|| true`). Will become blocking after existing violations are addressed (tracked in OMN-1296).
 - **Deferred Work**: FSM transitions and consolidation still required
 
 ---

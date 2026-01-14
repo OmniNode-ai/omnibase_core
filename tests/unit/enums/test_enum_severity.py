@@ -161,8 +161,7 @@ class TestEnumSeverity:
     def test_severity_ordering_by_value(self) -> None:
         """Test that severity levels can be compared by conventional ordering.
 
-        While EnumSeverity doesn't have explicit numeric levels, the conventional
-        ordering from lowest to highest is: DEBUG < INFO < WARNING < ERROR < CRITICAL < FATAL
+        The ordering from lowest to highest is: DEBUG < INFO < WARNING < ERROR < CRITICAL < FATAL
         """
         severity_order = ["debug", "info", "warning", "error", "critical", "fatal"]
         enum_order = [
@@ -176,6 +175,70 @@ class TestEnumSeverity:
 
         for i, severity in enumerate(enum_order):
             assert severity.value == severity_order[i]
+
+    def test_numeric_level_property(self) -> None:
+        """Test numeric_level property returns correct values."""
+        assert EnumSeverity.DEBUG.numeric_level == 10
+        assert EnumSeverity.INFO.numeric_level == 20
+        assert EnumSeverity.WARNING.numeric_level == 30
+        assert EnumSeverity.ERROR.numeric_level == 40
+        assert EnumSeverity.CRITICAL.numeric_level == 50
+        assert EnumSeverity.FATAL.numeric_level == 60
+
+    def test_numeric_level_ordering(self) -> None:
+        """Test that numeric levels are ordered correctly."""
+        levels = list(EnumSeverity)
+        numeric_values = [level.numeric_level for level in levels]
+
+        # Verify ordering: DEBUG < INFO < WARNING < ERROR < CRITICAL < FATAL
+        assert EnumSeverity.DEBUG.numeric_level < EnumSeverity.INFO.numeric_level
+        assert EnumSeverity.INFO.numeric_level < EnumSeverity.WARNING.numeric_level
+        assert EnumSeverity.WARNING.numeric_level < EnumSeverity.ERROR.numeric_level
+        assert EnumSeverity.ERROR.numeric_level < EnumSeverity.CRITICAL.numeric_level
+        assert EnumSeverity.CRITICAL.numeric_level < EnumSeverity.FATAL.numeric_level
+
+    def test_is_error_or_above(self) -> None:
+        """Test is_error_or_above helper method."""
+        # Not error or above
+        assert not EnumSeverity.DEBUG.is_error_or_above()
+        assert not EnumSeverity.INFO.is_error_or_above()
+        assert not EnumSeverity.WARNING.is_error_or_above()
+
+        # Error or above
+        assert EnumSeverity.ERROR.is_error_or_above()
+        assert EnumSeverity.CRITICAL.is_error_or_above()
+        assert EnumSeverity.FATAL.is_error_or_above()
+
+    def test_is_warning_or_above(self) -> None:
+        """Test is_warning_or_above helper method."""
+        # Not warning or above
+        assert not EnumSeverity.DEBUG.is_warning_or_above()
+        assert not EnumSeverity.INFO.is_warning_or_above()
+
+        # Warning or above
+        assert EnumSeverity.WARNING.is_warning_or_above()
+        assert EnumSeverity.ERROR.is_warning_or_above()
+        assert EnumSeverity.CRITICAL.is_warning_or_above()
+        assert EnumSeverity.FATAL.is_warning_or_above()
+
+    def test_severity_comparison_with_numeric_levels(self) -> None:
+        """Test comparing severities using numeric levels."""
+        # Example use case: filtering messages by minimum severity
+        min_severity = EnumSeverity.WARNING
+
+        below_threshold = [EnumSeverity.DEBUG, EnumSeverity.INFO]
+        at_or_above_threshold = [
+            EnumSeverity.WARNING,
+            EnumSeverity.ERROR,
+            EnumSeverity.CRITICAL,
+            EnumSeverity.FATAL,
+        ]
+
+        for severity in below_threshold:
+            assert severity.numeric_level < min_severity.numeric_level
+
+        for severity in at_or_above_threshold:
+            assert severity.numeric_level >= min_severity.numeric_level
 
 
 if __name__ == "__main__":

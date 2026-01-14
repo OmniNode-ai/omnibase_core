@@ -9,14 +9,14 @@ DOCUMENTED EXCEPTION per ADR-006 Status Taxonomy (OMN-1311):
 
     1. **RFC 5424 Base**: This enum includes the 8 RFC 5424 syslog severity levels
        (EMERGENCY through DEBUG) plus common extensions (TRACE, FATAL, WARN).
-       The canonical EnumSeverity has only 5 values (DEBUG through CRITICAL).
+       The canonical EnumSeverity has 6 values (DEBUG through FATAL).
 
     2. **Syslog Integration**: This enum is used for structured logging systems
        that require RFC 5424 severity levels for interoperability with
        syslog, journald, and other logging infrastructure.
 
     3. **Extended Level Support**: Includes levels not in the canonical enum:
-       EMERGENCY, ALERT, NOTICE (RFC 5424), plus TRACE, FATAL, WARN (extensions)
+       EMERGENCY, ALERT, NOTICE (RFC 5424), plus TRACE, WARN (extensions)
 
 For general-purpose severity classification, use EnumSeverity instead:
     from omnibase_core.enums.enum_severity import EnumSeverity
