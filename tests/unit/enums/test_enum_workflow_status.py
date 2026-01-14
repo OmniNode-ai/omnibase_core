@@ -417,14 +417,13 @@ class TestEnumWorkflowStatus:
             ],
         }
 
-        # Test that terminal states have no valid transitions
+        # Test that terminal states have no valid transitions defined
+        # (terminal statuses should not appear in valid_transitions keys)
         terminal_statuses = [
             s for s in EnumWorkflowStatus if EnumWorkflowStatus.is_terminal(s)
         ]
         for status in terminal_statuses:
-            # Terminal statuses should not transition to other states
-            # This is just a logical test - the enum doesn't enforce this
-            assert EnumWorkflowStatus.is_terminal(status) is True
+            assert status not in valid_transitions
 
         # Test that valid transitions are defined for active states
         for status in EnumWorkflowStatus:

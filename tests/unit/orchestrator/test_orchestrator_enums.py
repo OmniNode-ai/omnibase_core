@@ -863,13 +863,13 @@ class TestOrchestratorEnumsIntegration:
     """Integration tests across orchestrator enums."""
 
     def test_workflow_state_and_action_type_compatibility(self) -> None:
-        """Test that workflow states can transition through action types.
+        """Test that workflow state and action type enums can be used together.
 
-        Each action type should be applicable in RUNNING state.
+        Verifies both enum types have valid, non-None values.
         """
         running_state = EnumWorkflowStatus.RUNNING
         for action_type in EnumActionType:
-            # All action types should be valid concepts during RUNNING
+            # Verify enum values are defined
             assert action_type.value is not None
             assert running_state.value == "running"
 

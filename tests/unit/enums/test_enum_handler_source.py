@@ -27,12 +27,12 @@ class TestEnumHandlerSource:
         assert issubclass(EnumHandlerSource, Enum)
 
     def test_enum_string_behavior(self):
-        """Test string behavior of enum values."""
-        assert str(EnumHandlerSource.CORE) == "EnumHandlerSource.CORE"
-        assert str(EnumHandlerSource.RUNTIME) == "EnumHandlerSource.RUNTIME"
-        assert str(EnumHandlerSource.NODE_LOCAL) == "EnumHandlerSource.NODE_LOCAL"
-        assert str(EnumHandlerSource.PLUGIN) == "EnumHandlerSource.PLUGIN"
-        assert str(EnumHandlerSource.TEST) == "EnumHandlerSource.TEST"
+        """Test string behavior of enum values (str() returns value due to StrValueHelper mixin)."""
+        assert str(EnumHandlerSource.CORE) == "core"
+        assert str(EnumHandlerSource.RUNTIME) == "runtime"
+        assert str(EnumHandlerSource.NODE_LOCAL) == "node-local"
+        assert str(EnumHandlerSource.PLUGIN) == "plugin"
+        assert str(EnumHandlerSource.TEST) == "test"
 
     def test_enum_iteration(self):
         """Test that we can iterate over enum values."""

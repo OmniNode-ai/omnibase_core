@@ -44,4 +44,8 @@ class EnumFailureRecoveryStrategy(StrValueHelper, str, Enum):
     ABORT = "ABORT"
 
 
-__all__ = ["EnumAssignmentStatus"]
+__all__ = [
+    "EnumAssignmentStatus",
+    "EnumExecutionPattern",
+    "EnumFailureRecoveryStrategy",
+]

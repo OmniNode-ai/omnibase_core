@@ -13,7 +13,7 @@ This module is part of a carefully managed import chain to avoid circular depend
 Safe Runtime Imports:
 - omnibase_core.errors.error_codes (imports only from types.core_types and enums)
 - omnibase_core.enums.enum_log_level (no circular risk)
-- omnibase_core.enums.enum_node_health_status (no circular risk)
+- omnibase_core.enums.enum_health_status (no circular risk)
 - omnibase_core.logging.structured (no circular risk)
 - omnibase_core.models.core.model_health_status (no circular risk)
 - pydantic, typing, datetime (standard library)
