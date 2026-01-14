@@ -96,8 +96,6 @@ class ModelItemSummary(BaseModel):
         validate_assignment=True,
     )
 
-    # Export the model
-
     # Protocol method implementations
 
     def configure(self, **kwargs: Any) -> bool:
@@ -106,7 +104,7 @@ class ModelItemSummary(BaseModel):
             if hasattr(self, key):
                 try:
                     setattr(self, key, value)
-                except (AttributeError, ValueError, TypeError, KeyError) as e:
+                except (AttributeError, KeyError, TypeError, ValueError) as e:
                     raise ModelOnexError(
                         error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                         message=f"Failed to set attribute '{key}' to '{value}': {e}",

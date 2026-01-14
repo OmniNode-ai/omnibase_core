@@ -9,8 +9,6 @@ from typing import TypedDict
 
 
 class TypedDictExecutionStats(TypedDict):
-    """TypedDict for execution statistics."""
-
     execution_count: int
     success_count: int
     failure_count: int

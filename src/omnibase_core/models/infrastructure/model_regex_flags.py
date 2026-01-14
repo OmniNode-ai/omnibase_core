@@ -112,8 +112,6 @@ class ModelRegexFlags(BaseModel):
         validate_assignment=True,
     )
 
-    # Export the model
-
     # Protocol method implementations
 
     def execute(self, **kwargs: object) -> bool:

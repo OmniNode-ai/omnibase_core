@@ -10,8 +10,6 @@ from uuid import UUID
 
 
 class TypedDictSecurityContext(TypedDict):
-    """TypedDict for security context."""
-
     user_id: UUID
     session_id: UUID
     permissions: list[str]

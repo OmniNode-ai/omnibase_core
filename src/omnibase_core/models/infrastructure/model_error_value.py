@@ -156,14 +156,12 @@ class ModelErrorValue(BaseModel):
                 return exception_classes[self.exception_class](self.exception_message)
             # Fall back to generic RuntimeError with original class info
             return RuntimeError(f"{self.exception_class}: {self.exception_message}")
-        except (ValueError, TypeError, AttributeError) as e:
+        except (AttributeError, TypeError, ValueError) as e:
             # If recreation fails, raise error with context about the failure
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Failed to recreate exception {self.exception_class}: {e}",
             ) from e
-
-    # Export the model
 
     # Protocol method implementations
 

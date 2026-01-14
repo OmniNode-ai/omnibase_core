@@ -134,8 +134,6 @@ class ModelTypedMetrics[SimpleValueType](BaseModel):
         validate_assignment=True,
     )
 
-    # Export the model
-
     # Protocol method implementations
 
     def get_metadata(self) -> TypedDictMetadataDict:
@@ -210,12 +208,7 @@ class ModelTypedMetrics[SimpleValueType](BaseModel):
 
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except Exception:  # fallback-ok: protocol method contract requires bool return - False indicates validation failed, no logging needed
-            return False
+        return True
 
 
 __all__ = ["ModelTypedMetrics"]

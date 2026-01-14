@@ -15,9 +15,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from omnibase_core.decorators import allow_dict_any
 from omnibase_core.enums.enum_category_filter import EnumCategoryFilter
 from omnibase_core.enums.enum_cli_action import EnumCliAction
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_output_format import EnumOutputFormat
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.typed_dict_cli_node_execution_input_serialized import (
     TypedDictCliNodeExecutionInputSerialized,
 )
@@ -146,15 +144,7 @@ class ModelCliNodeExecutionInput(BaseModel):
 
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except (AttributeError, TypeError, ValueError) as e:
-            raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Operation failed: {e}",
-            ) from e
+        return True
 
 
 # Export for use

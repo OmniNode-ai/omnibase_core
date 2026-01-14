@@ -431,8 +431,6 @@ class ModelPropertyValue(BaseModel):
         from_attributes=True,
     )
 
-    # Export the model
-
     # Protocol method implementations
 
     def configure(self, **kwargs: object) -> bool:

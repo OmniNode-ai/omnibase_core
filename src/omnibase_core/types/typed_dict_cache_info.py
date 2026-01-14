@@ -8,8 +8,6 @@ from typing import TypedDict
 
 
 class TypedDictCacheInfo(TypedDict):
-    """TypedDict for cache information."""
-
     cache_name: str
     cache_size: int
     max_size: int

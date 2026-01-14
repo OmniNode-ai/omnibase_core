@@ -14,8 +14,6 @@ from .typed_dict_stats_collection import TypedDictStatsCollection
 
 
 class TypedDictSystemState(TypedDict):
-    """TypedDict for overall system state."""
-
     system_id: UUID
     system_name: str
     version: TypedDictSemVer

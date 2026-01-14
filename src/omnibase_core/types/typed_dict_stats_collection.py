@@ -13,8 +13,6 @@ from .typed_dict_resource_usage import TypedDictResourceUsage
 
 
 class TypedDictStatsCollection(TypedDict):
-    """TypedDict for collections of statistics."""
-
     execution_stats: TypedDictExecutionStats
     health_status: TypedDictHealthStatus
     resource_usage: TypedDictResourceUsage

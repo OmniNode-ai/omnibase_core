@@ -127,7 +127,7 @@ class ModelFunctionNodeMetadata(BaseModel):
                         minor=0,
                         patch=0,
                     )
-            except (ValueError, IndexError):
+            except (IndexError, ValueError):
                 self.deprecation.deprecated_since = ModelSemVer(
                     major=1,
                     minor=0,
@@ -318,7 +318,7 @@ class ModelFunctionNodeMetadata(BaseModel):
             minor = int(parts[1]) if len(parts) > 1 else 0
             patch = int(parts[2]) if len(parts) > 2 else 0
             version = ModelSemVer(major=major, minor=minor, patch=patch)
-        except (ValueError, IndexError):
+        except (IndexError, ValueError):
             version = ModelSemVer(major=1, minor=0, patch=0)
 
         dep = ModelFunctionDeprecationInfo.create_deprecated(version, replacement)
@@ -384,12 +384,7 @@ class ModelFunctionNodeMetadata(BaseModel):
 
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except Exception:  # fallback-ok: Protocol method - graceful fallback for optional implementation
-            return False
+        return True
 
 
 # NOTE: model_rebuild() not needed - Pydantic v2 handles forward references automatically

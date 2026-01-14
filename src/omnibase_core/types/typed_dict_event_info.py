@@ -10,8 +10,6 @@ from uuid import UUID
 
 
 class TypedDictEventInfo(TypedDict):
-    """TypedDict for event information."""
-
     event_id: UUID
     event_type: str
     timestamp: datetime

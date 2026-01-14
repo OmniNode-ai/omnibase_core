@@ -6,8 +6,6 @@ from typing import TypedDict
 
 
 class TypedDictMetadataParams(TypedDict, total=False):
-    """Metadata-related factory parameters."""
-
     name: str
     value: str
     description: str

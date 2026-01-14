@@ -10,8 +10,6 @@ from uuid import UUID
 
 
 class TypedDictBatchProcessingInfo(TypedDict):
-    """TypedDict for batch processing information."""
-
     batch_id: UUID
     total_items: int
     processed_items: int

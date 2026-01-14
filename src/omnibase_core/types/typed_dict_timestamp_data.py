@@ -9,8 +9,6 @@ from typing import TypedDict
 
 
 class TypedDictTimestampData(TypedDict):
-    """Timestamp data structure."""
-
     last_modified: datetime | None
     last_validated: datetime | None
 

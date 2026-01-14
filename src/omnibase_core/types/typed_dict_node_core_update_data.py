@@ -12,8 +12,6 @@ from omnibase_core.enums.enum_node_type import EnumNodeType
 
 
 class TypedDictNodeCoreUpdateData(TypedDict, total=False):
-    """Typed structure for core node data updates."""
-
     node_display_name: str
     description: str
     node_type: EnumNodeType

@@ -83,8 +83,6 @@ class ModelExamplesCollectionSummary(BaseModel):
         validate_assignment=True,
     )
 
-    # Export the models
-
     # Protocol method implementations
 
     def configure(self, **kwargs: object) -> bool:

@@ -211,8 +211,6 @@ class ModelFunctionNodeSummary(BaseModel):
         validate_assignment=True,
     )
 
-    # Export the model
-
     # Protocol method implementations
 
     def get_id(self) -> str:
@@ -288,12 +286,7 @@ class ModelFunctionNodeSummary(BaseModel):
 
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except Exception:  # fallback-ok: Protocol method - graceful fallback for optional implementation
-            return False
+        return True
 
 
 __all__ = ["ModelFunctionNodeSummary"]

@@ -506,12 +506,7 @@ class ModelCustomProperties(BaseModel):
         Note:
             Subclasses should override this method to add custom validation logic.
         """
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except Exception:  # fallback-ok: protocol method contract requires bool return - False indicates validation failed, no logging needed
-            return False
+        return True
 
     def get_name(self) -> str:
         """Get the instance name.

@@ -2,7 +2,7 @@
 Node core information summary model.
 
 Clean, strongly-typed replacement for node core info dict[str, Any] return types.
-Follows ONEX one-model-per-file naming conventions.
+Follows ONEX single-class-per-file naming conventions.
 """
 
 from __future__ import annotations
@@ -59,8 +59,6 @@ class ModelNodeCoreInfoSummary(BaseModel):
         use_enum_values=False,
         validate_assignment=True,
     )
-
-    # Export the model
 
     # Protocol method implementations
 
@@ -199,12 +197,7 @@ class ModelNodeCoreInfoSummary(BaseModel):
             contract - validation failures are indicated by returning False.
             Override in subclasses for custom validation logic.
         """
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except Exception:  # fallback-ok: Protocol method - graceful fallback for optional implementation
-            return False
+        return True
 
 
 __all__ = ["ModelNodeCoreInfoSummary"]

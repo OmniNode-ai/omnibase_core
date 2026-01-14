@@ -9,8 +9,6 @@ from typing import TypedDict
 
 
 class TypedDictLegacyStats(TypedDict, total=False):
-    """Legacy stats input structure for converter functions."""
-
     execution_count: str | None
     success_count: str | None
     failure_count: str | None

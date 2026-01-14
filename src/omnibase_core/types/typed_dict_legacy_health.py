@@ -9,8 +9,6 @@ from typing import TypedDict
 
 
 class TypedDictLegacyHealth(TypedDict, total=False):
-    """Legacy health input structure for converter functions."""
-
     status: str | None
     uptime_seconds: str | None
     last_check: datetime | None

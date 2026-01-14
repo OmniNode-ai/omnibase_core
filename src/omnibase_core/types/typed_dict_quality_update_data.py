@@ -10,8 +10,6 @@ from omnibase_core.enums.enum_documentation_quality import EnumDocumentationQual
 
 
 class TypedDictQualityUpdateData(TypedDict, total=False):
-    """Typed structure for quality data updates."""
-
     quality_score: float
     documentation_quality: EnumDocumentationQuality
     test_coverage: float

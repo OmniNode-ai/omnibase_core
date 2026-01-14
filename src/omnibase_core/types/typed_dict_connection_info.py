@@ -10,8 +10,6 @@ from uuid import UUID
 
 
 class TypedDictConnectionInfo(TypedDict):
-    """TypedDict for connection information."""
-
     connection_id: UUID
     connection_type: str
     status: str  # "connected", "disconnected", "error"

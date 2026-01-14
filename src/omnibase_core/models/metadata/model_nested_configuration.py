@@ -47,8 +47,6 @@ class ModelNestedConfiguration(BaseModel):
         validate_assignment=True,
     )
 
-    # Export the model
-
     # Protocol method implementations
 
     def get_metadata(self) -> TypedDictMetadataDict:

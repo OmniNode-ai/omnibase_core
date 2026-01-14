@@ -8,8 +8,6 @@ from typing import TypedDict
 
 
 class TypedDictLegacyError(TypedDict, total=False):
-    """Legacy error input structure for converter functions."""
-
     error_code: str | None
     error_message: str | None
     error_type: str | None

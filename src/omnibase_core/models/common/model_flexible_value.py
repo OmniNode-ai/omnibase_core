@@ -351,8 +351,6 @@ class ModelFlexibleValue(BaseModel):
         from_attributes=True,
     )
 
-    # Export the model
-
     # Protocol method implementations
 
     def serialize(self) -> dict[str, object]:

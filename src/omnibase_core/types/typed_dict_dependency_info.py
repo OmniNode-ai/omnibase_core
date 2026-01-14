@@ -11,8 +11,6 @@ from .typed_dict_sem_ver import TypedDictSemVer
 
 
 class TypedDictDependencyInfo(TypedDict):
-    """TypedDict for dependency information."""
-
     dependency_name: str
     dependency_version: TypedDictSemVer
     required_version: TypedDictSemVer

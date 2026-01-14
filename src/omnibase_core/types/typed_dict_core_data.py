@@ -8,8 +8,6 @@ from typing import TypedDict
 
 
 class TypedDictCoreData(TypedDict, total=False):
-    """Typed structure for core data updates."""
-
     total_nodes: int
     active_nodes: int
     deprecated_nodes: int

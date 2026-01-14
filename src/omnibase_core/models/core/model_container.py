@@ -166,7 +166,7 @@ class ModelContainer[T](BaseModel):
                 is_validated=False,  # Reset validation after transformation
                 validation_notes="Value transformed, requires re-validation",
             )
-        except (AttributeError, ValueError, TypeError, KeyError) as e:
+        except (AttributeError, KeyError, TypeError, ValueError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.OPERATION_FAILED,
                 message=f"Failed to map container value: {e!s}",
@@ -219,7 +219,7 @@ class ModelContainer[T](BaseModel):
                     },
                 ),
             )
-        except (ModelOnexError, AttributeError, ValueError, TypeError) as e:
+        except (AttributeError, ModelOnexError, TypeError, ValueError) as e:
             if isinstance(e, ModelOnexError):
                 raise
             raise ModelOnexError(
@@ -302,7 +302,7 @@ class ModelContainer[T](BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except (AttributeError, ValueError, TypeError, KeyError) as e:
+        except (AttributeError, KeyError, TypeError, ValueError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
@@ -314,15 +314,9 @@ class ModelContainer[T](BaseModel):
 
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except (AttributeError, ValueError, TypeError, KeyError) as e:
-            raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Operation failed: {e}",
-            ) from e
+        # Basic validation - ensure required fields exist
+        # Override in specific models for custom validation
+        return True
 
     def get_name(self) -> str:
         """Get name (Nameable protocol)."""

@@ -8,8 +8,6 @@ from omnibase_core.enums.enum_severity_level import EnumSeverityLevel
 
 
 class TypedDictMessageParams(TypedDict, total=False):
-    """Message-related factory parameters."""
-
     message: str
     severity: EnumSeverityLevel
 

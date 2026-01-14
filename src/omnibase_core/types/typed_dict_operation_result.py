@@ -11,8 +11,6 @@ from .typed_dict_error_details import TypedDictErrorDetails
 
 
 class TypedDictOperationResult(TypedDict):
-    """TypedDict for operation results."""
-
     success: bool
     result_type: str
     execution_time_ms: int

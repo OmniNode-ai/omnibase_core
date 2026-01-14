@@ -48,8 +48,6 @@ class ModelExampleMetadataSummary(BaseModel):
         validate_assignment=True,
     )
 
-    # Export the model
-
     # Protocol method implementations
 
     def configure(self, **kwargs: object) -> bool:

@@ -8,8 +8,6 @@ from typing import TypedDict
 
 
 class TypedDictPerformanceUpdateData(TypedDict, total=False):
-    """Typed structure for performance data updates."""
-
     average_execution_time_ms: float
     memory_usage_mb: float
     cpu_usage_percent: float

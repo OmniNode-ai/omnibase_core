@@ -9,8 +9,6 @@ from typing import TypedDict
 
 
 class TypedDictMetrics(TypedDict):
-    """TypedDict for general metrics."""
-
     timestamp: datetime
     metric_name: str
     metric_value: float

@@ -9,8 +9,6 @@ from typing import NotRequired, TypedDict
 
 
 class TypedDictFeatureFlags(TypedDict):
-    """TypedDict for feature flags."""
-
     feature_name: str
     enabled: bool
     environment: str
