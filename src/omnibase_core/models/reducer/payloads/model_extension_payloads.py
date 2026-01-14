@@ -23,6 +23,19 @@ Thread Safety:
     All payloads are immutable (frozen=True) after creation, making them
     thread-safe for concurrent read access.
 
+JSON Serialization:
+    The `data` field enforces strict JSON serializability at runtime.
+    Only primitive JSON types are allowed:
+    - str, int, float, bool, None (scalars)
+    - list (arrays of JSON values)
+    - dict with str keys (objects)
+
+    Non-JSON types are REJECTED with actionable error messages:
+    - datetime: Use `.isoformat()` before assignment
+    - UUID: Use `str(uuid)` before assignment
+    - Path: Use `str(path)` before assignment
+    - Custom objects: Use `.model_dump()` or manual serialization
+
 Example:
     >>> from omnibase_core.models.reducer.payloads import ModelPayloadExtension
     >>>
@@ -46,16 +59,96 @@ See Also:
     omnibase_core.models.reducer.model_intent: Extension intent model
 """
 
-from typing import Literal
+from typing import Any, Literal
 
-from pydantic import Field
+from pydantic import Field, field_validator
 
 from omnibase_core.models.reducer.payloads.model_intent_payload_base import (
     ModelIntentPayloadBase,
 )
+from omnibase_core.types import JsonType
 
 # Public API - listed immediately after imports per Python convention
 __all__ = ["ModelPayloadExtension"]
+
+
+# ==============================================================================
+# Strict JSON Validation Helpers
+# ==============================================================================
+
+# Types that are commonly mistaken for JSON-serializable but are NOT.
+# These require explicit conversion before assignment to `data`.
+_NON_JSON_TYPE_HINTS: dict[str, str] = {
+    "datetime": "Use .isoformat() to convert to ISO-8601 string",
+    "date": "Use .isoformat() to convert to ISO-8601 string",
+    "time": "Use .isoformat() to convert to ISO-8601 string",
+    "timedelta": "Use .total_seconds() or str() to convert",
+    "UUID": "Use str(uuid) to convert to string",
+    "Path": "Use str(path) to convert to string",
+    "PosixPath": "Use str(path) to convert to string",
+    "WindowsPath": "Use str(path) to convert to string",
+    "PurePath": "Use str(path) to convert to string",
+    "Decimal": "Use float(decimal) or str(decimal) to convert",
+    "bytes": "Use .decode('utf-8') or base64.b64encode().decode() to convert",
+    "bytearray": "Use bytes(ba).decode('utf-8') or base64 encoding to convert",
+    "set": "Use list(set_value) to convert to list",
+    "frozenset": "Use list(frozenset_value) to convert to list",
+}
+
+
+def _find_non_json_serializable_path(
+    value: Any, path: str = ""
+) -> tuple[str, str, str] | None:
+    """Find the first non-JSON-serializable value in a nested structure.
+
+    This function enforces STRICT JSON serializability - only the primitive
+    JSON types are allowed. Non-JSON types like datetime, UUID, Path, etc.
+    are rejected with actionable hints for common conversions.
+
+    Returns a tuple of (path, type_name, hint) if found, None if all values valid.
+    Uses recursive traversal to provide accurate key-paths for error messages.
+
+    Args:
+        value: The value to check for JSON serializability.
+        path: The current key-path (for nested structures).
+
+    Returns:
+        Tuple of (path, type_name, hint) if non-serializable value found,
+        None otherwise. The hint provides actionable conversion advice.
+    """
+    # JSON-serializable primitives: str, int, float, bool, None
+    if value is None or isinstance(value, (str, int, float, bool)):
+        return None
+
+    # Check dict recursively (JSON objects must have string keys)
+    if isinstance(value, dict):
+        for key, val in value.items():
+            if not isinstance(key, str):
+                key_path = f"{path}.{key}" if path else str(key)
+                return (
+                    key_path,
+                    f"non-string key ({type(key).__name__})",
+                    "JSON object keys must be strings",
+                )
+            key_path = f"{path}.{key}" if path else key
+            result = _find_non_json_serializable_path(val, key_path)
+            if result is not None:
+                return result
+        return None
+
+    # Check list recursively (JSON arrays)
+    if isinstance(value, list):
+        for idx, item in enumerate(value):
+            item_path = f"{path}[{idx}]" if path else f"[{idx}]"
+            result = _find_non_json_serializable_path(item, item_path)
+            if result is not None:
+                return result
+        return None
+
+    # Non-serializable type found - get hint for common types
+    type_name = type(value).__name__
+    hint = _NON_JSON_TYPE_HINTS.get(type_name, "Convert to JSON-compatible type")
+    return (path or "root", type_name, hint)
 
 
 class ModelPayloadExtension(ModelIntentPayloadBase):
@@ -135,11 +228,12 @@ class ModelPayloadExtension(ModelIntentPayloadBase):
         max_length=32,
     )
 
-    data: dict[str, object] = Field(
+    data: dict[str, JsonType] = Field(
         default_factory=dict,
         description=(
             "Arbitrary extension-specific data. Schema is defined by the extension. "
-            "Must be JSON-serializable."
+            "Must be JSON-serializable (str, int, float, bool, None, list, dict only). "
+            "Non-JSON types like datetime, UUID, Path are rejected with actionable hints."
         ),
     )
 
@@ -160,3 +254,65 @@ class ModelPayloadExtension(ModelIntentPayloadBase):
         ge=1,
         le=3600,
     )
+
+    @field_validator("data", mode="before")
+    @classmethod
+    def validate_data_json_serializable(cls, v: object) -> dict[str, JsonType]:
+        """Validate that data values are strictly JSON-serializable.
+
+        Enforces strict JSON serializability - only primitive JSON types are allowed:
+        str, int, float, bool, None, list (of JSON values), dict (with str keys).
+
+        Non-JSON types like datetime, UUID, Path, or custom objects are REJECTED
+        with actionable error messages that include the key-path and conversion hints.
+
+        No auto-coercion is performed - callers must explicitly convert types.
+
+        Args:
+            v: The dict to validate.
+
+        Returns:
+            The validated dict (unchanged if valid), typed as dict[str, JsonType].
+
+        Raises:
+            ValueError: If any value is not JSON-serializable, with key-path and hint.
+        """
+        if not isinstance(v, dict):
+            raise ValueError(f"data must be a dict, got {type(v).__name__}")
+
+        result = _find_non_json_serializable_path(v)
+        if result is not None:
+            path, type_name, hint = result
+            raise ValueError(
+                f"Non-JSON-serializable value at 'data.{path}': {type_name}. {hint}."
+            )
+        # NOTE(OMN-1266): Type narrowing - validation confirms all values are JsonType.
+        # Safe because _find_non_json_serializable_path validates recursively.
+        return v  # type: ignore[return-value]
+
+    @field_validator("config", mode="before")
+    @classmethod
+    def validate_config_json_serializable(cls, v: object) -> dict[str, object]:
+        """Validate that config values are JSON-serializable.
+
+        Applies the same JSON-serializability rules as the data field.
+
+        Args:
+            v: The dict to validate.
+
+        Returns:
+            The validated dict (unchanged if valid).
+
+        Raises:
+            ValueError: If any value is not JSON-serializable, with key-path and hint.
+        """
+        if not isinstance(v, dict):
+            raise ValueError(f"config must be a dict, got {type(v).__name__}")
+
+        result = _find_non_json_serializable_path(v)
+        if result is not None:
+            path, type_name, hint = result
+            raise ValueError(
+                f"Non-JSON-serializable value at 'config.{path}': {type_name}. {hint}."
+            )
+        return v
