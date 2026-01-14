@@ -358,7 +358,8 @@ repos:
         # - model_node_config_value.py: Node config entry and schema types
         # - mixin_event_bus.py: Duck-typed Protocol defined alongside mixin that uses it
         # - mixin_health_check.py: Duck-typed Protocols (connection pools, clients) alongside health check mixin
-        exclude: ^(tests/|archived/|archive/|scripts/validation/|src/omnibase_core/utils/util_singleton_holders\.py$|src/omnibase_core/models/core/model_action_config_value\.py$|src/omnibase_core/models/configuration/model_node_config_value\.py$|src/omnibase_core/mixins/mixin_event_bus\.py$|src/omnibase_core/mixins/mixin_health_check\.py$|src/omnibase_core/protocols/)
+        # - checker_enum_governance.py: Tightly coupled data classes + AST visitor for governance validator (OMN-1313)
+        exclude: ^(tests/|archived/|archive/|scripts/validation/|src/omnibase_core/utils/util_singleton_holders\.py$|src/omnibase_core/models/core/model_action_config_value\.py$|src/omnibase_core/models/configuration/model_node_config_value\.py$|src/omnibase_core/mixins/mixin_event_bus\.py$|src/omnibase_core/mixins/mixin_health_check\.py$|src/omnibase_core/validation/checker_enum_governance\.py$|src/omnibase_core/protocols/)
         stages: [pre-commit]
 
       - id: validate-enum-model-imports
@@ -381,6 +382,21 @@ repos:
         pass_filenames: true
         files: ^src/.*\.py$
         exclude: ^(tests/|archived/|archive/).*\.py$
+        stages: [pre-commit]
+
+      # Enum Governance Validation (OMN-1313)
+      # Enforces enum governance rules across the codebase:
+      # - No duplicate enum member values within a file
+      # - Consistent naming patterns for enum classes
+      # - Proper enum inheritance patterns
+      - id: check-enum-governance
+        name: Check Enum Governance
+        entry: poetry run python -m omnibase_core.validation.checker_enum_governance
+        language: system
+        types: [python]
+        files: ^src/.*\.py$
+        exclude: ^(tests/|archived/).*\.py$
+        pass_filenames: true
         stages: [pre-commit]
 
       - id: validate-typeddict-patterns
