@@ -180,13 +180,18 @@ class TestEnumHandlerType:
         assert "v0.4.0" in doc
         assert "LOCAL" in doc
 
-    def test_handler_type_categories(self):
-        """Test that handler types represent different categories."""
-        # Abstract types
+    def test_all_documented_handler_types_exist(self):
+        """Verify all documented handler type enum members are accessible.
+
+        This test ensures that all handler types documented in the enum's
+        docstring (Abstract, Concrete, and Development/Testing) are present
+        and accessible as enum members.
+        """
+        # Abstract types (foundational handler categories)
         assert EnumHandlerType.EXTENSION in EnumHandlerType
         assert EnumHandlerType.SPECIAL in EnumHandlerType
         assert EnumHandlerType.NAMED in EnumHandlerType
-        # Concrete types
+        # Concrete handler types (v0.3.6+)
         assert EnumHandlerType.HTTP in EnumHandlerType
         assert EnumHandlerType.DATABASE in EnumHandlerType
         assert EnumHandlerType.KAFKA in EnumHandlerType
@@ -196,7 +201,7 @@ class TestEnumHandlerType:
         assert EnumHandlerType.GRAPH_DATABASE in EnumHandlerType
         assert EnumHandlerType.REDIS in EnumHandlerType
         assert EnumHandlerType.EVENT_BUS in EnumHandlerType
-        # Development/Testing types
+        # Development/Testing types (v0.4.0+)
         assert EnumHandlerType.LOCAL in EnumHandlerType
 
 

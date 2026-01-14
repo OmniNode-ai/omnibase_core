@@ -9,7 +9,7 @@
 | **Created** | 2026-01-12 |
 | **Last Updated** | 2026-01-12 |
 | **Author** | ONEX Framework Team |
-| **Related Issue** | OMN-1312 |
+| **Related Issue** | OMN-1296 |
 | **Correlation ID** | `b8f4e2c1-7d3a-4f9e-a5b6-8c1d2e3f4a5b` |
 
 ## Executive Summary
@@ -67,7 +67,7 @@ Additionally, we establish **three severity categories**:
 | **Log Severity** | RFC 5424 logging levels | `EnumSeverityLevel` | Keep Separate |
 | **Business Impact** | Business impact classification | `EnumImpactSeverity` | Keep Separate |
 
-> **Note on Severity Enums**: `EnumSeverity` is for classifying issues, violations, and findings (e.g., validation errors, code analysis results). For actual logging operations with RFC 5424 compliance and numeric level ordering, use `EnumSeverityLevel` instead.
+> **Note on Severity Enums**: `EnumSeverity` is for classifying issues, violations, and findings (e.g., validation errors, code analysis results). It is **NOT** for selecting log levels in code - when writing `logger.info()`, `logger.warning()`, etc., you are not using `EnumSeverity`. For logging infrastructure that needs RFC 5424 compliance and numeric level ordering, use `EnumSeverityLevel` instead.
 
 ---
 
@@ -231,7 +231,7 @@ class EnumSeverity(str, Enum):
     FATAL = "fatal"        # Unrecoverable error, system must terminate
 ```
 
-**When to Use**: Validation findings, code analysis results, issue classification, diagnostic messages. For actual log level selection (e.g., `logger.warning()`), use `EnumSeverityLevel` instead.
+**When to Use**: Validation findings, code analysis results, issue classification, diagnostic messages. **Not for log level selection** - when you call `logger.warning()` or `logger.info()`, you are not using `EnumSeverity`. For logging infrastructure requiring numeric level ordering, use `EnumSeverityLevel`.
 
 **Location**: `src/omnibase_core/enums/enum_severity.py`
 
@@ -349,7 +349,7 @@ This ADR explicitly **does not** cover:
 
 ### Negative
 
-- **Partial Enforcement**: Enum governance checker (`checker_enum_governance.py`) is implemented and runs in pre-commit, but currently in warning mode (`|| true`). Will become blocking after existing violations are addressed (tracked in OMN-1296).
+- **Partial Enforcement**: Enum governance checker (`checker_enum_governance.py`) is implemented and runs in pre-commit hooks, but currently operates in **warning mode** (uses `|| true` to avoid blocking commits). The checker reports violations but does not fail builds. It will become a blocking check after existing violations are addressed (tracked in OMN-1296).
 - **Deferred Work**: FSM transitions and consolidation still required
 
 ---

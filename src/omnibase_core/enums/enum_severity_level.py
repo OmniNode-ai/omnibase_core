@@ -32,7 +32,8 @@ from enum import Enum, unique
 from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 # Module-level constant for numeric severity levels (avoids per-call dict allocation)
-# Compatible with RFC 5424 severity levels with numeric ordering
+# Uses ascending numeric scale (higher = more severe) for comparison operations.
+# Note: RFC 5424 uses descending 0-7 scale; this map uses ascending for intuitive comparison.
 _SEVERITY_LEVEL_NUMERIC_MAP: dict[str, int] = {
     "trace": 10,
     "debug": 20,
@@ -55,22 +56,27 @@ class EnumSeverityLevel(StrValueHelper, str, Enum):
 
     Inherits from str for JSON serialization compatibility while providing
     type safety and IDE support.
+
+    RFC 5424 Compliance:
+        The first 8 values (EMERGENCY through DEBUG) correspond to RFC 5424
+        severity levels 0-7. Note: RFC 5424 uses "Informational" for level 6;
+        this enum uses "INFO" as a common abbreviation.
     """
 
-    # Standard severity levels (RFC 5424 inspired)
-    EMERGENCY = "emergency"  # System is unusable
-    ALERT = "alert"  # Action must be taken immediately
-    CRITICAL = "critical"  # Critical conditions
-    ERROR = "error"  # Error conditions
-    WARNING = "warning"  # Warning conditions
-    NOTICE = "notice"  # Normal but significant conditions
-    INFO = "info"  # Informational messages
-    DEBUG = "debug"  # Debug-level messages
+    # RFC 5424 severity levels (0-7)
+    EMERGENCY = "emergency"  # RFC 5424 level 0: System is unusable
+    ALERT = "alert"  # RFC 5424 level 1: Action must be taken immediately
+    CRITICAL = "critical"  # RFC 5424 level 2: Critical conditions
+    ERROR = "error"  # RFC 5424 level 3: Error conditions
+    WARNING = "warning"  # RFC 5424 level 4: Warning conditions
+    NOTICE = "notice"  # RFC 5424 level 5: Normal but significant conditions
+    INFO = "info"  # RFC 5424 level 6: Informational messages
+    DEBUG = "debug"  # RFC 5424 level 7: Debug-level messages
 
-    # Additional common levels
-    TRACE = "trace"  # Very detailed debug information
-    FATAL = "fatal"  # Fatal error (alias for EMERGENCY)
-    WARN = "warn"  # Short form of WARNING
+    # Extensions beyond RFC 5424
+    TRACE = "trace"  # Extension: Very detailed debug information (below DEBUG)
+    FATAL = "fatal"  # Extension: Fatal error (semantic alias for EMERGENCY)
+    WARN = "warn"  # Extension: Short form of WARNING
 
     @classmethod
     def from_string(cls, value: str) -> EnumSeverityLevel:
