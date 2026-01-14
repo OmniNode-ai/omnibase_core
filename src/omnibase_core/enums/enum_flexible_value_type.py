@@ -1,10 +1,10 @@
-from __future__ import annotations
-
 """
 Flexible Value Type Enum.
 
 Strongly typed enumeration for flexible value type discriminators.
 """
+
+from __future__ import annotations
 
 from enum import Enum, unique
 

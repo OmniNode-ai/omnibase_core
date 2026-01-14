@@ -1,11 +1,10 @@
-from __future__ import annotations
-
 """
 Error Value Type Enum.
 
 Strongly typed enumeration for error value type discriminators.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 

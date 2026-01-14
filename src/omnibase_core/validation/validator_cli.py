@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Unified CLI interface for all omnibase_core validation tools.
 
@@ -12,6 +10,8 @@ Usage:
     python -m omnibase_core.validation.cli union-usage --strict
     python -m omnibase_core.validation.cli all
 """
+
+from __future__ import annotations
 
 import argparse
 import sys

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 TypedDict for trace information data.
 
@@ -7,6 +5,7 @@ Strongly-typed representation for trace information to replace loose Any typing.
 Follows ONEX one-model-per-file and TypedDict naming conventions.
 """
 
+from __future__ import annotations
 
 from datetime import datetime
 from typing import TypedDict

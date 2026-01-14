@@ -115,12 +115,7 @@ class ModelOperationPayload(BaseModel):
 
     def validate_instance(self) -> bool:
         """Validate instance integrity (Validatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except Exception:  # fallback-ok: Protocol method - graceful fallback for optional implementation
-            return False
+        return True
 
 
 # Export for use

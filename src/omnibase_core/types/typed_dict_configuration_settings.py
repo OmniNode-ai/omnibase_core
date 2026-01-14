@@ -1,15 +1,13 @@
-from __future__ import annotations
-
 """
 TypedDict for configuration settings.
 """
+
+from __future__ import annotations
 
 from typing import TypedDict
 
 
 class TypedDictConfigurationSettings(TypedDict):
-    """TypedDict for configuration settings."""
-
     environment: str
     debug_enabled: bool
     log_level: str

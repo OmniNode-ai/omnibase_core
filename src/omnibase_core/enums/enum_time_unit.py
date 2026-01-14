@@ -1,11 +1,10 @@
-from __future__ import annotations
-
 """
 Time Unit Enumeration.
 
 Time unit enumeration for flexible time representation.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 

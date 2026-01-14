@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Function status enumeration for node operations.
 
@@ -7,6 +5,7 @@ Provides strongly typed status values for function lifecycle tracking.
 Follows ONEX one-enum-per-file naming conventions.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 

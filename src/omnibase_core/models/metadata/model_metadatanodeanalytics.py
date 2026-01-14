@@ -369,7 +369,7 @@ class ModelMetadataNodeAnalytics(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except (AttributeError, ValueError, TypeError, KeyError):
+        except (AttributeError, KeyError, TypeError, ValueError):
             # fallback-ok: metadata update failure in analytics does not impact core functionality
             return False
 
@@ -379,10 +379,6 @@ class ModelMetadataNodeAnalytics(BaseModel):
 
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except (AttributeError, ValueError, TypeError, KeyError):
-            # fallback-ok: validation failure in monitoring analytics defaults to invalid state
-            return False
+        # Basic validation - ensure required fields exist
+        # Override in specific models for custom validation
+        return True

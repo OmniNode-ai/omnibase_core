@@ -1,11 +1,10 @@
-from __future__ import annotations
-
 """
 Documentation quality enumeration.
 
 Defines quality levels for documentation assessment.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 

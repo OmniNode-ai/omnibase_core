@@ -1,10 +1,10 @@
-from __future__ import annotations
-
 """
 Migration Conflict Type Enum.
 
 Strongly typed enumeration for migration conflict type discriminators.
 """
+
+from __future__ import annotations
 
 from enum import Enum, unique
 

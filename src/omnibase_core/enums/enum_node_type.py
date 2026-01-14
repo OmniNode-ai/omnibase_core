@@ -1,11 +1,10 @@
-from __future__ import annotations
-
 """
 Node Type Enum.
 
 Strongly typed node type values for ONEX architecture node classification.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 from typing import TYPE_CHECKING

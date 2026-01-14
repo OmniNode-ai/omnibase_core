@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Execution Order Enum.
 
@@ -7,6 +5,7 @@ Strongly typed enumeration for execution order strategies.
 Replaces Literal["reverse", "forward", "parallel"] patterns.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 

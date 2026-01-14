@@ -1,14 +1,3 @@
-from __future__ import annotations
-
-from datetime import datetime
-from typing import Self
-
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
-
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.primitives.model_semver import ModelSemVer
-
 """
 Generic Configuration Base Class.
 
@@ -16,13 +5,25 @@ Standardizes common patterns found across Config domain models,
 eliminating field duplication and providing consistent configuration interfaces.
 """
 
+from __future__ import annotations
 
-from datetime import UTC
+from datetime import UTC, datetime
+from typing import Self
 
-from pydantic import field_serializer
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    field_serializer,
+    field_validator,
+    model_validator,
+)
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.infrastructure.model_result import ModelResult
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelConfigurationBase[T](BaseModel):
@@ -126,7 +127,7 @@ class ModelConfigurationBase[T](BaseModel):
             if self.name is not None and len(self.name.strip()) == 0:
                 return False
             return base_valid
-        except (AttributeError, ValueError, TypeError, KeyError) as e:
+        except (AttributeError, KeyError, TypeError, ValueError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
@@ -180,7 +181,7 @@ class ModelConfigurationBase[T](BaseModel):
                     self.config_data = value
             self.update_timestamp()
             return True
-        except (AttributeError, ValueError, TypeError, KeyError) as e:
+        except (AttributeError, KeyError, TypeError, ValueError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",

@@ -1,10 +1,10 @@
-from __future__ import annotations
-
 """
 TypedDict for workflow execution context.
 
 Provides type-safe structure for workflow context passed between steps.
 """
+
+from __future__ import annotations
 
 from typing import TypedDict
 

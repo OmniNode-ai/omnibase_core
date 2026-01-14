@@ -1,11 +1,10 @@
-from __future__ import annotations
-
 """
 Result Type Enum.
 
 Strongly typed result type values for configuration and processing.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 

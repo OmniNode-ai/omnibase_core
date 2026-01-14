@@ -1,11 +1,10 @@
-from __future__ import annotations
-
 """
 Datetime parsing utilities for TypedDict conversions.
 
 Provides consistent datetime parsing across the codebase.
 """
 
+from __future__ import annotations
 
 from datetime import datetime
 

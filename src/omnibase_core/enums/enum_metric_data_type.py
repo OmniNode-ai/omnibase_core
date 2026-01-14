@@ -1,11 +1,10 @@
-from __future__ import annotations
-
 """
 Metric Data Type Enum.
 
 Strongly typed metric data type values for data type classification.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 

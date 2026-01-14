@@ -1,11 +1,11 @@
-from __future__ import annotations
-
 """
 Numeric Value Type Enum.
 
 Strongly typed enumeration for numeric value type discriminators.
 Used in ModelNumericValue for type-safe numeric union handling.
 """
+
+from __future__ import annotations
 
 from enum import Enum, unique
 

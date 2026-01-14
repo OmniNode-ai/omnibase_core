@@ -1,11 +1,10 @@
-from __future__ import annotations
-
 """
 Runtime Category Enumeration.
 
 Defines categories for estimated runtime durations.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 

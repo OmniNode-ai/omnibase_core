@@ -1,12 +1,3 @@
-from __future__ import annotations
-
-from collections.abc import Callable
-from typing import TypeVar
-
-from pydantic import Field
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Property collection model for environment properties.
 
@@ -14,16 +5,22 @@ This module provides the ModelPropertyCollection class for managing
 collections of typed properties with validation and helper methods.
 """
 
+from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict
+from collections.abc import Callable
+from typing import TypeVar
+
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_property_type import EnumPropertyType
+from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
 
 # Use already imported ModelPropertyValue for type safety
 # No need for primitive soup fallback - ModelPropertyValue provides proper discriminated union
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.type_serializable_value import SerializedDict
 
 from .model_property_metadata import ModelPropertyMetadata
@@ -185,10 +182,13 @@ class ModelPropertyCollection(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except (AttributeError, ValueError, TypeError) as e:
+        except ModelOnexError:
+            raise  # Re-raise without double-wrapping
+        except PYDANTIC_MODEL_ERRORS as e:
+            # PYDANTIC_MODEL_ERRORS covers: AttributeError, TypeError, ValidationError, ValueError
             raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             ) from e
 
     def serialize(self) -> SerializedDict:
@@ -196,13 +196,12 @@ class ModelPropertyCollection(BaseModel):
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except (AttributeError, ValueError, TypeError) as e:
-            raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Operation failed: {e}",
-            ) from e
+        """
+        Validate instance integrity (ProtocolValidatable protocol).
+
+        Returns True for well-constructed instances. Override in subclasses
+        for custom validation logic.
+        """
+        # Basic validation - Pydantic handles field constraints
+        # Override in specific models for custom validation
+        return True

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Standard Tag Enum.
 
@@ -7,6 +5,7 @@ Standardized tags for consistent classification across metadata models.
 Reduces reliance on free-form string tags while maintaining extensibility.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 

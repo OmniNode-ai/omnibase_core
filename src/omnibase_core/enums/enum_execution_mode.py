@@ -1,11 +1,10 @@
-from __future__ import annotations
-
 """
 Execution Mode Enum.
 
 Strongly typed execution mode values for configuration - defines WHICH pattern to use for processing.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 

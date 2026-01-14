@@ -67,10 +67,13 @@ class ModelFallbackMetadata(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
+        except ModelOnexError:
+            raise  # Re-raise without double-wrapping
         except PYDANTIC_MODEL_ERRORS as e:
+            # PYDANTIC_MODEL_ERRORS covers: AttributeError, TypeError, ValidationError, ValueError
             raise ModelOnexError(
+                message=f"Operation failed: {e}",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Configuration failed: {e}",
             ) from e
 
     def serialize(self) -> SerializedDict:

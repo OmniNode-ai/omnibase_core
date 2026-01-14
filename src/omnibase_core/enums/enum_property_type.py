@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Property type enum for environment properties.
 
@@ -7,6 +5,7 @@ This module provides the EnumPropertyType for defining supported property types
 in environment property storage with proper validation and constraints.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 

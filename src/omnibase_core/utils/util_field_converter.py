@@ -1,9 +1,3 @@
-from __future__ import annotations
-
-from collections.abc import Callable
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 FieldConverter
 
@@ -13,19 +7,21 @@ This replaces hardcoded if/elif chains with a declarative,
 extensible converter registry pattern.
 
 IMPORT ORDER CONSTRAINTS (Critical - Do Not Break):
-===============================================
 This module is part of a carefully managed import chain to avoid circular dependencies.
 
 Safe Runtime Imports (OK to import at module level):
 - Standard library modules only
 """
 
+from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 # Use ModelSchemaValue directly for ONEX compliance
 

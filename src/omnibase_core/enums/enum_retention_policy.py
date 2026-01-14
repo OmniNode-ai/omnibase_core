@@ -1,11 +1,10 @@
-from __future__ import annotations
-
 """
 Retention policy enumeration.
 
 Defines data retention policies for compliance and lifecycle management.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 

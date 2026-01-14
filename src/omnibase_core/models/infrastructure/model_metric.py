@@ -1,3 +1,10 @@
+"""
+Metric model.
+
+Individual metric model with strong typing using TypeVar generics.
+Follows ONEX one-model-per-file naming conventions and strong typing standards.
+"""
+
 from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -8,13 +15,6 @@ from omnibase_core.models.common.model_numeric_value import ModelNumericValue
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.type_serializable_value import SerializedDict
-
-"""
-Metric model.
-
-Individual metric model with strong typing using TypeVar generics.
-Follows ONEX one-model-per-file naming conventions and strong typing standards.
-"""
 
 
 class ModelMetric(BaseModel):

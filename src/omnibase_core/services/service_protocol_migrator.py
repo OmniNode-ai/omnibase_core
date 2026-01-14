@@ -1,8 +1,8 @@
-from __future__ import annotations
-
 """
 Protocol migrator for safe migration of protocols to omnibase_spi.
 """
+
+from __future__ import annotations
 
 import shutil
 from pathlib import Path

@@ -73,7 +73,7 @@ class ModelResultAccessor(ModelFieldAccessor):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except (AttributeError, ValueError, TypeError, KeyError):
+        except (AttributeError, KeyError, TypeError, ValueError):
             # fallback-ok: Configurable protocol requires bool return - False signals configuration failure
             return False
 
@@ -96,7 +96,7 @@ class ModelResultAccessor(ModelFieldAccessor):
                         result[key] = value
                     else:
                         result[key] = str(value)
-                except (AttributeError, ValueError, TypeError, KeyError):
+                except (AttributeError, KeyError, TypeError, ValueError):
                     # Skip any attributes that can't be serialized
                     continue
 
@@ -104,13 +104,9 @@ class ModelResultAccessor(ModelFieldAccessor):
 
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except (AttributeError, ValueError, TypeError, KeyError):
-            # fallback-ok: Validatable protocol requires bool return - False signals validation failure
-            return False
+        # Basic validation - ensure required fields exist
+        # Override in specific models for custom validation
+        return True
 
     def get_name(self) -> str:
         """Get name (Nameable protocol)."""

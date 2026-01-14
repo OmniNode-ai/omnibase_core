@@ -1,9 +1,3 @@
-from __future__ import annotations
-
-from typing import TypeVar
-
-from pydantic import Field
-
 """
 Typed property model for environment properties.
 
@@ -11,10 +5,11 @@ This module provides the ModelTypedProperty class for storing a single
 typed property with validation in the environment property system.
 """
 
+from __future__ import annotations
 
-from typing import cast
+from typing import TypeVar, cast
 
-from pydantic import BaseModel, ConfigDict, ValidationError, model_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_property_type import EnumPropertyType

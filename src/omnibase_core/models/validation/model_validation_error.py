@@ -1,24 +1,17 @@
-from __future__ import annotations
-
-import hashlib
-
-from pydantic import ConfigDict, Field
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Validation error model for tracking validation failures.
 """
 
+from __future__ import annotations
 
+import hashlib
 from typing import cast
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.constants import MAX_DESCRIPTION_LENGTH, MAX_NAME_LENGTH
 from omnibase_core.enums import EnumSeverity
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.types.typed_dict_validation_error_serialized import (
     TypedDictValidationErrorSerialized,
 )
@@ -184,15 +177,7 @@ class ModelValidationError(BaseModel):
 
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except (AttributeError, ValueError, TypeError) as e:
-            raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Operation failed: {e}",
-            ) from e
+        return True
 
     def serialize(self) -> TypedDictValidationErrorSerialized:
         """Serialize to dictionary (Serializable protocol)."""

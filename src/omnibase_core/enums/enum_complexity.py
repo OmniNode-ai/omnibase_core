@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Complexity enumeration for operations and functions.
 
@@ -7,6 +5,7 @@ Provides strongly typed complexity values for performance estimation.
 Follows ONEX one-enum-per-file naming conventions.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 

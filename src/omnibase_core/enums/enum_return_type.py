@@ -1,11 +1,10 @@
-from __future__ import annotations
-
 """
 Return Type Enum.
 
 Strongly typed return type values for ONEX architecture output classification.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 

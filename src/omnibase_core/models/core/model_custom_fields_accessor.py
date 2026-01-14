@@ -854,12 +854,7 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
 
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except Exception:  # fallback-ok: protocol method must return bool, not raise
-            return False
+        return True
 
     def get_name(self) -> str:
         """Get name (Nameable protocol)."""

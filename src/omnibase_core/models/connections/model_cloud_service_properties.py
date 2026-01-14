@@ -53,8 +53,6 @@ class ModelCloudServiceProperties(BaseModel):
         validate_assignment=True,
     )
 
-    # Export the model
-
     # Protocol method implementations
 
     def configure(self, **kwargs: object) -> bool:
@@ -64,7 +62,7 @@ class ModelCloudServiceProperties(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except (AttributeError, ValueError, TypeError, ValidationError) as e:
+        except (AttributeError, TypeError, ValidationError, ValueError) as e:
             raise ModelOnexError(
                 message=f"Operation failed: {e}",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,

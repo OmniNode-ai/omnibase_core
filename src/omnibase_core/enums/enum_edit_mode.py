@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Edit Mode Enum.
 
@@ -7,6 +5,7 @@ Strongly typed enumeration for edit operation modes.
 Replaces Literal["replace", "insert", "delete"] patterns.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 

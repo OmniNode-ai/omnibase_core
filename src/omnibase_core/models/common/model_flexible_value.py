@@ -1,3 +1,10 @@
+"""
+Flexible Value Model - Discriminated Union for Mixed Type Values.
+
+Replaces dict[str, Any]| None, list[Any]| None, and other mixed-type unions
+with structured discriminated union pattern for type safety.
+"""
+
 from __future__ import annotations
 
 from uuid import UUID
@@ -10,13 +17,6 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 from .model_error_context import ModelErrorContext
 from .model_schema_value import ModelSchemaValue
-
-"""
-Flexible Value Model - Discriminated Union for Mixed Type Values.
-
-Replaces dict[str, Any]| None, list[Any]| None, and other mixed-type unions
-with structured discriminated union pattern for type safety.
-"""
 
 # Note: Previously had type aliases (FlexibleDictType, FlexibleListType, FlexibleValueType)
 # These were removed to comply with ONEX strong typing standards.
@@ -350,8 +350,6 @@ class ModelFlexibleValue(BaseModel):
         validate_assignment=True,
         from_attributes=True,
     )
-
-    # Export the model
 
     # Protocol method implementations
 

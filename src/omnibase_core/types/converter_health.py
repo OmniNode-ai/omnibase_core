@@ -1,8 +1,8 @@
-from __future__ import annotations
-
 """
 Convert legacy health dict[str, Any] to TypedDict.
 """
+
+from __future__ import annotations
 
 from .typed_dict_converted_health import TypedDictConvertedHealth
 from .typed_dict_legacy_health import TypedDictLegacyHealth

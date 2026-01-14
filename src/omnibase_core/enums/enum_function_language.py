@@ -1,11 +1,10 @@
-from __future__ import annotations
-
 """
 Function language enumeration.
 
 Defines supported languages for function discovery and tool definitions.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 

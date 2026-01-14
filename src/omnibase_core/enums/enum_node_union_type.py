@@ -1,11 +1,10 @@
-from __future__ import annotations
-
 """
 Node Union Type Enum.
 
 Strongly typed enumeration for node union type discriminators.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 

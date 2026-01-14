@@ -13,9 +13,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.decorators import allow_dict_any
 from omnibase_core.enums.enum_color_scheme import EnumColorScheme
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_table_alignment import EnumTableAlignment
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.infrastructure.model_value import ModelValue
 from omnibase_core.models.utils.model_field_converter import ModelFieldConverterRegistry
 from omnibase_core.types.typed_dict_output_format_options_kwargs import (
@@ -305,15 +303,7 @@ class ModelOutputFormatOptions(BaseModel):
 
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except (AttributeError, ValueError, TypeError) as e:
-            raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Operation failed: {e}",
-            ) from e
+        return True
 
 
 # Export for use

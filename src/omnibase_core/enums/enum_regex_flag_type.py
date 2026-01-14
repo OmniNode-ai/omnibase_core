@@ -1,11 +1,10 @@
-from __future__ import annotations
-
 """
 Regex Flag Type Enum.
 
 Strongly typed enumeration for regex flag type discriminators.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 

@@ -1,11 +1,10 @@
-from __future__ import annotations
-
 """
 Entity Type Enum.
 
 Strongly typed entity type values for data classification.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 

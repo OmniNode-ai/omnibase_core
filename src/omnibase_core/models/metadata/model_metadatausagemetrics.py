@@ -126,9 +126,4 @@ class ModelMetadataUsageMetrics(BaseModel):
 
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except Exception:  # fallback-ok: protocol method contract requires bool return - False indicates validation failed, no logging needed
-            return False
+        return True

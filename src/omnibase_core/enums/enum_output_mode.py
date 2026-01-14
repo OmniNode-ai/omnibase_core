@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Output Mode Enum.
 
@@ -7,6 +5,7 @@ Strongly typed enumeration for output mode types.
 Replaces Literal["content", "files_with_matches", "count"] patterns.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 

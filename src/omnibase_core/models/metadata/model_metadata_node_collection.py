@@ -101,7 +101,7 @@ class ModelMetadataNodeCollection(RootModel[dict[str, object]]):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except (AttributeError, ValueError, TypeError, KeyError):
+        except (AttributeError, KeyError, TypeError, ValueError):
             # fallback-ok: ProtocolMetadataProvider contract expects bool, not exceptions
             return False
 
@@ -114,10 +114,6 @@ class ModelMetadataNodeCollection(RootModel[dict[str, object]]):
 
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except (AttributeError, ValueError, TypeError, KeyError):
-            # fallback-ok: ProtocolValidatable contract expects bool validation result, not exceptions
-            return False
+        # Basic validation - ensure required fields exist
+        # Override in specific models for custom validation
+        return True

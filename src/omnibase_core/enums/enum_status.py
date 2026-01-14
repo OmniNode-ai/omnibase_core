@@ -1,11 +1,10 @@
-from __future__ import annotations
-
 """
 Status enumeration for general status tracking.
 
 Provides standardized status values for state management across the system.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 
