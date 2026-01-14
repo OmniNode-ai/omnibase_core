@@ -158,7 +158,8 @@ from .enum_import_status import EnumImportStatus
 # Injection scope enum (DI container scoping)
 from .enum_injection_scope import EnumInjectionScope
 
-# Invariant-related enums (OMN-1192)
+# Invariant-related enums (OMN-1192, OMN-1206)
+from .enum_invariant_report_status import EnumInvariantReportStatus
 from .enum_invariant_severity import EnumInvariantSeverity
 from .enum_invariant_type import EnumInvariantType
 
@@ -542,8 +543,9 @@ __all__ = [
     "EnumTokenType",
     "EnumTriggerEvent",
     "EnumLikelihood",
-    # Invariant domain (OMN-1192, OMN-1207)
+    # Invariant domain (OMN-1192, OMN-1206, OMN-1207)
     "EnumComparisonType",
+    "EnumInvariantReportStatus",
     "EnumInvariantSeverity",
     "EnumInvariantType",
     # Violation severity domain (OMN-1195)
