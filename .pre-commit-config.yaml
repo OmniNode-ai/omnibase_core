@@ -257,6 +257,21 @@ repos:
         exclude: ^(tests/|archived/|archive/|scripts/validation/).*\.py$
         stages: [pre-commit]
 
+      # Pydantic Conventions Validation (OMN-1314)
+      # Enforces Pydantic model best practices:
+      # - No empty ConfigDict() - explicit configuration required
+      # - frozen=True models must have from_attributes=True
+      # - No unnecessary Field() wrappers without metadata
+      # - Mutable defaults must use default_factory
+      - id: validate-pydantic-conventions
+        name: Validate Pydantic conventions
+        entry: poetry run python -m omnibase_core.validation.validator_pydantic_conventions
+        language: system
+        types: [python]
+        files: ^src/omnibase_core/
+        pass_filenames: true
+        stages: [pre-commit]
+
       # UNION VALIDATION THRESHOLD:
       # Tech debt: Union type threshold reduced from 256 to 160 (OMN-676).
       # Target: Reduce to 0 incrementally. Tracking: OMN-468, OMN-676
