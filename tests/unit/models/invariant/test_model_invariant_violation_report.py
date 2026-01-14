@@ -471,6 +471,7 @@ class TestReportOutputFormats:
         expected_keys = {
             "id",
             "evaluation_id",
+            "invariant_set_id",
             "target",
             "status",
             "total_invariants",

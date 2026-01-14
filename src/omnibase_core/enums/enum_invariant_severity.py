@@ -51,3 +51,5 @@ _SEVERITY_ORDER: dict["EnumInvariantSeverity", int] = {
     EnumInvariantSeverity.WARNING: 1,
     EnumInvariantSeverity.CRITICAL: 2,
 }
+
+__all__ = ["EnumInvariantSeverity"]

@@ -22,6 +22,14 @@ class ModelInvariantViolationReport(BaseModel):
     Reports facts only - does not embed policy decisions about blocking.
     The calling code (via contract configuration) determines what severity
     threshold constitutes a blocking violation.
+
+    Note on failed_count vs len(violations):
+        The `failed_count` field represents the total count of failed invariants,
+        while the `violations` list contains detailed violation records. These are
+        intentionally independent because:
+        - Some evaluations may summarize failures without generating full detail records
+        - The violations list may be a filtered subset (e.g., only CRITICAL violations)
+        - Pagination or truncation may limit the violations list while preserving counts
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
@@ -35,7 +43,10 @@ class ModelInvariantViolationReport(BaseModel):
     target: str = Field(..., description="Node/workflow that was evaluated")
 
     # Timing
-    evaluated_at: datetime
+    evaluated_at: datetime = Field(
+        ...,
+        description="Timestamp when evaluation completed. Timezone-aware recommended (UTC preferred).",
+    )
     duration_ms: float = Field(
         ..., ge=0, description="Evaluation duration in milliseconds"
     )
@@ -43,7 +54,12 @@ class ModelInvariantViolationReport(BaseModel):
     # Summary Statistics (stored, not computed - set by creator)
     total_invariants: int = Field(..., ge=0)
     passed_count: int = Field(..., ge=0)
-    failed_count: int = Field(..., ge=0)
+    failed_count: int = Field(
+        ...,
+        ge=0,
+        description="Total count of failed invariants. Independent from len(violations) "
+        "which may be a filtered subset or omit details for summarized failures.",
+    )
     skipped_count: int = Field(..., ge=0)
 
     # Status
@@ -130,6 +146,7 @@ class ModelInvariantViolationReport(BaseModel):
         return {
             "id": str(self.id),
             "evaluation_id": str(self.evaluation_id),
+            "invariant_set_id": str(self.invariant_set_id),
             "target": self.target,
             "status": self.status.value,
             "total_invariants": self.total_invariants,
@@ -162,6 +179,9 @@ class ModelInvariantViolationReport(BaseModel):
             f"| Failed | {self.failed_count} |",
             f"| Skipped | {self.skipped_count} |",
             f"| Pass Rate | {self.pass_rate:.1%} |",
+            f"| Critical | {self.critical_count} |",
+            f"| Warnings | {self.warning_count} |",
+            f"| Info | {self.info_count} |",
             "",
             f"**Status**: {self.status.value.upper()}",
             "",
