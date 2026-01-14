@@ -51,6 +51,9 @@ if TYPE_CHECKING:
 
     from omnibase_core.container.container_service_registry import ServiceRegistry
     from omnibase_core.models.container.model_enhanced_logger import ModelEnhancedLogger
+    from omnibase_core.models.container.model_registry_config import (
+        ModelServiceRegistryConfig,
+    )
     from omnibase_core.models.container.model_workflow_coordinator import (
         ModelWorkflowCoordinator,
     )
@@ -323,13 +326,85 @@ class ModelONEXContainer:
         return self._base_container.secret_manager
 
     @property
-    def service_registry(self) -> "ServiceRegistry | None":
-        """
-        Access to service registry (new DI system).
+    def service_registry(self) -> "ServiceRegistry":
+        """Access to service registry (new DI system).
 
         Returns:
-            ServiceRegistry instance if enabled, None otherwise
+            ServiceRegistry instance.
+
+        Raises:
+            ModelOnexError: If registry is not initialized.
         """
+        if self._service_registry is None:
+            raise ModelOnexError(
+                message="Service registry not initialized. Call container.initialize_service_registry() first.",
+                error_code=EnumCoreErrorCode.INVALID_STATE,
+                context={
+                    "hint": "Use initialize_service_registry(config) to initialize."
+                },
+            )
+        return self._service_registry
+
+    def initialize_service_registry(
+        self,
+        config: "ModelServiceRegistryConfig | None" = None,
+    ) -> "ServiceRegistry":
+        """Initialize the service registry exactly once.
+
+        This method provides explicit control over service registry initialization.
+        It uses lazy imports to avoid circular dependencies (see OMN-1261).
+
+        Args:
+            config: Registry configuration. Uses default if None.
+
+        Returns:
+            The initialized ServiceRegistry instance.
+
+        Raises:
+            ModelOnexError: If registry is already initialized.
+
+        Example:
+            Explicit initialization::
+
+                container = ModelONEXContainer(enable_service_registry=False)
+                registry = container.initialize_service_registry()
+
+            With custom config::
+
+                from omnibase_core.models.container.model_registry_config import (
+                    ModelServiceRegistryConfig,
+                )
+
+                config = ModelServiceRegistryConfig(registry_name="custom")
+                registry = container.initialize_service_registry(config)
+        """
+        if self._service_registry is not None:
+            raise ModelOnexError(
+                message="Service registry already initialized. Use container.service_registry.",
+                error_code=EnumCoreErrorCode.INVALID_STATE,
+                context={
+                    "hint": "If you need reconfiguration, create a new container."
+                },
+            )
+
+        # Lazy import to avoid circular dependency (OMN-1261)
+        from omnibase_core.container.container_service_registry import ServiceRegistry
+        from omnibase_core.models.container.model_registry_config import (
+            create_default_registry_config,
+        )
+
+        if config is None:
+            config = create_default_registry_config()
+
+        self._service_registry = ServiceRegistry(config)
+        self._enable_service_registry = True
+
+        emit_log_event(
+            LogLevel.INFO,
+            "ServiceRegistry initialized via initialize_service_registry()",
+            {"registry_name": config.registry_name},
+        )
+
         return self._service_registry
 
     async def get_service_async(
