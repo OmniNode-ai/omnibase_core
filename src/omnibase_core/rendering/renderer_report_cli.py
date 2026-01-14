@@ -146,8 +146,10 @@ class RendererReportCli:
         )
         pass_rate_pct = summary.pass_rate * PERCENTAGE_MULTIPLIER
         lines.append(
-            f"Executions: {summary.passed_count}/{summary.total_executions} "
-            f"passed ({pass_rate_pct:.0f}%)"
+            RendererReportCli._truncate_line(
+                f"Executions: {summary.passed_count}/{summary.total_executions} "
+                f"passed ({pass_rate_pct:.0f}%)"
+            )
         )
         lines.append("")
 
@@ -193,7 +195,11 @@ class RendererReportCli:
                 severity_parts.append(f"{info_count} info")
 
             if severity_parts:
-                lines.append(f"Severity: {', '.join(severity_parts)}")
+                lines.append(
+                    RendererReportCli._truncate_line(
+                        f"Severity: {', '.join(severity_parts)}"
+                    )
+                )
 
             # Show type breakdown without severity labels
             # (types and severities are independent aggregations)
@@ -216,8 +222,10 @@ class RendererReportCli:
         baseline_latency = summary.latency_stats.baseline_avg_ms
         replay_latency = summary.latency_stats.replay_avg_ms
         lines.append(
-            f"Latency:  {latency_sign}{latency_delta:.0f}% "
-            f"(avg {baseline_latency:.0f}ms -> {replay_latency:.0f}ms)"
+            RendererReportCli._truncate_line(
+                f"Latency:  {latency_sign}{latency_delta:.0f}% "
+                f"(avg {baseline_latency:.0f}ms -> {replay_latency:.0f}ms)"
+            )
         )
 
         if summary.cost_stats is not None:
@@ -226,8 +234,10 @@ class RendererReportCli:
             baseline_cost = summary.cost_stats.baseline_avg_per_execution
             replay_cost = summary.cost_stats.replay_avg_per_execution
             lines.append(
-                f"Cost:     {cost_sign}{cost_delta:.0f}% "
-                f"(${baseline_cost:.4f} -> ${replay_cost:.4f} per execution)"
+                RendererReportCli._truncate_line(
+                    f"Cost:     {cost_sign}{cost_delta:.0f}% "
+                    f"(${baseline_cost:.4f} -> ${replay_cost:.4f} per execution)"
+                )
             )
         else:
             lines.append(COST_NA_CLI)
@@ -239,7 +249,11 @@ class RendererReportCli:
         RendererReportCli._format_section_header(
             f"RECOMMENDATION: {action_upper}", lines
         )
-        lines.append(f"Confidence: {recommendation.confidence:.0%}")
+        lines.append(
+            RendererReportCli._truncate_line(
+                f"Confidence: {recommendation.confidence:.0%}"
+            )
+        )
         lines.append("")
 
         if recommendation.blockers:
@@ -302,9 +316,11 @@ class RendererReportCli:
             Recommendation: APPROVE (confidence: 95%)
         """
         lines = [
-            summary.headline,
-            f"Recommendation: {recommendation.action.upper()} "
-            f"(confidence: {recommendation.confidence:.0%})",
+            RendererReportCli._truncate_line(summary.headline),
+            RendererReportCli._truncate_line(
+                f"Recommendation: {recommendation.action.upper()} "
+                f"(confidence: {recommendation.confidence:.0%})"
+            ),
         ]
         return "\n".join(lines)
 

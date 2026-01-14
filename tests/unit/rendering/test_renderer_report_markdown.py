@@ -35,7 +35,7 @@ from omnibase_core.models.evidence.model_latency_statistics import (
 from omnibase_core.rendering.renderer_report_markdown import (
     MARKDOWN_ESCAPE_CHARS,
     RendererReportMarkdown,
-    _escape_markdown_table_cell,
+    escape_markdown,
 )
 
 # =============================================================================
@@ -182,63 +182,70 @@ def create_recommendation(
 
 
 @pytest.mark.unit
-class TestEscapeMarkdownTableCell:
-    """Tests for _escape_markdown_table_cell function."""
+class TestEscapeMarkdown:
+    """Tests for escape_markdown function."""
 
     def test_escapes_pipe_character(self) -> None:
         """Test that pipe characters are escaped to prevent table breaks."""
-        result = _escape_markdown_table_cell("value|with|pipes")
+        result = escape_markdown("value|with|pipes")
         assert result == r"value\|with\|pipes"
 
     def test_escapes_asterisk(self) -> None:
         """Test that asterisks are escaped to prevent emphasis."""
-        result = _escape_markdown_table_cell("value*with*asterisks")
+        result = escape_markdown("value*with*asterisks")
         assert result == r"value\*with\*asterisks"
 
     def test_escapes_underscore(self) -> None:
         """Test that underscores are escaped to prevent emphasis."""
-        result = _escape_markdown_table_cell("value_with_underscores")
+        result = escape_markdown("value_with_underscores")
         assert result == r"value\_with\_underscores"
 
     def test_escapes_backtick(self) -> None:
         """Test that backticks are escaped to prevent code formatting."""
-        result = _escape_markdown_table_cell("value`with`backticks")
+        result = escape_markdown("value`with`backticks")
         assert result == r"value\`with\`backticks"
 
     def test_escapes_brackets(self) -> None:
         """Test that brackets are escaped to prevent links."""
-        result = _escape_markdown_table_cell("value[with]brackets")
+        result = escape_markdown("value[with]brackets")
         assert result == r"value\[with\]brackets"
 
     def test_replaces_newlines_with_space(self) -> None:
         """Test that newlines are replaced with spaces to maintain table integrity."""
-        result = _escape_markdown_table_cell("value\nwith\nnewlines")
+        result = escape_markdown("value\nwith\nnewlines")
         assert result == "value with newlines"
 
     def test_removes_carriage_returns(self) -> None:
         """Test that carriage returns are removed."""
-        result = _escape_markdown_table_cell("value\rwith\rreturns")
+        result = escape_markdown("value\rwith\rreturns")
         assert result == "valuewithreturns"
 
     def test_handles_empty_string(self) -> None:
         """Test that empty strings are handled correctly."""
-        result = _escape_markdown_table_cell("")
+        result = escape_markdown("")
         assert result == ""
 
     def test_handles_string_without_special_chars(self) -> None:
         """Test that strings without special chars pass through unchanged."""
-        result = _escape_markdown_table_cell("normal text")
+        result = escape_markdown("normal text")
         assert result == "normal text"
 
     def test_handles_multiple_special_chars(self) -> None:
         """Test that multiple different special chars are all escaped."""
-        result = _escape_markdown_table_cell("type|with*special_chars[and]more")
+        result = escape_markdown("type|with*special_chars[and]more")
         assert result == r"type\|with\*special\_chars\[and\]more"
 
     def test_escape_chars_constant_completeness(self) -> None:
         """Test that all documented escape characters are in the constant."""
-        expected_chars = {"|", "*", "_", "`", "[", "]", "\n", "\r"}
-        assert set(MARKDOWN_ESCAPE_CHARS.keys()) == expected_chars
+        # MARKDOWN_ESCAPE_CHARS is a tuple of (char, replacement) pairs
+        expected_chars = {"\\", "|", "*", "_", "`", "[", "]", "\n", "\r"}
+        actual_chars = {char for char, _ in MARKDOWN_ESCAPE_CHARS}
+        assert actual_chars == expected_chars
+
+    def test_escapes_backslash(self) -> None:
+        """Test that backslashes are escaped to prevent escape sequence issues."""
+        result = escape_markdown(r"path\to\file")
+        assert result == r"path\\to\\file"
 
 
 # =============================================================================

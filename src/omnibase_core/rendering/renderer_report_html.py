@@ -13,13 +13,6 @@ Thread Safety:
 import html as html_module
 from datetime import UTC, datetime
 
-# Maximum comparison details to render in HTML before truncation
-# (prevents DOM bloat for large corpus replays)
-COMPARISON_DETAIL_LIMIT_HTML = 50
-
-# UUID display truncation - shows first N characters for readability
-UUID_DISPLAY_LENGTH = 8
-
 from omnibase_core.models.evidence.model_decision_recommendation import (
     ModelDecisionRecommendation,
 )
@@ -28,7 +21,14 @@ from omnibase_core.models.replay.model_execution_comparison import (
     ModelExecutionComparison,
 )
 
-# CSS color scheme
+# Maximum comparison details to render in HTML before truncation
+# (prevents DOM bloat for large corpus replays)
+COMPARISON_DETAIL_LIMIT_HTML = 50
+
+# UUID display truncation - shows first N characters for readability
+UUID_DISPLAY_LENGTH = 8
+
+# CSS color scheme - used for inline styles to ensure portability
 CSS_COLORS = {
     "success": "#28a745",
     "warning": "#ffc107",
@@ -38,6 +38,14 @@ CSS_COLORS = {
     "bg_light": "#f8f9fa",
     "border": "#dee2e6",
 }
+
+# Severity sort order for HTML tables (lower value = higher priority in display)
+SEVERITY_SORT_ORDER: dict[str, int] = {
+    "critical": 0,
+    "warning": 1,
+    "info": 2,
+}
+DEFAULT_FALLBACK_SORT_ORDER = 99  # Unknown severities sort last
 
 
 class RendererReportHtml:
@@ -84,7 +92,9 @@ class RendererReportHtml:
             raise ValueError(msg)
 
         generated_at_str = (
-            generated_at.isoformat() if generated_at else datetime.now(UTC).isoformat()
+            generated_at.isoformat()
+            if generated_at
+            else datetime.now(tz=UTC).isoformat()
         )
 
         # Build content sections
@@ -203,7 +213,8 @@ class RendererReportHtml:
             lines.append("<h3>Blockers</h3><ul>")
             for blocker in recommendation.blockers:
                 lines.append(
-                    f'<li style="color: #dc3545;">{html_module.escape(blocker)}</li>'
+                    f'<li style="color: {CSS_COLORS["danger"]};">'
+                    f"{html_module.escape(blocker)}</li>"
                 )
             lines.append("</ul>")
 
@@ -211,7 +222,8 @@ class RendererReportHtml:
             lines.append("<h3>Warnings</h3><ul>")
             for warning in recommendation.warnings:
                 lines.append(
-                    f'<li style="color: #ffc107;">{html_module.escape(warning)}</li>'
+                    f'<li style="color: {CSS_COLORS["warning"]};">'
+                    f"{html_module.escape(warning)}</li>"
                 )
             lines.append("</ul>")
 
@@ -249,14 +261,29 @@ class RendererReportHtml:
                 )
             lines.append("</table>")
 
+        # FIX(PR #391): Normalize severity keys to lowercase for case-insensitive
+        # aggregation and consistent display. Input may have mixed case keys
+        # ("CRITICAL", "Warning", "info"). Aggregate counts for same severity
+        # with different cases, e.g., {"HIGH": 5, "High": 3} becomes {"high": 8}
         if violations.by_severity:
             lines.append(
                 "<h3>By Severity</h3><table><tr><th>Severity</th><th>Count</th></tr>"
             )
-            for severity, count in sorted(violations.by_severity.items()):
-                lines.append(
-                    f"<tr><td>{html_module.escape(severity.capitalize())}</td><td>{count}</td></tr>"
-                )
+            # Aggregate counts by normalized (lowercase) severity key
+            aggregated: dict[str, int] = {}
+            for severity, count in violations.by_severity.items():
+                normalized_key = severity.lower()
+                aggregated[normalized_key] = aggregated.get(normalized_key, 0) + count
+            # Sort by priority: critical (0) > warning (1) > info (2) > unknown (99)
+            for severity, count in sorted(
+                aggregated.items(),
+                key=lambda x: SEVERITY_SORT_ORDER.get(
+                    x[0], DEFAULT_FALLBACK_SORT_ORDER
+                ),
+            ):
+                # Capitalize severity for consistent display, escape for XSS prevention
+                escaped_severity = html_module.escape(severity.capitalize())
+                lines.append(f"<tr><td>{escaped_severity}</td><td>{count}</td></tr>")
             lines.append("</table>")
 
         return "\n".join(lines)
@@ -355,6 +382,8 @@ class RendererReportHtml:
 __all__ = [
     "COMPARISON_DETAIL_LIMIT_HTML",
     "CSS_COLORS",
+    "DEFAULT_FALLBACK_SORT_ORDER",
     "RendererReportHtml",
+    "SEVERITY_SORT_ORDER",
     "UUID_DISPLAY_LENGTH",
 ]

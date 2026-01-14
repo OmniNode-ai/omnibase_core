@@ -26,8 +26,8 @@ from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 import pytest
-from omnibase_core.enums.enum_invariant_severity import EnumInvariantSeverity
 
+from omnibase_core.enums import EnumSeverity
 from omnibase_core.models.evidence.model_cost_statistics import ModelCostStatistics
 from omnibase_core.models.evidence.model_decision_recommendation import (
     ModelDecisionRecommendation,
@@ -225,7 +225,7 @@ def create_evidence_summary(
 
 def create_invariant_result(
     passed: bool = True,
-    severity: EnumInvariantSeverity = EnumInvariantSeverity.INFO,
+    severity: EnumSeverity = EnumSeverity.INFO,
     invariant_name: str = "test_invariant",
 ) -> ModelInvariantResult:
     """Create an invariant result for testing.
@@ -425,6 +425,7 @@ def sample_comparisons() -> list[ModelExecutionComparison]:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestRendererReportHtmlStructure:
     """Tests for HTML document structure."""
 
@@ -494,6 +495,7 @@ class TestRendererReportHtmlStructure:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestRendererReportHtmlContent:
     """Tests for HTML content sections."""
 
@@ -648,6 +650,7 @@ class TestRendererReportHtmlContent:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestRendererReportHtmlSecurity:
     """Tests for HTML escaping and XSS prevention."""
 
@@ -772,6 +775,7 @@ class TestRendererReportHtmlSecurity:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestRendererReportHtmlBadges:
     """Tests for recommendation badge styling."""
 
@@ -841,6 +845,7 @@ class TestRendererReportHtmlBadges:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestRendererReportHtmlDetails:
     """Tests for comparison details section."""
 
@@ -917,6 +922,7 @@ class TestRendererReportHtmlDetails:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestRendererReportHtmlTimestamps:
     """Tests for timestamp handling."""
 
@@ -961,6 +967,7 @@ class TestRendererReportHtmlTimestamps:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestRendererReportHtmlTimezoneValidation:
     """Tests for timezone validation in HTML renderer."""
 
@@ -1002,6 +1009,7 @@ class TestRendererReportHtmlTimezoneValidation:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestRendererReportHtmlCostStats:
     """Tests for cost statistics handling."""
 
@@ -1040,6 +1048,7 @@ class TestRendererReportHtmlCostStats:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestRendererReportHtmlViolations:
     """Tests for violations section rendering."""
 
@@ -1107,6 +1116,7 @@ class TestRendererReportHtmlViolations:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestRendererReportHtmlPerformance:
     """Tests for performance metrics rendering."""
 
@@ -1152,6 +1162,7 @@ class TestRendererReportHtmlPerformance:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestRendererReportHtmlEdgeCases:
     """Tests for edge cases and boundary conditions."""
 
@@ -1216,3 +1227,25 @@ class TestRendererReportHtmlEdgeCases:
         assert "&lt;" in html
         assert "&gt;" in html
         assert "&quot;" in html
+
+    def test_create_cost_stats_with_zero_execution_count(self) -> None:
+        """create_cost_stats should handle execution_count=0 without division by zero.
+
+        This tests the guard against division by zero in the helper function.
+        When execution_count is 0, per-execution averages should be 0.0.
+        """
+        cost_stats = create_cost_stats(
+            baseline_total=100.0,
+            replay_total=50.0,
+            execution_count=0,  # Edge case: no executions
+        )
+
+        # Should not raise ZeroDivisionError
+        assert cost_stats is not None
+        assert cost_stats.baseline_total == 100.0
+        assert cost_stats.replay_total == 50.0
+        assert cost_stats.delta_total == -50.0
+        assert cost_stats.delta_percent == -50.0
+        # Per-execution averages should be 0.0 when execution_count is 0
+        assert cost_stats.baseline_avg_per_execution == 0.0
+        assert cost_stats.replay_avg_per_execution == 0.0

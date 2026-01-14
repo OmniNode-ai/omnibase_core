@@ -47,36 +47,41 @@ REPORT_VERSION = "1.0.0"
 
 # Characters that need escaping in markdown table cells
 # These could break table formatting or create unintended formatting
-MARKDOWN_ESCAPE_CHARS = {
-    "|": r"\|",  # Table cell delimiter
-    "*": r"\*",  # Emphasis
-    "_": r"\_",  # Emphasis
-    "`": r"\`",  # Code
-    "[": r"\[",  # Links
-    "]": r"\]",  # Links
-    "\n": " ",  # Newlines break table rows
-    "\r": "",  # Remove carriage returns
-}
+# Order matters: backslash must be escaped first to avoid double-escaping
+MARKDOWN_ESCAPE_CHARS = (
+    ("\\", r"\\"),  # Backslash - must be first to avoid double-escaping
+    ("|", r"\|"),  # Table cell delimiter
+    ("*", r"\*"),  # Emphasis
+    ("_", r"\_"),  # Emphasis
+    ("`", r"\`"),  # Code
+    ("[", r"\["),  # Links
+    ("]", r"\]"),  # Links
+    ("\n", " "),  # Newlines break table rows
+    ("\r", ""),  # Remove carriage returns
+)
 
 
-def _escape_markdown_table_cell(text: str) -> str:
-    """Escape markdown-sensitive characters in table cell content.
+def escape_markdown(text: str) -> str:
+    """Escape markdown-sensitive characters in text content.
 
     Escapes characters that could break table formatting or create
-    unintended emphasis/links in markdown table cells.
+    unintended emphasis/links in markdown content. Safe for use in
+    table cells, emphasis, and general text.
 
     Args:
-        text: Raw text content for a table cell.
+        text: Raw text content to escape.
 
     Returns:
         Text with markdown-sensitive characters escaped.
 
     Example:
-        >>> _escape_markdown_table_cell("value|with*special_chars")
+        >>> escape_markdown("value|with*special_chars")
         'value\\|with\\*special\\_chars'
+        >>> escape_markdown("path\\to\\file")
+        'path\\\\to\\\\file'
     """
     result = text
-    for char, replacement in MARKDOWN_ESCAPE_CHARS.items():
+    for char, replacement in MARKDOWN_ESCAPE_CHARS:
         result = result.replace(char, replacement)
     return result
 
@@ -170,7 +175,9 @@ class RendererReportMarkdown:
         lines.append("# Corpus Replay Evidence Report")
         lines.append("")
         generated_at_str = (
-            generated_at.isoformat() if generated_at else datetime.now(UTC).isoformat()
+            generated_at.isoformat()
+            if generated_at
+            else datetime.now(tz=UTC).isoformat()
         )
         lines.append(f"> **Generated**: {generated_at_str}")
         lines.append("")
@@ -190,7 +197,7 @@ class RendererReportMarkdown:
         )
         lines.append(f"| Confidence | {summary.confidence_score:.1%} |")
         lines.append("")
-        lines.append(f"**Headline**: {summary.headline}")
+        lines.append(f"**Headline**: {escape_markdown(summary.headline)}")
         lines.append("")
 
         # Recommendation section
@@ -211,28 +218,28 @@ class RendererReportMarkdown:
         lines.append("")
 
         if recommendation.rationale:
-            lines.append(f"_{recommendation.rationale}_")
+            lines.append(f"_{escape_markdown(recommendation.rationale)}_")
             lines.append("")
 
         if recommendation.blockers:
             lines.append("### Blockers")
             lines.append("")
             for blocker in recommendation.blockers:
-                lines.append(f"- :x: {blocker}")
+                lines.append(f"- :x: {escape_markdown(blocker)}")
             lines.append("")
 
         if recommendation.warnings:
             lines.append("### Warnings")
             lines.append("")
             for warning in recommendation.warnings:
-                lines.append(f"- :warning: {warning}")
+                lines.append(f"- :warning: {escape_markdown(warning)}")
             lines.append("")
 
         if recommendation.next_steps:
             lines.append("### Next Steps")
             lines.append("")
             for i, step in enumerate(recommendation.next_steps, 1):
-                lines.append(f"{i}. {step}")
+                lines.append(f"{i}. {escape_markdown(step)}")
             lines.append("")
 
         # Invariant Violations section
@@ -260,7 +267,7 @@ class RendererReportMarkdown:
                     summary.invariant_violations.by_type.items()
                 ):
                     # Escape markdown-sensitive characters in type names
-                    escaped_type = _escape_markdown_table_cell(vtype)
+                    escaped_type = escape_markdown(vtype)
                     lines.append(f"| {escaped_type} | {count} |")
                 lines.append("")
 
@@ -404,4 +411,5 @@ __all__ = [
     "RendererReportMarkdown",
     "SEVERITY_SORT_ORDER",
     "UUID_DISPLAY_LENGTH",
+    "escape_markdown",
 ]
