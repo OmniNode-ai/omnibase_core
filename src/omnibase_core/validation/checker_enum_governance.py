@@ -1,652 +1,861 @@
 """
-Enum Governance Checker for ONEX Codebase.
+CheckerEnumGovernance - Contract-driven validator for enum governance rules.
 
-This module enforces enum governance rules for the omnibase_core codebase.
-It is designed to be run as a pre-commit hook or standalone validation tool.
+This module provides comprehensive enum governance validation including:
+- ENUM_001: Member casing enforcement (UPPER_SNAKE_CASE)
+- ENUM_002: Literal type alias detection (suggest Enum conversion)
+- ENUM_003: Duplicate enum value detection across files
 
 Key Features:
-    - Enum member casing validation (UPPER_SNAKE_CASE)
-    - Literal type duplication detection
-    - AST-based analysis for accurate detection
-    - CI-friendly exit codes (0=pass, 1=fail)
-
-P0 Rules (Block in CI):
-    - E001: Enum member must use UPPER_SNAKE_CASE
-    - E002: Literal type duplicates enum values
+    - Multi-phase scanning for deterministic cross-file analysis
+    - Contract-driven configuration via ModelValidatorSubcontract
+    - AST-based analysis for accurate enum and Literal detection
+    - Approved overlaps support for intentional duplicate values
 
 Usage Examples:
-    As a module (validates src/omnibase_core by default)::
+    Programmatic usage::
 
-        poetry run python -m omnibase_core.validation.checker_enum_governance
+        from pathlib import Path
+        from omnibase_core.validation.checker_enum_governance import CheckerEnumGovernance
 
-    With a specific directory::
+        validator = CheckerEnumGovernance()
+        result = validator.validate(Path("src/"))
+        if not result.is_valid:
+            for issue in result.issues:
+                print(f"{issue.file_path}:{issue.line_number}: {issue.message}")
 
-        poetry run python -m omnibase_core.validation.checker_enum_governance /path/to/dir
+    CLI usage::
 
-    With verbose output::
+        python -m omnibase_core.validation.checker_enum_governance src/
 
-        poetry run python -m omnibase_core.validation.checker_enum_governance -v
+Thread Safety:
+    CheckerEnumGovernance instances are NOT thread-safe. Create separate instances
+    for concurrent use or protect with external synchronization.
 
-IMPORT ORDER CONSTRAINTS (Critical - Do Not Break):
-===================================================
-This module is part of a carefully managed import chain to avoid circular
-dependencies.
+Schema Version:
+    v1.0.0 - Initial version (OMN-1313)
 
-Safe Runtime Imports (OK to import at module level):
-    - Standard library modules only
-
-Note:
-    This module intentionally uses only standard library imports to ensure
-    it can be used in pre-commit hooks without additional dependencies.
+See Also:
+    - ValidatorBase: Base class for contract-driven validators
+    - checker_enum_member_casing: Reused UPPER_SNAKE_CASE pattern and suggestion
 """
 
-import argparse
+# NOTE(OMN-1313): This file contains tightly coupled data classes and visitor
+# for the governance validator. Splitting would create unnecessary complexity.
+# Excluded from single-class-per-file validation.
+
 import ast
 import logging
-import re
 import sys
+import time
 from dataclasses import dataclass
 from pathlib import Path
+from typing import ClassVar
 
+from omnibase_core.models.common.model_validation_issue import ModelValidationIssue
+from omnibase_core.models.common.model_validation_result import ModelValidationResult
+from omnibase_core.models.contracts.subcontracts.model_validator_subcontract import (
+    ModelValidatorSubcontract,
+)
+from omnibase_core.validation.checker_enum_member_casing import (
+    ENUM_BASE_NAMES,
+    UPPER_SNAKE_CASE_PATTERN,
+    suggest_upper_snake_case,
+)
+from omnibase_core.validation.validator_base import ValidatorBase
+
+# Configure logger for this module
 logger = logging.getLogger(__name__)
 
-# Pattern for UPPER_SNAKE_CASE validation
-UPPER_SNAKE_CASE_PATTERN = re.compile(r"^[A-Z][A-Z0-9]*(_[A-Z0-9]+)*$")
+# Rule IDs for enum governance
+RULE_ENUM_MEMBER_CASING = "enum_member_casing"
+RULE_LITERAL_SHOULD_BE_ENUM = "literal_should_be_enum"
+RULE_DUPLICATE_ENUM_VALUES = "duplicate_enum_values"
+
+# Pattern words that suggest a Literal might be better as an Enum
+ENUM_PATTERN_WORDS = frozenset(
+    {
+        "Status",
+        "State",
+        "Phase",
+        "Mode",
+        "Health",
+        "Type",
+        "Kind",
+        "Level",
+        "Category",
+        "Priority",
+        "Severity",
+        "Stage",
+        "Role",
+        "Action",
+        "Result",
+        "Outcome",
+    }
+)
 
 
 @dataclass(frozen=True)
-class GovernanceViolation:
-    """Represents a single enum governance violation.
+class _CollectedEnumData:
+    """Information about an enum class discovered during scanning.
 
     Attributes:
-        file_path: Path to the file containing the violation
-        line: Line number where the violation occurs
-        rule_code: Rule identifier (e.g., E001, E002)
-        message: Human-readable description of the violation
-        severity: Either "ERROR" or "WARNING"
+        name: The class name of the enum.
+        file_path: Path to the file containing the enum.
+        line_number: Line number where the enum is defined.
+        values: Frozenset of string values assigned to enum members.
+        member_names: Tuple of member names (for casing validation).
     """
 
+    name: str
     file_path: Path
-    line: int
-    rule_code: str
-    message: str
-    severity: str = "ERROR"
-
-    def __str__(self) -> str:
-        """Format violation for output."""
-        return f"{self.severity}: {self.file_path}:{self.line} - {self.rule_code}: {self.message}"
+    line_number: int
+    values: frozenset[str]
+    member_names: tuple[str, ...]
 
 
 @dataclass(frozen=True)
-class MemberInfo:
-    """Information about an enum member.
+class LiteralAliasInfo:
+    """Information about a Literal type alias discovered during scanning.
 
     Attributes:
-        enum_name: Name of the enum class
-        member_name: Name of the enum member
-        member_value: String value of the enum member (if available)
-        file_path: Path to the file containing the enum
-        line: Line number of the enum member
+        name: The alias name.
+        file_path: Path to the file containing the alias.
+        line_number: Line number where the alias is defined.
+        values: Tuple of string values in the Literal.
     """
 
-    enum_name: str
-    member_name: str
-    member_value: str | None
+    name: str
     file_path: Path
-    line: int
+    line_number: int
+    values: tuple[str, ...]
 
 
-class CollectorAST(ast.NodeVisitor):
-    """AST visitor that collects enum class definitions and their members.
+class GovernanceASTVisitor(ast.NodeVisitor):
+    """AST visitor for collecting enum and Literal type alias information.
+
+    Collects metadata about enums and module-scope Literal type aliases
+    for governance validation.
 
     Attributes:
-        enums: Dictionary mapping enum names to their member info list
-        file_path: Path to the file being analyzed
+        file_path: Path to the file being analyzed.
+        enums: List of _CollectedEnumData objects found.
+        literal_aliases: List of LiteralAliasInfo objects found.
     """
 
     def __init__(self, file_path: Path) -> None:
-        """Initialize the collector.
+        """Initialize the visitor.
 
         Args:
-            file_path: Path to the source file being analyzed
+            file_path: Path to the source file being analyzed.
         """
         self.file_path = file_path
-        self.enums: dict[str, list[MemberInfo]] = {}
+        self.enums: list[_CollectedEnumData] = []
+        self.literal_aliases: list[LiteralAliasInfo] = []
+        self._scope_stack: list[str] = []  # Track current scope
 
-    def visit_ClassDef(self, node: ast.ClassDef) -> None:
-        """Visit a class definition to check if it's an enum.
-
-        Args:
-            node: The AST ClassDef node
-        """
-        # Check if this class inherits from Enum
-        is_enum = False
-        for base in node.bases:
-            base_name = self._get_base_name(base)
-            # Note: "str, Enum" is NOT needed here because for `class Foo(str, Enum)`,
-            # the AST represents multiple bases, each checked separately. The "Enum"
-            # check handles this case since _get_base_name() returns individual names.
-            if base_name in {
-                "Enum",
-                "IntEnum",
-                "StrEnum",
-                "Flag",
-                "IntFlag",
-            }:
-                is_enum = True
-                break
-
-        if is_enum:
-            self.enums[node.name] = []
-
-            # Process class body to find enum members
-            for item in node.body:
-                if isinstance(item, ast.Assign):
-                    for target in item.targets:
-                        if isinstance(target, ast.Name):
-                            member_name = target.id
-                            # Skip dunder and private members during collection
-                            if member_name.startswith("_"):
-                                continue
-                            member_value = self._extract_value(item.value)
-                            self.enums[node.name].append(
-                                MemberInfo(
-                                    enum_name=node.name,
-                                    member_name=member_name,
-                                    member_value=member_value,
-                                    file_path=self.file_path,
-                                    line=item.lineno,
-                                )
-                            )
-                elif isinstance(item, ast.AnnAssign) and item.target:
-                    if isinstance(item.target, ast.Name):
-                        member_name = item.target.id
-                        # Skip dunder and private members during collection
-                        if member_name.startswith("_"):
-                            continue
-                        member_value = (
-                            self._extract_value(item.value) if item.value else None
-                        )
-                        self.enums[node.name].append(
-                            MemberInfo(
-                                enum_name=node.name,
-                                member_name=member_name,
-                                member_value=member_value,
-                                file_path=self.file_path,
-                                line=item.lineno,
-                            )
-                        )
-
-        self.generic_visit(node)
-
-    def _get_base_name(self, base: ast.expr) -> str:
-        """Extract the name of a base class from AST node.
+    def _is_enum_class(self, node: ast.ClassDef) -> bool:
+        """Check if a class definition is an Enum subclass.
 
         Args:
-            base: AST expression node representing the base class
+            node: The AST ClassDef node to check.
 
         Returns:
-            String representation of the base class name
+            True if the class is an Enum subclass, False otherwise.
+        """
+        for base in node.bases:
+            base_name = self._extract_base_name(base)
+            if base_name is None:
+                continue
+
+            # Direct match with known enum bases
+            if base_name in ENUM_BASE_NAMES:
+                return True
+
+            # Heuristic: class name ends with "Enum" (e.g., MyCustomEnum)
+            if base_name.endswith("Enum"):
+                return True
+
+        return False
+
+    def _extract_base_name(self, base: ast.expr) -> str | None:
+        """Extract the name from a base class expression.
+
+        Args:
+            base: AST expression node representing a base class.
+
+        Returns:
+            The base class name as a string, or None if it cannot be extracted.
         """
         if isinstance(base, ast.Name):
             return base.id
         if isinstance(base, ast.Attribute):
             return base.attr
-        if isinstance(base, ast.Subscript):
-            # Handle generic types like Enum[str]
-            if isinstance(base.value, ast.Name):
-                return base.value.id
-        # Note: Tuple syntax like "class Foo(str, Enum)" doesn't create a tuple
-        # in AST - each base is represented separately, so "Enum" is checked above.
-        return ""
+        return None
 
-    def _extract_value(self, node: ast.expr | None) -> str | None:
+    def _extract_enum_member_info(
+        self, node: ast.stmt
+    ) -> tuple[str | None, str | None]:
+        """Extract member name and string value from an enum assignment.
+
+        Args:
+            node: AST statement node to check.
+
+        Returns:
+            Tuple of (member_name, string_value) or (None, None) if not a member.
+        """
+        target: ast.expr | None = None
+        value: ast.expr | None = None
+
+        if isinstance(node, ast.Assign) and len(node.targets) == 1:
+            target = node.targets[0]
+            value = node.value
+        elif isinstance(node, ast.AnnAssign) and node.value is not None:
+            target = node.target
+            value = node.value
+
+        if target is None or not isinstance(target, ast.Name):
+            return None, None
+
+        name = target.id
+
+        # Skip dunder and private names
+        if name.startswith("_"):
+            return None, None
+
+        # Extract string value if present
+        str_value: str | None = None
+        if value is not None:
+            str_value = self._extract_string_value(value)
+
+        return name, str_value
+
+    def _extract_string_value(self, node: ast.expr) -> str | None:
         """Extract string value from an AST expression.
 
         Args:
-            node: AST expression node
+            node: AST expression node.
 
         Returns:
-            String value if extractable, None otherwise
+            String value if the expression is a string constant, None otherwise.
         """
-        if node is None:
-            return None
-        if isinstance(node, ast.Constant):
-            if isinstance(node.value, str):
-                return node.value
-        if isinstance(node, ast.Call):
-            # Handle auto() or similar
-            if isinstance(node.func, ast.Name) and node.func.id == "auto":
-                return None
-            # Handle explicit value calls
-            if node.args and isinstance(node.args[0], ast.Constant):
-                if isinstance(node.args[0].value, str):
-                    return node.args[0].value
+        if isinstance(node, ast.Constant) and isinstance(node.value, str):
+            return node.value
         return None
 
-
-class LiteralCollector(ast.NodeVisitor):
-    """AST visitor that collects Literal type definitions.
-
-    Attributes:
-        literals: List of tuples (line, literal_values_set)
-        file_path: Path to the file being analyzed
-    """
-
-    def __init__(self, file_path: Path) -> None:
-        """Initialize the collector.
+    def visit_ClassDef(self, node: ast.ClassDef) -> None:
+        """Visit class definitions to detect enums.
 
         Args:
-            file_path: Path to the source file being analyzed
+            node: The AST ClassDef node.
         """
-        self.file_path = file_path
-        self.literals: list[tuple[int, set[str]]] = []
+        if self._is_enum_class(node):
+            member_names: list[str] = []
+            string_values: set[str] = set()
 
-    def visit_Subscript(self, node: ast.Subscript) -> None:
-        """Visit subscript expressions to find Literal[...] types.
+            for stmt in node.body:
+                member_name, str_value = self._extract_enum_member_info(stmt)
+                if member_name is not None:
+                    member_names.append(member_name)
+                    if str_value is not None:
+                        string_values.add(str_value)
 
-        Args:
-            node: The AST Subscript node
-        """
-        # Check if this is Literal[...]
-        if (isinstance(node.value, ast.Name) and node.value.id == "Literal") or (
-            isinstance(node.value, ast.Attribute) and node.value.attr == "Literal"
-        ):
-            values = self._extract_literal_values(node.slice)
-            if values:
-                self.literals.append((node.lineno, values))
+            self.enums.append(
+                _CollectedEnumData(
+                    name=node.name,
+                    file_path=self.file_path,
+                    line_number=node.lineno,
+                    values=frozenset(string_values),
+                    member_names=tuple(member_names),
+                )
+            )
 
+        # Track scope for nested class detection
+        self._scope_stack.append(node.name)
         self.generic_visit(node)
+        self._scope_stack.pop()
 
-    def _extract_literal_values(self, slice_node: ast.expr) -> set[str]:
-        """Extract string values from a Literal type's slice.
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
+        """Track function scope to exclude nested Literals.
 
         Args:
-            slice_node: The slice expression of the Literal subscript
+            node: The AST FunctionDef node.
+        """
+        self._scope_stack.append(node.name)
+        self.generic_visit(node)
+        self._scope_stack.pop()
+
+    def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
+        """Track async function scope to exclude nested Literals.
+
+        Args:
+            node: The AST AsyncFunctionDef node.
+        """
+        self._scope_stack.append(node.name)
+        self.generic_visit(node)
+        self._scope_stack.pop()
+
+    def _is_module_scope(self) -> bool:
+        """Check if currently at module scope.
 
         Returns:
-            Set of string values found in the Literal
+            True if at module scope (not inside function or class).
         """
-        values: set[str] = set()
+        return len(self._scope_stack) == 0
 
+    def _extract_literal_values(self, node: ast.expr) -> tuple[str, ...] | None:
+        """Extract string values from a Literal type annotation.
+
+        Handles both Literal[...] and typing.Literal[...] patterns.
+
+        Args:
+            node: AST expression node representing the type annotation.
+
+        Returns:
+            Tuple of string values if valid Literal, None otherwise.
+        """
+        # Check for Literal[...] or typing.Literal[...]
+        if not isinstance(node, ast.Subscript):
+            return None
+
+        # Get the base name
+        base = node.value
+        base_name: str | None = None
+
+        if isinstance(base, ast.Name):
+            base_name = base.id
+        elif isinstance(base, ast.Attribute):
+            base_name = base.attr
+
+        if base_name != "Literal":
+            return None
+
+        # Extract the slice (the values inside Literal[...])
+        slice_node = node.slice
+
+        values: list[str] = []
+
+        # Handle Literal["a", "b", "c"] (tuple of values)
         if isinstance(slice_node, ast.Tuple):
-            # Literal["a", "b", "c"]
             for elt in slice_node.elts:
                 if isinstance(elt, ast.Constant) and isinstance(elt.value, str):
-                    values.add(elt.value)
+                    values.append(elt.value)
+                else:
+                    # Non-string value in Literal, skip this alias
+                    return None
+        # Handle Literal["single"] (single value)
         elif isinstance(slice_node, ast.Constant) and isinstance(slice_node.value, str):
-            # Literal["single_value"]
-            values.add(slice_node.value)
+            values.append(slice_node.value)
+        else:
+            return None
 
-        return values
+        return tuple(values) if values else None
+
+    def _check_literal_alias(
+        self, name: str, annotation: ast.expr, lineno: int
+    ) -> None:
+        """Check if an assignment is a Literal type alias.
+
+        Args:
+            name: The alias name.
+            annotation: The AST expression for the annotation/value.
+            lineno: Line number of the assignment.
+        """
+        if not self._is_module_scope():
+            return
+
+        values = self._extract_literal_values(annotation)
+        if values is not None:
+            self.literal_aliases.append(
+                LiteralAliasInfo(
+                    name=name,
+                    file_path=self.file_path,
+                    line_number=lineno,
+                    values=values,
+                )
+            )
+
+    def visit_Assign(self, node: ast.Assign) -> None:
+        """Visit assignments to detect Literal type aliases.
+
+        Args:
+            node: The AST Assign node.
+        """
+        if len(node.targets) == 1 and isinstance(node.targets[0], ast.Name):
+            self._check_literal_alias(node.targets[0].id, node.value, node.lineno)
+        self.generic_visit(node)
+
+    def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
+        """Visit annotated assignments to detect Literal type aliases.
+
+        Handles patterns like: MyType: TypeAlias = Literal["a", "b"]
+
+        Args:
+            node: The AST AnnAssign node.
+        """
+        if isinstance(node.target, ast.Name) and node.value is not None:
+            self._check_literal_alias(node.target.id, node.value, node.lineno)
+        self.generic_visit(node)
 
 
-def check_enum_member_casing(
-    enum_members: list[MemberInfo],
-) -> list[GovernanceViolation]:
-    """Check that all enum members use UPPER_SNAKE_CASE naming.
+class CheckerEnumGovernance(ValidatorBase):
+    """Validator for enum governance rules.
 
-    Rule E001: Enum members must use UPPER_SNAKE_CASE naming convention.
+    Implements three governance rules:
+    - ENUM_001: Enum member casing (UPPER_SNAKE_CASE)
+    - ENUM_002: Literal type aliases that should be Enums
+    - ENUM_003: Duplicate enum values across files
 
-    Args:
-        enum_members: List of enum member info to check
+    Uses multi-phase scanning to ensure deterministic cross-file analysis.
 
-    Returns:
-        List of violations found
+    Thread Safety:
+        CheckerEnumGovernance instances are NOT thread-safe due to internal
+        mutable state inherited from ValidatorBase and the multi-phase scanning
+        state (_all_enums, _all_literals).
 
-    Examples:
-        Valid names: ACTIVE, PENDING_APPROVAL, HTTP_404
-        Invalid names: active, PendingApproval, httpError
+    Attributes:
+        validator_id: Unique identifier for this validator ("enum-governance").
     """
-    violations: list[GovernanceViolation] = []
 
-    for member in enum_members:
-        # Skip private/dunder members
-        if member.member_name.startswith("_"):
-            continue
+    validator_id: ClassVar[str] = "enum-governance"  # string-id-ok: registry key
 
-        if not UPPER_SNAKE_CASE_PATTERN.match(member.member_name):
-            violations.append(
-                GovernanceViolation(
-                    file_path=member.file_path,
-                    line=member.line,
-                    rule_code="E001",
+    def __init__(self, contract: ModelValidatorSubcontract | None = None) -> None:
+        """Initialize the enum governance validator.
+
+        Args:
+            contract: Pre-loaded validator contract. If None, the contract
+                will be loaded from the default YAML location when first accessed.
+        """
+        super().__init__(contract)
+        # Thread safety: The following instance variables maintain state across
+        # multi-phase scanning and prevent thread-safe reuse. Each worker process
+        # MUST create its own validator instance. See docs/guides/THREADING.md.
+        self._all_enums: list[_CollectedEnumData] = []
+        self._all_literals: list[LiteralAliasInfo] = []
+        self._phase_a_complete: bool = False
+
+    def validate(
+        self,
+        targets: Path | list[Path],
+    ) -> ModelValidationResult[None]:
+        """Validate target files with multi-phase scanning.
+
+        Phase A: Scan all files and collect enum/literal metadata.
+        Phase B: Run local validations (ENUM_001, ENUM_002).
+        Phase C: Run global validations (ENUM_003).
+
+        Args:
+            targets: Single path or list of paths to validate.
+
+        Returns:
+            ModelValidationResult containing all issues found.
+        """
+        start_time = time.time()
+
+        # Normalize to list
+        if isinstance(targets, Path):
+            targets = [targets]
+
+        # Resolve all target files
+        resolved_files = self._resolve_targets(targets)
+
+        # Filter excluded files
+        files_to_validate = [f for f in resolved_files if not self._is_excluded(f)]
+
+        # Reset multi-phase state
+        self._all_enums = []
+        self._all_literals = []
+        self._phase_a_complete = False
+
+        # Phase A: Scan all files first
+        for file_path in files_to_validate:
+            self._scan_file(file_path)
+        self._phase_a_complete = True
+
+        # Phase B & C: Run validations
+        all_issues: list[ModelValidationIssue] = []
+        files_with_violations: list[str] = []
+
+        try:
+            for file_path in files_to_validate:
+                file_issues = self._validate_file_with_suppression(file_path)
+                if file_issues:
+                    all_issues.extend(file_issues)
+                    files_with_violations.append(str(file_path))
+
+                # Check violation limit
+                if (
+                    self.contract.max_violations > 0
+                    and len(all_issues) >= self.contract.max_violations
+                ):
+                    break
+
+            # Phase C: Global validations (ENUM_003 - duplicate values)
+            global_issues = self._validate_global()
+            all_issues.extend(global_issues)
+
+            duration_ms = int((time.time() - start_time) * 1000)
+
+            return self._build_result(
+                files_checked=files_to_validate,
+                issues=all_issues,
+                files_with_violations=files_with_violations,
+                duration_ms=duration_ms,
+            )
+        finally:
+            # Clear caches
+            self._file_line_cache.clear()
+            self._all_enums = []
+            self._all_literals = []
+            self._phase_a_complete = False
+
+    def _scan_file(self, path: Path) -> None:
+        """Scan a file and collect enum/literal metadata.
+
+        Args:
+            path: Path to the Python file to scan.
+        """
+        try:
+            source = path.read_text(encoding="utf-8")
+        except OSError as e:
+            # fallback-ok: log warning and skip file on read errors
+            logger.warning("Cannot read file %s: %s", path, e)
+            return
+
+        try:
+            tree = ast.parse(source, filename=str(path))
+        except SyntaxError as e:
+            # fallback-ok: log warning and skip file with syntax errors
+            logger.warning(
+                "Skipping file with syntax error: path=%s, line=%s, error=%s",
+                path,
+                e.lineno,
+                e.msg,
+            )
+            return
+
+        visitor = GovernanceASTVisitor(path)
+        visitor.visit(tree)
+
+        self._all_enums.extend(visitor.enums)
+        self._all_literals.extend(visitor.literal_aliases)
+
+    def _validate_file(
+        self,
+        path: Path,
+        contract: ModelValidatorSubcontract,
+    ) -> tuple[ModelValidationIssue, ...]:
+        """Validate a single file for enum governance violations.
+
+        Implements ENUM_001 (member casing) and ENUM_002 (Literal aliases).
+
+        Args:
+            path: Path to the Python file to validate.
+            contract: Validator contract with configuration.
+
+        Returns:
+            Tuple of ModelValidationIssue instances for violations found.
+        """
+        issues: list[ModelValidationIssue] = []
+
+        # Get enums and literals for this file from phase A data
+        file_enums = [e for e in self._all_enums if e.file_path == path]
+        file_literals = [lit for lit in self._all_literals if lit.file_path == path]
+
+        # ENUM_001: Member casing validation
+        enum_001_issues = self._validate_enum_001(file_enums, contract)
+        issues.extend(enum_001_issues)
+
+        # ENUM_002: Literal alias validation
+        enum_002_issues = self._validate_enum_002(file_literals, contract)
+        issues.extend(enum_002_issues)
+
+        return tuple(issues)
+
+    def _validate_enum_001(
+        self,
+        enums: list[_CollectedEnumData],
+        contract: ModelValidatorSubcontract,
+    ) -> list[ModelValidationIssue]:
+        """Validate ENUM_001: Enum member casing.
+
+        Args:
+            enums: List of _CollectedEnumData objects to validate.
+            contract: Validator contract with configuration.
+
+        Returns:
+            List of validation issues for casing violations.
+        """
+        enabled, severity = self._get_rule_config(RULE_ENUM_MEMBER_CASING, contract)
+        if not enabled:
+            return []
+
+        issues: list[ModelValidationIssue] = []
+
+        for enum_info in enums:
+            for member_name in enum_info.member_names:
+                if not UPPER_SNAKE_CASE_PATTERN.match(member_name):
+                    suggested = suggest_upper_snake_case(member_name)
+                    issues.append(
+                        ModelValidationIssue(
+                            severity=severity,
+                            message=(
+                                f"{enum_info.name}.{member_name} violates "
+                                f"UPPER_SNAKE_CASE"
+                            ),
+                            code=RULE_ENUM_MEMBER_CASING,
+                            file_path=enum_info.file_path,
+                            line_number=enum_info.line_number,
+                            rule_name="enum_member_casing",
+                            suggestion=f"Rename to {suggested}",
+                        )
+                    )
+
+        return issues
+
+    def _validate_enum_002(
+        self,
+        literals: list[LiteralAliasInfo],
+        contract: ModelValidatorSubcontract,
+    ) -> list[ModelValidationIssue]:
+        """Validate ENUM_002: Literal aliases that should be Enums.
+
+        All 4 conditions must be met to flag a Literal:
+        1. Module-scope only (already filtered by visitor)
+        2. Alias name matches pattern word (Status, State, etc.)
+        3. Minimum 3 string values in the Literal
+        4. Values look like status vocabulary OR in allowed_aliases
+
+        Args:
+            literals: List of LiteralAliasInfo objects to validate.
+            contract: Validator contract with configuration.
+
+        Returns:
+            List of validation issues for Literal aliases.
+        """
+        enabled, severity = self._get_rule_config(RULE_LITERAL_SHOULD_BE_ENUM, contract)
+        if not enabled:
+            return []
+
+        # Get rule parameters with type narrowing
+        rule_params = self._get_rule_parameters(RULE_LITERAL_SHOULD_BE_ENUM, contract)
+        min_values_raw = rule_params.get("min_values", 3)
+        min_values = (
+            int(min_values_raw) if isinstance(min_values_raw, (int, float)) else 3
+        )
+        allowed_aliases_raw = rule_params.get("allowed_aliases", [])
+        allowed_aliases: set[str] = (
+            set(allowed_aliases_raw) if isinstance(allowed_aliases_raw, list) else set()
+        )
+
+        issues: list[ModelValidationIssue] = []
+
+        for literal_info in literals:
+            # Condition 2: Alias name matches pattern word
+            name_matches_pattern = any(
+                pattern_word in literal_info.name for pattern_word in ENUM_PATTERN_WORDS
+            )
+            if not name_matches_pattern:
+                continue
+
+            # Condition 3: Minimum values
+            if len(literal_info.values) < min_values:
+                continue
+
+            # Check if in allowed aliases (skip if allowed)
+            if literal_info.name in allowed_aliases:
+                continue
+
+            # Condition 4: Values look like status vocabulary
+            if not self._values_look_like_enum(literal_info.values):
+                continue
+
+            # All conditions met - flag this Literal
+            issues.append(
+                ModelValidationIssue(
+                    severity=severity,
                     message=(
-                        f"Enum member '{member.enum_name}.{member.member_name}' "
-                        f"must use UPPER_SNAKE_CASE"
+                        f"Literal type alias '{literal_info.name}' with "
+                        f"{len(literal_info.values)} values should be an Enum"
+                    ),
+                    code=RULE_LITERAL_SHOULD_BE_ENUM,
+                    file_path=literal_info.file_path,
+                    line_number=literal_info.line_number,
+                    rule_name="literal_should_be_enum",
+                    suggestion=(
+                        f"Convert to Enum class: class {literal_info.name}(str, Enum)"
                     ),
                 )
             )
 
-    return violations
+        return issues
 
+    def _values_look_like_enum(self, values: tuple[str, ...]) -> bool:
+        """Check if Literal values look like enum vocabulary.
 
-def check_literal_duplication(
-    enum_index: dict[str, set[str]],
-    literals: list[tuple[Path, int, set[str]]],
-) -> list[GovernanceViolation]:
-    """Check for Literal types that duplicate enum value sets.
+        Values that look like enum vocabulary:
+        - Lowercase with underscores (e.g., "in_progress", "completed")
+        - Short identifiers (single words like "active", "pending")
+        - ALL_CAPS (already enum-like)
 
-    Rule E002: Literal types should not duplicate existing enum values.
+        Args:
+            values: Tuple of string values to check.
 
-    This rule detects when a Literal type contains the same set of string
-    values as an existing enum. This indicates the Literal should be replaced
-    with the enum for better type safety and maintainability.
+        Returns:
+            True if values look like enum vocabulary.
+        """
+        enum_like_count = 0
+        for value in values:
+            # Check for:
+            # - lowercase/underscore pattern (snake_case or lowercase)
+            # - ALL_CAPS
+            # - short single words
+            is_enum_like = (
+                value.islower()
+                or "_" in value.lower()
+                or (value.isupper() and "_" in value)
+                or (len(value) <= 20 and value.isalpha())
+            )
+            if is_enum_like:
+                enum_like_count += 1
 
-    Deduplication: Reports only the first matching enum per Literal to avoid
-    duplicate violations. Exact matches take precedence over subset matches.
+        # Most values should look enum-like
+        return enum_like_count >= len(values) * 0.6
 
-    Args:
-        enum_index: Dictionary mapping enum names to their value sets
-        literals: List of (file_path, line, values_set) for each Literal found
+    def _validate_global(self) -> list[ModelValidationIssue]:
+        """Validate global rules (ENUM_003: duplicate enum values).
 
-    Returns:
-        List of violations found
-    """
-    violations: list[GovernanceViolation] = []
+        Returns:
+            List of validation issues for global violations.
+        """
+        enabled, severity = self._get_rule_config(
+            RULE_DUPLICATE_ENUM_VALUES, self.contract
+        )
+        if not enabled:
+            return []
 
-    for file_path, line, literal_values in literals:
-        if not literal_values:
-            continue
+        # Get rule parameters with type narrowing
+        rule_params = self._get_rule_parameters(
+            RULE_DUPLICATE_ENUM_VALUES, self.contract
+        )
+        require_name_similarity_raw = rule_params.get("require_name_similarity", True)
+        # Handle string "true"/"false" from YAML in addition to bool
+        if isinstance(require_name_similarity_raw, str):
+            require_name_similarity = require_name_similarity_raw.lower() in (
+                "true",
+                "1",
+                "yes",
+            )
+        elif isinstance(require_name_similarity_raw, bool):
+            require_name_similarity = require_name_similarity_raw
+        else:
+            require_name_similarity = True
 
-        # First pass: check for exact matches (report only first match)
-        exact_match_enum: str | None = None
-        for enum_name, enum_values in enum_index.items():
-            if literal_values == enum_values:
-                exact_match_enum = enum_name
-                violations.append(
-                    GovernanceViolation(
-                        file_path=file_path,
-                        line=line,
-                        rule_code="E002",
+        approved_overlaps_raw = rule_params.get("approved_overlaps", [])
+
+        # Parse approved overlaps into frozenset of tuples
+        # approved_overlaps in YAML is a list of [enum_a, enum_b] pairs
+        approved_overlaps: set[frozenset[str]] = set()
+        if isinstance(approved_overlaps_raw, list):
+            for overlap_item in approved_overlaps_raw:
+                # Handle "EnumA,EnumB" string format
+                if isinstance(overlap_item, str) and "," in overlap_item:
+                    parts = [p.strip() for p in overlap_item.split(",")]
+                    if len(parts) == 2 and all(parts):
+                        approved_overlaps.add(frozenset(parts))
+
+        issues: list[ModelValidationIssue] = []
+
+        # Compare all enum pairs
+        for i, enum_a in enumerate(self._all_enums):
+            for enum_b in self._all_enums[i + 1 :]:
+                # Skip if no values or empty values
+                if not enum_a.values or not enum_b.values:
+                    continue
+
+                # Check for overlapping values
+                overlap = enum_a.values & enum_b.values
+                if not overlap:
+                    continue
+
+                # Check if this pair is in approved overlaps
+                pair_key = frozenset([enum_a.name, enum_b.name])
+                if pair_key in approved_overlaps:
+                    continue
+
+                # If require_name_similarity, both names must contain pattern words
+                if require_name_similarity:
+                    name_a_has_pattern = any(
+                        word in enum_a.name for word in ENUM_PATTERN_WORDS
+                    )
+                    name_b_has_pattern = any(
+                        word in enum_b.name for word in ENUM_PATTERN_WORDS
+                    )
+                    if not (name_a_has_pattern and name_b_has_pattern):
+                        continue
+
+                # Flag the overlap
+                overlap_list = sorted(overlap)[:5]  # Limit to 5 for readability
+                overlap_str = ", ".join(f"'{v}'" for v in overlap_list)
+                if len(overlap) > 5:
+                    overlap_str += f" (and {len(overlap) - 5} more)"
+
+                issues.append(
+                    ModelValidationIssue(
+                        severity=severity,
                         message=(
-                            f"Literal type duplicates values from enum '{enum_name}'. "
-                            f"Use {enum_name} instead of Literal[...]"
+                            f"Enums '{enum_a.name}' and '{enum_b.name}' have "
+                            f"{len(overlap)} overlapping values: {overlap_str}"
                         ),
+                        code=RULE_DUPLICATE_ENUM_VALUES,
+                        file_path=enum_a.file_path,
+                        line_number=enum_a.line_number,
+                        rule_name="duplicate_enum_values",
+                        suggestion=(
+                            "Consider extracting shared values to a common enum "
+                            "or adding to approved_overlaps"
+                        ),
+                        context={
+                            "enum_a": enum_a.name,
+                            "enum_b": enum_b.name,
+                            "file_b": str(enum_b.file_path),
+                            "overlap_count": str(len(overlap)),
+                        },
                     )
                 )
-                break  # Only report first exact match to avoid duplicate violations
 
-        # Second pass: check for subset matches only if no exact match found
-        if exact_match_enum is None:
-            for enum_name, enum_values in enum_index.items():
-                if literal_values.issubset(enum_values) and len(literal_values) > 1:
-                    violations.append(
-                        GovernanceViolation(
-                            file_path=file_path,
-                            line=line,
-                            rule_code="E002",
-                            message=(
-                                f"Literal type values are a subset of enum '{enum_name}'. "
-                                f"Consider using {enum_name} for type safety"
-                            ),
-                            severity="WARNING",
-                        )
-                    )
-                    break  # Only report first subset match to avoid duplicate warnings
+        return issues
 
-    return violations
+    def _get_rule_parameters(
+        self,
+        rule_id: str,  # string-id-ok: contract rule identifier
+        contract: ModelValidatorSubcontract,
+    ) -> dict[str, str | int | float | bool | list[str]]:
+        """Get rule-specific parameters from the contract.
 
+        Args:
+            rule_id: The rule identifier to look up.
+            contract: Validator contract with rule configurations.
 
-def collect_enums_from_file(file_path: Path) -> dict[str, list[MemberInfo]]:
-    """Parse a Python file and collect all enum definitions.
-
-    Args:
-        file_path: Path to the Python file to parse
-
-    Returns:
-        Dictionary mapping enum names to their member info lists
-    """
-    try:
-        source = file_path.read_text(encoding="utf-8")
-        tree = ast.parse(source, filename=str(file_path))
-    except (SyntaxError, UnicodeDecodeError) as e:
-        logger.warning("Could not parse %s: %s", file_path, e)
+        Returns:
+            Dictionary of rule parameters, or empty dict if not found.
+        """
+        for rule in contract.rules:
+            if rule.rule_id == rule_id and rule.parameters is not None:
+                return rule.parameters
         return {}
 
-    collector = CollectorAST(file_path)
-    collector.visit(tree)
-    return collector.enums
 
-
-def collect_literals_from_file(file_path: Path) -> list[tuple[int, set[str]]]:
-    """Parse a Python file and collect all Literal type definitions.
-
-    Args:
-        file_path: Path to the Python file to parse
-
-    Returns:
-        List of (line_number, values_set) tuples for each Literal found
-    """
-    try:
-        source = file_path.read_text(encoding="utf-8")
-        tree = ast.parse(source, filename=str(file_path))
-    except (SyntaxError, UnicodeDecodeError) as e:
-        logger.warning("Could not parse %s: %s", file_path, e)
-        return []
-
-    collector = LiteralCollector(file_path)
-    collector.visit(tree)
-    return collector.literals
-
-
-def validate_enum_directory(
-    enum_dir: Path, verbose: bool = False
-) -> tuple[list[GovernanceViolation], dict[str, set[str]]]:
-    """Validate all enum files in a directory for casing violations.
-
-    Args:
-        enum_dir: Path to the enums/ directory
-        verbose: Whether to log progress
-
-    Returns:
-        Tuple of (violations list, enum_index dict)
-        The enum_index maps enum names to their value sets for Literal checking
-    """
-    violations: list[GovernanceViolation] = []
-    enum_index: dict[str, set[str]] = {}
-
-    if not enum_dir.exists():
-        logger.warning("Enum directory not found: %s", enum_dir)
-        return violations, enum_index
-
-    for file_path in enum_dir.glob("enum_*.py"):
-        if file_path.is_symlink():
-            continue
-
-        if verbose:
-            logger.debug("Checking enums in: %s", file_path)
-
-        enums = collect_enums_from_file(file_path)
-
-        for enum_name, members in enums.items():
-            # Check casing for each member
-            violations.extend(check_enum_member_casing(members))
-
-            # Build index of enum values for Literal checking
-            values: set[str] = set()
-            for member in members:
-                if member.member_value:
-                    values.add(member.member_value)
-            if values:
-                enum_index[enum_name] = values
-
-    return violations, enum_index
-
-
-def validate_literal_usage(
-    source_dir: Path,
-    enum_index: dict[str, set[str]],
-    verbose: bool = False,
-) -> list[GovernanceViolation]:
-    """Scan source directory for Literal types that duplicate enum values.
-
-    Args:
-        source_dir: Path to source directory to scan
-        enum_index: Dictionary mapping enum names to their value sets
-        verbose: Whether to log progress
-
-    Returns:
-        List of violations found
-    """
-    violations: list[GovernanceViolation] = []
-
-    if not enum_index:
-        return violations
-
-    # Collect all Literals from source files
-    all_literals: list[tuple[Path, int, set[str]]] = []
-
-    for file_path in source_dir.rglob("*.py"):
-        if file_path.is_symlink():
-            continue
-        # Skip test files (use Path.parts for platform-independent check)
-        if "tests" in file_path.parts:
-            continue
-
-        if verbose:
-            logger.debug("Scanning for Literals in: %s", file_path)
-
-        literals = collect_literals_from_file(file_path)
-        for line, values in literals:
-            all_literals.append((file_path, line, values))
-
-    # Check for duplications
-    violations.extend(check_literal_duplication(enum_index, all_literals))
-
-    return violations
-
-
-def validate_directory(
-    directory: Path, verbose: bool = False
-) -> list[GovernanceViolation]:
-    """Validate a directory for all enum governance rules.
-
-    Args:
-        directory: Path to the omnibase_core directory
-        verbose: Whether to log progress
-
-    Returns:
-        List of all violations found
-    """
-    violations: list[GovernanceViolation] = []
-
-    # Find the enums directory
-    enum_dir = directory / "enums"
-    if not enum_dir.exists():
-        # Try looking under src/omnibase_core/
-        enum_dir = directory / "src" / "omnibase_core" / "enums"
-
-    # Step 1: Validate enum casing and build index
-    enum_violations, enum_index = validate_enum_directory(enum_dir, verbose)
-    violations.extend(enum_violations)
-
-    if verbose:
-        logger.info(
-            "Found %d enums with %d total values",
-            len(enum_index),
-            sum(len(v) for v in enum_index.values()),
-        )
-
-    # Step 2: Scan for Literal duplication
-    source_dir = directory
-    if (directory / "src" / "omnibase_core").exists():
-        source_dir = directory / "src" / "omnibase_core"
-
-    literal_violations = validate_literal_usage(source_dir, enum_index, verbose)
-    violations.extend(literal_violations)
-
-    return violations
-
-
-def main() -> int:
-    """Main entry point for command-line validation.
-
-    Returns:
-        int: Exit code (0=pass, 1=failures found)
-    """
-    parser = argparse.ArgumentParser(
-        description="Check enum governance rules in omnibase_core",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  %(prog)s                    Check src/omnibase_core (default)
-  %(prog)s -v                 Check with verbose output
-  %(prog)s path/to/dir        Check a specific directory
-  %(prog)s --enums-only       Only check enum member casing (skip Literal check)
-
-Rules:
-  E001: Enum member must use UPPER_SNAKE_CASE
-  E002: Literal type duplicates enum values
-""",
-    )
-    parser.add_argument(
-        "directory",
-        nargs="?",
-        type=Path,
-        default=None,
-        help="Directory to check (default: src/omnibase_core)",
-    )
-    parser.add_argument(
-        "-v",
-        "--verbose",
-        action="store_true",
-        help="Print progress for each file checked",
-    )
-    parser.add_argument(
-        "--enums-only",
-        action="store_true",
-        help="Only check enum member casing, skip Literal duplication check",
-    )
-
-    args = parser.parse_args()
-
-    # Configure logging
-    log_level = logging.DEBUG if args.verbose else logging.INFO
-    logging.basicConfig(level=log_level, format="%(message)s", force=True)
-
-    # Determine target directory
-    if args.directory:
-        target_dir = args.directory
-    else:
-        # Find src/omnibase_core relative to this file
-        this_file = Path(__file__)
-        target_dir = this_file.parent.parent  # Go up from validation/ to omnibase_core/
-
-    if not target_dir.exists():
-        logger.error("Directory not found: %s", target_dir)
-        return 1
-
-    logger.info("Checking enum governance in: %s", target_dir)
-    logger.info("-" * 60)
-
-    if args.enums_only:
-        # Only check enum casing
-        enum_dir = target_dir / "enums"
-        if not enum_dir.exists():
-            enum_dir = target_dir / "src" / "omnibase_core" / "enums"
-        violations, _ = validate_enum_directory(enum_dir, args.verbose)
-    else:
-        violations = validate_directory(target_dir, args.verbose)
-
-    # Report violations
-    errors = [v for v in violations if v.severity == "ERROR"]
-    warnings = [v for v in violations if v.severity == "WARNING"]
-
-    if warnings:
-        logger.warning("Found %d warning(s):", len(warnings))
-        for violation in sorted(warnings, key=lambda v: (str(v.file_path), v.line)):
-            logger.warning("  %s", violation)
-
-    if errors:
-        logger.error("Found %d error(s):", len(errors))
-        for violation in sorted(errors, key=lambda v: (str(v.file_path), v.line)):
-            logger.error("  %s", violation)
-        return 1
-
-    logger.info("All enum governance checks passed!")
-    return 0
-
-
+# CLI entry point
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(CheckerEnumGovernance.main())
+
+
+__all__ = [
+    "CheckerEnumGovernance",
+    "GovernanceASTVisitor",
+    "LiteralAliasInfo",
+    "RULE_DUPLICATE_ENUM_VALUES",
+    "RULE_ENUM_MEMBER_CASING",
+    "RULE_LITERAL_SHOULD_BE_ENUM",
+]

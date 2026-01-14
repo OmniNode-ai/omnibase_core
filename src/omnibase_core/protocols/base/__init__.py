@@ -81,25 +81,27 @@ LiteralEventPriority = EnumEventPriority
 # Node types in ONEX 4-node architecture
 # Note: Uses UPPERCASE values; EnumNodeKind uses lowercase. Keep as Literal
 # until casing is unified in a future ticket.
-LiteralNodeType = Literal["COMPUTE", "EFFECT", "REDUCER", "ORCHESTRATOR"]
+LiteralNodeType = Literal[  # enum-ok: casing mismatch with EnumNodeKind
+    "COMPUTE", "EFFECT", "REDUCER", "ORCHESTRATOR"
+]
 
 # Service lifecycle patterns
-LiteralServiceLifecycle = Literal[
+LiteralServiceLifecycle = Literal[  # enum-ok: protocol type hint
     "singleton", "transient", "scoped", "pooled", "lazy", "eager"
 ]
 
 # Injection scope patterns
-LiteralInjectionScope = Literal[
+LiteralInjectionScope = Literal[  # enum-ok: protocol type hint
     "request", "session", "thread", "process", "global", "custom"
 ]
 
 # Service resolution status
-LiteralServiceResolutionStatus = Literal[
+LiteralServiceResolutionStatus = Literal[  # enum-ok: protocol type hint
     "resolved", "failed", "circular_dependency", "missing_dependency", "type_mismatch"
 ]
 
 # Validation modes
-LiteralValidationMode = Literal[
+LiteralValidationMode = Literal[  # enum-ok: protocol type hint
     "strict", "lenient", "smoke", "regression", "integration"
 ]
 

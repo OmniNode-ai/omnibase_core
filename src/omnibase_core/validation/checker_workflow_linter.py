@@ -71,7 +71,7 @@ from omnibase_core.models.validation.model_lint_warning import ModelLintWarning
 #
 # v1.1+ Roadmap: "conditional" step type will be added in v1.1 to support
 # conditional workflow execution. See LINEAR ticket OMN-656 for tracking.
-StepTypeLiteral = Literal[
+StepTypeLiteral = Literal[  # enum-ok: validator type constraint
     "compute", "effect", "reducer", "orchestrator", "parallel", "custom"
 ]
 
