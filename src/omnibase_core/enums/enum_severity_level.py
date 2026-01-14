@@ -29,6 +29,22 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
+# Module-level constant for numeric severity levels (avoids per-call dict allocation)
+# Compatible with RFC 5424 severity levels with numeric ordering
+_SEVERITY_LEVEL_NUMERIC_MAP: dict[str, int] = {
+    "trace": 10,
+    "debug": 20,
+    "info": 30,
+    "notice": 35,
+    "warning": 40,
+    "warn": 40,
+    "error": 50,
+    "critical": 60,
+    "alert": 70,
+    "emergency": 80,
+    "fatal": 80,
+}
+
 
 @unique
 class EnumSeverityLevel(str, Enum):
@@ -91,21 +107,7 @@ class EnumSeverityLevel(str, Enum):
     @property
     def numeric_level(self) -> int:
         """Get numeric representation for level comparison."""
-        # Severity level classification - architectural design for logging levels
-        levels = {
-            self.TRACE: 10,
-            self.DEBUG: 20,
-            self.INFO: 30,
-            self.NOTICE: 35,
-            self.WARNING: 40,
-            self.WARN: 40,
-            self.ERROR: 50,
-            self.CRITICAL: 60,
-            self.ALERT: 70,
-            self.EMERGENCY: 80,
-            self.FATAL: 80,
-        }
-        return levels.get(self, 30)  # Default to INFO level
+        return _SEVERITY_LEVEL_NUMERIC_MAP.get(self.value, 30)  # Default to INFO level
 
     def is_error_level(self) -> bool:
         """Check if this is an error-level severity."""

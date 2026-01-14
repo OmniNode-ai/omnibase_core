@@ -151,7 +151,8 @@ from .enum_ignore_pattern_source import EnumIgnorePatternSource, EnumTraversalMo
 # Import status enum
 from .enum_import_status import EnumImportStatus
 
-# Invariant-related enums (OMN-1192)
+# Invariant-related enums (OMN-1192, OMN-1206)
+from .enum_invariant_report_status import EnumInvariantReportStatus
 from .enum_invariant_type import EnumInvariantType
 
 # Language and localization enums
@@ -526,8 +527,9 @@ __all__ = [
     "EnumTokenType",
     "EnumTriggerEvent",
     "EnumLikelihood",
-    # Invariant domain (OMN-1192, OMN-1207)
+    # Invariant domain (OMN-1192, OMN-1206, OMN-1207)
     "EnumComparisonType",
+    "EnumInvariantReportStatus",
     "EnumInvariantType",
     # Dashboard domain (OMN-1284)
     "EnumDashboardStatus",

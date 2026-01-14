@@ -807,6 +807,8 @@ Some files are excluded from single-class-per-file validation due to architectur
 | File | Reason |
 |------|--------|
 | `mixins/mixin_event_bus.py` | Duck-typed Protocol defined alongside the mixin that uses it. The protocol and implementation are tightly coupled for duck-typing support of legacy event bus implementations. |
+| `validation/checker_enum_governance.py` | Enum governance checker with multiple AST collector classes for parsing enum definitions and Literal types. |
+| `mixins/mixin_health_check.py` | Duck-typed Protocols (ProtocolConnectionPool, ProtocolKafkaProducerAio, etc.) defined alongside the health check mixin for service-specific health checks. |
 
 These exclusions are documented in `.pre-commit-config.yaml` under `validate-single-class-per-file`.
 

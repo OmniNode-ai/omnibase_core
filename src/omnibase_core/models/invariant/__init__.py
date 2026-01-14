@@ -10,6 +10,7 @@ Models:
     ModelInvariantDefinition: Detailed definition with type-specific config.
     ModelInvariantSet: Collection of invariants for a node or workflow.
     ModelInvariantViolationDetail: Detailed information about a single violation.
+    ModelInvariantViolationReport: Aggregated report of all violations from an evaluation run.
     ModelEvaluationSummary: Summary of batch invariant evaluation results.
 
 Config Models (type-specific configurations):
@@ -68,6 +69,7 @@ from .model_invariant_definition import InvariantConfigUnion, ModelInvariantDefi
 from .model_invariant_result import ModelInvariantResult
 from .model_invariant_set import ModelInvariantSet
 from .model_invariant_violation_detail import ModelInvariantViolationDetail
+from .model_invariant_violation_report import ModelInvariantViolationReport
 from .model_latency_config import ModelLatencyConfig
 from .model_schema_invariant_config import ModelSchemaInvariantConfig
 from .model_threshold_config import ModelThresholdConfig
@@ -79,6 +81,7 @@ __all__ = [
     "ModelInvariantDefinition",
     "ModelInvariantSet",
     "ModelInvariantViolationDetail",
+    "ModelInvariantViolationReport",
     "ModelEvaluationSummary",
     # Config models
     "ModelSchemaInvariantConfig",
