@@ -13,7 +13,7 @@ Usage Example:
     >>> import ast
     >>> from pathlib import Path
     >>> from omnibase_core.validation.checker_visitor_any_type import AnyTypeVisitor
-    >>> from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
+    >>> from omnibase_core.enums import EnumSeverity
     >>>
     >>> source = "from typing import Any\\ndef foo(x: Any) -> Any: pass"
     >>> tree = ast.parse(source)
@@ -21,7 +21,7 @@ Usage Example:
     ...     source_lines=source.splitlines(),
     ...     suppression_patterns=["# noqa:"],
     ...     file_path=Path("example.py"),
-    ...     severity=EnumValidationSeverity.ERROR,
+    ...     severity=EnumSeverity.ERROR,
     ... )
     >>> visitor.visit(tree)
     >>> print(len(visitor.issues))  # Number of Any type violations found
@@ -43,7 +43,7 @@ See Also:
 import ast
 from pathlib import Path
 
-from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
+from omnibase_core.enums import EnumSeverity
 from omnibase_core.models.common.model_validation_issue import ModelValidationIssue
 
 # Rule IDs for Any type violations
@@ -82,7 +82,7 @@ class AnyTypeVisitor(ast.NodeVisitor):
         source_lines: list[str],
         suppression_patterns: list[str],
         file_path: Path,
-        severity: EnumValidationSeverity = EnumValidationSeverity.ERROR,
+        severity: EnumSeverity = EnumSeverity.ERROR,
     ) -> None:
         """Initialize the AnyTypeVisitor.
 

@@ -9,11 +9,26 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, computed_field, model_validator
 
+from omnibase_core.enums import EnumSeverity
 from omnibase_core.enums.enum_invariant_report_status import EnumInvariantReportStatus
-from omnibase_core.enums.enum_invariant_severity import EnumInvariantSeverity
 from omnibase_core.models.invariant.model_invariant_violation_detail import (
     ModelInvariantViolationDetail,
 )
+
+# Severity ordering for comparison (lower = less severe)
+_SEVERITY_ORDER: dict[EnumSeverity, int] = {
+    EnumSeverity.DEBUG: 0,
+    EnumSeverity.INFO: 1,
+    EnumSeverity.WARNING: 2,
+    EnumSeverity.ERROR: 3,
+    EnumSeverity.CRITICAL: 4,
+    EnumSeverity.FATAL: 5,
+}
+
+
+def _severity_gte(a: EnumSeverity, b: EnumSeverity) -> bool:
+    """Check if severity a >= severity b."""
+    return _SEVERITY_ORDER.get(a, 0) >= _SEVERITY_ORDER.get(b, 0)
 
 
 class ModelInvariantViolationReport(BaseModel):
@@ -99,47 +114,41 @@ class ModelInvariantViolationReport(BaseModel):
     @property
     def critical_count(self) -> int:
         """Count of CRITICAL severity violations."""
-        return sum(
-            1 for v in self.violations if v.severity == EnumInvariantSeverity.CRITICAL
-        )
+        return sum(1 for v in self.violations if v.severity == EnumSeverity.CRITICAL)
 
     # NOTE(OMN-1206): Pydantic @computed_field requires @property below it, causing mypy prop-decorator warning.
     @computed_field  # type: ignore[prop-decorator]
     @property
     def warning_count(self) -> int:
         """Count of WARNING severity violations."""
-        return sum(
-            1 for v in self.violations if v.severity == EnumInvariantSeverity.WARNING
-        )
+        return sum(1 for v in self.violations if v.severity == EnumSeverity.WARNING)
 
     # NOTE(OMN-1206): Pydantic @computed_field requires @property below it, causing mypy prop-decorator warning.
     @computed_field  # type: ignore[prop-decorator]
     @property
     def info_count(self) -> int:
         """Count of INFO severity violations."""
-        return sum(
-            1 for v in self.violations if v.severity == EnumInvariantSeverity.INFO
-        )
+        return sum(1 for v in self.violations if v.severity == EnumSeverity.INFO)
 
     # Query Methods (no policy, just filtering)
     def get_violations_by_severity(
-        self, severity: EnumInvariantSeverity
+        self, severity: EnumSeverity
     ) -> list[ModelInvariantViolationDetail]:
         """Filter violations by exact severity level."""
         return [v for v in self.violations if v.severity == severity]
 
     def get_violations_at_or_above(
-        self, threshold: EnumInvariantSeverity
+        self, threshold: EnumSeverity
     ) -> list[ModelInvariantViolationDetail]:
         """Get violations at or above the given severity threshold."""
-        return [v for v in self.violations if v.severity >= threshold]
+        return [v for v in self.violations if _severity_gte(v.severity, threshold)]
 
-    def has_violations_at_or_above(self, threshold: EnumInvariantSeverity) -> bool:
+    def has_violations_at_or_above(self, threshold: EnumSeverity) -> bool:
         """Check if any violations meet or exceed the threshold.
 
         Used by callers to determine blocking based on contract-defined policy.
         """
-        return any(v.severity >= threshold for v in self.violations)
+        return any(_severity_gte(v.severity, threshold) for v in self.violations)
 
     def to_summary_dict(self) -> dict[str, str | int | float | bool]:
         """Compact summary with JSON-safe primitives only."""
@@ -188,9 +197,9 @@ class ModelInvariantViolationReport(BaseModel):
         ]
 
         # Group violations by severity
-        critical = self.get_violations_by_severity(EnumInvariantSeverity.CRITICAL)
-        warnings = self.get_violations_by_severity(EnumInvariantSeverity.WARNING)
-        info = self.get_violations_by_severity(EnumInvariantSeverity.INFO)
+        critical = self.get_violations_by_severity(EnumSeverity.CRITICAL)
+        warnings = self.get_violations_by_severity(EnumSeverity.WARNING)
+        info = self.get_violations_by_severity(EnumSeverity.INFO)
 
         if critical:
             lines.append("## Critical Failures")

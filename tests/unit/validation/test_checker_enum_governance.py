@@ -19,7 +19,7 @@ from pathlib import Path
 
 import pytest
 
-from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
+from omnibase_core.enums import EnumSeverity
 from omnibase_core.models.contracts.subcontracts.model_validator_rule import (
     ModelValidatorRule,
 )
@@ -60,7 +60,7 @@ def create_test_file(tmp_path: Path, filename: str, content: str) -> Path:
 
 def create_test_contract(
     suppression_comments: list[str] | None = None,
-    severity_default: EnumValidationSeverity = EnumValidationSeverity.ERROR,
+    severity_default: EnumSeverity = EnumSeverity.ERROR,
     rules: list[ModelValidatorRule] | None = None,
     exclude_patterns: list[str] | None = None,
     fail_on_warning: bool = False,
@@ -81,13 +81,13 @@ def create_test_contract(
         ModelValidatorRule(
             rule_id=RULE_ENUM_MEMBER_CASING,
             description="Enforce UPPER_SNAKE_CASE naming for enum members",
-            severity=EnumValidationSeverity.ERROR,
+            severity=EnumSeverity.ERROR,
             enabled=True,
         ),
         ModelValidatorRule(
             rule_id=RULE_LITERAL_SHOULD_BE_ENUM,
             description="Detect Literal type aliases that should be enums",
-            severity=EnumValidationSeverity.ERROR,
+            severity=EnumSeverity.ERROR,
             enabled=True,
             parameters={
                 "min_values": 3,
@@ -97,7 +97,7 @@ def create_test_contract(
         ModelValidatorRule(
             rule_id=RULE_DUPLICATE_ENUM_VALUES,
             description="Detect enums with overlapping value sets",
-            severity=EnumValidationSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             enabled=True,
             parameters={
                 "require_name_similarity": True,
@@ -528,7 +528,7 @@ class TestLiteralShouldBeEnum:
             ModelValidatorRule(
                 rule_id=RULE_LITERAL_SHOULD_BE_ENUM,
                 description="Detect Literal type aliases",
-                severity=EnumValidationSeverity.ERROR,
+                severity=EnumSeverity.ERROR,
                 enabled=True,
                 parameters={
                     "min_values": 3,
@@ -763,13 +763,13 @@ class TestDuplicateEnumValues:
             ModelValidatorRule(
                 rule_id=RULE_ENUM_MEMBER_CASING,
                 description="Casing rule",
-                severity=EnumValidationSeverity.ERROR,
+                severity=EnumSeverity.ERROR,
                 enabled=True,
             ),
             ModelValidatorRule(
                 rule_id=RULE_DUPLICATE_ENUM_VALUES,
                 description="Detect overlapping enums",
-                severity=EnumValidationSeverity.WARNING,
+                severity=EnumSeverity.WARNING,
                 enabled=True,
                 parameters={
                     "require_name_similarity": True,
@@ -1120,19 +1120,19 @@ class TestExitCodes:
             ModelValidatorRule(
                 rule_id=RULE_ENUM_MEMBER_CASING,
                 description="Casing rule",
-                severity=EnumValidationSeverity.ERROR,
+                severity=EnumSeverity.ERROR,
                 enabled=False,  # Disabled
             ),
             ModelValidatorRule(
                 rule_id=RULE_LITERAL_SHOULD_BE_ENUM,
                 description="Literal rule",
-                severity=EnumValidationSeverity.ERROR,
+                severity=EnumSeverity.ERROR,
                 enabled=False,  # Disabled
             ),
             ModelValidatorRule(
                 rule_id=RULE_DUPLICATE_ENUM_VALUES,
                 description="Duplicate detection",
-                severity=EnumValidationSeverity.WARNING,
+                severity=EnumSeverity.WARNING,
                 enabled=True,
                 parameters={"require_name_similarity": True, "approved_overlaps": []},
             ),
@@ -1167,19 +1167,19 @@ class TestExitCodes:
             ModelValidatorRule(
                 rule_id=RULE_ENUM_MEMBER_CASING,
                 description="Casing rule",
-                severity=EnumValidationSeverity.ERROR,
+                severity=EnumSeverity.ERROR,
                 enabled=False,
             ),
             ModelValidatorRule(
                 rule_id=RULE_LITERAL_SHOULD_BE_ENUM,
                 description="Literal rule",
-                severity=EnumValidationSeverity.ERROR,
+                severity=EnumSeverity.ERROR,
                 enabled=False,
             ),
             ModelValidatorRule(
                 rule_id=RULE_DUPLICATE_ENUM_VALUES,
                 description="Duplicate detection",
-                severity=EnumValidationSeverity.WARNING,
+                severity=EnumSeverity.WARNING,
                 enabled=True,
                 parameters={"require_name_similarity": True, "approved_overlaps": []},
             ),
@@ -1216,7 +1216,7 @@ class TestRuleConfiguration:
             ModelValidatorRule(
                 rule_id=RULE_ENUM_MEMBER_CASING,
                 description="Disabled",
-                severity=EnumValidationSeverity.ERROR,
+                severity=EnumSeverity.ERROR,
                 enabled=False,
             ),
         ]
@@ -1241,7 +1241,7 @@ class TestRuleConfiguration:
             ModelValidatorRule(
                 rule_id=RULE_ENUM_MEMBER_CASING,
                 description="Warning severity",
-                severity=EnumValidationSeverity.WARNING,
+                severity=EnumSeverity.WARNING,
                 enabled=True,
             ),
         ]
@@ -1251,7 +1251,7 @@ class TestRuleConfiguration:
 
         casing_issues = [i for i in result.issues if i.code == RULE_ENUM_MEMBER_CASING]
         assert len(casing_issues) == 1
-        assert casing_issues[0].severity == EnumValidationSeverity.WARNING
+        assert casing_issues[0].severity == EnumSeverity.WARNING
 
 
 # =============================================================================

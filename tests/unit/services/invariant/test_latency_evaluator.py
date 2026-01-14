@@ -5,7 +5,7 @@
 
 import pytest
 
-from omnibase_core.enums import EnumInvariantSeverity, EnumInvariantType
+from omnibase_core.enums import EnumInvariantType, EnumSeverity
 from omnibase_core.models.invariant import ModelInvariant
 from omnibase_core.services.invariant.service_invariant_evaluator import (
     ServiceInvariantEvaluator,
@@ -23,7 +23,7 @@ class TestLatencyEvaluator:
         invariant = ModelInvariant(
             name="Response Time",
             type=EnumInvariantType.LATENCY,
-            severity=EnumInvariantSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             config={"max_ms": 5000},
         )
 
@@ -39,7 +39,7 @@ class TestLatencyEvaluator:
         invariant = ModelInvariant(
             name="Response Time",
             type=EnumInvariantType.LATENCY,
-            severity=EnumInvariantSeverity.CRITICAL,
+            severity=EnumSeverity.CRITICAL,
             config={"max_ms": 2000},
         )
 
@@ -57,7 +57,7 @@ class TestLatencyEvaluator:
         invariant = ModelInvariant(
             name="Duration Check",
             type=EnumInvariantType.LATENCY,
-            severity=EnumInvariantSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             config={"max_ms": 1000},
         )
 
@@ -73,7 +73,7 @@ class TestLatencyEvaluator:
         invariant = ModelInvariant(
             name="Exact Limit",
             type=EnumInvariantType.LATENCY,
-            severity=EnumInvariantSeverity.CRITICAL,
+            severity=EnumSeverity.CRITICAL,
             config={"max_ms": 1000},
         )
 
@@ -85,7 +85,7 @@ class TestLatencyEvaluator:
         invariant = ModelInvariant(
             name="Zero Latency",
             type=EnumInvariantType.LATENCY,
-            severity=EnumInvariantSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             config={"max_ms": 1000},
         )
 
@@ -99,7 +99,7 @@ class TestLatencyEvaluator:
         invariant = ModelInvariant(
             name="Missing Latency",
             type=EnumInvariantType.LATENCY,
-            severity=EnumInvariantSeverity.CRITICAL,
+            severity=EnumSeverity.CRITICAL,
             config={"max_ms": 1000},
         )
 
@@ -115,7 +115,7 @@ class TestLatencyEvaluator:
         invariant = ModelInvariant(
             name="Preference Check",
             type=EnumInvariantType.LATENCY,
-            severity=EnumInvariantSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             config={"max_ms": 1000},
         )
 
@@ -129,7 +129,7 @@ class TestLatencyEvaluator:
         invariant = ModelInvariant(
             name="Float Latency",
             type=EnumInvariantType.LATENCY,
-            severity=EnumInvariantSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             config={"max_ms": 100.5},
         )
 
@@ -146,7 +146,7 @@ class TestLatencyEvaluator:
         invariant = ModelInvariant(
             name="Non-Numeric",
             type=EnumInvariantType.LATENCY,
-            severity=EnumInvariantSeverity.CRITICAL,
+            severity=EnumSeverity.CRITICAL,
             config={"max_ms": 1000},
         )
 
@@ -162,7 +162,7 @@ class TestLatencyEvaluator:
         invariant = ModelInvariant(
             name="Large Latency",
             type=EnumInvariantType.LATENCY,
-            severity=EnumInvariantSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             config={"max_ms": 60000},  # 60 seconds
         )
 
@@ -177,7 +177,7 @@ class TestLatencyEvaluator:
         invariant = ModelInvariant(
             name="Message Check",
             type=EnumInvariantType.LATENCY,
-            severity=EnumInvariantSeverity.CRITICAL,
+            severity=EnumSeverity.CRITICAL,
             config={"max_ms": 500},
         )
 

@@ -26,10 +26,10 @@ Related:
 import logging
 from collections import defaultdict
 
+from omnibase_core.enums import EnumSeverity
 from omnibase_core.enums.enum_contract_validation_error_code import (
     EnumContractValidationErrorCode,
 )
-from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
 from omnibase_core.models.common.model_validation_result import ModelValidationResult
 from omnibase_core.models.contracts.model_handler_contract import ModelHandlerContract
 
@@ -111,7 +111,9 @@ class ExpandedContractGraphValidator:  # naming-ok: validator class, not protoco
         if result.is_valid:
             result.summary = f"Graph validation passed for {len(contracts)} contracts"
         else:
-            result.summary = f"Graph validation failed with {result.error_count} errors"
+            result.summary = (
+                f"Graph validation failed with {result.error_level_count} errors"
+            )
 
         return result
 
@@ -256,7 +258,7 @@ class ExpandedContractGraphValidator:  # naming-ok: validator class, not protoco
         unmatched = event_outputs - consumed_events
         if unmatched:
             result.add_issue(
-                severity=EnumValidationSeverity.WARNING,
+                severity=EnumSeverity.WARNING,
                 message=(
                     f"The following events are produced but have no consumers in the graph: "
                     f"{sorted(unmatched)}. These may be consumed by external systems."

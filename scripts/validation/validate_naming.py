@@ -221,6 +221,7 @@ class NamingConventionValidator:
             "ExpandedContractGraphValidator",  # Multi-contract graph validator (OMN-1128)
             "MergeValidator",  # Merge phase validator (OMN-1128)
             "Validator*",  # All Validator* classes (ValidatorAnyType, ValidatorContractLinter, etc.) (OMN-1291)
+            "Checker*",  # All Checker* classes (CheckerEnumMemberCasing, etc.) for AST analysis (OMN-1311)
             "*Visitor",  # All *Visitor classes (AnyTypeVisitor, etc.) for AST analysis (OMN-1291)
             "Checker*",  # All Checker* classes (CheckerEnumMemberCasing, etc.) for code analysis (#381)
         ],

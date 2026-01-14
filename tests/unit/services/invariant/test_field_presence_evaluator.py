@@ -6,7 +6,7 @@ from typing import Any
 
 import pytest
 
-from omnibase_core.enums import EnumInvariantSeverity, EnumInvariantType
+from omnibase_core.enums import EnumInvariantType, EnumSeverity
 from omnibase_core.models.invariant import ModelInvariant
 from omnibase_core.services.invariant.service_invariant_evaluator import (
     ServiceInvariantEvaluator,
@@ -24,7 +24,7 @@ class TestFieldPresenceEvaluator:
         invariant = ModelInvariant(
             name="Required Fields",
             type=EnumInvariantType.FIELD_PRESENCE,
-            severity=EnumInvariantSeverity.CRITICAL,
+            severity=EnumSeverity.CRITICAL,
             config={"fields": ["name", "email", "id"]},
         )
         output = {"name": "Alice", "email": "alice@example.com", "id": 123}
@@ -40,7 +40,7 @@ class TestFieldPresenceEvaluator:
         invariant = ModelInvariant(
             name="Required Fields",
             type=EnumInvariantType.FIELD_PRESENCE,
-            severity=EnumInvariantSeverity.CRITICAL,
+            severity=EnumSeverity.CRITICAL,
             config={"fields": ["name", "email", "phone"]},
         )
         output = {"name": "Alice", "email": "alice@example.com"}
@@ -57,7 +57,7 @@ class TestFieldPresenceEvaluator:
         invariant = ModelInvariant(
             name="Nested Fields",
             type=EnumInvariantType.FIELD_PRESENCE,
-            severity=EnumInvariantSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             config={"fields": ["user.profile.email", "user.settings.theme"]},
         )
 
@@ -89,7 +89,7 @@ class TestFieldPresenceEvaluator:
         invariant = ModelInvariant(
             name="Array Fields",
             type=EnumInvariantType.FIELD_PRESENCE,
-            severity=EnumInvariantSeverity.CRITICAL,
+            severity=EnumSeverity.CRITICAL,
             config={"fields": ["items.0.id", "items.0.name"]},
         )
 
@@ -110,7 +110,7 @@ class TestFieldPresenceEvaluator:
         invariant = ModelInvariant(
             name="No Required Fields",
             type=EnumInvariantType.FIELD_PRESENCE,
-            severity=EnumInvariantSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             config={"fields": []},
         )
         output = {"any": "data"}
@@ -126,7 +126,7 @@ class TestFieldPresenceEvaluator:
         invariant = ModelInvariant(
             name="Nullable Fields",
             type=EnumInvariantType.FIELD_PRESENCE,
-            severity=EnumInvariantSeverity.CRITICAL,
+            severity=EnumSeverity.CRITICAL,
             config={"fields": ["name", "optional_field"]},
         )
         output = {"name": "Alice", "optional_field": None}
@@ -142,7 +142,7 @@ class TestFieldPresenceEvaluator:
         invariant = ModelInvariant(
             name="Required Fields",
             type=EnumInvariantType.FIELD_PRESENCE,
-            severity=EnumInvariantSeverity.CRITICAL,
+            severity=EnumSeverity.CRITICAL,
             config={"fields": ["name"]},
         )
         output: dict[str, object] = {}
@@ -159,7 +159,7 @@ class TestFieldPresenceEvaluator:
         invariant = ModelInvariant(
             name="Multiple Required",
             type=EnumInvariantType.FIELD_PRESENCE,
-            severity=EnumInvariantSeverity.CRITICAL,
+            severity=EnumSeverity.CRITICAL,
             config={"fields": ["field_a", "field_b", "field_c"]},
         )
         output = {"field_a": "present"}
@@ -177,7 +177,7 @@ class TestFieldPresenceEvaluator:
         invariant = ModelInvariant(
             name="Deep Nested",
             type=EnumInvariantType.FIELD_PRESENCE,
-            severity=EnumInvariantSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             config={"fields": ["level1.level2.level3.level4.value"]},
         )
 
@@ -197,7 +197,7 @@ class TestFieldPresenceEvaluator:
         invariant = ModelInvariant(
             name="Array Bounds",
             type=EnumInvariantType.FIELD_PRESENCE,
-            severity=EnumInvariantSeverity.CRITICAL,
+            severity=EnumSeverity.CRITICAL,
             config={"fields": ["items.5.id"]},
         )
         output = {"items": [{"id": 1}, {"id": 2}]}
@@ -214,7 +214,7 @@ class TestFieldPresenceEvaluator:
         invariant = ModelInvariant(
             name="Mixed Path",
             type=EnumInvariantType.FIELD_PRESENCE,
-            severity=EnumInvariantSeverity.CRITICAL,
+            severity=EnumSeverity.CRITICAL,
             config={"fields": ["users.0.addresses.1.city"]},
         )
 
@@ -239,7 +239,7 @@ class TestFieldPresenceEvaluator:
         invariant = ModelInvariant(
             name="Check Expected",
             type=EnumInvariantType.FIELD_PRESENCE,
-            severity=EnumInvariantSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             config={"fields": ["a", "b", "c"]},
         )
         output = {"a": 1, "b": 2, "c": 3}

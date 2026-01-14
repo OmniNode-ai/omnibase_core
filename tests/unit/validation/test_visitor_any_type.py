@@ -20,7 +20,7 @@ from pathlib import Path
 
 import pytest
 
-from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
+from omnibase_core.enums import EnumSeverity
 from omnibase_core.validation.checker_visitor_any_type import (
     EXEMPT_DECORATORS,
     RULE_ANY_ANNOTATION,
@@ -39,7 +39,7 @@ from omnibase_core.validation.checker_visitor_any_type import (
 def create_visitor(
     source: str,
     suppression_patterns: list[str] | None = None,
-    severity: EnumValidationSeverity = EnumValidationSeverity.ERROR,
+    severity: EnumSeverity = EnumSeverity.ERROR,
 ) -> AnyTypeVisitor:
     """Create and run an AnyTypeVisitor on the given source code."""
     source = textwrap.dedent(source).strip()
@@ -683,7 +683,7 @@ class TestAnyTypeVisitorHelperMethods:
             source_lines=textwrap.dedent(source).strip().splitlines(),
             suppression_patterns=["# noqa:"],
             file_path=Path("test.py"),
-            severity=EnumValidationSeverity.ERROR,
+            severity=EnumSeverity.ERROR,
         )
 
         assert visitor._is_suppressed(1) is True
@@ -695,7 +695,7 @@ class TestAnyTypeVisitorHelperMethods:
             source_lines=["line1", "line2"],
             suppression_patterns=["# noqa:"],
             file_path=Path("test.py"),
-            severity=EnumValidationSeverity.ERROR,
+            severity=EnumSeverity.ERROR,
         )
 
         assert visitor._is_suppressed(0) is False
@@ -708,7 +708,7 @@ class TestAnyTypeVisitorHelperMethods:
             source_lines=[],
             suppression_patterns=[],
             file_path=Path("test.py"),
-            severity=EnumValidationSeverity.ERROR,
+            severity=EnumSeverity.ERROR,
         )
 
         name_node = ast.Name(id="allow_any_type")
@@ -723,7 +723,7 @@ class TestAnyTypeVisitorHelperMethods:
             source_lines=[],
             suppression_patterns=[],
             file_path=Path("test.py"),
-            severity=EnumValidationSeverity.ERROR,
+            severity=EnumSeverity.ERROR,
         )
 
         any_name = ast.Name(id="Any")
@@ -738,7 +738,7 @@ class TestAnyTypeVisitorHelperMethods:
             source_lines=[],
             suppression_patterns=[],
             file_path=Path("test.py"),
-            severity=EnumValidationSeverity.ERROR,
+            severity=EnumSeverity.ERROR,
         )
 
         name_node = ast.Name(id="MyType")

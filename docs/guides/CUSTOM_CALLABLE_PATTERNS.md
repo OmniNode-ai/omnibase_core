@@ -103,7 +103,7 @@ def has_valid_status(output: dict[str, Any], **kwargs) -> bool:
 ```python
 # Usage
 from omnibase_core.models.invariant import ModelInvariant
-from omnibase_core.enums import EnumInvariantType, EnumInvariantSeverity
+from omnibase_core.enums import EnumInvariantType, EnumSeverity
 from omnibase_core.services.invariant.service_invariant_evaluator import (
     ServiceInvariantEvaluator,
 )
@@ -112,7 +112,7 @@ evaluator = ServiceInvariantEvaluator()
 invariant = ModelInvariant(
     name="status_check",
     type=EnumInvariantType.CUSTOM,
-    severity=EnumInvariantSeverity.CRITICAL,
+    severity=EnumSeverity.CRITICAL,
     config={"callable_path": "validators.status_check.has_valid_status"},
 )
 
@@ -156,7 +156,7 @@ def check_min_items(
 invariant = ModelInvariant(
     name="item_count_check",
     type=EnumInvariantType.CUSTOM,
-    severity=EnumInvariantSeverity.WARNING,
+    severity=EnumSeverity.WARNING,
     config={
         "callable_path": "validators.item_count:check_min_items",
         "min_count": 5,
@@ -223,7 +223,7 @@ def validate_api_response(
 invariant = ModelInvariant(
     name="api_response_validation",
     type=EnumInvariantType.CUSTOM,
-    severity=EnumInvariantSeverity.CRITICAL,
+    severity=EnumSeverity.CRITICAL,
     config={
         "callable_path": "validators.api_response:validate_api_response",
         "require_pagination": True,
@@ -505,7 +505,7 @@ Example test patterns for custom validators:
 
 ```python
 import pytest
-from omnibase_core.enums import EnumInvariantSeverity, EnumInvariantType
+from omnibase_core.enums import EnumSeverity, EnumInvariantType
 from omnibase_core.models.invariant import ModelInvariant
 from omnibase_core.services.invariant.service_invariant_evaluator import (
     ServiceInvariantEvaluator,
@@ -526,7 +526,7 @@ class TestMyCustomValidator:
         invariant = ModelInvariant(
             name="test_custom",
             type=EnumInvariantType.CUSTOM,
-            severity=EnumInvariantSeverity.CRITICAL,
+            severity=EnumSeverity.CRITICAL,
             config={
                 "callable_path": "myapp.validators:my_validator",
                 "min_count": 1
@@ -543,7 +543,7 @@ class TestMyCustomValidator:
         invariant = ModelInvariant(
             name="test_custom",
             type=EnumInvariantType.CUSTOM,
-            severity=EnumInvariantSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             config={
                 "callable_path": "myapp.validators:my_validator",
                 "min_count": 5

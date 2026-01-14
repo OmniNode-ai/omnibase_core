@@ -31,7 +31,7 @@ class ModelResultSummary(BaseModel):
     retry_count: int = Field(ge=0, description="Number of retries")
     has_errors: bool = Field(description="Whether there are errors")
     has_warnings: bool = Field(description="Whether there are warnings")
-    error_count: int = Field(ge=0, description="Number of errors")
+    error_level_count: int = Field(ge=0, description="Count of ERROR-severity items")
     warning_count: int = Field(ge=0, description="Number of warnings")
     critical_error_count: int = Field(ge=0, description="Number of critical errors")
 

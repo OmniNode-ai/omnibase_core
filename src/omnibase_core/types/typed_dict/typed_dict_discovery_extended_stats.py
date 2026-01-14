@@ -13,7 +13,7 @@ class TypedDictDiscoveryExtendedStats(TypedDict):
     throttled_requests: int
     filtered_requests: int
     last_request_time: float | None
-    error_count: int
+    error_level_count: int
     active: bool
     throttle_seconds: float
     last_response_time: float | None
