@@ -22,6 +22,14 @@ class ModelEffectPolicySpec(BaseModel):
     IDs for fine-grained control.
 
     This model is immutable after creation for thread safety.
+
+    Category Combination Rules:
+        - allowed + blocked: Invalid (raises ValueError)
+        - blocked + require_mocks: Invalid (raises ValueError) - blocked categories
+          are rejected before mock lookup occurs
+        - allowed + require_mocks: Valid - means "allow this category but require
+          a mock during replay" (useful for categories you want to permit but
+          still need deterministic behavior)
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
