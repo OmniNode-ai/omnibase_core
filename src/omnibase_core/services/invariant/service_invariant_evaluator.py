@@ -647,6 +647,7 @@ class ServiceInvariantEvaluator:
 
         # Count all statistics in a single pass over results
         passed_count = 0
+        fatal_failures = 0
         critical_failures = 0
         error_failures = 0
         warning_failures = 0
@@ -655,8 +656,9 @@ class ServiceInvariantEvaluator:
         for r in results:
             if r.passed:
                 passed_count += 1
-            elif r.severity in (EnumSeverity.CRITICAL, EnumSeverity.FATAL):
-                # FATAL is more severe than CRITICAL, count both together
+            elif r.severity == EnumSeverity.FATAL:
+                fatal_failures += 1
+            elif r.severity == EnumSeverity.CRITICAL:
                 critical_failures += 1
             elif r.severity == EnumSeverity.ERROR:
                 error_failures += 1
@@ -668,12 +670,13 @@ class ServiceInvariantEvaluator:
 
         failed_count = len(results) - passed_count
 
-        overall_passed = critical_failures == 0
+        overall_passed = critical_failures == 0 and fatal_failures == 0
 
         return ModelEvaluationSummary(
             results=results,
             passed_count=passed_count,
             failed_count=failed_count,
+            fatal_failures=fatal_failures,
             critical_failures=critical_failures,
             error_failures=error_failures,
             warning_failures=warning_failures,
