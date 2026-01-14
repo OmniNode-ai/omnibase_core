@@ -11,8 +11,8 @@ import os
 
 from omnibase_core.constants import TIMEOUT_DEFAULT_MS
 from omnibase_core.models.configuration.model_node_config_value import (
-    ConfigValue,
     ModelNodeConfigSchema,
+    ScalarConfigValue,
     is_valid_value_type,
 )
 
@@ -69,7 +69,7 @@ class NodeConfigProvider:
     """
 
     # Default configuration values
-    _DEFAULTS: dict[str, ConfigValue] = {
+    _DEFAULTS: dict[str, ScalarConfigValue] = {
         # Compute node defaults
         "compute.max_parallel_workers": 4,
         "compute.cache_ttl_minutes": 30,
@@ -90,7 +90,7 @@ class NodeConfigProvider:
 
     def __init__(self) -> None:
         """Initialize configuration provider."""
-        self._config_cache: dict[str, ConfigValue] = {}
+        self._config_cache: dict[str, ScalarConfigValue] = {}
         self._load_environment_config()
 
     def _load_environment_config(self) -> None:
@@ -120,8 +120,8 @@ class NodeConfigProvider:
                 self._config_cache[key] = default_value
 
     async def get_config_value(
-        self, key: str, default: ConfigValue | None = None
-    ) -> ConfigValue | None:
+        self, key: str, default: ScalarConfigValue | None = None
+    ) -> ScalarConfigValue | None:
         """
         Get configuration value by key.
 
@@ -168,8 +168,8 @@ class NodeConfigProvider:
         return TIMEOUT_DEFAULT_MS  # Default 30 seconds
 
     async def get_security_config(
-        self, key: str, default: ConfigValue | None = None
-    ) -> ConfigValue | None:
+        self, key: str, default: ScalarConfigValue | None = None
+    ) -> ScalarConfigValue | None:
         """
         Get security-related configuration.
 
@@ -183,8 +183,8 @@ class NodeConfigProvider:
         return await self.get_config_value(key, default)
 
     async def get_business_logic_config(
-        self, key: str, default: ConfigValue | None = None
-    ) -> ConfigValue | None:
+        self, key: str, default: ScalarConfigValue | None = None
+    ) -> ScalarConfigValue | None:
         """
         Get business logic configuration.
 
@@ -198,8 +198,8 @@ class NodeConfigProvider:
         return await self.get_config_value(key, default)
 
     async def get_performance_config(
-        self, key: str, default: ConfigValue | None = None
-    ) -> ConfigValue | None:
+        self, key: str, default: ScalarConfigValue | None = None
+    ) -> ScalarConfigValue | None:
         """
         Get performance-related configuration.
 
@@ -224,7 +224,7 @@ class NodeConfigProvider:
         """
         return key in self._config_cache or key in self._DEFAULTS
 
-    async def get_all_config(self) -> dict[str, ConfigValue]:
+    async def get_all_config(self) -> dict[str, ScalarConfigValue]:
         """
         Get all configuration as dictionary.
 
