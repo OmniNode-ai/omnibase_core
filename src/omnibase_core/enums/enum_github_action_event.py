@@ -46,7 +46,7 @@ class EnumGithubActionEvent(StrValueHelper, str, Enum):
     ISSUE_COMMENT = "issue_comment"
 
 
-# Compatibility alias
+# Deprecated: use EnumGithubActionEvent directly
 GitHubActionEvent = EnumGithubActionEvent
 
 __all__ = ["EnumGithubActionEvent", "GitHubActionEvent"]

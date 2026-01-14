@@ -101,10 +101,10 @@ class ModelNodeCoreInfoSummary(BaseModel):
             - "metadata": Dict containing:
                 - "node_id": String representation of the node UUID
                 - "node_type": EnumMetadataNodeType value string
-                  (e.g., "COMPUTE", "EFFECT", "REDUCER", "ORCHESTRATOR")
-                - "status": EnumStatus value string (e.g., "ACTIVE", "INACTIVE")
+                  (e.g., "class", "function", "module", "method")
+                - "status": EnumStatus value string (e.g., "active", "inactive")
                 - "health": EnumHealthStatus value string
-                  (e.g., "HEALTHY", "DEGRADED", "UNHEALTHY")
+                  (e.g., "healthy", "degraded", "unhealthy")
                 - "is_active": Boolean indicating if node is currently active
                 - "is_healthy": Boolean indicating if node is in healthy state
                 - "has_description": Boolean indicating if description is set

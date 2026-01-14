@@ -229,7 +229,7 @@ class EnumGeneralStatus(StrValueHelper, str, Enum):
         }
 
 
-# Migration compatibility - provides same interface as original
+# Deprecated: use EnumGeneralStatus directly
 # Note: Python enums cannot extend other enums, so we use module-level alias
 EnumStatus = EnumGeneralStatus
 

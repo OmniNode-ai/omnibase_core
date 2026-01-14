@@ -117,7 +117,7 @@ class EnumScenarioStatusV2(StrValueHelper, str, Enum):
         return status in {cls.COMPLETED, cls.VALID}
 
 
-# Migration compatibility - provides same interface as original
+# Deprecated: use EnumScenarioStatusV2 directly
 # Note: Python enums cannot extend other enums, so we use module-level alias
 EnumScenarioStatus = EnumScenarioStatusV2
 
