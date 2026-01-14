@@ -67,7 +67,9 @@ class EnumExecutionStatus(StrValueHelper, str, Enum):
         SKIPPED: Execution was skipped
         CANCELLED: Execution was cancelled by user or system
         TIMEOUT: Execution exceeded time limit
-        PARTIAL: Execution partially completed (some steps succeeded)
+        PARTIAL: Execution partially completed (some steps succeeded).
+            Example: In a batch job of 100 items, 75 succeeded and 25 failed -
+            neither full SUCCESS nor complete FAILURE.
 
     Helper Methods:
         - :meth:`is_terminal`: Check if execution has finished
