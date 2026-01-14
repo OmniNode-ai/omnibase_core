@@ -1,0 +1,194 @@
+# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
+#
+# SPDX-License-Identifier: Apache-2.0
+"""Model for invariant violation report aggregation."""
+
+from datetime import datetime
+from uuid import UUID, uuid4
+
+from pydantic import BaseModel, ConfigDict, Field, computed_field
+
+from omnibase_core.enums.enum_invariant_report_status import EnumInvariantReportStatus
+from omnibase_core.enums.enum_invariant_severity import EnumInvariantSeverity
+from omnibase_core.models.invariant.model_invariant_violation_detail import (
+    ModelInvariantViolationDetail,
+)
+
+
+class ModelInvariantViolationReport(BaseModel):
+    """Comprehensive report of all invariant violations from an evaluation run.
+
+    Reports facts only - does not embed policy decisions about blocking.
+    The calling code (via contract configuration) determines what severity
+    threshold constitutes a blocking violation.
+    """
+
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
+
+    # Identification
+    id: UUID = Field(default_factory=uuid4)
+    evaluation_id: UUID = Field(..., description="Links to the evaluation run")
+    invariant_set_id: UUID = Field(
+        ..., description="The invariant set that was evaluated"
+    )
+    target: str = Field(..., description="Node/workflow that was evaluated")
+
+    # Timing
+    evaluated_at: datetime
+    duration_ms: float = Field(
+        ..., ge=0, description="Evaluation duration in milliseconds"
+    )
+
+    # Summary Statistics (stored, not computed - set by creator)
+    total_invariants: int = Field(..., ge=0)
+    passed_count: int = Field(..., ge=0)
+    failed_count: int = Field(..., ge=0)
+    skipped_count: int = Field(..., ge=0)
+
+    # Status
+    status: EnumInvariantReportStatus
+
+    # Violations (detailed)
+    violations: list[ModelInvariantViolationDetail] = Field(default_factory=list)
+
+    # Context
+    metadata: dict[str, str] = Field(default_factory=dict)
+
+    # Computed Properties
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def pass_rate(self) -> float:
+        """Pass rate from 0.0 to 1.0. Returns 1.0 if no invariants."""
+        if self.total_invariants == 0:
+            return 1.0
+        return self.passed_count / self.total_invariants
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def critical_count(self) -> int:
+        """Count of CRITICAL severity violations."""
+        return sum(
+            1 for v in self.violations if v.severity == EnumInvariantSeverity.CRITICAL
+        )
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def warning_count(self) -> int:
+        """Count of WARNING severity violations."""
+        return sum(
+            1 for v in self.violations if v.severity == EnumInvariantSeverity.WARNING
+        )
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def info_count(self) -> int:
+        """Count of INFO severity violations."""
+        return sum(
+            1 for v in self.violations if v.severity == EnumInvariantSeverity.INFO
+        )
+
+    # Query Methods (no policy, just filtering)
+    def get_violations_by_severity(
+        self, severity: EnumInvariantSeverity
+    ) -> list[ModelInvariantViolationDetail]:
+        """Filter violations by exact severity level."""
+        return [v for v in self.violations if v.severity == severity]
+
+    def get_violations_at_or_above(
+        self, threshold: EnumInvariantSeverity
+    ) -> list[ModelInvariantViolationDetail]:
+        """Get violations at or above the given severity threshold."""
+        return [v for v in self.violations if v.severity >= threshold]
+
+    def has_violations_at_or_above(self, threshold: EnumInvariantSeverity) -> bool:
+        """Check if any violations meet or exceed the threshold.
+
+        Used by callers to determine blocking based on contract-defined policy.
+        """
+        return any(v.severity >= threshold for v in self.violations)
+
+    def to_summary_dict(self) -> dict[str, str | int | float | bool]:
+        """Compact summary with JSON-safe primitives only."""
+        return {
+            "id": str(self.id),
+            "evaluation_id": str(self.evaluation_id),
+            "target": self.target,
+            "status": self.status.value,
+            "total_invariants": self.total_invariants,
+            "passed_count": self.passed_count,
+            "failed_count": self.failed_count,
+            "skipped_count": self.skipped_count,
+            "pass_rate": round(self.pass_rate, 4),
+            "critical_count": self.critical_count,
+            "warning_count": self.warning_count,
+            "info_count": self.info_count,
+            "duration_ms": self.duration_ms,
+            "evaluated_at": self.evaluated_at.isoformat(),
+        }
+
+    def to_markdown(self) -> str:
+        """Deterministic markdown report for logs/PR comments."""
+        lines = [
+            "# Invariant Evaluation Report",
+            "",
+            f"**Target**: {self.target}",
+            f"**Evaluated**: {self.evaluated_at.strftime('%Y-%m-%d %H:%M:%S UTC')}",
+            f"**Duration**: {self.duration_ms:.1f}ms",
+            "",
+            "## Summary",
+            "",
+            "| Metric | Value |",
+            "|--------|-------|",
+            f"| Total Invariants | {self.total_invariants} |",
+            f"| Passed | {self.passed_count} |",
+            f"| Failed | {self.failed_count} |",
+            f"| Skipped | {self.skipped_count} |",
+            f"| Pass Rate | {self.pass_rate:.1%} |",
+            "",
+            f"**Status**: {self.status.value.upper()}",
+            "",
+        ]
+
+        # Group violations by severity
+        critical = self.get_violations_by_severity(EnumInvariantSeverity.CRITICAL)
+        warnings = self.get_violations_by_severity(EnumInvariantSeverity.WARNING)
+        info = self.get_violations_by_severity(EnumInvariantSeverity.INFO)
+
+        if critical:
+            lines.append("## Critical Failures")
+            lines.append("")
+            for v in critical:
+                lines.append(f"### {v.invariant_name}")
+                lines.append(f"- **Message**: {v.message}")
+                if v.field_path:
+                    lines.append(f"- **Field**: {v.field_path}")
+                lines.append("")
+
+        if warnings:
+            lines.append("## Warnings")
+            lines.append("")
+            for v in warnings:
+                lines.append(f"### {v.invariant_name}")
+                lines.append(f"- **Message**: {v.message}")
+                if v.field_path:
+                    lines.append(f"- **Field**: {v.field_path}")
+                lines.append("")
+
+        if info:
+            lines.append("## Info")
+            lines.append("")
+            for v in info:
+                lines.append(f"### {v.invariant_name}")
+                lines.append(f"- **Message**: {v.message}")
+                lines.append("")
+
+        if not self.violations:
+            lines.append("## Violations")
+            lines.append("")
+            lines.append("No violations detected.")
+            lines.append("")
+
+        return "\n".join(lines)
+
+
+__all__ = ["ModelInvariantViolationReport"]
