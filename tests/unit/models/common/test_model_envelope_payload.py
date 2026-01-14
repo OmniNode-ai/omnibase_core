@@ -16,10 +16,8 @@ from datetime import UTC, datetime
 import pytest
 
 from omnibase_core.errors import ModelOnexError
-from omnibase_core.models.common.model_envelope_payload import (
-    ModelEnvelopePayload,
-    PayloadDataValue,
-)
+from omnibase_core.models.common.model_envelope_payload import ModelEnvelopePayload
+from omnibase_core.models.types.model_onex_common_types import CliValue
 
 
 @pytest.mark.unit
@@ -51,7 +49,7 @@ class TestModelEnvelopePayloadBasic:
         assert payload.data == {}
 
     def test_data_field_types(self) -> None:
-        """Test that data field accepts all PayloadDataValue types."""
+        """Test that data field accepts all CliValue | None types."""
         payload = ModelEnvelopePayload(
             data={
                 "string_val": "hello",
@@ -127,7 +125,7 @@ class TestModelEnvelopePayloadRoundTrip:
 
     def test_from_dict_flat_format(self) -> None:
         """Test from_dict with flat format (unknown keys go to data)."""
-        input_dict: dict[str, PayloadDataValue] = {
+        input_dict: dict[str, CliValue | None] = {
             "event_type": "user.created",
             "source": "auth-service",
             "custom_field": "custom_value",

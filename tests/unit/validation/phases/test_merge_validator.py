@@ -120,7 +120,7 @@ class TestMergeValidatorBasic(TestMergeValidatorFixtures):
         """Test that a valid merge passes validation."""
         result = validator.validate(valid_base, valid_patch, valid_merged)
         assert result.is_valid is True
-        assert result.error_count == 0
+        assert result.error_level_count == 0
 
     def test_validator_returns_validation_result(
         self,
@@ -137,7 +137,7 @@ class TestMergeValidatorBasic(TestMergeValidatorFixtures):
         assert hasattr(result, "issues")
         assert result.is_valid is True
         assert isinstance(result.issues, list)
-        assert result.error_count == 0
+        assert result.error_level_count == 0
 
     def test_validator_is_stateless(
         self,
@@ -204,7 +204,7 @@ class TestMergeValidatorPlaceholderDetection(TestMergeValidatorFixtures):
 
         result = validator.validate(valid_base, valid_patch, merged)
         assert result.is_valid is False
-        assert "placeholder" in result.summary.lower() or result.error_count > 0
+        assert "placeholder" in result.summary.lower() or result.error_level_count > 0
 
     def test_placeholder_jinja_style_detected(
         self,
@@ -317,7 +317,7 @@ class TestMergeValidatorPlaceholderDetection(TestMergeValidatorFixtures):
             for msg in result.warnings
         ), f"Expected warning about placeholder in description, got: {result.warnings}"
         # Get detailed warning issues for code verification
-        from omnibase_core.enums.enum_severity import EnumSeverity
+        from omnibase_core.enums import EnumSeverity
 
         warning_issues = result.get_issues_by_severity(EnumSeverity.WARNING)
         warning_codes = [issue.code for issue in warning_issues if issue.code]
@@ -570,7 +570,7 @@ class TestMergeValidatorDependencyReferences(TestMergeValidatorFixtures):
         assert isinstance(result, ModelValidationResult)
         # Validation should pass (warnings don't fail validation)
         assert result.is_valid is True
-        assert result.error_count == 0
+        assert result.error_level_count == 0
         # Verify the warning was produced for the unresolved dependency
         has_dependency_warning = result.warning_count > 0 or any(
             "handler.nonexistent" in str(issue.message) for issue in result.issues
@@ -724,7 +724,7 @@ class TestMergeValidatorMultipleErrors(TestMergeValidatorFixtures):
         result = validator.validate(valid_base, patch, merged)
         assert result.is_valid is False
         # Should have multiple errors
-        assert result.error_count >= 2
+        assert result.error_level_count >= 2
 
 
 @pytest.mark.unit

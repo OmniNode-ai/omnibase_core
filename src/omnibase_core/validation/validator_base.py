@@ -71,8 +71,8 @@ from typing import ClassVar
 
 import yaml
 
+from omnibase_core.enums import EnumSeverity
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.enums.enum_severity import EnumSeverity
 from omnibase_core.errors.exception_groups import (
     FILE_IO_ERRORS,
     PYDANTIC_MODEL_ERRORS,
@@ -98,10 +98,12 @@ EXIT_WARNINGS = 2
 
 # Severity priority for deterministic ordering (lower = higher priority)
 SEVERITY_PRIORITY: dict[EnumSeverity, int] = {
-    EnumSeverity.CRITICAL: 0,
-    EnumSeverity.ERROR: 1,
-    EnumSeverity.WARNING: 2,
-    EnumSeverity.INFO: 3,
+    EnumSeverity.FATAL: 0,
+    EnumSeverity.CRITICAL: 1,
+    EnumSeverity.ERROR: 2,
+    EnumSeverity.WARNING: 3,
+    EnumSeverity.INFO: 4,
+    EnumSeverity.DEBUG: 5,
 }
 
 
@@ -752,7 +754,9 @@ class ValidatorBase(ABC):
         )
 
         # Count by severity
-        error_count = sum(1 for i in sorted_issues if i.severity == EnumSeverity.ERROR)
+        error_level_count = sum(
+            1 for i in sorted_issues if i.severity == EnumSeverity.ERROR
+        )
         warning_count = sum(
             1 for i in sorted_issues if i.severity == EnumSeverity.WARNING
         )
@@ -761,7 +765,7 @@ class ValidatorBase(ABC):
         )
 
         # Determine validity based on contract settings
-        has_errors = error_count > 0 or critical_count > 0
+        has_errors = error_level_count > 0 or critical_count > 0
         has_warnings = warning_count > 0
 
         is_valid = True

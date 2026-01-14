@@ -5,7 +5,7 @@ from typing import Any
 import pytest
 from pydantic import BaseModel
 
-from omnibase_core.enums.enum_severity import EnumSeverity
+from omnibase_core.enums import EnumSeverity
 from omnibase_core.models.core import (
     ModelCapabilityFactory,
     ModelGenericFactory,

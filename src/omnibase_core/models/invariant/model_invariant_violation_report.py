@@ -9,11 +9,26 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, computed_field, model_validator
 
+from omnibase_core.enums import EnumSeverity
 from omnibase_core.enums.enum_invariant_report_status import EnumInvariantReportStatus
-from omnibase_core.enums.enum_severity import EnumSeverity
 from omnibase_core.models.invariant.model_invariant_violation_detail import (
     ModelInvariantViolationDetail,
 )
+
+# Severity ordering for comparison (lower = less severe)
+_SEVERITY_ORDER: dict[EnumSeverity, int] = {
+    EnumSeverity.DEBUG: 0,
+    EnumSeverity.INFO: 1,
+    EnumSeverity.WARNING: 2,
+    EnumSeverity.ERROR: 3,
+    EnumSeverity.CRITICAL: 4,
+    EnumSeverity.FATAL: 5,
+}
+
+
+def _severity_gte(a: EnumSeverity, b: EnumSeverity) -> bool:
+    """Check if severity a >= severity b."""
+    return _SEVERITY_ORDER.get(a, 0) >= _SEVERITY_ORDER.get(b, 0)
 
 
 class ModelInvariantViolationReport(BaseModel):
@@ -125,23 +140,15 @@ class ModelInvariantViolationReport(BaseModel):
     def get_violations_at_or_above(
         self, threshold: EnumSeverity
     ) -> list[ModelInvariantViolationDetail]:
-        """Get violations at or above the given severity threshold.
-
-        Uses numeric_level for proper severity comparison (higher = more severe).
-        """
-        threshold_level = threshold.numeric_level
-        return [
-            v for v in self.violations if v.severity.numeric_level >= threshold_level
-        ]
+        """Get violations at or above the given severity threshold."""
+        return [v for v in self.violations if _severity_gte(v.severity, threshold)]
 
     def has_violations_at_or_above(self, threshold: EnumSeverity) -> bool:
         """Check if any violations meet or exceed the threshold.
 
-        Uses numeric_level for proper severity comparison (higher = more severe).
         Used by callers to determine blocking based on contract-defined policy.
         """
-        threshold_level = threshold.numeric_level
-        return any(v.severity.numeric_level >= threshold_level for v in self.violations)
+        return any(_severity_gte(v.severity, threshold) for v in self.violations)
 
     def to_summary_dict(self) -> dict[str, str | int | float | bool]:
         """Compact summary with JSON-safe primitives only."""

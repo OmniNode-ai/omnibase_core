@@ -222,7 +222,6 @@ from omnibase_core.enums import (
     EnumExecutionTrigger,
 
     # Validation domain
-    EnumSeverity,
     EnumValidationLevel,
     EnumValidationMode,
     EnumValidationRuleType,

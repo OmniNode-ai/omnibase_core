@@ -159,7 +159,9 @@ class ModelMetadataNodeAnalytics(BaseModel):
     )
 
     # Error tracking
-    error_count: int = Field(default=0, description="Total error count", ge=0)
+    error_level_count: int = Field(
+        default=0, description="Number of ERROR-severity issues", ge=0
+    )
     warning_count: int = Field(default=0, description="Total warning count", ge=0)
     critical_error_count: int = Field(
         default=0,
@@ -221,7 +223,7 @@ class ModelMetadataNodeAnalytics(BaseModel):
         """Calculate error rate percentage."""
         if self.total_invocations == 0:
             return 0.0
-        return (self.error_count / self.total_invocations) * 100.0
+        return (self.error_level_count / self.total_invocations) * 100.0
 
     def add_custom_metric(self, name: str, value: ModelMetadataValue) -> None:
         """Add a custom metric using strongly-typed value."""
@@ -302,7 +304,7 @@ class ModelMetadataNodeAnalytics(BaseModel):
         summary.quality.documentation_coverage = self.documentation_coverage
 
         # Set error properties
-        summary.errors.error_count = self.error_count
+        summary.errors.error_level_count = self.error_level_count
         summary.errors.warning_count = self.warning_count
         summary.errors.critical_error_count = self.critical_error_count
 

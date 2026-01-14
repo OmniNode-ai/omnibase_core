@@ -20,7 +20,7 @@ from pathlib import Path
 
 import pytest
 
-from omnibase_core.enums.enum_severity import EnumSeverity
+from omnibase_core.enums import EnumSeverity
 from omnibase_core.validation.checker_visitor_any_type import (
     EXEMPT_DECORATORS,
     RULE_ANY_ANNOTATION,

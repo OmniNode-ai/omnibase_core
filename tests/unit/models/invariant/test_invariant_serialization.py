@@ -5,8 +5,7 @@ import uuid
 
 import pytest
 
-from omnibase_core.enums import EnumInvariantType
-from omnibase_core.enums.enum_severity import EnumSeverity
+from omnibase_core.enums import EnumInvariantType, EnumSeverity
 from omnibase_core.models.invariant import (
     ModelInvariant,
     ModelInvariantResult,

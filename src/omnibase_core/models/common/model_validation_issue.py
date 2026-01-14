@@ -3,8 +3,8 @@ from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-# Import the existing enum from enums module
-from omnibase_core.enums.enum_severity import EnumSeverity
+# Import canonical severity enum
+from omnibase_core.enums import EnumSeverity
 
 """
 Individual validation issue with proper typing.

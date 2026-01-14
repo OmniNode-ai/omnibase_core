@@ -17,8 +17,8 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from omnibase_core.constants import MAX_DESCRIPTION_LENGTH, MAX_NAME_LENGTH
+from omnibase_core.enums import EnumSeverity
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.enums.enum_severity import EnumSeverity
 from omnibase_core.types.typed_dict_validation_error_serialized import (
     TypedDictValidationErrorSerialized,
 )
@@ -188,7 +188,7 @@ class ModelValidationError(BaseModel):
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except (AttributeError, TypeError, ValueError) as e:
+        except (AttributeError, ValueError, TypeError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",

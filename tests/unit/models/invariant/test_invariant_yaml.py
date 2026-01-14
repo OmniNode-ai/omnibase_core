@@ -4,8 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from omnibase_core.enums import EnumInvariantType
-from omnibase_core.enums.enum_severity import EnumSeverity
+from omnibase_core.enums import EnumInvariantType, EnumSeverity
 from omnibase_core.errors import ModelOnexError
 from omnibase_core.models.invariant import (
     load_invariant_set_from_file,

@@ -9,7 +9,7 @@ Design Principles:
 - Use typing.Protocol with @runtime_checkable for duck typing support
 - Keep interfaces minimal - only define what Core actually needs
 - Provide complete type hints for mypy strict mode compliance
-- Use Literal types for enumerated values
+- Use canonical Enum types for enumerated values (from omnibase_core.enums)
 - Use forward references where needed to avoid circular imports
 
 Module Organization:
@@ -48,27 +48,8 @@ Migration from SPI:
 # Base Module Exports
 # =============================================================================
 
-from omnibase_core.protocols.base import (  # Enums, Literal Types, Protocols, Type Variables
+from omnibase_core.protocols.base import (  # Protocols; Type Variables
     ContextValue,
-    # Canonical Enums (preferred for new code)
-    EnumEventPriority,
-    EnumHealthStatus,
-    EnumLogLevel,
-    EnumOperationStatus,
-    EnumSeverity,
-    EnumValidationLevel,
-    # Backward-Compatible Type Aliases (point to enums above)
-    LiteralEventPriority,
-    LiteralHealthStatus,
-    LiteralInjectionScope,
-    LiteralLogLevel,
-    LiteralNodeType,
-    LiteralOperationStatus,
-    LiteralServiceLifecycle,
-    LiteralServiceResolutionStatus,
-    LiteralValidationLevel,
-    LiteralValidationMode,
-    LiteralValidationSeverity,
     ProtocolContextValue,
     ProtocolDateTime,
     ProtocolHasModelDump,
@@ -331,26 +312,6 @@ __all__ = [
     "T_co",
     "TInterface",
     "TImplementation",
-    # Canonical Enums (preferred for new code)
-    "EnumLogLevel",
-    "EnumHealthStatus",
-    "EnumOperationStatus",
-    "EnumSeverity",
-    "EnumValidationLevel",
-    "EnumEventPriority",
-    # Backward-Compatible Type Aliases (point to enums above)
-    "LiteralLogLevel",
-    "LiteralHealthStatus",
-    "LiteralOperationStatus",
-    "LiteralValidationLevel",
-    "LiteralValidationSeverity",
-    "LiteralEventPriority",
-    # Literal Types (no canonical enum equivalent)
-    "LiteralNodeType",
-    "LiteralServiceLifecycle",
-    "LiteralInjectionScope",
-    "LiteralServiceResolutionStatus",
-    "LiteralValidationMode",
     # Protocols
     "ProtocolDateTime",
     "ProtocolSemVer",

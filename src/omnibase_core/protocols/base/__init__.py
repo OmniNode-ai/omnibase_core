@@ -10,45 +10,12 @@ Design Principles:
 - Use abc.ABC with @abstractmethod for runtime isinstance checks
 - Keep interfaces minimal - only what Core actually needs
 - Provide complete type hints for mypy strict mode compliance
-
-Note on Literal Type Aliases:
-    Several Literal type aliases have been replaced with canonical enums
-    (per OMN-1308 enum governance). The enum types are exported with their
-    original Literal* names as deprecated aliases. New code should import
-    the enum types directly from omnibase_core.enums.
-
-    Replaced:
-    - LiteralLogLevel -> EnumLogLevel
-    - LiteralHealthStatus -> EnumHealthStatus
-    - LiteralOperationStatus -> EnumOperationStatus
-    - LiteralValidationLevel -> EnumValidationLevel
-    - LiteralValidationSeverity -> EnumSeverity
-    - LiteralEventPriority -> EnumEventPriority
-
-    Kept as Literals (no canonical enum equivalent):
-    - LiteralNodeType (UPPERCASE values, EnumNodeKind uses lowercase)
-    - LiteralServiceLifecycle
-    - LiteralInjectionScope
-    - LiteralServiceResolutionStatus
-    - LiteralValidationMode
 """
 
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Literal, TypeVar
-
-# =============================================================================
-# Canonical Enum Imports (replacing Literal types per OMN-1308)
-# =============================================================================
-from omnibase_core.enums.enum_event_priority import EnumEventPriority
-from omnibase_core.enums.enum_health_status import EnumHealthStatus
-from omnibase_core.enums.enum_log_level import EnumLogLevel
-from omnibase_core.enums.enum_operation_status import EnumOperationStatus
-
-# Canonical severity enum (OMN-1311)
-from omnibase_core.enums.enum_severity import EnumSeverity
-from omnibase_core.enums.enum_validation import EnumValidationLevel
+from typing import TypeVar
 
 # =============================================================================
 # Type Variables
@@ -58,52 +25,6 @@ T = TypeVar("T")
 T_co = TypeVar("T_co", covariant=True)
 TInterface = TypeVar("TInterface")
 TImplementation = TypeVar("TImplementation")
-
-
-# =============================================================================
-# Deprecated Type Aliases (Literal* names pointing to Enums)
-# =============================================================================
-
-# These deprecated aliases allow existing code importing LiteralXxx types
-# to continue working. New code should import enums directly.
-LiteralLogLevel = EnumLogLevel
-LiteralHealthStatus = EnumHealthStatus
-LiteralOperationStatus = EnumOperationStatus
-LiteralValidationLevel = EnumValidationLevel
-LiteralValidationSeverity = EnumSeverity
-LiteralEventPriority = EnumEventPriority
-
-
-# =============================================================================
-# Literal Type Aliases (no canonical enum equivalent)
-# =============================================================================
-
-# Node types in ONEX 4-node architecture
-# Note: Uses UPPERCASE values; EnumNodeKind uses lowercase. Keep as Literal
-# until casing is unified in a future ticket.
-LiteralNodeType = Literal[  # enum-ok: casing mismatch with EnumNodeKind
-    "COMPUTE", "EFFECT", "REDUCER", "ORCHESTRATOR"
-]
-
-# Service lifecycle patterns
-LiteralServiceLifecycle = Literal[  # enum-ok: protocol type hint
-    "singleton", "transient", "scoped", "pooled", "lazy", "eager"
-]
-
-# Injection scope patterns
-LiteralInjectionScope = Literal[  # enum-ok: protocol type hint
-    "request", "session", "thread", "process", "global", "custom"
-]
-
-# Service resolution status
-LiteralServiceResolutionStatus = Literal[  # enum-ok: protocol type hint
-    "resolved", "failed", "circular_dependency", "missing_dependency", "type_mismatch"
-]
-
-# Validation modes
-LiteralValidationMode = Literal[  # enum-ok: protocol type hint
-    "strict", "lenient", "smoke", "regression", "integration"
-]
 
 
 # =============================================================================
@@ -141,26 +62,6 @@ __all__ = [
     "T_co",
     "TInterface",
     "TImplementation",
-    # Canonical Enums (preferred for new code)
-    "EnumLogLevel",
-    "EnumHealthStatus",
-    "EnumOperationStatus",
-    "EnumValidationLevel",
-    "EnumSeverity",
-    "EnumEventPriority",
-    # Backward-Compatible Type Aliases (point to enums above)
-    "LiteralLogLevel",
-    "LiteralHealthStatus",
-    "LiteralOperationStatus",
-    "LiteralValidationLevel",
-    "LiteralValidationSeverity",
-    "LiteralEventPriority",
-    # Literal Types (no canonical enum equivalent)
-    "LiteralNodeType",
-    "LiteralServiceLifecycle",
-    "LiteralInjectionScope",
-    "LiteralServiceResolutionStatus",
-    "LiteralValidationMode",
     # DateTime
     "ProtocolDateTime",
     # Protocols

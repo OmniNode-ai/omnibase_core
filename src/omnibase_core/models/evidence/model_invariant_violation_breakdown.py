@@ -15,26 +15,18 @@ from collections import Counter
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.enums.enum_severity import EnumSeverity
-
 
 class ModelInvariantViolationBreakdown(BaseModel):
     """Breakdown of invariant violations by type and severity.
 
     Aggregates violation data from corpus replay comparisons, providing
     counts by violation type (e.g., output_equivalence, latency, cost)
-    and by severity level (e.g., "critical", "warning", "info").
-
-    Note:
-        Severity values are string keys from violation delta records, not
-        enum members. This allows flexibility for external data sources that
-        may provide severity as arbitrary strings (e.g., "critical", "warning", "info").
+    and by severity (critical, warning, info).
 
     Attributes:
         total_violations: Total number of violations (failures in replay).
         by_type: Count of violations grouped by type (e.g., {"output_equivalence": 3}).
-        by_severity: Count of violations grouped by severity level as string keys
-            (e.g., {"critical": 2, "warning": 5}).
+        by_severity: Count of violations grouped by severity level.
         new_violations: Violations that failed in replay but passed in baseline (regressions).
         fixed_violations: Violations that passed in replay but failed in baseline (improvements).
 
@@ -88,8 +80,7 @@ class ModelInvariantViolationBreakdown(BaseModel):
         Args:
             deltas: List of violation delta dictionaries. Each dict should contain:
                 - type: str - The violation type (e.g., "output_equivalence", "latency")
-                - severity: str - The severity level as an EnumSeverity value string
-                  (e.g., EnumSeverity.CRITICAL.value, EnumSeverity.WARNING.value)
+                - severity: str - The severity level (EnumSeverity value)
                 - baseline_passed: bool - Whether the invariant passed in baseline
                 - replay_passed: bool - Whether the invariant passed in replay
 
@@ -128,7 +119,7 @@ class ModelInvariantViolationBreakdown(BaseModel):
                 if baseline_passed:
                     new_count += 1
                     # Track new critical violations specifically
-                    if severity == EnumSeverity.CRITICAL.value:
+                    if severity == "critical":
                         new_critical_count += 1
 
             # Fixed violation: failed in baseline but passed in replay (improvement)

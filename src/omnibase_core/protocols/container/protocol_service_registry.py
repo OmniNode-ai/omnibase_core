@@ -12,10 +12,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Protocol, TypeVar, runtime_checkable
 from uuid import UUID
 
+from omnibase_core.enums import EnumInjectionScope, EnumServiceLifecycle
 from omnibase_core.protocols.base import (
     ContextValue,
-    LiteralInjectionScope,
-    LiteralServiceLifecycle,
 )
 
 if TYPE_CHECKING:
@@ -75,8 +74,8 @@ class ProtocolServiceRegistry(Protocol):
         self,
         interface: type[TInterface],
         implementation: type[TImplementation],
-        lifecycle: LiteralServiceLifecycle,
-        scope: LiteralInjectionScope,
+        lifecycle: EnumServiceLifecycle,
+        scope: EnumInjectionScope,
         configuration: dict[str, ContextValue] | None = None,
     ) -> UUID: ...
 
@@ -84,7 +83,7 @@ class ProtocolServiceRegistry(Protocol):
         self,
         interface: type[TInterface],
         instance: TInterface,
-        scope: LiteralInjectionScope = "global",
+        scope: EnumInjectionScope = EnumInjectionScope.GLOBAL,
         metadata: dict[str, ContextValue] | None = None,
     ) -> UUID: ...
 
@@ -92,8 +91,8 @@ class ProtocolServiceRegistry(Protocol):
         self,
         interface: type[TInterface],
         factory: ProtocolServiceFactory,
-        lifecycle: LiteralServiceLifecycle = "transient",
-        scope: LiteralInjectionScope = "global",
+        lifecycle: EnumServiceLifecycle = EnumServiceLifecycle.TRANSIENT,
+        scope: EnumInjectionScope = EnumInjectionScope.GLOBAL,
     ) -> UUID: ...
 
     async def unregister_service(self, registration_id: UUID) -> bool: ...
@@ -101,7 +100,7 @@ class ProtocolServiceRegistry(Protocol):
     async def resolve_service(
         self,
         interface: type[TInterface],
-        scope: LiteralInjectionScope | None = None,
+        scope: EnumInjectionScope | None = None,
         context: dict[str, ContextValue] | None = None,
     ) -> TInterface: ...
 
@@ -109,15 +108,15 @@ class ProtocolServiceRegistry(Protocol):
         self,
         interface: type[TInterface],
         name: str,
-        scope: LiteralInjectionScope | None = None,
+        scope: EnumInjectionScope | None = None,
     ) -> TInterface: ...
 
     async def resolve_all_services(
-        self, interface: type[TInterface], scope: LiteralInjectionScope | None = None
+        self, interface: type[TInterface], scope: EnumInjectionScope | None = None
     ) -> list[TInterface]: ...
 
     async def try_resolve_service(
-        self, interface: type[TInterface], scope: LiteralInjectionScope | None = None
+        self, interface: type[TInterface], scope: EnumInjectionScope | None = None
     ) -> TInterface | None: ...
 
     async def get_registration(
@@ -135,7 +134,7 @@ class ProtocolServiceRegistry(Protocol):
     ) -> list[ProtocolManagedServiceInstance]: ...
 
     async def dispose_instances(
-        self, registration_id: UUID, scope: LiteralInjectionScope | None = None
+        self, registration_id: UUID, scope: EnumInjectionScope | None = None
     ) -> int: ...
 
     async def validate_registration(

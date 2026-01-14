@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import Protocol, runtime_checkable
 
-from omnibase_core.enums.enum_log_level import EnumLogLevel
+from omnibase_core.enums import EnumLogLevel
 
 
 @runtime_checkable

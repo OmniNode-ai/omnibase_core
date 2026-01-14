@@ -19,14 +19,14 @@ class TestTypedDictDiscoveryStats:
             "throttled_requests": 2,
             "filtered_requests": 1,
             "last_request_time": 1234.56,
-            "error_count": 1,
+            "error_level_count": 1,
         }
         assert stats["requests_received"] == 5
         assert stats["responses_sent"] == 3
         assert stats["throttled_requests"] == 2
         assert stats["filtered_requests"] == 1
         assert stats["last_request_time"] == 1234.56
-        assert stats["error_count"] == 1
+        assert stats["error_level_count"] == 1
 
     def test_typed_dict_last_request_none(self):
         """Verify None handling for last_request_time."""
@@ -36,7 +36,7 @@ class TestTypedDictDiscoveryStats:
             "throttled_requests": 0,
             "filtered_requests": 0,
             "last_request_time": None,
-            "error_count": 0,
+            "error_level_count": 0,
         }
         assert stats["last_request_time"] is None
 
@@ -49,7 +49,7 @@ class TestTypedDictDiscoveryStats:
             "throttled_requests": 0,
             "filtered_requests": 0,
             "last_request_time": 1.0,
-            "error_count": 0,
+            "error_level_count": 0,
         }
         assert len(stats) == 6
 
@@ -61,14 +61,14 @@ class TestTypedDictDiscoveryStats:
             "throttled_requests": 0,
             "filtered_requests": 0,
             "last_request_time": None,
-            "error_count": 0,
+            "error_level_count": 0,
         }
         assert stats["requests_received"] == 0
         assert stats["responses_sent"] == 0
         assert stats["throttled_requests"] == 0
         assert stats["filtered_requests"] == 0
         assert stats["last_request_time"] is None
-        assert stats["error_count"] == 0
+        assert stats["error_level_count"] == 0
 
     def test_typed_dict_high_volume_stats(self):
         """Test TypedDict with high volume statistics."""
@@ -78,14 +78,14 @@ class TestTypedDictDiscoveryStats:
             "throttled_requests": 500,
             "filtered_requests": 200,
             "last_request_time": 1234567890.123456,
-            "error_count": 50,
+            "error_level_count": 50,
         }
         assert stats["requests_received"] == 10000
         assert stats["responses_sent"] == 9500
         assert stats["throttled_requests"] == 500
         assert stats["filtered_requests"] == 200
         assert stats["last_request_time"] == 1234567890.123456
-        assert stats["error_count"] == 50
+        assert stats["error_level_count"] == 50
 
     def test_typed_dict_partial_throttling(self):
         """Test TypedDict with partial throttling scenario."""
@@ -95,7 +95,7 @@ class TestTypedDictDiscoveryStats:
             "throttled_requests": 20,
             "filtered_requests": 0,
             "last_request_time": 1640000000.0,
-            "error_count": 0,
+            "error_level_count": 0,
         }
         assert (
             stats["requests_received"]
@@ -110,11 +110,12 @@ class TestTypedDictDiscoveryStats:
             "throttled_requests": 0,
             "filtered_requests": 0,
             "last_request_time": 1640000000.0,
-            "error_count": 5,
+            "error_level_count": 5,
         }
-        assert stats["error_count"] == 5
+        assert stats["error_level_count"] == 5
         assert (
-            stats["error_count"] == stats["requests_received"] - stats["responses_sent"]
+            stats["error_level_count"]
+            == stats["requests_received"] - stats["responses_sent"]
         )
 
     def test_typed_dict_field_types(self):
@@ -125,14 +126,14 @@ class TestTypedDictDiscoveryStats:
             "throttled_requests": 2,
             "filtered_requests": 1,
             "last_request_time": 1234.56,
-            "error_count": 0,
+            "error_level_count": 0,
         }
         assert isinstance(stats["requests_received"], int)
         assert isinstance(stats["responses_sent"], int)
         assert isinstance(stats["throttled_requests"], int)
         assert isinstance(stats["filtered_requests"], int)
         assert isinstance(stats["last_request_time"], float)
-        assert isinstance(stats["error_count"], int)
+        assert isinstance(stats["error_level_count"], int)
 
     def test_typed_dict_field_types_with_none(self):
         """Test field types with None value for optional field."""
@@ -142,14 +143,14 @@ class TestTypedDictDiscoveryStats:
             "throttled_requests": 2,
             "filtered_requests": 1,
             "last_request_time": None,
-            "error_count": 0,
+            "error_level_count": 0,
         }
         assert isinstance(stats["requests_received"], int)
         assert isinstance(stats["responses_sent"], int)
         assert isinstance(stats["throttled_requests"], int)
         assert isinstance(stats["filtered_requests"], int)
         assert stats["last_request_time"] is None
-        assert isinstance(stats["error_count"], int)
+        assert isinstance(stats["error_level_count"], int)
 
     def test_typed_dict_incremental_updates(self):
         """Test TypedDict with incremental counter updates."""
@@ -159,7 +160,7 @@ class TestTypedDictDiscoveryStats:
             "throttled_requests": 0,
             "filtered_requests": 0,
             "last_request_time": None,
-            "error_count": 0,
+            "error_level_count": 0,
         }
         # Simulate incremental updates
         stats["requests_received"] += 1
@@ -178,7 +179,7 @@ class TestTypedDictDiscoveryStats:
             "throttled_requests": 0,
             "filtered_requests": 0,
             "last_request_time": None,
-            "error_count": 0,
+            "error_level_count": 0,
         }
         # Simulate receiving request but throttling response
         stats["requests_received"] += 1
@@ -197,16 +198,16 @@ class TestTypedDictDiscoveryStats:
             "throttled_requests": 0,
             "filtered_requests": 0,
             "last_request_time": None,
-            "error_count": 0,
+            "error_level_count": 0,
         }
         # Simulate receiving request with error
         stats["requests_received"] += 1
-        stats["error_count"] += 1
+        stats["error_level_count"] += 1
         stats["last_request_time"] = 1640000000.0
 
         assert stats["requests_received"] == 1
         assert stats["responses_sent"] == 0
-        assert stats["error_count"] == 1
+        assert stats["error_level_count"] == 1
 
     def test_typed_dict_reset_stats(self):
         """Test TypedDict reset to initial state."""
@@ -216,7 +217,7 @@ class TestTypedDictDiscoveryStats:
             "throttled_requests": 5,
             "filtered_requests": 2,
             "last_request_time": 1640000000.0,
-            "error_count": 3,
+            "error_level_count": 3,
         }
         # Reset stats
         stats = {
@@ -225,11 +226,11 @@ class TestTypedDictDiscoveryStats:
             "throttled_requests": 0,
             "filtered_requests": 0,
             "last_request_time": None,
-            "error_count": 0,
+            "error_level_count": 0,
         }
         assert stats["requests_received"] == 0
         assert stats["responses_sent"] == 0
         assert stats["throttled_requests"] == 0
         assert stats["filtered_requests"] == 0
         assert stats["last_request_time"] is None
-        assert stats["error_count"] == 0
+        assert stats["error_level_count"] == 0

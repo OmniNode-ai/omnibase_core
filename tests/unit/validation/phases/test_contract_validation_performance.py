@@ -174,7 +174,7 @@ class TestLargeContractValidation:
         # Verify result is valid ModelValidationResult with expected properties
         assert result is not None, "Validation should return a result"
         assert result.is_valid is True, "Valid contract should pass merge validation"
-        assert result.error_count == 0, "Valid contract should have no errors"
+        assert result.error_level_count == 0, "Valid contract should have no errors"
         assert elapsed < 5.0, (
             f"Large contract validation took {elapsed:.2f}s, expected < 5.0s. "
             "This may indicate O(n^2) or worse complexity."
@@ -201,7 +201,7 @@ class TestLargeContractValidation:
         # Verify result is valid ModelValidationResult with expected properties
         assert result is not None, "Validation should return a result"
         assert result.is_valid is True, "Valid contract should pass merge validation"
-        assert result.error_count == 0, "Valid contract should have no errors"
+        assert result.error_level_count == 0, "Valid contract should have no errors"
         assert elapsed < 5.0, (
             f"Large contract validation (2000 handlers) took {elapsed:.2f}s, "
             "expected < 5.0s"
@@ -222,7 +222,7 @@ class TestLargeContractValidation:
         # Verify result is valid ModelValidationResult with expected properties
         assert result is not None, "Validation should return a result"
         assert result.is_valid is True, "Valid contract should pass expanded validation"
-        assert result.error_count == 0, "Valid contract should have no errors"
+        assert result.error_level_count == 0, "Valid contract should have no errors"
         assert elapsed < 5.0, (
             f"Expanded validation took {elapsed:.2f}s, expected < 5.0s"
         )
@@ -273,7 +273,7 @@ class TestDuplicateDetectionComplexity:
             assert result.is_valid is True, (
                 f"Contract with {size} handlers should pass validation"
             )
-            assert result.error_count == 0, (
+            assert result.error_level_count == 0, (
                 f"Contract with {size} handlers should have no errors"
             )
 
@@ -320,7 +320,7 @@ class TestDuplicateDetectionComplexity:
             assert result.is_valid is True, (
                 f"Valid contract with {size} handlers should pass"
             )
-            assert result.error_count == 0, (
+            assert result.error_level_count == 0, (
                 f"Valid contract with {size} handlers should have no errors"
             )
             assert elapsed < 2.0, (
@@ -371,7 +371,7 @@ class TestConcurrentValidationThreadSafety:
                     merged = create_valid_contract(valid_descriptor, suffix)
 
                     result = merge_validator.validate(base, patch, merged)
-                    thread_results.append((result.is_valid, result.error_count))
+                    thread_results.append((result.is_valid, result.error_level_count))
                 except Exception as e:
                     errors.append(f"Thread {thread_id}, iteration {i}: {e}")
             return thread_results
@@ -423,7 +423,7 @@ class TestConcurrentValidationThreadSafety:
                     suffix = f"{thread_id}_{i}"
                     contract = create_valid_contract(valid_descriptor, suffix)
                     result = expanded_validator.validate(contract)
-                    thread_results.append((result.is_valid, result.error_count))
+                    thread_results.append((result.is_valid, result.error_level_count))
                 except Exception as e:
                     errors.append(f"Thread {thread_id}, iteration {i}: {e}")
             return thread_results
@@ -622,7 +622,11 @@ class TestConcurrentValidationThreadSafety:
 
                     with results_lock:
                         key = f"{thread_id}_{i}"
-                        results[key] = (result.is_valid, result.error_count, suffix)
+                        results[key] = (
+                            result.is_valid,
+                            result.error_level_count,
+                            suffix,
+                        )
 
                 except Exception as e:
                     with results_lock:

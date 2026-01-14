@@ -12,7 +12,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.enums.enum_health_status import EnumHealthStatus
+from omnibase_core.enums import EnumHealthStatus
 from omnibase_core.types.type_serializable_value import SerializedDict
 
 
@@ -37,10 +37,12 @@ class ModelServiceHealthValidationResult(BaseModel):
 
     Example:
         ```python
+        from uuid import UUID
+        from omnibase_core.enums import EnumHealthStatus
         result = ModelServiceHealthValidationResult(
             registration_id=UUID("12345678-..."),
             is_healthy=True,
-            health_status="healthy",
+            health_status=EnumHealthStatus.HEALTHY,
             response_time_ms=5.2,
             instance_count=1,
         )
@@ -48,8 +50,8 @@ class ModelServiceHealthValidationResult(BaseModel):
     """
 
     model_config = ConfigDict(
-        extra="ignore",
-        frozen=False,
+        extra="forbid",
+        from_attributes=True,
         validate_assignment=True,
     )
 

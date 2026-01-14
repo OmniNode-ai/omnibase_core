@@ -45,10 +45,10 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
+from omnibase_core.enums import EnumSeverity
 from omnibase_core.enums.enum_patch_validation_error_code import (
     EnumPatchValidationErrorCode,
 )
-from omnibase_core.enums.enum_severity import EnumSeverity
 from omnibase_core.models.common.model_validation_result import ModelValidationResult
 from omnibase_core.models.contracts.model_contract_patch import ModelContractPatch
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -172,10 +172,12 @@ class ContractPatchValidator:
                 f"(warnings={result.warning_count})"
             )
         else:
-            result.summary = f"Patch validation failed with {result.error_count} errors"
+            result.summary = (
+                f"Patch validation failed with {result.error_level_count} errors"
+            )
             logger.info(
                 f"Patch validation failed for profile={patch.extends.profile}: "
-                f"{result.error_count} errors, {result.warning_count} warnings"
+                f"{result.error_level_count} errors, {result.warning_count} warnings"
             )
 
         return result

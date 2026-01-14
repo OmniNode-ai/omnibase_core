@@ -6,9 +6,8 @@ from datetime import UTC, datetime
 import pytest
 from pydantic import ValidationError
 
-from omnibase_core.enums import EnumInvariantType
+from omnibase_core.enums import EnumInvariantType, EnumSeverity
 from omnibase_core.enums.enum_comparison_type import EnumComparisonType
-from omnibase_core.enums.enum_severity import EnumSeverity
 from omnibase_core.models.invariant import ModelInvariantViolationDetail
 from omnibase_core.models.invariant.model_field_value_config import (
     ModelFieldValueConfig,

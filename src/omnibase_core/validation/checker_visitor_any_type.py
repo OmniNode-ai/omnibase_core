@@ -13,7 +13,7 @@ Usage Example:
     >>> import ast
     >>> from pathlib import Path
     >>> from omnibase_core.validation.checker_visitor_any_type import AnyTypeVisitor
-    >>> from omnibase_core.enums.enum_severity import EnumSeverity
+    >>> from omnibase_core.enums import EnumSeverity
     >>>
     >>> source = "from typing import Any\\ndef foo(x: Any) -> Any: pass"
     >>> tree = ast.parse(source)
@@ -43,7 +43,7 @@ See Also:
 import ast
 from pathlib import Path
 
-from omnibase_core.enums.enum_severity import EnumSeverity
+from omnibase_core.enums import EnumSeverity
 from omnibase_core.models.common.model_validation_issue import ModelValidationIssue
 
 # Rule IDs for Any type violations

@@ -144,12 +144,12 @@ class ModelMetadataAnalyticsSummary(BaseModel):
         self.quality.documentation_coverage = value
 
     @property
-    def error_count(self) -> int:
-        return self.errors.error_count
+    def error_level_count(self) -> int:
+        return self.errors.error_level_count
 
-    @error_count.setter
-    def error_count(self, value: int) -> None:
-        self.errors.error_count = value
+    @error_level_count.setter
+    def error_level_count(self, value: int) -> None:
+        self.errors.error_level_count = value
 
     @property
     def warning_count(self) -> int:
@@ -237,10 +237,10 @@ class ModelMetadataAnalyticsSummary(BaseModel):
         # Update errors
         if error_data and any(
             key in error_data
-            for key in ["error_count", "warning_count", "critical_error_count"]
+            for key in ["error_level_count", "warning_count", "critical_error_count"]
         ):
             self.errors.update_error_counts(
-                error_data.get("error_count", self.errors.error_count),
+                error_data.get("error_level_count", self.errors.error_level_count),
                 error_data.get("warning_count", self.errors.warning_count),
                 error_data.get(
                     "critical_error_count",

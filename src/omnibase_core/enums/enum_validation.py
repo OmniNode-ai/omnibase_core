@@ -1,15 +1,8 @@
 #!/usr/bin/env python3
-# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
-#
-# SPDX-License-Identifier: Apache-2.0
 """
 Validation-related enums for ONEX validation systems.
 
-Defines validation levels for ONEX validation systems.
-
-Note (OMN-1311):
-    EnumErrorSeverity was removed in favor of the canonical EnumSeverity.
-    Import severity from: omnibase_core.enums.enum_severity import EnumSeverity
+Defines validation levels for ONEX validation and error handling systems.
 """
 
 from enum import Enum, unique

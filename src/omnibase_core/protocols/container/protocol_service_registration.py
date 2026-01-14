@@ -8,13 +8,16 @@ including lifecycle management, dependency tracking, and health monitoring.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Protocol, runtime_checkable
 from uuid import UUID
 
-from omnibase_core.enums.enum_health_status import EnumHealthStatus
+from omnibase_core.enums import (
+    EnumHealthStatus,
+    EnumInjectionScope,
+    EnumRegistrationStatus,
+    EnumServiceLifecycle,
+)
 from omnibase_core.protocols.base import (
-    LiteralInjectionScope,
-    LiteralServiceLifecycle,
     ProtocolDateTime,
 )
 
@@ -38,12 +41,10 @@ class ProtocolServiceRegistration(Protocol):
 
     registration_id: UUID
     service_metadata: ProtocolServiceRegistrationMetadata
-    lifecycle: LiteralServiceLifecycle
-    scope: LiteralInjectionScope
+    lifecycle: EnumServiceLifecycle
+    scope: EnumInjectionScope
     dependencies: list[ProtocolServiceDependency]
-    registration_status: Literal[
-        "registered", "unregistered", "failed", "pending", "conflict", "invalid"
-    ]
+    registration_status: EnumRegistrationStatus
     health_status: EnumHealthStatus
     registration_time: ProtocolDateTime
     last_access_time: ProtocolDateTime | None

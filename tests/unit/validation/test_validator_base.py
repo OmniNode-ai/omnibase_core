@@ -18,8 +18,8 @@ from typing import ClassVar
 
 import pytest
 
+from omnibase_core.enums import EnumSeverity
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.enums.enum_severity import EnumSeverity
 from omnibase_core.models.common.model_validation_issue import ModelValidationIssue
 from omnibase_core.models.contracts.subcontracts.model_validator_subcontract import (
     ModelValidatorSubcontract,
@@ -616,21 +616,195 @@ class TestValidatorBaseConstants:
 
     def test_severity_priority_ordering(self) -> None:
         """Test that severity priority ordering is correct."""
-        # Lower number = higher priority
-        assert SEVERITY_PRIORITY[EnumSeverity.CRITICAL] == 0
-        assert SEVERITY_PRIORITY[EnumSeverity.ERROR] == 1
-        assert SEVERITY_PRIORITY[EnumSeverity.WARNING] == 2
-        assert SEVERITY_PRIORITY[EnumSeverity.INFO] == 3
+        # Lower number = higher priority (most severe first)
+        assert SEVERITY_PRIORITY[EnumSeverity.FATAL] == 0
+        assert SEVERITY_PRIORITY[EnumSeverity.CRITICAL] == 1
+        assert SEVERITY_PRIORITY[EnumSeverity.ERROR] == 2
+        assert SEVERITY_PRIORITY[EnumSeverity.WARNING] == 3
+        assert SEVERITY_PRIORITY[EnumSeverity.INFO] == 4
+        assert SEVERITY_PRIORITY[EnumSeverity.DEBUG] == 5
 
     def test_severity_priority_all_severities_covered(self) -> None:
         """Test that all severities are covered in priority map."""
-        expected_severities = {
+        # Validate against all EnumSeverity members for completeness
+        assert set(SEVERITY_PRIORITY.keys()) == set(EnumSeverity)
+
+    @pytest.mark.parametrize(
+        "severity",
+        [
+            EnumSeverity.DEBUG,
+            EnumSeverity.INFO,
+            EnumSeverity.WARNING,
+            EnumSeverity.ERROR,
+            EnumSeverity.CRITICAL,
+            EnumSeverity.FATAL,
+        ],
+    )
+    def test_severity_priority_no_keyerror(self, severity: EnumSeverity) -> None:
+        """Test that each EnumSeverity value can be accessed without KeyError."""
+        # This ensures SEVERITY_PRIORITY has a mapping for every enum member
+        priority = SEVERITY_PRIORITY[severity]
+        assert isinstance(priority, int)
+        assert priority >= 0
+
+    def test_severity_priority_unique_values(self) -> None:
+        """Test that each severity has a unique priority value."""
+        priorities = list(SEVERITY_PRIORITY.values())
+        assert len(priorities) == len(set(priorities)), (
+            "Duplicate priority values found"
+        )
+
+    def test_severity_priority_count_matches_enum(self) -> None:
+        """Test that SEVERITY_PRIORITY has exactly 6 entries matching EnumSeverity."""
+        expected_count = 6  # DEBUG, INFO, WARNING, ERROR, CRITICAL, FATAL
+        assert len(SEVERITY_PRIORITY) == expected_count
+        assert len(EnumSeverity) == expected_count
+
+
+# =============================================================================
+# Severity Coverage Tests
+# =============================================================================
+
+
+@pytest.mark.unit
+class TestValidatorBaseSeverityCoverage:
+    """Comprehensive tests for all EnumSeverity values in validation context.
+
+    Ensures that all 6 EnumSeverity values (DEBUG, INFO, WARNING, ERROR, CRITICAL, FATAL)
+    work correctly with the validator system.
+    """
+
+    @pytest.mark.parametrize(
+        "severity",
+        [
+            EnumSeverity.DEBUG,
+            EnumSeverity.INFO,
+            EnumSeverity.WARNING,
+            EnumSeverity.ERROR,
+            EnumSeverity.CRITICAL,
+            EnumSeverity.FATAL,
+        ],
+    )
+    def test_validation_issue_accepts_all_severities(
+        self, severity: EnumSeverity, tmp_path: Path
+    ) -> None:
+        """Test that ModelValidationIssue accepts all EnumSeverity values."""
+        issue = ModelValidationIssue(
+            severity=severity,
+            message=f"Test issue with severity {severity.name}",
+            code=f"test_{severity.name.lower()}",
+            file_path=tmp_path / "test.py",
+            line_number=1,
+        )
+        assert issue.severity == severity
+
+    @pytest.mark.parametrize(
+        "severity",
+        [
+            EnumSeverity.DEBUG,
+            EnumSeverity.INFO,
+            EnumSeverity.WARNING,
+            EnumSeverity.ERROR,
+            EnumSeverity.CRITICAL,
+            EnumSeverity.FATAL,
+        ],
+    )
+    def test_validator_returns_issues_with_all_severities(
+        self, severity: EnumSeverity, tmp_path: Path
+    ) -> None:
+        """Test that validator can return issues with any severity level."""
+        test_file = tmp_path / "test.py"
+        test_file.write_text("# test file")
+
+        contract = create_test_contract()
+        issue = ModelValidationIssue(
+            severity=severity,
+            message=f"Issue with {severity.name}",
+            code=f"code_{severity.name.lower()}",
+            file_path=test_file,
+            line_number=1,
+        )
+        validator = MockValidator(contract=contract, issues_to_return=[issue])
+
+        result = validator.validate_file(test_file)
+
+        assert len(result.issues) == 1
+        assert result.issues[0].severity == severity
+
+    def test_sorting_all_six_severities(self, tmp_path: Path) -> None:
+        """Test that all 6 severity levels sort correctly by priority."""
+        test_file = tmp_path / "test.py"
+        test_file.write_text("# test")
+
+        # Create issues in reverse priority order (least severe first)
+        issues = [
+            ModelValidationIssue(
+                severity=EnumSeverity.DEBUG,
+                message="Debug",
+                code="debug",
+            ),
+            ModelValidationIssue(
+                severity=EnumSeverity.INFO,
+                message="Info",
+                code="info",
+            ),
+            ModelValidationIssue(
+                severity=EnumSeverity.WARNING,
+                message="Warning",
+                code="warning",
+            ),
+            ModelValidationIssue(
+                severity=EnumSeverity.ERROR,
+                message="Error",
+                code="error",
+            ),
+            ModelValidationIssue(
+                severity=EnumSeverity.CRITICAL,
+                message="Critical",
+                code="critical",
+            ),
+            ModelValidationIssue(
+                severity=EnumSeverity.FATAL,
+                message="Fatal",
+                code="fatal",
+            ),
+        ]
+
+        contract = create_test_contract()
+        validator = MockValidator(contract=contract, issues_to_return=issues)
+
+        result = validator.validate_file(test_file)
+
+        # Verify all 6 issues are present
+        assert len(result.issues) == 6
+
+        # Verify sorted in priority order (most severe first)
+        expected_order = [
+            EnumSeverity.FATAL,
             EnumSeverity.CRITICAL,
             EnumSeverity.ERROR,
             EnumSeverity.WARNING,
             EnumSeverity.INFO,
-        }
-        assert set(SEVERITY_PRIORITY.keys()) == expected_severities
+            EnumSeverity.DEBUG,
+        ]
+        actual_order = [issue.severity for issue in result.issues]
+        assert actual_order == expected_order
+
+    @pytest.mark.parametrize(
+        "severity",
+        [
+            EnumSeverity.DEBUG,
+            EnumSeverity.INFO,
+            EnumSeverity.WARNING,
+            EnumSeverity.ERROR,
+            EnumSeverity.CRITICAL,
+            EnumSeverity.FATAL,
+        ],
+    )
+    def test_contract_severity_default_all_values(self, severity: EnumSeverity) -> None:
+        """Test that contract accepts all severity values as default."""
+        contract = create_test_contract(severity_default=severity)
+        assert contract.severity_default == severity
 
 
 # =============================================================================

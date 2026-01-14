@@ -8,7 +8,7 @@ health checks, session affinity, and circuit breaker configurations.
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 if TYPE_CHECKING:
     from omnibase_core.models.services.model_node_weights import ModelNodeWeights
@@ -30,6 +30,8 @@ class ModelLoadBalancingPolicy(BaseModel):
     selection, node weights, health monitoring, session affinity, fault tolerance,
     and retry handling for distributed node environments.
     """
+
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
 
     policy_name: str = Field(
         default=...,

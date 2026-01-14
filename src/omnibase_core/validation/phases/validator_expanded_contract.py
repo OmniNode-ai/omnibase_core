@@ -38,10 +38,10 @@ Related:
 import logging
 import re
 
+from omnibase_core.enums import EnumSeverity
 from omnibase_core.enums.enum_contract_validation_error_code import (
     EnumContractValidationErrorCode,
 )
-from omnibase_core.enums.enum_severity import EnumSeverity
 from omnibase_core.models.common.model_validation_result import ModelValidationResult
 from omnibase_core.models.contracts.model_handler_contract import ModelHandlerContract
 
@@ -202,12 +202,10 @@ class ExpandedContractValidator:  # naming-ok: validator class, not protocol
                 f"(warnings={result.warning_count})"
             )
         else:
-            result.summary = (
-                f"Expanded contract validation failed with {result.error_count} errors"
-            )
+            result.summary = f"Expanded contract validation failed with {result.error_level_count} errors"
             logger.info(
                 f"Expanded contract validation failed for handler_id={contract.handler_id}: "
-                f"{result.error_count} errors, {result.warning_count} warnings"
+                f"{result.error_level_count} errors, {result.warning_count} warnings"
             )
 
         return result

@@ -25,7 +25,7 @@ class ModelToolHealthMetadata(BaseModel):
     health_check_endpoint: str | None = Field(
         default=None, description="Health check endpoint if available"
     )
-    error_count: int = Field(default=0, description="Number of recent errors")
+    error_level_count: int = Field(default=0, description="Number of recent errors")
     warning_count: int = Field(default=0, description="Number of recent warnings")
     last_error_message: str | None = Field(
         default=None, description="Most recent error message"

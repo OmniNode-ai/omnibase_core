@@ -7,7 +7,7 @@ and named argument access with type conversion capabilities.
 
 from typing import TypeVar, cast
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.core.model_argument_value import (
     ArgumentValueType,
@@ -24,6 +24,8 @@ class ModelArgumentMap(BaseModel):
     This model provides structured access to both positional and named
     arguments with type-safe retrieval methods.
     """
+
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
 
     positional_args: list[ModelArgumentValue] = Field(
         default_factory=list,

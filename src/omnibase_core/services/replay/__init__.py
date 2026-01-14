@@ -13,6 +13,7 @@ This module contains services for the replay infrastructure including:
 - **ServiceReplaySafetyEnforcer**: Replay safety policy enforcement
 - **ServiceAuditTrail**: Enforcement decision audit trail
 - **ServiceConfigOverrideInjector**: Configuration override injection
+- **ServiceEffectMockRegistry**: Mock registry for MOCKED policy level
 
 Note: Following OMN-1071 policy, services are NOT exported at package level.
 Import directly from the specific service module:
@@ -24,6 +25,9 @@ Import directly from the specific service module:
     from omnibase_core.services.replay.service_audit_trail import ServiceAuditTrail
     from omnibase_core.services.replay.service_config_override_injector import (
         ServiceConfigOverrideInjector,
+    )
+    from omnibase_core.services.replay.service_effect_mock_registry import (
+        ServiceEffectMockRegistry,
     )
     from omnibase_core.services.replay.service_replay_safety_enforcer import (
         ServiceReplaySafetyEnforcer,
@@ -42,6 +46,9 @@ Integration Guide:
     Added InjectorUUID (OMN-1150)
     Added ServiceAuditTrail (OMN-1150)
     Added ServiceReplaySafetyEnforcer (OMN-1150)
+
+.. versionadded:: 0.6.4
+    Added ServiceEffectMockRegistry (OMN-1147)
 """
 
 __all__: list[str] = []

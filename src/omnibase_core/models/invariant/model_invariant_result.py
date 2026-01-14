@@ -14,7 +14,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.enums.enum_severity import EnumSeverity
+from omnibase_core.enums import EnumSeverity
 
 
 class ModelInvariantResult(BaseModel):

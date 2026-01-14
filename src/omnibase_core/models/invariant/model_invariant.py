@@ -15,8 +15,8 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from omnibase_core.enums import EnumSeverity
 from omnibase_core.enums.enum_invariant_type import EnumInvariantType
-from omnibase_core.enums.enum_severity import EnumSeverity
 
 # Required config keys for each invariant type
 # These match the field names from the corresponding config models:

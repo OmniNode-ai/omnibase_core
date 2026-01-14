@@ -1,8 +1,8 @@
 from pathlib import Path
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.enums.enum_severity import EnumSeverity
+from omnibase_core.enums import EnumSeverity
 from omnibase_core.models.common.model_validation_issue import ModelValidationIssue
 from omnibase_core.models.common.model_validation_metadata import (
     ModelValidationMetadata,
@@ -39,6 +39,10 @@ class ModelValidationResult[T: object](BaseModel):
     - Helper methods for common validation patterns
     - Current standards with all previous implementations
     """
+
+    # Mutable model: allows add_issue(), merge() mutations. Uses extra="forbid" for
+    # internal consistency. from_attributes=True for pytest-xdist compatibility.
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
 
     # Core validation result
     is_valid: bool = Field(default=False, description="Overall validation result")
@@ -91,8 +95,8 @@ class ModelValidationResult[T: object](BaseModel):
         return len(self.issues)
 
     @property
-    def error_count(self) -> int:
-        """Number of error-level issues."""
+    def error_level_count(self) -> int:
+        """Number of ERROR-severity issues."""
         return len(self.get_issues_by_severity(EnumSeverity.ERROR))
 
     @property
@@ -104,6 +108,11 @@ class ModelValidationResult[T: object](BaseModel):
     def critical_count(self) -> int:
         """Number of critical-level issues."""
         return len(self.get_issues_by_severity(EnumSeverity.CRITICAL))
+
+    @property
+    def fatal_count(self) -> int:
+        """Number of fatal-level issues."""
+        return len(self.get_issues_by_severity(EnumSeverity.FATAL))
 
     # Factory methods for common patterns
     @classmethod
@@ -196,7 +205,8 @@ class ModelValidationResult[T: object](BaseModel):
         self.issues.append(issue)
 
         # Update validity based on severity
-        if severity in [EnumSeverity.ERROR, EnumSeverity.CRITICAL]:
+        # FATAL, CRITICAL, and ERROR all invalidate the result
+        if severity in [EnumSeverity.FATAL, EnumSeverity.CRITICAL, EnumSeverity.ERROR]:
             self.is_valid = False
 
         # Update legacy fields for current standards
@@ -251,6 +261,10 @@ class ModelValidationResult[T: object](BaseModel):
     def has_critical_issues(self) -> bool:
         """Check if there are any critical issues."""
         return any(issue.severity == EnumSeverity.CRITICAL for issue in self.issues)
+
+    def has_fatal_issues(self) -> bool:
+        """Check if there are any fatal issues."""
+        return any(issue.severity == EnumSeverity.FATAL for issue in self.issues)
 
     def has_errors(self) -> bool:
         """Check if there are any error-level issues."""

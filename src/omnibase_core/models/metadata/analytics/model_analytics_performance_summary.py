@@ -108,6 +108,7 @@ class ModelAnalyticsPerformanceSummary(BaseModel):
 
     model_config = ConfigDict(
         extra="ignore",
+        from_attributes=True,
         use_enum_values=False,
         validate_assignment=True,
     )

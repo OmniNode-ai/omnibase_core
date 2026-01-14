@@ -90,7 +90,7 @@ class TestExpandedContractValidatorBasic(TestExpandedContractValidatorFixtures):
         """Test that a valid contract passes validation."""
         result = validator.validate(valid_contract)
         assert result.is_valid is True
-        assert result.error_count == 0
+        assert result.error_level_count == 0
 
     def test_validator_returns_validation_result(
         self,

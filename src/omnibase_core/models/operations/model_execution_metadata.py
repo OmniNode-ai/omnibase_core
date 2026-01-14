@@ -78,7 +78,7 @@ class ModelExecutionMetadata(BaseModel):
     cpu_usage_percent: float = Field(default=0.0, description="CPU usage percentage")
 
     # Error information
-    error_count: int = Field(
+    error_level_count: int = Field(
         default=0, ge=0, description="Number of errors encountered"
     )
     warning_count: int = Field(
@@ -201,7 +201,7 @@ class ModelExecutionMetadata(BaseModel):
                 message="Resource usage values cannot be negative",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
-        if self.error_count < 0 or self.warning_count < 0:
+        if self.error_level_count < 0 or self.warning_count < 0:
             raise ModelOnexError(
                 message="Error and warning counts cannot be negative",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,

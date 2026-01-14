@@ -18,7 +18,7 @@ Strict typing is enforced: No Any types allowed in implementation.
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.enums.enum_severity import EnumSeverity
+from omnibase_core.enums import EnumSeverity
 
 # Type alias for rule parameter values to avoid inline union soup.
 # Supports common JSON-serializable primitive types.

@@ -56,7 +56,7 @@ class TestBreakdownCreation:
             breakdown.total_violations = 10
 
     def test_by_severity_uses_enum_values(self) -> None:
-        """by_severity dict uses EnumSeverity string values."""
+        """by_severity dict uses EnumSeverity values."""
         breakdown = ModelInvariantViolationBreakdown(
             total_violations=6,
             by_type={"cost": 6},

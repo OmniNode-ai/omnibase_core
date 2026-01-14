@@ -20,7 +20,7 @@ from pathlib import Path
 
 import pytest
 
-from omnibase_core.enums.enum_severity import EnumSeverity
+from omnibase_core.enums import EnumSeverity
 from omnibase_core.models.contracts.subcontracts.model_validator_rule import (
     ModelValidatorRule,
 )

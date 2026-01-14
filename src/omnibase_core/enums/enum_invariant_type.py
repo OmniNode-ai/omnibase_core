@@ -9,9 +9,11 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumInvariantType(str, Enum):
+class EnumInvariantType(StrValueHelper, str, Enum):
     """Types of invariant validation rules for AI model safety checks."""
 
     SCHEMA = "schema"

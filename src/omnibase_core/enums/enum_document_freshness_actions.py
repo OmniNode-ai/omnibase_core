@@ -98,6 +98,15 @@ class EnumDependencyRelationship(StrValueHelper, str, Enum):
     DEPENDS_ON = "depends_on"
 
 
+@unique
+class EnumOutputFormat(StrValueHelper, str, Enum):
+    """Output format options for analysis results."""
+
+    JSON = "json"
+    MARKDOWN = "markdown"
+    HTML = "html"
+
+
 __all__ = [
     "EnumDependencyRelationship",
     "EnumDocumentFreshnessActions",
@@ -105,6 +114,7 @@ __all__ = [
     "EnumDocumentFreshnessStatus",
     "EnumDocumentType",
     "EnumEstimatedEffort",
+    "EnumOutputFormat",
     "EnumRecommendationPriority",
     "EnumRecommendationType",
 ]

@@ -133,7 +133,11 @@ class ModelCircuitBreaker(BaseModel):
         ...     pass
     """
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    model_config = ConfigDict(
+        extra="forbid",
+        from_attributes=True,
+        arbitrary_types_allowed=True,  # Required for threading.Lock private attr
+    )
 
     def __new__(cls, **_data: object) -> "ModelCircuitBreaker":
         """Override __new__ to trigger lazy model rebuild before Pydantic validation.

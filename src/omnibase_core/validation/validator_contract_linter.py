@@ -60,7 +60,7 @@ from omnibase_core.contracts import (
     ModelContractFingerprint,
     compute_contract_fingerprint,
 )
-from omnibase_core.enums.enum_severity import EnumSeverity
+from omnibase_core.enums import EnumSeverity
 from omnibase_core.errors.exception_groups import FILE_IO_ERRORS, VALIDATION_ERRORS
 from omnibase_core.models.common.model_validation_issue import ModelValidationIssue
 from omnibase_core.models.contracts.model_contract_compute import ModelContractCompute

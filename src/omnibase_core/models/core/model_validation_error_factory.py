@@ -10,8 +10,8 @@ from typing import TypeVar, Unpack
 
 from pydantic import BaseModel
 
+from omnibase_core.enums import EnumSeverity
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.enums.enum_severity import EnumSeverity
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types import SerializedDict, TypedDictFactoryKwargs
 
@@ -119,7 +119,7 @@ class ModelValidationErrorFactory(ModelGenericFactory[T]):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except (AttributeError, KeyError, TypeError, ValueError) as e:
+        except (AttributeError, ValueError, TypeError, KeyError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
@@ -140,7 +140,7 @@ class ModelValidationErrorFactory(ModelGenericFactory[T]):
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except (AttributeError, KeyError, TypeError, ValueError) as e:
+        except (AttributeError, ValueError, TypeError, KeyError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",

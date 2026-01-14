@@ -39,10 +39,10 @@ import logging
 import re
 from collections.abc import Sequence
 
+from omnibase_core.enums import EnumSeverity
 from omnibase_core.enums.enum_contract_validation_error_code import (
     EnumContractValidationErrorCode,
 )
-from omnibase_core.enums.enum_severity import EnumSeverity
 from omnibase_core.models.common.model_validation_result import ModelValidationResult
 from omnibase_core.models.contracts.model_contract_patch import ModelContractPatch
 from omnibase_core.models.contracts.model_handler_contract import ModelHandlerContract
@@ -256,10 +256,12 @@ class MergeValidator:
                 f"(warnings={result.warning_count})"
             )
         else:
-            result.summary = f"Merge validation failed with {result.error_count} errors"
+            result.summary = (
+                f"Merge validation failed with {result.error_level_count} errors"
+            )
             logger.info(
                 f"Merge validation failed for {merged.name}: "
-                f"{result.error_count} errors, {result.warning_count} warnings"
+                f"{result.error_level_count} errors, {result.warning_count} warnings"
             )
 
         return result

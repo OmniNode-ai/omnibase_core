@@ -1,7 +1,11 @@
 """
 Node Kind Enum.
 
-Types of ONEX nodes in the four-node architecture.
+High-level architectural classification for ONEX nodes.
+
+Defines 5 values: 4 core types (EFFECT, COMPUTE, REDUCER, ORCHESTRATOR) plus
+RUNTIME_HOST for infrastructure. The "four-node architecture" refers to the
+core processing pipeline: EFFECT -> COMPUTE -> REDUCER -> ORCHESTRATOR.
 """
 
 from __future__ import annotations

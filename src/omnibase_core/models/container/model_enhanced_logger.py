@@ -32,9 +32,11 @@ class ModelEnhancedLogger:
     ) -> None:
         """Emit log event synchronously."""
         if level.value >= self.level.value:
-            from datetime import datetime
+            from datetime import UTC, datetime
 
-            datetime.now().isoformat()
+            timestamp = datetime.now(UTC).isoformat()
+            # print-ok: stub logger output - this is intentional for minimal logging
+            print(f"[{timestamp}] [{level.name}] [{event_type}] {message}")
 
     async def emit_log_event_async(
         self,

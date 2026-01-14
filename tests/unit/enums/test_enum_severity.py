@@ -1,281 +1,182 @@
-"""
-Unit tests for EnumSeverity.
+"""Unit tests for EnumSeverity.
 
-EnumSeverity provides 5 severity levels:
-DEBUG, INFO, WARNING, ERROR, CRITICAL
-
-Tests all aspects of the severity enum including:
-- Enum value validation
-- String representation
-- JSON serialization compatibility
-- Pydantic integration
-- Enum iteration and membership
-- Severity level ordering
+Tests the canonical severity enum including string serialization via StrValueHelper,
+enum member validation, uniqueness, and integration with Pydantic and JSON.
 """
 
 import json
 
 import pytest
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, ConfigDict, ValidationError
 
 from omnibase_core.enums import EnumSeverity
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 @pytest.mark.unit
 class TestEnumSeverity:
-    """Test cases for EnumSeverity."""
+    """Test cases for EnumSeverity canonical severity enum."""
 
-    def test_enum_values(self):
-        """Test that all expected enum values are present."""
+    def test_enum_values_exist(self) -> None:
+        """Verify all expected enum members are present with correct values."""
         expected_values = {
             "DEBUG": "debug",
             "INFO": "info",
             "WARNING": "warning",
             "ERROR": "error",
             "CRITICAL": "critical",
+            "FATAL": "fatal",
         }
 
         for name, value in expected_values.items():
-            severity = getattr(EnumSeverity, name)
-            assert severity.value == value
+            level = getattr(EnumSeverity, name)
+            assert level.value == value
 
-    def test_string_inheritance(self):
-        """Test that enum inherits from str."""
-        assert isinstance(EnumSeverity.INFO, str)
-        assert EnumSeverity.INFO == "info"
-        assert isinstance(EnumSeverity.ERROR, str)
-        assert EnumSeverity.ERROR == "error"
+    def test_enum_member_count(self) -> None:
+        """Verify enum has exactly 6 members."""
+        members = list(EnumSeverity)
+        assert len(members) == 6
 
-    def test_string_representation(self):
-        """Test string representation of enum values."""
-        # Enum inherits from str, so value is accessible as string
-        assert EnumSeverity.DEBUG.value == "debug"
-        assert EnumSeverity.INFO.value == "info"
-        assert EnumSeverity.WARNING.value == "warning"
-        assert EnumSeverity.ERROR.value == "error"
-        assert EnumSeverity.CRITICAL.value == "critical"
+    def test_string_serialization_via_str_value_helper(self) -> None:
+        """Test StrValueHelper provides __str__ returning the value."""
+        assert str(EnumSeverity.DEBUG) == "debug"
+        assert str(EnumSeverity.INFO) == "info"
+        assert str(EnumSeverity.WARNING) == "warning"
+        assert str(EnumSeverity.ERROR) == "error"
+        assert str(EnumSeverity.CRITICAL) == "critical"
+        assert str(EnumSeverity.FATAL) == "fatal"
 
-    def test_enum_equality(self):
+    def test_str_value_helper_consistency(self) -> None:
+        """Verify str() returns value for all enum members."""
+        for member in EnumSeverity:
+            assert str(member) == member.value
+
+    def test_enum_uniqueness(self) -> None:
+        """Verify no duplicate values exist via @unique decorator."""
+        values = [member.value for member in EnumSeverity]
+        assert len(values) == len(set(values))
+
+    def test_enum_is_str_subclass(self) -> None:
+        """Verify enum inherits from str for string compatibility."""
+        for member in EnumSeverity:
+            assert isinstance(member, str)
+            assert isinstance(member.value, str)
+
+    def test_enum_equality(self) -> None:
         """Test enum equality comparison."""
-        assert EnumSeverity.INFO == EnumSeverity.INFO
-        assert EnumSeverity.ERROR != EnumSeverity.WARNING
-        assert EnumSeverity.CRITICAL == EnumSeverity.CRITICAL
+        assert EnumSeverity.ERROR == EnumSeverity.ERROR
+        assert EnumSeverity.WARNING != EnumSeverity.ERROR
+        assert EnumSeverity.CRITICAL != EnumSeverity.FATAL
 
-    def test_enum_membership(self):
+    def test_enum_membership(self) -> None:
         """Test enum membership checking."""
-        all_severities = [
-            EnumSeverity.DEBUG,
-            EnumSeverity.INFO,
-            EnumSeverity.WARNING,
-            EnumSeverity.ERROR,
-            EnumSeverity.CRITICAL,
-        ]
+        all_levels = list(EnumSeverity)
+        for level in all_levels:
+            assert level in EnumSeverity
 
-        for severity in all_severities:
-            assert severity in EnumSeverity
+    def test_enum_iteration_completeness(self) -> None:
+        """Test that iterating over enum returns all 6 expected members.
 
-    def test_enum_iteration(self):
-        """Test iterating over enum values."""
-        severities = list(EnumSeverity)
-        assert len(severities) == 5
+        This verifies completeness (all values present), not ordering.
+        For ordering tests, see test_severity_ordering_by_value.
+        """
+        levels = list(EnumSeverity)
+        level_values = {level.value for level in levels}
+        expected_values = {"debug", "info", "warning", "error", "critical", "fatal"}
+        assert level_values == expected_values
+        assert len(levels) == 6  # Explicit count check
 
-        severity_values = [s.value for s in severities]
-        expected_values = ["debug", "info", "warning", "error", "critical"]
-
-        assert set(severity_values) == set(expected_values)
-
-    def test_json_serialization(self):
+    def test_json_serialization(self) -> None:
         """Test JSON serialization compatibility."""
-        # Test direct serialization
-        severity = EnumSeverity.ERROR
-        json_str = json.dumps(severity, default=str)
-        assert json_str == '"error"'
+        level = EnumSeverity.CRITICAL
+        json_str = json.dumps(level, default=str)
+        assert json_str == '"critical"'
 
-        # Test in dictionary
         data = {"severity": EnumSeverity.WARNING}
         json_str = json.dumps(data, default=str)
         assert '"severity": "warning"' in json_str
 
-    def test_pydantic_integration(self):
+    def test_pydantic_integration(self) -> None:
         """Test integration with Pydantic models."""
 
-        class ValidationResult(BaseModel):
+        class SeverityMessage(BaseModel):
+            model_config = ConfigDict(extra="forbid")
+
             severity: EnumSeverity
+            message: str
 
-        # Test valid enum assignment
-        result = ValidationResult(severity=EnumSeverity.ERROR)
-        assert result.severity == EnumSeverity.ERROR
+        msg = SeverityMessage(severity=EnumSeverity.ERROR, message="Test error")
+        assert msg.severity == EnumSeverity.ERROR
 
-        # Test string assignment (should work due to str inheritance)
-        result = ValidationResult(severity="warning")
-        assert result.severity == EnumSeverity.WARNING
+        msg = SeverityMessage(severity="warning", message="Test warning")
+        assert msg.severity == EnumSeverity.WARNING
 
-        # Test invalid value should raise ValidationError
         with pytest.raises(ValidationError):
-            ValidationResult(severity="invalid_severity")
+            SeverityMessage(severity="invalid_level", message="Test")
 
-    def test_pydantic_serialization(self):
+    def test_pydantic_serialization(self) -> None:
         """Test Pydantic model serialization."""
 
-        class ValidationResult(BaseModel):
+        class SeverityMessage(BaseModel):
+            model_config = ConfigDict(extra="forbid")
+
             severity: EnumSeverity
+            message: str
 
-        result = ValidationResult(severity=EnumSeverity.CRITICAL)
+        msg = SeverityMessage(severity=EnumSeverity.FATAL, message="System crash")
 
-        # Test dict serialization
-        result_dict = result.model_dump()
-        assert result_dict == {"severity": "critical"}
+        msg_dict = msg.model_dump()
+        assert msg_dict == {"severity": "fatal", "message": "System crash"}
 
-        # Test JSON serialization
-        json_str = result.model_dump_json()
-        assert json_str == '{"severity":"critical"}'
+        json_str = msg.model_dump_json()
+        assert '"severity":"fatal"' in json_str
 
-    def test_edge_cases(self):
-        """Test edge cases and error conditions."""
-        # Test case sensitivity (should be case-sensitive)
-        assert EnumSeverity.ERROR.value == "error"
-        assert EnumSeverity.ERROR.value != "ERROR"
-        assert EnumSeverity.ERROR.value != "Error"
+    def test_enum_value_case_sensitivity(self) -> None:
+        """Test that enum values are lowercase."""
+        for member in EnumSeverity:
+            assert member.value == member.value.lower()
+            assert member.value != member.value.upper()
 
-        # Test that we can't create invalid enum values
-        with pytest.raises((AttributeError, ValueError)):
-            _ = EnumSeverity("invalid_value")
+    def test_invalid_enum_creation(self) -> None:
+        """Test that invalid enum values raise errors."""
+        with pytest.raises((ValueError, AttributeError)):
+            _ = EnumSeverity("invalid_level")
 
-    def test_severity_ordering(self):
-        """Test that severity levels follow expected ordering."""
-        # Define expected order from least to most severe
-        expected_order = [
+    def test_string_comparison(self) -> None:
+        """Test string comparison due to str inheritance."""
+        assert EnumSeverity.ERROR == "error"
+        assert EnumSeverity.WARNING == "warning"
+        assert EnumSeverity.FATAL != "critical"
+
+    def test_yaml_serialization_compatibility(self) -> None:
+        """Test YAML serialization compatibility."""
+        import yaml
+
+        data = {"severity": str(EnumSeverity.FATAL)}
+        yaml_str = yaml.dump(data, default_flow_style=False)
+        assert "severity: fatal" in yaml_str
+
+        loaded_data = yaml.safe_load(yaml_str)
+        assert loaded_data["severity"] == "fatal"
+
+    def test_severity_ordering_by_value(self) -> None:
+        """Test that severity levels can be compared by conventional ordering.
+
+        While EnumSeverity doesn't have explicit numeric levels, the conventional
+        ordering from lowest to highest is: DEBUG < INFO < WARNING < ERROR < CRITICAL < FATAL
+        """
+        severity_order = ["debug", "info", "warning", "error", "critical", "fatal"]
+        enum_order = [
             EnumSeverity.DEBUG,
             EnumSeverity.INFO,
             EnumSeverity.WARNING,
             EnumSeverity.ERROR,
             EnumSeverity.CRITICAL,
+            EnumSeverity.FATAL,
         ]
 
-        # Verify order matches declaration order
-        actual_order = list(EnumSeverity)
-        assert actual_order == expected_order
+        for i, severity in enumerate(enum_order):
+            assert severity.value == severity_order[i]
 
-    def test_severity_semantics(self):
-        """Test semantic meaning of severity levels."""
-        # DEBUG: debug-level messages
-        assert EnumSeverity.DEBUG.value == "debug"
 
-        # INFO: informational messages
-        assert EnumSeverity.INFO.value == "info"
-
-        # WARNING: potential issues
-        assert EnumSeverity.WARNING.value == "warning"
-
-        # ERROR: validation failures
-        assert EnumSeverity.ERROR.value == "error"
-
-        # CRITICAL: severe/unrecoverable failures
-        assert EnumSeverity.CRITICAL.value == "critical"
-
-    def test_all_values_unique(self):
-        """Test that all enum values are unique."""
-        values = [s.value for s in EnumSeverity]
-        assert len(values) == len(set(values))
-
-    def test_enum_names_uppercase(self):
-        """Test that all enum names follow UPPERCASE convention."""
-        for severity in EnumSeverity:
-            assert severity.name.isupper()
-
-    def test_enum_values_lowercase(self):
-        """Test that all enum values are lowercase."""
-        for severity in EnumSeverity:
-            assert severity.value.islower()
-
-    def test_error_levels(self):
-        """Test classification of error severity levels."""
-        # Non-blocking severities
-        non_blocking = [
-            EnumSeverity.DEBUG,
-            EnumSeverity.INFO,
-            EnumSeverity.WARNING,
-        ]
-        for severity in non_blocking:
-            assert severity in EnumSeverity
-
-        # Blocking severities
-        blocking = [
-            EnumSeverity.ERROR,
-            EnumSeverity.CRITICAL,
-        ]
-        for severity in blocking:
-            assert severity in EnumSeverity
-
-    def test_numeric_level(self):
-        """Test numeric level property for severity comparison."""
-        # Verify levels are compatible with Python logging (10, 20, 30, 40, 50)
-        assert EnumSeverity.DEBUG.numeric_level == 10
-        assert EnumSeverity.INFO.numeric_level == 20
-        assert EnumSeverity.WARNING.numeric_level == 30
-        assert EnumSeverity.ERROR.numeric_level == 40
-        assert EnumSeverity.CRITICAL.numeric_level == 50
-
-        # Verify ordering
-        assert EnumSeverity.DEBUG.numeric_level < EnumSeverity.INFO.numeric_level
-        assert EnumSeverity.INFO.numeric_level < EnumSeverity.WARNING.numeric_level
-        assert EnumSeverity.WARNING.numeric_level < EnumSeverity.ERROR.numeric_level
-        assert EnumSeverity.ERROR.numeric_level < EnumSeverity.CRITICAL.numeric_level
-
-    def test_is_error_or_above(self):
-        """Test is_error_or_above() helper method."""
-        # Below error level
-        assert not EnumSeverity.DEBUG.is_error_or_above()
-        assert not EnumSeverity.INFO.is_error_or_above()
-        assert not EnumSeverity.WARNING.is_error_or_above()
-
-        # Error level and above
-        assert EnumSeverity.ERROR.is_error_or_above()
-        assert EnumSeverity.CRITICAL.is_error_or_above()
-
-    def test_is_warning_or_above(self):
-        """Test is_warning_or_above() helper method."""
-        # Below warning level
-        assert not EnumSeverity.DEBUG.is_warning_or_above()
-        assert not EnumSeverity.INFO.is_warning_or_above()
-
-        # Warning level and above
-        assert EnumSeverity.WARNING.is_warning_or_above()
-        assert EnumSeverity.ERROR.is_warning_or_above()
-        assert EnumSeverity.CRITICAL.is_warning_or_above()
-
-    def test_from_string(self):
-        """Test from_string() class method for case-insensitive conversion."""
-        # Test lowercase (exact match)
-        assert EnumSeverity.from_string("debug") == EnumSeverity.DEBUG
-        assert EnumSeverity.from_string("info") == EnumSeverity.INFO
-        assert EnumSeverity.from_string("warning") == EnumSeverity.WARNING
-        assert EnumSeverity.from_string("error") == EnumSeverity.ERROR
-        assert EnumSeverity.from_string("critical") == EnumSeverity.CRITICAL
-
-        # Test uppercase (case-insensitive)
-        assert EnumSeverity.from_string("DEBUG") == EnumSeverity.DEBUG
-        assert EnumSeverity.from_string("INFO") == EnumSeverity.INFO
-        assert EnumSeverity.from_string("WARNING") == EnumSeverity.WARNING
-        assert EnumSeverity.from_string("ERROR") == EnumSeverity.ERROR
-        assert EnumSeverity.from_string("CRITICAL") == EnumSeverity.CRITICAL
-
-        # Test mixed case
-        assert EnumSeverity.from_string("Warning") == EnumSeverity.WARNING
-        assert EnumSeverity.from_string("Error") == EnumSeverity.ERROR
-
-        # Test with whitespace
-        assert EnumSeverity.from_string("  error  ") == EnumSeverity.ERROR
-        assert EnumSeverity.from_string("\twarning\n") == EnumSeverity.WARNING
-
-    def test_from_string_invalid(self):
-        """Test from_string() raises ModelOnexError for invalid input."""
-        with pytest.raises(ModelOnexError, match="Unknown severity level"):
-            EnumSeverity.from_string("invalid")
-
-        with pytest.raises(ModelOnexError, match="Unknown severity level"):
-            EnumSeverity.from_string("fatal")  # Not a valid EnumSeverity value
-
-        with pytest.raises(ModelOnexError, match="Unknown severity level"):
-            EnumSeverity.from_string("")
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

@@ -49,7 +49,7 @@ import sys
 from pathlib import Path
 from typing import ClassVar
 
-from omnibase_core.enums.enum_severity import EnumSeverity
+from omnibase_core.enums import EnumSeverity
 from omnibase_core.models.common.model_validation_issue import ModelValidationIssue
 from omnibase_core.models.contracts.subcontracts.model_validator_subcontract import (
     ModelValidatorSubcontract,

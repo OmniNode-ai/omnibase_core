@@ -14,8 +14,7 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, PydanticUndefinedAnnotation
 
-from omnibase_core.enums import EnumInvariantType
-from omnibase_core.enums.enum_severity import EnumSeverity
+from omnibase_core.enums import EnumInvariantType, EnumSeverity
 from omnibase_core.models.invariant.model_invariant import ModelInvariant
 
 

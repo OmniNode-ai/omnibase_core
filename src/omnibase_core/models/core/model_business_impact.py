@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING
 
 from pydantic import Field
 
-from omnibase_core.enums.enum_impact_severity import EnumImpactSeverity
+from omnibase_core.enums import EnumImpactSeverity
 
 if TYPE_CHECKING:
     from omnibase_core.types.type_serializable_value import SerializedDict

@@ -6,7 +6,7 @@ This module provides strongly-typed metadata for request patterns.
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.enums.enum_event_priority import EnumEventPriority
+from omnibase_core.enums import EnumEventPriority
 
 
 class ModelRequestMetadata(BaseModel):
@@ -53,7 +53,7 @@ class ModelRequestMetadata(BaseModel):
     )
     priority: EnumEventPriority | None = Field(
         default=None,
-        description="Request priority level: critical (highest), high, normal, low, deferred (lowest)",
+        description="Request priority level (see EnumEventPriority: LOW, NORMAL, HIGH, CRITICAL, DEFERRED)",
     )
     tags: list[str] = Field(
         default_factory=list,
