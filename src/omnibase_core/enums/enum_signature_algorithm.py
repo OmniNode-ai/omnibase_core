@@ -4,9 +4,11 @@
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumSignatureAlgorithm(str, Enum):
+class EnumSignatureAlgorithm(StrValueHelper, str, Enum):
     """Supported cryptographic signature algorithms.
 
     RSA: RS256, RS384, RS512. RSA-PSS: PS256, PS384, PS512. ECDSA: ES256, ES384, ES512.

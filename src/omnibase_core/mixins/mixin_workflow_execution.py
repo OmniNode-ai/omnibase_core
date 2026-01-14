@@ -251,7 +251,7 @@ class MixinWorkflowExecution:
             )
 
             # Check result
-            if result.execution_status == EnumWorkflowState.COMPLETED:
+            if result.execution_status == EnumWorkflowStatus.COMPLETED:
                 print(f"Workflow completed: {len(result.actions_emitted)} actions")
                 # Process actions (emitted to target nodes)
                 for action in result.actions_emitted:

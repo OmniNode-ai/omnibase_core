@@ -9,9 +9,11 @@ Strongly typed metric type values for infrastructure metrics.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumMetricType(str, Enum):
+class EnumMetricType(StrValueHelper, str, Enum):
     """Strongly typed metric type values."""
 
     PERFORMANCE = "performance"

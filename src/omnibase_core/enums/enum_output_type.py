@@ -9,9 +9,11 @@ Strongly typed output type values for configuration and processing.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumOutputType(str, Enum):
+class EnumOutputType(StrValueHelper, str, Enum):
     """
     Strongly typed output type values.
 
@@ -24,10 +26,6 @@ class EnumOutputType(str, Enum):
     CONSOLE = "console"
     API = "api"
     DATABASE = "database"
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def is_persistent(cls, output_type: EnumOutputType) -> bool:

@@ -16,7 +16,7 @@ from omnibase_core.models.primitives.model_semver import ModelSemVer
 # Default version for test instances - required field after removing default_factory
 DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
 
-from omnibase_core.enums.enum_node_health_status import EnumNodeHealthStatus
+from omnibase_core.enums.enum_health_status import EnumHealthStatus
 from omnibase_core.models.contracts.subcontracts.model_component_health import (
     ModelComponentHealth,
 )
@@ -38,7 +38,6 @@ from omnibase_core.models.contracts.subcontracts.model_health_check_subcontract_
 from omnibase_core.models.contracts.subcontracts.model_node_health_status import (
     ModelNodeHealthStatus,
 )
-from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 @pytest.mark.unit
@@ -51,7 +50,7 @@ class TestModelComponentHealth:
         component = ModelComponentHealth(
             version=DEFAULT_VERSION,
             component_name="database_connection",
-            status=EnumNodeHealthStatus.HEALTHY,
+            status=EnumHealthStatus.HEALTHY,
             message="Database connection is healthy",
             last_check=now,
             check_duration_ms=150,
@@ -68,7 +67,7 @@ class TestModelComponentHealth:
         )
 
         assert component.component_name == "database_connection"
-        assert component.status == EnumNodeHealthStatus.HEALTHY
+        assert component.status == EnumHealthStatus.HEALTHY
         assert component.message == "Database connection is healthy"
         assert component.last_check == now
         assert component.check_duration_ms == 150
@@ -82,13 +81,13 @@ class TestModelComponentHealth:
         component = ModelComponentHealth(
             version=DEFAULT_VERSION,
             component_name="cache",
-            status=EnumNodeHealthStatus.DEGRADED,
+            status=EnumHealthStatus.DEGRADED,
             message="Cache is degraded",
             last_check=now,
         )
 
         assert component.component_name == "cache"
-        assert component.status == EnumNodeHealthStatus.DEGRADED
+        assert component.status == EnumHealthStatus.DEGRADED
         assert component.check_duration_ms is None
         assert component.details == []
 
@@ -100,7 +99,7 @@ class TestModelComponentHealth:
             ModelComponentHealth(
                 version=DEFAULT_VERSION,
                 component_name="test",
-                status=EnumNodeHealthStatus.HEALTHY,
+                status=EnumHealthStatus.HEALTHY,
                 message="Test",
                 last_check=now,
                 check_duration_ms=-1,  # Invalid negative duration
@@ -112,13 +111,13 @@ class TestModelComponentHealth:
         component = ModelComponentHealth(
             version=DEFAULT_VERSION,
             component_name="test",
-            status=EnumNodeHealthStatus.CRITICAL,
+            status=EnumHealthStatus.CRITICAL,
             message="Critical status",
             last_check=now,
         )
 
-        assert isinstance(component.status, EnumNodeHealthStatus)
-        assert component.status == EnumNodeHealthStatus.CRITICAL
+        assert isinstance(component.status, EnumHealthStatus)
+        assert component.status == EnumHealthStatus.CRITICAL
 
 
 @pytest.mark.unit
@@ -131,7 +130,7 @@ class TestModelNodeHealthStatus:
         test_uuid = UUID("12345678-1234-5678-1234-567812345678")
         node_health = ModelNodeHealthStatus(
             version=DEFAULT_VERSION,
-            status=EnumNodeHealthStatus.HEALTHY,
+            status=EnumHealthStatus.HEALTHY,
             message="Node is healthy",
             timestamp=now,
             check_duration_ms=500,
@@ -139,7 +138,7 @@ class TestModelNodeHealthStatus:
             node_id=test_uuid,
         )
 
-        assert node_health.status == EnumNodeHealthStatus.HEALTHY
+        assert node_health.status == EnumHealthStatus.HEALTHY
         assert node_health.message == "Node is healthy"
         assert node_health.timestamp == now
         assert node_health.check_duration_ms == 500
@@ -151,7 +150,7 @@ class TestModelNodeHealthStatus:
         now = datetime.now(UTC)
         node_health = ModelNodeHealthStatus(
             version=DEFAULT_VERSION,
-            status=EnumNodeHealthStatus.UNHEALTHY,
+            status=EnumHealthStatus.UNHEALTHY,
             message="Node is unhealthy",
             timestamp=now,
             check_duration_ms=750,
@@ -168,7 +167,7 @@ class TestModelNodeHealthStatus:
         with pytest.raises(ValidationError):
             ModelNodeHealthStatus(
                 version=DEFAULT_VERSION,
-                status=EnumNodeHealthStatus.HEALTHY,
+                status=EnumHealthStatus.HEALTHY,
                 message="Test",
                 timestamp=now,
                 check_duration_ms=-100,  # Invalid
@@ -187,14 +186,14 @@ class TestModelComponentHealthCollection:
             ModelComponentHealth(
                 version=DEFAULT_VERSION,
                 component_name="db",
-                status=EnumNodeHealthStatus.HEALTHY,
+                status=EnumHealthStatus.HEALTHY,
                 message="Healthy",
                 last_check=now,
             ),
             ModelComponentHealth(
                 version=DEFAULT_VERSION,
                 component_name="cache",
-                status=EnumNodeHealthStatus.DEGRADED,
+                status=EnumHealthStatus.DEGRADED,
                 message="Degraded",
                 last_check=now,
             ),
@@ -251,7 +250,7 @@ class TestModelDependencyHealth:
             version=DEFAULT_VERSION,
             dependency_name="postgresql",
             dependency_type="database",
-            status=EnumNodeHealthStatus.HEALTHY,
+            status=EnumHealthStatus.HEALTHY,
             endpoint="postgresql://localhost:5432/mydb",
             last_check=now,
             response_time_ms=50,
@@ -260,7 +259,7 @@ class TestModelDependencyHealth:
 
         assert dependency.dependency_name == "postgresql"
         assert dependency.dependency_type == "database"
-        assert dependency.status == EnumNodeHealthStatus.HEALTHY
+        assert dependency.status == EnumHealthStatus.HEALTHY
         assert dependency.endpoint == "postgresql://localhost:5432/mydb"
         assert dependency.response_time_ms == 50
         assert dependency.error_message is None
@@ -272,14 +271,14 @@ class TestModelDependencyHealth:
             version=DEFAULT_VERSION,
             dependency_name="redis",
             dependency_type="cache",
-            status=EnumNodeHealthStatus.UNHEALTHY,
+            status=EnumHealthStatus.UNHEALTHY,
             endpoint="redis://localhost:6379",
             last_check=now,
             response_time_ms=None,
             error_message="Connection timeout after 5000ms",
         )
 
-        assert dependency.status == EnumNodeHealthStatus.UNHEALTHY
+        assert dependency.status == EnumHealthStatus.UNHEALTHY
         assert dependency.error_message == "Connection timeout after 5000ms"
         assert dependency.response_time_ms is None
 
@@ -290,7 +289,7 @@ class TestModelDependencyHealth:
             version=DEFAULT_VERSION,
             dependency_name="external_api",
             dependency_type="service",
-            status=EnumNodeHealthStatus.DEGRADED,
+            status=EnumHealthStatus.DEGRADED,
             last_check=now,
         )
 
@@ -307,7 +306,7 @@ class TestModelDependencyHealth:
                 version=DEFAULT_VERSION,
                 dependency_name="test",
                 dependency_type="service",
-                status=EnumNodeHealthStatus.HEALTHY,
+                status=EnumHealthStatus.HEALTHY,
                 last_check=now,
                 response_time_ms=-50,  # Invalid
             )
@@ -323,7 +322,7 @@ class TestModelHealthCheckSubcontractResult:
 
         node_health = ModelNodeHealthStatus(
             version=DEFAULT_VERSION,
-            status=EnumNodeHealthStatus.HEALTHY,
+            status=EnumHealthStatus.HEALTHY,
             message="All systems operational",
             timestamp=now,
             check_duration_ms=300,
@@ -334,7 +333,7 @@ class TestModelHealthCheckSubcontractResult:
             ModelComponentHealth(
                 version=DEFAULT_VERSION,
                 component_name="worker",
-                status=EnumNodeHealthStatus.HEALTHY,
+                status=EnumHealthStatus.HEALTHY,
                 message="Worker healthy",
                 last_check=now,
             )
@@ -345,7 +344,7 @@ class TestModelHealthCheckSubcontractResult:
                 version=DEFAULT_VERSION,
                 dependency_name="postgres",
                 dependency_type="database",
-                status=EnumNodeHealthStatus.HEALTHY,
+                status=EnumHealthStatus.HEALTHY,
                 last_check=now,
             )
         ]
@@ -359,7 +358,7 @@ class TestModelHealthCheckSubcontractResult:
             recommendations=["Consider scaling up workers"],
         )
 
-        assert result.node_health.status == EnumNodeHealthStatus.HEALTHY
+        assert result.node_health.status == EnumHealthStatus.HEALTHY
         assert len(result.component_health) == 1
         assert len(result.dependency_health) == 1
         assert result.health_score == 0.95
@@ -371,7 +370,7 @@ class TestModelHealthCheckSubcontractResult:
 
         node_health = ModelNodeHealthStatus(
             version=DEFAULT_VERSION,
-            status=EnumNodeHealthStatus.DEGRADED,
+            status=EnumHealthStatus.DEGRADED,
             message="Performance degraded",
             timestamp=now,
             check_duration_ms=500,
@@ -394,7 +393,7 @@ class TestModelHealthCheckSubcontractResult:
 
         node_health = ModelNodeHealthStatus(
             version=DEFAULT_VERSION,
-            status=EnumNodeHealthStatus.HEALTHY,
+            status=EnumHealthStatus.HEALTHY,
             message="Healthy",
             timestamp=now,
             check_duration_ms=100,

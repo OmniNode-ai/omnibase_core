@@ -137,7 +137,7 @@ class TestNodesModuleImports:
             EnumExecutionMode,
             EnumReductionType,
             EnumStreamingMode,
-            EnumWorkflowState,
+            EnumWorkflowStatus,
         )
 
         assert isinstance(EnumActionType, EnumMeta), (
@@ -149,8 +149,8 @@ class TestNodesModuleImports:
         assert isinstance(EnumExecutionMode, EnumMeta), (
             "EnumExecutionMode should be an enum type"
         )
-        assert isinstance(EnumWorkflowState, EnumMeta), (
-            "EnumWorkflowState should be an enum type"
+        assert isinstance(EnumWorkflowStatus, EnumMeta), (
+            "EnumWorkflowStatus should be an enum type"
         )
         assert isinstance(EnumConflictResolution, EnumMeta), (
             "EnumConflictResolution should be an enum type"

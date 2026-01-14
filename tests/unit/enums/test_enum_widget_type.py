@@ -54,10 +54,14 @@ class TestEnumWidgetType:
             assert not (widget_type.is_data_bound and widget_type.is_aggregation)
 
     def test_string_conversion(self) -> None:
-        """Test string conversion and str enum behavior."""
-        # str(enum) returns full representation
-        assert "CHART" in str(EnumWidgetType.CHART)
-        # But as str subclass, equality with string works
+        """Test string conversion and str enum behavior (str() returns value due to StrValueHelper mixin)."""
+        # str(enum) returns the value due to StrValueHelper mixin
+        assert str(EnumWidgetType.CHART) == "chart"
+        assert str(EnumWidgetType.TABLE) == "table"
+        assert str(EnumWidgetType.METRIC_CARD) == "metric_card"
+        assert str(EnumWidgetType.STATUS_GRID) == "status_grid"
+        assert str(EnumWidgetType.EVENT_FEED) == "event_feed"
+        # As str subclass, equality with string works
         assert EnumWidgetType.CHART == "chart"
         assert EnumWidgetType.TABLE == "table"
         assert EnumWidgetType.METRIC_CARD == "metric_card"

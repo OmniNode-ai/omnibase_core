@@ -68,8 +68,8 @@ class TestEnumCacheEvictionPolicy:
 
     def test_enum_string_representation(self) -> None:
         """Test string representation."""
-        # str() returns the enum name, not value (even though it inherits from str)
-        assert str(EnumCacheEvictionPolicy.LRU) == "EnumCacheEvictionPolicy.LRU"
+        # str() returns the value due to StrValueHelper mixin
+        assert str(EnumCacheEvictionPolicy.LRU) == "lru"
         assert (
             repr(EnumCacheEvictionPolicy.LFU) == "<EnumCacheEvictionPolicy.LFU: 'lfu'>"
         )

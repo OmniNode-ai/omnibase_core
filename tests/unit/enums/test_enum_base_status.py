@@ -298,3 +298,70 @@ class TestEnumBaseStatus:
         assert lifecycle.isdisjoint(execution)
         assert lifecycle.isdisjoint(quality)
         assert execution.isdisjoint(quality)
+
+    def test_roundtrip_serialization_all_values(self):
+        """Test roundtrip serialization for all enum values including INACTIVE.
+
+        Ensures str(enum) -> Enum(str) works for every value.
+        """
+        for status in EnumBaseStatus:
+            # String roundtrip
+            serialized = str(status)
+            deserialized = EnumBaseStatus(serialized)
+            assert deserialized == status, (
+                f"String roundtrip failed for {status}: "
+                f"serialized={serialized}, deserialized={deserialized}"
+            )
+
+            # Value roundtrip
+            value = status.value
+            reconstructed = EnumBaseStatus(value)
+            assert reconstructed == status, (
+                f"Value roundtrip failed for {status}: "
+                f"value={value}, reconstructed={reconstructed}"
+            )
+
+    def test_inactive_roundtrip_specifically(self):
+        """Test INACTIVE roundtrip serialization explicitly.
+
+        INACTIVE is a key lifecycle state that represents deactivated
+        resources and should serialize/deserialize correctly.
+        """
+        status = EnumBaseStatus.INACTIVE
+
+        # Test string representation
+        assert str(status) == "inactive"
+        assert status.value == "inactive"
+
+        # Test reconstruction from string
+        from_str = EnumBaseStatus("inactive")
+        assert from_str == status
+        assert from_str is status  # Should be same enum instance
+
+        # Test in JSON context
+        import json
+
+        json_str = json.dumps(status)
+        assert json_str == '"inactive"'
+
+    def test_inactive_classification(self):
+        """Test INACTIVE is correctly classified by helper methods.
+
+        INACTIVE should be a terminal state but not an error state.
+        """
+        status = EnumBaseStatus.INACTIVE
+
+        # INACTIVE is terminal (resource is deactivated, no further transitions)
+        assert status.is_terminal_state() is True
+
+        # INACTIVE is not active
+        assert status.is_active_state() is False
+
+        # INACTIVE is not an error (intentional deactivation, not failure)
+        assert status.is_error_state() is False
+
+        # INACTIVE is not a pending state
+        assert status.is_pending_state() is False
+
+        # INACTIVE is not a quality state
+        assert status.is_quality_state() is False

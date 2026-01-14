@@ -1303,7 +1303,7 @@ from datetime import datetime, UTC
 from typing import Any
 from uuid import UUID
 
-from omnibase_core.enums.enum_workflow_execution import EnumWorkflowState
+from omnibase_core.enums.enum_workflow_execution import EnumWorkflowStatus
 from omnibase_core.models.orchestrator.model_action import ModelAction
 
 
@@ -1325,7 +1325,7 @@ class WorkflowExecutionResult:
     def __init__(
         self,
         workflow_id: UUID,
-        execution_status: EnumWorkflowState,
+        execution_status: EnumWorkflowStatus,
         completed_steps: list[str],
         failed_steps: list[str],
         skipped_steps: list[str],
@@ -1746,13 +1746,13 @@ class EnumActionType(Enum):
     CUSTOM = "custom"            # Custom action type
 ```
 
-### EnumWorkflowState
+### EnumWorkflowStatus
 
 ```python
 from enum import Enum
 
 
-class EnumWorkflowState(Enum):
+class EnumWorkflowStatus(Enum):
     """Workflow execution states."""
 
     PENDING = "pending"      # Workflow not yet started
@@ -2355,11 +2355,11 @@ A failed `WorkflowExecutionResult` (not exception) SHOULD be returned for:
 
 | Condition | Result Status |
 |-----------|---------------|
-| Action creation failed | `EnumWorkflowState.FAILED` |
-| Downstream node reported failure | `EnumWorkflowState.FAILED` |
-| Timeout exceeded | `EnumWorkflowState.FAILED` |
-| Dependencies not met (workflow cannot progress) | `EnumWorkflowState.FAILED` |
-| Workflow cancelled | `EnumWorkflowState.CANCELLED` |
+| Action creation failed | `EnumWorkflowStatus.FAILED` |
+| Downstream node reported failure | `EnumWorkflowStatus.FAILED` |
+| Timeout exceeded | `EnumWorkflowStatus.FAILED` |
+| Dependencies not met (workflow cannot progress) | `EnumWorkflowStatus.FAILED` |
+| Workflow cancelled | `EnumWorkflowStatus.CANCELLED` |
 
 ### Error Code Reference
 

@@ -108,7 +108,7 @@ class EnumActionStatus(StrValueHelper, str, Enum):
         """
         return self in {EnumActionStatus.CREATED, EnumActionStatus.READY}
 
-    def is_success(self) -> bool:
+    def is_successful(self) -> bool:
         """
         Check if this status represents successful completion.
 
@@ -116,9 +116,9 @@ class EnumActionStatus(StrValueHelper, str, Enum):
             True if COMPLETED, False otherwise.
 
         Example:
-            >>> EnumActionStatus.COMPLETED.is_success()
+            >>> EnumActionStatus.COMPLETED.is_successful()
             True
-            >>> EnumActionStatus.FAILED.is_success()
+            >>> EnumActionStatus.FAILED.is_successful()
             False
         """
         return self == EnumActionStatus.COMPLETED

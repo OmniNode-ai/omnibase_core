@@ -127,7 +127,7 @@ class EnumStatusProtocol(Protocol):
 - `EnumScenarioStatusV2`
 - `EnumGeneralStatus`
 - `EnumFunctionLifecycleStatus`
-- `EnumExecutionStatusV2`
+- `EnumExecutionStatus`
 
 **Design Notes**:
 - Enables polymorphic status handling
@@ -833,7 +833,7 @@ EnumStatusProtocol (omnibase_core)
 EnumScenarioStatusV2
 EnumGeneralStatus
 EnumFunctionLifecycleStatus
-EnumExecutionStatusV2
+EnumExecutionStatus
 ```
 
 ### Validation Protocols

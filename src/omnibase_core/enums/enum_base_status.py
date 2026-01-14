@@ -17,9 +17,11 @@ Design Principles:
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumBaseStatus(str, Enum):
+class EnumBaseStatus(StrValueHelper, str, Enum):
     """
     Base status enumeration for universal state management.
 

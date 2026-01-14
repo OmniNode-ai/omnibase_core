@@ -10,9 +10,11 @@ Reduces reliance on free-form string tags while maintaining extensibility.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumStandardTag(str, Enum):
+class EnumStandardTag(StrValueHelper, str, Enum):
     """
     Standard tags for metadata classification.
 
@@ -61,10 +63,6 @@ class EnumStandardTag(str, Enum):
     INTERNAL = "internal"
     THIRD_PARTY = "third_party"
     CUSTOM = "custom"
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def get_functional_tags(cls) -> list[EnumStandardTag]:

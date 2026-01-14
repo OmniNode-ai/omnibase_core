@@ -7,9 +7,11 @@ Metadata node status enumeration.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumMetadataNodeStatus(str, Enum):
+class EnumMetadataNodeStatus(StrValueHelper, str, Enum):
     """Metadata node status enumeration."""
 
     ACTIVE = "active"

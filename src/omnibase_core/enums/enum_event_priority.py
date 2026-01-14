@@ -4,9 +4,11 @@ Event priority enumeration for ONEX event publishing.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumEventPriority(str, Enum):
+class EnumEventPriority(StrValueHelper, str, Enum):
     """Priority levels for event processing."""
 
     CRITICAL = "CRITICAL"  # Process immediately, highest priority
@@ -14,3 +16,6 @@ class EnumEventPriority(str, Enum):
     NORMAL = "NORMAL"  # Standard processing priority
     LOW = "LOW"  # Process when resources available
     DEFERRED = "DEFERRED"  # Process in background, lowest priority
+
+
+__all__ = ["EnumEventPriority"]

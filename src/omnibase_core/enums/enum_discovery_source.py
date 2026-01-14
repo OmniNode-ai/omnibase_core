@@ -2,9 +2,11 @@
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumDiscoverySource(str, Enum):
+class EnumDiscoverySource(StrValueHelper, str, Enum):
     """Sources for node discovery in ONEX."""
 
     REGISTRY = "registry"
@@ -12,3 +14,6 @@ class EnumDiscoverySource(str, Enum):
     NETWORK = "network"
     CACHE = "cache"
     MANUAL = "manual"
+
+
+__all__ = ["EnumDiscoverySource"]

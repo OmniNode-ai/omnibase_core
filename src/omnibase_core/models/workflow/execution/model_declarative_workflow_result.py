@@ -10,7 +10,7 @@ Strict typing is enforced - no Any types in implementation.
 from datetime import UTC, datetime
 from uuid import UUID
 
-from omnibase_core.enums.enum_workflow_execution import EnumWorkflowState
+from omnibase_core.enums.enum_workflow_status import EnumWorkflowStatus
 from omnibase_core.models.orchestrator.model_action import ModelAction
 from omnibase_core.models.workflow.execution.model_workflow_result_metadata import (
     ModelWorkflowResultMetadata,
@@ -61,7 +61,7 @@ class ModelDeclarativeWorkflowResult:
 
     # Class-level type annotations for IDE support and static type checking
     workflow_id: UUID
-    execution_status: EnumWorkflowState
+    execution_status: EnumWorkflowStatus
     completed_steps: list[str]
     failed_steps: list[str]
     skipped_steps: list[str]
@@ -73,7 +73,7 @@ class ModelDeclarativeWorkflowResult:
     def __init__(
         self,
         workflow_id: UUID,
-        execution_status: EnumWorkflowState,
+        execution_status: EnumWorkflowStatus,
         completed_steps: list[str],
         failed_steps: list[str],
         actions_emitted: list[ModelAction],

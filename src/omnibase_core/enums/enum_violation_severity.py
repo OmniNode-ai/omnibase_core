@@ -12,9 +12,11 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumViolationSeverity(str, Enum):
+class EnumViolationSeverity(StrValueHelper, str, Enum):
     """Severity levels for invariant violations."""
 
     CRITICAL = "critical"

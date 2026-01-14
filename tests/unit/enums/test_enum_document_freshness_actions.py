@@ -10,7 +10,8 @@ Tests all document freshness-related enums including:
 - EnumRecommendationPriority
 - EnumEstimatedEffort
 - EnumDependencyRelationship
-- EnumOutputFormat
+
+Also tests integration with EnumOutputFormat (canonical enum from enum_output_format.py).
 
 Tests cover:
 - Enum value validation
@@ -32,10 +33,10 @@ from omnibase_core.enums.enum_document_freshness_actions import (
     EnumDocumentFreshnessStatus,
     EnumDocumentType,
     EnumEstimatedEffort,
-    EnumOutputFormat,
     EnumRecommendationPriority,
     EnumRecommendationType,
 )
+from omnibase_core.enums.enum_output_format import EnumOutputFormat
 
 
 @pytest.mark.unit
@@ -323,14 +324,20 @@ class TestEnumDependencyRelationship:
 
 @pytest.mark.unit
 class TestEnumOutputFormat:
-    """Test EnumOutputFormat enum."""
+    """Test EnumOutputFormat enum (canonical from enum_output_format.py)."""
 
     def test_enum_values(self):
         """Test that all expected enum values are present."""
         expected_values = {
+            "TEXT": "text",
             "JSON": "json",
+            "YAML": "yaml",
             "MARKDOWN": "markdown",
-            "HTML": "html",
+            "TABLE": "table",
+            "CSV": "csv",
+            "DETAILED": "detailed",
+            "COMPACT": "compact",
+            "RAW": "raw",
         }
 
         for name, value in expected_values.items():
@@ -341,12 +348,12 @@ class TestEnumOutputFormat:
         """Test different output formats."""
         assert EnumOutputFormat.JSON == "json"
         assert EnumOutputFormat.MARKDOWN == "markdown"
-        assert EnumOutputFormat.HTML == "html"
+        assert EnumOutputFormat.TEXT == "text"
 
     def test_enum_iteration(self):
         """Test iterating over enum values."""
         formats = list(EnumOutputFormat)
-        assert len(formats) == 3
+        assert len(formats) == 9
 
 
 @pytest.mark.unit

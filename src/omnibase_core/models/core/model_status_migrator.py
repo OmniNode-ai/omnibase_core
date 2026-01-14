@@ -7,7 +7,7 @@ if TYPE_CHECKING:
 
 from omnibase_core.enums.enum_base_status import EnumBaseStatus
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.enums.enum_execution_status_v2 import EnumExecutionStatusV2
+from omnibase_core.enums.enum_execution_status import EnumExecutionStatus
 from omnibase_core.enums.enum_function_lifecycle_status import (
     EnumFunctionLifecycleStatus,
 )
@@ -144,15 +144,15 @@ class ModelEnumStatusMigrator:
             ) from e
 
     @staticmethod
-    def migrate_execution_status(old_value: str) -> EnumExecutionStatusV2:
+    def migrate_execution_status(old_value: str) -> EnumExecutionStatus:
         """
-        Migrate from legacy EnumExecutionStatus to EnumExecutionStatusV2.
+        Migrate from legacy EnumExecutionStatus to EnumExecutionStatus.
 
         Args:
             old_value: String value from legacy enum
 
         Returns:
-            Corresponding EnumExecutionStatusV2 value
+            Corresponding EnumExecutionStatus value
 
         Raises:
             ModelOnexError: If old_value cannot be migrated
@@ -165,7 +165,7 @@ class ModelEnumStatusMigrator:
 
         # Direct mapping for values that exist in both
         try:
-            return EnumExecutionStatusV2(old_value)
+            return EnumExecutionStatus(old_value)
         except ValueError as e:
             raise _get_onex_error()(
                 code=_get_core_error_code().CONVERSION_ERROR,

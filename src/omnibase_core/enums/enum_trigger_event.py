@@ -8,9 +8,11 @@ Used by context models to specify what event triggered an action or checkpoint.
 from enum import Enum, unique
 from functools import cache
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumTriggerEvent(str, Enum):
+class EnumTriggerEvent(StrValueHelper, str, Enum):
     """Enumeration for events that can trigger workflow actions or checkpoints."""
 
     # Workflow progress triggers
@@ -31,11 +33,6 @@ class EnumTriggerEvent(str, Enum):
     # System triggers
     STARTUP = "startup"  # System or service startup
     SHUTDOWN = "shutdown"  # System or service shutdown
-
-    def __str__(self) -> str:
-        """Return the string value of the trigger event."""
-        # Cast to satisfy mypy - Enum.value is typed as object but str Enums have str values
-        return str(self.value)
 
     @classmethod
     @cache

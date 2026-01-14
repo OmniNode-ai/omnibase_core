@@ -6,9 +6,11 @@ Strongly typed enumeration for OnexTree synchronization status values.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumTreeSyncStatus(str, Enum):
+class EnumTreeSyncStatus(StrValueHelper, str, Enum):
     """
     OnexTree synchronization status classifications.
 
@@ -22,10 +24,6 @@ class EnumTreeSyncStatus(str, Enum):
     ERROR = "error"
     SYNCING = "syncing"
     UNKNOWN = "unknown"
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def is_synchronized(cls, status: "EnumTreeSyncStatus") -> bool:

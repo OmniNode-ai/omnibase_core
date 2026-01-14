@@ -7,9 +7,11 @@ Time period enumeration for trend data models.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumTimePeriod(str, Enum):
+class EnumTimePeriod(StrValueHelper, str, Enum):
     """
     Enumeration for time periods in trend analysis.
 
@@ -24,10 +26,6 @@ class EnumTimePeriod(str, Enum):
     YEARLY = "yearly"
     REAL_TIME = "real_time"
     CUSTOM = "custom"
-
-    def __str__(self) -> str:
-        """Return string representation."""
-        return self.value
 
 
 # Export for use

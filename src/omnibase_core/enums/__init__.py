@@ -99,6 +99,9 @@ from .enum_event_sink_type import EnumEventSinkType
 # Execution-related enums
 from .enum_execution_mode import EnumExecutionMode
 from .enum_execution_shape import EnumExecutionShape, EnumMessageCategory
+
+# Execution status enum (canonical for execution lifecycle - OMN-1310)
+from .enum_execution_status import EnumExecutionStatus
 from .enum_execution_trigger import EnumExecutionTrigger
 
 # Failure type enums (OMN-1236)
@@ -140,7 +143,7 @@ from .enum_header_transformation_type import EnumHeaderTransformationType
 # Health and status enums
 from .enum_health_check_type import EnumHealthCheckType
 from .enum_health_detail_type import EnumHealthDetailType
-from .enum_health_status_type import EnumHealthStatusType
+from .enum_health_status import EnumHealthStatus
 
 # Hub and coordination enums
 from .enum_hub_capability import EnumHubCapability
@@ -188,7 +191,6 @@ from .enum_metadata_tool_type import EnumMetadataToolType
 # Namespace-related enums
 from .enum_namespace_strategy import EnumNamespaceStrategy
 from .enum_node_architecture_type import EnumNodeArchitectureType
-from .enum_node_health_status import EnumNodeHealthStatus
 
 # Node-related enums
 from .enum_node_kind import EnumNodeKind
@@ -201,15 +203,13 @@ from .enum_onex_error_code import EnumOnexErrorCode
 
 # Response and reply enums
 from .enum_onex_reply_status import EnumOnexReplyStatus
+
+# Operation status enum (canonical for operation results - OMN-1310)
 from .enum_operation_status import EnumOperationStatus
 
 # Orchestrator-related enums (from nodes)
 from .enum_orchestrator_capability import EnumOrchestratorCapability
-from .enum_orchestrator_types import (
-    EnumActionType,
-    EnumBranchCondition,
-    EnumWorkflowState,
-)
+from .enum_orchestrator_types import EnumActionType, EnumBranchCondition
 
 # Parameter and return type enums
 from .enum_parameter_type import EnumParameterType
@@ -310,6 +310,7 @@ from .enum_widget_type import EnumWidgetType
 # Workflow-related enums
 from .enum_workflow_coordination import EnumFailureRecoveryStrategy
 from .enum_workflow_dependency_type import EnumWorkflowDependencyType
+from .enum_workflow_status import EnumWorkflowStatus
 
 # NOTE: ModelEnumStatusMigrator is defined in models.core.model_status_migrator
 # It was moved from enums to eliminate circular imports
@@ -363,14 +364,14 @@ __all__ = [
     # Health and status domain
     "EnumHealthCheckType",
     "EnumHealthDetailType",
-    "EnumHealthStatusType",
-    "EnumNodeHealthStatus",
+    "EnumHealthStatus",  # Canonical health status (OMN-1310)
     "EnumNodeStatus",
     # Node domain
     "EnumNodeArchitectureType",
     "EnumNodeKind",
     "EnumNodeType",
-    "EnumOperationStatus",
+    "EnumOperationStatus",  # Canonical operation status (OMN-1310)
+    "EnumExecutionStatus",  # Canonical execution status (OMN-1310)
     "EnumValidationLevel",
     "EnumValidationMode",
     "EnumValueType",
@@ -379,7 +380,6 @@ __all__ = [
     "EnumActionStatus",
     "EnumActionType",
     "EnumBranchCondition",
-    "EnumWorkflowState",
     # Reducer domain (from nodes)
     "EnumConflictResolution",
     "EnumReductionType",
@@ -412,6 +412,7 @@ __all__ = [
     # Workflow domain
     "EnumFailureRecoveryStrategy",
     "EnumWorkflowDependencyType",
+    "EnumWorkflowStatus",
     # Infrastructure domain
     "EnumAuthType",
     "EnumBackoffStrategy",

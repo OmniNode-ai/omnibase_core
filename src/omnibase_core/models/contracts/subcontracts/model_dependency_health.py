@@ -12,7 +12,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.enums.enum_node_health_status import EnumNodeHealthStatus
+from omnibase_core.enums.enum_health_status import EnumHealthStatus
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
@@ -31,9 +31,7 @@ class ModelDependencyHealth(BaseModel):
         ..., description="Type of dependency (database, service, protocol, etc.)"
     )
 
-    status: EnumNodeHealthStatus = Field(
-        ..., description="Health status of the dependency"
-    )
+    status: EnumHealthStatus = Field(..., description="Health status of the dependency")
 
     endpoint: str | None = Field(
         default=None, description="Endpoint or connection string for the dependency"

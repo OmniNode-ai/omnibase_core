@@ -2,7 +2,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.enums.enum_health_status_type import EnumHealthStatusType
+from omnibase_core.enums.enum_health_status import EnumHealthStatus
 from omnibase_core.models.core.model_health_check_result import ModelHealthCheckResult
 from omnibase_core.models.core.model_system_metrics import ModelSystemMetrics
 
@@ -10,9 +10,7 @@ from omnibase_core.models.core.model_system_metrics import ModelSystemMetrics
 class ModelAgentHealthStatus(BaseModel):
     """Complete agent system health status."""
 
-    overall_status: EnumHealthStatusType = Field(
-        description="Overall system health status"
-    )
+    overall_status: EnumHealthStatus = Field(description="Overall system health status")
     health_checks: list[ModelHealthCheckResult] = Field(
         description="Individual health check results",
     )

@@ -12,9 +12,7 @@ from uuid import UUID, uuid4
 import pytest
 
 from omnibase_core.enums.enum_execution_phase import EnumExecutionPhase
-from omnibase_core.enums.enum_execution_status_v2 import (
-    EnumExecutionStatusV2 as EnumExecutionStatus,
-)
+from omnibase_core.enums.enum_execution_status import EnumExecutionStatus
 from omnibase_core.models.cli.model_cli_execution_core import ModelCliExecutionCore
 
 

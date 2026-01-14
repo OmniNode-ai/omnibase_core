@@ -2,9 +2,11 @@
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumToolMissingReason(str, Enum):
+class EnumToolMissingReason(StrValueHelper, str, Enum):
     """
     Categorized reasons for missing tools.
 
@@ -21,3 +23,6 @@ class EnumToolMissingReason(str, Enum):
     CIRCULAR_DEPENDENCY = "circular_dependency"
     VERSION_INCOMPATIBLE = "version_incompatible"
     INSTANTIATION_FAILED = "instantiation_failed"
+
+
+__all__ = ["EnumToolMissingReason"]
