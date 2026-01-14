@@ -13,3 +13,6 @@ class EnumContractCompliance(StrValueHelper, str, Enum):
     PARTIALLY_COMPLIANT = "partially_compliant"
     NON_COMPLIANT = "non_compliant"
     VALIDATION_PENDING = "validation_pending"
+
+
+__all__ = ["EnumContractCompliance"]

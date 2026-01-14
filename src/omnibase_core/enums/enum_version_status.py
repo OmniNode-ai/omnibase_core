@@ -18,3 +18,6 @@ class EnumVersionStatus(StrValueHelper, str, Enum):
     BETA = "beta"
     ALPHA = "alpha"
     END_OF_LIFE = "end_of_life"
+
+
+__all__ = ["EnumVersionStatus"]

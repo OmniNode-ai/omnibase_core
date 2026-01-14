@@ -15,3 +15,6 @@ class EnumChainValidationStatus(StrValueHelper, str, Enum):
     INCOMPLETE = "incomplete"  # Chain missing required signatures
     TAMPERED = "tampered"  # Evidence of tampering detected
     EXPIRED = "expired"  # Signatures too old for policy
+
+
+__all__ = ["EnumChainValidationStatus"]

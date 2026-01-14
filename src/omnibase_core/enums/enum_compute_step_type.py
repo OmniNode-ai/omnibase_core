@@ -17,3 +17,6 @@ class EnumComputeStepType(StrValueHelper, str, Enum):
     MAPPING = "mapping"
     # v1.2+: CONDITIONAL = "conditional"
     # v1.2+: PARALLEL = "parallel"
+
+
+__all__ = ["EnumComputeStepType"]

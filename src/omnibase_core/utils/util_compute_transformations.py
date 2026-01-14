@@ -350,10 +350,7 @@ def transform_unicode(data: str, config: ModelTransformUnicodeConfig) -> str:
     """
     _validate_string_input(data, "NORMALIZE_UNICODE")
 
-    # Cast enum value to Literal type expected by unicodedata.normalize()
-    form: Literal["NFC", "NFD", "NFKC", "NFKD"] = cast(
-        Literal["NFC", "NFD", "NFKC", "NFKD"], config.form.value
-    )
+    form = cast(Literal["NFC", "NFD", "NFKC", "NFKD"], config.form.value)
     return unicodedata.normalize(form, data)
 
 

@@ -46,3 +46,6 @@ class EnumLogLevel(StrValueHelper, str, Enum):
     FATAL = "fatal"
     SUCCESS = "success"
     UNKNOWN = "unknown"
+
+
+__all__ = ["EnumLogLevel"]

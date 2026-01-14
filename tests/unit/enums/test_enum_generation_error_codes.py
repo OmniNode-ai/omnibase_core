@@ -102,7 +102,7 @@ class TestEnumGenerationErrorCodes:
         assert issubclass(EnumGenerationErrorCodes, Enum)
 
     def test_enum_string_behavior(self):
-        """Test string behavior of enum values (StrValueHelper returns value)."""
+        """Test string behavior of enum values (str() returns value due to StrValueHelper mixin)."""
         assert (
             str(EnumGenerationErrorCodes.TOOL_PATH_NOT_FOUND) == "tool_path_not_found"
         )

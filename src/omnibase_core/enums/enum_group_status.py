@@ -11,3 +11,6 @@ class EnumGroupStatus(StrValueHelper, str, Enum):
     DEPRECATED = "deprecated"
     EXPERIMENTAL = "experimental"
     MAINTENANCE = "maintenance"
+
+
+__all__ = ["EnumGroupStatus"]

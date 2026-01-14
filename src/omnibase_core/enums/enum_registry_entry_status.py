@@ -9,3 +9,6 @@ class EnumRegistryEntryStatus(StrValueHelper, str, Enum):
     EPHEMERAL = "ephemeral"
     ONLINE = "online"
     VALIDATED = "validated"
+
+
+__all__ = ["EnumRegistryEntryStatus"]

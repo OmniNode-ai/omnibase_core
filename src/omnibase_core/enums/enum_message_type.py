@@ -11,3 +11,6 @@ class EnumMessageType(StrValueHelper, str, Enum):
     DATA = "data"
     NOTIFICATION = "notification"
     QUERY = "query"
+
+
+__all__ = ["EnumMessageType"]

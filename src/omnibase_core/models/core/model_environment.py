@@ -323,7 +323,7 @@ class ModelEnvironment(BaseModel):
                 queue_size=10000,
                 max_retries=5,
             )
-        elif name in ["staging", "stage", "test", "testing"]:
+        elif name in {"staging", "stage", "test", "testing"}:
             resource_limits = ModelResourceLimits(
                 cpu_cores=2.0,
                 memory_mb=2048,
@@ -364,7 +364,7 @@ class ModelEnvironment(BaseModel):
             monitoring_enabled=True,
             auto_scaling_enabled=is_production,
             logging_level=(
-                "DEBUG" if name in ["development", "dev", "local"] else "INFO"
+                "DEBUG" if name in {"development", "dev", "local"} else "INFO"
             ),
             resource_limits=resource_limits,
         )

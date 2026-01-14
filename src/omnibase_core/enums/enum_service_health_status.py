@@ -14,3 +14,6 @@ class EnumServiceHealthStatus(StrValueHelper, str, Enum):
     TIMEOUT = "timeout"
     AUTHENTICATING = "authenticating"
     MAINTENANCE = "maintenance"
+
+
+__all__ = ["EnumServiceHealthStatus"]

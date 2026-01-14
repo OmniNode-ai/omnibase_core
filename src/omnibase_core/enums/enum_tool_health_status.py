@@ -17,3 +17,6 @@ class EnumToolHealthStatus(StrValueHelper, str, Enum):
     DEGRADED = "degraded"
     ERROR = "error"
     UNAVAILABLE = "unavailable"
+
+
+__all__ = ["EnumToolHealthStatus"]

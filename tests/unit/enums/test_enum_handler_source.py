@@ -27,8 +27,7 @@ class TestEnumHandlerSource:
         assert issubclass(EnumHandlerSource, Enum)
 
     def test_enum_string_behavior(self):
-        """Test string behavior of enum values with StrValueHelper."""
-        # StrValueHelper makes str() return the enum value
+        """Test string behavior of enum values (str() returns value due to StrValueHelper mixin)."""
         assert str(EnumHandlerSource.CORE) == "core"
         assert str(EnumHandlerSource.RUNTIME) == "runtime"
         assert str(EnumHandlerSource.NODE_LOCAL) == "node-local"

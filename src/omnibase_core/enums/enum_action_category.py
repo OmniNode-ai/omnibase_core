@@ -33,11 +33,11 @@ class EnumActionCategory(StrValueHelper, str, Enum):
         Returns:
             True if management category, False otherwise
         """
-        return self in [
+        return self in {
             self.LIFECYCLE,
             self.CONFIGURATION,
             self.REGISTRY,
-        ]
+        }
 
     def is_execution_category(self) -> bool:
         """
@@ -46,11 +46,11 @@ class EnumActionCategory(StrValueHelper, str, Enum):
         Returns:
             True if execution category, False otherwise
         """
-        return self in [
+        return self in {
             self.EXECUTION,
             self.WORKFLOW,
             self.SYSTEM,
-        ]
+        }
 
     def is_inspection_category(self) -> bool:
         """
@@ -59,7 +59,7 @@ class EnumActionCategory(StrValueHelper, str, Enum):
         Returns:
             True if inspection category, False otherwise
         """
-        return self in [
+        return self in {
             self.VALIDATION,
             self.INTROSPECTION,
-        ]
+        }

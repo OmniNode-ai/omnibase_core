@@ -10,9 +10,11 @@ Part of the ONEX strong typing foundation.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumDeprecationStatus(str, Enum):
+class EnumDeprecationStatus(StrValueHelper, str, Enum):
     """
     Deprecation status enumeration for lifecycle management.
 

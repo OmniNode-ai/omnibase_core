@@ -26,8 +26,8 @@ class EnumDaemonActionType(StrValueHelper, str, Enum):
 
     def is_destructive(self) -> bool:
         """Check if this action type typically involves destructive operations."""
-        return self in [self.LIFECYCLE, self.SERVICE_MANAGEMENT, self.CONFIGURATION]
+        return self in {self.LIFECYCLE, self.SERVICE_MANAGEMENT, self.CONFIGURATION}
 
     def requires_confirmation(self) -> bool:
         """Check if this action type typically requires user confirmation."""
-        return self in [self.LIFECYCLE, self.SERVICE_MANAGEMENT]
+        return self in {self.LIFECYCLE, self.SERVICE_MANAGEMENT}

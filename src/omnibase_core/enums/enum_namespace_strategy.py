@@ -24,3 +24,6 @@ class EnumNamespaceStrategy(StrValueHelper, str, Enum):
 
     CUSTOM = "custom"
     """Use custom namespace strategy."""
+
+
+__all__ = ["EnumNamespaceStrategy"]

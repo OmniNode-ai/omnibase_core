@@ -21,3 +21,6 @@ class EnumLearningEventType(StrValueHelper, str, Enum):
     RULE_DEPRECATED = "rule_deprecated"
     WORKFLOW_STARTED = "workflow_started"
     INTELLIGENCE_EXTRACTED = "intelligence_extracted"
+
+
+__all__ = ["EnumLearningEventType"]

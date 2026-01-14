@@ -20,3 +20,6 @@ class EnumHealthCheckType(StrValueHelper, str, Enum):
     COMMAND = "command"
     GRPC = "grpc"
     CUSTOM = "custom"
+
+
+__all__ = ["EnumHealthCheckType"]

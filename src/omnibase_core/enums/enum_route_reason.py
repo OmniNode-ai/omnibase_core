@@ -20,3 +20,6 @@ class EnumRouteReason(StrValueHelper, str, Enum):
     ONLY_AVAILABLE = "only_available"
     FAILOVER = "failover"
     DEFAULT = "default"
+
+
+__all__ = ["EnumRouteReason"]

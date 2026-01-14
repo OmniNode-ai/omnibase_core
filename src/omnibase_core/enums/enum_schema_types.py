@@ -92,3 +92,6 @@ class EnumPythonTypes(StrValueHelper, str, Enum):
 
     # Complex object placeholder (will be replaced by specific types)
     MODEL_COMPLEX_OBJECT = MODEL_OBJECT_DATA  # Explicit alias
+
+
+__all__ = ["EnumSchemaTypes"]

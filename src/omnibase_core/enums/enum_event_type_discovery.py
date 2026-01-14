@@ -31,3 +31,6 @@ class EnumEventTypeDiscovery(StrValueHelper, str, Enum):
     CONTAINER_HEALTH_CHECK = "container_health_check"
     MESH_COORDINATION = "mesh_coordination"
     HUB_STATUS_UPDATE = "hub_status_update"
+
+
+__all__ = ["EnumEventTypeDiscovery"]

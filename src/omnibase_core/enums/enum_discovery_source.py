@@ -14,3 +14,6 @@ class EnumDiscoverySource(StrValueHelper, str, Enum):
     NETWORK = "network"
     CACHE = "cache"
     MANUAL = "manual"
+
+
+__all__ = ["EnumDiscoverySource"]

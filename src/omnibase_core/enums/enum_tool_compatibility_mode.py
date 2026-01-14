@@ -18,3 +18,6 @@ class EnumToolCompatibilityMode(StrValueHelper, str, Enum):
     INCOMPATIBLE = "incompatible"
     DEPRECATED = "deprecated"
     EXPERIMENTAL = "experimental"
+
+
+__all__ = ["EnumToolCompatibilityMode"]

@@ -9,9 +9,11 @@ Strongly typed status values for scenario execution.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumScenarioStatus(str, Enum):
+class EnumScenarioStatus(StrValueHelper, str, Enum):
     """Strongly typed scenario status values."""
 
     NOT_EXECUTED = "not_executed"

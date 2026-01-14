@@ -27,3 +27,6 @@ class EnumToolCategory(StrValueHelper, str, Enum):
     REGISTRY = "registry"
     TRANSFORMATION = "transformation"
     OUTPUT = "output"
+
+
+__all__ = ["EnumToolCategory"]

@@ -10,9 +10,11 @@ Replaces Literal["content", "files_with_matches", "count"] patterns.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumOutputMode(str, Enum):
+class EnumOutputMode(StrValueHelper, str, Enum):
     """
     Strongly typed output mode discriminators.
 
@@ -24,10 +26,6 @@ class EnumOutputMode(str, Enum):
     CONTENT = "content"
     FILES_WITH_MATCHES = "files_with_matches"
     COUNT = "count"
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def returns_full_content(cls, output_mode: EnumOutputMode) -> bool:

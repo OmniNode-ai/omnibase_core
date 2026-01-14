@@ -13,3 +13,6 @@ class EnumPrecommitToolNames(StrValueHelper, str, Enum):
     """Pre-commit tool names following ONEX enum-backed naming standards."""
 
     TOOL_IDEMPOTENCY_ASSERTION_CHECKER = "tool_idempotency_assertion_checker"
+
+
+__all__ = ["EnumPrecommitToolNames"]

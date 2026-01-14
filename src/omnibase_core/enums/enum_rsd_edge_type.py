@@ -20,3 +20,6 @@ class EnumRsdEdgeType(StrValueHelper, str, Enum):
     CHILD_OF = "child_of"
     DUPLICATE_OF = "duplicate_of"
     CAUSED_BY = "caused_by"
+
+
+__all__ = ["EnumRsdEdgeType"]

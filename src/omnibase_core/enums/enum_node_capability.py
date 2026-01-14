@@ -20,3 +20,6 @@ class EnumNodeCapability(StrValueHelper, str, Enum):
     SUPPORTS_SCHEMA_VALIDATION = "supports_schema_validation"
     SUPPORTS_ERROR_RECOVERY = "supports_error_recovery"
     SUPPORTS_EVENT_DISCOVERY = "supports_event_discovery"
+
+
+__all__ = ["EnumNodeCapability"]

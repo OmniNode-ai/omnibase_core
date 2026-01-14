@@ -9,3 +9,6 @@ class EnumRegistryOutputStatus(StrValueHelper, str, Enum):
     SUCCESS = "success"
     FAILURE = "failure"
     WARNING = "warning"
+
+
+__all__ = ["EnumRegistryOutputStatus"]

@@ -17,3 +17,6 @@ class EnumCoordinationMode(StrValueHelper, str, Enum):
     EVENT_ROUTER = "event_router"
     WORKFLOW_ORCHESTRATOR = "workflow_orchestrator"
     META_HUB_ROUTER = "meta_hub_router"
+
+
+__all__ = ["EnumCoordinationMode"]

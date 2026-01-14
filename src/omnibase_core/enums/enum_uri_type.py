@@ -21,3 +21,6 @@ class EnumUriType(StrValueHelper, str, Enum):
     PLUGIN = "plugin"
     SCHEMA = "schema"
     NODE = "node"
+
+
+__all__ = ["EnumUriType"]

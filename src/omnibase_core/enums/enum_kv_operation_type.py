@@ -23,3 +23,6 @@ class EnumKvOperationType(StrValueHelper, str, Enum):
     SYNC = "sync"
     BACKUP = "backup"
     RESTORE = "restore"
+
+
+__all__ = ["EnumKvOperationType"]

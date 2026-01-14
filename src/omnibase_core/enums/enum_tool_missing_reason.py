@@ -23,3 +23,6 @@ class EnumToolMissingReason(StrValueHelper, str, Enum):
     CIRCULAR_DEPENDENCY = "circular_dependency"
     VERSION_INCOMPATIBLE = "version_incompatible"
     INSTANTIATION_FAILED = "instantiation_failed"
+
+
+__all__ = ["EnumToolMissingReason"]

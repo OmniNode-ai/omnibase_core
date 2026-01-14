@@ -18,3 +18,6 @@ class EnumHealthDetailType(StrValueHelper, str, Enum):
     WARNING = "warning"
     ERROR = "error"
     DIAGNOSTIC = "diagnostic"
+
+
+__all__ = ["EnumHealthDetailType"]

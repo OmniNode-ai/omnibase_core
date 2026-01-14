@@ -9,9 +9,11 @@ Strongly typed example category values for configuration.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumExampleCategory(str, Enum):
+class EnumExampleCategory(StrValueHelper, str, Enum):
     """Strongly typed example category values."""
 
     PRIMARY = "primary"

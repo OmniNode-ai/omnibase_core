@@ -17,3 +17,6 @@ class EnumContextPosition(StrValueHelper, str, Enum):
     BEFORE = "before"
     AFTER = "after"
     REPLACE = "replace"
+
+
+__all__ = ["EnumContextPosition"]

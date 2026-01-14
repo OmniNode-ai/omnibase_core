@@ -34,11 +34,6 @@ class EnumTriggerEvent(StrValueHelper, str, Enum):
     STARTUP = "startup"  # System or service startup
     SHUTDOWN = "shutdown"  # System or service shutdown
 
-    def __str__(self) -> str:
-        """Return the string value of the trigger event."""
-        # Cast to satisfy mypy - Enum.value is typed as object but str Enums have str values
-        return str(self.value)
-
     @classmethod
     @cache
     def _automatic_triggers(cls) -> frozenset["EnumTriggerEvent"]:

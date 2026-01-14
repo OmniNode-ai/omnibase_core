@@ -9,9 +9,11 @@ Strongly typed input/output type values for configuration.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumIoType(str, Enum):
+class EnumIoType(StrValueHelper, str, Enum):
     """Strongly typed input/output type values."""
 
     INPUT = "input"

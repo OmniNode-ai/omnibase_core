@@ -12,3 +12,6 @@ class EnumImpactSeverity(StrValueHelper, str, Enum):
     MEDIUM = "medium"
     LOW = "low"
     MINIMAL = "minimal"
+
+
+__all__ = ["EnumImpactSeverity"]

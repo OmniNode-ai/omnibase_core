@@ -11,7 +11,6 @@ from omnibase_core.models.contracts.subcontracts.model_event_type_subcontract im
     ModelEventTypeSubcontract,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 @pytest.mark.unit

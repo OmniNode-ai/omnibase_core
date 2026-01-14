@@ -16,3 +16,6 @@ class EnumArtifactType(StrValueHelper, str, Enum):
     PLUGIN = "plugin"
     SCHEMA = "schema"
     CONFIG = "config"
+
+
+__all__ = ["EnumArtifactType"]

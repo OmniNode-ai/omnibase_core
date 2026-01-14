@@ -13,13 +13,13 @@ from omnibase_core.enums.enum_orchestrator_types import (
     EnumActionType,
     EnumBranchCondition,
     EnumExecutionMode,
-    EnumWorkflowState,
 )
 from omnibase_core.enums.enum_reducer_types import (
     EnumConflictResolution,
     EnumReductionType,
     EnumStreamingMode,
 )
+from omnibase_core.enums.enum_workflow_status import EnumWorkflowStatus
 from omnibase_core.models.compute.model_compute_input import ModelComputeInput
 from omnibase_core.models.compute.model_compute_output import ModelComputeOutput
 from omnibase_core.models.effect.model_effect_input import ModelEffectInput
@@ -62,7 +62,7 @@ __all__ = [
     "EnumActionType",
     "EnumBranchCondition",
     "EnumExecutionMode",
-    "EnumWorkflowState",
+    "EnumWorkflowStatus",
     "EnumConflictResolution",
     "EnumReductionType",
     "EnumStreamingMode",

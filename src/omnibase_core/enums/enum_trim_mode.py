@@ -23,3 +23,6 @@ class EnumTrimMode(StrValueHelper, str, Enum):
     BOTH = "both"
     LEFT = "left"
     RIGHT = "right"
+
+
+__all__ = ["EnumTrimMode"]

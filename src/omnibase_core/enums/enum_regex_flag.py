@@ -23,3 +23,6 @@ class EnumRegexFlag(StrValueHelper, str, Enum):
     IGNORECASE = "IGNORECASE"
     MULTILINE = "MULTILINE"
     DOTALL = "DOTALL"
+
+
+__all__ = ["EnumRegexFlag"]

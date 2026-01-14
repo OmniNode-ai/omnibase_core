@@ -11,3 +11,6 @@ class EnumSensitivityLevel(StrValueHelper, str, Enum):
     MEDIUM = "medium"
     HIGH = "high"
     CRITICAL = "critical"
+
+
+__all__ = ["EnumSensitivityLevel"]

@@ -2,24 +2,16 @@
 Workflow Coordination Enums.
 
 Comprehensive enum definitions for workflow coordination functionality including
-workflow status, assignment status, execution patterns, and failure recovery
-strategies for ORCHESTRATOR nodes.
+assignment status, execution patterns, and failure recovery strategies
+for ORCHESTRATOR nodes.
+
+Note: EnumWorkflowStatus has been consolidated into the canonical version
+in enum_workflow_status.py per OMN-1310.
 """
 
 from enum import Enum, unique
 
 from omnibase_core.utils.util_str_enum_base import StrValueHelper
-
-
-@unique
-class EnumWorkflowStatus(StrValueHelper, str, Enum):
-    """Workflow execution status."""
-
-    CREATED = "CREATED"
-    RUNNING = "RUNNING"
-    COMPLETED = "COMPLETED"
-    FAILED = "FAILED"
-    CANCELLED = "CANCELLED"
 
 
 @unique
@@ -50,3 +42,10 @@ class EnumFailureRecoveryStrategy(StrValueHelper, str, Enum):
     ROLLBACK = "ROLLBACK"  # RESERVED - v2.0
     COMPENSATE = "COMPENSATE"  # RESERVED - v2.0
     ABORT = "ABORT"
+
+
+__all__ = [
+    "EnumAssignmentStatus",
+    "EnumExecutionPattern",
+    "EnumFailureRecoveryStrategy",
+]

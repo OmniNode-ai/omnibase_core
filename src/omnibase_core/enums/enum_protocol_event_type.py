@@ -52,3 +52,6 @@ class EnumProtocolEventType(StrValueHelper, str, Enum):
 
     # Custom events
     CUSTOM = "CUSTOM"  # For domain-specific events
+
+
+__all__ = ["EnumProtocolEventType"]

@@ -35,3 +35,6 @@ class EnumTransformationType(StrValueHelper, str, Enum):
     JSON_PATH = "json_path"
     # v1.1+: SPLIT, JOIN, TEMPLATE, TYPE_CONVERSION
     # v1.2+: FILTER, MAP, REDUCE, SORT
+
+
+__all__ = ["EnumTransformationType"]

@@ -22,3 +22,6 @@ class EnumDependencyMode(StrValueHelper, str, Enum):
     def is_mock(self) -> bool:
         """Return True if this mode uses mocked dependencies."""
         return self == self.MOCK
+
+
+__all__ = ["EnumDependencyMode"]

@@ -681,7 +681,7 @@ from omnibase_core.nodes import (
 # Also available: Public enums
 from omnibase_core.nodes import (
     EnumReductionType, EnumConflictResolution, EnumStreamingMode,  # Reducer
-    EnumExecutionMode, EnumWorkflowState, EnumActionType, EnumBranchCondition,  # Orchestrator
+    EnumExecutionMode, EnumWorkflowStatus, EnumActionType, EnumBranchCondition,  # Orchestrator
 )
 ```
 

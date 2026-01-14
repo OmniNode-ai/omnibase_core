@@ -18,3 +18,6 @@ class EnumToolCriticality(StrValueHelper, str, Enum):
     MEDIUM = "medium"
     LOW = "low"
     OPTIONAL = "optional"
+
+
+__all__ = ["EnumToolCriticality"]

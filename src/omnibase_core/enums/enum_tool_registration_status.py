@@ -12,3 +12,6 @@ class EnumToolRegistrationStatus(StrValueHelper, str, Enum):
     FAILED = "failed"
     DEPRECATED = "deprecated"
     DISABLED = "disabled"
+
+
+__all__ = ["EnumToolRegistrationStatus"]

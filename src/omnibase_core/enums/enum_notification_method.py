@@ -18,3 +18,6 @@ class EnumNotificationMethod(StrValueHelper, str, Enum):
     PUT = "PUT"  # Update-style notifications
     PATCH = "PATCH"  # Partial update notifications
     GET = "GET"  # Query-style notifications (less common)
+
+
+__all__ = ["EnumNotificationMethod"]

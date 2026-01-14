@@ -17,3 +17,6 @@ class EnumWorkflowPriority(StrValueHelper, str, Enum):
     NORMAL = "normal"
     HIGH = "high"
     URGENT = "urgent"
+
+
+__all__ = ["EnumWorkflowPriority"]

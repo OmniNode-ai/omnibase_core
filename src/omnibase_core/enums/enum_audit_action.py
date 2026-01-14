@@ -23,3 +23,6 @@ class EnumAuditAction(StrValueHelper, str, Enum):
     BACKUP = "backup"
     RESTORE = "restore"
     CUSTOM = "custom"
+
+
+__all__ = ["EnumAuditAction"]

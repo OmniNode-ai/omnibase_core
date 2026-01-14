@@ -10,9 +10,11 @@ Defines validation behavior modes for controlling strictness in validation opera
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumValidationMode(str, Enum):
+class EnumValidationMode(StrValueHelper, str, Enum):
     """
     Validation mode controlling how strictly validation rules are enforced.
 
@@ -59,10 +61,6 @@ class EnumValidationMode(str, Enum):
     Use for development, migration, or debugging scenarios where you need
     to see all validation issues rather than failing on the first one.
     """
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     def is_strict(self) -> bool:
         """

@@ -19,3 +19,6 @@ class EnumOnexReplyStatus(StrValueHelper, str, Enum):
     ERROR = "error"
     TIMEOUT = "timeout"
     VALIDATION_ERROR = "validation_error"
+
+
+__all__ = ["EnumOnexReplyStatus"]

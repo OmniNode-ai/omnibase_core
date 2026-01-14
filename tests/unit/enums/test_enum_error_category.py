@@ -30,8 +30,7 @@ class TestEnumErrorCategory:
         assert issubclass(EnumErrorCategory, Enum)
 
     def test_enum_string_behavior(self):
-        """Test string behavior of enum values."""
-        # StrValueHelper makes str() return the value
+        """Test string behavior of enum values (str() returns value due to StrValueHelper mixin)."""
         assert str(EnumErrorCategory.TRANSIENT) == "transient"
         assert str(EnumErrorCategory.CONFIGURATION) == "configuration"
         assert str(EnumErrorCategory.RESOURCE_EXHAUSTION) == "resource_exhaustion"

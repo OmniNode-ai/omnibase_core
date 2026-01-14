@@ -19,3 +19,6 @@ class EnumAssemblyStrategy(StrValueHelper, str, Enum):
     WEIGHTED_CONSENSUS = "weighted_consensus"
     BEST_OF_N = "best_of_n"
     COMPARATIVE_ANALYSIS = "comparative_analysis"
+
+
+__all__ = ["EnumAssemblyStrategy"]

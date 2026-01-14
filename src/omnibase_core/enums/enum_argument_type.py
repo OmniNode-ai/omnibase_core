@@ -24,3 +24,6 @@ class EnumArgumentType(StrValueHelper, str, Enum):
     PATH = "path"
     JSON = "json"
     LIST = "list[Any]"
+
+
+__all__ = ["EnumArgumentType"]

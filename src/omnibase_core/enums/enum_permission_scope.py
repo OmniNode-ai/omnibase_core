@@ -18,3 +18,6 @@ class EnumPermissionScope(StrValueHelper, str, Enum):
     USER = "user"
     SERVICE = "service"
     RESOURCE = "resource"
+
+
+__all__ = ["EnumPermissionScope"]

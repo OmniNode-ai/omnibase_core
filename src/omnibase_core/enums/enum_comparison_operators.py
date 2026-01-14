@@ -17,3 +17,6 @@ class EnumComparisonOperators(StrValueHelper, str, Enum):
     LESS_THAN_OR_EQUAL = "less_than_or_equal"
     CONTAINS = "contains"
     NOT_CONTAINS = "not_contains"
+
+
+__all__ = ["EnumComparisonOperators"]

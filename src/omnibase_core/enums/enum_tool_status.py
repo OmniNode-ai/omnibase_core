@@ -18,3 +18,6 @@ class EnumToolStatus(StrValueHelper, str, Enum):
     EXPERIMENTAL = "experimental"
     MAINTENANCE = "maintenance"
     END_OF_LIFE = "end_of_life"
+
+
+__all__ = ["EnumToolStatus"]

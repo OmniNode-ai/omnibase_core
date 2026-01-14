@@ -23,8 +23,11 @@ class EnumLlmProvider(StrValueHelper, str, Enum):
 
     def is_local(self) -> bool:
         """Check if this is a local provider."""
-        return self in [self.OLLAMA, self.LOCAL, self.LITELLM]
+        return self in {self.OLLAMA, self.LOCAL, self.LITELLM}
 
     def requires_api_key(self) -> bool:
         """Check if this provider requires an API key."""
-        return self in [self.CLAUDE, self.OPENAI, self.GEMINI, self.ANTHROPIC]
+        return self in {self.CLAUDE, self.OPENAI, self.GEMINI, self.ANTHROPIC}
+
+
+__all__ = ["EnumLlmProvider"]

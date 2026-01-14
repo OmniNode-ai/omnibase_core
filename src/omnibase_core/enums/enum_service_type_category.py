@@ -13,3 +13,6 @@ class EnumServiceTypeCategory(StrValueHelper, str, Enum):
     DATABASE = "database"
     REST_API = "rest_api"
     CUSTOM = "custom"
+
+
+__all__ = ["EnumServiceTypeCategory"]

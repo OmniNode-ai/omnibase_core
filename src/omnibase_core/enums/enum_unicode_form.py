@@ -25,3 +25,6 @@ class EnumUnicodeForm(StrValueHelper, str, Enum):
     NFD = "NFD"
     NFKC = "NFKC"
     NFKD = "NFKD"
+
+
+__all__ = ["EnumUnicodeForm"]

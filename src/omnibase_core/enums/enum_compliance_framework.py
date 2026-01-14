@@ -16,3 +16,6 @@ class EnumComplianceFramework(StrValueHelper, str, Enum):
     FISMA = "FISMA"  # Federal Information Security Management
     ISO27001 = "ISO27001"  # Information Security Management
     NIST = "NIST"  # NIST Cybersecurity Framework
+
+
+__all__ = ["EnumComplianceFramework"]

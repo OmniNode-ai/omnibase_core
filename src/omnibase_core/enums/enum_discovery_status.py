@@ -18,3 +18,6 @@ class EnumDiscoveryStatus(StrValueHelper, str, Enum):
     INACTIVE = "inactive"
     PENDING = "pending"
     COMPLETED = "completed"
+
+
+__all__ = ["EnumDiscoveryStatus"]

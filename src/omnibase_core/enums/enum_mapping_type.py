@@ -17,3 +17,6 @@ class EnumMappingType(StrValueHelper, str, Enum):
     TRANSFORM = "transform"
     CONDITIONAL = "conditional"
     COMPOSITE = "composite"
+
+
+__all__ = ["EnumMappingType"]

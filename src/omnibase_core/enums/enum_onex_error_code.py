@@ -43,3 +43,6 @@ class EnumOnexErrorCode(StrValueHelper, str, Enum):
         from omnibase_core.enums.enum_cli_exit_code import EnumCLIExitCode
 
         return EnumCLIExitCode.ERROR.value
+
+
+__all__ = ["EnumOnexErrorCode"]

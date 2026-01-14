@@ -21,3 +21,6 @@ class EnumCacheEvictionPolicy(StrValueHelper, str, Enum):
     LRU = "lru"  # Least Recently Used - evicts oldest accessed entry
     LFU = "lfu"  # Least Frequently Used - evicts least accessed entry
     FIFO = "fifo"  # First In First Out - evicts oldest inserted entry
+
+
+__all__ = ["EnumCacheEvictionPolicy"]

@@ -40,3 +40,6 @@ class EnumFileStatus(StrValueHelper, str, Enum):
     INCOMPLETE = "incomplete"  # Missing required fields
     SYNTHETIC = "synthetic"  # Generated, not user-authored
     # Add more statuses as protocol evolves
+
+
+__all__ = ["EnumFileStatus"]

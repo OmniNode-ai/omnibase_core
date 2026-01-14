@@ -18,3 +18,6 @@ class EnumCoordinationToolNames(StrValueHelper, str, Enum):
     TOOL_SUBWORKFLOW_EXECUTOR = "tool_subworkflow_executor"
     TOOL_COMPOSITION_ORCHESTRATOR = "tool_composition_orchestrator"
     TOOL_WORKFLOW_REGISTRY = "tool_workflow_registry"
+
+
+__all__ = ["EnumCoordinationToolNames"]

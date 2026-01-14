@@ -103,3 +103,6 @@ class EnumPatchValidationErrorCode(StrValueHelper, str, Enum):
         "CONTRACT_PATCH_PYDANTIC_VALIDATION_ERROR"
     )
     """Pydantic model validation error occurred."""
+
+
+__all__ = ["EnumPatchValidationErrorCode"]

@@ -20,3 +20,6 @@ class EnumOllamaErrorType(StrValueHelper, str, Enum):
     UNKNOWN = "unknown"
     API_ERROR = "api_error"
     NETWORK_ERROR = "network_error"
+
+
+__all__ = ["EnumOllamaErrorType"]

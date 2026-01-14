@@ -14,3 +14,6 @@ class EnumInputDataType(StrValueHelper, str, Enum):
     STRUCTURED = "structured"
     PRIMITIVE = "primitive"
     MIXED = "mixed"
+
+
+__all__ = ["EnumInputDataType"]

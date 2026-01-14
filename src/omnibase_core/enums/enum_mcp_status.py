@@ -19,3 +19,6 @@ class EnumMcpStatus(StrValueHelper, str, Enum):
     RUNNING = "running"
     UNKNOWN = "unknown"
     UNREACHABLE = "unreachable"
+
+
+__all__ = ["EnumMcpStatus"]

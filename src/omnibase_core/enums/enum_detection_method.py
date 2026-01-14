@@ -15,3 +15,6 @@ class EnumDetectionMethod(StrValueHelper, str, Enum):
     DICTIONARY_MATCH = "dictionary_match"
     CONTEXT_ANALYSIS = "context_analysis"
     HYBRID = "hybrid"
+
+
+__all__ = ["EnumDetectionMethod"]

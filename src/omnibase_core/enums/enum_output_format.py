@@ -46,3 +46,6 @@ class EnumOutputFormat(StrValueHelper, str, Enum):
     DETAILED = "detailed"  # Detailed format for comprehensive output
     COMPACT = "compact"  # Compact format for minimal output
     RAW = "raw"  # Raw format for unprocessed output
+
+
+__all__ = ["EnumOutputFormat"]

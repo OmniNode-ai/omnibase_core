@@ -11,9 +11,9 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums.enum_health_status import EnumHealthStatus
 from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
 from omnibase_core.enums.enum_metadata_node_type import EnumMetadataNodeType
-from omnibase_core.enums.enum_node_health_status import EnumNodeHealthStatus
 from omnibase_core.enums.enum_registry_status import EnumRegistryStatus
 from omnibase_core.enums.enum_status import EnumStatus
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -184,7 +184,7 @@ class ModelNodeInformation(BaseModel):
             node_type=self.core_info.node_type,
             node_version=self.core_info.node_version,
             status=EnumStatus.ACTIVE,  # Convert from metadata status
-            health=EnumNodeHealthStatus.HEALTHY,  # Default value
+            health=EnumHealthStatus.HEALTHY,  # Default value
             is_active=(self.core_info.status == EnumMetadataNodeStatus.ACTIVE),
             is_healthy=True,  # Default value
             has_description=self.core_info.has_description(),

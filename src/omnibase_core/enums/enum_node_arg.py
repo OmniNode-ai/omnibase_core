@@ -17,3 +17,6 @@ class EnumNodeArg(StrValueHelper, str, Enum):
     BOOTSTRAP = "--bootstrap"
     HEALTH_CHECK = "--health-check"
     INTROSPECT = "--introspect"
+
+
+__all__ = ["EnumNodeArg"]

@@ -35,3 +35,6 @@ class EnumHubCapability(StrValueHelper, str, Enum):
     VALIDATION_WORKFLOWS = "validation_workflows"
     PROGRESSIVE_ROLLOUTS = "progressive_rollouts"
     ROLLBACK_AUTOMATION = "rollback_automation"
+
+
+__all__ = ["EnumHubCapability"]

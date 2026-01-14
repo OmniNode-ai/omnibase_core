@@ -27,8 +27,7 @@ class TestEnumEventPriority:
         assert issubclass(EnumEventPriority, Enum)
 
     def test_enum_string_behavior(self):
-        """Test string behavior of enum values."""
-        # StrValueHelper makes str() return the value
+        """Test string behavior of enum values (str() returns value due to StrValueHelper mixin)."""
         assert str(EnumEventPriority.CRITICAL) == "CRITICAL"
         assert str(EnumEventPriority.HIGH) == "HIGH"
         assert str(EnumEventPriority.NORMAL) == "NORMAL"

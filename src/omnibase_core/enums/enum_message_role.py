@@ -17,3 +17,6 @@ class EnumMessageRole(StrValueHelper, str, Enum):
     USER = "user"
     SYSTEM = "system"
     ASSISTANT = "assistant"
+
+
+__all__ = ["EnumMessageRole"]

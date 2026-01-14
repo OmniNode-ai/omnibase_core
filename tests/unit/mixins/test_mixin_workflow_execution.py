@@ -9,10 +9,8 @@ from uuid import uuid4
 import pytest
 
 from omnibase_core.enums.enum_workflow_coordination import EnumFailureRecoveryStrategy
-from omnibase_core.enums.enum_workflow_execution import (
-    EnumExecutionMode,
-    EnumWorkflowState,
-)
+from omnibase_core.enums.enum_workflow_execution import EnumExecutionMode
+from omnibase_core.enums.enum_workflow_status import EnumWorkflowStatus
 from omnibase_core.mixins.mixin_workflow_execution import MixinWorkflowExecution
 from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
 from omnibase_core.models.contracts.subcontracts.model_coordination_rules import (
@@ -151,7 +149,7 @@ class TestMixinWorkflowExecution:
         )
 
         assert result.workflow_id == workflow_id
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
         assert len(result.completed_steps) == 3
         assert len(result.failed_steps) == 0
         assert len(result.actions_emitted) == 3
@@ -174,7 +172,7 @@ class TestMixinWorkflowExecution:
         )
 
         assert result.workflow_id == workflow_id
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
         assert len(result.completed_steps) == 4  # All steps should complete
         assert len(result.failed_steps) == 0
 
@@ -484,7 +482,7 @@ class TestMixinIntegration:
 
         # Verify result matches executor behavior
         assert result.workflow_id == workflow_id
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
         assert len(result.completed_steps) == len(simple_steps)
         assert result.skipped_steps == []  # No disabled steps
         assert len(result.actions_emitted) == len(simple_steps)
@@ -510,7 +508,7 @@ class TestMixinIntegration:
 
         # Empty workflow completes with 0 steps and 0 actions
         assert result.workflow_id == workflow_id
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
         assert len(result.completed_steps) == 0
         assert len(result.failed_steps) == 0
         assert result.skipped_steps == []  # No steps to skip

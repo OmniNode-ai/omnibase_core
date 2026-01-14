@@ -19,3 +19,6 @@ class EnumStateUpdateOperation(StrValueHelper, str, Enum):
     INCREMENT = "increment"  # Increment numeric value
     DECREMENT = "decrement"  # Decrement numeric value
     DELETE = "delete"  # Remove field from state
+
+
+__all__ = ["EnumStateUpdateOperation"]

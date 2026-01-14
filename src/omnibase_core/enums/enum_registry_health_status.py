@@ -13,3 +13,6 @@ class EnumRegistryHealthStatus(StrValueHelper, str, Enum):
     INITIALIZING = "initializing"
     MAINTENANCE = "maintenance"
     CRITICAL = "critical"
+
+
+__all__ = ["EnumRegistryHealthStatus"]

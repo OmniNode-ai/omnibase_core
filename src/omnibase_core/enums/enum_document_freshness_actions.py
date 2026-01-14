@@ -105,3 +105,16 @@ class EnumOutputFormat(StrValueHelper, str, Enum):
     JSON = "json"
     MARKDOWN = "markdown"
     HTML = "html"
+
+
+__all__ = [
+    "EnumDependencyRelationship",
+    "EnumDocumentFreshnessActions",
+    "EnumDocumentFreshnessRiskLevel",
+    "EnumDocumentFreshnessStatus",
+    "EnumDocumentType",
+    "EnumEstimatedEffort",
+    "EnumOutputFormat",
+    "EnumRecommendationPriority",
+    "EnumRecommendationType",
+]

@@ -46,3 +46,6 @@ class EnumCollaborationDomain(StrValueHelper, str, Enum):
     TASK_COORDINATION = "task_coordination"
     PROGRESS_TRACKING = "progress_tracking"
     RESOURCE_PLANNING = "resource_planning"
+
+
+__all__ = ["EnumCollaborationDomain"]

@@ -23,8 +23,8 @@ from omnibase_core.enums.enum_workflow_coordination import EnumFailureRecoverySt
 from omnibase_core.enums.enum_workflow_execution import (
     EnumActionType,
     EnumExecutionMode,
-    EnumWorkflowState,
 )
+from omnibase_core.enums.enum_workflow_status import EnumWorkflowStatus
 from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
 from omnibase_core.models.contracts.subcontracts.model_coordination_rules import (
     ModelCoordinationRules,
@@ -225,7 +225,7 @@ class TestSingleStepExecution:
         )
 
         assert result.workflow_id == workflow_id
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
         assert len(result.completed_steps) == 1
         assert len(result.failed_steps) == 0
 
@@ -272,7 +272,7 @@ class TestSingleStepExecution:
             execution_mode=EnumExecutionMode.SEQUENTIAL,
         )
 
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
         assert len(result.failed_steps) == 0
         assert result.execution_time_ms >= 1  # Minimum 1ms
 
@@ -323,7 +323,7 @@ class TestLinearChainExecution:
             execution_mode=EnumExecutionMode.SEQUENTIAL,
         )
 
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
         assert len(result.completed_steps) == 3
 
         # Verify order by checking completed_steps list
@@ -434,7 +434,7 @@ class TestDiamondDependencyExecution:
             execution_mode=EnumExecutionMode.SEQUENTIAL,
         )
 
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
         assert len(result.completed_steps) == 4
         assert len(result.failed_steps) == 0
 
@@ -579,7 +579,7 @@ class TestExecutionStatus:
             execution_mode=EnumExecutionMode.SEQUENTIAL,
         )
 
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
 
     @pytest.mark.asyncio
     async def test_failed_status_on_step_failure(
@@ -612,7 +612,7 @@ class TestExecutionStatus:
                 execution_mode=EnumExecutionMode.SEQUENTIAL,
             )
 
-        assert result.execution_status == EnumWorkflowState.FAILED
+        assert result.execution_status == EnumWorkflowStatus.FAILED
 
     @pytest.mark.asyncio
     async def test_failed_steps_tracking(
@@ -742,7 +742,7 @@ class TestExecutionStatus:
         assert str(step_b_id) not in result.completed_steps
 
         # Workflow is FAILED
-        assert result.execution_status == EnumWorkflowState.FAILED
+        assert result.execution_status == EnumWorkflowStatus.FAILED
 
 
 # =============================================================================
@@ -1171,7 +1171,7 @@ class TestComplexWorkflows:
             execution_mode=EnumExecutionMode.SEQUENTIAL,
         )
 
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
         assert len(result.completed_steps) == 7
 
         # Verify ordering constraints
@@ -1338,7 +1338,7 @@ class TestComplexWorkflows:
             execution_mode=EnumExecutionMode.SEQUENTIAL,
         )
 
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
         assert len(result.completed_steps) == 7
 
         # Verify topological constraints

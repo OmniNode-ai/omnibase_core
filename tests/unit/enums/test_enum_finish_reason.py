@@ -28,8 +28,7 @@ class TestEnumFinishReason:
         assert issubclass(EnumFinishReason, Enum)
 
     def test_enum_string_behavior(self):
-        """Test string behavior of enum values with StrValueHelper."""
-        # StrValueHelper makes str() return the enum value
+        """Test string behavior of enum values (str() returns value due to StrValueHelper mixin)."""
         assert str(EnumFinishReason.STOP) == "stop"
         assert str(EnumFinishReason.LENGTH) == "length"
         assert str(EnumFinishReason.CONTENT_FILTER) == "content_filter"

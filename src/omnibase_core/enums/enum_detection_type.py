@@ -18,3 +18,6 @@ class EnumDetectionType(StrValueHelper, str, Enum):
     MEDICAL = "medical"
     GOVERNMENT_ID = "government_id"
     CUSTOM = "custom"
+
+
+__all__ = ["EnumDetectionType"]

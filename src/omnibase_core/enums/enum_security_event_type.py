@@ -37,3 +37,6 @@ class EnumSecurityEventType(StrValueHelper, str, Enum):
     # Administrative events
     POLICY_VIOLATION = "policy_violation"
     CONFIGURATION_CHANGE = "configuration_change"
+
+
+__all__ = ["EnumSecurityEventType"]

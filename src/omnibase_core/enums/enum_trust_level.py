@@ -13,3 +13,6 @@ class EnumTrustLevel(StrValueHelper, str, Enum):
     PARTIAL_TRUST = "partial_trust"  # Mix of trusted and untrusted signatures
     UNTRUSTED = "untrusted"  # No trusted signatures
     COMPROMISED = "compromised"  # Evidence of compromise detected
+
+
+__all__ = ["EnumTrustLevel"]

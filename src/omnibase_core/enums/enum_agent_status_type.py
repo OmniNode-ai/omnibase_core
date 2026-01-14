@@ -20,3 +20,6 @@ class EnumAgentStatusType(StrValueHelper, str, Enum):
     TERMINATING = "terminating"
     STARTING = "starting"
     SUSPENDED = "suspended"
+
+
+__all__ = ["EnumAgentStatusType"]

@@ -17,3 +17,6 @@ class EnumComputationType(StrValueHelper, str, Enum):
     TEXT = "text"
     BINARY = "binary"
     STRUCTURED = "structured"
+
+
+__all__ = ["EnumComputationType"]

@@ -17,3 +17,6 @@ class EnumPrivacyLevel(StrValueHelper, str, Enum):
     LOCAL_ONLY = "local_only"
     EXTERNAL_OK = "external_ok"
     ANY = "any"
+
+
+__all__ = ["EnumPrivacyLevel"]

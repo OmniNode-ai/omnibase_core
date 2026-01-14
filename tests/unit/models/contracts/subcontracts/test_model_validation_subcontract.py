@@ -13,7 +13,6 @@ DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
 from omnibase_core.models.contracts.subcontracts.model_validation_subcontract import (
     ModelValidationSubcontract,
 )
-from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 @pytest.mark.unit

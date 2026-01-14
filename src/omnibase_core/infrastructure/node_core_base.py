@@ -38,8 +38,8 @@ from typing import TYPE_CHECKING, Any
 from uuid import UUID, uuid4
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums.enum_health_status import EnumHealthStatus
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.enums.enum_node_health_status import EnumNodeHealthStatus
 from omnibase_core.enums.enum_node_lifecycle_status import EnumNodeLifecycleStatus
 from omnibase_core.errors.exception_groups import FILE_IO_ERRORS
 from omnibase_core.logging.logging_structured import (
@@ -879,9 +879,9 @@ class NodeCoreBase(ABC):
         ]
 
         return {
-            "overall_status": EnumNodeHealthStatus.HEALTHY.value
+            "overall_status": EnumHealthStatus.HEALTHY.value
             if all_healthy
-            else EnumNodeHealthStatus.DEGRADED.value,
+            else EnumHealthStatus.DEGRADED.value,
             "component_checks": health_checks,
             "failing_components": failing_components,
             "healthy_count": sum(1 for h in health_checks.values() if h),

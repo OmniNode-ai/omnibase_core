@@ -13,3 +13,6 @@ class EnumBusinessLogicPattern(StrValueHelper, str, Enum):
     STATEFUL = "stateful"
     COORDINATION = "coordination"
     AGGREGATION = "aggregation"
+
+
+__all__ = ["EnumBusinessLogicPattern"]

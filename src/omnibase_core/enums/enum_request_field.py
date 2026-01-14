@@ -19,3 +19,6 @@ class EnumRequestField(StrValueHelper, str, Enum):
     ROLE = "role"
     TYPE = "type"
     TEXT = "text"
+
+
+__all__ = ["EnumRequestField"]

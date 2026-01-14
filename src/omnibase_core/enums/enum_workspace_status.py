@@ -20,3 +20,6 @@ class EnumWorkspaceStatus(StrValueHelper, str, Enum):
     MERGING = "merging"
     CLEANUP = "cleanup"
     FAILED = "failed"
+
+
+__all__ = ["EnumWorkspaceStatus"]

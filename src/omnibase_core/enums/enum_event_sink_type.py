@@ -35,7 +35,7 @@ class EnumEventSinkType(StrValueHelper, str, Enum):
             >>> EnumEventSinkType.FILE.is_persistent
             True
         """
-        return self in (EnumEventSinkType.FILE, EnumEventSinkType.KAFKA)
+        return self in {EnumEventSinkType.FILE, EnumEventSinkType.KAFKA}
 
     @property
     def requires_path(self) -> bool:

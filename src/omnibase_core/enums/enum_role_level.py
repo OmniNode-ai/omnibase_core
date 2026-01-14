@@ -20,3 +20,6 @@ class EnumRoleLevel(StrValueHelper, str, Enum):
     STAFF = "staff"
     DISTINGUISHED = "distinguished"
     FELLOW = "fellow"
+
+
+__all__ = ["EnumRoleLevel"]

@@ -27,3 +27,6 @@ class EnumWatchEventType(StrValueHelper, str, Enum):
     WATCH_ERROR = "watch_error"
     WATCH_TIMEOUT = "watch_timeout"
     WATCH_RECONNECTED = "watch_reconnected"
+
+
+__all__ = ["EnumWatchEventType"]

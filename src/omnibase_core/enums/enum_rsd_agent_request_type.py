@@ -21,3 +21,6 @@ class EnumRsdAgentRequestType(StrValueHelper, str, Enum):
     VALIDATE = "validate"
     REFACTOR = "refactor"
     DOCUMENT = "document"
+
+
+__all__ = ["EnumRsdAgentRequestType"]

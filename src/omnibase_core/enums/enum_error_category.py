@@ -21,3 +21,6 @@ class EnumErrorCategory(StrValueHelper, str, Enum):
     VALIDATION = "validation"
     SYSTEM = "system"
     UNKNOWN = "unknown"
+
+
+__all__ = ["EnumErrorCategory"]

@@ -17,3 +17,6 @@ class EnumSubscriptionStatus(StrValueHelper, str, Enum):
     ERROR = "ERROR"  # In error state, not processing
     INITIALIZING = "INITIALIZING"  # Being set up
     CLOSING = "CLOSING"  # Being shut down
+
+
+__all__ = ["EnumSubscriptionStatus"]

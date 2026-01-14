@@ -11,3 +11,6 @@ class EnumSecurityProfile(StrValueHelper, str, Enum):
     SP1_BASELINE = "SP1_BASELINE"
     SP2_PRODUCTION = "SP2_PRODUCTION"
     SP3_HIGH_ASSURANCE = "SP3_HIGH_ASSURANCE"
+
+
+__all__ = ["EnumSecurityProfile"]

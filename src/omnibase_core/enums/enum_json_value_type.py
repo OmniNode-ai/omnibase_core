@@ -12,3 +12,6 @@ class EnumJsonValueType(StrValueHelper, str, Enum):
     BOOLEAN = "boolean"
     ARRAY = "array"
     NULL = "null"
+
+
+__all__ = ["EnumJsonValueType"]

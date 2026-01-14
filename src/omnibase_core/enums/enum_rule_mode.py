@@ -15,3 +15,6 @@ class EnumRuleMode(StrValueHelper, str, Enum):
     CANARY = "canary"  # Apply to subset of operations
     PRODUCTION = "production"  # Full deployment
     DEPRECATED = "deprecated"  # Marked for removal
+
+
+__all__ = ["EnumRuleMode"]

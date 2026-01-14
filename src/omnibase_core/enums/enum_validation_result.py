@@ -9,3 +9,6 @@ class EnumValidationResult(StrValueHelper, str, Enum):
     FAIL = "fail"
     SKIP = "skip"
     ERROR = "error"
+
+
+__all__ = ["EnumValidationResult"]

@@ -32,3 +32,6 @@ class EnumTaskTypes(StrValueHelper, str, Enum):
     # Autonomous task types
     AUTONOMOUS_TOOL_BOOTSTRAP = "autonomous_tool_bootstrap"
     UNKNOWN = "unknown"
+
+
+__all__ = ["EnumTaskTypes"]

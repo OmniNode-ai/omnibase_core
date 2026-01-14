@@ -794,7 +794,7 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_workflow_execution import (
     EnumActionType,
     EnumExecutionMode,
-    EnumWorkflowState,
+    EnumWorkflowStatus,
 )
 from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
 from omnibase_core.models.contracts.subcontracts.model_workflow_definition import (
@@ -814,7 +814,7 @@ class WorkflowExecutionResult:
     def __init__(
         self,
         workflow_id: UUID,
-        execution_status: EnumWorkflowState,
+        execution_status: EnumWorkflowStatus,
         completed_steps: list[str],
         failed_steps: list[str],
         actions_emitted: list[ModelAction],
@@ -1076,9 +1076,9 @@ async def _execute_sequential(
 
     # Determine final status
     status = (
-        EnumWorkflowState.COMPLETED
+        EnumWorkflowStatus.COMPLETED
         if not failed_steps
-        else EnumWorkflowState.FAILED
+        else EnumWorkflowStatus.FAILED
     )
 
     return WorkflowExecutionResult(
@@ -1143,9 +1143,9 @@ async def _execute_parallel(
         remaining_steps = [s for s in remaining_steps if s not in ready_steps]
 
     status = (
-        EnumWorkflowState.COMPLETED
+        EnumWorkflowStatus.COMPLETED
         if not failed_steps
-        else EnumWorkflowState.FAILED
+        else EnumWorkflowStatus.FAILED
     )
 
     return WorkflowExecutionResult(
