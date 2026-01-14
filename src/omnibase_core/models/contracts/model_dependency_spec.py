@@ -41,7 +41,9 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 DependencyType = Literal[  # enum-ok: model type annotation
     "node", "protocol", "handler"
 ]
-SelectionStrategy = Literal["first", "random", "round_robin", "least_loaded"]
+SelectionStrategy = Literal[  # enum-ok: model type annotation
+    "first", "random", "round_robin", "least_loaded"
+]
 
 
 class ModelDependencySpec(BaseModel):

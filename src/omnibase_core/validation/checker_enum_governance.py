@@ -73,7 +73,24 @@ RULE_DUPLICATE_ENUM_VALUES = "duplicate_enum_values"
 
 # Pattern words that suggest a Literal might be better as an Enum
 ENUM_PATTERN_WORDS = frozenset(
-    {"Status", "State", "Phase", "Mode", "Health", "Type", "Kind", "Level", "Category"}
+    {
+        "Status",
+        "State",
+        "Phase",
+        "Mode",
+        "Health",
+        "Type",
+        "Kind",
+        "Level",
+        "Category",
+        "Priority",
+        "Severity",
+        "Stage",
+        "Role",
+        "Action",
+        "Result",
+        "Outcome",
+    }
 )
 
 
@@ -86,14 +103,14 @@ class _CollectedEnumData:
         file_path: Path to the file containing the enum.
         line_number: Line number where the enum is defined.
         values: Frozenset of string values assigned to enum members.
-        member_names: List of member names (for casing validation).
+        member_names: Tuple of member names (for casing validation).
     """
 
     name: str
     file_path: Path
     line_number: int
     values: frozenset[str]
-    member_names: list[str]
+    member_names: tuple[str, ...]
 
 
 @dataclass(frozen=True)
@@ -248,7 +265,7 @@ class GovernanceASTVisitor(ast.NodeVisitor):
                     file_path=self.file_path,
                     line_number=node.lineno,
                     values=frozenset(string_values),
-                    member_names=member_names,
+                    member_names=tuple(member_names),
                 )
             )
 
@@ -721,11 +738,18 @@ class CheckerEnumGovernance(ValidatorBase):
             RULE_DUPLICATE_ENUM_VALUES, self.contract
         )
         require_name_similarity_raw = rule_params.get("require_name_similarity", True)
-        require_name_similarity = (
-            bool(require_name_similarity_raw)
-            if isinstance(require_name_similarity_raw, bool)
-            else True
-        )
+        # Handle string "true"/"false" from YAML in addition to bool
+        if isinstance(require_name_similarity_raw, str):
+            require_name_similarity = require_name_similarity_raw.lower() in (
+                "true",
+                "1",
+                "yes",
+            )
+        elif isinstance(require_name_similarity_raw, bool):
+            require_name_similarity = require_name_similarity_raw
+        else:
+            require_name_similarity = True
+
         approved_overlaps_raw = rule_params.get("approved_overlaps", [])
 
         # Parse approved overlaps into frozenset of tuples
@@ -733,13 +757,11 @@ class CheckerEnumGovernance(ValidatorBase):
         approved_overlaps: set[frozenset[str]] = set()
         if isinstance(approved_overlaps_raw, list):
             for overlap_item in approved_overlaps_raw:
-                # Each overlap should be a string like "EnumA,EnumB"
+                # Handle "EnumA,EnumB" string format
                 if isinstance(overlap_item, str) and "," in overlap_item:
-                    parts = overlap_item.split(",")
-                    if len(parts) == 2:
-                        approved_overlaps.add(
-                            frozenset([parts[0].strip(), parts[1].strip()])
-                        )
+                    parts = [p.strip() for p in overlap_item.split(",")]
+                    if len(parts) == 2 and all(parts):
+                        approved_overlaps.add(frozenset(parts))
 
         issues: list[ModelValidationIssue] = []
 
@@ -831,7 +853,6 @@ if __name__ == "__main__":
 __all__ = [
     "CheckerEnumGovernance",
     "GovernanceASTVisitor",
-    "_CollectedEnumData",
     "LiteralAliasInfo",
     "RULE_DUPLICATE_ENUM_VALUES",
     "RULE_ENUM_MEMBER_CASING",

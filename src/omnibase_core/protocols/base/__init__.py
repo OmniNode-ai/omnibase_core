@@ -63,12 +63,12 @@ LiteralOperationStatus = Literal[  # enum-ok: protocol type hint
 ]
 
 # Service lifecycle patterns
-LiteralServiceLifecycle = Literal[
+LiteralServiceLifecycle = Literal[  # enum-ok: protocol type hint
     "singleton", "transient", "scoped", "pooled", "lazy", "eager"
 ]
 
 # Injection scope patterns
-LiteralInjectionScope = Literal[
+LiteralInjectionScope = Literal[  # enum-ok: protocol type hint
     "request", "session", "thread", "process", "global", "custom"
 ]
 
@@ -88,10 +88,14 @@ LiteralValidationMode = Literal[  # enum-ok: protocol type hint
 ]
 
 # Validation severity
-LiteralValidationSeverity = Literal["error", "warning", "info"]
+LiteralValidationSeverity = Literal[  # enum-ok: protocol type hint
+    "error", "warning", "info"
+]
 
 # Event priority
-LiteralEventPriority = Literal["low", "normal", "high", "critical"]
+LiteralEventPriority = Literal[  # enum-ok: protocol type hint
+    "low", "normal", "high", "critical"
+]
 
 
 # =============================================================================

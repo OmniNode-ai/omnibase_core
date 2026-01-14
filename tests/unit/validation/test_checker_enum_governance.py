@@ -563,6 +563,24 @@ class TestLiteralShouldBeEnum:
         ]
         assert len(literal_issues) == 0
 
+    def test_non_string_literal_mixed_types_not_flagged(self, tmp_path: Path) -> None:
+        """Literals with mixed string and non-string values should NOT be flagged."""
+        file_content = """
+        from typing import Literal
+
+        StatusType = Literal["active", 1, "pending"]
+        """
+        file_path = create_test_file(tmp_path, "test_literal.py", file_content)
+
+        contract = create_test_contract()
+        validator = CheckerEnumGovernance(contract=contract)
+        result = validator.validate(file_path)
+
+        literal_issues = [
+            i for i in result.issues if i.code == RULE_LITERAL_SHOULD_BE_ENUM
+        ]
+        assert len(literal_issues) == 0
+
 
 # =============================================================================
 # ENUM_003 Tests - Duplicate Enum Values
@@ -828,7 +846,7 @@ class Status(str, Enum):
         enum_info = visitor.enums[0]
         assert enum_info.name == "Status"
         assert enum_info.file_path == file_path
-        assert enum_info.member_names == ["ACTIVE", "INACTIVE"]
+        assert enum_info.member_names == ("ACTIVE", "INACTIVE")
         assert enum_info.values == frozenset({"active", "inactive"})
 
     def test_collects_literal_alias_info(self, tmp_path: Path) -> None:
@@ -1252,7 +1270,7 @@ class TestDataClasses:
             file_path=Path("/test.py"),
             line_number=1,
             values=frozenset({"active"}),
-            member_names=["ACTIVE"],
+            member_names=("ACTIVE",),
         )
 
         with pytest.raises(AttributeError):

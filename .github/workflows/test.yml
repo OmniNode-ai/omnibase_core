@@ -630,11 +630,10 @@ jobs:
         run: |
           echo "## Enum Governance Validation (OMN-1313)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Validates that all enums follow architectural standards:" >> $GITHUB_STEP_SUMMARY
-          echo "- Centralized in src/omnibase_core/enums/" >> $GITHUB_STEP_SUMMARY
-          echo "- Single responsibility per enum" >> $GITHUB_STEP_SUMMARY
-          echo "- Use StrValueHelper for string serialization" >> $GITHUB_STEP_SUMMARY
-          echo "- Proper naming conventions (enum_*.py)" >> $GITHUB_STEP_SUMMARY
+          echo "Validates enum governance with three rules:" >> $GITHUB_STEP_SUMMARY
+          echo "- ENUM_001: Enforce UPPER_SNAKE_CASE naming for enum members" >> $GITHUB_STEP_SUMMARY
+          echo "- ENUM_002: Detect Literal type aliases that should be enums" >> $GITHUB_STEP_SUMMARY
+          echo "- ENUM_003: Detect duplicate enum values across files (warn-only)" >> $GITHUB_STEP_SUMMARY
 
   # Phase 3 - Aggregation job
   # Waits for ALL jobs (Phase 1 validation + Phase 2 tests) to complete
