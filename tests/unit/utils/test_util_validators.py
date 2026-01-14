@@ -13,6 +13,7 @@ import pytest
 from omnibase_core.utils.util_validators import (
     convert_dict_to_frozen_pairs,
     convert_list_to_tuple,
+    ensure_timezone_aware,
 )
 
 
@@ -450,3 +451,99 @@ class TestEdgeCases:
         result = convert_list_to_tuple(fs)
         # Frozenset is not a list, so it passes through
         assert result is fs
+
+
+class TestEnsureTimezoneAware:
+    """Tests for ensure_timezone_aware function."""
+
+    def test_timezone_aware_datetime_passes_through(self) -> None:
+        """Timezone-aware datetime should pass through unchanged."""
+        from datetime import UTC, datetime
+
+        dt = datetime.now(UTC)
+        result = ensure_timezone_aware(dt, "timestamp")
+        assert result is dt
+
+    def test_naive_datetime_raises_value_error(self) -> None:
+        """Naive datetime (tzinfo=None) should raise ValueError."""
+        from datetime import datetime
+
+        dt = datetime.now()
+        with pytest.raises(ValueError, match="must be timezone-aware"):
+            ensure_timezone_aware(dt, "timestamp")
+
+    def test_error_message_includes_field_name(self) -> None:
+        """Error message should include the field name."""
+        from datetime import datetime
+
+        dt = datetime.now()
+        with pytest.raises(ValueError, match="custom_field must be timezone-aware"):
+            ensure_timezone_aware(dt, "custom_field")
+
+    def test_error_message_includes_datetime_value(self) -> None:
+        """Error message should include the naive datetime value."""
+        from datetime import datetime
+
+        dt = datetime(2024, 1, 15, 10, 30, 0)
+        with pytest.raises(ValueError, match="2024-01-15"):
+            ensure_timezone_aware(dt, "timestamp")
+
+    def test_effectively_naive_datetime_raises_value_error(self) -> None:
+        """Datetime with tzinfo that returns None for utcoffset should raise."""
+        from datetime import datetime, timedelta, tzinfo
+
+        class NullOffsetTimezone(tzinfo):
+            """A timezone that returns None for utcoffset (effectively naive)."""
+
+            def utcoffset(self, dt: datetime | None) -> timedelta | None:
+                return None
+
+            def dst(self, dt: datetime | None) -> timedelta | None:
+                return None
+
+            def tzname(self, dt: datetime | None) -> str | None:
+                return "NULL"
+
+        dt = datetime(2024, 1, 15, 10, 30, 0, tzinfo=NullOffsetTimezone())
+        # tzinfo is set, but utcoffset() returns None - "effectively naive"
+        assert dt.tzinfo is not None
+        with pytest.raises(ValueError, match="effectively naive"):
+            ensure_timezone_aware(dt, "timestamp")
+
+    def test_valid_custom_timezone_passes(self) -> None:
+        """Datetime with valid custom timezone should pass."""
+        from datetime import datetime, timedelta, timezone
+
+        # Create a custom timezone (UTC+5)
+        custom_tz = timezone(timedelta(hours=5))
+        dt = datetime(2024, 1, 15, 10, 30, 0, tzinfo=custom_tz)
+        result = ensure_timezone_aware(dt, "timestamp")
+        assert result is dt
+
+    def test_utc_datetime_passes(self) -> None:
+        """UTC datetime should pass validation."""
+        from datetime import UTC, datetime
+
+        dt = datetime(2024, 1, 15, 10, 30, 0, tzinfo=UTC)
+        result = ensure_timezone_aware(dt, "timestamp")
+        assert result is dt
+
+    def test_default_field_name_is_timestamp(self) -> None:
+        """Default field_name should be 'timestamp'."""
+        from datetime import datetime
+
+        dt = datetime.now()
+        with pytest.raises(ValueError, match="timestamp must be timezone-aware"):
+            ensure_timezone_aware(dt)
+
+    def test_various_field_names(self) -> None:
+        """Function should work with various field names."""
+        from datetime import datetime
+
+        dt = datetime.now()
+        field_names = ["created_at", "updated_at", "start_time", "end_time"]
+        for field_name in field_names:
+            with pytest.raises(
+                ValueError, match=f"{field_name} must be timezone-aware"
+            ):
+                ensure_timezone_aware(dt, field_name)

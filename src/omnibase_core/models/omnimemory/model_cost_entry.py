@@ -19,6 +19,8 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from omnibase_core.utils.util_validators import ensure_timezone_aware
+
 
 class ModelCostEntry(BaseModel):
     """Single cost entry in the ledger.
@@ -118,23 +120,8 @@ class ModelCostEntry(BaseModel):
     @field_validator("timestamp")
     @classmethod
     def validate_timestamp_has_timezone(cls, v: datetime) -> datetime:
-        """Ensure timestamp is timezone-aware.
-
-        Args:
-            v: The timestamp value to validate.
-
-        Returns:
-            The validated timestamp.
-
-        Raises:
-            ValueError: If the timestamp has no timezone info.
-        """
-        if v.tzinfo is None:
-            raise ValueError(
-                "timestamp must be timezone-aware (use datetime.now(UTC) or include tzinfo). "
-                f"Got naive datetime: {v}"
-            )
-        return v
+        """Validate timestamp is timezone-aware using shared utility."""
+        return ensure_timezone_aware(v, "timestamp")
 
     @model_validator(mode="after")
     def validate_cumulative_total_ge_cost(self) -> "ModelCostEntry":
@@ -171,14 +158,12 @@ class ModelCostEntry(BaseModel):
     # === Utility Methods ===
 
     def __str__(self) -> str:
-        """Return a human-readable string representation."""
         return (
             f"CostEntry({self.operation}@{self.model_used}: "
             f"${self.cost:.4f}, tokens={self.total_tokens})"
         )
 
     def __repr__(self) -> str:
-        """Return a detailed string representation for debugging."""
         return (
             f"ModelCostEntry(entry_id={self.entry_id!r}, "
             f"operation={self.operation!r}, "

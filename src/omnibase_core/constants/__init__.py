@@ -6,6 +6,7 @@ from omnibase_core.constants import (
     constants_error,
     constants_field_limits,
     constants_handler_capabilities,
+    constants_omnimemory,
     constants_topic_taxonomy,
 )
 from omnibase_core.constants.constants_contract_fields import (
@@ -94,6 +95,9 @@ from omnibase_core.constants.constants_handler_capabilities import (
     get_capabilities_by_node_kind,
     validate_capabilities,
 )
+from omnibase_core.constants.constants_omnimemory import (
+    FLOAT_COMPARISON_EPSILON,
+)
 from omnibase_core.constants.constants_timeouts import (
     DATABASE_QUERY_TIMEOUT_SECONDS,
     DEFAULT_CACHE_TTL_SECONDS,
@@ -148,6 +152,7 @@ __all__ = [
     "constants_effect",
     "constants_error",
     "constants_field_limits",
+    "constants_omnimemory",
     "constants_topic_taxonomy",
     "constants_handler_capabilities",
     "normalize_legacy_event_type",
@@ -203,6 +208,8 @@ __all__ = [
     "EFFECT_TIMEOUT_DEFAULT_MS",
     "EFFECT_TIMEOUT_MAX_MS",
     "EFFECT_TIMEOUT_MIN_MS",
+    # OmniMemory constants
+    "FLOAT_COMPARISON_EPSILON",
     # Field length limits
     "MAX_BFS_ITERATIONS",
     "MAX_DESCRIPTION_LENGTH",
