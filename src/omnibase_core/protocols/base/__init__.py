@@ -15,7 +15,7 @@ Design Principles:
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Literal, TypeVar
+from typing import TypeVar
 
 # =============================================================================
 # Type Variables
@@ -25,69 +25,6 @@ T = TypeVar("T")
 T_co = TypeVar("T_co", covariant=True)
 TInterface = TypeVar("TInterface")
 TImplementation = TypeVar("TImplementation")
-
-
-# =============================================================================
-# Core Literal Type Aliases (Core-native equivalents of SPI types)
-# =============================================================================
-
-# Logging levels
-LiteralLogLevel = Literal[
-    "TRACE", "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL", "FATAL"
-]
-
-# Node types in ONEX 4-node architecture
-LiteralNodeType = Literal["COMPUTE", "EFFECT", "REDUCER", "ORCHESTRATOR"]
-
-# Health status indicators
-LiteralHealthStatus = Literal[
-    "healthy",
-    "degraded",
-    "unhealthy",
-    "critical",
-    "unknown",
-    "warning",
-    "unreachable",
-    "available",
-    "unavailable",
-    "initializing",
-    "disposing",
-    "error",
-]
-
-# Operation status
-LiteralOperationStatus = Literal[
-    "success", "failed", "in_progress", "cancelled", "pending"
-]
-
-# Service lifecycle patterns
-LiteralServiceLifecycle = Literal[
-    "singleton", "transient", "scoped", "pooled", "lazy", "eager"
-]
-
-# Injection scope patterns
-LiteralInjectionScope = Literal[
-    "request", "session", "thread", "process", "global", "custom"
-]
-
-# Service resolution status
-LiteralServiceResolutionStatus = Literal[
-    "resolved", "failed", "circular_dependency", "missing_dependency", "type_mismatch"
-]
-
-# Validation levels
-LiteralValidationLevel = Literal["BASIC", "STANDARD", "COMPREHENSIVE", "PARANOID"]
-
-# Validation modes
-LiteralValidationMode = Literal[
-    "strict", "lenient", "smoke", "regression", "integration"
-]
-
-# Validation severity
-LiteralValidationSeverity = Literal["error", "warning", "info"]
-
-# Event priority
-LiteralEventPriority = Literal["low", "normal", "high", "critical"]
 
 
 # =============================================================================
@@ -125,18 +62,6 @@ __all__ = [
     "T_co",
     "TInterface",
     "TImplementation",
-    # Literal Types
-    "LiteralLogLevel",
-    "LiteralNodeType",
-    "LiteralHealthStatus",
-    "LiteralOperationStatus",
-    "LiteralServiceLifecycle",
-    "LiteralInjectionScope",
-    "LiteralServiceResolutionStatus",
-    "LiteralValidationLevel",
-    "LiteralValidationMode",
-    "LiteralValidationSeverity",
-    "LiteralEventPriority",
     # DateTime
     "ProtocolDateTime",
     # Protocols

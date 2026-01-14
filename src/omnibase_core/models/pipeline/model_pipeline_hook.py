@@ -70,7 +70,9 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from omnibase_core.enums.enum_handler_type_category import EnumHandlerTypeCategory
 
 # Canonical phase type
-PipelinePhase = Literal["preflight", "before", "execute", "after", "emit", "finalize"]
+PipelinePhase = Literal[  # enum-ok: model type annotation
+    "preflight", "before", "execute", "after", "emit", "finalize"
+]
 
 
 class ModelPipelineHook(BaseModel):

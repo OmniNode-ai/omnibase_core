@@ -502,7 +502,7 @@ class ModelPermission(BaseModel):
             try:
                 if not self._evaluate_simple_condition(condition, context):
                     return False
-            except (AttributeError, ValueError, TypeError, KeyError, OSError):
+            except (AttributeError, KeyError, OSError, TypeError, ValueError):
                 # fallback-ok: Security fail-safe - deny access on malformed conditions
                 return False  # Fail safe
 

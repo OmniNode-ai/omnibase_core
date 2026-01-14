@@ -13,13 +13,13 @@ Example:
     ...     ServiceInvariantEvaluator,
     ... )
     >>> from omnibase_core.models.invariant import ModelInvariant, ModelInvariantSet
-    >>> from omnibase_core.enums import EnumInvariantType, EnumInvariantSeverity
+    >>> from omnibase_core.enums import EnumInvariantType, EnumSeverity
     >>>
     >>> evaluator = ServiceInvariantEvaluator()
     >>> invariant = ModelInvariant(
     ...     name="latency_check",
     ...     type=EnumInvariantType.LATENCY,
-    ...     severity=EnumInvariantSeverity.CRITICAL,
+    ...     severity=EnumSeverity.CRITICAL,
     ...     config={"max_ms": 500},
     ... )
     >>> result = evaluator.evaluate(invariant, {"latency_ms": 250})
@@ -44,7 +44,7 @@ from typing import Any
 import jsonschema
 from jsonschema.protocols import Validator
 
-from omnibase_core.enums import EnumInvariantSeverity, EnumInvariantType
+from omnibase_core.enums import EnumInvariantType, EnumSeverity
 from omnibase_core.errors.error_regex_timeout import RegexTimeoutError
 from omnibase_core.errors.exception_groups import VALIDATION_ERRORS
 from omnibase_core.models.invariant import (
@@ -625,7 +625,7 @@ class ServiceInvariantEvaluator:
         Args:
             invariant_set: The set of invariants to evaluate.
             output: The output dictionary to validate against.
-            fail_fast: If True, stop on first CRITICAL failure.
+            fail_fast: If True, stop on first CRITICAL or FATAL failure.
 
         Returns:
             ModelEvaluationSummary with aggregate statistics and all results.
@@ -640,7 +640,7 @@ class ServiceInvariantEvaluator:
             if (
                 fail_fast
                 and not result.passed
-                and result.severity == EnumInvariantSeverity.CRITICAL
+                and result.severity in (EnumSeverity.CRITICAL, EnumSeverity.FATAL)
             ):
                 break
 
@@ -648,29 +648,38 @@ class ServiceInvariantEvaluator:
 
         # Count all statistics in a single pass over results
         passed_count = 0
+        fatal_failures = 0
         critical_failures = 0
+        error_failures = 0
         warning_failures = 0
         info_failures = 0
 
         for r in results:
             if r.passed:
                 passed_count += 1
-            elif r.severity == EnumInvariantSeverity.CRITICAL:
+            elif r.severity == EnumSeverity.FATAL:
+                fatal_failures += 1
+            elif r.severity == EnumSeverity.CRITICAL:
                 critical_failures += 1
-            elif r.severity == EnumInvariantSeverity.WARNING:
+            elif r.severity == EnumSeverity.ERROR:
+                error_failures += 1
+            elif r.severity == EnumSeverity.WARNING:
                 warning_failures += 1
-            elif r.severity == EnumInvariantSeverity.INFO:
+            elif r.severity in (EnumSeverity.INFO, EnumSeverity.DEBUG):
+                # DEBUG is less severe than INFO, count both together
                 info_failures += 1
 
         failed_count = len(results) - passed_count
 
-        overall_passed = critical_failures == 0
+        overall_passed = critical_failures == 0 and fatal_failures == 0
 
         return ModelEvaluationSummary(
             results=results,
             passed_count=passed_count,
             failed_count=failed_count,
+            fatal_failures=fatal_failures,
             critical_failures=critical_failures,
+            error_failures=error_failures,
             warning_failures=warning_failures,
             info_failures=info_failures,
             overall_passed=overall_passed,
@@ -1209,7 +1218,7 @@ class ServiceInvariantEvaluator:
                 invariant = ModelInvariant(
                     name="status_check",
                     type=EnumInvariantType.CUSTOM,
-                    severity=EnumInvariantSeverity.CRITICAL,
+                    severity=EnumSeverity.CRITICAL,
                     config={"callable_path": "myapp.validators.has_valid_status"},
                 )
 

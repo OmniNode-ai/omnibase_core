@@ -237,7 +237,7 @@ class ModelReference(BaseModel):
 
             module = importlib.import_module(module_path)
             return getattr(module, class_name, None)
-        except (ImportError, ValueError, AttributeError):
+        except (AttributeError, ImportError, ValueError):
             return None
 
     @classmethod

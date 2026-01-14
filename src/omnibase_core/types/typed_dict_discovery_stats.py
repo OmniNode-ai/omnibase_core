@@ -17,7 +17,7 @@ class TypedDictDiscoveryStats(TypedDict):
         throttled_requests: Requests throttled due to rate limiting
         filtered_requests: Requests that didn't match discovery criteria (node type, capabilities, filters)
         last_request_time: Timestamp of last request received (None if no requests)
-        error_count: Count of errors during discovery processing (message parsing, response publishing, etc.)
+        error_level_count: Count of errors during discovery processing (message parsing, response publishing, etc.)
     """
 
     requests_received: int
@@ -25,7 +25,7 @@ class TypedDictDiscoveryStats(TypedDict):
     throttled_requests: int
     filtered_requests: int
     last_request_time: float | None
-    error_count: int
+    error_level_count: int
 
 
 __all__ = ["TypedDictDiscoveryStats"]

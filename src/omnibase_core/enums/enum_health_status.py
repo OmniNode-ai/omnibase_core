@@ -89,9 +89,9 @@ class EnumHealthStatus(StrValueHelper, str, Enum):
     UNREACHABLE = "unreachable"
     AVAILABLE = "available"
     UNAVAILABLE = "unavailable"
-    ERROR = "error"
     INITIALIZING = "initializing"
     DISPOSING = "disposing"
+    ERROR = "error"
 
     def is_operational(self) -> bool:
         """Check if the service is operational despite potential issues."""

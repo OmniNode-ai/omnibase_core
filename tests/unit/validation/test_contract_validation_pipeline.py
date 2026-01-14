@@ -154,7 +154,7 @@ class TestContractValidationPipelineValidatePatch(
         assert isinstance(result, ModelValidationResult)
         # Verify actual validation behavior, not just type
         assert result.is_valid is True
-        assert result.error_count == 0
+        assert result.error_level_count == 0
 
     def test_validate_patch_returns_validation_result(
         self, pipeline: ContractValidationPipeline, valid_patch: ModelContractPatch
@@ -167,7 +167,7 @@ class TestContractValidationPipelineValidatePatch(
         assert hasattr(result, "issues")
         assert result.is_valid is True
         assert isinstance(result.issues, list)
-        assert result.error_count == 0
+        assert result.error_level_count == 0
 
     def test_validate_patch_valid_patch_passes(
         self, pipeline: ContractValidationPipeline, valid_patch: ModelContractPatch
@@ -195,7 +195,7 @@ class TestContractValidationPipelineValidateMerge(
         assert isinstance(result, ModelValidationResult)
         # Verify actual validation behavior for valid inputs
         assert result.is_valid is True
-        assert result.error_count == 0
+        assert result.error_level_count == 0
 
     def test_validate_merge_returns_validation_result(
         self,
@@ -210,7 +210,7 @@ class TestContractValidationPipelineValidateMerge(
         # Verify result has expected structure and valid content
         assert result.is_valid is True
         assert isinstance(result.issues, list)
-        assert result.error_count == 0
+        assert result.error_level_count == 0
 
     def test_validate_merge_valid_merge_passes(
         self,
@@ -240,7 +240,7 @@ class TestContractValidationPipelineValidateExpanded(
         assert isinstance(result, ModelValidationResult)
         # Verify actual validation behavior for valid inputs
         assert result.is_valid is True
-        assert result.error_count == 0
+        assert result.error_level_count == 0
 
     def test_validate_expanded_returns_validation_result(
         self,
@@ -253,7 +253,7 @@ class TestContractValidationPipelineValidateExpanded(
         # Verify result has expected structure and valid content
         assert result.is_valid is True
         assert isinstance(result.issues, list)
-        assert result.error_count == 0
+        assert result.error_level_count == 0
 
     def test_validate_expanded_valid_contract_passes(
         self,
@@ -350,7 +350,7 @@ class TestContractValidationPipelineConstraintValidator(
         assert isinstance(result, ModelValidationResult)
         # Verify validation still works correctly despite invalid constraint_validator
         assert result.is_valid is True
-        assert result.error_count == 0
+        assert result.error_level_count == 0
 
 
 @pytest.mark.unit
@@ -657,7 +657,7 @@ class TestContractValidationPipelineEdgeCases(TestContractValidationPipelineFixt
         assert isinstance(result, ModelValidationResult)
         # Minimal patch should still be valid
         assert result.is_valid is True
-        assert result.error_count == 0
+        assert result.error_level_count == 0
 
     def test_expanded_contract_result_serialization(self) -> None:
         """Test that ModelExpandedContractResult can be serialized."""
@@ -792,7 +792,7 @@ class TestValidationPerformance:
         assert isinstance(result, ModelValidationResult)
         # Verify validation succeeds, not just type check
         assert result.is_valid is True
-        assert result.error_count == 0
+        assert result.error_level_count == 0
         assert elapsed < 1.0, f"Validation took {elapsed:.2f}s, expected < 1.0s"
 
     def test_validate_large_contract_500_outputs(
@@ -824,7 +824,7 @@ class TestValidationPerformance:
         assert isinstance(result, ModelValidationResult)
         # Verify validation succeeds, not just type check
         assert result.is_valid is True
-        assert result.error_count == 0
+        assert result.error_level_count == 0
         # Should still be fast - linear scaling expected
         assert elapsed < 1.0, f"Validation took {elapsed:.2f}s, expected < 1.0s"
 
@@ -857,7 +857,7 @@ class TestValidationPerformance:
         assert isinstance(result, ModelValidationResult)
         # Verify validation succeeds, not just type check
         assert result.is_valid is True
-        assert result.error_count == 0
+        assert result.error_level_count == 0
         # At O(n), 1000 outputs should still complete quickly
         assert elapsed < 1.0, f"Validation took {elapsed:.2f}s, expected < 1.0s"
 
@@ -894,8 +894,8 @@ class TestValidationPerformance:
         # Verify both validations succeed, not just type check
         assert result_small.is_valid is True
         assert result_large.is_valid is True
-        assert result_small.error_count == 0
-        assert result_large.error_count == 0
+        assert result_small.error_level_count == 0
+        assert result_large.error_level_count == 0
 
         # Both should complete quickly
         assert small_elapsed < 1.0, f"Small patch took {small_elapsed:.2f}s"

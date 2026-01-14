@@ -10,9 +10,11 @@ in environment property storage with proper validation and constraints.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumPropertyType(str, Enum):
+class EnumPropertyType(StrValueHelper, str, Enum):
     """Enum for supported property types."""
 
     STRING = "string"

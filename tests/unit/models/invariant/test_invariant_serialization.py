@@ -5,7 +5,7 @@ import uuid
 
 import pytest
 
-from omnibase_core.enums import EnumInvariantSeverity, EnumInvariantType
+from omnibase_core.enums import EnumInvariantType, EnumSeverity
 from omnibase_core.models.invariant import (
     ModelInvariant,
     ModelInvariantResult,
@@ -26,7 +26,7 @@ class TestInvariantSerialization:
         original = ModelInvariant(
             name="Test invariant",
             type=EnumInvariantType.LATENCY,
-            severity=EnumInvariantSeverity.CRITICAL,
+            severity=EnumSeverity.CRITICAL,
             config={"max_ms": 5000},
             enabled=False,
             description="Test description",
@@ -74,7 +74,7 @@ class TestInvariantSerialization:
         inv = ModelInvariant.model_validate_json(json_str)
         assert inv.name == "Test"
         assert inv.type == EnumInvariantType.LATENCY
-        assert inv.severity == EnumInvariantSeverity.WARNING
+        assert inv.severity == EnumSeverity.WARNING
         assert inv.id == TEST_UUID
 
     def test_invariant_preserves_complex_config(self) -> None:
@@ -115,7 +115,7 @@ class TestInvariantSerialization:
         inv = ModelInvariant(
             name="Test",
             type=EnumInvariantType.LATENCY,
-            severity=EnumInvariantSeverity.CRITICAL,
+            severity=EnumSeverity.CRITICAL,
             config={"max_ms": 5000},
         )
 
@@ -131,12 +131,12 @@ class TestInvariantSerialization:
             f"Expected EnumInvariantType.LATENCY, got {data['type']!r}"
         )
 
-        assert type(data["severity"]) is EnumInvariantSeverity, (
+        assert type(data["severity"]) is EnumSeverity, (
             f"Expected model_dump() to return enum member, "
             f"got {type(data['severity']).__name__}"
         )
-        assert data["severity"] is EnumInvariantSeverity.CRITICAL, (
-            f"Expected EnumInvariantSeverity.CRITICAL, got {data['severity']!r}"
+        assert data["severity"] is EnumSeverity.CRITICAL, (
+            f"Expected EnumSeverity.CRITICAL, got {data['severity']!r}"
         )
 
         # model_dump(mode="json") returns string values for JSON compatibility
@@ -169,7 +169,7 @@ class TestInvariantResultSerialization:
             invariant_id=TEST_UUID,
             invariant_name="Test",
             passed=False,
-            severity=EnumInvariantSeverity.CRITICAL,
+            severity=EnumSeverity.CRITICAL,
             actual_value={"nested": {"value": 123}},
             expected_value={"nested": {"value": 100}},
             message="Value mismatch",
@@ -187,7 +187,7 @@ class TestInvariantResultSerialization:
             invariant_id=TEST_UUID,
             invariant_name="Test",
             passed=True,
-            severity=EnumInvariantSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             actual_value=None,
             expected_value=None,
         )
@@ -205,7 +205,7 @@ class TestInvariantResultSerialization:
             invariant_id=TEST_UUID,
             invariant_name="Test",
             passed=True,
-            severity=EnumInvariantSeverity.INFO,
+            severity=EnumSeverity.INFO,
         )
 
         json_str = result.model_dump_json()
@@ -221,7 +221,7 @@ class TestInvariantResultSerialization:
             invariant_id=TEST_UUID,
             invariant_name="Fields check",
             passed=False,
-            severity=EnumInvariantSeverity.CRITICAL,
+            severity=EnumSeverity.CRITICAL,
             actual_value=["response"],
             expected_value=["response", "model", "usage"],
             message="Missing fields: model, usage",
@@ -239,7 +239,7 @@ class TestInvariantResultSerialization:
             invariant_id=TEST_UUID,
             invariant_name="Latency check",
             passed=False,
-            severity=EnumInvariantSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             actual_value=6500,
             expected_value=5000,
             message="Latency exceeded threshold: 6500ms > 5000ms",
@@ -261,13 +261,13 @@ class TestInvariantSetSerialization:
         inv1 = ModelInvariant(
             name="Latency check",
             type=EnumInvariantType.LATENCY,
-            severity=EnumInvariantSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             config={"max_ms": 5000},
         )
         inv2 = ModelInvariant(
             name="Cost check",
             type=EnumInvariantType.COST,
-            severity=EnumInvariantSeverity.CRITICAL,
+            severity=EnumSeverity.CRITICAL,
             config={"max_cost": 0.10, "per": "request"},
         )
 
@@ -368,27 +368,27 @@ class TestSerializationRoundTrips:
             ModelInvariant(
                 name="Latency check",
                 type=EnumInvariantType.LATENCY,
-                severity=EnumInvariantSeverity.WARNING,
+                severity=EnumSeverity.WARNING,
                 config={"max_ms": 5000},
                 description="Check response time",
             ),
             ModelInvariant(
                 name="Cost check",
                 type=EnumInvariantType.COST,
-                severity=EnumInvariantSeverity.CRITICAL,
+                severity=EnumSeverity.CRITICAL,
                 config={"max_cost": 0.10, "per": "request"},
                 enabled=True,
             ),
             ModelInvariant(
                 name="Field check",
                 type=EnumInvariantType.FIELD_PRESENCE,
-                severity=EnumInvariantSeverity.WARNING,
+                severity=EnumSeverity.WARNING,
                 config={"fields": ["response", "model"]},
             ),
             ModelInvariant(
                 name="Schema check",
                 type=EnumInvariantType.SCHEMA,
-                severity=EnumInvariantSeverity.CRITICAL,
+                severity=EnumSeverity.CRITICAL,
                 config={
                     "json_schema": {
                         "type": "object",
@@ -434,7 +434,7 @@ class TestSerializationRoundTrips:
                 invariant_id=test_uuids[i],
                 invariant_name=f"Check {i}",
                 passed=i % 2 == 0,
-                severity=EnumInvariantSeverity.WARNING,
+                severity=EnumSeverity.WARNING,
                 actual_value=i * 100,
                 expected_value=500,
             )
@@ -510,7 +510,7 @@ class TestSerializationEdgeCases:
             invariant_id=TEST_UUID,
             invariant_name="Test",
             passed=False,
-            severity=EnumInvariantSeverity.CRITICAL,
+            severity=EnumSeverity.CRITICAL,
             message=long_message,
         )
 

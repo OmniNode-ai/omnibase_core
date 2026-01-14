@@ -23,9 +23,11 @@ class ModelEvaluationSummary(BaseModel):
         passed_count: Number of invariants that passed.
         failed_count: Number of invariants that failed.
         critical_failures: Number of failed invariants with CRITICAL severity.
+        fatal_failures: Number of failed invariants with FATAL severity.
         warning_failures: Number of failed invariants with WARNING severity.
-        info_failures: Number of failed invariants with INFO severity.
-        overall_passed: True if all critical invariants passed.
+        error_failures: Number of failed invariants with ERROR severity.
+        info_failures: Number of failed invariants with INFO or DEBUG severity.
+        overall_passed: True if all critical/fatal invariants passed.
         total_duration_ms: Total time to evaluate all invariants in milliseconds.
         evaluated_at: Timestamp when evaluation completed.
 
@@ -55,19 +57,29 @@ class ModelEvaluationSummary(BaseModel):
         ge=0,
         description="Number of failed invariants with CRITICAL severity",
     )
+    fatal_failures: int = Field(
+        default=0,
+        ge=0,
+        description="Number of failed invariants with FATAL severity",
+    )
     warning_failures: int = Field(
         ...,
         ge=0,
         description="Number of failed invariants with WARNING severity",
     )
+    error_failures: int = Field(
+        default=0,
+        ge=0,
+        description="Number of failed invariants with ERROR severity",
+    )
     info_failures: int = Field(
         default=0,
         ge=0,
-        description="Number of failed invariants with INFO severity",
+        description="Number of failed invariants with INFO or DEBUG severity",
     )
     overall_passed: bool = Field(
         ...,
-        description="True if all critical invariants passed",
+        description="True if all critical and fatal invariants passed",
     )
     total_duration_ms: float = Field(
         ...,

@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from omnibase_core.enums import EnumInvariantSeverity, EnumInvariantType
+from omnibase_core.enums import EnumInvariantType, EnumSeverity
 from omnibase_core.errors import ModelOnexError
 from omnibase_core.models.invariant import (
     load_invariant_set_from_file,
@@ -81,7 +81,7 @@ invariants:
 
     def test_yaml_parses_all_severity_levels(self) -> None:
         """All severity levels can be defined in YAML."""
-        for severity in EnumInvariantSeverity:
+        for severity in EnumSeverity:
             yaml_content = f"""
 name: "Test Severity"
 target: "node_test"
@@ -533,7 +533,7 @@ class TestYamlWithFixtures:
             for inv in inv_set.invariants
             if inv.type == EnumInvariantType.FIELD_PRESENCE
         )
-        assert field_inv.severity == EnumInvariantSeverity.CRITICAL
+        assert field_inv.severity == EnumSeverity.CRITICAL
         assert "response" in field_inv.config["fields"]
 
     def test_yaml_fixture_latency(self, sample_yaml_invariant_set: str) -> None:
@@ -543,7 +543,7 @@ class TestYamlWithFixtures:
         latency_inv = next(
             inv for inv in inv_set.invariants if inv.type == EnumInvariantType.LATENCY
         )
-        assert latency_inv.severity == EnumInvariantSeverity.WARNING
+        assert latency_inv.severity == EnumSeverity.WARNING
         assert latency_inv.config["max_ms"] == 5000
 
 

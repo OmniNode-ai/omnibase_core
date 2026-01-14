@@ -257,6 +257,21 @@ repos:
         exclude: ^(tests/|archived/|archive/|scripts/validation/).*\.py$
         stages: [pre-commit]
 
+      # Pydantic Conventions Validation (OMN-1314)
+      # Enforces Pydantic model best practices:
+      # - No empty ConfigDict() - explicit configuration required
+      # - frozen=True models must have from_attributes=True
+      # - No unnecessary Field() wrappers without metadata
+      # - Mutable defaults must use default_factory
+      - id: validate-pydantic-conventions
+        name: Validate Pydantic conventions
+        entry: poetry run python -m omnibase_core.validation.validator_pydantic_conventions
+        language: system
+        types: [python]
+        files: ^src/omnibase_core/
+        pass_filenames: true
+        stages: [pre-commit]
+
       # UNION VALIDATION THRESHOLD:
       # Tech debt: Union type threshold reduced from 256 to 160 (OMN-676).
       # Target: Reduce to 0 incrementally. Tracking: OMN-468, OMN-676
@@ -358,7 +373,8 @@ repos:
         # - model_node_config_value.py: Node config entry and schema types
         # - mixin_event_bus.py: Duck-typed Protocol defined alongside mixin that uses it
         # - mixin_health_check.py: Duck-typed Protocols (connection pools, clients) alongside health check mixin
-        exclude: ^(tests/|archived/|archive/|scripts/validation/|src/omnibase_core/utils/util_singleton_holders\.py$|src/omnibase_core/models/core/model_action_config_value\.py$|src/omnibase_core/models/configuration/model_node_config_value\.py$|src/omnibase_core/mixins/mixin_event_bus\.py$|src/omnibase_core/mixins/mixin_health_check\.py$|src/omnibase_core/protocols/)
+        # - checker_enum_governance.py: Tightly coupled data classes + AST visitor for governance validator (OMN-1313)
+        exclude: ^(tests/|archived/|archive/|scripts/validation/|src/omnibase_core/utils/util_singleton_holders\.py$|src/omnibase_core/models/core/model_action_config_value\.py$|src/omnibase_core/models/configuration/model_node_config_value\.py$|src/omnibase_core/mixins/mixin_event_bus\.py$|src/omnibase_core/mixins/mixin_health_check\.py$|src/omnibase_core/validation/checker_enum_governance\.py$|src/omnibase_core/protocols/)
         stages: [pre-commit]
 
       - id: validate-enum-model-imports
@@ -381,6 +397,33 @@ repos:
         pass_filenames: true
         files: ^src/.*\.py$
         exclude: ^(tests/|archived/|archive/).*\.py$
+        stages: [pre-commit]
+
+      # Literal Type Alias Duplication Detection (OMN-1308)
+      # Detects duplicate Literal type aliases that should use canonical types
+      # Enforces use of EnumXxx enums instead of scattered Literal["a", "b"] definitions
+      # See: docs/architecture/adr/ADR-013-status-taxonomy.md
+      - id: check-literal-duplication
+        name: ONEX Literal Duplication Check
+        entry: poetry run python -m omnibase_core.validation.checker_literal_duplication
+        language: system
+        types: [python]
+        pass_filenames: true
+        exclude: ^(tests/|archived/|archive/).*\.py$
+        stages: [pre-commit]
+
+      # Enum Governance Validator (OMN-1313):
+      # - ENUM_001: Enforce UPPER_SNAKE_CASE naming for enum members
+      # - ENUM_002: Detect Literal type aliases that should be enums
+      # - ENUM_003: Detect duplicate enum values across files (warn-only)
+      - id: check-enum-governance
+        name: Check Enum Governance
+        entry: poetry run python -m omnibase_core.validation.checker_enum_governance
+        language: system
+        types: [python]
+        files: ^src/.*\.py$
+        exclude: ^(tests/|archived/).*\.py$
+        pass_filenames: true
         stages: [pre-commit]
 
       - id: validate-typeddict-patterns

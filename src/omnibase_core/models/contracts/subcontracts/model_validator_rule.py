@@ -18,7 +18,7 @@ Strict typing is enforced: No Any types allowed in implementation.
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
+from omnibase_core.enums import EnumSeverity
 
 # Type alias for rule parameter values to avoid inline union soup.
 # Supports common JSON-serializable primitive types.
@@ -58,8 +58,8 @@ class ModelValidatorRule(BaseModel):
         min_length=1,
     )
 
-    severity: EnumValidationSeverity = Field(
-        default=EnumValidationSeverity.ERROR,
+    severity: EnumSeverity = Field(
+        default=EnumSeverity.ERROR,
         description="Severity level for violations of this rule",
     )
 

@@ -49,7 +49,7 @@ import sys
 from pathlib import Path
 from typing import ClassVar
 
-from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
+from omnibase_core.enums import EnumSeverity
 from omnibase_core.models.common.model_validation_issue import ModelValidationIssue
 from omnibase_core.models.contracts.subcontracts.model_validator_subcontract import (
     ModelValidatorSubcontract,
@@ -166,7 +166,7 @@ class ValidatorNamingConvention(ValidatorBase):
         # Compute default severity with defensive fallback and logging
         # Note: contract.severity_default should never be None per model definition,
         # but we guard against it for robustness against external data sources
-        default_severity = contract.severity_default or EnumValidationSeverity.WARNING
+        default_severity = contract.severity_default or EnumSeverity.WARNING
         if contract.severity_default is None:
             # NOTE(OMN-1302): Defensive logging for impossible case. Safe because guards external data.
             logger.warning(  # type: ignore[unreachable]
@@ -270,10 +270,10 @@ class ValidatorNamingConvention(ValidatorBase):
         contract: ModelValidatorSubcontract,
         class_naming_enabled: bool,
         function_naming_enabled: bool,
-        class_naming_severity: EnumValidationSeverity,
-        function_naming_severity: EnumValidationSeverity,
+        class_naming_severity: EnumSeverity,
+        function_naming_severity: EnumSeverity,
         unknown_naming_enabled: bool,
-        unknown_naming_severity: EnumValidationSeverity,
+        unknown_naming_severity: EnumSeverity,
     ) -> list[ModelValidationIssue]:
         """Run AST-based validation for class and function naming.
 
@@ -317,7 +317,7 @@ class ValidatorNamingConvention(ValidatorBase):
 
         # Default severity for fallback in edge cases (all severities should be
         # non-None at this point, but we keep a final fallback for safety)
-        default_severity = contract.severity_default or EnumValidationSeverity.WARNING
+        default_severity = contract.severity_default or EnumSeverity.WARNING
 
         # Convert checker issues to ModelValidationIssue
         for issue_str in checker.issues:

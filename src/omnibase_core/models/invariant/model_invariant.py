@@ -15,7 +15,7 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from omnibase_core.enums.enum_invariant_severity import EnumInvariantSeverity
+from omnibase_core.enums import EnumSeverity
 from omnibase_core.enums.enum_invariant_type import EnumInvariantType
 
 # Required config keys for each invariant type
@@ -98,8 +98,8 @@ class ModelInvariant(BaseModel):
         ...,
         description="Type of invariant (metric threshold, behavior check, etc.)",
     )
-    severity: EnumInvariantSeverity = Field(
-        default=EnumInvariantSeverity.WARNING,
+    severity: EnumSeverity = Field(
+        default=EnumSeverity.WARNING,
         description="Severity level determining action on violation",
     )
     config: dict[str, object] = Field(

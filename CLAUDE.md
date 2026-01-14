@@ -828,6 +828,30 @@ str(EnumStatus.PENDING)  # Returns: "pending"
 ```
 
 **Note**: `StrValueHelper` is a utility mixin for enums, not a node mixin. It is located in `omnibase_core.utils`, not `omnibase_core.mixins`.
+
+### Severity Enum Policy
+
+**Canonical Enum**: Use `EnumSeverity` from `omnibase_core.enums` for all general severity classifications.
+
+```python
+from omnibase_core.enums import EnumSeverity
+
+# Values: DEBUG, INFO, WARNING, ERROR, CRITICAL, FATAL
+severity = EnumSeverity.WARNING
+```
+
+**Documented Exceptions** (do NOT merge into EnumSeverity):
+
+| Enum | Location | Reason |
+|------|----------|--------|
+| `EnumSeverityLevel` | `omnibase_core.enums` | RFC 5424 logging compliance (11 values including TRACE, NOTICE, ALERT, EMERGENCY) |
+| `EnumImpactSeverity` | `omnibase_core.enums` | Business impact scale (CRITICAL, HIGH, MEDIUM, LOW, MINIMAL) |
+
+**Policy**: Do not create new severity enums. If you need additional severity levels:
+1. Evaluate if `EnumSeverity` can be extended (requires ticket + review)
+2. Check if `EnumSeverityLevel` or `EnumImpactSeverity` is more appropriate for your use case
+3. If truly needed, create a ticket explaining why a new enum is necessary
+
 ### Pydantic Model Configuration Standards
 
 Every Pydantic model MUST have an explicit `model_config`. Empty `ConfigDict()` is not allowed - it has ambiguous intent and provides no explicit policy for model behavior (extra fields, mutability, etc.). Models must declare their configuration explicitly.

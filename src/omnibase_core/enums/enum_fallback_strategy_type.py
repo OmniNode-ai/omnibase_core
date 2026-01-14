@@ -10,9 +10,11 @@ core fallback strategy types in the ONEX Configuration-Driven Registry System.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumFallbackStrategyType(str, Enum):
+class EnumFallbackStrategyType(StrValueHelper, str, Enum):
     """Core fallback strategy types."""
 
     BOOTSTRAP = "bootstrap"

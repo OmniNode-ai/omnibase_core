@@ -108,13 +108,13 @@ class ModelExternalServiceConfig(BaseModel):
                         values["connection_config"] = ModelDatabaseConnectionConfig(
                             **connection_config,
                         )
-                    except (ValueError, ValidationError) as e:
+                    except (ValidationError, ValueError) as e:
                         msg = f"Invalid database connection config: {e!s}"
                         raise ModelOnexError(
                             msg,
                             error_code=EnumCoreErrorCode.VALIDATION_FAILED,
                         ) from e
-                    except (KeyError, AttributeError, OSError) as e:
+                    except (AttributeError, KeyError, OSError) as e:
                         msg = f"Failed to create database connection config: {e!s}"
                         raise ModelOnexError(
                             msg,
@@ -125,13 +125,13 @@ class ModelExternalServiceConfig(BaseModel):
                         values["connection_config"] = ModelRestApiConnectionConfig(
                             **connection_config,
                         )
-                    except (ValueError, ValidationError) as e:
+                    except (ValidationError, ValueError) as e:
                         msg = f"Invalid REST API connection config: {e!s}"
                         raise ModelOnexError(
                             msg,
                             error_code=EnumCoreErrorCode.VALIDATION_FAILED,
                         ) from e
-                    except (KeyError, AttributeError, OSError) as e:
+                    except (AttributeError, KeyError, OSError) as e:
                         msg = f"Failed to create REST API connection config: {e!s}"
                         raise ModelOnexError(
                             msg,

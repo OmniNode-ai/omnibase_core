@@ -30,8 +30,7 @@ from uuid import uuid4
 
 import pytest
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.enums.enum_invariant_severity import EnumInvariantSeverity
+from omnibase_core.enums import EnumCoreErrorCode, EnumSeverity
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.evidence.model_cost_statistics import ModelCostStatistics
 from omnibase_core.models.evidence.model_evidence_summary import ModelEvidenceSummary
@@ -235,7 +234,7 @@ def create_evidence_summary(
 
 def create_invariant_result(
     passed: bool = True,
-    severity: EnumInvariantSeverity = EnumInvariantSeverity.INFO,
+    severity: EnumSeverity = EnumSeverity.INFO,
     invariant_name: str = "test_invariant",
 ) -> ModelInvariantResult:
     """Create an invariant result for testing.

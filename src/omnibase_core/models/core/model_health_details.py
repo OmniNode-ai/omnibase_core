@@ -33,7 +33,9 @@ class ModelHealthDetails(BaseModel):
         default=None,
         description="Number of active connections",
     )
-    error_count: int | None = Field(default=None, description="Number of recent errors")
+    error_level_count: int | None = Field(
+        default=None, description="Number of recent errors"
+    )
     last_backup: str | None = Field(default=None, description="Last backup timestamp")
     queue_depth: int | None = Field(default=None, description="Message queue depth")
     response_time_ms: float | None = Field(

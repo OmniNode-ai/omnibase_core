@@ -14,10 +14,9 @@ from __future__ import annotations
 from typing import Any, Protocol, runtime_checkable
 from uuid import UUID
 
+from omnibase_core.enums import EnumInjectionScope, EnumServiceLifecycle
 from omnibase_core.protocols.base import (
     ContextValue,
-    LiteralInjectionScope,
-    LiteralServiceLifecycle,
     ProtocolDateTime,
 )
 
@@ -37,8 +36,8 @@ class ProtocolManagedServiceInstance(Protocol):
     instance_id: UUID
     service_registration_id: UUID
     instance: Any
-    lifecycle: LiteralServiceLifecycle
-    scope: LiteralInjectionScope
+    lifecycle: EnumServiceLifecycle
+    scope: EnumInjectionScope
     created_at: ProtocolDateTime
     last_accessed: ProtocolDateTime
     access_count: int

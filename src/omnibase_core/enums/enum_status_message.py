@@ -9,9 +9,11 @@ Strongly typed status message values for progress tracking.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumStatusMessage(str, Enum):
+class EnumStatusMessage(StrValueHelper, str, Enum):
     """Strongly typed status message values."""
 
     ACTIVE = "active"

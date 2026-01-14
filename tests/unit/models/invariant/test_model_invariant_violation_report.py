@@ -7,9 +7,9 @@ from uuid import UUID, uuid4
 import pytest
 from pydantic import ValidationError
 
+from omnibase_core.enums import EnumSeverity
 from omnibase_core.enums.enum_comparison_type import EnumComparisonType
 from omnibase_core.enums.enum_invariant_report_status import EnumInvariantReportStatus
-from omnibase_core.enums.enum_invariant_severity import EnumInvariantSeverity
 from omnibase_core.enums.enum_invariant_type import EnumInvariantType
 from omnibase_core.models.invariant.model_invariant_violation_detail import (
     ModelInvariantViolationDetail,
@@ -20,7 +20,7 @@ from omnibase_core.models.invariant.model_invariant_violation_report import (
 
 
 def create_violation(
-    severity: EnumInvariantSeverity,
+    severity: EnumSeverity,
     name: str = "Test Invariant",
     field_path: str | None = None,
 ) -> ModelInvariantViolationDetail:
@@ -120,7 +120,7 @@ class TestReportCreation:
 
     def test_creation_with_optional_fields(self) -> None:
         """Report accepts optional violations and metadata."""
-        violation = create_violation(EnumInvariantSeverity.CRITICAL)
+        violation = create_violation(EnumSeverity.CRITICAL)
         metadata = {"run_id": "test-run-123", "environment": "staging"}
 
         report = ModelInvariantViolationReport(
@@ -139,7 +139,7 @@ class TestReportCreation:
         )
 
         assert len(report.violations) == 1
-        assert report.violations[0].severity == EnumInvariantSeverity.CRITICAL
+        assert report.violations[0].severity == EnumSeverity.CRITICAL
         assert report.metadata == metadata
         assert report.metadata["run_id"] == "test-run-123"
 
@@ -256,12 +256,12 @@ class TestReportStatistics:
     def test_severity_counts_match_violations(self) -> None:
         """critical_count, warning_count, info_count match actual violations."""
         violations = [
-            create_violation(EnumInvariantSeverity.CRITICAL, "Critical 1"),
-            create_violation(EnumInvariantSeverity.CRITICAL, "Critical 2"),
-            create_violation(EnumInvariantSeverity.WARNING, "Warning 1"),
-            create_violation(EnumInvariantSeverity.WARNING, "Warning 2"),
-            create_violation(EnumInvariantSeverity.WARNING, "Warning 3"),
-            create_violation(EnumInvariantSeverity.INFO, "Info 1"),
+            create_violation(EnumSeverity.CRITICAL, "Critical 1"),
+            create_violation(EnumSeverity.CRITICAL, "Critical 2"),
+            create_violation(EnumSeverity.WARNING, "Warning 1"),
+            create_violation(EnumSeverity.WARNING, "Warning 2"),
+            create_violation(EnumSeverity.WARNING, "Warning 3"),
+            create_violation(EnumSeverity.INFO, "Info 1"),
         ]
 
         report = create_report(
@@ -291,25 +291,23 @@ class TestReportQueryMethods:
     def test_get_violations_by_severity_exact_match(self) -> None:
         """get_violations_by_severity returns only exact matches."""
         violations = [
-            create_violation(EnumInvariantSeverity.CRITICAL, "Critical"),
-            create_violation(EnumInvariantSeverity.WARNING, "Warning 1"),
-            create_violation(EnumInvariantSeverity.WARNING, "Warning 2"),
-            create_violation(EnumInvariantSeverity.INFO, "Info"),
+            create_violation(EnumSeverity.CRITICAL, "Critical"),
+            create_violation(EnumSeverity.WARNING, "Warning 1"),
+            create_violation(EnumSeverity.WARNING, "Warning 2"),
+            create_violation(EnumSeverity.INFO, "Info"),
         ]
 
         report = create_report(violations=violations)
 
-        critical_only = report.get_violations_by_severity(
-            EnumInvariantSeverity.CRITICAL
-        )
-        warning_only = report.get_violations_by_severity(EnumInvariantSeverity.WARNING)
-        info_only = report.get_violations_by_severity(EnumInvariantSeverity.INFO)
+        critical_only = report.get_violations_by_severity(EnumSeverity.CRITICAL)
+        warning_only = report.get_violations_by_severity(EnumSeverity.WARNING)
+        info_only = report.get_violations_by_severity(EnumSeverity.INFO)
 
         assert len(critical_only) == 1
         assert critical_only[0].invariant_name == "Critical"
 
         assert len(warning_only) == 2
-        assert all(v.severity == EnumInvariantSeverity.WARNING for v in warning_only)
+        assert all(v.severity == EnumSeverity.WARNING for v in warning_only)
 
         assert len(info_only) == 1
         assert info_only[0].invariant_name == "Info"
@@ -317,106 +315,102 @@ class TestReportQueryMethods:
     def test_get_violations_at_or_above_info_threshold(self) -> None:
         """INFO threshold returns all violations."""
         violations = [
-            create_violation(EnumInvariantSeverity.CRITICAL),
-            create_violation(EnumInvariantSeverity.WARNING),
-            create_violation(EnumInvariantSeverity.INFO),
+            create_violation(EnumSeverity.CRITICAL),
+            create_violation(EnumSeverity.WARNING),
+            create_violation(EnumSeverity.INFO),
         ]
 
         report = create_report(violations=violations)
-        result = report.get_violations_at_or_above(EnumInvariantSeverity.INFO)
+        result = report.get_violations_at_or_above(EnumSeverity.INFO)
 
         assert len(result) == 3
 
     def test_get_violations_at_or_above_warning_threshold(self) -> None:
         """WARNING threshold returns WARNING + CRITICAL."""
         violations = [
-            create_violation(EnumInvariantSeverity.CRITICAL, "Critical"),
-            create_violation(EnumInvariantSeverity.WARNING, "Warning"),
-            create_violation(EnumInvariantSeverity.INFO, "Info"),
+            create_violation(EnumSeverity.CRITICAL, "Critical"),
+            create_violation(EnumSeverity.WARNING, "Warning"),
+            create_violation(EnumSeverity.INFO, "Info"),
         ]
 
         report = create_report(violations=violations)
-        result = report.get_violations_at_or_above(EnumInvariantSeverity.WARNING)
+        result = report.get_violations_at_or_above(EnumSeverity.WARNING)
 
         assert len(result) == 2
         severities = {v.severity for v in result}
-        assert EnumInvariantSeverity.CRITICAL in severities
-        assert EnumInvariantSeverity.WARNING in severities
-        assert EnumInvariantSeverity.INFO not in severities
+        assert EnumSeverity.CRITICAL in severities
+        assert EnumSeverity.WARNING in severities
+        assert EnumSeverity.INFO not in severities
 
     def test_get_violations_at_or_above_critical_threshold(self) -> None:
         """CRITICAL threshold returns only CRITICAL."""
         violations = [
-            create_violation(EnumInvariantSeverity.CRITICAL, "Critical"),
-            create_violation(EnumInvariantSeverity.WARNING, "Warning"),
-            create_violation(EnumInvariantSeverity.INFO, "Info"),
+            create_violation(EnumSeverity.CRITICAL, "Critical"),
+            create_violation(EnumSeverity.WARNING, "Warning"),
+            create_violation(EnumSeverity.INFO, "Info"),
         ]
 
         report = create_report(violations=violations)
-        result = report.get_violations_at_or_above(EnumInvariantSeverity.CRITICAL)
+        result = report.get_violations_at_or_above(EnumSeverity.CRITICAL)
 
         assert len(result) == 1
-        assert result[0].severity == EnumInvariantSeverity.CRITICAL
+        assert result[0].severity == EnumSeverity.CRITICAL
 
     def test_has_violations_at_or_above_true(self) -> None:
         """has_violations_at_or_above returns True when violations exist."""
         violations = [
-            create_violation(EnumInvariantSeverity.WARNING),
-            create_violation(EnumInvariantSeverity.INFO),
+            create_violation(EnumSeverity.WARNING),
+            create_violation(EnumSeverity.INFO),
         ]
 
         report = create_report(violations=violations)
 
-        assert report.has_violations_at_or_above(EnumInvariantSeverity.INFO) is True
-        assert report.has_violations_at_or_above(EnumInvariantSeverity.WARNING) is True
+        assert report.has_violations_at_or_above(EnumSeverity.INFO) is True
+        assert report.has_violations_at_or_above(EnumSeverity.WARNING) is True
 
     def test_has_violations_at_or_above_false(self) -> None:
         """has_violations_at_or_above returns False when no violations meet threshold."""
         violations = [
-            create_violation(EnumInvariantSeverity.INFO),
-            create_violation(EnumInvariantSeverity.INFO),
+            create_violation(EnumSeverity.INFO),
+            create_violation(EnumSeverity.INFO),
         ]
 
         report = create_report(violations=violations)
 
-        assert report.has_violations_at_or_above(EnumInvariantSeverity.WARNING) is False
-        assert (
-            report.has_violations_at_or_above(EnumInvariantSeverity.CRITICAL) is False
-        )
+        assert report.has_violations_at_or_above(EnumSeverity.WARNING) is False
+        assert report.has_violations_at_or_above(EnumSeverity.CRITICAL) is False
 
     def test_has_violations_at_or_above_empty_list(self) -> None:
         """has_violations_at_or_above returns False with no violations."""
         report = create_report(violations=[])
 
-        assert report.has_violations_at_or_above(EnumInvariantSeverity.INFO) is False
-        assert report.has_violations_at_or_above(EnumInvariantSeverity.WARNING) is False
-        assert (
-            report.has_violations_at_or_above(EnumInvariantSeverity.CRITICAL) is False
-        )
+        assert report.has_violations_at_or_above(EnumSeverity.INFO) is False
+        assert report.has_violations_at_or_above(EnumSeverity.WARNING) is False
+        assert report.has_violations_at_or_above(EnumSeverity.CRITICAL) is False
 
     def test_filter_returns_empty_when_none_match(self) -> None:
         """Filters return empty list when no violations match."""
         violations = [
-            create_violation(EnumInvariantSeverity.INFO),
-            create_violation(EnumInvariantSeverity.INFO),
+            create_violation(EnumSeverity.INFO),
+            create_violation(EnumSeverity.INFO),
         ]
 
         report = create_report(violations=violations)
 
-        assert report.get_violations_by_severity(EnumInvariantSeverity.CRITICAL) == []
-        assert report.get_violations_by_severity(EnumInvariantSeverity.WARNING) == []
-        assert report.get_violations_at_or_above(EnumInvariantSeverity.CRITICAL) == []
+        assert report.get_violations_by_severity(EnumSeverity.CRITICAL) == []
+        assert report.get_violations_by_severity(EnumSeverity.WARNING) == []
+        assert report.get_violations_at_or_above(EnumSeverity.CRITICAL) == []
 
     def test_query_methods_preserve_violation_order(self) -> None:
         """Query methods return violations in original order."""
         violations = [
-            create_violation(EnumInvariantSeverity.WARNING, "First"),
-            create_violation(EnumInvariantSeverity.WARNING, "Second"),
-            create_violation(EnumInvariantSeverity.WARNING, "Third"),
+            create_violation(EnumSeverity.WARNING, "First"),
+            create_violation(EnumSeverity.WARNING, "Second"),
+            create_violation(EnumSeverity.WARNING, "Third"),
         ]
 
         report = create_report(violations=violations)
-        result = report.get_violations_by_severity(EnumInvariantSeverity.WARNING)
+        result = report.get_violations_by_severity(EnumSeverity.WARNING)
 
         assert [v.invariant_name for v in result] == ["First", "Second", "Third"]
 
@@ -428,8 +422,8 @@ class TestReportOutputFormats:
     def test_to_summary_dict_json_safe(self) -> None:
         """to_summary_dict returns only JSON-safe primitives."""
         violations = [
-            create_violation(EnumInvariantSeverity.CRITICAL),
-            create_violation(EnumInvariantSeverity.WARNING),
+            create_violation(EnumSeverity.CRITICAL),
+            create_violation(EnumSeverity.WARNING),
         ]
 
         report = create_report(violations=violations)
@@ -514,7 +508,7 @@ class TestReportOutputFormats:
     def test_to_markdown_deterministic(self) -> None:
         """to_markdown produces consistent output for same input."""
         violations = [
-            create_violation(EnumInvariantSeverity.CRITICAL, "Critical Check"),
+            create_violation(EnumSeverity.CRITICAL, "Critical Check"),
         ]
         evaluated_at = datetime(2025, 1, 15, 12, 30, 45, tzinfo=UTC)
         # Use fixed UUIDs for deterministic test
@@ -545,13 +539,9 @@ class TestReportOutputFormats:
     def test_to_markdown_includes_all_sections(self) -> None:
         """to_markdown includes summary, critical, warnings, info sections."""
         violations = [
-            create_violation(
-                EnumInvariantSeverity.CRITICAL, "Critical Issue", "field.critical"
-            ),
-            create_violation(
-                EnumInvariantSeverity.WARNING, "Warning Issue", "field.warning"
-            ),
-            create_violation(EnumInvariantSeverity.INFO, "Info Issue"),
+            create_violation(EnumSeverity.CRITICAL, "Critical Issue", "field.critical"),
+            create_violation(EnumSeverity.WARNING, "Warning Issue", "field.warning"),
+            create_violation(EnumSeverity.INFO, "Info Issue"),
         ]
 
         report = create_report(violations=violations, total_invariants=10)
@@ -609,7 +599,7 @@ class TestReportOutputFormats:
     def test_to_markdown_includes_field_path(self) -> None:
         """to_markdown includes field path when present in violation."""
         violation = create_violation(
-            EnumInvariantSeverity.CRITICAL,
+            EnumSeverity.CRITICAL,
             "Field Check",
             field_path="response.data.value",
         )
@@ -639,9 +629,9 @@ class TestReportSerialization:
         These fields are recomputed on deserialization.
         """
         violations = [
-            create_violation(EnumInvariantSeverity.CRITICAL, "Critical"),
-            create_violation(EnumInvariantSeverity.WARNING, "Warning"),
-            create_violation(EnumInvariantSeverity.INFO, "Info"),
+            create_violation(EnumSeverity.CRITICAL, "Critical"),
+            create_violation(EnumSeverity.WARNING, "Warning"),
+            create_violation(EnumSeverity.INFO, "Info"),
         ]
 
         original = create_report(
@@ -697,7 +687,7 @@ class TestReportSerialization:
             invariant_id=uuid4(),
             invariant_name="Test Check",
             invariant_type=EnumInvariantType.LATENCY,
-            severity=EnumInvariantSeverity.WARNING,
+            severity=EnumSeverity.WARNING,
             field_path="response.latency",
             actual_value=7500,
             expected_value=5000,
@@ -730,8 +720,8 @@ class TestReportSerialization:
     def test_computed_fields_included_in_model_dump(self) -> None:
         """Computed fields are included when using model_dump without exclusions."""
         violations = [
-            create_violation(EnumInvariantSeverity.CRITICAL),
-            create_violation(EnumInvariantSeverity.WARNING),
+            create_violation(EnumSeverity.CRITICAL),
+            create_violation(EnumSeverity.WARNING),
         ]
         report = create_report(violations=violations)
 
@@ -774,7 +764,7 @@ class TestReportStatusValues:
             status=EnumInvariantReportStatus.PASSED,
         )
         assert report.status == EnumInvariantReportStatus.PASSED
-        assert not report.has_violations_at_or_above(EnumInvariantSeverity.INFO)
+        assert not report.has_violations_at_or_above(EnumSeverity.INFO)
 
 
 @pytest.mark.unit

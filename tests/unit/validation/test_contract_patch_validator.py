@@ -43,7 +43,7 @@ class TestContractPatchValidator:
         patch = ModelContractPatch(extends=profile_ref)
         result = validator.validate(patch)
         assert result.is_valid is True
-        assert result.error_count == 0
+        assert result.error_level_count == 0
 
     @pytest.mark.unit
     def test_validate_new_contract_patch(
