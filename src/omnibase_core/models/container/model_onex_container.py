@@ -352,6 +352,10 @@ class ModelONEXContainer:
         """Initialize the service registry exactly once.
 
         This method provides explicit control over service registry initialization.
+        After initialization, the ``service_registry`` property will return the
+        registry instance directly. If accessed before initialization, the property
+        raises ``ModelOnexError`` with ``INVALID_STATE`` error code.
+
         It uses lazy imports to avoid circular dependencies (see OMN-1261).
 
         Args:
@@ -362,6 +366,10 @@ class ModelONEXContainer:
 
         Raises:
             ModelOnexError: If registry is already initialized.
+
+        Note:
+            This method is not thread-safe. Do not call from multiple threads
+            simultaneously without external synchronization.
 
         Example:
             Explicit initialization::
