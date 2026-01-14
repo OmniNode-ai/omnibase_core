@@ -1,11 +1,11 @@
-from __future__ import annotations
-
 """
 Discriminated Value Type Enum.
 
 Strongly typed enumeration for discriminated value type discriminators.
 Used in ModelDiscriminatedValue for type-safe union handling.
 """
+
+from __future__ import annotations
 
 from enum import Enum, unique
 

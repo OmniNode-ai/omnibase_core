@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Base Status Enumeration for ONEX Status Hierarchy.
 
@@ -14,6 +12,7 @@ Design Principles:
 - Conflict-Free: No overlapping values with domain-specific concepts
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 

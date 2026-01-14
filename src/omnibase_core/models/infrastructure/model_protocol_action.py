@@ -1,11 +1,11 @@
-from __future__ import annotations
-
 """
 Action model for reducer pattern.
 
 Implements ProtocolAction from omnibase_spi.
 Follows ONEX strong typing principles and one-model-per-file architecture.
 """
+
+from __future__ import annotations
 
 from datetime import datetime
 

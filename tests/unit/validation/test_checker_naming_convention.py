@@ -103,6 +103,7 @@ class TestDirectoryPrefixRules:
             "nodes",
             "pipeline",
             "protocols",
+            "rendering",
             "resolution",
             "runtime",
             "schemas",

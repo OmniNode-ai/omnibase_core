@@ -1,9 +1,3 @@
-from __future__ import annotations
-
-from pydantic import Field, ValidationInfo, field_validator
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 CLI Execution Context Model.
 
@@ -11,16 +5,16 @@ Represents custom execution context with proper validation.
 Replaces dict[str, Any] for custom context with structured typing.
 """
 
+from __future__ import annotations
 
 from datetime import datetime
 from pathlib import Path
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 
 from omnibase_core.enums.enum_context_source import EnumContextSource
 from omnibase_core.enums.enum_context_type import EnumContextType
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.types.type_serializable_value import SerializedDict
 
 

@@ -98,8 +98,6 @@ class ModelYamlValue(BaseModel):
         validate_assignment=True,
     )
 
-    # Export the model
-
     # Protocol method implementations
 
     def serialize(self) -> SerializedDict:

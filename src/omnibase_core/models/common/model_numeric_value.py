@@ -169,8 +169,6 @@ class ModelNumericValue(BaseModel):
     # Removed to comply with ONEX strong typing standards.
     # Use explicit type: ModelNumericValue
 
-    # Export the model and type alias
-
     # Protocol method implementations
 
     def serialize(self) -> dict[str, object]:

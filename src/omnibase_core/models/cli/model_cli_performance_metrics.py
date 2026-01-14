@@ -1,7 +1,3 @@
-from __future__ import annotations
-
-from pydantic import Field
-
 """
 Performance Metrics Model.
 
@@ -9,8 +5,9 @@ Restrictive model for CLI execution performance metrics
 with proper typing and validation.
 """
 
+from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.types.type_serializable_value import SerializedDict
 

@@ -1,19 +1,18 @@
-from __future__ import annotations
-
-from types import TracebackType
-
 """
 ToolLoggerCodeBlock
 
 Tool logger code block implementation for performance tracking.
 
 IMPORT ORDER CONSTRAINTS (Critical - Do Not Break):
-===============================================
 This module is part of a carefully managed import chain to avoid circular dependencies.
 
 Safe Runtime Imports (OK to import at module level):
 - Standard library modules only
 """
+
+from __future__ import annotations
+
+from types import TracebackType
 
 
 class ToolLoggerCodeBlock:

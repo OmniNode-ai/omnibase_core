@@ -1,9 +1,8 @@
-from __future__ import annotations
-
 """
 TypedDict for event information.
 """
 
+from __future__ import annotations
 
 from datetime import datetime
 from typing import NotRequired, TypedDict
@@ -11,8 +10,6 @@ from uuid import UUID
 
 
 class TypedDictEventInfo(TypedDict):
-    """TypedDict for event information."""
-
     event_id: UUID
     event_type: str
     timestamp: datetime

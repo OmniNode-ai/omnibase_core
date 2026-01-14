@@ -356,6 +356,15 @@ poetry run ruff check --fix src/ tests/  # Auto-fix
 pre-commit run --all-files               # Run all hooks
 ```
 
+### File Headers
+
+All Python files MUST follow the canonical header format. See [docs/conventions/FILE_HEADERS.md](docs/conventions/FILE_HEADERS.md) for the complete specification.
+
+**Quick Reference**:
+1. Module docstring FIRST (PEP 257)
+2. `from __future__ import annotations` immediately after
+3. Imports: stdlib, third-party, then local (enforced by ruff I001/I002)
+
 ### Docstring Guidelines
 
 Follow these guidelines to avoid "AI slop" - docstrings that add noise without value.

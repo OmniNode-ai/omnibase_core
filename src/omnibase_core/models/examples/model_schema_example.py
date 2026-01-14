@@ -1,12 +1,3 @@
-from __future__ import annotations
-
-from typing import TypeVar
-
-from pydantic import Field
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.primitives.model_semver import ModelSemVer
-
 """
 Schema example model.
 
@@ -14,12 +5,19 @@ Type-safe model for extracting examples from YAML schema files,
 replacing dict[str, Any] return types with structured models.
 """
 
-from pydantic import BaseModel, ConfigDict
+from __future__ import annotations
+
+from typing import TypeVar
+
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_data_type import EnumDataType
+from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.types.type_serializable_value import SerializedDict
 
 # Note: Using ModelSchemaValue instead of complex union types for type safety
@@ -273,25 +271,22 @@ class ModelSchemaExample(BaseModel):
         validate_assignment=True,
     )
 
-    # Export the model
-
     # Protocol method implementations
 
     def configure(self, **kwargs: object) -> bool:
-        """Configure instance with provided parameters (Configurable protocol).
-
-        Raises:
-            ModelOnexError: If configuration fails with details about the failure
-        """
+        """Configure instance with provided parameters (Configurable protocol)."""
         try:
             for key, value in kwargs.items():
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except (AttributeError, TypeError, ValueError) as e:
+        except ModelOnexError:
+            raise  # Re-raise without double-wrapping
+        except PYDANTIC_MODEL_ERRORS as e:
+            # PYDANTIC_MODEL_ERRORS covers: AttributeError, TypeError, ValidationError, ValueError
             raise ModelOnexError(
+                message=f"Operation failed: {e}",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Configuration failed: {e}",
             ) from e
 
     def serialize(self) -> SerializedDict:
@@ -299,20 +294,15 @@ class ModelSchemaExample(BaseModel):
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (ProtocolValidatable protocol).
-
-        Raises:
-            ModelOnexError: If validation fails with details about the failure
         """
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except (AttributeError, TypeError, ValueError) as e:
-            raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Instance validation failed: {e}",
-            ) from e
+        Validate instance integrity (ProtocolValidatable protocol).
+
+        Returns True for well-constructed instances. Override in subclasses
+        for custom validation logic.
+        """
+        # Basic validation - Pydantic handles field constraints
+        # Override in specific models for custom validation
+        return True
 
 
 __all__ = ["ModelSchemaExample"]

@@ -1,11 +1,10 @@
-from __future__ import annotations
-
 """
 Difficulty level enumeration.
 
 Defines difficulty levels for examples and learning materials.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 

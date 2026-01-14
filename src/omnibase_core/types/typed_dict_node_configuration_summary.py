@@ -1,11 +1,10 @@
-from __future__ import annotations
-
 """
 Node Configuration Summary TypedDict.
 
 Type-safe dictionary for node configuration summary.
 """
 
+from __future__ import annotations
 
 from typing import TypedDict
 

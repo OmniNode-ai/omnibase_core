@@ -1,11 +1,10 @@
-from __future__ import annotations
-
 """
 Registry Status Enum.
 
 Strongly typed status values for registry operations.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 

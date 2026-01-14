@@ -8,8 +8,6 @@ if TYPE_CHECKING:
 
 
 class TypedDictDefaultOutputState(TypedDict):
-    """TypedDict for default output state from contract state reducer."""
-
     status: "EnumOnexStatus"
     message: str
     version: "ModelSemVer"

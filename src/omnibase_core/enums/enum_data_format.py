@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Data format enumeration for specifying data format types.
 
@@ -7,6 +5,7 @@ Provides strongly typed data format specifications for examples,
 configurations, and data processing across the ONEX architecture.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 

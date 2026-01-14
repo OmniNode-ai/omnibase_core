@@ -47,10 +47,13 @@ from omnibase_core.models.replay.model_execution_comparison import (
 from omnibase_core.models.replay.model_invariant_comparison_summary import (
     ModelInvariantComparisonSummary,
 )
-from omnibase_core.services.service_decision_report_generator import (
+from omnibase_core.rendering.renderer_report_cli import (
     COMPARISON_LIMIT_CLI_VERBOSE,
-    COMPARISON_LIMIT_MARKDOWN,
     REPORT_WIDTH,
+    RendererReportCli,
+)
+from omnibase_core.rendering.renderer_report_markdown import COMPARISON_LIMIT_MARKDOWN
+from omnibase_core.services.service_decision_report_generator import (
     ServiceDecisionReportGenerator,
 )
 
@@ -1411,7 +1414,7 @@ class TestEdgeCasesExtended:
         """Test that the _center_text method truncates text longer than REPORT_WIDTH."""
         # Test the internal _center_text method directly for truncation behavior
         long_text = "A" * 100  # 100 characters, well over REPORT_WIDTH (80)
-        centered = service._center_text(long_text)
+        centered = RendererReportCli._center_text(long_text)
 
         # Verify truncation: text should be truncated to REPORT_WIDTH (80) with ellipsis
         assert len(centered) == REPORT_WIDTH, (
@@ -1443,7 +1446,7 @@ class TestEdgeCasesExtended:
         """Test that text exactly REPORT_WIDTH chars is NOT truncated."""
         # Create text exactly REPORT_WIDTH characters
         exact_text = "X" * REPORT_WIDTH
-        centered = service._center_text(exact_text)
+        centered = RendererReportCli._center_text(exact_text)
 
         # Should NOT be truncated (no ellipsis)
         assert len(centered) == REPORT_WIDTH
@@ -4053,11 +4056,7 @@ class TestReportWidthBoundary:
         service: ServiceDecisionReportGenerator,
     ) -> None:
         """Test _center_text handles empty string correctly."""
-        centered = service._center_text("")
-
-        from omnibase_core.services.service_decision_report_generator import (
-            REPORT_WIDTH,
-        )
+        centered = RendererReportCli._center_text("")
 
         # Empty string should result in REPORT_WIDTH spaces
         assert len(centered) == REPORT_WIDTH
@@ -4068,11 +4067,7 @@ class TestReportWidthBoundary:
         service: ServiceDecisionReportGenerator,
     ) -> None:
         """Test _center_text handles single character correctly."""
-        centered = service._center_text("X")
-
-        from omnibase_core.services.service_decision_report_generator import (
-            REPORT_WIDTH,
-        )
+        centered = RendererReportCli._center_text("X")
 
         # Single char should be centered in REPORT_WIDTH
         assert len(centered) == REPORT_WIDTH
@@ -4088,12 +4083,8 @@ class TestReportWidthBoundary:
         service: ServiceDecisionReportGenerator,
     ) -> None:
         """Test _center_text with text one character shorter than REPORT_WIDTH."""
-        from omnibase_core.services.service_decision_report_generator import (
-            REPORT_WIDTH,
-        )
-
         text = "Y" * (REPORT_WIDTH - 1)
-        centered = service._center_text(text)
+        centered = RendererReportCli._center_text(text)
 
         # Should NOT be truncated (no ellipsis)
         assert len(centered) == REPORT_WIDTH
@@ -4106,12 +4097,8 @@ class TestReportWidthBoundary:
         service: ServiceDecisionReportGenerator,
     ) -> None:
         """Test _center_text with text one character longer than REPORT_WIDTH."""
-        from omnibase_core.services.service_decision_report_generator import (
-            REPORT_WIDTH,
-        )
-
         text = "Z" * (REPORT_WIDTH + 1)
-        centered = service._center_text(text)
+        centered = RendererReportCli._center_text(text)
 
         # Should be truncated to exactly REPORT_WIDTH with ellipsis
         assert len(centered) == REPORT_WIDTH
@@ -4122,13 +4109,9 @@ class TestReportWidthBoundary:
         service: ServiceDecisionReportGenerator,
     ) -> None:
         """Test _center_text handles whitespace-only input correctly."""
-        from omnibase_core.services.service_decision_report_generator import (
-            REPORT_WIDTH,
-        )
-
         # Various whitespace inputs
         for whitespace in ["   ", "\t\t", "  \t  "]:
-            centered = service._center_text(whitespace)
+            centered = RendererReportCli._center_text(whitespace)
             assert len(centered) == REPORT_WIDTH
 
     def test_cli_report_all_lines_within_width(
@@ -4138,10 +4121,6 @@ class TestReportWidthBoundary:
         sample_comparisons: list[ModelExecutionComparison],
     ) -> None:
         """Comprehensive test that ALL CLI lines respect REPORT_WIDTH."""
-        from omnibase_core.services.service_decision_report_generator import (
-            REPORT_WIDTH,
-        )
-
         # Test all verbosity levels
         for verbosity in ["minimal", "standard", "verbose"]:
             report = service.generate_cli_report(

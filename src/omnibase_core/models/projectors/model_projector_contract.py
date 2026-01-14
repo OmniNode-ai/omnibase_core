@@ -90,6 +90,9 @@ from typing import ClassVar, Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from omnibase_core.models.projectors.model_partial_update_operation import (
+    ModelPartialUpdateOperation,
+)
 from omnibase_core.models.projectors.model_projector_behavior import (
     ModelProjectorBehavior,
 )
@@ -240,6 +243,17 @@ class ModelProjectorContract(BaseModel):
         description="Projection behavior configuration",
     )
 
+    partial_updates: list[ModelPartialUpdateOperation] = Field(
+        default_factory=list,
+        description=(
+            "Optional list of partial update operations. Each operation defines "
+            "a subset of columns to update when triggered by a specific event. "
+            "Partial updates are more efficient than full upserts for high-frequency "
+            "updates like heartbeats or state transitions."
+        ),
+        json_schema_extra={"default": []},
+    )
+
     @field_validator("consumed_events")
     @classmethod
     def validate_event_names(cls, v: list[str]) -> list[str]:
@@ -283,33 +297,125 @@ class ModelProjectorContract(BaseModel):
 
     @model_validator(mode="after")
     def validate_upsert_key_exists_in_columns(self) -> Self:
-        """Validate that upsert_key references an existing column when specified.
+        """Validate that upsert_key references existing column(s) when specified.
 
         When the behavior mode is 'upsert' and an explicit upsert_key is provided,
-        this validator ensures the upsert_key corresponds to a column defined in
-        the projection schema.
+        this validator ensures the upsert_key corresponds to column(s) defined in
+        the projection schema. Supports both single column (str) and composite
+        keys (list[str]).
 
         Returns:
             The validated model instance.
 
         Raises:
-            ValueError: If upsert_key does not match any column name in the schema.
+            ValueError: If any upsert_key column does not exist in the schema.
         """
         if self.behavior.mode == "upsert" and self.behavior.upsert_key is not None:
             column_names = {col.name for col in self.projection_schema.columns}
-            if self.behavior.upsert_key not in column_names:
+            # Normalize to list for uniform handling
+            upsert_columns = (
+                [self.behavior.upsert_key]
+                if isinstance(self.behavior.upsert_key, str)
+                else self.behavior.upsert_key
+            )
+            missing = [col for col in upsert_columns if col not in column_names]
+            if missing:
                 # error-ok: Pydantic validator requires ValueError
                 raise ValueError(
-                    f"upsert_key '{self.behavior.upsert_key}' must reference an existing column. "
+                    f"upsert_key column(s) {missing} must reference existing columns. "
                     f"Available columns: {sorted(column_names)}"
                 )
+        return self
+
+    @model_validator(mode="after")
+    def validate_partial_update_columns_exist(self) -> Self:
+        """Validate that partial update columns reference existing schema columns.
+
+        Each column specified in a partial update operation must correspond to
+        a column defined in the projection schema.
+
+        Returns:
+            The validated model instance.
+
+        Raises:
+            ValueError: If any partial update column does not exist in the schema.
+        """
+        if not self.partial_updates:
+            return self
+
+        column_names = {col.name for col in self.projection_schema.columns}
+        for partial_update in self.partial_updates:
+            for col_name in partial_update.columns:
+                if col_name not in column_names:
+                    # error-ok: Pydantic validator requires ValueError
+                    raise ValueError(
+                        f"Partial update '{partial_update.name}' references non-existent "
+                        f"column '{col_name}'. Available columns: {sorted(column_names)}"
+                    )
+        return self
+
+    @model_validator(mode="after")
+    def validate_partial_update_trigger_events_consumed(self) -> Self:
+        """Validate that partial update trigger events are in consumed_events.
+
+        Each trigger_event in a partial update operation must be one of the
+        events that this projector consumes.
+
+        Returns:
+            The validated model instance.
+
+        Raises:
+            ValueError: If any trigger event is not in consumed_events.
+        """
+        if not self.partial_updates:
+            return self
+
+        consumed_set = set(self.consumed_events)
+        for partial_update in self.partial_updates:
+            if partial_update.trigger_event not in consumed_set:
+                # error-ok: Pydantic validator requires ValueError
+                raise ValueError(
+                    f"Partial update '{partial_update.name}' trigger_event "
+                    f"'{partial_update.trigger_event}' must be in consumed_events. "
+                    f"Available events: {sorted(consumed_set)}"
+                )
+        return self
+
+    @model_validator(mode="after")
+    def validate_no_duplicate_partial_update_names(self) -> Self:
+        """Validate that all partial update names are unique.
+
+        Partial update operation names must be unique within a contract
+        to avoid ambiguity in logging, metrics, and debugging.
+
+        Returns:
+            The validated model instance.
+
+        Raises:
+            ValueError: If any partial update name appears more than once.
+        """
+        if not self.partial_updates:
+            return self
+
+        seen: set[str] = set()
+        duplicates: set[str] = set()
+        for partial_update in self.partial_updates:
+            if partial_update.name in seen:
+                duplicates.add(partial_update.name)
+            seen.add(partial_update.name)
+
+        if duplicates:
+            # error-ok: Pydantic validator requires ValueError
+            raise ValueError(
+                f"Duplicate partial update names are not allowed: {sorted(duplicates)}"
+            )
         return self
 
     def __hash__(self) -> int:
         """Return hash value for the contract.
 
         Custom implementation to support hashing with list fields.
-        Converts consumed_events list to tuple for hashing.
+        Converts consumed_events and partial_updates lists to tuples for hashing.
         """
         return hash(
             (
@@ -321,6 +427,7 @@ class ModelProjectorContract(BaseModel):
                 tuple(self.consumed_events),
                 self.projection_schema,
                 self.behavior,
+                tuple(self.partial_updates),
             )
         )
 
@@ -329,17 +436,18 @@ class ModelProjectorContract(BaseModel):
 
         Returns:
             String representation showing projector_id, version, event count,
-            and index count for better debugging visibility.
+            index count, and partial update count for better debugging visibility.
 
         Examples:
             >>> contract = ModelProjectorContract(...)
             >>> repr(contract)
-            "ModelProjectorContract(id='node-projector', version='1.0.0', events=2, indexes=1)"
+            "ModelProjectorContract(id='node-projector', version='1.0.0', events=2, indexes=1, partial_updates=0)"
         """
         return (
             f"ModelProjectorContract(id={self.projector_id!r}, "
             f"version={self.version!r}, events={len(self.consumed_events)}, "
-            f"indexes={len(self.projection_schema.indexes)})"
+            f"indexes={len(self.projection_schema.indexes)}, "
+            f"partial_updates={len(self.partial_updates)})"
         )
 
 

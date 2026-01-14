@@ -1,8 +1,8 @@
-from __future__ import annotations
-
 """
 Convert legacy error dict[str, Any] to TypedDict.
 """
+
+from __future__ import annotations
 
 from .typed_dict_error_details import TypedDictErrorDetails
 from .typed_dict_legacy_error import TypedDictLegacyError
@@ -11,7 +11,7 @@ from .typed_dict_legacy_error import TypedDictLegacyError
 def convert_error_details_to_typed_dict(
     error: TypedDictLegacyError,
 ) -> TypedDictErrorDetails:
-    """Convert legacy error dict[str, Any] to TypedDict."""
+    """Convert legacy error dict to TypedDict, coercing all values to strings."""
     # Lazy import to avoid circular import:
     # types -> utils -> models.errors -> types
     from omnibase_core.utils.util_datetime_parser import parse_datetime

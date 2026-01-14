@@ -1,9 +1,8 @@
-from __future__ import annotations
-
 """
 Metadata node status enumeration.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 

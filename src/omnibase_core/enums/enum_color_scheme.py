@@ -1,10 +1,10 @@
-from __future__ import annotations
-
 """
 Color scheme enumeration.
 
 Defines color schemes for CLI output formatting.
 """
+
+from __future__ import annotations
 
 from enum import Enum, unique
 

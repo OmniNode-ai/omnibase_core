@@ -1,9 +1,3 @@
-from __future__ import annotations
-
-from pydantic import Field
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Generic validation error aggregator to standardize validation across all domains.
 
@@ -12,12 +6,14 @@ aggregation, and reporting that replaces scattered validation logic across
 the codebase.
 """
 
+from __future__ import annotations
 
 from typing import cast
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.typed_dict_validation_container_serialized import (
     TypedDictValidationContainerSerialized,
 )

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Instance type enumeration for cloud and service instances.
 
@@ -7,6 +5,7 @@ Provides strongly typed instance type values for connection configurations.
 Follows ONEX one-enum-per-file naming conventions.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 

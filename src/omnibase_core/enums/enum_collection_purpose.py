@@ -1,11 +1,10 @@
-from __future__ import annotations
-
 """
 Collection purpose enumeration.
 
 Defines purposes for data collections and analytics.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 

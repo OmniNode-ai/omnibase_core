@@ -1,10 +1,10 @@
-from __future__ import annotations
-
 """
 Result Factory TypedDict for Model Creation.
 
 Specialized TypedDict for result-type models with success/error patterns.
 """
+
+from __future__ import annotations
 
 from typing import TypedDict
 

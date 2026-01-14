@@ -156,6 +156,7 @@ class TestModelCostLedgerImmutability:
         ledger = ModelCostLedger(**minimal_ledger_data)
 
         with pytest.raises(ValidationError):
+            # NOTE: Intentionally testing frozen model mutation - mypy correctly flags assignment to frozen attr
             ledger.budget_total = 999.99  # type: ignore[misc]
 
     def test_cannot_modify_budget_total(self, minimal_ledger_data: dict) -> None:
@@ -163,6 +164,7 @@ class TestModelCostLedgerImmutability:
         ledger = ModelCostLedger(**minimal_ledger_data)
 
         with pytest.raises(ValidationError):
+            # NOTE: Intentionally testing frozen model mutation - mypy correctly flags assignment to frozen attr
             ledger.budget_total = 200.0  # type: ignore[misc]
 
     def test_cannot_modify_entries(
@@ -172,6 +174,7 @@ class TestModelCostLedgerImmutability:
         ledger = ModelCostLedger(**minimal_ledger_data)
 
         with pytest.raises(ValidationError):
+            # NOTE: Intentionally testing frozen model mutation - mypy correctly flags assignment to frozen attr
             ledger.entries = (sample_entry,)  # type: ignore[misc]
 
     def test_cannot_modify_total_spent(self, minimal_ledger_data: dict) -> None:
@@ -179,6 +182,7 @@ class TestModelCostLedgerImmutability:
         ledger = ModelCostLedger(**minimal_ledger_data)
 
         with pytest.raises(ValidationError):
+            # NOTE: Intentionally testing frozen model mutation - mypy correctly flags assignment to frozen attr
             ledger.total_spent = 50.0  # type: ignore[misc]
 
     def test_cannot_modify_ledger_id(self, minimal_ledger_data: dict) -> None:
@@ -186,6 +190,7 @@ class TestModelCostLedgerImmutability:
         ledger = ModelCostLedger(**minimal_ledger_data)
 
         with pytest.raises(ValidationError):
+            # NOTE: Intentionally testing frozen model mutation - mypy correctly flags assignment to frozen attr
             ledger.ledger_id = uuid4()  # type: ignore[misc]
 
     def test_cannot_modify_budget_remaining(self, minimal_ledger_data: dict) -> None:
@@ -193,6 +198,7 @@ class TestModelCostLedgerImmutability:
         ledger = ModelCostLedger(**minimal_ledger_data)
 
         with pytest.raises(ValidationError):
+            # NOTE: Intentionally testing frozen model mutation - mypy correctly flags assignment to frozen attr
             ledger.budget_remaining = 50.0  # type: ignore[misc]
 
     def test_cannot_modify_escalation_count(self, minimal_ledger_data: dict) -> None:
@@ -200,6 +206,7 @@ class TestModelCostLedgerImmutability:
         ledger = ModelCostLedger(**minimal_ledger_data)
 
         with pytest.raises(ValidationError):
+            # NOTE: Intentionally testing frozen model mutation - mypy correctly flags assignment to frozen attr
             ledger.escalation_count = 5  # type: ignore[misc]
 
     def test_cannot_modify_warning_threshold(self, minimal_ledger_data: dict) -> None:
@@ -207,6 +214,7 @@ class TestModelCostLedgerImmutability:
         ledger = ModelCostLedger(**minimal_ledger_data)
 
         with pytest.raises(ValidationError):
+            # NOTE: Intentionally testing frozen model mutation - mypy correctly flags assignment to frozen attr
             ledger.warning_threshold = 0.5  # type: ignore[misc]
 
 
@@ -318,6 +326,7 @@ class TestModelCostLedgerValidation:
     def test_missing_required_field_budget_total(self) -> None:
         """Test that missing budget_total raises ValidationError."""
         with pytest.raises(ValidationError) as exc_info:
+            # NOTE: Intentionally testing Pydantic validation - mypy correctly flags missing required arg
             ModelCostLedger()  # type: ignore[call-arg]
 
         assert "budget_total" in str(exc_info.value)
@@ -1337,6 +1346,7 @@ class TestModelCostLedgerEdgeCases:
 
         # Tuple should be immutable
         with pytest.raises((TypeError, AttributeError)):
+            # NOTE: Intentionally testing tuple immutability - mypy correctly flags item assignment to immutable sequence
             ledger.entries[0] = sample_entry  # type: ignore[index]
 
 

@@ -168,11 +168,6 @@ class ModelNodeCoreMetadata(BaseModel):
 
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except (
-            Exception
-        ):  # fallback-ok: validation method, False indicates validation failure
-            return False
+        # Basic validation - ensure required fields exist
+        # Override in specific models for custom validation
+        return True

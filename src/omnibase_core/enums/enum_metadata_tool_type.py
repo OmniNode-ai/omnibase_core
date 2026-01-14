@@ -1,11 +1,10 @@
-from __future__ import annotations
-
 """
 Metadata tool type enumeration.
 
 Defines types of metadata tools available in the ONEX ecosystem.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 

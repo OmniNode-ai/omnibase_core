@@ -1,12 +1,10 @@
-from __future__ import annotations
-
-from pydantic import Field
-
 """
 Canonical payload for completion events following ONEX naming conventions.
 """
 
-from pydantic import BaseModel, ConfigDict, StrictBool, StrictInt, StrictStr
+from __future__ import annotations
+
+from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictInt, StrictStr
 
 
 class ModelCompletionData(BaseModel):

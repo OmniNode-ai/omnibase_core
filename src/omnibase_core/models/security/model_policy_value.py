@@ -46,7 +46,6 @@ Usage Examples:
     >>> assert policy_data.get_python_type() == dict
 
 IMPORT ORDER CONSTRAINTS (Critical - Do Not Break):
-===============================================
 This module is part of a carefully managed import chain to avoid circular dependencies.
 
 Safe Runtime Imports (OK to import at module level):

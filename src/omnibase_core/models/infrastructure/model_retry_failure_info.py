@@ -92,8 +92,6 @@ class ModelRetryFailureInfo(BaseModel):
         validate_assignment=True,
     )
 
-    # Export the model
-
     # Protocol method implementations
 
     def execute(self, **kwargs: Any) -> bool:

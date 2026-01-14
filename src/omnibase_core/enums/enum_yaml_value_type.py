@@ -1,11 +1,10 @@
-from __future__ import annotations
-
 """
 YAML Value Type Enum.
 
 Strongly typed enumeration for YAML value type discriminators.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 

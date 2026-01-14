@@ -163,8 +163,6 @@ class ModelErrorValue(BaseModel):
                 message=f"Failed to recreate exception {self.exception_class}: {e}",
             ) from e
 
-    # Export the model
-
     # Protocol method implementations
 
     def execute(self, **kwargs: object) -> bool:

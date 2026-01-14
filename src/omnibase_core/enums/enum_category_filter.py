@@ -1,11 +1,10 @@
-from __future__ import annotations
-
 """
 Category Filter Enum.
 
 Strongly typed category filter values for ONEX architecture filtering operations.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 

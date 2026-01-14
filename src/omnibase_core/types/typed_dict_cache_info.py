@@ -1,15 +1,13 @@
-from __future__ import annotations
-
 """
 TypedDict for cache information.
 """
+
+from __future__ import annotations
 
 from typing import TypedDict
 
 
 class TypedDictCacheInfo(TypedDict):
-    """TypedDict for cache information."""
-
     cache_name: str
     cache_size: int
     max_size: int

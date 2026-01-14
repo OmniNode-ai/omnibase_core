@@ -1,8 +1,8 @@
-from __future__ import annotations
-
 """
 TypedDict for connection information.
 """
+
+from __future__ import annotations
 
 from datetime import datetime
 from typing import TypedDict
@@ -10,8 +10,6 @@ from uuid import UUID
 
 
 class TypedDictConnectionInfo(TypedDict):
-    """TypedDict for connection information."""
-
     connection_id: UUID
     connection_type: str
     status: str  # "connected", "disconnected", "error"

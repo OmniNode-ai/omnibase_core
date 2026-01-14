@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Standard Category Enum.
 
@@ -7,6 +5,7 @@ Standardized categories for consistent classification across metadata models.
 Provides hierarchical organization beyond simple tags.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 

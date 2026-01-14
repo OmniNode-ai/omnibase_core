@@ -1,9 +1,8 @@
-from __future__ import annotations
-
 """
 TypedDict for batch processing information.
 """
 
+from __future__ import annotations
 
 from datetime import datetime
 from typing import NotRequired, TypedDict
@@ -11,8 +10,6 @@ from uuid import UUID
 
 
 class TypedDictBatchProcessingInfo(TypedDict):
-    """TypedDict for batch processing information."""
-
     batch_id: UUID
     total_items: int
     processed_items: int

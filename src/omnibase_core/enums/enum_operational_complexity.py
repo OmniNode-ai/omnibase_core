@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Operational complexity enumeration for performance and execution characteristics.
 
@@ -7,6 +5,7 @@ Focused on runtime, resource usage, and operational concerns.
 Part of the unified complexity enum consolidation strategy.
 """
 
+from __future__ import annotations
 
 from enum import Enum, unique
 
