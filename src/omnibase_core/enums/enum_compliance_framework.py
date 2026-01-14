@@ -2,9 +2,11 @@
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumComplianceFramework(str, Enum):
+class EnumComplianceFramework(StrValueHelper, str, Enum):
     """Supported compliance frameworks."""
 
     SOX = "SOX"  # Sarbanes-Oxley Act
@@ -14,3 +16,6 @@ class EnumComplianceFramework(str, Enum):
     FISMA = "FISMA"  # Federal Information Security Management
     ISO27001 = "ISO27001"  # Information Security Management
     NIST = "NIST"  # NIST Cybersecurity Framework
+
+
+__all__ = ["EnumComplianceFramework"]

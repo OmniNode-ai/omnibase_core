@@ -10,9 +10,11 @@ Provides hierarchical organization beyond simple tags.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumStandardCategory(str, Enum):
+class EnumStandardCategory(StrValueHelper, str, Enum):
     """
     Standard categories for metadata classification.
 
@@ -63,10 +65,6 @@ class EnumStandardCategory(str, Enum):
     STORAGE = "storage"
     STREAMING = "streaming"
     BATCH = "batch"
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def get_architecture_categories(cls) -> list[EnumStandardCategory]:

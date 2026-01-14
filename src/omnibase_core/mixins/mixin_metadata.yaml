@@ -15,7 +15,7 @@ mixin_retry:
   # Dependencies
   requires:
     - "omnibase_core.models.infrastructure.model_retry_policy"
-    - "omnibase_core.models.infrastructure.model_retry_config"
+    - "omnibase_core.models.core.model_retry_config"
     - "omnibase_core.models.infrastructure.model_retry_conditions"
     - "omnibase_core.models.infrastructure.model_retry_execution"
     - "omnibase_core.models.infrastructure.model_retry_advanced"
@@ -443,9 +443,9 @@ mixin_health_check:
 
   # Dependencies
   requires:
-    - "omnibase_core.enums.enum_node_health_status"
-    - "omnibase_core.models.core.model_health_status"
-    - "omnibase_core.logging.structured"
+    - "omnibase_core.enums.enum_health_status"
+    - "omnibase_core.models.health.model_health_status"
+    - "omnibase_core.logging.logging_structured"
     - "omnibase_core.enums.enum_log_level"
     - "asyncio"
     - "datetime"
@@ -2488,7 +2488,7 @@ mixin_fsm_execution:
   requires:
     - "omnibase_core.models.contracts.subcontracts.model_fsm_subcontract"
     - "omnibase_core.utils.util_fsm_executor"
-    - "omnibase_core.models.model_intent"
+    - "omnibase_core.models.reducer.model_intent"
     - "pydantic"
 
   # Compatibility
@@ -3174,7 +3174,7 @@ mixin_introspection:
 
   requires:
     - "omnibase_core.models.contracts.subcontracts.model_introspection_subcontract"
-    - "omnibase_core.models.metadata.model_node_metadata"
+    - "omnibase_core.models.core.model_node_metadata"
     - "pydantic"
 
   compatible_with:
@@ -3296,7 +3296,7 @@ mixin_node_lifecycle:
 
   requires:
     - "omnibase_core.models.contracts.subcontracts.model_lifecycle_subcontract"
-    - "omnibase_core.enums.enum_node_lifecycle_state"
+    - "omnibase_core.enums.enum_node_lifecycle_status"
     - "pydantic"
 
   compatible_with:
@@ -3358,7 +3358,7 @@ mixin_tool_execution:
 
   requires:
     - "omnibase_core.models.contracts.subcontracts.model_tool_execution_subcontract"
-    - "omnibase_core.models.tools.model_tool_definition"
+    - "omnibase_core.models.tools.model_tool_execution_result"
     - "pydantic"
 
   compatible_with:

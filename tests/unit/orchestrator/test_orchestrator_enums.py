@@ -2,11 +2,13 @@
 Unit tests for NodeOrchestrator-related enums.
 
 Tests all aspects of orchestrator enumeration types including:
-- EnumWorkflowState - Workflow execution states
-- EnumExecutionMode - Execution modes for workflow steps (from enum_orchestrator_types)
+- EnumWorkflowStatus - Workflow lifecycle states (canonical) (str, Enum)
+- EnumExecutionMode (aliased as EnumExecutionModeOrchestrator) - Execution modes for workflow steps
 - EnumActionType - Types of actions for orchestrated execution
-- EnumFailureRecoveryStrategy - Failure recovery strategies
+- EnumFailureRecoveryStrategy - Failure recovery strategies (str, Enum)
 - EnumBranchCondition - Conditional branching types
+- EnumExecutionPattern - Execution patterns for workflow coordination (str, Enum)
+- EnumAssignmentStatus - Task assignment lifecycle states (str, Enum)
 
 Each enum is tested for:
 - Value existence and correctness
@@ -27,7 +29,6 @@ import pytest
 from omnibase_core.enums.enum_orchestrator_types import (
     EnumActionType,
     EnumBranchCondition,
-    EnumWorkflowState,
 )
 from omnibase_core.enums.enum_orchestrator_types import (
     EnumExecutionMode as EnumExecutionModeOrchestrator,
@@ -36,8 +37,8 @@ from omnibase_core.enums.enum_workflow_coordination import (
     EnumAssignmentStatus,
     EnumExecutionPattern,
     EnumFailureRecoveryStrategy,
-    EnumWorkflowStatus,
 )
+from omnibase_core.enums.enum_workflow_status import EnumWorkflowStatus
 
 # ============================================================================
 # Fixtures
@@ -45,8 +46,8 @@ from omnibase_core.enums.enum_workflow_coordination import (
 
 
 @pytest.fixture
-def all_workflow_state_values() -> list[str]:
-    """All expected EnumWorkflowState values."""
+def all_workflow_status_values() -> list[str]:
+    """All expected EnumWorkflowStatus values."""
     return ["pending", "running", "paused", "completed", "failed", "cancelled"]
 
 
@@ -87,41 +88,41 @@ def all_assignment_status_values() -> list[str]:
 
 
 # ============================================================================
-# EnumWorkflowState Tests
+# EnumWorkflowStatus Tests
 # ============================================================================
 
 
 @pytest.mark.timeout(5)
 @pytest.mark.unit
-class TestEnumWorkflowState:
-    """Tests for EnumWorkflowState from enum_orchestrator_types."""
+class TestEnumWorkflowStatus:
+    """Tests for EnumWorkflowStatus lifecycle states and transitions."""
 
     def test_enum_inherits_from_enum(self) -> None:
-        """Test that EnumWorkflowState inherits from Enum."""
-        assert issubclass(EnumWorkflowState, Enum)
+        """Test that EnumWorkflowStatus inherits from Enum."""
+        assert issubclass(EnumWorkflowStatus, Enum)
 
-    def test_values_exist(self, all_workflow_state_values: list[str]) -> None:
+    def test_values_exist(self, all_workflow_status_values: list[str]) -> None:
         """Test all expected values exist."""
-        assert EnumWorkflowState.PENDING.value == "pending"
-        assert EnumWorkflowState.RUNNING.value == "running"
-        assert EnumWorkflowState.PAUSED.value == "paused"
-        assert EnumWorkflowState.COMPLETED.value == "completed"
-        assert EnumWorkflowState.FAILED.value == "failed"
-        assert EnumWorkflowState.CANCELLED.value == "cancelled"
+        assert EnumWorkflowStatus.PENDING.value == "pending"
+        assert EnumWorkflowStatus.RUNNING.value == "running"
+        assert EnumWorkflowStatus.PAUSED.value == "paused"
+        assert EnumWorkflowStatus.COMPLETED.value == "completed"
+        assert EnumWorkflowStatus.FAILED.value == "failed"
+        assert EnumWorkflowStatus.CANCELLED.value == "cancelled"
 
     def test_member_count(self) -> None:
         """Test correct number of members (6 states)."""
-        assert len(EnumWorkflowState) == 6
+        assert len(EnumWorkflowStatus) == 6
 
     def test_string_values(self) -> None:
         """Test string representations match expected values."""
         expected_mappings = {
-            EnumWorkflowState.PENDING: "pending",
-            EnumWorkflowState.RUNNING: "running",
-            EnumWorkflowState.PAUSED: "paused",
-            EnumWorkflowState.COMPLETED: "completed",
-            EnumWorkflowState.FAILED: "failed",
-            EnumWorkflowState.CANCELLED: "cancelled",
+            EnumWorkflowStatus.PENDING: "pending",
+            EnumWorkflowStatus.RUNNING: "running",
+            EnumWorkflowStatus.PAUSED: "paused",
+            EnumWorkflowStatus.COMPLETED: "completed",
+            EnumWorkflowStatus.FAILED: "failed",
+            EnumWorkflowStatus.CANCELLED: "cancelled",
         }
         for member, expected_value in expected_mappings.items():
             assert member.value == expected_value
@@ -133,48 +134,48 @@ class TestEnumWorkflowState:
         and should not be used in v1.0 implementations.
         """
         # Verify it exists
-        assert hasattr(EnumWorkflowState, "PAUSED")
-        assert EnumWorkflowState.PAUSED.value == "paused"
+        assert hasattr(EnumWorkflowStatus, "PAUSED")
+        assert EnumWorkflowStatus.PAUSED.value == "paused"
         # Verify it's in the enum (reserved but still a valid member)
-        assert EnumWorkflowState.PAUSED in EnumWorkflowState
+        assert EnumWorkflowStatus.PAUSED in EnumWorkflowStatus
 
-    def test_iteration(self, all_workflow_state_values: list[str]) -> None:
+    def test_iteration(self, all_workflow_status_values: list[str]) -> None:
         """Test enum iteration returns all values."""
-        actual_values = {member.value for member in EnumWorkflowState}
-        expected_values = set(all_workflow_state_values)
+        actual_values = {member.value for member in EnumWorkflowStatus}
+        expected_values = set(all_workflow_status_values)
         assert actual_values == expected_values
 
     def test_value_uniqueness(self) -> None:
         """Test all enum members have unique values."""
-        values = [member.value for member in EnumWorkflowState]
+        values = [member.value for member in EnumWorkflowStatus]
         assert len(values) == len(set(values))
 
     def test_enum_comparison(self) -> None:
         """Test enum comparison operations."""
-        assert EnumWorkflowState.PENDING == EnumWorkflowState.PENDING
-        assert EnumWorkflowState.PENDING != EnumWorkflowState.RUNNING
-        assert EnumWorkflowState.COMPLETED is EnumWorkflowState.COMPLETED
+        assert EnumWorkflowStatus.PENDING == EnumWorkflowStatus.PENDING
+        assert EnumWorkflowStatus.PENDING != EnumWorkflowStatus.RUNNING
+        assert EnumWorkflowStatus.COMPLETED is EnumWorkflowStatus.COMPLETED
 
     def test_enum_from_value(self) -> None:
         """Test creating enum from string value."""
-        assert EnumWorkflowState("pending") == EnumWorkflowState.PENDING
-        assert EnumWorkflowState("completed") == EnumWorkflowState.COMPLETED
+        assert EnumWorkflowStatus("pending") == EnumWorkflowStatus.PENDING
+        assert EnumWorkflowStatus("completed") == EnumWorkflowStatus.COMPLETED
 
     def test_invalid_value_raises_error(self) -> None:
         """Test invalid value raises ValueError."""
         with pytest.raises(ValueError):
-            EnumWorkflowState("invalid_state")
+            EnumWorkflowStatus("invalid_state")
 
     def test_json_serialization(self) -> None:
         """Test enum values are JSON serializable."""
-        for member in EnumWorkflowState:
+        for member in EnumWorkflowStatus:
             serialized = json.dumps(member.value)
             deserialized = json.loads(serialized)
-            assert EnumWorkflowState(deserialized) == member
+            assert EnumWorkflowStatus(deserialized) == member
 
     def test_pickle_serialization(self) -> None:
         """Test enum members can be pickled and unpickled."""
-        for member in EnumWorkflowState:
+        for member in EnumWorkflowStatus:
             pickled = pickle.dumps(member)
             unpickled = pickle.loads(pickled)
             assert unpickled == member
@@ -183,31 +184,31 @@ class TestEnumWorkflowState:
     def test_terminal_states(self) -> None:
         """Test identification of terminal workflow states."""
         terminal_states = {
-            EnumWorkflowState.COMPLETED,
-            EnumWorkflowState.FAILED,
-            EnumWorkflowState.CANCELLED,
+            EnumWorkflowStatus.COMPLETED,
+            EnumWorkflowStatus.FAILED,
+            EnumWorkflowStatus.CANCELLED,
         }
         non_terminal_states = {
-            EnumWorkflowState.PENDING,
-            EnumWorkflowState.RUNNING,
-            EnumWorkflowState.PAUSED,
+            EnumWorkflowStatus.PENDING,
+            EnumWorkflowStatus.RUNNING,
+            EnumWorkflowStatus.PAUSED,
         }
-        all_states = set(EnumWorkflowState)
+        all_states = set(EnumWorkflowStatus)
         assert terminal_states.union(non_terminal_states) == all_states
 
     def test_active_states(self) -> None:
         """Test identification of active workflow states."""
         active_states = {
-            EnumWorkflowState.RUNNING,
-            EnumWorkflowState.PAUSED,  # Reserved but semantically active
+            EnumWorkflowStatus.RUNNING,
+            EnumWorkflowStatus.PAUSED,  # Reserved but semantically active
         }
-        initial_states = {EnumWorkflowState.PENDING}
+        initial_states = {EnumWorkflowStatus.PENDING}
         final_states = {
-            EnumWorkflowState.COMPLETED,
-            EnumWorkflowState.FAILED,
-            EnumWorkflowState.CANCELLED,
+            EnumWorkflowStatus.COMPLETED,
+            EnumWorkflowStatus.FAILED,
+            EnumWorkflowStatus.CANCELLED,
         }
-        all_states = set(EnumWorkflowState)
+        all_states = set(EnumWorkflowStatus)
         assert active_states.union(initial_states).union(final_states) == all_states
 
 
@@ -780,14 +781,18 @@ class TestEnumAssignmentStatus:
 
 
 # ============================================================================
-# EnumWorkflowStatus Tests (from workflow_coordination)
+# EnumWorkflowStatus Coordination Tests
 # ============================================================================
 
 
 @pytest.mark.timeout(5)
 @pytest.mark.unit
 class TestEnumWorkflowStatusCoordination:
-    """Tests for EnumWorkflowStatus from enum_workflow_coordination."""
+    """Tests for canonical EnumWorkflowStatus.
+
+    Note: This tests the canonical EnumWorkflowStatus which has lowercase
+    values (pending, running, etc.) and includes PAUSED state.
+    """
 
     def test_enum_inherits_from_str_and_enum(self) -> None:
         """Test that EnumWorkflowStatus inherits from str and Enum."""
@@ -796,24 +801,26 @@ class TestEnumWorkflowStatusCoordination:
 
     def test_values_exist(self) -> None:
         """Test all expected values exist."""
-        assert EnumWorkflowStatus.CREATED.value == "CREATED"
-        assert EnumWorkflowStatus.RUNNING.value == "RUNNING"
-        assert EnumWorkflowStatus.COMPLETED.value == "COMPLETED"
-        assert EnumWorkflowStatus.FAILED.value == "FAILED"
-        assert EnumWorkflowStatus.CANCELLED.value == "CANCELLED"
+        assert EnumWorkflowStatus.PENDING.value == "pending"
+        assert EnumWorkflowStatus.RUNNING.value == "running"
+        assert EnumWorkflowStatus.COMPLETED.value == "completed"
+        assert EnumWorkflowStatus.FAILED.value == "failed"
+        assert EnumWorkflowStatus.CANCELLED.value == "cancelled"
+        assert EnumWorkflowStatus.PAUSED.value == "paused"
 
     def test_member_count(self) -> None:
-        """Test correct number of members (5 statuses)."""
-        assert len(EnumWorkflowStatus) == 5
+        """Test correct number of members (6 statuses)."""
+        assert len(EnumWorkflowStatus) == 6
 
     def test_string_values(self) -> None:
         """Test string representations match expected values."""
         expected_mappings = {
-            EnumWorkflowStatus.CREATED: "CREATED",
-            EnumWorkflowStatus.RUNNING: "RUNNING",
-            EnumWorkflowStatus.COMPLETED: "COMPLETED",
-            EnumWorkflowStatus.FAILED: "FAILED",
-            EnumWorkflowStatus.CANCELLED: "CANCELLED",
+            EnumWorkflowStatus.PENDING: "pending",
+            EnumWorkflowStatus.RUNNING: "running",
+            EnumWorkflowStatus.COMPLETED: "completed",
+            EnumWorkflowStatus.FAILED: "failed",
+            EnumWorkflowStatus.CANCELLED: "cancelled",
+            EnumWorkflowStatus.PAUSED: "paused",
         }
         for member, expected_value in expected_mappings.items():
             assert member.value == expected_value
@@ -821,7 +828,14 @@ class TestEnumWorkflowStatusCoordination:
 
     def test_iteration(self) -> None:
         """Test enum iteration returns all values."""
-        expected_values = {"CREATED", "RUNNING", "COMPLETED", "FAILED", "CANCELLED"}
+        expected_values = {
+            "pending",
+            "running",
+            "completed",
+            "failed",
+            "cancelled",
+            "paused",
+        }
         actual_values = {member.value for member in EnumWorkflowStatus}
         assert actual_values == expected_values
 
@@ -849,19 +863,19 @@ class TestOrchestratorEnumsIntegration:
     """Integration tests across orchestrator enums."""
 
     def test_workflow_state_and_action_type_compatibility(self) -> None:
-        """Test that workflow states can transition through action types.
+        """Test that workflow state and action type enums can be used together.
 
-        Each action type should be applicable in RUNNING state.
+        Verifies both enum types have valid, non-None values.
         """
-        running_state = EnumWorkflowState.RUNNING
+        running_state = EnumWorkflowStatus.RUNNING
         for action_type in EnumActionType:
-            # All action types should be valid concepts during RUNNING
+            # Verify enum values are defined
             assert action_type.value is not None
             assert running_state.value == "running"
 
     def test_failure_recovery_after_failed_state(self) -> None:
         """Test that recovery strategies are semantically valid after FAILED state."""
-        failed_state = EnumWorkflowState.FAILED
+        failed_state = EnumWorkflowStatus.FAILED
         assert failed_state.value == "failed"
 
         # All recovery strategies should be applicable after failure
@@ -883,7 +897,7 @@ class TestOrchestratorEnumsIntegration:
         class OrchestratorConfig(BaseModel):
             """Test model for orchestrator enum compatibility."""
 
-            workflow_state: EnumWorkflowState
+            workflow_state: EnumWorkflowStatus
             action_type: EnumActionType
             branch_condition: EnumBranchCondition
             recovery_strategy: EnumFailureRecoveryStrategy
@@ -892,7 +906,7 @@ class TestOrchestratorEnumsIntegration:
 
         # Test creation with enum values
         config = OrchestratorConfig(
-            workflow_state=EnumWorkflowState.RUNNING,
+            workflow_state=EnumWorkflowStatus.RUNNING,
             action_type=EnumActionType.COMPUTE,
             branch_condition=EnumBranchCondition.IF_SUCCESS,
             recovery_strategy=EnumFailureRecoveryStrategy.RETRY,
@@ -900,18 +914,18 @@ class TestOrchestratorEnumsIntegration:
             assignment_status=EnumAssignmentStatus.EXECUTING,
         )
 
-        assert config.workflow_state == EnumWorkflowState.RUNNING
+        assert config.workflow_state == EnumWorkflowStatus.RUNNING
         assert config.action_type == EnumActionType.COMPUTE
         assert config.recovery_strategy == EnumFailureRecoveryStrategy.RETRY
 
-        # Test serialization - non-str enums retain enum type in model_dump
+        # Test serialization - model_dump() returns enum members by default
         # (use mode='json' for string serialization)
         data = config.model_dump()
-        # EnumWorkflowState is pure Enum (not str, Enum), keeps enum in model_dump
-        assert data["workflow_state"] == EnumWorkflowState.RUNNING
-        # EnumActionType is pure Enum (not str, Enum), keeps enum in model_dump
+        # EnumWorkflowStatus is (str, Enum), value equals string in comparisons
+        assert data["workflow_state"] == EnumWorkflowStatus.RUNNING
+        # EnumActionType is Enum (not str,Enum), returns enum member in model_dump
         assert data["action_type"] == EnumActionType.COMPUTE
-        # EnumFailureRecoveryStrategy is str, Enum - value is the string
+        # EnumFailureRecoveryStrategy is (str, Enum) - value is the string
         assert data["recovery_strategy"] == "RETRY"
 
         # Test JSON serialization mode (converts all to primitives)
@@ -922,19 +936,18 @@ class TestOrchestratorEnumsIntegration:
 
         # Test deserialization
         new_config = OrchestratorConfig.model_validate(data)
-        assert new_config.workflow_state == EnumWorkflowState.RUNNING
+        assert new_config.workflow_state == EnumWorkflowStatus.RUNNING
 
     def test_all_orchestrator_enums_hashable(self) -> None:
         """Test all orchestrator enum members are hashable."""
         all_enums: list[type[Enum]] = [
-            EnumWorkflowState,
+            EnumWorkflowStatus,
             EnumExecutionModeOrchestrator,
             EnumActionType,
             EnumFailureRecoveryStrategy,
             EnumBranchCondition,
             EnumExecutionPattern,
             EnumAssignmentStatus,
-            EnumWorkflowStatus,
         ]
 
         for enum_class in all_enums:
@@ -948,15 +961,15 @@ class TestOrchestratorEnumsIntegration:
 
         This ensures documentation of reserved values is accurate.
         """
-        # EnumWorkflowState: PAUSED is reserved for v1.1
+        # EnumWorkflowStatus: PAUSED is reserved for v1.1
         v1_workflow_states = {
-            EnumWorkflowState.PENDING,
-            EnumWorkflowState.RUNNING,
-            EnumWorkflowState.COMPLETED,
-            EnumWorkflowState.FAILED,
-            EnumWorkflowState.CANCELLED,
+            EnumWorkflowStatus.PENDING,
+            EnumWorkflowStatus.RUNNING,
+            EnumWorkflowStatus.COMPLETED,
+            EnumWorkflowStatus.FAILED,
+            EnumWorkflowStatus.CANCELLED,
         }
-        reserved_workflow_states = {EnumWorkflowState.PAUSED}
+        reserved_workflow_states = {EnumWorkflowStatus.PAUSED}
         assert v1_workflow_states.intersection(reserved_workflow_states) == set()
 
         # EnumExecutionMode: CONDITIONAL (v1.1), STREAMING (v1.2) reserved
@@ -981,7 +994,3 @@ class TestOrchestratorEnumsIntegration:
             EnumFailureRecoveryStrategy.COMPENSATE,
         }
         assert v1_recovery_strategies.intersection(v2_reserved_strategies) == set()
-
-
-if __name__ == "__main__":
-    pytest.main([__file__, "-v"])

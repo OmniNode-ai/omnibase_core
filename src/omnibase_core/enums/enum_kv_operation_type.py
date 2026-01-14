@@ -7,9 +7,11 @@ Consul integration and distributed storage systems.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumKvOperationType(str, Enum):
+class EnumKvOperationType(StrValueHelper, str, Enum):
     """Canonical KV operation types for ONEX distributed storage."""
 
     CREATE = "create"
@@ -21,3 +23,6 @@ class EnumKvOperationType(str, Enum):
     SYNC = "sync"
     BACKUP = "backup"
     RESTORE = "restore"
+
+
+__all__ = ["EnumKvOperationType"]

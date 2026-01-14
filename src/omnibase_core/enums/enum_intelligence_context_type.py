@@ -7,9 +7,11 @@ cross-instance intelligence sharing in ONEX architecture.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumIntelligenceContextType(str, Enum):
+class EnumIntelligenceContextType(StrValueHelper, str, Enum):
     """
     Enum for intelligence context types with security validation.
 
@@ -41,3 +43,6 @@ class EnumIntelligenceContextType(str, Enum):
     COORDINATION_REQUEST = "coordination_request"
     COORDINATION_STATUS = "coordination_status"
     COORDINATION_HANDOFF = "coordination_handoff"
+
+
+__all__ = ["EnumIntelligenceContextType"]

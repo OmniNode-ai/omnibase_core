@@ -9,9 +9,11 @@ Strongly typed context type values for configuration and processing.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumContextType(str, Enum):
+class EnumContextType(StrValueHelper, str, Enum):
     """
     Strongly typed context type values.
 
@@ -24,10 +26,6 @@ class EnumContextType(str, Enum):
     BATCH = "batch"
     INTERACTIVE = "interactive"
     API = "api"
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def is_automated(cls, context_type: EnumContextType) -> bool:

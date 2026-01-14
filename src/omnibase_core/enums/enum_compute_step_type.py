@@ -2,9 +2,11 @@
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumComputeStepType(str, Enum):
+class EnumComputeStepType(StrValueHelper, str, Enum):
     """Pipeline step types for compute operations.
 
     Types: VALIDATION, TRANSFORMATION, MAPPING.
@@ -15,3 +17,6 @@ class EnumComputeStepType(str, Enum):
     MAPPING = "mapping"
     # v1.2+: CONDITIONAL = "conditional"
     # v1.2+: PARALLEL = "parallel"
+
+
+__all__ = ["EnumComputeStepType"]

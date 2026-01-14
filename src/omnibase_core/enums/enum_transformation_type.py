@@ -7,9 +7,11 @@ Only 6 types are supported in v1.0 - collection operations are deferred to v1.1+
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumTransformationType(str, Enum):
+class EnumTransformationType(StrValueHelper, str, Enum):
     """
     v1.0 Transformation types.
 
@@ -33,3 +35,6 @@ class EnumTransformationType(str, Enum):
     JSON_PATH = "json_path"
     # v1.1+: SPLIT, JOIN, TEMPLATE, TYPE_CONVERSION
     # v1.2+: FILTER, MAP, REDUCE, SORT
+
+
+__all__ = ["EnumTransformationType"]

@@ -10,10 +10,11 @@ Time unit enumeration for flexible time representation.
 from enum import Enum, unique
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 
 @unique
-class EnumTimeUnit(str, Enum):
+class EnumTimeUnit(StrValueHelper, str, Enum):
     """Time unit enumeration for flexible time representation."""
 
     MILLISECONDS = "ms"
@@ -21,10 +22,6 @@ class EnumTimeUnit(str, Enum):
     MINUTES = "m"
     HOURS = "h"
     DAYS = "d"
-
-    def __str__(self) -> str:
-        """Return string representation."""
-        return self.value
 
     @property
     def display_name(self) -> str:

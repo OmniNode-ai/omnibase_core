@@ -28,9 +28,11 @@ incident prioritization systems.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumImpactSeverity(str, Enum):
+class EnumImpactSeverity(StrValueHelper, str, Enum):
     """
     Business impact severity levels.
 

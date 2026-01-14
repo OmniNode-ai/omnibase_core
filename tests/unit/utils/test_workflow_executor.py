@@ -10,10 +10,8 @@ import pytest
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_workflow_coordination import EnumFailureRecoveryStrategy
-from omnibase_core.enums.enum_workflow_execution import (
-    EnumExecutionMode,
-    EnumWorkflowState,
-)
+from omnibase_core.enums.enum_workflow_execution import EnumExecutionMode
+from omnibase_core.enums.enum_workflow_status import EnumWorkflowStatus
 from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
 from omnibase_core.models.contracts.subcontracts.model_coordination_rules import (
     ModelCoordinationRules,
@@ -194,7 +192,7 @@ class TestWorkflowExecutionSuccess:
         )
 
         assert result.workflow_id == workflow_id
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
         assert len(result.completed_steps) == 3
         assert len(result.failed_steps) == 0
         assert result.skipped_steps == []  # No disabled steps
@@ -217,7 +215,7 @@ class TestWorkflowExecutionSuccess:
         )
 
         assert result.workflow_id == workflow_id
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
         assert len(result.completed_steps) == 4  # All steps should complete
         assert len(result.failed_steps) == 0
         assert result.skipped_steps == []  # No disabled steps
@@ -324,7 +322,7 @@ class TestWorkflowValidation:
         )
 
         # Empty workflow produces COMPLETED status with no steps or actions
-        assert result.execution_status == EnumWorkflowState.COMPLETED, (
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED, (
             "Empty workflow should complete successfully per v1.0.3 Fix 29"
         )
         assert len(result.completed_steps) == 0, (
@@ -640,7 +638,7 @@ class TestExecuteStepErrorHandling:
         assert str(step_id) in result.failed_steps
         assert str(step_id) not in result.completed_steps
         assert len(result.actions_emitted) == 0
-        assert result.execution_status == EnumWorkflowState.FAILED
+        assert result.execution_status == EnumWorkflowStatus.FAILED
 
     @pytest.mark.asyncio
     async def test_execute_parallel_captures_onex_errors(
@@ -684,7 +682,7 @@ class TestExecuteStepErrorHandling:
         assert str(step_id) in result.failed_steps
         assert str(step_id) not in result.completed_steps
         assert len(result.actions_emitted) == 0
-        assert result.execution_status == EnumWorkflowState.FAILED
+        assert result.execution_status == EnumWorkflowStatus.FAILED
 
     @pytest.mark.asyncio
     async def test_execute_parallel_mixed_success_and_failure(
@@ -746,7 +744,7 @@ class TestExecuteStepErrorHandling:
         # Should have one action (from success step)
         assert len(result.actions_emitted) == 1
         # Overall status is FAILED due to the failure
-        assert result.execution_status == EnumWorkflowState.FAILED
+        assert result.execution_status == EnumWorkflowStatus.FAILED
 
     @pytest.mark.asyncio
     async def test_execute_parallel_error_with_stop_action(
@@ -801,7 +799,7 @@ class TestExecuteStepErrorHandling:
         # No actions should be emitted (wave 1 failed before action creation)
         assert len(result.actions_emitted) == 0
         # Overall status should be FAILED
-        assert result.execution_status == EnumWorkflowState.FAILED
+        assert result.execution_status == EnumWorkflowStatus.FAILED
         # Verify fewer steps were processed than total (workflow stopped early)
         assert len(result.completed_steps) + len(result.failed_steps) < len(steps)
 
@@ -1367,7 +1365,7 @@ class TestDeclarationOrderIntegration:
         )
 
         # Verify all steps completed
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
         assert len(result.completed_steps) == 3
         assert len(result.actions_emitted) == 3
 
@@ -1462,7 +1460,7 @@ class TestDeclarationOrderIntegration:
         )
 
         # Verify all steps completed
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
         assert len(result.completed_steps) == 4
         assert len(result.actions_emitted) == 4
 
@@ -1564,7 +1562,7 @@ class TestDeclarationOrderIntegration:
         )
 
         # Verify all steps completed
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
         assert len(result.completed_steps) == 4
         assert len(result.actions_emitted) == 4
 
@@ -1639,7 +1637,7 @@ class TestDeclarationOrderIntegration:
             execution_mode=EnumExecutionMode.SEQUENTIAL,
         )
 
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
         assert len(result.actions_emitted) == 3
 
         # Map actions by step ID
@@ -2031,7 +2029,7 @@ class TestWorkflowContextIntegration:
         )
 
         # Verify all steps completed
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
         assert len(result.completed_steps) == 3
 
         # Verify each action's payload metadata contains expected data
@@ -2109,7 +2107,7 @@ class TestWorkflowContextIntegration:
         )
 
         # Verify all steps completed
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
         assert len(result.completed_steps) == 5
         assert len(result.actions_emitted) == 5
 
@@ -2446,7 +2444,7 @@ class TestWorkflowExecutorPerformance:
         elapsed_time = time.perf_counter() - start_time
 
         # Verify all steps completed
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
         assert len(result.completed_steps) == 100
         assert len(result.actions_emitted) == 100
         assert len(result.failed_steps) == 0
@@ -2487,7 +2485,7 @@ class TestWorkflowExecutorPerformance:
         elapsed_time = time.perf_counter() - start_time
 
         # Verify all steps completed
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
         assert len(result.completed_steps) == 100
         assert len(result.actions_emitted) == 100
         assert len(result.failed_steps) == 0
@@ -2527,7 +2525,7 @@ class TestWorkflowExecutorPerformance:
         elapsed_time = time.perf_counter() - start_time
 
         # Verify all steps completed
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
         assert len(result.completed_steps) == 100
         assert len(result.actions_emitted) == 100
         assert len(result.failed_steps) == 0
@@ -2564,7 +2562,7 @@ class TestWorkflowExecutorPerformance:
         elapsed_time = time.perf_counter() - start_time
 
         # Verify all steps completed
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
         assert len(result.completed_steps) == 100
         assert len(result.actions_emitted) == 100
         assert len(result.failed_steps) == 0
@@ -2600,7 +2598,7 @@ class TestWorkflowExecutorPerformance:
         elapsed_time = time.perf_counter() - start_time
 
         # Verify all steps completed
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
         assert len(result.completed_steps) == 200
         assert len(result.actions_emitted) == 200
 
@@ -2636,7 +2634,7 @@ class TestWorkflowExecutorPerformance:
         elapsed_time = time.perf_counter() - start_time
 
         # Verify all steps completed
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
         assert len(result.completed_steps) == 200
         assert len(result.actions_emitted) == 200
 
@@ -2749,7 +2747,7 @@ class TestWorkflowExecutorPerformance:
         )
 
         # Verify all steps completed
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
         assert len(result.completed_steps) == 150
         assert len(result.actions_emitted) == 150
 
@@ -2803,8 +2801,8 @@ class TestWorkflowExecutorPerformance:
         par_time = time.perf_counter() - par_start
 
         # Both should complete successfully
-        assert seq_result.execution_status == EnumWorkflowState.COMPLETED
-        assert par_result.execution_status == EnumWorkflowState.COMPLETED
+        assert seq_result.execution_status == EnumWorkflowStatus.COMPLETED
+        assert par_result.execution_status == EnumWorkflowStatus.COMPLETED
 
         # Parallel should be faster (or at least not significantly slower)
         # We allow some tolerance since the executor's async nature may vary
@@ -2866,7 +2864,7 @@ class TestWorkflowSizeLimits:
             workflow_id=workflow_id,
         )
 
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
         assert len(result.completed_steps) == num_steps
         assert len(result.actions_emitted) == num_steps
         assert len(result.failed_steps) == 0
@@ -2908,7 +2906,7 @@ class TestWorkflowSizeLimits:
             workflow_id=workflow_id,
         )
 
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
         assert len(result.completed_steps) == num_steps
         assert len(result.actions_emitted) == num_steps
 
@@ -2968,7 +2966,7 @@ class TestWorkflowSizeLimits:
             workflow_id=workflow_id,
         )
 
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
         assert len(result.completed_steps) == num_predecessors + 1
         assert len(result.actions_emitted) == num_predecessors + 1
 
@@ -3026,8 +3024,8 @@ class TestWorkflowSizeLimits:
         )
 
         # Both should complete successfully
-        assert result1.execution_status == EnumWorkflowState.COMPLETED
-        assert result2.execution_status == EnumWorkflowState.COMPLETED
+        assert result1.execution_status == EnumWorkflowStatus.COMPLETED
+        assert result2.execution_status == EnumWorkflowStatus.COMPLETED
 
         # Completed steps should be in same order (deterministic)
         assert result1.completed_steps == result2.completed_steps, (
@@ -3122,7 +3120,7 @@ class TestWorkflowSizeLimits:
             workflow_id=uuid4(),
         )
 
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
         assert len(result.completed_steps) == 7
         assert len(result.failed_steps) == 0
 
@@ -3221,7 +3219,7 @@ class TestWorkflowSizeLimits:
             workflow_id=uuid4(),
         )
 
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
         assert len(result.completed_steps) == num_steps
         assert len(result.actions_emitted) == num_steps
 
@@ -3313,7 +3311,7 @@ class TestWorkflowSizeLimitEnforcement:
             workflow_id=uuid4(),
         )
 
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
         assert len(result.completed_steps) == 1
         assert len(result.actions_emitted) == 1
 
@@ -3420,7 +3418,7 @@ class TestWorkflowSizeLimitEnforcement:
             )
 
         # Workflow should fail but not raise an exception
-        assert result.execution_status == EnumWorkflowState.FAILED
+        assert result.execution_status == EnumWorkflowStatus.FAILED
         # Some steps should have completed before the limit was hit
         assert len(result.completed_steps) > 0
         # At least one step should have failed (the one that exceeded the limit)
@@ -3561,7 +3559,7 @@ class TestWorkflowSizeLimitEnforcement:
             )
 
         # Workflow should fail but not raise an exception
-        assert result.execution_status == EnumWorkflowState.FAILED
+        assert result.execution_status == EnumWorkflowStatus.FAILED
         # Some steps should have completed before the limit was hit
         assert len(result.completed_steps) > 0
         # At least one step should have failed (the one that exceeded the limit)
@@ -3616,7 +3614,7 @@ class TestWorkflowSizeLimitEnforcement:
             workflow_id=uuid4(),
         )
 
-        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED
         assert len(result.completed_steps) == 10
         assert len(result.actions_emitted) == 10
         assert len(result.failed_steps) == 0

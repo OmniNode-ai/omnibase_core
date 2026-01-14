@@ -7,9 +7,11 @@ node contracts and structural conventions.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumUriType(str, Enum):
+class EnumUriType(StrValueHelper, str, Enum):
     """Valid types for ONEX URIs."""
 
     TOOL = "tool"
@@ -19,3 +21,6 @@ class EnumUriType(str, Enum):
     PLUGIN = "plugin"
     SCHEMA = "schema"
     NODE = "node"
+
+
+__all__ = ["EnumUriType"]

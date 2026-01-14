@@ -30,10 +30,8 @@ import pytest
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_node_type import EnumNodeType
 from omnibase_core.enums.enum_workflow_coordination import EnumFailureRecoveryStrategy
-from omnibase_core.enums.enum_workflow_execution import (
-    EnumExecutionMode,
-    EnumWorkflowState,
-)
+from omnibase_core.enums.enum_workflow_execution import EnumExecutionMode
+from omnibase_core.enums.enum_workflow_status import EnumWorkflowStatus
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
 from omnibase_core.models.contracts.subcontracts.model_coordination_rules import (
@@ -320,7 +318,7 @@ class TestOrchestratorIntegration:
 
         # Assert: Verify output structure and workflow execution
         assert isinstance(result, ModelOrchestratorOutput)
-        assert result.execution_status == EnumWorkflowState.COMPLETED.value
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED.value
         assert result.execution_time_ms >= 0
 
         # Verify completed steps
@@ -440,7 +438,7 @@ class TestOrchestratorIntegration:
         result: ModelOrchestratorOutput = asyncio.run(orchestrator.process(input_data))
 
         # Assert
-        assert result.execution_status == EnumWorkflowState.COMPLETED.value
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED.value
         assert len(result.completed_steps) == 4
         assert len(result.failed_steps) == 0
         assert len(result.actions_emitted) == 4
@@ -496,7 +494,7 @@ class TestOrchestratorIntegration:
         result: ModelOrchestratorOutput = asyncio.run(orchestrator.process(input_data))
 
         # Assert
-        assert result.execution_status == EnumWorkflowState.COMPLETED.value
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED.value
 
         # Verify workflow state contains context
         snapshot = orchestrator.snapshot_workflow_state()
@@ -568,7 +566,7 @@ class TestOrchestratorIntegrationEdgeCases:
         result: ModelOrchestratorOutput = asyncio.run(orchestrator.process(input_data))
 
         # Assert
-        assert result.execution_status == EnumWorkflowState.COMPLETED.value
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED.value
         assert len(result.completed_steps) == 3
         assert len(result.failed_steps) == 0
 
@@ -672,7 +670,7 @@ class TestOrchestratorIntegrationEdgeCases:
         result: ModelOrchestratorOutput = asyncio.run(orchestrator.process(input_data))
 
         # Assert: Only enabled step should be in completed list
-        assert result.execution_status == EnumWorkflowState.COMPLETED.value
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED.value
         assert len(result.completed_steps) == 1
         assert str(enabled_step_id) in result.completed_steps
         assert str(disabled_step_id) not in result.completed_steps
@@ -714,7 +712,7 @@ class TestOrchestratorIntegrationEdgeCases:
         result: ModelOrchestratorOutput = asyncio.run(orchestrator.process(input_data))
 
         # Assert
-        assert result.execution_status == EnumWorkflowState.COMPLETED.value
+        assert result.execution_status == EnumWorkflowStatus.COMPLETED.value
         assert len(result.completed_steps) == 5
 
     def test_contract_validation_without_steps(

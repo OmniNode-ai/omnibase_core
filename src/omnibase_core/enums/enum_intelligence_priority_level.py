@@ -7,9 +7,11 @@ context sharing and processing prioritization.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumIntelligencePriorityLevel(str, Enum):
+class EnumIntelligencePriorityLevel(StrValueHelper, str, Enum):
     """
     Enum for intelligence priority levels with validation.
 
@@ -22,3 +24,6 @@ class EnumIntelligencePriorityLevel(str, Enum):
     HIGH = "high"
     CRITICAL = "critical"
     EMERGENCY = "emergency"
+
+
+__all__ = ["EnumIntelligencePriorityLevel"]

@@ -1,25 +1,16 @@
 """
 Workflow Execution Enums.
 
-Enums for workflow orchestration including states, execution modes,
+Enums for workflow orchestration including execution modes,
 action types, and branch conditions.
 
 Extracted from node_orchestrator.py to eliminate embedded class anti-pattern.
+
+Note: EnumWorkflowState has been consolidated into EnumWorkflowStatus
+in enum_workflow_status.py per OMN-1310.
 """
 
 from enum import Enum, unique
-
-
-@unique
-class EnumWorkflowState(Enum):
-    """Workflow execution states."""
-
-    PENDING = "pending"
-    RUNNING = "running"
-    PAUSED = "paused"
-    COMPLETED = "completed"
-    FAILED = "failed"
-    CANCELLED = "cancelled"
 
 
 @unique

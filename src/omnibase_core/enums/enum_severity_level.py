@@ -29,6 +29,8 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 # Module-level constant for numeric severity levels (avoids per-call dict allocation)
 # Compatible with RFC 5424 severity levels with numeric ordering
 _SEVERITY_LEVEL_NUMERIC_MAP: dict[str, int] = {
@@ -47,7 +49,7 @@ _SEVERITY_LEVEL_NUMERIC_MAP: dict[str, int] = {
 
 
 @unique
-class EnumSeverityLevel(str, Enum):
+class EnumSeverityLevel(StrValueHelper, str, Enum):
     """
     Strongly typed severity level for messages and logging.
 
@@ -70,10 +72,6 @@ class EnumSeverityLevel(str, Enum):
     FATAL = "fatal"  # Fatal error (alias for EMERGENCY)
     WARN = "warn"  # Short form of WARNING
 
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
-
     @classmethod
     def from_string(cls, value: str) -> EnumSeverityLevel:
         """Convert string to severity level with fallback handling."""
@@ -85,10 +83,9 @@ class EnumSeverityLevel(str, Enum):
             if level.value == normalized:
                 return level
 
-        # Common aliases
+        # Common aliases (note: "warn" is handled by WARN member, not as alias)
         aliases = {
             "err": cls.ERROR,
-            "warn": cls.WARNING,
             "information": cls.INFO,
             "informational": cls.INFO,
             "verbose": cls.DEBUG,

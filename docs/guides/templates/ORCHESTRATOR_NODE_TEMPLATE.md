@@ -123,7 +123,7 @@ from omnibase_core.nodes import (
     EnumActionType,
     EnumBranchCondition,
     EnumExecutionMode,
-    EnumWorkflowState,
+    EnumWorkflowStatus,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.model_onex_warning import ModelONEXWarning
@@ -160,7 +160,7 @@ class Node{DomainCamelCase}{MicroserviceCamelCase}Orchestrator(
 
     v0.4.0 Architecture:
     - NodeOrchestrator provides MixinWorkflowExecution for workflow-driven coordination
-    - Uses EnumActionType, EnumBranchCondition, EnumExecutionMode, EnumWorkflowState
+    - Uses EnumActionType, EnumBranchCondition, EnumExecutionMode, EnumWorkflowStatus
     - Lease-based ownership with optimistic concurrency control
 
     Key Features:

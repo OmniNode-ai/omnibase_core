@@ -9,9 +9,11 @@ Strongly typed type name values for node types.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumTypeName(str, Enum):
+class EnumTypeName(StrValueHelper, str, Enum):
     """
     Strongly typed type name values for node types.
 
@@ -66,10 +68,6 @@ class EnumTypeName(str, Enum):
 
     # Testing nodes
     SCENARIO_RUNNER = "SCENARIO_RUNNER"
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def is_generation_node(cls, type_name: EnumTypeName) -> bool:

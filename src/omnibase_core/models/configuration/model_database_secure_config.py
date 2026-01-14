@@ -215,7 +215,7 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
         v = v.strip().lower()
 
         # Allow localhost and IP addresses
-        if v in ["localhost", "127.0.0.1", "::1"]:
+        if v in {"localhost", "127.0.0.1", "::1"}:
             return v
 
         # Check for valid domain format
@@ -551,7 +551,7 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
         else:
             security_level = "medium"
 
-            if self.ssl_mode in ["disable", "allow"]:
+            if self.ssl_mode in {"disable", "allow"}:
                 vulnerabilities.append(f"Weak SSL mode: {self.ssl_mode}")
                 recommendations.append(
                     "Use 'require' or 'verify-full' SSL mode",

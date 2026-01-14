@@ -9,9 +9,11 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumComparisonType(str, Enum):
+class EnumComparisonType(StrValueHelper, str, Enum):
     """Types of comparisons for invariant validation."""
 
     EXACT = "exact"

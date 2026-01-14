@@ -9,9 +9,11 @@ Strongly typed execution mode values for configuration - defines WHICH pattern t
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumExecutionMode(str, Enum):
+class EnumExecutionMode(StrValueHelper, str, Enum):
     """
     Execution pattern mode - WHICH pattern to use for processing.
 

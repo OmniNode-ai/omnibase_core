@@ -6,9 +6,11 @@ Defines types for discriminated union in validation rules input structures.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumValidationRulesInputType(str, Enum):
+class EnumValidationRulesInputType(StrValueHelper, str, Enum):
     """Validation rules input type enumeration for discriminated unions."""
 
     NONE = "none"

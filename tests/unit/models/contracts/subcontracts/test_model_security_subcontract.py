@@ -16,7 +16,6 @@ from omnibase_core.models.contracts.subcontracts.model_security_subcontract impo
     ModelSecuritySubcontract,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 @pytest.mark.unit

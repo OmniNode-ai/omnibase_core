@@ -2,9 +2,11 @@
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumComparisonOperators(str, Enum):
+class EnumComparisonOperators(StrValueHelper, str, Enum):
     """Enum for comparison operators used in conditional logic."""
 
     EQUALS = "equals"
@@ -15,3 +17,6 @@ class EnumComparisonOperators(str, Enum):
     LESS_THAN_OR_EQUAL = "less_than_or_equal"
     CONTAINS = "contains"
     NOT_CONTAINS = "not_contains"
+
+
+__all__ = ["EnumComparisonOperators"]
