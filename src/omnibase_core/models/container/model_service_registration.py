@@ -15,7 +15,7 @@ from omnibase_core.protocols import (
 from .model_service_metadata import ModelServiceMetadata
 
 # Type alias for registration status
-LiteralRegistrationStatus = Literal[
+LiteralRegistrationStatus = Literal[  # enum-ok: model type annotation
     "registered", "unregistered", "failed", "pending", "conflict", "invalid"
 ]
 

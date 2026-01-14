@@ -40,7 +40,7 @@ __all__ = [
 ]
 
 # Type alias for valid event types
-ContractValidationEventType = Literal[
+ContractValidationEventType = Literal[  # enum-ok: model type annotation
     "validation_started",
     "validation_passed",
     "validation_failed",

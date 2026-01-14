@@ -31,6 +31,7 @@ jobs:
   #   - node-purity-check: Declarative node purity guarantees
   #   - mypy-validation-scripts: Type check validation scripts
   #   - core-infra-boundary: Transport/I/O import validation (ADR-005)
+  #   - enum-governance: Enum architectural standards validation (OMN-1313)
   #
   # Phase 2 - Full Test Suite (after Phase 1 completes):
   #   - test-parallel: 20 splits of full test suite (~3 min each)
@@ -574,13 +575,73 @@ jobs:
           echo "- No class-level mutable state" >> $GITHUB_STEP_SUMMARY
           echo "- No caching decorators that introduce state" >> $GITHUB_STEP_SUMMARY
 
+  # Phase 1 validation job - runs in parallel with all other Phase 1 jobs
+  # Enum Governance Validation (OMN-1313)
+  # Ensures all enums follow architectural standards:
+  # - Centralized in src/omnibase_core/enums/
+  # - Single responsibility per enum
+  # - Use StrValueHelper for string serialization
+  enum-governance:
+    name: Enum Governance Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: ${{ env.POETRY_VERSION }}
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Load cached venv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: >-
+            venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-
+            ${{ hashFiles('**/poetry.lock') }}-
+            ${{ env.CACHE_VERSION }}
+          restore-keys: |
+            venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/poetry.lock') }}-${{ env.CACHE_VERSION }}
+
+      - name: Install dependencies
+        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        run: poetry install --no-interaction --no-root
+
+      - name: Install project
+        run: poetry install --no-interaction
+
+      - name: Run enum governance validator
+        run: poetry run python -m omnibase_core.validation.checker_enum_governance src/omnibase_core/
+
+      - name: Enum governance summary
+        if: always()
+        run: |
+          echo "## Enum Governance Validation (OMN-1313)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Validates enum governance with three rules:" >> $GITHUB_STEP_SUMMARY
+          echo "- ENUM_001: Enforce UPPER_SNAKE_CASE naming for enum members" >> $GITHUB_STEP_SUMMARY
+          echo "- ENUM_002: Detect Literal type aliases that should be enums" >> $GITHUB_STEP_SUMMARY
+          echo "- ENUM_003: Detect duplicate enum values across files (warn-only)" >> $GITHUB_STEP_SUMMARY
+
   # Phase 3 - Aggregation job
   # Waits for ALL jobs (Phase 1 validation + Phase 2 tests) to complete
   # Provides unified pass/fail status for branch protection rules
   test-summary:
     name: Test Summary
     runs-on: ubuntu-latest
-    needs: [test-parallel, lint, pyright, exports-validation, mypy-validation-scripts, core-infra-boundary, docs-validation, node-purity-check]
+    needs: [test-parallel, lint, pyright, exports-validation, mypy-validation-scripts, core-infra-boundary, docs-validation, node-purity-check, enum-governance]
     if: always()
 
     steps:
@@ -594,6 +655,7 @@ jobs:
           core_infra="${{ needs.core-infra-boundary.result }}"
           docs="${{ needs.docs-validation.result }}"
           purity="${{ needs.node-purity-check.result }}"
+          enum_gov="${{ needs.enum-governance.result }}"
 
           if [[ "$parallel" == "success" ]] && \
              [[ "$lint" == "success" ]] && \
@@ -602,7 +664,8 @@ jobs:
              [[ "$mypy_scripts" == "success" ]] && \
              [[ "$core_infra" == "success" ]] && \
              [[ "$docs" == "success" ]] && \
-             [[ "$purity" == "success" ]]; then
+             [[ "$purity" == "success" ]] && \
+             [[ "$enum_gov" == "success" ]]; then
             echo "All tests passed successfully"
             echo "Parallel Tests (20 splits): Passed"
             echo "Code Quality: Passed"
@@ -612,6 +675,7 @@ jobs:
             echo "Core-Infra Boundary: Passed"
             echo "Documentation: Passed"
             echo "Node Purity: Passed"
+            echo "Enum Governance: Passed"
             exit 0
           else
             echo "Tests failed"
@@ -623,5 +687,6 @@ jobs:
             echo "Core-Infra Boundary: $core_infra"
             echo "Documentation: $docs"
             echo "Node Purity: $purity"
+            echo "Enum Governance: $enum_gov"
             exit 1
           fi

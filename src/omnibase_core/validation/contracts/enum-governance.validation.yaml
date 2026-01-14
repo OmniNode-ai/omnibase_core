@@ -1,0 +1,101 @@
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: enum-governance
+  validator_name: Enum Governance Validator
+  validator_description: |
+    Enforces enum governance policies across the codebase with three rules:
+    1. ENUM_001: Enforce UPPER_SNAKE_CASE naming for enum members
+    2. ENUM_002: Detect Literal type aliases that should be proper enums
+    3. ENUM_003: Detect enums with overlapping/duplicate value sets (warn-only)
+
+    These rules ensure consistent enum usage, prevent Literal proliferation,
+    and identify potential enum consolidation opportunities.
+
+  target_patterns:
+    - "**/*.py"
+  exclude_patterns:
+    - "**/node_modules/**"
+    - "**/.git/**"
+    - "**/venv/**"
+    - "**/__pycache__/**"
+    - "**/archived/**"
+    - "**/tests/**"
+    - "**/*_test.py"
+    - "**/test_*.py"
+    - "**/conftest.py"
+
+  rules:
+    - rule_id: enum_member_casing
+      description: Enforce UPPER_SNAKE_CASE naming for enum members
+      severity: error
+      enabled: true
+
+    - rule_id: literal_should_be_enum
+      description: Detect Literal type aliases that should be proper enums
+      severity: error
+      enabled: true
+      parameters:
+        min_values: 3
+        allowed_aliases:
+          - EnforcementOutcome  # Pydantic field typing, not domain model
+
+    - rule_id: duplicate_enum_values
+      description: Detect enums with overlapping/duplicate value sets
+      severity: warning
+      enabled: true  # Phase 3: Enabled with require_name_similarity=true to limit false positives
+      parameters:
+        require_name_similarity: true
+        approved_overlaps: []
+
+  # ============================================================================
+  # LINE-BASED SUPPRESSION (NOT rule-specific!)
+  # ============================================================================
+  # IMPORTANT: Suppression operates on WHOLE LINES, not individual rules.
+  #
+  # How it works:
+  #   - If ANY pattern below appears anywhere on a source line, ALL enum
+  #     violations on that line are suppressed (regardless of which rule triggered).
+  #   - The validator performs a simple substring match against the entire line.
+  #
+  # Example - suppress enum member casing violation:
+  #   MY_value = "my_value"  # enum-ok: legacy naming preserved for compatibility
+  #
+  # Example - suppress literal-should-be-enum violation:
+  #   StatusType = Literal["a", "b", "c"]  # ONEX_EXCLUDE: enum
+  #
+  # Matching: Case-sensitive substring search (no regex).
+  # ============================================================================
+  suppression_comments:
+    # Legacy ONEX exclusion pattern
+    - "# ONEX_EXCLUDE: enum"
+
+    # Preferred pattern with reason (e.g., "# enum-ok: legacy compatibility")
+    - "# enum-ok:"
+
+    # Standard noqa pattern
+    - "# noqa: enum"
+
+  severity_default: error
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+
+  # ============================================================================
+  # PARALLEL EXECUTION SEMANTICS
+  # ============================================================================
+  # This flag indicates that the validator SUPPORTS parallel file processing,
+  # meaning files can be validated concurrently by separate worker processes
+  # (e.g., pytest-xdist splits).
+  #
+  # CRITICAL THREAD SAFETY CONSTRAINT:
+  #   Parallel execution is PROCESS-safe, NOT THREAD-safe within a single process.
+  #   Each worker process MUST create its own validator instance.
+  #
+  # For thread safety details, see: docs/guides/THREADING.md
+  # ============================================================================
+  parallel_execution: true
