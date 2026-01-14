@@ -6,8 +6,7 @@
 Demonstrates how to use the ContractValidator API for contract validation.
 """
 
-from omnibase_core.services.service_contract_validator import \
-    ServiceContractValidator
+from omnibase_core.services.service_contract_validator import ServiceContractValidator
 
 
 def example_1_validate_yaml_contract():
