@@ -258,11 +258,15 @@ class ModelPayloadExtension(ModelIntentPayloadBase):
         ),
     )
 
-    config: dict[str, object] = Field(
+    # NOTE(OMN-1266): StrictJsonType is used instead of object because runtime
+    # validation rejects non-JSON types - this ensures static type matches runtime behavior.
+    # The config field has identical JSON validation to the data field.
+    config: dict[str, StrictJsonType] = Field(
         default_factory=dict,
         description=(
             "Optional configuration overrides for this execution. Allows per-call "
-            "customization of extension behavior."
+            "customization of extension behavior. Must be JSON-serializable "
+            "(str, int, float, bool, None, list, dict only)."
         ),
     )
 
@@ -315,8 +319,8 @@ class ModelPayloadExtension(ModelIntentPayloadBase):
 
     @field_validator("config", mode="before")
     @classmethod
-    def validate_config_json_serializable(cls, v: object) -> dict[str, object]:
-        """Validate that config values are JSON-serializable.
+    def validate_config_json_serializable(cls, v: object) -> dict[str, StrictJsonType]:
+        """Validate that config values are strictly JSON-serializable.
 
         Applies the same JSON-serializability rules as the data field.
 
@@ -324,7 +328,7 @@ class ModelPayloadExtension(ModelIntentPayloadBase):
             v: The dict to validate.
 
         Returns:
-            The validated dict (unchanged if valid).
+            The validated dict (unchanged if valid), typed as dict[str, StrictJsonType].
 
         Raises:
             ValueError: If any value is not JSON-serializable, with key-path and hint.
@@ -338,4 +342,6 @@ class ModelPayloadExtension(ModelIntentPayloadBase):
             raise ValueError(
                 f"Non-JSON-serializable value at 'config.{path}': {type_name}. {hint}."
             )
+        # NOTE(OMN-1266): Type narrowing - validator confirms all values are StrictJsonType
+        # primitives. The isinstance(v, dict) check above narrows the type sufficiently.
         return v

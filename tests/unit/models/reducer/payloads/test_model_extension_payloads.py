@@ -242,6 +242,7 @@ class TestModelPayloadExtensionImmutability:
             extension_type="plugin.test", plugin_name="test"
         )
         with pytest.raises(ValidationError):
+            # NOTE(OMN-1266): Intentionally mutating frozen model to test immutability.
             payload.extension_type = "webhook.send"  # type: ignore[misc]
 
     def test_cannot_modify_plugin_name(self) -> None:
@@ -250,6 +251,7 @@ class TestModelPayloadExtensionImmutability:
             extension_type="plugin.test", plugin_name="test"
         )
         with pytest.raises(ValidationError):
+            # NOTE(OMN-1266): Intentionally mutating frozen model to test immutability.
             payload.plugin_name = "new-plugin"  # type: ignore[misc]
 
 
@@ -420,6 +422,7 @@ class TestModelPayloadExtensionJsonValidationAcceptance:
         payload = ModelPayloadExtension(
             extension_type="plugin.test",
             plugin_name="test",
+            # NOTE(OMN-1266): mypy cannot infer JsonType for dict[str, object].
             data=complex_data,  # type: ignore[arg-type]
         )
         assert payload.data == complex_data
@@ -451,6 +454,7 @@ class TestModelPayloadExtensionJsonValidationAcceptance:
         payload = ModelPayloadExtension(
             extension_type="plugin.test",
             plugin_name="test",
+            # NOTE(OMN-1266): mypy cannot infer JsonType for dict[str, object].
             data=deep_data,  # type: ignore[arg-type]
         )
         # Safe: validated at runtime, mypy cannot track recursive JsonType
@@ -475,6 +479,7 @@ class TestModelPayloadExtensionJsonValidationAcceptance:
         payload = ModelPayloadExtension(
             extension_type="plugin.test",
             plugin_name="test",
+            # NOTE(OMN-1266): mypy sees list[int] as incompatible with JsonType.
             data={"large": large_list},  # type: ignore[dict-item]
         )
         large_value = payload.data["large"]
