@@ -21,7 +21,9 @@ class ModelAgentStatus(BaseModel):
     activity: ModelAgentActivity = Field(description="Current activity information")
     resource_usage: ModelResourceMetrics = Field(description="Resource usage metrics")
     health_score: float = Field(description="Health score from 0.0 to 1.0")
-    error_count: int = Field(default=0, description="Number of errors since last reset")
+    error_level_count: int = Field(
+        default=0, description="Number of errors since last reset"
+    )
     last_error: str | None = Field(
         default=None, description="Description of last error"
     )

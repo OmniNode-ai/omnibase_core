@@ -177,7 +177,7 @@ class ContractValidationPipeline:  # naming-ok: validator class, not protocol
         ...     # Access phase-specific results for detailed diagnostics
         ...     for phase_name, phase_result in result.validation_results.items():
         ...         if not phase_result.is_valid:
-        ...             print(f"\nPhase {phase_name}: {phase_result.error_count} errors, "
+        ...             print(f"\nPhase {phase_name}: {phase_result.error_level_count} errors, "
         ...                   f"{phase_result.warning_count} warnings")
         ...
         ...             # Iterate over all issues with full context
@@ -380,7 +380,7 @@ class ContractValidationPipeline:  # naming-ok: validator class, not protocol
         result = self._patch_validator.validate(patch)
         logger.debug(
             f"Phase 1 (PATCH): Completed - is_valid={result.is_valid}, "
-            f"errors={result.error_count}, warnings={result.warning_count}"
+            f"errors={result.error_level_count}, warnings={result.warning_count}"
         )
         return result
 
@@ -436,7 +436,7 @@ class ContractValidationPipeline:  # naming-ok: validator class, not protocol
 
         logger.debug(
             f"Phase 2 (MERGE): Completed - is_valid={result.is_valid}, "
-            f"errors={result.error_count}, warnings={result.warning_count}"
+            f"errors={result.error_level_count}, warnings={result.warning_count}"
         )
         return result
 
@@ -570,7 +570,7 @@ class ContractValidationPipeline:  # naming-ok: validator class, not protocol
         result = self._expanded_validator.validate(contract)
         logger.debug(
             f"Phase 3 (EXPANDED): Completed - is_valid={result.is_valid}, "
-            f"errors={result.error_count}, warnings={result.warning_count}"
+            f"errors={result.error_level_count}, warnings={result.warning_count}"
         )
         return result
 
@@ -690,7 +690,7 @@ class ContractValidationPipeline:  # naming-ok: validator class, not protocol
         # Check for critical errors
         if not patch_result.is_valid:
             logger.info(
-                f"Pipeline: Failed at Phase 1 (PATCH) - {patch_result.error_count} errors"
+                f"Pipeline: Failed at Phase 1 (PATCH) - {patch_result.error_level_count} errors"
             )
             result.errors = all_errors
             result.phase_failed = EnumValidationPhase.PATCH
@@ -700,7 +700,7 @@ class ContractValidationPipeline:  # naming-ok: validator class, not protocol
             failed_event = ModelContractValidationFailedEvent.create(
                 contract_name=contract_name,
                 run_id=run_id,
-                error_count=patch_result.error_count,
+                error_count=patch_result.error_level_count,
                 first_error_code="PATCH_VALIDATION_FAILED",
                 duration_ms=duration_ms,
                 violations=all_errors[:100],  # Bounded to MAX_VIOLATION_ENTRIES
@@ -798,7 +798,7 @@ class ContractValidationPipeline:  # naming-ok: validator class, not protocol
         # Check for critical errors
         if not merge_result.is_valid:
             logger.info(
-                f"Pipeline: Failed at Phase 2 (MERGE) - {merge_result.error_count} errors"
+                f"Pipeline: Failed at Phase 2 (MERGE) - {merge_result.error_level_count} errors"
             )
             result.errors = all_errors
             result.phase_failed = EnumValidationPhase.MERGE
@@ -808,7 +808,7 @@ class ContractValidationPipeline:  # naming-ok: validator class, not protocol
             failed_event = ModelContractValidationFailedEvent.create(
                 contract_name=contract_name,
                 run_id=run_id,
-                error_count=merge_result.error_count,
+                error_count=merge_result.error_level_count,
                 first_error_code="MERGE_VALIDATION_FAILED",
                 duration_ms=duration_ms,
                 violations=all_errors[:100],
@@ -830,7 +830,7 @@ class ContractValidationPipeline:  # naming-ok: validator class, not protocol
         # Check for critical errors
         if not expanded_result.is_valid:
             logger.info(
-                f"Pipeline: Failed at Phase 3 (EXPANDED) - {expanded_result.error_count} errors"
+                f"Pipeline: Failed at Phase 3 (EXPANDED) - {expanded_result.error_level_count} errors"
             )
             result.errors = all_errors
             result.phase_failed = EnumValidationPhase.EXPANDED
@@ -840,7 +840,7 @@ class ContractValidationPipeline:  # naming-ok: validator class, not protocol
             failed_event = ModelContractValidationFailedEvent.create(
                 contract_name=contract_name,
                 run_id=run_id,
-                error_count=expanded_result.error_count,
+                error_count=expanded_result.error_level_count,
                 first_error_code="EXPANDED_VALIDATION_FAILED",
                 duration_ms=duration_ms,
                 violations=all_errors[:100],

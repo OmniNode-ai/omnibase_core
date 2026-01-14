@@ -358,7 +358,7 @@ class ModelCliResult(BaseModel):
             retry_count=self.retry_count,
             has_errors=self.has_errors(),
             has_warnings=self.has_warnings(),
-            error_count=len(self.validation_errors),
+            error_level_count=len(self.validation_errors),
             warning_count=len(self.warnings),
             critical_error_count=len(self.get_critical_errors()),
         )

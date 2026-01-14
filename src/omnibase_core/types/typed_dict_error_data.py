@@ -10,7 +10,7 @@ from typing import TypedDict
 class TypedDictErrorData(TypedDict, total=False):
     """Typed structure for error count statistics in metadata analytics."""
 
-    error_count: int
+    error_level_count: int
     warning_count: int
     critical_error_count: int
 

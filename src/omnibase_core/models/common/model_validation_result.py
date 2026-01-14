@@ -95,8 +95,8 @@ class ModelValidationResult[T: object](BaseModel):
         return len(self.issues)
 
     @property
-    def error_count(self) -> int:
-        """Number of error-level issues."""
+    def error_level_count(self) -> int:
+        """Number of ERROR-severity issues."""
         return len(self.get_issues_by_severity(EnumSeverity.ERROR))
 
     @property

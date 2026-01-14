@@ -256,10 +256,12 @@ class MergeValidator:
                 f"(warnings={result.warning_count})"
             )
         else:
-            result.summary = f"Merge validation failed with {result.error_count} errors"
+            result.summary = (
+                f"Merge validation failed with {result.error_level_count} errors"
+            )
             logger.info(
                 f"Merge validation failed for {merged.name}: "
-                f"{result.error_count} errors, {result.warning_count} warnings"
+                f"{result.error_level_count} errors, {result.warning_count} warnings"
             )
 
         return result

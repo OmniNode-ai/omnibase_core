@@ -28,7 +28,7 @@ class ModelAnalyticsErrorSummary(BaseModel):
 
     # Count metrics
     total_issues: int = Field(description="Total number of issues")
-    error_count: int = Field(description="Number of errors")
+    error_level_count: int = Field(description="Number of ERROR-severity issues")
     warning_count: int = Field(description="Number of warnings")
     critical_error_count: int = Field(description="Number of critical errors")
     fatal_error_count: int = Field(default=0, description="Number of fatal errors")
@@ -59,7 +59,7 @@ class ModelAnalyticsErrorSummary(BaseModel):
     def is_error_free(self) -> bool:
         """Check if there are no errors (only warnings allowed)."""
         return (
-            self.error_count == 0
+            self.error_level_count == 0
             and self.critical_error_count == 0
             and self.fatal_error_count == 0
         )
@@ -69,7 +69,7 @@ class ModelAnalyticsErrorSummary(BaseModel):
         """Check if there are only warnings (no errors)."""
         return (
             self.warning_count > 0
-            and self.error_count == 0
+            and self.error_level_count == 0
             and self.critical_error_count == 0
             and self.fatal_error_count == 0
         )
@@ -80,7 +80,7 @@ class ModelAnalyticsErrorSummary(BaseModel):
             return "Fatal"
         if self.critical_error_count > 0:
             return "Critical"
-        if self.error_count > 0:
+        if self.error_level_count > 0:
             return "Poor"
         if self.warning_count > 0:
             return "Fair"
@@ -91,7 +91,7 @@ class ModelAnalyticsErrorSummary(BaseModel):
         return {
             "fatal": self.fatal_error_count,
             "critical": self.critical_error_count,
-            "errors": self.error_count,
+            "error_level": self.error_level_count,
             "warnings": self.warning_count,
         }
 
@@ -99,7 +99,7 @@ class ModelAnalyticsErrorSummary(BaseModel):
     def create_summary(
         cls,
         total_issues: int,
-        error_count: int,
+        error_level_count: int,
         warning_count: int,
         critical_error_count: int,
         error_rate_percentage: float,
@@ -113,7 +113,7 @@ class ModelAnalyticsErrorSummary(BaseModel):
         """Create an error summary with all required data."""
         return cls(
             total_issues=total_issues,
-            error_count=error_count,
+            error_level_count=error_level_count,
             warning_count=warning_count,
             critical_error_count=critical_error_count,
             fatal_error_count=fatal_error_count,
@@ -141,7 +141,7 @@ class ModelAnalyticsErrorSummary(BaseModel):
         # Pack all error summary data into metadata
         result["metadata"] = {
             "total_issues": self.total_issues,
-            "error_count": self.error_count,
+            "error_level_count": self.error_level_count,
             "warning_count": self.warning_count,
             "critical_error_count": self.critical_error_count,
             "fatal_error_count": self.fatal_error_count,

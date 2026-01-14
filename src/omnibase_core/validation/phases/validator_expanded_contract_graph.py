@@ -111,7 +111,9 @@ class ExpandedContractGraphValidator:  # naming-ok: validator class, not protoco
         if result.is_valid:
             result.summary = f"Graph validation passed for {len(contracts)} contracts"
         else:
-            result.summary = f"Graph validation failed with {result.error_count} errors"
+            result.summary = (
+                f"Graph validation failed with {result.error_level_count} errors"
+            )
 
         return result
 

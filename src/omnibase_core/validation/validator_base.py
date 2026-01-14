@@ -754,7 +754,9 @@ class ValidatorBase(ABC):
         )
 
         # Count by severity
-        error_count = sum(1 for i in sorted_issues if i.severity == EnumSeverity.ERROR)
+        error_level_count = sum(
+            1 for i in sorted_issues if i.severity == EnumSeverity.ERROR
+        )
         warning_count = sum(
             1 for i in sorted_issues if i.severity == EnumSeverity.WARNING
         )
@@ -763,7 +765,7 @@ class ValidatorBase(ABC):
         )
 
         # Determine validity based on contract settings
-        has_errors = error_count > 0 or critical_count > 0
+        has_errors = error_level_count > 0 or critical_count > 0
         has_warnings = warning_count > 0
 
         is_valid = True

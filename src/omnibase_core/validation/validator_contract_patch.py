@@ -172,10 +172,12 @@ class ContractPatchValidator:
                 f"(warnings={result.warning_count})"
             )
         else:
-            result.summary = f"Patch validation failed with {result.error_count} errors"
+            result.summary = (
+                f"Patch validation failed with {result.error_level_count} errors"
+            )
             logger.info(
                 f"Patch validation failed for profile={patch.extends.profile}: "
-                f"{result.error_count} errors, {result.warning_count} warnings"
+                f"{result.error_level_count} errors, {result.warning_count} warnings"
             )
 
         return result

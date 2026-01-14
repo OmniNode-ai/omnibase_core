@@ -202,12 +202,10 @@ class ExpandedContractValidator:  # naming-ok: validator class, not protocol
                 f"(warnings={result.warning_count})"
             )
         else:
-            result.summary = (
-                f"Expanded contract validation failed with {result.error_count} errors"
-            )
+            result.summary = f"Expanded contract validation failed with {result.error_level_count} errors"
             logger.info(
                 f"Expanded contract validation failed for handler_id={contract.handler_id}: "
-                f"{result.error_count} errors, {result.warning_count} warnings"
+                f"{result.error_level_count} errors, {result.warning_count} warnings"
             )
 
         return result

@@ -32,7 +32,7 @@ class TestModelResultSummaryBasics:
             retry_count=0,
             has_errors=False,
             has_warnings=False,
-            error_count=0,
+            error_level_count=0,
             warning_count=0,
             critical_error_count=0,
         )
@@ -61,7 +61,7 @@ class TestModelResultSummaryBasics:
             retry_count=3,
             has_errors=True,
             has_warnings=True,
-            error_count=5,
+            error_level_count=5,
             warning_count=2,
             critical_error_count=1,
         )
@@ -71,7 +71,7 @@ class TestModelResultSummaryBasics:
         assert summary.retry_count == 3
         assert summary.has_errors is True
         assert summary.has_warnings is True
-        assert summary.error_count == 5
+        assert summary.error_level_count == 5
         assert summary.warning_count == 2
         assert summary.critical_error_count == 1
 
@@ -97,7 +97,7 @@ class TestModelResultSummaryBasics:
             retry_count=0,
             has_errors=False,
             has_warnings=False,
-            error_count=0,
+            error_level_count=0,
             warning_count=0,
             critical_error_count=0,
         )
@@ -123,7 +123,7 @@ class TestModelResultSummaryExecutionStatus:
             retry_count=0,
             has_errors=False,
             has_warnings=False,
-            error_count=0,
+            error_level_count=0,
             warning_count=0,
             critical_error_count=0,
         )
@@ -146,7 +146,7 @@ class TestModelResultSummaryExecutionStatus:
             retry_count=2,
             has_errors=False,
             has_warnings=True,
-            error_count=0,
+            error_level_count=0,
             warning_count=3,
             critical_error_count=0,
         )
@@ -169,7 +169,7 @@ class TestModelResultSummaryExecutionStatus:
             retry_count=0,
             has_errors=True,
             has_warnings=False,
-            error_count=1,
+            error_level_count=1,
             warning_count=0,
             critical_error_count=1,
         )
@@ -192,14 +192,14 @@ class TestModelResultSummaryExecutionStatus:
             retry_count=5,
             has_errors=True,
             has_warnings=True,
-            error_count=10,
+            error_level_count=10,
             warning_count=5,
             critical_error_count=2,
         )
 
         assert summary.success is False
         assert summary.retry_count == 5
-        assert summary.error_count == 10
+        assert summary.error_level_count == 10
 
 
 @pytest.mark.unit
@@ -220,12 +220,12 @@ class TestModelResultSummaryErrorCounts:
             retry_count=0,
             has_errors=False,
             has_warnings=False,
-            error_count=0,
+            error_level_count=0,
             warning_count=0,
             critical_error_count=0,
         )
 
-        assert summary.error_count == 0
+        assert summary.error_level_count == 0
         assert summary.warning_count == 0
         assert summary.critical_error_count == 0
 
@@ -243,7 +243,7 @@ class TestModelResultSummaryErrorCounts:
             retry_count=0,
             has_errors=False,
             has_warnings=True,
-            error_count=0,
+            error_level_count=0,
             warning_count=10,
             critical_error_count=0,
         )
@@ -266,14 +266,14 @@ class TestModelResultSummaryErrorCounts:
             retry_count=1,
             has_errors=True,
             has_warnings=True,
-            error_count=3,
+            error_level_count=3,
             warning_count=7,
             critical_error_count=1,
         )
 
         assert summary.has_errors is True
         assert summary.has_warnings is True
-        assert summary.error_count == 3
+        assert summary.error_level_count == 3
         assert summary.warning_count == 7
         assert summary.critical_error_count == 1
 
@@ -291,13 +291,13 @@ class TestModelResultSummaryErrorCounts:
             retry_count=0,
             has_errors=True,
             has_warnings=False,
-            error_count=5,
+            error_level_count=5,
             warning_count=0,
             critical_error_count=5,
         )
 
         assert summary.critical_error_count == 5
-        assert summary.error_count == 5
+        assert summary.error_level_count == 5
 
 
 @pytest.mark.unit
@@ -318,7 +318,7 @@ class TestModelResultSummaryProtocols:
             retry_count=0,
             has_errors=False,
             has_warnings=False,
-            error_count=0,
+            error_level_count=0,
             warning_count=0,
             critical_error_count=0,
         )
@@ -345,7 +345,7 @@ class TestModelResultSummaryProtocols:
             retry_count=0,
             has_errors=False,
             has_warnings=False,
-            error_count=0,
+            error_level_count=0,
             warning_count=0,
             critical_error_count=0,
         )
@@ -369,7 +369,7 @@ class TestModelResultSummaryProtocols:
             retry_count=0,
             has_errors=False,
             has_warnings=False,
-            error_count=0,
+            error_level_count=0,
             warning_count=0,
             critical_error_count=0,
         )
@@ -394,7 +394,7 @@ class TestModelResultSummaryProtocols:
             retry_count=0,
             has_errors=False,
             has_warnings=False,
-            error_count=0,
+            error_level_count=0,
             warning_count=0,
             critical_error_count=0,
         )
@@ -422,7 +422,7 @@ class TestModelResultSummaryEdgeCases:
             retry_count=0,
             has_errors=False,
             has_warnings=False,
-            error_count=0,
+            error_level_count=0,
             warning_count=0,
             critical_error_count=0,
         )
@@ -443,7 +443,7 @@ class TestModelResultSummaryEdgeCases:
             retry_count=0,
             has_errors=False,
             has_warnings=False,
-            error_count=0,
+            error_level_count=0,
             warning_count=0,
             critical_error_count=0,
         )
@@ -465,7 +465,7 @@ class TestModelResultSummaryEdgeCases:
             retry_count=0,
             has_errors=False,
             has_warnings=False,
-            error_count=0,
+            error_level_count=0,
             warning_count=0,
             critical_error_count=0,
         )
@@ -482,7 +482,7 @@ class TestModelResultSummaryEdgeCases:
             retry_count=0,
             has_errors=True,
             has_warnings=False,
-            error_count=1,
+            error_level_count=1,
             warning_count=0,
             critical_error_count=0,
         )
@@ -499,7 +499,7 @@ class TestModelResultSummaryEdgeCases:
             retry_count=0,
             has_errors=True,
             has_warnings=False,
-            error_count=1,
+            error_level_count=1,
             warning_count=0,
             critical_error_count=1,
         )
@@ -519,7 +519,7 @@ class TestModelResultSummaryEdgeCases:
             retry_count=100,
             has_errors=True,
             has_warnings=True,
-            error_count=100,
+            error_level_count=100,
             warning_count=50,
             critical_error_count=10,
         )
@@ -540,7 +540,7 @@ class TestModelResultSummaryEdgeCases:
             retry_count=0,
             has_errors=False,
             has_warnings=False,
-            error_count=0,
+            error_level_count=0,
             warning_count=0,
             critical_error_count=0,
             unknown_field="value",  # type: ignore[call-arg]
@@ -563,7 +563,7 @@ class TestModelResultSummaryEdgeCases:
             retry_count=0,
             has_errors=False,
             has_warnings=False,
-            error_count=0,
+            error_level_count=0,
             warning_count=0,
             critical_error_count=0,
         )

@@ -9,7 +9,7 @@ class ModelTemplateValidationResult(BaseModel):
     """Result of template validation with comprehensive metrics"""
 
     issues: list[ModelValidationIssue]
-    error_count: int
+    error_level_count: int
     warning_count: int
     info_count: int
     total_files_checked: int

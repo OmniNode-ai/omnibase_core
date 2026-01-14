@@ -16,7 +16,7 @@ class ModelConfig:
             "module_path": "protocol.tools.example.tool_example",
             "health_check_method": "introspection",
             "health_check_endpoint": None,
-            "error_count": 0,
+            "error_level_count": 0,
             "warning_count": 1,
             "last_error_message": None,
             "average_response_time_ms": 125.5,

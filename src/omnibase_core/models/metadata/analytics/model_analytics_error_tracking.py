@@ -29,7 +29,9 @@ class ModelAnalyticsErrorTracking(BaseModel):
     """
 
     # Error tracking
-    error_count: int = Field(default=0, description="Number of errors")
+    error_level_count: int = Field(
+        default=0, description="Number of ERROR-severity issues"
+    )
     warning_count: int = Field(default=0, description="Number of warnings")
     critical_error_count: int = Field(
         default=0,
@@ -44,7 +46,7 @@ class ModelAnalyticsErrorTracking(BaseModel):
     def total_issues(self) -> int:
         """Get total count of all issues."""
         return (
-            self.error_count
+            self.error_level_count
             + self.warning_count
             + self.critical_error_count
             + self.fatal_error_count
@@ -52,8 +54,8 @@ class ModelAnalyticsErrorTracking(BaseModel):
 
     @property
     def has_errors(self) -> bool:
-        """Check if there are any errors."""
-        return self.error_count > 0
+        """Check if there are any ERROR-severity issues."""
+        return self.error_level_count > 0
 
     @property
     def has_warnings(self) -> bool:
@@ -81,9 +83,9 @@ class ModelAnalyticsErrorTracking(BaseModel):
         Mapping:
         - Fatal errors present → FATAL
         - Critical errors present → CRITICAL
-        - >10 errors → ERROR (high severity)
-        - >5 errors → WARNING (medium severity)
-        - >0 errors → INFO (low severity)
+        - >10 ERROR-severity issues → ERROR (high severity)
+        - >5 ERROR-severity issues → WARNING (medium severity)
+        - >0 ERROR-severity issues → INFO (low severity)
         - Warnings only → WARNING
         - Clean (no issues) → DEBUG
         """
@@ -91,21 +93,21 @@ class ModelAnalyticsErrorTracking(BaseModel):
             return EnumSeverity.FATAL
         if self.critical_error_count > 0:
             return EnumSeverity.CRITICAL
-        if self.error_count > 10:
+        if self.error_level_count > 10:
             return EnumSeverity.ERROR
-        if self.error_count > 5:
+        if self.error_level_count > 5:
             return EnumSeverity.WARNING
-        if self.error_count > 0:
+        if self.error_level_count > 0:
             return EnumSeverity.INFO
         if self.warning_count > 0:
             return EnumSeverity.WARNING
         return EnumSeverity.DEBUG
 
     def calculate_error_rate(self, total_invocations: int) -> float:
-        """Calculate error rate percentage."""
+        """Calculate ERROR-severity issue rate percentage."""
         if total_invocations == 0:
             return 0.0
-        return (self.error_count / total_invocations) * 100.0
+        return (self.error_level_count / total_invocations) * 100.0
 
     def calculate_critical_error_rate(self, total_invocations: int) -> float:
         """Calculate critical error rate percentage."""
@@ -135,7 +137,7 @@ class ModelAnalyticsErrorTracking(BaseModel):
         fatal_errors: int = 0,
     ) -> None:
         """Update all error counts."""
-        self.error_count = max(0, errors)
+        self.error_level_count = max(0, errors)
         self.warning_count = max(0, warnings)
         self.critical_error_count = max(0, critical_errors)
         self.fatal_error_count = max(0, fatal_errors)
@@ -148,14 +150,14 @@ class ModelAnalyticsErrorTracking(BaseModel):
         fatal_errors: int = 0,
     ) -> None:
         """Add to existing error counts."""
-        self.error_count += max(0, errors)
+        self.error_level_count += max(0, errors)
         self.warning_count += max(0, warnings)
         self.critical_error_count += max(0, critical_errors)
         self.fatal_error_count += max(0, fatal_errors)
 
     def increment_error(self) -> None:
-        """Increment error count by 1."""
-        self.error_count += 1
+        """Increment ERROR-severity count by 1."""
+        self.error_level_count += 1
 
     def increment_warning(self) -> None:
         """Increment warning count by 1."""
@@ -171,15 +173,15 @@ class ModelAnalyticsErrorTracking(BaseModel):
 
     def clear_all_errors(self) -> None:
         """Clear all error and warning counts."""
-        self.error_count = 0
+        self.error_level_count = 0
         self.warning_count = 0
         self.critical_error_count = 0
         self.fatal_error_count = 0
 
     def get_error_distribution(self) -> dict[str, int]:
-        """Get error distribution."""
+        """Get error distribution by severity level."""
         return {
-            "errors": self.error_count,
+            "error_level": self.error_level_count,
             "warnings": self.warning_count,
             "critical_errors": self.critical_error_count,
             "fatal_errors": self.fatal_error_count,
@@ -192,7 +194,7 @@ class ModelAnalyticsErrorTracking(BaseModel):
         """Get comprehensive error summary."""
         return ModelAnalyticsErrorSummary.create_summary(
             total_issues=self.total_issues,
-            error_count=self.error_count,
+            error_level_count=self.error_level_count,
             warning_count=self.warning_count,
             critical_error_count=self.critical_error_count,
             fatal_error_count=self.fatal_error_count,
@@ -221,14 +223,14 @@ class ModelAnalyticsErrorTracking(BaseModel):
     @classmethod
     def create_with_errors(
         cls,
-        error_count: int,
+        error_level_count: int,
         warning_count: int = 0,
         critical_error_count: int = 0,
         fatal_error_count: int = 0,
     ) -> ModelAnalyticsErrorTracking:
         """Create error tracking with specified error counts."""
         return cls(
-            error_count=error_count,
+            error_level_count=error_level_count,
             warning_count=warning_count,
             critical_error_count=critical_error_count,
             fatal_error_count=fatal_error_count,
@@ -249,7 +251,7 @@ class ModelAnalyticsErrorTracking(BaseModel):
         # Analytics models don't have standard name/description/version fields
         # Pack all error tracking data into metadata
         result["metadata"] = {
-            "error_count": self.error_count,
+            "error_level_count": self.error_level_count,
             "warning_count": self.warning_count,
             "critical_error_count": self.critical_error_count,
             "fatal_error_count": self.fatal_error_count,
