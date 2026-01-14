@@ -112,6 +112,10 @@ class ModelNodeCoreInfoSummary(BaseModel):
 
         Example:
             >>> from uuid import uuid4
+            >>> from omnibase_core.enums.enum_health_status import EnumHealthStatus
+            >>> from omnibase_core.enums.enum_metadata_node_type import EnumMetadataNodeType
+            >>> from omnibase_core.enums.enum_status import EnumStatus
+            >>> from omnibase_core.models.primitives.model_semver import ModelSemVer
             >>> summary = ModelNodeCoreInfoSummary(
             ...     node_id=uuid4(),
             ...     node_name="DataProcessor",
@@ -122,7 +126,7 @@ class ModelNodeCoreInfoSummary(BaseModel):
             ...     is_active=True,
             ...     is_healthy=True,
             ...     has_description=True,
-            ...     has_author=False
+            ...     has_author=False,
             ... )
             >>> metadata = summary.get_metadata()
             >>> metadata["name"]

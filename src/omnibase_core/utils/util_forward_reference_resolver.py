@@ -46,7 +46,10 @@ Error Handling Overview:
     1. **Fail-Fast Errors** (raise immediately):
        - PydanticSchemaGenerationError: Invalid type annotations or schema issues
        - PydanticUserError: Invalid Pydantic model configuration
-       - TypeError/ValueError: Type annotation problems during rebuild
+       - VALIDATION_ERRORS (TypeError, ValidationError, ValueError): Used by
+         rebuild_model_references() and handle_subclass_forward_refs()
+       - PYDANTIC_MODEL_ERRORS (AttributeError, TypeError, ValidationError, ValueError):
+         Used by auto_rebuild_on_module_load() for broader attribute error coverage
        - RuntimeError: Critical failures during module manipulation
 
     2. **Deferred Errors** (log warning, allow retry later):
@@ -57,13 +60,17 @@ Error Handling Overview:
        - All Pydantic-specific errors are wrapped with structured context
        - Error codes: INITIALIZATION_FAILED, CONFIGURATION_ERROR, IMPORT_ERROR
 
-Error Categories Quick Reference:
+Error Categories Quick Reference (rebuild_model_references behavior):
+
+    Note: handle_subclass_forward_refs() logs warnings instead of wrapping errors.
+    auto_rebuild_on_module_load() re-raises PYDANTIC_MODEL_ERRORS without wrapping.
 
     | Error Type                    | Function Behavior                    | User Action                           |
     |-------------------------------|--------------------------------------|---------------------------------------|
     | ImportError                   | Deferred (logged as debug/warning)   | Call _rebuild_model() after deps load |
-    | TypeError                     | Fail-fast (raised immediately)       | Fix type annotations                  |
-    | ValueError                    | Fail-fast (raised immediately)       | Fix model configuration               |
+    | TypeError                     | Fail-fast (wrapped in ModelOnexError)| Fix type annotations                  |
+    | ValidationError               | Fail-fast (wrapped in ModelOnexError)| Fix Pydantic model validation         |
+    | ValueError                    | Fail-fast (wrapped in ModelOnexError)| Fix model configuration               |
     | PydanticSchemaGenerationError | Fail-fast (wrapped in ModelOnexError)| Fix schema definitions                |
     | PydanticUserError             | Fail-fast (wrapped in ModelOnexError)| Fix Pydantic model config             |
     | AttributeError                | Fail-fast (wrapped in ModelOnexError)| Check type_mappings completeness      |
@@ -141,6 +148,11 @@ import sys
 import warnings
 from typing import TYPE_CHECKING
 
+from omnibase_core.errors.exception_groups import (
+    PYDANTIC_MODEL_ERRORS,
+    VALIDATION_ERRORS,
+)
+
 if TYPE_CHECKING:
     from collections.abc import Callable
 
@@ -172,8 +184,8 @@ def rebuild_model_references(
 
             - **INITIALIZATION_FAILED** (ONEX_CORE_087):
               - PydanticSchemaGenerationError: Invalid annotations or schema
-              - TypeError: Type mismatch during rebuild
-              - ValueError: Invalid values in model configuration
+              - VALIDATION_ERRORS (TypeError, ValidationError, ValueError):
+                Type mismatch, Pydantic validation failure, or invalid configuration
               - AttributeError: Missing attribute during module injection
 
             - **CONFIGURATION_ERROR** (ONEX_CORE_044):
@@ -204,12 +216,13 @@ def rebuild_model_references(
             - Conflicting field definitions
             - Invalid discriminator setup
 
-        **TypeError/ValueError**:
+        **VALIDATION_ERRORS (TypeError, ValidationError, ValueError)**:
             Occurs during the rebuild process.
             Common causes:
             - Type annotation syntax errors
             - Invalid default values for typed fields
             - Incompatible type constraints
+            - Pydantic validation failures
 
         **AttributeError**:
             Occurs during module injection.
@@ -317,7 +330,7 @@ def rebuild_model_references(
                 "error_details": str(e),
             },
         ) from e
-    except (TypeError, ValueError) as e:
+    except VALIDATION_ERRORS as e:
         raise ModelOnexError(
             message=f"Failed to rebuild {model_name}: {e}",
             error_code=EnumCoreErrorCode.INITIALIZATION_FAILED,
@@ -375,7 +388,7 @@ def handle_subclass_forward_refs(
             - Circular import resolution is in progress
             - The model will be rebuilt later when dependencies are available
 
-        **TypeError/ValueError** (warned):
+        **VALIDATION_ERRORS (TypeError, ValidationError, ValueError)** (warned):
             When rebuild_func raises these errors, it indicates a configuration
             or type annotation problem that needs attention.
 
@@ -388,6 +401,7 @@ def handle_subclass_forward_refs(
             - Invalid type annotations in the parent model
             - Missing types in type_mappings
             - Pydantic configuration issues
+            - ValidationError from Pydantic model validation
 
     Edge Cases:
         **Called during early module loading**:
@@ -410,9 +424,10 @@ def handle_subclass_forward_refs(
             succeed (as more modules load). This is handled gracefully.
 
         **rebuild_func raises other exceptions**:
-            Any exception other than ImportError, TypeError, or ValueError
-            will propagate normally (not caught by this function). This
-            includes RuntimeError, which indicates a critical failure.
+            Any exception other than ImportError or VALIDATION_ERRORS
+            (TypeError, ValidationError, ValueError) will propagate normally
+            (not caught by this function). This includes RuntimeError,
+            which indicates a critical failure.
 
     Examples:
         Standard usage in __init_subclass__:
@@ -474,7 +489,7 @@ def handle_subclass_forward_refs(
             subclass_name,
             e,
         )
-    except (TypeError, ValueError) as e:
+    except VALIDATION_ERRORS as e:
         # Type annotation issues during rebuild - likely configuration error
         msg = (
             f"{parent_name} subclass {subclass_name}: forward reference "
@@ -515,9 +530,8 @@ def auto_rebuild_on_module_load(  # stub-ok: fully implemented with extensive do
 
             - ModelOnexError with CONFIGURATION_ERROR code
             - ModelOnexError with INITIALIZATION_FAILED code
-            - TypeError (type annotation problems)
-            - ValueError (invalid configuration values)
-            - AttributeError (missing attributes)
+            - PYDANTIC_MODEL_ERRORS (AttributeError, TypeError, ValidationError, ValueError):
+              These indicate type annotation, configuration, or attribute problems
             - RuntimeError (critical module manipulation failure)
 
             These errors will crash the import, which is intentional - they
@@ -667,9 +681,9 @@ def auto_rebuild_on_module_load(  # stub-ok: fully implemented with extensive do
                 error_msg=rebuild_error.message or str(rebuild_error),
                 error_type="ModelOnexError",
             )
-        except (AttributeError, TypeError, ValueError):
-            # These specific exceptions indicate configuration problems
-            # Re-raise to fail fast
+        except PYDANTIC_MODEL_ERRORS:
+            # PYDANTIC_MODEL_ERRORS (AttributeError, TypeError, ValidationError, ValueError)
+            # indicate configuration problems - re-raise to fail fast
             raise
         except RuntimeError:
             # RuntimeError during module manipulation is a critical failure

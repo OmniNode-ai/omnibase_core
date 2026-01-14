@@ -12,6 +12,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from omnibase_core.decorators.decorator_error_handling import standard_error_handling
 from omnibase_core.errors.exception_base import (
     ExceptionConfigurationError,
     ExceptionInputValidationError,
@@ -98,6 +99,7 @@ class ServiceProtocolAuditor:
             f"at {self.repository_path}"
         )
 
+    @standard_error_handling("Current repository audit")
     def check_current_repository(self) -> ModelAuditResult:
         """
         Audit protocols in current repository only.
@@ -160,6 +162,7 @@ class ServiceProtocolAuditor:
             recommendations=recommendations,
         )
 
+    @standard_error_handling("SPI compatibility check")
     def check_against_spi(
         self, spi_path: str = "../omnibase_spi"
     ) -> ModelDuplicationReport:
@@ -233,6 +236,7 @@ class ServiceProtocolAuditor:
             recommendations=recommendations,
         )
 
+    @standard_error_handling("Ecosystem audit")
     def audit_ecosystem(self, omni_root: Path) -> dict[str, ModelAuditResult]:
         """
         Comprehensive audit across all omni* repositories.

@@ -32,13 +32,14 @@ import types
 from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
-from typing import cast
+from typing import Any, cast
 from uuid import UUID, uuid4
 
 from omnibase_core.constants import TIMEOUT_DEFAULT_MS
 from omnibase_core.constants.constants_event_types import TOOL_INVOCATION
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
+from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
 from omnibase_core.logging.logging_structured import emit_log_event_sync
 from omnibase_core.models.core.model_log_context import ModelLogContext
 from omnibase_core.models.discovery.model_node_shutdown_event import (
@@ -56,6 +57,37 @@ from omnibase_core.types.type_json import JsonType
 
 # Component identifier for logging
 _COMPONENT_NAME = Path(__file__).stem
+
+# Service lookup errors for container.get_service() calls.
+# Uses centralized PYDANTIC_MODEL_ERRORS (AttributeError, TypeError, ValidationError, ValueError)
+# plus RuntimeError for service availability issues.
+# Defined at module level with explicit tuple concatenation to satisfy mypy
+# (mypy cannot handle tuple unpacking in except clauses).
+#
+# RuntimeError covers: service not registered, container not initialized, circular
+# dependencies, or other container-level service resolution failures.
+_SERVICE_LOOKUP_ERRORS: tuple[type[Exception], ...] = PYDANTIC_MODEL_ERRORS + (
+    RuntimeError,  # init-errors-ok: service not available or container issues
+)
+
+# Tool execution errors for handle_tool_invocation().
+# Uses centralized PYDANTIC_MODEL_ERRORS plus additional exceptions specific to tool execution.
+# Defined at module level with explicit tuple concatenation to satisfy mypy
+# (mypy cannot handle tuple unpacking in except clauses).
+#
+# Additional exceptions beyond PYDANTIC_MODEL_ERRORS:
+# - KeyError: state/parameter access errors (dict key lookup failures)
+# - ModelOnexError: ONEX framework errors (structured domain errors)
+# - OSError: I/O and connection errors (includes ConnectionError)
+# - RuntimeError: execution environment errors (async context, resource limits)
+# - TimeoutError: async operation timeouts (task cancellation due to timeout)
+_TOOL_EXECUTION_ERRORS: tuple[type[Exception], ...] = PYDANTIC_MODEL_ERRORS + (
+    KeyError,
+    ModelOnexError,
+    OSError,
+    RuntimeError,
+    TimeoutError,
+)
 
 
 class MixinNodeService:
@@ -153,6 +185,10 @@ class MixinNodeService:
             # Main service event loop
             await self._service_event_loop()
 
+        except asyncio.CancelledError:
+            # CRITICAL: Re-raise CancelledError to honor task cancellation.
+            # Cleanup is handled by stop_service_mode() which caller should invoke.
+            raise
         # fallback-ok: service startup requires cleanup on any error
         except Exception as e:
             self._log_error(f"Failed to start service: {e}")
@@ -195,8 +231,8 @@ class MixinNodeService:
             for callback in self._shutdown_callbacks:
                 try:
                     callback()
-                # fallback-ok: user callbacks must not crash shutdown
                 except Exception as e:
+                    # fallback-ok: user callbacks must not crash shutdown
                     self._log_error(f"Shutdown callback failed: {e}")
 
             # Cleanup event handlers if available
@@ -206,8 +242,13 @@ class MixinNodeService:
             self._service_running = False
             self._log_info("Service stopped successfully")
 
-        # fallback-ok: shutdown must complete even if cleanup fails
+        except asyncio.CancelledError:
+            # CRITICAL: Re-raise CancelledError to honor task cancellation.
+            # Set service as not running before propagating cancellation.
+            self._service_running = False
+            raise
         except Exception as e:
+            # cleanup-resilience-ok: shutdown must complete even if cleanup fails
             self._log_error(f"Error during service shutdown: {e}")
             self._service_running = False
 
@@ -293,23 +334,9 @@ class MixinNodeService:
                 f"Tool invocation completed successfully in {execution_time_ms}ms",
             )
 
-        except (
-            AttributeError,
-            KeyError,
-            ModelOnexError,
-            OSError,
-            RuntimeError,
-            TimeoutError,
-            TypeError,
-            ValueError,
-        ) as e:
-            # Specific expected exceptions from tool invocation:
-            # - ValueError/TypeError: validation and type conversion errors
-            # - RuntimeError: execution environment errors
-            # - AttributeError/KeyError: state/parameter access errors
-            # - OSError: I/O and connection errors (includes ConnectionError)
-            # - TimeoutError: async operation timeouts
-            # - ModelOnexError: ONEX framework errors
+        except _TOOL_EXECUTION_ERRORS as e:
+            # boundary-ok: tool invocation boundary must return error response, not crash.
+            # Uses centralized _TOOL_EXECUTION_ERRORS (see module-level definition).
             execution_time_ms = int((time.time() - start_time) * 1000)
             response_event = ModelToolResponseEvent.create_error_response(
                 correlation_id=correlation_id,
@@ -331,6 +358,11 @@ class MixinNodeService:
 
             self._failed_invocations += 1
             self._log_error(f"Tool invocation failed: {e}")
+
+        except asyncio.CancelledError:
+            # CRITICAL: Re-raise CancelledError to honor task cancellation.
+            # The finally block will still clean up active_invocations.
+            raise
 
         # fallback-ok: service must emit error response for any failure
         # Fallback for truly unexpected exceptions not covered above.
@@ -404,9 +436,17 @@ class MixinNodeService:
 
     # Private methods
 
-    async def _subscribe_to_tool_invocations(self) -> None:
-        """Subscribe to TOOL_INVOCATION events."""
-        # Try multiple strategies to get event bus (similar to MixinEventBus._get_event_bus)
+    def _try_get_event_bus_from_container(self) -> Any:
+        """
+        Try to get event bus from container using multiple strategies.
+
+        This helper consolidates the event bus lookup logic used across
+        subscription, response emission, and shutdown event methods.
+
+        Returns:
+            The event bus object if found, None otherwise. Return type is Any
+            to allow duck-typed access to subscribe/publish methods.
+        """
         event_bus = None
 
         # Strategy 1: Try _get_event_bus() method if available (from MixinEventBus)
@@ -423,15 +463,23 @@ class MixinNodeService:
                 container = self.container
                 if hasattr(container, "get_service"):
                     event_bus = container.get_service("event_bus")
-            except (AttributeError, KeyError, RuntimeError, TypeError, ValueError):
-                # fallback-ok: service lookup failure continues to next strategy
+            except _SERVICE_LOOKUP_ERRORS:
+                # fallback-ok: service lookup failure returns None
                 pass
+
+        return event_bus
+
+    async def _subscribe_to_tool_invocations(self) -> None:
+        """Subscribe to TOOL_INVOCATION events."""
+        event_bus = self._try_get_event_bus_from_container()
 
         # Raise error if no event bus found
         if not event_bus:
             raise ModelOnexError(
                 message="Event bus not available for subscription",
                 error_code=EnumCoreErrorCode.SERVICE_UNAVAILABLE,
+                node_type=type(self).__name__,
+                subscription_topic=TOOL_INVOCATION,
             )
 
         # Subscribe to tool invocation events
@@ -461,6 +509,10 @@ class MixinNodeService:
             # Re-raise immediately without any I/O operations
             raise
         except (OSError, RuntimeError, ValueError) as e:
+            # boundary-ok: event loop must log and propagate non-fatal errors
+            # OSError: I/O errors during event processing
+            # RuntimeError: async context errors (e.g., loop closed)
+            # ValueError: invalid state during event processing
             self._log_error(f"Service event loop error: {e}")
             raise
 
@@ -498,6 +550,10 @@ class MixinNodeService:
                 # Re-raise immediately without any I/O operations
                 raise
             except (OSError, RuntimeError, ValueError) as e:
+                # boundary-ok: health monitor must log errors and exit gracefully
+                # OSError: I/O errors during health check
+                # RuntimeError: async context errors (e.g., loop closed)
+                # ValueError: invalid state during health monitoring
                 self._log_error(f"Health monitor error: {e}")
                 break  # Exit loop on exception
 
@@ -595,6 +651,8 @@ class MixinNodeService:
             raise ModelOnexError(
                 message="Tool execution returned None - nodes must return a valid result",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                node_type=type(self).__name__,
+                node_name=self._extract_node_name(),
             )
 
         if hasattr(result, "model_dump"):
@@ -613,26 +671,7 @@ class MixinNodeService:
 
     async def _emit_tool_response(self, response_event: ModelToolResponseEvent) -> None:
         """Emit a tool response event."""
-        # Try multiple strategies to get event bus (similar to _subscribe_to_tool_invocations)
-        event_bus = None
-
-        # Strategy 1: Try _get_event_bus() method if available (from MixinEventBus)
-        if hasattr(self, "_get_event_bus"):
-            event_bus = self._get_event_bus()
-
-        # Strategy 2: Try direct event_bus attribute
-        if not event_bus:
-            event_bus = getattr(self, "event_bus", None)
-
-        # Strategy 3: Try container.get_service()
-        if not event_bus and hasattr(self, "container"):
-            try:
-                container = self.container
-                if hasattr(container, "get_service"):
-                    event_bus = container.get_service("event_bus")
-            except (AttributeError, KeyError, RuntimeError, TypeError, ValueError):
-                # fallback-ok: optional event bus for response
-                pass
+        event_bus = self._try_get_event_bus_from_container()
 
         # Emit event if bus available
         if event_bus:
@@ -648,31 +687,16 @@ class MixinNodeService:
                 node_name=self._extract_node_name(),
             )
 
-            # Try multiple strategies to get event bus
-            event_bus = None
-
-            # Strategy 1: Try _get_event_bus() method if available (from MixinEventBus)
-            if hasattr(self, "_get_event_bus"):
-                event_bus = self._get_event_bus()
-
-            # Strategy 2: Try direct event_bus attribute
-            if not event_bus:
-                event_bus = getattr(self, "event_bus", None)
-
-            # Strategy 3: Try container.get_service()
-            if not event_bus and hasattr(self, "container"):
-                try:
-                    container = self.container
-                    if hasattr(container, "get_service"):
-                        event_bus = container.get_service("event_bus")
-                except (AttributeError, KeyError, RuntimeError, TypeError, ValueError):
-                    # fallback-ok: optional event bus for shutdown
-                    pass
+            event_bus = self._try_get_event_bus_from_container()
 
             if event_bus:
                 await event_bus.publish(shutdown_event)
 
         except (ModelOnexError, RuntimeError, ValueError) as e:
+            # cleanup-resilience-ok: shutdown event emission failure must not crash shutdown
+            # ModelOnexError: ONEX framework errors during event creation/emission
+            # RuntimeError: event bus or async context issues
+            # ValueError: invalid event data
             self._log_error(f"Failed to emit shutdown event: {e}")
 
     async def _cleanup_health_task(self) -> None:
@@ -699,7 +723,9 @@ class MixinNodeService:
             if not health_task.done():
                 health_task.cancel()
         except RuntimeError:
-            # Task is already being cancelled or event loop is closed
+            # cleanup-resilience-ok: task cancellation race condition or event loop closed
+            # RuntimeError can occur if task is already being cancelled concurrently
+            # or if the event loop has been closed during shutdown
             pass
 
         # Always await to ensure proper cleanup
@@ -768,6 +794,10 @@ class MixinNodeService:
             signal.signal(signal.SIGINT, signal_handler)
 
         except (OSError, RuntimeError, ValueError) as e:
+            # fallback-ok: signal handler registration is optional (may fail in threads)
+            # OSError: signal registration not allowed (e.g., not main thread)
+            # RuntimeError: event loop issues during handler setup
+            # ValueError: invalid signal number
             self._log_warning(f"Could not register signal handlers: {e}")
 
     def _extract_node_name(self) -> str:
@@ -794,7 +824,9 @@ class MixinNodeService:
                         method(self)
                         break
         except (AttributeError, TypeError):
-            # No introspection available, that's okay
+            # fallback-ok: introspection publishing is optional
+            # AttributeError: mixin method not available in MRO
+            # TypeError: method not callable or wrong signature
             pass
 
     def _log_info(self, message: str) -> None:

@@ -61,6 +61,7 @@ class ModelThresholdConfig(BaseModel):
             ValueError: If min_value is greater than max_value.
         """
         if self.min_value is None and self.max_value is None:
+            # error-ok: Pydantic model_validator requires ValueError
             raise ValueError(
                 "At least one of 'min_value' or 'max_value' must be provided "
                 "for threshold validation"
@@ -70,6 +71,7 @@ class ModelThresholdConfig(BaseModel):
             and self.max_value is not None
             and self.min_value > self.max_value
         ):
+            # error-ok: Pydantic model_validator requires ValueError
             raise ValueError(
                 f"min_value ({self.min_value}) cannot be greater than "
                 f"max_value ({self.max_value})"

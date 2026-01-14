@@ -19,6 +19,7 @@ import pytest
 from pydantic import BaseModel, ValidationError
 
 from omnibase_core.enums import EnumSeverity
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 @pytest.mark.unit
@@ -269,12 +270,12 @@ class TestEnumSeverity:
         assert EnumSeverity.from_string("\twarning\n") == EnumSeverity.WARNING
 
     def test_from_string_invalid(self):
-        """Test from_string() raises ValueError for invalid input."""
-        with pytest.raises(ValueError, match="Unknown severity level"):
+        """Test from_string() raises ModelOnexError for invalid input."""
+        with pytest.raises(ModelOnexError, match="Unknown severity level"):
             EnumSeverity.from_string("invalid")
 
-        with pytest.raises(ValueError, match="Unknown severity level"):
+        with pytest.raises(ModelOnexError, match="Unknown severity level"):
             EnumSeverity.from_string("fatal")  # Not a valid EnumSeverity value
 
-        with pytest.raises(ValueError, match="Unknown severity level"):
+        with pytest.raises(ModelOnexError, match="Unknown severity level"):
             EnumSeverity.from_string("")

@@ -20,6 +20,7 @@ import click
 
 from omnibase_core.enums.enum_cli_exit_code import EnumCLIExitCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel
+from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
 from omnibase_core.logging.logging_structured import emit_log_event_sync
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
@@ -493,7 +494,7 @@ def _check_validation_system() -> tuple[bool, str]:
         return True, f"Validation suite loaded with {validator_count} validators"
     except ImportError as e:
         return False, f"Import error: {e}"
-    except (AttributeError, TypeError, ValueError) as e:
+    except PYDANTIC_MODEL_ERRORS as e:
         # AttributeError: suite missing .validators attribute
         # TypeError: validators not iterable
         # ValueError: validation configuration error

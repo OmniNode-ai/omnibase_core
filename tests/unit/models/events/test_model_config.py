@@ -40,7 +40,6 @@ class TestModelConfigModule:
         from omnibase_core.models.events.model_event_config import BaseModel
 
         # Create a simple model using the imported BaseModel
-        @pytest.mark.unit
         class TestModel(BaseModel):
             name: str
             value: int

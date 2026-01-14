@@ -117,10 +117,12 @@ class ModelCheckpointMetadata(BaseModel):
             try:
                 return UUID(v)
             except ValueError:
+                # error-ok: Pydantic field_validator requires ValueError
                 raise ValueError(
                     f"Invalid UUID string for parent_checkpoint_id: '{v}'. "
                     f"Must be a valid UUID format (e.g., '550e8400-e29b-41d4-a716-446655440000')"
                 ) from None
+        # error-ok: Pydantic field_validator requires ValueError
         raise ValueError(
             f"parent_checkpoint_id must be UUID or str, got {type(v).__name__}"
         )

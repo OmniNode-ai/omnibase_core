@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from omnibase_core.decorators.decorator_error_handling import standard_error_handling
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_validation_metadata import (
     ModelValidationMetadata,
@@ -82,6 +83,7 @@ class ServiceValidationSuite:
             },
         }
 
+    @standard_error_handling("Validation execution")
     def run_validation(
         self,
         validation_type: str,
@@ -118,7 +120,7 @@ class ServiceValidationSuite:
                 result = self.run_validation(validation_type, directory, **kwargs)
                 results[validation_type] = result
             except ModelOnexError as e:
-                # ONEX framework validation errors
+                # fallback-ok: capture ONEX framework errors as validation failures
                 results[validation_type] = ModelValidationResult(
                     is_valid=False,
                     errors=[f"Validation error: {e.message}"],
@@ -128,7 +130,7 @@ class ServiceValidationSuite:
                     ),
                 )
             except OSError as e:
-                # File system errors (FileNotFoundError, PermissionError, etc.)
+                # fallback-ok: capture file system errors as validation failures
                 results[validation_type] = ModelValidationResult(
                     is_valid=False,
                     errors=[f"File system error: {e}"],
@@ -138,7 +140,7 @@ class ServiceValidationSuite:
                     ),
                 )
             except (TypeError, ValueError) as e:
-                # Data validation errors
+                # fallback-ok: capture data validation errors as validation failures
                 results[validation_type] = ModelValidationResult(
                     is_valid=False,
                     errors=[f"Validation failed: {e}"],

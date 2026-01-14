@@ -59,12 +59,8 @@ class ModelNodeCoreMetadata(BaseModel):
         return self.status == EnumMetadataNodeStatus.ACTIVE
 
     def is_healthy(self) -> bool:
-        """Check if node is healthy.
-
-        Uses case-insensitive string comparison for robustness when health
-        value may come from external sources (e.g., deserialized JSON).
-        """
-        return str(self.health).lower() == str(EnumHealthStatus.HEALTHY).lower()
+        """Check if node is healthy."""
+        return self.health == EnumHealthStatus.HEALTHY
 
     def get_status_summary(self) -> dict[str, str]:
         """Get concise status summary."""

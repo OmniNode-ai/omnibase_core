@@ -15,5 +15,6 @@ try:
     )
 
     ModelServiceDetectionConfig.model_rebuild()
-except Exception:  # error-ok: may fail during circular import, safe to ignore
+except Exception:
+    # init-errors-ok: may fail during circular import, safe to ignore
     pass

@@ -108,7 +108,6 @@ class TestOnexErrorCodeBase:
     def test_onex_error_code_abstract_methods(self):
         """Test that abstract methods raise NotImplementedError."""
 
-        @pytest.mark.unit
         class TestErrorCode(OnexErrorCode):
             TEST_ERROR = "TEST_ERROR_001"
 
@@ -126,7 +125,6 @@ class TestOnexErrorCodeBase:
     def test_onex_error_code_default_exit_code(self):
         """Test that default get_exit_code() returns ERROR."""
 
-        @pytest.mark.unit
         class TestErrorCode(OnexErrorCode):
             TEST_ERROR = "TEST_ERROR_001"
 
@@ -466,7 +464,6 @@ class TestErrorCodeRegistry:
     def test_list_registered_components(self):
         """Test listing registered components."""
 
-        @pytest.mark.unit
         class TestErrorCode(OnexErrorCode):
             TEST = "TEST_001"
 

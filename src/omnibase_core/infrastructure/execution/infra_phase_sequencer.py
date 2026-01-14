@@ -41,6 +41,7 @@ from __future__ import annotations
 from collections import defaultdict
 from datetime import UTC, datetime
 
+from omnibase_core.decorators.decorator_error_handling import standard_error_handling
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_handler_execution_phase import EnumHandlerExecutionPhase
 from omnibase_core.models.contracts.model_execution_ordering_policy import (
@@ -77,6 +78,7 @@ def get_canonical_phase_order() -> list[EnumHandlerExecutionPhase]:
     return EnumHandlerExecutionPhase.get_ordered_phases()
 
 
+@standard_error_handling("Phase list validation")
 def validate_phase_list(phases: list[str] | tuple[str, ...]) -> bool:
     """
     Validate that a phase list contains valid canonical phases in correct order.
@@ -124,6 +126,7 @@ def validate_phase_list(phases: list[str] | tuple[str, ...]) -> bool:
     return True
 
 
+@standard_error_handling("Strict phase list validation")
 def validate_phase_list_strict(
     phases: list[str] | tuple[str, ...],
 ) -> tuple[bool, str | None]:
@@ -181,6 +184,7 @@ def validate_phase_list_strict(
     return True, None
 
 
+@standard_error_handling("Handler grouping by phase")
 def group_handlers_by_phase(
     handler_phase_mapping: dict[str, EnumHandlerExecutionPhase],
 ) -> dict[EnumHandlerExecutionPhase, list[str]]:
@@ -214,6 +218,7 @@ def group_handlers_by_phase(
     return dict(result)
 
 
+@standard_error_handling("Handler ordering in phase")
 def order_handlers_in_phase(
     handlers: list[str],
     policy: ModelExecutionOrderingPolicy | None = None,
@@ -263,6 +268,7 @@ def order_handlers_in_phase(
     return handlers_copy
 
 
+@standard_error_handling("Execution plan creation")
 def create_execution_plan(
     profile: ModelExecutionProfile,
     handler_phase_mapping: dict[str, EnumHandlerExecutionPhase],

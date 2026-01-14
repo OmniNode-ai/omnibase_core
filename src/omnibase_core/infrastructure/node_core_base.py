@@ -41,6 +41,7 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_health_status import EnumHealthStatus
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_node_lifecycle_status import EnumNodeLifecycleStatus
+from omnibase_core.errors.exception_groups import FILE_IO_ERRORS
 from omnibase_core.logging.logging_structured import (
     emit_log_event_sync as emit_log_event,
 )
@@ -744,7 +745,7 @@ class NodeCoreBase(ABC):
             # Return primitives as-is
             return data
 
-        except (FileNotFoundError, OSError) as e:
+        except FILE_IO_ERRORS as e:
             # fallback-ok: graceful degradation for missing/unreadable reference files
             emit_log_event(
                 LogLevel.WARNING,

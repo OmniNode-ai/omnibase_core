@@ -6,6 +6,8 @@ Provides consistent UUID generation across the ONEX system.
 
 from uuid import UUID, uuid4
 
+from omnibase_core.errors.exception_groups import VALIDATION_ERRORS
+
 
 class UtilUUID:
     """Centralized UUID generation and validation utility."""
@@ -26,7 +28,8 @@ class UtilUUID:
         try:
             UUID(uuid_string)
             return True
-        except (TypeError, ValueError):
+        except VALIDATION_ERRORS:
+            # fallback-ok: invalid UUID string returns False
             return False
 
     @staticmethod
@@ -34,7 +37,8 @@ class UtilUUID:
         """Parse a UUID string, return None if invalid."""
         try:
             return UUID(uuid_string)
-        except (TypeError, ValueError):
+        except VALIDATION_ERRORS:
+            # fallback-ok: invalid UUID string returns None
             return None
 
     @staticmethod
@@ -52,7 +56,8 @@ class UtilUUID:
         if isinstance(value, str):
             try:
                 return UUID(value)
-            except (TypeError, ValueError):
+            except VALIDATION_ERRORS:
+                # fallback-ok: invalid UUID string generates new UUID
                 return uuid4()
         return uuid4()  # type: ignore[unreachable]  # Defensive fallback
 

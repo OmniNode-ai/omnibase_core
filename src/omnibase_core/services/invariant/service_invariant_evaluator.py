@@ -47,6 +47,7 @@ from jsonschema.protocols import Validator
 from omnibase_core.enums import EnumInvariantType
 from omnibase_core.enums.enum_severity import EnumSeverity
 from omnibase_core.errors.error_regex_timeout import RegexTimeoutError
+from omnibase_core.errors.exception_groups import VALIDATION_ERRORS
 from omnibase_core.models.invariant import (
     ModelEvaluationSummary,
     ModelInvariant,
@@ -1013,7 +1014,7 @@ class ServiceInvariantEvaluator:
         try:
             # NOTE(OMN-1302): Config value from dict lookup. Safe because ValueError caught below.
             max_ms_num = float(max_ms)  # type: ignore[arg-type]
-        except (TypeError, ValueError):  # fallback-ok: invalid config fails validation
+        except VALIDATION_ERRORS:  # fallback-ok: invalid config fails validation
             return (False, f"Invalid max_ms value: {max_ms!r}", None, None)
 
         # Look for latency_ms or duration_ms
@@ -1075,7 +1076,7 @@ class ServiceInvariantEvaluator:
         try:
             # NOTE(OMN-1302): Config value from dict lookup. Safe because ValueError caught below.
             max_cost_num = float(max_cost)  # type: ignore[arg-type]
-        except (TypeError, ValueError):  # fallback-ok: invalid config fails validation
+        except VALIDATION_ERRORS:  # fallback-ok: invalid config fails validation
             return (False, f"Invalid max_cost value: {max_cost!r}", None, None)
 
         # Look for cost directly
