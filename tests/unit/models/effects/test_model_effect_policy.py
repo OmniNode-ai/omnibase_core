@@ -61,7 +61,7 @@ class TestModelEffectPolicySpec:
         )
 
         with pytest.raises(ValidationError):
-            policy.policy_level = EnumEffectPolicyLevel.STRICT  # type: ignore[misc]
+            policy.policy_level = EnumEffectPolicyLevel.STRICT
 
     # Tests for is_category_allowed method
 
@@ -86,16 +86,18 @@ class TestModelEffectPolicySpec:
         # Other categories should still be allowed under PERMISSIVE
         assert policy.is_category_allowed(EnumEffectCategory.DATABASE) is True
 
-    def test_is_category_allowed_blocked_takes_precedence(self) -> None:
-        """Test that blocked_categories takes precedence over allowed_categories."""
-        policy = ModelEffectPolicySpec(
-            policy_level=EnumEffectPolicyLevel.WARN,
-            allowed_categories=(EnumEffectCategory.NETWORK,),
-            blocked_categories=(EnumEffectCategory.NETWORK,),  # Same category!
-        )
+    def test_validation_rejects_category_in_both_allowed_and_blocked(self) -> None:
+        """Test that a category cannot be in both allowed and blocked lists."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelEffectPolicySpec(
+                policy_level=EnumEffectPolicyLevel.WARN,
+                allowed_categories=(EnumEffectCategory.NETWORK,),
+                blocked_categories=(EnumEffectCategory.NETWORK,),  # Same category!
+            )
 
-        # Blocked should win
-        assert policy.is_category_allowed(EnumEffectCategory.NETWORK) is False
+        error_msg = str(exc_info.value)
+        assert "cannot be both allowed and blocked" in error_msg
+        assert "network" in error_msg
 
     def test_is_category_allowed_strict_policy_blocks_by_default(self) -> None:
         """Test that STRICT policy blocks unspecified categories by default."""
@@ -217,18 +219,18 @@ class TestModelEffectPolicySpec:
             is False
         )
 
-    def test_is_effect_allowed_denylist_takes_precedence(self) -> None:
-        """Test that denylist takes precedence over allowlist."""
-        policy = ModelEffectPolicySpec(
-            policy_level=EnumEffectPolicyLevel.WARN,
-            allowlist_effect_ids=("test.effect",),
-            denylist_effect_ids=("test.effect",),  # Same effect!
-        )
+    def test_validation_rejects_effect_id_in_both_allowlist_and_denylist(self) -> None:
+        """Test that an effect ID cannot be in both allowlist and denylist."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelEffectPolicySpec(
+                policy_level=EnumEffectPolicyLevel.WARN,
+                allowlist_effect_ids=("test.effect",),
+                denylist_effect_ids=("test.effect",),  # Same effect!
+            )
 
-        # Denylist should win
-        assert (
-            policy.is_effect_allowed("test.effect", EnumEffectCategory.NETWORK) is False
-        )
+        error_msg = str(exc_info.value)
+        assert "cannot be both allowlisted and denylisted" in error_msg
+        assert "test.effect" in error_msg
 
     def test_is_effect_allowed_fallback_to_category_rules(self) -> None:
         """Test is_effect_allowed falls back to category rules when effect not listed."""
@@ -380,3 +382,79 @@ class TestModelEffectPolicySpec:
         # Mock requirements
         assert policy.requires_mock(EnumEffectCategory.TIME) is True
         assert policy.requires_mock(EnumEffectCategory.DATABASE) is False
+
+    # Tests for conflict validation
+
+    def test_validation_rejects_multiple_category_conflicts(self) -> None:
+        """Test that multiple conflicting categories are all reported."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelEffectPolicySpec(
+                policy_level=EnumEffectPolicyLevel.WARN,
+                allowed_categories=(
+                    EnumEffectCategory.NETWORK,
+                    EnumEffectCategory.DATABASE,
+                ),
+                blocked_categories=(
+                    EnumEffectCategory.NETWORK,
+                    EnumEffectCategory.DATABASE,
+                ),
+            )
+
+        error_msg = str(exc_info.value)
+        assert "cannot be both allowed and blocked" in error_msg
+        # Both conflicting categories should be mentioned
+        assert "database" in error_msg
+        assert "network" in error_msg
+
+    def test_validation_rejects_multiple_effect_id_conflicts(self) -> None:
+        """Test that multiple conflicting effect IDs are all reported."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelEffectPolicySpec(
+                policy_level=EnumEffectPolicyLevel.WARN,
+                allowlist_effect_ids=("effect.a", "effect.b"),
+                denylist_effect_ids=("effect.a", "effect.b"),
+            )
+
+        error_msg = str(exc_info.value)
+        assert "cannot be both allowlisted and denylisted" in error_msg
+        assert "effect.a" in error_msg
+        assert "effect.b" in error_msg
+
+    def test_validation_allows_non_overlapping_categories(self) -> None:
+        """Test that non-overlapping allowed/blocked categories are valid."""
+        policy = ModelEffectPolicySpec(
+            policy_level=EnumEffectPolicyLevel.WARN,
+            allowed_categories=(EnumEffectCategory.DATABASE,),
+            blocked_categories=(EnumEffectCategory.NETWORK,),
+        )
+
+        # Should create successfully
+        assert EnumEffectCategory.DATABASE in policy.allowed_categories
+        assert EnumEffectCategory.NETWORK in policy.blocked_categories
+
+    def test_validation_allows_non_overlapping_effect_ids(self) -> None:
+        """Test that non-overlapping allowlist/denylist effect IDs are valid."""
+        policy = ModelEffectPolicySpec(
+            policy_level=EnumEffectPolicyLevel.WARN,
+            allowlist_effect_ids=("safe.effect",),
+            denylist_effect_ids=("dangerous.effect",),
+        )
+
+        # Should create successfully
+        assert "safe.effect" in policy.allowlist_effect_ids
+        assert "dangerous.effect" in policy.denylist_effect_ids
+
+    def test_validation_checks_categories_before_effect_ids(self) -> None:
+        """Test that category conflicts are detected first when both exist."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelEffectPolicySpec(
+                policy_level=EnumEffectPolicyLevel.WARN,
+                allowed_categories=(EnumEffectCategory.NETWORK,),
+                blocked_categories=(EnumEffectCategory.NETWORK,),
+                allowlist_effect_ids=("test.effect",),
+                denylist_effect_ids=("test.effect",),
+            )
+
+        # Category conflict should be reported (it's checked first)
+        error_msg = str(exc_info.value)
+        assert "cannot be both allowed and blocked" in error_msg

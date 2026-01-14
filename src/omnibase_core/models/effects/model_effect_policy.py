@@ -4,7 +4,9 @@ Specifies how non-deterministic effects should be handled during replay.
 Part of the effect boundary system for OMN-1147.
 """
 
-from pydantic import BaseModel, ConfigDict, Field
+from typing import Self
+
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums.enum_effect_category import EnumEffectCategory
 from omnibase_core.enums.enum_effect_policy_level import EnumEffectPolicyLevel
@@ -47,6 +49,36 @@ class ModelEffectPolicySpec(BaseModel):
         default_factory=tuple,
         description="Specific effect IDs that are blocked regardless of category",
     )
+
+    @model_validator(mode="after")
+    def _validate_no_conflicts(self) -> Self:
+        """Validate that there are no conflicting policy configurations.
+
+        Raises:
+            ValueError: If a category is in both allowed and blocked lists,
+                or if an effect ID is in both allowlist and denylist.
+        """
+        # Check for categories in both allowed and blocked
+        allowed_set = set(self.allowed_categories)
+        blocked_set = set(self.blocked_categories)
+        category_conflicts = allowed_set & blocked_set
+        if category_conflicts:
+            conflict_names = sorted(c.value for c in category_conflicts)
+            raise ValueError(
+                f"Categories cannot be both allowed and blocked: {conflict_names}"
+            )
+
+        # Check for effect IDs in both allowlist and denylist
+        allowlist_set = set(self.allowlist_effect_ids)
+        denylist_set = set(self.denylist_effect_ids)
+        id_conflicts = allowlist_set & denylist_set
+        if id_conflicts:
+            raise ValueError(
+                f"Effect IDs cannot be both allowlisted and denylisted: "
+                f"{sorted(id_conflicts)}"
+            )
+
+        return self
 
     def is_category_allowed(self, category: EnumEffectCategory) -> bool:
         """Check if an effect category is allowed under this policy.

@@ -96,6 +96,13 @@ class ServiceEffectMockRegistry:
     Thread Safety:
         Not thread-safe. Use external synchronization for concurrent access.
 
+    Note:
+        Registered mocks are stored as callable references. If a mock maintains
+        internal state (e.g., a counter that increments on each call), that state
+        persists across invocations within the same registry instance. For fully
+        deterministic replay behavior, prefer stateless mocks or reset mock state
+        between test runs by calling :meth:`clear` or re-creating the registry.
+
     .. versionadded:: 0.6.4
     """
 

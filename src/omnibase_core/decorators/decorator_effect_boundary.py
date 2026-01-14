@@ -3,8 +3,18 @@
 Provides the @effect_boundary decorator to mark functions as effect boundaries,
 attaching ModelEffectBoundary metadata for runtime replay safety enforcement.
 Part of the effect boundary system for OMN-1147.
+
+Async Support:
+    The decorator automatically detects async functions using
+    asyncio.iscoroutinefunction() and creates the appropriate wrapper:
+    - Async functions get an async wrapper that properly awaits the original
+    - Sync functions get a sync wrapper that calls the original directly
+
+    This ensures proper coroutine handling and preserves the async nature
+    of decorated functions.
 """
 
+import asyncio
 from collections.abc import Callable
 from functools import wraps
 from typing import ParamSpec, TypeVar
@@ -44,6 +54,10 @@ def effect_boundary(
     policy enforcement during replay execution. The metadata is discoverable
     via introspection using get_effect_boundary().
 
+    This decorator supports both sync and async functions. It automatically
+    detects async functions using asyncio.iscoroutinefunction() and creates
+    the appropriate wrapper type to preserve async behavior.
+
     Args:
         boundary_id: Unique identifier for this effect boundary.
         categories: Effect categories this boundary encompasses. Each category
@@ -58,8 +72,11 @@ def effect_boundary(
 
     Returns:
         Decorated function with ModelEffectBoundary metadata attached.
+        For async functions, returns an async wrapper. For sync functions,
+        returns a sync wrapper.
 
     Example:
+        # Async function example
         @effect_boundary(
             boundary_id="user_service.fetch_user",
             categories=[EnumEffectCategory.NETWORK, EnumEffectCategory.DATABASE],
@@ -67,6 +84,15 @@ def effect_boundary(
             description="Fetches user data from external service and cache",
         )
         async def fetch_user(user_id: str) -> User:
+            ...
+
+        # Sync function example
+        @effect_boundary(
+            boundary_id="file_service.read_config",
+            categories=[EnumEffectCategory.FILESYSTEM],
+            policy=EnumEffectPolicyLevel.WARN,
+        )
+        def read_config(path: str) -> dict:
             ...
 
         # Later, retrieve metadata for policy enforcement:
@@ -96,13 +122,27 @@ def effect_boundary(
             isolation_mechanisms=tuple(isolation_mechanisms or []),
         )
 
-        @wraps(func)
-        def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-            return func(*args, **kwargs)
+        # Create appropriate wrapper based on function type
+        if asyncio.iscoroutinefunction(func):
 
-        # Attach metadata to the wrapper
-        setattr(wrapper, EFFECT_BOUNDARY_ATTR, boundary)
-        return wrapper
+            @wraps(func)
+            async def async_wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+                # NOTE(OMN-1147): mypy cannot track R through async/await with ParamSpec.
+                # Safe because we're awaiting the same func that was passed in.
+                return await func(*args, **kwargs)  # type: ignore[no-any-return]
+
+            # Attach metadata to the async wrapper
+            setattr(async_wrapper, EFFECT_BOUNDARY_ATTR, boundary)
+            return async_wrapper  # type: ignore[return-value]
+        else:
+
+            @wraps(func)
+            def sync_wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+                return func(*args, **kwargs)
+
+            # Attach metadata to the sync wrapper
+            setattr(sync_wrapper, EFFECT_BOUNDARY_ATTR, boundary)
+            return sync_wrapper
 
     return decorator
 

@@ -4,8 +4,10 @@ Part of OMN-1147: Effect Classification System test suite.
 """
 
 import asyncio
+from collections.abc import Callable
 
 import pytest
+from pydantic import ValidationError
 
 from omnibase_core.decorators.decorator_effect_boundary import (
     EFFECT_BOUNDARY_ATTR,
@@ -320,9 +322,9 @@ class TestEffectBoundaryDecorator:
         boundary = get_effect_boundary(func)
         assert boundary is not None
 
-        # ModelEffectBoundary is frozen - this should raise
-        with pytest.raises(Exception):  # ValidationError for Pydantic
-            boundary.boundary_id = "modified"  # type: ignore[misc]
+        # ModelEffectBoundary is frozen - this should raise ValidationError
+        with pytest.raises(ValidationError):
+            boundary.boundary_id = "modified"
 
     def test_function_with_type_hints(self) -> None:
         """Test decorator works with fully type-hinted functions."""
@@ -391,8 +393,10 @@ class TestEffectBoundaryDecorator:
     def test_multiple_decorators_on_same_function(self) -> None:
         """Test that effect_boundary can coexist with other decorators."""
 
-        def logging_decorator(func):
-            def wrapper(*args, **kwargs):
+        def logging_decorator(
+            func: Callable[..., object],
+        ) -> Callable[..., object]:
+            def wrapper(*args: object, **kwargs: object) -> object:
                 return func(*args, **kwargs)
 
             wrapper.__name__ = func.__name__
