@@ -19,6 +19,7 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from omnibase_core.constants.constants_omnimemory import FLOAT_COMPARISON_EPSILON
 from omnibase_core.models.omnimemory.model_decision_record import ModelDecisionRecord
 from omnibase_core.models.omnimemory.model_failure_record import ModelFailureRecord
 
@@ -153,7 +154,7 @@ class ModelMemoryDiff(BaseModel):
             self.decisions_added
             or self.decisions_removed
             or self.failures_added
-            or abs(self.cost_delta) > 1e-9
+            or abs(self.cost_delta) > FLOAT_COMPARISON_EPSILON
         )
 
     @property
@@ -188,7 +189,7 @@ class ModelMemoryDiff(BaseModel):
             changes.append(f"-{len(self.decisions_removed)} decisions")
         if self.failures_added:
             changes.append(f"+{len(self.failures_added)} failures")
-        if abs(self.cost_delta) > 1e-9:
+        if abs(self.cost_delta) > FLOAT_COMPARISON_EPSILON:
             if self.cost_delta > 0:
                 changes.append(f"+${self.cost_delta:.4f} cost")
             else:

@@ -1361,6 +1361,218 @@ class TestModelMemorySnapshotDiffFrom:
 
 
 # ============================================================================
+# Test: Performance
+# ============================================================================
+
+
+@pytest.mark.slow
+class TestModelMemorySnapshotPerformance:
+    """Performance tests to catch algorithmic complexity issues."""
+
+    def test_diff_from_large_decision_set(
+        self,
+        sample_subject: ModelSubjectRef,
+        sample_cost_ledger: ModelCostLedger,
+    ) -> None:
+        """Test diff_from with 1000+ decisions completes in reasonable time.
+
+        This test guards against O(n^2) regressions in the diff algorithm.
+        The current implementation uses set operations which should be O(n).
+        With 1000 decisions, O(n) should complete in milliseconds while
+        O(n^2) would take significantly longer.
+        """
+        import time
+
+        num_decisions = 1000
+
+        # Create 1000 unique decisions for base snapshot
+        base_decisions = tuple(
+            ModelDecisionRecord(
+                decision_type=EnumDecisionType.MODEL_SELECTION,
+                timestamp=datetime.now(UTC),
+                options_considered=(f"base_option_{i}",),
+                chosen_option=f"base_option_{i}",
+                confidence=0.5,
+                input_hash=f"base_hash_{i}",
+            )
+            for i in range(num_decisions)
+        )
+
+        # Create 1000 different decisions for target snapshot
+        # All different from base to maximize diff work
+        target_decisions = tuple(
+            ModelDecisionRecord(
+                decision_type=EnumDecisionType.MODEL_SELECTION,
+                timestamp=datetime.now(UTC),
+                options_considered=(f"target_option_{i}",),
+                chosen_option=f"target_option_{i}",
+                confidence=0.5,
+                input_hash=f"target_hash_{i}",
+            )
+            for i in range(num_decisions)
+        )
+
+        base_snapshot = ModelMemorySnapshot(
+            subject=sample_subject,
+            cost_ledger=sample_cost_ledger,
+            decisions=base_decisions,
+        )
+        target_snapshot = ModelMemorySnapshot(
+            subject=sample_subject,
+            cost_ledger=sample_cost_ledger,
+            decisions=target_decisions,
+        )
+
+        start = time.perf_counter()
+        diff = target_snapshot.diff_from(base_snapshot)
+        elapsed = time.perf_counter() - start
+
+        # O(n) algorithm should complete in well under 1 second for 1000 items
+        # O(n^2) with 1000 items would take significantly longer
+        # Using 1.0 second as a generous threshold to avoid flaky tests
+        assert elapsed < 1.0, (
+            f"diff_from took {elapsed:.3f}s for {num_decisions} decisions, "
+            f"may indicate O(n^2) complexity regression"
+        )
+
+        # Verify correctness - all decisions should show as added/removed
+        assert len(diff.decisions_added) == num_decisions
+        assert len(diff.decisions_removed) == num_decisions
+        assert diff.has_changes is True
+
+    def test_diff_from_large_decision_set_with_overlap(
+        self,
+        sample_subject: ModelSubjectRef,
+        sample_cost_ledger: ModelCostLedger,
+    ) -> None:
+        """Test diff_from with partial overlap in large decision sets.
+
+        Tests the more realistic scenario where base and target share
+        some decisions. This exercises the set intersection logic.
+        """
+        import time
+
+        num_decisions = 1000
+        overlap_count = 500
+
+        # Create shared decisions (will be in both snapshots)
+        shared_decisions = [
+            ModelDecisionRecord(
+                decision_type=EnumDecisionType.MODEL_SELECTION,
+                timestamp=datetime.now(UTC),
+                options_considered=(f"shared_option_{i}",),
+                chosen_option=f"shared_option_{i}",
+                confidence=0.5,
+                input_hash=f"shared_hash_{i}",
+            )
+            for i in range(overlap_count)
+        ]
+
+        # Create unique decisions for base (not in target)
+        base_only_decisions = [
+            ModelDecisionRecord(
+                decision_type=EnumDecisionType.MODEL_SELECTION,
+                timestamp=datetime.now(UTC),
+                options_considered=(f"base_only_{i}",),
+                chosen_option=f"base_only_{i}",
+                confidence=0.5,
+                input_hash=f"base_only_hash_{i}",
+            )
+            for i in range(num_decisions - overlap_count)
+        ]
+
+        # Create unique decisions for target (not in base)
+        target_only_decisions = [
+            ModelDecisionRecord(
+                decision_type=EnumDecisionType.MODEL_SELECTION,
+                timestamp=datetime.now(UTC),
+                options_considered=(f"target_only_{i}",),
+                chosen_option=f"target_only_{i}",
+                confidence=0.5,
+                input_hash=f"target_only_hash_{i}",
+            )
+            for i in range(num_decisions - overlap_count)
+        ]
+
+        base_snapshot = ModelMemorySnapshot(
+            subject=sample_subject,
+            cost_ledger=sample_cost_ledger,
+            decisions=tuple(shared_decisions + base_only_decisions),
+        )
+        target_snapshot = ModelMemorySnapshot(
+            subject=sample_subject,
+            cost_ledger=sample_cost_ledger,
+            decisions=tuple(shared_decisions + target_only_decisions),
+        )
+
+        start = time.perf_counter()
+        diff = target_snapshot.diff_from(base_snapshot)
+        elapsed = time.perf_counter() - start
+
+        # Should complete quickly with O(n) complexity
+        assert elapsed < 1.0, (
+            f"diff_from took {elapsed:.3f}s for {num_decisions} decisions with overlap, "
+            f"may indicate O(n^2) complexity regression"
+        )
+
+        # Verify correctness
+        # Target has target_only decisions added (not in base)
+        assert len(diff.decisions_added) == num_decisions - overlap_count
+        # Base had base_only decisions removed (not in target)
+        assert len(diff.decisions_removed) == num_decisions - overlap_count
+        assert diff.has_changes is True
+
+    def test_diff_from_large_failure_set(
+        self,
+        sample_subject: ModelSubjectRef,
+        sample_cost_ledger: ModelCostLedger,
+    ) -> None:
+        """Test diff_from with 1000+ failures completes in reasonable time.
+
+        Similar to decision test but exercises the failure diff logic.
+        """
+        import time
+
+        num_failures = 1000
+
+        # Create failures for target (none in base)
+        target_failures = tuple(
+            ModelFailureRecord(
+                timestamp=datetime.now(UTC),
+                failure_type=EnumFailureType.TIMEOUT,
+                step_context=f"step_{i}",
+                error_code=f"ERR_{i:04d}",
+                error_message=f"Error message {i}",
+            )
+            for i in range(num_failures)
+        )
+
+        base_snapshot = ModelMemorySnapshot(
+            subject=sample_subject,
+            cost_ledger=sample_cost_ledger,
+        )
+        target_snapshot = ModelMemorySnapshot(
+            subject=sample_subject,
+            cost_ledger=sample_cost_ledger,
+            failures=target_failures,
+        )
+
+        start = time.perf_counter()
+        diff = target_snapshot.diff_from(base_snapshot)
+        elapsed = time.perf_counter() - start
+
+        # Should complete quickly with O(n) complexity
+        assert elapsed < 1.0, (
+            f"diff_from took {elapsed:.3f}s for {num_failures} failures, "
+            f"may indicate O(n^2) complexity regression"
+        )
+
+        # Verify correctness
+        assert len(diff.failures_added) == num_failures
+        assert diff.has_changes is True
+
+
+# ============================================================================
 # Test: Integration Scenarios
 # ============================================================================
 

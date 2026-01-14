@@ -14,6 +14,103 @@ provides content-based hashing for integrity verification.
 This is a pure data model with immutable operations (all mutations return
 new instances).
 
+Example workflow (snapshot -> mutation -> diff)::
+
+    >>> from datetime import datetime, UTC
+    >>> from uuid import uuid4
+    >>> from omnibase_core.enums.enum_decision_type import EnumDecisionType
+    >>> from omnibase_core.enums.enum_failure_type import EnumFailureType
+    >>> from omnibase_core.enums.enum_subject_type import EnumSubjectType
+    >>> from omnibase_core.models.omnimemory import (
+    ...     ModelCostEntry,
+    ...     ModelCostLedger,
+    ...     ModelDecisionRecord,
+    ...     ModelFailureRecord,
+    ...     ModelMemorySnapshot,
+    ...     ModelSubjectRef,
+    ... )
+    >>>
+    >>> # 1. Create initial snapshot (base state)
+    >>> # The snapshot represents the "state is the asset" pattern - all agent
+    >>> # memory is captured as an immutable, versioned data structure.
+    >>> subject = ModelSubjectRef(
+    ...     subject_type=EnumSubjectType.AGENT,
+    ...     subject_id=uuid4(),
+    ... )
+    >>> ledger = ModelCostLedger(budget_total=100.0)
+    >>> base_snapshot = ModelMemorySnapshot(subject=subject, cost_ledger=ledger)
+    >>> base_snapshot.decision_count
+    0
+    >>>
+    >>> # 2. Record a decision (returns NEW snapshot - original unchanged)
+    >>> # Each mutation creates a new snapshot, preserving the full history.
+    >>> decision = ModelDecisionRecord(
+    ...     decision_type=EnumDecisionType.MODEL_SELECTION,
+    ...     timestamp=datetime.now(UTC),
+    ...     options_considered=("gpt-4", "claude-3-opus"),
+    ...     chosen_option="gpt-4",
+    ...     confidence=0.95,
+    ...     input_hash="abc123def456",
+    ...     rationale="Selected for code generation capability",
+    ... )
+    >>> snapshot_v2 = base_snapshot.with_decision(decision)
+    >>> snapshot_v2.decision_count
+    1
+    >>> base_snapshot.decision_count  # Original unchanged
+    0
+    >>>
+    >>> # 3. Record a cost entry from an LLM call
+    >>> cost_entry = ModelCostEntry(
+    ...     timestamp=datetime.now(UTC),
+    ...     operation="chat_completion",
+    ...     model_used="gpt-4",
+    ...     tokens_in=150,
+    ...     tokens_out=75,
+    ...     cost=0.0068,
+    ...     cumulative_total=0.0068,
+    ... )
+    >>> snapshot_v3 = snapshot_v2.with_cost_entry(cost_entry)
+    >>> snapshot_v3.cost_ledger.total_spent
+    0.0068
+    >>>
+    >>> # 4. Record a failure (failures are first-class state for learning)
+    >>> failure = ModelFailureRecord(
+    ...     timestamp=datetime.now(UTC),
+    ...     failure_type=EnumFailureType.RATE_LIMIT,
+    ...     step_context="code_review",
+    ...     error_code="RATE_LIMIT_429",
+    ...     error_message="API rate limit exceeded, retry after 60s",
+    ...     model_used="gpt-4",
+    ...     retry_attempt=0,
+    ... )
+    >>> snapshot_v4 = snapshot_v3.with_failure(failure)
+    >>> snapshot_v4.failure_count
+    1
+    >>>
+    >>> # 5. Compute diff to understand what changed between two snapshots
+    >>> # For diffing, create explicit snapshots (diff compares by snapshot_id).
+    >>> # Here we show diffing two snapshots with accumulated state changes.
+    >>> updated_ledger = base_snapshot.cost_ledger.with_entry(cost_entry)
+    >>> final_snapshot = ModelMemorySnapshot(
+    ...     subject=subject,
+    ...     cost_ledger=updated_ledger,
+    ...     decisions=(decision,),
+    ...     failures=(failure,),
+    ...     parent_snapshot_id=base_snapshot.snapshot_id,  # Link lineage
+    ... )
+    >>> diff = final_snapshot.diff_from(base_snapshot)
+    >>> diff.has_changes
+    True
+    >>> len(diff.decisions_added)
+    1
+    >>> len(diff.failures_added)
+    1
+    >>> diff.cost_delta > 0
+    True
+    >>> # Human-readable summary of changes
+    >>> "decision" in diff.summary.lower()
+    True
+
 .. versionadded:: 0.6.0
     Added as part of OmniMemory core infrastructure (OMN-1243)
 """
@@ -25,6 +122,7 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.constants.constants_omnimemory import FLOAT_COMPARISON_EPSILON
 from omnibase_core.models.omnimemory.model_cost_entry import ModelCostEntry
 from omnibase_core.models.omnimemory.model_cost_ledger import ModelCostLedger
 from omnibase_core.models.omnimemory.model_decision_record import ModelDecisionRecord
@@ -61,6 +159,13 @@ class ModelMemorySnapshot(BaseModel):
         instances rather than modifying in place. The content_hash is
         computed from semantic fields only, excluding identity and metadata
         fields to enable content-based comparison.
+
+    Note:
+        Decision/failure removal methods are intentionally omitted. Snapshots
+        are append-only by design to support audit trails and lineage tracking.
+        When decisions need to be "removed", create a new snapshot without them;
+        the removal will be tracked in diff_from() comparisons via the
+        decisions_removed field.
 
     Example:
         >>> from datetime import datetime, UTC
@@ -266,6 +371,15 @@ class ModelMemorySnapshot(BaseModel):
         Returns:
             SHA-256 hex digest of the semantic content.
 
+        Note:
+            Hash determinism depends on consistent serialization. The ``default=str``
+            parameter handles datetime and UUID conversion. Requirements:
+
+            - All datetime fields must use UTC timezone for consistent string output
+            - UUID ``str()`` output is deterministic (lowercase hyphenated format)
+            - Nested models use ``mode="json"`` for Pydantic's deterministic serialization
+            - The ``sort_keys=True`` ensures dictionary key ordering is consistent
+
         Example:
             >>> hash1 = snapshot.compute_content_hash()
             >>> # Same content produces same hash
@@ -275,7 +389,8 @@ class ModelMemorySnapshot(BaseModel):
 
         .. versionadded:: 0.6.0
         """
-        # Build canonical representation from semantic fields only
+        # Build canonical representation from semantic fields only.
+        # Nested models use mode="json" for deterministic Pydantic serialization.
         content = {
             "decisions": [d.model_dump(mode="json") for d in self.decisions],
             "failures": [f.model_dump(mode="json") for f in self.failures],
@@ -283,7 +398,8 @@ class ModelMemorySnapshot(BaseModel):
             "execution_annotations": self.execution_annotations,
             "schema_version": self.schema_version,
         }
-        # Use sort_keys for deterministic output, default=str for datetime/UUID
+        # Determinism contract: sort_keys ensures key ordering, default=str handles
+        # datetime/UUID via str() which is deterministic for these types.
         canonical = json.dumps(content, sort_keys=True, default=str)
         return hashlib.sha256(canonical.encode()).hexdigest()
 
@@ -385,7 +501,7 @@ class ModelMemorySnapshot(BaseModel):
             summary_parts.append(f"{len(decisions_removed)} decision(s) removed")
         if failures_added:
             summary_parts.append(f"{len(failures_added)} failure(s) recorded")
-        if abs(cost_delta) > 1e-9:
+        if abs(cost_delta) > FLOAT_COMPARISON_EPSILON:
             delta_str = (
                 f"+${cost_delta:.4f}" if cost_delta > 0 else f"-${abs(cost_delta):.4f}"
             )
