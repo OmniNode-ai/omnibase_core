@@ -29,6 +29,11 @@ class ModelEvidenceFilter(BaseModel):
         start_date: Filter to evidence after this date.
         end_date: Filter to evidence before this date.
 
+    Date Handling:
+        Naive datetimes (without tzinfo) are treated as UTC for comparison.
+        Use timezone-aware datetimes (e.g., ``datetime.now(UTC)``) to avoid
+        ambiguity.
+
     Thread Safety:
         This model is immutable (frozen=True) and thread-safe.
     """
