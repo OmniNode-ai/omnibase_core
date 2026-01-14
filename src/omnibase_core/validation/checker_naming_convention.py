@@ -161,6 +161,7 @@ DIRECTORY_PREFIX_RULES: dict[str, tuple[str, ...]] = {
     ),
     "protocols": ("protocol_",),
     "resolution": ("resolver_",),
+    "rendering": ("renderer_",),
     # runtime/ accepts handler_ prefix because:
     # - runtime/handler_registry.py manages handler registration
     # - runtime/handlers/handler_local.py implements local handler logic
