@@ -40,23 +40,6 @@ validation:
       severity: error
       enabled: true
       parameters:
-        pattern_words:
-          - Status
-          - State
-          - Phase
-          - Mode
-          - Health
-          - Type
-          - Kind
-          - Level
-          - Category
-          - Priority
-          - Severity
-          - Stage
-          - Role
-          - Action
-          - Result
-          - Outcome
         min_values: 3
         allowed_aliases:
           - EnforcementOutcome  # Pydantic field typing, not domain model

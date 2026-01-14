@@ -427,7 +427,9 @@ class CheckerEnumGovernance(ValidatorBase):
                 will be loaded from the default YAML location when first accessed.
         """
         super().__init__(contract)
-        # Multi-phase scanning state
+        # Thread safety: The following instance variables maintain state across
+        # multi-phase scanning and prevent thread-safe reuse. Each worker process
+        # MUST create its own validator instance. See docs/guides/THREADING.md.
         self._all_enums: list[_CollectedEnumData] = []
         self._all_literals: list[LiteralAliasInfo] = []
         self._phase_a_complete: bool = False
