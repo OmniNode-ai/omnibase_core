@@ -26,8 +26,8 @@ from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 import pytest
-
 from omnibase_core.enums.enum_invariant_severity import EnumInvariantSeverity
+
 from omnibase_core.models.evidence.model_cost_statistics import ModelCostStatistics
 from omnibase_core.models.evidence.model_decision_recommendation import (
     ModelDecisionRecommendation,
