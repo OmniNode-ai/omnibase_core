@@ -216,16 +216,17 @@ class EnumRegistryEntryStatus(str, Enum):
 
 #### Issue Severity (`EnumSeverity`) - Canonical
 
-**Purpose**: Classify the severity of violations, issues, and findings using a standard 5-level scale aligned with logging conventions.
+**Purpose**: Classify the severity of violations, issues, and findings using a standard 6-level scale aligned with logging conventions.
 
 **Values**:
 ```python
 class EnumSeverity(str, Enum):
-    DEBUG = "debug"        # Detailed debugging information
-    INFO = "info"          # Informational messages, normal operation
-    WARNING = "warning"    # Potential issues that should be reviewed
-    ERROR = "error"        # Error conditions that need attention
-    CRITICAL = "critical"  # Must be addressed immediately
+    DEBUG = "debug"        # Detailed diagnostic information for debugging
+    INFO = "info"          # General operational information
+    WARNING = "warning"    # Unexpected situation that doesn't prevent operation
+    ERROR = "error"        # Operation failed but system can continue
+    CRITICAL = "critical"  # Serious error requiring attention, system can continue degraded
+    FATAL = "fatal"        # Unrecoverable error, system must terminate
 ```
 
 **When to Use**: Validation findings, code analysis, issue classification, logging context.
