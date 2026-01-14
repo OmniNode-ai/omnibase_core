@@ -7,22 +7,22 @@ Generates decision-ready reports from corpus replay evidence in multiple formats
 - CLI: Formatted terminal output with configurable verbosity
 - JSON: Structured data for machine consumption
 - Markdown: GitHub-flavored markdown for PRs and documentation
+- HTML: Standalone HTML with inline CSS for dashboards
 
 Thread Safety:
     ServiceDecisionReportGenerator is stateless and thread-safe. All methods
     take inputs and return outputs without modifying any shared state.
 
 Output Determinism:
-    Report methods that include timestamps (generate_json_report, generate_markdown_report)
-    accept an optional `generated_at` parameter. When provided, output is fully deterministic
-    and reproducible. When omitted, current UTC time is used, making output time-dependent.
+    Report methods that include timestamps (generate_json_report, generate_markdown_report,
+    generate_html_report) accept an optional `generated_at` parameter. When provided,
+    output is fully deterministic and reproducible. When omitted, current UTC time is used,
+    making output time-dependent.
 """
 
-import json
-from datetime import UTC, datetime
+from datetime import datetime
 from pathlib import Path
-from typing import Literal, NewType
-from uuid import UUID
+from typing import Literal
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -33,51 +33,13 @@ from omnibase_core.models.evidence.model_evidence_summary import ModelEvidenceSu
 from omnibase_core.models.replay.model_execution_comparison import (
     ModelExecutionComparison,
 )
+from omnibase_core.rendering.renderer_report_cli import RendererReportCli
+from omnibase_core.rendering.renderer_report_html import RendererReportHtml
+from omnibase_core.rendering.renderer_report_json import RendererReportJson
+from omnibase_core.rendering.renderer_report_markdown import RendererReportMarkdown
 from omnibase_core.types.typed_dict_decision_report import TypedDictDecisionReport
 
-# Type alias for report version strings (semantic versioning)
-ReportVersion = NewType("ReportVersion", str)
-
-# Report formatting constants
-REPORT_WIDTH = 80
-REPORT_VERSION: ReportVersion = ReportVersion("1.0.0")
-SEPARATOR_CHAR = "="
-SEPARATOR_LINE = SEPARATOR_CHAR * REPORT_WIDTH
-SUBSECTION_CHAR = "-"
-
-# Comparison display limits - prevent terminal overflow in verbose mode
-# while showing enough data for debugging
-COMPARISON_LIMIT_CLI_VERBOSE = 10
-
-# Markdown comparison limit - higher than CLI due to collapsible sections
-# allowing for more detail without overwhelming the reader
-COMPARISON_LIMIT_MARKDOWN = 50
-
-# JSON formatting
-JSON_INDENT_SPACES = 2
-
-# Percentage conversion multiplier (ratio 0.0-1.0 to percent 0-100)
-PERCENTAGE_MULTIPLIER = 100
-
-# Text truncation constants
-ELLIPSIS = "..."
-ELLIPSIS_LENGTH = len(ELLIPSIS)  # 3 characters for "..."
-
-# UUID display truncation - shows first N characters for readability while
-# maintaining enough uniqueness for visual identification in tables
-UUID_DISPLAY_LENGTH = 8
-
-# Severity sort order for markdown tables (lower value = higher priority in display)
-SEVERITY_SORT_ORDER: dict[str, int] = {
-    "critical": 0,
-    "warning": 1,
-    "info": 2,
-}
-DEFAULT_FALLBACK_SORT_ORDER = 99  # Unknown severities sort last
-
-# Cost data unavailability messages (consistent terminology across formats)
-COST_NA_CLI = "Cost:     N/A (incomplete cost data)"
-COST_NA_MARKDOWN = "_Cost data not available (incomplete data)_"
+# Cost data unavailability warning message (used in recommendation generation)
 COST_NA_WARNING = "Cost data incomplete - manual cost review recommended"
 
 
@@ -100,9 +62,10 @@ class ServiceDecisionReportGenerator:
 
     Output Determinism:
         Report methods that include timestamps (generate_json_report,
-        generate_markdown_report) accept an optional `generated_at` parameter.
-        When provided, output is fully deterministic and reproducible for testing.
-        When omitted, current UTC time is used, making output time-dependent.
+        generate_markdown_report, generate_html_report) accept an optional
+        `generated_at` parameter. When provided, output is fully deterministic
+        and reproducible for testing. When omitted, current UTC time is used,
+        making output time-dependent.
 
     Example:
         >>> from omnibase_core.services.service_decision_report_generator import (
@@ -386,7 +349,6 @@ class ServiceDecisionReportGenerator:
         Raises:
             ModelOnexError: If comparisons is not a list.
         """
-        # Validate comparisons input
         if not isinstance(comparisons, list):
             raise ModelOnexError(
                 message="comparisons must be a list",
@@ -394,203 +356,8 @@ class ServiceDecisionReportGenerator:
                 context={"comparisons_type": type(comparisons).__name__},
             )
 
-        lines: list[str] = []
-
-        if verbosity == "minimal":
-            return self._generate_minimal_cli_report(summary, recommendation)
-
-        # Header
-        lines.append(SEPARATOR_LINE)
-        lines.append(self._center_text("CORPUS REPLAY EVIDENCE REPORT"))
-        lines.append(SEPARATOR_LINE)
-        lines.append("")
-
-        # Summary section
-        self._format_section_header("SUMMARY", lines)
-        lines.append(f"Corpus: {summary.corpus_id}")
-        lines.append(
-            f"Baseline: {summary.baseline_version} | Replay: {summary.replay_version}"
-        )
-        pass_rate_pct = summary.pass_rate * PERCENTAGE_MULTIPLIER
-        lines.append(
-            f"Executions: {summary.passed_count}/{summary.total_executions} "
-            f"passed ({pass_rate_pct:.0f}%)"
-        )
-        lines.append("")
-
-        # Invariant violations section
-        violation_count = summary.invariant_violations.total_violations
-        self._format_section_header(f"INVARIANT VIOLATIONS ({violation_count})", lines)
-
-        if violation_count == 0:
-            lines.append("No violations detected.")
-        else:
-            by_severity = summary.invariant_violations.by_severity
-            by_type = summary.invariant_violations.by_type
-
-            # Severity and type are independent aggregations in ModelInvariantViolationBreakdown.
-            # by_severity counts violations by severity level (critical/warning/info).
-            # by_type counts violations by type (e.g., "schema_mismatch", "constraint_violation").
-            # These cannot be correlated since we don't have per-violation severity-type pairs.
-            #
-            # FIX: Violation severity display logic (PR #368) - Normalize severity keys
-            # to lowercase for case-insensitive lookup. Input data may have severity keys
-            # in any case (e.g., "CRITICAL", "Warning", "info"), but we need consistent
-            # display. Each severity type gets its correct label by using lowercase keys.
-            normalized_severity = {k.lower(): v for k, v in by_severity.items()}
-            severity_parts = []
-            # Extract counts for each known severity level using normalized keys
-            critical_count = normalized_severity.get("critical", 0)
-            warning_count = normalized_severity.get("warning", 0)
-            info_count = normalized_severity.get("info", 0)
-
-            if critical_count > 0:
-                severity_parts.append(f"{critical_count} critical")
-            if warning_count > 0:
-                severity_parts.append(f"{warning_count} warning")
-            if verbosity == "verbose" and info_count > 0:
-                severity_parts.append(f"{info_count} info")
-
-            if severity_parts:
-                lines.append(f"Severity: {', '.join(severity_parts)}")
-
-            # Show type breakdown without severity labels
-            # (types and severities are independent aggregations)
-            if by_type:
-                lines.append("By type:")
-                for violation_type, count in sorted(by_type.items()):
-                    lines.append(f"  - {violation_type}: {count} violation(s)")
-
-        lines.append("")
-
-        # Performance section
-        self._format_section_header("PERFORMANCE", lines)
-
-        latency_delta = summary.latency_stats.delta_avg_percent
-        latency_sign = "+" if latency_delta > 0 else ""
-        baseline_latency = summary.latency_stats.baseline_avg_ms
-        replay_latency = summary.latency_stats.replay_avg_ms
-        lines.append(
-            f"Latency:  {latency_sign}{latency_delta:.0f}% "
-            f"(avg {baseline_latency:.0f}ms -> {replay_latency:.0f}ms)"
-        )
-
-        if summary.cost_stats is not None:
-            cost_delta = summary.cost_stats.delta_percent
-            cost_sign = "+" if cost_delta > 0 else ""
-            baseline_cost = summary.cost_stats.baseline_avg_per_execution
-            replay_cost = summary.cost_stats.replay_avg_per_execution
-            lines.append(
-                f"Cost:     {cost_sign}{cost_delta:.0f}% "
-                f"(${baseline_cost:.4f} -> ${replay_cost:.4f} per execution)"
-            )
-        else:
-            lines.append(COST_NA_CLI)
-
-        lines.append("")
-
-        # Recommendation section
         recommendation = self._ensure_recommendation(summary, recommendation)
-        action_upper = recommendation.action.upper()
-        self._format_section_header(f"RECOMMENDATION: {action_upper}", lines)
-        lines.append(f"Confidence: {recommendation.confidence:.0%}")
-        lines.append("")
-
-        if recommendation.blockers:
-            lines.append("Blockers:")
-            for blocker in recommendation.blockers:
-                lines.append(f"  - {blocker}")
-            lines.append("")
-
-        if recommendation.warnings:
-            lines.append("Warnings:")
-            for warning in recommendation.warnings:
-                lines.append(f"  - {warning}")
-            lines.append("")
-
-        if recommendation.next_steps:
-            lines.append("Next Steps:")
-            for i, step in enumerate(recommendation.next_steps, 1):
-                lines.append(f"  {i}. {step}")
-            lines.append("")
-
-        # Verbose: include comparison details
-        if verbosity == "verbose" and comparisons:
-            self._format_section_header("COMPARISON DETAILS", lines)
-            for comparison in comparisons[:COMPARISON_LIMIT_CLI_VERBOSE]:
-                status = "PASS" if comparison.output_match else "FAIL"
-                lines.append(
-                    f"[{status}] {comparison.comparison_id} | "
-                    f"Latency: {comparison.latency_delta_percent:+.1f}%"
-                )
-            if len(comparisons) > COMPARISON_LIMIT_CLI_VERBOSE:
-                lines.append(
-                    f"... and {len(comparisons) - COMPARISON_LIMIT_CLI_VERBOSE} more comparisons"
-                )
-            lines.append("")
-
-        lines.append(SEPARATOR_LINE)
-
-        return "\n".join(lines)
-
-    def _generate_minimal_cli_report(
-        self,
-        summary: ModelEvidenceSummary,
-        recommendation: ModelDecisionRecommendation | None = None,
-    ) -> str:
-        """Generate minimal CLI report (headline + recommendation only).
-
-        Args:
-            summary: Aggregated evidence summary.
-            recommendation: Pre-generated recommendation. If None, generates a new one.
-
-        Returns:
-            Minimal formatted report string.
-        """
-        recommendation = self._ensure_recommendation(summary, recommendation)
-        lines = [
-            summary.headline,
-            f"Recommendation: {recommendation.action.upper()} "
-            f"(confidence: {recommendation.confidence:.0%})",
-        ]
-        return "\n".join(lines)
-
-    def _center_text(self, text: str) -> str:
-        """Center text within REPORT_WIDTH, truncating if necessary.
-
-        Args:
-            text: Text to center.
-
-        Returns:
-            Centered text string, truncated with ellipsis if too long.
-        """
-        # FIX: Off-by-one error (PR #368) - Use strict '>' comparison, not '>='.
-        # Text of EXACTLY REPORT_WIDTH chars should NOT be truncated, only text
-        # that is LONGER than REPORT_WIDTH. Using '>=' would incorrectly truncate
-        # text that fits perfectly within the report width.
-        if len(text) > REPORT_WIDTH:
-            return text[: REPORT_WIDTH - ELLIPSIS_LENGTH] + ELLIPSIS
-        # Text exactly REPORT_WIDTH chars - return as-is without centering
-        if len(text) == REPORT_WIDTH:
-            return text
-        return text.center(REPORT_WIDTH)
-
-    def _format_section_header(self, header: str, lines: list[str]) -> None:
-        """Add a section header with matching underline to the lines list.
-
-        This helper ensures consistent formatting of section headers in CLI reports
-        and eliminates duplication of header text when calculating underline length.
-
-        Args:
-            header: The section header text.
-            lines: The list of lines to append to (modified in place).
-        """
-        lines.append(header)
-        # FIX: Underline length calculation (PR #368) - Use len(header) to ensure
-        # the underline matches the header text length EXACTLY. Previously there
-        # was a risk of inconsistency when the header string was duplicated in
-        # both the header line and underline length calculation.
-        lines.append(SUBSECTION_CHAR * len(header))
+        return RendererReportCli.render(summary, comparisons, recommendation, verbosity)
 
     def generate_json_report(
         self,
@@ -626,7 +393,6 @@ class ServiceDecisionReportGenerator:
         Raises:
             ModelOnexError: If comparisons is not a list.
         """
-        # Validate comparisons input
         if not isinstance(comparisons, list):
             raise ModelOnexError(
                 message="comparisons must be a list",
@@ -635,98 +401,9 @@ class ServiceDecisionReportGenerator:
             )
 
         recommendation = self._ensure_recommendation(summary, recommendation)
-
-        report: TypedDictDecisionReport = {
-            "report_version": REPORT_VERSION,
-            "generated_at": generated_at.isoformat()
-            if generated_at
-            else datetime.now(UTC).isoformat(),
-            "summary": {
-                "summary_id": summary.summary_id,
-                "corpus_id": summary.corpus_id,
-                "baseline_version": summary.baseline_version,
-                "replay_version": summary.replay_version,
-                "total_executions": summary.total_executions,
-                "passed_count": summary.passed_count,
-                "failed_count": summary.failed_count,
-                "pass_rate": summary.pass_rate,
-                "confidence_score": summary.confidence_score,
-                "headline": summary.headline,
-                "started_at": summary.started_at.isoformat(),
-                "ended_at": summary.ended_at.isoformat(),
-            },
-            "violations": {
-                "total": summary.invariant_violations.total_violations,
-                "by_type": summary.invariant_violations.by_type,
-                "by_severity": summary.invariant_violations.by_severity,
-                "new_violations": summary.invariant_violations.new_violations,
-                "new_critical_violations": (
-                    summary.invariant_violations.new_critical_violations
-                ),
-                "fixed_violations": summary.invariant_violations.fixed_violations,
-            },
-            "performance": {
-                "latency": {
-                    "baseline_avg_ms": summary.latency_stats.baseline_avg_ms,
-                    "replay_avg_ms": summary.latency_stats.replay_avg_ms,
-                    "delta_avg_ms": summary.latency_stats.delta_avg_ms,
-                    "delta_avg_percent": summary.latency_stats.delta_avg_percent,
-                    "baseline_p50_ms": summary.latency_stats.baseline_p50_ms,
-                    "replay_p50_ms": summary.latency_stats.replay_p50_ms,
-                    "delta_p50_percent": summary.latency_stats.delta_p50_percent,
-                    "baseline_p95_ms": summary.latency_stats.baseline_p95_ms,
-                    "replay_p95_ms": summary.latency_stats.replay_p95_ms,
-                    "delta_p95_percent": summary.latency_stats.delta_p95_percent,
-                },
-                "cost": None,
-            },
-            "recommendation": {
-                "action": recommendation.action,
-                "confidence": recommendation.confidence,
-                "blockers": recommendation.blockers,
-                "warnings": recommendation.warnings,
-                "next_steps": recommendation.next_steps,
-                "rationale": recommendation.rationale,
-            },
-        }
-
-        # Add cost data if available
-        if summary.cost_stats is not None:
-            report["performance"]["cost"] = {
-                "baseline_total": summary.cost_stats.baseline_total,
-                "replay_total": summary.cost_stats.replay_total,
-                "delta_total": summary.cost_stats.delta_total,
-                "delta_percent": summary.cost_stats.delta_percent,
-                "baseline_avg_per_execution": (
-                    summary.cost_stats.baseline_avg_per_execution
-                ),
-                "replay_avg_per_execution": summary.cost_stats.replay_avg_per_execution,
-            }
-
-        # Add details if requested
-        if include_details and comparisons:
-            report["details"] = [
-                {
-                    "comparison_id": str(c.comparison_id),
-                    "baseline_execution_id": str(c.baseline_execution_id),
-                    "replay_execution_id": str(c.replay_execution_id),
-                    "input_hash": c.input_hash,
-                    "input_hash_match": c.input_hash_match,
-                    "output_match": c.output_match,
-                    "baseline_latency_ms": c.baseline_latency_ms,
-                    "replay_latency_ms": c.replay_latency_ms,
-                    "latency_delta_ms": c.latency_delta_ms,
-                    "latency_delta_percent": c.latency_delta_percent,
-                    "baseline_cost": c.baseline_cost,
-                    "replay_cost": c.replay_cost,
-                    "cost_delta": c.cost_delta,
-                    "cost_delta_percent": c.cost_delta_percent,
-                    "compared_at": c.compared_at.isoformat(),
-                }
-                for c in comparisons
-            ]
-
-        return report
+        return RendererReportJson.render(
+            summary, comparisons, recommendation, include_details, generated_at
+        )
 
     def generate_markdown_report(
         self,
@@ -762,7 +439,6 @@ class ServiceDecisionReportGenerator:
         Raises:
             ModelOnexError: If comparisons is not a list.
         """
-        # Validate comparisons input
         if not isinstance(comparisons, list):
             raise ModelOnexError(
                 message="comparisons must be a list",
@@ -771,229 +447,60 @@ class ServiceDecisionReportGenerator:
             )
 
         recommendation = self._ensure_recommendation(summary, recommendation)
-        lines: list[str] = []
-
-        # Header
-        lines.append("# Corpus Replay Evidence Report")
-        lines.append("")
-        generated_at_str = (
-            generated_at.isoformat() if generated_at else datetime.now(UTC).isoformat()
+        return RendererReportMarkdown.render(
+            summary,
+            comparisons,
+            recommendation,
+            include_details,
+            generated_at,
+            self.latency_warning_percent,
+            self.cost_warning_percent,
         )
-        lines.append(f"> **Generated**: {generated_at_str}")
-        lines.append("")
 
-        # Summary section
-        lines.append("## Summary")
-        lines.append("")
-        lines.append(f"**Corpus**: `{summary.corpus_id}`")
-        lines.append("")
-        lines.append("| Metric | Value |")
-        lines.append("|--------|-------|")
-        lines.append(f"| Baseline Version | `{summary.baseline_version}` |")
-        lines.append(f"| Replay Version | `{summary.replay_version}` |")
-        lines.append(
-            f"| Pass Rate | {summary.passed_count}/{summary.total_executions} "
-            f"({summary.pass_rate:.1%}) |"
-        )
-        lines.append(f"| Confidence | {summary.confidence_score:.1%} |")
-        lines.append("")
-        lines.append(f"**Headline**: {summary.headline}")
-        lines.append("")
+    def generate_html_report(
+        self,
+        summary: ModelEvidenceSummary,
+        comparisons: list[ModelExecutionComparison],
+        include_details: bool = True,
+        recommendation: ModelDecisionRecommendation | None = None,
+        generated_at: datetime | None = None,
+        standalone: bool = True,
+    ) -> str:
+        """Generate HTML report for web display.
 
-        # Recommendation section
-        lines.append("## Recommendation")
-        lines.append("")
+        Creates standalone HTML with inline CSS suitable for dashboards
+        and web views.
 
-        # Use emoji indicators based on action
-        emoji = {
-            "approve": ":white_check_mark:",
-            "review": ":warning:",
-            "reject": ":x:",
-        }
-        lines.append(
-            f"{emoji.get(recommendation.action, '')} "
-            f"**{recommendation.action.upper()}** "
-            f"(confidence: {recommendation.confidence:.0%})"
-        )
-        lines.append("")
+        Args:
+            summary: Aggregated evidence summary from corpus replay.
+            comparisons: Individual execution comparisons.
+            include_details: Whether to include individual comparison details.
+            recommendation: Pre-generated recommendation. If None, generates a new one.
+            generated_at: Optional timestamp for report generation.
+            standalone: If True, generate full HTML document. If False, just content div.
 
-        if recommendation.rationale:
-            lines.append(f"_{recommendation.rationale}_")
-            lines.append("")
+        Returns:
+            HTML string with inline CSS.
 
-        if recommendation.blockers:
-            lines.append("### Blockers")
-            lines.append("")
-            for blocker in recommendation.blockers:
-                lines.append(f"- :x: {blocker}")
-            lines.append("")
-
-        if recommendation.warnings:
-            lines.append("### Warnings")
-            lines.append("")
-            for warning in recommendation.warnings:
-                lines.append(f"- :warning: {warning}")
-            lines.append("")
-
-        if recommendation.next_steps:
-            lines.append("### Next Steps")
-            lines.append("")
-            for i, step in enumerate(recommendation.next_steps, 1):
-                lines.append(f"{i}. {step}")
-            lines.append("")
-
-        # Invariant Violations section
-        lines.append("## Invariant Violations")
-        lines.append("")
-
-        violation_count = summary.invariant_violations.total_violations
-        if violation_count == 0:
-            lines.append(":white_check_mark: No violations detected.")
-        else:
-            lines.append(
-                f":warning: **{violation_count}** violation(s) detected "
-                f"({summary.invariant_violations.new_violations} new, "
-                f"{summary.invariant_violations.fixed_violations} fixed)"
+        Raises:
+            ModelOnexError: If comparisons is not a list.
+        """
+        if not isinstance(comparisons, list):
+            raise ModelOnexError(
+                message="comparisons must be a list",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                context={"comparisons_type": type(comparisons).__name__},
             )
-            lines.append("")
 
-            # Violations by type table
-            if summary.invariant_violations.by_type:
-                lines.append("### By Type")
-                lines.append("")
-                lines.append("| Type | Count |")
-                lines.append("|------|-------|")
-                for vtype, count in sorted(
-                    summary.invariant_violations.by_type.items()
-                ):
-                    lines.append(f"| {vtype} | {count} |")
-                lines.append("")
-
-            # Violations by severity table
-            # FIX: Violation severity display logic (PR #368) - Normalize severity keys
-            # to lowercase for case-insensitive sorting and consistent display.
-            # Input may have mixed case keys ("CRITICAL", "Warning", "info").
-            if summary.invariant_violations.by_severity:
-                lines.append("### By Severity")
-                lines.append("")
-                lines.append("| Severity | Count |")
-                lines.append("|----------|-------|")
-                # Normalize keys to lowercase for sorting, capitalize for display
-                # This ensures "CRITICAL", "Critical", and "critical" all display as "Critical"
-                normalized_items = [
-                    (severity.lower(), count)
-                    for severity, count in summary.invariant_violations.by_severity.items()
-                ]
-                # Sort by priority: critical (0) > warning (1) > info (2) > unknown (99)
-                for severity, count in sorted(
-                    normalized_items,
-                    key=lambda x: SEVERITY_SORT_ORDER.get(
-                        x[0], DEFAULT_FALLBACK_SORT_ORDER
-                    ),
-                ):
-                    # Capitalize severity for consistent display (e.g., "Critical")
-                    lines.append(f"| {severity.capitalize()} | {count} |")
-                lines.append("")
-
-        # Performance section
-        lines.append("## Performance")
-        lines.append("")
-
-        # Latency table
-        lines.append("### Latency")
-        lines.append("")
-        latency = summary.latency_stats
-        latency_emoji = (
-            ":white_check_mark:"
-            if latency.delta_avg_percent <= self.latency_warning_percent
-            else ":warning:"
+        recommendation = self._ensure_recommendation(summary, recommendation)
+        return RendererReportHtml.render(
+            summary,
+            comparisons,
+            recommendation,
+            include_details,
+            generated_at,
+            standalone,
         )
-        lines.append(
-            f"{latency_emoji} Average latency change: "
-            f"**{latency.delta_avg_percent:+.1f}%**"
-        )
-        lines.append("")
-        lines.append("| Metric | Baseline | Replay | Delta |")
-        lines.append("|--------|----------|--------|-------|")
-        lines.append(
-            f"| Average | {latency.baseline_avg_ms:.1f}ms | "
-            f"{latency.replay_avg_ms:.1f}ms | "
-            f"{latency.delta_avg_ms:+.1f}ms ({latency.delta_avg_percent:+.1f}%) |"
-        )
-        lines.append(
-            f"| P50 | {latency.baseline_p50_ms:.1f}ms | "
-            f"{latency.replay_p50_ms:.1f}ms | "
-            f"{latency.delta_p50_percent:+.1f}% |"
-        )
-        lines.append(
-            f"| P95 | {latency.baseline_p95_ms:.1f}ms | "
-            f"{latency.replay_p95_ms:.1f}ms | "
-            f"{latency.delta_p95_percent:+.1f}% |"
-        )
-        lines.append("")
-
-        # Cost table (if available)
-        lines.append("### Cost")
-        lines.append("")
-        if summary.cost_stats is not None:
-            cost = summary.cost_stats
-            cost_emoji = (
-                ":white_check_mark:"
-                if cost.delta_percent <= self.cost_warning_percent
-                else ":warning:"
-            )
-            lines.append(
-                f"{cost_emoji} Total cost change: **{cost.delta_percent:+.1f}%**"
-            )
-            lines.append("")
-            lines.append("| Metric | Baseline | Replay | Delta |")
-            lines.append("|--------|----------|--------|-------|")
-            lines.append(
-                f"| Total | ${cost.baseline_total:.4f} | "
-                f"${cost.replay_total:.4f} | "
-                f"${cost.delta_total:+.4f} ({cost.delta_percent:+.1f}%) |"
-            )
-            lines.append(
-                f"| Avg/Execution | ${cost.baseline_avg_per_execution:.6f} | "
-                f"${cost.replay_avg_per_execution:.6f} | - |"
-            )
-        else:
-            lines.append(COST_NA_MARKDOWN)
-        lines.append("")
-
-        # Details section (if requested)
-        if include_details and comparisons:
-            lines.append("## Comparison Details")
-            lines.append("")
-            lines.append("<details>")
-            lines.append("<summary>Click to expand comparison details</summary>")
-            lines.append("")
-            lines.append("| Status | Comparison ID | Latency Delta | Output Match |")
-            lines.append("|--------|---------------|---------------|--------------|")
-
-            for c in comparisons[:COMPARISON_LIMIT_MARKDOWN]:
-                status = ":white_check_mark:" if c.output_match else ":x:"
-                lines.append(
-                    f"| {status} | `{str(c.comparison_id)[:UUID_DISPLAY_LENGTH]}...` | "
-                    f"{c.latency_delta_percent:+.1f}% | "
-                    f"{'Yes' if c.output_match else 'No'} |"
-                )
-
-            if len(comparisons) > COMPARISON_LIMIT_MARKDOWN:
-                lines.append("")
-                lines.append(
-                    f"_... and {len(comparisons) - COMPARISON_LIMIT_MARKDOWN} more comparisons_"
-                )
-
-            lines.append("")
-            lines.append("</details>")
-            lines.append("")
-
-        # Footer
-        lines.append("---")
-        lines.append(f"_Report version: {REPORT_VERSION}_")
-
-        return "\n".join(lines)
 
     def generate_recommendation(
         self,
@@ -1196,7 +703,7 @@ class ServiceDecisionReportGenerator:
         summary: ModelEvidenceSummary,
         comparisons: list[ModelExecutionComparison],
         path: Path,
-        output_format: Literal["cli", "markdown", "json"] = "markdown",
+        output_format: Literal["cli", "markdown", "json", "html"] = "markdown",
         recommendation: ModelDecisionRecommendation | None = None,
     ) -> None:
         """Save report to file in specified format.
@@ -1209,7 +716,7 @@ class ServiceDecisionReportGenerator:
             summary: Aggregated evidence summary from corpus replay.
             comparisons: Individual execution comparisons.
             path: Path to save the file to.
-            output_format: Output format - "cli", "markdown", or "json".
+            output_format: Output format - "cli", "markdown", "json", or "html".
             recommendation: Pre-generated recommendation. If None, generates a new one.
 
         Raises:
@@ -1233,10 +740,13 @@ class ServiceDecisionReportGenerator:
             "markdown": lambda: self.generate_markdown_report(
                 summary, comparisons, recommendation=recommendation
             ),
-            "json": lambda: self._serialize_json_report(
+            "json": lambda: RendererReportJson.serialize(
                 self.generate_json_report(
                     summary, comparisons, recommendation=recommendation
                 )
+            ),
+            "html": lambda: self.generate_html_report(
+                summary, comparisons, recommendation=recommendation
             ),
         }
 
@@ -1281,36 +791,6 @@ class ServiceDecisionReportGenerator:
                 context={"path": str(path), "format": output_format, "error": str(e)},
             ) from e
 
-    def _serialize_json_report(self, report: TypedDictDecisionReport) -> str:
-        """Serialize JSON report to string.
-
-        Args:
-            report: The typed dict report to serialize.
-
-        Returns:
-            JSON string representation of the report.
-
-        Raises:
-            TypeError: If report contains unexpected non-serializable types.
-        """
-
-        def _json_serializer(obj: object) -> str:
-            """Convert known non-JSON types to strings.
-
-            Only handles datetime and UUID - raises TypeError for unknown types
-            to prevent silent data corruption.
-            """
-            if isinstance(obj, datetime):
-                return obj.isoformat()
-            if isinstance(obj, UUID):
-                return str(obj)
-            # error-ok: TypeError required by json.dumps default parameter contract
-            raise TypeError(
-                f"Object of type {type(obj).__name__} is not JSON serializable"
-            )
-
-        return json.dumps(report, indent=JSON_INDENT_SPACES, default=_json_serializer)
-
     def save_to_markdown(
         self,
         summary: ModelEvidenceSummary,
@@ -1348,7 +828,7 @@ class ServiceDecisionReportGenerator:
     ) -> dict[str, str]:
         """Generate report in all available formats.
 
-        Convenience method that generates CLI, Markdown, and JSON
+        Convenience method that generates CLI, Markdown, JSON, and HTML
         formats in a single call. Generates the recommendation once
         and reuses it across all formats for consistency.
 
@@ -1363,7 +843,8 @@ class ServiceDecisionReportGenerator:
             {
                 "cli": "...",
                 "markdown": "...",
-                "json": "..."
+                "json": "...",
+                "html": "..."
             }
 
         Example:
@@ -1383,32 +864,18 @@ class ServiceDecisionReportGenerator:
             "markdown": self.generate_markdown_report(
                 summary, comparisons, recommendation=recommendation
             ),
-            "json": self._serialize_json_report(
+            "json": RendererReportJson.serialize(
                 self.generate_json_report(
                     summary, comparisons, recommendation=recommendation
                 )
+            ),
+            "html": self.generate_html_report(
+                summary, comparisons, recommendation=recommendation
             ),
         }
 
 
 __all__ = [
-    "COMPARISON_LIMIT_CLI_VERBOSE",
-    "COMPARISON_LIMIT_MARKDOWN",
-    "COST_NA_CLI",
-    "COST_NA_MARKDOWN",
     "COST_NA_WARNING",
-    "DEFAULT_FALLBACK_SORT_ORDER",
-    "ELLIPSIS",
-    "ELLIPSIS_LENGTH",
-    "JSON_INDENT_SPACES",
-    "PERCENTAGE_MULTIPLIER",
-    "REPORT_VERSION",
-    "REPORT_WIDTH",
-    "ReportVersion",
-    "SEPARATOR_CHAR",
-    "SEPARATOR_LINE",
-    "SEVERITY_SORT_ORDER",
     "ServiceDecisionReportGenerator",
-    "SUBSECTION_CHAR",
-    "UUID_DISPLAY_LENGTH",
 ]

@@ -46,6 +46,9 @@ making them thread-safe for concurrent read access.
 from omnibase_core.models.projectors.model_idempotency_config import (
     ModelIdempotencyConfig,
 )
+from omnibase_core.models.projectors.model_partial_update_operation import (
+    ModelPartialUpdateOperation,
+)
 from omnibase_core.models.projectors.model_projection_result import (
     ModelProjectionResult,
 )
@@ -63,6 +66,7 @@ from omnibase_core.models.projectors.model_projector_schema import ModelProjecto
 __all__ = [
     "EVENT_NAME_PATTERN",
     "ModelIdempotencyConfig",
+    "ModelPartialUpdateOperation",
     "ModelProjectionResult",
     "ModelProjectorBehavior",
     "ModelProjectorColumn",
