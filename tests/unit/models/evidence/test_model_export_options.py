@@ -119,6 +119,15 @@ class TestModelExportOptionsValidation:
         with pytest.raises(ValidationError):
             ModelExportOptions(indent_size=9)
 
+    def test_indent_size_validation_invalid_below_min(self) -> None:
+        """indent_size should reject values below minimum."""
+        from omnibase_core.models.evidence.model_export_options import (
+            ModelExportOptions,
+        )
+
+        with pytest.raises(ValidationError):
+            ModelExportOptions(indent_size=-1)
+
 
 @pytest.mark.unit
 class TestModelExportOptionsImmutability:

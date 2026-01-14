@@ -49,6 +49,10 @@ UUID_DISPLAY_LENGTH = 8
 # Cost data unavailability message for CLI format
 COST_NA_CLI = "Cost:     N/A (incomplete cost data)"
 
+# Maximum length for content within formatted lines (accounts for prefixes/formatting)
+# For lines like "Corpus: {id}", we reserve space for the label
+MAX_CONTENT_LENGTH = REPORT_WIDTH - ELLIPSIS_LENGTH
+
 
 class RendererReportCli:
     """Render evidence reports to CLI format.
@@ -134,9 +138,11 @@ class RendererReportCli:
 
         # Summary section
         RendererReportCli._format_section_header("SUMMARY", lines)
-        lines.append(f"Corpus: {summary.corpus_id}")
+        lines.append(RendererReportCli._truncate_line(f"Corpus: {summary.corpus_id}"))
         lines.append(
-            f"Baseline: {summary.baseline_version} | Replay: {summary.replay_version}"
+            RendererReportCli._truncate_line(
+                f"Baseline: {summary.baseline_version} | Replay: {summary.replay_version}"
+            )
         )
         pass_rate_pct = summary.pass_rate * PERCENTAGE_MULTIPLIER
         lines.append(
@@ -162,11 +168,17 @@ class RendererReportCli:
             # by_type counts violations by type (e.g., "schema_mismatch", "constraint_violation").
             # These cannot be correlated since we don't have per-violation severity-type pairs.
             #
-            # FIX: Violation severity display logic (PR #368) - Normalize severity keys
-            # to lowercase for case-insensitive lookup. Input data may have severity keys
-            # in any case (e.g., "CRITICAL", "Warning", "info"), but we need consistent
-            # display. Each severity type gets its correct label by using lowercase keys.
-            normalized_severity = {k.lower(): v for k, v in by_severity.items()}
+            # FIX: Violation severity display logic (PR #368, PR #391) - Normalize severity
+            # keys to lowercase for case-insensitive lookup. Input data may have severity
+            # keys in any case (e.g., "CRITICAL", "Warning", "info"), but we need consistent
+            # display. SUM counts for duplicate keys (e.g., "HIGH" + "High" + "high" = total).
+            # Using dict comprehension would overwrite, so we iterate and accumulate.
+            normalized_severity: dict[str, int] = {}
+            for key, count in by_severity.items():
+                normalized_key = key.lower()
+                normalized_severity[normalized_key] = (
+                    normalized_severity.get(normalized_key, 0) + count
+                )
             severity_parts = []
             # Extract counts for each known severity level using normalized keys
             critical_count = normalized_severity.get("critical", 0)
@@ -188,7 +200,11 @@ class RendererReportCli:
             if by_type:
                 lines.append("By type:")
                 for violation_type, count in sorted(by_type.items()):
-                    lines.append(f"  - {violation_type}: {count} violation(s)")
+                    lines.append(
+                        RendererReportCli._truncate_line(
+                            f"  - {violation_type}: {count} violation(s)"
+                        )
+                    )
 
         lines.append("")
 
@@ -229,19 +245,19 @@ class RendererReportCli:
         if recommendation.blockers:
             lines.append("Blockers:")
             for blocker in recommendation.blockers:
-                lines.append(f"  - {blocker}")
+                lines.append(RendererReportCli._truncate_line(f"  - {blocker}"))
             lines.append("")
 
         if recommendation.warnings:
             lines.append("Warnings:")
             for warning in recommendation.warnings:
-                lines.append(f"  - {warning}")
+                lines.append(RendererReportCli._truncate_line(f"  - {warning}"))
             lines.append("")
 
         if recommendation.next_steps:
             lines.append("Next Steps:")
             for i, step in enumerate(recommendation.next_steps, 1):
-                lines.append(f"  {i}. {step}")
+                lines.append(RendererReportCli._truncate_line(f"  {i}. {step}"))
             lines.append("")
 
         # Verbose: include comparison details
@@ -250,8 +266,10 @@ class RendererReportCli:
             for comparison in comparisons[:COMPARISON_LIMIT_CLI_VERBOSE]:
                 status = "PASS" if comparison.output_match else "FAIL"
                 lines.append(
-                    f"[{status}] {comparison.comparison_id} | "
-                    f"Latency: {comparison.latency_delta_percent:+.1f}%"
+                    RendererReportCli._truncate_line(
+                        f"[{status}] {comparison.comparison_id} | "
+                        f"Latency: {comparison.latency_delta_percent:+.1f}%"
+                    )
                 )
             if len(comparisons) > COMPARISON_LIMIT_CLI_VERBOSE:
                 lines.append(
@@ -329,12 +347,28 @@ class RendererReportCli:
         # both the header line and underline length calculation.
         lines.append(SUBSECTION_CHAR * len(header))
 
+    @staticmethod
+    def _truncate_line(line: str, max_width: int = REPORT_WIDTH) -> str:
+        """Truncate a line to fit within max_width, adding ellipsis if needed.
+
+        Args:
+            line: The line to truncate.
+            max_width: Maximum allowed width (default: REPORT_WIDTH).
+
+        Returns:
+            Line truncated with ellipsis if it exceeds max_width, otherwise unchanged.
+        """
+        if len(line) <= max_width:
+            return line
+        return line[: max_width - ELLIPSIS_LENGTH] + ELLIPSIS
+
 
 __all__ = [
     "COMPARISON_LIMIT_CLI_VERBOSE",
     "COST_NA_CLI",
     "ELLIPSIS",
     "ELLIPSIS_LENGTH",
+    "MAX_CONTENT_LENGTH",
     "PERCENTAGE_MULTIPLIER",
     "REPORT_WIDTH",
     "RendererReportCli",

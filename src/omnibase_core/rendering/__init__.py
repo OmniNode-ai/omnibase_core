@@ -87,7 +87,6 @@ from omnibase_core.rendering.renderer_report_json import (
     JSON_INDENT_SPACES,
     REPORT_VERSION,
     RendererReportJson,
-    ReportVersion,
 )
 from omnibase_core.rendering.renderer_report_markdown import RendererReportMarkdown
 
@@ -106,7 +105,6 @@ __all__ = [
     "RendererReportHtml",
     "RendererReportJson",
     "RendererReportMarkdown",
-    "ReportVersion",
     "SEPARATOR_CHAR",
     "SEPARATOR_LINE",
     "SUBSECTION_CHAR",

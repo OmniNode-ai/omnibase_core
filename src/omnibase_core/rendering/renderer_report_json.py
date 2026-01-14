@@ -15,8 +15,6 @@ Thread Safety:
 
 import json
 from datetime import UTC, datetime
-from typing import NewType
-from uuid import UUID
 
 from omnibase_core.models.evidence.model_decision_recommendation import (
     ModelDecisionRecommendation,
@@ -27,11 +25,9 @@ from omnibase_core.models.replay.model_execution_comparison import (
 )
 from omnibase_core.types.typed_dict_decision_report import TypedDictDecisionReport
 
-# Type alias for report version strings (semantic versioning)
-ReportVersion = NewType("ReportVersion", str)
-
-# Report version constant
-REPORT_VERSION: ReportVersion = ReportVersion("1.0.0")
+# Report version constant (semantic versioning)
+# string-version-ok: plain str for TypedDict compatibility
+REPORT_VERSION: str = "1.0.0"
 
 # JSON formatting
 JSON_INDENT_SPACES = 2
@@ -103,7 +99,7 @@ class RendererReportJson:
             "report_version": REPORT_VERSION,
             "generated_at": generated_at.isoformat()
             if generated_at
-            else datetime.now(UTC).isoformat(),
+            else datetime.now(tz=UTC).isoformat(),
             "summary": {
                 "summary_id": summary.summary_id,
                 "corpus_id": summary.corpus_id,
@@ -195,41 +191,28 @@ class RendererReportJson:
     def serialize(report: TypedDictDecisionReport) -> str:
         """Serialize JSON report to string.
 
+        The report from render() is guaranteed to be JSON-serializable without
+        custom type converters - all datetimes are pre-converted to ISO strings.
+
         Args:
             report: The typed dict report to serialize.
 
         Returns:
-            JSON string representation of the report.
+            JSON string representation of the report with unicode preserved.
 
         Raises:
-            TypeError: If report contains unexpected non-serializable types.
+            TypeError: If report contains non-serializable types (indicates a bug
+                in render() - all values should already be JSON-native types).
 
         Example:
             >>> report = RendererReportJson.render(summary, comparisons, recommendation)
             >>> json_str = RendererReportJson.serialize(report)
         """
-
-        def _json_serializer(obj: object) -> str:
-            """Convert known non-JSON types to strings.
-
-            Only handles datetime and UUID - raises TypeError for unknown types
-            to prevent silent data corruption.
-            """
-            if isinstance(obj, datetime):
-                return obj.isoformat()
-            if isinstance(obj, UUID):
-                return str(obj)
-            # error-ok: TypeError required by json.dumps default parameter contract
-            raise TypeError(
-                f"Object of type {type(obj).__name__} is not JSON serializable"
-            )
-
-        return json.dumps(report, indent=JSON_INDENT_SPACES, default=_json_serializer)
+        return json.dumps(report, indent=JSON_INDENT_SPACES, ensure_ascii=False)
 
 
 __all__ = [
     "JSON_INDENT_SPACES",
     "REPORT_VERSION",
     "RendererReportJson",
-    "ReportVersion",
 ]

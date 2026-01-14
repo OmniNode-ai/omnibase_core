@@ -125,13 +125,17 @@ def create_cost_stats(
         (delta_total / baseline_total * 100.0) if baseline_total != 0 else 0.0
     )
 
+    # Guard against division by zero when execution_count is 0
+    baseline_avg = baseline_total / execution_count if execution_count != 0 else 0.0
+    replay_avg = replay_total / execution_count if execution_count != 0 else 0.0
+
     return ModelCostStatistics(
         baseline_total=baseline_total,
         replay_total=replay_total,
         delta_total=delta_total,
         delta_percent=delta_percent,
-        baseline_avg_per_execution=baseline_total / execution_count,
-        replay_avg_per_execution=replay_total / execution_count,
+        baseline_avg_per_execution=baseline_avg,
+        replay_avg_per_execution=replay_avg,
     )
 
 
@@ -1171,17 +1175,3 @@ class TestRendererReportHtmlEdgeCases:
         assert "&lt;" in html
         assert "&gt;" in html
         assert "&quot;" in html
-
-
-__all__ = [
-    "TestRendererReportHtmlStructure",
-    "TestRendererReportHtmlContent",
-    "TestRendererReportHtmlSecurity",
-    "TestRendererReportHtmlBadges",
-    "TestRendererReportHtmlDetails",
-    "TestRendererReportHtmlTimestamps",
-    "TestRendererReportHtmlCostStats",
-    "TestRendererReportHtmlViolations",
-    "TestRendererReportHtmlPerformance",
-    "TestRendererReportHtmlEdgeCases",
-]

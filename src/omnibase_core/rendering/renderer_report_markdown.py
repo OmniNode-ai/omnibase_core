@@ -45,6 +45,41 @@ COST_NA_MARKDOWN = "_Cost data not available (incomplete data)_"
 # Report version for footer
 REPORT_VERSION = "1.0.0"
 
+# Characters that need escaping in markdown table cells
+# These could break table formatting or create unintended formatting
+MARKDOWN_ESCAPE_CHARS = {
+    "|": r"\|",  # Table cell delimiter
+    "*": r"\*",  # Emphasis
+    "_": r"\_",  # Emphasis
+    "`": r"\`",  # Code
+    "[": r"\[",  # Links
+    "]": r"\]",  # Links
+    "\n": " ",  # Newlines break table rows
+    "\r": "",  # Remove carriage returns
+}
+
+
+def _escape_markdown_table_cell(text: str) -> str:
+    """Escape markdown-sensitive characters in table cell content.
+
+    Escapes characters that could break table formatting or create
+    unintended emphasis/links in markdown table cells.
+
+    Args:
+        text: Raw text content for a table cell.
+
+    Returns:
+        Text with markdown-sensitive characters escaped.
+
+    Example:
+        >>> _escape_markdown_table_cell("value|with*special_chars")
+        'value\\|with\\*special\\_chars'
+    """
+    result = text
+    for char, replacement in MARKDOWN_ESCAPE_CHARS.items():
+        result = result.replace(char, replacement)
+    return result
+
 
 class RendererReportMarkdown:
     """Render evidence reports to Markdown format.
@@ -214,27 +249,33 @@ class RendererReportMarkdown:
                 for vtype, count in sorted(
                     summary.invariant_violations.by_type.items()
                 ):
-                    lines.append(f"| {vtype} | {count} |")
+                    # Escape markdown-sensitive characters in type names
+                    escaped_type = _escape_markdown_table_cell(vtype)
+                    lines.append(f"| {escaped_type} | {count} |")
                 lines.append("")
 
             # Violations by severity table
             # FIX: Violation severity display logic (PR #368) - Normalize severity keys
             # to lowercase for case-insensitive sorting and consistent display.
             # Input may have mixed case keys ("CRITICAL", "Warning", "info").
+            # FIX(PR #391): Aggregate counts for same severity with different cases
+            # e.g., {"HIGH": 5, "High": 3, "high": 2} becomes {"high": 10}
             if summary.invariant_violations.by_severity:
                 lines.append("### By Severity")
                 lines.append("")
                 lines.append("| Severity | Count |")
                 lines.append("|----------|-------|")
-                # Normalize keys to lowercase for sorting, capitalize for display
-                # This ensures "CRITICAL", "Critical", and "critical" all display as "Critical"
-                normalized_items = [
-                    (severity.lower(), count)
-                    for severity, count in summary.invariant_violations.by_severity.items()
-                ]
+                # Aggregate counts by normalized (lowercase) severity key
+                # This ensures "CRITICAL", "Critical", and "critical" sum to single row
+                aggregated: dict[str, int] = {}
+                for severity, count in summary.invariant_violations.by_severity.items():
+                    normalized_key = severity.lower()
+                    aggregated[normalized_key] = (
+                        aggregated.get(normalized_key, 0) + count
+                    )
                 # Sort by priority: critical (0) > warning (1) > info (2) > unknown (99)
                 for severity, count in sorted(
-                    normalized_items,
+                    aggregated.items(),
                     key=lambda x: SEVERITY_SORT_ORDER.get(
                         x[0], DEFAULT_FALLBACK_SORT_ORDER
                     ),
@@ -348,6 +389,7 @@ __all__ = [
     "COMPARISON_LIMIT_MARKDOWN",
     "COST_NA_MARKDOWN",
     "DEFAULT_FALLBACK_SORT_ORDER",
+    "MARKDOWN_ESCAPE_CHARS",
     "REPORT_VERSION",
     "RendererReportMarkdown",
     "SEVERITY_SORT_ORDER",
