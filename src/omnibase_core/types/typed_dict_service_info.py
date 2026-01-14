@@ -15,7 +15,7 @@ class TypedDictServiceInfo(TypedDict):
 
     service_name: str
     service_version: TypedDictSemVer
-    status: str  # "running", "stopped", "error"
+    status: str  # See EnumMcpStatus for related values: RUNNING, ERROR, etc.
     port: NotRequired[int]
     host: NotRequired[str]
     health_check_url: NotRequired[str]

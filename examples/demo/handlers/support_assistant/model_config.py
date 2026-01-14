@@ -44,7 +44,8 @@ __all__ = [
 
 
 # Pydantic models for contract provider_config validation
-class _CloudProviderConfig(BaseModel):  # type: ignore[explicit-any]  # Pydantic BaseModel uses Any internally
+# NOTE(OMN-1201): Pydantic BaseModel uses Any internally in model fields. Safe for example models.
+class _CloudProviderConfig(BaseModel):  # type: ignore[explicit-any]
     """Configuration for cloud LLM providers (OpenAI, Anthropic)."""
 
     model_config = ConfigDict(extra="forbid", from_attributes=True)
@@ -55,7 +56,8 @@ class _CloudProviderConfig(BaseModel):  # type: ignore[explicit-any]  # Pydantic
     api_key_env: str
 
 
-class _LocalProviderConfig(BaseModel):  # type: ignore[explicit-any]  # Pydantic BaseModel uses Any internally
+# NOTE(OMN-1201): Pydantic BaseModel uses Any internally in model fields. Safe for example models.
+class _LocalProviderConfig(BaseModel):  # type: ignore[explicit-any]
     """Configuration for local LLM providers."""
 
     model_config = ConfigDict(extra="forbid", from_attributes=True)
@@ -67,7 +69,8 @@ class _LocalProviderConfig(BaseModel):  # type: ignore[explicit-any]  # Pydantic
     default_endpoint: str = "http://localhost:8000"
 
 
-class _ProviderConfigSection(BaseModel):  # type: ignore[explicit-any]  # Pydantic BaseModel uses Any internally
+# NOTE(OMN-1201): Pydantic BaseModel uses Any internally in model fields. Safe for example models.
+class _ProviderConfigSection(BaseModel):  # type: ignore[explicit-any]
     """The provider_config section of the contract."""
 
     model_config = ConfigDict(extra="forbid", from_attributes=True)
@@ -77,7 +80,8 @@ class _ProviderConfigSection(BaseModel):  # type: ignore[explicit-any]  # Pydant
     local: _LocalProviderConfig
 
 
-class _ContractMetadata(BaseModel):  # type: ignore[explicit-any]  # Pydantic BaseModel uses Any internally
+# NOTE(OMN-1201): Pydantic BaseModel uses Any internally in model fields. Safe for example models.
+class _ContractMetadata(BaseModel):  # type: ignore[explicit-any]
     """Metadata section containing provider_config."""
 
     model_config = ConfigDict(extra="ignore", from_attributes=True)  # Ignore other metadata fields
@@ -85,7 +89,8 @@ class _ContractMetadata(BaseModel):  # type: ignore[explicit-any]  # Pydantic Ba
     provider_config: _ProviderConfigSection
 
 
-class _ContractWithProviderConfig(BaseModel):  # type: ignore[explicit-any]  # Pydantic BaseModel uses Any internally
+# NOTE(OMN-1201): Pydantic BaseModel uses Any internally in model fields. Safe for example models.
+class _ContractWithProviderConfig(BaseModel):  # type: ignore[explicit-any]
     """Partial contract model for extracting provider_config from metadata."""
 
     model_config = ConfigDict(extra="ignore", from_attributes=True)  # Ignore other contract fields
@@ -93,7 +98,8 @@ class _ContractWithProviderConfig(BaseModel):  # type: ignore[explicit-any]  # P
     metadata: _ContractMetadata
 
 
-class ModelConfig(BaseModel):  # type: ignore[explicit-any]  # Pydantic BaseModel uses Any internally
+# NOTE(OMN-1201): Pydantic BaseModel uses Any internally in model fields. Safe for example models.
+class ModelConfig(BaseModel):  # type: ignore[explicit-any]
     """Configuration for the LLM provider.
 
     This model allows swapping between different LLM providers (OpenAI, Anthropic,

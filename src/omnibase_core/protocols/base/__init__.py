@@ -15,7 +15,7 @@ Design Principles:
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Literal, TypeVar
+from typing import TypeVar
 
 # =============================================================================
 # Type Variables
@@ -25,77 +25,6 @@ T = TypeVar("T")
 T_co = TypeVar("T_co", covariant=True)
 TInterface = TypeVar("TInterface")
 TImplementation = TypeVar("TImplementation")
-
-
-# =============================================================================
-# Core Literal Type Aliases (Core-native equivalents of SPI types)
-# =============================================================================
-
-# Logging levels
-LiteralLogLevel = Literal[  # enum-ok: protocol type hint
-    "TRACE", "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL", "FATAL"
-]
-
-# Node types in ONEX 4-node architecture
-LiteralNodeType = Literal[  # enum-ok: protocol type hint
-    "COMPUTE", "EFFECT", "REDUCER", "ORCHESTRATOR"
-]
-
-# Health status indicators
-LiteralHealthStatus = Literal[  # enum-ok: protocol type hint
-    "healthy",
-    "degraded",
-    "unhealthy",
-    "critical",
-    "unknown",
-    "warning",
-    "unreachable",
-    "available",
-    "unavailable",
-    "initializing",
-    "disposing",
-    "error",
-]
-
-# Operation status
-LiteralOperationStatus = Literal[  # enum-ok: protocol type hint
-    "success", "failed", "in_progress", "cancelled", "pending"
-]
-
-# Service lifecycle patterns
-LiteralServiceLifecycle = Literal[  # enum-ok: protocol type hint
-    "singleton", "transient", "scoped", "pooled", "lazy", "eager"
-]
-
-# Injection scope patterns
-LiteralInjectionScope = Literal[  # enum-ok: protocol type hint
-    "request", "session", "thread", "process", "global", "custom"
-]
-
-# Service resolution status
-LiteralServiceResolutionStatus = Literal[  # enum-ok: protocol type hint
-    "resolved", "failed", "circular_dependency", "missing_dependency", "type_mismatch"
-]
-
-# Validation levels
-LiteralValidationLevel = Literal[  # enum-ok: protocol type hint
-    "BASIC", "STANDARD", "COMPREHENSIVE", "PARANOID"
-]
-
-# Validation modes
-LiteralValidationMode = Literal[  # enum-ok: protocol type hint
-    "strict", "lenient", "smoke", "regression", "integration"
-]
-
-# Validation severity
-LiteralValidationSeverity = Literal[  # enum-ok: protocol type hint
-    "error", "warning", "info"
-]
-
-# Event priority
-LiteralEventPriority = Literal[  # enum-ok: protocol type hint
-    "low", "normal", "high", "critical"
-]
 
 
 # =============================================================================
@@ -133,18 +62,6 @@ __all__ = [
     "T_co",
     "TInterface",
     "TImplementation",
-    # Literal Types
-    "LiteralLogLevel",
-    "LiteralNodeType",
-    "LiteralHealthStatus",
-    "LiteralOperationStatus",
-    "LiteralServiceLifecycle",
-    "LiteralInjectionScope",
-    "LiteralServiceResolutionStatus",
-    "LiteralValidationLevel",
-    "LiteralValidationMode",
-    "LiteralValidationSeverity",
-    "LiteralEventPriority",
     # DateTime
     "ProtocolDateTime",
     # Protocols

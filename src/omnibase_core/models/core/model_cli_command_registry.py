@@ -297,7 +297,7 @@ def get_global_command_registry() -> ModelCliCommandRegistry:
         container = get_model_onex_container_sync()
         registry: ModelCliCommandRegistry = container.command_registry()
         return registry
-    except (AttributeError, ValueError, TypeError, KeyError) as e:
+    except (AttributeError, KeyError, TypeError, ValueError) as e:
         raise ModelOnexError(
             message="DI container not initialized - cannot get command registry. "
             "Initialize the container first.",

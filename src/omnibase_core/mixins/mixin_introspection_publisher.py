@@ -90,7 +90,7 @@ class MixinIntrospectionPublisher:
                 f"Published introspection event for node {node_id}",
                 context=context,
             )
-        except (ValueError, ValidationError) as e:
+        except (ValidationError, ValueError) as e:
             context = ModelLogContext(
                 calling_module=_COMPONENT_NAME,
                 calling_function="_publish_introspection_event",

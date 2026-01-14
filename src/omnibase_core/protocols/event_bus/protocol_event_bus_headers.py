@@ -10,8 +10,8 @@ from __future__ import annotations
 from typing import Protocol, runtime_checkable
 from uuid import UUID
 
+from omnibase_core.enums import EnumEventPriority
 from omnibase_core.protocols.base import (
-    LiteralEventPriority,
     ProtocolDateTime,
     ProtocolSemVer,
 )
@@ -63,7 +63,7 @@ class ProtocolEventBusHeaders(Protocol):
     def operation_name(self) -> str | None: ...
 
     @property
-    def priority(self) -> LiteralEventPriority | None: ...
+    def priority(self) -> EnumEventPriority | None: ...
 
     @property
     def routing_key(self) -> str | None: ...

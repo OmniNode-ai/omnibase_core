@@ -12,9 +12,11 @@ This is a CLOSED vocabulary - new injection points require explicit addition.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumOverrideInjectionPoint(str, Enum):
+class EnumOverrideInjectionPoint(StrValueHelper, str, Enum):
     """Injection points for configuration overrides during replay.
 
     Defines WHERE configuration overrides can be applied during replay

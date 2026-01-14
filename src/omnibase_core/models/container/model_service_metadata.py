@@ -1,6 +1,6 @@
 """Service metadata model - implements ProtocolServiceRegistrationMetadata."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -47,7 +47,7 @@ class ModelServiceMetadata(BaseModel):
     # attributes even when class identity differs (e.g., in pytest-xdist
     # parallel execution where model classes are imported in separate workers).
     # See CLAUDE.md section "Pydantic from_attributes=True for Value Objects".
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
 
     service_id: UUID = Field(description="Unique service identifier")
     service_name: str = Field(description="Human-readable service name")
@@ -70,7 +70,7 @@ class ModelServiceMetadata(BaseModel):
         description="Additional configuration",
     )
     created_at: datetime = Field(
-        default_factory=datetime.now,
+        default_factory=lambda: datetime.now(UTC),
         description="Registration timestamp",
     )
     last_modified_at: datetime | None = Field(

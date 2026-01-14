@@ -399,6 +399,19 @@ repos:
         exclude: ^(tests/|archived/|archive/).*\.py$
         stages: [pre-commit]
 
+      # Literal Type Alias Duplication Detection (OMN-1308)
+      # Detects duplicate Literal type aliases that should use canonical types
+      # Enforces use of EnumXxx enums instead of scattered Literal["a", "b"] definitions
+      # See: docs/architecture/adr/ADR-013-status-taxonomy.md
+      - id: check-literal-duplication
+        name: ONEX Literal Duplication Check
+        entry: poetry run python -m omnibase_core.validation.checker_literal_duplication
+        language: system
+        types: [python]
+        pass_filenames: true
+        exclude: ^(tests/|archived/|archive/).*\.py$
+        stages: [pre-commit]
+
       # Enum Governance Validator (OMN-1313):
       # - ENUM_001: Enforce UPPER_SNAKE_CASE naming for enum members
       # - ENUM_002: Detect Literal type aliases that should be enums
