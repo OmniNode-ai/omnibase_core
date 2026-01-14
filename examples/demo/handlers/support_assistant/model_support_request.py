@@ -14,6 +14,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 
+# NOTE(OMN-1201): Pydantic BaseModel uses Any internally in model fields. Safe for example models.
 class SupportRequest(BaseModel):  # type: ignore[explicit-any]
     """Input schema for support assistant.
 

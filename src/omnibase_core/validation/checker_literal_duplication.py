@@ -452,11 +452,13 @@ def _should_exclude(file_path: Path, exclude_patterns: list[str]) -> bool:
     """Check if a file should be excluded from validation.
 
     Args:
-        file_path: Path to check.
+        file_path: Path to check. Both absolute and relative paths are supported;
+            relative paths are resolved to absolute paths before matching.
         exclude_patterns: List of patterns to match against. Patterns are matched
             as exact path components, not as substrings. For example, "test" will
             only exclude paths containing a directory named exactly "test", not
-            paths containing "mytest" or "testing".
+            paths containing "mytest" or "testing". Relative path prefixes like
+            "./" are stripped before matching (e.g., "./tests/" matches "tests").
 
     Returns:
         True if the file should be excluded, False otherwise.
@@ -490,6 +492,17 @@ def _should_exclude(file_path: Path, exclude_patterns: list[str]) -> bool:
         # Strip trailing path separators to handle patterns like "tests/" or "src/"
         # This ensures "tests/" matches the "tests" path component correctly
         normalized_pattern = pattern.rstrip("/\\")
+
+        # Strip leading "./" or ".\" for relative path patterns
+        # This handles patterns like "./tests" or ".\tests" that should match
+        # as the component "tests", not as a path to resolve relative to cwd.
+        # Example: "./tests/" -> "tests" (matches any path with "tests" component)
+        while normalized_pattern.startswith(("./", ".\\")):
+            normalized_pattern = normalized_pattern[2:]
+
+        # Skip empty patterns (e.g., if pattern was just "./" or "./")
+        if not normalized_pattern:
+            continue
 
         # Handle full path patterns (e.g., "/full/path/tests" or "src/tests")
         # If pattern contains path separators, treat it as a path prefix match

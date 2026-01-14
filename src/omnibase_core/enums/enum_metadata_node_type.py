@@ -7,9 +7,11 @@ Metadata node type enumeration.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumMetadataNodeType(str, Enum):
+class EnumMetadataNodeType(StrValueHelper, str, Enum):
     """Metadata node type enumeration."""
 
     FUNCTION = "function"

@@ -610,6 +610,33 @@ class TestShouldExclude:
         file_path = Path("src/../tests/unit/test_something.py")
         assert _should_exclude(file_path, []) is True
 
+    def test_excludes_pattern_with_leading_dot_slash(self) -> None:
+        """Test exclusion with pattern containing leading ./."""
+        file_path = Path("src/vendor/external.py")
+        # Pattern "./vendor/" should match the "vendor" component
+        assert _should_exclude(file_path, ["./vendor/"]) is True
+
+    def test_excludes_pattern_with_multiple_leading_dot_slash(self) -> None:
+        """Test exclusion with pattern containing multiple leading ./."""
+        file_path = Path("src/vendor/external.py")
+        # Pattern "././vendor" should match the "vendor" component
+        assert _should_exclude(file_path, ["././vendor"]) is True
+
+    def test_handles_empty_pattern_after_normalization(self) -> None:
+        """Test that patterns reducing to empty string are skipped."""
+        file_path = Path("src/omnibase_core/models/model_user.py")
+        # Pattern "./" normalizes to empty string and should be skipped
+        assert _should_exclude(file_path, ["./"]) is False
+
+    def test_excludes_relative_tests_pattern(self) -> None:
+        """Test exclusion with relative ./tests/ pattern."""
+        file_path = Path("myproject/tests/unit/test_something.py")
+        # This should be excluded by the hardcoded "tests" check
+        assert _should_exclude(file_path, []) is True
+        # But also verify custom "./tests/" pattern works
+        file_path2 = Path("src/custom_tests/test_utils.py")
+        assert _should_exclude(file_path2, ["./custom_tests/"]) is True
+
 
 # =============================================================================
 # Tests for check_for_duplications function
@@ -760,13 +787,16 @@ class TestGetEnumNamesFromDirectory:
         enums_dir.mkdir()
         (enums_dir / "__init__.py").write_text("")
         (enums_dir / "utils.py").write_text("")
-        (enums_dir / "enum_status.py").write_text("# enum")
+        # Use "customstatus" instead of "status" since "status" is in KNOWN_ENUM_NAMES
+        # and would be removed when subtracting KNOWN_ENUM_NAMES from the result
+        (enums_dir / "enum_customstatus.py").write_text("# enum")
 
         enum_names = get_enum_names_from_directory(enums_dir)
 
-        # Only enum_status should be extracted (plus known enums)
+        # Only enum_customstatus should be extracted (plus known enums)
+        # We subtract KNOWN_ENUM_NAMES to isolate what was extracted from files
         extracted = enum_names - KNOWN_ENUM_NAMES
-        assert "status" in extracted
+        assert "customstatus" in extracted
 
 
 # =============================================================================

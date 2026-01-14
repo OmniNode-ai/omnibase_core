@@ -818,26 +818,9 @@ class ServiceRegistry:
                 self._performance_metrics
             )
 
-        # Determine overall status
-        # Map registry state to operation status
-        # Priority: FAILED (any failures) > PENDING (no registrations) > SUCCESS
-        # Each branch explicitly sets both status and message to prevent incorrect overwrites
-        overall_status: EnumOperationStatus
-        status_message: str
-        if self._failed_registrations > 0:
-            overall_status = EnumOperationStatus.FAILED
-            status_message = (
-                f"Registry has {self._failed_registrations} failed registration(s) "
-                f"and {len(self._registrations)} active service(s)"
-            )
-        elif not self._registrations:
-            overall_status = EnumOperationStatus.PENDING
-            status_message = "Registry initialized, no services registered yet"
-        else:
-            overall_status = EnumOperationStatus.SUCCESS
-            status_message = (
-                f"Registry operational with {len(self._registrations)} services"
-            )
+        # Determine overall status using helper method that returns both values
+        # together to prevent incorrect overwrites from separate assignments
+        overall_status, status_message = self._determine_overall_status()
 
         return ModelServiceRegistryStatus(
             registry_id=self._registry_id,
@@ -1016,6 +999,38 @@ class ServiceRegistry:
         return None
 
     # Private helper methods
+
+    def _determine_overall_status(self) -> tuple[EnumOperationStatus, str]:
+        """
+        Determine registry overall status with clear priority rules.
+
+        Returns both status and message as a tuple to ensure they are always
+        set together, preventing potential logic issues where one could be
+        incorrectly overwritten without updating the other.
+
+        Priority order (highest to lowest):
+            1. FAILED - Any failed registrations indicate problems
+            2. PENDING - No registrations yet (empty registry)
+            3. SUCCESS - Registry is operational with services
+
+        Returns:
+            Tuple of (status, message) for the registry status.
+        """
+        if self._failed_registrations > 0:
+            return (
+                EnumOperationStatus.FAILED,
+                f"Registry has {self._failed_registrations} failed registration(s) "
+                f"and {len(self._registrations)} active service(s)",
+            )
+        if not self._registrations:
+            return (
+                EnumOperationStatus.PENDING,
+                "Registry initialized, no services registered yet",
+            )
+        return (
+            EnumOperationStatus.SUCCESS,
+            f"Registry operational with {len(self._registrations)} services",
+        )
 
     async def _store_instance(
         self,
