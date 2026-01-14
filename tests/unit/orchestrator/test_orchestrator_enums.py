@@ -2,7 +2,7 @@
 Unit tests for NodeOrchestrator-related enums.
 
 Tests all aspects of orchestrator enumeration types including:
-- EnumWorkflowStatus - Workflow lifecycle states (canonical)
+- EnumWorkflowStatus - Workflow lifecycle states (canonical) (str, Enum)
 - EnumExecutionMode (aliased as EnumExecutionModeOrchestrator) - Execution modes for workflow steps
 - EnumActionType - Types of actions for orchestrated execution
 - EnumFailureRecoveryStrategy - Failure recovery strategies (str, Enum)

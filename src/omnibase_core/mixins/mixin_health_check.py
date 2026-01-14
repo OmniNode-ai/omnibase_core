@@ -10,22 +10,19 @@ IMPORT ORDER CONSTRAINTS (Critical - Do Not Break):
 ===============================================
 This module is part of a carefully managed import chain to avoid circular dependencies.
 
-Safe Runtime Imports:
-- omnibase_core.errors.error_codes (imports only from types.core_types and enums)
-- omnibase_core.enums.enum_log_level (no circular risk)
-- omnibase_core.enums.enum_health_status (no circular risk)
-- omnibase_core.logging.structured (no circular risk)
-- omnibase_core.models.core.model_health_status (no circular risk)
-- pydantic, typing, datetime (standard library)
+Safe Runtime Imports (what this module actually imports):
+- omnibase_core.enums.enum_health_status (EnumHealthStatus - no circular risk)
+- omnibase_core.enums.enum_log_level (EnumLogLevel - no circular risk)
+- omnibase_core.logging.logging_structured (emit_log_event_sync - no circular risk)
+- omnibase_core.models.health.model_health_status (ModelHealthStatus - no circular risk)
+- omnibase_core.protocols.http (ProtocolHttpClient - no circular risk)
+- omnibase_core.types.typed_dict_mixin_types (TypedDictHealthCheckStatus - no circular risk)
+- Standard library: asyncio, collections.abc, datetime, typing, urllib.parse, uuid
 
 Import Chain Position:
-1. errors.error_codes → types.core_types
-2. THIS MODULE → errors.error_codes (OK - no circle)
-3. types.constraints → TYPE_CHECKING import of errors.error_codes
-4. models.* → types.constraints
-
-This module can safely import error_codes because error_codes only imports
-from types.core_types (not from models or types.constraints).
+This module is a leaf node in the import graph - it imports from stable,
+foundational modules (enums, logging, models, protocols, types) that have
+no dependencies on mixins. This ensures no circular import risk.
 """
 
 import asyncio
