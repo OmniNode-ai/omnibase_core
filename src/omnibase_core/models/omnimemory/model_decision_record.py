@@ -21,6 +21,7 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from omnibase_core.enums.enum_decision_type import EnumDecisionType
+from omnibase_core.utils.util_validators import ensure_timezone_aware
 
 
 class ModelDecisionRecord(BaseModel):
@@ -133,30 +134,8 @@ class ModelDecisionRecord(BaseModel):
     @field_validator("timestamp")
     @classmethod
     def validate_timestamp_has_timezone(cls, v: datetime) -> datetime:
-        """Ensure timestamp is timezone-aware.
-
-        Rejects both naive datetimes (tzinfo=None) and effectively naive
-        datetimes (tzinfo that returns None for utcoffset).
-
-        Note:
-            This validator is intentionally duplicated in ModelFailureRecord
-            to avoid cross-model imports between frozen Pydantic models.
-
-        Args:
-            v: The timestamp value to validate.
-
-        Returns:
-            The validated timestamp.
-
-        Raises:
-            ValueError: If the timestamp has no valid timezone info.
-        """
-        if v.tzinfo is None or v.tzinfo.utcoffset(v) is None:
-            raise ValueError(
-                "timestamp must be timezone-aware (use datetime.now(UTC) or include tzinfo). "
-                f"Got naive or effectively naive datetime: {v}"
-            )
-        return v
+        """Validate timestamp is timezone-aware using shared utility."""
+        return ensure_timezone_aware(v, "timestamp")
 
     @model_validator(mode="after")
     def validate_chosen_option_in_options(self) -> "ModelDecisionRecord":
@@ -187,14 +166,12 @@ class ModelDecisionRecord(BaseModel):
     # === Utility Methods ===
 
     def __str__(self) -> str:
-        """Return a human-readable string representation."""
         return (
             f"DecisionRecord({self.decision_type.value}: "
             f"chose '{self.chosen_option}' with {self.confidence:.0%} confidence)"
         )
 
     def __repr__(self) -> str:
-        """Return a detailed string representation for debugging."""
         return (
             f"ModelDecisionRecord(decision_id={self.decision_id!r}, "
             f"decision_type={self.decision_type!r}, "

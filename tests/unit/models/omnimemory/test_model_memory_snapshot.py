@@ -21,8 +21,6 @@ from uuid import UUID, uuid4
 import pytest
 from pydantic import ValidationError
 
-pytestmark = pytest.mark.unit
-
 from omnibase_core.enums.enum_decision_type import EnumDecisionType
 from omnibase_core.enums.enum_failure_type import EnumFailureType
 from omnibase_core.enums.enum_subject_type import EnumSubjectType
@@ -33,6 +31,8 @@ from omnibase_core.models.omnimemory.model_failure_record import ModelFailureRec
 from omnibase_core.models.omnimemory.model_memory_diff import ModelMemoryDiff
 from omnibase_core.models.omnimemory.model_memory_snapshot import ModelMemorySnapshot
 from omnibase_core.models.omnimemory.model_subject_ref import ModelSubjectRef
+
+pytestmark = pytest.mark.unit
 
 # ============================================================================
 # Fixtures
@@ -141,7 +141,9 @@ def full_snapshot_data(
 class TestModelMemorySnapshotInstantiation:
     """Tests for model instantiation and basic functionality."""
 
-    def test_create_with_minimal_data(self, minimal_snapshot_data: dict) -> None:
+    def test_create_with_minimal_data(
+        self, minimal_snapshot_data: dict[str, Any]
+    ) -> None:
         """Test creating snapshot with only required fields."""
         snapshot = ModelMemorySnapshot(**minimal_snapshot_data)
 
@@ -150,7 +152,7 @@ class TestModelMemorySnapshotInstantiation:
         assert snapshot.subject == minimal_snapshot_data["subject"]
         assert snapshot.cost_ledger == minimal_snapshot_data["cost_ledger"]
 
-    def test_create_with_full_data(self, full_snapshot_data: dict) -> None:
+    def test_create_with_full_data(self, full_snapshot_data: dict[str, Any]) -> None:
         """Test creating snapshot with all fields explicitly set."""
         snapshot = ModelMemorySnapshot(**full_snapshot_data)
 
@@ -162,7 +164,9 @@ class TestModelMemorySnapshotInstantiation:
         assert len(snapshot.failures) == 1
         assert snapshot.tags == ("production", "critical")
 
-    def test_auto_generated_snapshot_id(self, minimal_snapshot_data: dict) -> None:
+    def test_auto_generated_snapshot_id(
+        self, minimal_snapshot_data: dict[str, Any]
+    ) -> None:
         """Test that snapshot_id is auto-generated when not provided."""
         snapshot1 = ModelMemorySnapshot(**minimal_snapshot_data)
         snapshot2 = ModelMemorySnapshot(**minimal_snapshot_data)
@@ -171,7 +175,7 @@ class TestModelMemorySnapshotInstantiation:
         assert isinstance(snapshot2.snapshot_id, UUID)
         assert snapshot1.snapshot_id != snapshot2.snapshot_id  # Each gets unique ID
 
-    def test_default_values(self, minimal_snapshot_data: dict) -> None:
+    def test_default_values(self, minimal_snapshot_data: dict[str, Any]) -> None:
         """Test that default values are properly set."""
         snapshot = ModelMemorySnapshot(**minimal_snapshot_data)
 
@@ -184,7 +188,9 @@ class TestModelMemorySnapshotInstantiation:
         assert snapshot.schema_version == "1.0.0"
         assert snapshot.tags == ()
 
-    def test_created_at_auto_generated(self, minimal_snapshot_data: dict) -> None:
+    def test_created_at_auto_generated(
+        self, minimal_snapshot_data: dict[str, Any]
+    ) -> None:
         """Test that created_at is auto-generated with timezone."""
         before = datetime.now(UTC)
         snapshot = ModelMemorySnapshot(**minimal_snapshot_data)
@@ -203,14 +209,16 @@ class TestModelMemorySnapshotInstantiation:
 class TestModelMemorySnapshotImmutability:
     """Tests for frozen model behavior."""
 
-    def test_model_is_frozen(self, minimal_snapshot_data: dict) -> None:
+    def test_model_is_frozen(self, minimal_snapshot_data: dict[str, Any]) -> None:
         """Test that the model is immutable."""
         snapshot = ModelMemorySnapshot(**minimal_snapshot_data)
 
         with pytest.raises(ValidationError):
             snapshot.version = 999
 
-    def test_cannot_modify_snapshot_id(self, minimal_snapshot_data: dict) -> None:
+    def test_cannot_modify_snapshot_id(
+        self, minimal_snapshot_data: dict[str, Any]
+    ) -> None:
         """Test that snapshot_id cannot be modified."""
         snapshot = ModelMemorySnapshot(**minimal_snapshot_data)
 
@@ -218,7 +226,9 @@ class TestModelMemorySnapshotImmutability:
             snapshot.snapshot_id = uuid4()
 
     def test_cannot_modify_decisions(
-        self, minimal_snapshot_data: dict, sample_decision: ModelDecisionRecord
+        self,
+        minimal_snapshot_data: dict[str, Any],
+        sample_decision: ModelDecisionRecord,
     ) -> None:
         """Test that decisions cannot be modified."""
         snapshot = ModelMemorySnapshot(**minimal_snapshot_data)
@@ -227,7 +237,7 @@ class TestModelMemorySnapshotImmutability:
             snapshot.decisions = (sample_decision,)
 
     def test_cannot_modify_failures(
-        self, minimal_snapshot_data: dict, sample_failure: ModelFailureRecord
+        self, minimal_snapshot_data: dict[str, Any], sample_failure: ModelFailureRecord
     ) -> None:
         """Test that failures cannot be modified."""
         snapshot = ModelMemorySnapshot(**minimal_snapshot_data)
@@ -236,7 +246,7 @@ class TestModelMemorySnapshotImmutability:
             snapshot.failures = (sample_failure,)
 
     def test_cannot_modify_cost_ledger(
-        self, minimal_snapshot_data: dict, sample_cost_ledger: ModelCostLedger
+        self, minimal_snapshot_data: dict[str, Any], sample_cost_ledger: ModelCostLedger
     ) -> None:
         """Test that cost_ledger cannot be modified."""
         snapshot = ModelMemorySnapshot(**minimal_snapshot_data)
@@ -244,7 +254,7 @@ class TestModelMemorySnapshotImmutability:
         with pytest.raises(ValidationError):
             snapshot.cost_ledger = sample_cost_ledger
 
-    def test_cannot_modify_tags(self, minimal_snapshot_data: dict) -> None:
+    def test_cannot_modify_tags(self, minimal_snapshot_data: dict[str, Any]) -> None:
         """Test that tags cannot be modified."""
         snapshot = ModelMemorySnapshot(**minimal_snapshot_data)
 
@@ -260,7 +270,9 @@ class TestModelMemorySnapshotImmutability:
 class TestModelMemorySnapshotValidation:
     """Tests for field validation constraints."""
 
-    def test_version_must_be_positive(self, minimal_snapshot_data: dict) -> None:
+    def test_version_must_be_positive(
+        self, minimal_snapshot_data: dict[str, Any]
+    ) -> None:
         """Test that version rejects zero and negative values."""
         minimal_snapshot_data["version"] = 0
 
@@ -269,7 +281,9 @@ class TestModelMemorySnapshotValidation:
 
         assert "version" in str(exc_info.value)
 
-    def test_version_accepts_positive_values(self, minimal_snapshot_data: dict) -> None:
+    def test_version_accepts_positive_values(
+        self, minimal_snapshot_data: dict[str, Any]
+    ) -> None:
         """Test that version accepts positive values."""
         for version in [1, 2, 100, 9999]:
             minimal_snapshot_data["version"] = version
@@ -304,7 +318,9 @@ class TestModelMemorySnapshotWithDecision:
     """Tests for with_decision() immutable update method."""
 
     def test_with_decision_returns_new_instance(
-        self, minimal_snapshot_data: dict, sample_decision: ModelDecisionRecord
+        self,
+        minimal_snapshot_data: dict[str, Any],
+        sample_decision: ModelDecisionRecord,
     ) -> None:
         """Test that with_decision returns a new snapshot instance."""
         snapshot = ModelMemorySnapshot(**minimal_snapshot_data)
@@ -314,7 +330,9 @@ class TestModelMemorySnapshotWithDecision:
         assert isinstance(new_snapshot, ModelMemorySnapshot)
 
     def test_with_decision_preserves_original(
-        self, minimal_snapshot_data: dict, sample_decision: ModelDecisionRecord
+        self,
+        minimal_snapshot_data: dict[str, Any],
+        sample_decision: ModelDecisionRecord,
     ) -> None:
         """Test that with_decision does not modify the original snapshot."""
         snapshot = ModelMemorySnapshot(**minimal_snapshot_data)
@@ -325,7 +343,9 @@ class TestModelMemorySnapshotWithDecision:
         assert snapshot.decisions == original_decisions
 
     def test_with_decision_appends_decision(
-        self, minimal_snapshot_data: dict, sample_decision: ModelDecisionRecord
+        self,
+        minimal_snapshot_data: dict[str, Any],
+        sample_decision: ModelDecisionRecord,
     ) -> None:
         """Test that with_decision appends the decision to the tuple."""
         snapshot = ModelMemorySnapshot(**minimal_snapshot_data)
@@ -357,7 +377,9 @@ class TestModelMemorySnapshotWithDecision:
         assert len(set(decision_ids)) == 3
 
     def test_with_decision_preserves_snapshot_id(
-        self, minimal_snapshot_data: dict, sample_decision: ModelDecisionRecord
+        self,
+        minimal_snapshot_data: dict[str, Any],
+        sample_decision: ModelDecisionRecord,
     ) -> None:
         """Test that with_decision preserves the snapshot_id."""
         snapshot = ModelMemorySnapshot(**minimal_snapshot_data)
@@ -366,7 +388,7 @@ class TestModelMemorySnapshotWithDecision:
         assert new_snapshot.snapshot_id == snapshot.snapshot_id
 
     def test_with_decision_preserves_other_fields(
-        self, full_snapshot_data: dict, sample_decision: ModelDecisionRecord
+        self, full_snapshot_data: dict[str, Any], sample_decision: ModelDecisionRecord
     ) -> None:
         """Test that with_decision preserves other fields."""
         snapshot = ModelMemorySnapshot(**full_snapshot_data)
@@ -387,7 +409,7 @@ class TestModelMemorySnapshotWithFailure:
     """Tests for with_failure() immutable update method."""
 
     def test_with_failure_returns_new_instance(
-        self, minimal_snapshot_data: dict, sample_failure: ModelFailureRecord
+        self, minimal_snapshot_data: dict[str, Any], sample_failure: ModelFailureRecord
     ) -> None:
         """Test that with_failure returns a new snapshot instance."""
         snapshot = ModelMemorySnapshot(**minimal_snapshot_data)
@@ -397,7 +419,7 @@ class TestModelMemorySnapshotWithFailure:
         assert isinstance(new_snapshot, ModelMemorySnapshot)
 
     def test_with_failure_preserves_original(
-        self, minimal_snapshot_data: dict, sample_failure: ModelFailureRecord
+        self, minimal_snapshot_data: dict[str, Any], sample_failure: ModelFailureRecord
     ) -> None:
         """Test that with_failure does not modify the original snapshot."""
         snapshot = ModelMemorySnapshot(**minimal_snapshot_data)
@@ -408,7 +430,7 @@ class TestModelMemorySnapshotWithFailure:
         assert snapshot.failures == original_failures
 
     def test_with_failure_appends_failure(
-        self, minimal_snapshot_data: dict, sample_failure: ModelFailureRecord
+        self, minimal_snapshot_data: dict[str, Any], sample_failure: ModelFailureRecord
     ) -> None:
         """Test that with_failure appends the failure to the tuple."""
         snapshot = ModelMemorySnapshot(**minimal_snapshot_data)
@@ -439,7 +461,7 @@ class TestModelMemorySnapshotWithFailure:
         assert len(set(failure_ids)) == 3
 
     def test_with_failure_preserves_snapshot_id(
-        self, minimal_snapshot_data: dict, sample_failure: ModelFailureRecord
+        self, minimal_snapshot_data: dict[str, Any], sample_failure: ModelFailureRecord
     ) -> None:
         """Test that with_failure preserves the snapshot_id."""
         snapshot = ModelMemorySnapshot(**minimal_snapshot_data)
@@ -457,7 +479,7 @@ class TestModelMemorySnapshotWithCostEntry:
     """Tests for with_cost_entry() immutable update method."""
 
     def test_with_cost_entry_returns_new_instance(
-        self, minimal_snapshot_data: dict, sample_cost_entry: ModelCostEntry
+        self, minimal_snapshot_data: dict[str, Any], sample_cost_entry: ModelCostEntry
     ) -> None:
         """Test that with_cost_entry returns a new snapshot instance."""
         snapshot = ModelMemorySnapshot(**minimal_snapshot_data)
@@ -467,7 +489,7 @@ class TestModelMemorySnapshotWithCostEntry:
         assert isinstance(new_snapshot, ModelMemorySnapshot)
 
     def test_with_cost_entry_preserves_original(
-        self, minimal_snapshot_data: dict, sample_cost_entry: ModelCostEntry
+        self, minimal_snapshot_data: dict[str, Any], sample_cost_entry: ModelCostEntry
     ) -> None:
         """Test that with_cost_entry does not modify the original snapshot."""
         snapshot = ModelMemorySnapshot(**minimal_snapshot_data)
@@ -478,7 +500,7 @@ class TestModelMemorySnapshotWithCostEntry:
         assert snapshot.cost_ledger.total_spent == original_spent
 
     def test_with_cost_entry_updates_ledger(
-        self, minimal_snapshot_data: dict, sample_cost_entry: ModelCostEntry
+        self, minimal_snapshot_data: dict[str, Any], sample_cost_entry: ModelCostEntry
     ) -> None:
         """Test that with_cost_entry updates the cost ledger."""
         snapshot = ModelMemorySnapshot(**minimal_snapshot_data)
@@ -488,7 +510,7 @@ class TestModelMemorySnapshotWithCostEntry:
         assert new_snapshot.cost_ledger.total_spent == expected_spent
 
     def test_with_cost_entry_preserves_snapshot_id(
-        self, minimal_snapshot_data: dict, sample_cost_entry: ModelCostEntry
+        self, minimal_snapshot_data: dict[str, Any], sample_cost_entry: ModelCostEntry
     ) -> None:
         """Test that with_cost_entry preserves the snapshot_id."""
         snapshot = ModelMemorySnapshot(**minimal_snapshot_data)
@@ -506,7 +528,7 @@ class TestModelMemorySnapshotContentHash:
     """Tests for compute_content_hash() and content_hash behavior."""
 
     def test_compute_content_hash_returns_string(
-        self, minimal_snapshot_data: dict
+        self, minimal_snapshot_data: dict[str, Any]
     ) -> None:
         """Test that compute_content_hash returns a hex string."""
         snapshot = ModelMemorySnapshot(**minimal_snapshot_data)
@@ -515,7 +537,9 @@ class TestModelMemorySnapshotContentHash:
         assert isinstance(content_hash, str)
         assert len(content_hash) == 64  # SHA-256 hex digest is 64 chars
 
-    def test_content_hash_is_deterministic(self, minimal_snapshot_data: dict) -> None:
+    def test_content_hash_is_deterministic(
+        self, minimal_snapshot_data: dict[str, Any]
+    ) -> None:
         """Test that same content produces same hash."""
         snapshot = ModelMemorySnapshot(**minimal_snapshot_data)
 
@@ -525,7 +549,9 @@ class TestModelMemorySnapshotContentHash:
         assert hash1 == hash2
 
     def test_content_hash_changes_with_decisions(
-        self, minimal_snapshot_data: dict, sample_decision: ModelDecisionRecord
+        self,
+        minimal_snapshot_data: dict[str, Any],
+        sample_decision: ModelDecisionRecord,
     ) -> None:
         """Test that content_hash changes when decisions are added."""
         snapshot = ModelMemorySnapshot(**minimal_snapshot_data)
@@ -537,7 +563,7 @@ class TestModelMemorySnapshotContentHash:
         assert new_snapshot.content_hash == new_snapshot.compute_content_hash()
 
     def test_content_hash_changes_with_failures(
-        self, minimal_snapshot_data: dict, sample_failure: ModelFailureRecord
+        self, minimal_snapshot_data: dict[str, Any], sample_failure: ModelFailureRecord
     ) -> None:
         """Test that content_hash changes when failures are added."""
         snapshot = ModelMemorySnapshot(**minimal_snapshot_data)
@@ -548,7 +574,7 @@ class TestModelMemorySnapshotContentHash:
         assert new_snapshot.content_hash != original_hash
 
     def test_content_hash_changes_with_cost_entry(
-        self, minimal_snapshot_data: dict, sample_cost_entry: ModelCostEntry
+        self, minimal_snapshot_data: dict[str, Any], sample_cost_entry: ModelCostEntry
     ) -> None:
         """Test that content_hash changes when cost entries are added."""
         snapshot = ModelMemorySnapshot(**minimal_snapshot_data)
@@ -730,20 +756,26 @@ class TestModelMemorySnapshotContentHash:
 class TestModelMemorySnapshotLineage:
     """Tests for parent snapshot lineage tracking."""
 
-    def test_has_parent_false_when_no_parent(self, minimal_snapshot_data: dict) -> None:
+    def test_has_parent_false_when_no_parent(
+        self, minimal_snapshot_data: dict[str, Any]
+    ) -> None:
         """Test has_parent returns False when parent_snapshot_id is None."""
         snapshot = ModelMemorySnapshot(**minimal_snapshot_data)
 
         assert snapshot.has_parent is False
 
-    def test_has_parent_true_when_parent_set(self, minimal_snapshot_data: dict) -> None:
+    def test_has_parent_true_when_parent_set(
+        self, minimal_snapshot_data: dict[str, Any]
+    ) -> None:
         """Test has_parent returns True when parent_snapshot_id is set."""
         minimal_snapshot_data["parent_snapshot_id"] = uuid4()
         snapshot = ModelMemorySnapshot(**minimal_snapshot_data)
 
         assert snapshot.has_parent is True
 
-    def test_parent_snapshot_id_preserved(self, minimal_snapshot_data: dict) -> None:
+    def test_parent_snapshot_id_preserved(
+        self, minimal_snapshot_data: dict[str, Any]
+    ) -> None:
         """Test that parent_snapshot_id is correctly stored."""
         parent_id = uuid4()
         minimal_snapshot_data["parent_snapshot_id"] = parent_id
@@ -760,30 +792,60 @@ class TestModelMemorySnapshotLineage:
 class TestModelMemorySnapshotUtilityProperties:
     """Tests for utility properties."""
 
-    def test_decision_count(
-        self, minimal_snapshot_data: dict, sample_decision: ModelDecisionRecord
-    ) -> None:
+    def test_decision_count(self, minimal_snapshot_data: dict[str, Any]) -> None:
         """Test decision_count property."""
         snapshot = ModelMemorySnapshot(**minimal_snapshot_data)
         assert snapshot.decision_count == 0
 
-        snapshot = snapshot.with_decision(sample_decision)
+        # Create fresh decision instance for first addition
+        decision1 = ModelDecisionRecord(
+            decision_type=EnumDecisionType.MODEL_SELECTION,
+            timestamp=datetime.now(UTC),
+            options_considered=("gpt-4", "claude-3"),
+            chosen_option="gpt-4",
+            confidence=0.85,
+            input_hash="hash1",
+        )
+        snapshot = snapshot.with_decision(decision1)
         assert snapshot.decision_count == 1
 
-        snapshot = snapshot.with_decision(sample_decision)
+        # Create fresh decision instance for second addition
+        decision2 = ModelDecisionRecord(
+            decision_type=EnumDecisionType.MODEL_SELECTION,
+            timestamp=datetime.now(UTC),
+            options_considered=("gpt-4", "claude-3"),
+            chosen_option="claude-3",
+            confidence=0.90,
+            input_hash="hash2",
+        )
+        snapshot = snapshot.with_decision(decision2)
         assert snapshot.decision_count == 2
 
-    def test_failure_count(
-        self, minimal_snapshot_data: dict, sample_failure: ModelFailureRecord
-    ) -> None:
+    def test_failure_count(self, minimal_snapshot_data: dict[str, Any]) -> None:
         """Test failure_count property."""
         snapshot = ModelMemorySnapshot(**minimal_snapshot_data)
         assert snapshot.failure_count == 0
 
-        snapshot = snapshot.with_failure(sample_failure)
+        # Create fresh failure instance for first addition
+        failure1 = ModelFailureRecord(
+            timestamp=datetime.now(UTC),
+            failure_type=EnumFailureType.TIMEOUT,
+            step_context="code_generation",
+            error_code="TIMEOUT_001",
+            error_message="Operation exceeded 30s timeout",
+        )
+        snapshot = snapshot.with_failure(failure1)
         assert snapshot.failure_count == 1
 
-        snapshot = snapshot.with_failure(sample_failure)
+        # Create fresh failure instance for second addition
+        failure2 = ModelFailureRecord(
+            timestamp=datetime.now(UTC),
+            failure_type=EnumFailureType.RATE_LIMIT,
+            step_context="api_call",
+            error_code="RATE_002",
+            error_message="Rate limit exceeded",
+        )
+        snapshot = snapshot.with_failure(failure2)
         assert snapshot.failure_count == 2
 
 
@@ -795,7 +857,7 @@ class TestModelMemorySnapshotUtilityProperties:
 class TestModelMemorySnapshotSerialization:
     """Tests for serialization and deserialization."""
 
-    def test_model_dump(self, minimal_snapshot_data: dict) -> None:
+    def test_model_dump(self, minimal_snapshot_data: dict[str, Any]) -> None:
         """Test serialization to dictionary."""
         snapshot = ModelMemorySnapshot(**minimal_snapshot_data)
         data = snapshot.model_dump()
@@ -807,7 +869,7 @@ class TestModelMemorySnapshotSerialization:
         assert "decisions" in data
         assert "failures" in data
 
-    def test_model_dump_json(self, minimal_snapshot_data: dict) -> None:
+    def test_model_dump_json(self, minimal_snapshot_data: dict[str, Any]) -> None:
         """Test serialization to JSON string."""
         snapshot = ModelMemorySnapshot(**minimal_snapshot_data)
         json_str = snapshot.model_dump_json()
@@ -816,7 +878,7 @@ class TestModelMemorySnapshotSerialization:
         assert "snapshot_id" in json_str
         assert "version" in json_str
 
-    def test_round_trip_serialization(self, full_snapshot_data: dict) -> None:
+    def test_round_trip_serialization(self, full_snapshot_data: dict[str, Any]) -> None:
         """Test that model survives serialization round-trip."""
         original = ModelMemorySnapshot(**full_snapshot_data)
         data = original.model_dump()
@@ -828,7 +890,9 @@ class TestModelMemorySnapshotSerialization:
         assert len(original.decisions) == len(restored.decisions)
         assert len(original.failures) == len(restored.failures)
 
-    def test_json_round_trip_serialization(self, minimal_snapshot_data: dict) -> None:
+    def test_json_round_trip_serialization(
+        self, minimal_snapshot_data: dict[str, Any]
+    ) -> None:
         """Test JSON serialization and deserialization roundtrip."""
         original = ModelMemorySnapshot(**minimal_snapshot_data)
 
@@ -839,7 +903,9 @@ class TestModelMemorySnapshotSerialization:
         assert original.version == restored.version
         assert original.schema_version == restored.schema_version
 
-    def test_model_dump_contains_all_fields(self, full_snapshot_data: dict) -> None:
+    def test_model_dump_contains_all_fields(
+        self, full_snapshot_data: dict[str, Any]
+    ) -> None:
         """Test model_dump contains all expected fields."""
         snapshot = ModelMemorySnapshot(**full_snapshot_data)
         data = snapshot.model_dump()
@@ -862,7 +928,9 @@ class TestModelMemorySnapshotSerialization:
         for field in expected_fields:
             assert field in data
 
-    def test_model_validate_from_dict(self, minimal_snapshot_data: dict) -> None:
+    def test_model_validate_from_dict(
+        self, minimal_snapshot_data: dict[str, Any]
+    ) -> None:
         """Test model validation from dictionary."""
         snapshot = ModelMemorySnapshot.model_validate(minimal_snapshot_data)
 
@@ -879,7 +947,7 @@ class TestModelMemorySnapshotEdgeCases:
     """Tests for edge cases and boundary conditions."""
 
     def test_model_not_hashable_due_to_dict_field(
-        self, minimal_snapshot_data: dict
+        self, minimal_snapshot_data: dict[str, Any]
     ) -> None:
         """Test that model is NOT hashable due to execution_annotations dict.
 
@@ -891,7 +959,7 @@ class TestModelMemorySnapshotEdgeCases:
         with pytest.raises(TypeError, match="unhashable type"):
             hash(snapshot)
 
-    def test_str_representation(self, minimal_snapshot_data: dict) -> None:
+    def test_str_representation(self, minimal_snapshot_data: dict[str, Any]) -> None:
         """Test __str__ method returns string."""
         snapshot = ModelMemorySnapshot(**minimal_snapshot_data)
         str_repr = str(snapshot)
@@ -899,7 +967,7 @@ class TestModelMemorySnapshotEdgeCases:
         assert isinstance(str_repr, str)
         assert "MemorySnapshot" in str_repr
 
-    def test_repr_representation(self, minimal_snapshot_data: dict) -> None:
+    def test_repr_representation(self, minimal_snapshot_data: dict[str, Any]) -> None:
         """Test __repr__ method returns string with class name."""
         snapshot = ModelMemorySnapshot(**minimal_snapshot_data)
         repr_str = repr(snapshot)
@@ -907,7 +975,7 @@ class TestModelMemorySnapshotEdgeCases:
         assert isinstance(repr_str, str)
         assert "ModelMemorySnapshot" in repr_str
 
-    def test_model_equality(self, minimal_snapshot_data: dict) -> None:
+    def test_model_equality(self, minimal_snapshot_data: dict[str, Any]) -> None:
         """Test model equality comparison with identical data."""
         snapshot_id = uuid4()
         created_at = datetime.now(UTC)
@@ -920,7 +988,7 @@ class TestModelMemorySnapshotEdgeCases:
         assert snapshot1 == snapshot2
 
     def test_model_inequality_different_snapshot_id(
-        self, minimal_snapshot_data: dict
+        self, minimal_snapshot_data: dict[str, Any]
     ) -> None:
         """Test model inequality when snapshot_ids differ."""
         snapshot1 = ModelMemorySnapshot(**minimal_snapshot_data)
@@ -929,13 +997,17 @@ class TestModelMemorySnapshotEdgeCases:
         # Different auto-generated snapshot_ids
         assert snapshot1 != snapshot2
 
-    def test_empty_execution_annotations(self, minimal_snapshot_data: dict) -> None:
+    def test_empty_execution_annotations(
+        self, minimal_snapshot_data: dict[str, Any]
+    ) -> None:
         """Test snapshot with empty execution_annotations."""
         snapshot = ModelMemorySnapshot(**minimal_snapshot_data)
 
         assert snapshot.execution_annotations == {}
 
-    def test_complex_execution_annotations(self, minimal_snapshot_data: dict) -> None:
+    def test_complex_execution_annotations(
+        self, minimal_snapshot_data: dict[str, Any]
+    ) -> None:
         """Test snapshot with complex nested execution_annotations."""
         minimal_snapshot_data["execution_annotations"] = {
             "step": "validation",
@@ -950,7 +1022,9 @@ class TestModelMemorySnapshotEdgeCases:
         assert snapshot.execution_annotations["nested"]["key"] == "value"
 
     def test_tuples_are_immutable(
-        self, minimal_snapshot_data: dict, sample_decision: ModelDecisionRecord
+        self,
+        minimal_snapshot_data: dict[str, Any],
+        sample_decision: ModelDecisionRecord,
     ) -> None:
         """Test that decision/failure tuples are truly immutable."""
         snapshot = ModelMemorySnapshot(**minimal_snapshot_data)
@@ -970,7 +1044,7 @@ class TestModelMemorySnapshotDiffFrom:
     """Tests for diff_from() method."""
 
     def test_diff_from_returns_model_memory_diff(
-        self, minimal_snapshot_data: dict
+        self, minimal_snapshot_data: dict[str, Any]
     ) -> None:
         """Test that diff_from returns a ModelMemoryDiff instance."""
         snapshot1 = ModelMemorySnapshot(**minimal_snapshot_data)
@@ -1072,7 +1146,9 @@ class TestModelMemorySnapshotDiffFrom:
         assert "2 decision(s) added" in diff.summary
 
     def test_diff_from_decisions_removed(
-        self, minimal_snapshot_data: dict, sample_decision: ModelDecisionRecord
+        self,
+        minimal_snapshot_data: dict[str, Any],
+        sample_decision: ModelDecisionRecord,
     ) -> None:
         """Test diff_from correctly identifies removed decisions."""
         # Base has a decision
@@ -1246,7 +1322,9 @@ class TestModelMemorySnapshotDiffFrom:
         assert "failure(s) recorded" in diff.summary
         assert "cost" in diff.summary
 
-    def test_diff_from_correct_snapshot_ids(self, minimal_snapshot_data: dict) -> None:
+    def test_diff_from_correct_snapshot_ids(
+        self, minimal_snapshot_data: dict[str, Any]
+    ) -> None:
         """Test diff_from returns correct base and target snapshot IDs."""
         base_snapshot = ModelMemorySnapshot(**minimal_snapshot_data)
         target_snapshot = ModelMemorySnapshot(**minimal_snapshot_data)
@@ -1256,7 +1334,9 @@ class TestModelMemorySnapshotDiffFrom:
         assert diff.base_snapshot_id == base_snapshot.snapshot_id
         assert diff.target_snapshot_id == target_snapshot.snapshot_id
 
-    def test_diff_from_summary_no_changes(self, minimal_snapshot_data: dict) -> None:
+    def test_diff_from_summary_no_changes(
+        self, minimal_snapshot_data: dict[str, Any]
+    ) -> None:
         """Test diff_from summary when there are no changes."""
         snapshot1 = ModelMemorySnapshot(**minimal_snapshot_data)
         snapshot2 = ModelMemorySnapshot(**minimal_snapshot_data)
@@ -1582,8 +1662,7 @@ class TestModelMemorySnapshotIntegration:
 
     def test_full_snapshot_lifecycle(
         self,
-        minimal_snapshot_data: dict,
-        sample_decision: ModelDecisionRecord,
+        minimal_snapshot_data: dict[str, Any],
         sample_failure: ModelFailureRecord,
         sample_cost_entry: ModelCostEntry,
     ) -> None:
@@ -1593,9 +1672,26 @@ class TestModelMemorySnapshotIntegration:
         assert snapshot.decision_count == 0
         assert snapshot.failure_count == 0
 
-        # Add decisions
-        snapshot = snapshot.with_decision(sample_decision)
-        snapshot = snapshot.with_decision(sample_decision)
+        # Add decisions - create fresh instances for each addition
+        decision1 = ModelDecisionRecord(
+            decision_type=EnumDecisionType.MODEL_SELECTION,
+            timestamp=datetime.now(UTC),
+            options_considered=("gpt-4", "claude-3"),
+            chosen_option="gpt-4",
+            confidence=0.85,
+            input_hash="lifecycle_hash_1",
+        )
+        snapshot = snapshot.with_decision(decision1)
+
+        decision2 = ModelDecisionRecord(
+            decision_type=EnumDecisionType.MODEL_SELECTION,
+            timestamp=datetime.now(UTC),
+            options_considered=("gpt-4", "claude-3"),
+            chosen_option="claude-3",
+            confidence=0.90,
+            input_hash="lifecycle_hash_2",
+        )
+        snapshot = snapshot.with_decision(decision2)
         assert snapshot.decision_count == 2
 
         # Add failures

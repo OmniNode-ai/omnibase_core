@@ -14,15 +14,16 @@ Tests comprehensive subject reference functionality including:
 - from_attributes=True behavior
 """
 
+from typing import Any
 from uuid import UUID, uuid4
 
 import pytest
 from pydantic import ValidationError
 
-pytestmark = pytest.mark.unit
-
 from omnibase_core.enums.enum_subject_type import EnumSubjectType
 from omnibase_core.models.omnimemory.model_subject_ref import ModelSubjectRef
+
+pytestmark = pytest.mark.unit
 
 # ============================================================================
 # Fixtures
@@ -30,7 +31,7 @@ from omnibase_core.models.omnimemory.model_subject_ref import ModelSubjectRef
 
 
 @pytest.fixture
-def minimal_ref_data_uuid() -> dict:
+def minimal_ref_data_uuid() -> dict[str, Any]:
     """Minimal required data for creating a subject ref with UUID."""
     return {
         "subject_type": EnumSubjectType.AGENT,
@@ -39,7 +40,7 @@ def minimal_ref_data_uuid() -> dict:
 
 
 @pytest.fixture
-def minimal_ref_data_string() -> dict:
+def minimal_ref_data_string() -> dict[str, Any]:
     """Minimal required data for creating a subject ref with string ID."""
     return {
         "subject_type": EnumSubjectType.USER,
@@ -48,7 +49,7 @@ def minimal_ref_data_string() -> dict:
 
 
 @pytest.fixture
-def full_ref_data() -> dict:
+def full_ref_data() -> dict[str, Any]:
     """Complete data including all optional fields."""
     return {
         "subject_type": EnumSubjectType.WORKFLOW,
@@ -66,7 +67,7 @@ def full_ref_data() -> dict:
 class TestModelSubjectRefInstantiation:
     """Tests for model instantiation and basic functionality."""
 
-    def test_create_with_uuid_id(self, minimal_ref_data_uuid: dict) -> None:
+    def test_create_with_uuid_id(self, minimal_ref_data_uuid: dict[str, Any]) -> None:
         """Test creating ref with UUID subject_id."""
         ref = ModelSubjectRef(**minimal_ref_data_uuid)
 
@@ -75,7 +76,9 @@ class TestModelSubjectRefInstantiation:
         assert ref.namespace is None
         assert ref.subject_key is None
 
-    def test_create_with_string_id(self, minimal_ref_data_string: dict) -> None:
+    def test_create_with_string_id(
+        self, minimal_ref_data_string: dict[str, Any]
+    ) -> None:
         """Test creating ref with string subject_id."""
         ref = ModelSubjectRef(**minimal_ref_data_string)
 
@@ -83,7 +86,7 @@ class TestModelSubjectRefInstantiation:
         assert ref.subject_id == "user-12345"
         assert isinstance(ref.subject_id, str)
 
-    def test_create_with_full_data(self, full_ref_data: dict) -> None:
+    def test_create_with_full_data(self, full_ref_data: dict[str, Any]) -> None:
         """Test creating ref with all fields explicitly set."""
         ref = ModelSubjectRef(**full_ref_data)
 
@@ -92,7 +95,9 @@ class TestModelSubjectRefInstantiation:
         assert ref.namespace == "production"
         assert ref.subject_key == "data-processor-v2"
 
-    def test_create_with_namespace_only(self, minimal_ref_data_uuid: dict) -> None:
+    def test_create_with_namespace_only(
+        self, minimal_ref_data_uuid: dict[str, Any]
+    ) -> None:
         """Test creating ref with namespace but no subject_key."""
         minimal_ref_data_uuid["namespace"] = "staging"
         ref = ModelSubjectRef(**minimal_ref_data_uuid)
@@ -100,7 +105,9 @@ class TestModelSubjectRefInstantiation:
         assert ref.namespace == "staging"
         assert ref.subject_key is None
 
-    def test_create_with_subject_key_only(self, minimal_ref_data_uuid: dict) -> None:
+    def test_create_with_subject_key_only(
+        self, minimal_ref_data_uuid: dict[str, Any]
+    ) -> None:
         """Test creating ref with subject_key but no namespace."""
         minimal_ref_data_uuid["subject_key"] = "my-agent"
         ref = ModelSubjectRef(**minimal_ref_data_uuid)
@@ -147,7 +154,7 @@ class TestModelSubjectRefInstantiation:
 class TestModelSubjectRefImmutability:
     """Tests for frozen model behavior."""
 
-    def test_model_is_frozen(self, minimal_ref_data_uuid: dict) -> None:
+    def test_model_is_frozen(self, minimal_ref_data_uuid: dict[str, Any]) -> None:
         """Test that the model is immutable."""
         ref = ModelSubjectRef(**minimal_ref_data_uuid)
 
@@ -155,7 +162,9 @@ class TestModelSubjectRefImmutability:
             # NOTE: Intentionally testing frozen model mutation - mypy correctly flags assignment to frozen attr
             ref.subject_type = EnumSubjectType.USER  # type: ignore[misc]
 
-    def test_cannot_modify_subject_id(self, minimal_ref_data_uuid: dict) -> None:
+    def test_cannot_modify_subject_id(
+        self, minimal_ref_data_uuid: dict[str, Any]
+    ) -> None:
         """Test that subject_id cannot be modified."""
         ref = ModelSubjectRef(**minimal_ref_data_uuid)
 
@@ -163,7 +172,7 @@ class TestModelSubjectRefImmutability:
             # NOTE: Intentionally testing frozen model mutation - mypy correctly flags assignment to frozen attr
             ref.subject_id = uuid4()  # type: ignore[misc]
 
-    def test_cannot_modify_namespace(self, full_ref_data: dict) -> None:
+    def test_cannot_modify_namespace(self, full_ref_data: dict[str, Any]) -> None:
         """Test that namespace cannot be modified."""
         ref = ModelSubjectRef(**full_ref_data)
 
@@ -171,7 +180,7 @@ class TestModelSubjectRefImmutability:
             # NOTE: Intentionally testing frozen model mutation - mypy correctly flags assignment to frozen attr
             ref.namespace = "different-namespace"  # type: ignore[misc]
 
-    def test_cannot_modify_subject_key(self, full_ref_data: dict) -> None:
+    def test_cannot_modify_subject_key(self, full_ref_data: dict[str, Any]) -> None:
         """Test that subject_key cannot be modified."""
         ref = ModelSubjectRef(**full_ref_data)
 
@@ -245,7 +254,7 @@ class TestModelSubjectRefValidation:
 class TestModelSubjectRefExtraForbid:
     """Tests for extra='forbid' behavior."""
 
-    def test_extra_fields_rejected(self, minimal_ref_data_uuid: dict) -> None:
+    def test_extra_fields_rejected(self, minimal_ref_data_uuid: dict[str, Any]) -> None:
         """Test that extra fields are rejected."""
         minimal_ref_data_uuid["unexpected_field"] = "should_fail"
 
@@ -256,7 +265,9 @@ class TestModelSubjectRefExtraForbid:
             exc_info.value
         )
 
-    def test_multiple_extra_fields_rejected(self, minimal_ref_data_uuid: dict) -> None:
+    def test_multiple_extra_fields_rejected(
+        self, minimal_ref_data_uuid: dict[str, Any]
+    ) -> None:
         """Test that multiple extra fields are rejected."""
         minimal_ref_data_uuid["extra1"] = "value1"
         minimal_ref_data_uuid["extra2"] = "value2"
@@ -320,7 +331,7 @@ class TestModelSubjectRefFromAttributes:
 class TestModelSubjectRefSerialization:
     """Tests for serialization and deserialization."""
 
-    def test_model_dump(self, minimal_ref_data_uuid: dict) -> None:
+    def test_model_dump(self, minimal_ref_data_uuid: dict[str, Any]) -> None:
         """Test serialization to dictionary."""
         ref = ModelSubjectRef(**minimal_ref_data_uuid)
         data = ref.model_dump()
@@ -331,7 +342,7 @@ class TestModelSubjectRefSerialization:
         assert "subject_key" in data
         assert data["subject_type"] == EnumSubjectType.AGENT
 
-    def test_model_dump_json(self, full_ref_data: dict) -> None:
+    def test_model_dump_json(self, full_ref_data: dict[str, Any]) -> None:
         """Test serialization to JSON string."""
         ref = ModelSubjectRef(**full_ref_data)
         json_str = ref.model_dump_json()
@@ -341,7 +352,9 @@ class TestModelSubjectRefSerialization:
         assert "production" in json_str
         assert "data-processor-v2" in json_str
 
-    def test_round_trip_serialization_uuid(self, minimal_ref_data_uuid: dict) -> None:
+    def test_round_trip_serialization_uuid(
+        self, minimal_ref_data_uuid: dict[str, Any]
+    ) -> None:
         """Test that model survives serialization round-trip with UUID."""
         original = ModelSubjectRef(**minimal_ref_data_uuid)
         data = original.model_dump()
@@ -353,7 +366,7 @@ class TestModelSubjectRefSerialization:
         assert original.subject_key == restored.subject_key
 
     def test_round_trip_serialization_string(
-        self, minimal_ref_data_string: dict
+        self, minimal_ref_data_string: dict[str, Any]
     ) -> None:
         """Test that model survives serialization round-trip with string ID."""
         original = ModelSubjectRef(**minimal_ref_data_string)
@@ -363,7 +376,7 @@ class TestModelSubjectRefSerialization:
         assert original.subject_type == restored.subject_type
         assert original.subject_id == restored.subject_id
 
-    def test_json_round_trip_serialization(self, full_ref_data: dict) -> None:
+    def test_json_round_trip_serialization(self, full_ref_data: dict[str, Any]) -> None:
         """Test JSON serialization and deserialization roundtrip."""
         original = ModelSubjectRef(**full_ref_data)
 
@@ -375,7 +388,9 @@ class TestModelSubjectRefSerialization:
         assert original.namespace == restored.namespace
         assert original.subject_key == restored.subject_key
 
-    def test_model_dump_contains_all_fields(self, full_ref_data: dict) -> None:
+    def test_model_dump_contains_all_fields(
+        self, full_ref_data: dict[str, Any]
+    ) -> None:
         """Test model_dump contains all expected fields."""
         ref = ModelSubjectRef(**full_ref_data)
         data = ref.model_dump()
@@ -389,7 +404,7 @@ class TestModelSubjectRefSerialization:
         for field in expected_fields:
             assert field in data
 
-    def test_model_validate_from_dict(self, full_ref_data: dict) -> None:
+    def test_model_validate_from_dict(self, full_ref_data: dict[str, Any]) -> None:
         """Test model validation from dictionary."""
         ref = ModelSubjectRef.model_validate(full_ref_data)
 
@@ -416,17 +431,50 @@ class TestModelSubjectRefEdgeCases:
             )
         assert "subject_id" in str(exc_info.value)
 
-    def test_empty_namespace_string(self, minimal_ref_data_uuid: dict) -> None:
-        """Test that empty string namespace is accepted."""
+    def test_empty_namespace_string_rejected(
+        self, minimal_ref_data_uuid: dict[str, Any]
+    ) -> None:
+        """Test that empty string namespace is rejected."""
         minimal_ref_data_uuid["namespace"] = ""
-        ref = ModelSubjectRef(**minimal_ref_data_uuid)
-        assert ref.namespace == ""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelSubjectRef(**minimal_ref_data_uuid)
+        assert "namespace" in str(exc_info.value)
 
-    def test_empty_subject_key_string(self, minimal_ref_data_uuid: dict) -> None:
-        """Test that empty string subject_key is accepted."""
+    def test_whitespace_namespace_string_rejected(
+        self, minimal_ref_data_uuid: dict[str, Any]
+    ) -> None:
+        """Test that whitespace-only namespace is rejected."""
+        minimal_ref_data_uuid["namespace"] = "   "
+        with pytest.raises(ValidationError) as exc_info:
+            ModelSubjectRef(**minimal_ref_data_uuid)
+        assert "namespace" in str(exc_info.value)
+
+    def test_empty_subject_key_string_rejected(
+        self, minimal_ref_data_uuid: dict[str, Any]
+    ) -> None:
+        """Test that empty string subject_key is rejected."""
         minimal_ref_data_uuid["subject_key"] = ""
-        ref = ModelSubjectRef(**minimal_ref_data_uuid)
-        assert ref.subject_key == ""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelSubjectRef(**minimal_ref_data_uuid)
+        assert "subject_key" in str(exc_info.value)
+
+    def test_whitespace_subject_key_string_rejected(
+        self, minimal_ref_data_uuid: dict[str, Any]
+    ) -> None:
+        """Test that whitespace-only subject_key is rejected."""
+        minimal_ref_data_uuid["subject_key"] = "   "
+        with pytest.raises(ValidationError) as exc_info:
+            ModelSubjectRef(**minimal_ref_data_uuid)
+        assert "subject_key" in str(exc_info.value)
+
+    def test_whitespace_subject_id_string_rejected(self) -> None:
+        """Test that whitespace-only subject_id is rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelSubjectRef(
+                subject_type=EnumSubjectType.AGENT,
+                subject_id="   ",
+            )
+        assert "subject_id" in str(exc_info.value)
 
     def test_long_string_id(self) -> None:
         """Test handling of long string ID."""
@@ -454,7 +502,9 @@ class TestModelSubjectRefEdgeCases:
             )
             assert ref.subject_id == sid
 
-    def test_special_characters_in_namespace(self, minimal_ref_data_uuid: dict) -> None:
+    def test_special_characters_in_namespace(
+        self, minimal_ref_data_uuid: dict[str, Any]
+    ) -> None:
         """Test namespace with special characters."""
         special_namespaces = [
             "prod-us-east",
@@ -528,7 +578,7 @@ class TestModelSubjectRefEdgeCases:
 
         assert ref1 != ref2
 
-    def test_str_representation(self, minimal_ref_data_uuid: dict) -> None:
+    def test_str_representation(self, minimal_ref_data_uuid: dict[str, Any]) -> None:
         """Test __str__ method returns formatted string."""
         ref = ModelSubjectRef(**minimal_ref_data_uuid)
         str_repr = str(ref)
@@ -536,7 +586,9 @@ class TestModelSubjectRefEdgeCases:
         assert isinstance(str_repr, str)
         assert "agent" in str_repr
 
-    def test_str_representation_with_namespace(self, full_ref_data: dict) -> None:
+    def test_str_representation_with_namespace(
+        self, full_ref_data: dict[str, Any]
+    ) -> None:
         """Test __str__ includes namespace when present."""
         ref = ModelSubjectRef(**full_ref_data)
         str_repr = str(ref)
@@ -545,7 +597,7 @@ class TestModelSubjectRefEdgeCases:
         assert "production" in str_repr
         assert "workflow" in str_repr
 
-    def test_repr_representation(self, minimal_ref_data_uuid: dict) -> None:
+    def test_repr_representation(self, minimal_ref_data_uuid: dict[str, Any]) -> None:
         """Test __repr__ method returns string with class name."""
         ref = ModelSubjectRef(**minimal_ref_data_uuid)
         repr_str = repr(ref)
@@ -570,7 +622,7 @@ class TestModelSubjectRefEdgeCases:
         # Frozen models should be hashable
         assert hash(ref1) == hash(ref2)
 
-    def test_can_use_as_dict_key(self, minimal_ref_data_uuid: dict) -> None:
+    def test_can_use_as_dict_key(self, minimal_ref_data_uuid: dict[str, Any]) -> None:
         """Test that frozen model can be used as dictionary key."""
         ref = ModelSubjectRef(**minimal_ref_data_uuid)
 

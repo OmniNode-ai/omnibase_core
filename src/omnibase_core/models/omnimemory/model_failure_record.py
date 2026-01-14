@@ -21,6 +21,7 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums.enum_failure_type import EnumFailureType
+from omnibase_core.utils.util_validators import ensure_timezone_aware
 
 
 class ModelFailureRecord(BaseModel):
@@ -142,42 +143,18 @@ class ModelFailureRecord(BaseModel):
     @field_validator("timestamp")
     @classmethod
     def validate_timestamp_has_timezone(cls, v: datetime) -> datetime:
-        """Ensure timestamp is timezone-aware.
-
-        Rejects both naive datetimes (tzinfo=None) and effectively naive
-        datetimes (tzinfo that returns None for utcoffset).
-
-        Note:
-            This validator is intentionally duplicated in ModelDecisionRecord
-            to avoid cross-model imports between frozen Pydantic models.
-
-        Args:
-            v: The timestamp value to validate.
-
-        Returns:
-            The validated timestamp.
-
-        Raises:
-            ValueError: If the timestamp has no valid timezone info.
-        """
-        if v.tzinfo is None or v.tzinfo.utcoffset(v) is None:
-            raise ValueError(
-                "timestamp must be timezone-aware (use datetime.now(UTC) or include tzinfo). "
-                f"Got naive or effectively naive datetime: {v}"
-            )
-        return v
+        """Validate timestamp is timezone-aware using shared utility."""
+        return ensure_timezone_aware(v, "timestamp")
 
     # === Utility Methods ===
 
     def __str__(self) -> str:
-        """Return a human-readable string representation."""
         return (
             f"FailureRecord({self.failure_type.value}@{self.step_context}: "
             f"{self.error_code}, retry={self.retry_attempt})"
         )
 
     def __repr__(self) -> str:
-        """Return a detailed string representation for debugging."""
         return (
             f"ModelFailureRecord(failure_id={self.failure_id!r}, "
             f"failure_type={self.failure_type!r}, "

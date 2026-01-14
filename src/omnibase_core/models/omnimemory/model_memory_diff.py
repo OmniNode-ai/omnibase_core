@@ -181,7 +181,6 @@ class ModelMemoryDiff(BaseModel):
     # === Utility Methods ===
 
     def __str__(self) -> str:
-        """Return a human-readable string representation."""
         changes = []
         if self.decisions_added:
             changes.append(f"+{len(self.decisions_added)} decisions")
@@ -200,7 +199,6 @@ class ModelMemoryDiff(BaseModel):
         return "MemoryDiff(no changes)"
 
     def __repr__(self) -> str:
-        """Return a detailed string representation for debugging."""
         return (
             f"ModelMemoryDiff(diff_id={self.diff_id!r}, "
             f"base_snapshot_id={self.base_snapshot_id!r}, "

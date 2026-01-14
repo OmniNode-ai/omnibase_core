@@ -92,34 +92,60 @@ class ModelSubjectRef(BaseModel):
     @field_validator("subject_id")
     @classmethod
     def validate_subject_id_not_empty(cls, v: UUID | str) -> UUID | str:
-        """Ensure string subject_id is not empty.
-
-        Args:
-            v: The subject_id value to validate.
-
-        Returns:
-            The validated subject_id.
+        """Validate string subject_id is not empty or whitespace-only.
 
         Raises:
-            ValueError: If the subject_id is an empty string.
+            ValueError: If subject_id is empty or contains only whitespace.
         """
-        if isinstance(v, str) and len(v) == 0:
+        if isinstance(v, str):
+            stripped = v.strip()
+            if len(stripped) == 0:
+                raise ValueError(
+                    "subject_id cannot be empty or whitespace-only. "
+                    "Provide a non-empty identifier."
+                )
+        return v
+
+    @field_validator("namespace")
+    @classmethod
+    def validate_namespace_not_whitespace(cls, v: str | None) -> str | None:
+        """Validate namespace is not whitespace-only when provided.
+
+        Raises:
+            ValueError: If namespace is provided but contains only whitespace.
+        """
+        if v is not None and len(v.strip()) == 0:
             raise ValueError(
-                "subject_id cannot be an empty string. Provide a non-empty identifier."
+                "namespace cannot be whitespace-only. "
+                "Provide a meaningful namespace or omit the field."
+            )
+        return v
+
+    @field_validator("subject_key")
+    @classmethod
+    def validate_subject_key_not_whitespace(cls, v: str | None) -> str | None:
+        """Validate subject_key is not whitespace-only when provided.
+
+        Raises:
+            ValueError: If subject_key is provided but contains only whitespace.
+        """
+        if v is not None and len(v.strip()) == 0:
+            raise ValueError(
+                "subject_key cannot be whitespace-only. "
+                "Provide a meaningful key or omit the field."
             )
         return v
 
     # === Utility Methods ===
 
     def __str__(self) -> str:
-        """Return a human-readable string representation."""
+        """Format as 'namespace/type:id' or 'type:id' if no namespace."""
         parts = [f"{self.subject_type.value}:{self.subject_id}"]
         if self.namespace:
             parts.insert(0, self.namespace)
         return "/".join(parts)
 
     def __repr__(self) -> str:
-        """Return a detailed string representation for debugging."""
         return (
             f"ModelSubjectRef(subject_type={self.subject_type!r}, "
             f"subject_id={self.subject_id!r}, "
