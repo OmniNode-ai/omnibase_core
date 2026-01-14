@@ -18,8 +18,8 @@ import textwrap
 from pathlib import Path
 
 import pytest
-
 from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
+
 from omnibase_core.models.contracts.subcontracts.model_validator_rule import (
     ModelValidatorRule,
 )
