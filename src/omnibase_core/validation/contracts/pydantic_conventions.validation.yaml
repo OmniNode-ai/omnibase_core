@@ -1,0 +1,130 @@
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: pydantic_conventions
+  validator_name: Pydantic Conventions Validator
+  validator_description: |
+    Enforces Pydantic model configuration standards established in OMN-1301.
+    Uses AST-based analysis to ensure models have explicit ConfigDict,
+    proper frozen/from_attributes pairing, and follow field definition patterns.
+
+    Checks for:
+    - Missing model_config in Pydantic models (including legacy class Config:)
+    - Empty ConfigDict() with no arguments
+    - frozen=True without from_attributes=True (pytest-xdist compatibility)
+    - Contract models missing explicit extra= policy
+    - Unnecessary Field(default=None) without other kwargs
+
+  target_patterns:
+    - "**/*.py"
+
+  exclude_patterns:
+    - "**/node_modules/**"
+    - "**/.git/**"
+    - "**/venv/**"
+    - "**/__pycache__/**"
+    - "**/archived/**"
+    - "**/tests/**"
+    - "**/*_test.py"
+    - "**/test_*.py"
+    - "**/conftest.py"
+    - "**/scripts/**"
+
+  rules:
+    - rule_id: missing-config
+      description: |
+        Every Pydantic model needs explicit model_config. Also flags legacy
+        class Config: style which should be migrated to model_config = ConfigDict(...).
+      severity: error
+      enabled: true
+
+    - rule_id: empty-config
+      description: |
+        ConfigDict() with no arguments is forbidden - must have at least one option.
+        Empty ConfigDict has ambiguous intent and provides no explicit policy for
+        model behavior (extra fields, mutability, etc.).
+      severity: error
+      enabled: true
+
+    - rule_id: frozen-without-from-attributes
+      description: |
+        frozen=True requires from_attributes=True for pytest-xdist compatibility.
+        Without from_attributes=True, pytest-xdist workers that import classes
+        independently may have Pydantic reject valid instances due to class
+        identity differences.
+      severity: error
+      enabled: true
+
+    - rule_id: contract-missing-extra
+      description: |
+        Contract models (in /models/contracts/ path) must explicitly declare extra=
+        policy. Contracts represent external data boundaries where extra field handling
+        must be intentional (forbid, ignore, or allow).
+      severity: warning
+      enabled: true
+
+    - rule_id: unnecessary-field-default-none
+      description: |
+        Field(default=None) without other kwargs should be simplified to = None.
+        Using Field() without metadata (description, alias, validators, etc.) adds
+        unnecessary verbosity without providing value.
+      severity: warning
+      enabled: true
+
+  # ============================================================================
+  # LINE-BASED SUPPRESSION (NOT rule-specific!)
+  # ============================================================================
+  # IMPORTANT: Suppression operates on WHOLE LINES, not individual rules.
+  #
+  # How it works:
+  #   - If ANY pattern below appears anywhere on a source line, ALL pydantic
+  #     convention violations on that line are suppressed (regardless of which
+  #     rule triggered).
+  #   - The validator performs a simple substring match against the entire line.
+  #
+  # Example - suppress missing-config violation:
+  #   class MyModel(BaseModel):  # pydantic-ok: third-party base class handles config
+  #
+  # Example - suppress frozen-without-from-attributes:
+  #   model_config = ConfigDict(frozen=True)  # ONEX_EXCLUDE: pydantic
+  #
+  # Matching: Case-sensitive substring search (no regex).
+  # ============================================================================
+  suppression_comments:
+    # Legacy ONEX exclusion pattern
+    - "# ONEX_EXCLUDE: pydantic"
+
+    # Preferred pattern with reason (e.g., "# pydantic-ok: third-party compatibility")
+    - "# pydantic-ok:"
+
+    # Standard noqa pattern
+    - "# noqa: pydantic"
+
+    # Alternative pattern matching validator name
+    - "# onex: ignore-pydantic-conventions"
+
+  severity_default: error
+  # NOTE: fail_on_error is false until existing technical debt (577 issues) is resolved.
+  # TODO(OMN-TBD): Set fail_on_error: true after fixing existing model violations. [NEEDS TICKET]
+  fail_on_error: false
+  fail_on_warning: false
+  max_violations: 0
+
+  # ============================================================================
+  # PARALLEL EXECUTION SEMANTICS
+  # ============================================================================
+  # This flag indicates that the validator SUPPORTS parallel file processing,
+  # meaning files can be validated concurrently by separate worker processes
+  # (e.g., pytest-xdist splits).
+  #
+  # CRITICAL THREAD SAFETY CONSTRAINT:
+  #   Parallel execution is PROCESS-safe, NOT THREAD-safe within a single process.
+  #   Each worker process MUST create its own validator instance.
+  #
+  # For thread safety details, see: docs/guides/THREADING.md
+  # ============================================================================
+  parallel_execution: true
