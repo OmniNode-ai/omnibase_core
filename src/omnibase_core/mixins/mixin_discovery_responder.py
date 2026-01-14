@@ -109,7 +109,7 @@ class MixinDiscoveryResponder:
             "throttled_requests": 0,
             "filtered_requests": 0,
             "last_request_time": None,
-            "error_count": 0,
+            "error_level_count": 0,
         }
         self._discovery_event_bus: ProtocolEventBus | None = None
         self._discovery_unsubscribe: Callable[[], Awaitable[None]] | None = None
@@ -251,7 +251,7 @@ class MixinDiscoveryResponder:
                 },
             )
             # Track error metrics
-            self._discovery_stats["error_count"] += 1
+            self._discovery_stats["error_level_count"] += 1
 
             # Acknowledge message even on error to prevent infinite redelivery
             # Discovery failures are non-fatal and should not block the system
@@ -348,7 +348,7 @@ class MixinDiscoveryResponder:
                 },
             )
             # Track error metrics
-            self._discovery_stats["error_count"] += 1
+            self._discovery_stats["error_level_count"] += 1
 
     def _extract_discovery_request_metadata(
         self, onex_event: OnexEvent
@@ -580,7 +580,7 @@ class MixinDiscoveryResponder:
                     "operation": "_send_discovery_response",
                 },
             )
-            # Note: error_count is incremented by the caller (_handle_discovery_request)
+            # Note: error_level_count is incremented by the caller (_handle_discovery_request)
             # to avoid double-counting when exception is re-raised
 
             # Re-raise to signal failure to caller
@@ -749,7 +749,7 @@ class MixinDiscoveryResponder:
             throttled_requests=self._discovery_stats["throttled_requests"],
             filtered_requests=self._discovery_stats["filtered_requests"],
             last_request_time=self._discovery_stats["last_request_time"],
-            error_count=self._discovery_stats["error_count"],
+            error_level_count=self._discovery_stats["error_level_count"],
             active=self._discovery_active,
             throttle_seconds=self._response_throttle,
             last_response_time=self._last_response_time,
@@ -765,5 +765,5 @@ class MixinDiscoveryResponder:
             "throttled_requests": 0,
             "filtered_requests": 0,
             "last_request_time": None,
-            "error_count": 0,
+            "error_level_count": 0,
         }
