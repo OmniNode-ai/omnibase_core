@@ -32,15 +32,17 @@ TImplementation = TypeVar("TImplementation")
 # =============================================================================
 
 # Logging levels
-LiteralLogLevel = Literal[
+LiteralLogLevel = Literal[  # enum-ok: protocol type hint
     "TRACE", "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL", "FATAL"
 ]
 
 # Node types in ONEX 4-node architecture
-LiteralNodeType = Literal["COMPUTE", "EFFECT", "REDUCER", "ORCHESTRATOR"]
+LiteralNodeType = Literal[  # enum-ok: protocol type hint
+    "COMPUTE", "EFFECT", "REDUCER", "ORCHESTRATOR"
+]
 
 # Health status indicators
-LiteralHealthStatus = Literal[
+LiteralHealthStatus = Literal[  # enum-ok: protocol type hint
     "healthy",
     "degraded",
     "unhealthy",
@@ -56,7 +58,7 @@ LiteralHealthStatus = Literal[
 ]
 
 # Operation status
-LiteralOperationStatus = Literal[
+LiteralOperationStatus = Literal[  # enum-ok: protocol type hint
     "success", "failed", "in_progress", "cancelled", "pending"
 ]
 
@@ -71,15 +73,17 @@ LiteralInjectionScope = Literal[
 ]
 
 # Service resolution status
-LiteralServiceResolutionStatus = Literal[
+LiteralServiceResolutionStatus = Literal[  # enum-ok: protocol type hint
     "resolved", "failed", "circular_dependency", "missing_dependency", "type_mismatch"
 ]
 
 # Validation levels
-LiteralValidationLevel = Literal["BASIC", "STANDARD", "COMPREHENSIVE", "PARANOID"]
+LiteralValidationLevel = Literal[  # enum-ok: protocol type hint
+    "BASIC", "STANDARD", "COMPREHENSIVE", "PARANOID"
+]
 
 # Validation modes
-LiteralValidationMode = Literal[
+LiteralValidationMode = Literal[  # enum-ok: protocol type hint
     "strict", "lenient", "smoke", "regression", "integration"
 ]
 

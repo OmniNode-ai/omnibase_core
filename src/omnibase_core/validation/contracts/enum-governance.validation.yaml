@@ -38,7 +38,7 @@ validation:
     - rule_id: literal_should_be_enum
       description: Detect Literal type aliases that should be proper enums
       severity: error
-      enabled: false  # Phase 2: Enable after addressing existing Literal aliases
+      enabled: true
       parameters:
         pattern_words:
           - "Status"
@@ -53,7 +53,7 @@ validation:
     - rule_id: duplicate_enum_values
       description: Detect enums with overlapping/duplicate value sets
       severity: warning
-      enabled: false  # Phase 3: Enable after populating approved_overlaps
+      enabled: true  # Phase 3: Enabled with require_name_similarity=true to limit false positives
       parameters:
         require_name_similarity: true
         approved_overlaps: []

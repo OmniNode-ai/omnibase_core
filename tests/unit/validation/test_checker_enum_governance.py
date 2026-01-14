@@ -32,9 +32,9 @@ from omnibase_core.validation.checker_enum_governance import (
     RULE_ENUM_MEMBER_CASING,
     RULE_LITERAL_SHOULD_BE_ENUM,
     CheckerEnumGovernance,
-    DiscoveredEnumInfo,
     GovernanceASTVisitor,
     LiteralAliasInfo,
+    _CollectedEnumData,
 )
 
 # =============================================================================
@@ -807,7 +807,7 @@ class TestGovernanceASTVisitor:
     """Tests for the GovernanceASTVisitor AST visitor."""
 
     def test_collects_enum_info(self, tmp_path: Path) -> None:
-        """Visitor should collect DiscoveredEnumInfo for enum classes."""
+        """Visitor should collect _CollectedEnumData for enum classes."""
         import ast
 
         file_content = """
@@ -1243,11 +1243,11 @@ class TestRuleConfiguration:
 
 @pytest.mark.unit
 class TestDataClasses:
-    """Tests for DiscoveredEnumInfo and LiteralAliasInfo dataclasses."""
+    """Tests for _CollectedEnumData and LiteralAliasInfo dataclasses."""
 
     def test_enum_info_frozen(self) -> None:
-        """DiscoveredEnumInfo should be frozen (immutable)."""
-        info = DiscoveredEnumInfo(
+        """_CollectedEnumData should be frozen (immutable)."""
+        info = _CollectedEnumData(
             name="Status",
             file_path=Path("/test.py"),
             line_number=1,
@@ -1303,11 +1303,11 @@ class TestImports:
     def test_import_data_classes(self) -> None:
         """Test that data classes can be imported."""
         from omnibase_core.validation.checker_enum_governance import (
-            DiscoveredEnumInfo,
             GovernanceASTVisitor,
             LiteralAliasInfo,
+            _CollectedEnumData,
         )
 
-        assert DiscoveredEnumInfo is not None
+        assert _CollectedEnumData is not None
         assert LiteralAliasInfo is not None
         assert GovernanceASTVisitor is not None

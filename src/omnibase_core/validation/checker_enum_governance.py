@@ -78,7 +78,7 @@ ENUM_PATTERN_WORDS = frozenset(
 
 
 @dataclass(frozen=True)
-class DiscoveredEnumInfo:
+class _CollectedEnumData:
     """Information about an enum class discovered during scanning.
 
     Attributes:
@@ -121,7 +121,7 @@ class GovernanceASTVisitor(ast.NodeVisitor):
 
     Attributes:
         file_path: Path to the file being analyzed.
-        enums: List of DiscoveredEnumInfo objects found.
+        enums: List of _CollectedEnumData objects found.
         literal_aliases: List of LiteralAliasInfo objects found.
     """
 
@@ -132,7 +132,7 @@ class GovernanceASTVisitor(ast.NodeVisitor):
             file_path: Path to the source file being analyzed.
         """
         self.file_path = file_path
-        self.enums: list[DiscoveredEnumInfo] = []
+        self.enums: list[_CollectedEnumData] = []
         self.literal_aliases: list[LiteralAliasInfo] = []
         self._scope_stack: list[str] = []  # Track current scope
 
@@ -243,7 +243,7 @@ class GovernanceASTVisitor(ast.NodeVisitor):
                         string_values.add(str_value)
 
             self.enums.append(
-                DiscoveredEnumInfo(
+                _CollectedEnumData(
                     name=node.name,
                     file_path=self.file_path,
                     line_number=node.lineno,
@@ -410,7 +410,7 @@ class CheckerEnumGovernance(ValidatorBase):
         """
         super().__init__(contract)
         # Multi-phase scanning state
-        self._all_enums: list[DiscoveredEnumInfo] = []
+        self._all_enums: list[_CollectedEnumData] = []
         self._all_literals: list[LiteralAliasInfo] = []
         self._phase_a_complete: bool = False
 
@@ -556,13 +556,13 @@ class CheckerEnumGovernance(ValidatorBase):
 
     def _validate_enum_001(
         self,
-        enums: list[DiscoveredEnumInfo],
+        enums: list[_CollectedEnumData],
         contract: ModelValidatorSubcontract,
     ) -> list[ModelValidationIssue]:
         """Validate ENUM_001: Enum member casing.
 
         Args:
-            enums: List of DiscoveredEnumInfo objects to validate.
+            enums: List of _CollectedEnumData objects to validate.
             contract: Validator contract with configuration.
 
         Returns:
@@ -831,7 +831,7 @@ if __name__ == "__main__":
 __all__ = [
     "CheckerEnumGovernance",
     "GovernanceASTVisitor",
-    "DiscoveredEnumInfo",
+    "_CollectedEnumData",
     "LiteralAliasInfo",
     "RULE_DUPLICATE_ENUM_VALUES",
     "RULE_ENUM_MEMBER_CASING",

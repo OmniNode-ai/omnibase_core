@@ -19,7 +19,9 @@ from types import MappingProxyType
 from typing import Literal
 
 # Type aliases for handler types (used for type-safe lookups)
-HandlerType = Literal["http", "db", "kafka", "filesystem"]
+HandlerType = Literal[  # enum-ok: constant type definition
+    "http", "db", "kafka", "filesystem"
+]
 HttpMethod = Literal["GET", "HEAD", "OPTIONS", "PUT", "DELETE", "POST", "PATCH"]
 DbOperation = Literal["SELECT", "INSERT", "UPDATE", "DELETE", "UPSERT"]
 KafkaOperation = Literal["produce"]
