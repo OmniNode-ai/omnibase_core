@@ -2,13 +2,13 @@
 Unit tests for NodeOrchestrator-related enums.
 
 Tests all aspects of orchestrator enumeration types including:
-- EnumWorkflowStatus - Workflow execution states
-- EnumExecutionMode - Execution modes for workflow steps (from enum_orchestrator_types)
+- EnumWorkflowStatus - Workflow lifecycle states (canonical)
+- EnumExecutionMode (aliased as EnumExecutionModeOrchestrator) - Execution modes for workflow steps
 - EnumActionType - Types of actions for orchestrated execution
-- EnumFailureRecoveryStrategy - Failure recovery strategies
+- EnumFailureRecoveryStrategy - Failure recovery strategies (str, Enum)
 - EnumBranchCondition - Conditional branching types
-- EnumExecutionPattern - Execution patterns for workflow coordination
-- EnumAssignmentStatus - Task assignment lifecycle states
+- EnumExecutionPattern - Execution patterns for workflow coordination (str, Enum)
+- EnumAssignmentStatus - Task assignment lifecycle states (str, Enum)
 
 Each enum is tested for:
 - Value existence and correctness
@@ -46,7 +46,7 @@ from omnibase_core.enums.enum_workflow_status import EnumWorkflowStatus
 
 
 @pytest.fixture
-def all_workflow_state_values() -> list[str]:
+def all_workflow_status_values() -> list[str]:
     """All expected EnumWorkflowStatus values."""
     return ["pending", "running", "paused", "completed", "failed", "cancelled"]
 
@@ -101,7 +101,7 @@ class TestEnumWorkflowStatus:
         """Test that EnumWorkflowStatus inherits from Enum."""
         assert issubclass(EnumWorkflowStatus, Enum)
 
-    def test_values_exist(self, all_workflow_state_values: list[str]) -> None:
+    def test_values_exist(self, all_workflow_status_values: list[str]) -> None:
         """Test all expected values exist."""
         assert EnumWorkflowStatus.PENDING.value == "pending"
         assert EnumWorkflowStatus.RUNNING.value == "running"
@@ -139,10 +139,10 @@ class TestEnumWorkflowStatus:
         # Verify it's in the enum (reserved but still a valid member)
         assert EnumWorkflowStatus.PAUSED in EnumWorkflowStatus
 
-    def test_iteration(self, all_workflow_state_values: list[str]) -> None:
+    def test_iteration(self, all_workflow_status_values: list[str]) -> None:
         """Test enum iteration returns all values."""
         actual_values = {member.value for member in EnumWorkflowStatus}
-        expected_values = set(all_workflow_state_values)
+        expected_values = set(all_workflow_status_values)
         assert actual_values == expected_values
 
     def test_value_uniqueness(self) -> None:

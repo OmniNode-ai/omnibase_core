@@ -420,7 +420,7 @@ class MixinNodeExecutor(MixinEventDrivenNode):
                     correlation_id=shutdown_event.correlation_id,
                 )
                 await event_bus.publish(envelope)
-        except (ValueError, RuntimeError, ModelOnexError) as e:
+        except (ModelOnexError, RuntimeError, ValueError) as e:
             self._log_error(f"Failed to emit shutdown event: {e}")
 
     async def _wait_for_active_invocations(

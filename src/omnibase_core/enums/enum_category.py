@@ -9,9 +9,11 @@ Provides standardized category values for classification across the system.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumCategory(str, Enum):
+class EnumCategory(StrValueHelper, str, Enum):
     """
     General category enumeration for data classification.
 

@@ -323,7 +323,7 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase, MixinHandlerRouting):
             raise
         # boundary-ok: wraps user computation exceptions into structured error response with metrics
         except Exception as e:
-            # Catch all other exceptions from user computation logic
+            # boundary-ok: wrap user computation exceptions in structured ONEX error
             # Calculate processing time for error reporting
             processing_time = 0.0
             if self._timing_service is not None and start_time is not None:

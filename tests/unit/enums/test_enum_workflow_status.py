@@ -284,7 +284,7 @@ class TestEnumWorkflowStatus:
 
     def test_workflow_lifecycle_logic(self):
         """Test workflow lifecycle state transitions and logic."""
-        # Test that active and terminal states are mutually exclusive
+        # Test that all statuses are either active XOR terminal (mutually exclusive)
         for status in EnumWorkflowStatus:
             is_active = EnumWorkflowStatus.is_active(status)
             is_terminal = EnumWorkflowStatus.is_terminal(status)
@@ -294,11 +294,7 @@ class TestEnumWorkflowStatus:
                 f"{status} cannot be both active and terminal"
             )
 
-        # Test that all statuses are either active or terminal
-        for status in EnumWorkflowStatus:
-            is_active = EnumWorkflowStatus.is_active(status)
-            is_terminal = EnumWorkflowStatus.is_terminal(status)
-
+            # A status must be either active or terminal
             assert is_active or is_terminal, (
                 f"{status} must be either active or terminal"
             )

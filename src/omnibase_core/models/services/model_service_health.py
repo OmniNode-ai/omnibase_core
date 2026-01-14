@@ -305,10 +305,10 @@ class ModelServiceHealth(BaseModel):
         """Get human-readable severity level."""
         if self.status == EnumServiceHealthStatus.ERROR:
             return "critical"
-        if self.status in [
+        if self.status in {
             EnumServiceHealthStatus.UNREACHABLE,
             EnumServiceHealthStatus.TIMEOUT,
-        ]:
+        }:
             return "high"
         if self.status == EnumServiceHealthStatus.DEGRADED:
             return "medium"
@@ -349,7 +349,7 @@ class ModelServiceHealth(BaseModel):
 
         if not self.authentication_type:
             recommendations.append("Implement authentication for enhanced security")
-        elif self.authentication_type.lower() in ["basic", "plaintext"]:
+        elif self.authentication_type.lower() in {"basic", "plaintext"}:
             recommendations.append(
                 "Consider upgrading to stronger authentication methods",
             )
@@ -486,7 +486,7 @@ class ModelServiceHealth(BaseModel):
             return "high_negative"
         if self.is_performance_concerning():
             return "medium_negative"
-        if self.get_performance_category() in ["excellent", "good"]:
+        if self.get_performance_category() in {"excellent", "good"}:
             return "positive"
         return "neutral"
 

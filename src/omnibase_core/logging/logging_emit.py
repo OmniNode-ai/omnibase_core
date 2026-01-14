@@ -268,7 +268,7 @@ def trace_function_lifecycle[F: Callable[..., Any]](func: F) -> F:
             return result
 
         except Exception as e:
-            # Log exception exit
+            # boundary-ok: decorator logs exception before re-raising
             end_time = datetime.now(UTC)
             execution_time_ms = (end_time - start_time).total_seconds() * 1000
 

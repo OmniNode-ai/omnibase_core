@@ -1,6 +1,7 @@
-#!/usr/bin/env python3
-"""
-Example: Using omnibase_core validation tools in other repositories
+# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
+#
+# SPDX-License-Identifier: Apache-2.0
+"""Example: Using omnibase_core validation tools in other repositories
 
 This example demonstrates how other repositories can integrate and use
 the validation tools provided by omnibase_core for ONEX compliance.
@@ -10,14 +11,10 @@ import sys
 from pathlib import Path
 
 # Import validation tools from omnibase_core
-from omnibase_core.validation import (
-    ValidationSuite,
-    validate_all,
-    validate_architecture,
-    validate_contracts,
-    validate_patterns,
-    validate_union_usage,
-)
+from omnibase_core.validation import (ValidationSuite, validate_all,
+                                      validate_architecture,
+                                      validate_contracts, validate_patterns,
+                                      validate_union_usage)
 
 
 def example_basic_usage():
@@ -152,9 +149,12 @@ def example_file_level_validation():
     print("=" * 50)
 
     # Import file-level validation functions
-    from omnibase_core.validation.validator_architecture import validate_one_model_per_file
-    from omnibase_core.validation.validator_patterns import validate_patterns_file
-    from omnibase_core.validation.validator_types import validate_union_usage_file
+    from omnibase_core.validation.validator_architecture import \
+        validate_one_model_per_file
+    from omnibase_core.validation.validator_patterns import \
+        validate_patterns_file
+    from omnibase_core.validation.validator_types import \
+        validate_union_usage_file
 
     # Find Python files to validate
     src_files = list(Path("src/").rglob("*.py"))[:3]  # Just first 3 for demo

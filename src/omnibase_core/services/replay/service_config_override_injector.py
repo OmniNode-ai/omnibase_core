@@ -3,6 +3,8 @@
 # SPDX-License-Identifier: Apache-2.0
 """Service for injecting configuration overrides during replay.
 
+Uses centralized exception groups from omnibase_core.errors.exception_groups.
+
 This module provides the ServiceConfigOverrideInjector class for validating,
 previewing, and applying configuration overrides to handler configurations,
 environment variables, and replay contexts.
@@ -82,6 +84,10 @@ from pydantic import BaseModel
 
 from omnibase_core.enums.replay.enum_override_injection_point import (
     EnumOverrideInjectionPoint,
+)
+from omnibase_core.errors.exception_groups import (
+    ATTRIBUTE_ACCESS_ERRORS,
+    PYDANTIC_MODEL_ERRORS,
 )
 from omnibase_core.models.replay.model_config_override_field_preview import (
     ModelConfigOverrideFieldPreview,
@@ -291,7 +297,7 @@ class ServiceConfigOverrideInjector:
                 else:
                     # Try getattr for other objects
                     current = getattr(current, part, MISSING)
-            except (AttributeError, IndexError, KeyError, TypeError) as e:
+            except ATTRIBUTE_ACCESS_ERRORS as e:
                 # boundary-ok: handle edge cases like non-subscriptable types
                 logger.debug(
                     "Path traversal failed at '%s': %s",
@@ -368,7 +374,7 @@ class ServiceConfigOverrideInjector:
                         f"Cannot traverse non-container type {type(current).__name__} "
                         f"at path segment '{part}'",
                     )
-            except (AttributeError, IndexError, KeyError, TypeError) as e:
+            except ATTRIBUTE_ACCESS_ERRORS as e:
                 # boundary-ok: handle edge cases during path navigation
                 return (
                     False,
@@ -392,7 +398,7 @@ class ServiceConfigOverrideInjector:
                 try:
                     setattr(current, final_part, value)
                     return (True, "")
-                except (AttributeError, TypeError, ValueError) as e:
+                except PYDANTIC_MODEL_ERRORS as e:
                     # catch-all-ok: Pydantic models may reject values for various reasons
                     return (
                         False,
@@ -413,7 +419,7 @@ class ServiceConfigOverrideInjector:
                     False,
                     f"Cannot set value on {type(current).__name__}",
                 )
-        except (AttributeError, IndexError, KeyError, TypeError) as e:
+        except ATTRIBUTE_ACCESS_ERRORS as e:
             # boundary-ok: handle edge cases during value assignment
             return (
                 False,

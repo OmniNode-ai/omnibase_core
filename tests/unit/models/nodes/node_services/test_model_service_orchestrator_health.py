@@ -108,6 +108,9 @@ def service_orchestrator(
     service._emit_shutdown_event = lambda: MixinNodeService._emit_shutdown_event(
         service
     )
+    service._try_get_event_bus_from_container = (
+        lambda: MixinNodeService._try_get_event_bus_from_container(service)
+    )
     service._health_monitor_loop = lambda: MixinNodeService._health_monitor_loop(
         service
     )
@@ -839,6 +842,8 @@ class TestShutdownEventEmission:
         - No exception raised
         """
         service_orchestrator.event_bus = None
+        # Also clear _get_event_bus so _try_get_event_bus_from_container returns None
+        service_orchestrator._get_event_bus = Mock(return_value=None)
 
         # Should not raise exception
         await service_orchestrator._emit_shutdown_event()
@@ -1188,6 +1193,9 @@ class TestShutdownIntegration:
         assert task is not None  # Keep reference alive
 
         await service_orchestrator.stop_service_mode()
+
+        # Ensure background task completes before assertions
+        await task
 
         assert service_orchestrator._service_running is False
         assert len(service_orchestrator._active_invocations) == 0

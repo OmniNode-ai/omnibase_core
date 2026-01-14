@@ -50,6 +50,7 @@ See Also:
 
 from __future__ import annotations
 
+import asyncio
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -264,6 +265,10 @@ class ServiceContractValidationEventEmitter:
             if sink.is_ready:
                 try:
                     await sink.write(event_to_emit)
+                except asyncio.CancelledError:
+                    # CRITICAL: Re-raise CancelledError to honor task cancellation.
+                    # Cancellation should not be collected - it must propagate immediately.
+                    raise
                 except Exception as e:  # catch-all-ok: collect all errors
                     errors.append((sink_name, e))
 
@@ -296,6 +301,10 @@ class ServiceContractValidationEventEmitter:
             if sink.is_ready:
                 try:
                     await sink.flush()
+                except asyncio.CancelledError:
+                    # CRITICAL: Re-raise CancelledError to honor task cancellation.
+                    # Cancellation should not be collected - it must propagate immediately.
+                    raise
                 except Exception as e:  # catch-all-ok: collect all errors
                     errors.append((sink_name, e))
 
@@ -323,6 +332,11 @@ class ServiceContractValidationEventEmitter:
         for sink_name, sink in self._sinks.items():
             try:
                 await sink.close()
+            except asyncio.CancelledError:
+                # CRITICAL: Re-raise CancelledError to honor task cancellation.
+                # Mark as closed before propagating to indicate partial cleanup.
+                self._closed = True
+                raise
             except Exception as e:  # catch-all-ok: ensure all sinks closed
                 errors.append((sink_name, e))
 

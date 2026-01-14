@@ -72,6 +72,7 @@ from pydantic import BaseModel
 # Import error codes for structured error handling
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors import ModelOnexError
+from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
 
 # Type-only imports for type checker satisfaction
 if TYPE_CHECKING:
@@ -220,7 +221,7 @@ def _parse_version_component(version_str: str, index: int) -> int:
         if not numeric_chars:
             return 0
         return int("".join(numeric_chars))
-    except (ValueError, IndexError):
+    except (IndexError, ValueError):
         return 0
 
 
@@ -328,7 +329,7 @@ def _convert_list_value(
         return value
     try:
         return [schema_cls.from_value(item) for item in value]
-    except (AttributeError, KeyError, TypeError, ValueError) as e:
+    except PYDANTIC_MODEL_ERRORS as e:
         first_item_type = type(value[0]).__name__ if value else "N/A"
         _logger.warning(
             "Failed to convert list items to ModelSchemaValue. "
@@ -390,7 +391,7 @@ def _convert_dict_value(
     if first_non_none_value is None:
         try:
             return {k: schema_cls.from_value(v) for k, v in value.items()}
-        except (AttributeError, KeyError, TypeError, ValueError) as e:
+        except PYDANTIC_MODEL_ERRORS as e:
             sample_keys = list(value.keys())[:5]
             _logger.warning(
                 "Failed to convert dict with all-None values to ModelSchemaValue. "
@@ -446,7 +447,7 @@ def _convert_dict_value(
     # Convert raw values to ModelSchemaValue
     try:
         return {k: schema_cls.from_value(v) for k, v in value.items()}
-    except (AttributeError, KeyError, TypeError, ValueError) as e:
+    except PYDANTIC_MODEL_ERRORS as e:
         sample_keys = list(value.keys())[:5]
         _logger.warning(
             "Failed to convert dict values to ModelSchemaValue. "

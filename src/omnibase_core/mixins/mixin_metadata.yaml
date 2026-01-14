@@ -3296,7 +3296,7 @@ mixin_node_lifecycle:
 
   requires:
     - "omnibase_core.models.contracts.subcontracts.model_lifecycle_subcontract"
-    - "omnibase_core.enums.enum_node_lifecycle_state"
+    - "omnibase_core.enums.enum_node_lifecycle_status"
     - "pydantic"
 
   compatible_with:

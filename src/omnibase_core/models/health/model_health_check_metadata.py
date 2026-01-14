@@ -118,11 +118,11 @@ def _resolve_forward_references() -> None:
             _types_namespace={"ModelCustomFields": ModelCustomFields}
         )
     except ImportError:
-        # error-ok: Import may fail during early module loading
+        # init-errors-ok: Import may fail during early module loading
         # The forward reference will be resolved when health/__init__.py completes
         pass
     except Exception:
-        # error-ok: model_rebuild may fail during circular import resolution
+        # init-errors-ok: model_rebuild may fail during circular import resolution
         # This is safe to ignore as the forward reference will be resolved
         # when the full module graph is loaded
         pass

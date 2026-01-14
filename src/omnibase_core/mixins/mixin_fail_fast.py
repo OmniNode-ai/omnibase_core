@@ -272,7 +272,7 @@ class MixinFailFast:
                     message=msg,
                     error_code=EnumCoreErrorCode.DEPENDENCY_FAILED,
                 )
-        except (ValueError, RuntimeError, KeyError) as e:
+        except (KeyError, RuntimeError, ValueError) as e:
             msg = f"Failed to check dependency '{dependency_name}': {e!s}"
             raise ModelOnexError(
                 message=msg,

@@ -134,6 +134,7 @@ class ModelPipelineHook(BaseModel):
     def validate_hook_name(cls, v: str) -> str:
         """Ensure hook_name is a valid identifier."""
         if not v.replace("_", "").replace("-", "").isalnum():
+            # error-ok: Pydantic field_validator requires ValueError
             raise ValueError(
                 f"hook_name must be alphanumeric with underscores/hyphens: {v}"
             )
@@ -144,6 +145,7 @@ class ModelPipelineHook(BaseModel):
     def validate_dependencies(cls, v: list[str]) -> list[str]:
         """Ensure no duplicate dependencies."""
         if len(v) != len(set(v)):
+            # error-ok: Pydantic field_validator requires ValueError
             raise ValueError("Duplicate dependencies not allowed")
         return v
 
