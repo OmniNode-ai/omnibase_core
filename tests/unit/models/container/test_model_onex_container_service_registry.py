@@ -254,3 +254,48 @@ class TestInitializeServiceRegistryFailure:
         # Verify container state is unchanged (not partially initialized)
         assert container._service_registry is None
         assert container._enable_service_registry is False
+
+    def test_initialize_service_registry_succeeds_after_prior_failure(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Verify initialization can succeed after a prior failure.
+
+        When ServiceRegistry instantiation fails, the container state remains
+        clean, allowing a subsequent call with corrected configuration to succeed.
+        """
+        # Arrange
+        container = ModelONEXContainer(enable_service_registry=False)
+        call_count = 0
+
+        # Store original __init__ before monkeypatching
+        original_init = ServiceRegistry.__init__
+
+        def mock_registry_init_fail_once(self, config):
+            nonlocal call_count
+            call_count += 1
+            if call_count == 1:
+                raise ValueError("Simulated first-call failure")
+            # On second call, use original init
+            original_init(self, config)
+
+        monkeypatch.setattr(
+            "omnibase_core.container.container_service_registry.ServiceRegistry.__init__",
+            mock_registry_init_fail_once,
+        )
+
+        # Act - First call fails
+        with pytest.raises(ValueError, match="Simulated first-call failure"):
+            container.initialize_service_registry()
+
+        # Verify state is clean after failure
+        assert container._service_registry is None
+        assert container._enable_service_registry is False
+
+        # Act - Second call succeeds
+        result = container.initialize_service_registry()
+
+        # Assert - Initialization succeeded
+        assert result is not None
+        assert isinstance(result, ServiceRegistry)
+        assert container.service_registry is result
+        assert container._enable_service_registry is True

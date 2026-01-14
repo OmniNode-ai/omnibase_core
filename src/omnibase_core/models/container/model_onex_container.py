@@ -366,7 +366,9 @@ class ModelONEXContainer:
 
         Raises:
             ModelOnexError: If registry is already initialized.
-            ValueError: If ServiceRegistry instantiation fails (e.g., invalid configuration).
+            Exception: Any exception from ServiceRegistry instantiation propagates
+                unchanged (e.g., ValueError, TypeError). Container state remains
+                unchanged on failure, allowing retry with corrected configuration.
 
         Note:
             This method is not thread-safe. Do not call from multiple threads
