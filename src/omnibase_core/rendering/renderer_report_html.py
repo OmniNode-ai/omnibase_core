@@ -13,6 +13,13 @@ Thread Safety:
 import html as html_module
 from datetime import UTC, datetime
 
+# Maximum comparison details to render in HTML before truncation
+# (prevents DOM bloat for large corpus replays)
+COMPARISON_DETAIL_LIMIT_HTML = 50
+
+# UUID display truncation - shows first N characters for readability
+UUID_DISPLAY_LENGTH = 8
+
 from omnibase_core.models.evidence.model_decision_recommendation import (
     ModelDecisionRecommendation,
 )
@@ -65,7 +72,17 @@ class RendererReportHtml:
 
         Returns:
             HTML string with inline CSS.
+
+        Raises:
+            ValueError: If generated_at is provided but timezone-naive. All timestamps
+                must be timezone-aware to ensure consistent RFC 3339 format output.
         """
+        # Validate timezone-awareness for consistent timestamp format
+        if generated_at is not None and generated_at.tzinfo is None:
+            msg = "generated_at must be timezone-aware (e.g., datetime.now(tz=UTC))"
+            # error-ok: ValueError for public API boundary validation per CLAUDE.md policy
+            raise ValueError(msg)
+
         generated_at_str = (
             generated_at.isoformat() if generated_at else datetime.now(UTC).isoformat()
         )
@@ -291,7 +308,8 @@ class RendererReportHtml:
 
     @staticmethod
     def _render_details_section(
-        comparisons: list[ModelExecutionComparison], limit: int = 50
+        comparisons: list[ModelExecutionComparison],
+        limit: int = COMPARISON_DETAIL_LIMIT_HTML,
     ) -> str:
         """Render comparison details section."""
         lines: list[str] = [
@@ -307,7 +325,8 @@ class RendererReportHtml:
         for c in comparisons[:limit]:
             status_badge = "badge-success" if c.output_match else "badge-danger"
             status_text = "PASS" if c.output_match else "FAIL"
-            comp_id = str(c.comparison_id)[:8]
+            # Truncate UUID to first 8 chars for display (safe even if shorter)
+            comp_id = str(c.comparison_id)[:UUID_DISPLAY_LENGTH]
             lines.append(
                 f"""
                 <tr>
@@ -333,4 +352,9 @@ class RendererReportHtml:
         return '<hr><p class="muted">Report version: 1.0.0</p>'
 
 
-__all__ = ["RendererReportHtml", "CSS_COLORS"]
+__all__ = [
+    "COMPARISON_DETAIL_LIMIT_HTML",
+    "CSS_COLORS",
+    "RendererReportHtml",
+    "UUID_DISPLAY_LENGTH",
+]

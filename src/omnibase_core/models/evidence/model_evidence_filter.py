@@ -41,7 +41,7 @@ class ModelEvidenceFilter(BaseModel):
 
     invariant_ids: tuple[str, ...] | None = Field(
         default=None,
-        description="Filter to specific invariant IDs (None = all)",
+        description="Filter to specific invariant IDs (None = all, tuple must be non-empty). Tuple is immutable for thread safety.",
     )
     status: Literal["passed", "failed", "all"] = Field(
         default="all",
@@ -76,6 +76,21 @@ class ModelEvidenceFilter(BaseModel):
             if self.start_date > self.end_date:
                 msg = "start_date must be before end_date"
                 raise ValueError(msg)
+        return self
+
+    @model_validator(mode="after")
+    def validate_invariant_ids(self) -> "ModelEvidenceFilter":
+        """Ensure invariant_ids is None or non-empty if provided.
+
+        Returns:
+            Self if validation passes.
+
+        Raises:
+            ValueError: If invariant_ids is an empty tuple.
+        """
+        if self.invariant_ids is not None and len(self.invariant_ids) == 0:
+            msg = "invariant_ids must be None (all) or a non-empty tuple of IDs"
+            raise ValueError(msg)
         return self
 
     def matches_confidence(self, confidence: float) -> bool:

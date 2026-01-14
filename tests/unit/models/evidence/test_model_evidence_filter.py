@@ -188,6 +188,47 @@ class TestModelEvidenceFilterDateValidation:
 
 
 @pytest.mark.unit
+class TestModelEvidenceFilterInvariantIdsValidation:
+    """Tests for ModelEvidenceFilter invariant_ids validation."""
+
+    def test_invariant_ids_rejects_empty_tuple(self) -> None:
+        """Empty tuple for invariant_ids should raise ValueError."""
+        from omnibase_core.models.evidence.model_evidence_filter import (
+            ModelEvidenceFilter,
+        )
+
+        with pytest.raises(ValueError, match="non-empty"):
+            ModelEvidenceFilter(invariant_ids=())
+
+    def test_invariant_ids_accepts_non_empty_tuple(self) -> None:
+        """Non-empty tuple for invariant_ids should be accepted."""
+        from omnibase_core.models.evidence.model_evidence_filter import (
+            ModelEvidenceFilter,
+        )
+
+        filter_ = ModelEvidenceFilter(invariant_ids=("inv-1", "inv-2"))
+        assert filter_.invariant_ids == ("inv-1", "inv-2")
+
+    def test_invariant_ids_accepts_none(self) -> None:
+        """None for invariant_ids should be accepted (means all)."""
+        from omnibase_core.models.evidence.model_evidence_filter import (
+            ModelEvidenceFilter,
+        )
+
+        filter_ = ModelEvidenceFilter(invariant_ids=None)
+        assert filter_.invariant_ids is None
+
+    def test_invariant_ids_accepts_single_item_tuple(self) -> None:
+        """Single-item tuple for invariant_ids should be accepted."""
+        from omnibase_core.models.evidence.model_evidence_filter import (
+            ModelEvidenceFilter,
+        )
+
+        filter_ = ModelEvidenceFilter(invariant_ids=("inv-1",))
+        assert filter_.invariant_ids == ("inv-1",)
+
+
+@pytest.mark.unit
 class TestModelEvidenceFilterMatchesConfidence:
     """Tests for ModelEvidenceFilter.matches_confidence method."""
 
@@ -320,15 +361,6 @@ class TestModelEvidenceFilterMatchesInvariantId:
 
         filter_ = ModelEvidenceFilter(invariant_ids=("inv-1", "inv-2"))
         assert filter_.matches_invariant("inv-3") is False
-
-    def test_matches_invariant_empty_tuple(self) -> None:
-        """Empty tuple should not match any ID."""
-        from omnibase_core.models.evidence.model_evidence_filter import (
-            ModelEvidenceFilter,
-        )
-
-        filter_ = ModelEvidenceFilter(invariant_ids=())
-        assert filter_.matches_invariant("any-id") is False
 
 
 @pytest.mark.unit

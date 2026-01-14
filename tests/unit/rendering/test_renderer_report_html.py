@@ -957,6 +957,47 @@ class TestRendererReportHtmlTimestamps:
 
 
 # =============================================================================
+# Tests: Timezone Validation
+# =============================================================================
+
+
+class TestRendererReportHtmlTimezoneValidation:
+    """Tests for timezone validation in HTML renderer."""
+
+    def test_render_rejects_timezone_naive_datetime(
+        self,
+        sample_summary: ModelEvidenceSummary,
+        sample_recommendation: ModelDecisionRecommendation,
+        sample_comparisons: list[ModelExecutionComparison],
+    ) -> None:
+        """Timezone-naive datetime should raise ValueError."""
+        naive_dt = datetime(2025, 1, 15, 10, 30, 0)  # No tzinfo
+        with pytest.raises(ValueError, match="timezone-aware"):
+            RendererReportHtml.render(
+                sample_summary,
+                sample_comparisons,
+                sample_recommendation,
+                generated_at=naive_dt,
+            )
+
+    def test_render_accepts_timezone_aware_datetime(
+        self,
+        sample_summary: ModelEvidenceSummary,
+        sample_recommendation: ModelDecisionRecommendation,
+        sample_comparisons: list[ModelExecutionComparison],
+    ) -> None:
+        """Timezone-aware datetime should be accepted."""
+        aware_dt = datetime(2025, 1, 15, 10, 30, 0, tzinfo=UTC)
+        html = RendererReportHtml.render(
+            sample_summary,
+            sample_comparisons,
+            sample_recommendation,
+            generated_at=aware_dt,
+        )
+        assert "2025-01-15T10:30:00" in html
+
+
+# =============================================================================
 # Tests: Cost Statistics
 # =============================================================================
 

@@ -147,6 +147,10 @@ class RendererReportMarkdown:
         Returns:
             GitHub-flavored markdown string.
 
+        Raises:
+            ValueError: If generated_at is provided but timezone-naive. All timestamps
+                must be timezone-aware to ensure consistent RFC 3339 format output.
+
         Example:
             >>> md_report = RendererReportMarkdown.render(
             ...     summary, comparisons, recommendation
@@ -154,6 +158,12 @@ class RendererReportMarkdown:
             >>> with open("report.md", "w") as f:
             ...     f.write(md_report)
         """
+        # Validate timezone-awareness for consistent timestamp format
+        if generated_at is not None and generated_at.tzinfo is None:
+            msg = "generated_at must be timezone-aware (e.g., datetime.now(tz=UTC))"
+            # error-ok: ValueError for public API boundary validation per CLAUDE.md policy
+            raise ValueError(msg)
+
         lines: list[str] = []
 
         # Header

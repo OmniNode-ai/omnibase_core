@@ -89,12 +89,22 @@ class RendererReportJson:
         Returns:
             TypedDictDecisionReport with report data.
 
+        Raises:
+            ValueError: If generated_at is provided but timezone-naive. All timestamps
+                must be timezone-aware to ensure consistent RFC 3339 format output.
+
         Example:
             >>> report = RendererReportJson.render(
             ...     summary, comparisons, recommendation
             ... )
             >>> json_str = json.dumps(report, sort_keys=True)
         """
+        # Validate timezone-awareness for consistent timestamp format
+        if generated_at is not None and generated_at.tzinfo is None:
+            msg = "generated_at must be timezone-aware (e.g., datetime.now(tz=UTC))"
+            # error-ok: ValueError for public API boundary validation per CLAUDE.md policy
+            raise ValueError(msg)
+
         report: TypedDictDecisionReport = {
             "report_version": REPORT_VERSION,
             "generated_at": generated_at.isoformat()
