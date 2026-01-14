@@ -59,9 +59,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors import ModelOnexError
-
-# Type alias for additional payload values (for data field)
-PayloadDataValue = str | int | float | bool | list[str] | None
+from omnibase_core.models.types.model_onex_common_types import CliValue
 
 
 class ModelEnvelopePayload(BaseModel):
@@ -135,7 +133,7 @@ class ModelEnvelopePayload(BaseModel):
     )
 
     # Flexible data container for event-specific attributes
-    data: dict[str, PayloadDataValue] = Field(
+    data: dict[str, CliValue | None] = Field(
         default_factory=dict,
         description="Additional event-specific payload data",
     )
@@ -154,7 +152,7 @@ class ModelEnvelopePayload(BaseModel):
 
     @classmethod
     def from_dict(
-        cls, data: dict[str, PayloadDataValue | dict[str, PayloadDataValue]]
+        cls, data: dict[str, CliValue | None | dict[str, CliValue | None]]
     ) -> Self:
         """Create from a dictionary of payload data.
 
@@ -173,7 +171,7 @@ class ModelEnvelopePayload(BaseModel):
 
         Warns:
             UserWarning: When dict values are encountered and skipped (potential
-                data loss). Nested dicts are not supported in PayloadDataValue.
+                data loss). Nested dicts are not supported in CliValue | None.
         """
         known_fields = {"event_type", "source", "timestamp", "correlation_id", "data"}
         skipped_keys: list[str] = []
@@ -186,12 +184,12 @@ class ModelEnvelopePayload(BaseModel):
 
         # Handle nested "data" dict from to_dict() output for round-trip support
         nested_data = data.get("data")
-        extra_data: dict[str, PayloadDataValue] = {}
+        extra_data: dict[str, CliValue | None] = {}
 
         if isinstance(nested_data, dict):
             # to_dict() output format: {"data": {...}}
             for key, value in nested_data.items():
-                # Ensure value is PayloadDataValue (not nested dict)
+                # Ensure value is CliValue | None (not nested dict)
                 # Note: isinstance check is defensive - type system says dict values
                 # can't be dicts, but runtime may receive malformed input
                 if isinstance(value, dict):
@@ -205,7 +203,7 @@ class ModelEnvelopePayload(BaseModel):
                     if isinstance(raw_value, dict):
                         skipped_keys.append(key)
                     else:
-                        # After isinstance check, raw_value is PayloadDataValue
+                        # After isinstance check, raw_value is CliValue | None
                         # (dict type is excluded from the union)
                         extra_data[key] = raw_value
 
@@ -213,7 +211,7 @@ class ModelEnvelopePayload(BaseModel):
         if skipped_keys:
             warnings.warn(
                 f"ModelEnvelopePayload.from_dict() skipped {len(skipped_keys)} dict "
-                f"value(s) that cannot be represented in PayloadDataValue: "
+                f"value(s) that cannot be represented in CliValue | None: "
                 f"{skipped_keys}. Nested dicts are not supported.",
                 UserWarning,
                 stacklevel=2,
@@ -279,18 +277,16 @@ class ModelEnvelopePayload(BaseModel):
             >>> # restored.data = {"count": "42", "enabled": "true"}  # strings, not int/bool!
         """
         # Convert to the wider type expected by from_dict
-        converted: dict[str, PayloadDataValue | dict[str, PayloadDataValue]] = dict(
-            data
-        )
+        converted: dict[str, CliValue | None | dict[str, CliValue | None]] = dict(data)
         return cls.from_dict(converted)
 
-    def to_dict(self) -> dict[str, PayloadDataValue | dict[str, PayloadDataValue]]:
+    def to_dict(self) -> dict[str, CliValue | None | dict[str, CliValue | None]]:
         """Convert to dictionary format.
 
         Returns:
             Dictionary representation with all fields.
         """
-        result: dict[str, PayloadDataValue | dict[str, PayloadDataValue]] = {}
+        result: dict[str, CliValue | None | dict[str, CliValue | None]] = {}
         if self.event_type is not None:
             result["event_type"] = self.event_type
         if self.source is not None:
@@ -406,7 +402,7 @@ class ModelEnvelopePayload(BaseModel):
 
         return result
 
-    def get(self, key: str, default: PayloadDataValue = None) -> PayloadDataValue:
+    def get(self, key: str, default: CliValue | None = None) -> CliValue | None:
         """Get a payload value by key.
 
         Checks both typed fields and data dictionary.
@@ -430,7 +426,7 @@ class ModelEnvelopePayload(BaseModel):
         # Then check data dictionary
         return self.data.get(key, default)
 
-    def get_data(self, key: str, default: PayloadDataValue = None) -> PayloadDataValue:
+    def get_data(self, key: str, default: CliValue | None = None) -> CliValue | None:
         """Get a value from the data dictionary.
 
         Args:
@@ -442,7 +438,7 @@ class ModelEnvelopePayload(BaseModel):
         """
         return self.data.get(key, default)
 
-    def set_data(self, key: str, value: PayloadDataValue) -> Self:
+    def set_data(self, key: str, value: CliValue | None) -> Self:
         """Set a value in the data dictionary, returning a new instance.
 
         Args:
@@ -538,4 +534,4 @@ class ModelEnvelopePayload(BaseModel):
         return self.has(key)
 
 
-__all__ = ["ModelEnvelopePayload", "PayloadDataValue"]
+__all__ = ["ModelEnvelopePayload"]

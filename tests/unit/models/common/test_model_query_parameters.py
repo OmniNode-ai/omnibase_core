@@ -14,7 +14,7 @@ import pytest
 
 from omnibase_core.models.common.model_query_parameters import (
     ModelQueryParameters,
-    ParameterValue,
+    QueryParameterValue,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
@@ -351,7 +351,7 @@ class TestModelQueryParametersSecurity:
     def test_max_parameters_exceeded(self) -> None:
         """Test that exceeding max parameters raises error."""
         # Create dict with MAX_PARAMETERS + 1 items
-        large_dict: dict[str, ParameterValue] = {
+        large_dict: dict[str, QueryParameterValue] = {
             f"key_{i}": i for i in range(ModelQueryParameters.MAX_PARAMETERS + 1)
         }
         with pytest.raises(ModelOnexError) as exc_info:
@@ -361,7 +361,7 @@ class TestModelQueryParametersSecurity:
 
     def test_max_parameters_exactly(self) -> None:
         """Test that exactly max parameters is allowed."""
-        exact_dict: dict[str, ParameterValue] = {
+        exact_dict: dict[str, QueryParameterValue] = {
             f"key_{i}": i for i in range(ModelQueryParameters.MAX_PARAMETERS)
         }
         params = ModelQueryParameters.from_dict(exact_dict)

@@ -1,9 +1,46 @@
-"""Common types for configuration models."""
+"""
+Configuration type aliases and validation utilities.
+
+This module provides type definitions and validation for node configuration values,
+enforcing type safety for configuration entries that support scalar types only
+(int, float, bool, str).
+
+Type Aliases:
+    ScalarConfigValue: Union of valid scalar configuration value types.
+        Excludes list, dict, and None to ensure simple, serializable config values.
+    VALID_VALUE_TYPES: Literal type constraining type name strings to valid values.
+
+Validation Functions:
+    is_valid_value_type: TypeGuard for narrowing str to VALID_VALUE_TYPES.
+    validate_config_value_type: Validates default value matches declared type.
+
+Note:
+    This module defines narrower types than the centralized ConfigValue in
+    model_onex_common_types.py. Use ScalarConfigValue when only simple scalar
+    values are acceptable (no list, dict, or None).
+
+Example:
+    >>> from omnibase_core.models.configuration.model_config_types import (
+    ...     ScalarConfigValue,
+    ...     is_valid_value_type,
+    ...     validate_config_value_type,
+    ... )
+    >>> value: ScalarConfigValue = 42
+    >>> if is_valid_value_type("int"):
+    ...     validate_config_value_type("int", value)  # No error
+
+See Also:
+    - :class:`ModelNodeConfigEntry`: Configuration entry model using these types.
+    - :class:`ModelNodeConfigSchema`: Configuration schema model using these types.
+    - ConfigValue in model_onex_common_types.py: Broader type including list/dict/None.
+"""
 
 from typing import Literal, TypeGuard
 
-# Type alias for valid configuration value types
-ConfigValue = int | float | bool | str
+# Type alias for valid scalar configuration value types
+# Named ScalarConfigValue to distinguish from broader ConfigValue types
+# that may include list[str] | dict[str, str] | None
+ScalarConfigValue = int | float | bool | str
 
 # Literal type constraining value_type/config_type to valid values
 VALID_VALUE_TYPES = Literal["int", "float", "bool", "str"]
@@ -28,7 +65,7 @@ def is_valid_value_type(type_name: str) -> TypeGuard[VALID_VALUE_TYPES]:
 
 
 def validate_config_value_type(
-    value_type: VALID_VALUE_TYPES, default: ConfigValue
+    value_type: VALID_VALUE_TYPES, default: ScalarConfigValue
 ) -> None:
     """Validate that default value matches declared type.
 
@@ -55,3 +92,11 @@ def validate_config_value_type(
         raise ValueError(  # error-ok: Pydantic validator requires ValueError
             f"default must be {value_type}, got {type(default).__name__}"
         )
+
+
+__all__ = [
+    "ScalarConfigValue",
+    "VALID_VALUE_TYPES",
+    "is_valid_value_type",
+    "validate_config_value_type",
+]

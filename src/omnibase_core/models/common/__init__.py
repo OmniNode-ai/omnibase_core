@@ -14,7 +14,7 @@ from .model_envelope import (
     validate_causation_chain,
     validate_envelope_fields,
 )
-from .model_envelope_payload import ModelEnvelopePayload, PayloadDataValue
+from .model_envelope_payload import ModelEnvelopePayload
 from .model_error_context import ModelErrorContext
 from .model_flexible_value import ModelFlexibleValue
 from .model_graph_node_inputs import ModelGraphNodeInputs
@@ -27,7 +27,7 @@ from .model_onex_warning import ModelOnexWarning
 from .model_optional_int import ModelOptionalInt
 from .model_output_mapping import ModelOutputMapping
 from .model_output_reference import ModelOutputReference
-from .model_query_parameters import ModelQueryParameters, ParameterValue
+from .model_query_parameters import ModelQueryParameters, QueryParameterValue
 from .model_registry_error import ModelRegistryError
 from .model_schema_value import ModelSchemaValue
 from .model_typed_mapping import ModelTypedMapping
@@ -84,8 +84,7 @@ __all__ = [
     "ModelValueContainer",
     "ModelValueUnion",
     # Type aliases
-    "ParameterValue",
-    "PayloadDataValue",
+    "QueryParameterValue",
     # Envelope validation helpers
     "get_chain_depth",
     "validate_causation_chain",
