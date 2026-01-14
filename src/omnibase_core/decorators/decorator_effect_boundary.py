@@ -133,6 +133,9 @@ def effect_boundary(
 
             # Attach metadata to the async wrapper
             setattr(async_wrapper, EFFECT_BOUNDARY_ATTR, boundary)
+            # NOTE(OMN-1147): mypy cannot infer that async_wrapper matches Callable[P, R]
+            # when R comes from an async function. Safe because async_wrapper preserves
+            # the signature and return type of the original async function.
             return async_wrapper  # type: ignore[return-value]
         else:
 

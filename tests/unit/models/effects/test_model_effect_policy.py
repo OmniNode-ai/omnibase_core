@@ -458,3 +458,83 @@ class TestModelEffectPolicySpec:
         # Category conflict should be reported (it's checked first)
         error_msg = str(exc_info.value)
         assert "cannot be both allowed and blocked" in error_msg
+
+    # Tests for get_effective_policy_for_effect method
+
+    def test_get_effective_policy_denylisted_effect(self) -> None:
+        """Test get_effective_policy_for_effect returns STRICT for denylisted effects."""
+        policy = ModelEffectPolicySpec(
+            policy_level=EnumEffectPolicyLevel.PERMISSIVE,
+            denylist_effect_ids=("blocked.effect",),
+        )
+
+        result = policy.get_effective_policy_for_effect(
+            "blocked.effect", EnumEffectCategory.NETWORK
+        )
+
+        assert result == EnumEffectPolicyLevel.STRICT
+
+    def test_get_effective_policy_allowlisted_effect(self) -> None:
+        """Test get_effective_policy_for_effect returns PERMISSIVE for allowlisted effects."""
+        policy = ModelEffectPolicySpec(
+            policy_level=EnumEffectPolicyLevel.STRICT,
+            allowlist_effect_ids=("allowed.effect",),
+        )
+
+        result = policy.get_effective_policy_for_effect(
+            "allowed.effect", EnumEffectCategory.NETWORK
+        )
+
+        assert result == EnumEffectPolicyLevel.PERMISSIVE
+
+    def test_get_effective_policy_blocked_category(self) -> None:
+        """Test get_effective_policy_for_effect returns STRICT for blocked categories."""
+        policy = ModelEffectPolicySpec(
+            policy_level=EnumEffectPolicyLevel.PERMISSIVE,
+            blocked_categories=(EnumEffectCategory.DATABASE,),
+        )
+
+        result = policy.get_effective_policy_for_effect(
+            "some.effect", EnumEffectCategory.DATABASE
+        )
+
+        assert result == EnumEffectPolicyLevel.STRICT
+
+    def test_get_effective_policy_mocked_category(self) -> None:
+        """Test get_effective_policy_for_effect returns MOCKED when mock required."""
+        policy = ModelEffectPolicySpec(
+            policy_level=EnumEffectPolicyLevel.WARN,
+            require_mocks_for_categories=(EnumEffectCategory.TIME,),
+        )
+
+        result = policy.get_effective_policy_for_effect(
+            "some.effect", EnumEffectCategory.TIME
+        )
+
+        assert result == EnumEffectPolicyLevel.MOCKED
+
+    def test_get_effective_policy_falls_back_to_base_level(self) -> None:
+        """Test get_effective_policy_for_effect returns base policy_level as fallback."""
+        policy = ModelEffectPolicySpec(
+            policy_level=EnumEffectPolicyLevel.WARN,
+        )
+
+        result = policy.get_effective_policy_for_effect(
+            "some.effect", EnumEffectCategory.NETWORK
+        )
+
+        assert result == EnumEffectPolicyLevel.WARN
+
+    def test_get_effective_policy_denylist_takes_precedence(self) -> None:
+        """Test that denylist takes precedence over allowlist."""
+        # This shouldn't happen due to validation, but test the precedence
+        policy = ModelEffectPolicySpec(
+            policy_level=EnumEffectPolicyLevel.PERMISSIVE,
+            denylist_effect_ids=("some.effect",),
+        )
+
+        result = policy.get_effective_policy_for_effect(
+            "some.effect", EnumEffectCategory.NETWORK
+        )
+
+        assert result == EnumEffectPolicyLevel.STRICT

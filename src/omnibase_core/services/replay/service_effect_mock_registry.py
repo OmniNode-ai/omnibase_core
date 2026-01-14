@@ -71,6 +71,11 @@ class ServiceEffectMockRegistry:
     """
     Registry for effect mocks used during replay with MOCKED policy.
 
+    Warning:
+        This class is NOT thread-safe. The internal dictionary is not protected
+        by locks. Use external synchronization or thread-local registries if
+        concurrent access is needed. See Thread Safety section below.
+
     Stores deterministic mock implementations indexed by effect key. Effects
     classified with MOCKED policy are replaced with these mocks during replay,
     ensuring predictable test execution.
@@ -148,6 +153,34 @@ class ServiceEffectMockRegistry:
         effect_key = effect_key.strip()
         self._mocks[effect_key] = mock_callable
         logger.debug("Registered mock for effect '%s'", effect_key)
+
+    def register_mocks(self, mocks: dict[str, Callable[..., Any]]) -> None:
+        """
+        Register multiple mocks at once.
+
+        Convenience method for registering multiple mocks in a single call,
+        useful for test setup.
+
+        Args:
+            mocks: Dictionary mapping effect keys to mock callables.
+
+        Raises:
+            ValueError: If any key is empty/whitespace-only or any value
+                is not callable. Note: If validation fails partway through,
+                previously registered mocks in this call remain registered.
+
+        Example:
+            >>> registry = ServiceEffectMockRegistry()
+            >>> registry.register_mocks({
+            ...     "time.now": lambda: datetime(2025, 1, 1),
+            ...     "random.random": lambda: 0.5,
+            ...     "network.http_get": lambda url: {"status": 200},
+            ... })
+            >>> registry.mock_count
+            3
+        """
+        for effect_key, mock_callable in mocks.items():
+            self.register_mock(effect_key, mock_callable)
 
     def get_mock(self, effect_key: str) -> Callable[..., Any] | None:
         """

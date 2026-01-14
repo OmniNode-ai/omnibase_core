@@ -118,3 +118,30 @@ class ModelEffectPolicySpec(BaseModel):
         if effect_id in self.allowlist_effect_ids:
             return True
         return self.is_category_allowed(category)
+
+    def get_effective_policy_for_effect(
+        self,
+        effect_id: str,  # string-id-ok: human-readable identifier, not UUID
+        category: EnumEffectCategory,
+    ) -> EnumEffectPolicyLevel:
+        """Get the effective policy level for a specific effect.
+
+        Returns the policy level that would apply considering allowlists,
+        denylists, and category-specific rules.
+
+        Args:
+            effect_id: The effect identifier to check.
+            category: The effect category.
+
+        Returns:
+            The effective policy level for this effect.
+        """
+        if effect_id in self.denylist_effect_ids:
+            return EnumEffectPolicyLevel.STRICT
+        if effect_id in self.allowlist_effect_ids:
+            return EnumEffectPolicyLevel.PERMISSIVE
+        if category in self.blocked_categories:
+            return EnumEffectPolicyLevel.STRICT
+        if self.requires_mock(category):
+            return EnumEffectPolicyLevel.MOCKED
+        return self.policy_level

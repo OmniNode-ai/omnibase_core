@@ -157,3 +157,36 @@ class TestEnumEffectCategory:
         assert cat.upper() == "NETWORK"
         assert cat.startswith("net")
         assert len(cat) == 7
+
+    def test_requires_isolation_database(self) -> None:
+        """Test requires_isolation returns True for DATABASE."""
+        assert (
+            EnumEffectCategory.requires_isolation(EnumEffectCategory.DATABASE) is True
+        )
+
+    def test_requires_isolation_filesystem(self) -> None:
+        """Test requires_isolation returns True for FILESYSTEM."""
+        assert (
+            EnumEffectCategory.requires_isolation(EnumEffectCategory.FILESYSTEM) is True
+        )
+
+    def test_requires_isolation_external_state(self) -> None:
+        """Test requires_isolation returns True for EXTERNAL_STATE."""
+        assert (
+            EnumEffectCategory.requires_isolation(EnumEffectCategory.EXTERNAL_STATE)
+            is True
+        )
+
+    def test_requires_isolation_network_false(self) -> None:
+        """Test requires_isolation returns False for NETWORK."""
+        assert (
+            EnumEffectCategory.requires_isolation(EnumEffectCategory.NETWORK) is False
+        )
+
+    def test_requires_isolation_time_false(self) -> None:
+        """Test requires_isolation returns False for TIME."""
+        assert EnumEffectCategory.requires_isolation(EnumEffectCategory.TIME) is False
+
+    def test_requires_isolation_random_false(self) -> None:
+        """Test requires_isolation returns False for RANDOM."""
+        assert EnumEffectCategory.requires_isolation(EnumEffectCategory.RANDOM) is False

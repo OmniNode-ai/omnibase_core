@@ -343,3 +343,75 @@ class TestServiceEffectMockRegistry:
         result = registry.unregister_mock("  network.http  ")
         assert result is True
         assert registry.mock_count == 0
+
+    def test_register_mocks_bulk_operation(self) -> None:
+        """Test register_mocks() registers multiple mocks at once."""
+        registry = ServiceEffectMockRegistry()
+
+        mocks = {
+            "time.now": lambda: "2025-01-01",
+            "random.random": lambda: 0.5,
+            "network.http_get": lambda url: {"status": 200},
+        }
+
+        registry.register_mocks(mocks)
+
+        assert registry.mock_count == 3
+        assert registry.has_mock("time.now") is True
+        assert registry.has_mock("random.random") is True
+        assert registry.has_mock("network.http_get") is True
+
+    def test_register_mocks_empty_dict(self) -> None:
+        """Test register_mocks() with empty dict does nothing."""
+        registry = ServiceEffectMockRegistry()
+
+        registry.register_mocks({})
+
+        assert registry.mock_count == 0
+
+    def test_register_mocks_validates_keys(self) -> None:
+        """Test register_mocks() validates effect keys."""
+        registry = ServiceEffectMockRegistry()
+
+        with pytest.raises(ValueError, match="empty"):
+            registry.register_mocks(
+                {
+                    "valid.key": lambda: None,
+                    "": lambda: None,  # Invalid empty key
+                }
+            )
+
+    def test_register_mocks_validates_callables(self) -> None:
+        """Test register_mocks() validates callables."""
+        registry = ServiceEffectMockRegistry()
+
+        with pytest.raises(ValueError, match="callable"):
+            registry.register_mocks(
+                {
+                    "valid.key": lambda: None,
+                    "invalid.key": "not a callable",  # type: ignore[dict-item]
+                }
+            )
+
+    def test_register_mocks_partial_registration_on_error(self) -> None:
+        """Test that mocks registered before error remain registered."""
+        registry = ServiceEffectMockRegistry()
+
+        # Python dicts maintain insertion order, so we can predict which gets registered
+        # before the error. Use an ordered approach.
+        try:
+            registry.register_mocks(
+                {
+                    "first.key": lambda: 1,
+                    "": lambda: 2,  # This will fail
+                    "third.key": lambda: 3,
+                }
+            )
+        except ValueError:
+            pass
+
+        # First key should be registered before the error
+        # Note: actual behavior depends on dict iteration order (guaranteed in Python 3.7+)
+        # The first key should be registered
+        assert registry.mock_count >= 1
+        assert registry.has_mock("first.key") is True

@@ -47,3 +47,19 @@ class EnumEffectCategory(StrValueHelper, str, Enum):
     def is_temporal_category(cls, category: "EnumEffectCategory") -> bool:
         """Check if category depends on time or randomness."""
         return category in {cls.TIME, cls.RANDOM}
+
+    @classmethod
+    def requires_isolation(cls, category: "EnumEffectCategory") -> bool:
+        """Check if category requires isolation mechanisms for safe replay.
+
+        Categories that require isolation benefit from mechanisms like
+        database snapshots, filesystem sandboxing, or environment isolation
+        to ensure deterministic replay behavior.
+
+        Args:
+            category: The effect category to check.
+
+        Returns:
+            True if the category benefits from isolation mechanisms.
+        """
+        return category in {cls.DATABASE, cls.FILESYSTEM, cls.EXTERNAL_STATE}
