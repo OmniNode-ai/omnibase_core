@@ -320,7 +320,6 @@ from .enum_uri_type import EnumUriType
 from .enum_validation import EnumValidationLevel
 from .enum_validation_mode import EnumValidationMode
 from .enum_validation_rule_type import EnumValidationRuleType
-from .enum_validation_severity import EnumValidationSeverity
 from .enum_value_type import EnumValueType
 
 # Vector store enums
@@ -371,7 +370,6 @@ __all__ = [
     # Validation domain
     "EnumEnvironmentValidationRuleType",
     "EnumValidationRuleType",
-    "EnumValidationSeverity",
     # Circuit breaker domain (standalone for cross-repo standardization)
     "EnumCircuitBreakerState",
     # Effect domain (from nodes)
