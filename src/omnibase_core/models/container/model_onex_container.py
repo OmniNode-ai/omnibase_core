@@ -366,6 +366,7 @@ class ModelONEXContainer:
 
         Raises:
             ModelOnexError: If registry is already initialized.
+            ValueError: If ServiceRegistry instantiation fails (e.g., invalid configuration).
 
         Note:
             This method is not thread-safe. Do not call from multiple threads

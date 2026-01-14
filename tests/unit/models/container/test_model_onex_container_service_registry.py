@@ -220,3 +220,37 @@ class TestInitializeServiceRegistryWithDefaultFactory:
         assert (
             registry.config.max_resolution_depth == expected_config.max_resolution_depth
         )
+
+
+@pytest.mark.unit
+class TestInitializeServiceRegistryFailure:
+    """Tests for initialize_service_registry failure scenarios."""
+
+    def test_initialize_service_registry_propagates_instantiation_error(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Verify initialization failure leaves container in clean state.
+
+        When ServiceRegistry instantiation fails, the exception should propagate
+        and the container's internal state should remain unchanged (not partially
+        initialized).
+        """
+        # Arrange
+        container = ModelONEXContainer(enable_service_registry=False)
+
+        # Mock ServiceRegistry to raise during instantiation
+        def mock_registry_init(self, config):
+            raise ValueError("Invalid configuration value")
+
+        monkeypatch.setattr(
+            "omnibase_core.container.container_service_registry.ServiceRegistry.__init__",
+            mock_registry_init,
+        )
+
+        # Act & Assert
+        with pytest.raises(ValueError, match="Invalid configuration value"):
+            container.initialize_service_registry()
+
+        # Verify container state is unchanged (not partially initialized)
+        assert container._service_registry is None
+        assert container._enable_service_registry is False
