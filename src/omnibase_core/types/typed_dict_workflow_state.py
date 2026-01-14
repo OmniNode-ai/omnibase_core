@@ -16,7 +16,7 @@ class TypedDictWorkflowState(TypedDict):
     current_step: str
     total_steps: int
     completed_steps: int
-    status: str  # EnumWorkflowStatus.value (PENDING, RUNNING, COMPLETED, FAILED, CANCELLED, SIMULATED)
+    status: str  # EnumWorkflowStatus.value (pending, running, completed, failed, cancelled, paused)
     created_at: datetime
     updated_at: datetime
 

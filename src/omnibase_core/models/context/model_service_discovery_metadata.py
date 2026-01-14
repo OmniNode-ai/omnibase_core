@@ -315,7 +315,7 @@ class ModelServiceDiscoveryMetadata(BaseModel):
                         "Invalid service_version dict: major, minor, patch must be integers"
                     )
                 return ModelSemVer(major=major, minor=minor, patch=patch)
-            except (TypeError, KeyError, ValueError) as e:
+            except (KeyError, TypeError, ValueError) as e:
                 # error-ok: Pydantic field_validator requires ValueError
                 raise ValueError(
                     f"Invalid service_version dict format: expected {{'major': int, "

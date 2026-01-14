@@ -8,13 +8,14 @@ Injection Scope Enum.
 Defines injection scope patterns for dependency injection containers.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 __all__ = ["EnumInjectionScope"]
 
 
+@unique
 class EnumInjectionScope(StrValueHelper, str, Enum):
     """Injection scope patterns for DI container.
 

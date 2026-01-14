@@ -8,13 +8,14 @@ Service Resolution Status Enum.
 Defines status values for service resolution operations in DI containers.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 __all__ = ["EnumServiceResolutionStatus"]
 
 
+@unique
 class EnumServiceResolutionStatus(StrValueHelper, str, Enum):
     """Service resolution status values.
 

@@ -60,8 +60,8 @@ class ModelInjectionContext(BaseModel):
     """
 
     model_config = ConfigDict(
-        extra="ignore",
-        frozen=False,
+        extra="forbid",
+        from_attributes=True,
         validate_assignment=True,
     )
 

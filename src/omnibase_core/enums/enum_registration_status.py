@@ -8,13 +8,14 @@ Registration Status Enum.
 Defines status values for service registration operations in DI containers.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 __all__ = ["EnumRegistrationStatus"]
 
 
+@unique
 class EnumRegistrationStatus(StrValueHelper, str, Enum):
     """Service registration status values.
 

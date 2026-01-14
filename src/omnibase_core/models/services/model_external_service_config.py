@@ -108,7 +108,7 @@ class ModelExternalServiceConfig(BaseModel):
                         values["connection_config"] = ModelDatabaseConnectionConfig(
                             **connection_config,
                         )
-                    except (ValueError, ValidationError) as e:
+                    except (ValidationError, ValueError) as e:
                         msg = f"Invalid database connection config: {e!s}"
                         raise ModelOnexError(
                             msg,
@@ -125,7 +125,7 @@ class ModelExternalServiceConfig(BaseModel):
                         values["connection_config"] = ModelRestApiConnectionConfig(
                             **connection_config,
                         )
-                    except (ValueError, ValidationError) as e:
+                    except (ValidationError, ValueError) as e:
                         msg = f"Invalid REST API connection config: {e!s}"
                         raise ModelOnexError(
                             msg,

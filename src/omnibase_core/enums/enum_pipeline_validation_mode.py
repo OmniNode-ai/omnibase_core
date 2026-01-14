@@ -8,13 +8,14 @@ Pipeline Validation Mode Enum.
 Defines validation modes for pipeline processing and testing.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 __all__ = ["EnumPipelineValidationMode"]
 
 
+@unique
 class EnumPipelineValidationMode(StrValueHelper, str, Enum):
     """Validation modes for pipeline processing.
 

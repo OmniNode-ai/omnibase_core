@@ -8,13 +8,14 @@ Service Lifecycle Enum.
 Defines service lifecycle patterns for dependency injection containers.
 """
 
-from enum import Enum
+from enum import Enum, unique
 
 from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 __all__ = ["EnumServiceLifecycle"]
 
 
+@unique
 class EnumServiceLifecycle(StrValueHelper, str, Enum):
     """Service lifecycle patterns for DI container.
 
