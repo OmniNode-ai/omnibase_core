@@ -1,5 +1,3 @@
-from typing import Any, TypeVar
-
 """
 ONEX Decorator: Allow Any Type
 
@@ -8,6 +6,7 @@ Used sparingly and only for duck typing utility functions.
 """
 
 from collections.abc import Callable
+from typing import Any, TypeVar
 
 F = TypeVar("F", bound=Callable[..., Any])
 

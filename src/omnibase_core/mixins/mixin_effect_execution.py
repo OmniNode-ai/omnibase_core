@@ -79,7 +79,7 @@ import random
 import re
 import threading
 import time
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 from uuid import UUID
 
 if TYPE_CHECKING:
@@ -100,6 +100,7 @@ from omnibase_core.constants.constants_effect import (
 from omnibase_core.decorators.decorator_allow_dict_any import allow_dict_any
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_effect_types import EnumTransactionState
+from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
 from omnibase_core.models.configuration.model_circuit_breaker import ModelCircuitBreaker
 from omnibase_core.models.context import ModelEffectInputData
 from omnibase_core.models.contracts.subcontracts.model_effect_io_configs import (
@@ -1378,8 +1379,12 @@ class MixinEffectExecution:
             ) from exec_error
 
         # Handler returns Any, validate it matches expected return type
-        if isinstance(result, (str, int, float, bool, dict, list, type(None))):
-            return result  # type: ignore[return-value]  # Handler returns Any; validated via isinstance but type system cannot narrow union
+        if isinstance(result, (str, int, float, bool, dict, list)):
+            # Validated via isinstance check; cast to EffectResultType
+            return cast(EffectResultType, result)
+        if result is None:
+            # None not in EffectResultType, convert to empty dict
+            return {}
         # Convert other types to string representation
         return str(result)
 
@@ -1545,7 +1550,14 @@ class MixinEffectExecution:
 
             except ModelOnexError:
                 raise
-            except (AttributeError, IndexError, KeyError, TypeError, ValueError) as e:
+            except PYDANTIC_MODEL_ERRORS as e:
+                raise ModelOnexError(
+                    message=f"Field extraction failed for {output_name}: {e!s}",
+                    error_code=EnumCoreErrorCode.OPERATION_FAILED,
+                ) from e
+            except (
+                Exception
+            ) as e:  # catch-all-ok: extraction utility must not leak raw exceptions
                 raise ModelOnexError(
                     message=f"Field extraction failed for {output_name}: {e!s}",
                     error_code=EnumCoreErrorCode.OPERATION_FAILED,

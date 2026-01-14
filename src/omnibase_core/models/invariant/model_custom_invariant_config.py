@@ -75,6 +75,7 @@ class ModelCustomInvariantConfig(BaseModel):
 
         # Check for required dot (module.function format)
         if "." not in path:
+            # error-ok: Pydantic model_validator requires ValueError
             raise ValueError(
                 f"callable_path '{path}' must be a fully qualified Python path "
                 "in dotted notation (e.g., 'mymodule.validators.check_output'). "
@@ -83,6 +84,7 @@ class ModelCustomInvariantConfig(BaseModel):
 
         # Check for leading/trailing dots
         if path.startswith(".") or path.endswith("."):
+            # error-ok: Pydantic model_validator requires ValueError
             raise ValueError(
                 f"callable_path '{path}' cannot start or end with a dot. "
                 "Provide a complete path like 'mymodule.function'."
@@ -90,6 +92,7 @@ class ModelCustomInvariantConfig(BaseModel):
 
         # Check for consecutive dots
         if ".." in path:
+            # error-ok: Pydantic model_validator requires ValueError
             raise ValueError(
                 f"callable_path '{path}' contains consecutive dots. "
                 "Each segment must be a valid Python identifier."
@@ -101,6 +104,7 @@ class ModelCustomInvariantConfig(BaseModel):
             seg for seg in segments if not _PYTHON_IDENTIFIER_PATTERN.match(seg)
         ]
         if invalid_segments:
+            # error-ok: Pydantic model_validator requires ValueError
             raise ValueError(
                 f"callable_path '{path}' contains invalid Python identifiers: "
                 f"{invalid_segments}. Each segment must be a valid Python "

@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from omnibase_core.decorators.decorator_error_handling import standard_error_handling
 from omnibase_core.models.configuration.model_compute_cache_config import (
     ModelComputeCacheConfig,
 )
@@ -99,18 +100,22 @@ class ServiceComputeCache:
         """Whether stats are enabled."""
         return self._cache.enable_stats
 
+    @standard_error_handling("Cache get")
     def get(self, cache_key: str) -> Any | None:
         """Get cached value if valid and not expired."""
         return self._cache.get(cache_key)
 
+    @standard_error_handling("Cache put")
     def put(self, cache_key: str, value: Any, ttl_minutes: int | None = None) -> None:
         """Cache value with optional TTL."""
         self._cache.put(cache_key, value, ttl_minutes)
 
+    @standard_error_handling("Cache clear")
     def clear(self) -> None:
         """Clear all cached values."""
         self._cache.clear()
 
+    @standard_error_handling("Cache stats")
     def get_stats(self) -> dict[str, int | float]:
         """Get cache statistics."""
         return self._cache.get_stats()

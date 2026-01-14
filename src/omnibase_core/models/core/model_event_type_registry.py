@@ -8,6 +8,7 @@ enabling third-party plugins to register their own event types dynamically.
 import logging
 from pathlib import Path
 
+from omnibase_core.decorators.decorator_error_handling import standard_error_handling
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -26,6 +27,7 @@ class ModelEventTypeRegistry:
         self._namespace_events: dict[str, set[str]] = {}
         self._qualified_events: dict[str, ModelEventType] = {}
 
+    @standard_error_handling("Event type registration")
     def register_event_type(self, event_type: ModelEventType) -> None:
         """Register an event type from a node contract."""
         self._event_types[event_type.event_name] = event_type
@@ -160,10 +162,11 @@ class ModelEventTypeRegistry:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.INTERNAL_ERROR,
                 message=msg,
-            )
+            ) from e
 
         return events_discovered
 
+    @standard_error_handling("Core event type bootstrap")
     def bootstrap_core_event_types(self) -> None:
         """Bootstrap core ONEX event types for current standards."""
         from omnibase_core.models.primitives.model_semver import ModelSemVer
@@ -226,7 +229,7 @@ def get_event_type_registry() -> ModelEventTypeRegistry:
             registry.bootstrap_core_event_types()
 
         return registry
-    except (ModelOnexError, AttributeError, RuntimeError) as e:
+    except (AttributeError, ModelOnexError, RuntimeError) as e:
         raise ModelOnexError(
             message="DI container not initialized - cannot get event type registry. "
             "Initialize the container first.",

@@ -288,7 +288,6 @@ class TestModelServiceComputeInputStateConversion:
         - Action and parameters included
         """
 
-        @pytest.mark.unit
         class TestInputState:
             def __init__(self, action, **kwargs):
                 self.action = action
@@ -543,7 +542,6 @@ class TestModelServiceComputeResultSerialization:
         """
         from pydantic import BaseModel
 
-        @pytest.mark.unit
         class TestModel(BaseModel):
             field1: str
             field2: int

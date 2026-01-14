@@ -97,6 +97,7 @@ class ModelCapabilityMetadata(BaseModel):
             - "invalid..segment" (empty segments not allowed)
         """
         if not CAPABILITY_PATTERN.match(v):
+            # error-ok: Pydantic field_validator requires ValueError
             raise ValueError(
                 f"Invalid capability format: '{v}'. "
                 "Capability must be a semantic identifier with dot-separated segments. "

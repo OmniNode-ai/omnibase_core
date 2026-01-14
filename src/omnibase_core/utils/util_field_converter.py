@@ -75,7 +75,7 @@ class FieldConverter[T]:
                 )
 
             return result
-        except (ValueError, TypeError, AttributeError) as e:
+        except (AttributeError, TypeError, ValueError) as e:
             # Catch type conversion errors or attribute access issues
             # Use default if available
             if self.default_value is not None:

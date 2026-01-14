@@ -102,7 +102,6 @@ class TestEnumNodeKindRuntimeHost:
         """Test that RUNTIME_HOST works with Pydantic models."""
         from pydantic import BaseModel
 
-        @pytest.mark.unit
         class TestModel(BaseModel):
             node_kind: EnumNodeKind
 
@@ -199,7 +198,6 @@ class TestEnumNodeKindSerialization:
         """Test that enum works with Pydantic models."""
         from pydantic import BaseModel
 
-        @pytest.mark.unit
         class TestModel(BaseModel):
             node_kind: EnumNodeKind
 

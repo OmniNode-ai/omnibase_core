@@ -989,6 +989,7 @@ class EnvelopeRouter(ProtocolNodeRuntime):
             # Never suppress async cancellation - required for proper task cleanup
             raise
         except Exception as e:
+            # boundary-ok: handler errors converted to error envelope per router contract
             duration_ms = (time.perf_counter() - start_time) * 1000
             # Log the error for observability before converting to error envelope
             logger.warning(

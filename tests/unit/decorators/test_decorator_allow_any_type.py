@@ -149,7 +149,6 @@ class TestAllowAnyTypeWithPydanticModels:
         except ImportError:
             pytest.skip("Pydantic not installed")
 
-        @pytest.mark.unit
         class TestModel(BaseModel):
             name: str
             value: int

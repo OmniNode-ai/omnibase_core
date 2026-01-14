@@ -125,7 +125,6 @@ class TestEnumEffectHandlerTypePydanticIntegration:
         """Test enum serialization in a Pydantic model context."""
         from pydantic import BaseModel
 
-        @pytest.mark.unit
         class TestModel(BaseModel):
             handler_type: EnumEffectHandlerType
 
@@ -137,7 +136,6 @@ class TestEnumEffectHandlerTypePydanticIntegration:
         """Test enum deserialization in a Pydantic model context."""
         from pydantic import BaseModel
 
-        @pytest.mark.unit
         class TestModel(BaseModel):
             handler_type: EnumEffectHandlerType
 
@@ -153,7 +151,6 @@ class TestEnumEffectHandlerTypePydanticIntegration:
         """Test enum JSON serialization round-trip."""
         from pydantic import BaseModel
 
-        @pytest.mark.unit
         class TestModel(BaseModel):
             handler_type: EnumEffectHandlerType
 

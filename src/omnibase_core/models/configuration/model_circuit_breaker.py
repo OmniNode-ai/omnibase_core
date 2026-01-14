@@ -317,6 +317,7 @@ class ModelCircuitBreaker(BaseModel):
         }
         if isinstance(v, str) and v in valid_states:
             return v
+        # error-ok: Pydantic field_validator requires ValueError
         raise ValueError(
             f"Invalid circuit breaker state: {v!r}. Valid states: {sorted(valid_states)}"
         )
