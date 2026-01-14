@@ -3,10 +3,11 @@
 # SPDX-License-Identifier: Apache-2.0
 """Model for invariant violation report aggregation."""
 
-from datetime import datetime
+from datetime import UTC, datetime
+from typing import Self
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, ConfigDict, Field, computed_field
+from pydantic import BaseModel, ConfigDict, Field, computed_field, model_validator
 
 from omnibase_core.enums.enum_invariant_report_status import EnumInvariantReportStatus
 from omnibase_core.enums.enum_invariant_severity import EnumInvariantSeverity
@@ -54,7 +55,21 @@ class ModelInvariantViolationReport(BaseModel):
     # Context
     metadata: dict[str, str] = Field(default_factory=dict)
 
+    @model_validator(mode="after")
+    def _validate_count_consistency(self) -> Self:
+        """Validate that count fields are internally consistent."""
+        expected_total = self.passed_count + self.failed_count + self.skipped_count
+        if self.total_invariants != expected_total:
+            msg = (
+                f"Count mismatch: total_invariants ({self.total_invariants}) != "
+                f"passed_count ({self.passed_count}) + failed_count ({self.failed_count}) "
+                f"+ skipped_count ({self.skipped_count}) = {expected_total}"
+            )
+            raise ValueError(msg)
+        return self
+
     # Computed Properties
+    # NOTE(OMN-1206): Pydantic @computed_field requires @property below it, causing mypy prop-decorator warning.
     @computed_field  # type: ignore[prop-decorator]
     @property
     def pass_rate(self) -> float:
@@ -63,6 +78,7 @@ class ModelInvariantViolationReport(BaseModel):
             return 1.0
         return self.passed_count / self.total_invariants
 
+    # NOTE(OMN-1206): Pydantic @computed_field requires @property below it, causing mypy prop-decorator warning.
     @computed_field  # type: ignore[prop-decorator]
     @property
     def critical_count(self) -> int:
@@ -71,6 +87,7 @@ class ModelInvariantViolationReport(BaseModel):
             1 for v in self.violations if v.severity == EnumInvariantSeverity.CRITICAL
         )
 
+    # NOTE(OMN-1206): Pydantic @computed_field requires @property below it, causing mypy prop-decorator warning.
     @computed_field  # type: ignore[prop-decorator]
     @property
     def warning_count(self) -> int:
@@ -79,6 +96,7 @@ class ModelInvariantViolationReport(BaseModel):
             1 for v in self.violations if v.severity == EnumInvariantSeverity.WARNING
         )
 
+    # NOTE(OMN-1206): Pydantic @computed_field requires @property below it, causing mypy prop-decorator warning.
     @computed_field  # type: ignore[prop-decorator]
     @property
     def info_count(self) -> int:
@@ -132,7 +150,7 @@ class ModelInvariantViolationReport(BaseModel):
             "# Invariant Evaluation Report",
             "",
             f"**Target**: {self.target}",
-            f"**Evaluated**: {self.evaluated_at.strftime('%Y-%m-%d %H:%M:%S UTC')}",
+            f"**Evaluated**: {self.evaluated_at.astimezone(UTC).strftime('%Y-%m-%d %H:%M:%S UTC')}",
             f"**Duration**: {self.duration_ms:.1f}ms",
             "",
             "## Summary",
@@ -180,6 +198,8 @@ class ModelInvariantViolationReport(BaseModel):
             for v in info:
                 lines.append(f"### {v.invariant_name}")
                 lines.append(f"- **Message**: {v.message}")
+                if v.field_path:
+                    lines.append(f"- **Field**: {v.field_path}")
                 lines.append("")
 
         if not self.violations:

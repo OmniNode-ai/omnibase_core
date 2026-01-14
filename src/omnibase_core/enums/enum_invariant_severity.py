@@ -22,12 +22,7 @@ class EnumInvariantSeverity(StrValueHelper, str, Enum):
     @property
     def severity_order(self) -> int:
         """Numeric order for severity comparisons. Higher = more severe."""
-        order_map = {
-            EnumInvariantSeverity.INFO: 0,
-            EnumInvariantSeverity.WARNING: 1,
-            EnumInvariantSeverity.CRITICAL: 2,
-        }
-        return order_map[self]
+        return _SEVERITY_ORDER[self]
 
     def __ge__(self, other: object) -> bool:
         if not isinstance(other, EnumInvariantSeverity):
@@ -48,3 +43,11 @@ class EnumInvariantSeverity(StrValueHelper, str, Enum):
         if not isinstance(other, EnumInvariantSeverity):
             return NotImplemented
         return self.severity_order < other.severity_order
+
+
+# Module-level severity ordering map (cached, not recreated on each property access)
+_SEVERITY_ORDER: dict["EnumInvariantSeverity", int] = {
+    EnumInvariantSeverity.INFO: 0,
+    EnumInvariantSeverity.WARNING: 1,
+    EnumInvariantSeverity.CRITICAL: 2,
+}

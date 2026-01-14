@@ -15,3 +15,6 @@ class EnumInvariantReportStatus(StrValueHelper, str, Enum):
     FAILED = "failed"  # Completed, has violations
     PARTIAL = "partial"  # Some checks skipped or errored
     ERROR = "error"  # Evaluation itself failed to run
+
+
+__all__ = ["EnumInvariantReportStatus"]

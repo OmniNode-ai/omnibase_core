@@ -777,6 +777,95 @@ class TestReportStatusValues:
 
 
 @pytest.mark.unit
+class TestNegativeValueValidation:
+    """Test that negative values are properly rejected for count fields."""
+
+    def test_negative_total_invariants_rejected(self) -> None:
+        """Report rejects negative total_invariants."""
+        with pytest.raises(ValidationError):
+            ModelInvariantViolationReport(
+                evaluation_id=uuid4(),
+                invariant_set_id=uuid4(),
+                target="test_node",
+                evaluated_at=datetime.now(UTC),
+                duration_ms=100.0,
+                total_invariants=-1,
+                passed_count=0,
+                failed_count=0,
+                skipped_count=0,
+                status=EnumInvariantReportStatus.PASSED,
+            )
+
+    def test_negative_passed_count_rejected(self) -> None:
+        """Report rejects negative passed_count."""
+        with pytest.raises(ValidationError):
+            ModelInvariantViolationReport(
+                evaluation_id=uuid4(),
+                invariant_set_id=uuid4(),
+                target="test_node",
+                evaluated_at=datetime.now(UTC),
+                duration_ms=100.0,
+                total_invariants=10,
+                passed_count=-1,
+                failed_count=5,
+                skipped_count=0,
+                status=EnumInvariantReportStatus.FAILED,
+            )
+
+    def test_negative_failed_count_rejected(self) -> None:
+        """Report rejects negative failed_count."""
+        with pytest.raises(ValidationError):
+            ModelInvariantViolationReport(
+                evaluation_id=uuid4(),
+                invariant_set_id=uuid4(),
+                target="test_node",
+                evaluated_at=datetime.now(UTC),
+                duration_ms=100.0,
+                total_invariants=10,
+                passed_count=10,
+                failed_count=-1,
+                skipped_count=0,
+                status=EnumInvariantReportStatus.PASSED,
+            )
+
+    def test_negative_skipped_count_rejected(self) -> None:
+        """Report rejects negative skipped_count."""
+        with pytest.raises(ValidationError):
+            ModelInvariantViolationReport(
+                evaluation_id=uuid4(),
+                invariant_set_id=uuid4(),
+                target="test_node",
+                evaluated_at=datetime.now(UTC),
+                duration_ms=100.0,
+                total_invariants=10,
+                passed_count=8,
+                failed_count=2,
+                skipped_count=-1,
+                status=EnumInvariantReportStatus.FAILED,
+            )
+
+    def test_inconsistent_counts_rejected(self) -> None:
+        """Report rejects counts that don't sum to total_invariants.
+
+        This test validates the data consistency constraint:
+        passed_count + failed_count + skipped_count == total_invariants
+        """
+        with pytest.raises(ValidationError, match="Count mismatch"):
+            ModelInvariantViolationReport(
+                evaluation_id=uuid4(),
+                invariant_set_id=uuid4(),
+                target="test_node",
+                evaluated_at=datetime.now(UTC),
+                duration_ms=100.0,
+                total_invariants=10,
+                passed_count=5,
+                failed_count=2,  # 5+2+0=7 != 10
+                skipped_count=0,
+                status=EnumInvariantReportStatus.PASSED,
+            )
+
+
+@pytest.mark.unit
 class TestReportMetadata:
     """Test metadata handling."""
 
