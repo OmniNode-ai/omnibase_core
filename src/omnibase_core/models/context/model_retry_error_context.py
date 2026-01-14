@@ -135,6 +135,7 @@ class ModelErrorContext(BaseModel):
         if v is None:
             return v
         if not ERROR_CODE_PATTERN.match(v):
+            # error-ok: Pydantic field_validator requires ValueError
             raise ValueError(
                 f"error_code must match pattern UPPERCASE_CATEGORY_123 "
                 f"(e.g., AUTH_001, RATE_LIMIT_001), got: {v!r}"
@@ -156,6 +157,7 @@ class ModelErrorContext(BaseModel):
             ValueError: If retry_count is negative.
         """
         if v is not None and v < 0:
+            # error-ok: Pydantic field_validator requires ValueError
             raise ValueError(f"retry_count must be >= 0, got: {v}")
         return v
 

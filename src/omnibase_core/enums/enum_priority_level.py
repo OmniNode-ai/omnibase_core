@@ -34,7 +34,7 @@ class EnumPriorityLevel(StrValueHelper, str, Enum):
 
     def is_high_priority(self) -> bool:
         """Check if this is high or critical priority."""
-        return self in [self.HIGH, self.CRITICAL]
+        return self in {self.HIGH, self.CRITICAL}
 
     def requires_immediate_action(self) -> bool:
         """Check if this priority requires immediate action."""

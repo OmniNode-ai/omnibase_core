@@ -179,6 +179,7 @@ class ModelRuntimeDirectivePayload(BaseModel):
         # Check for reserved keys (prototype pollution prevention)
         found_reserved = _RESERVED_KEYS & set(v.keys())
         if found_reserved:
+            # error-ok: Pydantic field_validator requires ValueError
             raise ValueError(
                 f"handler_args cannot contain reserved keys: {sorted(found_reserved)}. "
                 "These keys are reserved to prevent prototype pollution attacks."
@@ -187,6 +188,7 @@ class ModelRuntimeDirectivePayload(BaseModel):
         # Check max depth to prevent deeply nested structures
         depth = _check_depth(v)
         if depth > _MAX_HANDLER_ARGS_DEPTH:
+            # error-ok: Pydantic field_validator requires ValueError
             raise ValueError(
                 f"handler_args exceeds maximum nesting depth of {_MAX_HANDLER_ARGS_DEPTH}. "
                 f"Found depth: {depth}. Deeply nested structures are rejected to prevent "

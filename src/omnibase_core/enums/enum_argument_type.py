@@ -6,9 +6,11 @@ Defines the available types for CLI command arguments.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumArgumentType(str, Enum):
+class EnumArgumentType(StrValueHelper, str, Enum):
     """
     Enumeration of CLI argument types.
 
@@ -22,3 +24,6 @@ class EnumArgumentType(str, Enum):
     PATH = "path"
     JSON = "json"
     LIST = "list[Any]"
+
+
+__all__ = ["EnumArgumentType"]

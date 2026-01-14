@@ -37,6 +37,7 @@ See Also:
 import re
 import unicodedata
 from collections.abc import Callable
+from typing import Literal, cast
 
 from omnibase_core.enums.enum_case_mode import EnumCaseMode
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -349,7 +350,8 @@ def transform_unicode(data: str, config: ModelTransformUnicodeConfig) -> str:
     """
     _validate_string_input(data, "NORMALIZE_UNICODE")
 
-    return unicodedata.normalize(config.form.value, data)
+    form = cast(Literal["NFC", "NFD", "NFKC", "NFKD"], config.form.value)
+    return unicodedata.normalize(form, data)
 
 
 # TODO(OMN-TBD): Consider using shared utility omnibase_core.utils.compute_path_resolver  [NEEDS TICKET]

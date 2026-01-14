@@ -29,7 +29,7 @@ Usage Examples:
 
         from pathlib import Path
         from omnibase_core.validation.checker_enum_member_casing import (
-            CheckerEnumMemberCasing,
+            MemberCasingChecker,
             validate_file,
             validate_directory,
         )
@@ -140,7 +140,7 @@ def suggest_upper_snake_case(name: str) -> str:
     return suggested
 
 
-class CheckerEnumMemberCasing(ast.NodeVisitor):
+class MemberCasingChecker(ast.NodeVisitor):
     """AST-based checker for enum member naming conventions.
 
     This class uses Python's Abstract Syntax Tree (AST) module to analyze
@@ -163,7 +163,7 @@ class CheckerEnumMemberCasing(ast.NodeVisitor):
         ...     INACTIVE = "inactive"  # OK
         ... '''
         >>> tree = ast.parse(source_code)
-        >>> checker = CheckerEnumMemberCasing("example.py")
+        >>> checker = MemberCasingChecker("example.py")
         >>> checker.visit(tree)
         >>> for issue in checker.issues:
         ...     print(issue)
@@ -342,7 +342,7 @@ class CheckerEnumMemberCasing(ast.NodeVisitor):
 def validate_file(file_path: Path) -> list[str]:
     """Validate enum member casing in a single file.
 
-    Parses the file and runs the CheckerEnumMemberCasing to find
+    Parses the file and runs the MemberCasingChecker to find
     any enum members that violate UPPER_SNAKE_CASE naming.
 
     Args:
@@ -369,7 +369,7 @@ def validate_file(file_path: Path) -> list[str]:
         logger.warning("Syntax error in %s: %s", file_path, e)
         return []
 
-    checker = CheckerEnumMemberCasing(str(file_path))
+    checker = MemberCasingChecker(str(file_path))
     checker.visit(tree)
     return checker.issues
 

@@ -19,6 +19,7 @@ See Also:
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums import EnumLikelihood
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.utils.util_enum_normalizer import create_enum_normalizer
 
@@ -136,7 +137,11 @@ class ModelDetectionMetadata(BaseModel):
             return v
         if isinstance(v, str):
             # Use ModelSemVer.parse() for string parsing
-            return ModelSemVer.parse(v)
+            try:
+                return ModelSemVer.parse(v)
+            except ModelOnexError as e:
+                # error-ok: Pydantic field_validator requires ValueError
+                raise ValueError(f"Invalid rule_version string: {v!r}") from e
         if isinstance(v, dict):
             # Allow dict format like {"major": 1, "minor": 2, "patch": 3}
             try:
@@ -149,15 +154,18 @@ class ModelDetectionMetadata(BaseModel):
                     or not isinstance(minor, int)
                     or not isinstance(patch, int)
                 ):
+                    # error-ok: Pydantic field_validator requires ValueError
                     raise ValueError(
                         "Invalid rule_version dict: major, minor, patch must be integers"
                     )
                 return ModelSemVer(major=major, minor=minor, patch=patch)
-            except (TypeError, KeyError, ValueError) as e:
+            except (TypeError, ValueError) as e:
+                # error-ok: Pydantic field_validator requires ValueError
                 raise ValueError(
                     f"Invalid rule_version dict format: expected {{'major': int, "
                     f"'minor': int, 'patch': int}}, got {v}"
                 ) from e
+        # error-ok: Pydantic field_validator requires ValueError
         raise ValueError(f"Expected ModelSemVer, str, or dict, got {type(v).__name__}")
 
     @field_validator("false_positive_likelihood", mode="before")

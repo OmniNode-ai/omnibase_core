@@ -38,7 +38,10 @@ from typing import TYPE_CHECKING, Any
 from uuid import UUID, uuid4
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums.enum_health_status import EnumHealthStatus
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
+from omnibase_core.enums.enum_node_lifecycle_status import EnumNodeLifecycleStatus
+from omnibase_core.errors.exception_groups import FILE_IO_ERRORS
 from omnibase_core.logging.logging_structured import (
     emit_log_event_sync as emit_log_event,
 )
@@ -112,7 +115,9 @@ class NodeCoreBase(ABC):
         object.__setattr__(self, "created_at", datetime.now(UTC))
 
         # Core state tracking
-        object.__setattr__(self, "state", {"status": "initialized"})
+        object.__setattr__(
+            self, "state", {"status": EnumNodeLifecycleStatus.INITIALIZED.value}
+        )
         object.__setattr__(
             self,
             "metrics",
@@ -192,7 +197,7 @@ class NodeCoreBase(ABC):
                 )
 
             # Update state
-            self.state["status"] = "initializing"
+            self.state["status"] = EnumNodeLifecycleStatus.INITIALIZING.value
 
             # Load contract if path available
             await self._load_contract()
@@ -205,7 +210,7 @@ class NodeCoreBase(ABC):
             self.metrics["initialization_duration_ms"] = initialization_time
 
             # Update state
-            self.state["status"] = "ready"
+            self.state["status"] = EnumNodeLifecycleStatus.READY.value
 
             # Emit lifecycle event
             await self._emit_lifecycle_event(
@@ -233,7 +238,7 @@ class NodeCoreBase(ABC):
             RuntimeError,
             ModelOnexError,
         ) as e:
-            self.state["status"] = "failed"
+            self.state["status"] = EnumNodeLifecycleStatus.FAILED.value
             self._increment_metric("error_count")
 
             raise ModelOnexError(
@@ -263,7 +268,7 @@ class NodeCoreBase(ABC):
             start_time = time.perf_counter()
 
             # Update state
-            self.state["status"] = "cleaning_up"
+            self.state["status"] = EnumNodeLifecycleStatus.CLEANING_UP.value
 
             # Cleanup node-specific resources
             await self._cleanup_node_resources()
@@ -286,7 +291,7 @@ class NodeCoreBase(ABC):
             await self._emit_lifecycle_event("node_cleanup_complete", final_metrics)
 
             # Update final state
-            self.state["status"] = "cleaned_up"
+            self.state["status"] = EnumNodeLifecycleStatus.CLEANED_UP.value
 
             emit_log_event(
                 LogLevel.INFO,
@@ -301,7 +306,7 @@ class NodeCoreBase(ABC):
         except (
             BaseException
         ) as e:  # catch-all-ok: cleanup must not raise to prevent resource leaks
-            self.state["status"] = "cleanup_failed"
+            self.state["status"] = EnumNodeLifecycleStatus.CLEANUP_FAILED.value
 
             emit_log_event(
                 LogLevel.ERROR,
@@ -429,7 +434,7 @@ class NodeCoreBase(ABC):
                                             f"Invalid version format: {version_value}",
                                             {"node_id": self.node_id},
                                         )
-                                except (ValueError, IndexError) as e:
+                                except (IndexError, ValueError) as e:
                                     # Parsing failed, keep default
                                     emit_log_event(
                                         LogLevel.WARNING,
@@ -740,7 +745,7 @@ class NodeCoreBase(ABC):
             # Return primitives as-is
             return data
 
-        except (FileNotFoundError, OSError) as e:
+        except FILE_IO_ERRORS as e:
             # fallback-ok: graceful degradation for missing/unreadable reference files
             emit_log_event(
                 LogLevel.WARNING,
@@ -874,7 +879,9 @@ class NodeCoreBase(ABC):
         ]
 
         return {
-            "overall_status": "healthy" if all_healthy else "degraded",
+            "overall_status": EnumHealthStatus.HEALTHY.value
+            if all_healthy
+            else EnumHealthStatus.DEGRADED.value,
             "component_checks": health_checks,
             "failing_components": failing_components,
             "healthy_count": sum(1 for h in health_checks.values() if h),

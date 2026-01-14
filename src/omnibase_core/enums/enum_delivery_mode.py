@@ -6,9 +6,11 @@ Defines the available modes for event delivery in the ONEX system.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumDeliveryMode(str, Enum):
+class EnumDeliveryMode(StrValueHelper, str, Enum):
     """
     Enumeration of event delivery modes.
 
@@ -17,3 +19,6 @@ class EnumDeliveryMode(str, Enum):
 
     DIRECT = "direct"
     INMEMORY = "inmemory"
+
+
+__all__ = ["EnumDeliveryMode"]

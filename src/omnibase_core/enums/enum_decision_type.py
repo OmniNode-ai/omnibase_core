@@ -7,9 +7,11 @@ and reporting within memory snapshots.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumDecisionType(str, Enum):
+class EnumDecisionType(StrValueHelper, str, Enum):
     """Decision type classification for omnimemory snapshots.
 
     Classifies decisions recorded in memory snapshots to enable systematic
@@ -69,10 +71,6 @@ class EnumDecisionType(str, Enum):
 
     CUSTOM = "custom"
     """Escape hatch for forward-compatibility with new decision types."""
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     @classmethod
     def is_valid(cls, value: str) -> bool:

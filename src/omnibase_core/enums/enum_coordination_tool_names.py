@@ -5,9 +5,11 @@ Single responsibility: Centralized coordination tool name definitions.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumCoordinationToolNames(str, Enum):
+class EnumCoordinationToolNames(StrValueHelper, str, Enum):
     """Coordination tool names following ONEX enum-backed naming standards."""
 
     TOOL_GENERIC_HUB_NODE = "tool_generic_hub_node"
@@ -16,3 +18,6 @@ class EnumCoordinationToolNames(str, Enum):
     TOOL_SUBWORKFLOW_EXECUTOR = "tool_subworkflow_executor"
     TOOL_COMPOSITION_ORCHESTRATOR = "tool_composition_orchestrator"
     TOOL_WORKFLOW_REGISTRY = "tool_workflow_registry"
+
+
+__all__ = ["EnumCoordinationToolNames"]

@@ -114,6 +114,7 @@ class NamingConventionValidator:
     # Exception patterns - classes that don't need to follow strict naming
     EXCEPTION_PATTERNS = [
         r"^_.*",  # Private classes
+        r"^Checker.*",  # Checker/validator utility classes (e.g., CheckerEnumMemberCasing)
         r".*Test$",  # Test classes
         r".*TestCase$",  # Test case classes
         r"^Test.*",  # Test classes
@@ -222,6 +223,7 @@ class NamingConventionValidator:
             "Validator*",  # All Validator* classes (ValidatorAnyType, ValidatorContractLinter, etc.) (OMN-1291)
             "Checker*",  # All Checker* classes (CheckerEnumMemberCasing, etc.) for AST analysis (OMN-1311)
             "*Visitor",  # All *Visitor classes (AnyTypeVisitor, etc.) for AST analysis (OMN-1291)
+            "Checker*",  # All Checker* classes (CheckerEnumMemberCasing, etc.) for code analysis (#381)
         ],
         # MERGE INFRASTRUCTURE: Contract merge engine for typed contract merging
         # Location: merge/ - Contract merge framework implementations

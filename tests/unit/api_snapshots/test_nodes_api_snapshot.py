@@ -73,7 +73,7 @@ class TestNodesAPISnapshot:
             "EnumActionType",
             "EnumBranchCondition",
             "EnumExecutionMode",
-            "EnumWorkflowState",
+            "EnumWorkflowStatus",
             # Public enums - Reducer types (3 enums)
             "EnumConflictResolution",
             "EnumReductionType",
@@ -116,7 +116,7 @@ class TestNodesAPISnapshot:
           ModelEffectOutput, ModelEffectTransaction, ModelOrchestratorInput,
           ModelOrchestratorOutput, ModelReducerInput, ModelReducerOutput
         - Enums (7): EnumActionType, EnumBranchCondition, EnumExecutionMode,
-          EnumWorkflowState, EnumConflictResolution, EnumReductionType, EnumStreamingMode
+          EnumWorkflowStatus, EnumConflictResolution, EnumReductionType, EnumStreamingMode
 
         Total: 4 + 9 + 7 = 20 exports
         """
@@ -288,7 +288,7 @@ class TestNodesEnumExportsSnapshot:
             "EnumActionType",
             "EnumBranchCondition",
             "EnumExecutionMode",
-            "EnumWorkflowState",
+            "EnumWorkflowStatus",
             # Reducer enums
             "EnumConflictResolution",
             "EnumReductionType",
@@ -308,7 +308,7 @@ class TestNodesEnumExportsSnapshot:
             "EnumActionType",
             "EnumBranchCondition",
             "EnumExecutionMode",
-            "EnumWorkflowState",
+            "EnumWorkflowStatus",
             "EnumConflictResolution",
             "EnumReductionType",
             "EnumStreamingMode",
@@ -329,13 +329,13 @@ class TestNodesEnumExportsSnapshot:
             EnumExecutionMode,
             EnumReductionType,
             EnumStreamingMode,
-            EnumWorkflowState,
+            EnumWorkflowStatus,
         )
 
         assert EnumActionType is not None
         assert EnumBranchCondition is not None
         assert EnumExecutionMode is not None
-        assert EnumWorkflowState is not None
+        assert EnumWorkflowStatus is not None
         assert EnumConflictResolution is not None
         assert EnumReductionType is not None
         assert EnumStreamingMode is not None

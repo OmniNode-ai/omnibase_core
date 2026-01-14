@@ -9,9 +9,11 @@ Strongly typed status values for registry operations.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumRegistryStatus(str, Enum):
+class EnumRegistryStatus(StrValueHelper, str, Enum):
     """Strongly typed registry status values."""
 
     HEALTHY = "healthy"

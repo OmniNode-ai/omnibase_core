@@ -43,34 +43,45 @@ class EnumConfigCategory(StrValueHelper, str, Enum):
     @classmethod
     def get_system_categories(cls) -> list[EnumConfigCategory]:
         """Get core system configuration categories."""
-        return [
-            cls.GENERATION,
-            cls.VALIDATION,
-            cls.TEMPLATE,
-            cls.MAINTENANCE,
-            cls.RUNTIME,
-        ]
+        return list(_SYSTEM_CATEGORIES)
 
     @classmethod
     def get_infrastructure_categories(cls) -> list[EnumConfigCategory]:
         """Get infrastructure configuration categories."""
-        return [
-            cls.CLI,
-            cls.DISCOVERY,
-            cls.SCHEMA,
-            cls.LOGGING,
-            cls.TESTING,
-        ]
+        return list(_INFRASTRUCTURE_CATEGORIES)
 
     @classmethod
     def is_system_category(cls, category: EnumConfigCategory) -> bool:
-        """Check if category is a core system category."""
-        return category in cls.get_system_categories()
+        """Check if category is a core system category (O(1) lookup)."""
+        return category in _SYSTEM_CATEGORIES
 
     @classmethod
     def is_infrastructure_category(cls, category: EnumConfigCategory) -> bool:
-        """Check if category is an infrastructure category."""
-        return category in cls.get_infrastructure_categories()
+        """Check if category is an infrastructure category (O(1) lookup)."""
+        return category in _INFRASTRUCTURE_CATEGORIES
+
+
+# Cached frozensets for O(1) membership lookups.
+# Defined after the enum class to allow self-referential enum values.
+_SYSTEM_CATEGORIES: frozenset[EnumConfigCategory] = frozenset(
+    {
+        EnumConfigCategory.GENERATION,
+        EnumConfigCategory.VALIDATION,
+        EnumConfigCategory.TEMPLATE,
+        EnumConfigCategory.MAINTENANCE,
+        EnumConfigCategory.RUNTIME,
+    }
+)
+
+_INFRASTRUCTURE_CATEGORIES: frozenset[EnumConfigCategory] = frozenset(
+    {
+        EnumConfigCategory.CLI,
+        EnumConfigCategory.DISCOVERY,
+        EnumConfigCategory.SCHEMA,
+        EnumConfigCategory.LOGGING,
+        EnumConfigCategory.TESTING,
+    }
+)
 
 
 # Export for use

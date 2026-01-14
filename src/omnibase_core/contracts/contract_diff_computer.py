@@ -57,6 +57,8 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
+from pydantic import ValidationError
+
 from omnibase_core.contracts.contract_hash_registry import compute_contract_fingerprint
 
 logger = logging.getLogger(__name__)
@@ -175,7 +177,13 @@ class ContractDiffComputer:
         try:
             before_fingerprint = compute_contract_fingerprint(before)
             after_fingerprint = compute_contract_fingerprint(after)
-        except (AttributeError, KeyError, ModelOnexError, TypeError, ValueError) as e:
+        except (
+            AttributeError,
+            ModelOnexError,
+            TypeError,
+            ValidationError,
+            ValueError,
+        ) as e:
             # fallback-ok: fingerprint computation is optional for non-contract models
             logger.debug(
                 "Fingerprint computation skipped for %s: %s",

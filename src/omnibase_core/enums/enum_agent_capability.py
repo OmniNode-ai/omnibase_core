@@ -6,9 +6,11 @@ Defines capabilities that agents can have for task routing and selection.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumAgentCapability(str, Enum):
+class EnumAgentCapability(StrValueHelper, str, Enum):
     """Agent capabilities for intelligent task routing."""
 
     # Code-related capabilities
@@ -51,9 +53,12 @@ class EnumAgentCapability(str, Enum):
 
     def requires_large_model(self) -> bool:
         """Check if this capability typically requires a larger model."""
-        return self in [
+        return self in {
             self.COMPLEX_ANALYSIS,
             self.ARCHITECTURE_DESIGN,
             self.LONG_CONTEXT,
             self.REASONING,
-        ]
+        }
+
+
+__all__ = ["EnumAgentCapability"]

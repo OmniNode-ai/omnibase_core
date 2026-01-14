@@ -9,9 +9,9 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.enums.enum_health_status import EnumHealthStatus
 from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
 from omnibase_core.enums.enum_metadata_node_type import EnumMetadataNodeType
-from omnibase_core.enums.enum_node_health_status import EnumNodeHealthStatus
 from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
 
 if TYPE_CHECKING:
@@ -46,8 +46,8 @@ class ModelNodeCoreMetadata(BaseModel):
         default=EnumMetadataNodeStatus.ACTIVE,
         description="Node status",
     )
-    health: EnumNodeHealthStatus = Field(
-        default=EnumNodeHealthStatus.HEALTHY,
+    health: EnumHealthStatus = Field(
+        default=EnumHealthStatus.HEALTHY,
         description="Node health",
     )
 

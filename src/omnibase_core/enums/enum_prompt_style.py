@@ -7,12 +7,17 @@ with proper ONEX enum naming conventions.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumPromptStyle(str, Enum):
+class EnumPromptStyle(StrValueHelper, str, Enum):
     """Prompt formatting styles."""
 
     PLAIN = "plain"
     MARKDOWN = "markdown"
     XML = "xml"
     JSON_INSTRUCTIONS = "json_instructions"
+
+
+__all__ = ["EnumPromptStyle"]

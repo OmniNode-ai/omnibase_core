@@ -12,10 +12,8 @@ import pytest
 from pydantic import ValidationError
 
 from omnibase_core.constants.constants_field_limits import MAX_NAME_LENGTH
-from omnibase_core.enums.enum_workflow_execution import (
-    EnumExecutionMode,
-    EnumWorkflowState,
-)
+from omnibase_core.enums.enum_execution_status import EnumExecutionStatus
+from omnibase_core.enums.enum_workflow_execution import EnumExecutionMode
 from omnibase_core.models.workflow.execution.model_workflow_step_execution import (
     ModelWorkflowStepExecution,
 )
@@ -34,7 +32,7 @@ class TestModelWorkflowStepExecution:
         )
         assert step.step_name == "test_step"
         assert step.execution_mode == EnumExecutionMode.SEQUENTIAL
-        assert step.state == EnumWorkflowState.PENDING
+        assert step.state == EnumExecutionStatus.PENDING
 
     def test_step_name_minimum_length(self) -> None:
         """Test step_name with minimum length (1 character)."""
@@ -130,7 +128,7 @@ class TestModelWorkflowStepExecution:
             step_name="test",
             execution_mode=EnumExecutionMode.SEQUENTIAL,
         )
-        assert step.state == EnumWorkflowState.PENDING
+        assert step.state == EnumExecutionStatus.PENDING
 
     def test_all_execution_modes(self) -> None:
         """Test all valid execution modes."""
@@ -153,7 +151,7 @@ class TestModelWorkflowStepExecution:
             condition_function = None
             timeout_ms = 30000
             retry_count = 0
-            state = EnumWorkflowState.PENDING
+            state = EnumExecutionStatus.PENDING
             started_at = None
             completed_at = None
             error = None

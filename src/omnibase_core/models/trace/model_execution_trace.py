@@ -139,6 +139,7 @@ class ModelExecutionTrace(BaseModel):
     def validate_time_ordering(self) -> "ModelExecutionTrace":
         """Validate that ended_at is not before started_at."""
         if self.ended_at < self.started_at:
+            # error-ok: Pydantic model_validator requires ValueError
             raise ValueError(
                 f"ended_at ({self.ended_at}) cannot be before started_at ({self.started_at})"
             )

@@ -462,26 +462,165 @@ def process(value: Optional[str]) -> Union[int, str]: ...  # Don't use
 
 ### Error Handling
 
+This section documents the comprehensive error handling policy for ONEX, including when to use different exception types, standardized markers, and available decorators.
+
+#### ValueError vs ModelOnexError Policy
+
+**Use `ValueError`** for:
+- Standard Python validation at function boundaries (public API input validation)
+- Simple type/value validation that doesn't need error codes
+- Cases where the error will be caught and handled immediately
+- Pydantic model validators (which convert to `ValidationError`)
+
 ```python
+# ✅ Appropriate use of ValueError
+def parse_duration(value: str) -> int:
+    if not value:
+        raise ValueError("Duration cannot be empty")
+    if not value.isdigit():
+        raise ValueError(f"Duration must be numeric, got: {value}")
+    return int(value)
+```
+
+**Use `ModelOnexError`** for:
+- ONEX-specific domain errors that need error codes for categorization
+- Errors that will be serialized, logged, or sent across service boundaries
+- Errors that need structured context for debugging
+- Errors in node/workflow execution that need tracking
+
+```python
+# ✅ Appropriate use of ModelOnexError
 from omnibase_core.errors import ModelOnexError
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
-# Always use structured errors, never generic Exception
 raise ModelOnexError(
-    message="Operation failed",
-    error_code=EnumCoreErrorCode.OPERATION_FAILED,
-    context={"user_id": user_id}
+    message="Contract validation failed",
+    error_code=EnumCoreErrorCode.CONTRACT_VALIDATION_ERROR,
+    context={"contract_id": contract_id, "field": "version"}
 )
 ```
 
-#### Use @standard_error_handling decorator:
+**Decision Matrix**:
+
+| Scenario | Exception Type | Reason |
+|----------|---------------|--------|
+| Invalid function argument | `ValueError` | Standard Python convention |
+| Missing required config | `ModelOnexError` | Needs error code for logging |
+| Type mismatch in validator | `ValueError` | Pydantic compatibility |
+| Node execution failure | `ModelOnexError` | Needs context for debugging |
+| API endpoint validation | `ValueError` | FastAPI handles conversion |
+| Workflow step failure | `ModelOnexError` | Needs serialization |
+
+#### Error Handling Decorators
+
+Three decorators eliminate error handling boilerplate. All decorators follow the ONEX exception contract:
+- Cancellation signals (`SystemExit`, `KeyboardInterrupt`, `GeneratorExit`, `asyncio.CancelledError`) **ALWAYS propagate**
+- `ModelOnexError` is **always re-raised as-is** to preserve error context
+- Other exceptions are **wrapped in `ModelOnexError`** with appropriate error codes
+
+**`@standard_error_handling`** - General purpose (eliminates 6+ lines of boilerplate):
 
 ```python
 from omnibase_core.decorators.decorator_error_handling import standard_error_handling
 
-@standard_error_handling  # Eliminates 6+ lines of try/catch boilerplate
-async def my_operation(self):
-    pass
+@standard_error_handling("Contract processing")
+def process_contract(self, contract_data):
+    # Just business logic - no try/catch needed
+    return validate_and_transform(contract_data)
+```
+
+**`@validation_error_handling`** - For validation operations:
+
+```python
+from omnibase_core.decorators.decorator_error_handling import validation_error_handling
+
+@validation_error_handling("Schema validation")
+def validate_schema(self, schema_data):
+    # ValidationErrors get VALIDATION_ERROR code
+    return model.model_validate(schema_data)
+```
+
+**`@io_error_handling`** - For file/network operations:
+
+```python
+from omnibase_core.decorators.decorator_error_handling import io_error_handling
+
+@io_error_handling("Config file reading")
+def read_config(self, file_path):
+    # FileNotFoundError gets FILE_NOT_FOUND code
+    with open(file_path) as f:
+        return yaml.safe_load(f)
+```
+
+#### Async Error Handling
+
+All three decorators **automatically detect async functions** and handle them correctly. No special configuration needed:
+
+```python
+from omnibase_core.decorators.decorator_error_handling import (
+    standard_error_handling,
+    io_error_handling,
+)
+
+# Decorators auto-detect async and wrap appropriately
+@standard_error_handling("Async data fetch")
+async def fetch_data(self, url: str) -> dict:
+    async with httpx.AsyncClient() as client:
+        response = await client.get(url)
+        return response.json()
+
+@io_error_handling("Async file operation")
+async def read_config_async(self, file_path: Path) -> dict:
+    async with aiofiles.open(file_path) as f:
+        content = await f.read()
+        return yaml.safe_load(content)
+```
+
+**Async-Specific Behavior**:
+
+1. **`asyncio.CancelledError` always propagates** - Never caught or wrapped by decorators
+2. **Async context preserved** - Stack traces and error context work correctly
+3. **Same error codes** - Async functions get the same `EnumCoreErrorCode` mapping as sync
+
+**Handling `asyncio.CancelledError` explicitly**:
+
+```python
+import asyncio
+from omnibase_core.errors.exception_groups import ASYNC_ERRORS
+
+async def process_with_cleanup(self, data: dict) -> dict:
+    try:
+        return await self._do_processing(data)
+    except asyncio.CancelledError:
+        # Perform cleanup before re-raising
+        await self._cleanup_resources()
+        raise  # ALWAYS re-raise CancelledError
+    except ASYNC_ERRORS as e:
+        # Handle other async errors (TimeoutError, RuntimeError)
+        return {"error": str(e), "status": "failed"}
+```
+
+**Async exception groups with decorators**:
+
+```python
+from omnibase_core.decorators.decorator_error_handling import io_error_handling
+from omnibase_core.errors.exception_groups import NETWORK_ERRORS
+
+@io_error_handling("API batch fetch")
+async def fetch_batch(self, urls: list[str]) -> list[dict]:
+    async with httpx.AsyncClient() as client:
+        tasks = [client.get(url) for url in urls]
+        responses = await asyncio.gather(*tasks, return_exceptions=True)
+
+        results = []
+        for resp in responses:
+            if isinstance(resp, NETWORK_ERRORS):
+                # Individual failures logged, continue with others
+                self.logger.warning(f"Fetch failed: {resp}")
+                results.append({"error": str(resp)})
+            else:
+                results.append(resp.json())
+        return results
 ```
 
 #### Exception Handling Comment Markers
@@ -498,12 +637,32 @@ When using catch-all or broad exception handlers, document the intent with these
 | `# tool-resilience-ok:` | Tool/plugin isolation | mypy plugins, linters |
 
 **Example Usage**:
+
 ```python
+# Graceful degradation
 try:
     config = load_config(path)
 except (OSError, ValidationError) as e:
     # fallback-ok: use defaults if config unavailable
     config = DEFAULT_CONFIG
+
+# API boundary
+@app.post("/api/process")
+async def process_request(data: dict) -> dict:
+    try:
+        return await processor.handle(data)
+    except Exception as e:
+        # boundary-ok: API must return valid response
+        logger.error(f"Processing failed: {e}")
+        return {"error": str(e), "status": "failed"}
+
+# Cleanup resilience
+finally:
+    try:
+        await connection.close()
+    except Exception as e:
+        # cleanup-resilience-ok: must not fail during cleanup
+        logger.warning(f"Connection close failed: {e}")
 ```
 
 #### Exception Tuple Ordering
@@ -511,10 +670,10 @@ except (OSError, ValidationError) as e:
 Exception tuples should be **alphabetically ordered** by exception class name:
 
 ```python
-# Correct - alphabetical
+# ✅ Correct - alphabetical
 except (AttributeError, TypeError, ValidationError, ValueError) as e:
 
-# Wrong - not alphabetical
+# ❌ Wrong - not alphabetical
 except (ValueError, TypeError, AttributeError) as e:
 ```
 
@@ -532,8 +691,61 @@ except PYDANTIC_MODEL_ERRORS as e:
     pass
 ```
 
-Available groups: `VALIDATION_ERRORS`, `PYDANTIC_MODEL_ERRORS`, `ATTRIBUTE_ACCESS_ERRORS`,
-`YAML_PARSING_ERRORS`, `JSON_PARSING_ERRORS`, `FILE_IO_ERRORS`, `NETWORK_ERRORS`, `ASYNC_ERRORS`
+**Available Groups**:
+
+| Group | Exceptions | Use Case |
+|-------|-----------|----------|
+| `VALIDATION_ERRORS` | `TypeError`, `ValidationError`, `ValueError` | Type checking, value validation |
+| `PYDANTIC_MODEL_ERRORS` | `AttributeError`, `TypeError`, `ValidationError`, `ValueError` | `model_validate()`, `model_dump()`, field access |
+| `ATTRIBUTE_ACCESS_ERRORS` | `AttributeError`, `IndexError`, `KeyError`, `TypeError` | Dict keys, object attributes, list indices |
+| `YAML_PARSING_ERRORS` | `ValidationError`, `ValueError`, `yaml.YAMLError` | YAML config/contract parsing |
+| `JSON_PARSING_ERRORS` | `json.JSONDecodeError`, `TypeError`, `ValidationError`, `ValueError` | JSON data/API response parsing |
+| `FILE_IO_ERRORS` | `FileNotFoundError`, `IOError`, `OSError`, `PermissionError` | File read/write operations |
+| `NETWORK_ERRORS` | `ConnectionError`, `OSError`, `TimeoutError` | HTTP requests, socket connections |
+| `ASYNC_ERRORS` | `asyncio.TimeoutError`, `RuntimeError` | Async task failures |
+
+**Important**: `asyncio.CancelledError` is **NOT** in any group - it must be caught separately and re-raised:
+
+```python
+try:
+    await async_operation()
+except asyncio.CancelledError:
+    # Cleanup if needed
+    raise  # Always re-raise!
+except ASYNC_ERRORS as e:
+    # Handle other async errors
+    pass
+```
+
+#### Quick Reference
+
+```python
+# Standard structured error
+from omnibase_core.errors import ModelOnexError
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+
+raise ModelOnexError(
+    message="Operation failed",
+    error_code=EnumCoreErrorCode.OPERATION_FAILED,
+    context={"user_id": user_id}
+)
+
+# Use decorator for boilerplate elimination
+from omnibase_core.decorators.decorator_error_handling import standard_error_handling
+
+@standard_error_handling("My operation")
+def my_operation(self):
+    pass  # No try/catch needed
+
+# Use exception groups for consistent handling
+from omnibase_core.errors.exception_groups import FILE_IO_ERRORS
+
+try:
+    data = read_file(path)
+except FILE_IO_ERRORS as e:
+    # fallback-ok: use empty data if file unavailable
+    data = {}
+```
 
 ### Mixin System
 
@@ -829,6 +1041,12 @@ value = some_call()  # type: ignore[arg-type]
 5. [REDUCER Node Tutorial](docs/guides/node-building/05_REDUCER_NODE_TUTORIAL.md)
 6. [ORCHESTRATOR Node Tutorial](docs/guides/node-building/06_ORCHESTRATOR_NODE_TUTORIAL.md)
 
+### Architecture Decision Records
+
+| ADR | Summary |
+|-----|---------|
+| [ADR-013](docs/architecture/adr/ADR-013-status-taxonomy.md) | Status Taxonomy: canonical status enums for 6 categories (Execution, Operation, Workflow, Health, Lifecycle, Registration) |
+
 📚 **Complete Index**: [docs/INDEX.md](docs/INDEX.md)
 
 ---
@@ -946,7 +1164,7 @@ poetry add --group dev package-name        # Add dev dependency
 
 ---
 
-**Last Updated**: 2026-01-11 | **Version**: 0.6.4 | **Python**: 3.12+
+**Last Updated**: 2026-01-12 | **Version**: 0.6.4 | **Python**: 3.12+
 
 **Ready to build?** → [Node Building Guide](docs/guides/node-building/README.md)
 **Need help?** → [Documentation Index](docs/INDEX.md)

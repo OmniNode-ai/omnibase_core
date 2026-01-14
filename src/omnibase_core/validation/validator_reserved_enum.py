@@ -103,9 +103,9 @@ def validate_execution_mode(mode: EnumExecutionMode) -> None:
         )
 
 
-# Note on EnumWorkflowState.PAUSED:
+# Note on EnumWorkflowStatus.PAUSED:
 # ===================================
-# Per CONTRACT_DRIVEN_NODEORCHESTRATOR_V1_0.md, EnumWorkflowState.PAUSED is reserved
+# Per CONTRACT_DRIVEN_NODEORCHESTRATOR_V1_0.md, EnumWorkflowStatus.PAUSED is reserved
 # for v1.1+ but is NOT actively rejected in v1.0. The enum value exists in the type
 # system for forward compatibility, but the executor does not implement pause/resume
 # semantics. If PAUSED state is encountered:
@@ -119,7 +119,7 @@ def validate_execution_mode(mode: EnumExecutionMode) -> None:
 # Per the global normative rule for reserved fields:
 #
 # 1. MUST be parsed by SPI: The enum value exists and is parseable from YAML/JSON.
-#    SPI parses "paused" string into EnumWorkflowState.PAUSED during contract codegen.
+#    SPI parses "paused" string into EnumWorkflowStatus.PAUSED during contract codegen.
 #
 # 2. MUST be preserved by Core: Typed models preserve the PAUSED value in their fields.
 #    Core does not strip or convert reserved values - they flow through unchanged.

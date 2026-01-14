@@ -2,9 +2,11 @@
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumOnexErrorCode(str, Enum):
+class EnumOnexErrorCode(StrValueHelper, str, Enum):
     """
     Base class for ONEX error codes.
 
@@ -41,3 +43,6 @@ class EnumOnexErrorCode(str, Enum):
         from omnibase_core.enums.enum_cli_exit_code import EnumCLIExitCode
 
         return EnumCLIExitCode.ERROR.value
+
+
+__all__ = ["EnumOnexErrorCode"]

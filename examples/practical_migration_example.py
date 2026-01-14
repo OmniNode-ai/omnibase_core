@@ -1,5 +1,7 @@
-"""
-Practical example showing migration of ModelCliOutputData to use ModelResultAccessor.
+# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
+#
+# SPDX-License-Identifier: Apache-2.0
+"""Practical example showing migration of ModelCliOutputData to use ModelResultAccessor.
 
 This demonstrates a real migration from the existing pattern to the new
 field accessor pattern with discriminated unions for proper type safety.
@@ -11,9 +13,9 @@ from pydantic import BaseModel, Field
 
 # Import the new field accessor
 from omnibase_core.models.core import ModelResultAccessor
-
 # Import discriminated union models for proper type safety
-from omnibase_core.models.examples.model_property_value import ModelPropertyValue
+from omnibase_core.models.examples.model_property_value import \
+    ModelPropertyValue
 
 
 # ========== BEFORE: Current Implementation (with generic unions) ==========

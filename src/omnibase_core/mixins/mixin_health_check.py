@@ -10,22 +10,19 @@ IMPORT ORDER CONSTRAINTS (Critical - Do Not Break):
 ===============================================
 This module is part of a carefully managed import chain to avoid circular dependencies.
 
-Safe Runtime Imports:
-- omnibase_core.errors.error_codes (imports only from types.core_types and enums)
-- omnibase_core.enums.enum_log_level (no circular risk)
-- omnibase_core.enums.enum_node_health_status (no circular risk)
-- omnibase_core.logging.structured (no circular risk)
-- omnibase_core.models.core.model_health_status (no circular risk)
-- pydantic, typing, datetime (standard library)
+Safe Runtime Imports (what this module actually imports):
+- omnibase_core.enums.enum_health_status (EnumHealthStatus - no circular risk)
+- omnibase_core.enums.enum_log_level (EnumLogLevel - no circular risk)
+- omnibase_core.logging.logging_structured (emit_log_event_sync - no circular risk)
+- omnibase_core.models.health.model_health_status (ModelHealthStatus - no circular risk)
+- omnibase_core.protocols.http (ProtocolHttpClient - no circular risk)
+- omnibase_core.types.typed_dict_mixin_types (TypedDictHealthCheckStatus - no circular risk)
+- Standard library: asyncio, collections.abc, datetime, typing, urllib.parse, uuid
 
 Import Chain Position:
-1. errors.error_codes → types.core_types
-2. THIS MODULE → errors.error_codes (OK - no circle)
-3. types.constraints → TYPE_CHECKING import of errors.error_codes
-4. models.* → types.constraints
-
-This module can safely import error_codes because error_codes only imports
-from types.core_types (not from models or types.constraints).
+This module is a leaf node in the import graph - it imports from stable,
+foundational modules (enums, logging, models, protocols, types) that have
+no dependencies on mixins. This ensures no circular import risk.
 """
 
 import asyncio
@@ -35,8 +32,8 @@ from typing import Protocol, runtime_checkable
 from urllib.parse import urlparse
 from uuid import uuid4
 
+from omnibase_core.enums.enum_health_status import EnumHealthStatus
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.enums.enum_node_health_status import EnumNodeHealthStatus
 from omnibase_core.logging.logging_structured import (
     emit_log_event_sync as emit_log_event,
 )
@@ -150,7 +147,7 @@ class MixinHealthCheck:
             def _check_database(self) -> ModelHealthStatus:
                 # Custom health check logic
                 return ModelHealthStatus(
-                    status=EnumNodeHealthStatus.HEALTHY,
+                    status=EnumHealthStatus.HEALTHY,
                     message="Database connection OK"
                 )
     """
@@ -205,7 +202,7 @@ class MixinHealthCheck:
 
         # Run all health checks
         check_results: list[ModelHealthStatus] = []
-        overall_status = EnumNodeHealthStatus.HEALTHY
+        overall_status = EnumHealthStatus.HEALTHY
         messages: list[str] = []
 
         for check_func in health_checks:
@@ -257,13 +254,13 @@ class MixinHealthCheck:
                 check_results.append(result)
 
                 # Update overall status (degraded if any check fails)
-                if result.status == "unhealthy":
-                    overall_status = EnumNodeHealthStatus.UNHEALTHY
+                if result.status == EnumHealthStatus.UNHEALTHY.value:
+                    overall_status = EnumHealthStatus.UNHEALTHY
                 elif (
-                    result.status == "degraded"
-                    and overall_status != EnumNodeHealthStatus.UNHEALTHY
+                    result.status == EnumHealthStatus.DEGRADED.value
+                    and overall_status != EnumHealthStatus.UNHEALTHY
                 ):
-                    overall_status = EnumNodeHealthStatus.DEGRADED
+                    overall_status = EnumHealthStatus.DEGRADED
 
                 # Collect messages - use issues instead
                 if result.issues:
@@ -285,7 +282,7 @@ class MixinHealthCheck:
                 )
 
                 # Mark as unhealthy if check throws
-                overall_status = EnumNodeHealthStatus.UNHEALTHY
+                overall_status = EnumHealthStatus.UNHEALTHY
                 messages.append(f"{check_func.__name__}: ERROR - {e!s}")
 
                 # Create error result
@@ -307,9 +304,9 @@ class MixinHealthCheck:
         # Build final health status
         # Calculate health score based on overall status
         health_score = 1.0
-        if overall_status == EnumNodeHealthStatus.DEGRADED:
+        if overall_status == EnumHealthStatus.DEGRADED:
             health_score = 0.6
-        elif overall_status == EnumNodeHealthStatus.UNHEALTHY:
+        elif overall_status == EnumHealthStatus.UNHEALTHY:
             health_score = 0.2
 
         # Collect all issues from check results
@@ -413,7 +410,7 @@ class MixinHealthCheck:
 
         # Wait for all checks to complete
         check_results: list[ModelHealthStatus] = []
-        overall_status = EnumNodeHealthStatus.HEALTHY
+        overall_status = EnumHealthStatus.HEALTHY
         messages: list[str] = []
 
         for check_name, task in check_tasks:
@@ -445,13 +442,13 @@ class MixinHealthCheck:
                 check_results.append(result)
 
                 # Update overall status
-                if result.status == "unhealthy":
-                    overall_status = EnumNodeHealthStatus.UNHEALTHY
+                if result.status == EnumHealthStatus.UNHEALTHY.value:
+                    overall_status = EnumHealthStatus.UNHEALTHY
                 elif (
-                    result.status == "degraded"
-                    and overall_status != EnumNodeHealthStatus.UNHEALTHY
+                    result.status == EnumHealthStatus.DEGRADED.value
+                    and overall_status != EnumHealthStatus.UNHEALTHY
                 ):
-                    overall_status = EnumNodeHealthStatus.DEGRADED
+                    overall_status = EnumHealthStatus.DEGRADED
 
                 # Collect messages from issues
                 if result.issues:
@@ -465,7 +462,7 @@ class MixinHealthCheck:
                     f"Async health check failed: {check_name}",
                     {"error": str(e)},
                 )
-                overall_status = EnumNodeHealthStatus.UNHEALTHY
+                overall_status = EnumHealthStatus.UNHEALTHY
                 messages.append(f"{check_name}: ERROR - {e!s}")
 
                 # Create error result for failed check
@@ -487,9 +484,9 @@ class MixinHealthCheck:
         # Build final health status
         # Calculate health score based on overall status
         health_score = 1.0
-        if overall_status == EnumNodeHealthStatus.DEGRADED:
+        if overall_status == EnumHealthStatus.DEGRADED:
             health_score = 0.6
-        elif overall_status == EnumNodeHealthStatus.UNHEALTHY:
+        elif overall_status == EnumHealthStatus.UNHEALTHY:
             health_score = 0.2
 
         # Collect all issues from check results
@@ -527,7 +524,7 @@ class MixinHealthCheck:
         # Convert to typed dictionary format
         return TypedDictHealthCheckStatus(
             node_id=node_id_str,
-            is_healthy=health.status == "healthy",
+            is_healthy=health.status == EnumHealthStatus.HEALTHY.value,
             status=health.status,
             health_score=health.health_score,
             issues=[issue.message for issue in health.issues],
@@ -568,8 +565,7 @@ class MixinHealthCheck:
                     ],
                 )
 
-        # fallback-ok: health check should return UNHEALTHY status, not crash
-        except Exception as e:
+        except Exception as e:  # fallback-ok: health check returns UNHEALTHY, not crash
             from omnibase_core.models.health.model_health_issue import ModelHealthIssue
 
             return ModelHealthStatus.create_unhealthy(
@@ -648,8 +644,7 @@ async def check_postgresql_health(
             ],
         )
 
-    # fallback-ok: health check should return UNHEALTHY status, not crash
-    except Exception as e:
+    except Exception as e:  # fallback-ok: health check returns UNHEALTHY, not crash
         emit_log_event(
             LogLevel.ERROR,
             "PostgreSQL health check failed",
@@ -753,8 +748,7 @@ async def check_kafka_health(
             ],
         )
 
-    # fallback-ok: health check should return DEGRADED status, not crash
-    except Exception as e:
+    except Exception as e:  # fallback-ok: health check returns DEGRADED, not crash
         emit_log_event(
             LogLevel.ERROR,
             "Kafka health check failed",
@@ -847,8 +841,7 @@ async def check_redis_health(
             ],
         )
 
-    # fallback-ok: health check should return UNHEALTHY status, not crash
-    except Exception as e:
+    except Exception as e:  # fallback-ok: health check returns UNHEALTHY, not crash
         emit_log_event(
             LogLevel.ERROR,
             "Redis health check failed",
@@ -1043,8 +1036,7 @@ async def check_http_service_health(
             ],
         )
 
-    # fallback-ok: health check should return UNHEALTHY status, not crash
-    except Exception as e:
+    except Exception as e:  # fallback-ok: health check returns UNHEALTHY, not crash
         emit_log_event(
             LogLevel.ERROR,
             "HTTP service health check failed",

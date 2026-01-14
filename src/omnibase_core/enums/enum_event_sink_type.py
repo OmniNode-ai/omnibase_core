@@ -5,11 +5,13 @@
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 __all__ = ["EnumEventSinkType"]
 
 
 @unique
-class EnumEventSinkType(str, Enum):
+class EnumEventSinkType(StrValueHelper, str, Enum):
     """Event sink types for contract validation events.
 
     Types: MEMORY (in-memory), FILE (JSONL), KAFKA (streaming).
@@ -33,7 +35,7 @@ class EnumEventSinkType(str, Enum):
             >>> EnumEventSinkType.FILE.is_persistent
             True
         """
-        return self in (EnumEventSinkType.FILE, EnumEventSinkType.KAFKA)
+        return self in {EnumEventSinkType.FILE, EnumEventSinkType.KAFKA}
 
     @property
     def requires_path(self) -> bool:

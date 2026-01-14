@@ -7,9 +7,11 @@ cross-instance collaboration in ONEX intelligence architecture.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumCollaborationDomain(str, Enum):
+class EnumCollaborationDomain(StrValueHelper, str, Enum):
     """
     Enum for collaboration domains with security validation.
 
@@ -44,3 +46,6 @@ class EnumCollaborationDomain(str, Enum):
     TASK_COORDINATION = "task_coordination"
     PROGRESS_TRACKING = "progress_tracking"
     RESOURCE_PLANNING = "resource_planning"
+
+
+__all__ = ["EnumCollaborationDomain"]

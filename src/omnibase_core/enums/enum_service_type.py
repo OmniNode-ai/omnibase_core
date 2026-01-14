@@ -9,9 +9,11 @@ infrastructure service types in the ONEX Configuration-Driven Registry System.
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 
 @unique
-class EnumServiceType(str, Enum):
+class EnumServiceType(StrValueHelper, str, Enum):
     """Standard service type categories."""
 
     KAFKA = "kafka"

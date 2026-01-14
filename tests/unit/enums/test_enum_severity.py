@@ -9,7 +9,7 @@ import json
 import pytest
 from pydantic import BaseModel, ConfigDict, ValidationError
 
-from omnibase_core.enums.enum_severity import EnumSeverity
+from omnibase_core.enums import EnumSeverity
 
 
 @pytest.mark.unit
@@ -73,12 +73,17 @@ class TestEnumSeverity:
         for level in all_levels:
             assert level in EnumSeverity
 
-    def test_enum_iteration_order(self) -> None:
-        """Test iterating over enum values returns all members."""
+    def test_enum_iteration_completeness(self) -> None:
+        """Test that iterating over enum returns all 6 expected members.
+
+        This verifies completeness (all values present), not ordering.
+        For ordering tests, see test_severity_ordering_by_value.
+        """
         levels = list(EnumSeverity)
         level_values = {level.value for level in levels}
         expected_values = {"debug", "info", "warning", "error", "critical", "fatal"}
         assert level_values == expected_values
+        assert len(levels) == 6  # Explicit count check
 
     def test_json_serialization(self) -> None:
         """Test JSON serialization compatibility."""

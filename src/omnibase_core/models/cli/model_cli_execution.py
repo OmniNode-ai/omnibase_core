@@ -32,9 +32,7 @@ ExecutionContextValue = object
 from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.enums.enum_execution_phase import EnumExecutionPhase
-from omnibase_core.enums.enum_execution_status_v2 import (
-    EnumExecutionStatusV2 as EnumExecutionStatus,
-)
+from omnibase_core.enums.enum_execution_status import EnumExecutionStatus
 from omnibase_core.enums.enum_output_format import EnumOutputFormat
 
 if TYPE_CHECKING:

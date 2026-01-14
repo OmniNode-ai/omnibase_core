@@ -10,11 +10,13 @@ values with scenario-specific states while eliminating conflicts with other doma
 
 from enum import Enum, unique
 
+from omnibase_core.utils.util_str_enum_base import StrValueHelper
+
 from .enum_base_status import EnumBaseStatus
 
 
 @unique
-class EnumScenarioStatusV2(str, Enum):
+class EnumScenarioStatusV2(StrValueHelper, str, Enum):
     """
     Scenario status enumeration extending base status hierarchy.
 
@@ -48,10 +50,6 @@ class EnumScenarioStatusV2(str, Enum):
     NOT_EXECUTED = "not_executed"  # Scenario hasn't been run yet
     QUEUED = "queued"  # Scenario is queued for execution
     SKIPPED = "skipped"  # Scenario was skipped during execution
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
 
     def to_base_status(self) -> EnumBaseStatus:
         """Convert to base status enum for universal operations."""

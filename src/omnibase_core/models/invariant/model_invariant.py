@@ -142,6 +142,7 @@ class ModelInvariant(BaseModel):
         missing_keys = required_keys - set(self.config.keys())
 
         if missing_keys:
+            # error-ok: Pydantic model_validator requires ValueError
             raise ValueError(
                 f"Invariant type '{self.type.value}' requires config keys: "
                 f"{sorted(required_keys)}. Missing: {sorted(missing_keys)}. "

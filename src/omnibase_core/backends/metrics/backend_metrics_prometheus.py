@@ -371,6 +371,7 @@ class BackendMetricsPrometheus:
                 self._last_push_failure_time = None
                 return
             except Exception as e:
+                # catch-all-ok: retry loop captures failures for exponential backoff
                 last_exception = e
                 if attempt < self._push_retry_count - 1:
                     logger.debug(
