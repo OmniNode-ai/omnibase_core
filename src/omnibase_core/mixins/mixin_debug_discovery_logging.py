@@ -12,11 +12,9 @@ from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.logging.logging_structured import (
     emit_log_event_sync as emit_log_event,
 )
+from omnibase_core.models.types.model_onex_common_types import EnvValue
 
 logger = logging.getLogger(__name__)
-
-# Type alias for logging context values
-LogContextValue = str | int | float | bool | None
 
 
 class MixinDebugDiscoveryLogging:
@@ -31,7 +29,7 @@ class MixinDebugDiscoveryLogging:
     def setup_discovery_debug_logging(
         self,
         node_name: str,
-        additional_context: Mapping[str, LogContextValue] | None = None,
+        additional_context: Mapping[str, EnvValue] | None = None,
     ) -> None:
         """
         Setup comprehensive discovery event debug logging.

@@ -2,8 +2,10 @@
 
 from typing import Literal, TypeGuard
 
-# Type alias for valid configuration value types
-ConfigValue = int | float | bool | str
+# Type alias for valid scalar configuration value types
+# Named ScalarConfigValue to distinguish from broader ConfigValue types
+# that may include list[str] | dict[str, str] | None
+ScalarConfigValue = int | float | bool | str
 
 # Literal type constraining value_type/config_type to valid values
 VALID_VALUE_TYPES = Literal["int", "float", "bool", "str"]
@@ -28,7 +30,7 @@ def is_valid_value_type(type_name: str) -> TypeGuard[VALID_VALUE_TYPES]:
 
 
 def validate_config_value_type(
-    value_type: VALID_VALUE_TYPES, default: ConfigValue
+    value_type: VALID_VALUE_TYPES, default: ScalarConfigValue
 ) -> None:
     """Validate that default value matches declared type.
 

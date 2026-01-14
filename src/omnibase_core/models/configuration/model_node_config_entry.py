@@ -4,7 +4,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.models.configuration.model_config_types import (
     VALID_VALUE_TYPES,
-    ConfigValue,
+    ScalarConfigValue,
     validate_config_value_type,
 )
 
@@ -30,7 +30,7 @@ class ModelNodeConfigEntry(BaseModel):
         ...,
         description="Type name of the value ('int', 'float', 'bool', 'str')",
     )
-    default: ConfigValue = Field(
+    default: ScalarConfigValue = Field(
         ...,
         description="Default value for this configuration",
     )

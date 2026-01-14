@@ -9,7 +9,7 @@ from .model_cli_config import (
     ModelTierConfig,
 )
 from .model_compute_cache_config import ModelComputeCacheConfig
-from .model_config_types import ConfigValue
+from .model_config_types import ScalarConfigValue
 from .model_environment_config_override import ModelEnvironmentConfigOverride
 from .model_environment_override import ModelEnvironmentOverride
 from .model_git_hub_actions_container import ModelGitHubActionsContainer
@@ -30,7 +30,7 @@ from .model_throttle_response import ModelThrottleResponse
 from .model_throttling_behavior import ModelThrottlingBehavior
 
 __all__ = [
-    "ConfigValue",
+    "ScalarConfigValue",
     "ModelAPIConfig",
     "ModelCLIConfig",
     "ModelComputeCacheConfig",
