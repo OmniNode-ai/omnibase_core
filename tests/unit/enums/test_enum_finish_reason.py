@@ -28,13 +28,14 @@ class TestEnumFinishReason:
         assert issubclass(EnumFinishReason, Enum)
 
     def test_enum_string_behavior(self):
-        """Test string behavior of enum values."""
-        assert str(EnumFinishReason.STOP) == "EnumFinishReason.STOP"
-        assert str(EnumFinishReason.LENGTH) == "EnumFinishReason.LENGTH"
-        assert str(EnumFinishReason.CONTENT_FILTER) == "EnumFinishReason.CONTENT_FILTER"
-        assert str(EnumFinishReason.TOOL_CALLS) == "EnumFinishReason.TOOL_CALLS"
-        assert str(EnumFinishReason.END_TURN) == "EnumFinishReason.END_TURN"
-        assert str(EnumFinishReason.MAX_TOKENS) == "EnumFinishReason.MAX_TOKENS"
+        """Test string behavior of enum values with StrValueHelper."""
+        # StrValueHelper makes str() return the enum value
+        assert str(EnumFinishReason.STOP) == "stop"
+        assert str(EnumFinishReason.LENGTH) == "length"
+        assert str(EnumFinishReason.CONTENT_FILTER) == "content_filter"
+        assert str(EnumFinishReason.TOOL_CALLS) == "tool_calls"
+        assert str(EnumFinishReason.END_TURN) == "end_turn"
+        assert str(EnumFinishReason.MAX_TOKENS) == "max_tokens"
 
     def test_enum_iteration(self):
         """Test that we can iterate over enum values."""

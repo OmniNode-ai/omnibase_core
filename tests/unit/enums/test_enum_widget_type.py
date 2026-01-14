@@ -55,8 +55,8 @@ class TestEnumWidgetType:
 
     def test_string_conversion(self) -> None:
         """Test string conversion and str enum behavior."""
-        # str(enum) returns full representation
-        assert "CHART" in str(EnumWidgetType.CHART)
+        # StrValueHelper makes str() return the value
+        assert str(EnumWidgetType.CHART) == "chart"
         # But as str subclass, equality with string works
         assert EnumWidgetType.CHART == "chart"
         assert EnumWidgetType.TABLE == "table"

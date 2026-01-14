@@ -54,12 +54,12 @@ class TestEnumWorkflowStatus:
         assert EnumWorkflowStatus.CANCELLED in EnumWorkflowStatus
 
     def test_string_conversion(self) -> None:
-        """Test string conversion of enum values."""
-        assert str(EnumWorkflowStatus.CREATED) == "EnumWorkflowStatus.CREATED"
-        assert str(EnumWorkflowStatus.RUNNING) == "EnumWorkflowStatus.RUNNING"
-        assert str(EnumWorkflowStatus.COMPLETED) == "EnumWorkflowStatus.COMPLETED"
-        assert str(EnumWorkflowStatus.FAILED) == "EnumWorkflowStatus.FAILED"
-        assert str(EnumWorkflowStatus.CANCELLED) == "EnumWorkflowStatus.CANCELLED"
+        """Test string conversion of enum values (StrValueHelper returns value)."""
+        assert str(EnumWorkflowStatus.CREATED) == "CREATED"
+        assert str(EnumWorkflowStatus.RUNNING) == "RUNNING"
+        assert str(EnumWorkflowStatus.COMPLETED) == "COMPLETED"
+        assert str(EnumWorkflowStatus.FAILED) == "FAILED"
+        assert str(EnumWorkflowStatus.CANCELLED) == "CANCELLED"
 
     def test_value_lookup(self) -> None:
         """Test enum lookup from string value."""
@@ -115,11 +115,11 @@ class TestEnumAssignmentStatus:
         assert EnumAssignmentStatus.FAILED in EnumAssignmentStatus
 
     def test_string_conversion(self) -> None:
-        """Test string conversion of enum values."""
-        assert str(EnumAssignmentStatus.ASSIGNED) == "EnumAssignmentStatus.ASSIGNED"
-        assert str(EnumAssignmentStatus.EXECUTING) == "EnumAssignmentStatus.EXECUTING"
-        assert str(EnumAssignmentStatus.COMPLETED) == "EnumAssignmentStatus.COMPLETED"
-        assert str(EnumAssignmentStatus.FAILED) == "EnumAssignmentStatus.FAILED"
+        """Test string conversion of enum values (StrValueHelper returns value)."""
+        assert str(EnumAssignmentStatus.ASSIGNED) == "ASSIGNED"
+        assert str(EnumAssignmentStatus.EXECUTING) == "EXECUTING"
+        assert str(EnumAssignmentStatus.COMPLETED) == "COMPLETED"
+        assert str(EnumAssignmentStatus.FAILED) == "FAILED"
 
     def test_value_lookup(self) -> None:
         """Test enum lookup from string value."""
@@ -174,17 +174,11 @@ class TestEnumExecutionPattern:
         assert EnumExecutionPattern.SCATTER_GATHER in EnumExecutionPattern
 
     def test_string_conversion(self) -> None:
-        """Test string conversion of enum values."""
-        assert str(EnumExecutionPattern.SEQUENTIAL) == "EnumExecutionPattern.SEQUENTIAL"
-        assert (
-            str(EnumExecutionPattern.PARALLEL_COMPUTE)
-            == "EnumExecutionPattern.PARALLEL_COMPUTE"
-        )
-        assert str(EnumExecutionPattern.PIPELINE) == "EnumExecutionPattern.PIPELINE"
-        assert (
-            str(EnumExecutionPattern.SCATTER_GATHER)
-            == "EnumExecutionPattern.SCATTER_GATHER"
-        )
+        """Test string conversion of enum values (StrValueHelper returns value)."""
+        assert str(EnumExecutionPattern.SEQUENTIAL) == "sequential"
+        assert str(EnumExecutionPattern.PARALLEL_COMPUTE) == "parallel_compute"
+        assert str(EnumExecutionPattern.PIPELINE) == "pipeline"
+        assert str(EnumExecutionPattern.SCATTER_GATHER) == "scatter_gather"
 
     def test_value_lookup(self) -> None:
         """Test enum lookup from string value."""
@@ -250,23 +244,11 @@ class TestEnumFailureRecoveryStrategy:
         assert EnumFailureRecoveryStrategy.ABORT in EnumFailureRecoveryStrategy
 
     def test_string_conversion(self) -> None:
-        """Test string conversion of enum values."""
-        assert (
-            str(EnumFailureRecoveryStrategy.RETRY)
-            == "EnumFailureRecoveryStrategy.RETRY"
-        )
-        assert (
-            str(EnumFailureRecoveryStrategy.ROLLBACK)
-            == "EnumFailureRecoveryStrategy.ROLLBACK"
-        )
-        assert (
-            str(EnumFailureRecoveryStrategy.COMPENSATE)
-            == "EnumFailureRecoveryStrategy.COMPENSATE"
-        )
-        assert (
-            str(EnumFailureRecoveryStrategy.ABORT)
-            == "EnumFailureRecoveryStrategy.ABORT"
-        )
+        """Test string conversion of enum values (StrValueHelper returns value)."""
+        assert str(EnumFailureRecoveryStrategy.RETRY) == "RETRY"
+        assert str(EnumFailureRecoveryStrategy.ROLLBACK) == "ROLLBACK"
+        assert str(EnumFailureRecoveryStrategy.COMPENSATE) == "COMPENSATE"
+        assert str(EnumFailureRecoveryStrategy.ABORT) == "ABORT"
 
     def test_value_lookup(self) -> None:
         """Test enum lookup from string value."""

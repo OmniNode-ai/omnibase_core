@@ -30,34 +30,25 @@ class TestEnumEventTypeDiscovery:
 
     def test_enum_string_behavior(self):
         """Test string behavior of enum values."""
+        # StrValueHelper makes str() return the value
+        assert str(EnumEventTypeDiscovery.SERVICE_DISCOVERY) == "service_discovery"
         assert (
-            str(EnumEventTypeDiscovery.SERVICE_DISCOVERY)
-            == "EnumEventTypeDiscovery.SERVICE_DISCOVERY"
-        )
-        assert (
-            str(EnumEventTypeDiscovery.SERVICE_REGISTRATION)
-            == "EnumEventTypeDiscovery.SERVICE_REGISTRATION"
+            str(EnumEventTypeDiscovery.SERVICE_REGISTRATION) == "service_registration"
         )
         assert (
             str(EnumEventTypeDiscovery.SERVICE_DEREGISTRATION)
-            == "EnumEventTypeDiscovery.SERVICE_DEREGISTRATION"
+            == "service_deregistration"
         )
         assert (
             str(EnumEventTypeDiscovery.CONTAINER_PROVISIONING)
-            == "EnumEventTypeDiscovery.CONTAINER_PROVISIONING"
+            == "container_provisioning"
         )
         assert (
             str(EnumEventTypeDiscovery.CONTAINER_HEALTH_CHECK)
-            == "EnumEventTypeDiscovery.CONTAINER_HEALTH_CHECK"
+            == "container_health_check"
         )
-        assert (
-            str(EnumEventTypeDiscovery.MESH_COORDINATION)
-            == "EnumEventTypeDiscovery.MESH_COORDINATION"
-        )
-        assert (
-            str(EnumEventTypeDiscovery.HUB_STATUS_UPDATE)
-            == "EnumEventTypeDiscovery.HUB_STATUS_UPDATE"
-        )
+        assert str(EnumEventTypeDiscovery.MESH_COORDINATION) == "mesh_coordination"
+        assert str(EnumEventTypeDiscovery.HUB_STATUS_UPDATE) == "hub_status_update"
 
     def test_enum_iteration(self):
         """Test that we can iterate over enum values."""

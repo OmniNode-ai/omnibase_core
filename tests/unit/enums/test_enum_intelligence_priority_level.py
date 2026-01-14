@@ -29,27 +29,12 @@ class TestEnumIntelligencePriorityLevel:
         assert issubclass(EnumIntelligencePriorityLevel, Enum)
 
     def test_enum_string_behavior(self):
-        """Test string behavior of enum values."""
-        assert (
-            str(EnumIntelligencePriorityLevel.LOW)
-            == "EnumIntelligencePriorityLevel.LOW"
-        )
-        assert (
-            str(EnumIntelligencePriorityLevel.NORMAL)
-            == "EnumIntelligencePriorityLevel.NORMAL"
-        )
-        assert (
-            str(EnumIntelligencePriorityLevel.HIGH)
-            == "EnumIntelligencePriorityLevel.HIGH"
-        )
-        assert (
-            str(EnumIntelligencePriorityLevel.CRITICAL)
-            == "EnumIntelligencePriorityLevel.CRITICAL"
-        )
-        assert (
-            str(EnumIntelligencePriorityLevel.EMERGENCY)
-            == "EnumIntelligencePriorityLevel.EMERGENCY"
-        )
+        """Test string behavior of enum values (StrValueHelper returns value)."""
+        assert str(EnumIntelligencePriorityLevel.LOW) == "low"
+        assert str(EnumIntelligencePriorityLevel.NORMAL) == "normal"
+        assert str(EnumIntelligencePriorityLevel.HIGH) == "high"
+        assert str(EnumIntelligencePriorityLevel.CRITICAL) == "critical"
+        assert str(EnumIntelligencePriorityLevel.EMERGENCY) == "emergency"
 
     def test_enum_iteration(self):
         """Test that we can iterate over enum values."""

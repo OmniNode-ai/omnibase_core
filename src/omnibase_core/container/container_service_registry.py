@@ -821,7 +821,8 @@ class ServiceRegistry:
         # Determine overall status
         # Map registry state to operation status
         # Priority: FAILED (any failures) > PENDING (no registrations) > SUCCESS
-        overall_status: EnumOperationStatus = EnumOperationStatus.SUCCESS
+        # Each branch explicitly sets both status and message to prevent incorrect overwrites
+        overall_status: EnumOperationStatus
         status_message: str
         if self._failed_registrations > 0:
             overall_status = EnumOperationStatus.FAILED
@@ -833,6 +834,7 @@ class ServiceRegistry:
             overall_status = EnumOperationStatus.PENDING
             status_message = "Registry initialized, no services registered yet"
         else:
+            overall_status = EnumOperationStatus.SUCCESS
             status_message = (
                 f"Registry operational with {len(self._registrations)} services"
             )

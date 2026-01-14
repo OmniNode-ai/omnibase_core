@@ -31,19 +31,15 @@ class TestEnumErrorCategory:
 
     def test_enum_string_behavior(self):
         """Test string behavior of enum values."""
-        assert str(EnumErrorCategory.TRANSIENT) == "EnumErrorCategory.TRANSIENT"
-        assert str(EnumErrorCategory.CONFIGURATION) == "EnumErrorCategory.CONFIGURATION"
-        assert (
-            str(EnumErrorCategory.RESOURCE_EXHAUSTION)
-            == "EnumErrorCategory.RESOURCE_EXHAUSTION"
-        )
-        assert (
-            str(EnumErrorCategory.AUTHENTICATION) == "EnumErrorCategory.AUTHENTICATION"
-        )
-        assert str(EnumErrorCategory.NETWORK) == "EnumErrorCategory.NETWORK"
-        assert str(EnumErrorCategory.VALIDATION) == "EnumErrorCategory.VALIDATION"
-        assert str(EnumErrorCategory.SYSTEM) == "EnumErrorCategory.SYSTEM"
-        assert str(EnumErrorCategory.UNKNOWN) == "EnumErrorCategory.UNKNOWN"
+        # StrValueHelper makes str() return the value
+        assert str(EnumErrorCategory.TRANSIENT) == "transient"
+        assert str(EnumErrorCategory.CONFIGURATION) == "configuration"
+        assert str(EnumErrorCategory.RESOURCE_EXHAUSTION) == "resource_exhaustion"
+        assert str(EnumErrorCategory.AUTHENTICATION) == "authentication"
+        assert str(EnumErrorCategory.NETWORK) == "network"
+        assert str(EnumErrorCategory.VALIDATION) == "validation"
+        assert str(EnumErrorCategory.SYSTEM) == "system"
+        assert str(EnumErrorCategory.UNKNOWN) == "unknown"
 
     def test_enum_iteration(self):
         """Test that we can iterate over enum values."""

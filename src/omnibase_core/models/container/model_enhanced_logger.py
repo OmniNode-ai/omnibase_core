@@ -34,7 +34,9 @@ class ModelEnhancedLogger:
         if level.value >= self.level.value:
             from datetime import UTC, datetime
 
-            datetime.now(UTC).isoformat()
+            timestamp = datetime.now(UTC).isoformat()
+            # print-ok: stub logger output - this is intentional for minimal logging
+            print(f"[{timestamp}] [{level.name}] [{event_type}] {message}")
 
     async def emit_log_event_async(
         self,

@@ -28,11 +28,12 @@ class TestEnumEventPriority:
 
     def test_enum_string_behavior(self):
         """Test string behavior of enum values."""
-        assert str(EnumEventPriority.CRITICAL) == "EnumEventPriority.CRITICAL"
-        assert str(EnumEventPriority.HIGH) == "EnumEventPriority.HIGH"
-        assert str(EnumEventPriority.NORMAL) == "EnumEventPriority.NORMAL"
-        assert str(EnumEventPriority.LOW) == "EnumEventPriority.LOW"
-        assert str(EnumEventPriority.DEFERRED) == "EnumEventPriority.DEFERRED"
+        # StrValueHelper makes str() return the value
+        assert str(EnumEventPriority.CRITICAL) == "CRITICAL"
+        assert str(EnumEventPriority.HIGH) == "HIGH"
+        assert str(EnumEventPriority.NORMAL) == "NORMAL"
+        assert str(EnumEventPriority.LOW) == "LOW"
+        assert str(EnumEventPriority.DEFERRED) == "DEFERRED"
 
     def test_enum_iteration(self):
         """Test that we can iterate over enum values."""

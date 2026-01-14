@@ -93,10 +93,13 @@ class TestEnumDashboardStatus:
                 assert status.requires_reconnection is True
 
     def test_string_conversion(self) -> None:
-        """Test string conversion and str enum behavior."""
-        # str(enum) returns full representation
-        assert "INITIALIZING" in str(EnumDashboardStatus.INITIALIZING)
-        # But as str subclass, equality with string works
+        """Test string conversion and str enum behavior (StrValueHelper returns value)."""
+        # str(enum) returns the value with StrValueHelper
+        assert str(EnumDashboardStatus.INITIALIZING) == "initializing"
+        assert str(EnumDashboardStatus.CONNECTED) == "connected"
+        assert str(EnumDashboardStatus.DISCONNECTED) == "disconnected"
+        assert str(EnumDashboardStatus.ERROR) == "error"
+        # As str subclass, equality with string works
         assert EnumDashboardStatus.INITIALIZING == "initializing"
         assert EnumDashboardStatus.CONNECTED == "connected"
         assert EnumDashboardStatus.DISCONNECTED == "disconnected"

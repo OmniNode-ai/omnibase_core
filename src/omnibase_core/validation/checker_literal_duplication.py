@@ -490,6 +490,19 @@ def _should_exclude(file_path: Path, exclude_patterns: list[str]) -> bool:
         # Strip trailing path separators to handle patterns like "tests/" or "src/"
         # This ensures "tests/" matches the "tests" path component correctly
         normalized_pattern = pattern.rstrip("/\\")
+
+        # Handle full path patterns (e.g., "/full/path/tests" or "src/tests")
+        # If pattern contains path separators, treat it as a path prefix match
+        if "/" in normalized_pattern or "\\" in normalized_pattern:
+            try:
+                pattern_path = Path(normalized_pattern).resolve()
+                # Check if file is under the pattern directory
+                resolved_path.relative_to(pattern_path)
+                return True
+            except (OSError, ValueError):
+                # Pattern is not a parent of the file, continue checking
+                pass
+
         # Check if pattern matches any path component exactly
         if normalized_pattern in path_parts:
             return True
