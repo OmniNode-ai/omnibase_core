@@ -58,7 +58,8 @@ validation:
           - Result
           - Outcome
         min_values: 3
-        allowed_aliases: []
+        allowed_aliases:
+          - EnforcementOutcome  # Pydantic field typing, not domain model
 
     - rule_id: duplicate_enum_values
       description: Detect enums with overlapping/duplicate value sets

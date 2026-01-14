@@ -47,6 +47,7 @@ See Also:
 import ast
 import logging
 import sys
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import ClassVar
@@ -447,8 +448,6 @@ class CheckerEnumGovernance(ValidatorBase):
         Returns:
             ModelValidationResult containing all issues found.
         """
-        import time
-
         start_time = time.time()
 
         # Normalize to list
