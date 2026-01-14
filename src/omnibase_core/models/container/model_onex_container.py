@@ -37,6 +37,7 @@ See Also:
 from typing import TYPE_CHECKING, TypeVar, cast
 
 from omnibase_core.decorators.decorator_allow_dict_any import allow_dict_any
+from omnibase_core.decorators.decorator_error_handling import standard_error_handling
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.type_serializable_value import (
     SerializableValue,
@@ -75,6 +76,7 @@ if TYPE_CHECKING:
 import asyncio
 import os
 import tempfile
+import threading
 import time
 from pathlib import Path
 
@@ -231,6 +233,7 @@ class ModelONEXContainer:
         # Initialize ServiceRegistry (new DI system)
         # Note: ServiceRegistry is imported in TYPE_CHECKING block; using string annotation
         self._service_registry: "ServiceRegistry | None" = None  # noqa: UP037
+        self._service_registry_lock = threading.Lock()
         self._enable_service_registry = enable_service_registry
 
         if enable_service_registry:
@@ -333,7 +336,11 @@ class ModelONEXContainer:
             ServiceRegistry instance.
 
         Raises:
-            ModelOnexError: If registry is not initialized.
+            ModelOnexError: If registry is not initialized. Call
+                initialize_service_registry() first.
+
+        See Also:
+            initialize_service_registry: Explicit initialization method.
         """
         if self._service_registry is None:
             raise ModelOnexError(
@@ -345,6 +352,7 @@ class ModelONEXContainer:
             )
         return self._service_registry
 
+    @standard_error_handling("Service registry initialization")
     def initialize_service_registry(
         self,
         config: "ModelServiceRegistryConfig | None" = None,
@@ -365,10 +373,11 @@ class ModelONEXContainer:
             The initialized ServiceRegistry instance.
 
         Raises:
-            ModelOnexError: If registry is already initialized.
-            Exception: Any exception from ServiceRegistry instantiation propagates
-                unchanged (e.g., ValueError, TypeError). Container state remains
-                unchanged on failure, allowing retry with corrected configuration.
+            ModelOnexError: If registry is already initialized, or if ServiceRegistry
+                instantiation fails. The ``@standard_error_handling`` decorator wraps
+                unexpected exceptions (e.g., ValueError, TypeError) in ModelOnexError
+                with ``OPERATION_FAILED`` error code. Container state remains unchanged
+                on failure, allowing retry with corrected configuration.
 
         Note:
             This method is not thread-safe. Do not call from multiple threads
@@ -389,32 +398,41 @@ class ModelONEXContainer:
                 config = ModelServiceRegistryConfig(registry_name="custom")
                 registry = container.initialize_service_registry(config)
         """
-        if self._service_registry is not None:
-            raise ModelOnexError(
-                message="Service registry already initialized. Use container.service_registry.",
-                error_code=EnumCoreErrorCode.INVALID_STATE,
-                context={
-                    "hint": "If you need reconfiguration, create a new container."
-                },
+        with self._service_registry_lock:
+            if self._service_registry is not None:
+                raise ModelOnexError(
+                    message="Service registry already initialized. Use container.service_registry.",
+                    error_code=EnumCoreErrorCode.INVALID_STATE,
+                    context={
+                        "hint": "If you need reconfiguration, create a new container."
+                    },
+                )
+
+            # Track whether custom config was provided before defaulting
+            config_was_provided = config is not None
+
+            # Lazy import to avoid circular dependency (OMN-1261)
+            from omnibase_core.container.container_service_registry import (
+                ServiceRegistry,
+            )
+            from omnibase_core.models.container.model_registry_config import (
+                create_default_registry_config,
             )
 
-        # Lazy import to avoid circular dependency (OMN-1261)
-        from omnibase_core.container.container_service_registry import ServiceRegistry
-        from omnibase_core.models.container.model_registry_config import (
-            create_default_registry_config,
-        )
+            if config is None:
+                config = create_default_registry_config()
 
-        if config is None:
-            config = create_default_registry_config()
+            self._service_registry = ServiceRegistry(config)
+            self._enable_service_registry = True
 
-        self._service_registry = ServiceRegistry(config)
-        self._enable_service_registry = True
-
-        emit_log_event(
-            LogLevel.INFO,
-            "ServiceRegistry initialized via initialize_service_registry()",
-            {"registry_name": config.registry_name},
-        )
+            emit_log_event(
+                LogLevel.INFO,
+                "ServiceRegistry initialized via initialize_service_registry()",
+                {
+                    "registry_name": config.registry_name,
+                    "custom_config": config_was_provided,
+                },
+            )
 
         return self._service_registry
 

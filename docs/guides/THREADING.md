@@ -746,6 +746,42 @@ def worker_thread(container):
     # Use services (check individual service thread safety)
 ```
 
+### Service Registry Initialization
+
+The `initialize_service_registry()` method is thread-safe and can be called from multiple
+threads simultaneously. The method uses an internal lock to ensure:
+
+- Exactly one thread will successfully initialize the registry
+- Other threads will receive `ModelOnexError` with `INVALID_STATE` error code
+- The registry instance is safely published to all threads
+
+**Example: Safe concurrent initialization**
+
+```python
+import threading
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+from omnibase_core.errors import ModelOnexError
+
+container = ModelONEXContainer(enable_service_registry=False)
+
+def worker():
+    try:
+        registry = container.initialize_service_registry()
+        # Use registry...
+    except ModelOnexError:
+        # Another thread already initialized
+        registry = container.service_registry
+        # Use registry...
+
+threads = [threading.Thread(target=worker) for _ in range(4)]
+for t in threads:
+    t.start()
+for t in threads:
+    t.join()
+```
+
+**Note**: Once initialized, `container.service_registry` property access is always thread-safe.
+
 ### Node Instance Sharing
 
 **DO NOT** share node instances across threads without careful analysis:
