@@ -235,7 +235,7 @@ class TestEnumHandlerTypeConcreteCategories:
             assert handler in EnumHandlerType
 
     def test_dev_test_handlers(self):
-        """Test handlers for development/testing operations (v0.4.0+)."""
+        """Test handlers for Development/Testing operations (v0.4.0+)."""
         dev_handlers = {
             EnumHandlerType.LOCAL,
         }

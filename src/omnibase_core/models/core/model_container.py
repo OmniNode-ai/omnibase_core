@@ -220,7 +220,7 @@ class ModelContainer[T](BaseModel):
                     },
                 ),
             )
-        except (ModelOnexError, AttributeError, ValueError, TypeError) as e:
+        except (AttributeError, ModelOnexError, TypeError, ValueError) as e:
             if isinstance(e, ModelOnexError):
                 raise
             raise ModelOnexError(

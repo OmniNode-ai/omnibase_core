@@ -322,14 +322,6 @@ from .enum_workflow_dependency_type import EnumWorkflowDependencyType
 # These need to be created or their references need to be updated.
 
 
-# Deprecated severity enum aliases (OMN-1296, OMN-1311)
-# Legacy names preserved as direct references to canonical EnumSeverity.
-# Use EnumSeverity directly for new code.
-EnumInvariantSeverity: type[EnumSeverity] = EnumSeverity
-EnumValidationSeverity: type[EnumSeverity] = EnumSeverity
-EnumViolationSeverity: type[EnumSeverity] = EnumSeverity
-
-
 __all__ = [
     # Error code domain
     "EnumCLIExitCode",
@@ -351,10 +343,6 @@ __all__ = [
     "EnumSecurityRiskLevel",
     # Severity domain (canonical - OMN-1311)
     "EnumSeverity",
-    # Deprecated severity aliases (OMN-1296) - use EnumSeverity directly
-    "EnumInvariantSeverity",
-    "EnumValidationSeverity",
-    "EnumViolationSeverity",
     # Validation domain
     "EnumEnvironmentValidationRuleType",
     "EnumValidationRuleType",

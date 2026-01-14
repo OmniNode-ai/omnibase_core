@@ -133,7 +133,7 @@ DI Container Registration:
                         success=response.status == 200,
                         data={"status_code": response.status}
                     )
-                except (TimeoutError, ConnectionError) as e:
+                except (ConnectionError, TimeoutError) as e:
                     return ModelEffectOutput(
                         success=False,
                         error=str(e)
