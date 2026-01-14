@@ -11,6 +11,7 @@ from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.enums.enum_artifact_type import EnumArtifactType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.types.type_serializable_value import SerializedDict
 
@@ -45,10 +46,13 @@ class ModelArtifactTypeConfig(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except (AttributeError, ValueError, TypeError) as e:
+        except ModelOnexError:
+            raise  # Re-raise without double-wrapping
+        except PYDANTIC_MODEL_ERRORS as e:
+            # PYDANTIC_MODEL_ERRORS covers: AttributeError, TypeError, ValidationError, ValueError
             raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             ) from e
 
     def serialize(self) -> SerializedDict:
@@ -56,11 +60,12 @@ class ModelArtifactTypeConfig(BaseModel):
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            return True
-        except (AttributeError, ValueError, TypeError) as e:
-            raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Operation failed: {e}",
-            ) from e
+        """
+        Validate instance integrity (ProtocolValidatable protocol).
+
+        Returns True for well-constructed instances. Override in subclasses
+        for custom validation logic.
+        """
+        # Basic validation - Pydantic handles field constraints
+        # Override in specific models for custom validation
+        return True

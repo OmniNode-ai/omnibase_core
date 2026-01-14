@@ -1,7 +1,7 @@
 """
 Node core information summary model.
 
-Clean, strongly-typed replacement for node core info dict[str, Any]return types.
+Clean, strongly-typed replacement for node core info dict[str, Any] return types.
 Follows ONEX one-model-per-file naming conventions.
 """
 
