@@ -710,6 +710,7 @@ class ManifestGenerator:
             try:
                 callback(manifest)
             except Exception as e:
+                # callback-resilience-ok: callbacks must not crash manifest build
                 warnings.warn(
                     f"on_manifest_built callback failed: {e!r}. "
                     "Manifest was built successfully but callback raised an exception.",
