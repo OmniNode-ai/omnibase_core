@@ -21,7 +21,7 @@ class ModelInvariantViolationBreakdown(BaseModel):
 
     Aggregates violation data from corpus replay comparisons, providing
     counts by violation type (e.g., output_equivalence, latency, cost)
-    and by severity (critical, warning, info).
+    and by severity level (e.g., debug, info, warning, error, critical, fatal).
 
     Attributes:
         total_violations: Total number of violations (failures in replay).

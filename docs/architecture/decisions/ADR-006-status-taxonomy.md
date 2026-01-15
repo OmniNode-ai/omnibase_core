@@ -7,7 +7,7 @@
 | **Document Type** | Architecture Decision Record (ADR) |
 | **Status** | 🟢 ACCEPTED |
 | **Created** | 2026-01-12 |
-| **Last Updated** | 2026-01-12 |
+| **Last Updated** | 2026-01-14 |
 | **Author** | ONEX Framework Team |
 | **Related Issue** | OMN-1296 |
 | **Correlation ID** | `b8f4e2c1-7d3a-4f9e-a5b6-8c1d2e3f4a5b` |
@@ -67,7 +67,15 @@ Additionally, we establish **three severity categories**:
 | **Log Severity** | RFC 5424 logging levels | `EnumSeverityLevel` | Keep Separate |
 | **Business Impact** | Business impact classification | `EnumImpactSeverity` | Keep Separate |
 
-> **Note on Severity Enums**: `EnumSeverity` is for classifying issues, violations, and findings (e.g., validation errors, code analysis results). It is **NOT** for selecting log levels in code - when writing `logger.info()`, `logger.warning()`, etc., you are not using `EnumSeverity`. For logging infrastructure that needs RFC 5424 compliance and numeric level ordering, use `EnumSeverityLevel` instead.
+> **Note on Severity Enums**: The three severity enums serve distinct purposes:
+>
+> - **`EnumSeverity`** (Canonical): General-purpose severity classification for issues, violations, findings, and diagnostic messages. Uses a 6-level scale (DEBUG, INFO, WARNING, ERROR, CRITICAL, FATAL) with numeric ordering for comparison. Use this for validation results, code analysis findings, and any domain-specific severity classification.
+>
+> - **`EnumSeverityLevel`** (Keep Separate): RFC 5424-compliant logging levels with 11 values including TRACE, NOTICE, ALERT, and EMERGENCY. Use this when building logging infrastructure that requires strict RFC 5424 compliance or numeric level filtering.
+>
+> - **`EnumImpactSeverity`** (Keep Separate): Business impact classification using a 5-level scale (CRITICAL, HIGH, MEDIUM, LOW, MINIMAL). Use this when assessing business or operational impact of changes, outages, or issues.
+>
+> **Key Distinction**: When you call `logger.warning()` or `logger.info()`, you are NOT using any of these enums - you are using Python's logging module directly. These enums are for programmatic severity classification in your application logic.
 
 ---
 
@@ -392,6 +400,7 @@ This ADR explicitly **does not** cover:
 | Date | Version | Author | Changes |
 |------|---------|--------|---------|
 | 2026-01-12 | 1.0 | ONEX Team | Initial taxonomy proposal |
+| 2026-01-14 | 1.1 | ONEX Team | Enhanced severity enum documentation with clearer distinctions between EnumSeverity, EnumSeverityLevel, and EnumImpactSeverity (PR #378 review) |
 
 ---
 

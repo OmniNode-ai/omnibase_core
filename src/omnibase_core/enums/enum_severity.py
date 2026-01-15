@@ -2,6 +2,7 @@
 
 from enum import Enum, unique
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.utils.util_str_enum_base import StrValueHelper
 
 # Module-level constant for numeric severity levels (avoids per-call dict allocation)
@@ -48,6 +49,29 @@ class EnumSeverity(StrValueHelper, str, Enum):
     ERROR = "error"
     CRITICAL = "critical"
     FATAL = "fatal"
+
+    @classmethod
+    def from_string(cls, value: str) -> "EnumSeverity":
+        """Convert string to severity level.
+
+        Args:
+            value: String representation of severity (case-insensitive).
+
+        Returns:
+            The corresponding EnumSeverity member.
+
+        Raises:
+            ModelOnexError: If value doesn't match any severity level.
+        """
+        try:
+            return cls(value.lower().strip())
+        except ValueError:
+            # Lazy import to avoid circular dependency
+            from omnibase_core.errors import ModelOnexError
+
+            valid_values = [e.value for e in cls]
+            msg = f"Invalid severity: '{value}'. Must be one of: {valid_values}"
+            raise ModelOnexError(msg, error_code=EnumCoreErrorCode.VALIDATION_ERROR)
 
     @property
     def numeric_level(self) -> int:

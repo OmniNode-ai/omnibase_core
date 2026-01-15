@@ -137,15 +137,7 @@ class ModelCliExecutionContext(BaseModel):
         Raises:
             ModelOnexError: If validation fails with details about the failure
         """
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except (AttributeError, TypeError, ValueError) as e:
-            raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Instance validation failed: {e}",
-            ) from e
+        return True
 
 
 # Export for use
