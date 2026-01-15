@@ -147,6 +147,10 @@ class ModelArgumentMap(BaseModel):
             default = []
         # Use bare 'list' for isinstance check at runtime (generic list[str] not valid).
         result = self.get_typed(name, list, default)
+        # NOTE(OMN-1073): Defensive None check. mypy proves this unreachable via overload
+        # resolution, but we keep it for runtime robustness against implementation changes.
+        if result is None:
+            return default  # type: ignore[unreachable]
         # Ensure we return list[str] by converting items
         return [str(item) for item in result]
 

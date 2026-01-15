@@ -232,7 +232,9 @@ class MixinDiscoveryResponder:
             envelope: ModelEventEnvelope[object] = ModelEventEnvelope(**envelope_dict)
 
             # Handle the discovery request, passing raw dict for metadata extraction
-            await self._handle_discovery_request(envelope, envelope_dict)
+            # Defensive copy: envelope_dict is shared with Pydantic constructor above;
+            # while Pydantic v2 doesn't typically mutate inputs, copying is safer
+            await self._handle_discovery_request(envelope, dict(envelope_dict))
 
             # Acknowledge message receipt only after successful handling
             await message.ack()

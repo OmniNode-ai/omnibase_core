@@ -2,6 +2,8 @@
 
 import pytest
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.metadata.model_input_state_class import ModelInputState
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
@@ -164,3 +166,10 @@ class TestModelInputState:
         assert ModelInputState.__doc__ is not None
         assert len(ModelInputState.__doc__.strip()) > 0
         assert "Type-safe input state container" in ModelInputState.__doc__
+
+    def test_set_metadata_invalid_version_format(self):
+        """Test set_metadata raises ModelOnexError for invalid version format."""
+        state = ModelInputState()
+        with pytest.raises(ModelOnexError) as exc_info:
+            state.set_metadata({"version": "invalid-version"})
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
