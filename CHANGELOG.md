@@ -257,24 +257,25 @@ The following workflow contract models now enforce **immutability** (`frozen=Tru
 
 | Model | Changes Applied |
 |-------|-----------------|
-| `ModelWorkflowDefinition` | Added `frozen=True`, `extra="ignore"` (Forward Compatibility Policy) |
+| `ModelWorkflowDefinition` | Added `frozen=True`, `extra="ignore"` (v1.0.5 Fix 54) |
 | `ModelWorkflowDefinitionMetadata` | Added `frozen=True`, `extra="forbid"` |
 | `ModelWorkflowStep` | Added `extra="forbid"` (already had `frozen=True`) |
-| `ModelCoordinationRules` | Added `frozen=True`, `extra="ignore"` (Forward Compatibility Policy) |
-| `ModelExecutionGraph` | Added `frozen=True`, `extra="ignore"` (Forward Compatibility Policy) |
-| `ModelWorkflowNode` | Added `frozen=True`, `extra="ignore"` (Forward Compatibility Policy) |
+| `ModelCoordinationRules` | Added `frozen=True`, `extra="ignore"` (v1.0.5 Fix 54) |
+| `ModelExecutionGraph` | Added `frozen=True`, `extra="ignore"` (v1.0.5 Fix 54) |
+| `ModelWorkflowNode` | Added `frozen=True`, `extra="ignore"` (v1.0.5 Fix 54) |
 
-**Forward Compatibility Policy** (v1.0.5 Fix 54): Models with `extra="ignore"` enable forward compatibility by accepting but discarding unrecognized fields. This means:
-- **No validation errors** when newer schema versions include additional fields
-- **Fields are dropped** during model construction (not preserved in round-trip serialization)
+**v1.0.5 Fix 54: Reserved Fields Governance** - Models with `extra="ignore"` implement reserved fields governance for forward compatibility. "Reserved fields" are fields defined in newer schema versions that older code does not recognize. This governance policy ensures:
+
+- **No validation errors** when newer schema versions include reserved (unrecognized) fields
+- **Fields are dropped** during model construction - reserved fields are discarded, NOT preserved in round-trip serialization
 - **Graceful degradation** allows older code to process newer data formats without crashing
 
-This policy ensures that workflow contracts from future ONEX versions can be parsed by current code without errors, even if new fields are not yet understood.
+This policy ensures that workflow contracts from future ONEX versions can be parsed by current code without errors, even if reserved fields are not yet understood by the current schema version.
 
 **Impact**:
 - Code that **mutates these models after creation** will now raise `pydantic.ValidationError`
 - For `extra="forbid"` models: Code that **passes unknown fields** will raise `pydantic.ValidationError`
-- For `extra="ignore"` models: Unknown fields are silently dropped during construction (forward compatibility)
+- For `extra="ignore"` models (v1.0.5 Fix 54): Reserved fields are dropped during construction - they are discarded, not preserved in round-trip serialization
 
 **Thread Safety Benefits**:
 
@@ -311,24 +312,34 @@ updated = original.model_copy(update={
 
 #### 2. Handling Extra Fields
 
+Models have different behaviors based on their `extra=` policy:
+
+**For `extra="forbid"` models** (e.g., `ModelWorkflowDefinitionMetadata`, `ModelWorkflowStep`):
 ```python
-# Before (v0.3.x) - Extra fields might have been silently ignored
+# Extra fields raise pydantic.ValidationError
+metadata = ModelWorkflowDefinitionMetadata(
+    version=version,
+    workflow_name="my-workflow",
+    workflow_version=workflow_version,
+    custom_field="value"  # ❌ Raises pydantic.ValidationError
+)
+```
+
+**For `extra="ignore"` models** (v1.0.5 Fix 54: Reserved Fields Governance):
+```python
+# Reserved fields are silently dropped during construction
 definition = ModelWorkflowDefinition(
     version=version,
     workflow_metadata=metadata,
     execution_graph=graph,
-    custom_field="value"  # ❌ Now raises pydantic.ValidationError
+    future_field="value"  # ⚠️ Silently dropped - NOT preserved in round-trip
 )
+# definition.future_field does not exist - the field was discarded
+```
 
-# After (v0.4.0+) - Only declared fields allowed
-definition = ModelWorkflowDefinition(
-    version=version,
-    workflow_metadata=metadata,
-    execution_graph=graph,
-    # custom_field removed - use proper extension mechanisms instead
-)
-
-# If you need custom metadata, use designated fields:
+**Best practice**: Use designated extension fields rather than relying on extra field behavior:
+```python
+# Use proper extension mechanisms instead of arbitrary fields
 metadata = ModelWorkflowDefinitionMetadata(
     version=version,
     workflow_name="my-workflow",
