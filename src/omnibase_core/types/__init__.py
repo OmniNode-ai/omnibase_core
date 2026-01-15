@@ -92,6 +92,8 @@ from .type_json import (
     JsonType,
     PrimitiveContainer,
     PrimitiveValue,
+    StrictJsonPrimitive,
+    StrictJsonType,
     ToolParameterValue,
 )
 
@@ -411,6 +413,8 @@ __all__ = [
     "JsonType",
     "PrimitiveValue",
     "PrimitiveContainer",
+    "StrictJsonPrimitive",
+    "StrictJsonType",
     "ToolParameterValue",
     # Serializable value types
     "SerializableValue",
