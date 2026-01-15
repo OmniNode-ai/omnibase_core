@@ -178,7 +178,7 @@ class ManifestGenerator:
         self._correlation_id = correlation_id
         self._parent_manifest_id = parent_manifest_id
         self._on_manifest_built: list[Callable[[ModelExecutionManifest], None]] = (
-            on_manifest_built or []
+            list(on_manifest_built) if on_manifest_built else []
         )
 
         # Accumulators for activation
@@ -706,7 +706,8 @@ class ManifestGenerator:
         )
 
         # Invoke on_manifest_built callbacks (OMN-1203: corpus capture hook)
-        for callback in self._on_manifest_built:
+        # Snapshot the list to prevent modification during iteration
+        for callback in list(self._on_manifest_built):
             try:
                 callback(manifest)
             except Exception as e:
