@@ -35,6 +35,9 @@ _DISCOVERY_REQUEST_ADAPTER: TypeAdapter[ModelDiscoveryRequestModelMetadata] = (
     TypeAdapter(ModelDiscoveryRequestModelMetadata)
 )
 
+# TypeAdapter for duck-typing validation of OnexEvent payloads
+_ONEX_EVENT_ADAPTER: TypeAdapter[OnexEvent] = TypeAdapter(OnexEvent)
+
 # Lazy initialization of introspection adapter to avoid import cycle
 _INTROSPECTION_ADAPTER: TypeAdapter[object] | None = None
 
@@ -299,18 +302,40 @@ class MixinDiscoveryResponder:
                     envelope_type=type(envelope).__name__,
                 )
 
-            # Extract event from envelope and cast to OnexEvent for type safety
+            # Extract and validate event using TypeAdapter for duck-typing validation
+            # (Per ONEX conventions: use TypeAdapter, not isinstance checks)
             event = envelope.payload
-            # Type cast for mypy - event is ModelOnexEvent after extraction
-            onex_event = cast("OnexEvent", event)
 
-            # STRICT: Event must have event_type attribute
-            if not hasattr(onex_event, "event_type"):
+            # Convert to dict for TypeAdapter validation
+            if hasattr(event, "model_dump"):
+                event_dict = event.model_dump()
+            elif isinstance(event, dict):
+                event_dict = event
+            else:
                 raise ModelOnexError(
-                    message="Event missing required 'event_type' attribute",
+                    message="Event payload must be dict-like or Pydantic model",
                     error_code=EnumCoreErrorCode.DISCOVERY_INVALID_REQUEST,
-                    event_type=type(onex_event).__name__,
+                    payload_type=type(event).__name__,
                 )
+
+            # Validate event structure using TypeAdapter (duck typing)
+            try:
+                onex_event = _ONEX_EVENT_ADAPTER.validate_python(event_dict)
+            except ValidationError as e:
+                emit_log_event(
+                    LogLevel.DEBUG,
+                    "Event payload validation failed",
+                    {
+                        "component": "DiscoveryResponder",
+                        "validation_error": str(e),
+                        "operation": "_handle_discovery_request",
+                    },
+                )
+                raise ModelOnexError(
+                    message="Event payload does not conform to OnexEvent schema",
+                    error_code=EnumCoreErrorCode.DISCOVERY_INVALID_REQUEST,
+                    validation_errors=str(e),
+                ) from e
 
             # Check for discovery request event type
             is_discovery_request = is_event_equal(

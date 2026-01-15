@@ -7,7 +7,7 @@ Implements ProtocolNodeResult for workflow state transitions.
 from dataclasses import dataclass
 from typing import Any
 
-from omnibase_core.protocols import ContextValue
+from omnibase_core.protocols import ContextValue, ProtocolState
 
 
 @dataclass
@@ -18,7 +18,7 @@ class ModelNodeWorkflowResult:
     Implements ProtocolNodeResult protocol for dispatch_async operations.
     """
 
-    value: ContextValue | None
+    value: ProtocolState | ContextValue | None
     is_success: bool
     is_failure: bool
     error: Any | None

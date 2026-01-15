@@ -3,7 +3,7 @@
 Type-safe input state container for version parsing.
 """
 
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -26,7 +26,13 @@ class ModelInputState(BaseModel):
     - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification
+
+    Error Codes:
+        VALIDATION_ERROR: Raised by set_metadata() for invalid version formats
+            or metadata field assignment failures.
     """
+
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
 
     # Version field (required for parsing) - canonical ModelSemVer
     version: ModelSemVer | None = Field(
@@ -118,13 +124,15 @@ class ModelInputState(BaseModel):
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except (AttributeError, KeyError, TypeError, ValueError) as e:
-            raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Operation failed: {e}",
-            ) from e
+        """Validate instance integrity (ProtocolValidatable protocol).
+
+        Returns:
+            True if the instance is valid.
+
+        Note:
+            Base implementation always returns True. Override in subclasses
+            for custom validation logic.
+        """
+        # Basic validation - ensure required fields exist
+        # Override in specific models for custom validation
+        return True

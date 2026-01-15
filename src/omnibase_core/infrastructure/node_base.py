@@ -65,7 +65,6 @@ from uuid import UUID, uuid4
 
 # Core-native protocol imports (no SPI dependency)
 from omnibase_core.protocols import (
-    ContextValue,
     ProtocolAction,
     ProtocolNodeResult,
     ProtocolState,
@@ -796,12 +795,8 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
             )
 
             # Wrap the new state in a result object
-            # Note: ProtocolState is cast to ContextValue for the result value.
-            # While these protocols differ, both represent state containers passed
-            # between workflow components. The ModelNodeWorkflowResult serves as
-            # a transport wrapper for any state-like object returned from dispatch.
             return ModelNodeWorkflowResult(
-                value=cast("ContextValue | None", new_state),
+                value=new_state,
                 is_success=True,
                 is_failure=False,
                 error=None,

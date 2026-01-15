@@ -83,9 +83,9 @@ class ModelArgumentMap(BaseModel):
                     other values converted via bool()
 
         Note:
-            The type: ignore comments in this method are necessary because TypeVar T
-            cannot be narrowed at runtime after the expected_type comparison. The
-            conversions are type-safe by construction (e.g., str() always returns str).
+            cast(T, ...) is used because mypy cannot narrow TypeVar T based on runtime
+            expected_type comparisons. Each conversion is guarded by an if-check ensuring
+            the return type matches T at runtime.
 
         Args:
             name: Argument name to retrieve
@@ -101,26 +101,23 @@ class ModelArgumentMap(BaseModel):
             value = self.named_args[name].value
             if isinstance(value, expected_type):
                 return value
-            # Try to convert if possible
-            # Note: type: ignore comments below are required because mypy cannot narrow
-            # TypeVar T based on runtime expected_type comparison. Each conversion is
-            # guarded by an if-check ensuring the return type matches T.
+            # Try to convert if possible.
+            # Note: cast(T, ...) is used because mypy cannot narrow TypeVar T based on
+            # runtime expected_type comparison. Each conversion is guarded by an if-check
+            # ensuring the return type matches T at runtime.
             try:
                 if expected_type == str:
-                    # NOTE(OMN-1302): TypeVar T cannot be narrowed by expected_type check. Safe because str() always returns str.
-                    return str(value)  # type: ignore[return-value]
+                    return cast(T, str(value))
                 if expected_type == int:
-                    # NOTE(OMN-1302): TypeVar T cannot be narrowed by expected_type check. Safe because int() returns int; arg-type ignored for Any input.
-                    return int(value)  # type: ignore[return-value,arg-type]
+                    # Convert via str() first to handle ArgumentValueType union safely
+                    return cast(T, int(str(value)))
                 if expected_type == float:
-                    # NOTE(OMN-1302): TypeVar T cannot be narrowed by expected_type check. Safe because float() returns float; arg-type ignored for Any input.
-                    return float(value)  # type: ignore[return-value,arg-type]
+                    # Convert via str() first to handle ArgumentValueType union safely
+                    return cast(T, float(str(value)))
                 if expected_type == bool:
                     if isinstance(value, str):
-                        # NOTE(OMN-1302): TypeVar T cannot be narrowed by expected_type check. Safe because bool comparison returns bool.
-                        return value.lower() in ("true", "1", "yes", "on")  # type: ignore[return-value]
-                    # NOTE(OMN-1302): TypeVar T cannot be narrowed by expected_type check. Safe because bool() always returns bool.
-                    return bool(value)  # type: ignore[return-value]
+                        return cast(T, value.lower() in ("true", "1", "yes", "on"))
+                    return cast(T, bool(value))
             except (TypeError, ValueError):
                 pass
         return default
@@ -199,9 +196,9 @@ class ModelArgumentMap(BaseModel):
                     other values converted via bool()
 
         Note:
-            The type: ignore comments in this method are necessary because TypeVar T
-            cannot be narrowed at runtime after the expected_type comparison. The
-            conversions are type-safe by construction (e.g., str() always returns str).
+            cast(T, ...) is used because mypy cannot narrow TypeVar T based on runtime
+            expected_type comparisons. Each conversion is guarded by an if-check ensuring
+            the return type matches T at runtime.
 
         Args:
             index: Position index (0-based)
@@ -217,26 +214,23 @@ class ModelArgumentMap(BaseModel):
             value = self.positional_args[index].value
             if isinstance(value, expected_type):
                 return value
-            # Try to convert if possible
-            # Note: type: ignore comments below are required because mypy cannot narrow
-            # TypeVar T based on runtime expected_type comparison. Each conversion is
-            # guarded by an if-check ensuring the return type matches T.
+            # Try to convert if possible.
+            # Note: cast(T, ...) is used because mypy cannot narrow TypeVar T based on
+            # runtime expected_type comparison. Each conversion is guarded by an if-check
+            # ensuring the return type matches T at runtime.
             try:
                 if expected_type == str:
-                    # NOTE(OMN-1302): TypeVar T cannot be narrowed by expected_type check. Safe because str() always returns str.
-                    return str(value)  # type: ignore[return-value]
+                    return cast(T, str(value))
                 if expected_type == int:
-                    # NOTE(OMN-1302): TypeVar T cannot be narrowed by expected_type check. Safe because int() returns int; arg-type ignored for Any input.
-                    return int(value)  # type: ignore[return-value,arg-type]
+                    # Convert via str() first to handle ArgumentValueType union safely
+                    return cast(T, int(str(value)))
                 if expected_type == float:
-                    # NOTE(OMN-1302): TypeVar T cannot be narrowed by expected_type check. Safe because float() returns float; arg-type ignored for Any input.
-                    return float(value)  # type: ignore[return-value,arg-type]
+                    # Convert via str() first to handle ArgumentValueType union safely
+                    return cast(T, float(str(value)))
                 if expected_type == bool:
                     if isinstance(value, str):
-                        # NOTE(OMN-1302): TypeVar T cannot be narrowed by expected_type check. Safe because bool comparison returns bool.
-                        return value.lower() in ("true", "1", "yes", "on")  # type: ignore[return-value]
-                    # NOTE(OMN-1302): TypeVar T cannot be narrowed by expected_type check. Safe because bool() always returns bool.
-                    return bool(value)  # type: ignore[return-value]
+                        return cast(T, value.lower() in ("true", "1", "yes", "on"))
+                    return cast(T, bool(value))
             except (TypeError, ValueError):
                 pass
         return default
