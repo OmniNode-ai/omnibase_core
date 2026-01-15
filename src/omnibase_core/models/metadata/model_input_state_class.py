@@ -78,7 +78,7 @@ class ModelInputState(BaseModel):
             "name": "",
             "description": "",
             "tags": [],
-            "metadata": dict(self.additional_fields) if self.additional_fields else {},
+            "metadata": self.additional_fields if self.additional_fields else {},
         }
         # version is Optional (ModelSemVer | None), so None check is correct
         if self.version is not None:
@@ -86,18 +86,39 @@ class ModelInputState(BaseModel):
         return result
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
-        """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
+        """Set metadata from dictionary (ProtocolMetadataProvider protocol).
+
+        Error Codes:
+            VALIDATION_ERROR: Raised when version format is invalid (string,
+                dict, or other value cannot be converted to ModelSemVer) or
+                when metadata field assignment fails.
+        """
         try:
             for key, value in metadata.items():
                 if hasattr(self, key):
                     # Convert version to ModelSemVer if provided as string or dict
                     if key == "version" and value is not None:
                         try:
-                            if isinstance(value, str):
+                            if isinstance(value, ModelSemVer):
+                                # Already ModelSemVer, use as-is (preserves type)
+                                pass
+                            elif isinstance(value, str):
                                 value = ModelSemVer.parse(value)
                             elif isinstance(value, dict):
-                                value = ModelSemVer(**value)
-                            # If already ModelSemVer, use as-is
+                                # Use model_validate for robust dict handling
+                                value = ModelSemVer.model_validate(value)
+                            else:
+                                raise ModelOnexError(
+                                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                                    message=(
+                                        f"Version must be ModelSemVer, str, or dict, "
+                                        f"got {type(value).__name__}"
+                                    ),
+                                    context={
+                                        "key": key,
+                                        "value_type": type(value).__name__,
+                                    },
+                                )
                         except (
                             TypeError,
                             ValidationError,
@@ -117,6 +138,7 @@ class ModelInputState(BaseModel):
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Failed to set metadata field: {e}",
+                context={"error_type": type(e).__name__},
             ) from e
 
     def serialize(self) -> TypedDictSerializedModel:

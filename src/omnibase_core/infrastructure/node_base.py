@@ -649,6 +649,9 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
             # Check if tool supports async processing
             if hasattr(main_tool, "process_async"):
                 result = await main_tool.process_async(input_state)
+                # NOTE(OMN-1073): Cast is safe because the tool's return type is governed
+                # by the contract specification. The tool implementation is validated at
+                # initialization via main_tool_class resolution from the contract YAML.
                 return cast("T_OUTPUT_STATE", result)
             if hasattr(main_tool, "process"):
                 # Run sync process in thread pool to avoid blocking
@@ -657,6 +660,7 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
                     main_tool.process,
                     input_state,
                 )
+                # NOTE(OMN-1073): Cast is safe - tool return type governed by contract.
                 return cast("T_OUTPUT_STATE", result)
             if hasattr(main_tool, "run"):
                 # Run sync run method in thread pool
@@ -665,6 +669,7 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
                     main_tool.run,
                     input_state,
                 )
+                # NOTE(OMN-1073): Cast is safe - tool return type governed by contract.
                 return cast("T_OUTPUT_STATE", result)
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.OPERATION_FAILED,
@@ -746,6 +751,9 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
         Default implementation returns empty state.
         Override in subclasses for custom initial state.
         """
+        # NOTE(OMN-1073): Cast is safe because ModelState implements ProtocolState
+        # via structural subtyping (duck typing). ModelState provides all required
+        # state container methods defined by the protocol.
         return cast("ProtocolState", ModelState())
 
     def dispatch(self, state: ProtocolState, action: ProtocolAction) -> ProtocolState:

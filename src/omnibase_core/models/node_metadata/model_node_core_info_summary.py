@@ -140,7 +140,10 @@ class ModelNodeCoreInfoSummary(BaseModel):
         # node_version is required (has default_factory), include directly
         result["version"] = self.node_version
         # Pack additional fields into metadata
-        # Cast to dict[str, SerializableValue] for TypedDictMetadataDict compatibility
+        # NOTE(OMN-1073): Cast is safe because all values are SerializableValue-compatible:
+        # - str (node_id) and enum .value strings are primitive JSON types
+        # - bool values (is_active, is_healthy, etc.) are primitive JSON types
+        # The cast ensures TypedDictMetadataDict.metadata type compatibility.
         result["metadata"] = cast(
             dict[str, SerializableValue],
             {

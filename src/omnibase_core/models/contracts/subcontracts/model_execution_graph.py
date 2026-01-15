@@ -85,6 +85,12 @@ class ModelExecutionGraph(BaseModel):
         description="Nodes in the execution graph",
     )
 
+    # v1.0.5 Fix 54: Reserved Fields Governance
+    # Uses extra="ignore" (not "forbid") to support forward compatibility.
+    # Reserved fields from future versions (v1.1+) are preserved during round-trip
+    # serialization but are NOT validated beyond structural type checking and
+    # MUST NOT influence any runtime decision in v1.0.
+    # See: test_workflow_contract_hardening.py for the comprehensive test coverage.
     model_config = ConfigDict(
         extra="ignore",
         use_enum_values=False,

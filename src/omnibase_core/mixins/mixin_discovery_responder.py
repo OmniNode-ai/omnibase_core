@@ -89,8 +89,9 @@ class MixinDiscoveryResponder:
     - Response time metrics
 
     TYPE SAFETY:
-    - Uses TypeAdapter for duck-typing validation of discovery metadata
-    - No isinstance checks for protocol validation
+    - Uses TypeAdapter for duck-typing validation of event payloads and metadata
+    - No isinstance checks for protocol/duck-typing validation
+    - Basic type validation (UUID, ModelSemVer) uses isinstance where appropriate
     - Consistent with ONEX patterns
 
     THREAD SAFETY:
@@ -304,30 +305,22 @@ class MixinDiscoveryResponder:
 
             # Extract and validate event using TypeAdapter for duck-typing validation
             # (Per ONEX conventions: use TypeAdapter, not isinstance checks)
+            # TypeAdapter.validate_python() accepts any Python object (dict, Pydantic model,
+            # dataclass, etc.) and validates/coerces it to the target type
             event = envelope.payload
 
-            # Convert to dict for TypeAdapter validation
-            if hasattr(event, "model_dump"):
-                event_dict = event.model_dump()
-            elif isinstance(event, dict):
-                event_dict = event
-            else:
-                raise ModelOnexError(
-                    message="Event payload must be dict-like or Pydantic model",
-                    error_code=EnumCoreErrorCode.DISCOVERY_INVALID_REQUEST,
-                    payload_type=type(event).__name__,
-                )
-
             # Validate event structure using TypeAdapter (duck typing)
+            # TypeAdapter handles all input types - no isinstance checks needed
             try:
-                onex_event = _ONEX_EVENT_ADAPTER.validate_python(event_dict)
+                onex_event = _ONEX_EVENT_ADAPTER.validate_python(event)
             except ValidationError as e:
                 emit_log_event(
-                    LogLevel.DEBUG,
+                    LogLevel.WARNING,
                     "Event payload validation failed",
                     {
                         "component": "DiscoveryResponder",
                         "validation_error": str(e),
+                        "payload_type": type(event).__name__,
                         "operation": "_handle_discovery_request",
                     },
                 )
@@ -409,6 +402,8 @@ class MixinDiscoveryResponder:
         # Navigate to payload.data in raw envelope dict
         # Structure: envelope -> payload -> data
         payload = raw_envelope_dict.get("payload")
+        # Note: isinstance check is appropriate here - we're navigating JSON-parsed dict
+        # structure, not validating duck-typed protocols
         if not isinstance(payload, dict):
             return None
 
@@ -416,35 +411,19 @@ class MixinDiscoveryResponder:
         if data is None:
             return None
 
-        # If data is already a dict, use it directly
-        # If it's a Pydantic model (shouldn't happen with raw dict), convert it
-        if hasattr(data, "model_dump"):
-            data_dict = data.model_dump()
-        elif isinstance(data, dict):
-            data_dict = data
-        else:
-            emit_log_event(
-                LogLevel.DEBUG,
-                "Discovery request data has unexpected type, skipping",
-                {
-                    "component": "DiscoveryResponder",
-                    "data_type": type(data).__name__,
-                    "operation": "_extract_discovery_request_metadata",
-                },
-            )
-            return None
-
-        # Use TypeAdapter for duck-typing validation
+        # Use TypeAdapter for duck-typing validation (no isinstance checks needed)
+        # TypeAdapter.validate_python() handles dict, Pydantic model, dataclass, etc.
         try:
-            return _DISCOVERY_REQUEST_ADAPTER.validate_python(data_dict)
+            return _DISCOVERY_REQUEST_ADAPTER.validate_python(data)
         except ValidationError as e:
-            # Log validation failure for observability
+            # Log validation failure for observability (WARNING level for visibility)
             emit_log_event(
-                LogLevel.DEBUG,
+                LogLevel.WARNING,
                 "Discovery request metadata validation failed",
                 {
                     "component": "DiscoveryResponder",
                     "validation_error": str(e),
+                    "data_type": type(data).__name__,
                     "operation": "_extract_discovery_request_metadata",
                 },
             )
@@ -671,17 +650,23 @@ class MixinDiscoveryResponder:
 
         introspection_response = self.get_introspection_response()
 
-        # If already a BaseModel, validate using TypeAdapter for duck-typing
+        # Use TypeAdapter for duck-typing validation (no isinstance checks needed)
+        # TypeAdapter.validate_python() handles Pydantic models, dicts, dataclasses, etc.
         adapter = _get_introspection_adapter()
-        if hasattr(introspection_response, "model_dump"):
-            data_dict = introspection_response.model_dump()
-        else:
-            data_dict = introspection_response
-
         try:
-            result = adapter.validate_python(data_dict)
+            result = adapter.validate_python(introspection_response)
             return cast("ModelIntrospectionData", result)
         except ValidationError as e:
+            emit_log_event(
+                LogLevel.WARNING,
+                "Introspection response validation failed",
+                {
+                    "component": "DiscoveryResponder",
+                    "validation_error": str(e),
+                    "response_type": type(introspection_response).__name__,
+                    "operation": "_get_discovery_introspection",
+                },
+            )
             raise ModelOnexError(
                 message="Introspection response does not match ModelIntrospectionData schema",
                 error_code=EnumCoreErrorCode.DISCOVERY_INVALID_NODE,
