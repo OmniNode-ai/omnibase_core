@@ -257,19 +257,24 @@ The following workflow contract models now enforce **immutability** (`frozen=Tru
 
 | Model | Changes Applied |
 |-------|-----------------|
-| `ModelWorkflowDefinition` | Added `frozen=True`, `extra="ignore"` (v1.0.5 Reserved Fields Governance) |
+| `ModelWorkflowDefinition` | Added `frozen=True`, `extra="ignore"` (Forward Compatibility Policy) |
 | `ModelWorkflowDefinitionMetadata` | Added `frozen=True`, `extra="forbid"` |
 | `ModelWorkflowStep` | Added `extra="forbid"` (already had `frozen=True`) |
-| `ModelCoordinationRules` | Added `frozen=True`, `extra="ignore"` (v1.0.5 Reserved Fields Governance) |
-| `ModelExecutionGraph` | Added `frozen=True`, `extra="ignore"` (v1.0.5 Reserved Fields Governance) |
-| `ModelWorkflowNode` | Added `frozen=True`, `extra="ignore"` (v1.0.5 Reserved Fields Governance) |
+| `ModelCoordinationRules` | Added `frozen=True`, `extra="ignore"` (Forward Compatibility Policy) |
+| `ModelExecutionGraph` | Added `frozen=True`, `extra="ignore"` (Forward Compatibility Policy) |
+| `ModelWorkflowNode` | Added `frozen=True`, `extra="ignore"` (Forward Compatibility Policy) |
 
-**Note**: Models with `extra="ignore"` (v1.0.5 Fix 54: Reserved Fields Governance) allow extra fields for forward compatibility. Reserved fields are preserved during round-trip serialization but are NOT validated beyond structural type checking and MUST NOT influence any runtime decision in v1.0.
+**Forward Compatibility Policy** (v1.0.5 Fix 54): Models with `extra="ignore"` enable forward compatibility by accepting but discarding unrecognized fields. This means:
+- **No validation errors** when newer schema versions include additional fields
+- **Fields are dropped** during model construction (not preserved in round-trip serialization)
+- **Graceful degradation** allows older code to process newer data formats without crashing
+
+This policy ensures that workflow contracts from future ONEX versions can be parsed by current code without errors, even if new fields are not yet understood.
 
 **Impact**:
 - Code that **mutates these models after creation** will now raise `pydantic.ValidationError`
 - For `extra="forbid"` models: Code that **passes unknown fields** will raise `pydantic.ValidationError`
-- For `extra="ignore"` models: Unknown fields are silently ignored (for forward compatibility)
+- For `extra="ignore"` models: Unknown fields are silently dropped during construction (forward compatibility)
 
 **Thread Safety Benefits**:
 

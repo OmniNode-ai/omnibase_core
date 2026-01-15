@@ -7,7 +7,6 @@ Follows ONEX one-model-per-file naming conventions.
 
 from __future__ import annotations
 
-from typing import cast
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -19,7 +18,6 @@ from omnibase_core.enums.enum_status import EnumStatus
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
-from omnibase_core.types.type_serializable_value import SerializableValue
 
 
 class ModelNodeCoreInfoSummary(BaseModel):
@@ -140,23 +138,16 @@ class ModelNodeCoreInfoSummary(BaseModel):
         # node_version is required (has default_factory), include directly
         result["version"] = self.node_version
         # Pack additional fields into metadata
-        # NOTE(OMN-1073): Cast is safe because all values are SerializableValue-compatible:
-        # - str (node_id) and enum .value strings are primitive JSON types
-        # - bool values (is_active, is_healthy, etc.) are primitive JSON types
-        # The cast ensures TypedDictMetadataDict.metadata type compatibility.
-        result["metadata"] = cast(
-            dict[str, SerializableValue],
-            {
-                "node_id": str(self.node_id),
-                "node_type": self.node_type.value,
-                "status": self.status.value,
-                "health": self.health.value,
-                "is_active": self.is_active,
-                "is_healthy": self.is_healthy,
-                "has_description": self.has_description,
-                "has_author": self.has_author,
-            },
-        )
+        result["metadata"] = {
+            "node_id": str(self.node_id),
+            "node_type": self.node_type.value,
+            "status": self.status.value,
+            "health": self.health.value,
+            "is_active": self.is_active,
+            "is_healthy": self.is_healthy,
+            "has_description": self.has_description,
+            "has_author": self.has_author,
+        }
         return result
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:

@@ -112,10 +112,14 @@ class ModelArgumentMap(BaseModel):
                     return cast(T, str(value))
                 if expected_type == int:
                     # NOTE(OMN-1073): Safe cast - int(value) returns int or raises.
-                    return cast(T, int(value))  # type: ignore[arg-type]
+                    # Narrow to types int() accepts (exclude lists).
+                    if isinstance(value, str | int | float | bool):
+                        return cast(T, int(value))
                 if expected_type == float:
                     # NOTE(OMN-1073): Safe cast - float(value) returns float or raises.
-                    return cast(T, float(value))  # type: ignore[arg-type]
+                    # Narrow to types float() accepts (exclude lists).
+                    if isinstance(value, str | int | float | bool):
+                        return cast(T, float(value))
                 if expected_type == bool:
                     # NOTE(OMN-1073): Safe cast - comparison result is always bool.
                     if isinstance(value, str):
@@ -228,10 +232,14 @@ class ModelArgumentMap(BaseModel):
                     return cast(T, str(value))
                 if expected_type == int:
                     # NOTE(OMN-1073): Safe cast - int(value) returns int or raises.
-                    return cast(T, int(value))  # type: ignore[arg-type]
+                    # Narrow to types int() accepts (exclude lists).
+                    if isinstance(value, str | int | float | bool):
+                        return cast(T, int(value))
                 if expected_type == float:
                     # NOTE(OMN-1073): Safe cast - float(value) returns float or raises.
-                    return cast(T, float(value))  # type: ignore[arg-type]
+                    # Narrow to types float() accepts (exclude lists).
+                    if isinstance(value, str | int | float | bool):
+                        return cast(T, float(value))
                 if expected_type == bool:
                     # NOTE(OMN-1073): Safe cast - comparison result is always bool.
                     if isinstance(value, str):
