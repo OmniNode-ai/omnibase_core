@@ -396,6 +396,15 @@ class MixinDiscoveryResponder:
         elif isinstance(data, dict):
             data_dict = data
         else:
+            emit_log_event(
+                LogLevel.DEBUG,
+                "Discovery request data has unexpected type, skipping",
+                {
+                    "component": "DiscoveryResponder",
+                    "data_type": type(data).__name__,
+                    "operation": "_extract_discovery_request_metadata",
+                },
+            )
             return None
 
         # Use TypeAdapter for duck-typing validation

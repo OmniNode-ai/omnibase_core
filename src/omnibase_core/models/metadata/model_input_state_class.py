@@ -3,7 +3,7 @@
 Type-safe input state container for version parsing.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -57,7 +57,17 @@ class ModelInputState(BaseModel):
     # Protocol method implementations
 
     def get_metadata(self) -> TypedDictMetadataDict:
-        """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
+        """Get metadata as dictionary (ProtocolMetadataProvider protocol).
+
+        Returns minimal metadata for ProtocolMetadataProvider compliance.
+        Empty name/description/tags are intentional: ModelInputState is a
+        version parsing container, not a named entity. The protocol requires
+        these fields but they have no semantic meaning for input state objects.
+
+        Returns:
+            TypedDictMetadataDict with empty name/description/tags placeholders,
+            additional_fields in metadata, and version if present.
+        """
         result: TypedDictMetadataDict = {
             "name": "",
             "description": "",
@@ -76,17 +86,31 @@ class ModelInputState(BaseModel):
                 if hasattr(self, key):
                     # Convert version to ModelSemVer if provided as string or dict
                     if key == "version" and value is not None:
-                        if isinstance(value, str):
-                            value = ModelSemVer.parse(value)
-                        elif isinstance(value, dict):
-                            value = ModelSemVer(**value)
-                        # If already ModelSemVer, use as-is
+                        try:
+                            if isinstance(value, str):
+                                value = ModelSemVer.parse(value)
+                            elif isinstance(value, dict):
+                                value = ModelSemVer(**value)
+                            # If already ModelSemVer, use as-is
+                        except (
+                            TypeError,
+                            ValidationError,
+                            ValueError,
+                        ) as version_error:
+                            raise ModelOnexError(
+                                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                                message=f"Invalid version format: {version_error}",
+                                context={"key": key, "value": str(value)[:100]},
+                            ) from version_error
                     setattr(self, key, value)
             return True
+        except ModelOnexError:
+            # Re-raise ModelOnexError (e.g., from version parsing) without wrapping
+            raise
         except (AttributeError, KeyError, TypeError, ValueError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Operation failed: {e}",
+                message=f"Failed to set metadata field: {e}",
             ) from e
 
     def serialize(self) -> TypedDictSerializedModel:
