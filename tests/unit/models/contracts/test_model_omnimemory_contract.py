@@ -232,6 +232,7 @@ class TestModelOmniMemoryContractValidConfigurations:
             retention_policy="forever",
             default_budget=100.0,
             hard_ceiling=0.0,
+            warning_threshold=0.0,  # Must be <= hard_ceiling
         )
         assert contract.hard_ceiling == 0.0
 
@@ -343,6 +344,37 @@ class TestModelOmniMemoryContractFieldConstraints:
             )
         error_message = str(exc_info.value).lower()
         assert "hard_ceiling" in error_message or "greater than" in error_message
+
+    def test_warning_threshold_exceeds_hard_ceiling_raises_error(
+        self, valid_contract_id: UUID
+    ) -> None:
+        """Test that warning_threshold > hard_ceiling raises ValidationError."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelOmniMemoryContract(
+                contract_id=valid_contract_id,
+                retention_policy="forever",
+                default_budget=100.0,
+                warning_threshold=0.9,
+                hard_ceiling=0.5,
+            )
+        error_message = str(exc_info.value)
+        assert "warning_threshold" in error_message
+        assert "hard_ceiling" in error_message
+        assert "cannot exceed" in error_message
+
+    def test_negative_retention_value_raises_error(
+        self, valid_contract_id: UUID
+    ) -> None:
+        """Test that negative retention_value raises ValidationError (ge=1 constraint)."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelOmniMemoryContract(
+                contract_id=valid_contract_id,
+                retention_policy="ttl",
+                retention_value=-1,
+                default_budget=100.0,
+            )
+        error_message = str(exc_info.value).lower()
+        assert "retention_value" in error_message or "greater than" in error_message
 
 
 # =============================================================================
@@ -701,13 +733,14 @@ class TestModelOmniMemoryContractEdgeCases:
 
     def test_unicode_name(self, valid_contract_id: UUID) -> None:
         """Test contract with unicode characters in name."""
+        unicode_name = "test-contract-\u540d\u524d-\U0001f680"
         contract = ModelOmniMemoryContract(
             contract_id=valid_contract_id,
-            name="test-contract-name",
+            name=unicode_name,
             retention_policy="forever",
             default_budget=100.0,
         )
-        assert contract.name == "test-contract-name"
+        assert contract.name == unicode_name
 
     def test_contract_hashable(self, valid_forever_config: dict) -> None:
         """Test that contract is hashable (frozen models should be)."""
@@ -724,9 +757,23 @@ class TestModelOmniMemoryContractEdgeCases:
         """Test contract equality comparison."""
         contract1 = ModelOmniMemoryContract.model_validate(valid_forever_config)
         contract2 = ModelOmniMemoryContract.model_validate(valid_forever_config)
-        # Both should have same values (but may have different contract_ids)
-        assert contract1.retention_policy == contract2.retention_policy
-        assert contract1.default_budget == contract2.default_budget
+        # Both should be equal since they have the same values
+        assert contract1 == contract2
+
+    def test_contract_inequality(self) -> None:
+        """Test contract inequality with different contract_ids."""
+        contract1 = ModelOmniMemoryContract(
+            contract_id=uuid4(),
+            retention_policy="forever",
+            default_budget=100.0,
+        )
+        contract2 = ModelOmniMemoryContract(
+            contract_id=uuid4(),
+            retention_policy="forever",
+            default_budget=100.0,
+        )
+        # Different contract_ids should result in inequality
+        assert contract1 != contract2
 
 
 # =============================================================================

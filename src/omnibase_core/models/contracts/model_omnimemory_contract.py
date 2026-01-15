@@ -86,3 +86,13 @@ class ModelOmniMemoryContract(BaseModel):
                 "retention_value is required when retention_policy is 'ttl' or 'count_limit'"
             )
         return self
+
+    @model_validator(mode="after")
+    def validate_threshold_ceiling(self) -> Self:
+        """Ensure warning_threshold does not exceed hard_ceiling."""
+        if self.warning_threshold > self.hard_ceiling:
+            raise ValueError(
+                f"warning_threshold ({self.warning_threshold}) cannot exceed "
+                f"hard_ceiling ({self.hard_ceiling})"
+            )
+        return self
