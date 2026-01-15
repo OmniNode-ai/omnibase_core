@@ -1,6 +1,6 @@
 # CLAUDE.md - Omnibase Core Project Instructions
 
-> **Version**: 0.6.4 | **Python**: 3.12+ | **Framework**: ONEX Core | **Shared Infrastructure**: See **`~/.claude/CLAUDE.md`** for common OmniNode infrastructure (PostgreSQL, Kafka/Redpanda, Docker networking, environment variables).
+> **Version**: 0.7.0 | **Python**: 3.12+ | **Framework**: ONEX Core | **Shared Infrastructure**: See **`~/.claude/CLAUDE.md`** for common OmniNode infrastructure (PostgreSQL, Kafka/Redpanda, Docker networking, environment variables).
 
 ---
 
@@ -1175,7 +1175,7 @@ poetry add --group dev package-name        # Add dev dependency
 
 ---
 
-**Last Updated**: 2026-01-12 | **Version**: 0.6.4 | **Python**: 3.12+
+**Last Updated**: 2026-01-15 | **Version**: 0.7.0 | **Python**: 3.12+
 
 **Ready to build?** → [Node Building Guide](docs/guides/node-building/README.md)
 **Need help?** → [Documentation Index](docs/INDEX.md)

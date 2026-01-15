@@ -7,6 +7,162 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-01-15
+
+### ⚠️ BREAKING CHANGES
+
+This release contains significant breaking changes to enum and type alias organization. These changes improve type safety, eliminate duplication, and establish canonical patterns for the codebase.
+
+#### Status Enum Consolidation [OMN-1310]
+
+**57+ overlapping status enums consolidated into 4 canonical enums.** No backwards compatibility - duplicates removed outright.
+
+| Canonical Enum | Values |
+|----------------|--------|
+| `EnumExecutionStatus` | PENDING, RUNNING, COMPLETED, SUCCESS, FAILED, SKIPPED, CANCELLED, TIMEOUT, PARTIAL |
+| `EnumOperationStatus` | SUCCESS, FAILED, IN_PROGRESS, CANCELLED, PENDING, TIMEOUT |
+| `EnumWorkflowStatus` | PENDING, RUNNING, COMPLETED, FAILED, CANCELLED, PAUSED |
+| `EnumHealthStatus` | HEALTHY, DEGRADED, UNHEALTHY, CRITICAL, UNKNOWN, WARNING, UNREACHABLE, AVAILABLE, UNAVAILABLE, ERROR, INITIALIZING, DISPOSING |
+
+**Deleted Enum Files:**
+- `enum_execution.py` (consolidated into EnumExecutionStatus)
+- `enum_execution_status_v2.py` (consolidated into EnumExecutionStatus)
+- `enum_health_status_type.py` (consolidated into EnumHealthStatus)
+- `enum_node_health_status.py` (consolidated into EnumHealthStatus)
+
+**Migration Guide:**
+```python
+# Before (v0.6.x)
+from omnibase_core.enums import EnumExecution, EnumHealthStatusType
+
+status = EnumExecution.RUNNING
+health = EnumHealthStatusType.HEALTHY
+
+# After (v0.7.0)
+from omnibase_core.enums import EnumExecutionStatus, EnumHealthStatus
+
+status = EnumExecutionStatus.RUNNING
+health = EnumHealthStatus.HEALTHY
+```
+
+#### Severity Enum Canonicalization [OMN-1311]
+
+**5 severity enums merged into canonical `EnumSeverity`.** This establishes a single source of truth for severity levels across the codebase.
+
+| Action | Enums |
+|--------|-------|
+| **Merged into EnumSeverity** | `EnumValidationSeverity`, `EnumInvariantSeverity`, `EnumViolationSeverity` |
+| **Removed (unused)** | `EnumErrorSeverity`, old `EnumSeverity` (orphaned with wrong values) |
+| **Kept separate (documented exceptions)** | `EnumSeverityLevel` (RFC 5424 logging), `EnumImpactSeverity` (business domain) |
+
+**Canonical EnumSeverity Values:** DEBUG, INFO, WARNING, ERROR, CRITICAL, FATAL
+
+**Migration Guide:**
+```python
+# Before (v0.6.x)
+from omnibase_core.enums import EnumValidationSeverity, EnumInvariantSeverity
+
+severity = EnumValidationSeverity.ERROR
+invariant_sev = EnumInvariantSeverity.CRITICAL
+
+# After (v0.7.0)
+from omnibase_core.enums import EnumSeverity
+
+severity = EnumSeverity.ERROR
+invariant_sev = EnumSeverity.CRITICAL
+```
+
+#### Literal Type Aliases Replaced with Canonical Enums [OMN-1308]
+
+**11 Literal type definitions removed** from `protocols/base/__init__.py` and replaced with proper enums.
+
+**New Enums Created:**
+
+| Enum | Values |
+|------|--------|
+| `EnumServiceLifecycle` | singleton, transient, scoped, pooled, lazy, eager |
+| `EnumInjectionScope` | request, session, thread, process, global, custom |
+| `EnumServiceResolutionStatus` | resolved, failed, circular_dependency, etc. |
+| `EnumPipelineValidationMode` | strict, lenient, smoke, regression, integration |
+| `EnumStepType` | compute, effect, reducer, orchestrator, parallel, custom |
+| `EnumRegistrationStatus` | registered, unregistered, failed, pending, etc. |
+
+**Migration Guide:**
+```python
+# Before (v0.6.x) - Using Literal types
+from omnibase_core.protocols.base import ServiceLifecycle
+lifecycle: ServiceLifecycle = "singleton"
+
+# After (v0.7.0) - Using enums
+from omnibase_core.enums import EnumServiceLifecycle
+lifecycle = EnumServiceLifecycle.SINGLETON
+```
+
+#### Type Alias Consolidation [OMN-1294]
+
+Duplicate type aliases consolidated to eliminate redundancy:
+
+| Old Type Alias | New Type Alias | Reason |
+|----------------|----------------|--------|
+| `LogContextValue` | `EnvValue` | Identical semantics |
+| `PayloadDataValue` | `CliValue \| None` | Equivalent type |
+| `ParameterValue` | `QueryParameterValue` | Renamed (different semantics) |
+| `ConfigValue` | `ScalarConfigValue` | Renamed (narrower semantics) |
+
+#### Enum Member Casing Standardization [OMN-1307]
+
+**All enum members must use UPPER_SNAKE_CASE.** `EnumFileStatus` members renamed from lowercase to UPPER_SNAKE_CASE. String values unchanged for backward compatibility in serialized data.
+
+```python
+# Before (v0.6.x)
+class EnumFileStatus(str, Enum):
+    pending = "pending"
+    processing = "processing"
+
+# After (v0.7.0)
+class EnumFileStatus(str, Enum):
+    PENDING = "pending"      # String value unchanged
+    PROCESSING = "processing"
+```
+
+**Impact:** Code referencing `EnumFileStatus.pending` must change to `EnumFileStatus.PENDING`.
+
+### Added
+
+- **EnumSeverity**: Canonical 6-level severity taxonomy (DEBUG, INFO, WARNING, ERROR, CRITICAL, FATAL) with `StrValueHelper` mixin [OMN-1296]
+- **Enum Governance Checker**: `checker_enum_governance.py` for automated enforcement of enum standards [OMN-1296]
+- **Enum Member Casing Validator**: `checker_enum_member_casing.py` AST-based validator with pre-commit integration [OMN-1307]
+- **Literal Duplication Checker**: `checker_literal_duplication.py` to prevent Literal/Enum duplication [OMN-1308]
+- **ModelOmniMemoryContract**: YAML schema for OmniMemory contracts [OMN-1251]
+- **ManifestGenerator Callback**: `on_manifest_built` callback hook for pipeline manifest generation [OMN-1203]
+- **JSON-Safety Validation**: `ModelPayloadExtension` JSON-safety validation [OMN-1266]
+- **Container Public API**: `initialize_service_registry()` public API for container initialization [OMN-1265]
+- **Evidence Export Service**: Demo service with renderer refactoring [OMN-1200]
+- **ModelMemorySnapshot**: Unified state container for OmniMemory [OMN-1243]
+- **Non-Deterministic Effect Classification**: Effect classification system for replay safety [OMN-1147]
+- **Pydantic Conventions Validator**: Validator for Pydantic model patterns [OMN-1314]
+- **Invariant Violation Report Model**: Demo model for invariant violations [OMN-1206]
+- **Error Handling Patterns**: Standardized error handling patterns with decorators [OMN-1299]
+- **Support Assistant Handler**: Demo handler for model evaluation [OMN-1201]
+- **ADR-013 Status Taxonomy**: Architecture decision record for status enum taxonomy [OMN-1312]
+
+### Changed
+
+- **File Headers**: Unified file headers across omnibase_core codebase [OMN-1337]
+- **Type Annotations**: Modernized to PEP 604 union syntax (`X | Y` instead of `Union[X, Y]`) [OMN-1300]
+- **Pydantic Patterns**: Standardized Pydantic model patterns across codebase [OMN-1301]
+- **File/Class Naming**: Fixed naming convention violations [OMN-1298]
+
+### Fixed
+
+- **EnumValidationSeverity Import**: Removed broken import that blocked all enum imports [#397]
+- **Status String References**: Replaced hardcoded status strings with enum references [OMN-1309]
+
+### Refactored
+
+- **Type Ignore Comments**: Reduced `type: ignore` comments by 35% through proper typing [OMN-1073]
+- **AI Slop Patterns**: Removed AI-generated boilerplate patterns from codebase [OMN-1297]
+
 ## [0.6.6] - 2026-01-12
 
 ### Added
