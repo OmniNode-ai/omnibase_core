@@ -235,10 +235,8 @@ class MixinDiscoveryResponder:
             envelope_dict = json.loads(message.value.decode("utf-8"))
             envelope: ModelEventEnvelope[object] = ModelEventEnvelope(**envelope_dict)
 
-            # Handle the discovery request, passing raw dict for metadata extraction
-            # Defensive copy: envelope_dict is shared with Pydantic constructor above;
-            # while Pydantic v2 doesn't typically mutate inputs, copying is safer
-            await self._handle_discovery_request(envelope, dict(envelope_dict))
+            # Pass raw dict for metadata extraction (see _extract_discovery_request_metadata)
+            await self._handle_discovery_request(envelope, envelope_dict)
 
             # Acknowledge message receipt only after successful handling
             await message.ack()
@@ -416,9 +414,9 @@ class MixinDiscoveryResponder:
         try:
             return _DISCOVERY_REQUEST_ADAPTER.validate_python(data)
         except ValidationError as e:
-            # Log validation failure for observability (WARNING level for visibility)
+            # Log validation failure for observability (DEBUG level - expected noise from untrusted sources)
             emit_log_event(
-                LogLevel.WARNING,
+                LogLevel.DEBUG,
                 "Discovery request metadata validation failed",
                 {
                     "component": "DiscoveryResponder",

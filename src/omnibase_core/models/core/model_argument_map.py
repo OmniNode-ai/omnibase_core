@@ -111,13 +111,11 @@ class ModelArgumentMap(BaseModel):
                     # NOTE(OMN-1073): Safe cast - str() always returns str.
                     return cast(T, str(value))
                 if expected_type == int:
-                    # NOTE(OMN-1073): Safe cast - int(str(value)) returns int or raises.
-                    # Convert via str() first to handle ArgumentValueType union safely.
-                    return cast(T, int(str(value)))
+                    # NOTE(OMN-1073): Safe cast - int(value) returns int or raises.
+                    return cast(T, int(value))  # type: ignore[arg-type]
                 if expected_type == float:
-                    # NOTE(OMN-1073): Safe cast - float(str(value)) returns float or raises.
-                    # Convert via str() first to handle ArgumentValueType union safely.
-                    return cast(T, float(str(value)))
+                    # NOTE(OMN-1073): Safe cast - float(value) returns float or raises.
+                    return cast(T, float(value))  # type: ignore[arg-type]
                 if expected_type == bool:
                     # NOTE(OMN-1073): Safe cast - comparison result is always bool.
                     if isinstance(value, str):
@@ -225,13 +223,11 @@ class ModelArgumentMap(BaseModel):
                     # NOTE(OMN-1073): Safe cast - str() always returns str.
                     return cast(T, str(value))
                 if expected_type == int:
-                    # NOTE(OMN-1073): Safe cast - int(str(value)) returns int or raises.
-                    # Convert via str() first to handle ArgumentValueType union safely.
-                    return cast(T, int(str(value)))
+                    # NOTE(OMN-1073): Safe cast - int(value) returns int or raises.
+                    return cast(T, int(value))  # type: ignore[arg-type]
                 if expected_type == float:
-                    # NOTE(OMN-1073): Safe cast - float(str(value)) returns float or raises.
-                    # Convert via str() first to handle ArgumentValueType union safely.
-                    return cast(T, float(str(value)))
+                    # NOTE(OMN-1073): Safe cast - float(value) returns float or raises.
+                    return cast(T, float(value))  # type: ignore[arg-type]
                 if expected_type == bool:
                     # NOTE(OMN-1073): Safe cast - comparison result is always bool.
                     if isinstance(value, str):
