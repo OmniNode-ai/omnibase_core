@@ -226,11 +226,13 @@ class MixinDiscoveryResponder:
             )
 
             # Deserialize the envelope from message value
+            # IMPORTANT: Keep raw dict for discovery metadata extraction
+            # (ModelEventData loses discovery-specific fields during validation)
             envelope_dict = json.loads(message.value.decode("utf-8"))
             envelope: ModelEventEnvelope[object] = ModelEventEnvelope(**envelope_dict)
 
-            # Handle the discovery request
-            await self._handle_discovery_request(envelope)
+            # Handle the discovery request, passing raw dict for metadata extraction
+            await self._handle_discovery_request(envelope, envelope_dict)
 
             # Acknowledge message receipt only after successful handling
             await message.ack()
@@ -269,18 +271,22 @@ class MixinDiscoveryResponder:
                 )
 
     async def _handle_discovery_request(
-        self, envelope: "ModelEventEnvelope[object]"
+        self,
+        envelope: "ModelEventEnvelope[object]",
+        raw_envelope_dict: dict[str, object] | None = None,
     ) -> None:
         """
         Handle incoming discovery requests.
 
         Discovery Protocol:
         - Events with type "NODE_DISCOVERY_REQUEST" are handled
-        - Request metadata is extracted from the event's `data` field (dict format)
+        - Request metadata is extracted from the raw envelope dict (not Pydantic models)
         - TypeAdapter is used for duck-typing validation (no isinstance checks)
 
         Args:
             envelope: Event envelope containing the discovery request
+            raw_envelope_dict: Raw envelope dict for metadata extraction (bypasses
+                ModelEventData validation which loses discovery-specific fields)
         """
         try:
             # STRICT: Envelope must have payload attribute
@@ -322,9 +328,12 @@ class MixinDiscoveryResponder:
                 self._discovery_stats["throttled_requests"] += 1
                 return  # Throttled
 
-            # Extract request metadata from event's data field using TypeAdapter
-            # Discovery protocol puts metadata in the data field (dict format)
-            request_metadata = self._extract_discovery_request_metadata(onex_event)
+            # Extract request metadata from raw envelope dict using TypeAdapter
+            # Discovery protocol puts metadata in the event's data field (dict format)
+            # We use raw_envelope_dict because ModelEventData validation loses discovery fields
+            request_metadata = self._extract_discovery_request_metadata(
+                raw_envelope_dict
+            )
             if request_metadata is None:
                 return  # Invalid request format
 
@@ -351,29 +360,43 @@ class MixinDiscoveryResponder:
             self._discovery_stats["error_level_count"] += 1
 
     def _extract_discovery_request_metadata(
-        self, onex_event: OnexEvent
+        self, raw_envelope_dict: dict[str, object] | None
     ) -> ModelDiscoveryRequestModelMetadata | None:
         """
-        Extract discovery request metadata from event using TypeAdapter.
+        Extract discovery request metadata from raw envelope dict using TypeAdapter.
 
         Discovery protocol places metadata in the event's `data` field.
-        The data field is typed as ModelEventData, but discovery protocol
-        uses it to store discovery request metadata as a dict.
+        We extract from raw dict because Pydantic's ModelEventData validation
+        loses discovery-specific fields (ModelEventData has different schema).
         This method uses TypeAdapter for duck-typing validation.
 
         Args:
-            onex_event: The ONEX event containing the discovery request
+            raw_envelope_dict: Raw envelope dict before Pydantic validation
 
         Returns:
             Validated ModelDiscoveryRequestModelMetadata or None if invalid
         """
-        # Try to extract data dict from event
-        if onex_event.data is None:
+        if raw_envelope_dict is None:
             return None
 
-        # Convert ModelEventData to dict for TypeAdapter validation
-        # Note: discovery protocol places metadata in data field as model_dump()
-        data_dict = onex_event.data.model_dump()
+        # Navigate to payload.data in raw envelope dict
+        # Structure: envelope -> payload -> data
+        payload = raw_envelope_dict.get("payload")
+        if not isinstance(payload, dict):
+            return None
+
+        data = payload.get("data")
+        if data is None:
+            return None
+
+        # If data is already a dict, use it directly
+        # If it's a Pydantic model (shouldn't happen with raw dict), convert it
+        if hasattr(data, "model_dump"):
+            data_dict = data.model_dump()
+        elif isinstance(data, dict):
+            data_dict = data
+        else:
+            return None
 
         # Use TypeAdapter for duck-typing validation
         try:

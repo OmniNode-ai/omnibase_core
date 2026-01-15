@@ -5,7 +5,7 @@ Type-safe container for parsed CLI arguments that provides both positional
 and named argument access with type conversion capabilities.
 """
 
-from typing import TypeVar, cast
+from typing import TypeVar, cast, overload
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -42,6 +42,22 @@ class ModelArgumentMap(BaseModel):
         description="Original raw argument strings",
     )
 
+    @overload
+    def get_typed(
+        self,
+        name: str,
+        expected_type: type[T],
+        default: None = None,
+    ) -> T | None: ...
+
+    @overload
+    def get_typed(
+        self,
+        name: str,
+        expected_type: type[T],
+        default: T,
+    ) -> T: ...
+
     def get_typed(
         self,
         name: str,
@@ -55,11 +71,15 @@ class ModelArgumentMap(BaseModel):
         stored value doesn't match expected_type, automatic conversion is attempted
         for str, int, float, and bool types.
 
+        Overloads:
+            - get_typed(name, type) -> T | None: Returns None if not found
+            - get_typed(name, type, default) -> T: Returns default if not found
+
         Type Conversion Behavior:
             - str: Any value converted via str()
             - int: Numeric strings/values converted via int()
             - float: Numeric strings/values converted via float()
-            - bool: String values "true", "1", "yes", "on" (case-insensitive) → True;
+            - bool: String values "true", "1", "yes", "on" (case-insensitive) -> True;
                     other values converted via bool()
 
         Note:
@@ -107,23 +127,19 @@ class ModelArgumentMap(BaseModel):
 
     def get_string(self, name: str, default: str = "") -> str:
         """Get string argument value."""
-        result = self.get_typed(name, str, default)
-        return result if result is not None else default
+        return self.get_typed(name, str, default)
 
     def get_int(self, name: str, default: int = 0) -> int:
         """Get integer argument value."""
-        result = self.get_typed(name, int, default)
-        return result if result is not None else default
+        return self.get_typed(name, int, default)
 
     def get_float(self, name: str, default: float = 0.0) -> float:
         """Get float argument value."""
-        result = self.get_typed(name, float, default)
-        return result if result is not None else default
+        return self.get_typed(name, float, default)
 
     def get_bool(self, name: str, default: bool = False) -> bool:
         """Get boolean argument value."""
-        result = self.get_typed(name, bool, default)
-        return result if result is not None else default
+        return self.get_typed(name, bool, default)
 
     def get_list(self, name: str, default: list[str] | None = None) -> list[str]:
         """Get list argument value."""
@@ -132,13 +148,27 @@ class ModelArgumentMap(BaseModel):
         # Use bare 'list' for isinstance check at runtime (generic list[str] not valid).
         result = self.get_typed(name, list, default)
         # Ensure we return list[str] by converting items
-        if result is not None and isinstance(result, list):
-            return [str(item) for item in result]
-        return default
+        return [str(item) for item in result]
 
     def has_argument(self, name: str) -> bool:
         """Check if named argument exists."""
         return name in self.named_args
+
+    @overload
+    def get_positional(
+        self,
+        index: int,
+        expected_type: type[T],
+        default: None = None,
+    ) -> T | None: ...
+
+    @overload
+    def get_positional(
+        self,
+        index: int,
+        expected_type: type[T],
+        default: T,
+    ) -> T: ...
 
     def get_positional(
         self,
@@ -152,6 +182,10 @@ class ModelArgumentMap(BaseModel):
         This method provides runtime type conversion for common types, identical
         to get_typed(). When the stored value doesn't match expected_type,
         automatic conversion is attempted for str, int, float, and bool types.
+
+        Overloads:
+            - get_positional(index, type) -> T | None: Returns None if not found
+            - get_positional(index, type, default) -> T: Returns default if not found
 
         Type Conversion Behavior:
             - str: Any value converted via str()

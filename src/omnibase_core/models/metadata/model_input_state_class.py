@@ -58,12 +58,15 @@ class ModelInputState(BaseModel):
 
     def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
-        result: TypedDictMetadataDict = {}
+        result: TypedDictMetadataDict = {
+            "name": "",
+            "description": "",
+            "tags": [],
+            "metadata": dict(self.additional_fields) if self.additional_fields else {},
+        }
         # version is Optional (ModelSemVer | None), so None check is correct
         if self.version is not None:
             result["version"] = self.version
-        if self.additional_fields:
-            result["metadata"] = dict(self.additional_fields)
         return result
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
@@ -71,6 +74,13 @@ class ModelInputState(BaseModel):
         try:
             for key, value in metadata.items():
                 if hasattr(self, key):
+                    # Convert version to ModelSemVer if provided as string or dict
+                    if key == "version" and value is not None:
+                        if isinstance(value, str):
+                            value = ModelSemVer.parse(value)
+                        elif isinstance(value, dict):
+                            value = ModelSemVer(**value)
+                        # If already ModelSemVer, use as-is
                     setattr(self, key, value)
             return True
         except (AttributeError, KeyError, TypeError, ValueError) as e:
