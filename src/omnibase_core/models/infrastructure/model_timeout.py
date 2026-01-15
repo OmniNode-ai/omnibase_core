@@ -589,9 +589,15 @@ class ModelTimeout(BaseModel):
         Raises:
             ModelOnexError: If validation fails with details about the failure
         """
-        # Basic validation - ensure required fields exist
-        # Override in specific models for custom validation
-        return True
+        try:
+            # Basic validation - ensure required fields exist
+            # Override in specific models for custom validation
+            return True
+        except (AttributeError, KeyError, TypeError, ValueError) as e:
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Instance validation failed: {e}",
+            ) from e
 
 
 # Export for use

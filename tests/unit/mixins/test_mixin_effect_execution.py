@@ -28,6 +28,7 @@ import pytest
 pytestmark = pytest.mark.unit
 
 from omnibase_core.enums import EnumEffectType, EnumTransactionState
+from omnibase_core.enums.enum_circuit_breaker_state import EnumCircuitBreakerState
 from omnibase_core.mixins.mixin_effect_execution import MixinEffectExecution
 from omnibase_core.models.configuration.model_circuit_breaker import ModelCircuitBreaker
 from omnibase_core.models.contracts.subcontracts.model_effect_io_configs import (
@@ -1063,7 +1064,7 @@ class TestCircuitBreaker:
         """Test that closed circuit breaker allows requests."""
         operation_id = uuid4()
         cb = ModelCircuitBreaker.create_resilient()
-        cb.state = "closed"
+        cb.state = EnumCircuitBreakerState.CLOSED
         test_node._circuit_breakers[operation_id] = cb
 
         result = test_node._check_circuit_breaker(operation_id)
@@ -1082,7 +1083,7 @@ class TestCircuitBreaker:
 
         operation_id = uuid4()
         cb = ModelCircuitBreaker.create_resilient()
-        cb.state = "open"
+        cb.state = EnumCircuitBreakerState.OPEN
         cb.failure_count = cb.failure_threshold + 1
         cb.total_requests = cb.minimum_request_threshold + 1
         # Set last_state_change to now so it doesn't transition to half-open
@@ -1430,7 +1431,7 @@ class TestExecuteWithRetry:
 
         # Initialize circuit breaker in open state
         cb = ModelCircuitBreaker.create_resilient()
-        cb.state = "open"
+        cb.state = EnumCircuitBreakerState.OPEN
         test_node._circuit_breakers[operation_id] = cb
 
         with pytest.raises(ModelOnexError) as exc_info:

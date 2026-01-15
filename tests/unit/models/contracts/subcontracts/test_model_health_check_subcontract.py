@@ -134,7 +134,7 @@ class TestModelNodeHealthStatus:
             message="Node is healthy",
             timestamp=now,
             check_duration_ms=500,
-            node_type="EFFECT",
+            node_type="EFFECT_GENERIC",
             node_id=test_uuid,
         )
 
@@ -142,7 +142,7 @@ class TestModelNodeHealthStatus:
         assert node_health.message == "Node is healthy"
         assert node_health.timestamp == now
         assert node_health.check_duration_ms == 500
-        assert node_health.node_type == "EFFECT"
+        assert node_health.node_type == "EFFECT_GENERIC"
         assert node_health.node_id == test_uuid
 
     def test_node_health_status_without_node_id(self):
@@ -154,11 +154,11 @@ class TestModelNodeHealthStatus:
             message="Node is unhealthy",
             timestamp=now,
             check_duration_ms=750,
-            node_type="COMPUTE",
+            node_type="COMPUTE_GENERIC",
         )
 
         assert node_health.node_id is None
-        assert node_health.node_type == "COMPUTE"
+        assert node_health.node_type == "COMPUTE_GENERIC"
 
     def test_node_health_status_negative_duration_validation(self):
         """Test validation of negative check duration."""
@@ -171,7 +171,7 @@ class TestModelNodeHealthStatus:
                 message="Test",
                 timestamp=now,
                 check_duration_ms=-100,  # Invalid
-                node_type="REDUCER",
+                node_type="REDUCER_GENERIC",
             )
 
 
@@ -326,7 +326,7 @@ class TestModelHealthCheckSubcontractResult:
             message="All systems operational",
             timestamp=now,
             check_duration_ms=300,
-            node_type="ORCHESTRATOR",
+            node_type="ORCHESTRATOR_GENERIC",
         )
 
         component_health = [
@@ -374,7 +374,7 @@ class TestModelHealthCheckSubcontractResult:
             message="Performance degraded",
             timestamp=now,
             check_duration_ms=500,
-            node_type="COMPUTE",
+            node_type="COMPUTE_GENERIC",
         )
 
         result = ModelHealthCheckSubcontractResult(
@@ -397,7 +397,7 @@ class TestModelHealthCheckSubcontractResult:
             message="Healthy",
             timestamp=now,
             check_duration_ms=100,
-            node_type="EFFECT",
+            node_type="EFFECT_GENERIC",
         )
 
         # Valid scores

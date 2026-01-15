@@ -626,7 +626,7 @@ def parse_input_state_version(input_state: SerializedDict) -> "ModelSemVer":
     if isinstance(v, dict):
         try:
             return ModelSemVer.model_validate(v)
-        except (ValueError, TypeError, AttributeError) as e:
+        except (AttributeError, TypeError, ValueError) as e:
             msg = (
                 f"Invalid version dictionary format. Expected {{major: int, minor: int, patch: int}}. "
                 f"Got: {v}. Error: {e}"

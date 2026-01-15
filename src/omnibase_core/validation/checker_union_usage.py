@@ -204,8 +204,8 @@ class UnionUsageChecker(ast.NodeVisitor):
     ) -> None:
         """Process Optional[T] syntax and flag for PEP 604 conversion.
 
-        Detects legacy Optional[T] syntax and reports it as an issue,
-        suggesting T | None as the preferred ONEX pattern.
+        Detects Optional[T] syntax and reports it as an issue,
+        suggesting T | None as the preferred ONEX pattern per PEP 604.
 
         Args:
             _node: The AST node for the Optional subscript (unused but kept for signature).
@@ -225,7 +225,7 @@ class UnionUsageChecker(ast.NodeVisitor):
         # Analyze the pattern for consistency with other union handling
         self._analyze_union_pattern(union_pattern)
 
-        # Flag Optional[T] as deprecated - use T | None instead (PEP 604)
+        # Flag Optional[T] - use T | None instead per PEP 604 (ONEX standard)
         self.issues.append(
             f"Line {line_no}: Use {inner_type} | None instead of Optional[{inner_type}] (PEP 604)"
         )

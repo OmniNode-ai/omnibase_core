@@ -143,10 +143,10 @@ class EnumFunctionLifecycleStatus(StrValueHelper, str, Enum):
         return stability_order.get(status, 0)
 
 
-# Migration compatibility aliases
+# Deprecated: use EnumFunctionLifecycleStatus directly
 # Note: Python enums cannot extend other enums, so we use module-level aliases
-EnumFunctionStatus = EnumFunctionLifecycleStatus
-EnumMetadataNodeStatus = EnumFunctionLifecycleStatus
+EnumFunctionStatus: type[EnumFunctionLifecycleStatus] = EnumFunctionLifecycleStatus
+EnumMetadataNodeStatus: type[EnumFunctionLifecycleStatus] = EnumFunctionLifecycleStatus
 
 
 # Export for use

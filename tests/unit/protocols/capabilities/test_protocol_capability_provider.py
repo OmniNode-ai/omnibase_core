@@ -179,7 +179,7 @@ class TestProtocolCapabilityProviderMethodBehavior:
         class Provider:
             def get_capabilities(self) -> dict[str, Any]:
                 return {
-                    "node_type": "COMPUTE",
+                    "node_type": "COMPUTE_GENERIC",
                     "supports_caching": True,
                     "max_retries": 3,
                 }
@@ -191,7 +191,7 @@ class TestProtocolCapabilityProviderMethodBehavior:
         capabilities = provider.get_capabilities()
 
         assert isinstance(capabilities, dict)
-        assert capabilities["node_type"] == "COMPUTE"
+        assert capabilities["node_type"] == "COMPUTE_GENERIC"
         assert capabilities["supports_caching"] is True
         assert capabilities["max_retries"] == 3
 

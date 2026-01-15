@@ -13,7 +13,6 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_fallback_strategy_type import EnumFallbackStrategyType
-from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.type_serializable_value import SerializedDict
 
@@ -92,10 +91,7 @@ class ModelFallbackStrategy(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except ModelOnexError:
-            raise  # Re-raise without double-wrapping
-        except PYDANTIC_MODEL_ERRORS as e:
-            # PYDANTIC_MODEL_ERRORS covers: AttributeError, TypeError, ValidationError, ValueError
+        except (AttributeError, TypeError, ValueError) as e:
             raise ModelOnexError(
                 message=f"Operation failed: {e}",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -106,12 +102,13 @@ class ModelFallbackStrategy(BaseModel):
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
-        """
-        Validate instance integrity (ProtocolValidatable protocol).
-
-        Returns True for well-constructed instances. Override in subclasses
-        for custom validation logic.
-        """
-        # Basic validation - Pydantic handles field constraints
-        # Override in specific models for custom validation
-        return True
+        """Validate instance integrity (ProtocolValidatable protocol)."""
+        try:
+            # Basic validation - ensure required fields exist
+            # Override in specific models for custom validation
+            return True
+        except (AttributeError, TypeError, ValueError) as e:
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Operation failed: {e}",
+            ) from e

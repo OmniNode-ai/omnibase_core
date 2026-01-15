@@ -36,6 +36,9 @@ from omnibase_core.validation.checker_enum_governance import (
     LiteralAliasInfo,
     _CollectedEnumData,
 )
+from omnibase_core.validation.checker_enum_member_casing import (
+    UPPER_SNAKE_CASE_PATTERN,
+)
 
 # =============================================================================
 # Test Helpers
@@ -119,6 +122,52 @@ def create_test_contract(
         severity_default=severity_default,
         rules=rules if rules is not None else default_rules,
     )
+
+
+# =============================================================================
+# Tests for UPPER_SNAKE_CASE_PATTERN
+# =============================================================================
+
+
+@pytest.mark.unit
+class TestUpperSnakeCasePattern:
+    """Tests for the UPPER_SNAKE_CASE regex pattern."""
+
+    @pytest.mark.parametrize(
+        "name",
+        [
+            "ACTIVE",
+            "PENDING",
+            "HTTP_404",
+            "A",
+            "A1",
+            "MY_ENUM_VALUE",
+            "UPPER_SNAKE_CASE",
+            "VALUE_123",
+            "A_B_C",
+        ],
+    )
+    def test_valid_upper_snake_case(self, name: str) -> None:
+        """Test valid UPPER_SNAKE_CASE names match pattern."""
+        assert UPPER_SNAKE_CASE_PATTERN.match(name) is not None
+
+    @pytest.mark.parametrize(
+        "name",
+        [
+            "active",
+            "Active",
+            "camelCase",
+            "Mixed_Case",
+            "TRAILING_",
+            "_LEADING",
+            "double__underscore",
+            "123_STARTS_WITH_NUMBER",
+            "",
+        ],
+    )
+    def test_invalid_upper_snake_case(self, name: str) -> None:
+        """Test invalid names do not match UPPER_SNAKE_CASE pattern."""
+        assert UPPER_SNAKE_CASE_PATTERN.match(name) is None
 
 
 # =============================================================================
@@ -801,7 +850,7 @@ class TestDuplicateEnumValues:
             PENDING = "pending"
         """
         create_test_file(tmp_path, "status1.py", file1_content)
-        file2_path = create_test_file(tmp_path, "status2.py", file2_content)
+        create_test_file(tmp_path, "status2.py", file2_content)
 
         contract = create_test_contract()
         validator = CheckerEnumGovernance(contract=contract)
@@ -1329,3 +1378,7 @@ class TestImports:
         assert _CollectedEnumData is not None
         assert LiteralAliasInfo is not None
         assert GovernanceASTVisitor is not None
+
+
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

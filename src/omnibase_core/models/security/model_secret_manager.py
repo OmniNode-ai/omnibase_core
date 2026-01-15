@@ -301,7 +301,7 @@ class ModelSecretManager(BaseModel):
                 status = "unhealthy"
                 warnings.extend(backend_health.issues)
 
-        except (ModelOnexError, RuntimeError, AttributeError) as e:
+        except (AttributeError, ModelOnexError, RuntimeError) as e:
             status = "unhealthy"
             components.append(
                 HealthCheckComponent(
@@ -404,7 +404,7 @@ def get_secret_manager() -> ModelSecretManager:
     try:
         container = get_model_onex_container_sync()
         return cast("ModelSecretManager", container.secret_manager())
-    except (ModelOnexError, AttributeError, RuntimeError) as e:
+    except (AttributeError, ModelOnexError, RuntimeError) as e:
         raise ModelOnexError(
             message="DI container not initialized - cannot get secret manager. "
             "Call init_secret_manager() first.",
@@ -434,7 +434,7 @@ def init_secret_manager(config: ModelSecretConfig) -> ModelSecretManager:
     try:
         container = get_model_onex_container_sync()
         return cast("ModelSecretManager", container.secret_manager())
-    except (ModelOnexError, AttributeError, RuntimeError) as e:
+    except (AttributeError, ModelOnexError, RuntimeError) as e:
         raise ModelOnexError(
             message="DI container not initialized - cannot initialize secret manager.",
             error_code=EnumCoreErrorCode.CONFIGURATION_ERROR,
@@ -466,7 +466,7 @@ def init_secret_manager_from_manager(manager: ModelSecretManager) -> ModelSecret
     try:
         container = get_model_onex_container_sync()
         return cast("ModelSecretManager", container.secret_manager())
-    except (ModelOnexError, AttributeError, RuntimeError) as e:
+    except (AttributeError, ModelOnexError, RuntimeError) as e:
         raise ModelOnexError(
             message="DI container not initialized - cannot initialize secret manager.",
             error_code=EnumCoreErrorCode.CONFIGURATION_ERROR,

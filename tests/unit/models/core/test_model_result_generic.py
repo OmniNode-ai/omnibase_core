@@ -387,7 +387,7 @@ class TestResultGenericComplexTypes:
         def parse_config(data: dict[str, Any]) -> ModelResult[dict[str, int], str]:
             try:
                 return ModelResult.ok({k: int(v) for k, v in data.items()})
-            except (ValueError, TypeError):
+            except (TypeError, ValueError):
                 return ModelResult.err("Invalid configuration format")
 
         def validate_config(config: dict[str, int]) -> ModelResult[dict[str, int], str]:

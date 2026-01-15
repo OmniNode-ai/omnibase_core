@@ -56,11 +56,11 @@ class ModelNodeCoreMetadata(BaseModel):
 
     def is_active(self) -> bool:
         """Check if node is active."""
-        return self.status.value == "ACTIVE"
+        return self.status == EnumMetadataNodeStatus.ACTIVE
 
     def is_healthy(self) -> bool:
         """Check if node is healthy."""
-        return self.health.value == "HEALTHY"
+        return self.health == EnumHealthStatus.HEALTHY
 
     def get_status_summary(self) -> dict[str, str]:
         """Get concise status summary."""

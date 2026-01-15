@@ -23,7 +23,7 @@ import pytest
 from omnibase_core.validation.checker_enum_member_casing import (
     ENUM_BASE_NAMES,
     UPPER_SNAKE_CASE_PATTERN,
-    MemberCasingChecker,
+    CheckerMemberCasing,
     main,
     suggest_upper_snake_case,
     validate_directory,
@@ -501,32 +501,32 @@ class TestSuggestUpperSnakeCase:
 
 
 # =============================================================================
-# Tests for MemberCasingChecker class
+# Tests for CheckerMemberCasing class
 # =============================================================================
 
 
 @pytest.mark.unit
-class TestMemberCasingCheckerInit:
-    """Tests for MemberCasingChecker initialization."""
+class TestCheckerMemberCasingInit:
+    """Tests for CheckerMemberCasing initialization."""
 
     def test_init_sets_file_path(self) -> None:
         """Test __init__ correctly sets file_path."""
-        checker = MemberCasingChecker("test.py")
+        checker = CheckerMemberCasing("test.py")
         assert checker.file_path == "test.py"
 
     def test_init_creates_empty_issues_list(self) -> None:
         """Test __init__ creates empty issues list."""
-        checker = MemberCasingChecker("test.py")
+        checker = CheckerMemberCasing("test.py")
         assert checker.issues == []
 
     def test_init_with_absolute_path(self) -> None:
         """Test __init__ with absolute path."""
-        checker = MemberCasingChecker("/home/user/project/src/enum.py")
+        checker = CheckerMemberCasing("/home/user/project/src/enum.py")
         assert checker.file_path == "/home/user/project/src/enum.py"
 
 
 @pytest.mark.unit
-class TestMemberCasingCheckerValidNames:
+class TestCheckerMemberCasingValidNames:
     """Tests for valid UPPER_SNAKE_CASE enum members."""
 
     @pytest.mark.parametrize(
@@ -549,7 +549,7 @@ class Status(Enum):
     {member_name} = "value"
 """
         tree = ast.parse(source)
-        checker = MemberCasingChecker("test.py")
+        checker = CheckerMemberCasing("test.py")
         checker.visit(tree)
         assert len(checker.issues) == 0
 
@@ -565,7 +565,7 @@ class Status(Enum):
     IN_PROGRESS = "in_progress"
 """
         tree = ast.parse(source)
-        checker = MemberCasingChecker("test.py")
+        checker = CheckerMemberCasing("test.py")
         checker.visit(tree)
         assert len(checker.issues) == 0
 
@@ -580,13 +580,13 @@ class Letter(Enum):
     X = 24
 """
         tree = ast.parse(source)
-        checker = MemberCasingChecker("test.py")
+        checker = CheckerMemberCasing("test.py")
         checker.visit(tree)
         assert len(checker.issues) == 0
 
 
 @pytest.mark.unit
-class TestMemberCasingCheckerInvalidNames:
+class TestCheckerMemberCasingInvalidNames:
     """Tests for invalid enum member names."""
 
     @pytest.mark.parametrize(
@@ -606,7 +606,7 @@ class Status(Enum):
     {member_name} = "value"
 """
         tree = ast.parse(source)
-        checker = MemberCasingChecker("test.py")
+        checker = CheckerMemberCasing("test.py")
         checker.visit(tree)
         assert len(checker.issues) == 1
         assert member_name in checker.issues[0]
@@ -630,7 +630,7 @@ class Status(Enum):
     {member_name} = "value"
 """
         tree = ast.parse(source)
-        checker = MemberCasingChecker("test.py")
+        checker = CheckerMemberCasing("test.py")
         checker.visit(tree)
         assert len(checker.issues) == 1
         assert member_name in checker.issues[0]
@@ -644,7 +644,7 @@ class Letter(Enum):
     a = 1
 """
         tree = ast.parse(source)
-        checker = MemberCasingChecker("test.py")
+        checker = CheckerMemberCasing("test.py")
         checker.visit(tree)
         assert len(checker.issues) == 1
         assert "a" in checker.issues[0]
@@ -661,14 +661,14 @@ class Status(Enum):
     camelCase = "camel"
 """
         tree = ast.parse(source)
-        checker = MemberCasingChecker("test.py")
+        checker = CheckerMemberCasing("test.py")
         checker.visit(tree)
         # Should flag: active, inactive, camelCase (3 issues)
         assert len(checker.issues) == 3
 
 
 @pytest.mark.unit
-class TestMemberCasingCheckerIgnoredMembers:
+class TestCheckerMemberCasingIgnoredMembers:
     """Tests for members that should be ignored (dunder, private)."""
 
     def test_dunder_members_ignored(self) -> None:
@@ -682,7 +682,7 @@ class Status(Enum):
     ACTIVE = "active"
 """
         tree = ast.parse(source)
-        checker = MemberCasingChecker("test.py")
+        checker = CheckerMemberCasing("test.py")
         checker.visit(tree)
         # Only ACTIVE should be checked and it's valid
         assert len(checker.issues) == 0
@@ -698,7 +698,7 @@ class Status(Enum):
     ACTIVE = "active"
 """
         tree = ast.parse(source)
-        checker = MemberCasingChecker("test.py")
+        checker = CheckerMemberCasing("test.py")
         checker.visit(tree)
         # _private and _internal_value should be ignored
         assert len(checker.issues) == 0
@@ -713,13 +713,13 @@ class Status(Enum):
     ACTIVE = "active"
 """
         tree = ast.parse(source)
-        checker = MemberCasingChecker("test.py")
+        checker = CheckerMemberCasing("test.py")
         checker.visit(tree)
         assert len(checker.issues) == 0
 
 
 @pytest.mark.unit
-class TestMemberCasingCheckerEnumDetection:
+class TestCheckerMemberCasingEnumDetection:
     """Tests for enum class detection."""
 
     def test_detects_enum_subclass(self) -> None:
@@ -731,7 +731,7 @@ class Status(Enum):
     active = "active"
 """
         tree = ast.parse(source)
-        checker = MemberCasingChecker("test.py")
+        checker = CheckerMemberCasing("test.py")
         checker.visit(tree)
         assert len(checker.issues) == 1
 
@@ -744,7 +744,7 @@ class Status(str, Enum):
     active = "active"
 """
         tree = ast.parse(source)
-        checker = MemberCasingChecker("test.py")
+        checker = CheckerMemberCasing("test.py")
         checker.visit(tree)
         assert len(checker.issues) == 1
 
@@ -758,7 +758,7 @@ class Priority(IntEnum):
     low = 2
 """
         tree = ast.parse(source)
-        checker = MemberCasingChecker("test.py")
+        checker = CheckerMemberCasing("test.py")
         checker.visit(tree)
         assert len(checker.issues) == 2
 
@@ -772,7 +772,7 @@ class Color(StrEnum):
     blue = "blue"
 """
         tree = ast.parse(source)
-        checker = MemberCasingChecker("test.py")
+        checker = CheckerMemberCasing("test.py")
         checker.visit(tree)
         assert len(checker.issues) == 2
 
@@ -786,7 +786,7 @@ class Permission(Flag):
     write = 2
 """
         tree = ast.parse(source)
-        checker = MemberCasingChecker("test.py")
+        checker = CheckerMemberCasing("test.py")
         checker.visit(tree)
         assert len(checker.issues) == 2
 
@@ -800,7 +800,7 @@ class Permission(IntFlag):
     write = 2
 """
         tree = ast.parse(source)
-        checker = MemberCasingChecker("test.py")
+        checker = CheckerMemberCasing("test.py")
         checker.visit(tree)
         assert len(checker.issues) == 2
 
@@ -814,7 +814,7 @@ class Status(MyCustomEnum):
     active = "active"
 """
         tree = ast.parse(source)
-        checker = MemberCasingChecker("test.py")
+        checker = CheckerMemberCasing("test.py")
         checker.visit(tree)
         # MyCustomEnum ends with "Enum", so Status should be checked
         assert len(checker.issues) == 1
@@ -830,7 +830,7 @@ class AnotherClass(object):
     lower_case = "value"
 """
         tree = ast.parse(source)
-        checker = MemberCasingChecker("test.py")
+        checker = CheckerMemberCasing("test.py")
         checker.visit(tree)
         # Regular classes should not be checked
         assert len(checker.issues) == 0
@@ -845,7 +845,7 @@ class Status(MyEnumerator):
     active = "active"
 """
         tree = ast.parse(source)
-        checker = MemberCasingChecker("test.py")
+        checker = CheckerMemberCasing("test.py")
         checker.visit(tree)
         # MyEnumerator doesn't end with "Enum", should be ignored
         assert len(checker.issues) == 0
@@ -859,13 +859,13 @@ class Status(enum.Enum):
     active = "active"
 """
         tree = ast.parse(source)
-        checker = MemberCasingChecker("test.py")
+        checker = CheckerMemberCasing("test.py")
         checker.visit(tree)
         assert len(checker.issues) == 1
 
 
 @pytest.mark.unit
-class TestMemberCasingCheckerNestedClasses:
+class TestCheckerMemberCasingNestedClasses:
     """Tests for nested enum classes."""
 
     def test_nested_enum_checked(self) -> None:
@@ -878,7 +878,7 @@ class Outer:
         active = "active"
 """
         tree = ast.parse(source)
-        checker = MemberCasingChecker("test.py")
+        checker = CheckerMemberCasing("test.py")
         checker.visit(tree)
         assert len(checker.issues) == 1
         assert "Inner" in checker.issues[0]
@@ -894,14 +894,14 @@ class Level1:
             invalid = "value"
 """
         tree = ast.parse(source)
-        checker = MemberCasingChecker("test.py")
+        checker = CheckerMemberCasing("test.py")
         checker.visit(tree)
         assert len(checker.issues) == 1
         assert "Level3" in checker.issues[0]
 
 
 @pytest.mark.unit
-class TestMemberCasingCheckerNonMemberStatements:
+class TestCheckerMemberCasingNonMemberStatements:
     """Tests for non-member statements in enum classes."""
 
     def test_method_definitions_ignored(self) -> None:
@@ -916,7 +916,7 @@ class Status(Enum):
         return self.value
 """
         tree = ast.parse(source)
-        checker = MemberCasingChecker("test.py")
+        checker = CheckerMemberCasing("test.py")
         checker.visit(tree)
         assert len(checker.issues) == 0
 
@@ -933,7 +933,7 @@ class Status(Enum):
         pass
 """
         tree = ast.parse(source)
-        checker = MemberCasingChecker("test.py")
+        checker = CheckerMemberCasing("test.py")
         checker.visit(tree)
         assert len(checker.issues) == 0
 
@@ -947,7 +947,7 @@ class Status(Enum):
     ACTIVE = "active"
 '''
         tree = ast.parse(source)
-        checker = MemberCasingChecker("test.py")
+        checker = CheckerMemberCasing("test.py")
         checker.visit(tree)
         assert len(checker.issues) == 0
 
@@ -961,7 +961,7 @@ class Status(Enum):
     ACTIVE = "active"
 """
         tree = ast.parse(source)
-        checker = MemberCasingChecker("test.py")
+        checker = CheckerMemberCasing("test.py")
         checker.visit(tree)
         assert len(checker.issues) == 0
 
@@ -975,13 +975,13 @@ class Status(Enum):
     a, b = 1, 2  # Not an enum member pattern
 """
         tree = ast.parse(source)
-        checker = MemberCasingChecker("test.py")
+        checker = CheckerMemberCasing("test.py")
         checker.visit(tree)
         assert len(checker.issues) == 0
 
 
 @pytest.mark.unit
-class TestMemberCasingCheckerLineNumbers:
+class TestCheckerMemberCasingLineNumbers:
     """Tests for line number reporting in issues."""
 
     def test_line_numbers_in_issues(self) -> None:
@@ -993,7 +993,7 @@ class Status(Enum):
     active = "active"
 """
         tree = ast.parse(source)
-        checker = MemberCasingChecker("test.py")
+        checker = CheckerMemberCasing("test.py")
         checker.visit(tree)
         assert len(checker.issues) == 1
         # active is on line 5
@@ -1010,7 +1010,7 @@ class Status(Enum):
     second = 3
 """
         tree = ast.parse(source)
-        checker = MemberCasingChecker("test.py")
+        checker = CheckerMemberCasing("test.py")
         checker.visit(tree)
         assert len(checker.issues) == 2
         # first on line 5, second on line 7
@@ -1036,7 +1036,7 @@ class Status(Enum):
     pass
 """
         tree = ast.parse(source)
-        checker = MemberCasingChecker("test.py")
+        checker = CheckerMemberCasing("test.py")
         class_def = tree.body[1]  # Second statement is the class
         assert checker._is_enum_class(class_def) is True
 
@@ -1047,7 +1047,7 @@ class Status(object):
     pass
 """
         tree = ast.parse(source)
-        checker = MemberCasingChecker("test.py")
+        checker = CheckerMemberCasing("test.py")
         class_def = tree.body[0]
         assert checker._is_enum_class(class_def) is False
 
@@ -1058,7 +1058,7 @@ class Status:
     pass
 """
         tree = ast.parse(source)
-        checker = MemberCasingChecker("test.py")
+        checker = CheckerMemberCasing("test.py")
         class_def = tree.body[0]
         assert checker._is_enum_class(class_def) is False
 
@@ -1079,7 +1079,7 @@ class Status(Enum):
     pass
 """
         tree = ast.parse(source)
-        checker = MemberCasingChecker("test.py")
+        checker = CheckerMemberCasing("test.py")
         class_def = tree.body[0]
         base = class_def.bases[0]
         assert checker._extract_base_name(base) == "Enum"
@@ -1093,7 +1093,7 @@ class Status(enum.Enum):
     pass
 """
         tree = ast.parse(source)
-        checker = MemberCasingChecker("test.py")
+        checker = CheckerMemberCasing("test.py")
         class_def = tree.body[1]
         base = class_def.bases[0]
         assert checker._extract_base_name(base) == "Enum"
@@ -1105,7 +1105,7 @@ class Status(get_base_class()):
     pass
 """
         tree = ast.parse(source)
-        checker = MemberCasingChecker("test.py")
+        checker = CheckerMemberCasing("test.py")
         class_def = tree.body[0]
         base = class_def.bases[0]  # This is a Call node
         assert checker._extract_base_name(base) is None
@@ -1126,7 +1126,7 @@ class TestIsEnumMember:
 ACTIVE = "active"
 """
         tree = ast.parse(source)
-        checker = MemberCasingChecker("test.py")
+        checker = CheckerMemberCasing("test.py")
         stmt = tree.body[0]
         is_member, name, line = checker._is_enum_member(stmt)
         assert is_member is True
@@ -1140,7 +1140,7 @@ def method():
     pass
 """
         tree = ast.parse(source)
-        checker = MemberCasingChecker("test.py")
+        checker = CheckerMemberCasing("test.py")
         stmt = tree.body[0]
         is_member, _name, _line = checker._is_enum_member(stmt)
         assert is_member is False
@@ -1152,7 +1152,7 @@ def method():
 __name__ = "test"
 """
         tree = ast.parse(source)
-        checker = MemberCasingChecker("test.py")
+        checker = CheckerMemberCasing("test.py")
         stmt = tree.body[0]
         is_member, _name, _line = checker._is_enum_member(stmt)
         assert is_member is False
@@ -1163,7 +1163,7 @@ __name__ = "test"
 _private = "test"
 """
         tree = ast.parse(source)
-        checker = MemberCasingChecker("test.py")
+        checker = CheckerMemberCasing("test.py")
         stmt = tree.body[0]
         is_member, _name, _line = checker._is_enum_member(stmt)
         assert is_member is False
@@ -1174,7 +1174,7 @@ _private = "test"
 a = b = 1
 """
         tree = ast.parse(source)
-        checker = MemberCasingChecker("test.py")
+        checker = CheckerMemberCasing("test.py")
         stmt = tree.body[0]
         is_member, _name, _line = checker._is_enum_member(stmt)
         # This has two targets [a, b], so it should not be a member
@@ -1188,7 +1188,7 @@ a = b = 1
 a, b = 1, 2
 """
         tree = ast.parse(source)
-        checker = MemberCasingChecker("test.py")
+        checker = CheckerMemberCasing("test.py")
         stmt = tree.body[0]
         is_member, _name, _line = checker._is_enum_member(stmt)
         assert is_member is False
@@ -1563,7 +1563,7 @@ class Status(Enum):
         assert "invalid" in issues[0]
 
     def test_checker_with_empty_file_path(self) -> None:
-        """Test MemberCasingChecker with empty file path."""
+        """Test CheckerMemberCasing with empty file path."""
         source = """
 from enum import Enum
 
@@ -1571,7 +1571,7 @@ class Status(Enum):
     VALID = 1
 """
         tree = ast.parse(source)
-        checker = MemberCasingChecker("")
+        checker = CheckerMemberCasing("")
         checker.visit(tree)
         assert len(checker.issues) == 0
 
@@ -1585,7 +1585,7 @@ class Status(str, Enum):
     VALID = "valid"
 """
         tree = ast.parse(source)
-        checker = MemberCasingChecker("test.py")
+        checker = CheckerMemberCasing("test.py")
         checker.visit(tree)
         assert len(checker.issues) == 1
         assert "active" in checker.issues[0]
@@ -1599,7 +1599,7 @@ class MyEnumClass(Enum):
     invalid = 1
 """
         tree = ast.parse(source)
-        checker = MemberCasingChecker("test.py")
+        checker = CheckerMemberCasing("test.py")
         checker.visit(tree)
         assert len(checker.issues) == 1
         assert "MyEnumClass" in checker.issues[0]
@@ -1614,7 +1614,7 @@ class Status(Enum):
     invalid = 1
 """
         tree = ast.parse(source)
-        checker = MemberCasingChecker("test.py")
+        checker = CheckerMemberCasing("test.py")
         checker.visit(tree)
         assert len(checker.issues) == 1
         # Format: "file:line: Class.member violates UPPER_SNAKE_CASE: member"
@@ -1640,7 +1640,7 @@ class Counter(Enum):
 Counter.VALID += 1  # This is outside the class
 """
         tree = ast.parse(source)
-        checker = MemberCasingChecker("test.py")
+        checker = CheckerMemberCasing("test.py")
         checker.visit(tree)
         # Only the enum class should be checked
         assert len(checker.issues) == 0
@@ -1658,7 +1658,7 @@ class Status(Enum):
     invalid: str = "invalid"
 """
         tree = ast.parse(source)
-        checker = MemberCasingChecker("test.py")
+        checker = CheckerMemberCasing("test.py")
         checker.visit(tree)
         # Annotated assignments with values should be detected as members
         assert len(checker.issues) == 1
@@ -1675,7 +1675,7 @@ class Status(Enum):
     HTTP_CODE: int = 200
 """
         tree = ast.parse(source)
-        checker = MemberCasingChecker("test.py")
+        checker = CheckerMemberCasing("test.py")
         checker.visit(tree)
         # Valid UPPER_SNAKE_CASE annotated assignments should pass
         assert len(checker.issues) == 0
@@ -1690,7 +1690,7 @@ class Status(Enum):
     VALID: str = "valid"
 """
         tree = ast.parse(source)
-        checker = MemberCasingChecker("test.py")
+        checker = CheckerMemberCasing("test.py")
         checker.visit(tree)
         # Private annotated assignments should be ignored
         assert len(checker.issues) == 0
@@ -1705,7 +1705,7 @@ class Status(Enum):
     VALID: str = "valid"
 """
         tree = ast.parse(source)
-        checker = MemberCasingChecker("test.py")
+        checker = CheckerMemberCasing("test.py")
         checker.visit(tree)
         # Dunder annotated assignments should be ignored
         assert len(checker.issues) == 0
@@ -1722,7 +1722,7 @@ class Status(Enum):
     camelCase: str = "camel"
 """
         tree = ast.parse(source)
-        checker = MemberCasingChecker("test.py")
+        checker = CheckerMemberCasing("test.py")
         checker.visit(tree)
         # Should detect 3 violations: first, second, camelCase
         assert len(checker.issues) == 3

@@ -2,7 +2,7 @@
 Node core information summary model.
 
 Clean, strongly-typed replacement for node core info dict[str, Any] return types.
-Follows ONEX single-class-per-file naming conventions.
+Follows ONEX one-model-per-file naming conventions.
 """
 
 from __future__ import annotations
@@ -99,10 +99,10 @@ class ModelNodeCoreInfoSummary(BaseModel):
             - "metadata": Dict containing:
                 - "node_id": String representation of the node UUID
                 - "node_type": EnumMetadataNodeType value string
-                  (e.g., "COMPUTE", "EFFECT", "REDUCER", "ORCHESTRATOR")
-                - "status": EnumStatus value string (e.g., "ACTIVE", "INACTIVE")
+                  (e.g., "class", "function", "module", "method")
+                - "status": EnumStatus value string (e.g., "active", "inactive")
                 - "health": EnumHealthStatus value string
-                  (e.g., "HEALTHY", "DEGRADED", "UNHEALTHY")
+                  (e.g., "healthy", "degraded", "unhealthy")
                 - "is_active": Boolean indicating if node is currently active
                 - "is_healthy": Boolean indicating if node is in healthy state
                 - "has_description": Boolean indicating if description is set
@@ -110,17 +110,21 @@ class ModelNodeCoreInfoSummary(BaseModel):
 
         Example:
             >>> from uuid import uuid4
+            >>> from omnibase_core.enums.enum_health_status import EnumHealthStatus
+            >>> from omnibase_core.enums.enum_metadata_node_type import EnumMetadataNodeType
+            >>> from omnibase_core.enums.enum_status import EnumStatus
+            >>> from omnibase_core.models.primitives.model_semver import ModelSemVer
             >>> summary = ModelNodeCoreInfoSummary(
             ...     node_id=uuid4(),
             ...     node_name="DataProcessor",
-            ...     node_type=EnumMetadataNodeType.COMPUTE,
+            ...     node_type=EnumMetadataNodeType.CLASS,
             ...     node_version=ModelSemVer(major=1, minor=0, patch=0),
             ...     status=EnumStatus.ACTIVE,
             ...     health=EnumHealthStatus.HEALTHY,
             ...     is_active=True,
             ...     is_healthy=True,
             ...     has_description=True,
-            ...     has_author=False
+            ...     has_author=False,
             ... )
             >>> metadata = summary.get_metadata()
             >>> metadata["name"]

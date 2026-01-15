@@ -48,7 +48,7 @@ class EnumGithubRunnerOs(StrValueHelper, str, Enum):
     MACOS_12 = "macos-12"
 
 
-# Compatibility alias
-GitHubRunnerOS = EnumGithubRunnerOs
+# Deprecated: use EnumGithubRunnerOs directly
+GitHubRunnerOS: type[EnumGithubRunnerOs] = EnumGithubRunnerOs
 
 __all__ = ["EnumGithubRunnerOs", "GitHubRunnerOS"]

@@ -24,6 +24,8 @@ class TestEnumHealthStatus:
         assert EnumHealthStatus.UNREACHABLE == "unreachable"
         assert EnumHealthStatus.AVAILABLE == "available"
         assert EnumHealthStatus.UNAVAILABLE == "unavailable"
+        assert EnumHealthStatus.INITIALIZING == "initializing"
+        assert EnumHealthStatus.DISPOSING == "disposing"
         assert EnumHealthStatus.ERROR == "error"
         assert EnumHealthStatus.INITIALIZING == "initializing"
         assert EnumHealthStatus.DISPOSING == "disposing"
@@ -61,6 +63,8 @@ class TestEnumHealthStatus:
         assert EnumHealthStatus.UNREACHABLE in values
         assert EnumHealthStatus.AVAILABLE in values
         assert EnumHealthStatus.UNAVAILABLE in values
+        assert EnumHealthStatus.INITIALIZING in values
+        assert EnumHealthStatus.DISPOSING in values
         assert EnumHealthStatus.ERROR in values
         assert EnumHealthStatus.INITIALIZING in values
         assert EnumHealthStatus.DISPOSING in values
@@ -144,6 +148,8 @@ class TestEnumHealthStatus:
             "unreachable",
             "available",
             "unavailable",
+            "initializing",
+            "disposing",
             "error",
             "initializing",
             "disposing",

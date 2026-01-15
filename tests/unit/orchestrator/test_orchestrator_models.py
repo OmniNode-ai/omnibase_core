@@ -495,7 +495,7 @@ class TestModelActionFrozenBehavior:
         """Verify ModelAction is immutable after creation."""
         model = ModelAction(
             action_type=EnumActionType.COMPUTE,
-            target_node_type="COMPUTE",
+            target_node_type="COMPUTE_GENERIC",
             payload=_create_test_payload(),
             lease_id=uuid4(),
             epoch=1,
@@ -508,7 +508,7 @@ class TestModelActionFrozenBehavior:
         with pytest.raises(ValidationError) as exc_info:
             ModelAction(
                 action_type=EnumActionType.COMPUTE,
-                target_node_type="COMPUTE",
+                target_node_type="COMPUTE_GENERIC",
                 payload=_create_test_payload(),
                 lease_id=uuid4(),
                 epoch=1,
@@ -536,7 +536,7 @@ class TestModelActionSerialization:
         model = ModelAction(
             action_id=action_id,
             action_type=EnumActionType.COMPUTE,
-            target_node_type="COMPUTE",
+            target_node_type="COMPUTE_GENERIC",
             lease_id=lease_id,
             epoch=5,
             payload=_create_test_payload(metadata={"key": "value"}),
@@ -563,7 +563,7 @@ class TestModelActionSerialization:
         lease_id = uuid4()
         model = ModelAction(
             action_type=EnumActionType.COMPUTE,
-            target_node_type="COMPUTE",
+            target_node_type="COMPUTE_GENERIC",
             payload=_create_test_payload(),
             lease_id=lease_id,
             epoch=1,
@@ -590,7 +590,7 @@ class TestModelActionSerialization:
 
         model = ModelAction(
             action_type=EnumActionType.EFFECT,
-            target_node_type="EFFECT",
+            target_node_type="EFFECT_GENERIC",
             lease_id=uuid4(),
             epoch=10,
             payload=_create_test_payload(EnumActionType.EFFECT, {"data": [1, 2, 3]}),
@@ -633,7 +633,7 @@ class TestModelActionFieldValidation:
         with pytest.raises(ValidationError):
             ModelAction(
                 action_type=EnumActionType.COMPUTE,
-                target_node_type="COMPUTE",
+                target_node_type="COMPUTE_GENERIC",
                 payload=_create_test_payload(),
                 # Missing lease_id and epoch
             )
@@ -642,7 +642,7 @@ class TestModelActionFieldValidation:
         """Test default values are correct."""
         model = ModelAction(
             action_type=EnumActionType.COMPUTE,
-            target_node_type="COMPUTE",
+            target_node_type="COMPUTE_GENERIC",
             payload=_create_test_payload(),
             lease_id=uuid4(),
             epoch=0,
@@ -663,7 +663,7 @@ class TestModelActionFieldValidation:
         for p in [1, 5, 10]:
             model = ModelAction(
                 action_type=EnumActionType.COMPUTE,
-                target_node_type="COMPUTE",
+                target_node_type="COMPUTE_GENERIC",
                 payload=_create_test_payload(),
                 lease_id=uuid4(),
                 epoch=1,
@@ -675,7 +675,7 @@ class TestModelActionFieldValidation:
         with pytest.raises(ValidationError):
             ModelAction(
                 action_type=EnumActionType.COMPUTE,
-                target_node_type="COMPUTE",
+                target_node_type="COMPUTE_GENERIC",
                 payload=_create_test_payload(),
                 lease_id=uuid4(),
                 epoch=1,
@@ -686,7 +686,7 @@ class TestModelActionFieldValidation:
         with pytest.raises(ValidationError):
             ModelAction(
                 action_type=EnumActionType.COMPUTE,
-                target_node_type="COMPUTE",
+                target_node_type="COMPUTE_GENERIC",
                 payload=_create_test_payload(),
                 lease_id=uuid4(),
                 epoch=1,
@@ -699,7 +699,7 @@ class TestModelActionFieldValidation:
         for t in [100, 30000, 300000]:
             model = ModelAction(
                 action_type=EnumActionType.COMPUTE,
-                target_node_type="COMPUTE",
+                target_node_type="COMPUTE_GENERIC",
                 payload=_create_test_payload(),
                 lease_id=uuid4(),
                 epoch=1,
@@ -711,7 +711,7 @@ class TestModelActionFieldValidation:
         with pytest.raises(ValidationError):
             ModelAction(
                 action_type=EnumActionType.COMPUTE,
-                target_node_type="COMPUTE",
+                target_node_type="COMPUTE_GENERIC",
                 payload=_create_test_payload(),
                 lease_id=uuid4(),
                 epoch=1,
@@ -722,7 +722,7 @@ class TestModelActionFieldValidation:
         with pytest.raises(ValidationError):
             ModelAction(
                 action_type=EnumActionType.COMPUTE,
-                target_node_type="COMPUTE",
+                target_node_type="COMPUTE_GENERIC",
                 payload=_create_test_payload(),
                 lease_id=uuid4(),
                 epoch=1,
@@ -735,7 +735,7 @@ class TestModelActionFieldValidation:
         for r in [0, 5, 10]:
             model = ModelAction(
                 action_type=EnumActionType.COMPUTE,
-                target_node_type="COMPUTE",
+                target_node_type="COMPUTE_GENERIC",
                 payload=_create_test_payload(),
                 lease_id=uuid4(),
                 epoch=1,
@@ -747,7 +747,7 @@ class TestModelActionFieldValidation:
         with pytest.raises(ValidationError):
             ModelAction(
                 action_type=EnumActionType.COMPUTE,
-                target_node_type="COMPUTE",
+                target_node_type="COMPUTE_GENERIC",
                 payload=_create_test_payload(),
                 lease_id=uuid4(),
                 epoch=1,
@@ -758,7 +758,7 @@ class TestModelActionFieldValidation:
         with pytest.raises(ValidationError):
             ModelAction(
                 action_type=EnumActionType.COMPUTE,
-                target_node_type="COMPUTE",
+                target_node_type="COMPUTE_GENERIC",
                 payload=_create_test_payload(),
                 lease_id=uuid4(),
                 epoch=1,
@@ -770,7 +770,7 @@ class TestModelActionFieldValidation:
         # Valid
         model = ModelAction(
             action_type=EnumActionType.COMPUTE,
-            target_node_type="COMPUTE",
+            target_node_type="COMPUTE_GENERIC",
             payload=_create_test_payload(),
             lease_id=uuid4(),
             epoch=0,
@@ -781,7 +781,7 @@ class TestModelActionFieldValidation:
         with pytest.raises(ValidationError):
             ModelAction(
                 action_type=EnumActionType.COMPUTE,
-                target_node_type="COMPUTE",
+                target_node_type="COMPUTE_GENERIC",
                 payload=_create_test_payload(),
                 lease_id=uuid4(),
                 epoch=-1,
@@ -792,12 +792,12 @@ class TestModelActionFieldValidation:
         # Valid
         model = ModelAction(
             action_type=EnumActionType.COMPUTE,
-            target_node_type="COMPUTE",
+            target_node_type="COMPUTE_GENERIC",
             payload=_create_test_payload(),
             lease_id=uuid4(),
             epoch=1,
         )
-        assert model.target_node_type == "COMPUTE"
+        assert model.target_node_type == "COMPUTE_GENERIC"
 
         # Empty string
         with pytest.raises(ValidationError):

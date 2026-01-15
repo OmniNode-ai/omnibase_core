@@ -85,12 +85,12 @@ class ModelCliToolExecutionInput(BaseModel):
         description="Request identifier for tracking",
     )
 
-    def to_legacy_dict(self) -> dict[str, object]:
+    def to_dict(self) -> dict[str, object]:
         """
-        Convert to legacy dictionary format for current standards.
+        Convert to dictionary format.
 
         Returns:
-            Dictionary representation compatible with existing code
+            Dictionary representation for serialization or API compatibility.
         """
         base_dict: dict[str, object] = {
             "action": self.action,
@@ -119,15 +119,15 @@ class ModelCliToolExecutionInput(BaseModel):
         return base_dict
 
     @classmethod
-    def from_legacy_dict(cls, data: "SerializedDict") -> "ModelCliToolExecutionInput":
+    def from_dict(cls, data: "SerializedDict") -> "ModelCliToolExecutionInput":
         """
-        Create instance from legacy dictionary format.
+        Create instance from dictionary format.
 
         Args:
-            data: Legacy SerializedDict parameters
+            data: SerializedDict parameters for deserialization.
 
         Returns:
-            ModelCliToolExecutionInput instance
+            ModelCliToolExecutionInput instance.
         """
         # Extract known fields
         known_fields = {

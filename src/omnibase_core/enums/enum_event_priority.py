@@ -11,11 +11,11 @@ from omnibase_core.utils.util_str_enum_base import StrValueHelper
 class EnumEventPriority(StrValueHelper, str, Enum):
     """Priority levels for event processing."""
 
-    CRITICAL = "CRITICAL"  # Process immediately, highest priority
-    HIGH = "HIGH"  # Process with high priority
-    NORMAL = "NORMAL"  # Standard processing priority
-    LOW = "LOW"  # Process when resources available
-    DEFERRED = "DEFERRED"  # Process in background, lowest priority
+    CRITICAL = "critical"  # Process immediately, highest priority
+    HIGH = "high"  # Process with high priority
+    NORMAL = "normal"  # Standard processing priority
+    LOW = "low"  # Process when resources available
+    DEFERRED = "deferred"  # Process in background, lowest priority
 
 
 __all__ = ["EnumEventPriority"]

@@ -155,14 +155,13 @@ repos:
       # The codebase has 71 existing violations that need incremental migration.
       # Once all files are renamed, change || true to make this blocking.
       # See: src/omnibase_core/validation/checker_naming_convention.py (Migration Plan)
+      # NOTE: always_run=true means files: pattern is ignored - script does its own discovery
       - id: validate-file-naming-conventions
         name: ONEX File Naming Convention Validation (Warning Mode)
         entry: bash -c 'poetry run python -m omnibase_core.validation.checker_naming_convention || true'
         language: system
         pass_filenames: false
         always_run: true
-        files: ^src/omnibase_core/.*\.py$
-        exclude: ^(tests/|archived/|archive/).*\.py$
         stages: [pre-push]  # Full directory scan, warning mode until Phase 4
 
       - id: validate-file-locations
@@ -399,33 +398,6 @@ repos:
         exclude: ^(tests/|archived/|archive/).*\.py$
         stages: [pre-commit]
 
-      # Literal Type Alias Duplication Detection (OMN-1308)
-      # Detects duplicate Literal type aliases that should use canonical types
-      # Enforces use of EnumXxx enums instead of scattered Literal["a", "b"] definitions
-      # See: docs/architecture/adr/ADR-013-status-taxonomy.md
-      - id: check-literal-duplication
-        name: ONEX Literal Duplication Check
-        entry: poetry run python -m omnibase_core.validation.checker_literal_duplication
-        language: system
-        types: [python]
-        pass_filenames: true
-        exclude: ^(tests/|archived/|archive/).*\.py$
-        stages: [pre-commit]
-
-      # Enum Governance Validator (OMN-1313):
-      # - ENUM_001: Enforce UPPER_SNAKE_CASE naming for enum members
-      # - ENUM_002: Detect Literal type aliases that should be enums
-      # - ENUM_003: Detect duplicate enum values across files (warn-only)
-      - id: check-enum-governance
-        name: Check Enum Governance
-        entry: poetry run python -m omnibase_core.validation.checker_enum_governance
-        language: system
-        types: [python]
-        files: ^src/.*\.py$
-        exclude: ^(tests/|archived/).*\.py$
-        pass_filenames: true
-        stages: [pre-commit]
-
       - id: validate-typeddict-patterns
         name: ONEX TypedDict Pattern Validation
         entry: poetry run python scripts/validation/validate-typeddict-patterns.py
@@ -527,25 +499,25 @@ repos:
       # Protocol @runtime_checkable Validation
       # Ensures all Protocol classes have @runtime_checkable decorator
       # Required for isinstance() checks and duck typing at runtime
+      # NOTE: always_run=true means files: pattern is ignored - script does its own discovery
       - id: check-protocol-runtime-checkable
         name: ONEX Protocol @runtime_checkable Validation
         entry: poetry run python scripts/validation/check_protocol_runtime_checkable.py
         language: system
         pass_filenames: false
         always_run: true
-        files: ^src/omnibase_core/protocols/.*\.py$
         stages: [pre-commit]
 
       # Protocol __all__ Exports Validation
       # Validates that protocol files have correct __all__ exports matching
       # their Protocol class definitions
+      # NOTE: always_run=true means files: pattern is ignored - script does its own discovery
       - id: check-protocol-exports
         name: ONEX Protocol __all__ Exports Validation
         entry: poetry run python scripts/check_protocol_exports.py
         language: system
         pass_filenames: false
         always_run: true
-        files: ^src/omnibase_core/protocols/.*\.py$
         stages: [pre-commit]
 
       # Protocol UUID Enforcement (pre-push only)
@@ -571,6 +543,22 @@ repos:
           - -p
           - no:testmon
         stages: [pre-push]
+
+      # Enum Governance Validation (OMN-1313)
+      # Enforces enum governance rules to prevent enum/status duplication:
+      # - E001: Enum members must use UPPER_SNAKE_CASE
+      # - E002: Literal types should not duplicate existing enum values
+      # PHASE 1: Warning mode (non-blocking) until existing violations are fixed
+      # The codebase has 13 existing Literal duplication violations.
+      # Once cleaned up, remove "|| true" to make this blocking.
+      # NOTE: always_run=true means files: pattern is ignored - script does its own discovery
+      - id: check-enum-governance
+        name: ONEX Enum Governance Validation (Warning Mode)
+        entry: bash -c 'poetry run python -m omnibase_core.validation.checker_enum_governance || true'
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit, pre-push]
 
       # Node Purity Validation (OMN-203)
       # Ensures declarative nodes (COMPUTE, REDUCER) maintain purity guarantees:

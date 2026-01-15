@@ -1,4 +1,4 @@
-from pydantic import Field
+from pydantic import ConfigDict, Field
 
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
@@ -38,6 +38,8 @@ class ModelCLIConfig(BaseModel):
     Supports environment variable overrides and validation for all
     configuration sections used by the production CLI.
     """
+
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
 
     # Core configuration sections
     tiers: ModelTierConfig = Field(default_factory=ModelTierConfig)

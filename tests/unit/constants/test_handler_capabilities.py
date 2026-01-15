@@ -320,7 +320,7 @@ class TestValidateCapabilities:
         result = validate_capabilities(
             requested={"http", "db"},
             available={"http", "db", "kafka", "filesystem"},
-            node_type="EFFECT",
+            node_type="EFFECT_GENERIC",
         )
         assert result is None
 
@@ -333,7 +333,7 @@ class TestValidateCapabilities:
         result = validate_capabilities(
             requested=set(),
             available={"http", "db"},
-            node_type="EFFECT",
+            node_type="EFFECT_GENERIC",
         )
         assert result is None
 
@@ -347,7 +347,7 @@ class TestValidateCapabilities:
             validate_capabilities(
                 requested={"http", "graphql"},
                 available={"http", "db"},
-                node_type="EFFECT",
+                node_type="EFFECT_GENERIC",
             )
 
         error = exc_info.value
@@ -363,7 +363,7 @@ class TestValidateCapabilities:
             validate_capabilities(
                 requested={"graphql"},
                 available={"http", "db"},
-                node_type="EFFECT",
+                node_type="EFFECT_GENERIC",
             )
 
         error = exc_info.value
@@ -379,11 +379,11 @@ class TestValidateCapabilities:
             validate_capabilities(
                 requested={"graphql"},
                 available={"http", "db"},
-                node_type="EFFECT",
+                node_type="EFFECT_GENERIC",
             )
 
         error = exc_info.value
-        assert error.node_type == "EFFECT"
+        assert error.node_type == "EFFECT_GENERIC"
 
     def test_validate_capabilities_error_includes_available_capabilities(self) -> None:
         """Test that error context includes available_capabilities."""
@@ -395,7 +395,7 @@ class TestValidateCapabilities:
             validate_capabilities(
                 requested={"graphql"},
                 available={"http", "db"},
-                node_type="EFFECT",
+                node_type="EFFECT_GENERIC",
             )
 
         error = exc_info.value
@@ -414,7 +414,7 @@ class TestValidateCapabilities:
             validate_capabilities(
                 requested={"missing_capability"},
                 available={"http", "db", "kafka"},
-                node_type="COMPUTE",
+                node_type="COMPUTE_GENERIC",
             )
 
     def test_validate_capabilities_raises_for_multiple_missing_capabilities(
@@ -430,7 +430,7 @@ class TestValidateCapabilities:
             validate_capabilities(
                 requested={"missing1", "missing2"},
                 available={"http", "db"},
-                node_type="EFFECT",
+                node_type="EFFECT_GENERIC",
             )
 
         error = exc_info.value
@@ -446,7 +446,7 @@ class TestValidateCapabilities:
         result = validate_capabilities(
             requested=frozenset({"http"}),
             available={"http", "db"},
-            node_type="EFFECT",
+            node_type="EFFECT_GENERIC",
         )
         assert result is None
 
@@ -459,7 +459,7 @@ class TestValidateCapabilities:
         result = validate_capabilities(
             requested={"http"},
             available=frozenset({"http", "db"}),
-            node_type="EFFECT",
+            node_type="EFFECT_GENERIC",
         )
         assert result is None
 
@@ -474,7 +474,7 @@ class TestValidateCapabilities:
             validate_capabilities(
                 requested={"HTTP"},
                 available={"http", "db"},
-                node_type="EFFECT",
+                node_type="EFFECT_GENERIC",
             )
 
 
@@ -580,7 +580,7 @@ class TestContractCapabilityValidation:
         result = validate_capabilities(
             requested=requested,
             available=EFFECT_CAPABILITIES,
-            node_type="EFFECT",
+            node_type="EFFECT_GENERIC",
         )
         assert result is None
 
@@ -594,7 +594,7 @@ class TestContractCapabilityValidation:
         result = validate_capabilities(
             requested=set(EFFECT_CAPABILITIES),
             available=EFFECT_CAPABILITIES,
-            node_type="EFFECT",
+            node_type="EFFECT_GENERIC",
         )
         assert result is None
 
@@ -609,13 +609,13 @@ class TestContractCapabilityValidation:
             validate_capabilities(
                 requested={"graphql"},  # Not in EFFECT_CAPABILITIES
                 available=EFFECT_CAPABILITIES,
-                node_type="EFFECT",
+                node_type="EFFECT_GENERIC",
             )
 
         error = exc_info.value
         # Error should be clear about what was requested vs what's available
         assert error.capability == "graphql"
-        assert error.node_type == "EFFECT"
+        assert error.node_type == "EFFECT_GENERIC"
 
     def test_contract_error_message_includes_requested_vs_available(self) -> None:
         """Test that error message includes what was requested vs what's available."""
@@ -628,7 +628,7 @@ class TestContractCapabilityValidation:
             validate_capabilities(
                 requested={"unsupported_cap"},
                 available=EFFECT_CAPABILITIES,
-                node_type="EFFECT",
+                node_type="EFFECT_GENERIC",
             )
 
         error = exc_info.value
@@ -646,7 +646,7 @@ class TestContractCapabilityValidation:
         result = validate_capabilities(
             requested=set(),
             available=COMPUTE_CAPABILITIES,
-            node_type="COMPUTE",
+            node_type="COMPUTE_GENERIC",
         )
         assert result is None
 
@@ -700,7 +700,7 @@ class TestHandlerCapabilitiesEdgeCases:
             validate_capabilities(
                 requested={"invalid_cap"},
                 available={"http", "db"},
-                node_type="EFFECT",
+                node_type="EFFECT_GENERIC",
             )
             pytest.fail("Expected UnsupportedCapabilityError to be raised")
         except UnsupportedCapabilityError:
@@ -720,7 +720,7 @@ class TestHandlerCapabilitiesEdgeCases:
             validate_capabilities(
                 requested={"unknown"},
                 available={"http"},
-                node_type="EFFECT",
+                node_type="EFFECT_GENERIC",
             )
 
         error = exc_info.value

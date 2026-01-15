@@ -33,18 +33,29 @@ def emit_log_event_sync(
     # Create structured log entry
     log_entry = {
         "timestamp": datetime.now(UTC).isoformat(),
-        "level": level.value,
+        "level": level.value.lower(),
         "message": message,
         "context": context or {},
     }
 
     # Map SPI LogLevel to Python logging levels
-    python_level = {
+    level_mapping = {
         LogLevel.DEBUG: logging.DEBUG,
         LogLevel.INFO: logging.INFO,
         LogLevel.WARNING: logging.WARNING,
         LogLevel.ERROR: logging.ERROR,
         LogLevel.CRITICAL: logging.CRITICAL,
-    }.get(level, logging.INFO)
+        LogLevel.FATAL: logging.CRITICAL,
+    }
+
+    python_level = level_mapping.get(level)
+    if python_level is None:
+        # fallback-ok: use INFO for unknown log levels but warn about configuration
+        logger.warning(
+            "Unknown log level %r, defaulting to INFO. "
+            "Valid levels: DEBUG, INFO, WARNING, ERROR, CRITICAL, FATAL",
+            level,
+        )
+        python_level = logging.INFO
 
     logger.log(python_level, json.dumps(log_entry, cls=PydanticJSONEncoder))

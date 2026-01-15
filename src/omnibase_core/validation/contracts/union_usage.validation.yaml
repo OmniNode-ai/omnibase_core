@@ -13,8 +13,8 @@ validation:
     - Unions with 3+ types that should be replaced with models
     - Mixed primitive/complex type unions
     - Primitive overload unions (str | int | bool | float)
-    - Legacy Optional[T] syntax (should use T | None)
-    - Legacy Union[T, None] syntax (should use T | None)
+    - Optional[T] syntax (should use T | None per PEP 604)
+    - Union[T, None] syntax (should use T | None per PEP 604)
 
   target_patterns:
     - "**/*.py"

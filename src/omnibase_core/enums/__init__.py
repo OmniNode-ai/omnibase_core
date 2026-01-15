@@ -278,6 +278,12 @@ from .enum_service_type_category import EnumServiceTypeCategory
 
 # Severity enum (canonical - replaces EnumViolationSeverity, OMN-1311)
 from .enum_severity import EnumSeverity
+
+# Deprecated aliases for EnumSeverity (OMN-1311 consolidation)
+# Use EnumSeverity directly in new code.
+EnumInvariantSeverity: type[EnumSeverity] = EnumSeverity
+EnumValidationSeverity: type[EnumSeverity] = EnumSeverity
+EnumViolationSeverity: type[EnumSeverity] = EnumSeverity
 from .enum_state_update_operation import EnumStateUpdateOperation
 
 # Step type enum (workflow step types)
@@ -554,6 +560,10 @@ __all__ = [
     "EnumInvariantType",
     # Severity domain (OMN-1311 - canonical, replaces EnumViolationSeverity)
     "EnumSeverity",
+    # Deprecated aliases for EnumSeverity (OMN-1311 consolidation)
+    "EnumInvariantSeverity",
+    "EnumValidationSeverity",
+    "EnumViolationSeverity",
     # Impact severity domain (OMN-1311 - business impact scale)
     "EnumImpactSeverity",
     # Dashboard domain (OMN-1284)

@@ -171,6 +171,7 @@ class ModelWorkflowCoordinationSubcontract(BaseModel):
 
     model_config = ConfigDict(
         extra="forbid",
+        from_attributes=True,
         frozen=True,
         use_enum_values=False,  # Keep enum objects, don't convert to strings
     )

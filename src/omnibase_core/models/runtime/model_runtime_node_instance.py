@@ -186,10 +186,11 @@ class ModelRuntimeNodeInstance(BaseModel):
     """
 
     model_config = ConfigDict(
-        frozen=True,
         extra="forbid",
-        validate_assignment=True,
+        from_attributes=True,
+        frozen=True,
         str_strip_whitespace=True,
+        validate_assignment=True,
     )
 
     slug: str = Field(
