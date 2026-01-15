@@ -314,7 +314,7 @@ class ModelPayloadExtension(ModelIntentPayloadBase):
             )
         # NOTE(OMN-1266): Type narrowing - validator confirms all values are StrictJsonType
         # primitives. Mypy accepts this return because the isinstance(v, dict) check above
-        # narrows the type sufficiently for the dict[str, JsonType] return annotation.
+        # narrows the type sufficiently for the dict[str, StrictJsonType] return annotation.
         return v
 
     @field_validator("config", mode="before")

@@ -747,6 +747,19 @@ class TestModelPayloadExtensionJsonValidationRejection:
         assert "value" in error_str
         assert "nan" in error_str.lower() or "finite" in error_str.lower()
 
+    def test_rejects_non_string_dict_keys(self) -> None:
+        """Test that non-string dict keys are rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelPayloadExtension(
+                extension_type="plugin.test",
+                plugin_name="test",
+                # NOTE(OMN-1266): Intentionally passing invalid type to test rejection.
+                data={123: "value"},  # type: ignore[dict-item]
+            )
+        error_str = str(exc_info.value)
+        assert "non-string key" in error_str
+        assert "int" in error_str
+
 
 @pytest.mark.unit
 class TestModelPayloadExtensionJsonValidationErrorMessages:
