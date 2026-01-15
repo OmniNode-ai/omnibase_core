@@ -129,6 +129,7 @@ from .model_lifecycle_config import ModelLifecycleConfig
 from .model_memory_management_config import ModelMemoryManagementConfig
 from .model_node_extensions import ModelNodeExtensions
 from .model_node_ref import ModelNodeRef
+from .model_omnimemory_contract import ModelOmniMemoryContract
 from .model_output_transformation_config import ModelOutputTransformationConfig
 from .model_parallel_config import ModelParallelConfig
 from .model_performance_requirements import ModelPerformanceRequirements
@@ -169,6 +170,7 @@ __all__ = [
     "ModelDriftResult",
     "ModelNodeExtensions",
     "ModelNodeRef",
+    "ModelOmniMemoryContract",
     "ModelProfileReference",
     "is_valid_meta_model",
     "validate_meta_model",
