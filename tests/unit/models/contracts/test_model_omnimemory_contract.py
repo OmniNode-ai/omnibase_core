@@ -43,12 +43,6 @@ def valid_contract_id() -> UUID:
 
 
 @pytest.fixture
-def default_version() -> ModelSemVer:
-    """Provide default ModelSemVer (1.0.0)."""
-    return ModelSemVer(major=1, minor=0, patch=0)
-
-
-@pytest.fixture
 def valid_forever_config(valid_contract_id: UUID) -> dict:
     """Provide valid configuration with forever retention policy."""
     return {
@@ -671,14 +665,19 @@ class TestModelOmniMemoryContractEdgeCases:
         assert contract.default_budget == 1_000_000.0
 
     def test_zero_retention_value_with_ttl(self, valid_contract_id: UUID) -> None:
-        """Test that zero retention_value is valid with TTL policy."""
-        contract = ModelOmniMemoryContract(
-            contract_id=valid_contract_id,
-            retention_policy="ttl",
-            retention_value=0,
-            default_budget=100.0,
-        )
-        assert contract.retention_value == 0
+        """Test that zero retention_value raises ValidationError.
+
+        retention_value=0 is semantically invalid:
+        - TTL=0 days means "expire immediately" (nonsensical)
+        - count_limit=0 means "keep 0 versions" (invalid)
+        """
+        with pytest.raises(ValidationError):
+            ModelOmniMemoryContract(
+                contract_id=valid_contract_id,
+                retention_policy="ttl",
+                retention_value=0,
+                default_budget=100.0,
+            )
 
     def test_large_retention_value(self, valid_contract_id: UUID) -> None:
         """Test contract with large retention_value."""

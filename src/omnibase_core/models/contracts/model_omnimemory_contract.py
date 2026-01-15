@@ -51,7 +51,8 @@ class ModelOmniMemoryContract(BaseModel):
     )
     retention_value: int | None = Field(
         default=None,
-        description="TTL in days (for 'ttl') or max count (for 'count_limit')",
+        ge=1,
+        description="TTL in days (for 'ttl') or max count (for 'count_limit'). Must be >= 1.",
     )
 
     # Cost controls
