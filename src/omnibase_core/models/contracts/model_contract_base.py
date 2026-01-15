@@ -291,7 +291,7 @@ class ModelContractBase(BaseModel, ABC):
             dependencies: List of dependency objects to categorize
 
         Returns:
-            dict[str, Any]: Categorized dependencies by type
+            dict[str, list[tuple[int, object]]]: Categorized dependencies by type
         """
         categorized: dict[str, list[tuple[int, object]]] = {
             "model_deps": [],

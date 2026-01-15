@@ -94,8 +94,8 @@ class ModelArgumentMap(BaseModel):
             default: Default value if argument not found or conversion fails
 
         Returns:
-            The argument value cast to expected_type, or default if not found
-            or conversion fails
+            When default is None (or omitted): T | None - the value or None
+            When default is T: T - the value or the provided default (never None)
         """
         if name in self.named_args:
             value = self.named_args[name].value
@@ -142,7 +142,11 @@ class ModelArgumentMap(BaseModel):
         return self.get_typed(name, bool, default)
 
     def get_list(self, name: str, default: list[str] | None = None) -> list[str]:
-        """Get list argument value."""
+        """Get list argument value with string conversion.
+
+        All list items are converted to strings. Returns empty list if argument
+        not found and no default provided.
+        """
         if default is None:
             default = []
         # Use bare 'list' for isinstance check at runtime (generic list[str] not valid).
@@ -206,8 +210,8 @@ class ModelArgumentMap(BaseModel):
             default: Default value if argument not found or conversion fails
 
         Returns:
-            The argument value cast to expected_type, or default if not found,
-            index out of bounds, or conversion fails
+            When default is None (or omitted): T | None - the value or None
+            When default is T: T - the value or the provided default (never None)
         """
         if 0 <= index < len(self.positional_args):
             value = self.positional_args[index].value

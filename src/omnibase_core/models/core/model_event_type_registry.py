@@ -176,6 +176,8 @@ class ModelEventTypeRegistry:
             ("NODE_SUCCESS", "Node success event", "lifecycle"),
             ("NODE_FAILURE", "Node failure event", "lifecycle"),
             ("NODE_REGISTER", "Node registration event", "lifecycle"),
+            ("NODE_DISCOVERY_REQUEST", "Node discovery request event", "discovery"),
+            ("DISCOVERY_RESPONSE", "Discovery response event", "discovery"),
             ("TELEMETRY_OPERATION_START", "Telemetry operation start", "telemetry"),
             ("TELEMETRY_OPERATION_SUCCESS", "Telemetry operation success", "telemetry"),
             ("TELEMETRY_OPERATION_ERROR", "Telemetry operation error", "telemetry"),

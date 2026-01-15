@@ -253,20 +253,23 @@ The default value of `BuilderExecutionPlan.enforce_hook_typing` has been changed
 
 #### Workflow Contract Model Hardening [OMN-654]
 
-The following workflow contract models now enforce **immutability** (`frozen=True`) and **strict field validation** (`extra="forbid"`):
+The following workflow contract models now enforce **immutability** (`frozen=True`) and **field validation**:
 
 | Model | Changes Applied |
 |-------|-----------------|
-| `ModelWorkflowDefinition` | Added `frozen=True`, `extra="forbid"` |
+| `ModelWorkflowDefinition` | Added `frozen=True`, `extra="ignore"` (v1.0.5 Reserved Fields Governance) |
 | `ModelWorkflowDefinitionMetadata` | Added `frozen=True`, `extra="forbid"` |
 | `ModelWorkflowStep` | Added `extra="forbid"` (already had `frozen=True`) |
-| `ModelCoordinationRules` | Added `frozen=True`, `extra="forbid"` |
-| `ModelExecutionGraph` | Added `frozen=True`, `extra="forbid"` |
-| `ModelWorkflowNode` | Added `frozen=True`, `extra="forbid"` |
+| `ModelCoordinationRules` | Added `frozen=True`, `extra="ignore"` (v1.0.5 Reserved Fields Governance) |
+| `ModelExecutionGraph` | Added `frozen=True`, `extra="ignore"` (v1.0.5 Reserved Fields Governance) |
+| `ModelWorkflowNode` | Added `frozen=True`, `extra="ignore"` (v1.0.5 Reserved Fields Governance) |
+
+**Note**: Models with `extra="ignore"` (v1.0.5 Fix 54: Reserved Fields Governance) allow extra fields for forward compatibility. Reserved fields are preserved during round-trip serialization but are NOT validated beyond structural type checking and MUST NOT influence any runtime decision in v1.0.
 
 **Impact**:
 - Code that **mutates these models after creation** will now raise `pydantic.ValidationError`
-- Code that **passes unknown fields** to these models will now raise `pydantic.ValidationError`
+- For `extra="forbid"` models: Code that **passes unknown fields** will raise `pydantic.ValidationError`
+- For `extra="ignore"` models: Unknown fields are silently ignored (for forward compatibility)
 
 **Thread Safety Benefits**:
 
