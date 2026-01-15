@@ -115,6 +115,8 @@ def create_event_type_from_registry(
 
     Replaces create_event_type_from_string() with proper validation.
     Uses Pydantic validation throughout.
+
+    If event type is not registered, creates a new one with default schema_version 1.0.0.
     """
     from .model_event_type_registry import get_event_type_registry
 
@@ -124,10 +126,12 @@ def create_event_type_from_registry(
         return existing
 
     # Create event type using ONEX-compatible validation
+    # schema_version is required - use default 1.0.0 for unregistered event types
     validated_data = {
         "event_name": event_name,
         "namespace": namespace,
         "description": description or f"Registry event type: {event_name}",
+        "schema_version": ModelSemVer(major=1, minor=0, patch=0),
     }
     return ModelEventType.model_validate(validated_data)
 

@@ -18,7 +18,7 @@ from omnibase_core.models.primitives.model_semver import ModelSemVer
 from .model_initialization_metadata import ModelInitializationMetadata
 
 if TYPE_CHECKING:
-    from omnibase_core.models.contracts.model_node_contract import ModelNodeContract
+    from omnibase_core.models.core.model_contract_content import ModelContractContent
 
 
 @dataclass
@@ -39,7 +39,7 @@ class ModelNodeState:
 
     contract_path: Path
     node_id: UUID
-    contract_content: ModelNodeContract | ModelSchemaValue | None
+    contract_content: ModelContractContent | ModelSchemaValue | None
     container_reference: object | None
     node_name: str
     version: ModelSemVer

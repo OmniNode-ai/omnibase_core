@@ -7,7 +7,6 @@ Follows ONEX one-model-per-file naming conventions.
 
 from __future__ import annotations
 
-from typing import cast
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -179,10 +178,7 @@ class ModelNodeCoreInfoSummary(BaseModel):
 
     def serialize(self) -> TypedDictSerializedModel:
         """Serialize to dictionary (Serializable protocol)."""
-        return cast(
-            TypedDictSerializedModel,
-            self.model_dump(exclude_none=False, by_alias=True),
-        )
+        return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
         """

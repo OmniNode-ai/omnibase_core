@@ -5,7 +5,7 @@ Type-safe container for parsed CLI arguments that provides both positional
 and named argument access with type conversion capabilities.
 """
 
-from typing import TypeVar, cast
+from typing import TypeVar, cast, overload
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -42,6 +42,22 @@ class ModelArgumentMap(BaseModel):
         description="Original raw argument strings",
     )
 
+    @overload
+    def get_typed(
+        self,
+        name: str,
+        expected_type: type[T],
+        default: None = None,
+    ) -> T | None: ...
+
+    @overload
+    def get_typed(
+        self,
+        name: str,
+        expected_type: type[T],
+        default: T,
+    ) -> T: ...
+
     def get_typed(
         self,
         name: str,
@@ -55,17 +71,21 @@ class ModelArgumentMap(BaseModel):
         stored value doesn't match expected_type, automatic conversion is attempted
         for str, int, float, and bool types.
 
+        Overloads:
+            - get_typed(name, type) -> T | None: Returns None if not found
+            - get_typed(name, type, default) -> T: Returns default if not found
+
         Type Conversion Behavior:
             - str: Any value converted via str()
             - int: Numeric strings/values converted via int()
             - float: Numeric strings/values converted via float()
-            - bool: String values "true", "1", "yes", "on" (case-insensitive) → True;
+            - bool: String values "true", "1", "yes", "on" (case-insensitive) -> True;
                     other values converted via bool()
 
         Note:
-            The type: ignore comments in this method are necessary because TypeVar T
-            cannot be narrowed at runtime after the expected_type comparison. The
-            conversions are type-safe by construction (e.g., str() always returns str).
+            cast(T, ...) is used because mypy cannot narrow TypeVar T based on runtime
+            expected_type comparisons. Each conversion is guarded by an if-check ensuring
+            the return type matches T at runtime.
 
         Args:
             name: Argument name to retrieve
@@ -74,71 +94,89 @@ class ModelArgumentMap(BaseModel):
             default: Default value if argument not found or conversion fails
 
         Returns:
-            The argument value cast to expected_type, or default if not found
-            or conversion fails
+            When default is None (or omitted): T | None - the value or None
+            When default is T: T - the value or the provided default (never None)
         """
         if name in self.named_args:
             value = self.named_args[name].value
             if isinstance(value, expected_type):
                 return value
-            # Try to convert if possible
-            # Note: type: ignore comments below are required because mypy cannot narrow
-            # TypeVar T based on runtime expected_type comparison. Each conversion is
-            # guarded by an if-check ensuring the return type matches T.
+            # Try to convert if possible.
+            # NOTE(OMN-1073): cast(T, ...) is used because mypy cannot narrow TypeVar T
+            # based on runtime expected_type comparison. Each conversion is guarded by an
+            # if-check ensuring the return type matches T at runtime. The cast is safe
+            # because the converter function (str/int/float/bool) guarantees the output type.
             try:
                 if expected_type == str:
-                    # NOTE(OMN-1302): TypeVar T cannot be narrowed by expected_type check. Safe because str() always returns str.
-                    return str(value)  # type: ignore[return-value]
+                    # NOTE(OMN-1073): Safe cast - str() always returns str.
+                    return cast(T, str(value))
                 if expected_type == int:
-                    # NOTE(OMN-1302): TypeVar T cannot be narrowed by expected_type check. Safe because int() returns int; arg-type ignored for Any input.
-                    return int(value)  # type: ignore[return-value,arg-type]
+                    # NOTE(OMN-1073): Safe cast - int(value) returns int or raises.
+                    # Narrow to types int() accepts (exclude lists).
+                    if isinstance(value, str | int | float | bool):
+                        return cast(T, int(value))
                 if expected_type == float:
-                    # NOTE(OMN-1302): TypeVar T cannot be narrowed by expected_type check. Safe because float() returns float; arg-type ignored for Any input.
-                    return float(value)  # type: ignore[return-value,arg-type]
+                    # NOTE(OMN-1073): Safe cast - float(value) returns float or raises.
+                    # Narrow to types float() accepts (exclude lists).
+                    if isinstance(value, str | int | float | bool):
+                        return cast(T, float(value))
                 if expected_type == bool:
+                    # NOTE(OMN-1073): Safe cast - comparison result is always bool.
                     if isinstance(value, str):
-                        # NOTE(OMN-1302): TypeVar T cannot be narrowed by expected_type check. Safe because bool comparison returns bool.
-                        return value.lower() in ("true", "1", "yes", "on")  # type: ignore[return-value]
-                    # NOTE(OMN-1302): TypeVar T cannot be narrowed by expected_type check. Safe because bool() always returns bool.
-                    return bool(value)  # type: ignore[return-value]
+                        return cast(T, value.lower() in ("true", "1", "yes", "on"))
+                    return cast(T, bool(value))
             except (TypeError, ValueError):
                 pass
         return default
 
     def get_string(self, name: str, default: str = "") -> str:
         """Get string argument value."""
-        result = self.get_typed(name, str, default)
-        return result if result is not None else default
+        return self.get_typed(name, str, default)
 
     def get_int(self, name: str, default: int = 0) -> int:
         """Get integer argument value."""
-        result = self.get_typed(name, int, default)
-        return result if result is not None else default
+        return self.get_typed(name, int, default)
 
     def get_float(self, name: str, default: float = 0.0) -> float:
         """Get float argument value."""
-        result = self.get_typed(name, float, default)
-        return result if result is not None else default
+        return self.get_typed(name, float, default)
 
     def get_bool(self, name: str, default: bool = False) -> bool:
         """Get boolean argument value."""
-        result = self.get_typed(name, bool, default)
-        return result if result is not None else default
+        return self.get_typed(name, bool, default)
 
     def get_list(self, name: str, default: list[str] | None = None) -> list[str]:
-        """Get list argument value."""
+        """Get list argument value with string conversion.
+
+        All list items are converted to strings. Returns empty list if argument
+        not found and no default provided.
+        """
         if default is None:
             default = []
         # Use bare 'list' for isinstance check at runtime (generic list[str] not valid).
         result = self.get_typed(name, list, default)
         # Ensure we return list[str] by converting items
-        if result is not None and isinstance(result, list):
-            return [str(item) for item in result]
-        return default
+        return [str(item) for item in result]
 
     def has_argument(self, name: str) -> bool:
         """Check if named argument exists."""
         return name in self.named_args
+
+    @overload
+    def get_positional(
+        self,
+        index: int,
+        expected_type: type[T],
+        default: None = None,
+    ) -> T | None: ...
+
+    @overload
+    def get_positional(
+        self,
+        index: int,
+        expected_type: type[T],
+        default: T,
+    ) -> T: ...
 
     def get_positional(
         self,
@@ -153,6 +191,10 @@ class ModelArgumentMap(BaseModel):
         to get_typed(). When the stored value doesn't match expected_type,
         automatic conversion is attempted for str, int, float, and bool types.
 
+        Overloads:
+            - get_positional(index, type) -> T | None: Returns None if not found
+            - get_positional(index, type, default) -> T: Returns default if not found
+
         Type Conversion Behavior:
             - str: Any value converted via str()
             - int: Numeric strings/values converted via int()
@@ -161,9 +203,9 @@ class ModelArgumentMap(BaseModel):
                     other values converted via bool()
 
         Note:
-            The type: ignore comments in this method are necessary because TypeVar T
-            cannot be narrowed at runtime after the expected_type comparison. The
-            conversions are type-safe by construction (e.g., str() always returns str).
+            cast(T, ...) is used because mypy cannot narrow TypeVar T based on runtime
+            expected_type comparisons. Each conversion is guarded by an if-check ensuring
+            the return type matches T at runtime.
 
         Args:
             index: Position index (0-based)
@@ -172,33 +214,37 @@ class ModelArgumentMap(BaseModel):
             default: Default value if argument not found or conversion fails
 
         Returns:
-            The argument value cast to expected_type, or default if not found,
-            index out of bounds, or conversion fails
+            When default is None (or omitted): T | None - the value or None
+            When default is T: T - the value or the provided default (never None)
         """
         if 0 <= index < len(self.positional_args):
             value = self.positional_args[index].value
             if isinstance(value, expected_type):
                 return value
-            # Try to convert if possible
-            # Note: type: ignore comments below are required because mypy cannot narrow
-            # TypeVar T based on runtime expected_type comparison. Each conversion is
-            # guarded by an if-check ensuring the return type matches T.
+            # Try to convert if possible.
+            # NOTE(OMN-1073): cast(T, ...) is used because mypy cannot narrow TypeVar T
+            # based on runtime expected_type comparison. Each conversion is guarded by an
+            # if-check ensuring the return type matches T at runtime. The cast is safe
+            # because the converter function (str/int/float/bool) guarantees the output type.
             try:
                 if expected_type == str:
-                    # NOTE(OMN-1302): TypeVar T cannot be narrowed by expected_type check. Safe because str() always returns str.
-                    return str(value)  # type: ignore[return-value]
+                    # NOTE(OMN-1073): Safe cast - str() always returns str.
+                    return cast(T, str(value))
                 if expected_type == int:
-                    # NOTE(OMN-1302): TypeVar T cannot be narrowed by expected_type check. Safe because int() returns int; arg-type ignored for Any input.
-                    return int(value)  # type: ignore[return-value,arg-type]
+                    # NOTE(OMN-1073): Safe cast - int(value) returns int or raises.
+                    # Narrow to types int() accepts (exclude lists).
+                    if isinstance(value, str | int | float | bool):
+                        return cast(T, int(value))
                 if expected_type == float:
-                    # NOTE(OMN-1302): TypeVar T cannot be narrowed by expected_type check. Safe because float() returns float; arg-type ignored for Any input.
-                    return float(value)  # type: ignore[return-value,arg-type]
+                    # NOTE(OMN-1073): Safe cast - float(value) returns float or raises.
+                    # Narrow to types float() accepts (exclude lists).
+                    if isinstance(value, str | int | float | bool):
+                        return cast(T, float(value))
                 if expected_type == bool:
+                    # NOTE(OMN-1073): Safe cast - comparison result is always bool.
                     if isinstance(value, str):
-                        # NOTE(OMN-1302): TypeVar T cannot be narrowed by expected_type check. Safe because bool comparison returns bool.
-                        return value.lower() in ("true", "1", "yes", "on")  # type: ignore[return-value]
-                    # NOTE(OMN-1302): TypeVar T cannot be narrowed by expected_type check. Safe because bool() always returns bool.
-                    return bool(value)  # type: ignore[return-value]
+                        return cast(T, value.lower() in ("true", "1", "yes", "on"))
+                    return cast(T, bool(value))
             except (TypeError, ValueError):
                 pass
         return default
@@ -209,8 +255,16 @@ class ModelArgumentMap(BaseModel):
         value: object,
         arg_type: str = "string",
     ) -> None:
-        """Add a named argument to the map."""
-        # Caller is responsible for passing ArgumentValueType-compatible values
+        """Add a named argument to the map.
+
+        Note:
+            Caller is responsible for passing ArgumentValueType-compatible values
+            (str, int, bool, float, list[str], list[int], list[float]).
+        """
+        # NOTE(OMN-1073): cast(ArgumentValueType, value) is used because the method
+        # signature accepts `object` for API flexibility. The cast is safe when callers
+        # pass ArgumentValueType-compatible values as documented. Pydantic validation
+        # in ModelArgumentValue will raise ValidationError if incompatible types are passed.
         arg_value = ModelArgumentValue(
             value=cast(ArgumentValueType, value),
             original_string=str(value),
@@ -219,8 +273,16 @@ class ModelArgumentMap(BaseModel):
         self.named_args[name] = arg_value
 
     def add_positional_argument(self, value: object, arg_type: str = "string") -> None:
-        """Add a positional argument to the map."""
-        # Caller is responsible for passing ArgumentValueType-compatible values
+        """Add a positional argument to the map.
+
+        Note:
+            Caller is responsible for passing ArgumentValueType-compatible values
+            (str, int, bool, float, list[str], list[int], list[float]).
+        """
+        # NOTE(OMN-1073): cast(ArgumentValueType, value) is used because the method
+        # signature accepts `object` for API flexibility. The cast is safe when callers
+        # pass ArgumentValueType-compatible values as documented. Pydantic validation
+        # in ModelArgumentValue will raise ValidationError if incompatible types are passed.
         arg_value = ModelArgumentValue(
             value=cast(ArgumentValueType, value),
             original_string=str(value),

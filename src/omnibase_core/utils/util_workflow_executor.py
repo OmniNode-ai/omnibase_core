@@ -561,6 +561,11 @@ async def validate_workflow_definition(
                     f"Step '{step.step_name}' depends on non-existent step: {dep_id}"
                 )
 
+        # Note: step_type="conditional" is already rejected by:
+        # 1. Pydantic Literal type at model definition (type-level enforcement)
+        # 2. RESERVED_STEP_TYPES check at lines 532-536 (runtime enforcement)
+        # No additional check needed here.
+
     return errors
 
 
@@ -936,22 +941,9 @@ async def _execute_parallel(
 
     Raises:
         ModelOnexError: If workflow validation fails during setup, or if total
-            payload limit (MAX_TOTAL_PAYLOAD_SIZE_BYTES) is exceeded. Unlike
-            sequential mode, payload limit violations in parallel mode fail
-            the entire workflow immediately after all wave steps complete,
-            raising ModelOnexError rather than treating it as a step failure.
+            payload limit (MAX_TOTAL_PAYLOAD_SIZE_BYTES) is exceeded.
 
     Note:
-        The error handling behavior differs from sequential mode:
-        - Sequential mode: Payload limit violations are caught and treated as
-          step failures per error_action configuration (workflow returns FAILED).
-        - Parallel mode: Payload limit violations raise ModelOnexError immediately
-          after the current wave completes (error propagates to caller).
-
-        This difference exists because parallel execution processes all steps in a
-        wave simultaneously, making per-step error handling less meaningful when
-        the aggregate payload exceeds the limit.
-
         Individual step errors (including MAX_STEP_PAYLOAD_SIZE_BYTES violations)
         are still handled per-step and respect the error_action configuration.
 
